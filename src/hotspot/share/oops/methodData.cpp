@@ -480,7 +480,7 @@ address RetData::fixup_ret(int return_bci, MethodData* h_mdo) {
   // Now check to see if any of the cache slots are open.
   for (uint row = 0; row < row_limit(); row++) {
     if (bci(row) == no_bci) {
-      set_bci_displacement(row, (int)(mdp - dp()));
+      set_bci_displacement(row, checked_cast<int>(mdp - dp()));
       set_bci_count(row, DataLayout::counter_increment);
       // Barrier to ensure displacement is written before the bci; allows
       // the interpreter to read displacement without fear of race condition.
