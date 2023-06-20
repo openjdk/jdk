@@ -257,8 +257,8 @@ class ChannelInputStream extends InputStream {
     }
 
     /**
-     * Transfers all bytes to the given target channel. If the target channel is a
-     * selectable channel then it's in blocking mode.
+     * Transfers all bytes to the target channel's file. If the source channel
+     * is a selectable channel then it's in blocking mode.
      */
     private long implTransferTo(FileChannel fc) throws IOException {
         long initialPos = fc.position();
