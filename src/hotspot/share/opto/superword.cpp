@@ -3965,7 +3965,10 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
     }
-    e = new URShiftINode(invar, log2_elt);
+    Node* aref = new URShiftINode(invar, log2_elt);
+    _igvn.register_new_node_with_optimizer(aref);
+    _phase->set_ctrl(aref, pre_ctrl);
+    e =  new AddINode(e, aref);
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
