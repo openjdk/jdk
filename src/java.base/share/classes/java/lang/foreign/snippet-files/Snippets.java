@@ -186,16 +186,16 @@ class Snippets {
                 }
             }
 
-            FunctionDescriptor compareDesc = FunctionDescriptor.of(JAVA_INT,
+            FunctionDescriptor comparDesc = FunctionDescriptor.of(JAVA_INT,
                     ADDRESS.withTargetLayout(JAVA_INT),
                     ADDRESS.withTargetLayout(JAVA_INT));
-            MethodHandle compareHandle = MethodHandles.lookup()
+            MethodHandle comparHandle = MethodHandles.lookup()
                     .findStatic(Qsort.class, "qsortCompare",
-                            compareDesc.toMethodType());
+                            comparDesc.toMethodType());
 
 
             try (Arena arena = Arena.ofConfined()) {
-                MemorySegment compareFunc = linker.upcallStub(compareHandle, compareDesc, arena);
+                MemorySegment compareFunc = linker.upcallStub(comparHandle, comparDesc, arena);
                 MemorySegment array = arena.allocateArray(JAVA_INT, 0, 9, 3, 4, 6, 5, 1, 8, 2, 7);
                 qsort.invokeExact(array, 10L, 4L, compareFunc);
                 int[] sorted = array.toArray(JAVA_INT); // [ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 ]
@@ -400,7 +400,7 @@ class Snippets {
                         .findStatic(Math.class, "multiplyExact",
                                 MethodType.methodType(long.class, long.class, long.class));
                 intHandle = MethodHandles.filterCoordinates(intHandle, 1,
-                        MethodHandles.insertArguments(multiplyExact, 0, 4L));
+                        MethodHandles.insertArguments(multiplyExact, 0, ValueLayout.JAVA_INT.byteSize()));
                 int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
             }
 
