@@ -499,10 +499,9 @@ void Runtime1::generate_unwind_exception(StubAssembler *sasm) {
   const Register handler_addr = x11;
 
   if (AbortVMOnException) {
-    __ mv(x15, x10);
     __ enter();
     save_live_registers(sasm);
-    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), x15);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, check_abort_on_vm_exception), x10);
     restore_live_registers(sasm);
     __ leave();
   }
