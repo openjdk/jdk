@@ -55,7 +55,7 @@ private:
 
   inline bool should_preserve_mark(oop obj, markWord m) const;
 
-  template<bool ALT_FWD>
+  template <bool ALT_FWD>
   void adjust_during_full_gc_impl();
 
 public:
@@ -68,7 +68,7 @@ public:
 
   // Adjust the preserved mark according to its
   // forwarding location stored in the mark.
-  template<bool ALT_FWD>
+  template <bool ALT_FWD>
   static inline void adjust_preserved_mark(PreservedMark* elem);
 
   // Iterate over the stack, adjust all preserved marks according

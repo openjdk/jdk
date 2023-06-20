@@ -73,7 +73,7 @@ public:
   virtual void do_oop(narrowOop* p);
 };
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 class G1AdjustClosure : public BasicOopIterateClosure {
   G1FullCollector* _collector;
 

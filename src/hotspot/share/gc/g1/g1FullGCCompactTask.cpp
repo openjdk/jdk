@@ -35,13 +35,13 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/ticks.hpp"
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void G1FullGCCompactTask::G1CompactRegionClosure<ALT_FWD>::clear_in_bitmap(oop obj) {
   assert(_bitmap->is_marked(obj), "Should only compact marked objects");
   _bitmap->clear(obj);
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 size_t G1FullGCCompactTask::G1CompactRegionClosure<ALT_FWD>::apply(oop obj) {
   size_t size = obj->size();
   if (SlidingForwarding::is_forwarded(obj)) {
@@ -54,7 +54,7 @@ size_t G1FullGCCompactTask::G1CompactRegionClosure<ALT_FWD>::apply(oop obj) {
   return size;
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void G1FullGCCompactTask::copy_object_to_new_location(oop obj) {
   assert(SlidingForwarding::is_forwarded(obj), "Sanity!");
   assert(SlidingForwarding::forwardee<ALT_FWD>(obj) != obj, "Object must have a new location");
@@ -113,7 +113,7 @@ void G1FullGCCompactTask::serial_compaction() {
   }
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void G1FullGCCompactTask::humongous_compaction_impl() {
   for (HeapRegion* hr : collector()->humongous_compaction_regions()) {
     assert(collector()->is_compaction_target(hr->hrm_index()), "Sanity");
@@ -130,7 +130,7 @@ void G1FullGCCompactTask::humongous_compaction() {
   }
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void G1FullGCCompactTask::compact_humongous_obj(HeapRegion* src_hr) {
   assert(src_hr->is_starts_humongous(), "Should be start region of the humongous object");
 

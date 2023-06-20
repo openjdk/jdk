@@ -127,7 +127,7 @@ inline void SlidingForwarding::forward_to_impl(oop from, oop to) {
   }
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 inline void SlidingForwarding::forward_to(oop obj, oop fwd) {
 #ifdef _LP64
   if (ALT_FWD) {
@@ -155,7 +155,7 @@ inline oop SlidingForwarding::forwardee_impl(oop from) {
   return cast_to_oop(to);
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 inline oop SlidingForwarding::forwardee(oop obj) {
 #ifdef _LP64
   if (ALT_FWD) {

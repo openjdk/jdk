@@ -41,7 +41,7 @@ void PreservedMarks::restore() {
   assert_empty();
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void PreservedMarks::adjust_during_full_gc_impl() {
   StackIterator<PreservedMark, mtGC> iter(_stack);
   while (!iter.is_empty()) {

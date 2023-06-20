@@ -40,7 +40,7 @@
 #include "memory/iterator.inline.hpp"
 #include "runtime/atomic.hpp"
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 class G1AdjustLiveClosure : public StackObj {
   G1AdjustClosure<ALT_FWD>* _adjust_closure;
 public:
@@ -56,8 +56,22 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
   G1FullCollector* _collector;
   G1CMBitMap* _bitmap;
   uint _worker_id;
+ public:
+  G1AdjustRegionClosure(G1FullCollector* collector, uint worker_id) :
+    _collector(collector),
+    _bitmap(collector->mark_bitmap()),
+    _worker_id(worker_id) { }
 
-  template<bool ALT_FWD>
+  bool do_heap_region(HeapRegion* r) {
+    if (UseAltGCForwarding) {
+      return do_heap_region_impl<true>(r);
+    } else {
+      return do_heap_region_impl<false>(r);
+    }
+  }
+
+private:
+  template <bool ALT_FWD>
   bool do_heap_region_impl(HeapRegion* r) {
     G1AdjustClosure<ALT_FWD> cl(_collector);
     if (r->is_humongous()) {
@@ -72,20 +86,6 @@ class G1AdjustRegionClosure : public HeapRegionClosure {
     }
     return false;
   }
-
- public:
-  G1AdjustRegionClosure(G1FullCollector* collector, uint worker_id) :
-    _collector(collector),
-    _bitmap(collector->mark_bitmap()),
-    _worker_id(worker_id) { }
-
-  bool do_heap_region(HeapRegion* r) {
-    if (UseAltGCForwarding) {
-      return do_heap_region_impl<true>(r);
-    } else {
-      return do_heap_region_impl<false>(r);
-    }
-  }
 };
 
 G1FullGCAdjustTask::G1FullGCAdjustTask(G1FullCollector* collector) :
@@ -96,7 +96,7 @@ G1FullGCAdjustTask::G1FullGCAdjustTask(G1FullCollector* collector) :
   ClassLoaderDataGraph::verify_claimed_marks_cleared(ClassLoaderData::_claim_stw_fullgc_adjust);
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void G1FullGCAdjustTask::work_impl(uint worker_id) {
   Ticks start = Ticks::now();
   ResourceMark rm;
