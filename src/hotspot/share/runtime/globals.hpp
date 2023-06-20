@@ -1239,7 +1239,7 @@ const int ObjectAlignmentInBytes = 8;
   product(intx,  AllocatePrefetchDistance, -1,                              \
           "Distance to prefetch ahead of allocation pointer. "              \
           "-1: use system-specific value (automatically determined")        \
-          constraint(AllocatePrefetchDistanceConstraintFunc,AfterMemoryInit)\
+          range(-1, 512)                                                    \
                                                                             \
   product(intx,  AllocatePrefetchLines, 3,                                  \
           "Number of lines to prefetch ahead of array allocation pointer")  \
