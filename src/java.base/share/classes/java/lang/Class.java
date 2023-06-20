@@ -392,8 +392,8 @@ public final class Class<T> implements java.io.Serializable,
      * caller frame on the stack (e.g. when called directly from a JNI
      * attached thread), the system class loader is used.
      *
-     * @param     className the <a href="#binary-name">binary name</a> of the class
-     *                      or the string representing an array type
+     * @param     className the {@linkplain ClassLoader##binary-name binary name}
+     *                      of the class or the string representing an array type
      * @return    the {@code Class} object for the class with the
      *            specified name.
      * @throws    LinkageError if the linkage fails
@@ -424,7 +424,7 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Returns the {@code Class} object associated with the class or
      * interface with the given string name, using the given class loader.
-     * Given the {@linkplain ##binary-name binary name} for a class or interface,
+     * Given the {@linkplain ClassLoader##binary-name binary name} for a class or interface,
      * this method attempts to locate and load the class or interface. The specified
      * class loader is used to load the class or interface.  If the parameter
      * {@code loader} is {@code null}, the class is loaded through the bootstrap
@@ -469,8 +469,8 @@ public final class Class<T> implements java.io.Serializable,
      * Note that this method does not check whether the requested class
      * is accessible to its caller.
      *
-     * @param name       the <a href="#binary-name">binary name</a> of the class
-     *                   or the string representing an array class
+     * @param name       the {@linkplain ClassLoader##binary-name binary name}
+     *                   of the class or the string representing an array class
      *
      * @param initialize if {@code true} the class will be initialized
      *                   (which implies linking). See Section {@jls
@@ -559,7 +559,9 @@ public final class Class<T> implements java.io.Serializable,
      * accessible to its caller. </p>
      *
      * @apiNote
-     * This method returns {@code null} on failure rather than
+     * This method does not support loading of array types, unlike
+     * {@link #forName(String, boolean, ClassLoader)}. The class name must be
+     * a binary name.  This method returns {@code null} on failure rather than
      * throwing a {@link ClassNotFoundException}, as is done by
      * the {@link #forName(String, boolean, ClassLoader)} method.
      * The security check is a stack-based permission check if the caller
