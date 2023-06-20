@@ -42,6 +42,7 @@ import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.FocusEvent;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowStateListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
@@ -965,6 +966,26 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
         return isFullScreenMode;
     }
 
+    private void waitForWindowState(int state) {
+        Object lock = new Object();
+        target.addWindowStateListener(new WindowStateListener() {
+            public void windowStateChanged(WindowEvent e) {
+                synchronized (lock) {
+                    if (e.getNewState() == state) {
+                        lock.notifyAll();
+                    }
+                }
+            }
+        });
+        if (peer.getState() != state) {
+            synchronized (lock) {
+                try {
+                    lock.wait();
+                } catch (InterruptedException ie) {}
+            }
+        }
+    }
+
     @Override
     public void setWindowState(int windowState) {
         if (peer == null || !peer.isVisible()) {
@@ -986,7 +1007,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     // let's return into the normal states first
                     // the zoom call toggles between the normal and the max states
                     unmaximize();
-                    peer.getLWToolkit().realSync();
+                    waitForWindowState(Frame.NORMAL);
                 }
                 execute(CWrapper.NSWindow::miniaturize);
                 break;
@@ -994,7 +1015,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 if (prevWindowState == Frame.ICONIFIED) {
                     // let's return into the normal states first
                     execute(CWrapper.NSWindow::deminiaturize);
-                    peer.getLWToolkit().realSync();
+                    waitForWindowState(Frame.NORMAL);
 
                 }
                 maximize();
