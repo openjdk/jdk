@@ -153,23 +153,19 @@ endif
 LIBJLI_CFLAGS += $(LIBZ_CFLAGS)
 
 ifneq ($(USE_EXTERNAL_LIBZ), true)
+  # Extra files from the zlib.
+  LIBJLI_EXTRA_FILE_LIST := inflate.c inftrees.c inffast.c zadler32.c zcrc32.c zutil.c
+
   LIBJLI_EXTRA_FILES += \
       $(addprefix $(TOPDIR)/src/java.base/share/native/libzip/zlib/, \
-          inflate.c \
-          inftrees.c \
-          inffast.c \
-          zadler32.c \
-          zcrc32.c \
-          zutil.c \
-      )
+          $(LIBJLI_EXTRA_FILE_LIST))
 
   # Do not include these libz objects in the static libjli library.
   # When statically linking the java launcher with all JDK and VM
   # static libraries, we use the --whole-archive linker option.
   # The duplicate objects in different static libraries cause linking
   # errors due to duplicate symbols.
-  LIBJLI_STATIC_EXCLUDE_OBJS := \
-      inflate.o inftrees.o inffast.o zadler32.o zcrc32.o zutil.o
+  LIBJLI_STATIC_EXCLUDE_OBJS := $(subst .c,$(OBJ_SUFFIX),$(LIBJLI_EXTRA_FILE_LIST))
 endif
 
 $(eval $(call SetupJdkLibrary, BUILD_LIBJLI, \
@@ -207,6 +203,7 @@ ifeq ($(call isTargetOs, aix), true)
       OPTIMIZATION := HIGH, \
       CFLAGS := $(STATIC_LIBRARY_FLAGS) $(CFLAGS_JDKLIB) $(LIBJLI_CFLAGS) \
           $(addprefix -I, $(LIBJLI_SRC_DIRS)), \
+      DISABLED_WARNINGS_clang_aix := format-nonliteral deprecated-non-prototype, \
       ARFLAGS := $(ARFLAGS), \
       OBJECT_DIR := $(SUPPORT_OUTPUTDIR)/native/$(MODULE)/libjli_static))
 
