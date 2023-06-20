@@ -1,4 +1,4 @@
-.\" Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JSHELL" "1" "2023" "JDK 21-ea" "JDK Commands"
+.TH "JSHELL" "1" "2024" "JDK 22-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -67,6 +67,11 @@ Imports all Java SE packages.
 \f[V]PRINTING\f[R]
 Defines \f[V]print\f[R], \f[V]println\f[R], and \f[V]printf\f[R] as
 \f[V]jshell\f[R] methods for use within the tool.
+.TP
+\f[V]TOOLING\f[R]
+Defines \f[V]javac\f[R], \f[V]jar\f[R], and other methods for running
+JDK tools via their command-line interface within the \f[V]jshell\f[R]
+tool.
 .PP
 For more than one script, use a space to separate the names.
 Scripts are run in the order in which they\[aq]re entered on the command
@@ -231,6 +236,11 @@ Imports all Java SE packages.
 \f[V]PRINTING\f[R]
 Defines \f[V]print\f[R], \f[V]println\f[R], and \f[V]printf\f[R] as
 \f[V]jshell\f[R] methods for use within the tool.
+.TP
+\f[V]TOOLING\f[R]
+Defines \f[V]javac\f[R], \f[V]jar\f[R], and other methods for running
+JDK tools via their command-line interface within the \f[V]jshell\f[R]
+tool.
 .PP
 For more than one script, provide a separate instance of this option for
 each script.
@@ -451,6 +461,11 @@ Imports all Java SE packages.
 \f[V]PRINTING\f[R]
 Defines \f[V]print\f[R], \f[V]println\f[R], and \f[V]printf\f[R] as
 \f[V]jshell\f[R] methods for use within the tool.
+.TP
+\f[V]TOOLING\f[R]
+Defines \f[V]javac\f[R], \f[V]jar\f[R], and other methods for running
+JDK tools via their command-line interface within the \f[V]jshell\f[R]
+tool.
 .RE
 .TP
 \f[V]/reload\f[R] [\f[I]options\f[R]]
@@ -765,6 +780,11 @@ Imports all Java SE packages.
 \f[V]PRINTING\f[R]
 Defines \f[V]print\f[R], \f[V]println\f[R], and \f[V]printf\f[R] as
 \f[V]jshell\f[R] methods for use within the tool.
+.TP
+\f[V]TOOLING\f[R]
+Defines \f[V]javac\f[R], \f[V]jar\f[R], and other methods for running
+JDK tools via their command-line interface within the \f[V]jshell\f[R]
+tool.
 .PP
 The following options are valid:
 .TP
