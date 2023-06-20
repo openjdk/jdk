@@ -378,15 +378,15 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      * @return a set view of the keys contained in this enum map
      */
     public Set<K> keySet() {
-        Set<K> ks = keySet;
-        if (ks == null) {
-            ks = new KeySet();
-            keySet = ks;
-        }
-        return ks;
+        return super.keySet();
     }
 
-    private class KeySet extends AbstractSet<K> {
+    @Override
+    Set<K> keySet0() {
+        return new KeySet();
+    }
+
+    private final class KeySet extends AbstractSet<K> {
         public Iterator<K> iterator() {
             return new KeyIterator();
         }
@@ -417,15 +417,15 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
      * @return a collection view of the values contained in this map
      */
     public Collection<V> values() {
-        Collection<V> vs = values;
-        if (vs == null) {
-            vs = new Values();
-            values = vs;
-        }
-        return vs;
+        return super.values();
     }
 
-    private class Values extends AbstractCollection<V> {
+    @Override
+    Collection<V> values0() {
+        return new Values();
+    }
+
+    private final class Values extends AbstractCollection<V> {
         public Iterator<V> iterator() {
             return new ValueIterator();
         }

@@ -25,6 +25,10 @@
 
 package java.util;
 
+import jdk.internal.misc.Unsafe;
+import jdk.internal.vm.annotation.Stable;
+
+import java.util.concurrent.locks.StampedLock;
 import java.util.stream.Stream;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
@@ -70,6 +74,9 @@ import java.util.function.Predicate;
  */
 
 public abstract class AbstractMap<K,V> implements Map<K,V> {
+
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     /**
      * Sole constructor.  (For invocation by subclass constructors, typically
      * implicit.)
@@ -304,32 +311,24 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
 
     // Views
 
-    /**
-     * Each of these fields are initialized to contain an instance of the
-     * appropriate view the first time this view is requested.  The views are
-     * stateless, so there's no reason to create more than one of each.
-     *
-     * <p>Since there is no synchronization performed while accessing these fields,
-     * it is expected that java.util.Map view classes using these fields have
-     * no non-final fields (or any fields at all except for outer-this). Adhering
-     * to this rule would make the races on these fields benign.
-     *
-     * <p>It is also imperative that implementations read the field only once,
-     * as in:
-     *
-     * <pre> {@code
-     * public Set<K> keySet() {
-     *   Set<K> ks = keySet;  // single racy read
-     *   if (ks == null) {
-     *     ks = new KeySet();
-     *     keySet = ks;
-     *   }
-     *   return ks;
-     * }
-     *}</pre>
-     */
-    transient Set<K>        keySet;
-    transient Collection<V> values;
+    private static final long VIEWS
+            = UNSAFE.objectFieldOffset(AbstractMap.class, "views");
+
+    // Todo: Investigate if we can make this field final
+    // Set via Unsafe
+    private transient Views<K , V> views;
+
+    final Views<K, V> views() {
+        Views<K, V> v = views;
+        if (v != null) {
+            return v;
+        }
+        return cas(this, VIEWS, new Views<>());
+    }
+
+    final void resetViews() {
+        UNSAFE.putReferenceVolatile(this, VIEWS, null);
+    }
 
     /**
      * {@inheritDoc}
@@ -348,46 +347,45 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * method will not all return the same set.
      */
     public Set<K> keySet() {
-        Set<K> ks = keySet;
-        if (ks == null) {
-            ks = new AbstractSet<K>() {
-                public Iterator<K> iterator() {
-                    return new Iterator<K>() {
-                        private Iterator<Entry<K,V>> i = entrySet().iterator();
+        return views().keySet(this);
+    }
 
-                        public boolean hasNext() {
-                            return i.hasNext();
-                        }
+    Set<K> keySet0() {
+        return new AbstractSet<>() {
+            public Iterator<K> iterator() {
+                return new Iterator<>() {
+                    private final Iterator<Entry<K, V>> i = entrySet().iterator();
 
-                        public K next() {
-                            return i.next().getKey();
-                        }
+                    public boolean hasNext() {
+                        return i.hasNext();
+                    }
 
-                        public void remove() {
-                            i.remove();
-                        }
-                    };
-                }
+                    public K next() {
+                        return i.next().getKey();
+                    }
 
-                public int size() {
-                    return AbstractMap.this.size();
-                }
+                    public void remove() {
+                        i.remove();
+                    }
+                };
+            }
 
-                public boolean isEmpty() {
-                    return AbstractMap.this.isEmpty();
-                }
+            public int size() {
+                return AbstractMap.this.size();
+            }
 
-                public void clear() {
-                    AbstractMap.this.clear();
-                }
+            public boolean isEmpty() {
+                return AbstractMap.this.isEmpty();
+            }
 
-                public boolean contains(Object k) {
-                    return AbstractMap.this.containsKey(k);
-                }
-            };
-            keySet = ks;
-        }
-        return ks;
+            public void clear() {
+                AbstractMap.this.clear();
+            }
+
+            public boolean contains(Object k) {
+                return AbstractMap.this.containsKey(k);
+            }
+        };
     }
 
     /**
@@ -407,46 +405,45 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * method will not all return the same collection.
      */
     public Collection<V> values() {
-        Collection<V> vals = values;
-        if (vals == null) {
-            vals = new AbstractCollection<V>() {
-                public Iterator<V> iterator() {
-                    return new Iterator<V>() {
-                        private Iterator<Entry<K,V>> i = entrySet().iterator();
+        return views().values(this);
+    }
 
-                        public boolean hasNext() {
-                            return i.hasNext();
-                        }
+    Collection<V> values0() {
+        return new AbstractCollection<>() {
+            public Iterator<V> iterator() {
+                return new Iterator<>() {
+                    private final Iterator<Entry<K, V>> i = entrySet().iterator();
 
-                        public V next() {
-                            return i.next().getValue();
-                        }
+                    public boolean hasNext() {
+                        return i.hasNext();
+                    }
 
-                        public void remove() {
-                            i.remove();
-                        }
-                    };
-                }
+                    public V next() {
+                        return i.next().getValue();
+                    }
 
-                public int size() {
-                    return AbstractMap.this.size();
-                }
+                    public void remove() {
+                        i.remove();
+                    }
+                };
+            }
 
-                public boolean isEmpty() {
-                    return AbstractMap.this.isEmpty();
-                }
+            public int size() {
+                return AbstractMap.this.size();
+            }
 
-                public void clear() {
-                    AbstractMap.this.clear();
-                }
+            public boolean isEmpty() {
+                return AbstractMap.this.isEmpty();
+            }
 
-                public boolean contains(Object v) {
-                    return AbstractMap.this.containsValue(v);
-                }
-            };
-            values = vals;
-        }
-        return vals;
+            public void clear() {
+                AbstractMap.this.clear();
+            }
+
+            public boolean contains(Object v) {
+                return AbstractMap.this.containsValue(v);
+            }
+        };
     }
 
     public abstract Set<Entry<K,V>> entrySet();
@@ -569,8 +566,7 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      */
     protected Object clone() throws CloneNotSupportedException {
         AbstractMap<?,?> result = (AbstractMap<?,?>)super.clone();
-        result.keySet = null;
-        result.values = null;
+        resetViews();
         return result;
     }
 
@@ -924,4 +920,55 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
         public <T> T[] toArray(T[] a) { return view().toArray(a); }
         public String toString() { return view().toString(); }
     }
+
+    private static final class Views<K, V> {
+
+        private static final long KEY_SET
+                = UNSAFE.objectFieldOffset(Views.class, "keySet");
+        private static final long VALUES
+                = UNSAFE.objectFieldOffset(Views.class, "values");
+
+        /**
+         * Each of these fields are initialized to contain an instance of the
+         * appropriate view the first time this view is requested.  The views are
+         * stateless, so there's no reason to create more than one of each.
+         * <p>
+         * The fields are race-free and will never change once set, so implementations
+         * are free to read the fields in any order and several times and can declare
+         * non-final fields that depends on these fields.
+         *
+         */
+
+        @Stable
+        private Set<K> keySet;
+
+        @Stable
+        private Collection<V> values;
+
+        Set<K> keySet(AbstractMap<K, V> am) {
+            Set<K> ks = keySet;
+            if (ks != null) {
+                return ks;
+            }
+            return cas(this, KEY_SET, am.keySet0());
+        }
+
+        Collection<V> values(AbstractMap<K, V> am) {
+            Collection<V> vs = values;
+            if (vs != null) {
+                return vs;
+            }
+            return cas(this, VALUES, am.values0());
+        }
+
+    }
+
+    // Race-free implementation. Only one instance is ever returned per target and offset.
+    @SuppressWarnings("unchecked")
+    private static <T> T cas(Object target, long offset, T newObject) {
+        return UNSAFE.compareAndSetReference(target, offset, null, newObject)
+                ? newObject
+                : (T) UNSAFE.getReferenceVolatile(target, offset);
+    }
+
 }

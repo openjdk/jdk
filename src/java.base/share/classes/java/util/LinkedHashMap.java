@@ -638,16 +638,14 @@ public class LinkedHashMap<K,V>
      * @since 21
      */
     public SequencedSet<K> sequencedKeySet() {
-        Set<K> ks = keySet;
-        if (ks == null) {
-            SequencedSet<K> sks = new LinkedKeySet(false);
-            keySet = sks;
-            return sks;
-        } else {
-            // The cast should never fail, since the only assignment of non-null to keySet is
-            // above, and assignments in AbstractMap and HashMap are in overridden methods.
-            return (SequencedSet<K>) ks;
-        }
+        // The cast should never fail, since the only assignment of non-null to keySet is
+        // via the keySet0() method, and assignments in AbstractMap and HashMap are in overridden methods.
+        return (SequencedSet<K>) super.keySet();
+    }
+
+    @Override
+    SequencedSet<K> keySet0() {
+        return new LinkedKeySet(false);
     }
 
     static <K1,V1> Node<K1,V1> nsee(Node<K1,V1> node) {
@@ -787,16 +785,14 @@ public class LinkedHashMap<K,V>
      * @since 21
      */
     public SequencedCollection<V> sequencedValues() {
-        Collection<V> vs = values;
-        if (vs == null) {
-            SequencedCollection<V> svs = new LinkedValues(false);
-            values = svs;
-            return svs;
-        } else {
-            // The cast should never fail, since the only assignment of non-null to values is
-            // above, and assignments in AbstractMap and HashMap are in overridden methods.
-            return (SequencedCollection<V>) vs;
-        }
+        // The cast should never fail, since the only assignment of non-null to values is
+        // via the values0() method, and assignments in AbstractMap and HashMap are in overridden methods.
+        return (SequencedCollection<V>) super.values();
+    }
+
+    @Override
+    SequencedCollection<V> values0() {
+        return new LinkedValues(false);
     }
 
     final class LinkedValues extends AbstractCollection<V> implements SequencedCollection<V> {
