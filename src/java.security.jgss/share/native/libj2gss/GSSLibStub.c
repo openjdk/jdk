@@ -24,6 +24,7 @@
  */
 
 #include <stdalign.h>
+
 #include "sun_security_jgss_wrapper_GSSLibStub.h"
 #include "NativeUtil.h"
 #include "NativeFunc.h"
@@ -1189,7 +1190,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_inquireContext(JNIEnv *env,
   OM_uint32 time;
   OM_uint32 flags;
   int isInitiator, isEstablished;
-#if defined (_WIN32)
+#if defined (_WIN32) && defined (_MSC_VER)
   alignas(8)
 #endif
   jlong result[6];
