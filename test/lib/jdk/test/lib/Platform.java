@@ -260,6 +260,34 @@ public class Platform {
         return true;
     }
 
+
+    public static boolean hasPlistEntriesOSX() throws IOException {
+        // Find the path to the java binary.
+        String jdkPath = System.getProperty("java.home");
+        Path javaPath = Paths.get(jdkPath + "/bin/java");
+        String javaFileName = javaPath.toAbsolutePath().toString();
+        if (Files.notExists(javaPath)) {
+            throw new FileNotFoundException("Could not find file " + javaFileName);
+        }
+
+        // Run codesign on the java binary.
+        ProcessBuilder pb = new ProcessBuilder("codesign", "--display", "--verbose", javaFileName);
+        pb.redirectErrorStream(true); // redirect stderr to stdout
+        Process codesignProcess = pb.start();
+        BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
+        String line;
+        while ((line = is.readLine()) != null) {
+            System.out.println("STDOUT: " + line);
+            if (line.indexOf("Info.plist=not bound") != -1) {
+                return false;
+            }
+            if (line.indexOf("Info.plist entries=") != -1) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Return true if the test JDK is hardened, otherwise false. Only valid on OSX.
      */

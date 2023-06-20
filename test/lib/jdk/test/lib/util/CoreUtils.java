@@ -127,6 +127,8 @@ public class CoreUtils {
             }
 
             return coreFileLocation; // success!
+        } else {
+            System.out.println("Core file not found, try to find a reason for this");
         }
 
         // See if we can figure out the likely reason the core file was not found. Recover from
@@ -147,6 +149,11 @@ public class CoreUtils {
                 {
                     // We can't generate cores files with hardened binaries on OSX 10.15 and later.
                     throw new SkippedException("Cannot produce core file with hardened binary on OSX 10.15 and later");
+                }
+            } else {
+                // codesign has to add entitlements using the plist, if this is not present we might not generate a core file
+                if (!Platform.hasPlistEntriesOSX()) {
+                    throw new SkippedException("Cannot produce core file with binary having no plist entitlement entries");
                 }
             }
         } else if (Platform.isLinux()) {
