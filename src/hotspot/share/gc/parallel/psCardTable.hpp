@@ -42,12 +42,16 @@ class PSCardTable: public CardTable {
     verify_card       = CT_MR_BS_last_reserved + 5
   };
 
+  static const size_t num_cards_in_stripe = 128;
+  static size_t large_obj_arr_min_words() { return 2 * num_cards_in_stripe * _card_size_in_words + 1; }
+
   CardValue* find_first_dirty_card(CardValue* const start_card,
                                    CardValue* const end_card);
 
   CardValue* find_first_clean_card(ObjectStartArray* start_array,
                                    CardValue* const start_card,
-                                   CardValue* const end_card);
+                                   CardValue* const end_card,
+                                   objArrayOop const large_obj_array);
 
   void clear_cards(CardValue* const start, CardValue* const end);
 
@@ -68,6 +72,11 @@ class PSCardTable: public CardTable {
                                   PSPromotionManager* pm,
                                   uint stripe_index,
                                   uint n_stripes);
+  void scavenge_large_array_stripe(ObjectStartArray* start_array,
+                                   PSPromotionManager* pm,
+                                   HeapWord* stripe_addr,
+                                   HeapWord* stripe_end_addr,
+                                   HeapWord* space_top);
 
   bool addr_is_marked_imprecise(void *addr);
   bool addr_is_marked_precise(void *addr);

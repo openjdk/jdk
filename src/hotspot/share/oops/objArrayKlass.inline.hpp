@@ -118,4 +118,12 @@ void objArrayOopDesc::oop_iterate_range(OopClosureType* blk, int start, int end)
   }
 }
 
+template <typename OopClosureType>
+void objArrayOopDesc::oop_oop_iterate_bounded(OopClosureType* closure, MemRegion mr) {
+  if (UseCompressedOops) {
+    ((ObjArrayKlass*)klass())->oop_oop_iterate_bounded<narrowOop>(this, closure, mr);
+  } else {
+    ((ObjArrayKlass*)klass())->oop_oop_iterate_bounded<oop>(this, closure, mr);
+  }
+}
 #endif // SHARE_OOPS_OBJARRAYKLASS_INLINE_HPP

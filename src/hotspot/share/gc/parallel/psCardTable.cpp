@@ -136,10 +136,12 @@ CardTable::CardValue* PSCardTable::find_first_dirty_card(CardValue* const start_
 
 // postcondition: ret is a clean card or end_card
 // Note: if a part of an object is on a dirty card, all cards this object
-// resides on are considered dirty.
+// resides on are considered dirty except for large object arrays. The card marks
+// of object arrays are precise which allows scanning of just the dirty regions.
 CardTable::CardValue* PSCardTable::find_first_clean_card(ObjectStartArray* const start_array,
                                                          CardValue* const start_card,
-                                                         CardValue* const end_card) {
+                                                         CardValue* const end_card,
+                                                         objArrayOop const large_obj_array) {
   assert(start_card == end_card ||
          *start_card != PSCardTable::clean_card_val(), "precondition");
   // Skip the first dirty card.
@@ -153,6 +155,11 @@ CardTable::CardValue* PSCardTable::find_first_clean_card(ObjectStartArray* const
     assert(*(i_card - 1) != PSCardTable::clean_card_val(), "prev card must be dirty");
     // Find the final obj on the prev dirty card.
     HeapWord* obj_addr = start_array->object_start(addr_for(i_card)-1);
+    if (large_obj_array == cast_to_oop(obj_addr)) {
+      // we scan only dirty regions of large arrays
+      assert(i_card <= end_card, "inv");
+      return i_card;
+    }
     HeapWord* obj_end_addr = obj_addr + cast_to_oop(obj_addr)->size();
     CardValue* final_card_by_obj = byte_for(obj_end_addr - 1);
     assert(final_card_by_obj < end_card, "inv");
@@ -182,6 +189,7 @@ void PSCardTable::scan_objects_in_range(PSPromotionManager* pm,
   while (obj_addr < end) {
     oop obj = cast_to_oop(obj_addr);
     assert(oopDesc::is_oop(obj), "inv");
+    assert(!obj->is_objArray() || obj->size() < large_obj_arr_min_words(), "inv");
     prefetch_write(obj_addr);
     pm->push_contents(obj);
     obj_addr += obj->size();
@@ -226,6 +234,9 @@ void PSCardTable::scan_objects_in_range(PSPromotionManager* pm,
 // stripe 0 in slice 0, the thread finds the stripe 0 in slice 1 by adding
 // slice_size_in_words to the start of stripe 0 in slice 0 to get to the start
 // of stripe 0 in slice 1.
+//
+// Parallel scanning of large arrays is also based on stripes with the exception
+// of the last 2 stripes: the chunks defined by them are scanned together.
 
 void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              MutableSpace* sp,
@@ -233,7 +244,6 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
                                              PSPromotionManager* pm,
                                              uint stripe_index,
                                              uint n_stripes) {
-  const size_t num_cards_in_stripe = 128;
   const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
   const size_t slice_size_in_words = stripe_size_in_words * n_stripes;
 
@@ -244,8 +254,9 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     HeapWord* const cur_stripe_end_addr = MIN2(cur_stripe_addr + stripe_size_in_words,
                                                space_top);
 
-    // Process a stripe iff it contains any obj-start
+    // Process a stripe iff it contains any obj-start or large array chunk
     if (!start_array->object_starts_in_range(cur_stripe_addr, cur_stripe_end_addr)) {
+      scavenge_large_array_stripe(start_array, pm, cur_stripe_addr, cur_stripe_end_addr, space_top);
       continue;
     }
 
@@ -258,6 +269,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     CardValue* iter_limit_r;
     CardValue* clear_limit_l;
     CardValue* clear_limit_r;
+    objArrayOop large_arr = nullptr;
 
     // Identify left ends and the first obj-start inside this stripe.
     HeapWord* first_obj_addr = start_array->object_start(cur_stripe_addr);
@@ -277,7 +289,15 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     {
       // Identify right ends.
       HeapWord* obj_addr = start_array->object_start(cur_stripe_end_addr - 1);
-      HeapWord* obj_end_addr = obj_addr + cast_to_oop(obj_addr)->size();
+      size_t obj_sz = cast_to_oop(obj_addr)->size();
+      HeapWord* obj_end_addr = obj_addr + obj_sz;
+      // large arrays starting in this stripe are scanned here
+      if (obj_sz >= large_obj_arr_min_words() && cast_to_oop(obj_addr)->is_objArray() &&
+          obj_addr >= cur_stripe_addr) {
+        // the last condition is not redundant as we can reach here if an obj starts at space_top
+        obj_end_addr = cur_stripe_end_addr;
+        large_arr = objArrayOop(cast_to_oop(obj_addr));
+      }
       assert(obj_end_addr >= cur_stripe_end_addr, "inv");
       clear_limit_r = byte_for(obj_end_addr);
       iter_limit_r = byte_for(obj_end_addr - 1) + 1;
@@ -293,7 +313,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
 
     for (CardValue* cur_card = iter_limit_l; cur_card < iter_limit_r; cur_card = dirty_r + 1) {
       dirty_l = find_first_dirty_card(cur_card, iter_limit_r);
-      dirty_r = find_first_clean_card(start_array, dirty_l, iter_limit_r);
+      dirty_r = find_first_clean_card(start_array, dirty_l, iter_limit_r, large_arr);
       assert(dirty_l <= dirty_r, "inv");
 
       // empty
@@ -306,7 +326,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       assert(*dirty_r == clean_card || dirty_r >= clear_limit_r,
              "clean card or belonging to next stripe");
 
-      // Process this non-empty dirty chunk in two steps:
+      // Process this non-empty dirty chunk in three steps:
       {
         // 1. Clear card in [dirty_l, dirty_r) subject to [clear_limit_l, clear_limit_r) constraint
         clear_cards(MAX2(dirty_l, clear_limit_l),
@@ -315,14 +335,105 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
 
       {
         // 2. Scan objs in [dirty_l, dirty_r) subject to [first_obj_addr, cur_stripe_end_addr) constraint
+        //    Exclude the large array if one begins in the stripe
         HeapWord* obj_l = MAX2(start_array->object_start(addr_for(dirty_l)),
                                first_obj_addr);
 
         HeapWord* obj_r = MIN2(addr_for(dirty_r),
-                               cur_stripe_end_addr);
+                               large_arr != nullptr ?
+                                   cast_from_oop<HeapWord*>(large_arr) :
+                                   cur_stripe_end_addr);
 
         scan_objects_in_range(pm, obj_l, obj_r);
       }
+
+      if (large_arr != nullptr && addr_for(dirty_r) >= cast_from_oop<HeapWord*>(large_arr)) {
+        // 3. Scan the large array elements in [dirty_l, dirty_r) subject to [large_arr, cur_stripe_end_addr)
+        HeapWord* arr_l = addr_for(dirty_l);
+
+        HeapWord* arr_r = MIN2(addr_for(dirty_r),
+                               cur_stripe_end_addr);
+
+        pm->push_array_region(large_arr, arr_l, arr_r);
+      }
+    }
+  }
+}
+
+// Partially scan a large object array in the given stripe.
+// Scan to end if it is in the next stripe.
+void PSCardTable::scavenge_large_array_stripe(ObjectStartArray* start_array,
+                                              PSPromotionManager* pm,
+                                              HeapWord* stripe_addr,
+                                              HeapWord* stripe_end_addr,
+                                              HeapWord* space_top) {
+  const size_t stripe_size_in_words = num_cards_in_stripe * _card_size_in_words;
+
+  HeapWord* large_arr_addr = start_array->object_start(stripe_addr);
+
+  size_t arr_sz;
+  if (large_arr_addr == nullptr ||
+      !cast_to_oop(large_arr_addr)->is_objArray() ||
+      (arr_sz = cast_to_oop(large_arr_addr)->size()) < large_obj_arr_min_words())
+    return;
+
+  objArrayOop large_arr = objArrayOop(cast_to_oop(large_arr_addr));
+  HeapWord* arr_end_addr = large_arr_addr + arr_sz;
+
+  if (arr_end_addr <= stripe_end_addr) {
+    // the end chunk is scanned together with the chunk in the previous stripe
+    assert(large_obj_arr_min_words() > 2 * stripe_size_in_words, "2nd last chunk must cover stripe");
+    return;
+  }
+
+  CardValue* iter_limit_l = byte_for(stripe_addr);
+  CardValue* iter_limit_r = byte_for(stripe_end_addr - 1) + 1;
+  CardValue* clear_limit_l = byte_for(stripe_addr);
+  CardValue* clear_limit_r = byte_for(stripe_end_addr);
+
+  HeapWord* scan_limit_r = stripe_end_addr;
+  HeapWord* next_stripe = stripe_end_addr;
+  HeapWord* next_stripe_end = MIN2(next_stripe + stripe_size_in_words, space_top);
+
+  // scan to end if it is in the following stripe
+  if (arr_end_addr > next_stripe && arr_end_addr <= next_stripe_end) {
+    clear_limit_r = byte_for(arr_end_addr);
+    iter_limit_r = byte_for(arr_end_addr - 1) + 1;
+    scan_limit_r = arr_end_addr;
+  }
+
+  // Process dirty chunks, i.e. consecutive dirty cards [dirty_l, dirty_r),
+  // chunk by chunk inside [iter_limit_l, iter_limit_r).
+  CardValue* dirty_l;
+  CardValue* dirty_r;
+
+  for (CardValue* cur_card = iter_limit_l; cur_card < iter_limit_r; cur_card = dirty_r + 1) {
+    dirty_l = find_first_dirty_card(cur_card, iter_limit_r);
+    dirty_r = find_first_clean_card(start_array, dirty_l, iter_limit_r, large_arr);
+    assert(dirty_l <= dirty_r, "inv");
+
+    // empty
+    if (dirty_l == dirty_r) {
+      assert(dirty_r == iter_limit_r, "no more dirty cards in this stripe");
+      break;
+    }
+
+    assert(*dirty_l != clean_card, "inv");
+    assert(*dirty_r == clean_card || dirty_r >= clear_limit_r,
+           "clean card or belonging to next stripe");
+
+    // Process this non-empty dirty chunk in two steps:
+    {
+      // 1. Clear card in [dirty_l, dirty_r) subject to [clear_limit_l, clear_limit_r) constraint
+      clear_cards(MAX2(dirty_l, clear_limit_l),
+                  MIN2(dirty_r, clear_limit_r));
+    }
+
+    {
+      // 2. Scan elements in [dirty_l, dirty_r)
+      HeapWord* left = addr_for(dirty_l);
+      HeapWord* right = MIN2(addr_for(dirty_r), scan_limit_r);
+      pm->push_array_region(large_arr, left, right);
     }
   }
 }
