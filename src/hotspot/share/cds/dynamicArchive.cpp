@@ -29,8 +29,7 @@
 #include "cds/cds_globals.hpp"
 #include "cds/classPrelinker.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/lambdaFormInvokers.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -346,7 +345,7 @@ public:
     _builder.doit();
   }
   ~VM_PopulateDynamicDumpSharedSpace() {
-    LambdaFormInvokers::cleanup_regenerated_classes();
+    RegeneratedClasses::cleanup();
   }
 };
 
