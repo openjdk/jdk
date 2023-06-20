@@ -52,7 +52,7 @@ class PlaceholderTable : public AllStatic {
     LOAD_SUPER = 2,                // loading superclass for this class
     DEFINE_CLASS = 3               // find_or_define class
   };
-
+  static void initialize();
   static PlaceholderEntry* get_entry(Symbol* name, ClassLoaderData* loader_data);
 
   // find_and_add returns probe pointer - old or new
