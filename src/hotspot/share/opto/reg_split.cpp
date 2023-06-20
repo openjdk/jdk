@@ -499,7 +499,6 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
   // Free thread local resources used by this method on exit.
   ResourceMark rm(split_arena);
-  ResourceMark rm2;
 
   uint                 bidx, pidx, slidx, insidx, inpidx, twoidx;
   uint                 non_phi = 1, spill_cnt = 0;
@@ -520,8 +519,10 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   // Create a convenient mapping from lrg numbers to reaches/leaves indices
   uint *lrg2reach = NEW_SPLIT_ARRAY(uint, maxlrg);
   // Keep track of DEFS & Phis for later passes
-  Node_List defs{};
-  Node_List phis{};
+  Arena defs_arena{mtCompiler, Chunk::medium_size};
+  Arena phis_arena{mtCompiler, Chunk::medium_size}
+  Node_List defs{&defs_arena};
+  Node_List phis{&phis_arena};
   // Gather info on which LRG's are spilling, and build maps
   for (bidx = 1; bidx < maxlrg; bidx++) {
     if (lrgs(bidx).alive() && lrgs(bidx).reg() >= LRG::SPILL_REG) {
@@ -569,8 +570,10 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 #undef NEW_SPLIT_ARRAY
 
   // Initialize to array of empty vectorsets
-  for( slidx = 0; slidx < spill_cnt; slidx++ )
+  // Each containing at most spill_cnt * _cfg.number_of_blocks() entries.
+  for (slidx = 0; slidx < spill_cnt; slidx++) {
     UP_entry[slidx] = new(split_arena) VectorSet(split_arena);
+  }
 
   //----------PASS 1----------
   //----------Propagation & Node Insertion Code----------
