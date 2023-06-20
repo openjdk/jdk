@@ -646,6 +646,16 @@ public sealed interface Linker permits AbstractLinker {
         /**
          * {@return a linker option used to denote the index of the first variadic argument layout in the
          *          function descriptor associated with a downcall linkage request}
+         * <p>
+         * The {@code index} value must be greater than zero, and less than or equal to the number of argument layouts
+         * of the function descriptor that is used in the same linkage request as this option. When the {@code index} is
+         * equal to the number of argument layouts in the descriptor, it indicates a variadic function to which zero
+         * variadic arguments are passed. It is important to always use this linker option when linking a variadic function,
+         * as this affects the linking process on certain platforms (even if no variadic arguments are passed).
+         *
+         * @implNote The index value is validated when making a linkage request, which is when the function descriptor
+         * against which the index is validated is available.
+         *
          * @param index the index of the first variadic argument layout in the function descriptor associated
          *              with a downcall linkage request.
          */
