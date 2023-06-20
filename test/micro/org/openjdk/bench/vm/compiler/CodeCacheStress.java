@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2023 Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -82,9 +80,9 @@ public class CodeCacheStress {
     String[] classNames;
 
     int index = 0;
-    Map<Object, Method[]> table1 = new HashMap<>();
-    ArrayList<Map<String, Integer>> mapList = new ArrayList<>();
-    Map<Class, Object[]> instList = new HashMap<>();
+    Map<Object, Method[]> classToMethodsMap = new HashMap<>();
+    ArrayList<Map<String, Integer>> argumentMaps = new ArrayList<>();
+    Map<Class, Object[]> instancesOfClassMap = new HashMap<>();
 
 
     static String B(int count) {
@@ -334,13 +332,13 @@ public class CodeCacheStress {
         loadedClasses = new Class[numberOfClasses];
         classNames = new String[numberOfClasses];
 
-        mapList.add(new HashMap<String, Integer>());
-        mapList.add(new LinkedHashMap<String, Integer>());
-        mapList.add(new WeakHashMap<String, Integer>());
+        argumentMaps.add(new HashMap<String, Integer>());
+        argumentMaps.add(new LinkedHashMap<String, Integer>());
+        argumentMaps.add(new WeakHashMap<String, Integer>());
 
-        mapList.get(0).put(k, v);
-        mapList.get(1).put(k, v);
-        mapList.get(2).put(k, v);
+        argumentMaps.get(0).put(k, v);
+        argumentMaps.get(1).put(k, v);
+        argumentMaps.get(2).put(k, v);
 
         for (int i = 0; i < numberOfClasses; i++) {
             classNames[i] = "B" + i;
@@ -358,7 +356,7 @@ public class CodeCacheStress {
             for (int j = 0; j < instanceCount; j++) {
                 receivers1[j] = ca[0].newInstance();
             }
-            instList.put(c, receivers1);
+            instancesOfClassMap.put(c, receivers1);
 
             Method[] methods = new Method[methodNames.length];
             IntStream.range(0, methodNames.length).forEach(m -> {
@@ -371,15 +369,15 @@ public class CodeCacheStress {
                 }
             });
 
-            table1.put((receivers1[0]).getClass(), methods);
+            classToMethodsMap.put((receivers1[0]).getClass(), methods);
 
             // Warmup the methods to get compiled
             IntStream.range(0, methodNames.length).parallel().forEach(m -> {
                 IntStream.range(0, 12000).forEach(x -> {
                     try {
-                        Object r = ((Object[]) instList.get(c))[0];
-                        Method[] mi = table1.get(r.getClass());
-                        mi[m].invoke(r, mapList.get(0), k, 5);
+                        Object r = ((Object[]) instancesOfClassMap.get(c))[0];
+                        Method[] mi = classToMethodsMap.get(r.getClass());
+                        mi[m].invoke(r, argumentMaps.get(0), k, 5);
                     } catch (Exception e) {
                         System.out.println("Exception = " + e);
                         e.printStackTrace();
@@ -402,19 +400,19 @@ public class CodeCacheStress {
     Object chooseInstance(Class c) {
         ThreadLocalRandom tlr = ThreadLocalRandom.current();
         int whichInst = tlr.nextInt(instanceCount);
-        return ((Object[]) instList.get(c))[whichInst];
+        return ((Object[]) instancesOfClassMap.get(c))[whichInst];
     }
 
     Method chooseMethod(Class c) {
         ThreadLocalRandom tlr = ThreadLocalRandom.current();
         int whichM = tlr.nextInt(methodNames.length);
-        return table1.get(c)[whichM];
+        return classToMethodsMap.get(c)[whichM];
     }
 
     Map chooseMap() {
         ThreadLocalRandom tlr = ThreadLocalRandom.current();
-        int whichMap = tlr.nextInt(mapList.size());
-        return mapList.get(whichMap);
+        int whichMap = tlr.nextInt(argumentMaps.size());
+        return argumentMaps.get(whichMap);
     }
 
     Integer callTheMethod(Method m, Object r, String k, Map map) throws Exception {
@@ -423,7 +421,7 @@ public class CodeCacheStress {
 
     @Benchmark
     public Integer work() throws Exception {
-        Integer sum = 0;
+        int sum = 0;
 
         // Call a method of a random instance of a random class up to the specified range
         for (int index = 0; index < compiledClasses.length; index++) {
