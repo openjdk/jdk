@@ -53,30 +53,17 @@ class FileChannelInputStream extends ChannelInputStream {
     public long transferTo(OutputStream out) throws IOException {
         // transferTo(SocketChannel)
         if (out instanceof SocketOutputStream sos) {
-            SocketChannel sc = sos.channel();
-            synchronized (sc.blockingLock()) {
-                if (!sc.isBlocking())
-                    throw new IllegalBlockingModeException();
-                return transferTo(sc);
-            }
+            return transferTo(sos.channel());
         }
 
         // transferTo(WritableByteChannel)
         if (out instanceof ChannelOutputStream cos) {
-            WritableByteChannel target = cos.channel();
-            if (target instanceof SelectableChannel sc) {
-                synchronized (sc.blockingLock()) {
-                    if (!sc.isBlocking())
-                        throw new IllegalBlockingModeException();
-                    return transferTo(target);
-                }
-            }
-            return transferTo(target);
+            return transferTo(cos.channel());
         }
 
         // transferTo(FileChannel)
         if (out instanceof FileOutputStream fos) {
-            return transferTo(fos.getChannel());
+            return implTransferTo(fos.getChannel());
         }
 
         return super.transferTo(out);
@@ -86,6 +73,22 @@ class FileChannelInputStream extends ChannelInputStream {
      * Transfers all bytes to the given target channel.
      */
     private long transferTo(WritableByteChannel target) throws IOException {
+        if (target instanceof SelectableChannel sc) {
+            synchronized (sc.blockingLock()) {
+                if (!sc.isBlocking())
+                    throw new IllegalBlockingModeException();
+                return implTransferTo(target);
+            }
+        } else {
+            return implTransferTo(target);
+        }
+    }
+
+    /**
+     * Transfers all bytes to the given target channel. If the target channel is a
+     * selectable channel then it's in blocking mode.
+     */
+    private long implTransferTo(WritableByteChannel target) throws IOException {
         FileChannel fc = channel();
         long initialPos = fc.position();
         long pos = initialPos;

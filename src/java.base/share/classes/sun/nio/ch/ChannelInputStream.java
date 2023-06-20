@@ -233,15 +233,7 @@ class ChannelInputStream extends InputStream {
 
         // use FileChannel.transferFrom if output stream is based on a FileChannel
         if (out instanceof FileChannelOutputStream fcos) {
-            FileChannel fc = fcos.channel();
-            if (ch instanceof SelectableChannel sc) {
-                synchronized (sc.blockingLock()) {
-                    if (!sc.isBlocking())
-                        throw new IllegalBlockingModeException();
-                    return transferTo(fc);
-                }
-            }
-            return transferTo(fc);
+            return transferTo(fcos.channel());
         } else if (out instanceof FileOutputStream fos) {
             return transferTo(fos.getChannel());
         }
@@ -253,6 +245,22 @@ class ChannelInputStream extends InputStream {
      * Transfers all bytes to the target channel's file.
      */
     private long transferTo(FileChannel fc) throws IOException {
+        if (ch instanceof SelectableChannel sc) {
+            synchronized (sc.blockingLock()) {
+                if (!sc.isBlocking())
+                    throw new IllegalBlockingModeException();
+                return implTransferTo(fc);
+            }
+        } else {
+            return implTransferTo(fc);
+        }
+    }
+
+    /**
+     * Transfers all bytes to the given target channel. If the target channel is a
+     * selectable channel then it's in blocking mode.
+     */
+    private long implTransferTo(FileChannel fc) throws IOException {
         long initialPos = fc.position();
         long pos = initialPos;
         try {
