@@ -86,7 +86,7 @@ public class InternalFrameTitleButtonTest {
 
         Robot robot = new Robot();
         robot.waitForIdle();
-        robot.delay(1000);	
+        robot.delay(1000);
 
         SwingUtilities.invokeAndWait(() -> {
             BasicInternalFrameTitlePane title =
