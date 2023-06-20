@@ -291,7 +291,7 @@ abstract class HttpConnection implements Closeable {
             } else {
                 String[] alpn = null;
                 if (version == HTTP_2 && hasRequiredHTTP2TLSVersion(client)) {
-                    alpn = new String[] {Alpns.H2, Alpns.HTTP_1_1 };
+                    alpn = new String[] { Alpns.H2, Alpns.HTTP_1_1 };
                 }
                 return getSSLConnection(addr, proxy, alpn, request, client);
             }
