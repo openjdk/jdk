@@ -500,9 +500,9 @@ public interface ChronoLocalDateTime<D extends ChronoLocalDate>
      * This default implementation performs the comparison defined above.
      *
      * @param other  the other date-time to compare to, not null
-     * @return the comparator value is less than zero if the {@code other} is before,
-     *          zero if they are equal, greater than zero if the {@code other} is after
-
+     * @return the comparator value is the comparison the {@code other} local date-time,
+     *          and the {@code other} chronology, in order, returning the first non-zero result,
+     *          and otherwise returning zero
      * @see #isBefore
      * @see #isAfter
      */

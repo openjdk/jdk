@@ -807,8 +807,11 @@ public interface Chronology extends Comparable<Chronology> {
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param other  the other chronology to compare to, not null
-     * @return the comparator value is less than zero if the {@code other} ID string is before,
-     *          zero if they are equal, greater than zero if the {@code other} ID string is after
+     * @return the comparator value is less than zero if {@code other}'s ID string
+     *          is lexicographically before this ID string, greater than zero
+     *          if {@code other}'s ID string is lexicographically greater than this ID string;
+     *          otherwise, if the ID strings are equal, the value is zero unless
+     *          the implementation distinguishes instances using additional information
      */
     @Override
     int compareTo(Chronology other);
