@@ -85,6 +85,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
                 buttonWidth = (int) ((float) buttonWidth * d.width / d.height);
             }
         } else {
+            buttonWidth = buttonHeight;
             buttonWidth += 2;
             Color activeBorderColor =
                     UIManager.getColor("InternalFrame.activeBorderColor");
