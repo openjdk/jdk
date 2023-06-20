@@ -25,6 +25,7 @@
 
 package sun.nio.ch;
 
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -34,7 +35,6 @@ import java.nio.channels.IllegalBlockingModeException;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.channels.SelectableChannel;
-import java.nio.channels.WritableByteChannel;
 import java.util.Arrays;
 import java.util.Objects;
 import jdk.internal.util.ArraysSupport;
@@ -58,6 +58,13 @@ class ChannelInputStream extends InputStream {
      */
     ChannelInputStream(ReadableByteChannel ch) {
         this.ch = ch;
+    }
+
+    /**
+     * Return the underlying channel.
+     */
+    ReadableByteChannel channel() {
+        return ch;
     }
 
     /**
@@ -224,85 +231,37 @@ class ChannelInputStream extends InputStream {
     public long transferTo(OutputStream out) throws IOException {
         Objects.requireNonNull(out, "out");
 
-        if (ch instanceof FileChannel fc) {
-            // FileChannel -> SocketChannel
-            if (out instanceof SocketOutputStream sos) {
-                SocketChannelImpl sc = sos.channel();
+        // use FileChannel.transferFrom if output stream is based on a FileChannel
+        if (out instanceof FileChannelOutputStream fcos) {
+            FileChannel fc = fcos.channel();
+            if (ch instanceof SelectableChannel sc) {
                 synchronized (sc.blockingLock()) {
                     if (!sc.isBlocking())
                         throw new IllegalBlockingModeException();
-                    return transfer(fc, sc);
+                    return transferTo(fc);
                 }
             }
-
-            // FileChannel -> WritableByteChannel
-            if (out instanceof ChannelOutputStream cos) {
-                WritableByteChannel wbc = cos.channel();
-
-                if (wbc instanceof SelectableChannel sc) {
-                    synchronized (sc.blockingLock()) {
-                        if (!sc.isBlocking())
-                            throw new IllegalBlockingModeException();
-                        return transfer(fc, wbc);
-                    }
-                }
-
-                return transfer(fc, wbc);
-            }
-        }
-
-        if (out instanceof ChannelOutputStream cos && cos.channel() instanceof FileChannel fc) {
-            ReadableByteChannel rbc = ch;
-
-            if (rbc instanceof SelectableChannel sc) {
-                synchronized (sc.blockingLock()) {
-                    if (!sc.isBlocking())
-                        throw new IllegalBlockingModeException();
-                    return transfer(rbc, fc);
-                }
-            }
-
-            return transfer(rbc, fc);
+            return transferTo(fc);
+        } else if (out instanceof FileOutputStream fos) {
+            return transferTo(fos.getChannel());
         }
 
         return super.transferTo(out);
     }
 
     /**
-     * Transfers all bytes from a channel's file to a target writeable byte channel.
-     * If the writeable byte channel is a selectable channel then it must be in
-     * blocking mode.
+     * Transfers all bytes to the target channel's file.
      */
-    private static long transfer(FileChannel fc, WritableByteChannel target)
-        throws IOException
-    {
+    private long transferTo(FileChannel fc) throws IOException {
         long initialPos = fc.position();
         long pos = initialPos;
         try {
-            while (pos < fc.size()) {
-                pos += fc.transferTo(pos, Long.MAX_VALUE, target);
-            }
-        } finally {
-            fc.position(pos);
-        }
-        return pos - initialPos;
-    }
-
-    /**
-     * Transfers all bytes from a readable byte channel to a target channel's file.
-     * If the readable byte channel is a selectable channel then it must be in
-     * blocking mode.
-     */
-    private static long transfer(ReadableByteChannel src, FileChannel dst) throws IOException {
-        long initialPos = dst.position();
-        long pos = initialPos;
-        try {
             long n;
-            while ((n = dst.transferFrom(src, pos, Long.MAX_VALUE)) > 0) {
+            while ((n = fc.transferFrom(ch, pos, Long.MAX_VALUE)) > 0) {
                 pos += n;
             }
         } finally {
-            dst.position(pos);
+            fc.position(pos);
         }
         return pos - initialPos;
     }

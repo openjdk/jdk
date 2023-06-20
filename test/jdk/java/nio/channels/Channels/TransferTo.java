@@ -22,6 +22,7 @@
  */
 
 import java.io.ByteArrayOutputStream;
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -49,8 +50,7 @@ import static org.testng.Assert.assertThrows;
  * @build jdk.test.lib.RandomFactory
  * @run testng/othervm/timeout=180 TransferTo
  * @bug 8265891
- * @summary Tests whether sun.nio.ChannelInputStream.transferTo conforms to the
- *          InputStream.transferTo specification
+ * @summary Tests Channels.newInputStream.transferTo
  * @key randomness
  */
 public class TransferTo extends TransferToBase {
@@ -62,16 +62,23 @@ public class TransferTo extends TransferToBase {
     @DataProvider
     public static Object[][] streamCombinations() {
         return new Object[][] {
-            // tests FileChannel.transferTo(FileChannel) optimized case
+            // should use FileChannel.transferTo(FileChannel)
             {fileChannelInput(), fileChannelOutput()},
 
-            // tests FileChannel.transferTo(SelectableChannelOutput)
-            // optimized case
+            // should use FileChannel.transferTo(FileChannel)
+            {fileChannelInput(), fileOutputStream()},
+
+            // should use FileChannel.transferTo(SelectableChannel)
             {fileChannelInput(), selectableChannelOutput()},
 
-            // tests FileChannel.transferTo(WritableByteChannelOutput)
-            // optimized case
+            // should use FileChannel.transferTo(WritableByteChannel)
             {fileChannelInput(), writableByteChannelOutput()},
+
+            // should use FileChannel.transferFrom(ReadableByteChannel)
+            {readableByteChannelInput(), fileChannelOutput()},
+
+            // should use FileChannel.transferFrom(ReadableByteChannel)
+            {readableByteChannelInput(), fileOutputStream()},
 
             // tests InputStream.transferTo(OutputStream) default case
             {readableByteChannelInput(), defaultOutput()}
@@ -104,7 +111,7 @@ public class TransferTo extends TransferToBase {
      */
     @Test(dataProvider = "streamCombinations")
     public void testStreamContents(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider) throws Exception {
+                                   OutputStreamProvider outputStreamProvider) throws IOException {
         assertStreamContents(inputStreamProvider, outputStreamProvider);
     }
 
@@ -118,24 +125,24 @@ public class TransferTo extends TransferToBase {
             // testing arbitrary input (here: empty file) to non-blocking
             // selectable output
             try (FileChannel fc = FileChannel.open(Files.createTempFile(CWD, "testIllegalBlockingMode", null));
-                InputStream is = Channels.newInputStream(fc);
-                SelectableChannel sc = pipe.sink().configureBlocking(false);
-                OutputStream os = Channels.newOutputStream((WritableByteChannel) sc)) {
+                 InputStream in = Channels.newInputStream(fc);
+                 SelectableChannel sc = pipe.sink().configureBlocking(false);
+                 OutputStream out = Channels.newOutputStream((WritableByteChannel) sc)) {
 
                 // IllegalBlockingMode must be thrown when trying to perform
                 // a transfer
-                assertThrows(IllegalBlockingModeException.class, () -> is.transferTo(os));
+                assertThrows(IllegalBlockingModeException.class, () -> in.transferTo(out));
             }
 
             // testing non-blocking selectable input to arbitrary output
             // (here: byte array)
             try (SelectableChannel sc = pipe.source().configureBlocking(false);
-                InputStream is = Channels.newInputStream((ReadableByteChannel) sc);
-                OutputStream os = new ByteArrayOutputStream()) {
+                InputStream in = Channels.newInputStream((ReadableByteChannel) sc);
+                OutputStream out = new ByteArrayOutputStream()) {
 
                 // IllegalBlockingMode must be thrown when trying to perform
                 // a transfer
-                assertThrows(IllegalBlockingModeException.class, () -> is.transferTo(os));
+                assertThrows(IllegalBlockingModeException.class, () -> in.transferTo(out));
             }
         } finally {
             pipe.source().close();
@@ -147,9 +154,9 @@ public class TransferTo extends TransferToBase {
      * Creates a provider for an output stream which does not wrap a channel
      */
     private static OutputStreamProvider defaultOutput() {
-        return spy -> {
+        return supplier -> {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            spy.accept(outputStream::toByteArray);
+            supplier.accept(outputStream::toByteArray);
             return outputStream;
         };
     }
@@ -170,37 +177,54 @@ public class TransferTo extends TransferToBase {
      * Creates a provider for an output stream which wraps a selectable channel
      */
     private static OutputStreamProvider selectableChannelOutput() {
-        return spy -> {
+        return supplier -> {
             Pipe pipe = Pipe.open();
             Future<byte[]> bytes = CompletableFuture.supplyAsync(() -> {
                 try {
-                    InputStream is = Channels.newInputStream(pipe.source());
-                    return is.readAllBytes();
+                    InputStream in = Channels.newInputStream(pipe.source());
+                    return in.readAllBytes();
                 } catch (IOException e) {
                     throw new AssertionError("Exception while asserting content", e);
                 }
             });
-            final OutputStream os = Channels.newOutputStream(pipe.sink());
-            spy.accept(() -> {
+            OutputStream out = Channels.newOutputStream(pipe.sink());
+            supplier.accept(() -> {
                 try {
-                    os.close();
+                    out.close();
                     return bytes.get();
                 } catch (IOException | InterruptedException | ExecutionException e) {
                     throw new AssertionError("Exception while asserting content", e);
                 }
             });
-            return os;
+            return out;
         };
     }
 
     /*
-     * Creates a provider for an output stream which wraps a writable byte channel but is not a file channel
+     * Creates a provider for an output stream that wraps a writable byte channel but is not a file channel
      */
     private static OutputStreamProvider writableByteChannelOutput() {
-        return spy -> {
+        return supplier -> {
             ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-            spy.accept(outputStream::toByteArray);
+            supplier.accept(outputStream::toByteArray);
             return Channels.newOutputStream(Channels.newChannel(outputStream));
+        };
+    }
+
+    /**
+     * Returns a provider for a FileOutputStream.
+     */
+    private static OutputStreamProvider fileOutputStream() {
+        return supplier -> {
+            Path path = Files.createTempFile(CWD, "fosOutput", null);
+            supplier.accept(() -> {
+                try {
+                    return Files.readAllBytes(path);
+                } catch (IOException e) {
+                    throw new AssertionError("Failed to verify output file", e);
+                }
+            });
+            return new FileOutputStream(path.toFile());
         };
     }
 

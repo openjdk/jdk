@@ -67,7 +67,8 @@ class TransferToBase {
      * output streams before the transfer are zero (BOF).
      */
     static void checkTransferredContents(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider, byte[] inBytes) throws Exception {
+                                         OutputStreamProvider outputStreamProvider,
+                                         byte[] inBytes) throws IOException {
         checkTransferredContents(inputStreamProvider, outputStreamProvider, inBytes, 0, 0);
     }
 
@@ -77,7 +78,10 @@ class TransferToBase {
      * output streams before the transfer are provided by the caller.
      */
     static void checkTransferredContents(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider, byte[] inBytes, int posIn, int posOut) throws Exception {
+                                         OutputStreamProvider outputStreamProvider,
+                                         byte[] inBytes,
+                                         int posIn,
+                                         int posOut) throws IOException {
         AtomicReference<Supplier<byte[]>> recorder = new AtomicReference<>();
         try (InputStream in = inputStreamProvider.input(inBytes);
             OutputStream out = outputStreamProvider.output(recorder::set)) {
@@ -107,11 +111,11 @@ class TransferToBase {
     }
 
     interface InputStreamProvider {
-        InputStream input(byte... bytes) throws Exception;
+        InputStream input(byte... bytes) throws IOException;
     }
 
     interface OutputStreamProvider {
-        OutputStream output(Consumer<Supplier<byte[]>> spy) throws Exception;
+        OutputStream output(Consumer<Supplier<byte[]>> supplier) throws IOException;
     }
 
     /*
@@ -126,10 +130,10 @@ class TransferToBase {
      * Creates a provider for an output stream which wraps a file channel
      */
     static OutputStreamProvider fileChannelOutput() {
-        return spy -> {
+        return supplier -> {
             Path path = Files.createTempFile(CWD, "fileChannelOutput", null);
             FileChannel fileChannel = FileChannel.open(path, WRITE);
-            spy.accept(() -> {
+            supplier.accept(() -> {
                 try {
                     return Files.readAllBytes(path);
                 } catch (IOException e) {
@@ -160,7 +164,7 @@ class TransferToBase {
      * transferred to output stream.
      */
     static void assertStreamContents(InputStreamProvider inputStreamProvider,
-            OutputStreamProvider outputStreamProvider) throws Exception {
+                                     OutputStreamProvider outputStreamProvider) throws IOException {
         // tests empty input stream
         checkTransferredContents(inputStreamProvider, outputStreamProvider, new byte[0]);
 
@@ -190,9 +194,10 @@ class TransferToBase {
     /*
      * Special test for stream-to-file / file-to-stream transfer of more than 2 GB.
      */
-    static void testMoreThanTwoGB(String direction, BiFunction<Path, Path, InputStream> inputStreamProvider,
-            BiFunction<Path, Path, OutputStream> outputStreamProvider,
-            ToLongBiFunction<InputStream, OutputStream> transfer) throws IOException {
+    static void testMoreThanTwoGB(String direction,
+                                  BiFunction<Path, Path, InputStream> inputStreamProvider,
+                                  BiFunction<Path, Path, OutputStream> outputStreamProvider,
+                                  ToLongBiFunction<InputStream, OutputStream> transfer) throws IOException {
         // prepare two temporary files to be compared at the end of the test
         // set the source file name
         String sourceName = String.format("test3GBSource_transfer%s%s.tmp", direction,

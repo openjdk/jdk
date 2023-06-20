@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,13 @@
  */
 package sun.nio.ch;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.nio.channels.FileChannel;
+import java.nio.channels.IllegalBlockingModeException;
+import java.nio.channels.ReadableByteChannel;
 import java.util.function.IntSupplier;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
@@ -79,5 +84,38 @@ class SocketInputStream extends InputStream {
     @Override
     public void close() throws IOException {
         sc.close();
+    }
+
+    @Override
+    public long transferTo(OutputStream out) throws IOException {
+        // use FileChannel.transferFrom if output stream is based on a FileChannel
+        if (out instanceof FileChannelOutputStream fcos) {
+            return transferTo(fcos.channel());
+        } else if (out instanceof FileOutputStream fos) {
+            return transferTo(fos.getChannel());
+        }
+
+        return super.transferTo(out);
+    }
+
+    /**
+     * Transfers all bytes to the target channel's file.
+     */
+    private long transferTo(FileChannel fc) throws IOException {
+        synchronized (sc.blockingLock()) {
+            if (!sc.isBlocking())
+                throw new IllegalBlockingModeException();
+            long initialPos = fc.position();
+            long pos = initialPos;
+            try {
+                long n;
+                while ((n = fc.transferFrom(sc, pos, Long.MAX_VALUE)) > 0) {
+                    pos += n;
+                }
+            } finally {
+                fc.position(pos);
+            }
+            return pos - initialPos;
+        }
     }
 }

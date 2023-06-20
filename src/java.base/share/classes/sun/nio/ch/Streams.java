@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@ package sun.nio.ch;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.WritableByteChannel;
 
@@ -39,7 +40,10 @@ public class Streams {
      * Return an input stream that reads bytes from the given channel.
      */
     public static InputStream of(ReadableByteChannel ch) {
-        if (ch instanceof SocketChannelImpl sc) {
+        // avoid switch expression due to recursive initialization issues
+        if (ch instanceof FileChannel fc) {
+            return new FileChannelInputStream(fc);
+        } else if (ch instanceof SocketChannelImpl sc) {
             return new SocketInputStream(sc);
         } else {
             return new ChannelInputStream(ch);
@@ -50,7 +54,10 @@ public class Streams {
      * Return an output stream that writes bytes to the given channel.
      */
     public static OutputStream of(WritableByteChannel ch) {
-        if (ch instanceof SocketChannelImpl sc) {
+        // avoid switch expression due to recursive initialization issues
+        if (ch instanceof FileChannel fc) {
+            return new FileChannelOutputStream(fc);
+        } else if (ch instanceof SocketChannelImpl sc) {
             return new SocketOutputStream(sc);
         } else {
             return new ChannelOutputStream(ch);
