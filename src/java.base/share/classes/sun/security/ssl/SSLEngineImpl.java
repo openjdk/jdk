@@ -372,7 +372,7 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
             } else if (conContext.isPostHandshakeContext()) {
                 // unlikely, but just in case.
                 hsStatus = conContext.finishPostHandshake();
-            } else if (conContext.isHandshakeFinished()) {
+            } else if (conContext.handshakeContext.handshakeFinished) {
                 hsStatus = conContext.finishHandshake();
             }
         }   // Otherwise, the followed call to getHSStatus() will help.
@@ -760,12 +760,11 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
     @Override
     public Runnable getDelegatedTask() {
         engineLock.lock();
-        HandshakeContext context = conContext.handshakeContext;
         try {
-            if (context != null && // PRE or POST handshake
-                    !context.taskDelegated &&
-                    !context.delegatedActions.isEmpty()) {
-                context.taskDelegated = true;
+            if (conContext.handshakeContext != null && // PRE or POST handshake
+                    !conContext.handshakeContext.taskDelegated &&
+                    !conContext.handshakeContext.delegatedActions.isEmpty()) {
+                conContext.handshakeContext.taskDelegated = true;
                 return new DelegatedTask(this);
             }
         } finally {
@@ -912,7 +911,13 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
     @Override
     public SSLSession getHandshakeSession() {
-        return conContext.getHandshakeSession();
+        engineLock.lock();
+        try {
+            return conContext.handshakeContext == null ?
+                    null : conContext.handshakeContext.handshakeSession;
+        } finally {
+            engineLock.unlock();
+        }
     }
 
     @Override
@@ -1048,7 +1053,13 @@ final class SSLEngineImpl extends SSLEngine implements SSLTransport {
 
     @Override
     public String getHandshakeApplicationProtocol() {
-        return conContext.getHandshakeApplicationProtocol();
+        engineLock.lock();
+        try {
+            return conContext.handshakeContext == null ?
+                    null : conContext.handshakeContext.applicationProtocol;
+        } finally {
+            engineLock.unlock();
+        }
     }
 
     @Override
