@@ -102,8 +102,12 @@
  * @requires vm.gc.Shenandoah
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseShenandoahGC TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseShenandoahGC -XX:+UseLargePages TestTracePageSizes
- * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseShenandoahGC -XX:+UseTransparentHugePages TestTracePageSizes
  */
+
+// Note:
+// Shenandoah THP trace test disabled due to https://bugs.openjdk.org/browse/JDK-8310388
+// When fixed, add this:
+// @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:+UseShenandoahGC -XX:+UseTransparentHugePages TestTracePageSizes
 
 import java.io.File;
 import java.nio.file.Files;
