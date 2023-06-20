@@ -57,21 +57,22 @@ public class RawCountsConstraint implements RawConstraint {
     private boolean expectMaxSizeForVectorNode() {
         switch (comparison.getComparator()) {
         case "<":
-            TestFormat.checkNoReport(comparison.getGivenValue() > 1, "Comparator < should compare with at least 2, but got: " + comparison.getGivenValue());
+            TestFormat.checkNoReport(comparison.getGivenValue() > 1, "Node count comparison \"<" + comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
             return false; // any
         case "<=":
-            TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Comparator <= should compare with at least 1, but got: " + comparison.getGivenValue());
+            TestFormat.checkNoReport(comparison.getGivenValue() > 1, "Node count comparison \"<=" + comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
             return false; // any
         case "=":
             // if 0, we expect none -> expect to not find any with any size
             return comparison.getGivenValue() > 0;
         case ">":
+            TestFormat.checkNoReport(comparison.getGivenValue() >= 0, "Node count comparison \">" + comparison.getGivenValue() + "\" is useless, please only use positive numbers.");
             return true; // max
         case ">=":
-            TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Comparator >= should compare with at least 1, but got: " + comparison.getGivenValue());
+            TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Node count comparison \">=" + comparison.getGivenValue() + "\" is useless, please only use strictly positive numbers with greater-equal.");
             return true; // max
         case "!=":
-            TestFormat.checkNoReport(false, "Comparator not supprted: " + comparison.getComparator());
+            TestFormat.checkNoReport(false, "Not-equal comparator not supported for node count: \"" + comparison.getComparator() + "\". Please rewrite the rule.");
             return false; // any
         default:
             TestFormat.checkNoReport(false, "Comparator not handled: " + comparison.getComparator());

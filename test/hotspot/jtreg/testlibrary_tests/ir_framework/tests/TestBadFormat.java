@@ -999,7 +999,7 @@ class BadIRAnnotationsAfterTestVM {
     public void missingCountString() {}
 
     @Test
-    @FailCount(45)
+    @FailCount(51)
     @IR(counts = {IRNode.STORE, IRNode.STORE})
     @IR(counts = {IRNode.STORE, IRNode.STORE, IRNode.STORE, IRNode.STORE})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", IRNode.STORE})
@@ -1025,6 +1025,12 @@ class BadIRAnnotationsAfterTestVM {
     @IR(counts = {IRNode.STORE, " > 3.0"})
     @IR(counts = {IRNode.STORE, " > a3"})
     @IR(counts = {IRNode.STORE, " > 0x1"})
+    @IR(counts = {IRNode.STORE, "!= 1000"})
+    @IR(counts = {IRNode.STORE, "< 0"})
+    @IR(counts = {IRNode.STORE, "< 1"})
+    @IR(counts = {IRNode.STORE, "<= 0"})
+    @IR(counts = {IRNode.STORE, "> -1"})
+    @IR(counts = {IRNode.STORE, ">= 0"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "<"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", "!3"})
