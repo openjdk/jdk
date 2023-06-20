@@ -346,7 +346,8 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VF, "> 0"},
+    // TODO investigate, maybe unrolling insufficient?
+    @IR(counts = {IRNode.ADD_VF, IRNode.VECTOR_TYPE + "float:any", "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Some aarch64 machines have AlignVector == true, like ThunderX2

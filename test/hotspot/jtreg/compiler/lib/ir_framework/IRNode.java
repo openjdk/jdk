@@ -1846,9 +1846,7 @@ public class IRNode {
      * Return maximal number of elements that can fit in a vector of the specified type.
      */
     public static long getMaxElementsForType(String typeString, VMInfo vmInfo) {
-        int bytes = getTypeSizeInBytes(typeString);
-        long maxBytes = vmInfo.getLong("MaxVectorSize", 0);
-        TestFramework.check(maxBytes > 0, "VMInfo: MaxVectorSize is not larger than zero");
+        long maxBytes = 64;
 
         // restrict maxBytes for specific features, see Matcher::vector_width_in_bytes:
         //  -> x86:
@@ -1857,20 +1855,25 @@ public class IRNode {
         boolean avx512 = vmInfo.hasCPUFeature("avx512f");
         boolean avx512bw = vmInfo.hasCPUFeature("avx512bw");
         if (avx512) {
-            maxBytes = Math.min(maxBytes, 64);
+            maxBytes = 64;
 	} else if (avx2) {
-            maxBytes = Math.min(maxBytes, 32);
+            maxBytes = 32;
 	} else if (avx1) {
-            maxBytes = Math.min(maxBytes, 16);
+            maxBytes = 16;
         }
         if (avx1 && (typeString.equals("float") || typeString.equals("double"))) {
-            maxBytes = Math.min(maxBytes, avx512 ? 64 : 32);
+            maxBytes = avx512 ? 64 : 32;
         }
         if (avx512 && (typeString.equals("byte") || typeString.equals("short") || typeString.equals("char"))) {
-            maxBytes = Math.min(maxBytes, avx512bw ? 64 : 32);
+            maxBytes = avx512bw ? 64 : 32;
         }
 
+        long maxVectorSize = vmInfo.getLong("MaxVectorSize", 0);
+        TestFramework.check(maxVectorSize > 0, "VMInfo: MaxVectorSize is not larger than zero");
+        maxBytes = Math.min(maxBytes, maxVectorSize);
+
         // compute elements per vector: vector bytes divided by bytes per element
+        int bytes = getTypeSizeInBytes(typeString);
         return maxBytes / bytes;
     }
 
