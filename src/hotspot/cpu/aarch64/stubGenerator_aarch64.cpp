@@ -5476,7 +5476,7 @@ class StubGenerator: public StubCodeGenerator {
 
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
 
-    // In case a concurrent thread disarmed the nmethod, we need to ensure the new instructinos
+    // In case a concurrent thread disarmed the nmethod, we need to ensure the new instructions
     // are made visible using isb. Note that this is synchronous cross modifying code, where the
     // existence of new instructions is communicated via data (the guard value).
     if (bs_asm->nmethod_patching_type() == NMethodPatchingType::conc_instruction_and_data_patch) {
