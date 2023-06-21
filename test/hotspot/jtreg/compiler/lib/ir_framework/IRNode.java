@@ -1132,20 +1132,17 @@ public class IRNode {
 
     public static final String ROTATE_LEFT_V = PREFIX + "ROTATE_LEFT_V" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(ROTATE_LEFT_V, "RotateLeftV");
     }
 
     public static final String ROTATE_RIGHT_V = PREFIX + "ROTATE_RIGHT_V" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(ROTATE_RIGHT_V, "RotateRightV");
     }
 
-    public static final String ROUND_DOUBLE_MODE_V = PREFIX + "ROUND_DOUBLE_MODE_V" + POSTFIX;
+    public static final String ROUND_DOUBLE_MODE_V = VECTOR_PREFIX + "ROUND_DOUBLE_MODE_V" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(ROUND_DOUBLE_MODE_V, "RoundDoubleModeV");
+        vectorNode(ROUND_DOUBLE_MODE_V, "RoundDoubleModeV", "double");
     }
 
     public static final String RSHIFT = PREFIX + "RSHIFT" + POSTFIX;
@@ -1358,10 +1355,34 @@ public class IRNode {
         beforeMatchingNameRegex(SUB_L, "SubL");
     }
 
-    public static final String SUB_V = PREFIX + "SUB_V" + POSTFIX;
+    public static final String SUB_VB = VECTOR_PREFIX + "SUB_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(SUB_V, "SubV(B|S|I|L|F|D)");
+        vectorNode(SUB_VB, "SubVB", "byte");
+    }
+
+    public static final String SUB_VS = VECTOR_PREFIX + "SUB_VS" + POSTFIX;
+    static {
+        vectorNode(SUB_VS, "SubVS", "short");
+    }
+
+    public static final String SUB_VI = VECTOR_PREFIX + "SUB_VI" + POSTFIX;
+    static {
+        vectorNode(SUB_VI, "SubVI", "int");
+    }
+
+    public static final String SUB_VL = VECTOR_PREFIX + "SUB_VL" + POSTFIX;
+    static {
+        vectorNode(SUB_VL, "SubVL", "long");
+    }
+
+    public static final String SUB_VF = VECTOR_PREFIX + "SUB_VF" + POSTFIX;
+    static {
+        vectorNode(SUB_VF, "SubVF", "float");
+    }
+
+    public static final String SUB_VD = VECTOR_PREFIX + "SUB_VD" + POSTFIX;
+    static {
+        vectorNode(SUB_VD, "SubVD", "double");
     }
 
     public static final String TRAP = PREFIX + "TRAP" + POSTFIX;

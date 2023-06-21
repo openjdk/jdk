@@ -67,7 +67,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     // ---------------- Arithmetic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VS, ">0"})
     public char[] vectorNeg() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -101,7 +101,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VS, ">0"})
     public char[] vectorSub() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -135,7 +135,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.MUL_VS, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VS, ">0", IRNode.SUB_VS, ">0"})
     public char[] vectorMulSub() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {

@@ -66,7 +66,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
     // ---------------- Arithmetic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VL, ">0"})
     public long[] vectorNeg() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -99,7 +99,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VL, ">0"})
     public long[] vectorSub() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -134,7 +134,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_VL, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VL, ">0", IRNode.SUB_VL, ">0"})
     public long[] vectorMulSub() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

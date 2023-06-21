@@ -67,7 +67,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     // ---------------- Arithmetic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VB, ">0"})
     public byte[] vectorNeg() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -100,7 +100,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.SUB_V, ">0"})
+        counts = {IRNode.SUB_VB, ">0"})
     public byte[] vectorSub() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -133,7 +133,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.MUL_VB, ">0", IRNode.SUB_V, ">0"})
+        counts = {IRNode.MUL_VB, ">0", IRNode.SUB_VB, ">0"})
     public byte[] vectorMulSub() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
