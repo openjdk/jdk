@@ -64,7 +64,7 @@ public class Locks {
             return;
         }
         String name = t.getName();
-        // If t is Virtual, it will hold a lock on a VirtualThread, which we ignore.
+        // Carrier Thread can hold a lock on a VirtualThread, which we ignore.
         Optional<ThreadInfo> result = Arrays.stream(
                 TM.getThreadInfo(TM.getAllThreadIds(), true, true))
                                             .filter(Objects::nonNull)
