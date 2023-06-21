@@ -1010,16 +1010,14 @@ public class IRNode {
         vectorNode(POPCOUNT_VL, "PopCountVL", "long");
     }
 
-    public static final String COUNTTRAILINGZEROS_VL = PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
+    public static final String COUNTTRAILINGZEROS_VL = VECTOR_PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
     static {
-        // TODO vectorNode
-        superWordNodes(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV");
+        vectorNode(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV", "long");
     }
 
-    public static final String COUNTLEADINGZEROS_VL = PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
+    public static final String COUNTLEADINGZEROS_VL = VECTOR_PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
     static {
-        // TODO vectorNode
-        superWordNodes(COUNTLEADINGZEROS_VL, "CountLeadingZerosV");
+        vectorNode(COUNTLEADINGZEROS_VL, "CountLeadingZerosV", "long");
     }
 
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
@@ -1088,10 +1086,24 @@ public class IRNode {
                                                                     CompilePhase.BEFORE_MATCHING));
     }
 
-    public static final String REVERSE_BYTES_V = PREFIX + "REVERSE_BYTES_V" + POSTFIX;
+    public static final String REVERSE_BYTES_VB = VECTOR_PREFIX + "REVERSE_BYTES_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(REVERSE_BYTES_V, "ReverseBytesV");
+        vectorNode(REVERSE_BYTES_VB, "ReverseBytesV", "byte");
+    }
+
+    public static final String REVERSE_BYTES_VS = VECTOR_PREFIX + "REVERSE_BYTES_VS" + POSTFIX;
+    static {
+        vectorNode(REVERSE_BYTES_VS, "ReverseBytesV", "short");
+    }
+
+    public static final String REVERSE_BYTES_VI = VECTOR_PREFIX + "REVERSE_BYTES_VI" + POSTFIX;
+    static {
+        vectorNode(REVERSE_BYTES_VI, "ReverseBytesV", "int");
+    }
+
+    public static final String REVERSE_BYTES_VL = VECTOR_PREFIX + "REVERSE_BYTES_VL" + POSTFIX;
+    static {
+        vectorNode(REVERSE_BYTES_VL, "ReverseBytesV", "long");
     }
 
     public static final String REVERSE_I = PREFIX + "REVERSE_I" + POSTFIX;
