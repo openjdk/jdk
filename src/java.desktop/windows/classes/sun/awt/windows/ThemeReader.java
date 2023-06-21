@@ -30,10 +30,13 @@ import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Point;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 
 /**
  * Implements Theme Support for Windows XP.
@@ -43,7 +46,14 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  * @author Igor Kushnirskiy
  */
 public final class ThemeReader {
-    private static final int defaultDPI = 96;
+
+    private static final int defaultDPI =  96;
+    private static final  List<String> dpiSupportedWidgets =
+            List.of("MENU","BUTTON");
+    private static final  List<Integer> dpiSupportedParts =
+            List.of(Part.BP_RADIOBUTTON.getValue(),
+                    Part.BP_CHECKBOX.getValue(),
+                    Part.MP_POPUPCHECK.getValue());
     private static final Map<Integer, Map<String, Long>> dpiAwareWidgetToTheme
             = new HashMap<>();
 
@@ -159,11 +169,22 @@ public final class ThemeReader {
            int part, int state, int x, int y, int w, int h, int stride, int dpi) {
         readLock.lock();
         try {
+
+            int width = w;
+            int height = h;
+
             /* We get the part size based on the theme for current screen DPI
-            and pass it to paintBackground */
-            Dimension d = getPartSize(getTheme(widget, dpi), part, state);
+            and pass it to paintBackground for dpi supported parts. */
+            if (dpiSupportedWidgets.contains(widget) &&
+                dpiSupportedParts.contains(Integer.valueOf(part)))
+            {
+                Dimension d = getPartSize(getTheme(widget, dpi), part, state);
+                width =  d.width;
+                height = d.height;
+            }
+
             paintBackground(buffer, getTheme(widget, dpi), part, state,
-                            d.width, d.height, w, h, stride);
+                            width, height, w, h, stride);
         } finally {
             readLock.unlock();
         }
