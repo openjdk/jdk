@@ -60,7 +60,7 @@ public class RawCountsConstraint implements RawConstraint {
             TestFormat.checkNoReport(comparison.getGivenValue() > 1, "Node count comparison \"<" + comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
             return false; // any
         case "<=":
-            TestFormat.checkNoReport(comparison.getGivenValue() > 1, "Node count comparison \"<=" + comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
+            TestFormat.checkNoReport(comparison.getGivenValue() >= 1, "Node count comparison \"<=" + comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
             return false; // any
         case "=":
             // if 0, we expect none -> expect to not find any with any size
