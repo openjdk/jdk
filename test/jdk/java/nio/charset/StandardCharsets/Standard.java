@@ -42,7 +42,8 @@ public class Standard {
     private final static String standardCharsets[] = {
         "US-ASCII", "ISO-8859-1", "UTF-8",
         "UTF-16BE", "UTF-16LE", "UTF-16",
-        "UTF-32BE", "UTF-32LE", "UTF-32" };
+        "UTF-32BE", "UTF-32LE", "UTF-32",
+    };
 
     public static void realMain(String[] args) {
         check(StandardCharsets.US_ASCII instanceof Charset);
