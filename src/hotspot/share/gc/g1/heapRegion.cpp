@@ -618,7 +618,7 @@ class G1VerifyLiveAndRemSetClosure : public BasicOopIterateClosure {
     if (CompressedOops::is_null(heap_oop)) {
       return;
     }
-    oop obj = CompressedOops::decode_not_null(heap_oop);
+    oop obj = CompressedOops::decode_raw_not_null(heap_oop);
 
     LiveChecker<T> live_check(this, _containing_obj, p, obj, _vo);
     if (live_check.failed()) {
