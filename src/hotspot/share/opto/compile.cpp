@@ -565,7 +565,11 @@ void Compile::print_ideal_ir(const char* phase_name) {
   if (_output == nullptr) {
     tty->print_cr("AFTER: %s", phase_name);
     // Print out all nodes in ascending order of index.
-    root()->dump_bfs(MaxNodeLimit, nullptr, "+S$");
+    // Buffer the dump first, and print it at once to avoid
+    // having to lock on tty or risk having the dump split.
+    stringStream ss;
+    root()->dump_bfs(MaxNodeLimit, nullptr, "+S$", &ss);
+    tty->print("%s", ss.as_string());
   } else {
     // Dump the node blockwise if we have a scheduling
     _output->print_scheduling();

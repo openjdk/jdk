@@ -46,7 +46,7 @@ public class TestVectorConditionalMove {
         TestFramework.runWithFlags("-XX:-TieredCompilation",
                                    "-XX:+UseCMoveUnconditionally",
                                    "-XX:+UseVectorCmov",
-                                   "-XX:CompileCommand=compileonly,*.TestVectorConditionalMove.test*");
+                                   "-XX:CompileCommand=compileonly,compiler.c2.irTests.TestVectorConditionalMove::test*");
     }
 
     // Compare 2 values, and pick one of them
