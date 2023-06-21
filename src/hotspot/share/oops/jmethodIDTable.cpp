@@ -50,7 +50,7 @@ class JmethodIDTableConfig : public AllStatic {
  public:
   typedef JmethodEntry Value;
   static void* allocate_node(void* context, size_t size, Value const& value) {
-    return AllocateHeap(size, mtClass);
+    return AllocateHeap(size, mtJNI);
   }
   static void free_node(void* context, void* memory, Value const& value) {
     FreeHeap(memory);
@@ -61,7 +61,7 @@ class JmethodIDTableConfig : public AllStatic {
   }
 };
 
-using MethodIdTable = ConcurrentHashTable<JmethodIDTableConfig, mtClass>;
+using MethodIdTable = ConcurrentHashTable<JmethodIDTableConfig, mtJNI>;
 static MethodIdTable* _jmethod_id_table = nullptr;
 
 void JmethodIDTable::initialize() {

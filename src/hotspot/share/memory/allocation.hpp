@@ -130,6 +130,7 @@ typedef AllocFailStrategy::AllocFailEnum AllocFailType;
   f(mtMetaspace,      "Metaspace")                                                   \
   f(mtStringDedup,    "String Deduplication")                                        \
   f(mtObjectMonitor,  "Object Monitors")                                             \
+  f(mtJNI,            "JNI")                                                         \
   f(mtNone,           "Unknown")                                                     \
   //end
 
