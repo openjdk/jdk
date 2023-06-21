@@ -99,6 +99,7 @@ import com.sun.tools.javac.tree.JCTree.JCBindingPattern;
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag.*;
 
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
+import static javax.tools.StandardLocation.ANNOTATION_PROCESSOR_PATH;
 
 import com.sun.tools.javac.tree.JCTree.JCModuleDecl;
 import com.sun.tools.javac.tree.JCTree.JCRecordPattern;
@@ -1301,10 +1302,10 @@ public class JavaCompiler {
     boolean explicitAnnotationProcessingRequested() {
         return
             explicitAnnotationProcessingRequested ||
-            explicitAnnotationProcessingRequested(options);
+            explicitAnnotationProcessingRequested(options, fileManager);
     }
 
-    static boolean explicitAnnotationProcessingRequested(Options options) {
+    static boolean explicitAnnotationProcessingRequested(Options options, JavaFileManager fileManager) {
         return
             options.isSet(PROCESSOR) ||
             options.isSet(PROCESSOR_PATH) ||
@@ -1312,7 +1313,8 @@ public class JavaCompiler {
             options.isSet(PROC, "only") ||
             options.isSet(PROC, "full") ||
             options.isSet(A) ||
-            options.isSet(XPRINT);
+            options.isSet(XPRINT) ||
+            fileManager.hasLocation(ANNOTATION_PROCESSOR_PATH);
         // Skipping -XprintRounds and -XprintProcessorInfo
     }
 

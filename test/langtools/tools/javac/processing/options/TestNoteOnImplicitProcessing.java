@@ -56,6 +56,7 @@ import toolbox.JarTask;
  * $ javac -cp ImplicitProcTestProc.jar                                     HelloWorldTest.java
  *
  * Does _not_ generate a note and the processor runs:
+ * $ javac -processorpath ImplicitProcTestProc.jar                          HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -processor ImplicitProcTestProc.jar HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -proc:full                          HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -proc:only                          HelloWorldTest.java
@@ -156,6 +157,20 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
 
         checkForProcessorMessage(javacResult, true);
         checkForCompilerNote(javacResult, true);
+    }
+
+    @Test
+    public void processorPath(Path base, Path jarFile) {
+        Task.Result javacResult =
+            new JavacTask(tb)
+            .options("-processorpath", jarFile.toString(),
+                     "-XDrawDiagnostics")
+            .files("HelloWorldTest.java")
+            .run(Expect.SUCCESS)
+            .writeAll();
+
+        checkForProcessorMessage(javacResult, true);
+        checkForCompilerNote(javacResult, false);
     }
 
     @Test
