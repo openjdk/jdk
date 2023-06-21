@@ -41,7 +41,7 @@ import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueParser;
 import jdk.jfr.internal.WriteableUserPath;
 
 /**
@@ -171,7 +171,7 @@ final class DCmdDump extends AbstractDCmd {
 
         if (time.startsWith("-")) {
             try {
-                long durationNanos = Utils.parseTimespan(time.substring(1));
+                long durationNanos = ValueParser.parseTimespan(time.substring(1));
                 Duration duration = Duration.ofNanos(durationNanos);
                 return Instant.now().minus(duration);
             } catch (NumberFormatException nfe) {

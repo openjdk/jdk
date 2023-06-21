@@ -356,7 +356,6 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level
 void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase, uint extra_indent) const {
   LogTarget(Debug, gc, phases) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     log_phase(phase, 2 + extra_indent, &ls, true);
   }

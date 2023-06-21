@@ -23,7 +23,7 @@
 
 /*
   @test
-  @bug 4152524
+  @bug 4152524 8310054
   @requires os.family=="windows"
   @summary Test that scroll pane doesn't have scroll bars visible when it is
   shown for the first time with SCROLLBARS_AS_NEEDED style
@@ -57,7 +57,7 @@ public class ScrollPaneExtraScrollBar {
             sp = new ScrollPane(ScrollPane.SCROLLBARS_AS_NEEDED);
             sp.add(new Button("TEST"));
             f.add("Center", sp);
-            f.pack();
+            // Frame must not be packed, otherwise the bug isn't reproduced
             f.setLocationRelativeTo(null);
             f.setVisible(true);
         });

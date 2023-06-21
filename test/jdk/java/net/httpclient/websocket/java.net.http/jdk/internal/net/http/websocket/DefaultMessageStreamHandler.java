@@ -45,4 +45,3 @@ abstract class DefaultMessageStreamHandler implements MessageStreamHandler {
 
     public void onError(Throwable e) {}
 }
-
