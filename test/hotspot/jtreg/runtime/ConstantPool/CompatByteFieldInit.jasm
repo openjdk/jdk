@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,18 @@
  * questions.
  */
 
-package jdk.jfr.event.gc.configuration;
 
-import static jdk.test.lib.Asserts.assertGreaterThanOrEqual;
+super class CompatByteFieldInit
+	version 65:0
+{
+  public static final Field b:B	= int 0x80;
+  public static final Field s:S	= int 0x8000;
 
-import java.util.List;
-
-import jdk.jfr.Recording;
-import jdk.jfr.consumer.RecordedEvent;
-import jdk.test.lib.jfr.EventNames;
-import jdk.test.lib.jfr.EventVerifier;
-import jdk.test.lib.jfr.Events;
-
-
-public abstract class GCHeapConfigurationEventTester {
-    public void run() throws Exception {
-        Recording recording = new Recording();
-        recording.enable(EventNames.GCHeapConfiguration);
-        recording.start();
-        recording.stop();
-        List<RecordedEvent> events = Events.fromRecording(recording);
-        assertGreaterThanOrEqual(events.size(), 1, "Expected at least 1 event");
-        EventVerifier v = createVerifier(events.getFirst());
-        v.verify();
-    }
-
-    protected abstract EventVerifier createVerifier(RecordedEvent e);
-}
+  Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
+} // end Class CompatByteFieldInit
