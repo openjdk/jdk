@@ -48,7 +48,7 @@ import java.util.Random;
 
 public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 543;
+    private static final int SIZE = 6543;
 
     private int[] ints;
     private short[] shorts;
