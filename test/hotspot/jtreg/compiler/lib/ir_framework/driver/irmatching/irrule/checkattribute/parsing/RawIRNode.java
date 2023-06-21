@@ -58,18 +58,13 @@ public class RawIRNode {
         if (IRNode.isIRNode(node)) {
             nodeRegex = IRNode.getRegexForCompilePhase(node, compilePhase);
             if (IRNode.isVectorIRNode(node)) {
-                String type;
+                String type = IRNode.getVectorNodeType(node);
                 String size;
                 if (userPostfix.isValid()) {
                     String value = userPostfix.value();
-                    TestFormat.checkNoReport(value.startsWith(IRNode.VECTOR_TYPE), "Vector node's vector type must start with IRNode.VECTOR_TYPE, got: \"" + value + "\"");
-                    String value2 = value.substring(2);
-                    String[] l = value2.split(":");
-                    TestFormat.checkNoReport(l.length == 2, "Vector nodei's vector type must have pattern \"_@<type>,<size>\", got: \"" + value + "\"");
-                    type = l[0];
-                    size = l[1];
+                    TestFormat.checkNoReport(value.startsWith(IRNode.VECTOR_SIZE), "Vector node's vector type must start with IRNode.VECTOR_SIZE, got: \"" + value + "\"");
+                    size = value.substring(2);
                 } else {
-                    type = IRNode.getVectorNodeType(node);
                     size = vectorSizeDefault;
                 }
                 // Parse type
@@ -87,7 +82,7 @@ public class RawIRNode {
                         try {
                             s = Integer.parseInt(sizes[i]);
                         } catch (NumberFormatException e) {
-                            TestFormat.checkNoReport(false, "Vector node specifier has invalid (not int) size \"" + sizes[i] + "\", in \"" + size + "\" for \"" + node + "\"");
+                            TestFormat.checkNoReport(false, "Vector node has invalid size \"" + sizes[i] + "\", in \"" + size + "\" for \"" + node + "\"");
                         }
                         sizes_regex += ((i > 0) ? "|" : "") + s;
                     }

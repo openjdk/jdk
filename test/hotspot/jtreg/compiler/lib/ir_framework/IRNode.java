@@ -97,7 +97,15 @@ public class IRNode {
 
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
 
-    public static final String VECTOR_TYPE = "_@";
+    public static final String VECTOR_SIZE = "_@";
+    public static final String VECTOR_SIZE_ANY = VECTOR_SIZE + "any"; // default for count "=0" and failOn
+    public static final String VECTOR_SIZE_MAX = VECTOR_SIZE + "max_for_type"; // default in count
+    public static final String VECTOR_SIZE_2   = VECTOR_SIZE + "2";
+    public static final String VECTOR_SIZE_4   = VECTOR_SIZE + "4";
+    public static final String VECTOR_SIZE_8   = VECTOR_SIZE + "8";
+    public static final String VECTOR_SIZE_16  = VECTOR_SIZE + "16";
+    public static final String VECTOR_SIZE_32  = VECTOR_SIZE + "32";
+    public static final String VECTOR_SIZE_64  = VECTOR_SIZE + "64";
 
     /**
      * IR placeholder string to regex-for-compile-phase map.
@@ -1975,10 +1983,10 @@ public class IRNode {
     }
 
     /**
-     * Is {@code irVectorTypeString} a vector type string?
+     * Is {@code irVectorTypeString} a vector size string?
      */
     public static boolean isVectorType(String irVectorTypeString) {
-        return irVectorTypeString.startsWith(VECTOR_TYPE);
+        return irVectorTypeString.startsWith(VECTOR_SIZE);
     }
  
     /**

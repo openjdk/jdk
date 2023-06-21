@@ -49,7 +49,7 @@ public class TestAutoVectorization2DArray {
 
     @Test
     @IR(counts = { IRNode.LOAD_VECTOR,  " >0 " })
-    @IR(counts = { IRNode.ADD_VD,       IRNode.VECTOR_TYPE + "double:2,4", " >0 " })
+    @IR(counts = { IRNode.ADD_VD,       IRNode.VECTOR_SIZE + "2,4", " >0 " })
     @IR(counts = { IRNode.STORE_VECTOR, " >0 " })
     private static void testDouble(double[][] a , double[][] b, double[][] c) {
         for(int i = 0; i < a.length; i++) {
