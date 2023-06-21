@@ -118,7 +118,7 @@ class BytecodePrinter {
       code = Bytecodes::code_at(method(), bcp);
     }
     _code = code;
-     int bci = bcp - method->code_base();
+     int bci = (int)(bcp - method->code_base());
     st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
     if (Verbose) {
       st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
@@ -147,7 +147,7 @@ class BytecodePrinter {
       code = Bytecodes::code_at(method(), bcp+1);
     }
     _code = code;
-    int bci = bcp - method->code_base();
+    int bci = (int)(bcp - method->code_base());
     // Print bytecode index and name
     if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_BYTECODE_ADDR)) {
       st->print(INTPTR_FORMAT " ", p2i(bcp));
