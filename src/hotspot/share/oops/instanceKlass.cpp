@@ -3744,7 +3744,10 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
   {
     stringStream st;
     st.print_cr("Loading %s", external_name());
-    JavaThread::current()->print_stack_on(&st);
+    Thread* current = Thread::current_or_null();
+    if (current != nullptr && current->is_Java_thread()) {
+      JavaThread::cast(current)->print_stack_on(&st);
+    }
     tty->print_raw(st.as_string());
   }
 
