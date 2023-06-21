@@ -507,89 +507,58 @@ public final class Long extends Number
         char i14 = hex256[(((int) lsb) >> 8) & 0xff];
         char i15 = hex256[((int) lsb) & 0xff];
 
+        final byte coder;
+        final int charSize;
+        final int off;
         if (COMPACT_STRINGS) {
-            byte[] buf = new byte[36];
-
-            buf[0] = (byte) (i0 >> 8);
-            buf[1] = (byte) i0;
-            buf[2] = (byte) (i1 >> 8);
-            buf[3] = (byte) i1;
-            buf[4] = (byte) (i2 >> 8);
-            buf[5] = (byte) i2;
-            buf[6] = (byte) (i3 >> 8);
-            buf[7] = (byte) i3;
-            buf[8] = '-';
-            buf[9] = (byte) (i4 >> 8);
-            buf[10] = (byte) i4;
-            buf[11] = (byte) (i5 >> 8);
-            buf[12] = (byte) i5;
-            buf[13] = '-';
-            buf[14] = (byte) (i6 >> 8);
-            buf[15] = (byte) i6;
-            buf[16] = (byte) (i7 >> 8);
-            buf[17] = (byte) i7;
-            buf[18] = '-';
-            buf[19] = (byte) (i8 >> 8);
-            buf[20] = (byte) i8;
-            buf[21] = (byte) (i9 >> 8);
-            buf[22] = (byte) i9;
-            buf[23] = '-';
-            buf[24] = (byte) (i10 >> 8);
-            buf[25] = (byte) i10;
-            buf[26] = (byte) (i11 >> 8);
-            buf[27] = (byte) i11;
-            buf[28] = (byte) (i12 >> 8);
-            buf[29] = (byte) i12;
-            buf[30] = (byte) (i13 >> 8);
-            buf[31] = (byte) i13;
-            buf[32] = (byte) (i14 >> 8);
-            buf[33] = (byte) i14;
-            buf[34] = (byte) (i15 >> 8);
-            buf[35] = (byte) i15;
-
-            return new String(buf, LATIN1);
+            coder = LATIN1;
+            charSize = 1;
+            off = 0;
         } else {
-            byte[] buf = new byte[72];
-
-            StringUTF16.putChar(buf, 0, (byte) (i0 >> 8));
-            StringUTF16.putChar(buf, 1, (byte) i0);
-            StringUTF16.putChar(buf, 2, (byte) (i1 >> 8));
-            StringUTF16.putChar(buf, 3, (byte) i1);
-            StringUTF16.putChar(buf, 4, (byte) (i2 >> 8));
-            StringUTF16.putChar(buf, 5, (byte) i2);
-            StringUTF16.putChar(buf, 6, (byte) (i3 >> 8));
-            StringUTF16.putChar(buf, 7, (byte) i3);
-            StringUTF16.putChar(buf, 8, '-');
-            StringUTF16.putChar(buf, 9, (byte) (i4 >> 8));
-            StringUTF16.putChar(buf, 10, (byte) i4);
-            StringUTF16.putChar(buf, 11, (byte) (i5 >> 8));
-            StringUTF16.putChar(buf, 12, (byte) i5);
-            StringUTF16.putChar(buf, 13, '-');
-            StringUTF16.putChar(buf, 14, (byte) (i6 >> 8));
-            StringUTF16.putChar(buf, 15, (byte) i6);
-            StringUTF16.putChar(buf, 16, (byte) (i7 >> 8));
-            StringUTF16.putChar(buf, 17, (byte) i7);
-            StringUTF16.putChar(buf, 18, '-');
-            StringUTF16.putChar(buf, 19, (byte) (i8 >> 8));
-            StringUTF16.putChar(buf, 20, (byte) i8);
-            StringUTF16.putChar(buf, 21, (byte) (i9 >> 8));
-            StringUTF16.putChar(buf, 22, (byte) i9);
-            StringUTF16.putChar(buf, 23, '-');
-            StringUTF16.putChar(buf, 24, (byte) (i10 >> 8));
-            StringUTF16.putChar(buf, 25, (byte) i10);
-            StringUTF16.putChar(buf, 26, (byte) (i11 >> 8));
-            StringUTF16.putChar(buf, 27, (byte) i11);
-            StringUTF16.putChar(buf, 28, (byte) (i12 >> 8));
-            StringUTF16.putChar(buf, 29, (byte) i12);
-            StringUTF16.putChar(buf, 30, (byte) (i13 >> 8));
-            StringUTF16.putChar(buf, 31, (byte) i13);
-            StringUTF16.putChar(buf, 32, (byte) (i14 >> 8));
-            StringUTF16.putChar(buf, 33, (byte) i14);
-            StringUTF16.putChar(buf, 34, (byte) (i15 >> 8));
-            StringUTF16.putChar(buf, 35, (byte) i15);
-
-            return new String(buf, UTF16);
+            coder = UTF16;
+            charSize = 2;
+            off = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ? 1 : 0;
         }
+        final byte[] buf = new byte[36 * charSize];
+
+        buf[off] = (byte) (i >> 8);
+        buf[1 * charSize + off] = (byte) i;
+        buf[2 * charSize + off] = (byte) (i1 >> 8);
+        buf[3 * charSize + off] = (byte) i1;
+        buf[4 * charSize + off] = (byte) (i2 >> 8);
+        buf[5 * charSize + off] = (byte) i2;
+        buf[6 * charSize + off] = (byte) (i3 >> 8);
+        buf[7 * charSize + off] = (byte) i3;
+        buf[8 * charSize + off] = '-';
+        buf[9 * charSize + off] = (byte) (i4 >> 8);
+        buf[10 * charSize + off] = (byte) i4;
+        buf[11 * charSize + off] = (byte) (i5 >> 8);
+        buf[12 * charSize + off] = (byte) i5;
+        buf[13 * charSize + off] = '-';
+        buf[14 * charSize + off] = (byte) (i6 >> 8);
+        buf[15 * charSize + off] = (byte) i6;
+        buf[16 * charSize + off] = (byte) (i7 >> 8);
+        buf[17 * charSize + off] = (byte) i7;
+        buf[18 * charSize + off] = '-';
+        buf[19 * charSize + off] = (byte) (i8 >> 8);
+        buf[20 * charSize + off] = (byte) i8;
+        buf[21 * charSize + off] = (byte) (i9 >> 8);
+        buf[22 * charSize + off] = (byte) i9;
+        buf[23 * charSize + off] = '-';
+        buf[24 * charSize + off] = (byte) (i10 >> 8);
+        buf[25 * charSize + off] = (byte) i10;
+        buf[26 * charSize + off] = (byte) (i11 >> 8);
+        buf[27 * charSize + off] = (byte) i11;
+        buf[28 * charSize + off] = (byte) (i12 >> 8);
+        buf[29 * charSize + off] = (byte) i12;
+        buf[30 * charSize + off] = (byte) (i13 >> 8);
+        buf[31 * charSize + off] = (byte) i13;
+        buf[32 * charSize + off] = (byte) (i14 >> 8);
+        buf[33 * charSize + off] = (byte) i14;
+        buf[34 * charSize + off] = (byte) (i15 >> 8);
+        buf[35 * charSize + off] = (byte) i15;
+
+        return new String(buf, coder);
     }
 
     /**
