@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,44 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
-    @test
-    @summary Locale constructor should allow language-only argument
-    @bug 4316602
-    @author joconner
-*/
+
+/*
+ * @test
+ * @bug 4316602
+ * @author joconner
+ * @summary Verify all Locale constructors
+ * @run junit LocaleConstructors
+ */
 
 import java.util.Locale;
 
-public class Bug4316602 {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        String language = "ja";
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class LocaleConstructors {
+
+    static final String language = "en";
+    static final String country = "US";
+    static final String variant = "socal";
+
+    @Test
+    public void langTest() {
         Locale aLocale = Locale.of(language);
-        if (aLocale.toString().equals(language)) {
-            System.out.println("passed");
-        } else {
-            System.out.println("Bug4316602 failed");
-            throw new Exception("Bug4316602 failed");
-        }
+        assertEquals(aLocale.toString(), language);
     }
 
+    @Test
+    public void langCountryTest() {
+        Locale aLocale = Locale.of(language, country);
+        assertEquals(aLocale.toString(), String.format("%s_%s",
+                language, country));
+    }
+
+    @Test
+    public void langCountryVariantTest() {
+        Locale aLocale = Locale.of(language, country, variant);
+        assertEquals(aLocale.toString(), String.format("%s_%s_%s",
+                language, country, variant));
+    }
 }
