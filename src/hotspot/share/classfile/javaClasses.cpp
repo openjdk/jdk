@@ -817,16 +817,16 @@ static void initialize_static_primitive_field(fieldDescriptor* fd, Handle mirror
   BasicType t = fd->field_type();
   switch (t) {
   case T_BYTE:
-    mirror()->byte_field_put(fd->offset(), checked_cast<jbyte>(fd->int_initial_value()));
+    mirror()->byte_field_put(fd->offset(), (jbyte)(fd->int_initial_value()));
     break;
   case T_BOOLEAN:
-    mirror()->bool_field_put(fd->offset(), checked_cast<jboolean>(fd->int_initial_value()));
+    mirror()->bool_field_put(fd->offset(), (jboolean)(fd->int_initial_value()));
     break;
   case T_CHAR:
-    mirror()->char_field_put(fd->offset(), checked_cast<jchar>(fd->int_initial_value()));
+    mirror()->char_field_put(fd->offset(), (jchar)(fd->int_initial_value()));
     break;
   case T_SHORT:
-    mirror()->short_field_put(fd->offset(), checked_cast<jshort>(fd->int_initial_value()));
+    mirror()->short_field_put(fd->offset(), (jshort)(fd->int_initial_value()));
     break;
   case T_INT:
     mirror()->int_field_put(fd->offset(), fd->int_initial_value());
