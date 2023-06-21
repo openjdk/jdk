@@ -958,11 +958,6 @@ public class IRNode {
         vectorNode(OR_VB, "OrV", "byte");
     }
 
-    public static final String OR_VC = VECTOR_PREFIX + "OR_VC" + POSTFIX;
-    static {
-        vectorNode(OR_VC, "OrV", "char");
-    }
-
     public static final String OR_VS = VECTOR_PREFIX + "OR_VS" + POSTFIX;
     static {
         vectorNode(OR_VS, "OrV", "short");
@@ -1430,10 +1425,29 @@ public class IRNode {
         beforeMatchingNameRegex(URSHIFT_S, "URShiftS");
     }
 
-    public static final String URSHIFT_V = PREFIX + "URSHIFT_V" + POSTFIX;
+    public static final String URSHIFT_VB = VECTOR_PREFIX + "URSHIFT_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(URSHIFT_V, "URShiftV(B|S|I|L)");
+        vectorNode(URSHIFT_VB, "URShiftVB", "byte");
+    }
+
+    public static final String URSHIFT_VS = VECTOR_PREFIX + "URSHIFT_VS" + POSTFIX;
+    static {
+        vectorNode(URSHIFT_VS, "URShiftVS", "short");
+    }
+
+    public static final String URSHIFT_VC = VECTOR_PREFIX + "URSHIFT_VC" + POSTFIX;
+    static {
+        vectorNode(URSHIFT_VC, "URShiftVS", "char"); // short computation with char type
+    }
+
+    public static final String URSHIFT_VI = VECTOR_PREFIX + "URSHIFT_VI" + POSTFIX;
+    static {
+        vectorNode(URSHIFT_VI, "URShiftVI", "int");
+    }
+
+    public static final String URSHIFT_VL = VECTOR_PREFIX + "URSHIFT_VL" + POSTFIX;
+    static {
+        vectorNode(URSHIFT_VL, "URShiftVL", "long");
     }
 
     public static final String VAND_NOT_I = PREFIX + "VAND_NOT_I" + POSTFIX;
@@ -1685,11 +1699,6 @@ public class IRNode {
     public static final String XOR_VB = VECTOR_PREFIX + "XOR_VB" + POSTFIX;
     static {
         vectorNode(XOR_VB, "XorV", "byte");
-    }
-
-    public static final String XOR_VC = VECTOR_PREFIX + "XOR_VC" + POSTFIX;
-    static {
-        vectorNode(XOR_VC, "XorV", "char");
     }
 
     public static final String XOR_VS = VECTOR_PREFIX + "XOR_VS" + POSTFIX;

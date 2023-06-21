@@ -213,7 +213,7 @@ public class BasicLongOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.URSHIFT_V, ">0"})
+        counts = {IRNode.URSHIFT_VL, ">0"})
     public long[] vectorUnsignedShiftRight() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

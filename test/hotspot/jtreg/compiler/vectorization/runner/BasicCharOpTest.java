@@ -147,7 +147,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
     // ---------------- Logic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_VC, ">0"})
+        counts = {IRNode.XOR_VS, ">0"})
     public char[] vectorNot() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -169,7 +169,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.OR_VC, ">0"})
+        counts = {IRNode.OR_VS, ">0"})
     public char[] vectorOr() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -180,7 +180,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_VC, ">0"})
+        counts = {IRNode.XOR_VS, ">0"})
     public char[] vectorXor() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -203,7 +203,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.URSHIFT_V, ">0"})
+        counts = {IRNode.URSHIFT_VC, ">0"})
     public char[] vectorSignedShiftRight() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -214,7 +214,7 @@ public class BasicCharOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.URSHIFT_V, ">0"})
+        counts = {IRNode.URSHIFT_VC, ">0"})
     public char[] vectorUnsignedShiftRight() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {

@@ -221,7 +221,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.URSHIFT_V, ">0"})
+        counts = {IRNode.URSHIFT_VI, ">0"})
     public int[] vectorUnsignedShiftRight() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
