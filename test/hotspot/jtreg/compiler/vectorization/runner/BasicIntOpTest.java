@@ -66,6 +66,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.SUB_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorNeg() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -77,6 +80,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
         counts = {IRNode.ABS_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorAbs() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,6 +94,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.ADD_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorAdd() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -99,6 +108,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.SUB_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorSub() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -110,6 +122,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.MUL_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorMul() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -121,6 +136,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorMulAdd() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -132,6 +150,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorMulSub() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -143,6 +164,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
         counts = {IRNode.POPCOUNT_VI, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorPopCount() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -155,6 +179,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.XOR_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorNot() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -166,6 +193,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.AND_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorAnd() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -177,6 +207,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.OR_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorOr() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -188,6 +221,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.XOR_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorXor() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -200,6 +236,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.LSHIFT_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorShiftLeft() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -211,6 +250,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.RSHIFT_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorSignedShiftRight() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -222,6 +264,9 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.URSHIFT_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] vectorUnsignedShiftRight() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {

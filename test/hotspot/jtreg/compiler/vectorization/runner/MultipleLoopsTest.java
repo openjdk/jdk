@@ -65,6 +65,9 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] consecutiveLoops() {
         int[] res1 = new int[SIZE];
         int[] res2 = new int[SIZE];
@@ -84,6 +87,9 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] consecutiveLoopsNested() {
         int[] res = new int[SIZE];
         for (int outer = 0; outer < 30; outer++) {
@@ -100,6 +106,9 @@ public class MultipleLoopsTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] nestedLoopOuterNonCounted() {
         int i = 1;
         int[] res = new int[SIZE];

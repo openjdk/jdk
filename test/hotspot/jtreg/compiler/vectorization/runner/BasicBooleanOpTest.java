@@ -77,6 +77,9 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
         counts = {IRNode.AND_V, ">0"})
     @IR(applyIfCPUFeature = {"avx512f", "true"},
         counts = {IRNode.MACRO_LOGIC_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public boolean[] vectorAnd() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,6 +91,9 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.OR_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public boolean[] vectorOr() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -99,6 +105,9 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.XOR_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public boolean[] vectorXor() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {

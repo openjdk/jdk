@@ -66,7 +66,11 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     // ---------------- Simple Fill ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_B, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public byte[] fillByteArray() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -77,7 +81,11 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_S, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] fillShortArray() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -88,7 +96,11 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_S, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public char[] fillCharArray() {
         char[] res = new char[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -99,7 +111,11 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_I, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] fillIntArray() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -111,6 +127,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_L, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public long[] fillLongArray() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -121,7 +140,11 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_F, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public float[] fillFloatArray() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -133,6 +156,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_D, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public double[] fillDoubleArray() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -145,6 +171,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_L, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public long[] fillLongArrayWithInt() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -156,6 +185,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_L, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public long[] fillLongArrayWithUnsigned() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -167,6 +199,9 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.REPLICATE_L, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public long[] fillLongArrayWithFloat() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -177,7 +212,11 @@ public class ArrayInvariantFillTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"OptimizeFill", "false"},
         counts = {IRNode.REPLICATE_I, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIfAnd = {"UseMaskedLoop", "true", "OptimizeFill", "false"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] fillIntArrayWithDouble() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {

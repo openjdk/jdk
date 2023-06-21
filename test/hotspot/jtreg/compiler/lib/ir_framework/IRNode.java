@@ -609,6 +609,11 @@ public class IRNode {
         fromBeforeCountedLoops(LOOP, regex);
     }
 
+    public static final String LOOP_VECTOR_MASK = PREFIX + "LOOP_VECTOR_MASK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(LOOP_VECTOR_MASK, "LoopVectorMask");
+    }
+
     public static final String LSHIFT = PREFIX + "LSHIFT" + POSTFIX;
     static {
         beforeMatchingNameRegex(LSHIFT, "LShift(I|L)");

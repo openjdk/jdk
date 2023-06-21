@@ -60,6 +60,9 @@ public class ArrayUnsafeOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public byte[] arrayUnsafeFill() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < 500; i++) {
@@ -69,6 +72,9 @@ public class ArrayUnsafeOpTest extends VectorizationTestRunner {
     }
 
     @Test
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public byte[] arrayUnsafeFillWithOneAddp() {
         byte[] res = new byte[SIZE];
         for (int i = 123; i < 500; i++) {

@@ -81,6 +81,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] nonConstantRange() {
         int[] res = new int[SIZE];
         for (int i = start; i < end; i++) {
@@ -92,6 +95,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] crossZeroRange() {
         int[] res = new int[SIZE];
         for (int i = -20; i < 20; i++) {
@@ -103,6 +109,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] nonEqualTestRange() {
         int[] res = new int[SIZE];
         for (int i = start; i != end; i++) {
@@ -114,6 +123,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] shortInductionLoop() {
         int[] res = new int[SIZE];
         for (short s = 123; s < 456; s++) {
@@ -125,6 +137,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] whileLoop() {
         int[] res = new int[SIZE];
         int i = start;
@@ -138,6 +153,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] doWhileLoop() {
         int[] res = new int[SIZE];
         int i = start;
@@ -211,6 +229,9 @@ public class LoopRangeStrideTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] countDownLoopWithNegScale() {
         int[] res = new int[SIZE];
         for (int i = SIZE / 2; i > 0; i--) {

@@ -54,7 +54,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _packset(arena(), 8,  0, nullptr),                        // packs for the current block
   _bb_idx(arena(), (int)(1.10 * phase->C->unique()), 0, 0), // node idx to index in bb
   _block(arena(), 8,  0, nullptr),                          // nodes in current block
-  _post_block(arena(), 8, 0, nullptr),                      // nodes common to current block which are marked as post loop vectorizable
   _data_entry(arena(), 8,  0, nullptr),                     // nodes with all inputs from outside
   _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
   _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
@@ -116,11 +115,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     mark_reductions();
   }
 
-  if (cl->is_rce_post_loop() && is_marked_reduction_loop()) {
-    // Post loop vectorization doesn't support reductions
-    return false;
-  }
-
   // skip any loop that has not been assigned max unroll by analysis
   if (do_optimization) {
     if (SuperWordLoopUnrollAnalysis && cl->slp_max_unroll() == 0) {
@@ -176,24 +170,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   if (do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
     success = SLP_extract();
-    if (PostLoopMultiversioning) {
-      if (cl->is_vectorized_loop() && cl->is_main_loop() && !is_marked_reduction_loop()) {
-        IdealLoopTree *lpt_next = cl->is_strip_mined() ? lpt->_parent->_next : lpt->_next;
-        CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
-        // Main loop SLP works well for manually unrolled loops. But post loop
-        // vectorization doesn't work for these. To bail out the optimization
-        // earlier, we have range check and loop stride conditions below.
-        if (cl_next->is_post_loop() && !lpt_next->range_checks_present() &&
-            cl_next->stride_is_con() && abs(cl_next->stride_con()) == 1) {
-          if (!cl_next->is_vectorized_loop()) {
-            // Propagate some main loop attributes to its corresponding scalar
-            // rce'd post loop for vectorization with vector masks
-            cl_next->set_slp_max_unroll(cl->slp_max_unroll());
-            cl_next->set_slp_pack_count(cl->slp_pack_count());
-          }
-        }
-      }
-    }
   }
   return success;
 }
@@ -206,9 +182,6 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   Node_Stack nstack((int)ignored_size);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   Node *cl_exit = cl->loopexit_or_null();
-  int rpo_idx = _post_block.length();
-
-  assert(rpo_idx == 0, "post loop block is empty");
 
   // First clear the entries
   for (uint i = 0; i < lpt()->_body.size(); i++) {
@@ -313,27 +286,6 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   }
 
   if (is_slp) {
-    // In the main loop, SLP works well if parts of the operations in the loop body
-    // are not vectorizable and those non-vectorizable parts will be unrolled only.
-    // But in post loops with vector masks, we create singleton packs directly from
-    // scalars so all operations should be vectorized together. This compares the
-    // number of packs in the post loop with the main loop and bail out if the post
-    // loop potentially has more packs.
-    if (cl->is_rce_post_loop()) {
-      for (uint i = 0; i < lpt()->_body.size(); i++) {
-        if (ignored_loop_nodes[i] == -1) {
-          _post_block.at_put_grow(rpo_idx++, lpt()->_body.at(i));
-        }
-      }
-      if (_post_block.length() > cl->slp_pack_count()) {
-        // Clear local_loop_unroll_factor and bail out directly from here
-        local_loop_unroll_factor = 0;
-        cl->mark_was_slp();
-        cl->set_slp_max_unroll(0);
-        return;
-      }
-    }
-
     // Now we try to find the maximum supported consistent vector which the machine
     // description can use
     bool flag_small_bt = false;
@@ -404,7 +356,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       cl->mark_passed_slp();
     }
     cl->mark_was_slp();
-    if (cl->is_main_loop() || cl->is_rce_post_loop()) {
+    if (cl->is_main_loop()) {
       cl->set_slp_max_unroll(local_loop_unroll_factor);
     }
   }
@@ -624,44 +576,6 @@ bool SuperWord::SLP_extract() {
     DEBUG_ONLY(verify_packs();)
 
     schedule();
-
-    // Record eventual count of vector packs for checks in post loop vectorization
-    if (PostLoopMultiversioning) {
-      cl->set_slp_pack_count(_packset.length());
-    }
-  } else {
-    assert(cl->is_rce_post_loop(), "Must be an rce'd post loop");
-    int saved_mapped_unroll_factor = cl->slp_max_unroll();
-    if (saved_mapped_unroll_factor) {
-      int vector_mapped_unroll_factor = saved_mapped_unroll_factor;
-
-      // now reset the slp_unroll_factor so that we can check the analysis mapped
-      // what the vector loop was mapped to
-      cl->set_slp_max_unroll(0);
-
-      // do the analysis on the post loop
-      unrolling_analysis(vector_mapped_unroll_factor);
-
-      // if our analyzed loop is a canonical fit, start processing it
-      if (vector_mapped_unroll_factor == saved_mapped_unroll_factor) {
-        // now add the vector nodes to packsets
-        for (int i = 0; i < _post_block.length(); i++) {
-          Node* n = _post_block.at(i);
-          Node_List* singleton = new Node_List();
-          singleton->push(n);
-          _packset.append(singleton);
-          set_my_pack(n, singleton);
-        }
-
-        // map base types for vector usage
-        compute_vector_element_type();
-      } else {
-        return false;
-      }
-    } else {
-      // for some reason we could not map the slp analysis state of the vectorized loop
-      return false;
-    }
   }
 
   return output();
@@ -2629,16 +2543,6 @@ bool SuperWord::output() {
     return false;
   }
 
-  Node* vmask = nullptr;
-  if (cl->is_rce_post_loop() && do_reserve_copy()) {
-    // Create a vector mask node for post loop, bail out if not created
-    vmask = create_post_loop_vmask();
-    if (vmask == nullptr) {
-      // create_post_loop_vmask checks many conditions, any of them could fail
-      return false; // and reverse to backup IG
-    }
-  }
-
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
@@ -2650,10 +2554,6 @@ bool SuperWord::output() {
       uint vlen = p->size();
       uint vlen_in_bytes = 0;
       Node* vn = nullptr;
-      if (cl->is_rce_post_loop()) {
-        // override vlen with the main loops vector length
-        vlen = cl->slp_max_unroll();
-      }
       NOT_PRODUCT(if(is_trace_cmov()) {tty->print_cr("SWPointer::output: %d executed first, %d executed last in pack", first->_idx, n->_idx); print_pack(p);})
       int   opc = n->Opcode();
       if (n->is_Load()) {
@@ -2675,13 +2575,7 @@ bool SuperWord::output() {
         }
         Node* adr = first->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        if (cl->is_rce_post_loop()) {
-          assert(vmask != nullptr, "vector mask should be generated");
-          const TypeVect* vt = TypeVect::make(velt_basic_type(n), vlen);
-          vn = new LoadVectorMaskedNode(ctl, mem, adr, atyp, vt, vmask);
-        } else {
-          vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
-        }
+        vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
         vlen_in_bytes = vn->as_LoadVector()->memory_size();
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
@@ -2699,13 +2593,7 @@ bool SuperWord::output() {
         Node* mem = first->in(MemNode::Memory);
         Node* adr = first->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        if (cl->is_rce_post_loop()) {
-          assert(vmask != nullptr, "vector mask should be generated");
-          const TypeVect* vt = TypeVect::make(velt_basic_type(n), vlen);
-          vn = new StoreVectorMaskedNode(ctl, mem, adr, val, atyp, vmask);
-        } else {
-          vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
-        }
+        vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
         vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (VectorNode::is_scalar_rotate(n)) {
         Node* in1 = first->in(1);
@@ -2973,9 +2861,6 @@ bool SuperWord::output() {
             cl->mark_do_unroll_only();
           }
         }
-        if (cl->is_rce_post_loop() && do_reserve_copy()) {
-          cl->mark_is_multiversioned();
-        }
       }
     }
   }
@@ -2988,107 +2873,6 @@ bool SuperWord::output() {
   return true;
 }
 
-//-------------------------create_post_loop_vmask-------------------------
-// Check the post loop vectorizability and create a vector mask if yes.
-// Return null to bail out if post loop is not vectorizable.
-Node* SuperWord::create_post_loop_vmask() {
-  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  assert(cl->is_rce_post_loop(), "Must be an rce post loop");
-  assert(!is_marked_reduction_loop(), "no vector reduction in post loop");
-  assert(abs(cl->stride_con()) == 1, "post loop stride can only be +/-1");
-
-  // Collect vector element types of all post loop packs. Also collect
-  // superword pointers of each memory access operation if the address
-  // expression is supported. (Note that vectorizable post loop should
-  // only have positive scale in counting-up loop and negative scale in
-  // counting-down loop.) Collected SWPointer(s) are also used for data
-  // dependence check next.
-  VectorElementSizeStats stats(_arena);
-  GrowableArray<SWPointer*> swptrs(_arena, _packset.length(), 0, nullptr);
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
-    assert(p->size() == 1, "all post loop packs should be singleton");
-    Node* n = p->at(0);
-    BasicType bt = velt_basic_type(n);
-    if (!is_java_primitive(bt)) {
-      return nullptr;
-    }
-    if (n->is_Mem()) {
-      SWPointer* mem_p = new (_arena) SWPointer(n->as_Mem(), this, nullptr, false);
-      // For each memory access, we check if the scale (in bytes) in its
-      // address expression is equal to the data size times loop stride.
-      // With this, Only positive scales exist in counting-up loops and
-      // negative scales exist in counting-down loops.
-      if (mem_p->scale_in_bytes() != type2aelembytes(bt) * cl->stride_con()) {
-        return nullptr;
-      }
-      swptrs.append(mem_p);
-    }
-    stats.record_size(type2aelembytes(bt));
-  }
-
-  // Find the vector data type for generating vector masks. Currently we
-  // don't support post loops with mixed vector data sizes
-  int unique_size = stats.unique_size();
-  BasicType vmask_bt;
-  switch (unique_size) {
-    case 1:  vmask_bt = T_BYTE; break;
-    case 2:  vmask_bt = T_SHORT; break;
-    case 4:  vmask_bt = T_INT; break;
-    case 8:  vmask_bt = T_LONG; break;
-    default: return nullptr;
-  }
-
-  // Currently we can't remove this MaxVectorSize constraint. Without it,
-  // it's not guaranteed that the RCE'd post loop runs at most "vlen - 1"
-  // iterations, because the vector drain loop may not be cloned from the
-  // vectorized main loop. We should re-engineer PostLoopMultiversioning
-  // to fix this problem.
-  int vlen = cl->slp_max_unroll();
-  if (unique_size * vlen != MaxVectorSize) {
-    return nullptr;
-  }
-
-  // Bail out if target doesn't support mask generator or masked load/store
-  if (!Matcher::match_rule_supported_vector(Op_LoadVectorMasked, vlen, vmask_bt)  ||
-      !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, vlen, vmask_bt) ||
-      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, vmask_bt)) {
-    return nullptr;
-  }
-
-  // Bail out if potential data dependence exists between memory accesses
-  if (SWPointer::has_potential_dependence(swptrs)) {
-    return nullptr;
-  }
-
-  // Create vector mask with the post loop trip count. Note there's another
-  // vector drain loop which is cloned from main loop before super-unrolling
-  // so the scalar post loop runs at most vlen-1 trips. Hence, this version
-  // only runs at most 1 iteration after vector mask transformation.
-  Node* trip_cnt;
-  Node* new_incr;
-  if (cl->stride_con() > 0) {
-    trip_cnt = new SubINode(cl->limit(), cl->init_trip());
-    new_incr = new AddINode(cl->phi(), trip_cnt);
-  } else {
-    trip_cnt = new SubINode(cl->init_trip(), cl->limit());
-    new_incr = new SubINode(cl->phi(), trip_cnt);
-  }
-  _igvn.register_new_node_with_optimizer(trip_cnt);
-  _igvn.register_new_node_with_optimizer(new_incr);
-  _igvn.replace_node(cl->incr(), new_incr);
-  Node* length = new ConvI2LNode(trip_cnt);
-  _igvn.register_new_node_with_optimizer(length);
-  Node* vmask = VectorMaskGenNode::make(length, vmask_bt);
-  _igvn.register_new_node_with_optimizer(vmask);
-
-  // Remove exit test to transform 1-iteration loop to straight-line code.
-  // This results in redundant cmp+branch instructions been eliminated.
-  Node *cl_exit = cl->loopexit();
-  _igvn.replace_input_of(cl_exit, 1, _igvn.intcon(0));
-  return vmask;
-}
-
 //------------------------------vector_opd---------------------------
 // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
 Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
@@ -3098,19 +2882,11 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   bool have_same_inputs = same_inputs(p, opd_idx);
 
-  if (cl->is_rce_post_loop()) {
-    // override vlen with the main loops vector length
-    assert(p->size() == 1, "Packs in post loop should have only one node");
-    vlen = cl->slp_max_unroll();
-  }
-
   // Insert index population operation to create a vector of increasing
   // indices starting from the iv value. In some special unrolled loops
   // (see JDK-8286125), we need scalar replications of the iv value if
-  // all inputs are the same iv, so we do a same inputs check here. But
-  // in post loops, "have_same_inputs" is always true because all packs
-  // are singleton. That's why a pack size check is also required.
-  if (opd == iv() && (!have_same_inputs || p->size() == 1)) {
+  // all inputs are the same iv, so we do a same inputs check here.
+  if (opd == iv() && !have_same_inputs) {
     BasicType p0_bt = velt_basic_type(p0);
     BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
     assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
@@ -4026,7 +3802,6 @@ void SuperWord::init() {
   _packset.clear();
   _disjoint_ptrs.clear();
   _block.clear();
-  _post_block.clear();
   _data_entry.clear();
   _mem_slice_head.clear();
   _mem_slice_tail.clear();
@@ -4095,14 +3870,35 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
 #endif
   _nstack(nstack), _analyze_only(analyze_only),
-  _stack_idx(0)
+  _stack_idx(0), _phase(slp->phase()), _lpt(slp->lpt())
 #ifndef PRODUCT
   , _tracer(slp)
 #endif
 {
-  NOT_PRODUCT(_tracer.ctor_1(mem);)
+  init();
+}
 
-  Node* adr = mem->in(MemNode::Address);
+// Following is used outside superword optimization
+SWPointer::SWPointer(MemNode* mem, PhaseIdealLoop* phase, IdealLoopTree* lpt,
+                     Node_Stack* nstack, bool analyze_only) :
+  _mem(mem), _slp(nullptr), _base(nullptr), _adr(nullptr),
+  _scale(0), _offset(0), _invar(nullptr),
+#ifdef ASSERT
+  _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
+#endif
+  _nstack(nstack), _analyze_only(analyze_only),
+  _stack_idx(nstack->size()), _phase(phase), _lpt(lpt)
+#ifndef PRODUCT
+  , _tracer(nullptr)
+#endif
+{
+  init();
+}
+
+void SWPointer::init() {
+  NOT_PRODUCT(_tracer.ctor_1(_mem);)
+
+  Node* adr = _mem->in(MemNode::Address);
   if (!adr->is_AddP()) {
     assert(!valid(), "too complex");
     return;
@@ -4120,7 +3916,7 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
     return;
   }
 
-  NOT_PRODUCT(if(_slp->is_trace_alignment()) _tracer.store_depth();)
+  NOT_PRODUCT(if(_slp && _slp->is_trace_alignment()) _tracer.store_depth();)
   NOT_PRODUCT(_tracer.ctor_2(adr);)
 
   int i;
@@ -4149,8 +3945,8 @@ SWPointer::SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool anal
     return;
   }
 
-  NOT_PRODUCT(if(_slp->is_trace_alignment()) _tracer.restore_depth();)
-  NOT_PRODUCT(_tracer.ctor_6(mem);)
+  NOT_PRODUCT(if(_slp && _slp->is_trace_alignment()) _tracer.restore_depth();)
+  NOT_PRODUCT(_tracer.ctor_6(_mem);)
 
   _base = base;
   _adr  = adr;
@@ -4166,7 +3962,7 @@ SWPointer::SWPointer(SWPointer* p) :
   _debug_invar(nullptr), _debug_negate_invar(false), _debug_invar_scale(nullptr),
 #endif
   _nstack(p->_nstack), _analyze_only(p->_analyze_only),
-  _stack_idx(p->_stack_idx)
+  _stack_idx(p->_stack_idx), _phase(p->_phase), _lpt(p->_lpt)
   #ifndef PRODUCT
   , _tracer(p->_slp)
   #endif
@@ -4182,7 +3978,7 @@ bool SWPointer::invariant(Node* n) const {
   Node* n_c = phase()->get_ctrl(n);
   NOT_PRODUCT(_tracer.invariant_1(n, n_c);)
   bool is_not_member = !is_loop_member(n);
-  if (is_not_member && _slp->lp()->is_main_loop()) {
+  if (is_not_member && _slp && _slp->lp()->is_main_loop()) {
     // Check that n_c dominates the pre loop head node. If it does not, then we cannot use n as invariant for the pre loop
     // CountedLoopEndNode check because n_c is either part of the pre loop or between the pre and the main loop (illegal
     // invariant: Happens, for example, when n_c is a CastII node that prevents data nodes to flow above the main loop).
@@ -4497,14 +4293,18 @@ void SWPointer::Tracer::print_depth() const {
   }
 }
 
+bool SWPointer::Tracer::slp_trace_alignment() {
+  return _slp && _slp->is_trace_alignment();
+}
+
 void SWPointer::Tracer::ctor_1 (Node* mem) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print(" %d SWPointer::SWPointer: start alignment analysis", mem->_idx); mem->dump();
   }
 }
 
 void SWPointer::Tracer::ctor_2(Node* adr) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     //store_depth();
     inc_depth();
     print_depth(); tty->print(" %d (adr) SWPointer::SWPointer: ", adr->_idx); adr->dump();
@@ -4514,7 +4314,7 @@ void SWPointer::Tracer::ctor_2(Node* adr) {
 }
 
 void SWPointer::Tracer::ctor_3(Node* adr, int i) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     inc_depth();
     Node* offset = adr->in(AddPNode::Offset);
     print_depth(); tty->print(" %d (offset) SWPointer::SWPointer: i = %d: ", offset->_idx, i); offset->dump();
@@ -4522,14 +4322,14 @@ void SWPointer::Tracer::ctor_3(Node* adr, int i) {
 }
 
 void SWPointer::Tracer::ctor_4(Node* adr, int i) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     inc_depth();
     print_depth(); tty->print(" %d (adr) SWPointer::SWPointer: i = %d: ", adr->_idx, i); adr->dump();
   }
 }
 
 void SWPointer::Tracer::ctor_5(Node* adr, Node* base, int i) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     inc_depth();
     if (base == adr) {
       print_depth(); tty->print_cr("  \\ %d (adr) == %d (base) SWPointer::SWPointer: breaking analysis at i = %d", adr->_idx, base->_idx, i);
@@ -4540,14 +4340,14 @@ void SWPointer::Tracer::ctor_5(Node* adr, Node* base, int i) {
 }
 
 void SWPointer::Tracer::ctor_6(Node* mem) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     //restore_depth();
     print_depth(); tty->print_cr(" %d (adr) SWPointer::SWPointer: stop analysis", mem->_idx);
   }
 }
 
 void SWPointer::Tracer::invariant_1(Node *n, Node *n_c) const {
-  if (_slp->do_vector_loop() && _slp->is_debug() && _slp->_lpt->is_member(_slp->_phase->get_loop(n_c)) != (int)_slp->in_bb(n)) {
+  if (_slp && _slp->do_vector_loop() && _slp->is_debug() && _slp->_lpt->is_member(_slp->_phase->get_loop(n_c)) != (int)_slp->in_bb(n)) {
     int is_member =  _slp->_lpt->is_member(_slp->_phase->get_loop(n_c));
     int in_bb     =  _slp->in_bb(n);
     print_depth(); tty->print("  \\ ");  tty->print_cr(" %d SWPointer::invariant  conditions differ: n_c %d", n->_idx, n_c->_idx);
@@ -4558,26 +4358,26 @@ void SWPointer::Tracer::invariant_1(Node *n, Node *n_c) const {
 }
 
 void SWPointer::Tracer::scaled_iv_plus_offset_1(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print(" %d SWPointer::scaled_iv_plus_offset testing node: ", n->_idx);
     n->dump();
   }
 }
 
 void SWPointer::Tracer::scaled_iv_plus_offset_2(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: PASSED", n->_idx);
   }
 }
 
 void SWPointer::Tracer::scaled_iv_plus_offset_3(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: PASSED", n->_idx);
   }
 }
 
 void SWPointer::Tracer::scaled_iv_plus_offset_4(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: Op_AddI PASSED", n->_idx);
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(1) is scaled_iv: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(2) is offset_plus_k: ", n->in(2)->_idx); n->in(2)->dump();
@@ -4585,7 +4385,7 @@ void SWPointer::Tracer::scaled_iv_plus_offset_4(Node* n) {
 }
 
 void SWPointer::Tracer::scaled_iv_plus_offset_5(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: Op_AddI PASSED", n->_idx);
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(2) is scaled_iv: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(1) is offset_plus_k: ", n->in(1)->_idx); n->in(1)->dump();
@@ -4593,7 +4393,7 @@ void SWPointer::Tracer::scaled_iv_plus_offset_5(Node* n) {
 }
 
 void SWPointer::Tracer::scaled_iv_plus_offset_6(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
     print_depth(); tty->print("  \\  %d SWPointer::scaled_iv_plus_offset: in(1) is scaled_iv: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(2) is offset_plus_k: ", n->in(2)->_idx); n->in(2)->dump();
@@ -4601,7 +4401,7 @@ void SWPointer::Tracer::scaled_iv_plus_offset_6(Node* n) {
 }
 
 void SWPointer::Tracer::scaled_iv_plus_offset_7(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: Op_%s PASSED", n->_idx, n->Name());
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(2) is scaled_iv: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv_plus_offset: in(1) is offset_plus_k: ", n->in(1)->_idx); n->in(1)->dump();
@@ -4609,32 +4409,32 @@ void SWPointer::Tracer::scaled_iv_plus_offset_7(Node* n) {
 }
 
 void SWPointer::Tracer::scaled_iv_plus_offset_8(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv_plus_offset: FAILED", n->_idx);
   }
 }
 
 void SWPointer::Tracer::scaled_iv_1(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print(" %d SWPointer::scaled_iv: testing node: ", n->_idx); n->dump();
   }
 }
 
 void SWPointer::Tracer::scaled_iv_2(Node* n, int scale) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: FAILED since another _scale has been detected before", n->_idx);
     print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: _scale (%d) != 0", scale);
   }
 }
 
 void SWPointer::Tracer::scaled_iv_3(Node* n, int scale) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: is iv, setting _scale = %d", n->_idx, scale);
   }
 }
 
 void SWPointer::Tracer::scaled_iv_4(Node* n, int scale) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_MulI PASSED, setting _scale = %d", n->_idx, scale);
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv: in(1) is iv: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
@@ -4642,7 +4442,7 @@ void SWPointer::Tracer::scaled_iv_4(Node* n, int scale) {
 }
 
 void SWPointer::Tracer::scaled_iv_5(Node* n, int scale) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_MulI PASSED, setting _scale = %d", n->_idx, scale);
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv: in(2) is iv: ", n->in(2)->_idx); n->in(2)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
@@ -4650,7 +4450,7 @@ void SWPointer::Tracer::scaled_iv_5(Node* n, int scale) {
 }
 
 void SWPointer::Tracer::scaled_iv_6(Node* n, int scale) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_LShiftI PASSED, setting _scale = %d", n->_idx, scale);
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv: in(1) is iv: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::scaled_iv: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
@@ -4658,7 +4458,7 @@ void SWPointer::Tracer::scaled_iv_6(Node* n, int scale) {
 }
 
 void SWPointer::Tracer::scaled_iv_7(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_ConvI2L PASSED", n->_idx);
     print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: in(1) %d is scaled_iv_plus_offset: ", n->in(1)->_idx);
     inc_depth(); inc_depth();
@@ -4668,13 +4468,13 @@ void SWPointer::Tracer::scaled_iv_7(Node* n) {
 }
 
 void SWPointer::Tracer::scaled_iv_8(Node* n, SWPointer* tmp) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print(" %d SWPointer::scaled_iv: Op_LShiftL, creating tmp SWPointer: ", n->_idx); tmp->print();
   }
 }
 
 void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: Op_LShiftL PASSED, setting _scale = %d, _offset = %d", n->_idx, scale, offset);
     print_depth(); tty->print_cr("  \\ SWPointer::scaled_iv: in(1) [%d] is scaled_iv_plus_offset, in(2) [%d] used to scale: _scale = %d, _offset = %d",
     n->in(1)->_idx, n->in(2)->_idx, scale, offset);
@@ -4692,45 +4492,45 @@ void SWPointer::Tracer::scaled_iv_9(Node* n, int scale, int offset, Node* invar)
 }
 
 void SWPointer::Tracer::scaled_iv_10(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::scaled_iv: FAILED", n->_idx);
   }
 }
 
 void SWPointer::Tracer::offset_plus_k_1(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print(" %d SWPointer::offset_plus_k: testing node: ", n->_idx); n->dump();
   }
 }
 
 void SWPointer::Tracer::offset_plus_k_2(Node* n, int _offset) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_ConI PASSED, setting _offset = %d", n->_idx, _offset);
   }
 }
 
 void SWPointer::Tracer::offset_plus_k_3(Node* n, int _offset) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_ConL PASSED, setting _offset = %d", n->_idx, _offset);
   }
 }
 
 void SWPointer::Tracer::offset_plus_k_4(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: FAILED", n->_idx);
     print_depth(); tty->print_cr("  \\ " JLONG_FORMAT " SWPointer::offset_plus_k: Op_ConL FAILED, k is too big", n->get_long());
   }
 }
 
 void SWPointer::Tracer::offset_plus_k_5(Node* n, Node* _invar) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: FAILED since another invariant has been detected before", n->_idx);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: _invar is not null: ", _invar->_idx); _invar->dump();
   }
 }
 
 void SWPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
@@ -4739,7 +4539,7 @@ void SWPointer::Tracer::offset_plus_k_6(Node* n, Node* _invar, bool _negate_inva
 }
 
 void SWPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_AddI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
@@ -4748,7 +4548,7 @@ void SWPointer::Tracer::offset_plus_k_7(Node* n, Node* _invar, bool _negate_inva
 }
 
 void SWPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI is PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d",
     n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is Con: ", n->in(2)->_idx); n->in(2)->dump();
@@ -4757,7 +4557,7 @@ void SWPointer::Tracer::offset_plus_k_8(Node* n, Node* _invar, bool _negate_inva
 }
 
 void SWPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: Op_SubI PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(1) is Con: ", n->in(1)->_idx); n->in(1)->dump();
     print_depth(); tty->print("  \\ %d SWPointer::offset_plus_k: in(2) is invariant: ", _invar->_idx); _invar->dump();
@@ -4765,14 +4565,14 @@ void SWPointer::Tracer::offset_plus_k_9(Node* n, Node* _invar, bool _negate_inva
 }
 
 void SWPointer::Tracer::offset_plus_k_10(Node* n, Node* _invar, bool _negate_invar, int _offset) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: PASSED, setting _debug_negate_invar = %d, _invar = %d, _offset = %d", n->_idx, _negate_invar, _invar->_idx, _offset);
     print_depth(); tty->print_cr("  \\ %d SWPointer::offset_plus_k: is invariant", n->_idx);
   }
 }
 
 void SWPointer::Tracer::offset_plus_k_11(Node* n) {
-  if(_slp->is_trace_alignment()) {
+  if (slp_trace_alignment()) {
     print_depth(); tty->print_cr(" %d SWPointer::offset_plus_k: FAILED", n->_idx);
   }
 }

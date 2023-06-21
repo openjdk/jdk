@@ -155,6 +155,7 @@ source %{
       case Op_OrVMask:
       case Op_XorVMask:
       case Op_MaskAll:
+      case Op_LoopVectorMask:
       case Op_VectorMaskGen:
       case Op_LoadVectorMasked:
       case Op_StoreVectorMasked:
@@ -4181,6 +4182,36 @@ instruct vmask_gen_sub(pReg pd, iRegL src1, iRegL src2, rFlagsReg cr) %{
     BasicType bt = Matcher::vector_element_basic_type(this);
     __ sve_whilelt($pd$$PRegister, __ elemType_to_regVariant(bt), $src2$$Register, $src1$$Register);
   %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct loop_vmask_gen(pRegGov pg, iRegIorL2I from, iRegIorL2I to, rFlagsReg cr) %{
+  predicate(UseSVE > 0);
+  match(Set pg (LoopVectorMask from to));
+  effect(KILL cr);
+  format %{ "loop_vmask_gen $pg, $from, $to\t# KILL cr" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    __ sve_whileltw($pg$$PRegister, __ elemType_to_regVariant(bt), $from$$Register, $to$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
+// -------------------------- Vector mask extraction --------------------------
+
+instruct extract_high_mask(pRegGov pd, pRegGov pn) %{
+  predicate(UseSVE > 0);
+  match(Set pd (ExtractHighMask pn));
+  format %{ "extract_high_mask $pd, $pn" %}
+  ins_encode %{ __ sve_punpkhi($pd$$PRegister, $pn$$PRegister); %}
+  ins_pipe(pipe_slow);
+%}
+
+instruct extract_low_mask(pRegGov pd, pRegGov pn) %{
+  predicate(UseSVE > 0);
+  match(Set pd (ExtractLowMask pn));
+  format %{ "extract_low_mask $pd, $pn" %}
+  ins_encode %{ __ sve_punpklo($pd$$PRegister, $pn$$PRegister); %}
   ins_pipe(pipe_slow);
 %}
 

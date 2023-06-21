@@ -133,6 +133,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_I2X, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public float[] convertIntToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -169,6 +172,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true"},
         counts = {IRNode.VECTOR_CAST_L2X, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public double[] convertLongToDouble() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -223,6 +229,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
         counts = {IRNode.VECTOR_CAST_F2X, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] convertFloatToInt() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -259,6 +268,9 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx512dq", "true"},
         counts = {IRNode.VECTOR_CAST_D2X, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public long[] convertDoubleToLong() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

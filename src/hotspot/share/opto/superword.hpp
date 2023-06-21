@@ -238,13 +238,16 @@ class VectorElementSizeStats {
   int* _stats;
 
  public:
-  VectorElementSizeStats(Arena* a) : _stats(NEW_ARENA_ARRAY(a, int, 4)) {
-    memset(_stats, 0, sizeof(int) * 4);
-  }
+  VectorElementSizeStats(Arena* a) : _stats(NEW_ARENA_ARRAY(a, int, 4)) { clear(); }
+  void clear() { memset(_stats, 0, sizeof(int) * 4); }
 
   void record_size(int size) {
     assert(1 <= size && size <= 8 && is_power_of_2(size), "Illegal size");
     _stats[exact_log2(size)]++;
+  }
+
+  int count_size(int size) {
+    return _stats[exact_log2(size)];
   }
 
   int smallest_size() {
@@ -285,7 +288,6 @@ class SuperWord : public ResourceObj {
   GrowableArray<int> _bb_idx;            // Map from Node _idx to index within block
 
   GrowableArray<Node*> _block;           // Nodes in current block
-  GrowableArray<Node*> _post_block;      // Nodes in post loop block
   GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
   GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
@@ -579,8 +581,6 @@ private:
 
   // Convert packs into vector node operations
   bool output();
-  // Create vector mask for post loop vectorization
-  Node* create_post_loop_vmask();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
   // Can code be generated for pack p?
@@ -657,9 +657,16 @@ class SWPointer : public ArenaObj {
   bool        _analyze_only; // Used in loop unrolling only for swpointer trace
   uint        _stack_idx;    // Used in loop unrolling only for swpointer trace
 
-  PhaseIdealLoop* phase() const { return _slp->phase(); }
-  IdealLoopTree*  lpt() const   { return _slp->lpt(); }
-  PhiNode*        iv() const    { return _slp->iv();  } // Induction var
+  PhaseIdealLoop* _phase;    // PhaseIdealLoop handle
+  IdealLoopTree*  _lpt;      // Current IdealLoopTree
+
+  PhaseIdealLoop* phase() const { return _phase; }
+  IdealLoopTree*  lpt() const   { return _lpt; }
+  PhiNode* iv() const {
+    return _slp ? _slp->iv() : _lpt->_head->as_CountedLoop()->phi()->as_Phi();
+  }
+
+  void init();
 
   bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
@@ -681,6 +688,9 @@ class SWPointer : public ArenaObj {
   };
 
   SWPointer(MemNode* mem, SuperWord* slp, Node_Stack *nstack, bool analyze_only);
+  // Following is used outside superword optimization
+  SWPointer(MemNode* mem, PhaseIdealLoop* phase, IdealLoopTree* lpt,
+            Node_Stack* nstack, bool analyze_only);
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   SWPointer(SWPointer* p);
@@ -755,6 +765,8 @@ class SWPointer : public ArenaObj {
     Tracer (SuperWord* slp) : _slp(slp) {}
 
     // tracing functions
+    bool slp_trace_alignment();
+
     void ctor_1(Node* mem);
     void ctor_2(Node* adr);
     void ctor_3(Node* adr, int i);

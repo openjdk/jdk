@@ -182,9 +182,6 @@
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
                                                                             \
-  product(bool, PostLoopMultiversioning, false, EXPERIMENTAL,               \
-           "Multi versioned post loops to eliminate range checks")          \
-                                                                            \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \
                                                                             \
@@ -569,6 +566,12 @@
                                                                             \
   develop(bool, MonomorphicArrayCheck, true,                                \
           "Uncommon-trap array store checks that require full type check")  \
+                                                                            \
+  product(bool, UseMaskedLoop, false, EXPERIMENTAL,                         \
+          "Use fully predicated loop auto-vectorization")                   \
+                                                                            \
+  notproduct(bool, TraceMaskedLoop, false,                                  \
+          "Trace masked loop transformations")                              \
                                                                             \
   notproduct(bool, TracePhaseCCP, false,                                    \
           "Print progress during Conditional Constant Propagation")         \

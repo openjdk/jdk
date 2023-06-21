@@ -1819,4 +1819,49 @@ public:
   virtual int Opcode() const;
 };
 
+//------------------------------LoopVectorMaskNode------------------------------
+// Node for generating a loop vector mask from an integer range
+class LoopVectorMaskNode : public TypeNode {
+ private:
+  int _max_trips;
+ public:
+  LoopVectorMaskNode(Node* from, Node* to, const Type* ty, int max_trips) :
+      TypeNode(ty, 3), _max_trips(max_trips) {
+    init_class_id(Class_LoopVectorMask);
+    init_req(1, from);
+    init_req(2, to);
+  }
+
+  virtual int Opcode() const;
+  virtual uint hash() const { return TypeNode::hash() + _max_trips; }
+  virtual bool cmp(const Node& n) const {
+    return TypeNode::cmp(n) &&
+           _max_trips == ((LoopVectorMaskNode&)n)._max_trips;
+  }
+  virtual uint size_of() const { return sizeof(LoopVectorMaskNode); }
+  virtual uint ideal_reg() const { return Op_RegVectMask; }
+  int max_trips() const { return _max_trips; }
+};
+
+//--------------------------Extract[High|Low]MaskNode--------------------------
+class ExtractHighMaskNode : public TypeNode {
+ public:
+  ExtractHighMaskNode(Node* in, const Type* ty) : TypeNode(ty, 2) {
+    init_req(1, in);
+  }
+
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegVectMask; }
+};
+
+class ExtractLowMaskNode : public TypeNode {
+ public:
+  ExtractLowMaskNode(Node* in, const Type* ty) : TypeNode(ty, 2) {
+    init_req(1, in);
+  }
+
+  virtual int Opcode() const;
+  virtual uint ideal_reg() const { return Op_RegVectMask; }
+};
+
 #endif // SHARE_OPTO_VECTORNODE_HPP

@@ -1529,6 +1529,7 @@
   declare_c2_type(UDivModLNode, DivModNode)                               \
   declare_c2_type(BoxLockNode, Node)                                      \
   declare_c2_type(LoopNode, RegionNode)                                   \
+  declare_c2_type(LoopVectorMaskNode, TypeNode)                           \
   declare_c2_type(CountedLoopNode, LoopNode)                              \
   declare_c2_type(CountedLoopEndNode, IfNode)                             \
   declare_c2_type(MachNode, Node)                                         \
@@ -1780,6 +1781,8 @@
   declare_c2_type(IsFiniteDNode, Node)                                    \
   declare_c2_type(LoadVectorGatherNode, LoadVectorNode)                   \
   declare_c2_type(StoreVectorScatterNode, StoreVectorNode)                \
+  declare_c2_type(LoadVectorMaskedNode, LoadVectorNode)                   \
+  declare_c2_type(StoreVectorMaskedNode, StoreVectorNode)                 \
   declare_c2_type(VectorLoadMaskNode, VectorNode)                         \
   declare_c2_type(VectorLoadShuffleNode, VectorNode)                      \
   declare_c2_type(VectorStoreMaskNode, VectorNode)                        \

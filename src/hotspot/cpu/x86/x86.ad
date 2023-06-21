@@ -1746,6 +1746,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
       }
       break;
     case Op_ClearArray:
+    case Op_LoopVectorMask:
     case Op_VectorMaskGen:
     case Op_VectorCmpMasked:
       if (!is_LP64 || !VM_Version::supports_avx512bw()) {
@@ -8963,6 +8964,63 @@ instruct vmask_gen_imm(kReg dst, immL len, rRegL temp) %{
     __ kmovql($dst$$KRegister, $temp$$Register);
   %}
   ins_pipe( pipe_slow );
+%}
+
+instruct loop_vmask_gen_small_trip(kReg dst, rRegI from, rRegI to, rRegI tmp1, rRegL tmp2) %{
+  predicate(n->as_LoopVectorMask()->max_trips() > 0 &&
+            n->as_LoopVectorMask()->max_trips() < 256);
+  match(Set dst (LoopVectorMask from to));
+  format %{ "loop_vmask_gen_small_trip $dst, $from, $to\t! loop vector mask generator" %}
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_encode %{
+    int vlen = Matcher::vector_length(this);
+    jlong all_true_mask = (vlen < 64) ? ((1L << vlen) - 1) : -1L;
+    __ movl($tmp1$$Register, $to$$Register);
+    __ subl($tmp1$$Register, $from$$Register);
+    __ mov64($tmp2$$Register, all_true_mask);
+    __ bzhiq($tmp2$$Register, $tmp2$$Register, $tmp1$$Register);
+    __ kmovql($dst$$KRegister, $tmp2$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct loop_vmask_gen(kReg dst, rRegI from, rRegI to, rRegI tmp1, rRegL tmp2) %{
+  predicate(n->as_LoopVectorMask()->max_trips() <= 0 ||
+            n->as_LoopVectorMask()->max_trips() >= 256);
+  match(Set dst (LoopVectorMask from to));
+  format %{ "loop_vmask_gen $dst, $from, $to\t! loop vector mask generator" %}
+  effect(TEMP tmp1, TEMP tmp2);
+  ins_encode %{
+    int vlen = Matcher::vector_length(this);
+    jlong all_true_mask = (vlen < 64) ? ((1L << vlen) - 1) : -1L;
+    Label SATURATED;
+    __ movl($tmp1$$Register, $to$$Register);
+    __ subl($tmp1$$Register, $from$$Register);
+    __ mov64($tmp2$$Register, all_true_mask);
+    __ cmpl($tmp1$$Register, 255);
+    __ jccb(Assembler::greaterEqual, SATURATED);
+    __ bzhiq($tmp2$$Register, $tmp2$$Register, $tmp1$$Register);
+    __ bind(SATURATED);
+    __ kmovql($dst$$KRegister, $tmp2$$Register);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct extract_high_mask(kReg dst, kReg src) %{
+  match(Set dst (ExtractHighMask src));
+  format %{ "extract_high_mask $dst, $src" %}
+  ins_encode %{
+    int vlen = Matcher::vector_length(this);
+    __ kshiftrql($dst$$KRegister, $src$$KRegister, vlen);
+  %}
+  ins_pipe( pipe_slow );
+%}
+
+instruct extract_low_mask(kReg dst_src) %{
+  match(Set dst_src (ExtractLowMask dst_src));
+  format %{ "extract_low_mask $dst_src, $dst_src\t# do nothing" %}
+  ins_encode %{ /* empty encoding */ %}
+  ins_pipe( empty );
 %}
 
 instruct vmask_tolong_evex(rRegL dst, kReg mask, rFlagsReg cr) %{

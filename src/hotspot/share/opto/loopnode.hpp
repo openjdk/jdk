@@ -72,7 +72,7 @@ protected:
          DoUnrollOnly          = 1<<9,
          VectorizedLoop        = 1<<10,
          HasAtomicPostLoop     = 1<<11,
-         IsMultiversioned      = 1<<12,
+         VectorMasked          = 1<<12,
          StripMined            = 1<<13,
          SubwordLoop           = 1<<14,
          ProfileTripFailed     = 1<<15,
@@ -80,8 +80,6 @@ protected:
          LoopNestLongOuterLoop = 1<<17};
   char _unswitch_count;
   enum { _unswitch_max=3 };
-  char _postloop_flags;
-  enum { RCEPostLoop = 1 };
 
   // Expected trip count from profile data
   float _profile_trip_cnt;
@@ -93,8 +91,8 @@ public:
   bool is_inner_loop() const { return _loop_flags & InnerLoop; }
   void set_inner_loop() { _loop_flags |= InnerLoop; }
 
-  bool is_multiversioned() const { return _loop_flags & IsMultiversioned; }
   bool is_vectorized_loop() const { return _loop_flags & VectorizedLoop; }
+  bool is_vector_masked() const { return _loop_flags & VectorMasked; }
   bool is_partial_peel_loop() const { return _loop_flags & PartialPeelLoop; }
   void set_partial_peel_loop() { _loop_flags |= PartialPeelLoop; }
   bool partial_peel_has_failed() const { return _loop_flags & PartialPeelFailed; }
@@ -110,7 +108,7 @@ public:
   void mark_do_unroll_only() { _loop_flags |= DoUnrollOnly; }
   void mark_loop_vectorized() { _loop_flags |= VectorizedLoop; }
   void mark_has_atomic_post_loop() { _loop_flags |= HasAtomicPostLoop; }
-  void mark_is_multiversioned() { _loop_flags |= IsMultiversioned; }
+  void mark_vector_masked() { _loop_flags |= VectorMasked; }
   void mark_strip_mined() { _loop_flags |= StripMined; }
   void clear_strip_mined() { _loop_flags &= ~StripMined; }
   void mark_profile_trip_failed() { _loop_flags |= ProfileTripFailed; }
@@ -120,9 +118,6 @@ public:
 
   int unswitch_max() { return _unswitch_max; }
   int unswitch_count() { return _unswitch_count; }
-
-  int is_rce_post_loop() const { return _postloop_flags & RCEPostLoop; }
-  void set_is_rce_post_loop() { _postloop_flags |= RCEPostLoop; }
 
   void set_unswitch_count(int val) {
     assert (val <= unswitch_max(), "too many unswitches");
@@ -134,7 +129,7 @@ public:
 
   LoopNode(Node *entry, Node *backedge)
     : RegionNode(3), _loop_flags(0), _unswitch_count(0),
-      _postloop_flags(0), _profile_trip_cnt(COUNT_UNKNOWN)  {
+      _profile_trip_cnt(COUNT_UNKNOWN)  {
     init_class_id(Class_Loop);
     init_req(EntryControl, entry);
     init_req(LoopBackControl, backedge);
@@ -143,6 +138,9 @@ public:
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual int Opcode() const;
   bool can_be_counted_loop(PhaseValues* phase) const {
+    if (is_vector_masked()) {
+      return false;
+    }
     return req() == 3 && in(0) != nullptr &&
       in(1) != nullptr && phase->type(in(1)) != Type::TOP &&
       in(2) != nullptr && phase->type(in(2)) != Type::TOP;
@@ -322,8 +320,6 @@ public:
   int  node_count_before_unroll()            { return _node_count_before_unroll; }
   void set_slp_max_unroll(int unroll_factor) { _slp_maximum_unroll_factor = unroll_factor; }
   int  slp_max_unroll() const                { return _slp_maximum_unroll_factor; }
-  void set_slp_pack_count(int pack_count)    { _slp_vector_pack_count = pack_count; }
-  int  slp_pack_count() const                { return _slp_vector_pack_count; }
 
   virtual LoopNode* skip_strip_mined(int expect_skeleton = 1);
   OuterStripMinedLoopNode* outer_loop() const;
@@ -775,6 +771,8 @@ public:
 
   void remove_main_post_loops(CountedLoopNode *cl, PhaseIdealLoop *phase);
 
+  void collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const;
+
   bool compute_has_range_checks() const;
   bool range_checks_present() {
     if (!_has_range_checks_computed) {
@@ -808,8 +806,6 @@ public:
     return (unroll_cnt - 1) * (100.0 / LoopPercentProfileLimit) > cl->profile_trip_cnt();
   }
 
-  void collect_loop_core_nodes(PhaseIdealLoop* phase, Unique_Node_List& wq) const;
-
   bool empty_loop_with_data_nodes(PhaseIdealLoop* phase) const;
 
   void enqueue_data_nodes(PhaseIdealLoop* phase, Unique_Node_List& empty_loop_nodes, Unique_Node_List& wq) const;
@@ -829,6 +825,7 @@ class PhaseIdealLoop : public PhaseTransform {
   friend class IdealLoopTree;
   friend class SuperWord;
   friend class CountedLoopReserveKit;
+  friend class VectorMaskedLoop;
   friend class ShenandoahBarrierC2Support;
   friend class AutoNodeBudget;
 
@@ -1305,9 +1302,6 @@ public:
                          CountedLoopNode* main_head, CountedLoopEndNode* main_end,
                          Node*& incr, Node* limit, CountedLoopNode*& post_head);
 
-  // Add an RCE'd post loop which we will multi-version adapt for run time test path usage
-  void insert_scalar_rced_post_loop( IdealLoopTree *loop, Node_List &old_new );
-
   // Add a vector post loop between a vector main loop and the current post loop
   void insert_vector_post_loop(IdealLoopTree *loop, Node_List &old_new);
   // If Node n lives in the back_ctrl block, we clone a private version of n
@@ -1401,13 +1395,6 @@ public:
 
   // Eliminate range-checks and other trip-counter vs loop-invariant tests.
   void do_range_check(IdealLoopTree *loop, Node_List &old_new);
-
-  // Process post loops which have range checks and try to build a multi-version
-  // guard to safely determine if we can execute the post loop which was RCE'd.
-  bool multi_version_post_loops(IdealLoopTree *rce_loop, IdealLoopTree *legacy_loop);
-
-  // Cause the rce'd post loop to optimized away, this happens if we cannot complete multiverioning
-  void poison_rce_post_loop(IdealLoopTree *rce_loop);
 
   // Create a slow version of the loop by cloning the loop
   // and inserting an if to select fast-slow versions.

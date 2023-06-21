@@ -63,7 +63,7 @@ public class VectorizationTestRunner {
         Class klass = getClass();
         // Add extra VM options to verify experimental auto-vectorization
         WB.setBooleanVMFlag("UnlockExperimentalVMOptions", true);
-        WB.setBooleanVMFlag("PostLoopMultiversioning", true);
+        WB.setBooleanVMFlag("UseMaskedLoop", true);
         for (Method method : klass.getDeclaredMethods()) {
             try {
                 if (method.isAnnotationPresent(Test.class)) {
@@ -80,8 +80,6 @@ public class VectorizationTestRunner {
         // To test vectorizability, invoke the IR test framework to check existence of
         // expected C2 IR node.
         TestFramework irTest = new TestFramework(klass);
-        // Add extra VM options to enable more auto-vectorization chances
-        irTest.addFlags("-XX:-OptimizeFill");
         irTest.start();
     }
 

@@ -70,6 +70,9 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int SimpleIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -82,6 +85,9 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int indexedByIvUsed() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -94,6 +100,9 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int ivUsedMultiple() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -106,6 +115,9 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int ivUsedComplexExpr() {
         int i = 0;
         int[] res = new int[SIZE];
@@ -118,6 +130,9 @@ public class LoopLiveOutNodesTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public int[] ivUsedAnotherLoop() {
         int i = 0;
         int[] res = new int[SIZE];

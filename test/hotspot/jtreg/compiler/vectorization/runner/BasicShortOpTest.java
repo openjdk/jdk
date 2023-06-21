@@ -68,6 +68,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.SUB_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorNeg() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -79,6 +82,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "ssse3", "true"},
         counts = {IRNode.ABS_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorAbs() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -90,6 +96,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.ADD_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorAdd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -101,6 +110,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.SUB_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorSub() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -112,6 +124,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.MUL_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorMul() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -123,6 +138,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.MUL_V, ">0", IRNode.ADD_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorMulAdd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -134,6 +152,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.MUL_V, ">0", IRNode.SUB_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorMulSub() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -146,6 +167,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.XOR_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorNot() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -157,6 +181,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.AND_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorAnd() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -168,6 +195,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.OR_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorOr() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -179,6 +209,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.XOR_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorXor() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -191,6 +224,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.LSHIFT_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorShiftLeft() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -202,6 +238,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
         counts = {IRNode.RSHIFT_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] vectorSignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -250,6 +289,9 @@ public class BasicShortOpTest extends VectorizationTestRunner {
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx2", "true"},
         counts = {IRNode.REVERSE_BYTES_V, ">0"})
+    @IR(applyIfCPUFeature = {"sve", "true"},
+        applyIf = {"UseMaskedLoop", "true"},
+        counts = {IRNode.LOOP_VECTOR_MASK, ">0"})
     public short[] reverseBytesWithShort() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {

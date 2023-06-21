@@ -98,6 +98,7 @@ class LockNode;
 class LongCountedLoopNode;
 class LongCountedLoopEndNode;
 class LoopNode;
+class LoopVectorMaskNode;
 class LShiftNode;
 class MachBranchNode;
 class MachCallDynamicJavaNode;
@@ -120,6 +121,8 @@ class MachSpillCopyNode;
 class MachTempNode;
 class MachMergeNode;
 class MachMemBarNode;
+class ExtractHighMaskNode;
+class ExtractLowMaskNode;
 class Matcher;
 class MemBarNode;
 class MemBarStoreStoreNode;
@@ -726,6 +729,7 @@ public:
           DEFINE_CLASS_ID(UnorderedReduction, Reduction, 0)
       DEFINE_CLASS_ID(Con, Type, 8)
           DEFINE_CLASS_ID(ConI, Con, 0)
+      DEFINE_CLASS_ID(LoopVectorMask, Type, 9)
 
 
     DEFINE_CLASS_ID(Proj,  Node, 3)
@@ -909,6 +913,7 @@ public:
   DEFINE_CLASS_QUERY(LoadStoreConditional)
   DEFINE_CLASS_QUERY(Lock)
   DEFINE_CLASS_QUERY(Loop)
+  DEFINE_CLASS_QUERY(LoopVectorMask)
   DEFINE_CLASS_QUERY(LShift)
   DEFINE_CLASS_QUERY(Mach)
   DEFINE_CLASS_QUERY(MachBranch)
@@ -1737,7 +1742,7 @@ inline void Compile::remove_for_igvn(Node* n) {
 }
 
 //------------------------------Node_Stack-------------------------------------
-class Node_Stack {
+class Node_Stack : public ResourceObj {
   friend class VMStructs;
 protected:
   struct INode {
