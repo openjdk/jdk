@@ -69,7 +69,7 @@ public class CompareProviderFormats {
     }
 
     /**
-     * For each locale, ensure that the returned resources for gmy and hmt match
+     * For each locale, ensure that the returned resources for gmt and hmt match
      * the expected resources for both COMPAT and CLDR
      */
     @ParameterizedTest
