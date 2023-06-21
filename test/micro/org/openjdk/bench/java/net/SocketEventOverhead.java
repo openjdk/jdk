@@ -72,7 +72,7 @@ public class SocketEventOverhead {
     }
 
     @Fork(value = 1, jvmArgsAppend = {
-        "--add-exports","java.base/jdk.internal.event=ALL-UNNAMED", 
+        "--add-exports","java.base/jdk.internal.event=ALL-UNNAMED",
         "-XX:StartFlightRecording:jdk.SocketWrite#enabled=true,jdk.SocketWrite#threshold=0ms,disk=false,jdk.SocketWrite#stackTrace=false"})
     @Benchmark
     public int socketWriteJFREnabledEventEmitted(SkeletonFixture fixture) {

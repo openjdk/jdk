@@ -26,6 +26,7 @@
 package java.net;
 
 import jdk.internal.event.SocketReadEvent;
+import jdk.internal.event.SocketWriteEvent;
 import sun.security.util.SecurityConstants;
 
 import java.io.InputStream;
@@ -40,7 +41,6 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.Collections;
 
-import jdk.internal.event.SocketWriteEvent;
 
 /**
  * This class implements client sockets (also called just
@@ -1099,19 +1099,19 @@ public class Socket implements java.io.Closeable {
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
             if (! SocketReadEvent.enabled()) {
-                return read0(b, off, len);
+                return implRead(b, off, len);
             }
             int nbytes = 0;
             long start = SocketReadEvent.timestamp();
             try {
-                nbytes = read0(b, off, len);
+                nbytes = implRead(b, off, len);
             } finally {
                 SocketReadEvent.checkForCommit(start, nbytes, parent.getRemoteSocketAddress(), parent.getSoTimeout());
             }
             return nbytes;
         }
 
-        private int read0(byte[] b, int off, int len) throws IOException {
+        private int implRead(byte[] b, int off, int len) throws IOException {
             try {
                 return in.read(b, off, len);
             } catch (SocketTimeoutException e) {
@@ -1209,21 +1209,19 @@ public class Socket implements java.io.Closeable {
         @Override
         public void write(byte[] b, int off, int len) throws IOException {
             if (!SocketWriteEvent.enabled()) {
-                write0(b, off, len);
+                implWrite(b, off, len);
                 return;
             }
-            int bytesWritten = 0;
             long start = 0;
             try {
                 start = SocketWriteEvent.timestamp();
-                write0(b, off, len);
-                bytesWritten = len;
+                implWrite(b, off, len);
             } finally {
                 SocketWriteEvent.checkForCommit(start, len, parent.getRemoteSocketAddress());
             }
         }
 
-        public void write0(byte[] b, int off, int len) throws IOException {
+        private void implWrite(byte[] b, int off, int len) throws IOException {
             try {
                 out.write(b, off, len);
             } catch (InterruptedIOException e) {

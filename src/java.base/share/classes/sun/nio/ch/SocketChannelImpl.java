@@ -406,19 +406,19 @@ class SocketChannelImpl
     @Override
     public int read(ByteBuffer buf) throws IOException {
         if (!SocketReadEvent.enabled()) {
-            return read0(buf);
+            return implRead(buf);
         }
         int nbytes = 0;
         long start = SocketReadEvent.timestamp();
         try {
-            nbytes = read0(buf);
+            nbytes = implRead(buf);
         } finally {
             SocketReadEvent.checkForCommit(start, nbytes, getRemoteAddress(), 0);
         }
         return nbytes;
     }
 
-    private int read0(ByteBuffer buf) throws IOException {
+    private int implRead(ByteBuffer buf) throws IOException {
         Objects.requireNonNull(buf);
 
         readLock.lock();
@@ -464,19 +464,19 @@ class SocketChannelImpl
         throws IOException
     {
         if (! SocketReadEvent.enabled()) {
-            return read0(dsts, offset, length);
+            return implRead(dsts, offset, length);
         }
         long nbytes = 0;
         long start = SocketReadEvent.timestamp();
         try {
-            nbytes = read0(dsts, offset, length);
+            nbytes = implRead(dsts, offset, length);
         } finally {
             SocketReadEvent.checkForCommit(start, nbytes, getRemoteAddress(), 0);
         }
         return nbytes;
     }
 
-    private long read0(ByteBuffer[] dsts, int offset, int length)
+    private long implRead(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
         Objects.checkFromIndexSize(offset, length, dsts.length);
@@ -563,19 +563,19 @@ class SocketChannelImpl
     @Override
     public int write(ByteBuffer buf) throws IOException {
         if (! SocketWriteEvent.enabled()) {
-            return write0(buf);
+            return implWrite(buf);
         }
         int nbytes = 0;
         long start = SocketWriteEvent.timestamp();
         try {
-            nbytes = write0(buf);
+            nbytes = implWrite(buf);
         } finally {
             SocketWriteEvent.checkForCommit(start, nbytes, getRemoteAddress());
         }
         return nbytes;
     }
 
-    private int write0(ByteBuffer buf) throws IOException {
+    private int implWrite(ByteBuffer buf) throws IOException {
         Objects.requireNonNull(buf);
         writeLock.lock();
         try {
@@ -608,19 +608,19 @@ class SocketChannelImpl
         throws IOException
     {
         if (! SocketWriteEvent.enabled()) {
-            return write0(srcs, offset, length);
+            return implWrite(srcs, offset, length);
         }
         long nbytes = 0;
         long start = SocketWriteEvent.timestamp();
         try {
-            nbytes = write0(srcs, offset, length);
+            nbytes = implWrite(srcs, offset, length);
         } finally {
             SocketWriteEvent.checkForCommit(start, nbytes, getRemoteAddress());
         }
         return nbytes;
     }
 
-    private long write0(ByteBuffer[] srcs, int offset, int length)
+    private long implWrite(ByteBuffer[] srcs, int offset, int length)
         throws IOException
     {
         Objects.checkFromIndexSize(offset, length, srcs.length);
