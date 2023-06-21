@@ -217,7 +217,7 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
         checkForProcessorMessage(javacResult, true);
         checkForCompilerNote(javacResult, false);
     }
-    
+
     @Test
     public void lintNone(Path base, Path jarFile) {
         Task.Result javacResult =
