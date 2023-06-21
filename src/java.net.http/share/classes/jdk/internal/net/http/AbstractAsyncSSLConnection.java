@@ -36,6 +36,7 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 
+import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.SSLTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Utils;
@@ -107,7 +108,7 @@ abstract class AbstractAsyncSSLConnection extends HttpConnection
         SSLParameters sslp = client.sslParameters();
         SSLParameters sslParameters = Utils.copySSLParameters(sslp);
         // filter out unwanted protocols, if h2 only
-        if (alpn != null && alpn.length != 0 && !contains(alpn, "http/1.1")) {
+        if (alpn != null && alpn.length != 0 && !contains(alpn, Alpns.HTTP_1_1)) {
             ArrayDeque<String> l = new ArrayDeque<>();
             for (String proto : sslParameters.getProtocols()) {
                 if (!proto.startsWith("SSL") && !proto.endsWith("v1.1") && !proto.endsWith("v1")) {

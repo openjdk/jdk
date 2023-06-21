@@ -258,7 +258,7 @@ public class TestTracePageSizes {
         parseSmaps();
 
         // Setup patters for the JVM page size logging.
-        String traceLinePatternString = ".*base=(0x[0-9A-Fa-f]*).*page_size=([^ ]+).*";
+        String traceLinePatternString = ".*base=(0x[0-9A-Fa-f]*).* page_size=(\\d+[BKMG]).*";
         Pattern traceLinePattern = Pattern.compile(traceLinePatternString);
 
         // The test needs to be run with page size logging printed to ps-$pid.log.

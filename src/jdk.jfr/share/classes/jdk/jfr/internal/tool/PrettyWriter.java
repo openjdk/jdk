@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ import jdk.jfr.consumer.RecordedStackTrace;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 
 /**
  * Print events in a human-readable format.
@@ -418,7 +418,7 @@ public final class PrettyWriter extends EventPrintWriter {
         if (clazz != null) {
             String className = clazz.getName();
             if (className!= null && className.startsWith("[")) {
-                className = decodeDescriptors(className, arraySize > 0 ? Long.toString(arraySize) : "").get(0);
+                className = decodeDescriptors(className, arraySize > 0 ? Long.toString(arraySize) : "").getFirst();
             }
             print(className);
             String description = object.getString("description");
@@ -484,7 +484,7 @@ public final class PrettyWriter extends EventPrintWriter {
         }
         String className = clazz.getName();
         if (className.startsWith("[")) {
-            className = decodeDescriptors(className, "").get(0);
+            className = decodeDescriptors(className, "").getFirst();
         }
         println(className + " (classLoader = " + classLoaderName + ")" + postFix);
     }
@@ -558,7 +558,7 @@ public final class PrettyWriter extends EventPrintWriter {
                 println("Forever");
                 return true;
             }
-            println(Utils.formatDuration(d));
+            println(ValueFormatter.formatDuration(d));
             return true;
         }
         if (value instanceof OffsetDateTime odt) {
@@ -583,20 +583,20 @@ public final class PrettyWriter extends EventPrintWriter {
                 long amount = n.longValue();
                 if (field.getAnnotation(Frequency.class) != null) {
                     if (dataAmount.value().equals(DataAmount.BYTES)) {
-                        println(Utils.formatBytesPerSecond(amount));
+                        println(ValueFormatter.formatBytesPerSecond(amount));
                         return true;
                     }
                     if (dataAmount.value().equals(DataAmount.BITS)) {
-                        println(Utils.formatBitsPerSecond(amount));
+                        println(ValueFormatter.formatBitsPerSecond(amount));
                         return true;
                     }
                 } else {
                     if (dataAmount.value().equals(DataAmount.BYTES)) {
-                        println(Utils.formatBytes(amount));
+                        println(ValueFormatter.formatBytes(amount));
                         return true;
                     }
                     if (dataAmount.value().equals(DataAmount.BITS)) {
-                        println(Utils.formatBits(amount));
+                        println(ValueFormatter.formatBits(amount));
                         return true;
                     }
                 }

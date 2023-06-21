@@ -212,8 +212,7 @@ bool CodeHeap::reserve(ReservedSpace rs, size_t committed_size, size_t segment_s
   const size_t c_size = align_up(committed_size, page_size);
   assert(c_size <= rs.size(), "alignment made committed size to large");
 
-  os::trace_page_sizes(_name, c_size, rs.size(), page_size,
-                       rs.base(), rs.size());
+  os::trace_page_sizes(_name, c_size, rs.size(), rs.base(), rs.size(), page_size);
   if (!_memory.initialize(rs, c_size)) {
     return false;
   }

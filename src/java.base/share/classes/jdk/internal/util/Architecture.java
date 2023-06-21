@@ -45,9 +45,12 @@ public enum Architecture {
     AARCH64(64, ByteOrder.LITTLE_ENDIAN),
     ARM(32, ByteOrder.LITTLE_ENDIAN),
     RISCV64(64, ByteOrder.LITTLE_ENDIAN),
+    LOONGARCH64(64, ByteOrder.LITTLE_ENDIAN),
     S390(64, ByteOrder.BIG_ENDIAN),
     PPC64(64, ByteOrder.BIG_ENDIAN),
     PPC64LE(64, ByteOrder.LITTLE_ENDIAN),
+    MIPSEL(32, ByteOrder.LITTLE_ENDIAN),
+    MIPS64EL(64, ByteOrder.LITTLE_ENDIAN)
     ;
 
     private final int addrSize;
@@ -134,6 +137,14 @@ public enum Architecture {
     }
 
     /**
+     * {@return {@code true} if the current architecture is LOONGARCH64}
+     */
+    @ForceInline
+    public static boolean isLOONGARCH64() {
+        return PlatformProps.TARGET_ARCH_IS_LOONGARCH64;
+    }
+
+    /**
      * {@return {@code true} if the current architecture is S390}
      */
     @ForceInline
@@ -171,6 +182,22 @@ public enum Architecture {
     @ForceInline
     public static boolean isAARCH64() {
         return PlatformProps.TARGET_ARCH_IS_AARCH64;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is MIPSEL}
+     */
+    @ForceInline
+    public static boolean isMIPSEL() {
+        return PlatformProps.TARGET_ARCH_IS_MIPSEL;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is MIPS64EL}
+     */
+    @ForceInline
+    public static boolean isMIPS64EL() {
+        return PlatformProps.TARGET_ARCH_IS_MIPS64EL;
     }
 
     /**
