@@ -44,7 +44,7 @@ import compiler.lib.ir_framework.*;
 
 public class BasicBooleanOpTest extends VectorizationTestRunner {
 
-    private static final int SIZE = 543;
+    private static final int SIZE = 6543;
 
     private boolean[] a;
     private boolean[] b;
@@ -87,7 +87,7 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.OR_V, ">0"})
+        counts = {IRNode.OR_VB, ">0"})
     public boolean[] vectorOr() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -98,7 +98,7 @@ public class BasicBooleanOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VB, ">0"})
     public boolean[] vectorXor() {
         boolean[] res = new boolean[SIZE];
         for (int i = 0; i < SIZE; i++) {

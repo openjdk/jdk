@@ -145,7 +145,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     // ---------------- Logic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VB, ">0"})
     public byte[] vectorNot() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -167,7 +167,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.OR_V, ">0"})
+        counts = {IRNode.OR_VB, ">0"})
     public byte[] vectorOr() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -178,7 +178,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VB, ">0"})
     public byte[] vectorXor() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -190,7 +190,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
     // ---------------- Shift ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.LSHIFT_V, ">0"})
+        counts = {IRNode.LSHIFT_VB, ">0"})
     public byte[] vectorShiftLeft() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {

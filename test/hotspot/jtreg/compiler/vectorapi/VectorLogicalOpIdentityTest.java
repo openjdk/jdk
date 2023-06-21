@@ -369,7 +369,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_V, counts = {IRNode.STORE_VECTOR, ">=1"})
+    @IR(failOn = IRNode.OR_VB, counts = {IRNode.STORE_VECTOR, ">=1"})
     public static void testOrMinusOne() {
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
         av.or((byte) -1).intoArray(br, 0);
@@ -382,7 +382,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_V, counts = {IRNode.LOAD_VECTOR, ">=1"})
+    @IR(failOn = IRNode.OR_VS, counts = {IRNode.LOAD_VECTOR, ">=1"})
     public static void testOrZero() {
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
         av.or((short) 0).intoArray(sr, 0);
@@ -395,7 +395,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_V, counts = {IRNode.LOAD_VECTOR, ">=1"})
+    @IR(failOn = IRNode.OR_VI, counts = {IRNode.LOAD_VECTOR, ">=1"})
     public static void testOrSame() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         av.or(av).intoArray(ir, 0);
@@ -410,7 +410,7 @@ public class VectorLogicalOpIdentityTest {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.STORE_VECTOR, ">=1"})
-    @IR(failOn = IRNode.OR_V, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(failOn = IRNode.OR_VB, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedOrMinusOne1() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
@@ -429,7 +429,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_V, counts = {IRNode.STORE_VECTOR, ">=1"})
+    @IR(failOn = IRNode.OR_VB, counts = {IRNode.STORE_VECTOR, ">=1"})
     public static void testMaskedOrMinusOne2() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
@@ -448,7 +448,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_V, counts = {IRNode.LOAD_VECTOR, ">=1"})
+    @IR(failOn = IRNode.OR_VS, counts = {IRNode.LOAD_VECTOR, ">=1"})
     public static void testMaskedOrZero1() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
@@ -469,7 +469,7 @@ public class VectorLogicalOpIdentityTest {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.LOAD_VECTOR, ">=1"})
-    @IR(failOn = IRNode.OR_V, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(failOn = IRNode.OR_VB, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedOrZero2() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
@@ -488,7 +488,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_V, counts = {IRNode.LOAD_VECTOR, ">=1"})
+    @IR(failOn = IRNode.OR_VL, counts = {IRNode.LOAD_VECTOR, ">=1"})
     public static void testMaskedOrSame() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
@@ -507,7 +507,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b), b) ==> OrV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_V, "1"})
+    @IR(counts = {IRNode.OR_VI, "1"})
     public static void testOrSameValue1() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
@@ -522,7 +522,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b), a) ==> OrV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_V, "1"})
+    @IR(counts = {IRNode.OR_VL, "1"})
     public static void testOrSameValue2() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
@@ -537,7 +537,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(b, OrV(a, b)) ==> OrV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_V, "1"})
+    @IR(counts = {IRNode.OR_VI, "1"})
     public static void testOrSameValue3() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         IntVector bv = IntVector.fromArray(I_SPECIES, ib, 0);
@@ -552,7 +552,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(a, OrV(a, b)) ==> OrV(a, b)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_V, "1"})
+    @IR(counts = {IRNode.OR_VL, "1"})
     public static void testOrSameValue4() {
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
         LongVector bv = LongVector.fromArray(L_SPECIES, lb, 0);
@@ -567,7 +567,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b, m), b, m) ==> OrV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_V, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.OR_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
     public static void testOrMaskSameValue1() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -588,7 +588,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(OrV(a, b, m), a, m) ==> OrV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_V, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.OR_VL, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
     public static void testOrMaskSameValue2() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
@@ -609,7 +609,7 @@ public class VectorLogicalOpIdentityTest {
     // Transform OrV(a, OrV(a, b, m), m) ==> OrV(a, b, m)
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.OR_V, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
+    @IR(counts = {IRNode.OR_VI, "1"}, applyIfCPUFeatureOr = {"sve", "true", "avx512", "true"})
     public static void testOrMaskSameValue3() {
         VectorMask<Integer> mask = VectorMask.fromArray(I_SPECIES, m, 0);
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
@@ -633,7 +633,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.XOR_V, counts = {IRNode.STORE_VECTOR, ">=1"})
+    @IR(failOn = IRNode.XOR_VB, counts = {IRNode.STORE_VECTOR, ">=1"})
     public static void testXorSame() {
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
         av.lanewise(VectorOperators.XOR, av).intoArray(br, 0);
@@ -648,7 +648,7 @@ public class VectorLogicalOpIdentityTest {
     @Test
     @Warmup(10000)
     @IR(counts = {IRNode.STORE_VECTOR, ">=1"})
-    @IR(failOn = IRNode.XOR_V, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
+    @IR(failOn = IRNode.XOR_VS, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedXorSame() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
@@ -708,7 +708,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = {IRNode.OR_V, IRNode.OR_V_MASK}, counts = {IRNode.STORE_VECTOR, ">=1"})
+    @IR(failOn = {IRNode.OR_VS, IRNode.OR_V_MASK}, counts = {IRNode.STORE_VECTOR, ">=1"})
     public static void testMaskOrMinusOne() {
         VectorMask<Short> ma = VectorMask.fromArray(S_SPECIES, m, 0);
         VectorMask<Short> mb = S_SPECIES.maskAll(true);
@@ -722,7 +722,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = {IRNode.OR_V, IRNode.OR_V_MASK}, counts = {IRNode.STORE_VECTOR, ">=1"})
+    @IR(failOn = {IRNode.OR_VI, IRNode.OR_V_MASK}, counts = {IRNode.STORE_VECTOR, ">=1"})
     public static void testMaskOrZero() {
         VectorMask<Integer> ma = VectorMask.fromArray(I_SPECIES, m, 0);
         VectorMask<Integer> mb = I_SPECIES.maskAll(false);
@@ -736,7 +736,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = {IRNode.OR_V, IRNode.OR_V_MASK}, counts = {IRNode.STORE_VECTOR, ">=1"})
+    @IR(failOn = {IRNode.OR_VB, IRNode.OR_V_MASK}, counts = {IRNode.STORE_VECTOR, ">=1"})
     public static void testMaskOrSame() {
         VectorMask<Byte> ma = VectorMask.fromArray(B_SPECIES, m, 0);
         ma.or(ma).intoArray(mr, 0);
@@ -749,7 +749,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = {IRNode.XOR_V, IRNode.XOR_V_MASK}, counts = {IRNode.STORE_VECTOR, ">=1"})
+    @IR(failOn = {IRNode.XOR_VI, IRNode.XOR_V_MASK}, counts = {IRNode.STORE_VECTOR, ">=1"})
     public static void testMaskXorSame() {
         VectorMask<Integer> ma = I_SPECIES.maskAll(true);
         ma.not().intoArray(mr, 0);

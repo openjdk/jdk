@@ -312,7 +312,6 @@ public class IRNode {
 
     public static final String AND_V_MASK = PREFIX + "AND_V_MASK" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(AND_V_MASK, "AndVMask");
     }
 
@@ -708,10 +707,29 @@ public class IRNode {
         beforeMatchingNameRegex(LSHIFT_L, "LShiftL");
     }
 
-    public static final String LSHIFT_V = PREFIX + "LSHIFT_V" + POSTFIX;
+    public static final String LSHIFT_VB = VECTOR_PREFIX + "LSHIFT_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(LSHIFT_V, "LShiftV(B|S|I|L)");
+        vectorNode(LSHIFT_VB, "LShiftVB", "byte");
+    }
+
+    public static final String LSHIFT_VS = VECTOR_PREFIX + "LSHIFT_VS" + POSTFIX;
+    static {
+        vectorNode(LSHIFT_VS, "LShiftVS", "short");
+    }
+
+    public static final String LSHIFT_VC = VECTOR_PREFIX + "LSHIFT_VC" + POSTFIX;
+    static {
+        vectorNode(LSHIFT_VC, "LShiftVS", "char"); // using short op with char type
+    }
+
+    public static final String LSHIFT_VI = VECTOR_PREFIX + "LSHIFT_VI" + POSTFIX;
+    static {
+        vectorNode(LSHIFT_VI, "LShiftVI", "int");
+    }
+
+    public static final String LSHIFT_VL = VECTOR_PREFIX + "LSHIFT_VL" + POSTFIX;
+    static {
+        vectorNode(LSHIFT_VL, "LShiftVL", "long");
     }
 
     public static final String MACRO_LOGIC_V = PREFIX + "MACRO_LOGIC_V" + POSTFIX;
@@ -755,10 +773,19 @@ public class IRNode {
         beforeMatchingNameRegex(MAX_L, "MaxL");
     }
 
-    public static final String MAX_V = PREFIX + "MAX_V" + POSTFIX;
+    public static final String MAX_VI = VECTOR_PREFIX + "MAX_VI" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(MAX_V, "MaxV");
+        vectorNode(MAX_VI, "MaxV", "int");
+    }
+
+    public static final String MAX_VF = VECTOR_PREFIX + "MAX_VF" + POSTFIX;
+    static {
+        vectorNode(MAX_VF, "MaxV", "float");
+    }
+
+    public static final String MAX_VD = VECTOR_PREFIX + "MAX_VD" + POSTFIX;
+    static {
+        vectorNode(MAX_VD, "MaxV", "double");
     }
 
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
@@ -806,10 +833,19 @@ public class IRNode {
         beforeMatchingNameRegex(MIN_L, "MinL");
     }
 
-    public static final String MIN_V = PREFIX + "MIN_V" + POSTFIX;
+    public static final String MIN_VI = VECTOR_PREFIX + "MIN_VI" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(MIN_V, "MinV");
+        vectorNode(MIN_VI, "MinV", "int");
+    }
+
+    public static final String MIN_VF = VECTOR_PREFIX + "MIN_VF" + POSTFIX;
+    static {
+        vectorNode(MIN_VF, "MinV", "float");
+    }
+
+    public static final String MIN_VD = VECTOR_PREFIX + "MIN_VD" + POSTFIX;
+    static {
+        vectorNode(MIN_VD, "MinV", "double");
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;
@@ -917,10 +953,29 @@ public class IRNode {
         trapNodes(NULL_CHECK_TRAP,"null_check");
     }
 
-    public static final String OR_V = PREFIX + "OR_V" + POSTFIX;
+    public static final String OR_VB = VECTOR_PREFIX + "OR_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(OR_V, "OrV");
+        vectorNode(OR_VB, "OrV", "byte");
+    }
+
+    public static final String OR_VC = VECTOR_PREFIX + "OR_VC" + POSTFIX;
+    static {
+        vectorNode(OR_VC, "OrV", "char");
+    }
+
+    public static final String OR_VS = VECTOR_PREFIX + "OR_VS" + POSTFIX;
+    static {
+        vectorNode(OR_VS, "OrV", "short");
+    }
+
+    public static final String OR_VI = VECTOR_PREFIX + "OR_VI" + POSTFIX;
+    static {
+        vectorNode(OR_VI, "OrV", "int");
+    }
+
+    public static final String OR_VL = VECTOR_PREFIX + "OR_VL" + POSTFIX;
+    static {
+        vectorNode(OR_VL, "OrV", "long");
     }
 
     public static final String OR_V_MASK = PREFIX + "OR_V_MASK" + POSTFIX;
@@ -1627,10 +1682,29 @@ public class IRNode {
         beforeMatchingNameRegex(XOR_L, "XorL");
     }
 
-    public static final String XOR_V = PREFIX + "XOR_V" + POSTFIX;
+    public static final String XOR_VB = VECTOR_PREFIX + "XOR_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(XOR_V, "XorV");
+        vectorNode(XOR_VB, "XorV", "byte");
+    }
+
+    public static final String XOR_VC = VECTOR_PREFIX + "XOR_VC" + POSTFIX;
+    static {
+        vectorNode(XOR_VC, "XorV", "char");
+    }
+
+    public static final String XOR_VS = VECTOR_PREFIX + "XOR_VS" + POSTFIX;
+    static {
+        vectorNode(XOR_VS, "XorV", "short");
+    }
+
+    public static final String XOR_VI = VECTOR_PREFIX + "XOR_VI" + POSTFIX;
+    static {
+        vectorNode(XOR_VI, "XorV", "int");
+    }
+
+    public static final String XOR_VL = VECTOR_PREFIX + "XOR_VL" + POSTFIX;
+    static {
+        vectorNode(XOR_VL, "XorV", "long");
     }
 
     public static final String XOR_V_MASK = PREFIX + "XOR_V_MASK" + POSTFIX;

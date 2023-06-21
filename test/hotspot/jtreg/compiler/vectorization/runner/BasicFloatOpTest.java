@@ -142,7 +142,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.MAX_V, ">0"})
+        counts = {IRNode.MAX_VF, ">0"})
     public float[] vectorMax() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -153,7 +153,7 @@ public class BasicFloatOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.MIN_V, ">0"})
+        counts = {IRNode.MIN_VF, ">0"})
     public float[] vectorMin() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {

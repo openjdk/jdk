@@ -142,7 +142,7 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.LSHIFT_V, ">0"})
+        counts = {IRNode.LSHIFT_VL, ">0"})
     public long[] longShiftLargeDistConstant() {
         long[] res = new long[SIZE];
         for (int i = 0; i < SIZE; i++) {

@@ -175,7 +175,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.MAX_V, ">0"})
+        counts = {IRNode.MAX_VD, ">0"})
     public double[] vectorMax() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -186,7 +186,7 @@ public class BasicDoubleOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.MIN_V, ">0"})
+        counts = {IRNode.MIN_VD, ">0"})
     public double[] vectorMin() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {

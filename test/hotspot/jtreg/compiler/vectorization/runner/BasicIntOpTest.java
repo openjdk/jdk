@@ -154,7 +154,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     // ---------------- Logic ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VI, ">0"})
     public int[] vectorNot() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -176,7 +176,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.OR_V, ">0"})
+        counts = {IRNode.OR_VI, ">0"})
     public int[] vectorOr() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -187,7 +187,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.XOR_V, ">0"})
+        counts = {IRNode.XOR_VI, ">0"})
     public int[] vectorXor() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -199,7 +199,7 @@ public class BasicIntOpTest extends VectorizationTestRunner {
     // ---------------- Shift ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.LSHIFT_V, ">0"})
+        counts = {IRNode.LSHIFT_VI, ">0"})
     public int[] vectorShiftLeft() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
