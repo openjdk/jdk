@@ -54,7 +54,7 @@ public sealed interface Classfile
         permits ClassfileImpl {
 
     /**
-     * {@return a new context with default options}
+     * {@return a context with default options}
      */
     static Classfile of() {
         return ClassfileImpl.DEFAULT_CONTEXT;
@@ -269,7 +269,7 @@ public sealed interface Classfile
 
     /**
      * Build a classfile into a file using the provided constant pool
-     * builder (which encapsulates classfile processing options.)
+     * builder.
      *
      * @param path the path to the file to write
      * @param thisClassEntry the name of the class to build
@@ -337,10 +337,10 @@ public sealed interface Classfile
      * sees fit.
      *
      * @implNote
-     * <p>This method behaves as if:
+     * This method behaves as if:
      * {@snippet lang=java :
-     *     Classfile.of().build(thisClass(), ConstantPoolBuilder.of(this),
-     *                     b -> b.transform(this, transform));
+     *     this.build(model.thisClass(), ConstantPoolBuilder.of(model),
+     *                     b -> b.transform(model, transform));
      * }
      *
      * @param model class model to transform
