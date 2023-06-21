@@ -157,8 +157,8 @@ public class NMTInitializationTest {
         vmArgs.add("-version");
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmArgs);
-				Process proc = pb.start();
-				long pid = proc.pid();
+        Process proc = pb.start();
+        long pid = proc.pid();
         System.out.println("Test process pid:" + pid);
         OutputAnalyzer output = new OutputAnalyzer(proc);
         if (debug) {
