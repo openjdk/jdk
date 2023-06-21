@@ -432,41 +432,39 @@ public final class Class<T> implements java.io.Serializable,
      * {@code initialize} parameter is {@code true} and if it has
      * not been initialized earlier.
      *
-     * <p> If {@code name} denotes a primitive type or void, an attempt
-     * will be made to locate a user-defined class in the unnamed package whose
-     * name is {@code name}. Therefore, this method cannot be used to
-     * obtain any of the {@code Class} objects representing primitive
-     * types or void.
+     * <p> This method cannot be used to obtain any of the {@code Class} objects
+     * representing primitive types or void, hidden classes or interfaces,
+     * or array classes whose element type is a hidden class or interface.
+     * If {@code name} denotes a primitive type or void, for example {@code I},
+     * an attempt will be made to locate a user-defined class in the unnamed package
+     * whose name is {@code I} instead.
      *
-     * <p> If {@code name} denotes an array class whose element type
-     * is a class or interface, the name consists of one or more {@code '['}
-     * followed by {@code 'L'}, the binary name of the element type and {@code ';'}
-     * for example {@code "[Ljava.lang.String;"}, this method attempts to
-     * load the element type but not initialize it regardless of the value
+     * <p> To obtain {@code Class} object associated with an array class,
+     * the name consists of one or more {@code '['} representing the depth
+     * of the array class, followed by the element type as encoded in
+     * {@linkplain ##nameFormat the table} specified in {@code Class.getName()}.
+     *
+     * <p> Examples:
+     * {@snippet lang="java" :
+     * Class<?> threadClass = Class.forName("java.lang.Thread", false, currentLoader);
+     * Class<?> stringArrayClass = Class.forName("[Ljava.lang.String;", false, currentLoader);
+     * Class<?> intArrayClass = Class.forName("[[[I", false, currentLoader);
+     * Class<?> nestedClass = Class.forName("java.lang.Character$UnicodeBlock", false, currentLoader);
+     * Class<?> fooClass = Class.forName("Foo", true, currentLoader);
+     * }
+     *
+     * <p> A call to {@code getName()} on the {@code Class} object returned
+     * from {@code forName(}<i>N</i>{@code )} returns <i>N</i>.
+     *
+     * <p> A call to {@code forName("[L}<i>N</i>{@code ;")} causes the element type
+     * named <i>N</i> to be loaded but not initialized regardless of the value
      * of the {@code initialize} parameter.
      *
-     * <p> To find an array class of a primitive type, the name string
-     * consists of one or more {@code '['} followed by the field type descriptor
-     * of the primitive type (JVMS {@jvms 4.3.2 }); for example {@code "[I"}
-     * represents an array of {@code int}.
-     *
-     * <p> For example, in an instance method the expression:
-     *
-     * {@snippet lang="java" :
-     * Class.forName("Foo")
-     * }
-     *
-     * is equivalent to:
-     *
-     * {@snippet lang="java" :
-     * Class.forName("Foo", true, this.getClass().getClassLoader())
-     * }
-     *
-     * Note that this method throws errors related to loading, linking
-     * or initializing as specified in Sections {@jls 12.2}, {@jls
-     * 12.3}, and {@jls 12.4} of <cite>The Java Language
-     * Specification</cite>.
-     * Note that this method does not check whether the requested class
+     * @apiNote
+     * This method throws errors related to loading, linking or initializing
+     * as specified in Sections {@jls 12.2}, {@jls 12.3}, and {@jls 12.4} of
+     * <cite>The Java Language Specification</cite>.
+     * In addition, this method does not check whether the requested class
      * is accessible to its caller.
      *
      * @param name       the {@linkplain ClassLoader##binary-name binary name}
@@ -901,7 +899,7 @@ public final class Class<T> implements java.io.Serializable,
      * representing the depth of the array nesting, followed by the element
      * type as encoded using the following table:
      *
-     * <blockquote><table class="striped">
+     * <blockquote><table class="striped" id="nameFormat">
      * <caption style="display:none">Element types and encodings</caption>
      * <thead>
      * <tr><th scope="col"> Element Type <th scope="col"> Encoding
@@ -928,6 +926,8 @@ public final class Class<T> implements java.io.Serializable,
      * <blockquote><pre>
      * String.class.getName()
      *     returns "java.lang.String"
+     * Character.UnicodeBlock.class.getName()
+     *     returns "java.lang.Character$UnicodeBlock"
      * byte.class.getName()
      *     returns "byte"
      * (new Object[3]).getClass().getName()
