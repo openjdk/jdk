@@ -36,6 +36,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class RootLocale {
 
+    /**
+     * Locale.ROOT should exist and match an empty Locale given as
+     * Locale("", "", "").
+     */
     @Test
     public void rootTest() {
         Locale root = Locale.of("", "", "");

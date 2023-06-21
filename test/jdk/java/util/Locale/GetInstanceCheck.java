@@ -48,7 +48,7 @@ public class GetInstanceCheck {
     static final String NAME = "getInstance";
 
     /**
-     * Initialize the non-public Locale.getInstance() method
+     * Initialize the non-public Locale.getInstance() method.
      */
     @BeforeAll
     static void initializeMethod() {
@@ -67,7 +67,7 @@ public class GetInstanceCheck {
 
     /**
      * Exists as sanity check that Locale.getInstance() will not throw
-     * an NPE if no arguments are null
+     * an NPE if no arguments are null.
      */
     @ParameterizedTest
     @MethodSource("passingArguments")
@@ -77,16 +77,16 @@ public class GetInstanceCheck {
         } catch (InvocationTargetException | IllegalAccessException exc) {
             Throwable cause = exc.getCause();
             if (exc.getCause() instanceof NullPointerException) {
-                fail(cause + " should not be thrown when no args are null");
+                fail(String.format("%s should not be thrown when no args are null", cause));
             } else {
-                fail(cause + " is unexpectedly thrown, when no exception should be thrown");
+                fail(String.format("%s unexpectedly thrown, when no exception should be thrown", cause));
             }
         }
     }
 
     /**
      * Make sure the Locale.getInstance() method throws an NPE
-     * if any given argument is null
+     * if any given argument is null.
      */
     @ParameterizedTest
     @MethodSource("failingArguments")

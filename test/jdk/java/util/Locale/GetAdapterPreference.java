@@ -26,8 +26,8 @@
  * @bug 8004240
  * @summary Verify that getAdapterPreference returns an unmodifiable list.
  * @modules java.base/sun.util.locale.provider
- * @compile -XDignore.symbol.file GetAdapterPref.java
- * @run junit GetAdapterPref
+ * @compile -XDignore.symbol.file GetAdapterPreference.java
+ * @run junit GetAdapterPreference
  */
 
 import java.util.List;

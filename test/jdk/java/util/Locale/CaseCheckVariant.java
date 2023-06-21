@@ -41,6 +41,10 @@ public class CaseCheckVariant {
     static final String LANG = "en";
     static final String COUNTRY = "US";
 
+    /**
+     * When a locale is created with a given variant, ensure
+     * that the variant is not case normalized.
+     */
     @ParameterizedTest
     @MethodSource("variants")
     public void variantNormalizationTest(String variant) {

@@ -25,7 +25,7 @@
  * @test
  * @bug 4316602
  * @author joconner
- * @summary Verify all Locale constructors
+ * @summary Verify all Locale constructors and of() methods
  * @run junit LocaleConstructors
  */
 
@@ -35,6 +35,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+/**
+ * This class tests to ensure that the language, language/country, and
+ * language/country/variant Locale constructors + of() method are all allowed.
+ */
 public class LocaleConstructors {
 
     static final String LANG = "en";
@@ -44,20 +48,28 @@ public class LocaleConstructors {
     @Test
     public void langTest() {
         Locale aLocale = Locale.of(LANG);
+        Locale otherLocale = new Locale(LANG);
         assertEquals(aLocale.toString(), LANG);
+        assertEquals(otherLocale.toString(), LANG);
     }
 
     @Test
     public void langCountryTest() {
         Locale aLocale = Locale.of(LANG, COUNTRY);
+        Locale otherLocale = new Locale(LANG, COUNTRY);
         assertEquals(aLocale.toString(), String.format("%s_%s",
+                LANG, COUNTRY));
+        assertEquals(otherLocale.toString(), String.format("%s_%s",
                 LANG, COUNTRY));
     }
 
     @Test
     public void langCountryVariantTest() {
         Locale aLocale = Locale.of(LANG, COUNTRY, VAR);
+        Locale otherLocale = new Locale(LANG, COUNTRY, VAR);
         assertEquals(aLocale.toString(), String.format("%s_%s_%s",
+                LANG, COUNTRY, VAR));
+        assertEquals(otherLocale.toString(), String.format("%s_%s_%s",
                 LANG, COUNTRY, VAR));
     }
 }
