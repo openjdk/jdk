@@ -37,27 +37,27 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class LocaleConstructors {
 
-    static final String language = "en";
-    static final String country = "US";
-    static final String variant = "socal";
+    static final String LANG = "en";
+    static final String COUNTRY = "US";
+    static final String VAR = "socal";
 
     @Test
     public void langTest() {
-        Locale aLocale = Locale.of(language);
-        assertEquals(aLocale.toString(), language);
+        Locale aLocale = Locale.of(LANG);
+        assertEquals(aLocale.toString(), LANG);
     }
 
     @Test
     public void langCountryTest() {
-        Locale aLocale = Locale.of(language, country);
+        Locale aLocale = Locale.of(LANG, COUNTRY);
         assertEquals(aLocale.toString(), String.format("%s_%s",
-                language, country));
+                LANG, COUNTRY));
     }
 
     @Test
     public void langCountryVariantTest() {
-        Locale aLocale = Locale.of(language, country, variant);
+        Locale aLocale = Locale.of(LANG, COUNTRY, VAR);
         assertEquals(aLocale.toString(), String.format("%s_%s_%s",
-                language, country, variant));
+                LANG, COUNTRY, VAR));
     }
 }
