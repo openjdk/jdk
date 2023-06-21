@@ -418,7 +418,7 @@ public final class PrettyWriter extends EventPrintWriter {
         if (clazz != null) {
             String className = clazz.getName();
             if (className!= null && className.startsWith("[")) {
-                className = decodeDescriptors(className, arraySize > 0 ? Long.toString(arraySize) : "").get(0);
+                className = decodeDescriptors(className, arraySize > 0 ? Long.toString(arraySize) : "").getFirst();
             }
             print(className);
             String description = object.getString("description");
@@ -484,7 +484,7 @@ public final class PrettyWriter extends EventPrintWriter {
         }
         String className = clazz.getName();
         if (className.startsWith("[")) {
-            className = decodeDescriptors(className, "").get(0);
+            className = decodeDescriptors(className, "").getFirst();
         }
         println(className + " (classLoader = " + classLoaderName + ")" + postFix);
     }

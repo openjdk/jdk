@@ -331,7 +331,7 @@ final class TableRenderer {
         for (TableCell cell : tableCells) {
             maxHeight = Math.max(cell.getHeight(), maxHeight);
         }
-        TableCell lastCell = tableCells.get(tableCells.size() - 1);
+        TableCell lastCell = tableCells.getLast();
         for (int rowIndex = 0; rowIndex < maxHeight; rowIndex++) {
             for (TableCell cell : tableCells) {
                 if (rowIndex < cell.getHeight()) {
