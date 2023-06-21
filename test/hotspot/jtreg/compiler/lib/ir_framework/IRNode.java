@@ -1173,10 +1173,29 @@ public class IRNode {
         vectorNode(RSHIFT_VS, "RShiftVS", "short");
     }
 
-    public static final String RSHIFT_V = PREFIX + "RSHIFT_V" + POSTFIX;
+    public static final String RSHIFT_VB = VECTOR_PREFIX + "RSHIFT_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(RSHIFT_V, "RShiftV(B|S|I|L)");
+        vectorNode(RSHIFT_VB, "RShiftVB", "byte");
+    }
+
+    public static final String RSHIFT_VS = VECTOR_PREFIX + "RSHIFT_VS" + POSTFIX;
+    static {
+        vectorNode(RSHIFT_VS, "RShiftVS", "short");
+    }
+
+    public static final String RSHIFT_VC = VECTOR_PREFIX + "RSHIFT_VC" + POSTFIX;
+    static {
+        vectorNode(RSHIFT_VC, "RShiftVS", "char"); // short computation with char type
+    }
+
+    public static final String RSHIFT_VI = VECTOR_PREFIX + "RSHIFT_VI" + POSTFIX;
+    static {
+        vectorNode(RSHIFT_VI, "RShiftVI", "int");
+    }
+
+    public static final String RSHIFT_VL = VECTOR_PREFIX + "RSHIFT_VL" + POSTFIX;
+    static {
+        vectorNode(RSHIFT_VL, "RShiftVL", "long");
     }
 
     public static final String SAFEPOINT = PREFIX + "SAFEPOINT" + POSTFIX;

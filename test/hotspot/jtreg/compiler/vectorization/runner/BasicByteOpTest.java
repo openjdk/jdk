@@ -201,7 +201,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VB, ">0"})
     public byte[] vectorSignedShiftRight() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -212,7 +212,7 @@ public class BasicByteOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VB, ">0"})
     public byte[] vectorUnsignedShiftRight() {
         byte[] res = new byte[SIZE];
         for (int i = 0; i < SIZE; i++) {

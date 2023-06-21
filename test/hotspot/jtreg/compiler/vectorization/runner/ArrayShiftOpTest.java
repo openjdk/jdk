@@ -98,7 +98,7 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VI, ">0"})
     public int[] intShiftLargeDistConstant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -109,7 +109,7 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VI, ">0"})
     public int[] intShiftLargeDistInvariant() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -120,7 +120,7 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VS, ">0"})
     public short[] shortShiftLargeDistConstant() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -131,7 +131,7 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VS, ">0"})
     public short[] shortShiftLargeDistInvariant() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -186,7 +186,7 @@ public class ArrayShiftOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
-        counts = {IRNode.RSHIFT_V, ">0"})
+        counts = {IRNode.RSHIFT_VS, ">0"})
     public short[] vectorUnsignedShiftRight() {
         short[] res = new short[SIZE];
         for (int i = 0; i < SIZE; i++) {
