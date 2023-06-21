@@ -1,0 +1,34 @@
+# .github/workflows/sync-upstream.yml
+name: Sync Upstream
+
+on:
+  schedule:
+    - cron: '22 14 * * *' # Runs every day at 14:15 UTC
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        persist-credentials: false
+        fetch-depth: 0
+
+    - name: Pull latest changes from upstream
+      run: |
+        git config --global user.email "sync@datadoghq.com"
+        git config --global user.name "Datadog Syncup Service"
+        git remote add upstream https://github.com/openjdk/jdk.git
+        git fetch upstream
+        git checkout -b upstream-master upstream/master
+        git checkout master
+        git merge upstream-master
+
+    - name: Push changes to downstream
+      uses: ad-m/github-push-action@master
+      with:
+        github_token: ${{ secrets.GH_PAT }}
+        branch: master
