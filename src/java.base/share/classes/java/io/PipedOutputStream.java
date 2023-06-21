@@ -163,7 +163,7 @@ public class PipedOutputStream extends OutputStream {
      */
     @Override
     public synchronized void flush() throws IOException {
-        PipedInputStream sink = this.sink;
+        var sink = this.sink;
         if (sink != null) {
             synchronized (sink) {
                 sink.notifyAll();
