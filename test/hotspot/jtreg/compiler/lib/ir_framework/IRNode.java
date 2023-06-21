@@ -1116,10 +1116,14 @@ public class IRNode {
         beforeMatchingNameRegex(REVERSE_L, "ReverseL");
     }
 
-    public static final String REVERSE_V = PREFIX + "REVERSE_V" + POSTFIX;
+    public static final String REVERSE_VI = VECTOR_PREFIX + "REVERSE_VI" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(REVERSE_V, "ReverseV");
+        vectorNode(REVERSE_VI, "ReverseV", "int");
+    }
+
+    public static final String REVERSE_VL = VECTOR_PREFIX + "REVERSE_VL" + POSTFIX;
+    static {
+        vectorNode(REVERSE_VL, "ReverseV", "long");
     }
 
     public static final String ROUND_VD = VECTOR_PREFIX + "ROUND_VD" + POSTFIX;
@@ -1779,16 +1783,24 @@ public class IRNode {
         machOnlyNameRegex(XOR3_SVE, "veor3_sve");
     }
 
-    public static final String COMPRESS_BITSV = PREFIX + "COMPRESS_BITSV" + POSTFIX;
+    public static final String COMPRESS_BITSVI = VECTOR_PREFIX + "COMPRESS_BITSVI" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(COMPRESS_BITSV, "CompressBitsV");
+        vectorNode(COMPRESS_BITSVI, "CompressBitsV", "int");
     }
 
-    public static final String EXPAND_BITSV = PREFIX + "EXPAND_BITSV" + POSTFIX;
+    public static final String COMPRESS_BITSVL = VECTOR_PREFIX + "COMPRESS_BITSVL" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(EXPAND_BITSV, "ExpandBitsV");
+        vectorNode(COMPRESS_BITSVL, "CompressBitsV", "long");
+    }
+
+    public static final String EXPAND_BITSVI = VECTOR_PREFIX + "EXPAND_BITSVI" + POSTFIX;
+    static {
+        vectorNode(EXPAND_BITSVI, "ExpandBitsV", "int");
+    }
+
+    public static final String EXPAND_BITSVL = VECTOR_PREFIX + "EXPAND_BITSVL" + POSTFIX;
+    static {
+        vectorNode(EXPAND_BITSVL, "ExpandBitsV", "long");
     }
 
     public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
