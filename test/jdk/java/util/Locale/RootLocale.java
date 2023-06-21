@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,20 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 6277243
  * @summary Verify that there is Locale.ROOT constant, and it is equal to Locale("", "", "")
+ * @run junit RootLocale
  */
 
 import java.util.Locale;
 
-public class bug6277243 {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class RootLocale {
+
+    @Test
+    public void rootTest() {
         Locale root = Locale.of("", "", "");
-        if (!Locale.ROOT.equals(root)) {
-            throw new RuntimeException("Locale.ROOT is not equal to Locale(\"\", \"\", \"\")");
-        }
+        assertEquals(Locale.ROOT, root, "Locale.ROOT is not equal to Locale(\"\", \"\", \"\")");
     }
 }
