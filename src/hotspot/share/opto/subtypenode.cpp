@@ -33,6 +33,10 @@
 #include "opto/subtypenode.hpp"
 
 const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const {
+  if (!super_t->isa_klassptr() ||
+      (!sub_t->isa_klassptr() && !sub_t->isa_oopptr())) {
+    return bottom_type();
+  }
   const TypeKlassPtr* superk = super_t->isa_klassptr();
   const TypeKlassPtr* subk = sub_t->isa_klassptr() ? sub_t->is_klassptr() : sub_t->is_oopptr()->as_klass_type();
 
