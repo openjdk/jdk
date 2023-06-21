@@ -27,7 +27,7 @@
 #include "cds/heapShared.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataGraph.inline.hpp"
-#include "classfile/javaClasses.hpp"
+#include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -61,10 +61,6 @@ void Klass::set_java_mirror(Handle m) {
 
 oop Klass::java_mirror_no_keepalive() const {
   return _java_mirror.peek();
-}
-
-void Klass::replace_java_mirror(oop mirror) {
-  _java_mirror.replace(mirror);
 }
 
 bool Klass::is_cloneable() const {
@@ -786,7 +782,7 @@ void Klass::verify_on(outputStream* st) {
   }
 
   if (java_mirror_no_keepalive() != NULL) {
-    guarantee(oopDesc::is_oop(java_mirror_no_keepalive()), "should be instance");
+    guarantee(java_lang_Class::is_instance(java_mirror_no_keepalive()), "should be instance");
   }
 }
 

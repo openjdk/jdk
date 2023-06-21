@@ -1318,7 +1318,7 @@ class RedefineVerifyMark : public StackObj {
  private:
   JvmtiThreadState* _state;
   Klass*            _scratch_class;
-  Handle            _scratch_mirror;
+  OopHandle         _scratch_mirror;
 
  public:
 
@@ -1326,14 +1326,14 @@ class RedefineVerifyMark : public StackObj {
                      JvmtiThreadState* state) : _state(state), _scratch_class(scratch_class)
   {
     _state->set_class_versions_map(the_class, scratch_class);
-    _scratch_mirror = Handle(_state->get_thread(), _scratch_class->java_mirror());
-    _scratch_class->replace_java_mirror(the_class->java_mirror());
+    _scratch_mirror = the_class->java_mirror_handle();  // this is a copy that is swapped
+    _scratch_class->swap_java_mirror_handle(_scratch_mirror);
   }
 
   ~RedefineVerifyMark() {
     // Restore the scratch class's mirror, so when scratch_class is removed
     // the correct mirror pointing to it can be cleared.
-    _scratch_class->replace_java_mirror(_scratch_mirror());
+    _scratch_class->swap_java_mirror_handle(_scratch_mirror);
     _state->clear_class_versions_map();
   }
 };

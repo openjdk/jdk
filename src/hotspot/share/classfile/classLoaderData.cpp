@@ -821,6 +821,7 @@ void ClassLoaderData::add_to_deallocate_list(Metadata* m) {
       _deallocate_list = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(100, mtClass);
     }
     _deallocate_list->append_if_missing(m);
+    ResourceMark rm;
     log_debug(class, loader, data)("deallocate added for %s", m->print_value_string());
     ClassLoaderDataGraph::set_should_clean_deallocate_lists();
   }

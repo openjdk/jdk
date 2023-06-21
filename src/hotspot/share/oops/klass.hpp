@@ -268,7 +268,8 @@ protected:
   void set_archived_java_mirror(oop m) NOT_CDS_JAVA_HEAP_RETURN;
 
   // Temporary mirror switch used by RedefineClasses
-  void replace_java_mirror(oop mirror);
+  OopHandle java_mirror_handle() const { return _java_mirror; }
+  void swap_java_mirror_handle(OopHandle& mirror) { _java_mirror.swap(mirror); }
 
   // Set java mirror OopHandle to NULL for CDS
   // This leaves the OopHandle in the CLD, but that's ok, you can't release them.
