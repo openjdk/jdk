@@ -418,7 +418,7 @@ public final class PrettyWriter extends EventPrintWriter {
         if (clazz != null) {
             String className = clazz.getName();
             if (className!= null && className.startsWith("[")) {
-                className = decodeDescriptors(className, arraySize > 0 ? Long.toString(arraySize) : "").getFirst();
+                className = ValueFormatter.decodeDescriptors(className, arraySize > 0 ? Long.toString(arraySize) : "").getFirst();
             }
             print(className);
             String description = object.getString("description");
@@ -463,7 +463,7 @@ public final class PrettyWriter extends EventPrintWriter {
         StringJoiner sj = new StringJoiner(", ");
         String md = m.getDescriptor().replace("/", ".");
         String parameter = md.substring(1, md.lastIndexOf(")"));
-        for (String qualifiedName : decodeDescriptors(parameter, "")) {
+        for (String qualifiedName : ValueFormatter.decodeDescriptors(parameter, "")) {
             String typeName = qualifiedName.substring(qualifiedName.lastIndexOf('.') + 1);
             sj.add(typeName);
         }
@@ -484,58 +484,9 @@ public final class PrettyWriter extends EventPrintWriter {
         }
         String className = clazz.getName();
         if (className.startsWith("[")) {
-            className = decodeDescriptors(className, "").getFirst();
+            className = ValueFormatter.decodeDescriptors(className, "").getFirst();
         }
         println(className + " (classLoader = " + classLoaderName + ")" + postFix);
-    }
-
-    List<String> decodeDescriptors(String descriptor, String arraySize) {
-        List<String> descriptors = new ArrayList<>();
-        for (int index = 0; index < descriptor.length(); index++) {
-            String arrayBrackets = "";
-            while (descriptor.charAt(index) == '[') {
-                arrayBrackets = arrayBrackets +  "[" + arraySize + "]" ;
-                arraySize = "";
-                index++;
-            }
-            char c = descriptor.charAt(index);
-            String type;
-            switch (c) {
-            case 'L':
-                int endIndex = descriptor.indexOf(';', index);
-                type = descriptor.substring(index + 1, endIndex);
-                index = endIndex;
-                break;
-            case 'I':
-                type = "int";
-                break;
-            case 'J':
-                type = "long";
-                break;
-            case 'Z':
-                type = "boolean";
-                break;
-            case 'D':
-                type = "double";
-                break;
-            case 'F':
-                type = "float";
-                break;
-            case 'S':
-                type = "short";
-                break;
-            case 'C':
-                type = "char";
-                break;
-            case 'B':
-                type = "byte";
-                break;
-            default:
-                type = "<unknown-descriptor-type>";
-            }
-            descriptors.add(type + arrayBrackets);
-        }
-        return descriptors;
     }
 
     private void printThread(RecordedThread thread, String postFix) {
