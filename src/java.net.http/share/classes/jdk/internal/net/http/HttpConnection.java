@@ -47,6 +47,7 @@ import java.net.http.HttpHeaders;
 
 import javax.net.ssl.SNIServerName;
 
+import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.Demand;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Logger;
@@ -290,7 +291,7 @@ abstract class HttpConnection implements Closeable {
             } else {
                 String[] alpn = null;
                 if (version == HTTP_2 && hasRequiredHTTP2TLSVersion(client)) {
-                    alpn = new String[] { "h2", "http/1.1" };
+                    alpn = new String[] { Alpns.H2, Alpns.HTTP_1_1 };
                 }
                 return getSSLConnection(addr, proxy, alpn, request, client);
             }

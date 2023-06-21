@@ -981,6 +981,13 @@ public class JavaCompiler {
         } catch (Abort ex) {
             if (devVerbose)
                 ex.printStackTrace(System.err);
+
+            // In case an Abort was thrown before processAnnotations could be called,
+            // we could have deferred diagnostics that haven't been reported.
+            if (deferredDiagnosticHandler != null) {
+                deferredDiagnosticHandler.reportDeferredDiagnostics();
+                log.popDiagnosticHandler(deferredDiagnosticHandler);
+            }
         } finally {
             if (verbose) {
                 elapsed_msec = elapsed(start_msec);

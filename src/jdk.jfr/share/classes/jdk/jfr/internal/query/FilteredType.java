@@ -31,7 +31,7 @@ import java.util.Objects;
 import jdk.jfr.EventType;
 import jdk.jfr.Experimental;
 import jdk.jfr.ValueDescriptor;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Type referenced in a FROM-clause.

@@ -2777,7 +2777,7 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   // If new_exception returns a different exception while creating the exception,
   // abandon the attempt to save the initialization error and return null.
   if (init_error->klass()->name() != exception_name) {
-    log_info(class, init)("Exception thrown while saving initialization exception %s",
+    log_info(class, init)("Exception %s thrown while saving initialization exception",
                         init_error->klass()->external_name());
     return Handle();
   }

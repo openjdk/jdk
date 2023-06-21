@@ -31,19 +31,19 @@ import java.io.UncheckedIOException;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.http.HttpConnectTimeoutException;
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.net.http.HttpConnectTimeoutException;
 import java.time.Duration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.ArrayList;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Flow;
@@ -53,9 +53,9 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLException;
-import java.net.http.HttpClient;
-import java.net.http.HttpHeaders;
+
 import jdk.internal.net.http.HttpConnection.HttpPublisher;
+import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.FlowTube.TubeSubscriber;
 import jdk.internal.net.http.common.HeaderDecoder;
@@ -81,11 +81,15 @@ import jdk.internal.net.http.frame.PushPromiseFrame;
 import jdk.internal.net.http.frame.ResetFrame;
 import jdk.internal.net.http.frame.SettingsFrame;
 import jdk.internal.net.http.frame.WindowUpdateFrame;
-import jdk.internal.net.http.hpack.Encoder;
 import jdk.internal.net.http.hpack.Decoder;
 import jdk.internal.net.http.hpack.DecodingCallback;
+import jdk.internal.net.http.hpack.Encoder;
 import static java.nio.charset.StandardCharsets.UTF_8;
-import static jdk.internal.net.http.frame.SettingsFrame.*;
+import static jdk.internal.net.http.frame.SettingsFrame.DEFAULT_INITIAL_WINDOW_SIZE;
+import static jdk.internal.net.http.frame.SettingsFrame.HEADER_TABLE_SIZE;
+import static jdk.internal.net.http.frame.SettingsFrame.INITIAL_WINDOW_SIZE;
+import static jdk.internal.net.http.frame.SettingsFrame.MAX_CONCURRENT_STREAMS;
+import static jdk.internal.net.http.frame.SettingsFrame.MAX_FRAME_SIZE;
 
 /**
  * An Http2Connection. Encapsulates the socket(channel) and any SSLEngine used
@@ -296,7 +300,7 @@ class Http2Connection  {
     //-------------------------------------
     final HttpConnection connection;
     private final Http2ClientImpl client2;
-    private final ConcurrentMap<Integer,Stream<?>> streams = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Integer,Stream<?>> streams = new ConcurrentHashMap<>();
     private int nextstreamid;
     private int nextPushStream = 2;
     // actual stream ids are not allocated until the Headers frame is ready
@@ -535,7 +539,7 @@ class Http2Connection  {
             }
             DEBUG_LOGGER.log("checkSSLConfig: alpn: '%s'", alpn );
 
-            if (alpn == null || !alpn.equals("h2")) {
+            if (alpn == null || !alpn.equals(Alpns.H2)) {
                 String msg;
                 if (alpn == null) {
                     Log.logSSL("ALPN not supported");
@@ -545,7 +549,7 @@ class Http2Connection  {
                         case "":
                             Log.logSSL(msg = "No ALPN negotiated");
                             break;
-                        case "http/1.1":
+                        case Alpns.HTTP_1_1:
                             Log.logSSL( msg = "HTTP/1.1 ALPN returned");
                             break;
                         default:
@@ -754,7 +758,14 @@ class Http2Connection  {
     void shutdown(Throwable t) {
         int state = closedState;
         if (debug.on()) debug.log(() -> "Shutting down h2c (state="+describeClosedState(state)+"): " + t);
-        if (!markShutdownRequested()) return;
+        stateLock.lock();
+        try {
+            if (!markShutdownRequested()) return;
+            Throwable initialCause = this.cause;
+            if (initialCause == null && t != null) this.cause = t;
+        } finally {
+            stateLock.unlock();
+        }
         if (Log.errors()) {
             if (t!= null && (!(t instanceof EOFException) || isActive())) {
                 Log.logError(t);
@@ -764,8 +775,6 @@ class Http2Connection  {
                 Log.logError("Shutting down connection");
             }
         }
-        Throwable initialCause = this.cause;
-        if (initialCause == null && t != null) this.cause = t;
         client2.deleteConnection(this);
         for (Stream<?> s : streams.values()) {
             try {
@@ -1428,6 +1437,7 @@ class Http2Connection  {
 
     void sendFrame(Http2Frame frame) {
         try {
+            if (debug.on()) debug.log("sending frame: " + frame);
             HttpPublisher publisher = publisher();
             sendlock.lock();
             try {

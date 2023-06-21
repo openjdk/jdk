@@ -25,6 +25,7 @@
  * @test id=default_gc
  * @enablePreview
  * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox
@@ -40,10 +41,10 @@
  */
 
 /*
- * @test id=zgc
+ * @test id=ZSinglegen
  * @enablePreview
  * @requires jdk.foreign.linker != "UNSUPPORTED"
- * @requires vm.gc.Z
+ * @requires vm.gc.ZSinglegen
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox
@@ -55,9 +56,30 @@
  *   -XX:+WhiteBoxAPI
  *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
- *   -XX:+UseZGC
+ *   -XX:+UseZGC -XX:-ZGenerational
  *   TestAsyncStackWalk
  */
+
+/*
+ * @test id=ZGenerational
+ * @enablePreview
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires vm.gc.ZGenerational
+ * @library /test/lib
+ * @library ../
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ *
+ * @run main/othervm
+ *   -Xbootclasspath/a:.
+ *   -XX:+UnlockDiagnosticVMOptions
+ *   -XX:+WhiteBoxAPI
+ *   --enable-native-access=ALL-UNNAMED
+ *   -Xbatch
+ *   -XX:+UseZGC -XX:+ZGenerational
+ *   TestAsyncStackWalk
+ */
+
 /*
  * @test id=shenandoah
  * @enablePreview
