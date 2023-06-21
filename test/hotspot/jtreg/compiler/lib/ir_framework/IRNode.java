@@ -1173,16 +1173,6 @@ public class IRNode {
         vectorNode(RSHIFT_VS, "RShiftVS", "short");
     }
 
-    public static final String RSHIFT_VB = VECTOR_PREFIX + "RSHIFT_VB" + POSTFIX;
-    static {
-        vectorNode(RSHIFT_VB, "RShiftVB", "byte");
-    }
-
-    public static final String RSHIFT_VS = VECTOR_PREFIX + "RSHIFT_VS" + POSTFIX;
-    static {
-        vectorNode(RSHIFT_VS, "RShiftVS", "short");
-    }
-
     public static final String RSHIFT_VC = VECTOR_PREFIX + "RSHIFT_VC" + POSTFIX;
     static {
         vectorNode(RSHIFT_VC, "RShiftVS", "char"); // short computation with char type
