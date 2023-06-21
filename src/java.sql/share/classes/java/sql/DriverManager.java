@@ -654,7 +654,7 @@ public class DriverManager {
         /*
          * When callerCl is null, we should check the application's
          * (which is invoking this class indirectly)
-         * classloader, so that the JDBC driver class outside rt.jar
+         * classloader, so that the JDBC driver class outside the image
          * can be loaded from here.
          */
         ClassLoader callerCL = caller != null ? caller.getClassLoader() : null;
