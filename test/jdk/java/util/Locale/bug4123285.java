@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,16 +20,9 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/*
- * @test
- * @bug 4123285
- * @summary Test that getAvailableLocales() works in Applet
- */
-
 import java.util.Locale;
 
-public class LocalesInApplet extends java.applet.Applet {
+public class bug4123285 extends java.applet.Applet {
     public void start() {
         System.out.println("Hello, world!");
         Locale[] systemLocales = null;
