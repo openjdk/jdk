@@ -624,10 +624,12 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _coarsened_locks   (comp_arena(), 8, 0, nullptr),
                   _congraph(nullptr),
                   NOT_PRODUCT(_igv_printer(nullptr) COMMA)
-                  _dead_node_list(comp_arena()),
+                  _unique(0),
                   _dead_node_count(0),
-                  _node_arena(mtCompiler),
-                  _old_arena(mtCompiler),
+                  _dead_node_list(comp_arena()),
+                  _node_arena_one(mtCompiler),
+                  _node_arena_two(mtCompiler),
+                  _node_arena(&_node_arena_one),
                   _mach_constant_base_node(nullptr),
                   _Compile_types(mtCompiler),
                   _initial_gvn(nullptr),
@@ -913,10 +915,12 @@ Compile::Compile( ciEnv* ci_env,
     _failure_reason(nullptr),
     _congraph(nullptr),
     NOT_PRODUCT(_igv_printer(nullptr) COMMA)
-    _dead_node_list(comp_arena()),
+    _unique(0),
     _dead_node_count(0),
-    _node_arena(mtCompiler),
-    _old_arena(mtCompiler),
+    _dead_node_list(comp_arena()),
+    _node_arena_one(mtCompiler),
+    _node_arena_two(mtCompiler),
+    _node_arena(&_node_arena_one),
     _mach_constant_base_node(nullptr),
     _Compile_types(mtCompiler),
     _initial_gvn(nullptr),
@@ -1927,7 +1931,7 @@ void Compile::process_for_unstable_if_traps(PhaseIterGVN& igvn) {
         if (!live_locals.at(i) && !local->is_top() && local != lhs && local!= rhs) {
           uint idx = jvms->locoff() + i;
 #ifdef ASSERT
-          if (Verbose) {
+          if (PrintOpto && Verbose) {
             tty->print("[unstable_if] kill local#%d: ", idx);
             local->dump();
             tty->cr();
@@ -2971,9 +2975,8 @@ void Compile::Code_Gen() {
     output.Output();
     if (failing())  return;
     output.install();
+    print_method(PHASE_FINAL_CODE, 1); // Compile::_output is not null here
   }
-
-  print_method(PHASE_FINAL_CODE, 1);
 
   // He's dead, Jim.
   _cfg     = (PhaseCFG*)((intptr_t)0xdeadbeef);
