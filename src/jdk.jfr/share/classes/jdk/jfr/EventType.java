@@ -36,7 +36,7 @@ import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.MetadataRepository;
 import jdk.jfr.internal.PlatformEventType;
 import jdk.jfr.internal.Type;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Describes an event, its fields, settings and annotations.
