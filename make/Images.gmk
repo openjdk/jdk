@@ -92,6 +92,7 @@ endif
 JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" || test "$$?" = "1" )
 
 JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
+JRE_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre
 
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
@@ -110,9 +111,9 @@ JLINK_JDK_TARGETS := $(jlink_jdk)
 $(eval $(call SetupExecute, jlink_jre, \
     WARN := Creating legacy jre image, \
     DEPS := $(JRE_JMODS) $(BASE_RELEASE_FILE) \
-        $(call DependOnVariable, JRE_MODULES_LIST), \
+        $(call DependOnVariable, JRE_MODULES_LIST, $(JRE_IMAGE_SUPPORT_DIR)/_jlink_jre.vardeps), \
     OUTPUT_DIR := $(JRE_IMAGE_DIR), \
-    SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre, \
+    SUPPORT_DIR := $(JRE_IMAGE_SUPPORT_DIR), \
     PRE_COMMAND := $(RM) -r $(JRE_IMAGE_DIR), \
     COMMAND := $(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
         $(JLINK_JRE_EXTRA_OPTS) --output $(JRE_IMAGE_DIR), \
@@ -161,7 +162,7 @@ define CreateCDSArchive
       INFO := Using CDS flags for $1: $$($1_$2_CDS_DUMP_FLAGS), \
       DEPS := $$(jlink_jre), \
       OUTPUT_FILE := $$(JRE_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE), \
-      SUPPORT_DIR := $$(SUPPORT_OUTPUTDIR)/images/jre, \
+      SUPPORT_DIR := $$(JRE_IMAGE_SUPPORT_DIR), \
       COMMAND := $$(FIXPATH) $$(JRE_IMAGE_DIR)/bin/java -Xshare:dump \
           -XX:SharedArchiveFile=$$(JRE_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE) \
           -$1 $$($1_$2_DUMP_EXTRA_ARG) $$($1_$2_CDS_DUMP_FLAGS) $$(LOG_INFO), \
