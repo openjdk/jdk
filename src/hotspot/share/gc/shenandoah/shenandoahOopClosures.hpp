@@ -40,13 +40,12 @@ enum StringDedupMode {
 
 class ShenandoahMarkRefsSuperClosure : public MetadataVisitingOopIterateClosure {
 private:
-  StringDedup::Requests     _stringDedup_requests;
   ShenandoahObjToScanQueue* _queue;
   ShenandoahMarkingContext* const _mark_context;
   bool _weak;
 
 protected:
-  template <class T, StringDedupMode STRING_DEDUP>
+  template <class T>
   void work(T *p);
 
 public:
@@ -65,7 +64,7 @@ class ShenandoahMarkUpdateRefsSuperClosure : public ShenandoahMarkRefsSuperClosu
 protected:
   ShenandoahHeap* const _heap;
 
-  template <class T, StringDedupMode STRING_DEDUP>
+  template <class T>
   inline void work(T* p);
 
 public:
@@ -76,11 +75,10 @@ public:
   };
 };
 
-template <StringDedupMode STRING_DEDUP>
 class ShenandoahMarkUpdateRefsClosure : public ShenandoahMarkUpdateRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, STRING_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T>(p); }
 
 public:
   ShenandoahMarkUpdateRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -91,11 +89,10 @@ public:
   virtual bool do_metadata()        { return false; }
 };
 
-template <StringDedupMode STRING_DEDUP>
 class ShenandoahMarkUpdateRefsMetadataClosure : public ShenandoahMarkUpdateRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, STRING_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T>(p); }
 
 public:
   ShenandoahMarkUpdateRefsMetadataClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -107,11 +104,10 @@ public:
 };
 
 
-template <StringDedupMode STRING_DEDUP>
 class ShenandoahMarkRefsClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, STRING_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T>(p); }
 
 public:
   ShenandoahMarkRefsClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
@@ -123,11 +119,10 @@ public:
 };
 
 
-template <StringDedupMode STRING_DEDUP>
 class ShenandoahMarkRefsMetadataClosure : public ShenandoahMarkRefsSuperClosure {
 private:
   template <class T>
-  inline void do_oop_work(T* p)     { work<T, STRING_DEDUP>(p); }
+  inline void do_oop_work(T* p)     { work<T>(p); }
 
 public:
   ShenandoahMarkRefsMetadataClosure(ShenandoahObjToScanQueue* q, ShenandoahReferenceProcessor* rp) :
