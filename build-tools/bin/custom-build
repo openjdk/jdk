@@ -1,0 +1,133 @@
+#!/bin/bash
+set -xeu
+set -o pipefail
+
+BUILD_ROOT=$(brazil-path package-build-root)
+target="release"
+if [ "$#" -gt 0 ]; then
+  target="$1"
+fi
+
+if [ "${target}" == "clean" ]; then
+  echo "**** CLEANING PRIOR BUILDS ****"
+  rm -rf "${BUILD_ROOT}"
+  rm -rf build
+  exit 0
+fi
+
+THIRD_PARTY_VERSION=$(grep thirdPartyVersion Config |cut -d'"' -f2 |cut -d- -f2)
+JDK_MV=$(echo ${THIRD_PARTY_VERSION} | cut -d'+' -f1 | cut -d'.' -f1)
+UPSTREAM_BUILD=$(echo ${THIRD_PARTY_VERSION} | cut -d'+' -f2)
+BRAZIL_BUILD_VERSION=$(brazil-path package-name-full-version | cut -d'-' -f2)
+
+PACKAGE_ROOT=$(brazil-path package-src-root)
+
+EDITABLE_SOURCE="${BUILD_ROOT}/private/editable-source"
+DOCS_DIR="${BUILD_ROOT}/brazil-documentation"
+IMAGE_DIR="${BUILD_ROOT}/jdk-${JDK_MV}"
+TEST_IMAGE_DIR="${BUILD_ROOT}/testimage"
+GENERATED_SRC_DIR="${BUILD_ROOT}/generated-src"
+
+BASH="$(brazil-path '[Bash]run.runtimefarm')"/bin/bash
+RSYNC="$(brazil-path '[Rsync]run.runtimefarm')"/bin/rsync
+
+BOOTSTRAP_JDK=$(brazil-path tooldirect.jdk)
+
+X_PATH="$(brazil-path [X11Libs]lib.libfarm)"
+CUPS_PATH="$(brazil-path [Cups]lib.libfarm)"
+FONTCONFIG_PATH="$(brazil-path [Fontconfig]lib.libfarm)"
+GTEST_SRC_PATH="$(brazil-path [Googletest]pkg.src)/third-party-src"
+ALSALIB_PATH="$(brazil-path [AlsaLib]lib.libfarm)"
+
+# Clean up old build artifacts that may be read-only before starting the build so we don't have
+# any old files from previous builds.
+rm -rf ${IMAGE_DIR} ${TEST_IMAGE_DIR} ${GENERATED_SRC_DIR}
+
+${RSYNC} -am --exclude=pre-build --exclude=/installers --exclude /build "${PACKAGE_ROOT}/" "${EDITABLE_SOURCE}"
+
+pushd ${EDITABLE_SOURCE}
+
+ARCH=$(uname -m)
+if [[ "${ARCH}" == "x86_64" || "${ARCH}" == "aarch64" ]]; then
+  if [[ $(brazil-path package-name) == OpenJDKTip* ]]; then
+    EXTRA_ZLIB=""
+  else
+    EXTRA_ZLIB="--with-additional-zlib=cloudflare,chromium"
+  fi
+else
+  EXTRA_ZLIB=""
+fi
+
+ARCH_FLAGS=()
+
+if [[ "${ARCH}" == "aarch64" ]]; then
+  ARCH_FLAGS=("--with-extra-cflags=-moutline-atomics"  "--with-extra-cxxflags=-moutline-atomics")
+else
+  ARCH_FLAGS=("")
+fi
+
+DEBUG_OPTIONS="--with-native-debug-symbols=zipped"
+DEBUG_LEVEL="release"
+
+if [ "${target}" == "debug" ] || [ "${target}" == "slowdebug" ]; then
+  export ZIP_DEBUGINFO_FILES=0
+  DEBUG_OPTIONS="--with-debug-level=slowdebug --with-native-debug-symbols=external"
+  DEBUG_LEVEL="slowdebug"
+  echo "Configuration: slow debug"
+elif [ "${target}" == "fastdebug" ]; then
+  DEBUG_OPTIONS="--with-debug-level=fastdebug --with-native-debug-symbols=zipped"
+  DEBUG_LEVEL="fastdebug"
+  echo "Configuration: fast debug"
+fi
+
+CONFIG_ARGS=('--with-jvm-features=zgc shenandoahgc'
+            "--with-boot-jdk=${BOOTSTRAP_JDK}"
+            "--with-version-feature=${JDK_MV}"
+            "--with-version-build=${UPSTREAM_BUILD}"
+            '--with-version-pre='
+            '--with-version-opt='
+            "--with-vendor-version-string=${BRAZIL_BUILD_VERSION}"
+            "--with-x=${X_PATH}"
+            "--with-cups=${CUPS_PATH}"
+            "--with-fontconfig=${FONTCONFIG_PATH}"
+            '--with-freetype=bundled'
+            '--with-giflib=bundled'
+            '--with-harfbuzz=bundled'
+            '--with-lcms=bundled'
+            '--with-libjpeg=bundled'
+            '--with-libpng=bundled'
+            '--with-zlib=bundled'
+            "${EXTRA_ZLIB}"
+            "${DEBUG_OPTIONS}"
+            '--with-vendor-name=Amazon.com Inc.'
+            "--with-gtest=${GTEST_SRC_PATH}"
+            '--with-jtreg=no'
+            '--disable-jtreg-failure-handler'
+            "--with-alsa=${ALSALIB_PATH}"
+            "${ARCH_FLAGS[@]}"
+)
+
+ ${BASH} ./configure "${CONFIG_ARGS[@]}"
+
+make images
+make test-image
+make docs
+make run-test 'TEST="gtest:all"'
+
+IMAGE_BUILD_OUTPUT="build/linux-${ARCH}-server-${DEBUG_LEVEL}/images"
+
+mkdir -p ${IMAGE_DIR}
+cp -rL ${IMAGE_BUILD_OUTPUT}/jdk/* ${IMAGE_DIR}
+mkdir -p ${DOCS_DIR}
+cp -rL ${IMAGE_BUILD_OUTPUT}/docs/* ${DOCS_DIR}
+mkdir -p ${TEST_IMAGE_DIR}
+cp -rL ${IMAGE_BUILD_OUTPUT}/test/* ${TEST_IMAGE_DIR}
+mkdir -p ${GENERATED_SRC_DIR}
+cp -rL ${IMAGE_BUILD_OUTPUT}/jdk/lib/src.zip ${GENERATED_SRC_DIR}
+
+if ! ${IMAGE_DIR}/bin/java -version 2>&1|grep -q ${THIRD_PARTY_VERSION}; then
+  echo "thirdPartyVersion does not match 'java -version'"
+  echo "Found:"
+  ${IMAGE_DIR}/bin/java -version
+  exit 1
+fi
