@@ -85,6 +85,17 @@ public final class Long extends Number
      */
     @Native public static final long MAX_VALUE = 0x7fffffffffffffffL;
 
+    static final char[] HEX256;
+    static {
+        HEX256 = new char[256];
+        for (int i = 0; i < 256; i++) {
+            int hi = (i >> 4) & 15;
+            int lo = i & 15;
+            HEX256[i] = (char) (((hi < 10 ? '0' + hi : 'a' + hi - 10) << 8)
+                    + (lo < 10 ? '0' + lo : 'a' + lo - 10));
+        }
+    }
+
     /**
      * The {@code Class} instance representing the primitive type
      * {@code long}.
@@ -446,33 +457,104 @@ public final class Long extends Number
     }
 
     static String fastUUID(long lsb, long msb) {
+        final char[] hex256 = HEX256;
+        char i = hex256[((int) (hi >> 56)) & 255];
+        char i1 = hex256[((int) (hi >> 48)) & 255];
+        char i2 = hex256[((int) (hi >> 40)) & 255];
+        char i3 = hex256[((int) (hi >> 32)) & 255];
+        char i4 = hex256[(((int) hi) >> 24) & 255];
+        char i5 = hex256[(((int) hi) >> 16) & 255];
+        char i6 = hex256[(((int) hi) >> 8) & 255];
+        char i7 = hex256[((int) hi) & 255];
+        char i8 = hex256[(((int) (lo >> 56))) & 255];
+        char i9 = hex256[(((int) (lo >> 48))) & 255];
+        char i10 = hex256[(((int) (lo >> 40))) & 255];
+        char i11 = hex256[((int) (lo >> 32)) & 255];
+        char i12 = hex256[(((int) lo) >> 24) & 255];
+        char i13 = hex256[(((int) lo) >> 16) & 255];
+        char i14 = hex256[(((int) lo) >> 8) & 255];
+        char i15 = hex256[((int) lo) & 255];
+
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[36];
-            formatUnsignedLong0(lsb,        4, buf, 24, 12);
-            formatUnsignedLong0(lsb >>> 48, 4, buf, 19, 4);
-            formatUnsignedLong0(msb,        4, buf, 14, 4);
-            formatUnsignedLong0(msb >>> 16, 4, buf, 9,  4);
-            formatUnsignedLong0(msb >>> 32, 4, buf, 0,  8);
 
-            buf[23] = '-';
-            buf[18] = '-';
+            buf[0] = (byte) (i >> 8);
+            buf[1] = (byte) i;
+            buf[2] = (byte) (i1 >> 8);
+            buf[3] = (byte) i1;
+            buf[4] = (byte) (i2 >> 8);
+            buf[5] = (byte) i2;
+            buf[6] = (byte) (i3 >> 8);
+            buf[7] = (byte) i3;
+            buf[8] = '-';
+            buf[9] = (byte) (i4 >> 8);
+            buf[10] = (byte) i4;
+            buf[11] = (byte) (i5 >> 8);
+            buf[12] = (byte) i5;
             buf[13] = '-';
-            buf[8]  = '-';
+            buf[14] = (byte) (i6 >> 8);
+            buf[15] = (byte) i6;
+            buf[16] = (byte) (i7 >> 8);
+            buf[17] = (byte) i7;
+            buf[18] = '-';
+            buf[19] = (byte) (i8 >> 8);
+            buf[20] = (byte) i8;
+            buf[21] = (byte) (i9 >> 8);
+            buf[22] = (byte) i9;
+            buf[23] = '-';
+            buf[24] = (byte) (i10 >> 8);
+            buf[25] = (byte) i10;
+            buf[26] = (byte) (i11 >> 8);
+            buf[27] = (byte) i11;
+            buf[28] = (byte) (i12 >> 8);
+            buf[29] = (byte) i12;
+            buf[30] = (byte) (i13 >> 8);
+            buf[31] = (byte) i13;
+            buf[32] = (byte) (i14 >> 8);
+            buf[33] = (byte) i14;
+            buf[34] = (byte) (i15 >> 8);
+            buf[35] = (byte) i15;
 
             return new String(buf, LATIN1);
         } else {
             byte[] buf = new byte[72];
 
-            formatUnsignedLong0UTF16(lsb,        4, buf, 24, 12);
-            formatUnsignedLong0UTF16(lsb >>> 48, 4, buf, 19, 4);
-            formatUnsignedLong0UTF16(msb,        4, buf, 14, 4);
-            formatUnsignedLong0UTF16(msb >>> 16, 4, buf, 9,  4);
-            formatUnsignedLong0UTF16(msb >>> 32, 4, buf, 0,  8);
-
-            StringUTF16.putChar(buf, 23, '-');
-            StringUTF16.putChar(buf, 18, '-');
+            StringUTF16.putChar(buf, 0, (byte) (i >> 8));
+            StringUTF16.putChar(buf, 1, (byte) i);
+            StringUTF16.putChar(buf, 2, (byte) (i1 >> 8));
+            StringUTF16.putChar(buf, 3, (byte) i1);
+            StringUTF16.putChar(buf, 4, (byte) (i2 >> 8));
+            StringUTF16.putChar(buf, 5, (byte) i2);
+            StringUTF16.putChar(buf, 6, (byte) (i3 >> 8));
+            StringUTF16.putChar(buf, 7, (byte) i3);
+            StringUTF16.putChar(buf, 8, '-');
+            StringUTF16.putChar(buf, 9, (byte) (i4 >> 8));
+            StringUTF16.putChar(buf, 10, (byte) i4);
+            StringUTF16.putChar(buf, 11, (byte) (i5 >> 8));
+            StringUTF16.putChar(buf, 12, (byte) i5);
             StringUTF16.putChar(buf, 13, '-');
-            StringUTF16.putChar(buf,  8, '-');
+            StringUTF16.putChar(buf, 14, (byte) (i6 >> 8));
+            StringUTF16.putChar(buf, 15, (byte) i6);
+            StringUTF16.putChar(buf, 16, (byte) (i7 >> 8));
+            StringUTF16.putChar(buf, 17, (byte) i7);
+            StringUTF16.putChar(buf, 18, '-');
+            StringUTF16.putChar(buf, 19, (byte) (i8 >> 8));
+            StringUTF16.putChar(buf, 20, (byte) i8);
+            StringUTF16.putChar(buf, 21, (byte) (i9 >> 8));
+            StringUTF16.putChar(buf, 22, (byte) i9);
+            StringUTF16.putChar(buf, 23, '-');
+            StringUTF16.putChar(buf, 24, (byte) (i10 >> 8));
+            StringUTF16.putChar(buf, 25, (byte) i10);
+            StringUTF16.putChar(buf, 26, (byte) (i11 >> 8));
+            StringUTF16.putChar(buf, 27, (byte) i11);
+            StringUTF16.putChar(buf, 28, (byte) (i12 >> 8));
+            StringUTF16.putChar(buf, 29, (byte) i12);
+            StringUTF16.putChar(buf, 30, (byte) (i13 >> 8));
+            StringUTF16.putChar(buf, 31, (byte) i13);
+            StringUTF16.putChar(buf, 32, (byte) (i14 >> 8));
+            StringUTF16.putChar(buf, 33, (byte) i14);
+            StringUTF16.putChar(buf, 34, (byte) (i15 >> 8));
+            StringUTF16.putChar(buf, 35, (byte) i15);
 
             return new String(buf, UTF16);
         }
