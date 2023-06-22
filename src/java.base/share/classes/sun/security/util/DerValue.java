@@ -1061,6 +1061,14 @@ public class DerValue {
     }
 
     /**
+     * Determines whether Date was encoded as UTC or Generalized time and
+     * calls getUTCTime or getGeneralizedTime accordingly
+     */
+    public Date getTime() throws IOException {
+        return (tag == tag_UtcTime) ? getUTCTime() : getGeneralizedTime();
+    }
+
+    /**
      * Returns a Date if the DerValue is UtcTime.
      *
      * @return the Date held in this DER value
