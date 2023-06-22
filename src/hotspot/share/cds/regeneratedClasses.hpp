@@ -30,9 +30,17 @@
 
 class InstanceKlass;
 
+// CDS regenerates some of the classes that are loaded normally during the dumping
+// process. For example, LambdaFormInvokers creates new versions of the four
+// java.lang.invoke.xxx$Holder classes that have additional methods.
+//
+// RegeneratedClasses records the relocation between the "original" and
+// "regenerated" versions of these classes. When writing the CDS archive, all
+// references to the "original" versions are redirected to the "regenerated"
+// versions.
 class RegeneratedClasses : public AllStatic {
  public:
-  static void add_class(InstanceKlass* src_klass, InstanceKlass* regen_klass);
+  static void add_class(InstanceKlass* orig_klass, InstanceKlass* regen_klass);
   static void cleanup();
   static bool has_been_regenerated(address orig_obj);
   static void record_regenerated_objects();
