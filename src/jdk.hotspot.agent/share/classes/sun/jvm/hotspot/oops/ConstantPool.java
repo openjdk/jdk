@@ -471,6 +471,21 @@ public class ConstantPool extends Metadata implements ClassConstants {
     U2Array operands = getOperands();
     int count = 0;
     if (operands != null) {
+      // Operands array consists of two parts. First part is an array of 32-bit values which denote
+      // index of the bootstrap method data in the operands array. Note that elements of operands array are of type short.
+      // So each element of first part occupies two slots in the array.
+      // Second part is the bootstrap methods data.
+      // This layout allows us to get BSM count by getting the index of first BSM and dividing it by 2.
+      //
+      // The example below shows layout of operands array with 3 bootstrap methods.
+      // First part has 3 32-bit values indicating the index of the respective bootstrap methods in
+      // the operands array.
+      // The first BSM is at index 6. So the count in this case is 6/2=3.
+      //
+      //            <-----first part----><-------second part------->
+      // index:     0     2      4      6        i2       i3
+      // operands:  |  6  |  i2  |  i3  |  bsm1  |  bsm2  |  bsm3  |
+      //
       count = getOperandOffsetAt(operands, 0) / 2;
     }
     if (DEBUG) {
