@@ -190,8 +190,8 @@ public abstract class Reader implements Readable, Closeable {
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
      * rewinding of the buffer is performed.  If the specified character
-     * buffer is full, then no characters will be read and zero will be
-     * returned.
+     * buffer has no elements {@linkplain java.nio.Buffer#hasRemaining
+     * remaining}, then no characters will be read and zero will be returned.
      *
      * @param target the buffer to read characters into
      * @return The number of characters added to the buffer, or
