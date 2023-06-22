@@ -517,7 +517,7 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // everything: it isn't intended to make sure that pointer types are
 // compatible, for example.
 template <typename T2, typename T1>
-T2 checked_cast(T1 thing) {
+constexpr T2 checked_cast(T1 thing) {
   T2 result = static_cast<T2>(thing);
   assert(static_cast<T1>(result) == thing, "must be");
   return result;

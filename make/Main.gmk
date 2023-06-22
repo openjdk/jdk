@@ -971,7 +971,8 @@ else
   # When creating the BUILDJDK, we don't need to add hashes to java.base, thus
   # we don't need to depend on all other jmods
   ifneq ($(CREATING_BUILDJDK), true)
-    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod, $(JMOD_TARGETS))
+    java.base-jmod: jrtfs-jar $(filter-out java.base-jmod \
+        $(addsuffix -jmod, $(call FindAllUpgradeableModules)), $(JMOD_TARGETS))
   endif
 
   # If not already set, set the JVM target so that the JVM will be built.

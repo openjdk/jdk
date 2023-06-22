@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -303,18 +303,13 @@ public final class JFC {
     }
 
     private static String exceptionToVerb(Exception e) {
-        if (e instanceof FileNotFoundException || e instanceof NoSuchFileException) {
-            return "find";
-        }
-        if (e instanceof ParseException) {
-            return "parse";
-        }
-        if (e instanceof JFCModelException) {
-            return "use";
-        }
-        if (e instanceof AccessDeniedException) {
-            return "access";
-        }
-        return "open";  // InvalidPath, IOException
+        return switch (e) {
+            case FileNotFoundException f -> "find";
+            case NoSuchFileException n -> "find";
+            case ParseException p -> "parse";
+            case JFCModelException j -> "use";
+            case AccessDeniedException a -> "access";
+            default -> "open"; // InvalidPath, IOException
+        };
     }
 }
