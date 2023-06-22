@@ -146,7 +146,7 @@ class NMTPreInitAllocationTable {
   // We chose 8191, as this is a Mersenne prime (2^x - 1), which for a random
   //  polynomial modulo p = (2^x - 1) is uniformily distributed in [p], so each
   //  bit has the same distribution.
-  static const int table_size = (2^13 - 1);
+  static const int table_size = 8191; // i.e. 8191==(2^13 - 1);
 
   NMTPreInitAllocation* _entries[table_size];
 
