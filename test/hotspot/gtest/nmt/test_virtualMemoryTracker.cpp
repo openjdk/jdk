@@ -28,6 +28,13 @@
 #include "services/virtualMemoryTracker.hpp"
 #include "unittest.hpp"
 
+static size_t get_committed() {
+  VirtualMemorySnapshot snapshot;
+  VirtualMemorySummary::snapshot(&snapshot);
+
+  return snapshot.by_type(mtThreadStack)->committed();
+}
+
 TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
   if (!MemTracker::enabled()) {
     return;
@@ -41,31 +48,24 @@ TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
     // Get a region of mapped memory not tracked by the virtual memory tracker.
     address base = (address) os::reserve_memory(2 * size, false);
     VirtualMemoryTracker::remove_released_region(base, 2 * size);
-
-    // Get the initial snapshot.
-    VirtualMemorySnapshot initial_snapshot;
-    VirtualMemorySummary::snapshot(&initial_snapshot);
+    size_t init_sz = get_committed();
 
     // Reserve and commit the top half.
     VirtualMemoryTracker::add_reserved_region(base, size, empty_stack, mtThreadStack);
     VirtualMemoryTracker::add_committed_region(base + size / 2, size / 2, empty_stack);
+    size_t tmp1_sz = get_committed();
 
     // Now pretend we have forgotten to call remove_released_region and allocate an new
     // overlapping region with some commited memory.
     VirtualMemoryTracker::add_reserved_region(base + size / 2, size, empty_stack, mtThreadStack);
     VirtualMemoryTracker::add_committed_region(base + size, size / 2, empty_stack);
+    size_t tmp2_sz = get_committed();
 
     // And remove the committed memory again by reserving a partially overlappinbg region.
     // This should mean the committed memory is now the same as the initial committed memory,
     // since the new region has no committed memory.
     VirtualMemoryTracker::add_reserved_region(base, size, empty_stack, mtThreadStack);
-
-    // Get the new snapshot.
-    VirtualMemorySnapshot new_snapshot;
-    VirtualMemorySummary::snapshot(&new_snapshot);
-
-    size_t init_sz = initial_snapshot.by_type(mtThreadStack)->committed();
-    size_t new_sz = new_snapshot.by_type(mtThreadStack)->committed();
+    size_t new_sz = get_committed();
 
     // Give back the memory.
     VirtualMemoryTracker::remove_released_region(base, size);
@@ -80,8 +80,8 @@ TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
 
     // If it fails too often log the values we see.
     if (i < 50) {
-      tty->print_cr("new_sz: %d, init_sz %d, diff %d, region_size %d", (int) new_sz, (int) init_sz,
-                    (int) (new_sz - init_sz), (int) size);
+      tty->print_cr("new_sz: %d, tmp1_sz %d, tmp2_sz %d, init_sz %d, diff %d, region_size %d", (int) new_sz,
+                    (int) tmp1_sz, (int) tmp2_sz, (int) init_sz, (int) (new_sz - init_sz), (int) size);
     }
 
     // Trigger a test failure on the last run.
