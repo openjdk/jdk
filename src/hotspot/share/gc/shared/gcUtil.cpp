@@ -86,7 +86,7 @@ void AdaptivePaddedAverage::sample(float new_sample) {
 
   // Now update the deviation and the padded average.
   float new_avg = average();
-  float new_dev = compute_adaptive_average((float)fabsd(new_sample - new_avg),
+  float new_dev = compute_adaptive_average(fabs(new_sample - new_avg),
                                            deviation());
   set_deviation(new_dev);
   set_padded_average(new_avg + (float)padding() * new_dev);
@@ -100,7 +100,7 @@ void AdaptivePaddedNoZeroDevAverage::sample(float new_sample) {
   float new_avg = average();
   if (new_sample != 0) {
     // We only create a new deviation if the sample is non-zero
-    float new_dev = compute_adaptive_average((float)fabsd(new_sample - new_avg),
+    float new_dev = compute_adaptive_average(fabs(new_sample - new_avg),
                                              deviation());
 
     set_deviation(new_dev);
