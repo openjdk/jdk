@@ -3233,7 +3233,7 @@ public class Flow {
         void checkEffectivelyFinal(DiagnosticPosition pos, VarSymbol sym) {
             if (currentTree != null &&
                     sym.owner.kind == MTH &&
-                    sym.pos < currentTree.getStartPosition()) {
+                    sym.pos < getCurrentTreeStartPosition()) {
                 switch (currentTree.getTag()) {
                     case CLASSDEF:
                     case CASE:
@@ -3243,6 +3243,11 @@ public class Flow {
                         }
                 }
             }
+        }
+
+        int getCurrentTreeStartPosition() {
+            return currentTree instanceof JCCase cse ? cse.guard.getStartPosition()
+                                                     : currentTree.getStartPosition();
         }
 
         @SuppressWarnings("fallthrough")
