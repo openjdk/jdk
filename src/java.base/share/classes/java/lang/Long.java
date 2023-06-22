@@ -447,7 +447,7 @@ public final class Long extends Number
     }
 
     static String fastUUID(long lsb, long msb) {
-        char[] hex256 = LongCache.HEX256;
+        char[] hex256 = DigitCache.HEX256;
 
         char i0 = hex256[((int) (msb >> 56)) & 0xff];
         char i1 = hex256[((int) (msb >> 48)) & 0xff];
@@ -1223,7 +1223,12 @@ public final class Long extends Number
                 archivedCache = c;
             }
             cache = archivedCache;
+        }
+    }
 
+    static final class DigitCache {
+        static final char[] HEX256;
+        static {
             HEX256 = new char[256];
             for (int i = 0; i < 256; i++) {
                 int hi = (i >> 4) & 15;
