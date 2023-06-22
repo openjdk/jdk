@@ -26,8 +26,7 @@
  * @bug 8279254
  * @summary Changed time encoding to correctly use UTC between 1950-2050 and GeneralizedTime otherwise
  * @library /test/lib
- * @modules java.base/sun.security.pkcs
-            java.base/sun.security.util
+ * @modules java.base/sun.security.util
  */
 
 import java.util.Date;
