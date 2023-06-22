@@ -991,8 +991,6 @@ public:
   void static deallocate_record_components(ClassLoaderData* loader_data,
                                            Array<RecordComponent*>* record_component);
 
-  // The constant pool is on stack if any of the methods are executing or
-  // referenced by handles.
   virtual bool on_stack() const;
 
   // callbacks for actions during class unloading
