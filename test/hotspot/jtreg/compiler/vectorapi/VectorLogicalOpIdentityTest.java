@@ -104,7 +104,6 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    // TODO: can we expect the AND_V in earlier phase, and then not later?
     @IR(failOn = IRNode.AND_VB, counts = {IRNode.LOAD_VB, ">=1"})
     public static void testAndMinusOne() {
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
