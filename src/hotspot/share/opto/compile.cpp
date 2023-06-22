@@ -556,16 +556,9 @@ void Compile::print_ideal_ir(const char* phase_name) {
   // To enable tools to match it up with the compilation activity,
   // be sure to tag this tty output with the compile ID.
 
-  // Buffer first, and dump all at once to avoid output splitting.
+  // Node dumping can cause a safepoint, which can break the ttyLocker.
+  // Buffer all node dumps, so that all safepoints happen before we lock.
   stringStream ss;
-  xmlStream x(&ss);
-
-  if (xtty != nullptr) {
-    x.head("ideal compile_id='%d'%s compile_phase='%s'",
-           compile_id(),
-           is_osr_compilation() ? " compile_kind='osr'" : "",
-           phase_name);
-  }
 
   if (_output == nullptr) {
     ss.print_cr("AFTER: %s", phase_name);
@@ -576,13 +569,16 @@ void Compile::print_ideal_ir(const char* phase_name) {
     _output->print_scheduling(&ss);
   }
 
+  // Check that the lock is not broken by a safepoint.
+  NoSafepointVerifier nsv;
+  ttyLocker ttyl;
   if (xtty != nullptr) {
-    x.tail("ideal");
-  }
-
-  // Print and flush all at once
-  if (xtty != nullptr) {
-    xtty->print("%s", ss.as_string());
+    xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
+               compile_id(),
+               is_osr_compilation() ? " compile_kind='osr'" : "",
+               phase_name);
+    tty->print("%s", ss.as_string());
+    xtty->tail("ideal");
   } else {
     tty->print("%s", ss.as_string());
   }
