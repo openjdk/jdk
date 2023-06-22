@@ -47,7 +47,7 @@ public class CaseCheckVariant {
      */
     @ParameterizedTest
     @MethodSource("variants")
-    public void variantNormalizationTest(String variant) {
+    public void variantCaseTest(String variant) {
         Locale aLocale = Locale.of(LANG, COUNTRY, variant);
         String localeVariant = aLocale.getVariant();
         assertEquals(localeVariant, variant);
