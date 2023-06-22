@@ -71,10 +71,11 @@ public class GetInstanceCheck {
      */
     @ParameterizedTest
     @MethodSource("passingArguments")
-    public void noNPETest(String language, String country, String variant) {
+    public void noNPETest(String language, String country, String variant) throws IllegalAccessException {
         try {
             getInstanceMethod.invoke(null, language, country, variant);
-        } catch (InvocationTargetException | IllegalAccessException exc) {
+        } catch (InvocationTargetException exc) {
+            // Determine underlying exception
             Throwable cause = exc.getCause();
             if (exc.getCause() instanceof NullPointerException) {
                 fail(String.format("%s should not be thrown when no args are null", cause));
@@ -90,11 +91,12 @@ public class GetInstanceCheck {
      */
     @ParameterizedTest
     @MethodSource("failingArguments")
-    public void throwNPETest(String language, String country, String variant) {
+    public void throwNPETest(String language, String country, String variant) throws IllegalAccessException {
         try {
             getInstanceMethod.invoke(null, language, country, variant);
             fail("Should NPE with any argument set to null");
-        } catch (InvocationTargetException | IllegalAccessException exc) {
+        } catch (InvocationTargetException exc) {
+            // Determine underlying exception
             Throwable cause = exc.getCause();
             if (cause instanceof NullPointerException) {
                 System.out.println("NPE successfully thrown");
