@@ -1050,4 +1050,14 @@ public final class Utils {
     public static void fullAccess(Path file) throws IOException {
         grantFileAccess(file, false);
     }
+
+    /**
+     * Returns path to the Java binary.
+     *
+     * @return path to the Java binary
+     */
+    public static Path javaPath() {
+        String jdkPath = System.getProperty("java.home");
+        return Paths.get(jdkPath + "/bin/java");
+    }
 }

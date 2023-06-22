@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,20 +260,21 @@ public class Platform {
         return true;
     }
 
+    private static codesignProcess launchCodesignOnJavaBinary(String javaFileName) {
+        ProcessBuilder pb = new ProcessBuilder("codesign", "--display", "--verbose", javaFileName);
+        pb.redirectErrorStream(true); // redirect stderr to stdout
+        Process codesignProcess = pb.start();
+        return codesignProcess;
+    }
 
     public static boolean hasPlistEntriesOSX() throws IOException {
-        // Find the path to the java binary.
-        String jdkPath = System.getProperty("java.home");
-        Path javaPath = Paths.get(jdkPath + "/bin/java");
+        Path javaPath = Utils.javaPath();
         String javaFileName = javaPath.toAbsolutePath().toString();
         if (Files.notExists(javaPath)) {
             throw new FileNotFoundException("Could not find file " + javaFileName);
         }
 
-        // Run codesign on the java binary.
-        ProcessBuilder pb = new ProcessBuilder("codesign", "--display", "--verbose", javaFileName);
-        pb.redirectErrorStream(true); // redirect stderr to stdout
-        Process codesignProcess = pb.start();
+        Process codesignProcess = launchCodesignOnJavaBinary(javaFileName);
         BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
         String line;
         while ((line = is.readLine()) != null) {
@@ -285,6 +286,7 @@ public class Platform {
                 return true;
             }
         }
+        System.out.println("No matching Info.plist entry was found");
         return false;
     }
 
@@ -298,18 +300,13 @@ public class Platform {
             return false; // assume not hardened
         }
 
-        // Find the path to the java binary.
-        String jdkPath = System.getProperty("java.home");
-        Path javaPath = Paths.get(jdkPath + "/bin/java");
+        Path javaPath = Utils.javaPath();
         String javaFileName = javaPath.toAbsolutePath().toString();
         if (Files.notExists(javaPath)) {
             throw new FileNotFoundException("Could not find file " + javaFileName);
         }
 
-        // Run codesign on the java binary.
-        ProcessBuilder pb = new ProcessBuilder("codesign", "--display", "--verbose", javaFileName);
-        pb.redirectErrorStream(true); // redirect stderr to stdout
-        Process codesignProcess = pb.start();
+        Process codesignProcess = launchCodesignOnJavaBinary(javaFileName);
         BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
         String line;
         boolean isHardened = false;
