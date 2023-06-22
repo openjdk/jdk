@@ -463,8 +463,7 @@ public class PKCS9Attribute implements DerEncoder {
         case 5:     // signing time
             byte elemTag = elems[0].getTag();
             DerInputStream dis = new DerInputStream(elems[0].toByteArray());
-            value = (elemTag == DerValue.tag_GeneralizedTime) ?
-                    dis.getGeneralizedTime() : dis.getUTCTime();
+            value = dis.getTime();
             break;
 
         case 6:     // countersignature

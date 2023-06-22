@@ -189,6 +189,10 @@ public class DerInputStream {
         return getDerValue().getGeneralString();
     }
 
+    public Date getTime() throws IOException {
+        return getDerValue().getTime();
+    }
+
     public Date getUTCTime() throws IOException {
         return getDerValue().getUTCTime();
     }
