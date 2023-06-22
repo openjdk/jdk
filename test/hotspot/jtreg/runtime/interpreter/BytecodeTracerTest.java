@@ -33,35 +33,54 @@
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.io.Serializable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
 
 public class BytecodeTracerTest {
+    private final static String Linked_className = Linked.class.getName();
+
+    // This loads the "Unlinked" class, but doesn't link it.
+    private final static String Unlinked_className = Unlinked.class.getName();
+
     public static class Linked {
         public static void doit(String args[]) {
             System.out.println("num args = " + args.length);
         }
-    }
+         public String test_ldc() {
+            Class c = Unloaded.class;
+            return "Literal";
+        }
+   }
 
-    public static class Unlinked implements Serializable {
+    public static class Unlinked {
         public String toString() {
             return "Unlinked" + this.hashCode();
         }
+        public String test_ldc() {
+            Class c = Unloaded.class;
+            return "Literal";
+        }
     }
 
-    static String output;
+    // This class is never loaded during the execution of BytecodeTracerTest
+    public static class Unloaded {
+
+
+    }
+
     static int testCount = 0;
+    String testNote;
+    String output;
 
-    static String nextCase(String testName) {
+    BytecodeTracerTest(String note) {
         ++ testCount;
-        return "======================================================================\nTest case "
-            + testCount + ": " + testName + "\n    ";
+        testNote = "======================================================================\nTest case "
+            + testCount + ": " + note + "\n    ";
     }
 
-    static void logOutput() throws Exception {
+    void logOutput() throws Exception {
         String logFileName = "log-" + testCount + ".txt";
         System.out.println("Output saved in " + logFileName);
         BufferedWriter writer = new BufferedWriter(new FileWriter(logFileName));
@@ -69,19 +88,37 @@ public class BytecodeTracerTest {
         writer.close();
     }
 
-    static void printClasses(String testName, String classNamePattern, int flags) throws Exception {
-        System.out.println(nextCase(testName) + "printClasses(\"" + classNamePattern + "\", " + flags + ")");
+    BytecodeTracerTest printClasses(String classNamePattern, int flags) throws Exception {
+        System.out.println(testNote + "printClasses(\"" + classNamePattern + "\", " + flags + ")");
         output = WhiteBox.getWhiteBox().printClasses(classNamePattern, flags);
         logOutput();
+        return this;
     }
 
-    static void printMethods(String testName, String classNamePattern, String methodPattern, int flags) throws Exception {
-        System.out.println(nextCase(testName) + "printMethods(\"" + classNamePattern + "\", \"" + methodPattern + "\", " + flags + ")");
+    BytecodeTracerTest printMethods(String classNamePattern, String methodPattern, int flags) throws Exception {
+        System.out.println(testNote + "printMethods(\"" + classNamePattern + "\", \"" + methodPattern + "\", " + flags + ")");
         output = WhiteBox.getWhiteBox().printMethods(classNamePattern, methodPattern, flags);
         logOutput();
+        return this;
     }
 
-    static void mustMatch(String pattern) {
+    BytecodeTracerTest printLinkedMethods(String methodPattern, int flags) throws Exception {
+        return printMethods(Linked_className, methodPattern, flags);
+    }
+
+    BytecodeTracerTest printLinkedMethods(String methodPattern) throws Exception {
+        return printLinkedMethods(methodPattern, 0xff);
+    }
+
+    BytecodeTracerTest printUnlinkedMethods(String methodPattern, int flags) throws Exception {
+        return printMethods(Unlinked_className, methodPattern, flags);
+    }
+
+    BytecodeTracerTest printUnlinkedMethods(String methodPattern) throws Exception {
+        return printUnlinkedMethods(methodPattern, 0xff);
+    }
+
+    BytecodeTracerTest mustMatch(String pattern) {
         Pattern p = Pattern.compile(pattern, Pattern.MULTILINE);
         Matcher m = p.matcher(output);
         boolean found = m.find();
@@ -94,28 +131,38 @@ public class BytecodeTracerTest {
                            "Missing pattern: \"" + pattern + "\"");
         System.out.println("Found pattern: " + pattern);
         System.out.println("          ==>: " + m.group());
+        return this;
+    }
+
+    static BytecodeTracerTest test(String note) {
+        return new BytecodeTracerTest(note);
     }
 
     public static void main(String args[]) throws Exception {
         Linked.doit(args); // Force "Linked" class to be linked (and rewritten);
 
-        // ======
-        printClasses("invokedynamic in linked class",
-                     "BytecodeTracerTest$Linked", 0xff);
-        mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>");
-        mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]");
+        test("invokedynamic in linked class")
+            .printClasses("BytecodeTracerTest$Linked", 0xff)
+            .mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>")
+            .mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]");
 
-        // ======
-        printMethods("invokedynamic in unlinked class",
-                     "BytecodeTracerTest$Unlinked", "toString", 0xff);
-        mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>");
-    }
+        test("invokedynamic in unlinked class")
+            .printUnlinkedMethods("toString")
+            .mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>");
 
-    public Serializable cast(Unlinked f) {
-        // Verifying this method causes the "Unlinked" class to be loaded. However
-        // the "Unlinked" class is never used during the execution of
-        // BytecodeTracerTest.main(), so it is not linked by HotSpot.
-        return f;
+        test("ldc in linked class")
+            .printLinkedMethods("test_ldc")
+            .mustMatch("ldc BytecodeTracerTest[$]Unloaded")
+            .mustMatch("fast_aldc \"Literal\""); // ldc of String has been rewritten during linking
+
+        test("ldc in unlinked class")
+            .printUnlinkedMethods("test_ldc")
+            .mustMatch(" ldc BytecodeTracerTest[$]Unloaded")
+            .mustMatch(" ldc \"Literal\""); // ldc of String is not rewritten
+
+        // field
+        // invokevirtual, invokestatic, invokevfinal, invokeinterface
+        
     }
 }
 
