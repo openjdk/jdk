@@ -581,8 +581,11 @@ void Compile::print_ideal_ir(const char* phase_name) {
   }
 
   // Print and flush all at once
-  ttyLocker ttyl;
-  tty->print("%s", ss.as_string());
+  if (xtty != nullptr) {
+    xtty->print("%s", ss.as_string());
+  } else {
+    tty->print("%s", ss.as_string());
+  }
 }
 #endif
 
