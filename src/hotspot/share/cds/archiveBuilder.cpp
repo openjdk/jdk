@@ -457,7 +457,7 @@ void ArchiveBuilder::record_regenerated_object(address orig_src_obj, address reg
   // should return the same value as get_buffered_addr(regen_src_obj).
   SourceObjInfo* p = _src_obj_table.get(regen_src_obj);
   assert(p != nullptr, "regenerated object should always be dumped");
-  SourceObjInfo src_info(orig_src_obj, p->buffered_addr());
+  SourceObjInfo src_info(orig_src_obj, p);
   bool created;
   _src_obj_table.put_if_absent(orig_src_obj, src_info, &created);
   assert(created, "We shouldn't have archived the original copy of an regenerated object");

@@ -142,10 +142,15 @@ private:
         _buffered_addr = nullptr;
       }
     }
-    SourceObjInfo(address src, address buf) {
-      _source_addr = src;
-      _buffered_addr = buf;
-    }
+
+    // This constructor is only used for regenerated objects (created by LambdaFormInvokers, etc).
+    //   src = address of a Method or InstanceKlass that has been regenerated.
+    //   renegerated_obj_info = info for the regenerated version of src.
+    SourceObjInfo(address src, SourceObjInfo* renegerated_obj_info) :
+      _ptrmap_start(0), _ptrmap_end(0), _read_only(false),
+      _follow_mode(renegerated_obj_info->_follow_mode),
+      _size_in_bytes(0), _msotype(renegerated_obj_info->_msotype),
+      _source_addr(src),  _buffered_addr(renegerated_obj_info->_buffered_addr) {}
 
     bool should_copy() const { return _follow_mode == make_a_copy; }
     void set_buffered_addr(address addr)  {

@@ -26,16 +26,11 @@
 #define SHARE_CDS_REGENERATEDCLASSES_HPP
 
 #include "memory/allStatic.hpp"
-#include "oops/oopHandle.hpp"
-#include "runtime/handles.hpp"
-#include "utilities/growableArray.hpp"
-#include "utilities/resourceHash.hpp"
+#include "utilities/globalDefinitions.hpp"
+
+class InstanceKlass;
 
 class RegeneratedClasses : public AllStatic {
- private:
-  using RegeneratedObjTable = ResourceHashtable<address, address, 15889, AnyObj::C_HEAP, mtClassShared>;
-  static RegeneratedObjTable* _renegerated_objs; // InstanceKlass* and Method*
-  static GrowableArrayCHeap<OopHandle, mtClassShared>* _regenerated_mirrors;
  public:
   static void add_class(InstanceKlass* src_klass, InstanceKlass* regen_klass);
   static void cleanup();

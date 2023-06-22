@@ -31,9 +31,12 @@
 #include "oops/oopHandle.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/thread.hpp"
+#include "utilities/growableArray.hpp"
+#include "utilities/resourceHash.hpp"
 
-RegeneratedClasses::RegeneratedObjTable* RegeneratedClasses::_renegerated_objs = nullptr;
-GrowableArrayCHeap<OopHandle, mtClassShared>* RegeneratedClasses::_regenerated_mirrors = nullptr;
+using RegeneratedObjTable = ResourceHashtable<address, address, 15889, AnyObj::C_HEAP, mtClassShared>;
+static RegeneratedObjTable* _renegerated_objs = nullptr; // InstanceKlass* and Method*
+static GrowableArrayCHeap<OopHandle, mtClassShared>* _regenerated_mirrors = nullptr;
 
 // The regenerated Klass is not added to any class loader, so we need
 // to keep its java_mirror alive to avoid class unloading.
@@ -72,6 +75,7 @@ bool RegeneratedClasses::has_been_regenerated(address orig_obj) {
 }
 
 void RegeneratedClasses::record_regenerated_objects() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be");
   if (_renegerated_objs != nullptr) {
     auto doit = [&] (address orig_obj, address regen_obj) {
       ArchiveBuilder::current()->record_regenerated_object(orig_obj, regen_obj);
