@@ -86,6 +86,10 @@ public class ClhsdbDumpclass {
             System.err.println(out.getStderr());
             out.shouldHaveExitValue(0);
             out.shouldMatch("public class " + APP_DOT_CLASSNAME);
+            // StackMapTable might not be generated for a class
+            // containing only methods with sequential control flows.
+            // But the class used here (LingeredApp) is not such a case.
+            out.shouldContain("StackMapTable:");
             out.shouldNotContain("Error:");
         } catch (SkippedException se) {
             throw se;
