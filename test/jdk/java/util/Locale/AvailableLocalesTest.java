@@ -58,7 +58,7 @@ public class AvailableLocalesTest {
      * and Locale.availableLocales() contain the same underlying elements
      */
     @Test
-    public void StreamEqualsArrayTest() {
+    public void streamEqualsArrayTest() {
         Locale[] arrayLocales = Locale.getAvailableLocales();
         Stream<Locale> streamedLocales = Locale.availableLocales();
         Locale[] convertedLocales = streamedLocales.toArray(Locale[]::new);
