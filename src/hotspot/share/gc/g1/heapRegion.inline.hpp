@@ -294,8 +294,8 @@ inline void HeapRegion::reset_parsable_bottom() {
 }
 
 inline void HeapRegion::note_start_of_marking() {
-  assert(top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
-  // Retained regions are not going to be scanned through.
+  assert(top_at_mark_start() == bottom(), "Region's TAMS must always be at bottom");
+  // Collection set candidate regions are never going to be marked through.
   if (is_old_or_humongous() && !is_collection_set_candidate()) {
     set_top_at_mark_start(top());
   }

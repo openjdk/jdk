@@ -267,7 +267,7 @@ uint G1Policy::calculate_young_desired_length(size_t pending_cards, size_t rs_le
   if (use_adaptive_young_list_length()) {
     desired_eden_length_by_mmu = calculate_desired_eden_length_by_mmu();
 
-    double base_time_ms = predict_base_time_ms(pending_cards, rs_length);
+    double base_time_ms = predict_base_time_ms(pending_cards, rs_length, true /* include_retained */);
 
     desired_eden_length_by_pause =
       calculate_desired_eden_length_by_pause(base_time_ms,
@@ -1025,7 +1025,8 @@ void G1Policy::record_young_gc_pause_end(bool evacuation_failed) {
 }
 
 double G1Policy::predict_base_time_ms(size_t pending_cards,
-                                      size_t rs_length) const {
+                                      size_t rs_length,
+                                      bool include_retained) const {
   bool in_young_only_phase = collector_state()->in_young_only_phase();
 
   size_t unique_cards_from_rs = _analytics->predict_scan_card_num(rs_length, in_young_only_phase);
@@ -1037,9 +1038,10 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
   double card_scan_time = _analytics->predict_card_scan_time_ms(effective_scanned_cards, in_young_only_phase);
   double constant_other_time = _analytics->predict_constant_other_time_ms();
   double survivor_evac_time = predict_survivor_regions_evac_time();
-  double retained_evac_time = predict_retained_regions_evac_time();
+  double retained_evac_time = include_retained ? predict_retained_regions_evac_time() : -1.0;
 
-  double total_time = card_merge_time + card_scan_time + constant_other_time + survivor_evac_time + retained_evac_time;
+  double total_time = card_merge_time + card_scan_time + constant_other_time + survivor_evac_time +
+                      (include_retained ? retained_evac_time : 0.0);
 
   log_trace(gc, ergo, heap)("Predicted base time: total %f lb_cards %zu rs_length %zu effective_scanned_cards %zu "
                             "card_merge_time %f card_scan_time %f constant_other_time %f "
@@ -1053,7 +1055,7 @@ double G1Policy::predict_base_time_ms(size_t pending_cards,
 double G1Policy::predict_base_time_ms(size_t pending_cards) const {
   bool for_young_only_phase = collector_state()->in_young_only_phase();
   size_t rs_length = _analytics->predict_rs_length(for_young_only_phase);
-  return predict_base_time_ms(pending_cards, rs_length);
+  return predict_base_time_ms(pending_cards, rs_length, false /* include_retained */);
 }
 
 size_t G1Policy::predict_bytes_to_copy(HeapRegion* hr) const {

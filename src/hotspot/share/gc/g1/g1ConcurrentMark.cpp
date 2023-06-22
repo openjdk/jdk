@@ -325,6 +325,15 @@ uint G1CMRootMemRegions::num_root_regions() const {
   return (uint)_num_root_regions;
 }
 
+bool G1CMRootMemRegions::contains(const MemRegion mr) const {
+  for (uint i = 0; i < _num_root_regions; i++) {
+    if (_root_regions[i].equals(mr)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 void G1CMRootMemRegions::notify_scan_done() {
   MutexLocker x(RootRegionScan_lock, Mutex::_no_safepoint_check_flag);
   _scan_in_progress = false;
@@ -992,6 +1001,10 @@ bool G1ConcurrentMark::wait_until_root_region_scan_finished() {
 
 void G1ConcurrentMark::add_root_region(HeapRegion* r) {
   root_regions()->add(r->top_at_mark_start(), r->top());
+}
+
+bool G1ConcurrentMark::is_root_region(HeapRegion* r) {
+  return root_regions()->contains(MemRegion(r->top_at_mark_start(), r->top()));
 }
 
 void G1ConcurrentMark::root_region_scan_abort_and_wait() {

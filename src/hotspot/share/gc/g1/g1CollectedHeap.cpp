@@ -2471,6 +2471,12 @@ void G1CollectedHeap::verify_after_young_collection(G1HeapVerifier::G1VerifyType
   _verifier->verify_after_gc();
   verify_numa_regions("GC End");
   _verifier->verify_region_sets_optional();
+
+  if (collector_state()->in_concurrent_start_gc()) {
+    log_debug(gc, verify)("Marking state");
+    _verifier->verify_marking_state();
+  }
+
   phase_times()->record_verify_after_time_ms((Ticks::now() - start).seconds() * MILLIUNITS);
 }
 

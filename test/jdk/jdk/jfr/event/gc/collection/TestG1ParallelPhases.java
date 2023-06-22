@@ -128,7 +128,7 @@ public class TestG1ParallelPhases {
             "RestoreRetainedRegions",
             "RemoveSelfForwards",
             "RestorePreservedMarks",
-            "ClearRetainedRegionsBitmap",
+            "ClearRetainedRegionData",
             // Generally optional phases.
             "OptScanHR",
             "OptMergeRS",

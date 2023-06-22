@@ -264,6 +264,10 @@ public:
   // The number of root regions to scan.
   uint num_root_regions() const;
 
+  // Is the given memregion contained in the root regions; the MemRegion must
+  // match exactly.
+  bool contains(const MemRegion mr) const;
+
   void cancel_scan();
 
   // Flag that we're done with root region scanning and notify anyone
@@ -555,6 +559,7 @@ public:
   void scan_root_regions();
   bool wait_until_root_region_scan_finished();
   void add_root_region(HeapRegion* r);
+  bool is_root_region(HeapRegion* r);
   void root_region_scan_abort_and_wait();
 
 private:
