@@ -993,7 +993,7 @@ public:
 
   // The constant pool is on stack if any of the methods are executing or
   // referenced by handles.
-  bool on_stack() const; // virtual
+  virtual bool on_stack() const;
 
   // callbacks for actions during class unloading
   static void unload_class(InstanceKlass* ik);
