@@ -577,7 +577,7 @@ void Compile::print_ideal_ir(const char* phase_name) {
                compile_id(),
                is_osr_compilation() ? " compile_kind='osr'" : "",
                phase_name);
-    tty->print("%s", ss.as_string());
+    xtty->print("%s", ss.as_string()); // print to tty would use xml escape encoding
     xtty->tail("ideal");
   } else {
     tty->print("%s", ss.as_string());
@@ -4990,8 +4990,8 @@ bool Compile::randomized_select(int count) {
 CloneMap&     Compile::clone_map()                 { return _clone_map; }
 void          Compile::set_clone_map(Dict* d)      { _clone_map._dict = d; }
 
-void NodeCloneInfo::dump() const {
-  tty->print(" {%d:%d} ", idx(), gen());
+void NodeCloneInfo::dump_on(outputStream* st) const {
+  st->print(" {%d:%d} ", idx(), gen());
 }
 
 void CloneMap::clone(Node* old, Node* nnn, int gen) {
@@ -5038,11 +5038,11 @@ int CloneMap::max_gen() const {
   return g;
 }
 
-void CloneMap::dump(node_idx_t key) const {
+void CloneMap::dump(node_idx_t key, outputStream* st) const {
   uint64_t val = value(key);
   if (val != 0) {
     NodeCloneInfo ni(val);
-    ni.dump();
+    ni.dump_on(st);
   }
 }
 

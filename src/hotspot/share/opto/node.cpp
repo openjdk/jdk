@@ -2528,7 +2528,7 @@ void Node::dump(const char* suffix, bool mark, outputStream* st, DumpConfig* dc)
   }
 
   if (C->clone_map().value(_idx) != 0) {
-    C->clone_map().dump(_idx);
+    C->clone_map().dump(_idx, st);
   }
   // Dump node-specific info
   dump_spec(st);
