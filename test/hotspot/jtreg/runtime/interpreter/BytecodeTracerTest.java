@@ -106,12 +106,9 @@ public class BytecodeTracerTest {
         mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]");
 
         // ======
-        if (false) { // disabled due to JDK-8309811
         printMethods("invokedynamic in unlinked class",
                      "BytecodeTracerTest$Unlinked", "toString", 0xff);
         mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>");
-        mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]");
-        }
     }
 
     public Serializable cast(Unlinked f) {
