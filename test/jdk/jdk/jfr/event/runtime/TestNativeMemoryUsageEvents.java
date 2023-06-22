@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -150,8 +150,8 @@ public class TestNativeMemoryUsageEvents {
                 .toList();
 
         // Verify that the heap has grown between the first and last sample.
-        long firstSample = javaHeapCommitted.get(0);
-        long lastSample = javaHeapCommitted.get(javaHeapCommitted.size() - 1);
+        long firstSample = javaHeapCommitted.getFirst();
+        long lastSample = javaHeapCommitted.getLast();
         assertGreaterThan(lastSample, firstSample, "heap should have grown and NMT should show that");
     }
 

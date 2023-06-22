@@ -86,7 +86,7 @@ address AbstractAssembler::start_a_const(int required_space, int required_align)
   CodeSection* cs = cb->consts();
   assert(_code_section == cb->insts() || _code_section == cb->stubs(), "not in insts/stubs?");
   address end = cs->end();
-  int pad = -(intptr_t)end & (required_align-1);
+  int pad = checked_cast<int>(-(intptr_t)end & (required_align-1));
   if (cs->maybe_expand_to_ensure_remaining(pad + required_space)) {
     if (cb->blob() == nullptr)  return nullptr;
     end = cs->end();  // refresh pointer
