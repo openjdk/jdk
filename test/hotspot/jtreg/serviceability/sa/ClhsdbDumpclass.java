@@ -75,6 +75,8 @@ public class ClhsdbDumpclass {
             // Run javap on the generated class file to make sure it's valid.
             JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("javap");
             launcher.addVMArgs(Utils.getTestJavaOpts());
+            // Let javap print additional info, e.g., StackMapTable
+            launcher.addToolArg("-verbose");
             launcher.addToolArg(classFile.toString());
             System.out.println("> javap " + classFile.toString());
             List<String> cmdStringList = Arrays.asList(launcher.getCommand());
