@@ -672,16 +672,19 @@ public class IRNode {
 
     public static final String LOAD_VECTOR = PREFIX + "LOAD_VECTOR" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR, "LoadVector");
     }
 
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
     }
 
     public static final String LOAD_VECTOR_GATHER_MASKED = PREFIX + "LOAD_VECTOR_GATHER_MASKED" + POSTFIX;
     static {
+        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER_MASKED, "LoadVectorGatherMasked");
     }
 
@@ -1338,19 +1341,16 @@ public class IRNode {
 
     public static final String STORE_VECTOR = PREFIX + "STORE_VECTOR" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(STORE_VECTOR, "StoreVector");
     }
 
     public static final String STORE_VECTOR_SCATTER = PREFIX + "STORE_VECTOR_SCATTER" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(STORE_VECTOR_SCATTER, "StoreVectorScatter");
     }
 
     public static final String STORE_VECTOR_SCATTER_MASKED = PREFIX + "STORE_VECTOR_SCATTER_MASKED" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(STORE_VECTOR_SCATTER_MASKED, "StoreVectorScatterMasked");
     }
 
