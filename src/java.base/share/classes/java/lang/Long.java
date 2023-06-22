@@ -1206,9 +1206,6 @@ public final class Long extends Number
         static final Long[] cache;
         static Long[] archivedCache;
 
-        @Stable
-        static final char[] HEX256;
-
         static {
             int size = -(-128) + 127 + 1;
 
@@ -1227,6 +1224,7 @@ public final class Long extends Number
     }
 
     static final class DigitCache {
+        @Stable
         static final char[] HEX256;
         static {
             HEX256 = new char[256];
