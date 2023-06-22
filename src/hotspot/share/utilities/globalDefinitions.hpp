@@ -715,7 +715,7 @@ void basic_types_init(); // cannot define here; uses assert
 
 
 // NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
-enum BasicType {
+enum BasicType : u1 {
 // The values T_BOOLEAN..T_LONG (4..11) are derived from the JVMS.
   T_BOOLEAN     = JVM_T_BOOLEAN,
   T_CHAR        = JVM_T_CHAR,
