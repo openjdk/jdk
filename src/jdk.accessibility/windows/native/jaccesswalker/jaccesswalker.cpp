@@ -307,7 +307,7 @@ BOOL CALLBACK EnumWndProc(HWND hwnd, LPARAM lParam) {
         long vmID;
         AccessibleContext ac;
         if (GetAccessibleContextFromHWND(hwnd, &vmID, &ac) == TRUE) {
-            theJaccesswalker->addComponentNodes(vmID, ac, nullptr,
+            theJaccesswalker->addComponentNodes(vmID, ac, (AccessibleNode *) NULL,
                                          hwnd, TVI_ROOT, theTreeControlWindow);
         }
         topLevelWindow = hwnd;
@@ -316,7 +316,7 @@ BOOL CALLBACK EnumWndProc(HWND hwnd, LPARAM lParam) {
         ::GetClassNameA(hwnd, szClass, sizeof(szClass) - 1);
         if ( ( 0 == ::strcmp(szClass, "IEFrame") )
              || ( 0 == ::strcmp(szClass, "MozillaUIWindowClass") ) ) {
-            EnumChildWindows(hwnd, (WNDENUMPROC) EnumChildProc, nullptr);
+            EnumChildWindows(hwnd, (WNDENUMPROC) EnumChildProc, NULL);
         }
     }
     return TRUE;
@@ -467,12 +467,12 @@ BOOL CALLBACK EnumChildProc(HWND hwnd, LPARAM lParam)
         AccessibleContext ac ( 0 );
         if ( TRUE == GetAccessibleContextFromHWND(hwnd, &vmID, &ac) ) {
             theJaccesswalker->addComponentNodes(
-                vmID, ac, nullptr,
+                vmID, ac, (AccessibleNode *) NULL,
                 hwnd, TVI_ROOT, theTreeControlWindow);
         }
         topLevelWindow = hwnd;
     } else {
-        EnumChildWindows(hwnd, (WNDENUMPROC) EnumChildProc, nullptr);
+        EnumChildWindows(hwnd, (WNDENUMPROC) EnumChildProc, NULL);
     }
     return TRUE;
 }
@@ -496,7 +496,7 @@ HWND CreateATreeView(HWND hwndParent) {
                           hwndParent,
                           (HMENU) cTreeControl,
                           theInstance,
-                          nullptr);
+                          NULL);
 
     return hwndTV;
 }
@@ -544,7 +544,7 @@ void Jaccesswalker::addComponentNodes(long vmID, AccessibleContext context,
         char s[LINE_BUFSIZE];
         snprintf( s, sizeof(s),
             "ERROR calling GetAccessibleContextInfo; vmID = %lX, context = %p",
-            static_cast<unsigned long>(vmID), (void*)context );
+            reinterpret_cast<unsigned long>(vmID), (void*)context );
 
         TVITEM tvi;
         tvi.mask = TVIF_PARAM | TVIF_TEXT;  // text and lParam are only valid parts
