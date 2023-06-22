@@ -858,7 +858,6 @@ public class Compatibility {
         return SHA1.equals(alg);
     }
 
-
     // Using specified jarsigner to sign the pre-created jar with specified
     // algorithms.
     private static OutputAnalyzer signJar(String jarsignerPath, String sigalg,
