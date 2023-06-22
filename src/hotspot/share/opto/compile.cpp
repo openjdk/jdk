@@ -551,33 +551,37 @@ void Compile::print_compile_messages() {
 
 #ifndef PRODUCT
 void Compile::print_ideal_ir(const char* phase_name) {
-  ttyLocker ttyl;
   // keep the following output all in one block
   // This output goes directly to the tty, not the compiler log.
   // To enable tools to match it up with the compilation activity,
   // be sure to tag this tty output with the compile ID.
+
+  // Buffer first, and dump all at once to avoid output splitting.
+  stringStream ss;
+  xmlStream x(&ss);
+
   if (xtty != nullptr) {
-    xtty->head("ideal compile_id='%d'%s compile_phase='%s'",
-               compile_id(),
-               is_osr_compilation() ? " compile_kind='osr'" : "",
-               phase_name);
+    x.head("ideal compile_id='%d'%s compile_phase='%s'",
+           compile_id(),
+           is_osr_compilation() ? " compile_kind='osr'" : "",
+           phase_name);
   }
+
   if (_output == nullptr) {
-    tty->print_cr("AFTER: %s", phase_name);
+    ss.print_cr("AFTER: %s", phase_name);
     // Print out all nodes in ascending order of index.
-    // Buffer the dump first, and print it at once to avoid
-    // having to lock on tty or risk having the dump split.
-    stringStream ss;
     root()->dump_bfs(MaxNodeLimit, nullptr, "+S$", &ss);
-    tty->print("%s", ss.as_string());
   } else {
     // Dump the node blockwise if we have a scheduling
-    _output->print_scheduling();
+    _output->print_scheduling(&ss);
   }
 
   if (xtty != nullptr) {
-    xtty->tail("ideal");
+    x.tail("ideal");
   }
+
+  // Print and flush all at once
+  tty->print("%s", ss.as_string());
 }
 #endif
 
