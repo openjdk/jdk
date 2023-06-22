@@ -21,13 +21,13 @@
  * questions.
  */
 import java.nio.ByteOrder;
+import java.util.List;
 import java.util.Locale;
 import java.util.stream.Stream;
 
 import jdk.internal.util.Architecture;
 import jdk.internal.misc.Unsafe;
 
-import static jdk.internal.util.Architecture.OTHER;
 import static jdk.internal.util.Architecture.AARCH64;
 import static jdk.internal.util.Architecture.ARM;
 import static jdk.internal.util.Architecture.PPC64;
@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
- * @bug 8304915
+ * @bug 8304915 8308452
  * @summary Verify Architecture enum maps to system property os.arch
  * @modules java.base/jdk.internal.util
  * @modules java.base/jdk.internal.misc
@@ -61,82 +61,58 @@ public class ArchTest {
     private static final boolean IS_64BIT_ADDRESS = Unsafe.getUnsafe().addressSize() == 8;
 
     /**
+     * Test data for Architecture name vs Arch enums, address bits, endian-ness and boolean isXXX() methods..
+     * Each Argument contains:
+     *  - the common os.arch name,
+     *  - the Architecture Enum,
+     *  - address bits 32/64,
+     *  - the byte-order (little or big),
+     *  - the result of invoking the architecture specific static method
+     * @return a stream of arguments for parameterized tests
+     */
+    private static Stream<Arguments> archParams() {
+        // In alphabetical order
+        return Stream.of(
+                Arguments.of("aarch64", AARCH64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isAARCH64()),
+                Arguments.of("amd64", X64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isX64()),
+                Arguments.of("arm", ARM, 32, ByteOrder.LITTLE_ENDIAN, Architecture.isAARCH64()),
+                Arguments.of("i386", X86, 32, ByteOrder.LITTLE_ENDIAN, Architecture.isX86()),
+                Arguments.of("loongarch64", LOONGARCH64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isLOONGARCH64()),
+                Arguments.of("mips64el", MIPS64EL, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isMIPS64EL()),
+                Arguments.of("mipsel", MIPSEL, 32, ByteOrder.LITTLE_ENDIAN, Architecture.isMIPSEL()),
+                Arguments.of("ppc64", PPC64, 64, ByteOrder.BIG_ENDIAN, Architecture.isPPC64()),
+                Arguments.of("ppc64le", PPC64LE, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isPPC64LE()),
+                Arguments.of("riscv64", RISCV64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isRISCV64()),
+                Arguments.of("s390", S390, 64, ByteOrder.BIG_ENDIAN, Architecture.isS390()),
+                Arguments.of("s390x", S390, 64, ByteOrder.BIG_ENDIAN, Architecture.isS390()),
+                Arguments.of("x64", X64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isX64()),
+                Arguments.of("x86", X86, 32, ByteOrder.LITTLE_ENDIAN, Architecture.isX86()),
+                Arguments.of("x86_64", X64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isX64())
+        );
+    }
+
+
+    /**
      * Test consistency of System property "os.arch" with Architecture.current().
      */
     @Test
     public void nameVsCurrent() {
         String osArch = System.getProperty("os.arch").toLowerCase(Locale.ROOT);
-        System.out.printf("System property os.arch: \"%s\", Architecture.current(): \"%s\"%n",
+        System.err.printf("System property os.arch: \"%s\", Architecture.current(): \"%s\"%n",
                 osArch, Architecture.current());
-        Architecture arch = switch (osArch) {
-            case "x86_64", "amd64" -> X64;
-            case "x86", "i386" -> X86;
-            case "aarch64" -> AARCH64;
-            case "arm" -> ARM;
-            case "riscv64" -> RISCV64;
-            case "loongarch64" -> LOONGARCH64;
-            case "s390x", "s390" -> S390;
-            case "ppc64" -> PPC64;
-            case "ppc64le" -> PPC64LE;
-            case "mipsel" -> MIPSEL;
-            case "mips64el" -> MIPS64EL;
-            default -> OTHER;
-        };
-        assertEquals(Architecture.current(), arch, "mismatch in Architecture.current vs " + osArch);
-    }
 
-    /**
-     * Test various Architecture enum values vs boolean isXXX() methods.
-     * @return a stream of arguments for parameterized test
-     */
-    private static Stream<Arguments> archParams() {
-        return Stream.of(
-                Arguments.of(X64, Architecture.isX64()),
-                Arguments.of(X86, Architecture.isX86()),
-                Arguments.of(AARCH64, Architecture.isAARCH64()),
-                Arguments.of(ARM, Architecture.isARM()),
-                Arguments.of(RISCV64, Architecture.isRISCV64()),
-                Arguments.of(LOONGARCH64, Architecture.isLOONGARCH64()),
-                Arguments.of(S390, Architecture.isS390()),
-                Arguments.of(MIPSEL, Architecture.isMIPSEL()),
-                Arguments.of(MIPS64EL, Architecture.isMIPS64EL()),
-                Arguments.of(PPC64, Architecture.isPPC64()),
-                Arguments.of(PPC64LE, Architecture.isPPC64LE()),
-                Arguments.of(OTHER, false)
-        );
+        // Map os.arch system property to expected Architecture
+        List<Architecture> argList = archParams()
+                .filter(p -> p.get()[0].equals(osArch))
+                .map(a -> (Architecture)a.get()[1])
+                .toList();
+        assertEquals(1, argList.size(), osArch + " too few or too many matching system property os.arch cases: " + argList);
+        assertEquals(Architecture.current(), argList.get(0), "mismatch in Architecture.current vs " + osArch);
     }
 
     @ParameterizedTest
     @MethodSource("archParams")
-    public void isArch(Architecture arch, boolean isArch) {
-        Architecture current = Architecture.current();
-        assertEquals(arch == current, isArch,
-                "Method is" + arch + "(): returned " + isArch + ", should be (" + arch + " == " + current + ")");
-    }
-
-    /**
-     * Test various Architecture names vs Arch enums.
-     * @return a stream of arguments for parameterized test
-     */
-    private static Stream<Arguments> archNames() {
-        return Stream.of(
-                Arguments.of("x64", X64, 64, ByteOrder.LITTLE_ENDIAN),
-                Arguments.of("X86_64", X64, 64, ByteOrder.LITTLE_ENDIAN),
-                Arguments.of("x86", X86, 32, ByteOrder.LITTLE_ENDIAN),
-                Arguments.of("i386", X86, 32, ByteOrder.LITTLE_ENDIAN),
-                Arguments.of("aarch64", AARCH64, 64, ByteOrder.LITTLE_ENDIAN),
-                Arguments.of("arm", ARM, 32, ByteOrder.LITTLE_ENDIAN),
-                Arguments.of("riscv64", RISCV64, 64, ByteOrder.LITTLE_ENDIAN),
-                Arguments.of("s390", S390, 64, ByteOrder.BIG_ENDIAN),
-                Arguments.of("s390x", S390, 64, ByteOrder.BIG_ENDIAN),
-                Arguments.of("ppc64", PPC64, 64, ByteOrder.BIG_ENDIAN),
-                Arguments.of("ppc64le", PPC64LE, 64, ByteOrder.LITTLE_ENDIAN)
-        );
-    }
-
-    @ParameterizedTest
-    @MethodSource("archNames")
-    public void isArch(String archName, Architecture arch, int addrSize, ByteOrder byteOrder) {
+    public void checkParams(String archName, Architecture arch, int addrSize, ByteOrder byteOrder, boolean isArch) {
         Architecture actual = Architecture.lookupByName(archName);
         assertEquals(actual, arch, "Wrong Architecture from lookupByName");
 
@@ -148,6 +124,10 @@ public class ArchTest {
 
         assertEquals(addrSize, actual.addressSize(), "Wrong address size");
         assertEquals(byteOrder, actual.byteOrder(), "Wrong byteOrder");
+
+        Architecture current = Architecture.current();
+        assertEquals(arch == current, isArch,
+                "Method is" + arch + "(): returned " + isArch + ", should be (" + arch + " == " + current + ")");
     }
 
     /**
