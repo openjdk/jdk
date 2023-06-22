@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ import sun.security.util.SecurityConstants;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.newIllegalArgumentException;
-import static java.lang.invoke.MethodType.fromDescriptor;
 
 /**
  * A method type represents the arguments and return type accepted and
@@ -1161,28 +1160,29 @@ class MethodType
     }
 
     /**
-     * Finds or creates an instance of a method type, given the spelling of its bytecode descriptor.
-     * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
+     * Finds or creates an instance of a method type of the given method descriptor
+     * (JVMS {@jvms 4.3.3}). This method is a convenience method for
+     * {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
      * Any class or interface name embedded in the descriptor string will be
-     * resolved by the given loader (or if it is null, on the system class loader).
+     * resolved by the given loader (or if it is {@code null}, on the system class loader).
      *
      * @apiNote
-     * It is possible to encounter method types which cannot be
-     * constructed by this method, because their component types are
-     * not all reachable from a common class loader, or some component types
-     * cannot be {@linkplain ##descriptor described nominally}.
+     * It is possible to encounter method types that have valid descriptors but
+     * cannot be constructed by this method, because their component types are
+     * not visible from a common class loader.
      * <p>
      * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
-     * @param descriptor a bytecode-level type descriptor string "(T...)T"
+     * @param descriptor a method descriptor string
      * @param loader the class loader in which to look up the types
-     * @return a method type matching the bytecode-level type descriptor
-     * @throws NullPointerException if the string is null
-     * @throws IllegalArgumentException if the string is not well-formed
+     * @return a method type of the given method descriptor
+     * @throws NullPointerException if the string is {@code null}
+     * @throws IllegalArgumentException if the string is not a method descriptor
      * @throws TypeNotPresentException if a named type cannot be found
      * @throws SecurityException if the security manager is present and
      *         {@code loader} is {@code null} and the caller does not have the
      *         {@link RuntimePermission}{@code ("getClassLoader")}
+     * @jvms 4.3.3 Method Descriptors
      */
     public static MethodType fromMethodDescriptorString(String descriptor, ClassLoader loader)
         throws IllegalArgumentException, TypeNotPresentException
@@ -1222,7 +1222,7 @@ class MethodType
     }
 
     /**
-     * Returns a descriptor string for the method type.  This method
+     * {@return the descriptor string for this method type} This method
      * is equivalent to calling {@link #descriptorString() MethodType::descriptorString}.
      *
      * @apiNote
@@ -1234,7 +1234,6 @@ class MethodType
      * <p>
      * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
-     * @return the descriptor string for this method type
      * @jvms 4.3.3 Method Descriptors
      * @see <a href="#descriptor">Nominal Descriptor for {@code MethodType}</a>
      */
@@ -1248,7 +1247,7 @@ class MethodType
     }
 
     /**
-     * Returns a descriptor string for this method type.
+     * {@return the descriptor string for this method type}
      *
      * <p>
      * If this method type can be {@linkplain ##descriptor described nominally},
@@ -1266,7 +1265,6 @@ class MethodType
      * of the return type. No {@link java.lang.constant.MethodTypeDesc MethodTypeDesc}
      * can be produced from the result string.
      *
-     * @return the descriptor string for this method type
      * @since 12
      * @jvms 4.3.3 Method Descriptors
      * @see <a href="#descriptor">Nominal Descriptor for {@code MethodType}</a>
