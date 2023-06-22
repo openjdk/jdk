@@ -4259,6 +4259,8 @@ Node* GraphKit::make_constant_from_field(ciField* field, Node* obj) {
 }
 
 void GraphKit::backfill_materialized(SafePointNode* map, uint begin, uint end, PEAState& as){
+  bool printed = false;
+
   for (uint i = begin; i < end; ++i) {
     Node* t = map->in(i);
 
@@ -4268,6 +4270,15 @@ void GraphKit::backfill_materialized(SafePointNode* map, uint begin, uint end, P
       if (as.contains(alloc)) {
         Node* neww = as.get_java_oop(alloc, true);
         if (neww != nullptr && neww != t) {
+#ifndef PRODUCT
+          if (PEAVerbose) {
+            if (!printed) {
+              map->dump();
+              printed = true;
+            }
+            tty->print_cr("[PEA] replace %d with node %d", i, neww->_idx);
+          }
+#endif
           map->set_req(i, neww);
         }
       }
