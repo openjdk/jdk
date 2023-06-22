@@ -170,7 +170,7 @@ public class ClassWriter implements /* imports */ ClassConstants
 
         // Code attributes
         Short stackMapTableIndex = utf8ToIndex.get("StackMapTable");
-        _stackMapTableIndex = (stackMapTableIndex != null)?
+        _stackMapTableIndex = (stackMapTableIndex != null) ?
                               stackMapTableIndex.shortValue() : 0;
         if (DEBUG) debugMessage("StackMapTable index = " + _stackMapTableIndex);
 
@@ -526,20 +526,20 @@ public class ClassWriter implements /* imports */ ClassConstants
             int stackMapAttrLen = 0;
 
             if (hasStackMapTable) {
-              if (DEBUG) debugMessage("\tmethod has stack map table");
-              stackMapData = m.getStackMapData();
-              if (DEBUG) debugMessage("\t\tstack map table length = " + stackMapData.length());
+                if (DEBUG) debugMessage("\tmethod has stack map table");
+                stackMapData = m.getStackMapData();
+                if (DEBUG) debugMessage("\t\tstack map table length = " + stackMapData.length());
 
-              stackMapAttrLen = stackMapData.length();
+                stackMapAttrLen = stackMapData.length();
 
-              codeSize += 2 /* stack map table attr index */ +
-                          4 /* stack map table attr length */ +
-                          stackMapAttrLen;
+                codeSize += 2 /* stack map table attr index */ +
+                            4 /* stack map table attr length */ +
+                            stackMapAttrLen;
 
-              if (DEBUG) debugMessage("\t\tstack map table attr size = " +
-                                      stackMapAttrLen);
+                if (DEBUG) debugMessage("\t\tstack map table attr size = " +
+                                        stackMapAttrLen);
 
-              codeAttrCount++;
+                codeAttrCount++;
             }
 
             boolean hasLineNumberTable = m.hasLineNumberTable();
@@ -630,13 +630,13 @@ public class ClassWriter implements /* imports */ ClassConstants
 
             // write StackMapTable, if available
             if (hasStackMapTable) {
-              writeIndex(_stackMapTableIndex);
-              dos.writeInt(stackMapAttrLen);
-              // We write bytes directly as stackMapData is
-              // raw data (#entries + entries)
-              for (int i = 0; i < stackMapData.length(); i++) {
-                dos.writeByte(stackMapData.at(i));
-              }
+                writeIndex(_stackMapTableIndex);
+                dos.writeInt(stackMapAttrLen);
+                // We write bytes directly as stackMapData is
+                // raw data (#entries + entries)
+                for (int i = 0; i < stackMapData.length(); i++) {
+                    dos.writeByte(stackMapData.at(i));
+                }
             }
 
             // write LineNumberTable, if available.

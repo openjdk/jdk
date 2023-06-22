@@ -109,8 +109,7 @@ public class ConstMethod extends Metadata {
 
   // Fields
   private static MetadataField constants;
-  // Raw stackmap data for the method (#entries + entries)
-  private static AddressField stackMapData;
+  private static AddressField stackMapData; // Raw stackmap data for the method (#entries + entries)
   private static CIntField constMethodSize;
   private static CIntField flags;
   private static CIntField codeSize;
