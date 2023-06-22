@@ -672,19 +672,16 @@ public class IRNode {
 
     public static final String LOAD_VECTOR = PREFIX + "LOAD_VECTOR" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR, "LoadVector");
     }
 
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
     }
 
     public static final String LOAD_VECTOR_GATHER_MASKED = PREFIX + "LOAD_VECTOR_GATHER_MASKED" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER_MASKED, "LoadVectorGatherMasked");
     }
 
