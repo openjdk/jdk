@@ -42,8 +42,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 public class AvailableLocalesTest {
 
     /**
-     * Test that Locale.getAvailableLocales() is non-empty.
-     * Print out the locales.
+     * Test that Locale.getAvailableLocales() is non-empty and prints out
+     * the returned locales - 4122700.
      */
     @Test
     public void nonEmptyLocalesTest() {
