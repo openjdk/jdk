@@ -486,8 +486,8 @@ public final class DerOutputStream
      * Takes a Date and chooses UTC or GeneralizedTime as per RFC 2630
      */
     public DerOutputStream putTime(Date d) {
-        Date low = new Date(-631152000L); // Dates before 1/1/1950
-        Date high = new Date(2524607999L); // Dates after 12/31/2049
+        Date low = new Date(-631152000000L); // Dates before 1/1/1950
+        Date high = new Date(2524607999000L); // Dates after 12/31/2049
         return (d.before(low) || d.after(high)) ? putGeneralizedTime(d) : putUTCTime(d);
     }
 

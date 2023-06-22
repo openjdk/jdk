@@ -37,7 +37,7 @@ public class DerTimeEncoding {
     public static void main(String args[]) throws Exception {
         //Check that dates after 2050 use GeneralizedTime
         DerOutputStream out = new DerOutputStream();
-        Date generalizedTimeDate = new Date(2055,3,17);
+        Date generalizedTimeDate = new Date(2688854400000L); // Test date is 3/17/2055
         out.putTime(generalizedTimeDate);
         DerValue val = new DerValue(out.toByteArray());
         if (val.tag != DerValue.tag_GeneralizedTime) {
@@ -47,7 +47,7 @@ public class DerTimeEncoding {
 
         //Check dates between 1950-2050 use UTC time
         out = new DerOutputStream();
-        Date utcDate = new Date(1977,9,3);
+        Date utcDate = new Date(242092800000L); //Test date is 9/3/1977
         out.putTime(utcDate);
         val = new DerValue(out.toByteArray());
         if (val.tag != DerValue.tag_UtcTime) {
