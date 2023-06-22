@@ -260,7 +260,13 @@ public class Platform {
         return true;
     }
 
-    private static codesignProcess launchCodesignOnJavaBinary(String javaFileName) {
+    private static Process launchCodesignOnJavaBinary() throws IOException {
+        String jdkPath = System.getProperty("java.home");
+        Path javaPath = Paths.get(jdkPath + "/bin/java");
+        String javaFileName = javaPath.toAbsolutePath().toString();
+        if (Files.notExists(javaPath)) {
+            throw new FileNotFoundException("Could not find file " + javaFileName);
+        }
         ProcessBuilder pb = new ProcessBuilder("codesign", "--display", "--verbose", javaFileName);
         pb.redirectErrorStream(true); // redirect stderr to stdout
         Process codesignProcess = pb.start();
@@ -268,13 +274,7 @@ public class Platform {
     }
 
     public static boolean hasPlistEntriesOSX() throws IOException {
-        Path javaPath = Utils.javaPath();
-        String javaFileName = javaPath.toAbsolutePath().toString();
-        if (Files.notExists(javaPath)) {
-            throw new FileNotFoundException("Could not find file " + javaFileName);
-        }
-
-        Process codesignProcess = launchCodesignOnJavaBinary(javaFileName);
+        Process codesignProcess = launchCodesignOnJavaBinary();
         BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
         String line;
         while ((line = is.readLine()) != null) {
@@ -299,14 +299,7 @@ public class Platform {
         if (getOsVersionMajor() == 10 && getOsVersionMinor() < 14) {
             return false; // assume not hardened
         }
-
-        Path javaPath = Utils.javaPath();
-        String javaFileName = javaPath.toAbsolutePath().toString();
-        if (Files.notExists(javaPath)) {
-            throw new FileNotFoundException("Could not find file " + javaFileName);
-        }
-
-        Process codesignProcess = launchCodesignOnJavaBinary(javaFileName);
+        Process codesignProcess = launchCodesignOnJavaBinary();
         BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
         String line;
         boolean isHardened = false;
