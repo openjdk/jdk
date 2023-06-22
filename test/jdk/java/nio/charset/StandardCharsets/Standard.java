@@ -92,21 +92,20 @@ public class Standard {
     @MethodSource("charsetFields")
     public void charsetModifiersTest(Field charsetField) throws IllegalAccessException {
         // Check modifiers
-        assertTrue(StandardCharsets.class == charsetField.getDeclaringClass());
+        assertEquals(StandardCharsets.class, charsetField.getDeclaringClass());
         assertTrue(Modifier.isFinal(charsetField.getModifiers()));
         assertTrue(Modifier.isStatic(charsetField.getModifiers()));
         assertTrue(Modifier.isPublic(charsetField.getModifiers()));
         // Check that the value can be accessed, and it is a Charset
-        Object valueOfField;
-        valueOfField = charsetField.get(null);
+        Object valueOfField = charsetField.get(null);
         assertTrue(valueOfField instanceof Charset);
     }
 
     /**
      * Validates that the Charsets contained in StandardCharsets are equal
      * to the expected Charsets list defined in the test. This test should fail if
-     * either the actual or expected (standard) Charsets list are modified, and
-     * the other is not.
+     * either the actual or expected (standard) Charsets are modified, and
+     * the others are not.
      */
     @Test
     public void correctCharsetsTest() {
