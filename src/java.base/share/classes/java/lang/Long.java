@@ -480,8 +480,8 @@ public final class Long extends Number
         }
         final byte[] buf = new byte[36 * charSize];
 
-        buf[off] = (byte) (i >> 8);
-        buf[1 * charSize + off] = (byte) i;
+        buf[off] = (byte) (i0 >> 8);
+        buf[1 * charSize + off] = (byte) i0;
         buf[2 * charSize + off] = (byte) (i1 >> 8);
         buf[3 * charSize + off] = (byte) i1;
         buf[4 * charSize + off] = (byte) (i2 >> 8);
