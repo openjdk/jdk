@@ -194,8 +194,8 @@ public abstract class Reader implements Readable, Closeable {
      * remaining}, then no characters will be read and zero will be returned.
      *
      * @param target the buffer to read characters into
-     * @return The number of characters added to the buffer, or
-     *         -1 if this source of characters is at its end
+     * @return The number of characters added to the buffer,
+     *         possibly zero, or -1 if this source of characters is at its end
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if target is null
      * @throws java.nio.ReadOnlyBufferException if target is a read only buffer,
