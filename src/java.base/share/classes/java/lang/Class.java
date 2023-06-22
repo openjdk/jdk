@@ -439,7 +439,7 @@ public final class Class<T> implements java.io.Serializable,
      * an attempt will be made to locate a user-defined class in the unnamed package
      * whose name is {@code I} instead.
      *
-     * <p> To obtain {@code Class} object associated with an array class,
+     * <p> To obtain the {@code Class} object associated with an array class,
      * the name consists of one or more {@code '['} representing the depth
      * of the array nesting, followed by the element type as encoded in
      * {@linkplain ##nameFormat the table} specified in {@code Class.getName()}.
