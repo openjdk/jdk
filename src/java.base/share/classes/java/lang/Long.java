@@ -457,7 +457,8 @@ public final class Long extends Number
 
             ByteArray.setLong(
                     buf,
-                    0, ((long) H256[((int) (msb >> 56)) & 0xff] << 48)
+                    0,
+                    ((long) H256[((int) (msb >> 56)) & 0xff] << 48)
                             | ((long) H256[((int) (msb >> 48)) & 0xff] << 32)
                             | ((long) H256[((int) (msb >> 40)) & 0xff] << 16)
                             | H256[((int) (msb >> 32)) & 0xff]
@@ -470,7 +471,8 @@ public final class Long extends Number
             );
             ByteArray.setInt(
                     buf,
-                    14, (H256[(((int) msb) >> 8) & 0xff] << 16)
+                    14,
+                    (H256[(((int) msb) >> 8) & 0xff] << 16)
                             | H256[((int) msb) & 0xff]);
             ByteArray.setInt(
                     buf,
@@ -520,6 +522,7 @@ public final class Long extends Number
 
         byte[] buf = new byte[72];
         int off = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ? 1 : 0;
+
         buf[0 + off] = (byte) (i0 >> 8);
         buf[2 + off] = (byte) i0;
         buf[4 + off] = (byte) (i1 >> 8);
