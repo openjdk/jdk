@@ -101,8 +101,12 @@ public class InternalFrameTitleButtonTest {
                     Icon icon = ((JButton) c).getIcon();
                     if( icon.getIconHeight() > height - 4 ||
                         icon.getIconWidth() > height - 2) {
-                        throw
-                           new RuntimeException("Wrong title icon size");
+                        throw new RuntimeException("Wrong title icon size");
+                    }
+                    if (UIManager.getInt("InternalFrame.titleButtonWidth")
+                                         != icon.getIconWidth()) {
+                        throw new RuntimeException(
+                            "UIManager width setting not same as returned icon width");
                     }
                 }
             }

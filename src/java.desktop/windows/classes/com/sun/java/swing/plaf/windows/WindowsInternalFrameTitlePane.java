@@ -91,6 +91,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
                     UIManager.getColor("InternalFrame.activeBorderColor");
             setBorder(BorderFactory.createLineBorder(activeBorderColor, 1));
         }
+        UIManager.put("InternalFrame.titleButtonWidth", buttonWidth);
         // JDK-8039383: initialize these colors because getXP() may return null when theme is changed
         selectedTitleGradientColor =
                 UIManager.getColor("InternalFrame.activeTitleGradient");
