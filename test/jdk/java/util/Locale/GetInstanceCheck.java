@@ -71,7 +71,8 @@ public class GetInstanceCheck {
      */
     @ParameterizedTest
     @MethodSource("passingArguments")
-    public void noNPETest(String language, String country, String variant) throws IllegalAccessException {
+    public void noNPETest(String language, String country, String variant)
+            throws IllegalAccessException {
         try {
             getInstanceMethod.invoke(null, language, country, variant);
         } catch (InvocationTargetException exc) {
@@ -91,7 +92,8 @@ public class GetInstanceCheck {
      */
     @ParameterizedTest
     @MethodSource("failingArguments")
-    public void throwNPETest(String language, String country, String variant) throws IllegalAccessException {
+    public void throwNPETest(String language, String country, String variant)
+            throws IllegalAccessException {
         try {
             getInstanceMethod.invoke(null, language, country, variant);
             fail("Should NPE with any argument set to null");
