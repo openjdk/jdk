@@ -22,10 +22,6 @@
  *
  */
 
-import java.util.Arrays;
-import java.util.ArrayList;
-import jdk.test.whitebox.code.Compiler;
-
 /*
  * @test
  * @summary Tests how CDS works when critical library classes are replaced with JVMTI ClassFileLoadHook
@@ -33,8 +29,7 @@ import jdk.test.whitebox.code.Compiler;
  * @requires vm.cds.write.archived.java.heap
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller -jar whitebox.jar jdk.test.whitebox.WhiteBox
- * @run main/othervm/native -Xbootclasspath/a:whitebox.jar -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
- *                          ReplaceCriticalClassesForSubgraphs
+ * @run main/othervm/native ReplaceCriticalClassesForSubgraphs
  */
 
 public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
@@ -44,8 +39,7 @@ public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
     }
 
     public String[] getTests() {
-        ArrayList<String> tests = new ArrayList<>();
-        tests.addAll(Arrays.asList(new String[] {
+        String tests[] = {
             // Try to replace classes that are used by the archived subgraph graphs. (CDS should be disabled)
             "-early -notshared -subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
             "-early -notshared -subgraph java/lang/Integer java.lang.Integer$IntegerCache",
@@ -54,20 +48,14 @@ public class ReplaceCriticalClassesForSubgraphs extends ReplaceCriticalClasses {
             // JvmtiExport::early_class_hook_env() is false.
             "-subgraph java/lang/module/ResolvedModule jdk.internal.module.ArchivedModuleGraph",
             "-subgraph java/lang/Integer java.lang.Integer$IntegerCache",
-        }));
 
-        if (!Compiler.isJVMCIEnabled()) {
-            // EnableJVMCI appends the jdk.internal.vm.ci module and disables full module graph.
-            // Temporarily bypasses these tests with EnableJVMCI until JDK-8266329 is resolved.
-            tests.addAll(Arrays.asList(new String[] {
-                // Tests for archived full module graph. We cannot use whitebox, which requires appending to bootclasspath.
-                // VM will disable full module graph if bootclasspath is appended.
-                "-nowhitebox -early -notshared -subgraph java/lang/Module jdk.internal.module.ArchivedBootLayer",
-                "-nowhitebox -early -notshared -subgraph java/lang/ModuleLayer jdk.internal.module.ArchivedBootLayer",
-                "-nowhitebox -subgraph java/lang/Module jdk.internal.module.ArchivedBootLayer",
-                "-nowhitebox -subgraph java/lang/ModuleLayer jdk.internal.module.ArchivedBootLayer",
-            }));
-        }
-        return tests.toArray(new String[0]);
+            // Tests for archived full module graph. We cannot use whitebox, which requires appending to bootclasspath.
+            // VM will disable full module graph if bootclasspath is appended.
+            "-nowhitebox -early -notshared -subgraph java/lang/Module jdk.internal.module.ArchivedBootLayer",
+            "-nowhitebox -early -notshared -subgraph java/lang/ModuleLayer jdk.internal.module.ArchivedBootLayer",
+            "-nowhitebox -subgraph java/lang/Module jdk.internal.module.ArchivedBootLayer",
+            "-nowhitebox -subgraph java/lang/ModuleLayer jdk.internal.module.ArchivedBootLayer",
+        };
+        return tests;
     }
 }
