@@ -742,7 +742,6 @@ public class IRNode {
 
     public static final String MACRO_LOGIC_V = PREFIX + "MACRO_LOGIC_V" + POSTFIX;
     static {
-        // TODO vectorNode
         afterBarrierExpansionToBeforeMatching(MACRO_LOGIC_V, "MacroLogicV");
     }
 
@@ -988,7 +987,6 @@ public class IRNode {
 
     public static final String OR_V_MASK = PREFIX + "OR_V_MASK" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(OR_V_MASK, "OrVMask");
     }
 
@@ -1521,97 +1519,81 @@ public class IRNode {
 
     public static final String VECTOR_BLEND = PREFIX + "VECTOR_BLEND" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_BLEND, "VectorBlend");
     }
 
     public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");
     }
 
     public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_B2X, "VectorCastB2X");
     }
 
     public static final String VECTOR_CAST_D2X = PREFIX + "VECTOR_CAST_D2X" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_D2X, "VectorCastD2X");
     }
 
     public static final String VECTOR_CAST_F2X = PREFIX + "VECTOR_CAST_F2X" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_F2X, "VectorCastF2X");
     }
 
     public static final String VECTOR_CAST_I2X = PREFIX + "VECTOR_CAST_I2X" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_I2X, "VectorCastI2X");
     }
 
     public static final String VECTOR_CAST_L2X = PREFIX + "VECTOR_CAST_L2X" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_L2X, "VectorCastL2X");
     }
 
     public static final String VECTOR_CAST_S2X = PREFIX + "VECTOR_CAST_S2X" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_S2X, "VectorCastS2X");
     }
 
     public static final String VECTOR_CAST_F2HF = PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_F2HF, "VectorCastF2HF");
     }
 
     public static final String VECTOR_CAST_HF2F = PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_CAST_HF2F, "VectorCastHF2F");
     }
 
     public static final String VECTOR_MASK_CAST = PREFIX + "VECTOR_MASK_CAST" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_MASK_CAST, "VectorMaskCast");
     }
 
     public static final String VECTOR_REINTERPRET = PREFIX + "VECTOR_REINTERPRET" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
     }
 
     public static final String VECTOR_UCAST_B2X = PREFIX + "VECTOR_UCAST_B2X" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_UCAST_B2X, "VectorUCastB2X");
     }
 
     public static final String VECTOR_UCAST_I2X = PREFIX + "VECTOR_UCAST_I2X" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_UCAST_I2X, "VectorUCastI2X");
     }
 
     public static final String VECTOR_UCAST_S2X = PREFIX + "VECTOR_UCAST_S2X" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_UCAST_S2X, "VectorUCastS2X");
     }
 
     public static final String VECTOR_TEST = PREFIX + "VECTOR_TEST" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(VECTOR_TEST, "VectorTest");
     }
 
@@ -1777,7 +1759,6 @@ public class IRNode {
 
     public static final String XOR_V_MASK = PREFIX + "XOR_V_MASK" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(XOR_V_MASK, "XorVMask");
     }
 
