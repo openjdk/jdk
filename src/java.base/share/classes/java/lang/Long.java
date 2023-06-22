@@ -470,26 +470,16 @@ public final class Long extends Number
         if (COMPACT_STRINGS) {
             byte[] buf = new byte[36];
 
-            ByteArray.setChar(buf, 0, i0);
-            ByteArray.setChar(buf, 2, i1);
-            ByteArray.setChar(buf, 4, i2);
-            ByteArray.setChar(buf, 6, i3);
+            ByteArray.setLong(buf, 0, ((long) i0 << 48) | ((long) i1 << 32) | ((long) i2 << 16) | i3);
             buf[8] = '-';
-            ByteArray.setChar(buf, 9, i4);
-            ByteArray.setChar(buf, 11, i5);
+            ByteArray.setInt(buf, 9, (i4 << 16) | i5);
             buf[13] = '-';
-            ByteArray.setChar(buf, 14, i6);
-            ByteArray.setChar(buf, 16, i7);
+            ByteArray.setInt(buf, 14, (i6 << 16) | i7);
             buf[18] = '-';
-            ByteArray.setChar(buf, 19, i8);
-            ByteArray.setChar(buf, 21, i9);
+            ByteArray.setInt(buf, 19, (i8 << 16) | i9);
             buf[23] = '-';
-            ByteArray.setChar(buf, 24, i10);
-            ByteArray.setChar(buf, 26, i11);
-            ByteArray.setChar(buf, 28, i12);
-            ByteArray.setChar(buf, 30, i13);
-            ByteArray.setChar(buf, 32, i14);
-            ByteArray.setChar(buf, 34, i15);
+            ByteArray.setLong(buf, 24, ((long) i10 << 48) | ((long) i11 << 32) | ((long) i12 << 16) | i13);
+            ByteArray.setInt(buf, 32, (i14 << 16) | i15);
 
             return new String(buf, LATIN1);
         }
