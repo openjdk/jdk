@@ -110,8 +110,7 @@ final class ViewFile {
                 String key = tokenizer.next();
                 tokenizer.expect("=");
                 String value = tokenizer.next();
-                ViewConfiguration view = views.get(views.size() - 1);
-                view.properties().put(key, value);
+                views.getLast().properties().put(key, value);
             }
         }
         return views;

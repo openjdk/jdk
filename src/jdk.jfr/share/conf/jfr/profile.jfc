@@ -735,8 +735,8 @@
     </event>
 
     <event name="jdk.Deserialization">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.InitialSecurityProperty">
@@ -745,13 +745,13 @@
     </event>
 
     <event name="jdk.SecurityPropertyModification">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.SecurityProviderService">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.TLSHandshake">
@@ -760,13 +760,13 @@
     </event>
 
     <event name="jdk.X509Validation">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.X509Certificate">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.JavaExceptionThrow">
@@ -927,7 +927,7 @@
   carry the control attribute.
   -->
     <control>
-        <selection name="gc" default="detailed" label="Garbage Collector">
+      <selection name="gc" default="detailed" label="Garbage Collector">
         <option label="Off" name="off">off</option>
         <option label="Normal" name="normal">normal</option>
         <option label="Detailed" name="detailed">detailed</option>
@@ -945,11 +945,11 @@
       </condition>
 
       <condition name="gc-enabled-detailed" true="true" false="false">
-       <or>
+        <or>
           <test name="gc" operator="equal" value="detailed"/>
           <test name="gc" operator="equal" value="high"/>
           <test name="gc" operator="equal" value="all"/>
-       </or>
+        </or>
       </condition>
 
       <condition name="gc-enabled-high" true="true" false="false">
@@ -967,7 +967,7 @@
         <option label="Off" name="off">0/s</option>
         <option label="Low" name="low">150/s</option>
         <option label="Medium" name="medium">300/s</option>
-	    <option label="High" name="high">1000/s</option>
+        <option label="High" name="high">1000/s</option>
         <option label="Maximum" name="maximum">1000000000/s</option>
       </selection>
 
@@ -1120,7 +1120,6 @@
       <text name="socket-threshold" label="Socket I/O Threshold" contentType="timespan" minimum="0 s">10 ms</text>
 
       <flag name="class-loading" label="Class Loading">false</flag>
-
     </control>
 
 </configuration>
