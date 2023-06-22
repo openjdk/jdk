@@ -680,10 +680,39 @@ public class IRNode {
         loadOfNodes(LOAD_US_OF_CLASS, "LoadUS");
     }
 
-    public static final String LOAD_VECTOR = PREFIX + "LOAD_VECTOR" + POSTFIX;
+    public static final String LOAD_VB = VECTOR_PREFIX + "LOAD_VB" + POSTFIX;
     static {
-        // TODO vectorNode
-        beforeMatchingNameRegex(LOAD_VECTOR, "LoadVector");
+        vectorNode(LOAD_VB, "LoadVector", "byte");
+    }
+
+    public static final String LOAD_VC = VECTOR_PREFIX + "LOAD_VC" + POSTFIX;
+    static {
+        vectorNode(LOAD_VC, "LoadVector", "char");
+    }
+
+    public static final String LOAD_VS = VECTOR_PREFIX + "LOAD_VS" + POSTFIX;
+    static {
+        vectorNode(LOAD_VS, "LoadVector", "short");
+    }
+
+    public static final String LOAD_VI = VECTOR_PREFIX + "LOAD_VI" + POSTFIX;
+    static {
+        vectorNode(LOAD_VI, "LoadVector", "int");
+    }
+
+    public static final String LOAD_VL = VECTOR_PREFIX + "LOAD_VL" + POSTFIX;
+    static {
+        vectorNode(LOAD_VL, "LoadVector", "long");
+    }
+
+    public static final String LOAD_VF = VECTOR_PREFIX + "LOAD_VF" + POSTFIX;
+    static {
+        vectorNode(LOAD_VF, "LoadVector", "float");
+    }
+
+    public static final String LOAD_VD = VECTOR_PREFIX + "LOAD_VD" + POSTFIX;
+    static {
+        vectorNode(LOAD_VD, "LoadVector", "double");
     }
 
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;

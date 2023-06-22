@@ -55,7 +55,8 @@ public class TestVectorizeTypeConversion {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0",
+    // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE_ANY, ">0",
                   IRNode.VECTOR_CAST_I2X, ">0",
                   IRNode.STORE_VECTOR, ">0"},
         // The vectorization of some conversions may fail when `+AlignVector`.
@@ -68,7 +69,9 @@ public class TestVectorizeTypeConversion {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0",
+    // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
+    @IR(counts = {IRNode.LOAD_VL, IRNode.VECTOR_SIZE_ANY, ">0",
+                  IRNode.LOAD_VI, IRNode.VECTOR_SIZE_ANY, ">0",
                   IRNode.VECTOR_CAST_I2X, ">0",
                   IRNode.VECTOR_CAST_L2X, ">0",
                   IRNode.STORE_VECTOR, ">0"})
@@ -80,7 +83,9 @@ public class TestVectorizeTypeConversion {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, ">0",
+    // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
+    @IR(counts = {IRNode.LOAD_VF, IRNode.VECTOR_SIZE_ANY, ">0",
+                  IRNode.LOAD_VD, IRNode.VECTOR_SIZE_ANY, ">0",
                   IRNode.VECTOR_CAST_D2X, ">0",
                   IRNode.VECTOR_CAST_F2X, ">0",
                   IRNode.STORE_VECTOR, ">0"})
