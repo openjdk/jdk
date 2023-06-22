@@ -96,7 +96,7 @@ public class Filters {
             return t -> true;
         }
         if (filters.size() == 1) {
-            return filters.get(0);
+            return filters.getFirst();
         }
         return t -> {
             for (Predicate<T> p : filters) {

@@ -363,7 +363,9 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeKeyRef = ptr_to_jlong(privateKeyRef);
             (*env)->CallVoidMethod(env, keyStore, jm_createKeyEntry, alias, creationDate, nativeKeyRef, certRefArray, javaCertArray);
-            JNU_CHECK_EXCEPTION(env);
+            if ((*env)->ExceptionCheck(env)) {
+                goto errOut;
+            }
         }
     } while (searchResult == noErr);
 
@@ -505,7 +507,9 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeRef = ptr_to_jlong(certRef);
             (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, certData);
-            JNU_CHECK_EXCEPTION(env);
+            if ((*env)->ExceptionCheck(env)) {
+                goto errOut;
+            }
         }
     } while (searchResult == noErr);
 

@@ -44,6 +44,8 @@ javax/management/remote/mandatory/loading/RMIDownloadTest.java 8308366 windows-x
 
 java/lang/instrument/NativeMethodPrefixAgent.java 8307169 generic-all
 
+java/lang/ScopedValue/StressStackOverflow.java#default 8309646 linux-all
+
 ##########
 ## Tests incompatible with virtual test thread factory.
 ## There is no goal to run all test with virtual test thread factory.
