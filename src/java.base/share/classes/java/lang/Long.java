@@ -30,11 +30,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.math.*;
-import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.util.ByteArray;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -466,58 +466,89 @@ public final class Long extends Number
         char i14 = hex256[(((int) lsb) >> 8) & 0xff];
         char i15 = hex256[((int) lsb) & 0xff];
 
-        final byte coder;
-        final int charSize;
-        final int off;
         if (COMPACT_STRINGS) {
-            coder = LATIN1;
-            charSize = 1;
-            off = 0;
+            byte[] buf = new byte[36];
+
+            buf[0] = (byte) (i0 >> 8);
+            buf[1] = (byte) i0;
+            buf[2] = (byte) (i1 >> 8);
+            buf[3] = (byte) i1;
+            buf[4] = (byte) (i2 >> 8);
+            buf[5] = (byte) i2;
+            buf[6] = (byte) (i3 >> 8);
+            buf[7] = (byte) i3;
+            buf[8] = '-';
+            buf[9] = (byte) (i4 >> 8);
+            buf[10] = (byte) i4;
+            buf[11] = (byte) (i5 >> 8);
+            buf[12] = (byte) i5;
+            buf[13] = '-';
+            buf[14] = (byte) (i6 >> 8);
+            buf[15] = (byte) i6;
+            buf[16] = (byte) (i7 >> 8);
+            buf[17] = (byte) i7;
+            buf[18] = '-';
+            buf[19] = (byte) (i8 >> 8);
+            buf[20] = (byte) i8;
+            buf[21] = (byte) (i9 >> 8);
+            buf[22] = (byte) i9;
+            buf[23] = '-';
+            buf[24] = (byte) (i10 >> 8);
+            buf[25] = (byte) i10;
+            buf[26] = (byte) (i11 >> 8);
+            buf[27] = (byte) i11;
+            buf[28] = (byte) (i12 >> 8);
+            buf[29] = (byte) i12;
+            buf[30] = (byte) (i13 >> 8);
+            buf[31] = (byte) i13;
+            buf[32] = (byte) (i14 >> 8);
+            buf[33] = (byte) i14;
+            buf[34] = (byte) (i15 >> 8);
+            buf[35] = (byte) i15;
+
+            return new String(buf, LATIN1);
         } else {
-            coder = UTF16;
-            charSize = 2;
-            off = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ? 1 : 0;
+            byte[] buf = new byte[72];
+
+            ByteArray.setChar(0, (byte) (i0 >> 8));
+            ByteArray.setChar(2, (byte) i0);
+            ByteArray.setChar(4, (byte) (i1 >> 8));
+            ByteArray.setChar(6, (byte) i1);
+            ByteArray.setChar(8, (byte) (i2 >> 8));
+            ByteArray.setChar(10, (byte) i2);
+            ByteArray.setChar(12, (byte) (i3 >> 8));
+            ByteArray.setChar(14, (byte) i3);
+            ByteArray.setChar(16, '-');
+            ByteArray.setChar(18, (byte) (i4 >> 8));
+            ByteArray.setChar(20, (byte) i4);
+            ByteArray.setChar(22, (byte) (i5 >> 8));
+            ByteArray.setChar(24, (byte) i5);
+            ByteArray.setChar(26, '-');
+            ByteArray.setChar(28, (byte) (i6 >> 8));
+            ByteArray.setChar(30, (byte) i6);
+            ByteArray.setChar(32, (byte) (i7 >> 8));
+            ByteArray.setChar(34, (byte) i7);
+            ByteArray.setChar(36, '-');
+            ByteArray.setChar(38, (byte) (i8 >> 8));
+            ByteArray.setChar(40, (byte) i8);
+            ByteArray.setChar(42, (byte) (i9 >> 8));
+            ByteArray.setChar(44, (byte) i9);
+            ByteArray.setChar(46, '-');
+            ByteArray.setChar(48, (byte) (i10 >> 8));
+            ByteArray.setChar(50, (byte) i10);
+            ByteArray.setChar(52, (byte) (i11 >> 8));
+            ByteArray.setChar(54, (byte) i11);
+            ByteArray.setChar(56, (byte) (i12 >> 8));
+            ByteArray.setChar(58, (byte) i12);
+            ByteArray.setChar(60, (byte) (i13 >> 8));
+            ByteArray.setChar(62, (byte) i13);
+            ByteArray.setChar(64, (byte) (i14 >> 8));
+            ByteArray.setChar(66, (byte) i14);
+            ByteArray.setChar(68, (byte) (i15 >> 8));
+            ByteArray.setChar(70, (byte) i15);
+
+            return new String(buf, UTF16);
         }
-        final byte[] buf = new byte[36 * charSize];
-
-        buf[off] = (byte) (i0 >> 8);
-        buf[1 * charSize + off] = (byte) i0;
-        buf[2 * charSize + off] = (byte) (i1 >> 8);
-        buf[3 * charSize + off] = (byte) i1;
-        buf[4 * charSize + off] = (byte) (i2 >> 8);
-        buf[5 * charSize + off] = (byte) i2;
-        buf[6 * charSize + off] = (byte) (i3 >> 8);
-        buf[7 * charSize + off] = (byte) i3;
-        buf[8 * charSize + off] = '-';
-        buf[9 * charSize + off] = (byte) (i4 >> 8);
-        buf[10 * charSize + off] = (byte) i4;
-        buf[11 * charSize + off] = (byte) (i5 >> 8);
-        buf[12 * charSize + off] = (byte) i5;
-        buf[13 * charSize + off] = '-';
-        buf[14 * charSize + off] = (byte) (i6 >> 8);
-        buf[15 * charSize + off] = (byte) i6;
-        buf[16 * charSize + off] = (byte) (i7 >> 8);
-        buf[17 * charSize + off] = (byte) i7;
-        buf[18 * charSize + off] = '-';
-        buf[19 * charSize + off] = (byte) (i8 >> 8);
-        buf[20 * charSize + off] = (byte) i8;
-        buf[21 * charSize + off] = (byte) (i9 >> 8);
-        buf[22 * charSize + off] = (byte) i9;
-        buf[23 * charSize + off] = '-';
-        buf[24 * charSize + off] = (byte) (i10 >> 8);
-        buf[25 * charSize + off] = (byte) i10;
-        buf[26 * charSize + off] = (byte) (i11 >> 8);
-        buf[27 * charSize + off] = (byte) i11;
-        buf[28 * charSize + off] = (byte) (i12 >> 8);
-        buf[29 * charSize + off] = (byte) i12;
-        buf[30 * charSize + off] = (byte) (i13 >> 8);
-        buf[31 * charSize + off] = (byte) i13;
-        buf[32 * charSize + off] = (byte) (i14 >> 8);
-        buf[33 * charSize + off] = (byte) i14;
-        buf[34 * charSize + off] = (byte) (i15 >> 8);
-        buf[35 * charSize + off] = (byte) i15;
-
-        return new String(buf, coder);
     }
 
     /**
