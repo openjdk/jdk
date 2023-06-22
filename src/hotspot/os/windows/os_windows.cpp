@@ -285,7 +285,7 @@ void os::run_periodic_checks(outputStream* st) {
 static LPTOP_LEVEL_EXCEPTION_FILTER prev_uef_handler = nullptr;
 #endif
 
-LONG WINAPI Uncaugh_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo);
+LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo);
 
 void os::init_system_properties_values() {
   // sysclasspath, java_home, dll_dir
@@ -399,7 +399,7 @@ void os::init_system_properties_values() {
 
 #ifndef _WIN64
   // set our UnhandledExceptionFilter and save any previous one
-  prev_uef_handler = SetUnhandledExceptionFilter(Uncaugh_Exception_Handler);
+  prev_uef_handler = SetUnhandledExceptionFilter(Uncaught_Exception_Handler);
 #endif
 
   // Done
@@ -2532,7 +2532,7 @@ bool handle_FLT_exception(struct _EXCEPTION_POINTERS* exceptionInfo) {
 #endif
 
 #ifndef _WIN64
-LONG WINAPI Uncaugh_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
+LONG WINAPI Uncaught_Exception_Handler(struct _EXCEPTION_POINTERS* exceptionInfo) {
   if (handle_FLT_exception(exceptionInfo)) {
     return EXCEPTION_CONTINUE_EXECUTION;
   }

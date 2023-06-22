@@ -34,10 +34,6 @@ import jdk.test.lib.process.ProcessTools;
 import org.testng.annotations.Test;
 
 import java.io.File;
-import java.lang.foreign.FunctionDescriptor;
-import java.lang.foreign.Linker;
-import java.lang.foreign.SymbolLookup;
-import java.lang.invoke.MethodHandle;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.regex.Pattern;
@@ -48,12 +44,10 @@ public class UncaughtNativeExceptionTest {
     private static class Crasher {
         public static void main(String[] args) throws Throwable {
             System.loadLibrary("NativeException");
-            MethodHandle mh = Linker.nativeLinker().downcallHandle(
-                    SymbolLookup.loaderLookup().find("throw_exception").orElseThrow(),
-                    FunctionDescriptor.ofVoid());
-
-            mh.invokeExact(); // throws native exception
+            throwException();
         }
+
+        static native void throwException();
     }
 
     // check that we actually report the native exception,
@@ -61,8 +55,6 @@ public class UncaughtNativeExceptionTest {
     @Test
     public void testNativeExceptionReporting() throws Exception {
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-                "--enable-preview",
-                "--enable-native-access=ALL-UNNAMED",
                 "-Djava.library.path=" + System.getProperty("java.library.path"),
                 Crasher.class.getName());
         OutputAnalyzer output = new OutputAnalyzer(pb.start());

@@ -21,15 +21,12 @@
  * questions.
  */
 
-#ifdef _WIN64
-// Windows only
+#include <jni.h>
 
 #include <Windows.h>
 
 const DWORD EX_CODE = 42;
 
-__declspec(dllexport) void throw_exception() {
-    RaiseException(EX_CODE, EXCEPTION_NONCONTINUABLE, 0, NULL);
+JNIEXPORT void JNICALL Java_UncaughtNativeExceptionTest_00024Crasher_throwException(JNIEnv* env, jclass cls) {
+  RaiseException(EX_CODE, EXCEPTION_NONCONTINUABLE, 0, NULL);
 }
-
-#endif
