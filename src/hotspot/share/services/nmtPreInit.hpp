@@ -153,14 +153,14 @@ class NMTPreInitAllocationTable {
   typedef int index_t;
   const index_t invalid_index = -1;
 
-  static unsigned calculate_hash(const void* p) {
+  static uint64_t calculate_hash(const void* p) {
     // Keep hash function simple, the modulo
     // operation in index function will do the "heavy lifting".
-    return (unsigned)p2i(p);
+    return (uint64_t)(p);
   }
 
   static index_t index_for_key(const void* p) {
-    const unsigned hash = calculate_hash(p);
+    const uint64_t hash = calculate_hash(p);
     // "table_size" is a Mersenne prime, so "modulo" is all we need here.
     return hash % table_size;
   }
