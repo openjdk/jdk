@@ -2296,8 +2296,14 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
     int final_int = (int)final_con;
     // The final value should be in integer range since the loop
     // is counted and the limit was checked for overflow.
-    assert(final_con == (jlong)final_int, "final value should be integer");
-    return TypeInt::make(final_int);
+    // Assert checks for overflow only if all input nodes are ConINodes, as during CCP
+    // there might be a temporary overflow from PhiNodes see JDK-8309266
+    assert((in(Init)->is_ConI() && in(Limit)->is_ConI() && in(Stride)->is_ConI()) ? final_con == (jlong)final_int : true, "final value should be integer");
+    if (final_con == (jlong)final_int) {
+      return TypeInt::make(final_int);
+    } else {
+      return bottom_type();
+    }
   }
 
   return bottom_type(); // TypeInt::INT
