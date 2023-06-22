@@ -51,7 +51,6 @@ public:
   static const char* retry_no_escape_analysis();
   static const char* retry_no_iterative_escape_analysis();
   static const char* retry_no_locks_coarsening();
-  static const char* retry_class_loading_during_parsing();
 
   // Print compilation timers and statistics
   void print_timers();
