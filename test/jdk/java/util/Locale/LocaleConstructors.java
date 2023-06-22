@@ -45,6 +45,7 @@ public class LocaleConstructors {
     static final String COUNTRY = "US";
     static final String VAR = "socal";
 
+    // Test Locale constructor and .of() allow (language) argument(s)
     @Test
     public void langTest() {
         Locale aLocale = Locale.of(LANG);
@@ -53,6 +54,7 @@ public class LocaleConstructors {
         assertEquals(otherLocale.toString(), LANG);
     }
 
+    // Test Locale constructor and .of() allow (language, constructor) argument(s)
     @Test
     public void langCountryTest() {
         Locale aLocale = Locale.of(LANG, COUNTRY);
@@ -63,6 +65,8 @@ public class LocaleConstructors {
                 LANG, COUNTRY));
     }
 
+    // Test Locale constructor and .of() allow
+    // (language, constructor, variant) argument(s)
     @Test
     public void langCountryVariantTest() {
         Locale aLocale = Locale.of(LANG, COUNTRY, VAR);
