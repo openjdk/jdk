@@ -47,20 +47,28 @@ public class ForNameNames {
         );
     }
 
+    /*
+     * Test 1-arg and 3-arg Class::forName.  Class::getName on the returned
+     * Class object returns the name passed to Class::forName.
+     */
     @ParameterizedTest
     @MethodSource("testCases")
     void testForName(String cn, Class<?> expected) throws ClassNotFoundException {
         ClassLoader loader = ForNameNames.class.getClassLoader();
-        Class<?> c = Class.forName(cn, false, loader);
-        assertEquals(expected, c);
-        c = Class.forName(cn);
-        assertEquals(expected, c);
+        Class<?> c1 = Class.forName(cn, false, loader);
+        assertEquals(expected, c1);
+        assertEquals(cn, c1.getName());
+
+        Class<?> c2 = Class.forName(cn);
+        assertEquals(expected, c2);
+        assertEquals(cn, c2.getName());
     }
 
     static Stream<Arguments> invalidNames() {
         return Stream.of(
                 Arguments.of("I"),                   // primitive type
-                Arguments.of("ForNameNames.Inner"),  // fully-qualified name
+                Arguments.of("int[]"),               // fully-qualified name of int array
+                Arguments.of("ForNameNames.Inner"),  // fully-qualified name of nested type
                 Arguments.of("[java.lang.String"),   // missing L and ;
                 Arguments.of("[Ljava.lang.String"),  // missing ;
                 Arguments.of("[Ljava/lang/String;")  // type descriptor

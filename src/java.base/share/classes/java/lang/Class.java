@@ -441,14 +441,14 @@ public final class Class<T> implements java.io.Serializable,
      *
      * <p> To obtain {@code Class} object associated with an array class,
      * the name consists of one or more {@code '['} representing the depth
-     * of the array class, followed by the element type as encoded in
+     * of the array nesting, followed by the element type as encoded in
      * {@linkplain ##nameFormat the table} specified in {@code Class.getName()}.
      *
      * <p> Examples:
      * {@snippet lang="java" :
      * Class<?> threadClass = Class.forName("java.lang.Thread", false, currentLoader);
      * Class<?> stringArrayClass = Class.forName("[Ljava.lang.String;", false, currentLoader);
-     * Class<?> intArrayClass = Class.forName("[[[I", false, currentLoader);
+     * Class<?> intArrayClass = Class.forName("[[[I", false, currentLoader);   // Class of int[][][]
      * Class<?> nestedClass = Class.forName("java.lang.Character$UnicodeBlock", false, currentLoader);
      * Class<?> fooClass = Class.forName("Foo", true, currentLoader);
      * }
