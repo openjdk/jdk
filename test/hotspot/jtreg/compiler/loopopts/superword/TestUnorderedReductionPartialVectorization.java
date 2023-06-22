@@ -39,8 +39,7 @@ public class TestUnorderedReductionPartialVectorization {
     static final int ITER  = 10;
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-Xbatch", "-XX:-TieredCompilation",
-                                   "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestUnorderedReductionPartialVectorization::test*");
+        TestFramework.run();
     }
 
     @Run(test = {"test1"})
