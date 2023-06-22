@@ -448,45 +448,77 @@ public final class Long extends Number
     }
 
     static String fastUUID(long lsb, long msb) {
-        char[] hex256 = DigitCache.HEX256;
-
-        char i0 = hex256[((int) (msb >> 56)) & 0xff];
-        char i1 = hex256[((int) (msb >> 48)) & 0xff];
-        char i2 = hex256[((int) (msb >> 40)) & 0xff];
-        char i3 = hex256[((int) (msb >> 32)) & 0xff];
-        char i4 = hex256[(((int) msb) >> 24) & 0xff];
-        char i5 = hex256[(((int) msb) >> 16) & 0xff];
-        char i6 = hex256[(((int) msb) >> 8) & 0xff];
-        char i7 = hex256[((int) msb) & 0xff];
-        char i8 = hex256[(((int) (lsb >> 56))) & 0xff];
-        char i9 = hex256[(((int) (lsb >> 48))) & 0xff];
-        char i10 = hex256[(((int) (lsb >> 40))) & 0xff];
-        char i11 = hex256[((int) (lsb >> 32)) & 0xff];
-        char i12 = hex256[(((int) lsb) >> 24) & 0xff];
-        char i13 = hex256[(((int) lsb) >> 16) & 0xff];
-        char i14 = hex256[(((int) lsb) >> 8) & 0xff];
-        char i15 = hex256[((int) lsb) & 0xff];
-
         if (COMPACT_STRINGS) {
-            byte[] buf = new byte[36];
+            char[] HEX = DigitCache.HEX256;
 
-            ByteArray.setLong(buf, 0, ((long) i0 << 48) | ((long) i1 << 32) | ((long) i2 << 16) | i3);
-            buf[8] = '-';
-            ByteArray.setInt(buf, 9, (i4 << 16) | i5);
-            buf[13] = '-';
-            ByteArray.setInt(buf, 14, (i6 << 16) | i7);
-            buf[18] = '-';
-            ByteArray.setInt(buf, 19, (i8 << 16) | i9);
-            buf[23] = '-';
-            ByteArray.setLong(buf, 24, ((long) i10 << 48) | ((long) i11 << 32) | ((long) i12 << 16) | i13);
-            ByteArray.setInt(buf, 32, (i14 << 16) | i15);
+            byte[] buf = new byte[36];
+            Arrays.fill(buf, (byte) '-');
+
+            ByteArray.setLong(
+                    buf,
+                    0, ((long) HEX[((int) (msb >> 56)) & 0xff] << 48)
+                            | ((long) HEX[((int) (msb >> 48)) & 0xff] << 32)
+                            | ((long) HEX[((int) (msb >> 40)) & 0xff] << 16)
+                            | HEX[((int) (msb >> 32)) & 0xff]
+            );
+            ByteArray.setInt(
+                    buf,
+                    9,
+                    (HEX[(((int) msb) >> 24) & 0xff] << 16)
+                            | HEX[(((int) msb) >> 16) & 0xff]
+            );
+            ByteArray.setInt(
+                    buf,
+                    14, (HEX[(((int) msb) >> 8) & 0xff] << 16)
+                            | HEX[((int) msb) & 0xff]);
+            ByteArray.setInt(
+                    buf,
+                    19,
+                    (HEX[(((int) (lsb >> 56))) & 0xff] << 16)
+                            | HEX[(((int) (lsb >> 48))) & 0xff]
+            );
+            ByteArray.setLong(
+                    buf,
+                    24,
+                    ((long) HEX[(((int) (lsb >> 40))) & 0xff] << 48)
+                            | ((long) HEX[((int) (lsb >> 32)) & 0xff] << 32)
+                            | ((long) HEX[(((int) lsb) >> 24) & 0xff] << 16)
+                            | HEX[(((int) lsb) >> 16) & 0xff]
+            );
+            ByteArray.setInt(
+                    buf,
+                    32,
+                    (HEX[(((int) lsb) >> 8) & 0xff] << 16) | HEX[((int) lsb) & 0xff]
+            );
 
             return new String(buf, LATIN1);
         }
 
+        return fastUUIDUTF16(lsb, msb);
+    }
+
+    static String fastUUIDUTF16(long lsb, long msb) {
+        final char[] HEX = DigitCache.HEX256;
+
+        char i0 = HEX[((int) (msb >> 56)) & 0xff];
+        char i1 = HEX[((int) (msb >> 48)) & 0xff];
+        char i2 = HEX[((int) (msb >> 40)) & 0xff];
+        char i3 = HEX[((int) (msb >> 32)) & 0xff];
+        char i4 = HEX[(((int) msb) >> 24) & 0xff];
+        char i5 = HEX[(((int) msb) >> 16) & 0xff];
+        char i6 = HEX[(((int) msb) >> 8) & 0xff];
+        char i7 = HEX[((int) msb) & 0xff];
+        char i8 = HEX[(((int) (lsb >> 56))) & 0xff];
+        char i9 = HEX[(((int) (lsb >> 48))) & 0xff];
+        char i10 = HEX[(((int) (lsb >> 40))) & 0xff];
+        char i11 = HEX[((int) (lsb >> 32)) & 0xff];
+        char i12 = HEX[(((int) lsb) >> 24) & 0xff];
+        char i13 = HEX[(((int) lsb) >> 16) & 0xff];
+        char i14 = HEX[(((int) lsb) >> 8) & 0xff];
+        char i15 = HEX[((int) lsb) & 0xff];
+
         byte[] buf = new byte[72];
         int off = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN ? 1 : 0;
-
         buf[0 + off] = (byte) (i0 >> 8);
         buf[2 + off] = (byte) i0;
         buf[4 + off] = (byte) (i1 >> 8);
