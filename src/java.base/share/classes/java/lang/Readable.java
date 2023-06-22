@@ -41,7 +41,7 @@ public interface Readable {
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
      * rewinding of the buffer is performed. If the specified character
-     * buffer has no elements {@linkplain java.nio.Buffer#hasRemaining
+     * buffer has no space {@linkplain java.nio.Buffer#hasRemaining
      * remaining}, then no characters will be read and zero will be returned.
      *
      * @param cb the buffer to read characters into
