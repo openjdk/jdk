@@ -70,7 +70,17 @@ import java.util.Map;
  *                                 Using this IR node expects another user provided string in the constraint list of
  *                                 {@link IR#failOn()} and {@link IR#counts()}. They cannot be used as normal IR nodes.
  *                                 Trying to do so will result in a format violation error.</li>
- *     <li><p>Vector IR nodes:  TODO.
+ *     <li><p>Vector IR nodes:  The IR node placeholder string contains an additional {@link #VECTOR_PREFIX}.
+ *                              Using this IR node, one can check for the type and size of a vector. The type must
+ *                              be directly specified in {@link #vectorNode}. For IR rules that are looking for a
+ *                              non-zero count of this node, the size is assumed to be the maximal number of elements
+ *                              that can fit in a vector of the specified type. This depends on the VM flag MaxVectorSize
+ *                              and CPU features. For IR rules that are looking for zero such nodes, or use failOn,
+ *                              there we match for any {@link #VECTOR_SIZE_ANY} size. This should be helpful in most cases
+ *                              to either check that there is vectorization at the widest vector-width possible, or no
+ *                              vectorization at all. If this is not sufficient, then one can use an additional argument
+ *                              to specify the size with {@link #VECTOR_SIZE}, followed by a size tag or comma separated
+ *                              list of sizes.
  * </ul>
  */
 public class IRNode {
@@ -678,13 +688,11 @@ public class IRNode {
 
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER, "LoadVectorGather");
     }
 
     public static final String LOAD_VECTOR_GATHER_MASKED = PREFIX + "LOAD_VECTOR_GATHER_MASKED" + POSTFIX;
     static {
-        // TODO vectorNode
         beforeMatchingNameRegex(LOAD_VECTOR_GATHER_MASKED, "LoadVectorGatherMasked");
     }
 
@@ -1894,10 +1902,13 @@ public class IRNode {
     }
 
     /**
-     * TODO IS_REPLACED may get replaced with nothing
+     * Apply {@code irNodeRegex} as regex for the IR vector node name on all machine independent ideal graph phases up to and
+     * including {@link CompilePhase#BEFORE_MATCHING}. Since this is a vector node, we can also check the vector element
+     * type {@code typeString} and the vector size (number of elements), {@see VECTOR_SIZE}.
      */
     private static void vectorNode(String irNodePlaceholder, String irNodeRegex, String typeString) {
         TestFramework.check(isVectorIRNode(irNodePlaceholder), "vectorNode: failed check for irNodePlaceholder " + irNodePlaceholder);
+        // IS_REPLACED is later replaced with the specific type and size of the vector.
         String regex = START + irNodeRegex + MID  + IS_REPLACED + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
         VECTOR_NODE_TYPE.put(irNodePlaceholder, typeString);
