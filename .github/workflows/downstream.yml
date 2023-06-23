@@ -75,6 +75,9 @@ jobs:
             git branch -f rivos/merge-${{ steps.configure.outputs.tag }} ${{ steps.configure.outputs.tag }}
 
             git checkout rivos/merge-${{ steps.configure.outputs.tag }}
+            # Setup user for merge commit
+            git config user.name "Ludovic Henry"
+            git config user.email "ludovic@rivosinc.com"
             if ! git merge --no-ff --no-edit origin/rivos/main; then
               # Print the conflicts
               git diff
