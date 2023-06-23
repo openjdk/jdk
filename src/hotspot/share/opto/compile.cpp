@@ -558,6 +558,7 @@ void Compile::print_ideal_ir(const char* phase_name) {
 
   // Node dumping can cause a safepoint, which can break the tty lock.
   // Buffer all node dumps, so that all safepoints happen before we lock.
+  ResourceMark rm;
   stringStream ss;
 
   if (_output == nullptr) {

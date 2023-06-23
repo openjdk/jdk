@@ -2069,6 +2069,7 @@ void PhaseOutput::ScheduleAndBundle() {
 #ifndef PRODUCT
   if (C->trace_opto_output()) {
     // Buffer and print all at once
+    ResourceMark rm;
     stringStream ss;
     ss.print("\n---- After ScheduleAndBundle ----\n");
     print_scheduling(&ss);
