@@ -35,7 +35,6 @@ import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
-import java.util.Arrays;
 import jdk.internal.util.ByteArray;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
@@ -450,14 +449,13 @@ public final class Long extends Number
 
     static String fastUUID(long lsb, long msb) {
         if (COMPACT_STRINGS) {
-            char[] H256 = DigitCache.HEX256;
-
             byte[] buf = new byte[36];
             buf[8]  = '-';
             buf[13] = '-';
             buf[18] = '-';
             buf[23] = '-';
 
+            char[] H256 = DigitCache.HEX256;
             ByteArray.setLong(
                     buf,
                     0,
