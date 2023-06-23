@@ -89,8 +89,8 @@ import jdk.test.lib.process.ProcessTools;
  */
 
 /*
- * @test id=Z
- * @requires vm.gc.Z
+ * @test id=ZSinglegen
+ * @requires vm.gc.ZSinglegen
  * @summary Unit test for jmap utility (Z GC)
  * @key intermittent
  * @library /test/lib
@@ -98,7 +98,20 @@ import jdk.test.lib.process.ProcessTools;
  * @build jdk.test.lib.hprof.model.*
  * @build jdk.test.lib.hprof.parser.*
  * @build jdk.test.lib.hprof.util.*
- * @run main/othervm/timeout=240 -XX:+UseZGC BasicJMapTest
+ * @run main/othervm/timeout=240 -XX:+UseZGC -XX:-ZGenerational BasicJMapTest
+ */
+
+/*
+ * @test id=ZGenerational
+ * @requires vm.gc.ZGenerational
+ * @summary Unit test for jmap utility (Z GC)
+ * @key intermittent
+ * @library /test/lib
+ * @build jdk.test.lib.hprof.*
+ * @build jdk.test.lib.hprof.model.*
+ * @build jdk.test.lib.hprof.parser.*
+ * @build jdk.test.lib.hprof.util.*
+ * @run main/othervm/timeout=240 -XX:+UseZGC -XX:+ZGenerational BasicJMapTest
  */
 
 public class BasicJMapTest {

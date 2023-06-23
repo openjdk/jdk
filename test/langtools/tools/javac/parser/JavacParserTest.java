@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671
+ * @bug 7073631 7159445 7156633 8028235 8065753 8205418 8205913 8228451 8237041 8253584 8246774 8256411 8256149 8259050 8266436 8267221 8271928 8275097 8293897 8295401 8304671 8310326
  * @summary tests error and diagnostics positions
  * @author  Jan Lahoda
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -2393,6 +2393,31 @@ public class JavacParserTest extends TestCase {
                         "11:23:compiler.err.guard.not.allowed",
                         "12:21:compiler.err.guard.not.allowed"),
                 codes);
+    }
+
+    @Test //JDK-8310326
+    void testUnnamedClassPositions() throws IOException {
+        String code = """
+                      void main() {
+                      }
+                      """;
+        DiagnosticCollector<JavaFileObject> coll =
+                new DiagnosticCollector<>();
+        JavacTaskImpl ct = (JavacTaskImpl) tool.getTask(null, fm, coll, List.of("--enable-preview", "--source", System.getProperty("java.specification.version")),
+                null, Arrays.asList(new MyFileObject(code)));
+        Trees trees = Trees.instance(ct);
+        SourcePositions sp = trees.getSourcePositions();
+        CompilationUnitTree cut = ct.parse().iterator().next();
+        new TreeScanner<Void, Void>() {
+            @Override
+            public Void visitClass(ClassTree node, Void p) {
+                assertEquals("Wrong start position", 0, sp.getStartPosition(cut, node));
+                assertEquals("Wrong end position", -1, sp.getEndPosition(cut, node));
+                assertEquals("Wrong modifiers start position", -1, sp.getStartPosition(cut, node.getModifiers()));
+                assertEquals("Wrong modifiers end position", -1, sp.getEndPosition(cut, node.getModifiers()));
+                return super.visitClass(node, p);
+            }
+        }.scan(cut, null);
     }
 
     void run(String[] args) throws Exception {
