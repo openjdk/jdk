@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,7 +98,7 @@ public final class Objects {
     }
 
    /**
-    * Generates a hash code for a sequence of input values. The hash
+    * {@return a hash code for a sequence of input values} The hash
     * code is generated as if all the input values were placed into an
     * array, and that array were hashed by calling {@link
     * Arrays#hashCode(Object[])}.
@@ -119,7 +119,6 @@ public final class Objects {
     * value can be computed by calling {@link #hashCode(Object)}.
     *
     * @param values the values to be hashed
-    * @return a hash value of the sequence of input values
     * @see Arrays#hashCode(Object[])
     * @see List#hashCode
     */
@@ -141,8 +140,8 @@ public final class Objects {
 
     /**
      * {@return the result of calling {@code toString} on the first
-     * argument if the first argument is not {@code null} and returns
-     * the second argument otherwise}
+     * argument if the first argument is not {@code null} and the
+     * second argument otherwise}
      *
      * @param o an object
      * @param nullDefault string to return if the first argument is
@@ -281,7 +280,7 @@ public final class Objects {
 
     /**
      * {@return the first argument if it is non-{@code null} and
-     * otherwise returns the non-{@code null} second argument}
+     * otherwise the second argument if it is non-{@code null}}
      *
      * @param obj an object
      * @param defaultObj a non-{@code null} object to return if the first argument
@@ -296,8 +295,9 @@ public final class Objects {
     }
 
     /**
-     * {@return the first argument if it is non-{@code null} and otherwise
-     * returns the non-{@code null} value of {@code supplier.get()}}
+     * {@return the first argument if it is non-{@code null} and
+     * otherwise the value from {@code supplier.get()} if it is
+     * non-{@code null}}
      *
      * @param obj an object
      * @param supplier of a non-{@code null} object to return if the first argument
