@@ -967,8 +967,12 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private void waitForWindowState(int state) {
+        if(peer.getState() == state) {
+            return;
+        }
+
         Object lock = new Object();
-        target.addWindowStateListener(new WindowStateListener() {
+        WindowStateListener wsl = new WindowStateListener() {
             public void windowStateChanged(WindowEvent e) {
                 synchronized (lock) {
                     if (e.getNewState() == state) {
@@ -976,7 +980,9 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     }
                 }
             }
-        });
+        };
+
+        target.addWindowStateListener(wsl);
         if (peer.getState() != state) {
             synchronized (lock) {
                 try {
@@ -984,6 +990,8 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 } catch (InterruptedException ie) {}
             }
         }
+
+        target.removeWindowStateListener(wsl);
     }
 
     @Override
