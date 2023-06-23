@@ -191,7 +191,8 @@ public abstract class Reader implements Readable, Closeable {
      * changes made are the results of a put operation. No flipping or
      * rewinding of the buffer is performed.  If the specified character
      * buffer has no space {@linkplain java.nio.Buffer#hasRemaining
-     * remaining}, then no characters will be read and zero will be returned.
+     * remaining} or or its {@linkplain java.nio.CharBuffer#length length}
+     * is zero, then no characters will be read and zero will be returned.
      *
      * @param target the buffer to read characters into
      * @return The number of characters added to the buffer,
@@ -199,7 +200,7 @@ public abstract class Reader implements Readable, Closeable {
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if target is null
      * @throws java.nio.ReadOnlyBufferException if target is a read only buffer,
-     *         even if it is empty
+     *         even if its length is zero
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {

@@ -42,7 +42,8 @@ public interface Readable {
      * changes made are the results of a put operation. No flipping or
      * rewinding of the buffer is performed. If the specified character
      * buffer has no space {@linkplain java.nio.Buffer#hasRemaining
-     * remaining}, then no characters will be read and zero will be returned.
+     * remaining} or its {@linkplain java.nio.CharBuffer#length length}
+     * is zero, then no characters will be read and zero will be returned.
      *
      * @param cb the buffer to read characters into
      * @return The number of {@code char} values added to the buffer,
@@ -50,7 +51,7 @@ public interface Readable {
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if cb is null
      * @throws java.nio.ReadOnlyBufferException if cb is a read only buffer,
-     *         even if it is empty
+     *         even if its length is zero
      */
     public int read(java.nio.CharBuffer cb) throws IOException;
 }
