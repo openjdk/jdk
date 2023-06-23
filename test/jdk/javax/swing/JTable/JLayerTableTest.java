@@ -54,7 +54,9 @@ public class JLayerTableTest {
         DefaultTableModel model = new DefaultTableModel() {
             @Override public int getRowCount() {return 100;}
             @Override public int getColumnCount() {return 3;}
-            @Override public Object getValueAt(int row, int column) {return "(" + row + "," + column + ")";}
+            @Override public Object getValueAt(int row, int column) {
+                return "(" + row + "," + column + ")";
+            }
         };
         table = new JTable(model);
         LayerUI<JComponent> layerUI = new LayerUI<>();
@@ -91,7 +93,8 @@ public class JLayerTableTest {
             if (table.getSelectedRow() == (table.getRowCount() - 1)) {
                 System.out.println("selected row " + table.getSelectedRow());
                 System.out.println("visible row count " + table.getRowCount());
-                throw new RuntimeException("Cursor is not moved to correct location");
+                throw new RuntimeException(
+                                    "Cursor is not moved to correct location");
             }
         } finally {
             SwingUtilities.invokeAndWait(() -> {
