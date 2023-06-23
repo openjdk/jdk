@@ -244,7 +244,6 @@ ifeq ($(call isTargetOs, linux)+$(call isTargetCpu, x86_64)+$(INCLUDE_COMPILER2)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_linux := -Wl$(COMMA)--no-as-needed, \
-      LDFLAGS_windows := -defaultlib:msvcrt, \
       LIBS := $(LIBCXX), \
       LIBS_linux := -lc -lm -ldl, \
   ))

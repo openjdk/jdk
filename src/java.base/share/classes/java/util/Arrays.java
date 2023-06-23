@@ -79,23 +79,12 @@ public final class Arrays {
     private Arrays() {}
 
     @IntrinsicCandidate
-    private static void arraySort(int[] array, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(array, 0, fromIndex, toIndex);
-    }
-
-    @IntrinsicCandidate
-    private static void arraySort(long[] array, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(array, 0, fromIndex, toIndex);
-    }
-
-    @IntrinsicCandidate
-    private static void arraySort(float[] array, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(array, 0, fromIndex, toIndex);
-    }
-
-    @IntrinsicCandidate
-    private static void arraySort(double[] array, int fromIndex, int toIndex) {
-        DualPivotQuicksort.sort(array, 0, fromIndex, toIndex);
+    private static void arraySort(Class<?> elemType, Object array, int fromIndex, int toIndex) {
+        if (elemType == int.class) DualPivotQuicksort.sort((int[]) array, 0, fromIndex, toIndex);
+        else if (elemType == long.class) DualPivotQuicksort.sort((long[]) array, 0, fromIndex, toIndex);
+        else if (elemType == float.class) DualPivotQuicksort.sort((float[]) array, 0, fromIndex, toIndex);
+        else if (elemType == double.class) DualPivotQuicksort.sort((double[]) array, 0, fromIndex, toIndex);
+        else throw new UnsupportedOperationException("arraySort intrinsic not supported for this type: " + elemType.toString());
     }
 
     /*
@@ -117,7 +106,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(int[] a) {
-        arraySort(a, 0, a.length);
+        arraySort(int.class, a, 0, a.length);
     }
 
     /**
@@ -141,7 +130,7 @@ public final class Arrays {
      */
     public static void sort(int[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        arraySort(a, fromIndex, toIndex);
+        arraySort(int.class, a, fromIndex, toIndex);
     }
 
     /**
@@ -155,7 +144,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(long[] a) {
-        arraySort(a, 0, a.length);
+        arraySort(long.class, a, 0, a.length);
     }
 
     /**
@@ -179,7 +168,7 @@ public final class Arrays {
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        arraySort(a, fromIndex, toIndex);
+        arraySort(long.class, a, fromIndex, toIndex);
     }
 
     /**
@@ -315,7 +304,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(float[] a) {
-        arraySort(a, 0, a.length);
+        arraySort(float.class, a, 0, a.length);
     }
 
     /**
@@ -347,7 +336,7 @@ public final class Arrays {
      */
     public static void sort(float[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        arraySort(a, fromIndex, toIndex);
+        arraySort(float.class, a, fromIndex, toIndex);
     }
 
     /**
@@ -369,7 +358,7 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(double[] a) {
-        arraySort(a, 0, a.length);
+        arraySort(double.class, a, 0, a.length);
     }
 
     /**
@@ -401,7 +390,7 @@ public final class Arrays {
      */
     public static void sort(double[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        arraySort(a, fromIndex, toIndex);
+        arraySort(double.class, a, fromIndex, toIndex);
     }
 
     /**

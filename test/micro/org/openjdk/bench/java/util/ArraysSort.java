@@ -33,6 +33,7 @@ import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Warmup;
 import org.openjdk.jmh.infra.Blackhole;
 
@@ -87,28 +88,36 @@ public class ArraysSort {
         }
     }
 
-    @Benchmark
-    public void intSort() throws Throwable {
+    @Setup(Level.Invocation)
+    public void init() {
         ints_sorted = ints_unsorted.clone();
-        Arrays.sort(ints_sorted);
-    }
-
-    @Benchmark
-    public void longSort() throws Throwable {
         longs_sorted = longs_unsorted.clone();
-        Arrays.sort(longs_sorted);
-    }
-
-    @Benchmark
-    public void floatSort() throws Throwable {
         floats_sorted = floats_unsorted.clone();
-        Arrays.sort(floats_sorted);
+        doubles_sorted = doubles_unsorted.clone();
     }
 
     @Benchmark
-    public void doubleSort() throws Throwable {
-        doubles_sorted = doubles_unsorted.clone();
+    public int[] intSort() throws Throwable {
+        Arrays.sort(ints_sorted);
+        return ints_sorted;
+    }
+
+    @Benchmark
+    public long[] longSort() throws Throwable {
+        Arrays.sort(longs_sorted);
+        return longs_sorted;
+    }
+
+    @Benchmark
+    public float[] floatSort() throws Throwable {
+        Arrays.sort(floats_sorted);
+        return floats_sorted;
+    }
+
+    @Benchmark
+    public double[] doubleSort() throws Throwable {
         Arrays.sort(doubles_sorted);
+        return doubles_sorted;
     }
 
 }

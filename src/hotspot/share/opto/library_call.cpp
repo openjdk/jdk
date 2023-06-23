@@ -292,10 +292,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
-  case vmIntrinsics::_arraySortI:
-  case vmIntrinsics::_arraySortL:
-  case vmIntrinsics::_arraySortF:
-  case vmIntrinsics::_arraySortD:               return inline_arraysort(intrinsic_id());
+  case vmIntrinsics::_arraySort:               return inline_arraysort(intrinsic_id());
 
   case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
@@ -5203,31 +5200,18 @@ bool LibraryCallKit::inline_arraysort(vmIntrinsics::ID id) {
   address stubAddr = nullptr;
   const char *stubName;
   stubName = "arraysort_stub";
-  BasicType bt;
 
-  switch(id) {
-    case vmIntrinsics::_arraySortI:
-      bt = T_INT;
-      break;
-    case vmIntrinsics::_arraySortL:
-      bt = T_LONG;
-      break;
-    case vmIntrinsics::_arraySortF:
-      bt = T_FLOAT;
-      break;
-    case vmIntrinsics::_arraySortD:
-      bt = T_DOUBLE;
-      break;
-    default:
-      break;
-  }
+  Node* elementType     = argument(0);
+  Node* array           = argument(1);
+  Node* fromIndex       = argument(2);
+  Node* toIndex         = argument(3);
+
+  const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
+  ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
+  BasicType bt = elem_type->basic_type();
 
   stubAddr = StubRoutines::select_arraysort_function(bt);
   if (stubAddr == nullptr) return false;
-
-  Node* array           = argument(0);
-  Node* fromIndex       = argument(1);
-  Node* toIndex         = argument(2);
 
   array = must_be_not_null(array, true);
 
