@@ -99,7 +99,7 @@ public class InternalFrameTitleButtonTest {
                 Component c = title.getComponent(i);
                 if (c instanceof JButton) {
                     Icon icon = ((JButton) c).getIcon();
-                    if( icon.getIconHeight() > height - 4 ||
+                    if (icon.getIconHeight() > height - 4 ||
                         icon.getIconWidth() > height - 2) {
                         throw new RuntimeException("Wrong title icon size");
                     }

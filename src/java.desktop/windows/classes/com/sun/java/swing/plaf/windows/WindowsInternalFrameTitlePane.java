@@ -68,7 +68,6 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         super.installDefaults();
 
         titlePaneHeight = UIManager.getInt("InternalFrame.titlePaneHeight");
-        buttonWidth     = UIManager.getInt("InternalFrame.titleButtonWidth")  - 4;
         buttonHeight    = UIManager.getInt("InternalFrame.titleButtonHeight") - 4;
 
         Object obj      = UIManager.get("InternalFrame.titleButtonToolTipsOn");
