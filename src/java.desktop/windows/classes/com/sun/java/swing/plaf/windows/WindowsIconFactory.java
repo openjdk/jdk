@@ -286,20 +286,12 @@ public class WindowsIconFactory implements Serializable
             int width;
             if (XPStyle.getXP() != null) {
                 // Fix for XP bug where sometimes these sizes aren't updated properly
-                // Assume for now that height is correct and derive width using the
-                // ratio from the uxtheme part
-                width = UIManager.getInt("InternalFrame.titleButtonHeight") -2;
-                Dimension d = XPStyle.getPartSize(Part.WP_CLOSEBUTTON, State.NORMAL);
-                if (d != null && d.width != 0 && d.height != 0) {
-                    width = (int) ((float) width * d.width / d.height);
-                }
+                // Assume for now that height is correct and derive width from height
+                width = UIManager.getInt("InternalFrame.titleButtonHeight") + 2;
             } else {
                 width = UIManager.getInt("InternalFrame.titleButtonHeight") -2;
             }
             UIManager.put("InternalFrame.titleButtonWidth", width);
-            if (XPStyle.getXP() != null) {
-                width -= 2;
-            }
             return width;
         }
 
