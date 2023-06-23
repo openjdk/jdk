@@ -115,7 +115,7 @@ public class Standard {
     @Test
     public void correctCharsetsTest() {
         // Grab the value from each Standard Charset field
-        List<String> actualCharsets = Arrays.stream(standardCharsetFields).map(field -> {
+        List<String> actualCharsets = charsetFields().map(field -> {
             try {
                 return ((Charset) field.get(null)).name();
             } catch (IllegalAccessException e) {
