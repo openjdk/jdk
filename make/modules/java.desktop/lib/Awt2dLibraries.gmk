@@ -460,8 +460,10 @@ else
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := type-limits missing-field-initializers strict-aliasing
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
+   # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
    HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := reorder delete-non-virtual-dtor strict-overflow \
-        maybe-uninitialized class-memaccess unused-result extra use-after-free noexcept-type
+        maybe-uninitialized class-memaccess unused-result extra use-after-free noexcept-type \
+        expansion-to-defined
    HARFBUZZ_DISABLED_WARNINGS_clang := unused-value incompatible-pointer-types \
         tautological-constant-out-of-range-compare int-to-pointer-cast \
         undef missing-field-initializers range-loop-analysis \
