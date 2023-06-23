@@ -759,7 +759,7 @@ public abstract class Clock implements InstantSource {
         @Override
         public long millis() {
             long millis = baseClock.millis();
-            return millis - (tickNanos >= 1000_000L ? Math.floorMod(millis, tickNanos / 1000_000L) : 0L);
+            return tickNanos < 1000_000L ? millis : millis - Math.floorMod(millis, tickNanos / 1000_000L);
         }
         @Override
         public Instant instant() {
