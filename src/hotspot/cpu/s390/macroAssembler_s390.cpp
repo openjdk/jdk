@@ -3261,8 +3261,9 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   // The object has an existing monitor iff (mark & monitor_value) != 0.
   z_lg(currentHeader, hdr_offset, oop);
   guarantee(Immediate::is_uimm16(markWord::monitor_value), "must be half-word");
-  if (LockingMode == LM_LIGHTWEIGHT)
+  if (LockingMode == LM_LIGHTWEIGHT) {
     z_lgr(temp, currentHeader);
+  }
   z_nill(currentHeader, markWord::monitor_value);
   z_brne(object_has_monitor);
 
@@ -3282,8 +3283,8 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 
     // don't load currentHead again from stack-top after monitor check, as it is possible
     // some other thread modified it.
-    z_lgr(currentHeader, temp);
-    fast_unlock(oop, currentHeader, temp, done);
+    // currentHeader is altered, but it's contents are copied in temp as well
+    fast_unlock(oop, temp, currentHeader, done);
     z_bru(done);
   }
 
