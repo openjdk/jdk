@@ -47,13 +47,22 @@ import static com.sun.java.swing.plaf.windows.TMSchema.Part;
  */
 public final class ThemeReader {
 
-    private static final int defaultDPI =  96;
-    private static final  List<String> dpiSupportedWidgets =
-            List.of("MENU","BUTTON");
-    private static final  List<Integer> dpiSupportedParts =
+    private static final int defaultDPI = 96;
+
+    /**
+     * List of widgets for which we need to get the part size for the current DPI.
+     */
+    private static final  List<String> partSizeWidgets =
+            List.of("MENU", "BUTTON");
+
+    /**
+     * List of widget parts for which we need to get the part size for the current DPI.
+     */
+    private static final List<Integer> partSizeParts =
             List.of(Part.BP_RADIOBUTTON.getValue(),
                     Part.BP_CHECKBOX.getValue(),
                     Part.MP_POPUPCHECK.getValue());
+
     private static final Map<Integer, Map<String, Long>> dpiAwareWidgetToTheme
             = new HashMap<>();
 
@@ -169,22 +178,15 @@ public final class ThemeReader {
            int part, int state, int x, int y, int w, int h, int stride, int dpi) {
         readLock.lock();
         try {
-
-            int width = w;
-            int height = h;
-
-            /* We get the part size based on the theme for current screen DPI
-            and pass it to paintBackground for dpi supported parts. */
-            if (dpiSupportedWidgets.contains(widget) &&
-                dpiSupportedParts.contains(Integer.valueOf(part)))
-            {
-                Dimension d = getPartSize(getTheme(widget, dpi), part, state);
-                width =  d.width;
-                height = d.height;
-            }
+            /* For widgets and parts in the lists, we get the part size
+            for the current screen DPI to scale them better. */
+            Dimension d = (partSizeWidgets.contains(widget)
+                          && partSizeParts.contains(Integer.valueOf(part)))
+                          ? getPartSize(getTheme(widget, dpi), part, state)
+                          : new Dimension(w, h);
 
             paintBackground(buffer, getTheme(widget, dpi), part, state,
-                            width, height, w, h, stride);
+                            d.width, d.height, w, h, stride);
         } finally {
             readLock.unlock();
         }
