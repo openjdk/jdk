@@ -820,7 +820,7 @@ public final class Class<T> implements java.io.Serializable,
      * <p>No other class objects are considered primitive.
      *
      * @apiNote
-     * A {@code Class} object represented a primitive type can be
+     * A {@code Class} object represented by a primitive type can be
      * accessed via the {@code TYPE} public static final variables
      * defined in the primitive wrapper classes such as {@link
      * java.lang.Integer#TYPE Integer.TYPE}. In the Java programming
