@@ -32,11 +32,19 @@ import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 
 /**
- * @test TestZAllocationStallEvent
- * @requires vm.hasJFR & vm.gc.Z
+ * @test id=ZSinglegen
+ * @requires vm.hasJFR & vm.gc.ZSinglegen
  * @key jfr
  * @library /test/lib /test/jdk /test/hotspot/jtreg
- * @run main/othervm -XX:+UseZGC -Xmx32M jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
+ */
+
+/**
+ * @test id=ZGenerational
+ * @requires vm.hasJFR & vm.gc.ZGenerational
+ * @key jfr
+ * @library /test/lib /test/jdk /test/hotspot/jtreg
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M jdk.jfr.event.gc.detailed.TestZAllocationStallEvent
  */
 
 public class TestZAllocationStallEvent {

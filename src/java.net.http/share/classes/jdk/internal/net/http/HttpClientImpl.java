@@ -53,7 +53,6 @@ import java.security.AccessController;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivilegedAction;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -87,11 +86,13 @@ import java.net.http.HttpResponse.PushPromiseHandler;
 import java.net.http.WebSocket;
 
 import jdk.internal.net.http.common.BufferSupplier;
+import jdk.internal.net.http.common.Deadline;
 import jdk.internal.net.http.common.HttpBodySubscriberWrapper;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
 import jdk.internal.net.http.common.Pair;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.common.OperationTrackers.Trackable;
 import jdk.internal.net.http.common.OperationTrackers.Tracker;
@@ -1482,10 +1483,10 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             SelectionKey key = channel.keyFor(selmgr.selector);
             if (key == null) return "channel not registered with selector";
             String keyInterestOps = key.isValid()
-                    ? "key.interestOps=" + key.interestOps() : "invalid key";
+                    ? "key.interestOps=" + Utils.interestOps(key) : "invalid key";
             return String.format("channel registered with selector, %s, sa.interestOps=%s",
-                                 keyInterestOps,
-                                 ((SelectorAttachment)key.attachment()).interestOps);
+                    keyInterestOps,
+                    Utils.describeOps(((SelectorAttachment)key.attachment()).interestOps));
         } catch (Throwable t) {
             return String.valueOf(t);
         }
@@ -1524,7 +1525,8 @@ final class HttpClientImpl extends HttpClient implements Trackable {
             interestOps |= newOps;
             pending.add(e);
             if (debug.on())
-                debug.log("Registering %s for %d (%s)", e, newOps, reRegister);
+                debug.log("Registering %s for %d (%s)",
+                        e, Utils.describeOps(newOps), reRegister);
             if (reRegister) {
                 // first time registration happens here also
                 try {
@@ -1745,7 +1747,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
         synchronized (this) {
             if (timeouts.isEmpty()) return 0L;
 
-            Instant now = Instant.now();
+            Deadline now = TimeSource.now();
             Iterator<TimeoutEvent> itr = timeouts.iterator();
             while (itr.hasNext()) {
                 TimeoutEvent event = itr.next();
@@ -1840,7 +1842,7 @@ final class HttpClientImpl extends HttpClient implements Trackable {
                 if (timeoutVal >= 0) return timeoutVal;
             }
         } catch (NumberFormatException ignored) {
-            Log.logTrace("Invalid value set for " + prop + " property: " + ignored.toString());
+            Log.logTrace("Invalid value set for " + prop + " property: " + ignored);
         }
         return def;
     }

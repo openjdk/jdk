@@ -532,15 +532,6 @@ public interface JavaLangAccess {
     Object scopedValueBindings();
 
     /**
-     * Set the current thread's scoped value bindings.
-     */
-    void setScopedValueBindings(Object bindings);
-
-    Object findScopedValueBindings();
-
-    void ensureMaterializedForStackWalk(Object value);
-
-    /**
      * Returns the innermost mounted continuation
      */
     Continuation getContinuation(Thread thread);

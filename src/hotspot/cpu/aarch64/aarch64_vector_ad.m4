@@ -3832,12 +3832,12 @@ instruct vstoremask_truecount_neon(iRegINoSp dst, vReg src, immI_gt_1 size, vReg
     // Input "src" is a vector mask represented as lanes with
     // 0/-1 as element values.
     uint esize = (uint)$size$$constant;
-    if (esize == 8) {
-      __ addpd($vtmp$$FloatRegister, $src$$FloatRegister);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
+    Assembler::SIMD_Arrangement arrangement = Assembler::esize2arrangement(esize,
+                                                                           /* isQ */ length_in_bytes == 16);
+    if (arrangement == __ T2D || arrangement == __ T2S) {
+      __ addpv($vtmp$$FloatRegister, arrangement, $src$$FloatRegister, $src$$FloatRegister);
     } else {
-      uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
-      Assembler::SIMD_Arrangement arrangement = Assembler::esize2arrangement(esize,
-                                                                             /* isQ */ length_in_bytes == 16);
       __ addv($vtmp$$FloatRegister, arrangement, $src$$FloatRegister);
     }
     __ smov($dst$$Register, $vtmp$$FloatRegister, __ B, 0);

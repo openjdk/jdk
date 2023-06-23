@@ -1447,12 +1447,7 @@ public class Attr extends JCTree.Visitor {
     public void visitDoLoop(JCDoWhileLoop tree) {
         attribStat(tree.body, env.dup(tree));
         attribExpr(tree.cond, env, syms.booleanType);
-        if (!breaksOutOf(tree, tree.body)) {
-            //include condition's body when false after the while, if cannot get out of the loop
-            MatchBindings condBindings = matchBindings;
-            condBindings.bindingsWhenFalse.forEach(env.info.scope::enter);
-            condBindings.bindingsWhenFalse.forEach(BindingSymbol::preserveBinding);
-        }
+        handleLoopConditionBindings(matchBindings, tree, tree.body);
         result = null;
     }
 
@@ -1466,17 +1461,8 @@ public class Attr extends JCTree.Visitor {
         } finally {
             whileEnv.info.scope.leave();
         }
-        if (!breaksOutOf(tree, tree.body)) {
-            //include condition's bindings when false after the while, if cannot get out of the loop
-            condBindings.bindingsWhenFalse.forEach(env.info.scope::enter);
-            condBindings.bindingsWhenFalse.forEach(BindingSymbol::preserveBinding);
-        }
+        handleLoopConditionBindings(condBindings, tree, tree.body);
         result = null;
-    }
-
-    private boolean breaksOutOf(JCTree loop, JCTree body) {
-        preFlow(body);
-        return flow.breaksOutOf(env, loop, body, make);
     }
 
     public void visitForLoop(JCForLoop tree) {
@@ -1503,11 +1489,50 @@ public class Attr extends JCTree.Visitor {
         finally {
             loopEnv.info.scope.leave();
         }
-        if (!breaksOutOf(tree, tree.body)) {
-            //include condition's body when false after the while, if cannot get out of the loop
-            condBindings.bindingsWhenFalse.forEach(env.info.scope::enter);
-            condBindings.bindingsWhenFalse.forEach(BindingSymbol::preserveBinding);
+        handleLoopConditionBindings(condBindings, tree, tree.body);
+    }
+
+    /**
+     * Include condition's bindings when false after the loop, if cannot get out of the loop
+     */
+    private void handleLoopConditionBindings(MatchBindings condBindings,
+                                             JCStatement loop,
+                                             JCStatement loopBody) {
+        if (condBindings.bindingsWhenFalse.nonEmpty() &&
+            !breaksTo(env, loop, loopBody)) {
+            addBindings2Scope(loop, condBindings.bindingsWhenFalse);
         }
+    }
+
+    private boolean breaksTo(Env<AttrContext> env, JCTree loop, JCTree body) {
+        preFlow(body);
+        return flow.breaksToTree(env, loop, body, make);
+    }
+
+    /**
+     * Add given bindings to the current scope, unless there's a break to
+     * an immediately enclosing labeled statement.
+     */
+    private void addBindings2Scope(JCStatement introducingStatement,
+                                   List<BindingSymbol> bindings) {
+        if (bindings.isEmpty()) {
+            return ;
+        }
+
+        var searchEnv = env;
+        while (searchEnv.tree instanceof JCLabeledStatement labeled &&
+               labeled.body == introducingStatement) {
+            if (breaksTo(env, labeled, labeled.body)) {
+                //breaking to an immediately enclosing labeled statement
+                return ;
+            }
+            searchEnv = searchEnv.next;
+            introducingStatement = labeled;
+        }
+
+        //include condition's body when false after the while, if cannot get out of the loop
+        bindings.forEach(env.info.scope::enter);
+        bindings.forEach(BindingSymbol::preserveBinding);
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
@@ -1657,9 +1682,9 @@ public class Attr extends JCTree.Visitor {
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
+            boolean intSwitch = types.isAssignable(seltype, syms.intType);
             boolean patternSwitch;
-            if (!enumSwitch && !stringSwitch && !errorEnumSwitch &&
-                !types.isAssignable(seltype, syms.intType)) {
+            if (!enumSwitch && !stringSwitch && !errorEnumSwitch && !intSwitch) {
                 preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
                 patternSwitch = true;
             } else {
@@ -1706,6 +1731,10 @@ public class Attr extends JCTree.Visitor {
                             if (sym == null) {
                                 if (allowPatternSwitch) {
                                     attribTree(expr, switchEnv, caseLabelResultInfo(seltype));
+                                    Symbol enumSym = TreeInfo.symbol(expr);
+                                    if (enumSym == null || !enumSym.isEnum() || enumSym.kind != VAR) {
+                                        log.error(expr.pos(), Errors.EnumLabelMustBeEnumConstant);
+                                    }
                                 } else {
                                     log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
                                 }
@@ -1728,14 +1757,16 @@ public class Attr extends JCTree.Visitor {
                             if (!pattype.hasTag(ERROR)) {
                                 if (pattype.constValue() == null) {
                                     Symbol s = TreeInfo.symbol(expr);
-                                    if (s != null && s.kind == TYP && allowPatternSwitch) {
+                                    if (s != null && s.kind == TYP) {
                                         log.error(expr.pos(),
                                                   Errors.PatternExpected);
-                                    } else if ((s != null && !s.isEnum()) || !allowPatternSwitch) {
+                                    } else if (s == null || !s.isEnum()) {
                                         log.error(expr.pos(),
-                                                  (stringSwitch ? Errors.StringConstReq : Errors.ConstExprReq));
+                                                  (stringSwitch ? Errors.StringConstReq
+                                                                : intSwitch ? Errors.ConstExprReq
+                                                                            : Errors.PatternOrEnumReq));
                                     }
-                                } else if (!stringSwitch && !types.isAssignable(seltype, syms.intType)) {
+                                } else if (!stringSwitch && !intSwitch) {
                                     log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                 } else if (!constants.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);
@@ -2236,8 +2267,7 @@ public class Attr extends JCTree.Visitor {
             afterIfBindings = condBindings.bindingsWhenFalse;
         }
 
-        afterIfBindings.forEach(env.info.scope::enter);
-        afterIfBindings.forEach(BindingSymbol::preserveBinding);
+        addBindings2Scope(tree, afterIfBindings);
 
         result = null;
     }
@@ -5505,6 +5535,10 @@ public class Attr extends JCTree.Visitor {
                 chk.checkClassOverrideEqualsAndHashIfNeeded(env.tree.pos(), c);
                 chk.checkFunctionalInterface((JCClassDecl) env.tree, c);
                 chk.checkLeaksNotAccessible(env, (JCClassDecl) env.tree);
+
+                if ((c.flags_field & Flags.UNNAMED_CLASS) != 0) {
+                    chk.checkHasMain(env.tree.pos(), c);
+                }
             } finally {
                 env.info.returnResult = prevReturnRes;
                 log.useSource(prev);

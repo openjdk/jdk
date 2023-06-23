@@ -633,9 +633,9 @@ public:
 
   static uint cores_per_cpu();
   static uint threads_per_core();
-  static intx L1_line_size();
+  static uint L1_line_size();
 
-  static intx prefetch_data_size()  {
+  static uint prefetch_data_size()  {
     return L1_line_size();
   }
 

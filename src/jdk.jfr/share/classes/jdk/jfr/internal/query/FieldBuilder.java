@@ -254,15 +254,11 @@ final class FieldBuilder {
 
     private void configureNumericTypes() {
         switch (descriptor.getTypeName()) {
-        case "int":
-        case "long":
-        case "short":
-        case "byte":
+        case "int", "long", "short", "byte":
             field.integralType = true;
             field.alignLeft = false;
             break;
-        case "float":
-        case "double":
+        case "float", "double":
             field.fractionalType = true;
             field.alignLeft = false;
             break;

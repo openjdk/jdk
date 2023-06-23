@@ -181,7 +181,7 @@ inline void SATBMarkQueueSet::apply_filter(Filter filter_out, SATBMarkQueue& que
 
   // Two-fingered compaction toward the end.
   void** src = &buf[queue.index()];
-  void** dst = &buf[buffer_size()];
+  void** dst = &buf[buffer_capacity()];
   assert(src <= dst, "invariant");
   for ( ; src < dst; ++src) {
     // Search low to high for an entry to keep.
