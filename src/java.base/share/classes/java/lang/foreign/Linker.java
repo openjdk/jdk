@@ -656,7 +656,7 @@ public sealed interface Linker permits AbstractLinker {
          * </ul>
          * It is important to always use this linker option when linking a <a href=Linker.html#variadic-funcs>variadic
          * function</a>, even if no variadic argument is passed (the second case in the list
-         * above), as this affects the linking process on certain platforms.
+         * above), as this might still affect the calling convention on certain platforms.
          *
          * @implNote The index value is validated when making a linkage request, which is when the function descriptor
          *           against which the index is validated is available.
