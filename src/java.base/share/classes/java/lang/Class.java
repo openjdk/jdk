@@ -807,15 +807,16 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Determines if the specified {@code Class} object represents a
-     * primitive type or void.
+     * Determines if this {@code Class} object represents a primitive
+     * type or void.
      *
-     * <p> There are nine predefined {@code Class} objects to represent
-     * the eight primitive types and void.  These are created by the Java
-     * Virtual Machine, and have the same {@linkplain #getName() names} as the primitive types that
-     * they represent, namely {@code boolean}, {@code byte},
-     * {@code char}, {@code short}, {@code int},
-     * {@code long}, {@code float}, and {@code double}.
+     * <p> There are nine predefined {@code Class} objects to
+     * represent the eight primitive types and void.  These are
+     * created by the Java Virtual Machine, and have the same
+     * {@linkplain #getName() names} as the primitive types that they
+     * represent, namely {@code boolean}, {@code byte}, {@code char},
+     * {@code short}, {@code int}, {@code long}, {@code float}, and
+     * {@code double}.
      *
      * <p>No other class objects are considered primitive.
      *
