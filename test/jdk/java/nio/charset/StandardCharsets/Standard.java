@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4884238
+ * @bug 4884238 8310047
  * @summary Test standard charset name constants and class qualities.
  * @author Mike Duigou
  * @run junit Standard
@@ -50,7 +50,9 @@ public class Standard {
     // These are the charsets StandardCharsets.java is expected to contain.
     private final static String[] expectedCharsets = {
             "US-ASCII", "ISO-8859-1", "UTF-8",
-            "UTF-16BE", "UTF-16LE", "UTF-16" };
+            "UTF-16BE", "UTF-16LE", "UTF-16",
+            "UTF-32BE", "UTF-32LE", "UTF-32"
+    };
 
     /**
      * Validates that the Charset constants from the data provider
@@ -131,7 +133,10 @@ public class Standard {
                 Arguments.of(StandardCharsets.UTF_8, "UTF-8"),
                 Arguments.of(StandardCharsets.UTF_16BE, "UTF-16BE"),
                 Arguments.of(StandardCharsets.UTF_16LE, "UTF-16LE"),
-                Arguments.of(StandardCharsets.UTF_16, "UTF-16")
+                Arguments.of(StandardCharsets.UTF_16, "UTF-16"),
+                Arguments.of(StandardCharsets.UTF_32BE, "UTF-32BE"),
+                Arguments.of(StandardCharsets.UTF_32LE, "UTF-32LE"),
+                Arguments.of(StandardCharsets.UTF_32, "UTF-32")
         );
     }
 
