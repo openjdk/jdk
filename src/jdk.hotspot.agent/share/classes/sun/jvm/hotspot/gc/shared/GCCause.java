@@ -46,11 +46,6 @@ public enum GCCause {
   _metadata_GC_threshold ("Metadata GC Threshold"),
   _metadata_GC_clear_soft_refs ("Metadata GC Clear Soft References"),
 
-  _cms_generation_full ("CMS Generation Full"),
-  _cms_initial_mark ("CMS Initial Mark"),
-  _cms_final_remark ("CMS Final Remark"),
-  _cms_concurrent_mark ("CMS Concurrent Mark"),
-
   _old_generation_expanded_on_last_scavenge ("Old Generation Expanded On Last Scavenge"),
   _old_generation_too_full_to_scavenge ("Old Generation Too Full To Scavenge"),
   _adaptive_size_policy ("Ergonomics"),

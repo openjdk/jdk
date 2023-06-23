@@ -227,6 +227,21 @@ public class TestArrayCopy {
         }
     }
 
+    @Test(dataProvider = "copyModesAndHelpers")
+    public void testCopyReadOnlyDest(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
+        int bytesPerElement = (int)helper.elementLayout.byteSize();
+        MemorySegment base = srcSegment(SEG_LENGTH_BYTES);
+        //CopyFrom
+        Object srcArr = helper.toArray(base);
+        MemorySegment dstSeg = helper.fromArray(srcArr).asReadOnly();
+        try {
+            helper.copyFromArray(srcArr, 0, SEG_LENGTH_BYTES / bytesPerElement, dstSeg, 0, ByteOrder.nativeOrder());
+            fail();
+        } catch (UnsupportedOperationException ex) {
+            //ok
+        }
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNotAnArraySrc() {
         MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});
@@ -254,13 +269,13 @@ public class TestArrayCopy {
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testHyperAlignedSrc() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withBitAlignment(16), 0, 4);
+        MemorySegment.copy(new byte[] { 1, 2, 3, 4 }, 0, segment, JAVA_BYTE.withByteAlignment(2), 0, 4);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testHyperAlignedDst() {
         MemorySegment segment = MemorySegment.ofArray(new byte[] {1, 2, 3, 4});
-        MemorySegment.copy(segment, JAVA_BYTE.withBitAlignment(16), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
+        MemorySegment.copy(segment, JAVA_BYTE.withByteAlignment(2), 0, new byte[] { 1, 2, 3, 4 }, 0, 4);
     }
 
     /***** Utilities *****/
@@ -328,7 +343,7 @@ public class TestArrayCopy {
 
         @SuppressWarnings("unchecked")
         public CopyHelper(L elementLayout, Class<X> carrier) {
-            this.elementLayout = (L)elementLayout.withBitAlignment(8);
+            this.elementLayout = (L)elementLayout.withByteAlignment(1);
             this.carrier = carrier;
         }
 

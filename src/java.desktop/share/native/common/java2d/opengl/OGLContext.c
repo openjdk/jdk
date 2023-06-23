@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1039,7 +1039,7 @@ JNIEXPORT jstring JNICALL Java_sun_java2d_opengl_OGLContext_getOGLIdString
     char *vendor, *renderer, *version;
     char *pAdapterId;
     jobject ret = NULL;
-    int len;
+    size_t len;
 
     J2dTraceLn(J2D_TRACE_INFO, "OGLContext_getOGLIdString");
 

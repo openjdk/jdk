@@ -55,7 +55,6 @@ void G1CardTable::initialize(G1RegionToSpaceMapper* mapper) {
   HeapWord* low_bound  = _whole_heap.start();
   HeapWord* high_bound = _whole_heap.end();
 
-  _cur_covered_regions = 1;
   _covered[0] = _whole_heap;
 
   _byte_map = (CardValue*) mapper->reserved().start();

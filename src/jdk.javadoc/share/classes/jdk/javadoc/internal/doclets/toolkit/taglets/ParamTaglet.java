@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,10 +64,10 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     }
 
     @Override
-    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
-        assert owner.getKind() == ElementKind.METHOD;
+    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+        assert dst.getKind() == ElementKind.METHOD;
         assert tag.getKind() == DocTree.Kind.PARAM;
-        var method = (ExecutableElement) owner;
+        var method = (ExecutableElement) dst;
         var param = (ParamTree) tag;
         // find the position of an owner parameter described by the given tag
         List<? extends Element> parameterElements;
@@ -77,7 +77,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
             parameterElements = method.getParameters();
         }
         Map<String, Integer> stringIntegerMap = mapNameToPosition(configuration.utils, parameterElements);
-        CommentHelper ch = configuration.utils.getCommentHelper(owner);
+        CommentHelper ch = configuration.utils.getCommentHelper(dst);
         Integer position = stringIntegerMap.get(ch.getParameterName(param));
         if (position == null) {
             return new Output(null, null, List.of(), true);
@@ -85,12 +85,20 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         // try to inherit description of the respective parameter in an overridden method
         try {
             var docFinder = configuration.utils.docFinder();
-            var r = docFinder.trySearch(method,
-                            m -> Result.fromOptional(extract(configuration.utils, m, position, param.isTypeParameter())))
-                    .toOptional();
+
+            Optional<Documentation> r;
+            if (src != null){
+                r = docFinder.search((ExecutableElement) src,
+                                m -> Result.fromOptional(extract(configuration.utils, m, position, param.isTypeParameter())))
+                        .toOptional();
+            } else {
+                r = docFinder.find((ExecutableElement) dst,
+                                m -> Result.fromOptional(extract(configuration.utils, m, position, param.isTypeParameter())))
+                        .toOptional();
+            }
             return r.map(result -> new Output(result.paramTree, result.method, result.paramTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
-        } catch (DocFinder.NoOverriddenMethodsFound e) {
+        } catch (DocFinder.NoOverriddenMethodFound e) {
             return new Output(null, null, List.of(), false);
         }
     }

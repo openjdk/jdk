@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -135,6 +135,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GW" draft="unconfirmed">Guinea-Bissau</territory>
 			<territory type="GY" draft="unconfirmed">Guyana</territory>
 			<territory type="HK" draft="unconfirmed">RAE de Hong Kong (China)</territory>
+			<territory type="HK" alt="short">Hong Kong</territory>
 			<territory type="HM" draft="unconfirmed">Isles Heard e McDonald</territory>
 			<territory type="HN" draft="unconfirmed">Honduras</territory>
 			<territory type="HT" draft="unconfirmed">Aití</territory>
@@ -302,9 +303,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -634,6 +641,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<dayPeriod type="am" draft="unconfirmed">a. m.</dayPeriod>
 							<dayPeriod type="pm" draft="unconfirmed">p. m.</dayPeriod>
 						</dayPeriodWidth>
+						<dayPeriodWidth type="wide">
+							<dayPeriod type="am" draft="unconfirmed">a. m.</dayPeriod>
+							<dayPeriod type="pm" draft="unconfirmed">p. m.</dayPeriod>
+						</dayPeriodWidth>
 					</dayPeriodContext>
 					<dayPeriodContext type="stand-alone">
 						<dayPeriodWidth type="abbreviated">
@@ -663,6 +674,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<era type="1" draft="unconfirmed">d. C.</era>
 						<era type="1" alt="variant" draft="unconfirmed">e. c.</era>
 					</eraAbbr>
+					<eraNarrow>
+						<era type="0">a. C.</era>
+						<era type="0" alt="variant">a. e. c.</era>
+						<era type="1">d. C.</era>
+						<era type="1" alt="variant">e. c.</era>
+					</eraNarrow>
 				</eras>
 				<dateFormats>
 					<dateFormatLength type="full">
@@ -713,9 +730,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
+							<pattern draft="unconfirmed">{1}, {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern draft="unconfirmed">{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -949,8 +972,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="weekday">
 				<displayName draft="unconfirmed">dia dera setmana</displayName>
 			</field>
+			<field type="weekday-short">
+				<displayName>dia dera setmana</displayName>
+			</field>
+			<field type="weekday-narrow">
+				<displayName>dia dera setmana</displayName>
+			</field>
+			<field type="dayperiod-short">
+				<displayName>deth maitin/deth vèspre</displayName>
+			</field>
 			<field type="dayperiod">
 				<displayName draft="unconfirmed">deth maitin/deth vèspre</displayName>
+			</field>
+			<field type="dayperiod-narrow">
+				<displayName>deth maitin/deth vèspre</displayName>
 			</field>
 			<field type="hour-short">
 				<displayName draft="unconfirmed">or.</displayName>
@@ -2303,6 +2338,111 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</dates>
 	<numbers>
 		<minimumGroupingDigits draft="unconfirmed">2</minimumGroupingDigits>
+		<symbols numberSystem="adlm">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="bali">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="beng">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="brah">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cakm">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="cham">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="deva">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="fullwide">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gong">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gonm">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="gujr">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="guru">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hanidec">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="hmnp">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="java">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="kali">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="khmr">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="knda">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lana">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="lanatham">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="laoo">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
 		<symbols numberSystem="latn">
 			<decimal draft="unconfirmed">.</decimal>
 			<group draft="unconfirmed">,</group>
@@ -2312,10 +2452,433 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nan draft="unconfirmed">NaN</nan>
 			<timeSeparator draft="unconfirmed">:</timeSeparator>
 		</symbols>
+		<symbols numberSystem="lepc">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="limb">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mlym">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mong">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mtei">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymr">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="mymrshan">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="nkoo">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="olck">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="orya">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="osma">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="rohg">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="saur">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="shrd">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sora">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="sund">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="takr">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="talu">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tamldec">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="telu">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="thai">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="tibt">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<symbols numberSystem="vaii">
+			<decimal>.</decimal>
+			<group>,</group>
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+		<currencyFormats numberSystem="adlm">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="arabext">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="bali">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="beng">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="brah">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="cakm">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="cham">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="deva">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="fullwide">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="gong">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="gonm">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="gujr">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="guru">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="hanidec">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="java">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="kali">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="khmr">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="knda">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lana">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lanatham">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="laoo">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
 		<currencyFormats numberSystem="latn">
 			<currencyFormatLength>
 				<currencyFormat type="accounting">
 					<pattern draft="unconfirmed">#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="lepc">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="limb">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mlym">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mong">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mtei">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymr">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="mymrshan">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="nkoo">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="olck">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="orya">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="osma">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="rohg">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="saur">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="shrd">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="sora">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="sund">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="takr">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="talu">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="tamldec">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="telu">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="thai">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="tibt">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
+				</currencyFormat>
+			</currencyFormatLength>
+		</currencyFormats>
+		<currencyFormats numberSystem="vaii">
+			<currencyFormatLength>
+				<currencyFormat type="accounting">
+					<pattern>#,##0.00¤</pattern>
 				</currencyFormat>
 			</currencyFormatLength>
 		</currencyFormats>
@@ -2964,10 +3527,235 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName count="other" draft="unconfirmed">kuaches zambianes</displayName>
 			</currency>
 		</currencies>
+		<miscPatterns numberSystem="adlm">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="arab">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="arabext">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="bali">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="beng">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="brah">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cakm">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="cham">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="deva">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="fullwide">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gong">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gonm">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="gujr">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="guru">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="hanidec">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="java">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="kali">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="khmr">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="knda">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lana">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lanatham">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="laoo">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
 		<miscPatterns numberSystem="latn">
 			<pattern type="approximately" draft="unconfirmed">~{0}</pattern>
 			<pattern type="atLeast" draft="unconfirmed">Mès de {0}</pattern>
 			<pattern type="range" draft="unconfirmed">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="lepc">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="limb">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mlym">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mong">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mtei">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymr">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="mymrshan">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="nkoo">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="olck">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="orya">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="osma">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="rohg">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="saur">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="shrd">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sora">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="sund">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="takr">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="talu">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tamldec">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="telu">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="thai">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="tibt">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
+		</miscPatterns>
+		<miscPatterns numberSystem="vaii">
+			<pattern type="approximately">~{0}</pattern>
+			<pattern type="atLeast">Mès de {0}</pattern>
+			<pattern type="range">{0}-{1}</pattern>
 		</miscPatterns>
 		<minimalPairs>
 			<pluralMinimalPairs count="other" draft="unconfirmed">{0} dies</pluralMinimalPairs>
@@ -2998,6 +3786,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<unitLength type="narrow">
 			<coordinateUnit>
 				<displayName draft="unconfirmed">punt</displayName>
+				<coordinateUnitPattern type="east" draft="unconfirmed">{0} E</coordinateUnitPattern>
+				<coordinateUnitPattern type="north" draft="unconfirmed">{0} N</coordinateUnitPattern>
+				<coordinateUnitPattern type="south" draft="unconfirmed">{0} S</coordinateUnitPattern>
 				<coordinateUnitPattern type="west" draft="unconfirmed">{0}O</coordinateUnitPattern>
 			</coordinateUnit>
 		</unitLength>
@@ -3017,6 +3808,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</listPattern>
 		<listPattern type="or-short">
 			<listPatternPart type="end" draft="unconfirmed">{0} o {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="end" draft="unconfirmed">{0} e {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-short">
+			<listPatternPart type="end" draft="unconfirmed">{0} e {1}</listPatternPart>
 		</listPattern>
 		<listPattern type="unit">
 			<listPatternPart type="end" draft="unconfirmed">{0}, {1}</listPatternPart>

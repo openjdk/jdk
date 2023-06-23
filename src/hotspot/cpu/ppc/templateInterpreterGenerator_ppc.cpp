@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -523,7 +524,7 @@ address TemplateInterpreterGenerator::generate_Reference_get_entry(void) {
   // If the receiver is null then it is OK to jump to the slow path.
   __ ld(R3_RET, Interpreter::stackElementSize, R15_esp); // get receiver
 
-  // Check if receiver == NULL and go the slow path.
+  // Check if receiver == nullptr and go the slow path.
   __ cmpdi(CCR0, R3_RET, 0);
   __ beq(CCR0, slow_path);
 
@@ -693,7 +694,7 @@ address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, i
   __ check_and_forward_exception(R11_scratch1, R12_scratch2);
 
   // Start executing bytecodes.
-  if (continuation == NULL) {
+  if (continuation == nullptr) {
     __ dispatch_next(state, step);
   } else {
     __ jump_to_entry(continuation, R11_scratch1);
@@ -766,9 +767,9 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& continue_ent
   // Generate code to initiate compilation on the counter overflow.
 
   // InterpreterRuntime::frequency_counter_overflow takes one arguments,
-  // which indicates if the counter overflow occurs at a backwards branch (NULL bcp)
+  // which indicates if the counter overflow occurs at a backwards branch (null bcp)
   // We pass zero in.
-  // The call returns the address of the verified entry point for the method or NULL
+  // The call returns the address of the verified entry point for the method or null
   // if the compilation did not complete (either went background or bailed out).
   //
   // Unlike the C++ interpreter above: Check exceptions!
@@ -778,7 +779,7 @@ void TemplateInterpreterGenerator::generate_counter_overflow(Label& continue_ent
   __ li(R4_ARG2, 0);
   __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::frequency_counter_overflow), R4_ARG2, true);
 
-  // Returns verified_entry_point or NULL.
+  // Returns verified_entry_point or null.
   // We ignore it in any case.
   __ b(continue_entry);
 }
@@ -801,7 +802,7 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rmem_f
   __ bgt(CCR0/*is_stack_overflow*/, done);
 
   // The stack overflows. Load target address of the runtime stub and call it.
-  assert(StubRoutines::throw_StackOverflowError_entry() != NULL, "generated in wrong order");
+  assert(StubRoutines::throw_StackOverflowError_entry() != nullptr, "generated in wrong order");
   __ load_const_optimized(Rscratch1, (StubRoutines::throw_StackOverflowError_entry()), R0);
   __ mtctr(Rscratch1);
   // Restore caller_sp (c2i adapter may exist, but no shrinking of interpreted caller frame).
@@ -869,7 +870,7 @@ void TemplateInterpreterGenerator::lock_method(Register Rflags, Register Rscratc
   // Got the oop to lock => execute!
   __ add_monitor_to_stack(true, Rscratch1, R0);
 
-  __ std(Robj_to_lock, BasicObjectLock::obj_offset_in_bytes(), R26_monitor);
+  __ std(Robj_to_lock, in_bytes(BasicObjectLock::obj_offset()), R26_monitor);
   __ lock_object(R26_monitor, Robj_to_lock);
 }
 
@@ -978,10 +979,10 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   }
 
   // Compute top frame size.
-  __ addi(Rtop_frame_size, Rtop_frame_size, frame::abi_reg_args_size + frame::ijava_state_size);
+  __ addi(Rtop_frame_size, Rtop_frame_size, frame::top_ijava_frame_abi_size + frame::ijava_state_size);
 
   // Cut back area between esp and max_stack.
-  __ addi(Rparent_frame_resize, Rparent_frame_resize, frame::abi_minframe_size - Interpreter::stackElementSize);
+  __ addi(Rparent_frame_resize, Rparent_frame_resize, frame::parent_ijava_frame_abi_size - Interpreter::stackElementSize);
 
   __ round_to(Rtop_frame_size, frame::alignment_in_bytes);
   __ round_to(Rparent_frame_resize, frame::alignment_in_bytes);
@@ -1001,7 +1002,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
 
   __ add(R18_locals, R15_esp, Rsize_of_parameters);
   __ ld(Rconst_pool, in_bytes(ConstMethod::constants_offset()), Rconst_method);
-  __ ld(R27_constPoolCache, ConstantPool::cache_offset_in_bytes(), Rconst_pool);
+  __ ld(R27_constPoolCache, ConstantPool::cache_offset(), Rconst_pool);
 
   // Set method data pointer.
   if (ProfileInterpreter) {
@@ -1026,7 +1027,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
   __ std(R12_scratch2, _abi0(lr), R1_SP);
 
   // Get mirror and store it in the frame as GC root for this Method*.
-  __ ld(Rmirror, ConstantPool::pool_holder_offset_in_bytes(), Rconst_pool);
+  __ ld(Rmirror, ConstantPool::pool_holder_offset(), Rconst_pool);
   __ ld(Rmirror, in_bytes(Klass::java_mirror_offset()), Rmirror);
   __ resolve_oop_handle(Rmirror, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_FRAME_LR_GP_REGS);
 
@@ -1074,7 +1075,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
   // Decide what to do: Use same platform specific instructions and runtime calls as compilers.
   bool use_instruction = false;
-  address runtime_entry = NULL;
+  address runtime_entry = nullptr;
   int num_args = 1;
   bool double_precision = true;
 
@@ -1103,7 +1104,7 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
   }
 
   // Use normal entry if neither instruction nor runtime call is used.
-  if (!use_instruction && runtime_entry == NULL) return NULL;
+  if (!use_instruction && runtime_entry == nullptr) return nullptr;
 
   address entry = __ pc();
 
@@ -1541,7 +1542,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   __ ld(active_handles, thread_(active_handles));
   // TODO PPC port assert(4 == JNIHandleBlock::top_size_in_bytes(), "unexpected field size");
   __ li(R0, 0);
-  __ stw(R0, JNIHandleBlock::top_offset_in_bytes(), active_handles);
+  __ stw(R0, in_bytes(JNIHandleBlock::top_offset()), active_handles);
 
   Label exception_return_sync_check_already_unlocked;
   __ ld(R0/*pending_exception*/, thread_(pending_exception));
@@ -2067,7 +2068,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
     __ bne(CCR0, L_done);
 
     // The member name argument must be restored if _invokestatic is re-executed after a PopFrame call.
-    // Detect such a case in the InterpreterRuntime function and return the member name argument, or NULL.
+    // Detect such a case in the InterpreterRuntime function and return the member name argument, or null.
     __ ld(R4_ARG2, 0, R18_locals);
     __ call_VM(R4_ARG2, CAST_FROM_FN_PTR(address, InterpreterRuntime::member_name_arg_or_null), R4_ARG2, R19_method, R14_bcp);
 
@@ -2197,7 +2198,7 @@ address TemplateInterpreterGenerator::generate_trace_code(TosState state) {
   //__ flush_bundle();
   address entry = __ pc();
 
-  const char *bname = NULL;
+  const char *bname = nullptr;
   uint tsize = 0;
   switch(state) {
   case ftos:
@@ -2319,7 +2320,7 @@ void TemplateInterpreterGenerator::trace_bytecode(Template* t) {
   // The run-time runtime saves the right registers, depending on
   // the tosca in-state for the given template.
 
-  assert(Interpreter::trace_code(t->tos_in()) != NULL,
+  assert(Interpreter::trace_code(t->tos_in()) != nullptr,
          "entry must have been generated");
 
   // Note: we destroy LR here.

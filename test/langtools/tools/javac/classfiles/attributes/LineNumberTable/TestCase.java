@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
 
 /**
  * TestCase contains source code to be compiled
@@ -32,28 +32,53 @@ import java.util.Set;
  */
 public class TestCase {
     public final String src;
-    public final Set<Integer> expectedLines;
-    public final boolean exactLines;
     public final List<String> extraCompilerOptions;
 
 
     private final String name;
+    private final MethodData[] methodData;
 
     public String getName() {
         return name;
     }
 
     public TestCase(String src, Collection<Integer> expectedLines, String name) {
-        this(src, expectedLines, false, List.of(), name);
+        this(src, name, new MethodData(null, expectedLines, false));
+    }
+
+    public TestCase(String src, String name, MethodData... methodData) {
+        this(src, List.of(), name, methodData);
     }
 
     public TestCase(String src, Collection<Integer> expectedLines,
                     boolean exactLines, List<String> extraCompilerOptions,
                     String name) {
+        this(src, extraCompilerOptions, name, new MethodData(null, expectedLines, exactLines));
+    }
+
+    public TestCase(String src, List<String> extraCompilerOptions,
+                    String name, MethodData... methodData) {
         this.src = src;
-        this.expectedLines = new HashSet<>(expectedLines);
-        this.exactLines = exactLines;
         this.extraCompilerOptions = extraCompilerOptions;
         this.name = name;
+        this.methodData = methodData;
+    }
+
+    public MethodData findData(String methodName) {
+        for (MethodData md : methodData) {
+            if (Objects.equals(md.methodName(), methodName)) {
+                return md;
+            }
+        }
+
+        return null;
+    }
+
+    record MethodData(String methodName, Collection<Integer> expectedLines, boolean exactLines) {
+
+        public MethodData {
+            expectedLines = new HashSet<>(expectedLines);
+        }
+
     }
 }

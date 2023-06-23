@@ -43,6 +43,7 @@
 #include "memory/allocation.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
@@ -84,7 +85,6 @@ char*  Arguments::_java_command                 = nullptr;
 SystemProperty* Arguments::_system_properties   = nullptr;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
-bool   Arguments::_java_compiler                = false;
 bool   Arguments::_xdebug_mode                  = false;
 const char*  Arguments::_java_vendor_url_bug    = nullptr;
 const char*  Arguments::_sun_java_launcher      = DEFAULT_JAVA_LAUNCHER;
@@ -104,9 +104,6 @@ char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
 
 LegacyGCLogging Arguments::_legacyGCLogging     = { 0, 0 };
-
-AgentLibraryList Arguments::_libraryList;
-AgentLibraryList Arguments::_agentList;
 
 // These are not set by the JDK's built-in launchers, but they can be set by
 // programs that embed the JVM using JNI_CreateJavaVM. See comments around
@@ -217,25 +214,6 @@ SystemProperty::SystemProperty(const char* key, const char* value, bool writeabl
   _writeable = writeable;
 }
 
-AgentLibrary::AgentLibrary(const char* name, const char* options,
-               bool is_absolute_path, void* os_lib,
-               bool instrument_lib) {
-  _name = AllocateHeap(strlen(name)+1, mtArguments);
-  strcpy(_name, name);
-  if (options == nullptr) {
-    _options = nullptr;
-  } else {
-    _options = AllocateHeap(strlen(options)+1, mtArguments);
-    strcpy(_options, options);
-  }
-  _is_absolute_path = is_absolute_path;
-  _os_lib = os_lib;
-  _next = nullptr;
-  _state = agent_invalid;
-  _is_static_lib = false;
-  _is_instrument_lib = instrument_lib;
-}
-
 // Check if head of 'option' matches 'name', and sets 'tail' to the remaining
 // part of the option string.
 static bool match_option(const JavaVMOption *option, const char* name,
@@ -325,23 +303,6 @@ bool needs_module_property_warning = false;
 #define UPGRADE_PATH_LEN 12
 #define ENABLE_NATIVE_ACCESS "enable.native.access"
 #define ENABLE_NATIVE_ACCESS_LEN 20
-
-void Arguments::add_init_library(const char* name, const char* options) {
-  _libraryList.add(new AgentLibrary(name, options, false, nullptr));
-}
-
-void Arguments::add_init_agent(const char* name, const char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr));
-}
-
-void Arguments::add_instrument_agent(const char* name, const char* options, bool absolute_path) {
-  _agentList.add(new AgentLibrary(name, options, absolute_path, nullptr, true));
-}
-
-// Late-binding agents not started via arguments
-void Arguments::add_loaded_agent(AgentLibrary *agentLib) {
-  _agentList.add(agentLib);
-}
 
 // Return TRUE if option matches 'property', or 'property=', or 'property.'.
 static bool matches_property_suffix(const char* option, const char* property, size_t len) {
@@ -551,7 +512,6 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
-  { "EnableWaitForParallelLoad",    JDK_Version::jdk(20), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
@@ -559,9 +519,10 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
 
-  { "G1UsePreventiveGC",            JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
+  { "MetaspaceReclaimPolicy",       JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
 
 #ifdef ASSERT
   { "DummyObsoleteTestFlag",        JDK_Version::undefined(), JDK_Version::jdk(18), JDK_Version::undefined() },
@@ -1304,8 +1265,14 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
 #endif
 
   if (strcmp(key, "java.compiler") == 0) {
-    process_java_compiler_argument(value);
-    // Record value in Arguments, but let it get passed to Java.
+    // we no longer support java.compiler system property, log a warning and let it get
+    // passed to Java, like any other system property
+    if (strlen(value) == 0 || strcasecmp(value, "NONE") == 0) {
+        // for applications using NONE or empty value, log a more informative message
+        warning("The java.compiler system property is obsolete and no longer supported, use -Xint");
+    } else {
+        warning("The java.compiler system property is obsolete and no longer supported.");
+    }
   } else if (strcmp(key, "sun.java.launcher.is_altjvm") == 0) {
     // sun.java.launcher.is_altjvm property is
     // private and is processed in process_sun_java_launcher_properties();
@@ -1410,7 +1377,6 @@ void Arguments::set_mode_flags(Mode mode) {
   // Set up default values for all flags.
   // If you add a flag to any of the branches below,
   // add a default value for it here.
-  set_java_compiler(false);
   _mode                      = mode;
 
   // Ensure Agent_OnLoad has the correct initial values.
@@ -1509,44 +1475,15 @@ void Arguments::set_use_compressed_oops() {
     if (UseCompressedOops && !FLAG_IS_DEFAULT(UseCompressedOops)) {
       warning("Max heap size too large for Compressed Oops");
       FLAG_SET_DEFAULT(UseCompressedOops, false);
-      if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
-        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-      }
     }
   }
 #endif // _LP64
 }
 
-
-// NOTE: set_use_compressed_klass_ptrs() must be called after calling
-// set_use_compressed_oops().
 void Arguments::set_use_compressed_klass_ptrs() {
 #ifdef _LP64
-  // On some architectures, the use of UseCompressedClassPointers implies the use of
-  // UseCompressedOops. The reason is that the rheap_base register of said platforms
-  // is reused to perform some optimized spilling, in order to use rheap_base as a
-  // temp register. But by treating it as any other temp register, spilling can typically
-  // be completely avoided instead. So it is better not to perform this trick. And by
-  // not having that reliance, large heaps, or heaps not supporting compressed oops,
-  // can still use compressed class pointers.
-  if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS && !UseCompressedOops) {
-    if (UseCompressedClassPointers) {
-      warning("UseCompressedClassPointers requires UseCompressedOops");
-    }
-    FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-  } else {
-    // Turn on UseCompressedClassPointers too
-    if (FLAG_IS_DEFAULT(UseCompressedClassPointers)) {
-      FLAG_SET_ERGO(UseCompressedClassPointers, true);
-    }
-    // Check the CompressedClassSpaceSize to make sure we use compressed klass ptrs.
-    if (UseCompressedClassPointers) {
-      if (CompressedClassSpaceSize > KlassEncodingMetaspaceMax) {
-        warning("CompressedClassSpaceSize is too large for UseCompressedClassPointers");
-        FLAG_SET_DEFAULT(UseCompressedClassPointers, false);
-      }
-    }
-  }
+  assert(!UseCompressedClassPointers || CompressedClassSpaceSize <= KlassEncodingMetaspaceMax,
+         "CompressedClassSpaceSize is too large for UseCompressedClassPointers");
 #endif // _LP64
 }
 
@@ -1568,9 +1505,6 @@ jint Arguments::set_ergonomics_flags() {
 
 #ifdef _LP64
   set_use_compressed_oops();
-
-  // set_use_compressed_klass_ptrs() must be called after calling
-  // set_use_compressed_oops().
   set_use_compressed_klass_ptrs();
 
   // Also checks that certain machines are slower with compressed oops
@@ -1709,9 +1643,6 @@ void Arguments::set_heap_size() {
             "Please check the setting of MaxRAMPercentage %5.2f."
             ,(size_t)reasonable_max, (size_t)max_coop_heap, MaxRAMPercentage);
           FLAG_SET_ERGO(UseCompressedOops, false);
-          if (COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS) {
-            FLAG_SET_ERGO(UseCompressedClassPointers, false);
-          }
         } else {
           reasonable_max = MIN2(reasonable_max, max_coop_heap);
         }
@@ -1900,16 +1831,6 @@ jint Arguments::set_aggressive_opts_flags() {
 }
 
 //===========================================================================================================
-// Parsing of java.compiler property
-
-void Arguments::process_java_compiler_argument(const char* arg) {
-  // For backwards compatibility, Djava.compiler=NONE or ""
-  // causes us to switch to -Xint mode UNLESS -Xdebug
-  // is also specified.
-  if (strlen(arg) == 0 || strcasecmp(arg, "NONE") == 0) {
-    set_java_compiler(true);    // "-Djava.compiler[=...]" most recently seen.
-  }
-}
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
   if (_sun_java_launcher != _default_java_launcher) {
@@ -1981,27 +1902,43 @@ bool Arguments::check_vm_args_consistency() {
   }
 #endif
 
-#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64)
+
+#if !defined(X86) && !defined(AARCH64) && !defined(RISCV64) && !defined(ARM) && !defined(PPC64)
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    FLAG_SET_CMDLINE(LockingMode, LM_LEGACY);
+    warning("New lightweight locking not supported on this platform");
+  }
+#endif
+
   if (UseHeavyMonitors) {
+    if (FLAG_IS_CMDLINE(LockingMode) && LockingMode != LM_MONITOR) {
+      jio_fprintf(defaultStream::error_stream(),
+                  "Conflicting -XX:+UseHeavyMonitors and -XX:LockingMode=%d flags", LockingMode);
+      return false;
+    }
+    FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
+  }
+
+#if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
+  if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "UseHeavyMonitors is not fully implemented on this architecture");
+                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture");
     return false;
   }
 #endif
-#if (defined(X86) || defined(PPC64)) && !defined(ZERO)
-  if (UseHeavyMonitors && UseRTMForStackLocks) {
+#if defined(X86) && !defined(ZERO)
+  if (LockingMode == LM_MONITOR && UseRTMForStackLocks) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+UseHeavyMonitors and -XX:+UseRTMForStackLocks are mutually exclusive");
+                "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive");
 
     return false;
   }
 #endif
-  if (VerifyHeavyMonitors && !UseHeavyMonitors) {
+  if (VerifyHeavyMonitors && LockingMode != LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+VerifyHeavyMonitors requires -XX:+UseHeavyMonitors");
+                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
     return false;
   }
-
   return status;
 }
 
@@ -2381,7 +2318,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
-        add_init_library(name, options);
+        JvmtiAgentList::add_xrun(name, options, false);
         FREE_C_HEAP_ARRAY(char, name);
         FREE_C_HEAP_ARRAY(char, options);
       }
@@ -2453,7 +2390,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
           return JNI_ERR;
         }
 #endif // !INCLUDE_JVMTI
-        add_init_agent(name, options, is_absolute_path);
+        JvmtiAgentList::add(name, options, is_absolute_path);
         os::free(name);
         os::free(options);
       }
@@ -2468,8 +2405,9 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         size_t length = strlen(tail) + 1;
         char *options = NEW_C_HEAP_ARRAY(char, length, mtArguments);
         jio_snprintf(options, length, "%s", tail);
-        add_instrument_agent("instrument", options, false);
+        JvmtiAgentList::add("instrument", options, false);
         FREE_C_HEAP_ARRAY(char, options);
+
         // java agents need module java.instrument
         if (!create_numbered_module_property("jdk.module.addmods", "java.instrument", addmods_count++)) {
           return JNI_ENOMEM;
@@ -2887,28 +2825,42 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         return JNI_ERR;
 #endif // INCLUDE_MANAGEMENT
 #if INCLUDE_JVMCI
-    } else if (match_option(option, "-XX:-EnableJVMCIProduct")) {
+    } else if (match_option(option, "-XX:-EnableJVMCIProduct") || match_option(option, "-XX:-UseGraalJIT")) {
       if (EnableJVMCIProduct) {
         jio_fprintf(defaultStream::error_stream(),
-                  "-XX:-EnableJVMCIProduct cannot come after -XX:+EnableJVMCIProduct\n");
+                  "-XX:-EnableJVMCIProduct or -XX:-UseGraalJIT cannot come after -XX:+EnableJVMCIProduct or -XX:+UseGraalJIT\n");
         return JNI_EINVAL;
       }
-    } else if (match_option(option, "-XX:+EnableJVMCIProduct")) {
-      // Just continue, since "-XX:+EnableJVMCIProduct" has been specified before
+    } else if (match_option(option, "-XX:+EnableJVMCIProduct") || match_option(option, "-XX:+UseGraalJIT")) {
+      bool use_graal_jit = match_option(option, "-XX:+UseGraalJIT");
+      if (use_graal_jit) {
+        const char* jvmci_compiler = get_property("jvmci.Compiler");
+        if (jvmci_compiler != nullptr) {
+          if (strncmp(jvmci_compiler, "graal", strlen("graal")) != 0) {
+            jio_fprintf(defaultStream::error_stream(),
+              "Value of jvmci.Compiler incompatible with +UseGraalJIT: %s", jvmci_compiler);
+            return JNI_ERR;
+          }
+        } else if (!add_property("jvmci.Compiler=graal")) {
+            return JNI_ENOMEM;
+        }
+      }
+
+      // Just continue, since "-XX:+EnableJVMCIProduct" or "-XX:+UseGraalJIT" has been specified before
       if (EnableJVMCIProduct) {
         continue;
       }
       JVMFlag *jvmciFlag = JVMFlag::find_flag("EnableJVMCIProduct");
       // Allow this flag if it has been unlocked.
       if (jvmciFlag != nullptr && jvmciFlag->is_unlocked()) {
-        if (!JVMCIGlobals::enable_jvmci_product_mode(origin)) {
+        if (!JVMCIGlobals::enable_jvmci_product_mode(origin, use_graal_jit)) {
           jio_fprintf(defaultStream::error_stream(),
             "Unable to enable JVMCI in product mode");
           return JNI_ERR;
         }
       }
       // The flag was locked so process normally to report that error
-      else if (!process_argument("EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
+      else if (!process_argument(use_graal_jit ? "UseGraalJIT" : "EnableJVMCIProduct", args->ignoreUnrecognized, origin)) {
         return JNI_EINVAL;
       }
 #endif // INCLUDE_JVMCI
@@ -3041,15 +2993,6 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     }
   }
 
-  // This must be done after all arguments have been processed.
-  // java_compiler() true means set to "NONE" or empty.
-  if (java_compiler() && !xdebug_mode()) {
-    // For backwards compatibility, we switch to interpreted mode if
-    // -Djava.compiler="NONE" or "" is specified AND "-Xdebug" was
-    // not specified.
-    set_mode_flags(_int);
-  }
-
   // CompileThresholdScaling == 0.0 is same as -Xint: Disable compilation (enable interpreter-only mode),
   // but like -Xint, leave compilation thresholds unaffected.
   // With tiered compilation disabled, setting CompileThreshold to 0 disables compilation as well.
@@ -3099,6 +3042,11 @@ jint Arguments::finalize_vm_init_args(bool patch_mod_javabase) {
     // class metadata instead of modifying them in place. The copy is inaccessible to the compiler.
     // TODO: revisit the following for the static archive case.
     set_mode_flags(_int);
+
+    // String deduplication may cause CDS to iterate the strings in different order from one
+    // run to another which resulting in non-determinstic CDS archives.
+    // Disable UseStringDeduplication while dumping CDS archive.
+    UseStringDeduplication = false;
   }
 
   // RecordDynamicDumpInfo is not compatible with ArchiveClassesAtExit

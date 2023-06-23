@@ -153,15 +153,41 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   GrowableArray<Metadata*>*      _deallocate_list;
 
   // Support for walking class loader data objects
-  ClassLoaderData* _next; /// Next loader_datas created
+  //
+  // The ClassLoaderDataGraph maintains two lists to keep track of CLDs.
+  //
+  // The first list [_head, _next] is where new CLDs are registered. The CLDs
+  // are only inserted at the _head, and the _next pointers are only rewritten
+  // from unlink_next() which unlinks one unloading CLD by setting _next to
+  // _next->_next. This allows GCs to concurrently walk the list while the CLDs
+  // are being concurrently unlinked.
+  //
+  // The second list [_unloading_head, _unloading_next] is where dead CLDs get
+  // moved to during class unloading. See: ClassLoaderDataGraph::do_unloading().
+  // This list is never modified while other threads are iterating over it.
+  //
+  // After all dead CLDs have been moved to the unloading list, there's a
+  // synchronization point (handshake) to ensure that all threads reading these
+  // CLDs finish their work. This ensures that we don't have a use-after-free
+  // when we later delete the CLDs.
+  //
+  // And finally, when no threads are using the unloading CLDs anymore, we
+  // remove them from the class unloading list and delete them. See:
+  // ClassLoaderDataGraph::purge();
+  ClassLoaderData* _next;
+  ClassLoaderData* _unloading_next;
 
   Klass*  _class_loader_klass;
   Symbol* _name;
   Symbol* _name_and_id;
   JFR_ONLY(DEFINE_TRACE_ID_FIELD;)
 
-  void set_next(ClassLoaderData* next) { _next = next; }
-  ClassLoaderData* next() const        { return Atomic::load(&_next); }
+  void set_next(ClassLoaderData* next);
+  ClassLoaderData* next() const;
+  void unlink_next();
+
+  void set_unloading_next(ClassLoaderData* unloading_next);
+  ClassLoaderData* unloading_next() const;
 
   ClassLoaderData(Handle h_class_loader, bool has_class_mirror_holder);
   ~ClassLoaderData();
@@ -193,6 +219,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   void free_deallocate_list_C_heap_structures();    // for the classes that are unloaded
 
   Dictionary* create_dictionary();
+
+  void demote_strong_roots();
 
   void initialize_name(Handle class_loader);
 
@@ -303,8 +331,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   bool modules_defined() { return (_modules != nullptr); }
 
   // Offsets
-  static ByteSize holder_offset()     { return in_ByteSize(offset_of(ClassLoaderData, _holder)); }
-  static ByteSize keep_alive_offset() { return in_ByteSize(offset_of(ClassLoaderData, _keep_alive)); }
+  static ByteSize holder_offset()     { return byte_offset_of(ClassLoaderData, _holder); }
+  static ByteSize keep_alive_offset() { return byte_offset_of(ClassLoaderData, _keep_alive); }
 
   // Loaded class dictionary
   Dictionary* dictionary() const { return _dictionary; }

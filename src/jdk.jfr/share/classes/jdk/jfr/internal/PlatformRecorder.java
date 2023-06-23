@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
 import jdk.jfr.internal.consumer.EventLog;
 import jdk.jfr.internal.instrument.JDKEvents;
 import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.util.Utils;
 
 public final class PlatformRecorder {
 
@@ -99,7 +100,7 @@ public final class PlatformRecorder {
             jvm.exclude(t);
             t.start();
             t.join();
-            return result.get(0);
+            return result.getFirst();
         } catch (InterruptedException e) {
             throw new IllegalStateException("Not able to create timer task. " + e.getMessage(), e);
         }
@@ -244,7 +245,7 @@ public final class PlatformRecorder {
             }
             currentChunk = newChunk;
             jvm.beginRecording();
-            startNanos = Utils.getChunkStartNanos();
+            startNanos = JVMSupport.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             if (currentChunk != null) {
                 currentChunk.setStartTime(startTime);
@@ -266,7 +267,7 @@ public final class PlatformRecorder {
                 startTime = MetadataRepository.getInstance().setOutput(p);
                 newChunk.setStartTime(startTime);
             }
-            startNanos = Utils.getChunkStartNanos();
+            startNanos = JVMSupport.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             recording.setStartTime(startTime);
             recording.setState(RecordingState.RUNNING);
@@ -313,7 +314,7 @@ public final class PlatformRecorder {
             }
         }
         OldObjectSample.emit(recording);
-        recording.setFinalStartnanos(Utils.getChunkStartNanos());
+        recording.setFinalStartnanos(JVMSupport.getChunkStartNanos());
 
         if (endPhysical) {
             PeriodicEvents.doChunkEnd();
@@ -420,7 +421,7 @@ public final class PlatformRecorder {
         return runningRecordings;
     }
 
-    private List<RepositoryChunk> makeChunkList(Instant startTime, Instant endTime) {
+    public List<RepositoryChunk> makeChunkList(Instant startTime, Instant endTime) {
         Set<RepositoryChunk> chunkSet = new HashSet<>();
         for (PlatformRecording r : getRecordings()) {
             chunkSet.addAll(r.getChunks());
@@ -438,7 +439,7 @@ public final class PlatformRecorder {
             return chunks;
         }
 
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     private void startDiskMonitor() {
@@ -454,6 +455,8 @@ public final class PlatformRecorder {
                 r.appendChunk(chunk);
             }
         }
+        // Decrease initial reference count
+        chunk.release();
         FilePurger.purge();
     }
 
@@ -658,5 +661,9 @@ public final class PlatformRecorder {
             jvm.markChunkFinal();
             rotateDisk();
         }
+    }
+
+    public RepositoryChunk getCurrentChunk() {
+        return currentChunk;
     }
 }

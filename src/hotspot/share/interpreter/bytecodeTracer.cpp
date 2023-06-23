@@ -35,6 +35,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
@@ -117,7 +118,7 @@ class BytecodePrinter {
       code = Bytecodes::code_at(method(), bcp);
     }
     _code = code;
-     int bci = bcp - method->code_base();
+     int bci = (int)(bcp - method->code_base());
     st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
     if (Verbose) {
       st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
@@ -146,7 +147,7 @@ class BytecodePrinter {
       code = Bytecodes::code_at(method(), bcp+1);
     }
     _code = code;
-    int bci = bcp - method->code_base();
+    int bci = (int)(bcp - method->code_base());
     // Print bytecode index and name
     if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_BYTECODE_ADDR)) {
       st->print(INTPTR_FORMAT " ", p2i(bcp));
@@ -302,10 +303,16 @@ bool BytecodePrinter::check_obj_index(int i, int& cp_index, outputStream* st) {
 
 
 bool BytecodePrinter::check_invokedynamic_index(int i, int& cp_index, outputStream* st) {
-  assert(ConstantPool::is_invokedynamic_index(i), "not secondary index?");
-  i = ConstantPool::decode_invokedynamic_index(i) + ConstantPool::CPCACHE_INDEX_TAG;
-
-  return check_cp_cache_index(i, cp_index, st);
+  ConstantPool* constants = _current_method->constants();
+  if (constants->cache() == nullptr) {
+    cp_index = i; // TODO: This is wrong on little-endian. See JDK-8309811.
+  } else {
+    assert(ConstantPool::is_invokedynamic_index(i), "must be");
+    int indy_index = ConstantPool::decode_invokedynamic_index(i);
+    ResolvedIndyEntry* indy_entry = constants->resolved_indy_entry_at(indy_index);
+    cp_index = indy_entry->constant_pool_index();
+  }
+  return true;
 }
 
 void BytecodePrinter::print_constant(int i, outputStream* st) {

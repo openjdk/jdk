@@ -22,6 +22,7 @@
  *
  */
 
+import java.lang.foreign.AddressLayout;
 import java.lang.foreign.Arena;
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.GroupLayout;
@@ -30,7 +31,6 @@ import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.PaddingLayout;
 import java.lang.foreign.SegmentAllocator;
-import java.lang.foreign.SegmentScope;
 import java.lang.foreign.SequenceLayout;
 import java.lang.foreign.StructLayout;
 import java.lang.foreign.SymbolLookup;
@@ -100,28 +100,29 @@ public class NativeTestHelper {
     /**
      * The layout for the {@code short} C type
      */
-    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT.withBitAlignment(16);
+    public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT;
     /**
      * The layout for the {@code int} C type
      */
-    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT.withBitAlignment(32);
+    public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
 
     /**
      * The layout for the {@code long long} C type.
      */
-    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG.withBitAlignment(64);
+    public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG;
     /**
      * The layout for the {@code float} C type
      */
-    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT.withBitAlignment(32);
+    public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT;
     /**
      * The layout for the {@code double} C type
      */
-    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE.withBitAlignment(64);
+    public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
     /**
      * The {@code T*} native type.
      */
-    public static final ValueLayout.OfAddress C_POINTER = ValueLayout.ADDRESS.withBitAlignment(64).asUnbounded();
+    public static final AddressLayout C_POINTER = ValueLayout.ADDRESS
+            .withTargetLayout(MemoryLayout.sequenceLayout(C_CHAR));
 
     public static final Linker LINKER = Linker.nativeLinker();
 
@@ -158,7 +159,7 @@ public class NativeTestHelper {
     public static MemorySegment upcallStub(Class<?> holder, String name, FunctionDescriptor descriptor) {
         try {
             MethodHandle target = MethodHandles.lookup().findStatic(holder, name, descriptor.toMethodType());
-            return LINKER.upcallStub(target, descriptor, SegmentScope.auto());
+            return LINKER.upcallStub(target, descriptor, Arena.ofAuto());
         } catch (ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
@@ -209,7 +210,7 @@ public class NativeTestHelper {
                 elementChecks.add(initField(random, segment, array, array.elementLayout(), sequenceElement(i), allocator));
             }
             return new TestValue(segment, actual -> elementChecks.forEach(check -> check.accept(actual)));
-        } else if (layout instanceof ValueLayout.OfAddress) {
+        } else if (layout instanceof AddressLayout) {
             MemorySegment value = MemorySegment.ofAddress(random.nextLong());
             return new TestValue(value, actual -> assertEquals(actual, value));
         }else if (layout instanceof ValueLayout.OfByte) {
@@ -287,7 +288,7 @@ public class NativeTestHelper {
         MethodHandle target = MethodHandles.insertArguments(MH_SAVER, 1, fd.argumentLayouts(), capturedArgs, arena, retIdx);
         target = target.asCollector(Object[].class, fd.argumentLayouts().size());
         target = target.asType(fd.toMethodType());
-        return LINKER.upcallStub(target, fd, arena.scope());
+        return LINKER.upcallStub(target, fd, arena);
     }
 
     private static Object saver(Object[] o, List<MemoryLayout> argLayouts, AtomicReference<Object[]> ref, SegmentAllocator allocator, int retArg) {
