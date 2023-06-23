@@ -118,6 +118,10 @@ public class MaximizedToIconified
         examineStates(new int[] {Frame.MAXIMIZED_BOTH, Frame.ICONIFIED, Frame.NORMAL});
         System.out.println("------");
         examineStates(new int[] {Frame.ICONIFIED, Frame.MAXIMIZED_BOTH, Frame.NORMAL});
+        System.out.println("------");
+        examineStates(new int[] {Frame.NORMAL, Frame.MAXIMIZED_BOTH, Frame.ICONIFIED});
+        System.out.println("------");
+        examineStates(new int[] {Frame.NORMAL, Frame.ICONIFIED, Frame.MAXIMIZED_BOTH});
 
     }
 

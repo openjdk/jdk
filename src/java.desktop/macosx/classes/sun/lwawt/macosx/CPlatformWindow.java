@@ -967,7 +967,7 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     }
 
     private void waitForWindowState(int state) {
-        if(peer.getState() == state) {
+        if (peer.getState() == state) {
             return;
         }
 
@@ -990,7 +990,6 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                 } catch (InterruptedException ie) {}
             }
         }
-
         target.removeWindowStateListener(wsl);
     }
 
