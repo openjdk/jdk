@@ -53,7 +53,7 @@ public class TestSlices {
             //init
             for (long i = 0 ; i < 2 ; i++) {
                 for (long j = 0 ; j < 5 ; j++) {
-                    VH_ALL.set(segment, i, j, (int)j + 1 + ((int)i * 5));
+                    VH_ALL.set(segment, 0L, i, j, (int)j + 1 + ((int)i * 5));
                 }
             }
 
@@ -65,8 +65,8 @@ public class TestSlices {
     public void testSliceBadIndex(VarHandle handle, int lo, int hi, int[] values) {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(LAYOUT);;
-            assertThrows(() -> handle.get(segment, lo, 0));
-            assertThrows(() -> handle.get(segment, 0, hi));
+            assertThrows(() -> handle.get(segment, 0L, lo, 0));
+            assertThrows(() -> handle.get(segment, 0L, 0, hi));
         }
     }
 
@@ -74,7 +74,7 @@ public class TestSlices {
         int index = 0;
         for (long i = 0 ; i < i_max ; i++) {
             for (long j = 0 ; j < j_max ; j++) {
-                int x = (int) handle.get(segment, i, j);
+                int x = (int) handle.get(segment, 0L, i, j);
                 assertEquals(x, values[index++]);
             }
         }

@@ -249,8 +249,8 @@ public class NativeTestHelper {
         } else {
             VarHandle accessor = containerLayout.varHandle(fieldPath);
             //set value
-            accessor.set(container, fieldValue.value());
-            return actual -> fieldCheck.accept(accessor.get((MemorySegment) actual));
+            accessor.set(container, 0L, fieldValue.value());
+            return actual -> fieldCheck.accept(accessor.get((MemorySegment) actual, 0L));
         }
     }
 
@@ -258,7 +258,7 @@ public class NativeTestHelper {
         MethodHandle slicer = containerLayout.sliceHandle(fieldPath);
         return container -> {
               try {
-                return (MemorySegment) slicer.invokeExact(container);
+                return (MemorySegment) slicer.invokeExact(container, 0L);
             } catch (Throwable e) {
                 throw new IllegalStateException(e);
             }

@@ -25,10 +25,8 @@
  */
 package java.lang.foreign;
 
-import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
-
 import jdk.internal.foreign.layout.ValueLayouts;
 import jdk.internal.javac.PreviewFeature;
 
@@ -77,67 +75,6 @@ public sealed interface ValueLayout extends MemoryLayout permits
     ValueLayout withoutName();
 
     /**
-     * Creates a <em>strided</em> var handle that can be used to access a memory segment as multi-dimensional
-     * array. This array has a notional sequence layout featuring {@code shape.length} nested sequence layouts. The element
-     * layout of the innermost sequence layout in the notional sequence layout is this value layout. The resulting var handle
-     * is obtained as if calling the {@link #varHandle(PathElement...)} method on the notional layout, with a layout
-     * path containing exactly {@code shape.length + 1} {@linkplain PathElement#sequenceElement() open sequence layout path elements}.
-     * <p>
-     * For instance, the following method call:
-     *
-     * {@snippet lang=java :
-     * VarHandle arrayHandle = ValueLayout.JAVA_INT.arrayElementVarHandle(10, 20);
-     * }
-     *
-     * Is equivalent to the following code:
-     *
-     * {@snippet lang = java:
-     * MemoryLayout innerLayout = MemoryLayout.sequenceLayout(10,
-     *         MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT));
-     * SequenceLayout notionalLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE / innerLayout.byteSize(), innerLayout);
-     * VarHandle arrayHandle = notionalLayout.varHandle(PathElement.sequenceElement(),
-     *                                                  PathElement.sequenceElement(),
-     *                                                  PathElement.sequenceElement());
-     *}
-     *
-     * The resulting var handle {@code arrayHandle} will feature 3 coordinates of type {@code long}; each coordinate
-     * is interpreted as an index into the corresponding sequence layout. If we refer to the var handle coordinates, from left
-     * to right, as {@code x}, {@code y} and {@code z} respectively, the final offset accessed by the var handle can be
-     * computed with the following formula:
-     *
-     * <blockquote><pre>{@code
-     * offset = (10 * 20 * 4 * x) + (20 * 4 * y) + (4 * z)
-     * }</pre></blockquote>
-     *
-     * Additionally, the values of {@code x}, {@code y} and {@code z} are constrained as follows:
-     * <ul>
-     *     <li>{@code 0 <= x < notionalLayout.elementCount() }</li>
-     *     <li>{@code 0 <= y < 10 }</li>
-     *     <li>{@code 0 <= z < 20 }</li>
-     * </ul>
-     * <p>
-     * Consider the following access expressions:
-     * {@snippet lang=java :
-     * int value1 = (int) arrayHandle.get(10, 2, 4); // ok, accessed offset = 8176
-     * int value2 = (int) arrayHandle.get(0, 0, 30); // out of bounds value for z
-     * }
-     * In the first case, access is well-formed, as the values for {@code x}, {@code y} and {@code z} conform to
-     * the bounds specified above. In the second case, access fails with {@link IndexOutOfBoundsException},
-     * as the value for {@code z} is outside its specified bounds.
-     *
-     * @param shape the size of each nested array dimension.
-     * @return a var handle which can be used to access a memory segment as a multi-dimensional array,
-     * featuring {@code shape.length + 1}
-     * {@code long} coordinates.
-     * @throws IllegalArgumentException if {@code shape[i] < 0}, for at least one index {@code i}.
-     * @throws UnsupportedOperationException if {@code byteAlignment() > byteSize()}.
-     * @see MethodHandles#memorySegmentViewVarHandle
-     * @see MemoryLayout#varHandle(PathElement...)
-     * @see SequenceLayout
-     */
-    VarHandle arrayElementVarHandle(int... shape);
-
-    /**
      * {@return the carrier associated with this value layout}
      */
     Class<?> carrier();
@@ -150,10 +87,32 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
     /**
      * {@inheritDoc}
+     *
      * @throws IllegalArgumentException {@inheritDoc}
      */
     @Override
     ValueLayout withByteAlignment(long byteAlignment);
+
+    /**
+     * {@return a var handle which can be used to access values described by this value layout, in a given memory segment.}
+     * <p>
+     * The returned var handle's {@linkplain VarHandle#varType() var type} is the {@linkplain ValueLayout#carrier() carrier type} of
+     * this value layout, and the list of coordinate types is {@code (MemorySegment, long)}, where the memory segment coordinate
+     * corresponds to the memory segment to be accessed, and the {@code long} coordinate corresponds to the byte offset
+     * into the accessed memory segment at which the access occurs.
+     * <p>
+     * The returned var handle checks that accesses are aligned according to this value layout's
+     * {@linkplain MemoryLayout#byteAlignment() alignment constraint}.
+     *
+     * @apiNote This method is similar, but more efficient, than calling {@code MemoryLayout#varHandle(PathElement...)}
+     * with an empty path element array, as it avoids the creation of the var args array.
+     *
+     * @apiNote The returned var handle features certain <a href="MemoryLayout.html#access-mode-restrictions">access mode
+     * restrictions</a> common to all memory access var handles derived from memory layouts.
+     *
+     * @see MemoryLayout#varHandle(PathElement...)
+     */
+    VarHandle varHandle();
 
     /**
      * A value layout whose carrier is {@code boolean.class}.

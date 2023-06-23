@@ -81,7 +81,7 @@ public class TestSegmentAllocators {
                         assertEquals(address.byteSize(), alignedLayout.byteSize());
                         addressList.add(address);
                         VarHandle handle = handleFactory.apply(alignedLayout);
-                        assertEquals(value, handle.get(address));
+                        assertEquals(value, handle.get(address, 0L));
                     }
                     boolean isBound = allocationFactory.isBound();
                     try {

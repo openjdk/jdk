@@ -45,10 +45,6 @@ public class UnrolledAccess extends JavaLayouts {
 
     static final Unsafe U = Utils.unsafe;
 
-    static final VarHandle VH_LONG_UNALIGNED = JAVA_LONG_UNALIGNED.arrayElementVarHandle();
-
-    static final VarHandle VH_LONG = JAVA_LONG.arrayElementVarHandle();
-
     final static int SIZE = 1024;
 
     @State(Scope.Benchmark)

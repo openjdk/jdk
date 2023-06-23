@@ -37,7 +37,6 @@ import java.lang.foreign.UnionLayout;
 import java.lang.foreign.ValueLayout;
 import java.lang.invoke.VarHandle;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -66,7 +65,7 @@ class FFIType {
 
     private static final VarHandle VH_TYPE = LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("type"));
     private static final VarHandle VH_ELEMENTS = LAYOUT.varHandle(MemoryLayout.PathElement.groupElement("elements"));
-    private static final VarHandle VH_SIZE_T_ARRAY = SIZE_T.arrayElementVarHandle();
+    private static final VarHandle VH_SIZE_T = SIZE_T.varHandle();
 
     private static MemorySegment make(List<MemoryLayout> elements, FFIABI abi, Arena scope) {
         MemorySegment elementsSeg = scope.allocate((elements.size() + 1) * ADDRESS.byteSize());
@@ -80,8 +79,8 @@ class FFIType {
         elementsSeg.setAtIndex(ADDRESS, i, MemorySegment.NULL);
 
         MemorySegment ffiType = scope.allocate(LAYOUT);
-        VH_TYPE.set(ffiType, LibFallback.structTag());
-        VH_ELEMENTS.set(ffiType, elementsSeg);
+        VH_TYPE.set(ffiType, 0L, LibFallback.structTag());
+        VH_ELEMENTS.set(ffiType, 0L, elementsSeg);
 
         return ffiType;
     }
@@ -129,7 +128,7 @@ class FFIType {
             int offsetIdx = 0;
             for (MemoryLayout element : structLayout.memberLayouts()) {
                 if (!(element instanceof PaddingLayout)) {
-                    long ffiOffset = (long) VH_SIZE_T_ARRAY.get(offsetsOut, offsetIdx++);
+                    long ffiOffset = sizeTAtIndex(offsetsOut, offsetIdx++);
                     if (ffiOffset != expectedOffset) {
                         throw new IllegalArgumentException("Invalid group layout." +
                                 " Offset of '" + element.name().orElse("<unnamed>")
@@ -149,5 +148,14 @@ class FFIType {
             case 8 -> JAVA_LONG;
             default -> throw new IllegalStateException("Unsupported size: " + byteSize);
         };
+    }
+
+    private static long sizeTAtIndex(MemorySegment segment, int index) {
+        long offset = SIZE_T.scale(0, index);
+        if (VH_SIZE_T.varType() == long.class) {
+            return (long) VH_SIZE_T.get(segment, offset);
+        } else {
+            return (int) VH_SIZE_T.get(segment, offset); // 'erase' to long
+        }
     }
 }

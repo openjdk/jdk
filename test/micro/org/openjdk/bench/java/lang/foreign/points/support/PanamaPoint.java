@@ -68,19 +68,19 @@ public class PanamaPoint extends CLayouts implements AutoCloseable {
     }
 
     public void setX(int x) {
-        VH_x.set(segment, x);
+        VH_x.set(segment, 0L, x);
     }
 
     public int getX() {
-        return (int) VH_x.get(segment);
+        return (int) VH_x.get(segment, 0L);
     }
 
     public void setY(int y) {
-        VH_y.set(segment, y);
+        VH_y.set(segment, 0L, y);
     }
 
     public int getY() {
-        return (int) VH_y.get(segment);
+        return (int) VH_y.get(segment, 0L);
     }
 
     public double distanceTo(PanamaPoint other) {

@@ -312,7 +312,7 @@ class Snippets {
             try (Arena arena = Arena.ofConfined()) {
                 MemorySegment capturedState = arena.allocate(capturedStateLayout);
                 handle.invoke(capturedState);
-                int errno = (int) errnoHandle.get(capturedState);
+                int errno = (int) errnoHandle.get(capturedState, 0L);
                 // use errno
             }
         }
@@ -350,8 +350,8 @@ class Snippets {
 
             MethodHandle offsetHandle = taggedValues.byteOffsetHandle(PathElement.sequenceElement(),
                     PathElement.groupElement("kind"));
-            long offset1 = (long) offsetHandle.invokeExact(1L); // 8
-            long offset2 = (long) offsetHandle.invokeExact(2L); // 16
+            long offset1 = (long) offsetHandle.invokeExact(0L, 1L); // 8
+            long offset2 = (long) offsetHandle.invokeExact(0L, 2L); // 16
         }
 
         void sliceHandle() {
@@ -395,7 +395,7 @@ class Snippets {
             {
                 MemorySegment segment = null; // ...
 
-                VarHandle intHandle = MethodHandles.memorySegmentViewVarHandle(ValueLayout.JAVA_INT);
+                VarHandle intHandle = ValueLayout.JAVA_INT.varHandle();
                 MethodHandle multiplyExact = MethodHandles.lookup()
                         .findStatic(Math.class, "multiplyExact",
                                 MethodType.methodType(long.class, long.class, long.class));
@@ -407,8 +407,13 @@ class Snippets {
             {
                 MemorySegment segment = null; // ...
 
-                VarHandle intHandle = ValueLayout.JAVA_INT.arrayElementVarHandle();
-                int value = (int) intHandle.get(segment, 3L); // get int element at offset 3 * 4 = 12
+                MemoryLayout segmentLayout = MemoryLayout.structLayout(
+                    ValueLayout.JAVA_INT.withName("size"),
+                    MemoryLayout.sequenceLayout(4, ValueLayout.JAVA_INT).withName("data") // array of 4 elements
+                );
+                VarHandle intHandle = segmentLayout.varHandle(MemoryLayout.PathElement.groupElement("data"),
+                                                              MemoryLayout.PathElement.sequenceElement());
+                int value = (int) intHandle.get(segment, 0L, 3L); // get int element at offset 0 + offsetof(data) + 3 * 4 = 12
             }
 
             {
@@ -650,18 +655,6 @@ class Snippets {
     }
 
     static class ValueLayoutSnippets {
-
-        void arrayElementVarHandle() {
-            MemoryLayout innerLayout = MemoryLayout.sequenceLayout(10,
-                    MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT));
-            SequenceLayout notionalLayout = MemoryLayout.sequenceLayout(Long.MAX_VALUE / innerLayout.byteSize(), innerLayout);
-            VarHandle arrayHandle = notionalLayout.varHandle(PathElement.sequenceElement(),
-                                                             PathElement.sequenceElement(),
-                                                             PathElement.sequenceElement());
-
-            int value1 = (int) arrayHandle.get(10, 2, 4); // ok, accessed offset = 8176
-            int value2 = (int) arrayHandle.get(0, 0, 30); // out of bounds value for z
-        }
 
         void statics() {
             ADDRESS.withByteAlignment(1);

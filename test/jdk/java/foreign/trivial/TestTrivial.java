@@ -73,9 +73,9 @@ public class TestTrivial extends NativeTestHelper {
         VarHandle vhY = bigLayout.varHandle(MemoryLayout.PathElement.groupElement("y"));
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment result = (MemorySegment) handle.invokeExact((SegmentAllocator) arena);
-            long x = (long) vhX.get(result);
+            long x = (long) vhX.get(result, 0L);
             assertEquals(x, 10);
-            long y = (long) vhY.get(result);
+            long y = (long) vhY.get(result, 0L);
             assertEquals(y, 11);
         }
     }
@@ -89,7 +89,7 @@ public class TestTrivial extends NativeTestHelper {
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment captureSeg = arena.allocate(capturedStateLayout);
             handle.invokeExact(captureSeg, 42);
-            int capturedErrno = (int) errnoHandle.get(captureSeg);
+            int capturedErrno = (int) errnoHandle.get(captureSeg, 0L);
             assertEquals(capturedErrno, 42);
         }
     }

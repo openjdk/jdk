@@ -412,20 +412,6 @@ public final class SharedUtils {
         };
     }
 
-    public static final class SimpleVaArg {
-        public final MemoryLayout layout;
-        public final Object value;
-
-        public SimpleVaArg(MemoryLayout layout, Object value) {
-            this.layout = layout;
-            this.value = value;
-        }
-
-        public VarHandle varHandle() {
-            return layout.varHandle();
-        }
-    }
-
     static void writeOverSized(MemorySegment ptr, Class<?> type, Object o) {
         // use VH_LONG for integers to zero out the whole register in the process
         if (type == long.class) {

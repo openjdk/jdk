@@ -54,7 +54,7 @@ public class VarHandleExact {
     static final VarHandle generic;
 
     static {
-        generic = MethodHandles.memorySegmentViewVarHandle(JAVA_INT);
+        generic = JAVA_INT.varHandle();
         exact = generic.withInvokeExactBehavior();
     }
 

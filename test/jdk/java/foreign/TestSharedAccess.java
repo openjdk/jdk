@@ -151,10 +151,10 @@ public class TestSharedAccess {
     }
 
     static int getInt(MemorySegment base) {
-        return (int)intHandle.getVolatile(base);
+        return (int)intHandle.getVolatile(base, 0L);
     }
 
     static void setInt(MemorySegment base, int value) {
-        intHandle.setVolatile(base, value);
+        intHandle.setVolatile(base, 0L, value);
     }
 }

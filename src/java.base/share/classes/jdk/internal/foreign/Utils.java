@@ -96,7 +96,19 @@ public final class Utils {
                 VarHandle prev = HANDLE_MAP.putIfAbsent(layout, handle);
                 return prev != null ? prev : handle;
             }
+
+            static VarHandle get(ValueLayout layout) {
+                return HANDLE_MAP.get(layout);
+            }
         }
+        layout = layout.withoutName(); // name doesn't matter
+        // keep the addressee layout as it's used below
+
+        VarHandle handle = VarHandleCache.get(layout);
+        if (handle != null) {
+            return handle;
+        }
+
         Class<?> baseCarrier = layout.carrier();
         if (layout.carrier() == MemorySegment.class) {
             baseCarrier = switch ((int) ValueLayout.ADDRESS.byteSize()) {
@@ -108,7 +120,7 @@ public final class Utils {
             baseCarrier = byte.class;
         }
 
-        VarHandle handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
+        handle = SharedSecrets.getJavaLangInvokeAccess().memorySegmentViewHandle(baseCarrier,
                 layout.byteAlignment() - 1, layout.order());
 
         if (layout.carrier() == boolean.class) {

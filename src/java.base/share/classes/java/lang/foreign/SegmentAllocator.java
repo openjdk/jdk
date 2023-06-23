@@ -143,9 +143,8 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfByte layout, byte value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
+        addr.set(layout, 0, value);
         return addr;
     }
 
@@ -158,9 +157,8 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfChar layout, char value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
+        addr.set(layout, 0, value);
         return addr;
     }
 
@@ -173,9 +171,8 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfShort layout, short value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
+        addr.set(layout, 0, value);
         return addr;
     }
 
@@ -188,9 +185,8 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfInt layout, int value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
+        addr.set(layout, 0, value);
         return addr;
     }
 
@@ -203,9 +199,8 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfFloat layout, float value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
+        addr.set(layout, 0, value);
         return addr;
     }
 
@@ -218,9 +213,8 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfLong layout, long value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
+        addr.set(layout, 0, value);
         return addr;
     }
 
@@ -233,9 +227,8 @@ public interface SegmentAllocator {
      */
     default MemorySegment allocate(ValueLayout.OfDouble layout, double value) {
         Objects.requireNonNull(layout);
-        VarHandle handle = layout.varHandle();
         MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
+        addr.set(layout, 0, value);
         return addr;
     }
 
@@ -251,7 +244,7 @@ public interface SegmentAllocator {
         Objects.requireNonNull(value);
         Objects.requireNonNull(layout);
         MemorySegment segment = allocate(layout);
-        layout.varHandle().set(segment, value);
+        segment.set(layout, 0, value);
         return segment;
     }
 
