@@ -3739,21 +3739,12 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
                                              const ModuleEntry* module_entry,
                                              const ClassFileStream* cfs) const {
-  if (TraceClassLoadingCause != nullptr &&
-      (strcmp(TraceClassLoadingCause, "*") == 0 || strstr(external_name(), TraceClassLoadingCause) != nullptr))
-  {
-    stringStream st;
-    st.print_cr("Loading %s", external_name());
-    Thread* current = Thread::current_or_null();
-    if (current != nullptr && current->is_Java_thread()) {
-      JavaThread::cast(current)->print_stack_on(&st);
-    }
-    tty->print_raw(st.as_string());
-  }
 
   if (ClassListWriter::is_enabled()) {
     ClassListWriter::write(this, cfs);
   }
+
+  print_class_load_cause_logging();
 
   if (!log_is_enabled(Info, class, load)) {
     return;
@@ -3838,6 +3829,59 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
     }
 
     msg.debug("%s", debug_stream.as_string());
+  }
+}
+
+void InstanceKlass::print_class_load_cause_logging() const {
+  bool log_cause_native = log_is_enabled(Info, class, load, cause, native);
+  if (log_cause_native || log_is_enabled(Info, class, load, cause)) {
+    JavaThread* current = JavaThread::current();
+    ResourceMark rm;
+    const char* name = external_name();
+
+    if (LogClassLoadingCauseFor != nullptr &&
+        strstr(name, LogClassLoadingCauseFor) == nullptr) {
+        return;
+    }
+
+    // Log Java stack first
+    {
+      LogMessage(class, load, cause) msg;
+      NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
+
+      info_stream.print_cr("Java stack when loading %s:", name);
+      current->print_stack_on(&info_stream);
+    }
+
+    // Log native stack second
+    if (log_cause_native) {
+      // Log to string first so that lines can be indented
+      stringStream stack_stream;
+      char buf[O_BUFLEN];
+      frame f = os::current_frame();
+      VMError::print_native_stack(&stack_stream, f, current, true /*print_source_info */,
+                                  -1 /* max stack_stream */, buf, O_BUFLEN);
+
+      LogMessage(class, load, cause, native) msg;
+      NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
+      info_stream.print_cr("Native stack when loading %s:", name);
+
+      // Print each native stack line to the log
+      int size = (int) stack_stream.size();
+      char* stack = stack_stream.as_string();
+      char* stack_end = stack + size;
+      char* line_start = stack;
+      for (char* p = stack; p < stack_end; p++) {
+        if (*p == '\n') {
+          *p = '\0';
+          info_stream.print_cr("\t%s", line_start);
+          line_start = p + 1;
+        }
+      }
+      if (line_start < stack_end) {
+        info_stream.print_cr("\t%s", line_start);
+      }
+    }
   }
 }
 
