@@ -2066,13 +2066,6 @@ bool os::unguard_memory(char* addr, size_t size) {
 
 // Large page support
 
-static size_t _large_page_size = 0;
-
-// Enable large page support if OS allows that.
-void os::large_page_init() {
-  return; // Nothing to do. See query_multipage_support and friends.
-}
-
 char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec) {
   fatal("os::reserve_memory_special should not be called on AIX.");
   return nullptr;
@@ -2081,10 +2074,6 @@ char* os::pd_reserve_memory_special(size_t bytes, size_t alignment, size_t page_
 bool os::pd_release_memory_special(char* base, size_t bytes) {
   fatal("os::release_memory_special should not be called on AIX.");
   return false;
-}
-
-size_t os::large_page_size() {
-  return _large_page_size;
 }
 
 bool os::can_commit_large_page_memory() {

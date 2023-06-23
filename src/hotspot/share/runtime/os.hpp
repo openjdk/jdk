@@ -173,6 +173,7 @@ class os: AllStatic {
   public:
     PageSizes() : _v(0) {}
     void add(size_t pagesize);
+    void remove(size_t pagesize);
     bool contains(size_t pagesize) const;
     // Given a page size, return the next smaller page size in this set, or 0.
     size_t next_smaller(size_t pagesize) const;
@@ -184,11 +185,18 @@ class os: AllStatic {
     size_t smallest() const;
     // Prints one line of comma separated, human readable page sizes, "empty" if empty.
     void print_on(outputStream* st) const;
+
+    bool empty() const { return _v == 0; }
   };
 
  private:
   static OSThread*          _starting_thread;
+
+  // All page sizes supported; includes the system page size (so, it will always have at least one element)
   static PageSizes          _page_sizes;
+
+  // If large pages are supported, the default large page size
+  static size_t             _large_page_size;
 
   static char*  pd_reserve_memory(size_t bytes, bool executable);
 
@@ -519,7 +527,7 @@ class os: AllStatic {
                                        char* addr, bool executable);
   static bool   release_memory_special(char* addr, size_t bytes);
   static void   large_page_init();
-  static size_t large_page_size();
+  static size_t large_page_size() { return _large_page_size; }
   static bool   can_commit_large_page_memory();
   static bool   can_execute_large_page_memory();
 

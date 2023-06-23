@@ -2998,8 +2998,6 @@ class NUMANodeListHolder {
 
 } numa_node_list_holder;
 
-static size_t _large_page_size = 0;
-
 static bool request_lock_memory_privilege() {
   HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE,
                                 os::current_process_id());
@@ -3044,7 +3042,7 @@ static bool numa_interleaving_init() {
 #define WARN(msg) if (warn_on_failure) { warning(msg); }
 
   // NUMAInterleaveGranularity cannot be less than vm_allocation_granularity (or _large_page_size if using large pages)
-  size_t min_interleave_granularity = UseLargePages ? _large_page_size : os::vm_allocation_granularity();
+  size_t min_interleave_granularity = UseLargePages ? os::large_page_size() : os::vm_allocation_granularity();
   NUMAInterleaveGranularity = align_up(NUMAInterleaveGranularity, min_interleave_granularity);
 
   if (!numa_node_list_holder.build()) {
@@ -3076,7 +3074,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags,
                                          bool should_inject_error = false) {
   char * p_buf;
   // note: at setup time we guaranteed that NUMAInterleaveGranularity was aligned up to a page size
-  size_t page_size = UseLargePages ? _large_page_size : os::vm_allocation_granularity();
+  size_t page_size = UseLargePages ? os::large_page_size() : os::vm_allocation_granularity();
   size_t chunk_size = UseNUMAInterleaving ? NUMAInterleaveGranularity : page_size;
 
   // first reserve enough address space in advance since we want to be
@@ -3392,10 +3390,6 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   return map_memory_to_file(requested_addr, bytes, file_desc);
-}
-
-size_t os::large_page_size() {
-  return _large_page_size;
 }
 
 bool os::can_commit_large_page_memory() {

@@ -86,6 +86,7 @@ OSThread*         os::_starting_thread    = nullptr;
 volatile unsigned int os::_rand_seed      = 1234567;
 int               os::_processor_count    = 0;
 int               os::_initial_active_processor_count = 0;
+size_t            os::_large_page_size = 0;
 os::PageSizes     os::_page_sizes;
 
 DEBUG_ONLY(bool os::_mutex_init_done = false;)
@@ -1983,6 +1984,11 @@ void os::PageSizes::add(size_t page_size) {
   _v |= page_size;
 }
 
+void os::PageSizes::remove(size_t page_size) {
+  assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
+  _v &= (~page_size);
+}
+
 bool os::PageSizes::contains(size_t page_size) const {
   assert(is_power_of_2(page_size), "page_size must be a power of 2: " SIZE_FORMAT_X, page_size);
   return (_v & page_size) != 0;
@@ -2032,13 +2038,7 @@ void os::PageSizes::print_on(outputStream* st) const {
     } else {
       st->print_raw(", ");
     }
-    if (sz < M) {
-      st->print(SIZE_FORMAT "k", sz / K);
-    } else if (sz < G) {
-      st->print(SIZE_FORMAT "M", sz / M);
-    } else {
-      st->print(SIZE_FORMAT "G", sz / G);
-    }
+    st->print(EXACTFMT, EXACTFMTARGS(sz));
   }
   if (first) {
     st->print("empty");

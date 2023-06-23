@@ -49,8 +49,6 @@ class os::Linux {
   static GrowableArray<int>* _cpu_to_node;
   static GrowableArray<int>* _nindex_to_node;
 
-  static size_t _default_large_page_size;
-
   static julong available_memory_in_container();
 
  protected:
@@ -76,17 +74,6 @@ class os::Linux {
   static void rebuild_nindex_to_node_map();
   static GrowableArray<int>* cpu_to_node()    { return _cpu_to_node; }
   static GrowableArray<int>* nindex_to_node()  { return _nindex_to_node; }
-
-  static size_t default_large_page_size();
-  static size_t scan_default_large_page_size();
-  static os::PageSizes scan_multiple_page_support();
-
-  static bool setup_large_page_type(size_t page_size);
-  static bool transparent_huge_pages_sanity_check(bool warn, size_t pages_size);
-  static bool hugetlbfs_sanity_check(bool warn, size_t page_size);
-  static bool shm_hugetlbfs_sanity_check(bool warn, size_t page_size);
-
-  static int hugetlbfs_page_size_flag(size_t page_size);
 
   static char* reserve_memory_special_shm(size_t bytes, size_t alignment, char* req_addr, bool exec);
   static char* reserve_memory_special_huge_tlbfs(size_t bytes, size_t alignment, size_t page_size, char* req_addr, bool exec);
@@ -435,6 +422,7 @@ class os::Linux {
   // otherwise does nothing and returns -2.
   static int malloc_info(FILE* stream);
 #endif // GLIBC
+
 };
 
 #endif // OS_LINUX_OS_LINUX_HPP
