@@ -145,7 +145,7 @@ int AwtMenuBar::CountItem(jobject menuBar)
     return nCount;
 }
 
-AwtMenuItem* AwtMenuBar::GetItem(jobject target, int index)
+AwtMenuItem* AwtMenuBar::GetItem(jobject target, jint index)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (env->EnsureLocalCapacity(2) < 0) {
