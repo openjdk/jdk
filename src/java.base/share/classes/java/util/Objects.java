@@ -127,8 +127,9 @@ public final class Objects {
     }
 
     /**
-     * {@return the result of calling {@code toString} for a non-{@code
-     * null} argument and {@code "null"} for a {@code null} argument}
+     * {@return the result of calling {@code toString} for a
+     * non-{@code null} argument and {@code "null"} for a
+     * {@code null} argument}
      *
      * @param o an object
      * @see Object#toString
