@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,12 +60,12 @@ private:
   static const uintptr_t ArraySliceBit = 1;
 
   G1TaskQueueEntry(oop obj) : _holder(obj) {
-    assert(_holder != NULL, "Not allowed to set NULL task queue element");
+    assert(_holder != nullptr, "Not allowed to set null task queue element");
   }
   G1TaskQueueEntry(HeapWord* addr) : _holder((void*)((uintptr_t)addr | ArraySliceBit)) { }
 public:
 
-  G1TaskQueueEntry() : _holder(NULL) { }
+  G1TaskQueueEntry() : _holder(nullptr) { }
   // Trivially copyable, for use in GenericTaskQueue.
 
   static G1TaskQueueEntry from_slice(HeapWord* what) { return G1TaskQueueEntry(what); }
@@ -83,7 +83,7 @@ public:
 
   bool is_oop() const { return !is_array_slice(); }
   bool is_array_slice() const { return ((uintptr_t)_holder & ArraySliceBit) != 0; }
-  bool is_null() const { return _holder == NULL; }
+  bool is_null() const { return _holder == nullptr; }
 };
 
 typedef GenericTaskQueue<G1TaskQueueEntry, mtGC> G1CMTaskQueue;
@@ -118,7 +118,7 @@ public:
 // stack memory is split into evenly sized chunks of oops. Users can only
 // add or remove entries on that basis.
 // Chunks are filled in increasing address order. Not completely filled chunks
-// have a NULL element as a terminating element.
+// have a null element as a terminating element.
 //
 // Every chunk has a header containing a single pointer element used for memory
 // management. This wastes some space, but is negligible (< .1% with current sizing).
@@ -152,12 +152,12 @@ private:
   char _pad4[DEFAULT_CACHE_LINE_SIZE - sizeof(size_t)];
 
   // Allocate a new chunk from the reserved memory, using the high water mark. Returns
-  // NULL if out of memory.
+  // null if out of memory.
   TaskQueueEntryChunk* allocate_new_chunk();
 
   // Atomically add the given chunk to the list.
   void add_chunk_to_list(TaskQueueEntryChunk* volatile* list, TaskQueueEntryChunk* elem);
-  // Atomically remove and return a chunk from the given list. Returns NULL if the
+  // Atomically remove and return a chunk from the given list. Returns null if the
   // list is empty.
   TaskQueueEntryChunk* remove_chunk_from_list(TaskQueueEntryChunk* volatile* list);
 
@@ -183,19 +183,19 @@ private:
 
   // Pushes the given buffer containing at most EntriesPerChunk elements on the mark
   // stack. If less than EntriesPerChunk elements are to be pushed, the array must
-  // be terminated with a NULL.
+  // be terminated with a null.
   // Returns whether the buffer contents were successfully pushed to the global mark
   // stack.
   bool par_push_chunk(G1TaskQueueEntry* buffer);
 
   // Pops a chunk from this mark stack, copying them into the given buffer. This
   // chunk may contain up to EntriesPerChunk elements. If there are less, the last
-  // element in the array is a NULL pointer.
+  // element in the array is a null pointer.
   bool par_pop_chunk(G1TaskQueueEntry* buffer);
 
   // Return whether the chunk list is empty. Racy due to unsynchronized access to
   // _chunk_list.
-  bool is_empty() const { return _chunk_list == NULL; }
+  bool is_empty() const { return _chunk_list == nullptr; }
 
   size_t capacity() const  { return _chunk_capacity; }
 
@@ -250,14 +250,14 @@ public:
   // Reset the claiming / scanning of the root regions.
   void prepare_for_scan();
 
-  // Forces get_next() to return NULL so that the iteration aborts early.
+  // Forces get_next() to return null so that the iteration aborts early.
   void abort() { _should_abort = true; }
 
   // Return true if the CM thread are actively scanning root regions,
   // false otherwise.
   bool scan_in_progress() { return _scan_in_progress; }
 
-  // Claim the next root MemRegion to scan atomically, or return NULL if
+  // Claim the next root MemRegion to scan atomically, or return null if
   // all have been claimed.
   const MemRegion* claim_next();
 
@@ -375,8 +375,6 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
 
   void weak_refs_work();
 
-  void report_object_count(bool mark_completed);
-
   void reclaim_empty_regions();
 
   // After reclaiming empty regions, update heap sizes.
@@ -406,7 +404,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   TaskTerminator*     terminator()   { return &_terminator; }
 
   // Claims the next available region to be scanned by a marking
-  // task/thread. It might return NULL if the next region is empty or
+  // task/thread. It might return null if the next region is empty or
   // we have run out of regions. In the latter case, out_of_regions()
   // determines whether we've really run out of regions or the task
   // should call claim_region() again. This might seem a bit
@@ -454,7 +452,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Region statistics gathered during marking.
   G1RegionMarkStats* _region_mark_stats;
   // Top pointer for each region at the start of the rebuild remembered set process
-  // for regions which remembered sets need to be rebuilt. A NULL for a given region
+  // for regions which remembered sets need to be rebuilt. A null for a given region
   // means that this region does not be scanned during the rebuilding remembered
   // set phase at all.
   HeapWord* volatile* _top_at_rebuild_starts;
@@ -655,11 +653,11 @@ private:
   // Oop closure used for iterations over oops
   G1CMOopClosure*             _cm_oop_closure;
 
-  // Region this task is scanning, NULL if we're not scanning any
+  // Region this task is scanning, null if we're not scanning any
   HeapRegion*                 _curr_region;
-  // Local finger of this task, NULL if we're not scanning a region
+  // Local finger of this task, null if we're not scanning a region
   HeapWord*                   _finger;
-  // Limit of the region this task is scanning, NULL if we're not scanning one
+  // Limit of the region this task is scanning, null if we're not scanning one
   HeapWord*                   _region_limit;
 
   // Number of words this task has scanned

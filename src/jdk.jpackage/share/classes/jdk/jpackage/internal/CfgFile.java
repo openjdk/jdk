@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,16 +66,21 @@ final class CfgFile {
             content.add(Map.entry("app.mainmodule", launcherData.moduleName()
                     + "/" + launcherData.qualifiedClassName()));
         } else {
-            // If the app is contained in an unnamed jar then launch it the
-            // legacy way and the main class string must be
-            // of the format com/foo/Main
             if (launcherData.mainJarName() != null) {
-                content.add(Map.entry("app.classpath",
-                        appCfgLayout.appDirectory().resolve(
-                                launcherData.mainJarName())));
+                Path mainJarPath = appCfgLayout.appDirectory().resolve(
+                        launcherData.mainJarName());
+
+                if (launcherData.isClassNameFromMainJar()) {
+                    content.add(Map.entry("app.mainjar", mainJarPath));
+                } else {
+                    content.add(Map.entry("app.classpath", mainJarPath));
+                }
             }
-            content.add(Map.entry("app.mainclass",
-                    launcherData.qualifiedClassName()));
+
+            if (!launcherData.isClassNameFromMainJar()) {
+                content.add(Map.entry("app.mainclass",
+                        launcherData.qualifiedClassName()));
+            }
         }
 
         for (var value : launcherData.classPath()) {

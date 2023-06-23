@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.Arrays;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.stream.Stream;
 
@@ -191,9 +192,9 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * <p> If the default behavior is not desired, then a Java security property
  * can be set to a different Time-to-live (TTL) value for positive
  * caching. Likewise, a system admin can configure a different
- * negative caching TTL value when needed.
+ * negative caching TTL value when needed or extend the usage of the stale data.
  *
- * <p> Two Java security properties control the TTL values used for
+ * <p> Three Java security properties control the TTL values used for
  *  positive and negative host name resolution caching:
  *
  * <dl style="margin-left:2em">
@@ -204,6 +205,25 @@ import static java.net.spi.InetAddressResolver.LookupPolicy.IPV6_FIRST;
  * setting is to cache for an implementation specific period of time.
  * <p>
  * A value of -1 indicates "cache forever".
+ * </dd>
+ * <dt><b>networkaddress.cache.stale.ttl</b></dt>
+ * <dd>Indicates the caching policy for stale names. The value is specified as
+ * an integer to indicate the number of seconds that stale names will be kept in
+ * the cache. A name is considered stale if the TTL has expired and an attempt
+ * to lookup the host name again was not successful. This property is useful if
+ * it is preferable to use a stale name rather than fail due to an unsuccessful
+ * lookup. The default setting is to cache for an implementation specific period
+ * of time.
+ * <p>
+ * If the value of this property is larger than "networkaddress.cache.ttl" then
+ * "networkaddress.cache.ttl" will be used as a refresh interval of the name in
+ * the cache. For example, if this property is set to 1 day and
+ * "networkaddress.cache.ttl" is set to 30 seconds, then the positive response
+ * will be cached for 1 day but an attempt to refresh it will be done every
+ * 30 seconds.
+ * <p>
+ * A value of 0 (zero) or if the property is not set means do not use stale
+ * names. Negative values are ignored.
  * </dd>
  * <dt><b>networkaddress.cache.negative.ttl</b> (default: 10)</dt>
  * <dd>Indicates the caching policy for un-successful name lookups
@@ -933,7 +953,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
 
     // CachedAddresses that have to expire are kept ordered in this NavigableSet
     // which is scanned on each access
-    private static final NavigableSet<CachedAddresses> expirySet =
+    private static final NavigableSet<CachedLookup> expirySet =
         new ConcurrentSkipListSet<>();
 
     // common interface
@@ -941,15 +961,22 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         InetAddress[] get() throws UnknownHostException;
     }
 
-    // a holder for cached addresses with required metadata
-    private static final class CachedAddresses  implements Addresses, Comparable<CachedAddresses> {
+    /**
+     * A cached result of a name service lookup. The result can be either valid
+     * addresses or invalid (ie a failed lookup) containing no addresses.
+     */
+    private static class CachedLookup implements Addresses, Comparable<CachedLookup> {
         private static final AtomicLong seq = new AtomicLong();
         final String host;
-        final InetAddress[] inetAddresses;
-        final long expiryTime; // time of expiry (in terms of System.nanoTime())
+        volatile InetAddress[] inetAddresses;
+        /**
+         * Time of expiry (in terms of System.nanoTime()). Can be modified only
+         * when the record is not added to the "expirySet".
+         */
+        volatile long expiryTime;
         final long id = seq.incrementAndGet(); // each instance is unique
 
-        CachedAddresses(String host, InetAddress[] inetAddresses, long expiryTime) {
+        CachedLookup(String host, InetAddress[] inetAddresses, long expiryTime) {
             this.host = host;
             this.inetAddresses = inetAddresses;
             this.expiryTime = expiryTime;
@@ -964,7 +991,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         }
 
         @Override
-        public int compareTo(CachedAddresses other) {
+        public int compareTo(CachedLookup other) {
             // natural order is expiry time -
             // compare difference of expiry times rather than
             // expiry times directly, to avoid possible overflow.
@@ -974,6 +1001,106 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             if (diff > 0L) return 1;
             // ties are broken using unique id
             return Long.compare(this.id, other.id);
+        }
+
+        /**
+         * Checks if the current cache record is expired or not. Expired records
+         * are removed from the expirySet and cache.
+         *
+         * @return {@code true} if the record was removed
+         */
+        public boolean tryRemoveExpiredAddress(long now) {
+            // compare difference of time instants rather than
+            // time instants directly, to avoid possible overflow.
+            // (see System.nanoTime() recommendations...)
+            if ((expiryTime - now) < 0L) {
+                // ConcurrentSkipListSet uses weakly consistent iterator,
+                // so removing while iterating is OK...
+                if (expirySet.remove(this)) {
+                    // ... remove from cache
+                    cache.remove(host, this);
+                }
+                return true;
+            }
+            return false;
+        }
+    }
+
+    /**
+     * A cached valid lookup containing addresses whose validity may be
+     * temporarily extended by an additional stale period pending the mapping
+     * being refreshed or updated.
+     */
+    private static final class ValidCachedLookup extends CachedLookup {
+        /**
+         * Time to refresh (in terms of System.nanoTime()).
+         */
+        private volatile long refreshTime;
+        /**
+         * For how long the stale data should be used after TTL expiration.
+         * Initially equal to the expiryTime, but increased over time after each
+         * successful lookup.
+         */
+        private volatile long staleTime;
+
+        /**
+         * only one thread is doing lookup to name service
+         * for particular host at any time.
+         */
+        private final Lock lookupLock = new ReentrantLock();
+
+        ValidCachedLookup(String host, InetAddress[] inetAddresses,
+                          long staleTime, long refreshTime)
+        {
+            super(host, inetAddresses, staleTime);
+            this.refreshTime = refreshTime;
+            this.staleTime = staleTime;
+        }
+
+        @Override
+        public InetAddress[] get() {
+            long now = System.nanoTime();
+            if ((refreshTime - now) < 0L && lookupLock.tryLock()) {
+                try {
+                    // cachePolicy is in [s] - we need [ns]
+                    refreshTime = now + InetAddressCachePolicy.get() * 1000_000_000L;
+                    // getAddressesFromNameService returns non-empty/non-null value
+                    inetAddresses = getAddressesFromNameService(host);
+                    // don't update the "expirySet", will do that later
+                    staleTime = refreshTime + InetAddressCachePolicy.getStale() * 1000_000_000L;
+                } catch (UnknownHostException ignore) {
+                } finally {
+                    lookupLock.unlock();
+                }
+            }
+            return inetAddresses;
+        }
+
+        /**
+         * Overrides the parent method to skip deleting the record from the
+         * cache if the stale data can still be used. Note to update the
+         * "expiryTime" field we have to remove the record from the expirySet
+         * and add it back. It is not necessary to remove/add it here, we can do
+         * that in the "get()" method above, but extracting it minimizes
+         * contention on "expirySet".
+         */
+        @Override
+        public boolean tryRemoveExpiredAddress(long now) {
+            // compare difference of time instants rather than
+            // time instants directly, to avoid possible overflow.
+            // (see System.nanoTime() recommendations...)
+            if ((expiryTime - now) < 0L) {
+                if ((staleTime - now) < 0L) {
+                    return super.tryRemoveExpiredAddress(now);
+                }
+                // ConcurrentSkipListSet uses weakly consistent iterator,
+                // so removing while iterating is OK...
+                if (expirySet.remove(this)) {
+                    expiryTime = staleTime;
+                    expirySet.add(this);
+                }
+            }
+            return false;
         }
     }
 
@@ -1021,18 +1148,33 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                     if (cachePolicy == InetAddressCachePolicy.NEVER) {
                         cache.remove(host, this);
                     } else {
-                        CachedAddresses cachedAddresses = new CachedAddresses(
-                            host,
-                            inetAddresses,
-                            cachePolicy == InetAddressCachePolicy.FOREVER
-                            ? 0L
-                            // cachePolicy is in [s] - we need [ns]
-                            : System.nanoTime() + 1000_000_000L * cachePolicy
-                        );
-                        if (cache.replace(host, this, cachedAddresses) &&
+                        long now = System.nanoTime();
+                        long expiryTime =
+                                cachePolicy == InetAddressCachePolicy.FOREVER ?
+                                0L
+                                // cachePolicy is in [s] - we need [ns]
+                                : now + 1000_000_000L * cachePolicy;
+                        CachedLookup cachedLookup;
+                        if (InetAddressCachePolicy.getStale() > 0 &&
+                                ex == null && expiryTime > 0)
+                        {
+                            long refreshTime = expiryTime;
+                            //  staleCachePolicy is in [s] - we need [ns]
+                            expiryTime = refreshTime + 1000_000_000L *
+                                    InetAddressCachePolicy.getStale();
+                            cachedLookup = new ValidCachedLookup(host,
+                                                                 inetAddresses,
+                                                                 expiryTime,
+                                                                 refreshTime);
+                        } else {
+                            cachedLookup = new CachedLookup(host,
+                                                            inetAddresses,
+                                                            expiryTime);
+                        }
+                        if (cache.replace(host, this, cachedLookup) &&
                             cachePolicy != InetAddressCachePolicy.FOREVER) {
                             // schedule expiry
-                            expirySet.add(cachedAddresses);
+                            expirySet.add(cachedLookup);
                         }
                     }
                     if (inetAddresses == null || inetAddresses.length == 0) {
@@ -1062,6 +1204,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 throws UnknownHostException {
             Objects.requireNonNull(host);
             Objects.requireNonNull(policy);
+            validate(host);
             InetAddress[] addrs;
             long comp = Blocker.begin();
             try {
@@ -1475,6 +1618,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
             return ret;
         }
 
+        validate(host);
         boolean ipv6Expected = false;
         if (host.charAt(0) == '[') {
             // This is supposed to be an IPv6 literal
@@ -1482,44 +1626,45 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 host = host.substring(1, host.length() -1);
                 ipv6Expected = true;
             } else {
-                // This was supposed to be a IPv6 address, but it's not!
-                throw new UnknownHostException(host + ": invalid IPv6 address");
+                // This was supposed to be a IPv6 literal, but it's not
+                throw invalidIPv6LiteralException(host, false);
             }
         }
 
-        // if host is an IP address, we won't do further lookup
+        // Check and try to parse host string as an IP address literal
         if (IPAddressUtil.digit(host.charAt(0), 16) != -1
             || (host.charAt(0) == ':')) {
-            byte[] addr;
+            byte[] addr = null;
             int numericZone = -1;
             String ifname = null;
-            // see if it is IPv4 address
-            try {
-                addr = IPAddressUtil.validateNumericFormatV4(host);
-            } catch (IllegalArgumentException iae) {
-                var uhe = new UnknownHostException(host);
-                uhe.initCause(iae);
-                throw uhe;
+
+            if (!ipv6Expected) {
+                // check if it is IPv4 address only if host is not wrapped in '[]'
+                try {
+                    addr = IPAddressUtil.validateNumericFormatV4(host);
+                } catch (IllegalArgumentException iae) {
+                    var uhe = new UnknownHostException(host);
+                    uhe.initCause(iae);
+                    throw uhe;
+                }
             }
             if (addr == null) {
-                // This is supposed to be an IPv6 literal
-                // Check if a numeric or string zone id is present
+                // Try to parse host string as an IPv6 literal
+                // Check if a numeric or string zone id is present first
                 int pos;
-                if ((pos=host.indexOf ('%')) != -1) {
-                    numericZone = checkNumericZone (host);
+                if ((pos = host.indexOf('%')) != -1) {
+                    numericZone = checkNumericZone(host);
                     if (numericZone == -1) { /* remainder of string must be an ifname */
-                        ifname = host.substring (pos+1);
+                        ifname = host.substring(pos + 1);
                     }
                 }
-                if ((addr = IPAddressUtil.textToNumericFormatV6(host)) == null && host.contains(":")) {
-                    throw new UnknownHostException(host + ": invalid IPv6 address");
+                if ((addr = IPAddressUtil.textToNumericFormatV6(host)) == null &&
+                        (host.contains(":") || ipv6Expected)) {
+                    throw invalidIPv6LiteralException(host, ipv6Expected);
                 }
-            } else if (ipv6Expected) {
-                // Means an IPv4 literal between brackets!
-                throw new UnknownHostException("["+host+"]");
             }
-            InetAddress[] ret = new InetAddress[1];
             if(addr != null) {
+                InetAddress[] ret = new InetAddress[1];
                 if (addr.length == Inet4Address.INADDRSZ) {
                     if (numericZone != -1 || ifname != null) {
                         // IPv4-mapped address must not contain zone-id
@@ -1536,10 +1681,16 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
                 return ret;
             }
         } else if (ipv6Expected) {
-            // We were expecting an IPv6 Literal, but got something else
-            throw new UnknownHostException("["+host+"]");
+            // We were expecting an IPv6 Literal since host string starts
+            // and ends with square brackets, but we got something else.
+            throw invalidIPv6LiteralException(host, true);
         }
         return getAllByName0(host, true, true);
+    }
+
+    private static UnknownHostException invalidIPv6LiteralException(String host, boolean wrapInBrackets) {
+        String hostString = wrapInBrackets ? "[" + host + "]" : host;
+        return new UnknownHostException(hostString + ": invalid IPv6 address literal");
     }
 
     /**
@@ -1629,18 +1780,8 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         // remove expired addresses from cache - expirySet keeps them ordered
         // by expiry time so we only need to iterate the prefix of the NavigableSet...
         long now = System.nanoTime();
-        for (CachedAddresses caddrs : expirySet) {
-            // compare difference of time instants rather than
-            // time instants directly, to avoid possible overflow.
-            // (see System.nanoTime() recommendations...)
-            if ((caddrs.expiryTime - now) < 0L) {
-                // ConcurrentSkipListSet uses weakly consistent iterator,
-                // so removing while iterating is OK...
-                if (expirySet.remove(caddrs)) {
-                    // ... remove from cache
-                    cache.remove(caddrs.host, caddrs);
-                }
-            } else {
+        for (CachedLookup caddrs : expirySet) {
+            if (!caddrs.tryRemoveExpiredAddress(now)) {
                 // we encountered 1st element that expires in future
                 break;
             }
@@ -1653,7 +1794,7 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         } else {
             addrs = cache.remove(host);
             if (addrs != null) {
-                if (addrs instanceof CachedAddresses) {
+                if (addrs instanceof CachedLookup) {
                     // try removing from expirySet too if CachedAddresses
                     expirySet.remove(addrs);
                 }
@@ -1872,5 +2013,11 @@ public sealed class InetAddress implements Serializable permits Inet4Address, In
         pf.put("address", holder().getAddress());
         pf.put("family", holder().getFamily());
         s.writeFields();
+    }
+
+    private static void validate(String host) throws UnknownHostException {
+        if (host.indexOf(0) != -1) {
+            throw new UnknownHostException("NUL character not allowed in hostname");
+        }
     }
 }

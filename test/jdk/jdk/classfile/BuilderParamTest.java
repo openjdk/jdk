@@ -52,6 +52,7 @@ class BuilderParamTest {
                 assertEquals(xb.parameterSlot(0), 1);
                 assertEquals(xb.parameterSlot(1), 2);
                 assertEquals(xb.parameterSlot(2), 4);
+                xb.return_();
             }));
         });
 
@@ -61,6 +62,7 @@ class BuilderParamTest {
                               assertEquals(xb.parameterSlot(0), 0);
                               assertEquals(xb.parameterSlot(1), 1);
                               assertEquals(xb.parameterSlot(2), 3);
+                              xb.return_();
                           }));
         });
     }

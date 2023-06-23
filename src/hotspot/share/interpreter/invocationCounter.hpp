@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ class InvocationCounter {
   // Accessors
   bool carry() const               { return (_counter & carry_mask) != 0; }
   uint count() const               { return _counter >> number_of_noncount_bits; }
-  uint limit() const               { return CompileThreshold; }
+  intx limit() const               { return CompileThreshold; }
   uint raw_counter() const         { return _counter; }
 
   void print();

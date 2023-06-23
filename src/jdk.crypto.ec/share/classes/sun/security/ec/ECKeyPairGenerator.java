@@ -191,15 +191,10 @@ public final class ECKeyPairGenerator extends KeyPairGeneratorSpi {
         int seedSize = (seedBits + 7) / 8;
         byte[] privArr = generatePrivateScalar(random, ops, seedSize);
 
-        Point pub = ops.multiply(ecParams.getGenerator(), privArr);
-        AffinePoint affPub = pub.asAffine();
-
-        PrivateKey privateKey = new ECPrivateKeyImpl(privArr, ecParams);
+        ECPrivateKeyImpl privateKey = new ECPrivateKeyImpl(privArr, ecParams);
         Arrays.fill(privArr, (byte)0);
 
-        ECPoint w = new ECPoint(affPub.getX().asBigInteger(),
-            affPub.getY().asBigInteger());
-        PublicKey publicKey = new ECPublicKeyImpl(w, ecParams);
+        PublicKey publicKey = privateKey.calculatePublicKey();
 
         return Optional.of(new KeyPair(publicKey, privateKey));
     }

@@ -138,12 +138,18 @@ class UnixPath implements Path {
 
     // use this path when making system/library calls
     byte[] getByteArrayForSysCalls() {
-        if (!isEmpty()) {
-            return path;
+        // resolve against default directory if required (chdir allowed or
+        // file system default directory is not working directory)
+        if (getFileSystem().needToResolveAgainstDefaultDirectory()) {
+            return resolve(getFileSystem().defaultDirectory(), path);
         } else {
-            // empty path case will access current directory
-            byte[] here = { '.' };
-            return here;
+            if (!isEmpty()) {
+                return path;
+            } else {
+                // empty path case will access current directory
+                byte[] here = { '.' };
+                return here;
+            }
         }
     }
 
@@ -154,7 +160,11 @@ class UnixPath implements Path {
 
     // use this path for permission checks
     String getPathForPermissionCheck() {
-        return toString();
+        if (getFileSystem().needToResolveAgainstDefaultDirectory()) {
+            return Util.toString(getByteArrayForSysCalls());
+        } else {
+            return toString();
+        }
     }
 
     // Checks that the given file is a UnixPath
@@ -895,12 +905,20 @@ class UnixPath implements Path {
             }
             final UnixFileKey elementKey = attrs.fileKey();
 
+            // Obtain the directory stream pointer. It will be closed by
+            // UnixDirectoryStream::close.
+            long dp = -1;
+            try {
+                dp = opendir(path);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(path);
+            }
+
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
             // key is equal to the key of the current element
-            FileSystemProvider provider = getFileSystem().provider();
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
-            try (DirectoryStream<Path> entries = provider.newDirectoryStream(path, filter)) {
+            try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
                 boolean found = false;
                 for (Path entry : entries) {
                     UnixPath p = path.resolve(entry.getFileName());

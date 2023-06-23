@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @bug 8166472 8162810
  * @summary Align javac support for at-files with launcher support
  * @modules jdk.compiler/com.sun.tools.javac.main
+ * @modules jdk.internal.opt/jdk.internal.opt
  */
 
 import java.io.IOException;
@@ -34,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.sun.tools.javac.main.CommandLine.Tokenizer;
+import jdk.internal.opt.CommandLine.Tokenizer;
 
 public class AtFileTest {
 

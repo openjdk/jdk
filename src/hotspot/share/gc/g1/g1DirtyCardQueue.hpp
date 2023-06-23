@@ -73,7 +73,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
   struct HeadTail {
     BufferNode* _head;
     BufferNode* _tail;
-    HeadTail() : _head(NULL), _tail(NULL) {}
+    HeadTail() : _head(nullptr), _tail(nullptr) {}
     HeadTail(BufferNode* head, BufferNode* tail) : _head(head), _tail(tail) {}
   };
 
@@ -126,7 +126,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
     };
 
     // The most recently created list, which might be for either the next or
-    // a previous safepoint, or might be NULL if the next list hasn't been
+    // a previous safepoint, or might be null if the next list hasn't been
     // created yet.  We only need one list because of the requirement that
     // threads calling add() must first ensure there are no paused buffers
     // from a previous safepoint.  There might be many list instances existing
@@ -194,7 +194,7 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   void abandon_completed_buffers();
 
-  // Refine the cards in "node" from its index to buffer_size.
+  // Refine the cards in "node" from its index to buffer_capacity.
   // Stops processing if SuspendibleThreadSet::should_yield() is true.
   // Returns true if the entire buffer was processed, false if there
   // is a pending yield request.  The node's index is updated to exclude
@@ -211,10 +211,10 @@ class G1DirtyCardQueueSet: public PtrQueueSet {
 
   // Thread-safe attempt to remove and return the first buffer from
   // the _completed queue.
-  // Returns NULL if the queue is empty, or if a concurrent push/append
+  // Returns null if the queue is empty, or if a concurrent push/append
   // interferes. It uses GlobalCounter critical section to avoid ABA problem.
   BufferNode* dequeue_completed_buffer();
-  // Remove and return a completed buffer from the list, or return NULL
+  // Remove and return a completed buffer from the list, or return null
   // if none available.
   BufferNode* get_completed_buffer();
 

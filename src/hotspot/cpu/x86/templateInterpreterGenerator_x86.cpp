@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/continuation.hpp"
@@ -606,7 +607,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ subptr(rsp, entry_size); // add space for a monitor entry
   __ movptr(monitor_block_top, rsp);  // set new monitor block top
   // store object
-  __ movptr(Address(rsp, BasicObjectLock::obj_offset_in_bytes()), rax);
+  __ movptr(Address(rsp, BasicObjectLock::obj_offset()), rax);
   const Register lockreg = NOT_LP64(rdx) LP64_ONLY(c_rarg1);
   __ movptr(lockreg, rsp); // object address
   __ lock_object(lockreg);
@@ -647,7 +648,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   __ movptr(rdx, Address(rbx, Method::const_offset()));
   __ movptr(rdx, Address(rdx, ConstMethod::constants_offset()));
-  __ movptr(rdx, Address(rdx, ConstantPool::cache_offset_in_bytes()));
+  __ movptr(rdx, Address(rdx, ConstantPool::cache_offset()));
   __ push(rdx); // set constant pool cache
 
   __ movptr(rax, rlocals);
@@ -1154,7 +1155,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ movptr(t, Address(thread, JavaThread::active_handles_offset()));
-  __ movl(Address(t, JNIHandleBlock::top_offset_in_bytes()), NULL_WORD);
+  __ movl(Address(t, JNIHandleBlock::top_offset()), NULL_WORD);
 
   // If result is an oop unbox and store it in frame where gc will see it
   // and result handler will pick it up
@@ -1248,7 +1249,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
       // monitor expect in c_rarg1 for slow unlock path
       __ lea(regmon, monitor); // address of first monitor
 
-      __ movptr(t, Address(regmon, BasicObjectLock::obj_offset_in_bytes()));
+      __ movptr(t, Address(regmon, BasicObjectLock::obj_offset()));
       __ testptr(t, t);
       __ jcc(Assembler::notZero, unlock);
 

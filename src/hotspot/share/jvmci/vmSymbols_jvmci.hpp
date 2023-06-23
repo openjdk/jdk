@@ -43,6 +43,7 @@
   template(jdk_vm_ci_hotspot_HotSpotResolvedJavaFieldImpl,        "jdk/vm/ci/hotspot/HotSpotResolvedJavaFieldImpl")                       \
   template(jdk_vm_ci_hotspot_HotSpotCompressedNullConstant,       "jdk/vm/ci/hotspot/HotSpotCompressedNullConstant")                      \
   template(jdk_vm_ci_hotspot_HotSpotObjectConstantImpl,           "jdk/vm/ci/hotspot/HotSpotObjectConstantImpl")                          \
+  template(jdk_vm_ci_hotspot_HotSpotMethodData,                   "jdk/vm/ci/hotspot/HotSpotMethodData")                                  \
   template(jdk_vm_ci_hotspot_DirectHotSpotObjectConstantImpl,     "jdk/vm/ci/hotspot/DirectHotSpotObjectConstantImpl")                    \
   template(jdk_vm_ci_hotspot_IndirectHotSpotObjectConstantImpl,   "jdk/vm/ci/hotspot/IndirectHotSpotObjectConstantImpl")                  \
   template(jdk_vm_ci_hotspot_HotSpotStackFrameReference,          "jdk/vm/ci/hotspot/HotSpotStackFrameReference")                         \
@@ -81,7 +82,7 @@
   template(compileMethod_signature,                               "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;IJI)Ljdk/vm/ci/hotspot/HotSpotCompilationRequestResult;") \
   template(isGCSupported_name,                                    "isGCSupported")                                                        \
   template(fromMetaspace_name,                                    "fromMetaspace")                                                        \
-  template(method_fromMetaspace_signature,                        "(J)Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;")                     \
+  template(method_fromMetaspace_signature,                        "(JLjdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;)Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethod;") \
   template(constantPool_fromMetaspace_signature,                  "(J)Ljdk/vm/ci/hotspot/HotSpotConstantPool;")                           \
   template(klass_fromMetaspace_signature,                         "(J)Ljdk/vm/ci/hotspot/HotSpotResolvedObjectTypeImpl;")                 \
   template(primitive_fromMetaspace_signature,                     "(Ljdk/vm/ci/hotspot/HotSpotObjectConstantImpl;C)Ljdk/vm/ci/hotspot/HotSpotResolvedPrimitiveType;") \
@@ -93,15 +94,14 @@
   template(runtime_signature,                                     "()Ljdk/vm/ci/hotspot/HotSpotJVMCIRuntime;")                            \
   template(getCompiler_name,                                      "getCompiler")                                                          \
   template(getCompiler_signature,                                 "()Ljdk/vm/ci/runtime/JVMCICompiler;")                                  \
-  template(callToString_name,                                     "callToString")                                                         \
-  template(callToString_signature,                                "(Ljava/lang/Object;)Ljava/lang/String;")                               \
+  template(exceptionToString_name,                                "exceptionToString")                                                    \
+  template(exceptionToString_signature,                           "(Ljava/lang/Throwable;ZZ)[Ljava/lang/String;")                         \
   template(postTranslation_name,                                  "postTranslation")                                                      \
   template(getName_name,                                          "getName")                                                              \
   template(bootstrapFinished_name,                                "bootstrapFinished")                                                    \
   template(forPrimitive_name,                                     "forPrimitive")                                                         \
   template(forPrimitive_signature,                                "(CJ)Ljdk/vm/ci/meta/PrimitiveConstant;")                               \
   template(method_string_bool_long_signature,                     "(Ljdk/vm/ci/hotspot/HotSpotResolvedJavaMethodImpl;Ljava/lang/String;ZJ)V") \
-  template(initializeSavedProperties_name,                        "initializeSavedProperties")                                            \
 
 #endif
 

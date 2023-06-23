@@ -514,7 +514,7 @@ class FrameValues {
     if (a->location == b->location) {
       return a->priority - b->priority;
     }
-    return a->location - b->location;
+    return checked_cast<int>(a->location - b->location);
   }
 
   void print_on(outputStream* out, int min_index, int max_index, intptr_t* v0, intptr_t* v1,

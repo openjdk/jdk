@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
  * @test
  * @summary Test Thread.yield submits the virtual thread task to the expected queue
  * @requires vm.continuations
- * @enablePreview
  * @run junit/othervm -Djdk.virtualThreadScheduler.maxPoolSize=1 YieldQueuing
  */
 

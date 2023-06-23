@@ -51,12 +51,16 @@ class os::Linux {
 
   static size_t _default_large_page_size;
 
+  static julong available_memory_in_container();
+
  protected:
 
   static julong _physical_memory;
   static pthread_t _main_thread;
 
   static julong available_memory();
+  static julong free_memory();
+
   static int active_processor_count();
 
   static void initialize_system_info();
@@ -148,6 +152,8 @@ class os::Linux {
 
   // Return default guard size for the specified thread type
   static size_t default_guard_size(os::ThreadType thr_type);
+
+  static bool adjustStackSizeForGuardPages(); // See comments in os_linux.cpp
 
   static void capture_initial_stack(size_t max_size);
 

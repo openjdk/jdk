@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,11 @@
 
 /**
  * @test
- * @summary Verifies that specific JVMTI functions returns JVMTI_ERROR_INVALID_THREAD if called with virtual threads.
+ * @summary Verifies that specific JVMTI functions return UNSUPPORTED_OPERATION
+ *          or OPAQUE_FRAME if called with virtual threads.
  * @requires vm.continuations
- * @compile --enable-preview -source ${jdk.version} VThreadUnsupportedTest.java
- * @run main/othervm/native --enable-preview -agentlib:VThreadUnsupportedTest VThreadUnsupportedTest
+ * @compile VThreadUnsupportedTest.java
+ * @run main/othervm/native -agentlib:VThreadUnsupportedTest VThreadUnsupportedTest
  */
 
 import java.util.concurrent.atomic.AtomicBoolean;
