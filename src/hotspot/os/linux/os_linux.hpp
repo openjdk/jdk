@@ -154,6 +154,8 @@ class Linux {
   // Return default guard size for the specified thread type
   static size_t default_guard_size(os::ThreadType thr_type);
 
+  static bool adjustStackSizeForGuardPages(); // See comments in os_linux.cpp
+
   static void capture_initial_stack(size_t max_size);
 
   // Stack overflow handling
