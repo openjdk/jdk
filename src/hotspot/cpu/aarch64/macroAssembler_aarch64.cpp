@@ -6313,6 +6313,57 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
 
 // Poly1305:
 
+void MacroAssembler::m_print52(FloatRegister v0, FloatRegister v1, FloatRegister v2, bool hi, const char *s) {
+  enter();
+  push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
+  umov(c_rarg0, v0, D, hi);
+  umov(c_rarg1, v1, D, hi);
+  umov(c_rarg2, v2, D, hi);
+  mov(rscratch1, ExternalAddress(CAST_FROM_FN_PTR(address, ::print52)));
+  blr(rscratch1);
+  pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
+  leave();
+}
+
+
+void MacroAssembler::m_print52(Register t0, Register t1, Register t2, const char *s) {
+  enter();
+  push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
+
+  sub(sp, sp, 4*wordSize);
+  str(t0, Address(sp, 0));
+  str(t1, Address(sp, wordSize));
+  str(t2, Address(sp, 2*wordSize));
+  ldr(c_rarg0, Address(sp, 0));
+  ldr(c_rarg1, Address(sp, wordSize));
+  ldr(c_rarg2, Address(sp, 2*wordSize));
+  add(sp, sp, 4*wordSize);
+  mov(c_rarg3, (uintptr_t)s);
+
+  mov(rscratch1, ExternalAddress(CAST_FROM_FN_PTR(address, ::print52)));
+  blr(rscratch1);
+  pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
+  leave();
+}
+
+
+void MacroAssembler::m_print26(FloatRegister v0, FloatRegister v1, FloatRegister v2,
+                               FloatRegister v3, FloatRegister v4,
+                               int index, const char *s) {
+  enter();
+  push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
+  umov(c_rarg0, v0, D, index);
+  umov(c_rarg1, v1, D, index);
+  umov(c_rarg2, v2, D, index);
+  umov(c_rarg3, v3, D, index);
+  umov(c_rarg4, v4, D, index);
+  mov(c_rarg5, (uintptr_t)s);
+  mov(rscratch1, ExternalAddress((address)::print26));
+  blr(rscratch1);
+  pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
+  leave();
+}
+
 void MacroAssembler::pack_26(Register dest0, Register dest1, Register dest2, Register src) {
   ldp(dest0, rscratch1, Address(src, 0));
   orr(dest0, dest0, rscratch1, Assembler::LSL, 26);
@@ -6403,6 +6454,8 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
   gen { umlal(u[3], T2D, m[4], rr[1], 0); };
   gen { umlal(u[4], T2D, m[0],  r[1], 0); };
 
+  gen { m_print26(u[4], u[3], u[2], u[1], u[0], 0, "U[2]"); };
+  gen { m_print26(u[4], u[3], u[2], u[1], u[0], 1, "U[3]"); };
 }
 
 void MacroAssembler::mov26(FloatRegister d, Register s, int lsb) {
@@ -6546,7 +6599,7 @@ void MacroAssembler::clear_above(const RegPair d, int shift) {
   mov(d._hi, 0);
 }
 
-void MacroAssembler::poly1305_reduce(LambdaAccumulator &acc, const RegPair u[]) {
+void MacroAssembler::poly1305_reduce(LambdaAccumulator &acc, const RegPair u[], const char *s) {
 #define gen acc << [=]()
   // Partial reduction mod 2**130 - 5
 
@@ -6589,6 +6642,8 @@ void MacroAssembler::poly1305_reduce(LambdaAccumulator &acc, const RegPair u[]) 
   gen { bfc(u[0]._lo, 52, 64-52); };                          // u[0] < 0x10000000000000 (i.e. 52 bits)
                                                      // u[1] < 0x20000000000000 (i.e. 53 bits)
                                                      // u[2] < 0x4000000 (i.e. 27 bits)
+
+  gen { m_print52(u[2]._lo, u[1]._lo, u[0]._lo, s); };
 }
 
 void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {

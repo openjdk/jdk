@@ -150,14 +150,18 @@ typedef uint32_t u32;
 
 void print128(u128 n) {
   u64 n1 = n >> 64; u64 n0 = (u128)(n << 64 >> 64);
-  printf("\"%016lx%016lx\", ", (u64)(n >> 64), (u64)(n << 64 >> 64));
+  printf("%016lx%016lx", (u64)(n >> 64), (u64)(n << 64 >> 64));
 }
 
-void print52(u64 x2, u64 x1, u64 x0) {
+int should_print = 1;
+
+void print52(u64 x2, u64 x1, u64 x0, const char *s) {
+  if (! should_print)  return;
+
   u64 over = x2 >> 26;
   x2 = x2 << (64-26) >> (64-26);
   x0 += over * 5;
-  
+
   u128 x_sum = 0;
   x_sum = x_sum
     + x0
@@ -170,13 +174,15 @@ void print52(u64 x2, u64 x1, u64 x0) {
 
   u64 top = tmp >> 64;
 
-  // u64 top = hi >> 24; if (top) printf("%lx", top);
-  printf("\"%lx\", ", (u64)top);
+  if (s) {
+    printf("%s: ", s);
+  }
+  printf("0x%lx:", (u64)top);
   print128(x_sum);
   printf("\n");
 }
 
-void print26(u64 x4, u64 x3, u64 x2, u64 x1, u64 x0) {
+void print26(u64 x4, u64 x3, u64 x2, u64 x1, u64 x0, const char *s) {
   x1 += x0 >> 26; x0 %= 1 <<26;
   x4 += x3 >> 26; x3 %= 1 <<26;
   x2 += x1 >> 26; x1 %= 1 <<26;
@@ -193,7 +199,10 @@ void print26(u64 x4, u64 x3, u64 x2, u64 x1, u64 x0) {
     + ((u128)x3 << 78)
     + ((u128)x4 << 104);
 
-  u64 top = x4 >> 24; printf("%lx:", top);
+  if (s) {
+    printf("%s: ", s);
+  }
+  u64 top = x4 >> 24; printf("0x%lx:", top);
   print128(sum);
   printf("\n");
 }

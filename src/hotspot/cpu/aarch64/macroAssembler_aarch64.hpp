@@ -1693,6 +1693,11 @@ public:
 
   // Poly1305
 
+  void m_print52(FloatRegister v0, FloatRegister v1, FloatRegister v2, bool hi, const char *s = nullptr);
+  void m_print52(Register t0, Register t1, Register t2, const char *s = nullptr);
+  void m_print26(FloatRegister v0, FloatRegister v1, FloatRegister v2,
+                 FloatRegister v3, FloatRegister v4, int index, const char *s = nullptr);
+
   void pack_26(Register dest0, Register dest1, Register dest2, Register src);
   void wide_mul(RegPair prod, Register n, Register m);
   void wide_madd(RegPair sum, Register n, Register m);
@@ -1756,7 +1761,7 @@ public:
   void copy_3_regs_to_5_elements(const FloatRegister d[],
                                  const Register s0, const Register s1, const Register s2);
 
-  void poly1305_reduce(LambdaAccumulator &acc, const RegPair u[]);
+  void poly1305_reduce(LambdaAccumulator &acc, const RegPair u[], const char *s = nullptr);
   void poly1305_reduce(const RegPair u[]) {
     LambdaAccumulator acc;
     poly1305_reduce(acc, u);
