@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8309811
- * @requires (vm.debug == true) 
+ * @requires vm.debug
  * @summary Test the output of -XX:+TraceBytecodes, -XX:TraceBytecodesAt, and -XX:TraceBytecodesStopAt
  * @run main/othervm -XX:+TraceBytecodes -XX:TraceBytecodesAt=2000 -XX:TraceBytecodesStopAt=3000 TraceBytecodes
  */

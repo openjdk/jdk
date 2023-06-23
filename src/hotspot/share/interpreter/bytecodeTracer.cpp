@@ -80,7 +80,7 @@ class BytecodePrinter {
   void      print_invokedynamic(int indy_index, int cp_index, outputStream* st);
   void      print_bsm(int cp_index, outputStream* st);
   void      print_field_or_method(int cp_index, outputStream* st);
-  void      print_invoke_handle(int i, outputStream* st);
+  void      print_dynamic(int cp_index, outputStream* st);
   void      print_attributes(int bci, outputStream* st);
   void      bytecode_epilog(int bci, outputStream* st);
 
@@ -226,7 +226,7 @@ void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
     st->print(" <MethodHandle of kind %d index at %d>", kind, i2);
     print_field_or_method(i2, st);
   } else if (tag.is_dynamic_constant()) {
-    print_field_or_method(cp_index, st);
+    print_dynamic(cp_index, st);
     if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC)) {
       print_bsm(cp_index, st);
     }
@@ -235,21 +235,15 @@ void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
   }
 }
 
+// Fieldref, Methodref, or InterfaceMethodref
 void BytecodePrinter::print_field_or_method(int cp_index, outputStream* st) {
   ConstantPool* constants = method()->constants();
   constantTag tag = constants->tag_at(cp_index);
 
-  bool has_klass = true;
-
   switch (tag.value()) {
-  case JVM_CONSTANT_InterfaceMethodref:
-  case JVM_CONSTANT_Methodref:
   case JVM_CONSTANT_Fieldref:
-    break;
-  case JVM_CONSTANT_NameAndType:
-  case JVM_CONSTANT_Dynamic:
-  case JVM_CONSTANT_InvokeDynamic:
-    has_klass = false;
+  case JVM_CONSTANT_Methodref:
+  case JVM_CONSTANT_InterfaceMethodref:
     break;
   default:
     st->print_cr(" bad tag=%d at %d", tag.value(), cp_index);
@@ -258,24 +252,36 @@ void BytecodePrinter::print_field_or_method(int cp_index, outputStream* st) {
 
   Symbol* name = constants->uncached_name_ref_at(cp_index);
   Symbol* signature = constants->uncached_signature_ref_at(cp_index);
+  Symbol* klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(cp_index));
   const char* sep = (tag.is_field() ? ":" : "");
-  if (has_klass) {
-    Symbol* klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(cp_index));
-    st->print_cr(" %d <%s.%s%s%s> ", cp_index, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
-  } else {
-    if (tag.is_dynamic_constant() || tag.is_invoke_dynamic()) {
-      int bsm = constants->bootstrap_method_ref_index_at(cp_index);
-      st->print(" bsm=%d", bsm);
-    }
-    if (tag.is_dynamic_constant()) {
-        sep = ":";
-    }
-    st->print_cr(" %d <%s%s%s>", cp_index, name->as_C_string(), sep, signature->as_C_string());
+  st->print_cr(" %d <%s.%s%s%s> ", cp_index, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
+}
+
+// JVM_CONSTANT_Dynamic or JVM_CONSTANT_InvokeDynamic
+void BytecodePrinter::print_dynamic(int cp_index, outputStream* st) {
+  ConstantPool* constants = method()->constants();
+  constantTag tag = constants->tag_at(cp_index);
+
+  switch (tag.value()) {
+  case JVM_CONSTANT_Dynamic:
+  case JVM_CONSTANT_InvokeDynamic:
+    break;
+  default:
+    st->print_cr(" bad tag=%d at %d", tag.value(), cp_index);
+    return;
   }
+
+  int bsm = constants->bootstrap_method_ref_index_at(cp_index);
+  st->print(" bsm=%d", bsm);
+
+  Symbol* name = constants->uncached_name_ref_at(cp_index);
+  Symbol* signature = constants->uncached_signature_ref_at(cp_index);
+  const char* sep = tag.is_dynamic_constant() ? ":" : "";
+  st->print_cr(" %d <%s%s%s>", cp_index, name->as_C_string(), sep, signature->as_C_string());
 }
 
 void BytecodePrinter::print_invokedynamic(int indy_index, int cp_index, outputStream* st) {
-  print_field_or_method(cp_index, st);
+  print_dynamic(cp_index, st);
 
   if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC)) {
     print_bsm(cp_index, st);
@@ -318,10 +324,6 @@ void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
     }
   }
   st->print_cr("  }");
-}
-
-void BytecodePrinter::print_invoke_handle(int i, outputStream* st) {
-  print_cpcache_entry(ConstantPool::decode_cpcache_index(i), st);
 }
 
 void BytecodePrinter::print_cpcache_entry(int cpc_index, outputStream* st) {
@@ -525,7 +527,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
             ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
           assert(is_linked(), "invokehandle is only in rewritten methods");
           assert(cpcache_index >= 0, "must be");
-          print_invoke_handle(cpcache_index, st);
+          print_cpcache_entry(cpcache_index, st);
         }
       }
       break;
