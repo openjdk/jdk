@@ -28,7 +28,9 @@
 #include "classfile/vmClasses.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "oops/symbol.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/os.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmEnums.hpp"
 
