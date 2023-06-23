@@ -28,3 +28,4 @@
 #############################################################################
 
 java/lang/invoke/MethodHandles/CatchExceptionTest.java 8146623 generic-all
+java/lang/ScopedValue/StressStackOverflow.java 8308609 generic-x64
