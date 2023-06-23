@@ -2082,6 +2082,7 @@ void PhaseOutput::ScheduleAndBundle() {
 void PhaseOutput::print_scheduling() {
   print_scheduling(tty);
 }
+
 void PhaseOutput::print_scheduling(outputStream* output_stream) {
   for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
     output_stream->print("\nBB#%03d:\n", i);

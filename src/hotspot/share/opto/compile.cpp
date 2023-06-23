@@ -556,7 +556,7 @@ void Compile::print_ideal_ir(const char* phase_name) {
   // To enable tools to match it up with the compilation activity,
   // be sure to tag this tty output with the compile ID.
 
-  // Node dumping can cause a safepoint, which can break the ttyLocker.
+  // Node dumping can cause a safepoint, which can break the tty lock.
   // Buffer all node dumps, so that all safepoints happen before we lock.
   stringStream ss;
 
