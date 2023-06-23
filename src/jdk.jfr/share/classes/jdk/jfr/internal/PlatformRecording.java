@@ -797,7 +797,7 @@ public final class PlatformRecording implements AutoCloseable {
         }
         // always keep at least one chunk
         if (result.isEmpty()) {
-            result.add(input.get(0));
+            result.add(input.getFirst());
         }
         return result;
     }
