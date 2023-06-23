@@ -33,6 +33,7 @@
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
+import java.lang.invoke.MethodHandle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.test.lib.Asserts;
@@ -66,6 +67,9 @@ public class BytecodeTracerTest {
         public void test_field(BytecodeTracerTest obj) {
             y = obj.x;
         }
+        public void test_invokehandle(MethodHandle mh) throws Throwable {
+            mh.invokeExact(4.0f, "String", this);
+        }
    }
 
     public static class Unlinked {
@@ -82,6 +86,9 @@ public class BytecodeTracerTest {
         }
         public void test_field(BytecodeTracerTest obj) {
             y = obj.x;
+        }
+        public void test_invokehandle(MethodHandle mh) throws Throwable {
+            mh.invokeExact(4.0f, "String", this);
         }
     }
 
@@ -195,15 +202,23 @@ public class BytecodeTracerTest {
             .mustMatch("BSM: REF_invokeStatic [0-9]+ <Unlinked2.condyBSM[(]Ljava/lang/invoke/MethodHandles")
             .mustMatch("ldc <MethodHandle of kind [0-9]+ index at [0-9]+> [0-9]+ <Unlinked2.test_ldc[(][)]I>");
 
-        test("invoke in linked class")
+        test("plain old invoke in linked class")
             .printLinkedMethods("test_invoke")
             .mustMatch("invokevirtual [0-9]+ <BytecodeTracerTest.virtualMethod[(][)]V>")
             .mustMatch("invokestatic [0-9]+ <BytecodeTracerTest.staticMethod[(][)]V>");
 
-        test("invoke in unlinked class")
+        test("plain old invoke in unlinked class")
             .printUnlinkedMethods("test_invoke")
             .mustMatch("invokevirtual [0-9]+ <BytecodeTracerTest.virtualMethod[(][)]V>")
             .mustMatch("invokestatic [0-9]+ <BytecodeTracerTest.staticMethod[(][)]V>");
+
+        test("invokehandle in linked class")
+            .printLinkedMethods("test_invokehandle")
+            .mustMatch("invokehandle [0-9]+ <java/lang/invoke/MethodHandle.invokeExact[(]FLjava/lang/String;LBytecodeTracerTest[$]Linked;[)]V>");
+
+        test("invokehandle in unlinked class")
+            .printUnlinkedMethods("test_invokehandle")
+            .mustMatch("invokevirtual [0-9]+ <java/lang/invoke/MethodHandle.invokeExact[(]FLjava/lang/String;LBytecodeTracerTest[$]Unlinked;[)]V>");
 
         test("field in linked class")
             .printLinkedMethods("test_field")
