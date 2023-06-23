@@ -168,4 +168,13 @@ size_t EpochDispatchOp<Operation>::dispatch(bool previous_epoch, const u1* eleme
   return elements;
 }
 
+template <typename T>
+bool ReinitializationOp<T>::process(T* t) {
+  assert(t != nullptr, "invariant");
+  assert(t->identity() != nullptr, "invariant");
+  t->reinitialize();
+  t->release();
+  return true;
+}
+
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_INLINE_HPP

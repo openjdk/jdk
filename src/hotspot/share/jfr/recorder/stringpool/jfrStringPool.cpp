@@ -77,10 +77,17 @@ static const size_t string_pool_buffer_size = 512 * K;
 bool JfrStringPool::initialize() {
   assert(_mspace == NULL, "invariant");
   _mspace = create_mspace<JfrStringPoolMspace>(string_pool_buffer_size,
-                                               string_pool_cache_count, // cache limit
-                                               string_pool_cache_count, // cache preallocate count
-                                               false, // preallocate_to_free_list (== preallocate directly to live list)
+                                               0,
+                                               0, // cache preallocate count
+                                               false,
                                                this);
+
+  // preallocate buffer count to each of the epoch live lists
+  for (size_t i = 0; i < string_pool_cache_count * 2; ++i) {
+    Buffer* const buffer = mspace_allocate(string_pool_buffer_size, _mspace);
+    _mspace->add_to_live_list(buffer, i % 2 == 0);
+  }
+  assert(_mspace->free_list_is_empty(), "invariant");
   return _mspace != NULL;
 }
 
@@ -95,11 +102,7 @@ static void release(BufferPtr buffer, Thread* thread) {
   assert(buffer->lease(), "invariant");
   assert(buffer->acquired_by_self(), "invariant");
   buffer->clear_lease();
-  if (buffer->transient()) {
-    buffer->set_retired();
-  } else {
-    buffer->release();
-  }
+  buffer->release();
 }
 
 BufferPtr JfrStringPool::flush(BufferPtr old, size_t used, size_t requested, Thread* thread) {
@@ -180,8 +183,10 @@ typedef StringPoolOp<UnBufferedWriteToChunk> WriteOperation;
 typedef StringPoolOp<StringPoolDiscarderStub> DiscardOperation;
 typedef ExclusiveOp<WriteOperation> ExclusiveWriteOperation;
 typedef ExclusiveOp<DiscardOperation> ExclusiveDiscardOperation;
+typedef ReinitializationOp<JfrStringPoolBuffer> ReinitializationOperation;
 typedef ReleaseWithExcisionOp<JfrStringPoolMspace, JfrStringPoolMspace::LiveList> ReleaseOperation;
 typedef CompositeOperation<ExclusiveWriteOperation, ReleaseOperation> WriteReleaseOperation;
+typedef CompositeOperation<ExclusiveWriteOperation, ReinitializationOperation> WriteReinitializeOperation;
 typedef CompositeOperation<ExclusiveDiscardOperation, ReleaseOperation> DiscardReleaseOperation;
 
 size_t JfrStringPool::write() {
@@ -189,10 +194,22 @@ size_t JfrStringPool::write() {
   WriteOperation wo(_chunkwriter, thread);
   ExclusiveWriteOperation ewo(wo);
   assert(_mspace->free_list_is_empty(), "invariant");
-  ReleaseOperation ro(_mspace, _mspace->live_list());
+  ReleaseOperation ro(_mspace, _mspace->live_list(true)); // previous epoch list
   WriteReleaseOperation wro(&ewo, &ro);
   assert(_mspace->live_list_is_nonempty(), "invariant");
-  process_live_list(wro, _mspace);
+  process_live_list(wro, _mspace, true); // previous epoch list
+  return wo.processed();
+}
+
+size_t JfrStringPool::flush() {
+  Thread* const thread = Thread::current();
+  WriteOperation wo(_chunkwriter, thread);
+  ExclusiveWriteOperation ewo(wo);
+  ReinitializationOperation rio;
+  WriteReinitializeOperation wro(&ewo, &rio);
+  assert(_mspace->free_list_is_empty(), "invariant");
+  assert(_mspace->live_list_is_nonempty(), "invariant");
+  process_live_list(wro, _mspace); // current epoch list
   return wo.processed();
 }
 
@@ -200,10 +217,10 @@ size_t JfrStringPool::clear() {
   DiscardOperation discard_operation;
   ExclusiveDiscardOperation edo(discard_operation);
   assert(_mspace->free_list_is_empty(), "invariant");
-  ReleaseOperation ro(_mspace, _mspace->live_list());
+  ReleaseOperation ro(_mspace, _mspace->live_list(true)); // previous epoch list
   DiscardReleaseOperation discard_op(&edo, &ro);
   assert(_mspace->live_list_is_nonempty(), "invariant");
-  process_live_list(discard_op, _mspace);
+  process_live_list(discard_op, _mspace, true); // previous epoch list
   return discard_operation.processed();
 }
 

@@ -214,4 +214,11 @@ class EpochDispatchOp {
   size_t elements() const { return _elements; }
 };
 
+template <typename T>
+class ReinitializationOp {
+ public:
+  typedef T Type;
+  bool process(Type* t);
+};
+
 #endif // SHARE_JFR_RECORDER_STORAGE_JFRSTORAGEUTILS_HPP
