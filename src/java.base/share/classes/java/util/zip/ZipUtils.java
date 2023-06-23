@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,7 @@ import static java.util.zip.ZipConstants.ENDHDR;
 import jdk.internal.access.JavaNioAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.Unsafe;
+import jdk.internal.util.ByteArrayLittleEndian;
 
 class ZipUtils {
 
@@ -170,7 +171,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final int get16(byte[] b, int off) {
-        return (b[off] & 0xff) | ((b[off + 1] & 0xff) << 8);
+        return ByteArrayLittleEndian.getUnsignedShort(b, off);
     }
 
     /**
@@ -178,7 +179,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final long get32(byte[] b, int off) {
-        return (get16(b, off) | ((long)get16(b, off+2) << 16)) & 0xffffffffL;
+        return ByteArrayLittleEndian.getUnsignedInt(b, off);
     }
 
     /**
@@ -186,7 +187,7 @@ class ZipUtils {
      * The bytes are assumed to be in Intel (little-endian) byte order.
      */
     public static final long get64(byte[] b, int off) {
-        return get32(b, off) | (get32(b, off+4) << 32);
+        return ByteArrayLittleEndian.getLong(b, off);
     }
 
     /**
@@ -195,7 +196,7 @@ class ZipUtils {
      *
      */
     public static final int get32S(byte[] b, int off) {
-        return (get16(b, off) | (get16(b, off+2) << 16));
+        return ByteArrayLittleEndian.getInt(b, off);
     }
 
     // fields access methods
@@ -204,15 +205,15 @@ class ZipUtils {
     }
 
     static final int SH(byte[] b, int n) {
-        return (b[n] & 0xff) | ((b[n + 1] & 0xff) << 8);
+        return ByteArrayLittleEndian.getUnsignedShort(b, n);
     }
 
     static final long LG(byte[] b, int n) {
-        return ((SH(b, n)) | (SH(b, n + 2) << 16)) & 0xffffffffL;
+        return ByteArrayLittleEndian.getUnsignedInt(b, n);
     }
 
     static final long LL(byte[] b, int n) {
-        return (LG(b, n)) | (LG(b, n + 4) << 32);
+        return ByteArrayLittleEndian.getLong(b, n);
     }
 
     static final long GETSIG(byte[] b) {
