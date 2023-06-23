@@ -651,7 +651,7 @@ public sealed interface Linker permits AbstractLinker {
          * layouts of the function descriptor used in conjunction with this linker option. When the {@code index} is:
          * <ul>
          * <li>{@code 0}, all arguments passed to the function are passed as variadic arguments</li>
-         * <li>{@code N}, none of the arguments passed to the function are passed as variadic argument</li>
+         * <li>{@code N}, none of the arguments passed to the function are passed as variadic arguments</li>
          * <li>{@code n}, where {@code 0 < m < N}, the arguments {@code m..N} are passed as variadic arguments</li>
          * </ul>
          * It is important to always use this linker option when linking a <a href=Linker.html#variadic-funcs>variadic
@@ -661,8 +661,8 @@ public sealed interface Linker permits AbstractLinker {
          * @implNote The index value is validated when making a linkage request, which is when the function descriptor
          *           against which the index is validated is available.
          *
-         * @param index the index indicating the start of the variadic arguments passed to the function described by
-         *              the function descriptor used in conjunction with this linker option.
+         * @param index the index of the first variadic argument layout in the function descriptor associated
+         *              with a downcall linkage request.
          */
         static Option firstVariadicArg(int index) {
             return new LinkerOptions.FirstVariadicArg(index);
