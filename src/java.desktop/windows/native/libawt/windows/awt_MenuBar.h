@@ -66,7 +66,7 @@ public:
     virtual HWND GetOwnerHWnd();
     virtual void RedrawMenuBar();
 
-    AwtMenuItem* GetItem(jobject target, int index);
+    AwtMenuItem* GetItem(jobject target, jint index);
     int CountItem(jobject menuBar);
 
     void DrawItem(DRAWITEMSTRUCT& drawInfo);
