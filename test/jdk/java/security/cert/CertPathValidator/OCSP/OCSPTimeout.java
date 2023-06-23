@@ -37,16 +37,16 @@
  * @library ../../../../../java/security/testlibrary
  * @build CertificateBuilder SimpleOCSPServer
  * @run main/othervm OCSPTimeout 1000 true
- * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=2
+ * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=5
  *      OCSPTimeout 1000 true
  * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=1
- *      OCSPTimeout 2000 false
+ *      OCSPTimeout 5000 false
  * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=1s
- *      OCSPTimeout 2000 false
+ *      OCSPTimeout 5000 false
  * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=1500ms
- *      OCSPTimeout 2000 false
- * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=2750ms
- *      OCSPTimeout 2000 true
+ *      OCSPTimeout 5000 false
+ * @run main/othervm -Dcom.sun.security.ocsp.readtimeout=4500ms
+ *      OCSPTimeout 1000 true
  */
 
 import java.io.*;

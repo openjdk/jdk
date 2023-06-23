@@ -27,6 +27,7 @@ package sun.jvm.hotspot.oops;
 import java.io.PrintStream;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
+import sun.jvm.hotspot.utilities.U1Array;
 
 import sun.jvm.hotspot.code.NMethod;
 import sun.jvm.hotspot.debugger.Address;
@@ -117,6 +118,12 @@ public class Method extends Metadata {
   }
   public ConstantPool getConstants()                  {
     return getConstMethod().getConstants();
+  }
+  public boolean      hasStackMapTable()              {
+    return getConstMethod().hasStackMapTable();
+  }
+  public U1Array      getStackMapData()               {
+    return getConstMethod().getStackMapData();
   }
   public MethodData   getMethodData()                 {
     Address addr = methodData.getValue(getAddress());
