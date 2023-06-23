@@ -135,7 +135,7 @@ class BytecodePrinter {
     _code = Bytecodes::_illegal;
 
 #ifndef PRODUCT
-    if (TraceBytecodesStopAt != 0 &&  BytecodeCounter::counter_value() >= TraceBytecodesStopAt) {
+    if (TraceBytecodesStopAt != 0 && BytecodeCounter::counter_value() >= TraceBytecodesStopAt) {
       TraceBytecodes = false;
     }
 #endif
@@ -197,7 +197,6 @@ void BytecodeTracer::print_method_codes(const methodHandle& method, int from, in
   }
 }
 
-// TODO ConstantDynamic ??
 void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
   ConstantPool* constants = method()->constants();
   constantTag tag = constants->tag_at(cp_index);
@@ -226,6 +225,11 @@ void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
     int i2 = constants->method_handle_index_at(cp_index);
     st->print(" <MethodHandle of kind %d index at %d>", kind, i2);
     print_field_or_method(i2, st);
+  } else if (tag.is_dynamic_constant()) {
+    print_field_or_method(cp_index, st);
+    if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC)) {
+      print_bsm(cp_index, st);
+    }
   } else {
     st->print_cr(" bad tag=%d at %d", tag.value(), cp_index);
   }
@@ -254,7 +258,7 @@ void BytecodePrinter::print_field_or_method(int cp_index, outputStream* st) {
 
   Symbol* name = constants->uncached_name_ref_at(cp_index);
   Symbol* signature = constants->uncached_signature_ref_at(cp_index);
-  const char* sep = (tag.is_field() ? "/" : "");
+  const char* sep = (tag.is_field() ? ":" : "");
   if (has_klass) {
     Symbol* klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(cp_index));
     st->print_cr(" %d <%s.%s%s%s> ", cp_index, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
@@ -262,6 +266,9 @@ void BytecodePrinter::print_field_or_method(int cp_index, outputStream* st) {
     if (tag.is_dynamic_constant() || tag.is_invoke_dynamic()) {
       int bsm = constants->bootstrap_method_ref_index_at(cp_index);
       st->print(" bsm=%d", bsm);
+    }
+    if (tag.is_dynamic_constant()) {
+        sep = ":";
     }
     st->print_cr(" %d <%s%s%s>", cp_index, name->as_C_string(), sep, signature->as_C_string());
   }

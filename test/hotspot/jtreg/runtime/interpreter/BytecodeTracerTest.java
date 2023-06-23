@@ -26,7 +26,7 @@
  * @bug 8309808 8309811
  * @summary Test the output of the HotSpot BytecodeTracer and ClassPrinter classes.
  * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox Linked2 Unlinked2
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI BytecodeTracerTest
  */
@@ -40,17 +40,31 @@ import jdk.test.whitebox.WhiteBox;
 
 public class BytecodeTracerTest {
     private final static String Linked_className = Linked.class.getName();
+    private final static String Linked2_className = Linked2.class.getName();
 
-    // This loads the "Unlinked" class, but doesn't link it.
+    // This loads the "Unlinked" and "Unlinked2" classes, but doesn't link them.
     private final static String Unlinked_className = Unlinked.class.getName();
+    private final static String Unlinked2_className = Unlinked2.class.getName();
+
+    public static void staticMethod()   { }
+    public void virtualMethod() { }
+    int x;
+    static long y;
 
     public static class Linked {
         public static void doit(String args[]) {
             System.out.println("num args = " + args.length);
         }
-         public String test_ldc() {
+        public String test_ldc() {
             Class c = Unloaded.class;
-            return "Literal";
+            return "Literal\u5678";
+        }
+        public void test_invoke(BytecodeTracerTest obj) {
+            obj.virtualMethod();
+            staticMethod();
+        }
+        public void test_field(BytecodeTracerTest obj) {
+            y = obj.x;
         }
    }
 
@@ -60,15 +74,19 @@ public class BytecodeTracerTest {
         }
         public String test_ldc() {
             Class c = Unloaded.class;
-            return "Literal";
+            return "Literal\u1234";
+        }
+        public void test_invoke(BytecodeTracerTest obj) {
+            obj.virtualMethod();
+            staticMethod();
+        }
+        public void test_field(BytecodeTracerTest obj) {
+            y = obj.x;
         }
     }
 
     // This class is never loaded during the execution of BytecodeTracerTest
-    public static class Unloaded {
-
-
-    }
+    public static class Unloaded { }
 
     static int testCount = 0;
     String testNote;
@@ -102,20 +120,20 @@ public class BytecodeTracerTest {
         return this;
     }
 
-    BytecodeTracerTest printLinkedMethods(String methodPattern, int flags) throws Exception {
-        return printMethods(Linked_className, methodPattern, flags);
-    }
-
     BytecodeTracerTest printLinkedMethods(String methodPattern) throws Exception {
-        return printLinkedMethods(methodPattern, 0xff);
+        return printMethods(Linked_className, methodPattern, 0xff);
     }
 
-    BytecodeTracerTest printUnlinkedMethods(String methodPattern, int flags) throws Exception {
-        return printMethods(Unlinked_className, methodPattern, flags);
+    BytecodeTracerTest printLinked2Methods(String methodPattern) throws Exception {
+        return printMethods(Linked2_className, methodPattern, 0xff);
     }
 
     BytecodeTracerTest printUnlinkedMethods(String methodPattern) throws Exception {
-        return printUnlinkedMethods(methodPattern, 0xff);
+        return printMethods(Unlinked_className, methodPattern, 0xff);
+    }
+
+    BytecodeTracerTest printUnlinked2Methods(String methodPattern) throws Exception {
+        return printMethods(Unlinked2_className, methodPattern, 0xff);
     }
 
     BytecodeTracerTest mustMatch(String pattern) {
@@ -139,7 +157,9 @@ public class BytecodeTracerTest {
     }
 
     public static void main(String args[]) throws Exception {
-        Linked.doit(args); // Force "Linked" class to be linked (and rewritten);
+        // Force "Linked" and "Linked2" classes to be linked (and rewritten);
+        Linked.doit(args);
+        Asserts.assertTrue(Linked2.test_ldc() == 12345, "must be");
 
         test("invokedynamic in linked class")
             .printClasses("BytecodeTracerTest$Linked", 0xff)
@@ -153,16 +173,44 @@ public class BytecodeTracerTest {
         test("ldc in linked class")
             .printLinkedMethods("test_ldc")
             .mustMatch("ldc BytecodeTracerTest[$]Unloaded")
-            .mustMatch("fast_aldc \"Literal\""); // ldc of String has been rewritten during linking
+            .mustMatch("fast_aldc \"Literal[\\\\]u5678\""); // ldc of String has been rewritten during linking
 
         test("ldc in unlinked class")
             .printUnlinkedMethods("test_ldc")
             .mustMatch(" ldc BytecodeTracerTest[$]Unloaded")
-            .mustMatch(" ldc \"Literal\""); // ldc of String is not rewritten
+            .mustMatch(" ldc \"Literal[\\\\]u1234\""); // ldc of String is not rewritten
 
-        // field
-        // invokevirtual, invokestatic, invokevfinal, invokeinterface
-        
+        test("More ldc tests in linked class")
+            .printLinked2Methods("test_ldc")
+            .mustMatch("ldc_w 2")
+            .mustMatch("fast_aldc_w \"Hello\"")
+            .mustMatch("BSM: REF_invokeStatic [0-9]+ <Linked2.condyBSM[(]Ljava/lang/invoke/MethodHandles");
+
+        test("More ldc tests in unlinked class")
+            .printUnlinked2Methods("test_ldc")
+            .mustMatch("ldc_w 2")
+            .mustMatch("ldc_w \"Hello\"")
+            .mustMatch("BSM: REF_invokeStatic [0-9]+ <Unlinked2.condyBSM[(]Ljava/lang/invoke/MethodHandles");
+
+        test("invoke in linked class")
+            .printLinkedMethods("test_invoke")
+            .mustMatch("invokevirtual [0-9]+ <BytecodeTracerTest.virtualMethod[(][)]V>")
+            .mustMatch("invokestatic [0-9]+ <BytecodeTracerTest.staticMethod[(][)]V>");
+
+        test("invoke in unlinked class")
+            .printUnlinkedMethods("test_invoke")
+            .mustMatch("invokevirtual [0-9]+ <BytecodeTracerTest.virtualMethod[(][)]V>")
+            .mustMatch("invokestatic [0-9]+ <BytecodeTracerTest.staticMethod[(][)]V>");
+
+        test("field in linked class")
+            .printLinkedMethods("test_field")
+            .mustMatch("getfield [0-9]+ <BytecodeTracerTest.x:I>")
+            .mustMatch("putstatic [0-9]+ <BytecodeTracerTest.y:J>");
+
+        test("field in unlinked class")
+            .printUnlinkedMethods("test_field")
+            .mustMatch("getfield [0-9]+ <BytecodeTracerTest.x:I>")
+            .mustMatch("putstatic [0-9]+ <BytecodeTracerTest.y:J>");
     }
 }
 
