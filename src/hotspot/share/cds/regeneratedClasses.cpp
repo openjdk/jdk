@@ -75,7 +75,7 @@ bool RegeneratedClasses::has_been_regenerated(address orig_obj) {
 }
 
 void RegeneratedClasses::record_regenerated_objects() {
-  assert(SafepointSynchronize::is_at_safepoint(), "must be");
+  assert_locked_or_safepoint(DumpTimeTable_lock);
   if (_renegerated_objs != nullptr) {
     auto doit = [&] (address orig_obj, address regen_obj) {
       ArchiveBuilder::current()->record_regenerated_object(orig_obj, regen_obj);
