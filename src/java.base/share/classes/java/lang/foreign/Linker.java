@@ -655,7 +655,7 @@ public sealed interface Linker permits AbstractLinker {
          * <li>{@code n}, where {@code 0 < m < N}, the arguments {@code m..N} are passed as variadic arguments</li>
          * </ul>
          * It is important to always use this linker option when linking a <a href=Linker.html#variadic-funcs>variadic
-         * function</a>, even when none of the arguments are passed as variadic arguments (the second case in the list
+         * function</a>, even if no variadic argument is passed (the second case in the list
          * above), as this affects the linking process on certain platforms.
          *
          * @implNote The index value is validated when making a linkage request, which is when the function descriptor
