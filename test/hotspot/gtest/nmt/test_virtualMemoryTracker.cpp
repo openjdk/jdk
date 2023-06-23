@@ -69,8 +69,11 @@ TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
 
     // Give back the memory.
     VirtualMemoryTracker::remove_released_region(base, size);
+    size_t tmp3_sz = get_committed();
     VirtualMemoryTracker::add_reserved_region(base, 2 * size, empty_stack, mtThreadStack);
+    size_t tmp4_sz = get_committed();
     os::release_memory((char*) base, 2 * size);
+    size_t tmp5_sz = get_committed();
 
     // If a parallel thread committed memory concurrently, we get a wrong test result.
     // This should not happen often, so try a few times.
@@ -80,8 +83,8 @@ TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
 
     // If it fails too often log the values we see.
     if (i < 50) {
-      tty->print_cr("new_sz: %d, tmp1_sz %d, tmp2_sz %d, init_sz %d, diff %d, region_size %d", (int) new_sz,
-                    (int) tmp1_sz, (int) tmp2_sz, (int) init_sz, (int) (new_sz - init_sz), (int) size);
+      tty->print_cr("init_sz: %d, tmp1_sz %d, tmp2_sz %d, tmp3_sz %d, tmp4_sz %d, tmp5_sz %d, new_sz %d, diff %d, region_size %d", (int) init_sz,
+                    (int) tmp1_sz, (int) tmp2_sz, (int) tmp3_sz, (int) tmp4_sz, (int) tmp5_sz, (int) new_sz, (int) (new_sz - init_sz), (int) size);
     }
 
     // Trigger a test failure on the last run.
