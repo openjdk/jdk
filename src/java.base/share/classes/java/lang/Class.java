@@ -808,7 +808,7 @@ public final class Class<T> implements java.io.Serializable,
 
     /**
      * Determines if the specified {@code Class} object represents a
-     * primitive type.
+     * primitive type or void.
      *
      * <p> There are nine predefined {@code Class} objects to represent
      * the eight primitive types and void.  These are created by the Java
@@ -825,6 +825,8 @@ public final class Class<T> implements java.io.Serializable,
      * wrapper classes such as {@link java.lang.Integer#TYPE Integer.TYPE}. In the Java
      * programming language, the objects may be referred to by a class
      * literal expression such as {@code int.class}.
+     * The {@code Class} for void can be expressed as {@code
+     * void.class} or {@link java.lang.Void#TYPE Void.TYPE}.
      *
      * @return true if and only if this class represents a primitive type
      *
