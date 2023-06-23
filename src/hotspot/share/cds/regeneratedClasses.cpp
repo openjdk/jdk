@@ -58,8 +58,8 @@ void RegeneratedClasses::add_class(InstanceKlass* orig_klass, InstanceKlass* reg
     Method* regen_m = regen_klass->find_method(orig_m->name(), orig_m->signature());
     if (regen_m == nullptr) {
       ResourceMark rm;
-      log_info(cds, lambda)("Method in original class is missing from regenerated class: " INTPTR_FORMAT " %s",
-                            p2i(orig_m), orig_m->external_name());
+      log_warning(cds)("Method in original class is missing from regenerated class: " INTPTR_FORMAT " %s",
+                       p2i(orig_m), orig_m->external_name());
     } else {
       _renegerated_objs->put((address)orig_m, (address)regen_m);
     }
