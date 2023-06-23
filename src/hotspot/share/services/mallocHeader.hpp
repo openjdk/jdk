@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -108,11 +108,11 @@ class MallocHeader {
 
   void print_block_on_error(outputStream* st, address bad_address) const;
 
-  static uint16_t build_footer(uint8_t b1, uint8_t b2) { return ((uint16_t)b1 << 8) | (uint16_t)b2; }
+  static uint16_t build_footer(uint8_t b1, uint8_t b2) { return (uint16_t)(((uint16_t)b1 << 8) | (uint16_t)b2); }
 
   uint8_t* footer_address() const   { return ((address)this) + sizeof(MallocHeader) + _size; }
   uint16_t get_footer() const       { return build_footer(footer_address()[0], footer_address()[1]); }
-  void set_footer(uint16_t v)       { footer_address()[0] = v >> 8; footer_address()[1] = (uint8_t)v; }
+  void set_footer(uint16_t v)       { footer_address()[0] = (uint8_t)(v >> 8); footer_address()[1] = (uint8_t)v; }
 
   template<typename InTypeParam, typename OutTypeParam>
   inline static OutTypeParam resolve_checked_impl(InTypeParam memblock);

@@ -120,7 +120,7 @@ public:
     for (int i = 0; i < NMT_TrackingStackDepth; i++) {
       hash += (uintptr_t)_stack[i];
     }
-    return hash;
+    return (unsigned int)hash;
   }
 
   void print_on(outputStream* out) const;

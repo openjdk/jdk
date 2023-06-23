@@ -662,7 +662,7 @@ inline double fabsd(double value) {
 // is zero, return 0.0.
 template<typename T>
 inline double percent_of(T numerator, T denominator) {
-  return denominator != 0 ? (double)numerator / denominator * 100.0 : 0.0;
+  return denominator != 0 ? (double)numerator / (double)denominator * 100.0 : 0.0;
 }
 
 //----------------------------------------------------------------------------------------------------
