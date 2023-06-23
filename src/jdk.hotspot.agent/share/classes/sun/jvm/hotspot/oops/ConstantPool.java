@@ -27,6 +27,7 @@ package sun.jvm.hotspot.oops;
 import java.io.*;
 import java.util.*;
 import sun.jvm.hotspot.debugger.*;
+import sun.jvm.hotspot.interpreter.Bytecodes;
 import sun.jvm.hotspot.runtime.*;
 import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
@@ -252,6 +253,31 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return res;
   }
 
+  // Translate index, which could be CPCache index or Indy index, to a constant pool index
+  public int to_cp_index(int index, int code) {
+    Assert.that(getCache() != null, "'index' is a rewritten index so this class must have been rewritten");
+    switch(code) {
+      case Bytecodes._invokedynamic:
+        int poolIndex = getCache().getIndyEntryAt(index).getConstantPoolIndex();
+        return invokeDynamicNameAndTypeRefIndexAt(poolIndex);
+      case Bytecodes._getfield:
+      case Bytecodes._getstatic:
+      case Bytecodes._putfield:
+      case Bytecodes._putstatic:
+        // TODO: handle resolved field entries with new structure
+        // i = ....
+      case Bytecodes._invokeinterface:
+      case Bytecodes._invokehandle:
+      case Bytecodes._invokespecial:
+      case Bytecodes._invokestatic:
+      case Bytecodes._invokevirtual:
+        // TODO: handle resolved method entries with new structure
+      default:
+        // change byte-ordering and go via cache
+        return remapInstructionOperandFromCache(index);
+    }
+  }
+
   public int[] getNameAndTypeAt(int which) {
     if (Assert.ASSERTS_ENABLED) {
       Assert.that(getTagAt(which).isNameAndType(), "Corrupted constant pool: " + which + " " + getTagAt(which));
@@ -263,29 +289,23 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return new int[] { extractLowShortFromInt(i), extractHighShortFromInt(i) };
   }
 
-  public Symbol getNameRefAt(int which) {
-    return implGetNameRefAt(which, false);
+  public Symbol getNameRefAt(int which, int code) {
+    int name_index = getNameRefIndexAt(getNameAndTypeRefIndexAt(which, code));
+    return getSymbolAt(name_index);
   }
 
-  public Symbol uncachedGetNameRefAt(int which) {
-    return implGetNameRefAt(which, true);
+  public Symbol uncachedGetNameRefAt(int cp_index) {
+    int name_index = getNameRefIndexAt(uncachedGetNameAndTypeRefIndexAt(cp_index));
+    return getSymbolAt(name_index);
   }
 
-  private Symbol implGetNameRefAt(int which, boolean uncached) {
-    int signatureIndex = getNameRefIndexAt(implNameAndTypeRefIndexAt(which, uncached));
+  public Symbol getSignatureRefAt(int which, int code) {
+    int signatureIndex = getSignatureRefIndexAt(getNameAndTypeRefIndexAt(which, code));
     return getSymbolAt(signatureIndex);
   }
 
-  public Symbol getSignatureRefAt(int which) {
-    return implGetSignatureRefAt(which, false);
-  }
-
-  public Symbol uncachedGetSignatureRefAt(int which) {
-    return implGetSignatureRefAt(which, true);
-  }
-
-  private Symbol implGetSignatureRefAt(int which, boolean uncached) {
-    int signatureIndex = getSignatureRefIndexAt(implNameAndTypeRefIndexAt(which, uncached));
+  public Symbol uncachedGetSignatureRefAt(int cp_index) {
+    int signatureIndex = getSignatureRefIndexAt(uncachedGetNameAndTypeRefIndexAt(cp_index));
     return getSymbolAt(signatureIndex);
   }
 
@@ -307,29 +327,20 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return getCache().getEntryAt(cpCacheIndex);
   }
 
-  private int implNameAndTypeRefIndexAt(int which, boolean uncached) {
-    int i = which;
-    if (!uncached && getCache() != null) {
-      if (isInvokedynamicIndex(which)) {
-        // Invokedynamic index is index into resolved_references
-        int poolIndex = getCache().getIndyEntryAt(which).getConstantPoolIndex();
-        poolIndex = invokeDynamicNameAndTypeRefIndexAt(poolIndex);
-        Assert.that(getTagAt(poolIndex).isNameAndType(), "");
-        return poolIndex;
-      }
-      // change byte-ordering and go via cache
-      i = remapInstructionOperandFromCache(which);
-    } else {
-      if (getTagAt(which).isInvokeDynamic() || getTagAt(which).isDynamicConstant()) {
-        int poolIndex = invokeDynamicNameAndTypeRefIndexAt(which);
-        Assert.that(getTagAt(poolIndex).isNameAndType(), "");
-        return poolIndex;
-      }
+  public int uncachedGetNameAndTypeRefIndexAt(int cp_index) {
+    if (getTagAt(cp_index).isInvokeDynamic() || getTagAt(cp_index).isDynamicConstant()) {
+      int poolIndex = invokeDynamicNameAndTypeRefIndexAt(cp_index);
+      Assert.that(getTagAt(poolIndex).isNameAndType(), "");
+      return poolIndex;
     }
     // assert(tag_at(i).is_field_or_method(), "Corrupted constant pool");
     // assert(!tag_at(i).is_invoke_dynamic(), "Must be handled above");
-    int refIndex = getIntAt(i);
+    int refIndex = getIntAt(cp_index);
     return extractHighShortFromInt(refIndex);
+  }
+
+  public int getNameAndTypeRefIndexAt(int index, int code) {
+    return uncachedGetNameAndTypeRefIndexAt(to_cp_index(index, code));
   }
 
   private int remapInstructionOperandFromCache(int operand) {
@@ -370,11 +381,11 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   // returns null, if not resolved.
-  public Method getMethodRefAt(int which) {
+  public Method getMethodRefAt(int which, int code) {
     Klass klass = getFieldOrMethodKlassRefAt(which);
     if (klass == null) return null;
-    Symbol name = getNameRefAt(which);
-    Symbol sig  = getSignatureRefAt(which);
+    Symbol name = getNameRefAt(which, code);
+    Symbol sig  = getSignatureRefAt(which, code);
     // Consider the super class for arrays. (java.lang.Object)
     if (klass.isArrayKlass()) {
        klass = klass.getJavaSuper();
@@ -383,16 +394,12 @@ public class ConstantPool extends Metadata implements ClassConstants {
   }
 
   // returns null, if not resolved.
-  public Field getFieldRefAt(int which) {
+  public Field getFieldRefAt(int which, int code) {
     InstanceKlass klass = (InstanceKlass)getFieldOrMethodKlassRefAt(which);
     if (klass == null) return null;
-    Symbol name = getNameRefAt(which);
-    Symbol sig  = getSignatureRefAt(which);
+    Symbol name = getNameRefAt(which, code);
+    Symbol sig  = getSignatureRefAt(which, code);
     return klass.findField(name.asString(), sig.asString());
-  }
-
-  public int getNameAndTypeRefIndexAt(int index) {
-    return implNameAndTypeRefIndexAt(index, false);
   }
 
   /** Lookup for entries consisting of (name_index, signature_index) */

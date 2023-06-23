@@ -855,6 +855,10 @@ public class BasicInternalFrameUI extends InternalFrameUI
          */
         protected BorderListener() {}
 
+        /**
+         * {@inheritDoc java.awt.event.MouseListener}
+         * @param e {@inheritDoc java.awt.event.MouseListener}
+         */
         public void mouseClicked(MouseEvent e) {
             if(e.getClickCount() > 1 && e.getSource() == getNorthPane()) {
                 if(frame.isIconifiable() && frame.isIcon()) {
@@ -911,10 +915,18 @@ public class BasicInternalFrameUI extends InternalFrameUI
             discardRelease = true;
         }
 
+        /**
+         * {@inheritDoc java.awt.event.MouseListener}
+         * @param e {@inheritDoc java.awt.event.MouseListener}
+         */
         public void mouseReleased(MouseEvent e) {
             finishMouseReleased();
         }
 
+        /**
+         * {@inheritDoc java.awt.event.MouseListener}
+         * @param e {@inheritDoc java.awt.event.MouseListener}
+         */
         public void mousePressed(MouseEvent e) {
             Point p = SwingUtilities.convertPoint((Component)e.getSource(),
                         e.getX(), e.getY(), null);
@@ -1300,10 +1312,18 @@ public class BasicInternalFrameUI extends InternalFrameUI
             updateFrameCursor();
         }
 
+        /**
+         * {@inheritDoc java.awt.event.MouseListener}
+         * @param e {@inheritDoc java.awt.event.MouseListener}
+         */
         public void mouseEntered(MouseEvent e)    {
             updateFrameCursor();
         }
 
+        /**
+         * {@inheritDoc java.awt.event.MouseListener}
+         * @param e {@inheritDoc java.awt.event.MouseListener}
+         */
         public void mouseExited(MouseEvent e)    {
             updateFrameCursor();
         }

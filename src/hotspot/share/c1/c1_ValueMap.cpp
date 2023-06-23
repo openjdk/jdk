@@ -281,7 +281,7 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   }
   void      kill_array(ValueType* type)                   {
     current_map()->kill_array(type);
-    BasicType basic_type = as_BasicType(type); assert(basic_type >= 0 && basic_type < T_VOID, "Invalid type");
+    BasicType basic_type = as_BasicType(type); assert(basic_type < T_VOID, "Invalid type");
     _has_indexed_store[basic_type] = true;
   }
 
@@ -298,12 +298,12 @@ class ShortLoopOptimizer : public ValueNumberingVisitor {
   }
 
   bool has_field_store(BasicType type) {
-    assert(type >= 0 && type < T_VOID, "Invalid type");
+    assert(type < T_VOID, "Invalid type");
     return _has_field_store[type];
   }
 
   bool has_indexed_store(BasicType type) {
-    assert(type >= 0 && type < T_VOID, "Invalid type");
+    assert(type < T_VOID, "Invalid type");
     return _has_indexed_store[type];
   }
 

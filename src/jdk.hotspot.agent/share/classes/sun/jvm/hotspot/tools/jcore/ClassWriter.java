@@ -57,6 +57,7 @@ public class ClassWriter implements /* imports */ ClassConstants
     protected short  _constantValueIndex;
     protected short  _codeIndex;
     protected short  _exceptionsIndex;
+    protected short  _stackMapTableIndex;
     protected short  _lineNumberTableIndex;
     protected short  _localVariableTableIndex;
     protected short  _signatureIndex;
@@ -168,6 +169,11 @@ public class ClassWriter implements /* imports */ ClassConstants
         // Short deprecatedIndex = (Short) utf8ToIndex.get("Deprecated");
 
         // Code attributes
+        Short stackMapTableIndex = utf8ToIndex.get("StackMapTable");
+        _stackMapTableIndex = (stackMapTableIndex != null) ?
+                              stackMapTableIndex.shortValue() : 0;
+        if (DEBUG) debugMessage("StackMapTable index = " + _stackMapTableIndex);
+
         Short lineNumberTableIndex = utf8ToIndex.get("LineNumberTable");
         _lineNumberTableIndex = (lineNumberTableIndex != null)?
                                        lineNumberTableIndex.shortValue() : 0;
@@ -515,6 +521,27 @@ public class ClassWriter implements /* imports */ ClassConstants
                                             2 /* catch_type   */);
             }
 
+            boolean hasStackMapTable = m.hasStackMapTable();
+            U1Array stackMapData = null;
+            int stackMapAttrLen = 0;
+
+            if (hasStackMapTable) {
+                if (DEBUG) debugMessage("\tmethod has stack map table");
+                stackMapData = m.getStackMapData();
+                if (DEBUG) debugMessage("\t\tstack map table length = " + stackMapData.length());
+
+                stackMapAttrLen = stackMapData.length();
+
+                codeSize += 2 /* stack map table attr index */ +
+                            4 /* stack map table attr length */ +
+                            stackMapAttrLen;
+
+                if (DEBUG) debugMessage("\t\tstack map table attr size = " +
+                                        stackMapAttrLen);
+
+                codeAttrCount++;
+            }
+
             boolean hasLineNumberTable = m.hasLineNumberTable();
             LineNumberTableElement[] lineNumberTable = null;
             int lineNumberAttrLen = 0;
@@ -600,6 +627,17 @@ public class ClassWriter implements /* imports */ ClassConstants
 
             dos.writeShort(codeAttrCount);
             if (DEBUG) debugMessage("\tcode attribute count = " + codeAttrCount);
+
+            // write StackMapTable, if available
+            if (hasStackMapTable) {
+                writeIndex(_stackMapTableIndex);
+                dos.writeInt(stackMapAttrLen);
+                // We write bytes directly as stackMapData is
+                // raw data (#entries + entries)
+                for (int i = 0; i < stackMapData.length(); i++) {
+                    dos.writeByte(stackMapData.at(i));
+                }
+            }
 
             // write LineNumberTable, if available.
             if (hasLineNumberTable) {
