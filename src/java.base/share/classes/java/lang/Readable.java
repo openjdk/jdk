@@ -40,10 +40,10 @@ public interface Readable {
      * Attempts to read characters into the specified character buffer.
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
-     * rewinding of the buffer is performed. If the specified character
-     * buffer has no space {@linkplain java.nio.Buffer#hasRemaining
-     * remaining} or its {@linkplain java.nio.CharBuffer#length length}
-     * is zero, then no characters will be read and zero will be returned.
+     * rewinding of the buffer is performed. If the {@linkplain
+     * java.nio.CharBuffer#length length} of the specified character
+     * buffer is zero, then no characters will be read and zero will be
+     * returned.
      *
      * @param cb the buffer to read characters into
      * @return The number of {@code char} values added to the buffer,
