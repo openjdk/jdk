@@ -34,7 +34,7 @@
 
   #define PLATFORM_PRINT_NATIVE_STACK 1
   static bool platform_print_native_stack(outputStream* st, void* context,
-                                          char *buf, int buf_size);
+                                          char *buf, int buf_size, address& lastpc);
 
   #define HAVE_FUNCTION_DESCRIPTORS 1
   static void* resolve_function_descriptor(void* p);

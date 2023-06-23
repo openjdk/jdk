@@ -886,7 +886,7 @@ class os: AllStatic {
 #ifndef PLATFORM_PRINT_NATIVE_STACK
   // No platform-specific code for printing the native stack.
   static bool platform_print_native_stack(outputStream* st, const void* context,
-                                          char *buf, int buf_size) {
+                                          char *buf, int buf_size, address& lastpc) {
     return false;
   }
 #endif

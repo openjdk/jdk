@@ -40,7 +40,7 @@
 #ifdef AMD64
 #define PLATFORM_PRINT_NATIVE_STACK 1
 static bool platform_print_native_stack(outputStream* st, const void* context,
-                                        char *buf, int buf_size);
+                                        char *buf, int buf_size, address& lastpc);
 #endif
 
 #endif // OS_CPU_WINDOWS_X86_OS_WINDOWS_X86_HPP
