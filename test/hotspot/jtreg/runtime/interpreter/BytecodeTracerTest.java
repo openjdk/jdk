@@ -164,7 +164,8 @@ public class BytecodeTracerTest {
         test("invokedynamic in linked class")
             .printClasses("BytecodeTracerTest$Linked", 0xff)
             .mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>")
-            .mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]");
+            .mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]")
+            .mustMatch("\"num args = [\\\\]u0001\""); // static param for string concat
 
         test("invokedynamic in unlinked class")
             .printUnlinkedMethods("toString")
@@ -184,13 +185,15 @@ public class BytecodeTracerTest {
             .printLinked2Methods("test_ldc")
             .mustMatch("ldc_w 2")
             .mustMatch("fast_aldc_w \"Hello\"")
-            .mustMatch("BSM: REF_invokeStatic [0-9]+ <Linked2.condyBSM[(]Ljava/lang/invoke/MethodHandles");
+            .mustMatch("BSM: REF_invokeStatic [0-9]+ <Linked2.condyBSM[(]Ljava/lang/invoke/MethodHandles")
+            .mustMatch("fast_aldc <MethodHandle of kind [0-9]+ index at [0-9]+> [0-9]+ <Linked2.test_ldc[(][)]I>");
 
         test("More ldc tests in unlinked class")
             .printUnlinked2Methods("test_ldc")
             .mustMatch("ldc_w 2")
             .mustMatch("ldc_w \"Hello\"")
-            .mustMatch("BSM: REF_invokeStatic [0-9]+ <Unlinked2.condyBSM[(]Ljava/lang/invoke/MethodHandles");
+            .mustMatch("BSM: REF_invokeStatic [0-9]+ <Unlinked2.condyBSM[(]Ljava/lang/invoke/MethodHandles")
+            .mustMatch("ldc <MethodHandle of kind [0-9]+ index at [0-9]+> [0-9]+ <Unlinked2.test_ldc[(][)]I>");
 
         test("invoke in linked class")
             .printLinkedMethods("test_invoke")

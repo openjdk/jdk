@@ -38,13 +38,18 @@ public class Linked2
     {
         ldc_w           int 2;
         pop;
+
         ldc_w           String "Hello";
+        pop;
+
+        ldc             MethodHandle REF_invokeStatic : Linked2.test_ldc:"()I";
         pop;
 
         ldc             Dynamic REF_invokeStatic:Linked2.condyBSM:"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;":I:"I";
         pop;
 
         ldc_w           Dynamic REF_invokeStatic:Linked2.condyBSM:"(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/Class;)Ljava/lang/Object;":I:"I";
+
         ireturn;
     }
 
