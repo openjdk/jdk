@@ -2265,7 +2265,9 @@ public final class Class<T> implements java.io.Serializable,
         }
         Field field = getField0(name);
         if (field == null) {
-            throw new NoSuchFieldException(name);
+            throw new NoSuchFieldException(String.format(
+                      "Class '%s' does not have member field '%s'",
+                      getName(), name));
         }
         return getReflectionFactory().copyField(field);
     }
@@ -2763,7 +2765,9 @@ public final class Class<T> implements java.io.Serializable,
         }
         Field field = searchFields(privateGetDeclaredFields(false), name);
         if (field == null) {
-            throw new NoSuchFieldException(name);
+            throw new NoSuchFieldException(String.format(
+                      "Class '%s' does not have declared field '%s'",
+                      getName(), name));
         }
         return getReflectionFactory().copyField(field);
     }
