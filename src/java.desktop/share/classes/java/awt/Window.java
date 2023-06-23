@@ -3215,6 +3215,13 @@ public class Window extends Container implements Accessible {
 
     @Override
     void setGraphicsConfiguration(GraphicsConfiguration gc) {
+        if (gc == null) {
+            gc = GraphicsEnvironment.
+                    getLocalGraphicsEnvironment().
+                    getDefaultScreenDevice().
+                    getDefaultConfiguration();
+        }
+
         synchronized (getTreeLock()) {
             WindowPeer peer = (WindowPeer) this.peer;
             if (peer != null) {
