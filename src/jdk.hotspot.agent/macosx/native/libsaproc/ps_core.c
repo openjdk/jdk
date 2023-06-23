@@ -299,11 +299,9 @@ static bool read_core_segments(struct ps_prochandle* ph) {
       }
       // The base of the library is offset by a random amount which ends up as a load command with a
       // filesize of 0.  This must be ignored otherwise the base address of the library is wrong.
-      if (segcmd.filesize != 0) {
-        if (add_map_info(ph, fd, segcmd.fileoff, segcmd.vmaddr, segcmd.vmsize, segcmd.flags) == NULL) {
-          print_debug("Failed to add map_info at i = %d\n", i);
-          goto err;
-        }
+      if (segcmd.filesize != 0 && add_map_info(ph, fd, segcmd.fileoff, segcmd.vmaddr, segcmd.vmsize, segcmd.flags) == NULL) {
+        print_debug("Failed to add map_info at i = %d\n", i);
+        goto err;
       }
       print_debug("LC_SEGMENT_64 %s: nsects=%d fileoff=0x%llx vmaddr=0x%llx vmsize=0x%llx filesize=0x%llx %s\n",
                   segcmd.filesize == 0 ? "with filesize == 0 ignored" : "added",
