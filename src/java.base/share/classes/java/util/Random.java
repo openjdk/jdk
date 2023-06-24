@@ -471,7 +471,7 @@ public class Random implements RandomGenerator, java.io.Serializable {
 
         for (int words = len >> 2; words--> 0; ) {
             int rnd = nextInt();
-            if (unsafe.isBigEndian()) 
+            if (unsafe.isBigEndian())
                 rnd = Integer.reverseBytes(rnd);
             unsafe.putInt(bytes, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + i, rnd);
             i += Integer.BYTES;
