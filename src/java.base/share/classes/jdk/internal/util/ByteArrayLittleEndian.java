@@ -141,6 +141,24 @@ public final class ByteArrayLittleEndian {
             false);
     }
 
+   /**
+     * {@return an {@code unsigned int} from the provided {@code array} at the given {@code offset}
+     * using big endian order}.
+     * <p>
+     * There are no access alignment requirements.
+     *
+     * @param array  to get a value from.
+     * @param offset where extraction in the array should begin
+     * @return an {@code long} representing an unsigned int from the array
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 4]
+     * @see #setUnsignedInt(byte[], int, long)
+     */
+    @ForceInline
+    public static long getUnsignedInt(byte[] array, int offset) {
+        return Integer.toUnsignedLong(getInt(array, offset));
+    }
+
     /**
      * {@return a {@code float} from the provided {@code array} at the given {@code offset}
      * using little endian order}.
@@ -306,6 +324,24 @@ public final class ByteArrayLittleEndian {
                 arrayOffset(array, Integer.BYTES, offset),
                 value,
                 false);
+    }
+
+   /**
+     * Sets (writes) the provided {@code value} using big endian order into
+     * the provided {@code array} beginning at the given {@code offset}.
+     * <p>
+     * There are no access alignment requirements.
+     *
+     * @param array  to set (write) a value into
+     * @param offset where setting (writing) in the array should begin
+     * @param value  value to set in the array
+     * @throws IndexOutOfBoundsException if the provided {@code offset} is outside
+     *                                   the range [0, array.length - 4]
+     * @see #getUnsignedInt(byte[], int)
+     */
+    @ForceInline
+    public static void setUnsignedInt(byte[] array, int offset, long value) {
+        setInt(array, offset, (int) value);
     }
 
     /**
