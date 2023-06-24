@@ -27,9 +27,7 @@ package jdk.internal.classfile.impl;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.AbstractList;
-import java.util.BitSet;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
 
@@ -38,11 +36,13 @@ import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.impl.TemporaryConstantPool;
 import java.lang.reflect.AccessFlag;
 
 import static jdk.internal.classfile.Classfile.ACC_STATIC;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.misc.Unsafe;
+import jdk.internal.util.Preconditions;
+import jdk.internal.vm.annotation.ForceInline;
 
 /**
  * Helper to create and manipulate type descriptors, where type descriptors are
@@ -52,6 +52,38 @@ import jdk.internal.access.SharedSecrets;
 public class Util {
 
     private Util() {
+    }
+
+    // Utilities to speed up reading/writing from arrays, before VarHandle is available
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
+    @ForceInline
+    public static long checkByteArrayIndex(byte[] array, int index, int bytes) {
+        return Unsafe.ARRAY_BYTE_BASE_OFFSET + Preconditions.checkIndex(index, array.length - bytes + 1, Preconditions.AIOOBE_FORMATTER);
+    }
+
+    public static short getShort(byte[] array, int index) {
+        return UNSAFE.getShortUnaligned(array, checkByteArrayIndex(array, index, Short.BYTES), true);
+    }
+
+    public static int getInt(byte[] array, int index) {
+        return UNSAFE.getIntUnaligned(array, checkByteArrayIndex(array, index, Integer.BYTES), true);
+    }
+
+    public static long getLong(byte[] array, int index) {
+        return UNSAFE.getLongUnaligned(array, checkByteArrayIndex(array, index, Long.BYTES), true);
+    }
+
+    public static void putShort(byte[] array, int index, short value) {
+        UNSAFE.putShortUnaligned(array, checkByteArrayIndex(array, index, Short.BYTES), value, true);
+    }
+
+    public static void putInt(byte[] array, int index, int value) {
+        UNSAFE.putIntUnaligned(array, checkByteArrayIndex(array, index, Integer.BYTES), value, true);
+    }
+
+    public static void putLong(byte[] array, int index, long value) {
+        UNSAFE.putLongUnaligned(array, checkByteArrayIndex(array, index, Long.BYTES), value, true);
     }
 
     public static int parameterSlots(MethodTypeDesc mDesc) {

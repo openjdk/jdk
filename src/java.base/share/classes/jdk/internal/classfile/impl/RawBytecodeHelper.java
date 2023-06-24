@@ -24,6 +24,8 @@
  */
 package jdk.internal.classfile.impl;
 
+import jdk.internal.vm.annotation.Stable;
+
 import java.nio.ByteBuffer;
 import static jdk.internal.classfile.Classfile.ASTORE_3;
 import static jdk.internal.classfile.Classfile.ISTORE;
@@ -35,7 +37,7 @@ public final class RawBytecodeHelper {
 
     public static final int ILLEGAL = -1;
 
-    private static final byte[] LENGTHS = new byte[] {
+    private static final @Stable byte[] LENGTHS = new byte[] {
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 3, 2, 3, 3, 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 2 | (4 << 4), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3 | (6 << 4), 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2 | (4 << 4), 0, 0, 1, 1, 1,
@@ -84,11 +86,11 @@ public final class RawBytecodeHelper {
     }
 
     public int getIndexU1() {
-        return bytecode.get(bci + 1) & 0xff;
+        return getU1(bci + 1);
     }
 
     public int getU1(int bci) {
-        return bytecode.get(bci) & 0xff;
+        return Byte.toUnsignedInt(bytecode.get(bci));
     }
 
     public int rawNext(int jumpTo) {
@@ -98,7 +100,7 @@ public final class RawBytecodeHelper {
 
     public int rawNext() {
         bci = nextBci;
-        int code = bytecode.get(bci) & 0xff;
+        int code = getU1(bci);
         int len = LENGTHS[code] & 0xf;
         if (len > 0 && (bci <= endBci - len)) {
             isWide = false;
@@ -109,12 +111,12 @@ public final class RawBytecodeHelper {
             rawCode = code;
             return code;
         } else {
-            len = switch (bytecode.get(bci) & 0xff) {
+            len = switch (getU1(bci)) {
                 case WIDE -> {
                     if (bci + 1 >= endBci) {
                         yield -1;
                     }
-                    yield LENGTHS[bytecode.get(bci + 1) & 0xff] >> 4;
+                    yield LENGTHS[getIndexU1()] >> 4;
                 }
                 case TABLESWITCH -> {
                     int aligned_bci = align(bci + 1);
@@ -147,7 +149,7 @@ public final class RawBytecodeHelper {
                     if (bci + 1 >= endBci) {
                         code = ILLEGAL;
                     } else {
-                        code = bytecode.get(bci + 1) & 0xff;
+                        code = getIndexU1();
                         isWide = true;
                     }
                 }
@@ -166,6 +168,6 @@ public final class RawBytecodeHelper {
     }
 
     public int getIndexU2Raw(int bci) {
-        return bytecode.getShort(bci) & 0xffff;
+        return Short.toUnsignedInt(bytecode.getShort(bci));
     }
 }

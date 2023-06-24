@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import jdk.internal.classfile.constantpool.PackageEntry;
 import jdk.internal.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
+import jdk.internal.misc.Unsafe;
 
 import static jdk.internal.classfile.Classfile.TAG_CLASS;
 import static jdk.internal.classfile.Classfile.TAG_CONSTANTDYNAMIC;
@@ -65,6 +66,8 @@ import static jdk.internal.classfile.Classfile.TAG_UTF8;
 public final class ClassReaderImpl
         implements ClassReader {
     static final int CP_ITEM_START = 10;
+    // Cannot use VarHandle as it depends on bytecode generation
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     private final byte[] buffer;
     private final int metadataStart;
@@ -194,14 +197,12 @@ public final class ClassReaderImpl
 
     @Override
     public int readU1(int p) {
-        return buffer[p] & 0xFF;
+        return Byte.toUnsignedInt(buffer[p]);
     }
 
     @Override
     public int readU2(int p) {
-        int b1 = buffer[p] & 0xFF;
-        int b2 = buffer[p + 1] & 0xFF;
-        return (b1 << 8) + b2;
+        return Short.toUnsignedInt(Util.getShort(buffer, p));
     }
 
     @Override
@@ -211,26 +212,17 @@ public final class ClassReaderImpl
 
     @Override
     public int readS2(int p) {
-        int b1 = buffer[p];
-        int b2 = buffer[p + 1] & 0xFF;
-        return (b1 << 8) + b2;
+        return Util.getShort(buffer, p);
     }
 
     @Override
     public int readInt(int p) {
-        int ch1 = buffer[p] & 0xFF;
-        int ch2 = buffer[p + 1] & 0xFF;
-        int ch3 = buffer[p + 2] & 0xFF;
-        int ch4 = buffer[p + 3] & 0xFF;
-        return (ch1 << 24) + (ch2 << 16) + (ch3 << 8) + ch4;
+        return Util.getInt(buffer, p);
     }
 
     @Override
     public long readLong(int p) {
-        return ((long) buffer[p + 0] << 56) + ((long) (buffer[p + 1] & 255) << 48) +
-               ((long) (buffer[p + 2] & 255) << 40) + ((long) (buffer[p + 3] & 255) << 32) +
-               ((long) (buffer[p + 4] & 255) << 24) + ((buffer[p + 5] & 255) << 16) + ((buffer[p + 6] & 255) << 8) +
-               (buffer[p + 7] & 255);
+        return Util.getLong(buffer, p);
     }
 
     @Override

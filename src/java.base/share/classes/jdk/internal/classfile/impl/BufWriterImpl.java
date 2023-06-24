@@ -87,17 +87,23 @@ public final class BufWriterImpl implements BufWriter {
 
     @Override
     public void writeU1(int x) {
-        writeIntBytes(1, x);
+        reserveSpace(Byte.BYTES);
+        elems[offset] = (byte) (x & 0xFF);
+        offset += Byte.BYTES;
     }
 
     @Override
     public void writeU2(int x) {
-        writeIntBytes(2, x);
+        reserveSpace(Short.BYTES);
+        Util.putShort(elems, offset, (short) (x & 0xFFFF));
+        offset += Short.BYTES;
     }
 
     @Override
     public void writeInt(int x) {
-        writeIntBytes(4, x);
+        reserveSpace(Integer.BYTES);
+        Util.putInt(elems, offset, x);
+        offset += Integer.BYTES;
     }
 
     @Override
@@ -107,7 +113,9 @@ public final class BufWriterImpl implements BufWriter {
 
     @Override
     public void writeLong(long x) {
-        writeIntBytes(8, x);
+        reserveSpace(Long.BYTES);
+        Util.putLong(elems, offset, x);
+        offset += Long.BYTES;
     }
 
     @Override
@@ -143,9 +151,17 @@ public final class BufWriterImpl implements BufWriter {
 
     @Override
     public void writeIntBytes(int intSize, long intValue) {
-        reserveSpace(intSize);
-        for (int i = 0; i < intSize; i++) {
-            elems[offset++] = (byte) ((intValue >> 8 * (intSize - i - 1)) & 0xFF);
+        switch (intSize) {
+            case 1 -> writeU1((int) (intValue & 0xFFL));
+            case 2 -> writeU2((int) (intValue & 0xFFFFL));
+            case 4 -> writeInt((int) (intValue & 0xFFFFFFFFL));
+            case 8 -> writeLong(intValue);
+            default -> {
+                reserveSpace(intSize);
+                for (int i = 0; i < intSize; i++) {
+                    elems[offset++] = (byte) ((intValue >> 8 * (intSize - i - 1)) & 0xFF);
+                }
+            }
         }
     }
 
