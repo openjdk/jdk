@@ -206,8 +206,8 @@ public final class ByteArray {
     @ForceInline
     public static long getLong(byte[] array, int offset) {
         return UNSAFE.getLongUnaligned(
-            array, 
-            arrayOffset(array, Long.BYTES, offset), 
+            array,
+            arrayOffset(array, Long.BYTES, offset),
             true);
     }
 
