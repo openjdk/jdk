@@ -4018,10 +4018,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (xInt.signum != signum)
             return false;
 
-        if (mag.length != xInt.mag.length)
-            return false;
-
-        return Arrays.equals(mag, 0, mag.length, xInt.mag, 0, mag.length);
+        return Arrays.equals(mag, 0, mag.length, xInt.mag, 0, xInt.mag.length);
     }
 
     /**
@@ -4054,12 +4051,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
      */
     @Override
     public int hashCode() {
-        int hashCode = 0;
-
-        for (int m : mag)
-            hashCode = (int)(31*hashCode + (m & LONG_MASK));
-
-        return hashCode * signum;
+        return Arrays.hashCode(mag) * signum;
     }
 
     /**
