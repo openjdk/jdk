@@ -1123,11 +1123,11 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             ReleaseDC(NULL, dc);
 
             // Free bitmap buffers if they were allocated
-            if (colorBits != nullptr) {
+            if (colorBits != NULL) {
                 free(colorBits);
             }
 
-            if (maskBits != nullptr) {
+            if (maskBits != NULL) {
                 free(maskBits);
             }
         }
