@@ -1080,8 +1080,8 @@ JNIEXPORT jintArray JNICALL Java_sun_awt_shell_Win32ShellFolder2_getIconBits
             // Extract the color bitmap
             int nBits = iconSize * iconSize;
 
-            jint *colorBits = nullptr;
-            int *maskBits = nullptr;
+            jint *colorBits = NULL;
+            int *maskBits = NULL;
 
             try {
                 entry_point();
