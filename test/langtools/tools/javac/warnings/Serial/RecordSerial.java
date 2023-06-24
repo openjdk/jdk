@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8202056
+ * @bug 8202056 8310835
  * @compile/ref=RecordSerial.out -XDrawDiagnostics -Xlint:serial RecordSerial.java
  */
 
@@ -40,5 +40,14 @@ record RecordSerial(int foo) implements Serializable {
     // (possibly) effective
     private Object readResolve() throws ObjectStreamException {
         return null;
+    }
+
+    // ineffective Externalizable methods
+    public void writeExternal(ObjectOutput oo) {
+        ;
+    }
+
+    public void readExternal(ObjectInput oi) {
+        ;
     }
 }

@@ -235,7 +235,10 @@ public class Symtab {
     public final Type objectOutputStreamType;
     public final Type ioExceptionType;
     public final Type objectStreamExceptionType;
+    // For externalization lint checking
     public final Type externalizableType;
+    public final Type objectInputType;
+    public final Type objectOutputType;
 
     // For string templates
     public final Type stringTemplateType;
@@ -622,6 +625,8 @@ public class Symtab {
         ioExceptionType = enterClass("java.io.IOException");
         objectStreamExceptionType = enterClass("java.io.ObjectStreamException");
         externalizableType = enterClass("java.io.Externalizable");
+        objectInputType  = enterClass("java.io.ObjectInput");
+        objectOutputType = enterClass("java.io.ObjectOutput");
         synthesizeEmptyInterfaceIfMissing(autoCloseableType);
         synthesizeEmptyInterfaceIfMissing(cloneableType);
         synthesizeEmptyInterfaceIfMissing(serializableType);

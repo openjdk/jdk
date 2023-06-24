@@ -5134,6 +5134,33 @@ public class Check {
             checkExceptions(tree, e, method, syms.objectStreamExceptionType);
         }
 
+        private void checkWriteExternalRecord(JCClassDecl tree, Element e, MethodSymbol method) {
+            //public void writeExternal(ObjectOutput) throws IOException
+            checkExternMethodRecord(tree, e, method, syms.objectOutputType);
+        }
+
+        private void checkReadExternalRecord(JCClassDecl tree, Element e, MethodSymbol method) {
+             // public void readExternal(ObjectInput) throws IOException
+            checkExternMethodRecord(tree, e, method, syms.objectInputType);
+         }
+
+        private void checkExternMethodRecord(JCClassDecl tree, Element e, MethodSymbol method, Type argType) {
+            long flags = method.flags();
+
+            if (isExternalizable((Type)(e.asType()))) {
+                Type rtype = method.getReturnType();
+                if ( ((flags & PUBLIC) != 0) &&
+                     ((flags & STATIC) == 0) &&
+                     types.isSameType(syms.voidType, rtype) &&
+                     hasExactlyOneArgWithType(tree, e, method, argType)) {
+                    // Not necessary to check throws clause in this context
+                    log.warning(LintCategory.SERIAL,
+                                TreeInfo.diagnosticPositionFor(method, tree),
+                                Warnings.IneffectualExternalizableMethodRecord(method.getSimpleName().toString()));
+                }
+            }
+        }
+
         void checkPrivateNonStaticMethod(JCClassDecl tree, MethodSymbol method) {
             var flags = method.flags();
             if ((flags & PRIVATE) == 0) {
@@ -5314,6 +5341,10 @@ public class Check {
                         switch(name) {
                         case "writeReplace" -> checkWriteReplace(tree, e, method);
                         case "readResolve"  -> checkReadResolve(tree, e, method);
+
+                        case "writeExternal" -> checkWriteExternalRecord(tree, e, method);
+                        case "readExternal"  -> checkReadExternalRecord(tree, e, method);
+
                         default -> {
                             if (serialMethodNames.contains(name)) {
                                 log.warning(LintCategory.SERIAL, tree.pos(),
@@ -5382,6 +5413,20 @@ public class Check {
             }
         }
 
+        private boolean hasExactlyOneArgWithType(JCClassDecl tree,
+                                                 Element enclosing,
+                                                 MethodSymbol method,
+                                                 Type expectedType) {
+            var parameters= method.getParameters();
+
+            if (parameters.size() != 1) {
+                return false;
+            }
+
+            return types.isSameType(parameters.get(0).asType(), expectedType);
+        }
+
+
         private void checkNoArgs(JCClassDecl tree, Element enclosing, MethodSymbol method) {
             var parameters = method.getParameters();
             if (!parameters.isEmpty()) {
@@ -5392,6 +5437,15 @@ public class Check {
         }
 
         private void checkExternalizable(JCClassDecl tree, Element enclosing, MethodSymbol method) {
+            // If the enclosing class is externalizable, warn for the method
+            if (isExternalizable((Type)enclosing.asType())) {
+                log.warning(LintCategory.SERIAL, tree.pos(),
+                            Warnings.IneffectualSerialMethodExternalizable(method.getSimpleName()));
+            }
+            return;
+        }
+
+        private void checkExternalizableRecord(JCClassDecl tree, Element enclosing, MethodSymbol method) {
             // If the enclosing class is externalizable, warn for the method
             if (isExternalizable((Type)enclosing.asType())) {
                 log.warning(LintCategory.SERIAL, tree.pos(),

@@ -1,0 +1,3 @@
+RecordExtern.java:15:17: compiler.warn.ineffectual.externalizable.method.record: writeExternal
+RecordExtern.java:20:17: compiler.warn.ineffectual.externalizable.method.record: readExternal
+2 warnings
