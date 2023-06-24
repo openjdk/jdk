@@ -357,7 +357,7 @@ final class ReadWriteValues {
         }
 
         default void setDouble(byte[] b, int off, double val) {
-            setDouble(b, off, Double.doubleToLongBits(val));
+            setLong(b, off, Double.doubleToLongBits(val));
         }
     }
 
