@@ -112,6 +112,9 @@ public class JRobot extends java.awt.Robot {
 
     /**
      * Move mouse cursor to the center of the Component.
+     * <p>
+     * <b>Note:</b> This method is executed on EDT
+     *
      * @param c Component the mouse is placed over
      */
     public void moveMouseTo(Component c) {
@@ -173,6 +176,9 @@ public class JRobot extends java.awt.Robot {
 
     /**
      * Click in the center of the given Component
+     * <p>
+     * <b>Note:</b> This method uses EDT
+     *
      * @param c the Component to click on
      * @param buttons mouse button(s).
      */
@@ -183,6 +189,9 @@ public class JRobot extends java.awt.Robot {
 
     /**
      * Click the first mouse button in the center of the given Component
+     * <p>
+     * <b>Note:</b> This method uses EDT
+     *
      * @param c the Component to click on
      */
     public void clickMouseOn(Component c) {
@@ -253,6 +262,9 @@ public class JRobot extends java.awt.Robot {
     /**
      * Convert a rectangle from coordinate system of Component c to
      * screen coordinate system.
+     * <p>
+     * <b>Note:</b> This method uses EDT
+     *
      * @param r a non-null Rectangle
      * @param c a Component whose coordinate system is used for conversion
      */
