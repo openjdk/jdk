@@ -25,7 +25,7 @@ package gc.x;
 
 /*
  * @test TestRelocateInPlace
- * @requires vm.gc.Z & !vm.opt.final.ZGenerational
+ * @requires vm.gc.ZSinglegen
  * @summary Test ZGC in-place relocateion
  * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xlog:gc*,gc+stats=off -Xmx256M -XX:+UnlockDiagnosticVMOptions -XX:+ZStressRelocateInPlace gc.x.TestRelocateInPlace
  */

@@ -495,10 +495,13 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
      * and which fd to send response back on
      */
     snprintf(buf1, sizeof(buf1), "%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1]);
-    /* put the fd string as argument to the helper cmd */
+    /* NULL-terminated argv array.
+     * argv[0] contains path to jspawnhelper, to follow conventions.
+     * argv[1] contains the fd string as argument to jspawnhelper
+     */
     hlpargs[0] = (char*)helperpath;
     hlpargs[1] = buf1;
-    hlpargs[2] = 0;
+    hlpargs[2] = NULL;
 
     /* Following items are sent down the pipe to the helper
      * after it is spawned.

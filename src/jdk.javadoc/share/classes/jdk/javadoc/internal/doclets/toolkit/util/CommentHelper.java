@@ -33,6 +33,7 @@ import com.sun.source.doctree.DocCommentTree;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.EscapeTree;
 import com.sun.source.doctree.IdentifierTree;
+import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
@@ -315,6 +316,11 @@ public class CommentHelper {
                 return visit(dt, null);
             }
             return null;
+        }
+
+        @Override
+        public R visitInheritDoc(InheritDocTree node, Void p) {
+            return visit(node.getSupertype(), p);
         }
 
         @Override

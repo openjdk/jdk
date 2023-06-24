@@ -1655,43 +1655,43 @@ const char* os::errno_name(int e) {
 void os::trace_page_sizes(const char* str,
                           const size_t region_min_size,
                           const size_t region_max_size,
-                          const size_t page_size,
                           const char* base,
-                          const size_t size) {
+                          const size_t size,
+                          const size_t page_size) {
 
   log_info(pagesize)("%s: "
                      " min=" SIZE_FORMAT "%s"
                      " max=" SIZE_FORMAT "%s"
                      " base=" PTR_FORMAT
-                     " page_size=" SIZE_FORMAT "%s"
-                     " size=" SIZE_FORMAT "%s",
+                     " size=" SIZE_FORMAT "%s"
+                     " page_size=" SIZE_FORMAT "%s",
                      str,
                      trace_page_size_params(region_min_size),
                      trace_page_size_params(region_max_size),
                      p2i(base),
-                     trace_page_size_params(page_size),
-                     trace_page_size_params(size));
+                     trace_page_size_params(size),
+                     trace_page_size_params(page_size));
 }
 
 void os::trace_page_sizes_for_requested_size(const char* str,
                                              const size_t requested_size,
-                                             const size_t page_size,
-                                             const size_t alignment,
+                                             const size_t requested_page_size,
                                              const char* base,
-                                             const size_t size) {
+                                             const size_t size,
+                                             const size_t page_size) {
 
   log_info(pagesize)("%s:"
                      " req_size=" SIZE_FORMAT "%s"
+                     " req_page_size=" SIZE_FORMAT "%s"
                      " base=" PTR_FORMAT
-                     " page_size=" SIZE_FORMAT "%s"
-                     " alignment=" SIZE_FORMAT "%s"
-                     " size=" SIZE_FORMAT "%s",
+                     " size=" SIZE_FORMAT "%s"
+                     " page_size=" SIZE_FORMAT "%s",
                      str,
                      trace_page_size_params(requested_size),
+                     trace_page_size_params(requested_page_size),
                      p2i(base),
-                     trace_page_size_params(page_size),
-                     trace_page_size_params(alignment),
-                     trace_page_size_params(size));
+                     trace_page_size_params(size),
+                     trace_page_size_params(page_size));
 }
 
 
