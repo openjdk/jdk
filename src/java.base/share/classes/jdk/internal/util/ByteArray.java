@@ -28,9 +28,6 @@ package jdk.internal.util;
 import jdk.internal.misc.Unsafe;
 import jdk.internal.vm.annotation.ForceInline;
 
-import java.util.List;
-import java.util.function.BiFunction;
-
 /**
  * Utility methods for packing/unpacking primitive values in/out of byte arrays
  * using {@linkplain java.nio.ByteOrder#BIG_ENDIAN big endian order} (aka. "network order").
@@ -43,14 +40,11 @@ public final class ByteArray {
     private ByteArray() {
     }
 
-    private static final BiFunction<String, List<Number>, ArrayIndexOutOfBoundsException>
-            OOBEF = Preconditions.outOfBoundsExceptionFormatter(ArrayIndexOutOfBoundsException::new);
-
     static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     @ForceInline
     static long arrayOffset(byte[] array, int typeBytes, int offset) {
-        return (long) Preconditions.checkIndex(offset, array.length - typeBytes + 1, OOBEF)
+        return (long) Preconditions.checkIndex(offset, array.length - typeBytes + 1, Preconditions.AIOOBE_FORMATTER)
                 + Unsafe.ARRAY_BYTE_BASE_OFFSET;
     }
 
