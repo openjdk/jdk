@@ -147,8 +147,8 @@ public final class ByteArray {
     @ForceInline
     public static int getInt(byte[] array, int offset) {
         return UNSAFE.getIntUnaligned(
-            array, 
-            arrayOffset(array, Integer.BYTES, offset), 
+            array,
+            arrayOffset(array, Integer.BYTES, offset),
             true);
     }
 
