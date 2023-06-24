@@ -29,4 +29,38 @@ record RecordExtern(int foo) implements Externalizable {
     public void readExternal() {
         ;
     }
+
+    // Check warnings for serialization methods and fields too
+
+    // partially effective
+    private static final long serialVersionUID = 42;
+
+    // ineffectual
+    private static final ObjectStreamField[] serialPersistentFields = {};
+
+    // ineffectual
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        stream.defaultWriteObject();
+    }
+
+    // (possibly) effective
+    private Object writeReplace() throws ObjectStreamException {
+        return null;
+    }
+
+    // ineffectual
+    private void readObject(ObjectInputStream stream)
+        throws IOException, ClassNotFoundException {
+        stream.defaultReadObject();
+    }
+
+    // ineffectual
+    private void readObjectNoData() throws ObjectStreamException {
+        return;
+    }
+
+    // (possibly) effective
+    private Object readResolve() throws ObjectStreamException {
+        return null;
+    }
 }
