@@ -41,9 +41,9 @@ public final class ByteArray {
     }
 
     /**
-     * The {@code Unsafe} can be functionality replaced by 
+     * The {@code Unsafe} can be functionality replaced by
      * {@linkplain java.lang.invoke.MethodHandles#byteArrayViewVarHandle byteArrayViewVarHandle},
-     * but it's not feasible in practices, because {@code ByteArray} and {@code ByteArrayLittleEndian} 
+     * but it's not feasible in practices, because {@code ByteArray} and {@code ByteArrayLittleEndian}
      * can be used in fundamental classes, {@code VarHandle} exercise many other
      * code at VM startup, this could lead a recursive calls when fundamental
      * classes is used in {@code VarHandle}.
