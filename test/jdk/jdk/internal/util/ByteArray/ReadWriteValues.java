@@ -322,11 +322,11 @@ final class ReadWriteValues {
         }
 
         long getLong(byte[] b, int off);
-        
+
         default float getFloat(byte[] b, int off) {
             return Float.intBitsToFloat(getInt(b, off));
         }
-        
+
         default double getDouble(byte[] b, int off) {
             return Double.longBitsToDouble(getLong(b, off));
         }
