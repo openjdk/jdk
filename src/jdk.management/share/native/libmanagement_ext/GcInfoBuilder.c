@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,7 +129,9 @@ static void setLongValueAtObjectArray(JNIEnv *env, jobjectArray array,
     static const char* class_name = "java/lang/Long";
     static const char* signature = "(J)V";
     jobject obj = JNU_NewObjectByName(env, class_name, signature, value);
-
+    if ((*env)->ExceptionCheck(env)) {
+        return;
+    }
     (*env)->SetObjectArrayElement(env, array, index, obj);
 }
 
@@ -138,7 +140,9 @@ static void setBooleanValueAtObjectArray(JNIEnv *env, jobjectArray array,
     static const char* class_name = "java/lang/Boolean";
     static const char* signature = "(Z)V";
     jobject obj = JNU_NewObjectByName(env, class_name, signature, value);
-
+    if ((*env)->ExceptionCheck(env)) {
+        return;
+    }
     (*env)->SetObjectArrayElement(env, array, index, obj);
 }
 
@@ -147,7 +151,9 @@ static void setByteValueAtObjectArray(JNIEnv *env, jobjectArray array,
     static const char* class_name = "java/lang/Byte";
     static const char* signature = "(B)V";
     jobject obj = JNU_NewObjectByName(env, class_name, signature, value);
-
+    if ((*env)->ExceptionCheck(env)) {
+        return;
+    }
     (*env)->SetObjectArrayElement(env, array, index, obj);
 }
 
@@ -156,7 +162,9 @@ static void setIntValueAtObjectArray(JNIEnv *env, jobjectArray array,
     static const char* class_name = "java/lang/Integer";
     static const char* signature = "(I)V";
     jobject obj = JNU_NewObjectByName(env, class_name, signature, value);
-
+    if ((*env)->ExceptionCheck(env)) {
+        return;
+    }
     (*env)->SetObjectArrayElement(env, array, index, obj);
 }
 
@@ -165,7 +173,9 @@ static void setShortValueAtObjectArray(JNIEnv *env, jobjectArray array,
     static const char* class_name = "java/lang/Short";
     static const char* signature = "(S)V";
     jobject obj = JNU_NewObjectByName(env, class_name, signature, value);
-
+    if ((*env)->ExceptionCheck(env)) {
+        return;
+    }
     (*env)->SetObjectArrayElement(env, array, index, obj);
 }
 
@@ -174,7 +184,9 @@ static void setDoubleValueAtObjectArray(JNIEnv *env, jobjectArray array,
     static const char* class_name = "java/lang/Double";
     static const char* signature = "(D)V";
     jobject obj = JNU_NewObjectByName(env, class_name, signature, value);
-
+    if ((*env)->ExceptionCheck(env)) {
+        return;
+    }
     (*env)->SetObjectArrayElement(env, array, index, obj);
 }
 
@@ -183,7 +195,9 @@ static void setFloatValueAtObjectArray(JNIEnv *env, jobjectArray array,
     static const char* class_name = "java/lang/Float";
     static const char* signature = "(D)V";
     jobject obj = JNU_NewObjectByName(env, class_name, signature, value);
-
+    if ((*env)->ExceptionCheck(env)) {
+        return;
+    }
     (*env)->SetObjectArrayElement(env, array, index, obj);
 }
 
@@ -192,7 +206,9 @@ static void setCharValueAtObjectArray(JNIEnv *env, jobjectArray array,
     static const char* class_name = "java/lang/Character";
     static const char* signature = "(C)V";
     jobject obj = JNU_NewObjectByName(env, class_name, signature, value);
-
+    if ((*env)->ExceptionCheck(env)) {
+        return;
+    }
     (*env)->SetObjectArrayElement(env, array, index, obj);
 }
 
@@ -292,6 +308,10 @@ JNIEXPORT jobject JNICALL Java_com_sun_management_internal_GcInfoBuilder_getLast
     }
     if (nativeTypes != NULL) {
         free(nativeTypes);
+    }
+    // Recognise possible Exception from the switch statement above:
+    if ((*env)->ExceptionCheck(env)) {
+        return NULL;
     }
 
     return JNU_NewObjectByName(env,
