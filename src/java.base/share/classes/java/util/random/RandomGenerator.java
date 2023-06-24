@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,8 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
+
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.random.RandomSupport;
 import jdk.internal.util.random.RandomSupport.*;
 
@@ -481,10 +483,13 @@ public interface RandomGenerator {
     default void nextBytes(byte[] bytes) {
         int i = 0;
         int len = bytes.length;
+        Unsafe unsafe = Unsafe.getUnsafe();
         for (int words = len >> 3; words--> 0; ) {
             long rnd = nextLong();
-            for (int n = 8; n--> 0; rnd >>>= Byte.SIZE)
-                bytes[i++] = (byte)rnd;
+            if (unsafe.isBigEndian())
+                rnd = Long.reverseBytes(rnd);
+            unsafe.putLong(bytes, (long)Unsafe.ARRAY_BYTE_BASE_OFFSET + i, rnd);
+            i += Long.BYTES;
         }
         if (i < len)
             for (long rnd = nextLong(); i < len; rnd >>>= Byte.SIZE)
