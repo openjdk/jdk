@@ -1499,7 +1499,7 @@ final class StringUTF16 {
 
     ////////////////////////////////////////////////////////////////
 
-    static native boolean isBigEndian();
+    private static native boolean isBigEndian();
 
     static final int HI_BYTE_SHIFT;
     static final int LO_BYTE_SHIFT;

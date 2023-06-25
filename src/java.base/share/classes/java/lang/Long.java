@@ -30,13 +30,10 @@ import java.lang.invoke.MethodHandles;
 import java.lang.constant.Constable;
 import java.lang.constant.ConstantDesc;
 import java.math.*;
-import java.nio.ByteOrder;
 import java.util.Objects;
 import java.util.Optional;
 
 import jdk.internal.misc.CDS;
-import jdk.internal.util.ByteArray;
-import jdk.internal.util.HexDigits;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -446,114 +443,6 @@ public final class Long extends Number
             StringUTF16.putChar(buf, --charPos, Integer.digits[((int) val) & mask]);
             val >>>= shift;
         } while (charPos > offset);
-    }
-
-    static String fastUUID(long lsb, long msb) {
-        byte[] buf = new byte[36];
-        short[] digits = HexDigits.DIGITS;
-        ByteArray.setLong(
-                buf,
-                0,
-                ((long) digits[((int) (msb >> 56)) & 0xff] << 48)
-                        | ((long) digits[((int) (msb >> 48)) & 0xff] << 32)
-                        | ((long) digits[((int) (msb >> 40)) & 0xff] << 16)
-                        | digits[((int) (msb >> 32)) & 0xff]);
-        buf[8] = '-';
-        ByteArray.setInt(
-                buf,
-                9,
-                (digits[(((int) msb) >> 24) & 0xff] << 16)
-                        | digits[(((int) msb) >> 16) & 0xff]);
-        buf[13] = '-';
-        ByteArray.setInt(
-                buf,
-                14,
-                (digits[(((int) msb) >> 8) & 0xff] << 16)
-                        | digits[((int) msb) & 0xff]);
-        buf[18] = '-';
-        ByteArray.setInt(
-                buf,
-                19,
-                (digits[(((int) (lsb >> 56))) & 0xff] << 16)
-                        | digits[(((int) (lsb >> 48))) & 0xff]);
-        buf[23] = '-';
-        ByteArray.setLong(
-                buf,
-                24,
-                ((long) digits[(((int) (lsb >> 40))) & 0xff] << 48)
-                        | ((long) digits[((int) (lsb >> 32)) & 0xff] << 32)
-                        | ((long) digits[(((int) lsb) >> 24) & 0xff] << 16)
-                        | digits[(((int) lsb) >> 16) & 0xff]);
-        ByteArray.setInt(
-                buf,
-                32,
-                (digits[(((int) lsb) >> 8) & 0xff] << 16)
-                        | digits[((int) lsb) & 0xff]);
-
-        return new String(buf, LATIN1);
-    }
-
-    static String fastUUIDUTF16(long lsb, long msb) {
-        short[] digits = HexDigits.DIGITS;
-
-        short i0 = digits[((int) (msb >> 56)) & 0xff];
-        short i1 = digits[((int) (msb >> 48)) & 0xff];
-        short i2 = digits[((int) (msb >> 40)) & 0xff];
-        short i3 = digits[((int) (msb >> 32)) & 0xff];
-        short i4 = digits[(((int) msb) >> 24) & 0xff];
-        short i5 = digits[(((int) msb) >> 16) & 0xff];
-        short i6 = digits[(((int) msb) >> 8) & 0xff];
-        short i7 = digits[((int) msb) & 0xff];
-        short i8 = digits[(((int) (lsb >> 56))) & 0xff];
-        short i9 = digits[(((int) (lsb >> 48))) & 0xff];
-        short i10 = digits[(((int) (lsb >> 40))) & 0xff];
-        short i11 = digits[((int) (lsb >> 32)) & 0xff];
-        short i12 = digits[(((int) lsb) >> 24) & 0xff];
-        short i13 = digits[(((int) lsb) >> 16) & 0xff];
-        short i14 = digits[(((int) lsb) >> 8) & 0xff];
-        short i15 = digits[((int) lsb) & 0xff];
-
-        byte[] buf = new byte[72];
-        int off = StringUTF16.isBigEndian() ? 1 : 0;
-
-        buf[0 + off] = (byte) (i0 >> 8);
-        buf[2 + off] = (byte) i0;
-        buf[4 + off] = (byte) (i1 >> 8);
-        buf[6 + off] = (byte) i1;
-        buf[8 + off] = (byte) (i2 >> 8);
-        buf[10 + off] = (byte) i2;
-        buf[12 + off] = (byte) (i3 >> 8);
-        buf[14 + off] = (byte) i3;
-        buf[16 + off] = '-';
-        buf[18 + off] = (byte) (i4 >> 8);
-        buf[20 + off] = (byte) i4;
-        buf[22 + off] = (byte) (i5 >> 8);
-        buf[24 + off] = (byte) i5;
-        buf[26 + off] = '-';
-        buf[28 + off] = (byte) (i6 >> 8);
-        buf[30 + off] = (byte) i6;
-        buf[32 + off] = (byte) (i7 >> 8);
-        buf[34 + off] = (byte) i7;
-        buf[36 + off] = '-';
-        buf[38 + off] = (byte) (i8 >> 8);
-        buf[40 + off] = (byte) i8;
-        buf[42 + off] = (byte) (i9 >> 8);
-        buf[44 + off] = (byte) i9;
-        buf[46 + off] = '-';
-        buf[48 + off] = (byte) (i10 >> 8);
-        buf[50 + off] = (byte) i10;
-        buf[52 + off] = (byte) (i11 >> 8);
-        buf[54 + off] = (byte) i11;
-        buf[56 + off] = (byte) (i12 >> 8);
-        buf[58 + off] = (byte) i12;
-        buf[60 + off] = (byte) (i13 >> 8);
-        buf[62 + off] = (byte) i13;
-        buf[64 + off] = (byte) (i14 >> 8);
-        buf[66 + off] = (byte) i14;
-        buf[68 + off] = (byte) (i15 >> 8);
-        buf[70 + off] = (byte) i15;
-
-        return new String(buf, UTF16);
     }
 
     /**
