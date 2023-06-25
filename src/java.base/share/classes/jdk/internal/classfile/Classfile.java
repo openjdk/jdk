@@ -244,7 +244,7 @@ public sealed interface Classfile
 
     /**
      * Build a classfile into a byte array using the provided constant pool
-     * builder (which encapsulates classfile processing options.)
+     * builder.
      *
      * @param thisClassEntry the name of the class to build
      * @param constantPool the constant pool builder
@@ -615,6 +615,21 @@ public sealed interface Classfile
     int TAG_UNICODE = 2;
     int TAG_UTF8 = 1;
 
+    // annotation element values
+    char AEV_BYTE = 'B';
+    char AEV_CHAR = 'C';
+    char AEV_DOUBLE = 'D';
+    char AEV_FLOAT = 'F';
+    char AEV_INT = 'I';
+    char AEV_LONG = 'J';
+    char AEV_SHORT = 'S';
+    char AEV_BOOLEAN = 'Z';
+    char AEV_STRING = 's';
+    char AEV_ENUM = 'e';
+    char AEV_CLASS = 'c';
+    char AEV_ANNOTATION = '@';
+    char AEV_ARRAY = '[';
+
     //type annotations
     int TAT_CLASS_TYPE_PARAMETER = 0x00;
     int TAT_METHOD_TYPE_PARAMETER = 0x01;
@@ -675,8 +690,14 @@ public sealed interface Classfile
     int JAVA_21_VERSION = 65;
     int JAVA_22_VERSION = 66;
 
-    int LATEST_MAJOR_VERSION = JAVA_22_VERSION;
-    int LATEST_MINOR_VERSION = 0;
     int PREVIEW_MINOR_VERSION = -1;
+
+    static int latestMajorVersion() {
+        return JAVA_22_VERSION;
+    }
+
+    static int latestMinorVersion() {
+        return 0;
+    }
 
 }
