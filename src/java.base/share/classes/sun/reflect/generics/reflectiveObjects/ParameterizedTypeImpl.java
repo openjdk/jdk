@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -165,9 +165,8 @@ public class ParameterizedTypeImpl implements ParameterizedType {
      */
     @Override
     public boolean equals(Object o) {
-        if (o instanceof ParameterizedType) {
+        if (o instanceof ParameterizedType that) {
             // Check that information is equivalent
-            ParameterizedType that = (ParameterizedType) o;
 
             if (this == that)
                 return true;
@@ -219,10 +218,10 @@ public class ParameterizedTypeImpl implements ParameterizedType {
 
             sb.append("$");
 
-            if (ownerType instanceof ParameterizedTypeImpl) {
+            if (ownerType instanceof ParameterizedTypeImpl pt) {
                 // Find simple name of nested type by removing the
                 // shared prefix with owner.
-                sb.append(rawType.getName().replace( ((ParameterizedTypeImpl)ownerType).rawType.getName() + "$",
+                sb.append(rawType.getName().replace(pt.rawType.getName() + "$",
                                          ""));
             } else
                sb.append(rawType.getSimpleName());

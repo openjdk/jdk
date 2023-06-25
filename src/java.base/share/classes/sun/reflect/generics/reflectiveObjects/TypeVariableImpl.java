@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ public class TypeVariableImpl<D extends GenericDeclaration>
             throw new AssertionError("Unexpected kind of GenericDeclaration" +
                     decl.getClass().toString());
         }
-        return new TypeVariableImpl<T>(decl, name, bs, f);
+        return new TypeVariableImpl<>(decl, name, bs, f);
     }
 
 
@@ -121,8 +121,8 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      */
     public Type[] getBounds() {
         Object[] value = bounds;
-        if (value instanceof FieldTypeSignature[]) {
-            value = reifyBounds((FieldTypeSignature[])value);
+        if (value instanceof FieldTypeSignature[] sigs) {
+            value = reifyBounds(sigs);
             bounds = value;
         }
         return (Type[])value.clone();
@@ -137,8 +137,8 @@ public class TypeVariableImpl<D extends GenericDeclaration>
      * @since 1.5
      */
     public D getGenericDeclaration() {
-        if (genericDeclaration instanceof Class)
-            ReflectUtil.checkPackageAccess((Class)genericDeclaration);
+        if (genericDeclaration instanceof Class<?> c)
+            ReflectUtil.checkPackageAccess(c);
         else if ((genericDeclaration instanceof Method) ||
                 (genericDeclaration instanceof Constructor))
             ReflectUtil.conservativeCheckMemberAccess((Member)genericDeclaration);
@@ -159,9 +159,8 @@ public class TypeVariableImpl<D extends GenericDeclaration>
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof TypeVariable &&
+        if (o instanceof TypeVariable<?> that &&
                 o.getClass() == TypeVariableImpl.class) {
-            TypeVariable<?> that = (TypeVariable<?>) o;
 
             GenericDeclaration thatDecl = that.getGenericDeclaration();
             String thatName = that.getName();

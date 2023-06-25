@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,8 +95,8 @@ public final class AnnotatedTypeFactory {
         } else if (type instanceof ParameterizedType t) {
             if (t.getOwnerType() == null)
                 return addTo;
-            if (t.getRawType() instanceof Class
-                    && Modifier.isStatic(((Class) t.getRawType()).getModifiers()))
+            if (t.getRawType() instanceof Class<?> c
+                    && Modifier.isStatic(c.getModifiers()))
                 return addTo;
             return nestingForType(t.getOwnerType(), addTo.pushInner());
         }
@@ -178,10 +178,9 @@ public final class AnnotatedTypeFactory {
 
         @Override
         public AnnotatedType getAnnotatedOwnerType() {
-            if (!(type instanceof Class<?>))
+            if (!(type instanceof Class<?> nested))
                 throw new IllegalStateException("Can't compute owner");
 
-            Class<?> nested = (Class<?>)type;
             Class<?> owner = nested.getDeclaringClass();
             if (owner == null) // top-level, local or anonymous
                 return null;
@@ -250,12 +249,11 @@ public final class AnnotatedTypeFactory {
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof AnnotatedType &&
+            if (o instanceof AnnotatedType that &&
                 !(o instanceof AnnotatedArrayType) &&
                 !(o instanceof AnnotatedTypeVariable) &&
                 !(o instanceof AnnotatedParameterizedType) &&
                 !(o instanceof AnnotatedWildcardType)) {
-                AnnotatedType that = (AnnotatedType) o;
                 return equalsTypeAndAnnotations(that);
             } else {
                 return false;
