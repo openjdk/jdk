@@ -81,7 +81,6 @@ import jdk.internal.classfile.TypeKind;
 import static jdk.internal.classfile.Classfile.*;
 import jdk.internal.classfile.CodeBuilder;
 
-import jdk.internal.vm.annotation.Stable;
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.plugin.PluginException;
 import jdk.tools.jlink.plugin.ResourcePool;
@@ -1540,7 +1539,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         static class SetBuilder<T extends Comparable<T>> {
             private static final MethodTypeDesc MTD_Set_ObjectArray = MethodTypeDesc.of(
                     CD_Set, CD_Object.arrayType());
-            private static @Stable final MethodTypeDesc[] SET_OF_MTDS = new MethodTypeDesc[11];
+            private static final MethodTypeDesc[] SET_OF_MTDS = new MethodTypeDesc[11];
 
             private static MethodTypeDesc setOfType(int count) {
                 var ret = SET_OF_MTDS[count];
