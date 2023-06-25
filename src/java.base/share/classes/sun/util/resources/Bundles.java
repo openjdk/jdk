@@ -507,8 +507,8 @@ public abstract class Bundles {
                 if (hashCodeCache != otherEntry.hashCodeCache) {
                     return false;
                 }
-                return Objects.equals(locale, otherEntry.locale)
-                        && Objects.equals(name, otherEntry.name);
+                return locale.equals(otherEntry.locale)
+                        && name.equals(otherEntry.name);
             }
             return false;
         }
