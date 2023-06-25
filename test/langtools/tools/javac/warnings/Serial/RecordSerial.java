@@ -42,7 +42,7 @@ record RecordSerial(int foo) implements Serializable {
         return null;
     }
 
-    // ineffective Externalizable methods
+    // meaningless Externalizable methods, no warning generated
     public void writeExternal(ObjectOutput oo) {
         ;
     }
