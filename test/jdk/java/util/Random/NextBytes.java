@@ -29,13 +29,17 @@
  * @run junit NextBytes
  */
 
-import org.junit.jupiter.api.Test;
-
 import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
+import java.util.function.Supplier;
 import java.util.random.RandomGenerator;
 import java.util.random.RandomGeneratorFactory;
 import java.util.stream.IntStream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -43,30 +47,30 @@ public class NextBytes {
 
     private static final long SEED = 2398579034L;
 
-    @Test
-    void testJURandom() throws Throwable {
-        byte[] expected = new byte[]
-            {27, -105, -24, 83, -77, -29, 119, -74, -106, 68, 54};
-        Random r = new java.util.Random(SEED);
-
-        assertAll(IntStream.range(0, expected.length).mapToObj(i -> () -> {
-            r.setSeed(SEED);
-            byte[] actual = new byte[i];
-            r.nextBytes(actual);
-            assertArrayEquals(Arrays.copyOf(expected, i), actual);
-        }));
+    private static List<Arguments> params() {
+        return List.of(
+            Arguments.of(
+                "Random",
+                new byte[]{27, -105, -24, 83, -77, -29, 119, -74, -106, 68, 54}
+            ),
+            Arguments.of(
+                "L32X64MixRandom",
+                new byte[]{-57, 102, 42, 34, -3, -113, 78, -20, 24, -17, 59}
+            ),
+            Arguments.of(
+                "Xoshiro256PlusPlus",
+                new byte[]{121, -17, 31, -115, 26, -119, 64, 25, -15, 63, 29}
+            )
+        );
     }
 
-    @Test
-    void testL32X64MixRandom() throws Throwable {
-        byte[] expected = new byte[]
-            {-57, 102, 42, 34, -3, -113, 78, -20, 24, -17, 59 };
-
-        RandomGeneratorFactory factory = RandomGeneratorFactory.of("L32X64MixRandom");
+    @ParameterizedTest
+    @MethodSource("params")
+    void testNextBytes(String algo, byte[] expected) throws Throwable {
+        RandomGeneratorFactory factory = RandomGeneratorFactory.of(algo);
         assertAll(IntStream.range(0, expected.length).mapToObj(i -> () -> {
-            RandomGenerator r = factory.create(SEED);
             byte[] actual = new byte[i];
-            r.nextBytes(actual);
+            factory.create(SEED).nextBytes(actual);
             assertArrayEquals(Arrays.copyOf(expected, i), actual);
         }));
     }
