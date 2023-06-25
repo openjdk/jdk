@@ -68,7 +68,7 @@ public class NextBytes {
     @MethodSource("params")
     void testNextBytes(String algo, byte[] expected) throws Throwable {
         RandomGeneratorFactory factory = RandomGeneratorFactory.of(algo);
-        assertAll(IntStream.range(0, expected.length).mapToObj(i -> () -> {
+        assertAll(IntStream.rangeClosed(0, expected.length).mapToObj(i -> () -> {
             byte[] actual = new byte[i];
             factory.create(SEED).nextBytes(actual);
             assertArrayEquals(Arrays.copyOf(expected, i), actual);
