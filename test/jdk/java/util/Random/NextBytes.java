@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,39 +24,51 @@
 /*
  * @test
  * @bug 4261170
- * @summary Tests for Random.nextBytes
+ * @summary Tests for RandomGenerator.nextBytes
  * @author Martin Buchholz
+ * @run junit NextBytes
  */
+
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.random.RandomGenerator;
+import java.util.random.RandomGeneratorFactory;
+import java.util.stream.IntStream;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class NextBytes {
-    private static void realMain(String[] args) throws Throwable {
+
+    private static final long SEED = 2398579034L;
+
+    @Test
+    void testJURandom() throws Throwable {
         byte[] expected = new byte[]
             {27, -105, -24, 83, -77, -29, 119, -74, -106, 68, 54};
-        Random r = new java.util.Random(2398579034L);
-        for (int i = 0; i <= expected.length; i++) {
-            r.setSeed(2398579034L);
+        Random r = new java.util.Random(SEED);
+
+        assertAll(IntStream.range(0, expected.length).mapToObj(i -> () -> {
+            r.setSeed(SEED);
             byte[] actual = new byte[i];
             r.nextBytes(actual);
-            //System.out.println(Arrays.toString(actual));
-            check(Arrays.equals(actual, Arrays.copyOf(expected,i)));
-        }
+            assertArrayEquals(Arrays.copyOf(expected, i), actual);
+        }));
     }
 
-    //--------------------- Infrastructure ---------------------------
-    static volatile int passed = 0, failed = 0;
-    static void pass() {passed++;}
-    static void fail() {failed++; Thread.dumpStack();}
-    static void fail(String msg) {System.out.println(msg); fail();}
-    static void unexpected(Throwable t) {failed++; t.printStackTrace();}
-    static void check(boolean cond) {if (cond) pass(); else fail();}
-    static void equal(Object x, Object y) {
-        if (x == null ? y == null : x.equals(y)) pass();
-        else fail(x + " not equal to " + y);}
-    public static void main(String[] args) throws Throwable {
-        try {realMain(args);} catch (Throwable t) {unexpected(t);}
-        System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
-        if (failed > 0) throw new AssertionError("Some tests failed");}
+    @Test
+    void testL32X64MixRandom() throws Throwable {
+        byte[] expected = new byte[]
+            {-57, 102, 42, 34, -3, -113, 78, -20, 24, -17, 59 };
+
+        RandomGeneratorFactory factory = RandomGeneratorFactory.of("L32X64MixRandom");
+        assertAll(IntStream.range(0, expected.length).mapToObj(i -> () -> {
+            RandomGenerator r = factory.create(SEED);
+            byte[] actual = new byte[i];
+            r.nextBytes(actual);
+            assertArrayEquals(Arrays.copyOf(expected, i), actual);
+        }));
+    }
+
 }
