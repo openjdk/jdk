@@ -55,8 +55,7 @@ volatile AttachListenerState AttachListener::_state = AL_NOT_INITIALIZED;
 // Invokes VMSupport.serializePropertiesToByteArray to serialize
 // the system properties into a byte array.
 
-static InstanceKlass* load_and_initialize_klass(Symbol* sh, TRAPS) {
-  Klass* k = SystemDictionary::resolve_or_fail(sh, true, CHECK_NULL);
+static InstanceKlass* initialize_klass(Klass* k, TRAPS) {
   InstanceKlass* ik = InstanceKlass::cast(k);
   if (ik->should_be_initialized()) {
     ik->initialize(CHECK_NULL);
@@ -68,9 +67,7 @@ static jint get_properties(AttachOperation* op, outputStream* out, Symbol* seria
   JavaThread* THREAD = JavaThread::current(); // For exception macros.
   HandleMark hm(THREAD);
 
-  // load VMSupport
-  Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
-  InstanceKlass* k = load_and_initialize_klass(klass, THREAD);
+  InstanceKlass* k = initialize_klass(vmClasses::VMSupport_klass(), THREAD);
   if (HAS_PENDING_EXCEPTION) {
     java_lang_Throwable::print(PENDING_EXCEPTION, out);
     CLEAR_PENDING_EXCEPTION;

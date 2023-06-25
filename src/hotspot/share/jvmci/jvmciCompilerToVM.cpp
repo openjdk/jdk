@@ -582,7 +582,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   TempNewSymbol class_name = SymbolTable::new_symbol(str);
 
   if (class_name->utf8_length() <= 1) {
-    JVMCI_THROW_MSG_0(InternalError, err_msg("Primitive type %s should be handled in Java code", class_name->as_C_string()));
+    JVMCI_THROW_MSG_0(InternalError, err_msg("Primitive type %s should be handled in Java code", str));
   }
 
   JVMCIKlassHandle resolved_klass(THREAD);
@@ -2833,9 +2833,7 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationA
   Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
   reflect_ConstantPool::set_cp(jcp(), holder->constants());
 
-  // load VMSupport
-  Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
-  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK_NULL);
+  Klass* k = vmClasses::VMSupport_klass();
 
   InstanceKlass* vm_support = InstanceKlass::cast(k);
   if (vm_support->should_be_initialized()) {

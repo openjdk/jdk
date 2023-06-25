@@ -389,11 +389,7 @@ class ExceptionTranslation: public StackObj {
 
  public:
   void doit(JavaThread* THREAD) {
-    // Resolve VMSupport class explicitly as HotSpotJVMCI::compute_offsets
-    // may not have been called.
-    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
-    guarantee(!HAS_PENDING_EXCEPTION, "");
-
+    Klass* vmSupport = vmClasses::VMSupport_klass();
     int buffer_size = 2048;
     while (true) {
       ResourceMark rm;
