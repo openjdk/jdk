@@ -30,11 +30,11 @@ import org.openjdk.jmh.annotations.*;
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 5, time = 2)
+@Warmup(iterations = 5, time = 3)
 @Measurement(iterations = 4, time = 2)
 @Fork(value = 3)
 public class RandomGeneratorNextBytes {
-    
+
     @Param({"Random", "L32X64MixRandom"})
     private String algo;
 
@@ -52,6 +52,6 @@ public class RandomGeneratorNextBytes {
 
     @Benchmark
     public void testNextBytes() {
-
+        generator.nextBytes(array);
     }
 }
