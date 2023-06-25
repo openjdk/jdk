@@ -2583,7 +2583,6 @@ bool LibraryCallKit::inline_vector_extract() {
       }
       // VectorMaskToLongNode requires the input is either a mask or a vector with BOOLEAN type.
       if (opd->bottom_type()->isa_vectmask() == nullptr) {
-        assert(!Matcher::has_predicated_vectors(), "should be");
         opd = gvn().transform(VectorStoreMaskNode::make(gvn(), opd, elem_bt, num_elem));
       }
       // ((toLong() >>> pos) & 1L
