@@ -41,7 +41,7 @@ private:
   shenandoah_padding(2);
 
 public:
-  ShenandoahLock() : _state(unlocked), _owner(NULL) {};
+  ShenandoahLock() : _state(unlocked), _owner(nullptr) {};
 
   void lock() {
 #ifdef ASSERT
@@ -50,7 +50,7 @@ public:
     Thread::SpinAcquire(&_state, "Shenandoah Heap Lock");
 #ifdef ASSERT
     assert(_state == locked, "must be locked");
-    assert(_owner == NULL, "must not be owned");
+    assert(_owner == nullptr, "must not be owned");
     _owner = Thread::current();
 #endif
   }
@@ -58,7 +58,7 @@ public:
   void unlock() {
 #ifdef ASSERT
     assert (_owner == Thread::current(), "sanity");
-    _owner = NULL;
+    _owner = nullptr;
 #endif
     Thread::SpinRelease(&_state);
   }
@@ -78,13 +78,13 @@ private:
   ShenandoahLock* const _lock;
 public:
   ShenandoahLocker(ShenandoahLock* lock) : _lock(lock) {
-    if (_lock != NULL) {
+    if (_lock != nullptr) {
       _lock->lock();
     }
   }
 
   ~ShenandoahLocker() {
-    if (_lock != NULL) {
+    if (_lock != nullptr) {
       _lock->unlock();
     }
   }
@@ -123,13 +123,13 @@ private:
 public:
   ShenandoahReentrantLocker(ShenandoahReentrantLock* lock) :
     _lock(lock) {
-    if (_lock != NULL) {
+    if (_lock != nullptr) {
       _lock->lock();
     }
   }
 
   ~ShenandoahReentrantLocker() {
-    if (_lock != NULL) {
+    if (_lock != nullptr) {
       assert(_lock->owned_by_self(), "Must be owner");
       _lock->unlock();
     }

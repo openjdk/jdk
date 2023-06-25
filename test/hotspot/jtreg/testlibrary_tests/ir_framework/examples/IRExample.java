@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -177,5 +177,21 @@ class FailingExamples {
     public void badCompilePhases() {
         iFld2 = 42;
         iFld2 = 42 + iFld2; // Removed in first IGVN iteration and replaced by iFld2 = 84
+    }
+
+    @Test
+    @IR(counts = {IRNode.STORE_I, "1"}) // Should work but since we do not invoke the method enough times, we fail.
+    public void testNotCompiled() {
+        iFld2 = 34;
+    }
+
+    // RunMode.STANDALONE gives the user full control over how the associated @Test method is compiled: The IR framework
+    // only invokes this @Run method once, without any additional warm-up iterations, and does NOT initiate a compilation.
+    // This is entirely left to the @Run method to do. Since we invoke the @Test method testNotCompiled() only once, this
+    // is not enough to normally trigger a C2 compilation. IR matching fails since there is no C2 compilation output.
+    // To fix that, we would need to invoke testNotCompiled() enough times to trigger a C2 compilation.
+    @Run(test = "testNotCompiled", mode = RunMode.STANDALONE)
+    public void badStandAloneNotCompiled() {
+        testNotCompiled();
     }
 }

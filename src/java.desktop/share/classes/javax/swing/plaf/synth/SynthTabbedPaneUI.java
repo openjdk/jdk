@@ -837,6 +837,9 @@ public class SynthTabbedPaneUI extends BasicTabbedPaneUI
     }
 
     private FontMetrics getFontMetrics(Font font) {
+        if (font == null) {
+            font = tabPane.getFont();
+        }
         return tabPane.getFontMetrics(font);
     }
 

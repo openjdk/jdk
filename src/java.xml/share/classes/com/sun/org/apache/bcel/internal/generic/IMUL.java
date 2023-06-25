@@ -23,28 +23,28 @@ package com.sun.org.apache.bcel.internal.generic;
 
 /**
  * IMUL - Multiply ints
- * <PRE>Stack: ..., value1, value2 -&gt; result</PRE>
  *
+ * <PRE>
+ * Stack: ..., value1, value2 -&gt; result
+ * </PRE>
  */
 public class IMUL extends ArithmeticInstruction {
 
-    /** Multiply ints
+    /**
+     * Multiply ints
      */
     public IMUL() {
         super(com.sun.org.apache.bcel.internal.Const.IMUL);
     }
 
-
     /**
-     * Call corresponding visitor method(s). The order is:
-     * Call visitor methods of implemented interfaces first, then
-     * call methods according to the class hierarchy in descending order,
-     * i.e., the most specific visitXXX() call comes last.
+     * Call corresponding visitor method(s). The order is: Call visitor methods of implemented interfaces first, then call
+     * methods according to the class hierarchy in descending order, i.e., the most specific visitXXX() call comes last.
      *
      * @param v Visitor object
      */
     @Override
-    public void accept( final Visitor v ) {
+    public void accept(final Visitor v) {
         v.visitTypedInstruction(this);
         v.visitStackProducer(this);
         v.visitStackConsumer(this);

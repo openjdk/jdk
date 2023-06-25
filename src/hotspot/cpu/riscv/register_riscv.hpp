@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -41,7 +41,7 @@
 #define CSR_VLENB    0xC22        // VLEN/8 (vector register length in bytes)
 #define CSR_CYCLE    0xc00        // Cycle counter for RDCYCLE instruction.
 #define CSR_TIME     0xc01        // Timer for RDTIME instruction.
-#define CSR_INSTERT  0xc02        // Instructions-retired counter for RDINSTRET instruction.
+#define CSR_INSTRET  0xc02        // Instructions-retired counter for RDINSTRET instruction.
 
 class VMRegImpl;
 typedef VMRegImpl* VMReg;
@@ -70,7 +70,7 @@ class Register {
 
    public:
     // accessors
-    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int raw_encoding() const { return checked_cast<int>(this - first()); }
     constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
     constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
@@ -187,7 +187,7 @@ class FloatRegister {
 
    public:
     // accessors
-    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int raw_encoding() const { return checked_cast<int>(this - first()); }
     constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
     constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
@@ -297,7 +297,7 @@ class VectorRegister {
 
    public:
     // accessors
-    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int raw_encoding() const { return checked_cast<int>(this - first()); }
     constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
     constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 

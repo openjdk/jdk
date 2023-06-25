@@ -142,6 +142,7 @@ void ClassPrelinker::dumptime_resolve_constants(InstanceKlass* ik, TRAPS) {
 }
 
 Klass* ClassPrelinker::find_loaded_class(JavaThread* THREAD, oop class_loader, Symbol* name) {
+  HandleMark hm(THREAD);
   Handle h_loader(THREAD, class_loader);
   Klass* k = SystemDictionary::find_instance_or_array_klass(THREAD, name,
                                                             h_loader,

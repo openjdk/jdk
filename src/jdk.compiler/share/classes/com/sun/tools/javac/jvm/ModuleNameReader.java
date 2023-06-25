@@ -25,6 +25,7 @@
 package com.sun.tools.javac.jvm;
 
 import com.sun.tools.javac.util.ByteBuffer;
+import com.sun.tools.javac.util.ByteBuffer.UnderflowException;
 import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.Name.NameMapper;
 
@@ -132,25 +133,37 @@ public class ModuleNameReader {
 
     /** Read a character.
      */
-    char nextChar() {
-        char res = buf.getChar(bp);
+    char nextChar() throws BadClassFile {
+        char res;
+        try {
+            res = buf.getChar(bp);
+        } catch (UnderflowException e) {
+            throw new BadClassFile("class file truncated at offset " + e.getLength());
+        }
         bp += 2;
         return res;
     }
 
     /** Read an integer.
      */
-    int nextInt() {
-        int res = buf.getInt(bp);
+    int nextInt() throws BadClassFile {
+        int res;
+        try {
+            res = buf.getInt(bp);
+        } catch (UnderflowException e) {
+            throw new BadClassFile("class file truncated at offset " + e.getLength());
+        }
         bp += 4;
         return res;
     }
 
-    NameMapper<String> utf8Mapper(boolean internalize) {
+    PoolReader.Utf8Mapper<String> utf8Mapper(boolean internalize) {
         return internalize ?
-                (buf, offset, len) ->
-                    Convert.utf2string(ClassFile.internalize(buf, offset, len)) :
-                Convert::utf2string;
+            (buf, offset, len) -> {
+                buf = ClassFile.internalize(buf, offset, len);
+                return Convert.utf2string(buf, 0, buf.length, Convert.Validation.STRICT);
+            } :
+            (buf, offset, len) -> Convert.utf2string(buf, offset, len, Convert.Validation.STRICT);
     }
 
 }

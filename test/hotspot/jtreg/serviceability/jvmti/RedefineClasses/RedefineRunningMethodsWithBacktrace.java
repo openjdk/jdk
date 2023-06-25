@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,16 +26,15 @@
  * @bug 8087315 8010319
  * @summary Get old method's stack trace elements after GC
  * @requires vm.jvmti
- * @requires vm.continuations
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  * @modules java.compiler
  *          java.instrument
  *          jdk.jartool/sun.tools.jar
  * @run main RedefineClassHelper
- * @compile --enable-preview -source ${jdk.version} RedefineRunningMethodsWithBacktrace.java
- * @run main/othervm --enable-preview -javaagent:redefineagent.jar RedefineRunningMethodsWithBacktrace platform
- * @run main/othervm --enable-preview -javaagent:redefineagent.jar RedefineRunningMethodsWithBacktrace virtual
+ * @compile RedefineRunningMethodsWithBacktrace.java
+ * @run main/othervm -javaagent:redefineagent.jar RedefineRunningMethodsWithBacktrace platform
+ * @run main/othervm -javaagent:redefineagent.jar RedefineRunningMethodsWithBacktrace virtual
  */
 
 import java.util.concurrent.ThreadFactory;

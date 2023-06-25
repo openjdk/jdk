@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ void VM_Version::initialize() {
   // Making this stub must be FIRST use of assembler
   const int stub_size = 128;
   BufferBlob* stub_blob = BufferBlob::create("get_cpu_info", stub_size);
-  if (stub_blob == NULL) {
+  if (stub_blob == nullptr) {
     vm_exit_during_initialization("Unable to allocate get_cpu_info stub");
   }
 

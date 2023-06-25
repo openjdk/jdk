@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,7 @@ import sun.security.util.*;
  *
  * We support this format but do not parse attributes and publicKey now.
  */
-public class PKCS8Key implements PrivateKey {
+public class PKCS8Key implements PrivateKey, InternalPrivateKey {
 
     /** use serialVersionUID from JDK 1.1. for interoperability */
     @java.io.Serial
@@ -92,13 +92,15 @@ public class PKCS8Key implements PrivateKey {
      * This method is also used by {@link #parseKey} to create a raw key.
      */
     protected PKCS8Key(byte[] input) throws InvalidKeyException {
-        decode(new ByteArrayInputStream(input));
+        try {
+            decode(new DerValue(input));
+        } catch (IOException e) {
+            throw new InvalidKeyException("Unable to decode key", e);
+        }
     }
 
-    private void decode(InputStream is) throws InvalidKeyException {
-        DerValue val = null;
+    private void decode(DerValue val) throws InvalidKeyException {
         try {
-            val = new DerValue(is);
             if (val.tag != DerValue.tag_Sequence) {
                 throw new InvalidKeyException("invalid key format");
             }
@@ -132,7 +134,7 @@ public class PKCS8Key implements PrivateKey {
             }
             throw new InvalidKeyException("Extra bytes");
         } catch (IOException e) {
-            throw new InvalidKeyException("IOException : " + e.getMessage());
+            throw new InvalidKeyException("Unable to decode key", e);
         } finally {
             if (val != null) {
                 val.clear();
@@ -241,10 +243,9 @@ public class PKCS8Key implements PrivateKey {
     @java.io.Serial
     private void readObject(ObjectInputStream stream) throws IOException {
         try {
-            decode(stream);
+            decode(new DerValue(stream));
         } catch (InvalidKeyException e) {
-            throw new IOException("deserialized key is invalid: " +
-                                  e.getMessage());
+            throw new IOException("deserialized key is invalid", e);
         }
     }
 

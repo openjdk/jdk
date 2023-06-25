@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,7 +31,7 @@
 #include "gc/g1/g1HeapVerifier.hpp"
 #include "gc/g1/heapRegion.hpp"
 #include "gc/g1/heapRegionRemSet.hpp"
-#include "gc/shared/cardTableRS.hpp"
+#include "gc/shared/cardTable.hpp"
 #include "gc/shared/gcArguments.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "runtime/globals.hpp"
@@ -39,7 +39,7 @@
 #include "runtime/java.hpp"
 
 static size_t calculate_heap_alignment(size_t space_alignment) {
-  size_t card_table_alignment = CardTableRS::ct_max_alignment_constraint();
+  size_t card_table_alignment = CardTable::ct_max_alignment_constraint();
   size_t page_size = UseLargePages ? os::large_page_size() : os::vm_page_size();
   return MAX3(card_table_alignment, space_alignment, page_size);
 }
@@ -81,9 +81,9 @@ void G1Arguments::initialize_verification_types() {
     char* save_ptr;
 
     char* token = strtok_r(type_list, delimiter, &save_ptr);
-    while (token != NULL) {
+    while (token != nullptr) {
       parse_verification_type(token);
-      token = strtok_r(NULL, delimiter, &save_ptr);
+      token = strtok_r(nullptr, delimiter, &save_ptr);
     }
     FREE_C_HEAP_ARRAY(char, type_list);
   }
@@ -167,7 +167,7 @@ void G1Arguments::initialize() {
   FLAG_SET_DEFAULT(ParallelGCThreads, WorkerPolicy::parallel_worker_threads());
   if (ParallelGCThreads == 0) {
     assert(!FLAG_IS_DEFAULT(ParallelGCThreads), "The default value for ParallelGCThreads should not be 0.");
-    vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", NULL);
+    vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", nullptr);
   }
 
   // When dumping the CDS archive we want to reduce fragmentation by

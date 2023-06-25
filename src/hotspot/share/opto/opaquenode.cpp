@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "opto/loopnode.hpp"
 #include "opto/opaquenode.hpp"
 #include "opto/phaseX.hpp"
 
@@ -54,6 +55,43 @@ Node* Opaque3Node::Identity(PhaseGVN* phase) {
   return this;
 }
 
+#ifdef ASSERT
+CountedLoopNode* OpaqueZeroTripGuardNode::guarded_loop() const {
+  Node* iff = if_node();
+  ResourceMark rm;
+  Unique_Node_List wq;
+  wq.push(iff);
+  for (uint i = 0; i < wq.size(); ++i) {
+    Node* nn = wq.at(i);
+    for (DUIterator_Fast imax, i = nn->fast_outs(imax); i < imax; i++) {
+      Node* u = nn->fast_out(i);
+      if (u->is_OuterStripMinedLoop()) {
+        wq.push(u);
+      }
+      if (u->is_CountedLoop() && u->as_CountedLoop()->is_canonical_loop_entry() == this) {
+        return u->as_CountedLoop();
+      }
+      if (u->is_Region()) {
+        continue;
+      }
+      if (u->is_CFG()) {
+        wq.push(u);
+      }
+    }
+  }
+  return nullptr;
+}
+#endif
+
+IfNode* OpaqueZeroTripGuardNode::if_node() const {
+  Node* cmp = unique_out();
+  assert(cmp->Opcode() == Op_CmpI, "");
+  Node* bol = cmp->unique_out();
+  assert(bol->Opcode() == Op_Bool, "");
+  Node* iff = bol->unique_out();
+  return iff->as_If();
+}
+
 // Do not allow value-numbering
 uint Opaque3Node::hash() const { return NO_HASH; }
 bool Opaque3Node::cmp(const Node &n) const {
@@ -76,7 +114,7 @@ Node *ProfileBooleanNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     _delay_removal = false;
     return this;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 

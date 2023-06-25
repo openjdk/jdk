@@ -270,7 +270,7 @@ class Direct$Type$Buffer$RW$$BO$
         return new Direct$Type$Buffer$RW$$BO$(this,
                                               -1,
                                               0,
-                                              rem, 
+                                              rem,
                                               rem,
                                               off,
 #if[byte]
@@ -433,22 +433,81 @@ class Direct$Type$Buffer$RW$$BO$
 
     public String toString(int start, int end) {
         Objects.checkFromToIndex(start, end, limit());
-        try {
-            int len = end - start;
-            char[] ca = new char[len];
-            CharBuffer cb = CharBuffer.wrap(ca);
-            CharBuffer db = this.duplicate();
-            db.position(start);
-            db.limit(end);
-            cb.put(db);
-            return new String(ca);
-        } catch (StringIndexOutOfBoundsException x) {
-            throw new IndexOutOfBoundsException();
-        }
+        int len = end - start;
+        char[] ca = new char[len];
+        CharBuffer cb = CharBuffer.wrap(ca);
+        CharBuffer db = this.duplicate();
+        db.position(start);
+        db.limit(end);
+        cb.put(db);
+        return new String(ca);
     }
 
 
     // --- Methods to support CharSequence ---
+
+#if[rw] 
+    private static final int APPEND_BUF_SIZE = 1024;
+
+    private $Type$Buffer appendChars(CharSequence csq, int start, int end) {
+        Objects.checkFromToIndex(start, end, csq.length());
+
+        int pos = position();
+        int lim = limit();
+        int rem = (pos <= lim) ? lim - pos : 0;
+        int length = end - start;
+        if (length > rem)
+            throw new BufferOverflowException();
+
+        char[] buf = new char[Math.min(APPEND_BUF_SIZE, length)];
+        int index = pos;
+        while (start < end) {
+            int count = end - start;
+            if (count > buf.length)
+                count = buf.length;
+
+            if (csq instanceof String str) {
+                str.getChars(start, start + count, buf, 0);
+            } else if (csq instanceof StringBuilder sb) {
+                sb.getChars(start, start + count, buf, 0);
+            } else if (csq instanceof StringBuffer sb) {
+                sb.getChars(start, start + count, buf, 0);
+            }
+
+            putArray(index, buf, 0, count);
+
+            start += count;
+            index += count;
+        }
+
+        position(pos + length);
+
+        return this;
+    }
+#end[rw] 
+
+    public $Type$Buffer append(CharSequence csq) {
+#if[rw] 
+        if (csq instanceof StringBuilder) 
+            return appendChars(csq, 0, csq.length());
+ 
+        return super.append(csq);
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
+ 
+    public $Type$Buffer append(CharSequence csq, int start, int end) { 
+#if[rw]
+        if (csq instanceof String || csq instanceof StringBuffer ||
+            csq instanceof StringBuilder)
+            return appendChars(csq, start, end);
+
+        return super.append(csq, start, end);
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
 
     public CharBuffer subSequence(int start, int end) {
         int pos = position();

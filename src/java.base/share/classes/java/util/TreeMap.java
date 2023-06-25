@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -98,6 +98,10 @@ import java.util.function.Function;
  * return {@link Map.Entry} instances that represent snapshots of mappings as
  * of the time of the call. They do <em>not</em> support mutation of the
  * underlying map via the optional {@link Map.Entry#setValue setValue} method.
+ *
+ * <p>The {@link #putFirst putFirst} and {@link #putLast putLast} methods of this class
+ * throw {@code UnsupportedOperationException}. The encounter order of mappings is determined
+ * by the comparison method; therefore, explicit positioning is not supported.
  *
  * <p>This class is a member of the
  * <a href="{@docRoot}/java.base/java/util/package-summary.html#CollectionsFramework">
@@ -303,6 +307,30 @@ public class TreeMap<K,V>
      */
     public K lastKey() {
         return key(getLastEntry());
+    }
+
+    /**
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * map's comparison method determines the position of mappings, so explicit positioning
+     * is not supported.
+     *
+     * @throws UnsupportedOperationException always
+     * @since 21
+     */
+     public V putFirst(K k, V v) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * map's comparison method determines the position of mappings, so explicit positioning
+     * is not supported.
+     *
+     * @throws UnsupportedOperationException always
+     * @since 21
+     */
+    public V putLast(K k, V v) {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -1167,6 +1195,8 @@ public class TreeMap<K,V>
      * {@code Set.remove}, {@code removeAll}, {@code retainAll} and
      * {@code clear} operations.  It does not support the
      * {@code add} or {@code addAll} operations.
+     *
+     * @return {@inheritDoc SortedMap}
      */
     public Set<Map.Entry<K,V>> entrySet() {
         EntrySet es = entrySet;

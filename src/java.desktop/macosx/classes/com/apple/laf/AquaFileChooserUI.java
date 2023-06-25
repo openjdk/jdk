@@ -162,6 +162,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     protected String filenameTextFieldToolTipText = null;
     protected String filterComboBoxToolTipText = null;
     protected String openDirectoryButtonToolTipText = null;
+    protected String chooseButtonToolTipText = null;
 
     protected String cancelOpenButtonToolTipText = null;
     protected String cancelSaveButtonToolTipText = null;
@@ -323,6 +324,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         // Mac-specific, required
         newFolderExistsErrorText = getString("FileChooser.newFolderExistsErrorText", "That name is already taken");
         chooseButtonText = getString("FileChooser.chooseButtonText", "Choose");
+        chooseButtonToolTipText = getString("FileChooser.chooseButtonToolTipText", "Choose selected file");
         newFolderButtonText = getString("FileChooser.newFolderButtonText", "New");
         newFolderTitleText = getString("FileChooser.newFolderTitleText", "New Folder");
 
@@ -397,6 +399,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         cancelSaveButtonToolTipText = null;
         cancelChooseButtonToolTipText = null;
         cancelNewFolderButtonToolTipText = null;
+        chooseButtonToolTipText = null;
 
         saveButtonToolTipText = null;
         openButtonToolTipText = null;
@@ -2051,9 +2054,9 @@ public class AquaFileChooserUI extends FileChooserUI {
             return fc.getApproveButtonMnemonic();
         }
 
-        // No fallback
         String getApproveButtonToolTipText(final JFileChooser fc) {
-            return getApproveButtonToolTipText(fc, null);
+            // Fallback to "Choose selected file"
+            return getApproveButtonToolTipText(fc, chooseButtonToolTipText);
         }
 
         String getApproveButtonToolTipText(final JFileChooser fc, final String fallbackText) {

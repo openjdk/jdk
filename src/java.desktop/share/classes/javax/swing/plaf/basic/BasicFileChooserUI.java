@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,6 @@ import java.beans.PropertyChangeListener;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
@@ -579,13 +578,14 @@ public class BasicFileChooserUI extends FileChooserUI {
      */
     public String getApproveButtonToolTipText(JFileChooser fc) {
         String tooltipText = fc.getApproveButtonToolTipText();
-        if(tooltipText != null) {
+        if (tooltipText != null) {
             return tooltipText;
         }
 
-        if(fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
+        if (fc.getDialogType() == JFileChooser.OPEN_DIALOG
+                || fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
             return openButtonToolTipText;
-        } else if(fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
+        } else if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             return saveButtonToolTipText;
         }
         return null;
@@ -708,8 +708,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                             && ((File)objects[0]).isDirectory()
                             && chooser.isTraversable(((File)objects[0]))
                             && (useSetDirectory
-                                || (!fsv.isFileSystem(((File)objects[0]))
-                                    && !Files.isSymbolicLink(((File)objects[0]).toPath())))) {
+                                || (!fsv.isFileSystem((File)objects[0])))) {
                             setDirectorySelected(true);
                             setDirectory(((File)objects[0]));
                         } else {
@@ -719,7 +718,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                                 boolean isDir = f.isDirectory();
                                 if ((chooser.isFileSelectionEnabled() && !isDir)
                                     || (chooser.isDirectorySelectionEnabled()
-                                        && (fsv.isFileSystem(f) || Files.isSymbolicLink(f.toPath()))
+                                        && fsv.isFileSystem(f)
                                         && isDir)) {
                                     fList.add(f);
                                 }
@@ -741,11 +740,7 @@ public class BasicFileChooserUI extends FileChooserUI {
                         setDirectorySelected(true);
                         setDirectory(file);
                         if (usesSingleFilePane) {
-                            if (Files.isSymbolicLink(file.toPath())) {
-                                chooser.setSelectedFile(file);
-                            } else {
-                                chooser.setSelectedFile(null);
-                            }
+                            chooser.setSelectedFile(null);
                         }
                     } else {
                         setDirectorySelected(false);
@@ -908,7 +903,8 @@ public class BasicFileChooserUI extends FileChooserUI {
         int mnemonic = fc.getApproveButtonMnemonic();
         if (mnemonic > 0) {
             return mnemonic;
-        } else if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
+        } else if (fc.getDialogType() == JFileChooser.OPEN_DIALOG
+                || fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
             return openButtonMnemonic;
         } else if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             return saveButtonMnemonic;
@@ -922,7 +918,8 @@ public class BasicFileChooserUI extends FileChooserUI {
         String buttonText = fc.getApproveButtonText();
         if (buttonText != null) {
             return buttonText;
-        } else if (fc.getDialogType() == JFileChooser.OPEN_DIALOG) {
+        } else if (fc.getDialogType() == JFileChooser.OPEN_DIALOG
+                || fc.getDialogType() == JFileChooser.CUSTOM_DIALOG) {
             return openButtonText;
         } else if (fc.getDialogType() == JFileChooser.SAVE_DIALOG) {
             return saveButtonText;

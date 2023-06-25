@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -64,7 +64,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
     intptr_t* ret_fp;
     intptr_t* ret_sp;
     address addr = os::fetch_frame_from_context(uc, &ret_sp, &ret_fp);
-    if (addr == NULL || ret_sp == NULL ) {
+    if (addr == nullptr || ret_sp == nullptr ) {
       // ucontext wasn't useful
       return false;
     }
@@ -72,7 +72,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
     frame ret_frame(ret_sp, ret_fp, addr);
     if (!ret_frame.safe_for_sender(this)) {
 #ifdef COMPILER2
-      frame ret_frame2(ret_sp, NULL, addr);
+      frame ret_frame2(ret_sp, nullptr, addr);
       if (!ret_frame2.safe_for_sender(this)) {
         // nothing else to try if the frame isn't good
         return false;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,8 @@ import java.util.List;
 import jdk.jfr.internal.consumer.ChunkHeader;
 import jdk.jfr.internal.consumer.FileAccess;
 import jdk.jfr.internal.consumer.RecordingInput;
+import jdk.jfr.internal.util.UserDataException;
+import jdk.jfr.internal.util.UserSyntaxException;
 
 final class Disassemble extends Command {
 
@@ -179,7 +181,7 @@ final class Disassemble extends Command {
     private List<Long> combineChunkSizes(List<Long> sizes, int maxChunks, long maxSize) {
         List<Long> reduced = new ArrayList<Long>();
         int chunks = 1;
-        long fileSize = sizes.get(0);
+        long fileSize = sizes.getFirst();
         for (int i = 1; i < sizes.size(); i++) {
             long size = sizes.get(i);
             if (fileSize + size > maxSize || chunks == maxChunks) {

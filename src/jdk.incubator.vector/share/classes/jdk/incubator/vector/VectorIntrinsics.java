@@ -26,10 +26,14 @@ package jdk.incubator.vector;
 
 import jdk.internal.vm.annotation.ForceInline;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Objects;
 
 /*non-public*/ class VectorIntrinsics {
-    static final int VECTOR_ACCESS_OOB_CHECK = Integer.getInteger("jdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK", 2);
+    @SuppressWarnings("removal")
+    static final int VECTOR_ACCESS_OOB_CHECK = AccessController.doPrivileged((PrivilegedAction<Integer>) () ->
+            Integer.getInteger("jdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK", 2));
 
     @ForceInline
     static void requireLength(int haveLength, int length) {

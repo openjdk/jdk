@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1013,9 +1013,6 @@ import javax.swing.text.*;
          */
         private void updatePercentagesAndAdjustmentWeights(int span) {
             adjustmentWeights = new int[columnRequirements.length];
-            for (int i = 0; i < columnRequirements.length; i++) {
-                adjustmentWeights[i] = 0;
-            }
             if (relativeCells) {
                 percentages = new int[columnRequirements.length];
             } else {

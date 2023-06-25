@@ -210,10 +210,6 @@ void CompileTask::print_line_on_error(outputStream* st, char* buf, int buflen) {
 // CompileTask::print_tty
 void CompileTask::print_tty() {
   ttyLocker ttyl;  // keep the following output all in one block
-  // print compiler name if requested
-  if (CIPrintCompilerName) {
-    tty->print("%s:", CompileBroker::compiler_name(comp_level()));
-  }
   print(tty);
 }
 
@@ -338,6 +334,7 @@ void CompileTask::log_task(xmlStream* log) {
 void CompileTask::log_task_queued() {
   ttyLocker ttyl;
   ResourceMark rm;
+  NoSafepointVerifier nsv;
 
   xtty->begin_elem("task_queued");
   log_task(xtty);

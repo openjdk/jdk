@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@
 // allocations and releases that occur after the iteration started will not be
 // seen by the iteration.  Further, some may overlap examination by the
 // iteration.  To help with this, allocate() and release() have an invariant
-// that an entry's value must be NULL when it is not in use.
+// that an entry's value must be null when it is not in use.
 //
 // ParState<concurrent, is_const>
 //   concurrent must be true if iteration may be concurrent with the
@@ -124,7 +124,7 @@
 //   - is_alive->do_object_b(*p) must be a valid expression whose value
 //   is convertible to bool.
 //
-//   If *p == NULL then neither is_alive nor cl will be invoked for p.
+//   If *p == nullptr then neither is_alive nor cl will be invoked for p.
 //   If is_alive->do_object_b(*p) is false, then cl will not be
 //   invoked on p.
 

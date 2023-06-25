@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import com.sun.hotspot.igv.data.ChangedListener;
 import com.sun.hotspot.igv.graph.Diagram;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -37,24 +38,29 @@ import java.util.List;
  */
 public class FilterChain implements ChangedEventProvider<FilterChain> {
 
-    private List<Filter> filters;
-    private transient ChangedEvent<FilterChain> changedEvent;
+    private final List<Filter> filters;
+    private final transient ChangedEvent<FilterChain> changedEvent;
+    private final String name;
 
-    private ChangedListener<Filter> changedListener = new ChangedListener<Filter>() {
+    private final ChangedListener<Filter> changedListener = new ChangedListener<Filter>() {
         @Override
         public void changed(Filter source) {
             changedEvent.fire();
         }
     };
 
-    public FilterChain() {
+    public FilterChain(String name) {
+        this.name = name;
         filters = new ArrayList<>();
         changedEvent = new ChangedEvent<>(this);
     }
 
-    public FilterChain(FilterChain f) {
-        this.filters = new ArrayList<>(f.filters);
-        changedEvent = new ChangedEvent<>(this);
+    public FilterChain() {
+        this("");
+    }
+
+    public void sortBy(List<String> order) {
+        filters.sort(Comparator.comparingInt(f -> order.indexOf(f.getName())));
     }
 
     @Override
@@ -62,34 +68,13 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
         return changedEvent;
     }
 
-    public Filter getFilterAt(int index) {
-        assert index >= 0 && index < filters.size();
-        return filters.get(index);
-    }
-
-    public void apply(Diagram d) {
-        for (Filter f : filters) {
-            f.apply(d);
-        }
-    }
-
-    public void apply(Diagram d, FilterChain sequence) {
-        List<Filter> applied = new ArrayList<>();
-        for (Filter f : sequence.getFilters()) {
-            if (filters.contains(f)) {
-                f.apply(d);
-                applied.add(f);
-            }
-        }
-
-
-        for (Filter f : filters) {
-            if (!applied.contains(f)) {
-                f.apply(d);
+    public void applyInOrder(Diagram diagram, FilterChain filterOrder) {
+        for (Filter filter : filterOrder.getFilters()) {
+            if (filters.contains(filter)) {
+                filter.apply(diagram);
             }
         }
     }
-
 
     public void addFilter(Filter filter) {
         assert filter != null;
@@ -100,6 +85,14 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
 
     public boolean containsFilter(Filter filter) {
         return filters.contains(filter);
+    }
+
+    public void clearFilters() {
+        for (Filter filter : filters) {
+            filter.getChangedEvent().removeListener(changedListener);
+        }
+        filters.clear();
+        changedEvent.fire();
     }
 
     public void removeFilter(Filter filter) {
@@ -129,7 +122,22 @@ public class FilterChain implements ChangedEventProvider<FilterChain> {
         changedEvent.fire();
     }
 
+    public void addFilters(List<Filter> filtersToAdd) {
+        for (Filter filter : filtersToAdd) {
+            addFilter(filter);
+        }
+    }
+
     public List<Filter> getFilters() {
         return Collections.unmodifiableList(filters);
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    @Override
+    public String toString() {
+        return getName();
     }
 }

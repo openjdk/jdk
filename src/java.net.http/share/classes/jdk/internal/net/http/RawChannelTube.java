@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,7 +74,7 @@ public class RawChannelTube implements RawChannel {
         this.writePublisher = new WritePublisher();
         this.readSubscriber = new ReadSubscriber();
         dbgTag = "[WebSocket] RawChannelTube(" + tube +")";
-        debug = Utils.getWebSocketLogger(dbgTag::toString, Utils.DEBUG_WS);
+        debug = Utils.getWebSocketLogger(dbgTag::toString);
         connection.client().webSocketOpen();
         connectFlows();
         if (Utils.ASSERTIONSENABLED && Utils.DEBUG_WS) {

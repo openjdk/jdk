@@ -50,7 +50,7 @@ inline void inc_stat_counter(volatile julong* dest, julong add_value) {
 template <class E>
 size_t MmapArrayAllocator<E>::size_for(size_t length) {
   size_t size = length * sizeof(E);
-  int alignment = os::vm_allocation_granularity();
+  size_t alignment = os::vm_allocation_granularity();
   return align_up(size, alignment);
 }
 

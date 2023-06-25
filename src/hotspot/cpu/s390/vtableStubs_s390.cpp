@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2021 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -49,9 +49,9 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(true);
   VtableStub* s = new(stub_code_length) VtableStub(true, vtable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.
@@ -82,9 +82,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
   assert(VtableStub::receiver_location() == Z_R2->as_VMReg(), "receiver expected in Z_ARG1");
 
   const Register rcvr_klass   = Z_R1_scratch;
-  address        npe_addr     = __ pc(); // npe == NULL ptr exception
-  // check if we must do an explicit check (implicit checks disabled, offset too large).
-  __ null_check(Z_ARG1, Z_R1_scratch, oopDesc::klass_offset_in_bytes());
+  address        npe_addr     = __ pc(); // npe is short for null pointer exception
   // Get receiver klass.
   __ load_klass(rcvr_klass, Z_ARG1);
 
@@ -112,7 +110,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   int entry_offset = in_bytes(Klass::vtable_start_offset()) +
                      vtable_index * vtableEntry::size_in_bytes();
-  int v_off        = entry_offset + vtableEntry::method_offset_in_bytes();
+  int v_off        = entry_offset + in_bytes(vtableEntry::method_offset());
 
   // Set method (in case of interpreted method), and destination address.
   // Duplicate safety code from enc_class Java_Dynamic_Call_dynTOC.
@@ -154,9 +152,9 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
   // Read "A word on VtableStub sizing" in share/code/vtableStubs.hpp for details on stub sizing.
   const int stub_code_length = code_size_limit(false);
   VtableStub* s = new(stub_code_length) VtableStub(false, itable_index);
-  // Can be NULL if there is no free space in the code cache.
-  if (s == NULL) {
-    return NULL;
+  // Can be null if there is no free space in the code cache.
+  if (s == nullptr) {
+    return nullptr;
   }
 
   // Count unused bytes in instruction sequences of variable size.
@@ -195,8 +193,7 @@ VtableStub* VtableStubs::create_itable_stub(int itable_index) {
 
   // Get receiver klass.
   // Must do an explicit check if offset too large or implicit checks are disabled.
-  address npe_addr = __ pc(); // npe == NULL ptr exception
-  __ null_check(Z_ARG1, Z_R1_scratch, oopDesc::klass_offset_in_bytes());
+  address npe_addr = __ pc(); // npe is short for null pointer exception
   __ load_klass(rcvr_klass, Z_ARG1);
 
   // Receiver subtype check against REFC.

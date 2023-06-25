@@ -242,6 +242,7 @@ import sun.security.action.GetIntegerAction;
  * <cite>Java Object Serialization Specification,</cite> Section 1.13,
  * "Serialization of Records"</a> for additional information.
  *
+ * @spec serialization/index.html Java Object Serialization Specification
  * @author      Mike Warres
  * @author      Roger Riggs
  * @see java.io.DataInput
@@ -308,8 +309,8 @@ public class ObjectInputStream
          * The maximum number of interfaces allowed for a proxy is limited to 65535 by
          * {@link java.lang.reflect.Proxy#newProxyInstance(ClassLoader, Class[], InvocationHandler)}.
          */
-        static final int PROXY_INTERFACE_LIMIT = Math.max(0, Math.min(65535, GetIntegerAction
-                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535)));
+        static final int PROXY_INTERFACE_LIMIT = Math.clamp(GetIntegerAction
+                .privilegedGetProperty("jdk.serialProxyInterfaceLimit", 65535), 0, 65535);
     }
 
     /*
@@ -1450,16 +1451,16 @@ public class ObjectInputStream
      * @param arrayLength the array length
      * @throws NullPointerException if arrayType is null
      * @throws IllegalArgumentException if arrayType isn't actually an array type
-     * @throws NegativeArraySizeException if arrayLength is negative
+     * @throws StreamCorruptedException if arrayLength is negative
      * @throws InvalidClassException if the filter rejects creation
      */
-    private void checkArray(Class<?> arrayType, int arrayLength) throws InvalidClassException {
+    private void checkArray(Class<?> arrayType, int arrayLength) throws ObjectStreamException {
         if (! arrayType.isArray()) {
             throw new IllegalArgumentException("not an array type");
         }
 
         if (arrayLength < 0) {
-            throw new NegativeArraySizeException();
+            throw new StreamCorruptedException("Array length is negative");
         }
 
         filterCheck(arrayType, arrayLength);
@@ -2137,7 +2138,9 @@ public class ObjectInputStream
 
         ObjectStreamClass desc = readClassDesc(false);
         int len = bin.readInt();
-
+        if (len < 0) {
+            throw new StreamCorruptedException("Array length is negative");
+        }
         filterCheck(desc.forClass(), len);
 
         Object array = null;

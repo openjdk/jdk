@@ -450,20 +450,6 @@ void JVMFlag::print_as_flag(outputStream* st) const {
   }
 }
 
-const char* JVMFlag::flag_error_str(JVMFlag::Error error) {
-  switch (error) {
-    case JVMFlag::MISSING_NAME: return "MISSING_NAME";
-    case JVMFlag::MISSING_VALUE: return "MISSING_VALUE";
-    case JVMFlag::NON_WRITABLE: return "NON_WRITABLE";
-    case JVMFlag::OUT_OF_BOUNDS: return "OUT_OF_BOUNDS";
-    case JVMFlag::VIOLATES_CONSTRAINT: return "VIOLATES_CONSTRAINT";
-    case JVMFlag::INVALID_FLAG: return "INVALID_FLAG";
-    case JVMFlag::ERR_OTHER: return "ERR_OTHER";
-    case JVMFlag::SUCCESS: return "SUCCESS";
-    default: ShouldNotReachHere(); return "nullptr";
-  }
-}
-
 //----------------------------------------------------------------------
 // Build flagTable[]
 

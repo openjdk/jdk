@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package sun.jvm.hotspot.oops;
 import java.io.PrintStream;
 import sun.jvm.hotspot.utilities.Observable;
 import sun.jvm.hotspot.utilities.Observer;
+import sun.jvm.hotspot.utilities.U1Array;
 
 import sun.jvm.hotspot.code.NMethod;
 import sun.jvm.hotspot.debugger.Address;
@@ -117,6 +118,12 @@ public class Method extends Metadata {
   }
   public ConstantPool getConstants()                  {
     return getConstMethod().getConstants();
+  }
+  public boolean      hasStackMapTable()              {
+    return getConstMethod().hasStackMapTable();
+  }
+  public U1Array      getStackMapData()               {
+    return getConstMethod().getStackMapData();
   }
   public MethodData   getMethodData()                 {
     Address addr = methodData.getValue(getAddress());
@@ -250,10 +257,6 @@ public class Method extends Metadata {
 
   public boolean isStaticInitializer() {
      return isStatic() && getName().equals(classInitializerName());
-  }
-
-  public boolean isObsolete() {
-     return getAccessFlagsObj().isObsolete();
   }
 
   public OopMapCacheEntry getMaskFor(int bci) {

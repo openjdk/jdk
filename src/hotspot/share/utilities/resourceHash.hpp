@@ -30,6 +30,8 @@
 #include "utilities/numberSeq.hpp"
 #include "utilities/tableStatistics.hpp"
 
+#include <type_traits>
+
 template<typename K, typename V>
 class ResourceHashtableNode : public AnyObj {
 public:
@@ -38,12 +40,14 @@ public:
   V _value;
   ResourceHashtableNode* _next;
 
-  ResourceHashtableNode(unsigned hash, K const& key, V const& value) :
-    _hash(hash), _key(key), _value(value), _next(nullptr) {}
+  ResourceHashtableNode(unsigned hash, K const& key, V const& value,
+                        ResourceHashtableNode* next = nullptr) :
+    _hash(hash), _key(key), _value(value), _next(next) {}
 
   // Create a node with a default-constructed value.
-  ResourceHashtableNode(unsigned hash, K const& key) :
-    _hash(hash), _key(key), _value(), _next(nullptr) {}
+  ResourceHashtableNode(unsigned hash, K const& key,
+                        ResourceHashtableNode* next = nullptr) :
+    _hash(hash), _key(key), _value(), _next(next) {}
 };
 
 template<
@@ -55,6 +59,10 @@ template<
     bool     (*EQUALS)(K const&, K const&)
     >
 class ResourceHashtableBase : public STORAGE {
+  static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<K>::value,
+                "Destructor for K is only called with C_HEAP");
+  static_assert(ALLOC_TYPE == AnyObj::C_HEAP || std::is_trivially_destructible<V>::value,
+                "Destructor for V is only called with C_HEAP");
   using Node = ResourceHashtableNode<K, V>;
  private:
   int _number_of_entries;
@@ -131,6 +139,29 @@ class ResourceHashtableBase : public STORAGE {
   }
 
  /**
+  * Inserts a value in the front of the table, assuming that
+  * the entry is absent.
+  * The table must be locked for the get or test that the entry
+  * is absent, and for this operation.
+  * This is a faster variant of put_if_absent because it adds to the
+  * head of the bucket, and doesn't search the bucket.
+  * @return: true: a new item is always added
+  */
+  bool put_when_absent(K const& key, V const& value) {
+    unsigned hv = HASH(key);
+    unsigned index = hv % table_size();
+    assert(*lookup_node(hv, key) == nullptr, "use put_if_absent");
+    Node** ptr = bucket_at(index);
+    if (ALLOC_TYPE == AnyObj::C_HEAP) {
+      *ptr = new (MEM_TYPE) Node(hv, key, value, *ptr);
+    } else {
+      *ptr = new Node(hv, key, value, *ptr);
+    }
+    _number_of_entries ++;
+    return true;
+  }
+
+ /**
   * Inserts or replaces a value in the table.
   * @return: true:  if a new item is added
   *          false: if the item already existed and the value is updated
@@ -196,14 +227,15 @@ class ResourceHashtableBase : public STORAGE {
     return &(*ptr)->_value;
   }
 
-
-  bool remove(K const& key) {
+  template<typename Function>
+  bool remove(K const& key, Function function) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
 
     Node* node = *ptr;
     if (node != nullptr) {
       *ptr = node->_next;
+      function(node->_key, node->_value);
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         delete node;
       }
@@ -211,6 +243,11 @@ class ResourceHashtableBase : public STORAGE {
       return true;
     }
     return false;
+  }
+
+  bool remove(K const& key) {
+    auto dummy = [&] (K& k, V& v) { };
+    return remove(key, dummy);
   }
 
   // ITER contains bool do_entry(K const&, V const&), which will be

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,8 @@
 class BufferNode;
 
 struct BufferNodeList {
-  BufferNode* _head;            // First node in list or NULL if empty.
-  BufferNode* _tail;            // Last node in list or NULL if empty.
+  BufferNode* _head;            // First node in list or null if empty.
+  BufferNode* _tail;            // Last node in list or null if empty.
   size_t _entry_count;          // Sum of entries in nodes in list.
 
   BufferNodeList();

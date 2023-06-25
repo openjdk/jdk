@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -273,7 +273,18 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
             JDWP.ThreadReference.Stop.process(vm, this,
                                          (ObjectReferenceImpl)throwable);
         } catch (JDWPException exc) {
-            throw exc.toJDIException();
+            switch (exc.errorCode()) {
+            case JDWP.Error.OPAQUE_FRAME:
+                assert isVirtual(); // can only happen with virtual threads
+                throw new OpaqueFrameException();
+            case JDWP.Error.THREAD_NOT_SUSPENDED:
+                assert isVirtual(); // can only happen with virtual threads
+                throw new IllegalThreadStateException("virtual thread not suspended");
+            case JDWP.Error.INVALID_THREAD:
+                throw new IllegalThreadStateException("thread has terminated");
+            default:
+                throw exc.toJDIException();
+            }
         }
     }
 
@@ -586,11 +597,10 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
         } catch (JDWPException exc) {
             switch (exc.errorCode()) {
             case JDWP.Error.OPAQUE_FRAME:
-                if (meth.isNative()) {
-                    throw new NativeMethodException();
-                } else {
-                    assert isVirtual(); // can only happen with virtual threads
+                if (isVirtual() && !meth.isNative()) {
                     throw new OpaqueFrameException();
+                } else {
+                    throw new NativeMethodException();
                 }
             case JDWP.Error.THREAD_NOT_SUSPENDED:
                 throw new IncompatibleThreadStateException(
@@ -634,19 +644,6 @@ public class ThreadReferenceImpl extends ObjectReferenceImpl
     void addListener(ThreadListener listener) {
         synchronized (vm.state()) {
             listeners.add(new WeakReference<>(listener));
-        }
-    }
-
-    void removeListener(ThreadListener listener) {
-        synchronized (vm.state()) {
-            Iterator<WeakReference<ThreadListener>> iter = listeners.iterator();
-            while (iter.hasNext()) {
-                WeakReference<ThreadListener> ref = iter.next();
-                if (listener.equals(ref.get())) {
-                    iter.remove();
-                    break;
-                }
-            }
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,41 +26,34 @@
  * @summary Test ThreadFlock with scoped values
  * @enablePreview
  * @modules java.base/jdk.internal.misc
- * @modules jdk.incubator.concurrent
- * @run testng WithScopedValue
+ * @run junit WithScopedValue
  */
 
 import jdk.internal.misc.ThreadFlock;
-import jdk.incubator.concurrent.ScopedValue;
-import jdk.incubator.concurrent.StructureViolationException;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.StructureViolationException;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Stream;
 
-import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import static org.testng.Assert.*;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import static org.junit.jupiter.api.Assertions.*;
 
-@Test
-public class WithScopedValue {
+class WithScopedValue {
 
-    @DataProvider(name = "factories")
-    public Object[][] factories() {
-        var defaultThreadFactory = Executors.defaultThreadFactory();
-        var virtualThreadFactory = Thread.ofVirtual().factory();
-        return new Object[][]{
-                { defaultThreadFactory, },
-                { virtualThreadFactory, },
-        };
+    private static Stream<ThreadFactory> factories() {
+        return Stream.of(Thread.ofPlatform().factory(), Thread.ofVirtual().factory());
     }
 
     /**
      * Test inheritance of a scoped value.
      */
-    @Test(dataProvider = "factories")
-    public void testInheritsScopedValue(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testInheritsScopedValue(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
-        String value = ScopedValue.where(name, "duke", () -> {
+        String value = ScopedValue.callWhere(name, "duke", () -> {
             var result = new AtomicReference<String>();
             try (var flock = ThreadFlock.open(null)) {
                 Thread thread = factory.newThread(() -> {
@@ -71,13 +64,14 @@ public class WithScopedValue {
             }
             return result.get();
         });
-        assertEquals(value, "duke");
+        assertEquals("duke", value);
     }
 
     /**
      * Test exiting a dynamic scope with open thread flocks.
      */
-    public void testStructureViolation1() {
+    @Test
+    void testStructureViolation1() {
         ScopedValue<String> name = ScopedValue.newInstance();
         class Box {
             ThreadFlock flock1;
@@ -85,7 +79,7 @@ public class WithScopedValue {
         }
         var box = new Box();
         try {
-            ScopedValue.where(name, "x1", () -> {
+            ScopedValue.runWhere(name, "x1", () -> {
                 box.flock1 = ThreadFlock.open(null);
                 box.flock2 = ThreadFlock.open(null);
             });
@@ -99,14 +93,15 @@ public class WithScopedValue {
      * Test closing a thread flock while in a dynamic scope and with enclosing thread
      * flocks. This test closes enclosing flock1.
      */
-    public void testStructureViolation2() {
+    @Test
+    void testStructureViolation2() {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var flock1 = ThreadFlock.open("flock1")) {
-            ScopedValue.where(name, "x1", () -> {
+            ScopedValue.runWhere(name, "x1", () -> {
                 try (var flock2 = ThreadFlock.open("flock2")) {
-                    ScopedValue.where(name, "x2", () -> {
+                    ScopedValue.runWhere(name, "x2", () -> {
                         try (var flock3 = ThreadFlock.open("flock3")) {
-                            ScopedValue.where(name, "x3", () -> {
+                            ScopedValue.runWhere(name, "x3", () -> {
                                 var flock4 = ThreadFlock.open("flock4");
 
                                 try {
@@ -130,14 +125,15 @@ public class WithScopedValue {
      * Test closing a thread flock while in a dynamic scope and with enclosing thread
      * flocks. This test closes enclosing flock2.
      */
-    public void testStructureViolation3() {
+    @Test
+    void testStructureViolation3() {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var flock1 = ThreadFlock.open("flock1")) {
-            ScopedValue.where(name, "x1", () -> {
+            ScopedValue.runWhere(name, "x1", () -> {
                 try (var flock2 = ThreadFlock.open("flock2")) {
-                    ScopedValue.where(name, "x2", () -> {
+                    ScopedValue.runWhere(name, "x2", () -> {
                         try (var flock3 = ThreadFlock.open("flock3")) {
-                            ScopedValue.where(name, "x3", () -> {
+                            ScopedValue.runWhere(name, "x3", () -> {
                                 var flock4 = ThreadFlock.open("flock4");
 
                                 try {
@@ -161,14 +157,15 @@ public class WithScopedValue {
      * Test closing a thread flock while in a dynamic scope and with enclosing thread
      * flocks. This test closes enclosing flock3.
      */
-    public void testStructureViolation4() {
+    @Test
+    void testStructureViolation4() {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var flock1 = ThreadFlock.open("flock1")) {
-            ScopedValue.where(name, "x1", () -> {
+            ScopedValue.runWhere(name, "x1", () -> {
                 try (var flock2 = ThreadFlock.open("flock2")) {
-                    ScopedValue.where(name, "x2", () -> {
+                    ScopedValue.runWhere(name, "x2", () -> {
                         try (var flock3 = ThreadFlock.open("flock3")) {
-                            ScopedValue.where(name, "x3", () -> {
+                            ScopedValue.runWhere(name, "x3", () -> {
                                 var flock4 = ThreadFlock.open("flock4");
 
                                 try {
@@ -191,13 +188,14 @@ public class WithScopedValue {
     /**
      * Test start when a scoped value is bound after a thread flock is created.
      */
-    @Test(dataProvider = "factories")
-    public void testStructureViolation5(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testStructureViolation5(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
         try (var flock = ThreadFlock.open(null)) {
-            ScopedValue.where(name, "duke", () -> {
+            ScopedValue.runWhere(name, "duke", () -> {
                 Thread thread = factory.newThread(() -> { });
-                expectThrows(StructureViolationException.class, () -> flock.start(thread));
+                assertThrows(StructureViolationException.class, () -> flock.start(thread));
             });
         }
     }
@@ -205,14 +203,15 @@ public class WithScopedValue {
     /**
      * Test start when a scoped value is re-bound after a thread flock is created.
      */
-    @Test(dataProvider = "factories")
-    public void testStructureViolation6(ThreadFactory factory) throws Exception {
+    @ParameterizedTest
+    @MethodSource("factories")
+    void testStructureViolation6(ThreadFactory factory) throws Exception {
         ScopedValue<String> name = ScopedValue.newInstance();
-        ScopedValue.where(name, "duke", () -> {
+        ScopedValue.runWhere(name, "duke", () -> {
             try (var flock = ThreadFlock.open(null)) {
-                ScopedValue.where(name, "duchess", () -> {
+                ScopedValue.runWhere(name, "duchess", () -> {
                     Thread thread = factory.newThread(() -> { });
-                    expectThrows(StructureViolationException.class, () -> flock.start(thread));
+                    assertThrows(StructureViolationException.class, () -> flock.start(thread));
                 });
             }
         });

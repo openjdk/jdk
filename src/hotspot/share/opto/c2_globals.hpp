@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,11 +82,6 @@
           "actual size could be less depending on elements type")           \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, SuperWordMaxVectorSize, 64, DIAGNOSTIC,                     \
-          "Vector size limit in bytes for superword, "                      \
-          "superword vector size limit in bytes")                           \
-          range(0, max_jint)                                                \
-                                                                            \
   product(intx, ArrayOperationPartialInlineSize, 0, DIAGNOSTIC,             \
           "Partial inline size used for small array operations"             \
           "(e.g. copy,cmp) acceleration.")                                  \
@@ -138,7 +133,7 @@
   notproduct(bool, OptoBreakpointOSR, false,                                \
           "insert breakpoint at osr method entry")                          \
                                                                             \
-  notproduct(intx, BreakAtNode, 0,                                          \
+  notproduct(uint64_t, BreakAtNode, 0,                                      \
           "Break at construction of this Node (either _idx or _debug_idx)") \
                                                                             \
   notproduct(bool, OptoBreakpointC2R, false,                                \
@@ -385,7 +380,7 @@
   notproduct(ccstr, PrintIdealGraphAddress, "127.0.0.1",                    \
           "IP address to connect to visualizer")                            \
                                                                             \
-  notproduct(ccstr, PrintIdealGraphFile, NULL,                              \
+  notproduct(ccstr, PrintIdealGraphFile, nullptr,                           \
           "File to dump ideal graph to.  If set overrides the "             \
           "use of the network")                                             \
                                                                             \
@@ -618,9 +613,12 @@
   develop(bool, TraceIterativeGVN, false,                                   \
           "Print progress during Iterative Global Value Numbering")         \
                                                                             \
-  develop(bool, VerifyIterativeGVN, false,                                  \
-          "Verify Def-Use modifications during sparse Iterative Global "    \
-          "Value Numbering")                                                \
+  develop(uint, VerifyIterativeGVN, 0,                                      \
+          "Verify Iterative Global Value Numbering"                         \
+          "=XY, with Y: verify Def-Use modifications during IGVN"           \
+          "          X: verify that type(n) == n->Value() after IGVN"       \
+          "X and Y in 0=off; 1=on")                                         \
+          constraint(VerifyIterativeGVNConstraintFunc, AtParse)             \
                                                                             \
   notproduct(bool, TraceCISCSpill, false,                                   \
           "Trace allocators use of cisc spillable instructions")            \

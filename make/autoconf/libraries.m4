@@ -82,7 +82,7 @@ AC_DEFUN_ONCE([LIB_DETERMINE_DEPENDENCIES],
   fi
 
   # Check if ffi is needed
-  if HOTSPOT_CHECK_JVM_VARIANT(zero); then
+  if HOTSPOT_CHECK_JVM_VARIANT(zero) || test "x$ENABLE_FALLBACK_LINKER" = "xtrue"; then
     NEEDS_LIB_FFI=true
   else
     NEEDS_LIB_FFI=false
@@ -170,8 +170,8 @@ AC_DEFUN_ONCE([LIB_SETUP_LIBRARIES],
 
   if test "x$OPENJDK_TARGET_OS" = xwindows; then
     BASIC_JVM_LIBS="$BASIC_JVM_LIBS kernel32.lib user32.lib gdi32.lib winspool.lib \
-        comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib \
-        wsock32.lib winmm.lib version.lib psapi.lib"
+        comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib powrprof.lib uuid.lib \
+        ws2_32.lib winmm.lib version.lib psapi.lib"
   fi
   LIB_SETUP_JVM_LIBS(BUILD)
   LIB_SETUP_JVM_LIBS(TARGET)

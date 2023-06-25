@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,30 +34,46 @@ typedef struct {
   const char **thr_names;
 } info;
 
+typedef struct  {
+  info expected;
+  info unexpected;
+} thread_info;
+
 static jvmtiEnv *jvmti_env;
 static jrawMonitorID starting_agent_thread_lock;
 static jrawMonitorID stopping_agent_thread_lock;
-static int system_threads_count;
-static const char *names0[] = {"main"};
-static const char *names1[] = {"main", "thread1"};
-static const char *names2[] = {"main", "Thread-"};
-static const char *names3[] = {"main", "ForkJoinPool-"};
 
-/*
- * Expected number and names of threads started by test for each test point
- */
-static info expected_thread_info[] = {
-    {1, names0}, {1, names0}, {2, names1},
-    {1, names0}, {2, names2},  {2, names3}
+static const char main_name[] = "main";
+static const char thread1_name[] = "thread1";
+static const char sys_thread_name[] = "SysThread";
+// Tes uses -Djava.util.concurrent.ForkJoinPool.common.parallelism=1
+// to make name of carrier thread deterministic
+static const char fj_thread_name[] = "ForkJoinPool-1-worker-1";
+
+static const char *main_only[] = { main_name };
+static const char *thr1_only[] = { thread1_name };
+static const char *sys_only[] = { sys_thread_name };
+static const char *main_thr1[] = { main_name, thread1_name };
+static const char *main_sys[] = { main_name, sys_thread_name };
+static const char *thr1_sys[] = { thread1_name, sys_thread_name };
+static const char *main_fj[] = { main_name, fj_thread_name };
+
+static thread_info thr_info[] = {
+  {{1, main_only},    {2, thr1_sys}},
+  {{1, main_only},    {2, thr1_sys}},
+  {{2, main_thr1},    {1, sys_only}},
+  {{1, main_only},    {2, thr1_sys}},
+  {{2, main_sys},     {1, thr1_only}},
+  {{2, main_fj},      {1, thr1_sys}}
 };
 
-const char VTHREAD_PREFIX[] = "ForkJoinPool";
-
-
 jthread create_jthread(JNIEnv *jni) {
-  jclass thrClass = jni->FindClass("java/lang/Thread");
-  jmethodID cid = jni->GetMethodID(thrClass, "<init>", "()V");
-  return jni->NewObject(thrClass, cid);
+  jclass thr_class = jni->FindClass("java/lang/Thread");
+  jmethodID cid = jni->GetMethodID(thr_class, "<init>", "(Ljava/lang/String;)V");
+  jstring thread_name = jni->NewStringUTF(sys_thread_name);
+  jthread res = jni->NewObject(thr_class, cid, thread_name);
+  jni->DeleteLocalRef(thread_name);
+  return res;
 }
 
 static void JNICALL
@@ -97,54 +113,53 @@ Agent_OnLoad(JavaVM *jvm, char *options, void *reserved) {
 }
 
 JNIEXPORT jboolean check_info(JNIEnv *jni, int idx) {
-  jboolean result = JNI_TRUE;
   jint threads_count = -1;
   jthread *threads;
-  int num_unexpected = 0;
+  jvmtiThreadInfo inf;
 
   LOG(" >>> Check point: %d\n", idx);
 
   jvmtiError err = jvmti_env->GetAllThreads(&threads_count, &threads);
   check_jvmti_status(jni, err, "Failed in GetAllThreads");
 
+  // check unexpected threads
   for (int i = 0; i < threads_count; i++) {
-    if (!isThreadExpected(jvmti_env, threads[i])) {
-      num_unexpected++;
-      LOG(">>> unexpected:  ");
-    } else {
-      LOG(">>> expected: ");
+    err = jvmti_env->GetThreadInfo(threads[i], &inf);
+    check_jvmti_status(jni, err, "Failed in GetThreadInfo");
+    char *name = get_thread_name(jvmti_env, jni, threads[i]);
+    LOG(" >>> %s", name);
+
+    bool found = false;
+    for (int j = 0; j < thr_info[idx].unexpected.cnt && !found; j++) {
+      found = strcmp(name, thr_info[idx].unexpected.thr_names[j]) == 0;
     }
-    print_thread_info(jvmti_env, jni, threads[i]);
+    if (found) {
+      LOG("Point %d: detected unexpected thread %s\n", idx, inf.name);
+      return JNI_FALSE;
+    }
   }
 
-  if (threads_count - num_unexpected != expected_thread_info[idx].cnt + system_threads_count) {
-    LOG("Point %d: number of threads expected: %d, got: %d\n",
-           idx, expected_thread_info[idx].cnt + system_threads_count, threads_count - num_unexpected);
-    return JNI_FALSE;
-  }
+  LOG("\n");
 
-  for (int i = 0; i < expected_thread_info[idx].cnt; i++) {
+  // verify all expected threads are present
+  for (int i = 0; i < thr_info[idx].expected.cnt; i++) {
     bool found = false;
     for (int j = 0; j < threads_count && !found; j++) {
       char *name = get_thread_name(jvmti_env, jni, threads[j]);
-      found = strstr(name, expected_thread_info[idx].thr_names[i]);
-      if (found) {
-        LOG(" >>> found: %s\n", name);
-      }
+      found = strcmp(name, thr_info[idx].expected.thr_names[i]) == 0;
     }
-
     if (!found) {
-      LOG("Point %d: thread %s not detected\n", idx, expected_thread_info[idx].thr_names[i]);
-      result = JNI_FALSE;
+      LOG("Point %d: thread %s not detected\n", idx, thr_info[idx].expected.thr_names[i]);
+      return JNI_FALSE;
     }
   }
 
   deallocate(jvmti_env, jni, threads);
-
-  return result;
+  return JNI_TRUE;
 }
 
-JNIEXPORT void Java_allthr01_startAgentThread(JNIEnv *jni) {
+JNIEXPORT void
+Java_allthr01_startAgentThread(JNIEnv *jni) {
   RawMonitorLocker rml1 = RawMonitorLocker(jvmti_env, jni, starting_agent_thread_lock);
   jvmtiError err = jvmti_env->RunAgentThread(create_jthread(jni),
                                              sys_thread, NULL,JVMTI_THREAD_NORM_PRIORITY);
@@ -158,27 +173,6 @@ Java_allthr01_stopAgentThread(JNIEnv *jni) {
   RawMonitorLocker rml2 = RawMonitorLocker(jvmti_env, jni, stopping_agent_thread_lock);
   rml2.notify();
   LOG("Stopped Agent Thread\n");
-}
-
-
-
-JNIEXPORT void JNICALL
-Java_allthr01_setSysCnt(JNIEnv *jni, jclass cls) {
-  jint threadsCount = -1;
-  jthread *threads;
-
-  jvmtiError err = jvmti_env->GetAllThreads(&threadsCount, &threads);
-  check_jvmti_status(jni,err, "Failed in GetAllThreads");
-
-  system_threads_count = threadsCount - 1;
-
-  for (int i = 0; i < threadsCount; i++) {
-    if (!isThreadExpected(jvmti_env, threads[i])) {
-      system_threads_count--;
-    }
-  }
-
-  LOG(" >>> number of system threads: %d\n", system_threads_count);
 }
 
 JNIEXPORT jboolean JNICALL

@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
+<!-- Copyright © 1991-2023 Unicode, Inc.
+For terms of use, see http://www.unicode.org/copyright.html
+SPDX-License-Identifier: Unicode-DFS-2016
+CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
+-->
+<ldml>
+	<identity>
+		<version number="$Revision$"/>
+		<language type="az"/>
+		<script type="Arab"/>
+	</identity>
+	<localeDisplayNames>
+		<languages>
+			<language type="ab">آبخازجا</language>
+			<language type="af">آفریکانس</language>
+			<language type="agq">آقمجه</language>
+			<language type="ak">آکانجا</language>
+			<language type="am">آمهارجا</language>
+			<language type="ar">عربجه</language>
+			<language type="ar_001">استاندارد عربجه</language>
+			<language type="as">آسامجا</language>
+			<language type="asa">آسوجا</language>
+			<language type="az">آذربایجان تۆرکجه‌سی</language>
+			<language type="az" alt="short">آذریجه</language>
+			<language type="az_Arab">تۆرکجه</language>
+			<language type="ba">باشقیرجا</language>
+			<language type="be">بئلاروسجا</language>
+			<language type="bem">بئمباجا</language>
+			<language type="bez">بئناجا</language>
+			<language type="bg">بۇلقارجا</language>
+			<language type="bgn">دوْغو بلوچجا</language>
+			<language type="bm">بامباراجا</language>
+			<language type="bn">بنگالجا</language>
+			<language type="br">برئتونجا</language>
+			<language type="brx">بوْدوجا</language>
+			<language type="bs">بوْسنیاجا</language>
+			<language type="ca">کاتالانجا</language>
+			<language type="ce">چئچئنجه</language>
+			<language type="cgg">چیقاجا</language>
+			<language type="chr">چئروکیجه</language>
+			<language type="ckb">اوْرتا کۆردجه</language>
+			<language type="co">کوْرسیکاجا</language>
+			<language type="cs">چئکجه</language>
+			<language type="cv">چۇواشجا</language>
+			<language type="da">دانجا</language>
+			<language type="de">آلمانجا</language>
+			<language type="dua">دۇالاجا</language>
+			<language type="dz">دزونگخا</language>
+			<language type="ebu">ائمبوجا</language>
+			<language type="ee">اِوه‌جه</language>
+			<language type="el">یونانجا</language>
+			<language type="en">اینگیلیزجه</language>
+			<language type="eo">اِسپرانتو</language>
+			<language type="es">اسپانیاجا</language>
+			<language type="es_419">لاتین آمریکا اسپانیاجاسی</language>
+			<language type="es_ES">اۇروپا اسپانیاجاسی</language>
+			<language type="es_MX">مکزیک اسپانیاجاسی</language>
+			<language type="et">اِستونجا</language>
+			<language type="eu">باسکجا</language>
+			<language type="fa">فارسجا</language>
+			<language type="fi">فینجه</language>
+			<language type="fil">فیلیپینجه</language>
+			<language type="fj">فیجیجه</language>
+			<language type="fo">فاروئه‌جه</language>
+			<language type="fr">فرانساجا</language>
+			<language type="gag">قاقائوزجا</language>
+			<language type="gl">قالیسیاجا</language>
+			<language type="gsw">سویس آلمانجاسی</language>
+			<language type="he">عبریجه</language>
+			<language type="hi">هیندجه</language>
+			<language type="hr">کروواسجا</language>
+			<language type="hy">ائرمنیجه</language>
+			<language type="it">ایتالیاجا</language>
+			<language type="ja">ژاپونجا</language>
+			<language type="ka">گۆرجوجه</language>
+			<language type="kk">قازاقجا</language>
+			<language type="km">خمئرجه</language>
+			<language type="ko">کوْره‌جه</language>
+			<language type="ks">کشمیرجه</language>
+			<language type="ksf">بافیاجا</language>
+			<language type="ku">کۆردجه</language>
+			<language type="kw">کوْرنجا</language>
+			<language type="ky">قیرقیزجا</language>
+			<language type="la">لاتینجه</language>
+			<language type="lg">قانداجا</language>
+			<language type="lrc">قۇزئی لوْرجه</language>
+			<language type="mk">مقدونیجه</language>
+			<language type="mn">موْغولجا</language>
+			<language type="my">بۇرماجا</language>
+			<language type="mzn">مازنیجه</language>
+			<language type="nl">هوْلندجه</language>
+			<language type="pa">پنجابجا</language>
+			<language type="ps">پشتوجه</language>
+			<language type="pt">پوْرتغالجه</language>
+			<language type="ro">رومانیاجا</language>
+			<language type="ru">روسجا</language>
+			<language type="sd">سیندیجه</language>
+			<language type="sdh">گۆنئی کۆردجه</language>
+			<language type="sk">اسلواکجا</language>
+			<language type="sq">آلبانیاجا</language>
+			<language type="sr">صربجه</language>
+			<language type="sv">سوئدجه</language>
+			<language type="sw">سواحیلیجه</language>
+			<language type="sw_CD">کوْنقو سواحیلیسی</language>
+			<language type="ta">تامیلجه</language>
+			<language type="tg">تاجیکجه</language>
+			<language type="tk">تۆرکمنجه</language>
+			<language type="tr">آنادولو تۆرکجه‌سی</language>
+			<language type="tt">تاتارجا</language>
+			<language type="ug">اۇیغورجا</language>
+			<language type="uk">اۇکراینجا</language>
+			<language type="und">تانینمایان دیل</language>
+			<language type="ur">اوْردوجا</language>
+			<language type="uz">اؤزبکجه</language>
+			<language type="vi">ویتنامجا</language>
+			<language type="zh">چینجه</language>
+			<language type="zh_Hans">ساده‌لنمیش چینجه</language>
+			<language type="zh_Hant">سنتی چینجه</language>
+			<language type="zu">زۇلوجا</language>
+		</languages>
+		<scripts>
+			<script type="Arab">عربجه</script>
+			<script type="Armn">ائرمنیجه</script>
+			<script type="Beng">بنگالجا</script>
+			<script type="Brai">بریل</script>
+			<script type="Cyrl">سریلیکجه</script>
+			<script type="Geor">گۆرجوجه</script>
+			<script type="Grek">یونانجا</script>
+			<script type="Hans">ساده‌لنمیش</script>
+			<script type="Hans" alt="stand-alone">ساده‌لنمیش هانجا</script>
+			<script type="Hant">سنتی</script>
+			<script type="Hant" alt="stand-alone">سنتی هانجا</script>
+			<script type="Hebr">عبریجه</script>
+			<script type="Hira">هیراگانا</script>
+			<script type="Jpan">ژاپونجا</script>
+			<script type="Kana">کاتاکانا</script>
+			<script type="Khmr">خمئرجه</script>
+			<script type="Kore">کوْره‌جه</script>
+			<script type="Latn">لاتینجه</script>
+			<script type="Mong">موْغولجا</script>
+			<script type="Taml">تامیلجه</script>
+			<script type="Tibt">تبتجه</script>
+			<script type="Zsym">سمبول‌لار</script>
+			<script type="Zxxx">یازیلمایان</script>
+			<script type="Zyyy">اوْرتاق</script>
+			<script type="Zzzz">تانینمایان خط</script>
+		</scripts>
+		<territories>
+			<territory type="001">دۆنیا</territory>
+		</territories>
+		<codePatterns>
+			<codePattern type="language">دیل: {0}</codePattern>
+			<codePattern type="script">یازی: {0}</codePattern>
+			<codePattern type="territory">بؤلگه: {0}</codePattern>
+		</codePatterns>
+	</localeDisplayNames>
+	<layout>
+		<orientation>
+			<characterOrder>right-to-left</characterOrder>
+			<lineOrder>top-to-bottom</lineOrder>
+		</orientation>
+	</layout>
+	<characters>
+		<exemplarCharacters>[آ ؤ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ه و ۆ ۇ ی ؽ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D\u200E\u200F \u064E \u064F \u0650 \u0652 إ ك ڭ ى ي]</exemplarCharacters>
+		<exemplarCharacters type="index">[آ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ه و ی]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐ ‑ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
+		<ellipsis type="final">{0}…</ellipsis>
+		<ellipsis type="initial">…{0}</ellipsis>
+		<ellipsis type="medial">{0}…{1}</ellipsis>
+		<ellipsis type="word-final">{0} …</ellipsis>
+		<ellipsis type="word-initial">… {0}</ellipsis>
+		<ellipsis type="word-medial">{0} … {1}</ellipsis>
+		<moreInformation>؟</moreInformation>
+	</characters>
+	<delimiters>
+		<quotationStart>«</quotationStart>
+		<quotationEnd>»</quotationEnd>
+		<alternateQuotationStart>‹</alternateQuotationStart>
+		<alternateQuotationEnd>›</alternateQuotationEnd>
+	</delimiters>
+	<numbers>
+		<defaultNumberingSystem draft="contributed">arabext</defaultNumberingSystem>
+		<otherNumberingSystems>
+			<native draft="contributed">arabext</native>
+		</otherNumberingSystems>
+		<symbols numberSystem="arabext">
+			<timeSeparator>:</timeSeparator>
+		</symbols>
+	</numbers>
+</ldml>

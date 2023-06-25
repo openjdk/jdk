@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,7 +139,7 @@ private:
     }
 
   public:
-    FunctionType _function[KLASS_KIND_COUNT];
+    FunctionType _function[Klass::KLASS_KIND_COUNT];
 
     Table(){
       set_init_function<InstanceKlass>();
@@ -202,7 +202,7 @@ private:
     }
 
   public:
-    FunctionType _function[KLASS_KIND_COUNT];
+    FunctionType _function[Klass::KLASS_KIND_COUNT];
 
     Table(){
       set_init_function<InstanceKlass>();
@@ -265,7 +265,7 @@ private:
     }
 
   public:
-    FunctionType _function[KLASS_KIND_COUNT];
+    FunctionType _function[Klass::KLASS_KIND_COUNT];
 
     Table(){
       set_init_function<InstanceKlass>();

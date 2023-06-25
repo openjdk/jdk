@@ -29,7 +29,7 @@
 
 #include "oops/oop.inline.hpp"
 #include "oops/oopsHierarchy.hpp"
-#include "runtime/globals.hpp"
+#include "gc/shared/gc_globals.hpp"
 
 inline bool G1CMObjArrayProcessor::should_be_sliced(oop obj) {
   return obj->is_objArray() && ((objArrayOop)obj)->size() >= 2 * ObjArrayMarkingStride;

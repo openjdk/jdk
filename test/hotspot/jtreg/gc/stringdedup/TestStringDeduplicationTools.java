@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,7 @@ class TestStringDeduplicationTools {
     private static byte[] dummy;
 
     private static String selectedGC = null;
+    private static String selectedGCMode = null;
 
     static {
         try {
@@ -71,6 +72,9 @@ class TestStringDeduplicationTools {
 
     public static void selectGC(String[] args) {
         selectedGC = args[0];
+        if (args.length > 1) {
+            selectedGCMode = args[1];
+        }
     }
 
     private static Object getValue(String string) {
@@ -100,8 +104,19 @@ class TestStringDeduplicationTools {
             if (n.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
                 GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) n.getUserData());
                 // Shenandoah and Z GC also report GC pauses, skip them
-                if (info.getGcName().startsWith("Shenandoah") || info.getGcName().startsWith("ZGC")) {
+                if (info.getGcName().startsWith("Shenandoah")) {
                     if ("end of GC cycle".equals(info.getGcAction())) {
+                        gcCount++;
+                    }
+                } else if (info.getGcName().startsWith("ZGC")) {
+                    // Generational ZGC only triggers string deduplications from major collections
+                    if (info.getGcName().startsWith("ZGC Major") && "end of GC cycle".equals(info.getGcAction())) {
+                        gcCount++;
+                    }
+
+                    // Single-gen ZGC
+                    if (!info.getGcName().startsWith("ZGC Major") && !info.getGcName().startsWith("ZGC Minor") &&
+                            "end of GC cycle".equals(info.getGcAction())) {
                         gcCount++;
                     }
                 } else if (info.getGcName().startsWith("G1")) {
@@ -278,6 +293,9 @@ class TestStringDeduplicationTools {
 
         ArrayList<String> args = new ArrayList<String>();
         args.add("-XX:+Use" + selectedGC + "GC");
+        if (selectedGCMode != null) {
+            args.add(selectedGCMode);
+        }
         args.addAll(Arrays.asList(defaultArgs));
         args.addAll(Arrays.asList(extraArgs));
 
@@ -337,9 +355,8 @@ class TestStringDeduplicationTools {
             // Create duplicate of baseString
             StringBuilder sb1 = new StringBuilder(baseString);
             String dupString1 = sb1.toString();
-            if (getValue(dupString1) == getValue(baseString)) {
-                throw new RuntimeException("Values should not match");
-            }
+
+            checkNotDeduplicated(getValue(dupString1), getValue(baseString));
 
             // Force baseString to be inspected for deduplication
             // and be inserted into the deduplication hashtable.
@@ -352,9 +369,8 @@ class TestStringDeduplicationTools {
             // Create a new duplicate of baseString
             StringBuilder sb2 = new StringBuilder(baseString);
             String dupString2 = sb2.toString();
-            if (getValue(dupString2) == getValue(baseString)) {
-                throw new RuntimeException("Values should not match");
-            }
+
+            checkNotDeduplicated(getValue(dupString2), getValue(baseString));
 
             // Intern the new duplicate
             Object beforeInternedValue = getValue(dupString2);
@@ -373,23 +389,18 @@ class TestStringDeduplicationTools {
             // Check original value of interned string, to make sure
             // deduplication happened on the interned string and not
             // on the base string
-            if (beforeInternedValue == getValue(baseString)) {
-                throw new RuntimeException("Values should not match");
-            }
+            checkNotDeduplicated(beforeInternedValue, getValue(baseString));
 
             // Create duplicate of baseString
             StringBuilder sb3 = new StringBuilder(baseString);
             String dupString3 = sb3.toString();
-            if (getValue(dupString3) == getValue(baseString)) {
-                throw new RuntimeException("Values should not match");
-            }
+
+            checkNotDeduplicated(dupString3, getValue(baseString));
 
             forceDeduplication(ageThreshold, FullGC);
 
-            if (!waitForDeduplication(dupString3, baseString)) {
-                if (getValue(dupString3) != getValue(internedString)) {
-                    throw new RuntimeException("String 3 doesn't match either");
-                }
+            if (!waitForDeduplication(dupString3, internedString)) {
+                throw new RuntimeException("Deduplication has not occurred for string 3");
             }
 
             if (afterInternedValue != getValue(dupString2)) {
@@ -397,6 +408,15 @@ class TestStringDeduplicationTools {
             }
 
             System.out.println("End: InternedTest");
+        }
+
+        private static void checkNotDeduplicated(Object value1, Object value2) {
+            // Note that the following check is invalid since a GC
+            // can run and actually deduplicate the strings.
+            //
+            // if (value1 == value2) {
+            //     throw new RuntimeException("Values should not match");
+            // }
         }
 
         public static OutputAnalyzer run() throws Exception {

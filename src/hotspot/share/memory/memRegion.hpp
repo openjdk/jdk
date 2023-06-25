@@ -105,15 +105,4 @@ public:
   virtual void do_MemRegion(MemRegion mr) = 0;
 };
 
-// A ResourceObj version of MemRegionClosure
-
-class MemRegionClosureRO: public MemRegionClosure {
-public:
-  void* operator new(size_t size) throw() {
-    return resource_allocate_bytes(size);
-  }
-
-  void  operator delete(void* p) {} // nothing to do
-};
-
 #endif // SHARE_MEMORY_MEMREGION_HPP

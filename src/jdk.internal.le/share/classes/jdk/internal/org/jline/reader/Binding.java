@@ -14,7 +14,7 @@ package jdk.internal.org.jline.reader;
  * @see Macro
  * @see Reference
  * @see Widget
- * @see org.jline.keymap.KeyMap
+ * @see jdk.internal.org.jline.keymap.KeyMap
  *
  * @author <a href="mailto:gnodet@gmail.com">Guillaume Nodet</a>
  */

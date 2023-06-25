@@ -70,13 +70,13 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<mapZone other="US Mountain Standard Time" territory="ZZ" type="Etc/GMT+7"/>
 
 			<!-- (UTC-07:00) Chihuahua, La Paz, Mazatlan -->
-			<mapZone other="Mountain Standard Time (Mexico)" territory="001" type="America/Chihuahua"/>
-			<mapZone other="Mountain Standard Time (Mexico)" territory="MX" type="America/Chihuahua America/Mazatlan"/>
+			<mapZone other="Mountain Standard Time (Mexico)" territory="001" type="America/Mazatlan"/>
+			<mapZone other="Mountain Standard Time (Mexico)" territory="MX" type="America/Mazatlan"/>
 
 			<!-- (UTC-07:00) Mountain Time (US & Canada) -->
 			<mapZone other="Mountain Standard Time" territory="001" type="America/Denver"/>
 			<mapZone other="Mountain Standard Time" territory="CA" type="America/Edmonton America/Cambridge_Bay America/Inuvik America/Yellowknife"/>
-			<mapZone other="Mountain Standard Time" territory="MX" type="America/Ojinaga"/>
+			<mapZone other="Mountain Standard Time" territory="MX" type="America/Ciudad_Juarez"/>
 			<mapZone other="Mountain Standard Time" territory="US" type="America/Denver America/Boise"/>
 			<mapZone other="Mountain Standard Time" territory="ZZ" type="MST7MDT"/>
 
@@ -98,7 +98,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 			<!-- (UTC-06:00) Central Time (US & Canada) -->
 			<mapZone other="Central Standard Time" territory="001" type="America/Chicago"/>
 			<mapZone other="Central Standard Time" territory="CA" type="America/Winnipeg America/Rainy_River America/Rankin_Inlet America/Resolute"/>
-			<mapZone other="Central Standard Time" territory="MX" type="America/Matamoros"/>
+			<mapZone other="Central Standard Time" territory="MX" type="America/Matamoros America/Ojinaga"/>
 			<mapZone other="Central Standard Time" territory="US" type="America/Chicago America/Indiana/Knox America/Indiana/Tell_City America/Menominee America/North_Dakota/Beulah America/North_Dakota/Center America/North_Dakota/New_Salem"/>
 			<mapZone other="Central Standard Time" territory="ZZ" type="CST6CDT"/>
 
@@ -108,7 +108,7 @@ For terms of use, see http://www.unicode.org/copyright.html
 
 			<!-- (UTC-06:00) Guadalajara, Mexico City, Monterrey -->
 			<mapZone other="Central Standard Time (Mexico)" territory="001" type="America/Mexico_City"/>
-			<mapZone other="Central Standard Time (Mexico)" territory="MX" type="America/Mexico_City America/Bahia_Banderas America/Merida America/Monterrey"/>
+			<mapZone other="Central Standard Time (Mexico)" territory="MX" type="America/Mexico_City America/Bahia_Banderas America/Merida America/Monterrey America/Chihuahua "/>
 
 			<!-- (UTC-06:00) Saskatchewan -->
 			<mapZone other="Canada Central Standard Time" territory="001" type="America/Regina"/>

@@ -21,7 +21,7 @@
  * questions.
  */
 
-// key: compiler.err.cant.assign.val.to.final.var
+// key: compiler.err.cant.assign.val.to.var
 
 class CantAssignToFinal {
     final int i = 0;

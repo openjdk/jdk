@@ -85,8 +85,11 @@ public class Http2TestServer implements AutoCloseable {
     }
 
     public String serverAuthority() {
-        return InetAddress.getLoopbackAddress().getHostName() + ":"
-                + getAddress().getPort();
+        final InetSocketAddress inetSockAddr = getAddress();
+        final String hostIP = inetSockAddr.getAddress().getHostAddress();
+        // escape for ipv6
+        final String h = hostIP.contains(":") ? "[" + hostIP + "]" : hostIP;
+        return h + ":" + inetSockAddr.getPort();
     }
 
     public Http2TestServer(boolean secure,
@@ -192,7 +195,7 @@ public class Http2TestServer implements AutoCloseable {
         this.secure = secure;
         this.exec = exec == null ? getDefaultExecutor() : exec;
         this.handlers = Collections.synchronizedMap(new HashMap<>());
-        this.properties = properties;
+        this.properties = properties == null ? new Properties() : properties;
         this.connections = ConcurrentHashMap.newKeySet();
     }
 

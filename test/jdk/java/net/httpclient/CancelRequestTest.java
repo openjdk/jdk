@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8245462 8229822 8254786 8297075 8297149 8298340
+ * @bug 8245462 8229822 8254786 8297075 8297149 8298340 8302635
  * @summary Tests cancelling the request.
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @key randomness
@@ -87,6 +87,8 @@ import jdk.httpclient.test.lib.http2.Http2TestServer;
 import static java.lang.System.arraycopy;
 import static java.lang.System.out;
 import static java.lang.System.err;
+import static java.net.http.HttpClient.Version.HTTP_1_1;
+import static java.net.http.HttpClient.Version.HTTP_2;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
@@ -593,25 +595,22 @@ public class CancelRequestTest implements HttpServerAdapters {
 
         // HTTP/1.1
         HttpTestHandler h1_chunkHandler = new HTTPSlowHandler();
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpTestServer.create(HTTP_1_1);
         httpTestServer.addHandler(h1_chunkHandler, "/http1/x/");
         httpURI = "http://" + httpTestServer.serverAuthority() + "/http1/x/";
 
-        HttpsServer httpsServer = HttpsServer.create(sa, 0);
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(sslContext));
-        httpsTestServer = HttpTestServer.of(httpsServer);
+        httpsTestServer = HttpTestServer.create(HTTP_1_1, sslContext);
         httpsTestServer.addHandler(h1_chunkHandler, "/https1/x/");
         httpsURI = "https://" + httpsTestServer.serverAuthority() + "/https1/x/";
 
         // HTTP/2
         HttpTestHandler h2_chunkedHandler = new HTTPSlowHandler();
 
-        http2TestServer = HttpTestServer.of(new Http2TestServer("localhost", false, 0));
+        http2TestServer = HttpTestServer.create(HTTP_2);
         http2TestServer.addHandler(h2_chunkedHandler, "/http2/x/");
         http2URI = "http://" + http2TestServer.serverAuthority() + "/http2/x/";
 
-        https2TestServer = HttpTestServer.of(new Http2TestServer("localhost", true, sslContext));
+        https2TestServer = HttpTestServer.create(HTTP_2, sslContext);
         https2TestServer.addHandler(h2_chunkedHandler, "/https2/x/");
         https2URI = "https://" + https2TestServer.serverAuthority() + "/https2/x/";
 

@@ -116,12 +116,6 @@ abstract class AbstractTest {
 
     protected void compileMethod(DeclaredTest test) {
         final Method testMethod = test.getTestMethod();
-        TestRun.check(WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false),
-                      "Method " + testMethod + " not compilable at level " + test.getCompLevel()
-                      + ". Did you use compileonly without including all @Test methods?");
-        TestRun.check(WHITE_BOX.isMethodCompilable(testMethod),
-                      "Method " + testMethod + " not compilable at level " + test.getCompLevel()
-                      + ". Did you use compileonly without including all @Test methods?");
         if (TestFramework.VERBOSE) {
             System.out.println("Compile method " + testMethod + " after warm-up...");
         }
@@ -163,7 +157,10 @@ abstract class AbstractTest {
     }
 
     private void enqueueMethodForCompilation(DeclaredTest test) {
-        TestVM.enqueueForCompilation(test.getTestMethod(), test.getCompLevel());
+        final Method testMethod = test.getTestMethod();
+        TestRun.check(WHITE_BOX.isMethodCompilable(testMethod, test.getCompLevel().getValue(), false),
+                      "Method " + testMethod + " not compilable (anymore) at level " + test.getCompLevel());
+        TestVM.enqueueForCompilation(testMethod, test.getCompLevel());
     }
 
     protected void checkCompilationLevel(DeclaredTest test) {

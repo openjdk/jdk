@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,10 +68,13 @@ public class JsrRewriting {
         output.shouldHaveExitValue(0);
 
         // ======= execute the test
+        // We run the test with MallocLimit set to 768m in oom mode,
+        // in order to trigger and observe a fake os::malloc oom. This needs NMT.
         pb = ProcessTools.createJavaProcessBuilder(
             "-cp", ".",
             "-XX:+UnlockDiagnosticVMOptions",
-            "-XX:MallocMaxTestWords=" + mallocMaxTestWords,
+            "-XX:NativeMemoryTracking=summary",
+            "-XX:MallocLimit=768m:oom",
             className);
 
         output = new OutputAnalyzer(pb.start());

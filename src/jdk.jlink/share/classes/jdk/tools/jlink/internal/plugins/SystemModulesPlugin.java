@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.constant.ClassDesc;
+import java.lang.constant.ConstantDesc;
+import static java.lang.constant.ConstantDescs.*;
+import java.lang.constant.MethodTypeDesc;
 import java.lang.module.Configuration;
 import java.lang.module.ModuleDescriptor;
 import java.lang.module.ModuleDescriptor.Exports;
@@ -39,8 +43,10 @@ import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReader;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
+import java.lang.reflect.ClassFileFormatVersion;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -68,13 +74,12 @@ import jdk.internal.module.ModuleReferenceImpl;
 import jdk.internal.module.ModuleResolution;
 import jdk.internal.module.ModuleTarget;
 
-import jdk.internal.org.objectweb.asm.ClassReader;
-import jdk.internal.org.objectweb.asm.ClassVisitor;
-import jdk.internal.org.objectweb.asm.ClassWriter;
-import jdk.internal.org.objectweb.asm.MethodVisitor;
-import jdk.internal.org.objectweb.asm.ModuleVisitor;
-import jdk.internal.org.objectweb.asm.Opcodes;
-import static jdk.internal.org.objectweb.asm.Opcodes.*;
+import jdk.internal.classfile.attribute.ModulePackagesAttribute;
+import jdk.internal.classfile.ClassBuilder;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.TypeKind;
+import static jdk.internal.classfile.Classfile.*;
+import jdk.internal.classfile.CodeBuilder;
 
 import jdk.tools.jlink.internal.ModuleSorter;
 import jdk.tools.jlink.plugin.PluginException;
@@ -96,15 +101,23 @@ import jdk.tools.jlink.plugin.ResourcePoolEntry;
  */
 
 public final class SystemModulesPlugin extends AbstractPlugin {
-    private static final String SYSTEM_MODULES_MAP_CLASS =
+    private static final int CLASSFILE_VERSION =
+            ClassFileFormatVersion.latest().major();
+    private static final String SYSTEM_MODULES_MAP_CLASSNAME =
             "jdk/internal/module/SystemModulesMap";
     private static final String SYSTEM_MODULES_CLASS_PREFIX =
             "jdk/internal/module/SystemModules$";
-    private static final String ALL_SYSTEM_MODULES_CLASS =
-            SYSTEM_MODULES_CLASS_PREFIX + "all";
-    private static final String DEFAULT_SYSTEM_MODULES_CLASS =
-            SYSTEM_MODULES_CLASS_PREFIX + "default";
 
+    private static final String ALL_SYSTEM_MODULES_CLASSNAME =
+            SYSTEM_MODULES_CLASS_PREFIX + "all";
+    private static final String DEFAULT_SYSTEM_MODULES_CLASSNAME =
+            SYSTEM_MODULES_CLASS_PREFIX + "default";
+    private static final ClassDesc CD_ALL_SYSTEM_MODULES =
+            ClassDesc.ofInternalName(ALL_SYSTEM_MODULES_CLASSNAME);
+    private static final ClassDesc CD_SYSTEM_MODULES =
+            ClassDesc.ofInternalName("jdk/internal/module/SystemModules");
+    private static final ClassDesc CD_SYSTEM_MODULES_MAP =
+            ClassDesc.ofInternalName(SYSTEM_MODULES_MAP_CLASSNAME);
     private boolean enabled;
 
     public SystemModulesPlugin() {
@@ -222,7 +235,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 .collect(Collectors.toSet());
         String rn = genSystemModulesClass(moduleInfos,
                                           resolve(finder, allModuleNames),
-                                          ALL_SYSTEM_MODULES_CLASS,
+                                          ALL_SYSTEM_MODULES_CLASSNAME,
                                           out);
         generated.add(rn);
 
@@ -232,9 +245,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         Configuration cf = resolve(finder, DefaultRoots.compute(finder));
         if (cf.modules().size() == moduleCount) {
             // all modules are resolved so no need to generate a class
-            defaultSystemModulesClassName = ALL_SYSTEM_MODULES_CLASS;
+            defaultSystemModulesClassName = ALL_SYSTEM_MODULES_CLASSNAME;
         } else {
-            defaultSystemModulesClassName = DEFAULT_SYSTEM_MODULES_CLASS;
+            defaultSystemModulesClassName = DEFAULT_SYSTEM_MODULES_CLASSNAME;
             rn = genSystemModulesClass(sublist(moduleInfos, cf),
                                        cf,
                                        defaultSystemModulesClassName,
@@ -250,7 +263,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 cf = resolve(finder, Set.of(moduleName));
                 if (cf.modules().size() == moduleCount) {
                     // resolves all modules so no need to generate a class
-                    map.put(moduleName, ALL_SYSTEM_MODULES_CLASS);
+                    map.put(moduleName, ALL_SYSTEM_MODULES_CLASSNAME);
                 } else {
                     String cn = SYSTEM_MODULES_CLASS_PREFIX + (suffix++);
                     rn = genSystemModulesClass(sublist(moduleInfos, cf), cf, cn, out);
@@ -261,8 +274,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         // generate SystemModulesMap
-        rn = genSystemModulesMapClass(ALL_SYSTEM_MODULES_CLASS,
-                                      defaultSystemModulesClassName,
+        rn = genSystemModulesMapClass(CD_ALL_SYSTEM_MODULES,
+                                      ClassDesc.ofInternalName(defaultSystemModulesClassName),
                                       map,
                                       out);
         generated.add(rn);
@@ -304,7 +317,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                          ResourcePoolBuilder out) {
         SystemModulesClassGenerator generator
             = new SystemModulesClassGenerator(className, moduleInfos);
-        byte[] bytes = generator.getClassWriter(cf).toByteArray();
+        byte[] bytes = generator.genClassBytes(cf);
         String rn = "/java.base/" + className + ".class";
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, bytes);
         out.add(e);
@@ -416,26 +429,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         }
 
         boolean hasModulePackages() throws IOException {
-            Set<String> packages = new HashSet<>();
-            ClassVisitor cv = new ClassVisitor(Opcodes.ASM7) {
-                @Override
-                public ModuleVisitor visitModule(String name,
-                                                 int flags,
-                                                 String version) {
-                    return new ModuleVisitor(Opcodes.ASM7) {
-                        @Override
-                        public void visitPackage(String pn) {
-                            packages.add(pn);
-                        }
-                    };
-                }
-            };
-
             try (InputStream in = getInputStream()) {
                 // parse module-info.class
-                ClassReader cr = new ClassReader(in);
-                cr.accept(cv, 0);
-                return packages.size() > 0;
+                return Classfile.parse(in.readAllBytes()).elementStream()
+                        .anyMatch(e -> e instanceof ModulePackagesAttribute mpa
+                                    && !mpa.packages().isEmpty());
             }
         }
 
@@ -502,26 +500,22 @@ public final class SystemModulesPlugin extends AbstractPlugin {
      * and other attributes of system modules.
      */
     static class SystemModulesClassGenerator {
-        private static final String MODULE_DESCRIPTOR_BUILDER =
-            "jdk/internal/module/Builder";
-        private static final String MODULE_DESCRIPTOR_ARRAY_SIGNATURE =
-            "[Ljava/lang/module/ModuleDescriptor;";
-        private static final String REQUIRES_MODIFIER_CLASSNAME =
-            "java/lang/module/ModuleDescriptor$Requires$Modifier";
-        private static final String EXPORTS_MODIFIER_CLASSNAME =
-            "java/lang/module/ModuleDescriptor$Exports$Modifier";
-        private static final String OPENS_MODIFIER_CLASSNAME =
-            "java/lang/module/ModuleDescriptor$Opens$Modifier";
-        private static final String MODULE_TARGET_CLASSNAME  =
-            "jdk/internal/module/ModuleTarget";
-        private static final String MODULE_TARGET_ARRAY_SIGNATURE  =
-            "[Ljdk/internal/module/ModuleTarget;";
-        private static final String MODULE_HASHES_ARRAY_SIGNATURE  =
-            "[Ljdk/internal/module/ModuleHashes;";
-        private static final String MODULE_RESOLUTION_CLASSNAME  =
-            "jdk/internal/module/ModuleResolution";
-        private static final String MODULE_RESOLUTIONS_ARRAY_SIGNATURE  =
-            "[Ljdk/internal/module/ModuleResolution;";
+        private static final ClassDesc CD_MODULE_DESCRIPTOR =
+            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor");
+        private static final ClassDesc CD_MODULE_BUILDER =
+            ClassDesc.ofInternalName("jdk/internal/module/Builder");
+        private static final ClassDesc CD_REQUIRES_MODIFIER =
+            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Requires$Modifier");
+        private static final ClassDesc CD_EXPORTS_MODIFIER =
+            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Exports$Modifier");
+        private static final ClassDesc CD_OPENS_MODIFIER =
+            ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Opens$Modifier");
+        private static final ClassDesc CD_MODULE_TARGET =
+            ClassDesc.ofInternalName("jdk/internal/module/ModuleTarget");
+        private static final ClassDesc CD_MODULE_HASHES =
+            ClassDesc.ofInternalName("jdk/internal/module/ModuleHashes");
+        private static final ClassDesc CD_MODULE_RESOLUTION =
+            ClassDesc.ofInternalName("jdk/internal/module/ModuleResolution");
 
         private static final int MAX_LOCAL_VARS = 256;
 
@@ -531,13 +525,10 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private final int MH_VAR         = 1;  // variable for ModuleHashes
         private int nextLocalVar         = 2;  // index to next local variable
 
-        // Method visitor for generating the SystemModules::modules() method
-        private MethodVisitor mv;
-
         // name of class to generate
-        private final String className;
+        private final ClassDesc classDesc;
 
-        // list of all ModuleDescriptorBuilders, invoked in turn when building.
+        // list of all ModuleInfos
         private final List<ModuleInfo> moduleInfos;
 
         // A builder to create one single Set instance for a given set of
@@ -548,7 +539,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         public SystemModulesClassGenerator(String className,
                                            List<ModuleInfo> moduleInfos) {
-            this.className = className;
+            this.classDesc = ClassDesc.ofInternalName(className);
             this.moduleInfos = moduleInfos;
             moduleInfos.forEach(mi -> dedups(mi.descriptor()));
         }
@@ -587,260 +578,229 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         /**
          * Generate SystemModules class
          */
-        public ClassWriter getClassWriter(Configuration cf) {
-            ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                             + ClassWriter.COMPUTE_FRAMES);
-            cw.visit(Opcodes.V1_8,
-                     ACC_FINAL+ACC_SUPER,
-                     className,
-                     null,
-                     "java/lang/Object",
-                     new String[] { "jdk/internal/module/SystemModules" });
+        public byte[] genClassBytes(Configuration cf) {
+            return Classfile.build(classDesc,
+                    clb -> {
+                        clb.withFlags(ACC_FINAL + ACC_SUPER)
+                           .withInterfaceSymbols(List.of(CD_SYSTEM_MODULES))
+                           .withVersion(CLASSFILE_VERSION, 0);
 
-            // generate <init>
-            genConstructor(cw);
+                        // generate <init>
+                        genConstructor(clb);
 
-            // generate hasSplitPackages
-            genHasSplitPackages(cw);
+                        // generate hasSplitPackages
+                        genHasSplitPackages(clb);
 
-            // generate hasIncubatorModules
-            genIncubatorModules(cw);
+                        // generate hasIncubatorModules
+                        genIncubatorModules(clb);
 
-            // generate moduleDescriptors
-            genModuleDescriptorsMethod(cw);
+                        // generate moduleDescriptors
+                        genModuleDescriptorsMethod(clb);
 
-            // generate moduleTargets
-            genModuleTargetsMethod(cw);
+                        // generate moduleTargets
+                        genModuleTargetsMethod(clb);
 
-            // generate moduleHashes
-            genModuleHashesMethod(cw);
+                        // generate moduleHashes
+                        genModuleHashesMethod(clb);
 
-            // generate moduleResolutions
-            genModuleResolutionsMethod(cw);
+                        // generate moduleResolutions
+                        genModuleResolutionsMethod(clb);
 
-            // generate moduleReads
-            genModuleReads(cw, cf);
-
-            return cw;
+                        // generate moduleReads
+                        genModuleReads(clb, cf);
+                    });
         }
 
         /**
          * Generate bytecode for no-arg constructor
          */
-        private void genConstructor(ClassWriter cw) {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL,
-                               "java/lang/Object",
-                               "<init>",
-                               "()V",
-                               false);
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+        private void genConstructor(ClassBuilder clb) {
+            clb.withMethodBody(
+                    "<init>",
+                    MethodTypeDesc.of(CD_void),
+                    ACC_PUBLIC,
+                    cob -> cob.aload(0)
+                              .invokespecial(CD_Object,
+                                             "<init>",
+                                             MethodTypeDesc.of(CD_void))
+                              .return_());
         }
 
         /**
          * Generate bytecode for hasSplitPackages method
          */
-        private void genHasSplitPackages(ClassWriter cw) {
+        private void genHasSplitPackages(ClassBuilder clb) {
             boolean distinct = moduleInfos.stream()
                     .map(ModuleInfo::packages)
                     .flatMap(Set::stream)
                     .allMatch(new HashSet<>()::add);
             boolean hasSplitPackages = !distinct;
 
-            mv = cw.visitMethod(ACC_PUBLIC,
-                                "hasSplitPackages",
-                                "()Z",
-                                "()Z",
-                                null);
-            mv.visitCode();
-            if (hasSplitPackages) {
-                mv.visitInsn(ICONST_1);
-            } else {
-                mv.visitInsn(ICONST_0);
-            }
-            mv.visitInsn(IRETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+            clb.withMethodBody(
+                    "hasSplitPackages",
+                    MethodTypeDesc.of(CD_boolean),
+                    ACC_PUBLIC,
+                    cob -> cob.constantInstruction(hasSplitPackages ? 1 : 0)
+                              .ireturn());
         }
 
         /**
          * Generate bytecode for hasIncubatorModules method
          */
-        private void genIncubatorModules(ClassWriter cw) {
+        private void genIncubatorModules(ClassBuilder clb) {
             boolean hasIncubatorModules = moduleInfos.stream()
                     .map(ModuleInfo::moduleResolution)
                     .filter(mres -> (mres != null && mres.hasIncubatingWarning()))
                     .findFirst()
                     .isPresent();
 
-            mv = cw.visitMethod(ACC_PUBLIC,
-                                "hasIncubatorModules",
-                                "()Z",
-                                "()Z",
-                                null);
-            mv.visitCode();
-            if (hasIncubatorModules) {
-                mv.visitInsn(ICONST_1);
-            } else {
-                mv.visitInsn(ICONST_0);
-            }
-            mv.visitInsn(IRETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+            clb.withMethodBody(
+                    "hasIncubatorModules",
+                    MethodTypeDesc.of(CD_boolean),
+                    ACC_PUBLIC,
+                    cob -> cob.constantInstruction(hasIncubatorModules ? 1 : 0)
+                              .ireturn());
         }
 
         /**
          * Generate bytecode for moduleDescriptors method
          */
-        private void genModuleDescriptorsMethod(ClassWriter cw) {
-            this.mv = cw.visitMethod(ACC_PUBLIC,
-                                     "moduleDescriptors",
-                                     "()" + MODULE_DESCRIPTOR_ARRAY_SIGNATURE,
-                                     "()" + MODULE_DESCRIPTOR_ARRAY_SIGNATURE,
-                                     null);
-            mv.visitCode();
-            pushInt(mv, moduleInfos.size());
-            mv.visitTypeInsn(ANEWARRAY, "java/lang/module/ModuleDescriptor");
-            mv.visitVarInsn(ASTORE, MD_VAR);
+        private void genModuleDescriptorsMethod(ClassBuilder clb) {
+            clb.withMethodBody(
+                    "moduleDescriptors",
+                    MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType()),
+                    ACC_PUBLIC,
+                    cob -> {
+                        cob.constantInstruction(moduleInfos.size())
+                           .anewarray(CD_MODULE_DESCRIPTOR)
+                           .astore(MD_VAR);
 
-            for (int index = 0; index < moduleInfos.size(); index++) {
-                ModuleInfo minfo = moduleInfos.get(index);
-                new ModuleDescriptorBuilder(minfo.descriptor(),
-                                            minfo.packages(),
-                                            index).build();
-            }
-            mv.visitVarInsn(ALOAD, MD_VAR);
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+                        for (int index = 0; index < moduleInfos.size(); index++) {
+                            ModuleInfo minfo = moduleInfos.get(index);
+                            new ModuleDescriptorBuilder(cob,
+                                                        minfo.descriptor(),
+                                                        minfo.packages(),
+                                                        index).build();
+                        }
+                        cob.aload(MD_VAR)
+                           .areturn();
+                    });
         }
 
         /**
          * Generate bytecode for moduleTargets method
          */
-        private void genModuleTargetsMethod(ClassWriter cw) {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC,
-                                              "moduleTargets",
-                                              "()" + MODULE_TARGET_ARRAY_SIGNATURE,
-                                              "()" + MODULE_TARGET_ARRAY_SIGNATURE,
-                                              null);
-            mv.visitCode();
-            pushInt(mv, moduleInfos.size());
-            mv.visitTypeInsn(ANEWARRAY, MODULE_TARGET_CLASSNAME);
-            mv.visitVarInsn(ASTORE, MT_VAR);
+        private void genModuleTargetsMethod(ClassBuilder clb) {
+            clb.withMethodBody(
+                    "moduleTargets",
+                    MethodTypeDesc.of(CD_MODULE_TARGET.arrayType()),
+                    ACC_PUBLIC,
+                    cob -> {
+                        cob.constantInstruction(moduleInfos.size())
+                           .anewarray(CD_MODULE_TARGET)
+                           .astore(MT_VAR);
 
+                        // if java.base has a ModuleTarget attribute then generate the array
+                        // with one element, all other elements will be null.
 
-            // if java.base has a ModuleTarget attribute then generate the array
-            // with one element, all other elements will be null.
+                        ModuleInfo base = moduleInfos.get(0);
+                        if (!base.moduleName().equals("java.base"))
+                            throw new InternalError("java.base should be first module in list");
+                        ModuleTarget target = base.target();
 
-            ModuleInfo base = moduleInfos.get(0);
-            if (!base.moduleName().equals("java.base"))
-                throw new InternalError("java.base should be first module in list");
-            ModuleTarget target = base.target();
+                        int count;
+                        if (target != null && target.targetPlatform() != null) {
+                            count = 1;
+                        } else {
+                            count = moduleInfos.size();
+                        }
 
-            int count;
-            if (target != null && target.targetPlatform() != null) {
-                count = 1;
-            } else {
-                count = moduleInfos.size();
-            }
+                        for (int index = 0; index < count; index++) {
+                            ModuleInfo minfo = moduleInfos.get(index);
+                            if (minfo.target() != null) {
+                                cob.aload(MT_VAR)
+                                   .constantInstruction(index);
 
-            for (int index = 0; index < count; index++) {
-                ModuleInfo minfo = moduleInfos.get(index);
-                if (minfo.target() != null) {
-                    mv.visitVarInsn(ALOAD, MT_VAR);
-                    pushInt(mv, index);
+                                // new ModuleTarget(String)
+                                cob.new_(CD_MODULE_TARGET)
+                                   .dup()
+                                   .constantInstruction(minfo.target().targetPlatform())
+                                   .invokespecial(CD_MODULE_TARGET,
+                                                  "<init>",
+                                                  MethodTypeDesc.of(CD_void, CD_String));
 
-                    // new ModuleTarget(String)
-                    mv.visitTypeInsn(NEW, MODULE_TARGET_CLASSNAME);
-                    mv.visitInsn(DUP);
-                    mv.visitLdcInsn(minfo.target().targetPlatform());
-                    mv.visitMethodInsn(INVOKESPECIAL, MODULE_TARGET_CLASSNAME,
-                                       "<init>", "(Ljava/lang/String;)V", false);
+                                cob.aastore();
+                            }
+                        }
 
-                    mv.visitInsn(AASTORE);
-                }
-            }
-
-            mv.visitVarInsn(ALOAD, MT_VAR);
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+                        cob.aload(MT_VAR)
+                           .areturn();
+                    });
         }
 
         /**
          * Generate bytecode for moduleHashes method
          */
-        private void genModuleHashesMethod(ClassWriter cw) {
-            MethodVisitor hmv =
-                cw.visitMethod(ACC_PUBLIC,
-                               "moduleHashes",
-                               "()" + MODULE_HASHES_ARRAY_SIGNATURE,
-                               "()" + MODULE_HASHES_ARRAY_SIGNATURE,
-                               null);
-            hmv.visitCode();
-            pushInt(hmv, moduleInfos.size());
-            hmv.visitTypeInsn(ANEWARRAY, "jdk/internal/module/ModuleHashes");
-            hmv.visitVarInsn(ASTORE, MH_VAR);
+        private void genModuleHashesMethod(ClassBuilder clb) {
+            clb.withMethodBody(
+                    "moduleHashes",
+                    MethodTypeDesc.of(CD_MODULE_HASHES.arrayType()),
+                    ACC_PUBLIC,
+                    cob -> {
+                        cob.constantInstruction(moduleInfos.size())
+                           .anewarray(CD_MODULE_HASHES)
+                           .astore(MH_VAR);
 
-            for (int index = 0; index < moduleInfos.size(); index++) {
-                ModuleInfo minfo = moduleInfos.get(index);
-                if (minfo.recordedHashes() != null) {
-                    new ModuleHashesBuilder(minfo.recordedHashes(),
-                                            index,
-                                            hmv).build();
-                }
-            }
+                        for (int index = 0; index < moduleInfos.size(); index++) {
+                            ModuleInfo minfo = moduleInfos.get(index);
+                            if (minfo.recordedHashes() != null) {
+                                new ModuleHashesBuilder(minfo.recordedHashes(),
+                                                        index,
+                                                        cob).build();
+                            }
+                        }
 
-            hmv.visitVarInsn(ALOAD, MH_VAR);
-            hmv.visitInsn(ARETURN);
-            hmv.visitMaxs(0, 0);
-            hmv.visitEnd();
+                        cob.aload(MH_VAR)
+                           .areturn();
+                    });
         }
 
         /**
          * Generate bytecode for moduleResolutions method
          */
-        private void genModuleResolutionsMethod(ClassWriter cw) {
-            MethodVisitor mresmv =
-                cw.visitMethod(ACC_PUBLIC,
-                               "moduleResolutions",
-                               "()" + MODULE_RESOLUTIONS_ARRAY_SIGNATURE,
-                               "()" + MODULE_RESOLUTIONS_ARRAY_SIGNATURE,
-                               null);
-            mresmv.visitCode();
-            pushInt(mresmv, moduleInfos.size());
-            mresmv.visitTypeInsn(ANEWARRAY, MODULE_RESOLUTION_CLASSNAME);
-            mresmv.visitVarInsn(ASTORE, 0);
+        private void genModuleResolutionsMethod(ClassBuilder clb) {
+            clb.withMethodBody(
+                    "moduleResolutions",
+                    MethodTypeDesc.of(CD_MODULE_RESOLUTION.arrayType()),
+                    ACC_PUBLIC,
+                    cob -> {
+                        cob.constantInstruction(moduleInfos.size())
+                           .anewarray(CD_MODULE_RESOLUTION)
+                           .astore(0);
 
-            for (int index=0; index < moduleInfos.size(); index++) {
-                ModuleInfo minfo = moduleInfos.get(index);
-                if (minfo.moduleResolution() != null) {
-                    mresmv.visitVarInsn(ALOAD, 0);
-                    pushInt(mresmv, index);
-                    mresmv.visitTypeInsn(NEW, MODULE_RESOLUTION_CLASSNAME);
-                    mresmv.visitInsn(DUP);
-                    mresmv.visitLdcInsn(minfo.moduleResolution().value());
-                    mresmv.visitMethodInsn(INVOKESPECIAL,
-                                           MODULE_RESOLUTION_CLASSNAME,
-                                           "<init>",
-                                           "(I)V", false);
-                    mresmv.visitInsn(AASTORE);
-                }
-            }
-            mresmv.visitVarInsn(ALOAD, 0);
-            mresmv.visitInsn(ARETURN);
-            mresmv.visitMaxs(0, 0);
-            mresmv.visitEnd();
+                        for (int index=0; index < moduleInfos.size(); index++) {
+                            ModuleInfo minfo = moduleInfos.get(index);
+                            if (minfo.moduleResolution() != null) {
+                                cob.aload(0)
+                                   .constantInstruction(index)
+                                   .new_(CD_MODULE_RESOLUTION)
+                                   .dup()
+                                   .constantInstruction(minfo.moduleResolution().value())
+                                   .invokespecial(CD_MODULE_RESOLUTION,
+                                                  "<init>",
+                                                  MethodTypeDesc.of(CD_void, CD_int))
+                                   .aastore();
+                            }
+                        }
+                        cob.aload(0)
+                           .areturn();
+                    });
         }
 
         /**
          * Generate bytecode for moduleReads method
          */
-        private void genModuleReads(ClassWriter cw, Configuration cf) {
+        private void genModuleReads(ClassBuilder clb, Configuration cf) {
             // module name -> names of modules that it reads
             Map<String, Set<String>> map = cf.modules().stream()
                     .collect(Collectors.toMap(
@@ -848,7 +808,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             m -> m.reads().stream()
                                     .map(ResolvedModule::name)
                                     .collect(Collectors.toSet())));
-            generate(cw, "moduleReads", map, true);
+            generate(clb, "moduleReads", map, true);
         }
 
         /**
@@ -856,171 +816,169 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          *
          * If {@code dedup} is true then the values are de-duplicated.
          */
-        private void generate(ClassWriter cw,
+        private void generate(ClassBuilder clb,
                               String methodName,
                               Map<String, Set<String>> map,
                               boolean dedup) {
-            MethodVisitor mv = cw.visitMethod(ACC_PUBLIC,
-                                              methodName,
-                                              "()Ljava/util/Map;",
-                                              "()Ljava/util/Map;",
-                                              null);
-            mv.visitCode();
+            clb.withMethodBody(
+                    methodName,
+                    MethodTypeDesc.of(CD_Map),
+                    ACC_PUBLIC,
+                    cob -> {
 
-            // map of Set -> local
-            Map<Set<String>, Integer> locals;
+                        // map of Set -> local
+                        Map<Set<String>, Integer> locals;
 
-            // generate code to create the sets that are duplicated
-            if (dedup) {
-                Collection<Set<String>> values = map.values();
-                Set<Set<String>> duplicateSets = values.stream()
-                        .distinct()
-                        .filter(s -> Collections.frequency(values, s) > 1)
-                        .collect(Collectors.toSet());
-                locals = new HashMap<>();
-                int index = 1;
-                for (Set<String> s : duplicateSets) {
-                    genImmutableSet(mv, s);
-                    mv.visitVarInsn(ASTORE, index);
-                    locals.put(s, index);
-                    if (++index >= MAX_LOCAL_VARS) {
-                        break;
-                    }
-                }
-            } else {
-                locals = Map.of();
-            }
+                        // generate code to create the sets that are duplicated
+                        if (dedup) {
+                            Collection<Set<String>> values = map.values();
+                            Set<Set<String>> duplicateSets = values.stream()
+                                    .distinct()
+                                    .filter(s -> Collections.frequency(values, s) > 1)
+                                    .collect(Collectors.toSet());
+                            locals = new HashMap<>();
+                            int index = 1;
+                            for (Set<String> s : duplicateSets) {
+                                genImmutableSet(cob, s);
+                                cob.astore(index);
+                                locals.put(s, index);
+                                if (++index >= MAX_LOCAL_VARS) {
+                                    break;
+                                }
+                            }
+                        } else {
+                            locals = Map.of();
+                        }
 
-            // new Map$Entry[size]
-            pushInt(mv, map.size());
-            mv.visitTypeInsn(ANEWARRAY, "java/util/Map$Entry");
+                        // new Map$Entry[size]
+                        cob.constantInstruction(map.size())
+                           .anewarray(ClassDesc.ofInternalName("java/util/Map$Entry"));
 
-            int index = 0;
-            for (var e : new TreeMap<>(map).entrySet()) {
-                String name = e.getKey();
-                Set<String> s = e.getValue();
+                        int index = 0;
+                        for (var e : new TreeMap<>(map).entrySet()) {
+                            String name = e.getKey();
+                            Set<String> s = e.getValue();
 
-                mv.visitInsn(DUP);
-                pushInt(mv, index);
-                mv.visitLdcInsn(name);
+                            cob.dup()
+                               .constantInstruction(index)
+                               .constantInstruction(name);
 
-                // if de-duplicated then load the local, otherwise generate code
-                Integer varIndex = locals.get(s);
-                if (varIndex == null) {
-                    genImmutableSet(mv, s);
-                } else {
-                    mv.visitVarInsn(ALOAD, varIndex);
-                }
+                            // if de-duplicated then load the local, otherwise generate code
+                            Integer varIndex = locals.get(s);
+                            if (varIndex == null) {
+                                genImmutableSet(cob, s);
+                            } else {
+                                cob.aload(varIndex);
+                            }
 
-                String desc = "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;";
-                mv.visitMethodInsn(INVOKESTATIC,
-                                   "java/util/Map",
-                                   "entry",
-                                   desc,
-                                   true);
-                mv.visitInsn(AASTORE);
-                index++;
-            }
+                            MethodTypeDesc desc = MethodTypeDesc.ofDescriptor(
+                                    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;");
+                            cob.invokestatic(CD_Map,
+                                             "entry",
+                                             desc,
+                                             true)
+                               .aastore();
+                            index++;
+                        }
 
-            // invoke Map.ofEntries(Map$Entry[])
-            mv.visitMethodInsn(INVOKESTATIC, "java/util/Map", "ofEntries",
-                    "([Ljava/util/Map$Entry;)Ljava/util/Map;", true);
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
+                        // invoke Map.ofEntries(Map$Entry[])
+                        cob.invokestatic(CD_Map,
+                                         "ofEntries",
+                                         MethodTypeDesc.ofDescriptor(
+                                                 "([Ljava/util/Map$Entry;)Ljava/util/Map;"),
+                                         true)
+                           .areturn();
+                    });
         }
 
         /**
          * Generate code to generate an immutable set.
          */
-        private void genImmutableSet(MethodVisitor mv, Set<String> set) {
+        private void genImmutableSet(CodeBuilder cob, Set<String> set) {
             int size = set.size();
 
             // use Set.of(Object[]) when there are more than 2 elements
             // use Set.of(Object) or Set.of(Object, Object) when fewer
             if (size > 2) {
-                pushInt(mv, size);
-                mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+                cob.constantInstruction(size)
+                   .anewarray(CD_String);
                 int i = 0;
                 for (String element : sorted(set)) {
-                    mv.visitInsn(DUP);
-                    pushInt(mv, i);
-                    mv.visitLdcInsn(element);
-                    mv.visitInsn(AASTORE);
+                    cob.dup()
+                       .constantInstruction(i)
+                       .constantInstruction(element)
+                       .aastore();
                     i++;
                 }
-                mv.visitMethodInsn(INVOKESTATIC,
-                        "java/util/Set",
-                        "of",
-                        "([Ljava/lang/Object;)Ljava/util/Set;",
-                        true);
+                cob.invokestatic(CD_Set,
+                                 "of",
+                                 MethodTypeDesc.ofDescriptor(
+                                         "([Ljava/lang/Object;)Ljava/util/Set;"),
+                                 true);
             } else {
-                StringBuilder sb = new StringBuilder("(");
                 for (String element : sorted(set)) {
-                    mv.visitLdcInsn(element);
-                    sb.append("Ljava/lang/Object;");
+                    cob.constantInstruction(element);
                 }
-                sb.append(")Ljava/util/Set;");
-                mv.visitMethodInsn(INVOKESTATIC,
-                        "java/util/Set",
-                        "of",
-                        sb.toString(),
-                        true);
+                var mtdArgs = new ClassDesc[size];
+                Arrays.fill(mtdArgs, CD_Object);
+                cob.invokestatic(CD_Set,
+                                 "of",
+                                 MethodTypeDesc.of(CD_Set, mtdArgs),
+                                 true);
             }
         }
 
         class ModuleDescriptorBuilder {
-            static final String BUILDER_TYPE = "Ljdk/internal/module/Builder;";
-            static final String EXPORTS_TYPE =
-                "Ljava/lang/module/ModuleDescriptor$Exports;";
-            static final String OPENS_TYPE =
-                "Ljava/lang/module/ModuleDescriptor$Opens;";
-            static final String PROVIDES_TYPE =
-                "Ljava/lang/module/ModuleDescriptor$Provides;";
-            static final String REQUIRES_TYPE =
-                "Ljava/lang/module/ModuleDescriptor$Requires;";
+            static final ClassDesc CD_EXPORTS =
+                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Exports");
+            static final ClassDesc CD_OPENS =
+                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Opens");
+            static final ClassDesc CD_PROVIDES =
+                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Provides");
+            static final ClassDesc CD_REQUIRES =
+                ClassDesc.ofInternalName("java/lang/module/ModuleDescriptor$Requires");
 
             // method signature for static Builder::newExports, newOpens,
             // newProvides, newRequires methods
-            static final String EXPORTS_MODIFIER_SET_STRING_SET_SIG =
-                "(Ljava/util/Set;Ljava/lang/String;Ljava/util/Set;)"
-                    + EXPORTS_TYPE;
-            static final String EXPORTS_MODIFIER_SET_STRING_SIG =
-                "(Ljava/util/Set;Ljava/lang/String;)" + EXPORTS_TYPE;
-            static final String OPENS_MODIFIER_SET_STRING_SET_SIG =
-                "(Ljava/util/Set;Ljava/lang/String;Ljava/util/Set;)"
-                    + OPENS_TYPE;
-            static final String OPENS_MODIFIER_SET_STRING_SIG =
-                "(Ljava/util/Set;Ljava/lang/String;)" + OPENS_TYPE;
-            static final String PROVIDES_STRING_LIST_SIG =
-                "(Ljava/lang/String;Ljava/util/List;)" + PROVIDES_TYPE;
-            static final String REQUIRES_SET_STRING_SIG =
-                "(Ljava/util/Set;Ljava/lang/String;)" + REQUIRES_TYPE;
-            static final String REQUIRES_SET_STRING_STRING_SIG =
-                "(Ljava/util/Set;Ljava/lang/String;Ljava/lang/String;)" + REQUIRES_TYPE;
+            static final MethodTypeDesc MTD_EXPORTS_MODIFIER_SET_STRING_SET =
+                MethodTypeDesc.of(CD_EXPORTS, CD_Set, CD_String, CD_Set);
+            static final MethodTypeDesc MTD_EXPORTS_MODIFIER_SET_STRING =
+                MethodTypeDesc.of(CD_EXPORTS, CD_Set, CD_String);
+            static final MethodTypeDesc MTD_OPENS_MODIFIER_SET_STRING_SET =
+                MethodTypeDesc.of(CD_OPENS, CD_Set, CD_String, CD_Set);
+            static final MethodTypeDesc MTD_OPENS_MODIFIER_SET_STRING =
+                MethodTypeDesc.of(CD_OPENS, CD_Set, CD_String);
+            static final MethodTypeDesc MTD_PROVIDES_STRING_LIST =
+                MethodTypeDesc.of(CD_PROVIDES, CD_String, CD_List);
+            static final MethodTypeDesc MTD_REQUIRES_SET_STRING =
+                MethodTypeDesc.of(CD_REQUIRES, CD_Set, CD_String);
+            static final MethodTypeDesc MTD_REQUIRES_SET_STRING_STRING =
+                MethodTypeDesc.of(CD_REQUIRES, CD_Set, CD_String, CD_String);
 
             // method signature for Builder instance methods that
             // return this Builder instance
-            static final String EXPORTS_ARRAY_SIG =
-                "([" + EXPORTS_TYPE + ")" + BUILDER_TYPE;
-            static final String OPENS_ARRAY_SIG =
-                "([" + OPENS_TYPE + ")" + BUILDER_TYPE;
-            static final String PROVIDES_ARRAY_SIG =
-                "([" + PROVIDES_TYPE + ")" + BUILDER_TYPE;
-            static final String REQUIRES_ARRAY_SIG =
-                "([" + REQUIRES_TYPE + ")" + BUILDER_TYPE;
-            static final String SET_SIG = "(Ljava/util/Set;)" + BUILDER_TYPE;
-            static final String STRING_SIG = "(Ljava/lang/String;)" + BUILDER_TYPE;
-            static final String BOOLEAN_SIG = "(Z)" + BUILDER_TYPE;
+            static final MethodTypeDesc MTD_EXPORTS_ARRAY =
+                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_EXPORTS.arrayType());
+            static final MethodTypeDesc MTD_OPENS_ARRAY =
+                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_OPENS.arrayType());
+            static final MethodTypeDesc MTD_PROVIDES_ARRAY =
+                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_PROVIDES.arrayType());
+            static final MethodTypeDesc MTD_REQUIRES_ARRAY =
+                MethodTypeDesc.of(CD_MODULE_BUILDER, CD_REQUIRES.arrayType());
+            static final MethodTypeDesc MTD_SET = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_Set);
+            static final MethodTypeDesc MTD_STRING = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_String);
+            static final MethodTypeDesc MTD_BOOLEAN = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_boolean);
 
+            final CodeBuilder cob;
             final ModuleDescriptor md;
             final Set<String> packages;
             final int index;
 
-            ModuleDescriptorBuilder(ModuleDescriptor md, Set<String> packages, int index) {
+            ModuleDescriptorBuilder(CodeBuilder cob, ModuleDescriptor md, Set<String> packages, int index) {
                 if (md.isAutomatic()) {
                     throw new InternalError("linking automatic module is not supported");
                 }
+                this.cob = cob;
                 this.md = md;
                 this.packages = packages;
                 this.index = index;
@@ -1058,13 +1016,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             }
 
             void newBuilder() {
-                mv.visitTypeInsn(NEW, MODULE_DESCRIPTOR_BUILDER);
-                mv.visitInsn(DUP);
-                mv.visitLdcInsn(md.name());
-                mv.visitMethodInsn(INVOKESPECIAL, MODULE_DESCRIPTOR_BUILDER,
-                    "<init>", "(Ljava/lang/String;)V", false);
-                mv.visitVarInsn(ASTORE, BUILDER_VAR);
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
+                cob.new_(CD_MODULE_BUILDER)
+                   .dup()
+                   .constantInstruction(md.name())
+                   .invokespecial(CD_MODULE_BUILDER,
+                                  "<init>",
+                                  MethodTypeDesc.of(CD_void, CD_String))
+                   .astore(BUILDER_VAR);
 
                 if (md.isOpen()) {
                     setModuleBit("open", true);
@@ -1081,29 +1039,26 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Invoke Builder.<methodName>(boolean value)
              */
             void setModuleBit(String methodName, boolean value) {
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                if (value) {
-                    mv.visitInsn(ICONST_1);
-                } else {
-                    mv.visitInsn(ICONST_0);
-                }
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    methodName, BOOLEAN_SIG, false);
-                mv.visitInsn(POP);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(value ? 1 : 0)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  methodName,
+                                  MTD_BOOLEAN)
+                   .pop();
             }
 
             /*
              * Put ModuleDescriptor into the modules array
              */
             void putModuleDescriptor() {
-                mv.visitVarInsn(ALOAD, MD_VAR);
-                pushInt(mv, index);
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                mv.visitLdcInsn(md.hashCode());
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "build", "(I)Ljava/lang/module/ModuleDescriptor;",
-                    false);
-                mv.visitInsn(AASTORE);
+                cob.aload(MD_VAR)
+                   .constantInstruction(index)
+                   .aload(BUILDER_VAR)
+                   .constantInstruction(md.hashCode())
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "build",
+                                  MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int))
+                   .aastore();
             }
 
             /*
@@ -1113,9 +1068,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              *
              */
             void requires(Set<Requires> requires) {
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                pushInt(mv, requires.size());
-                mv.visitTypeInsn(ANEWARRAY, "java/lang/module/ModuleDescriptor$Requires");
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(requires.size())
+                   .anewarray(CD_REQUIRES);
                 int arrayIndex = 0;
                 for (Requires require : sorted(requires)) {
                     String compiledVersion = null;
@@ -1123,13 +1078,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         compiledVersion = require.compiledVersion().get().toString();
                     }
 
-                    mv.visitInsn(DUP);               // arrayref
-                    pushInt(mv, arrayIndex++);
+                    cob.dup()               // arrayref
+                       .constantInstruction(arrayIndex++);
                     newRequires(require.modifiers(), require.name(), compiledVersion);
-                    mv.visitInsn(AASTORE);
+                    cob.aastore();
                 }
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "requires", REQUIRES_ARRAY_SIG, false);
+                cob.invokevirtual(CD_MODULE_BUILDER,
+                                  "requires",
+                                  MTD_REQUIRES_ARRAY)
+                    .pop();
             }
 
             /*
@@ -1139,16 +1096,18 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Builder.newRequires(mods, mn, compiledVersion);
              */
             void newRequires(Set<Requires.Modifier> mods, String name, String compiledVersion) {
-                int varIndex = dedupSetBuilder.indexOfRequiresModifiers(mods);
-                mv.visitVarInsn(ALOAD, varIndex);
-                mv.visitLdcInsn(name);
+                int varIndex = dedupSetBuilder.indexOfRequiresModifiers(cob, mods);
+                cob.aload(varIndex)
+                   .constantInstruction(name);
                 if (compiledVersion != null) {
-                    mv.visitLdcInsn(compiledVersion);
-                    mv.visitMethodInsn(INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newRequires", REQUIRES_SET_STRING_STRING_SIG, false);
+                    cob.constantInstruction(compiledVersion)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newRequires",
+                                     MTD_REQUIRES_SET_STRING_STRING);
                 } else {
-                    mv.visitMethodInsn(INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newRequires", REQUIRES_SET_STRING_SIG, false);
+                    cob.invokestatic(CD_MODULE_BUILDER,
+                                     "newRequires",
+                                     MTD_REQUIRES_SET_STRING);
                 }
             }
 
@@ -1159,18 +1118,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              *
              */
             void exports(Set<Exports> exports) {
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                pushInt(mv, exports.size());
-                mv.visitTypeInsn(ANEWARRAY, "java/lang/module/ModuleDescriptor$Exports");
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(exports.size())
+                   .anewarray(CD_EXPORTS);
                 int arrayIndex = 0;
                 for (Exports export : sorted(exports)) {
-                    mv.visitInsn(DUP);    // arrayref
-                    pushInt(mv, arrayIndex++);
+                    cob.dup()    // arrayref
+                       .constantInstruction(arrayIndex++);
                     newExports(export.modifiers(), export.source(), export.targets());
-                    mv.visitInsn(AASTORE);
+                    cob.aastore();
                 }
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "exports", EXPORTS_ARRAY_SIG, false);
+                cob.invokevirtual(CD_MODULE_BUILDER,
+                                  "exports",
+                                  MTD_EXPORTS_ARRAY)
+                    .pop();
             }
 
             /*
@@ -1189,19 +1150,21 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Builder.newExports(mods, pn, targets);
              */
             void newExports(Set<Exports.Modifier> ms, String pn, Set<String> targets) {
-                int modifiersSetIndex = dedupSetBuilder.indexOfExportsModifiers(ms);
+                int modifiersSetIndex = dedupSetBuilder.indexOfExportsModifiers(cob, ms);
                 if (!targets.isEmpty()) {
-                    int stringSetIndex = dedupSetBuilder.indexOfStringSet(targets);
-                    mv.visitVarInsn(ALOAD, modifiersSetIndex);
-                    mv.visitLdcInsn(pn);
-                    mv.visitVarInsn(ALOAD, stringSetIndex);
-                    mv.visitMethodInsn(INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newExports", EXPORTS_MODIFIER_SET_STRING_SET_SIG, false);
+                    int stringSetIndex = dedupSetBuilder.indexOfStringSet(cob, targets);
+                    cob.aload(modifiersSetIndex)
+                       .constantInstruction(pn)
+                       .aload(stringSetIndex)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newExports",
+                                     MTD_EXPORTS_MODIFIER_SET_STRING_SET);
                 } else {
-                    mv.visitVarInsn(ALOAD, modifiersSetIndex);
-                    mv.visitLdcInsn(pn);
-                    mv.visitMethodInsn(INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newExports", EXPORTS_MODIFIER_SET_STRING_SIG, false);
+                    cob.aload(modifiersSetIndex)
+                       .constantInstruction(pn)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newExports",
+                                     MTD_EXPORTS_MODIFIER_SET_STRING);
                 }
             }
 
@@ -1212,18 +1175,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Builder.opens(Opens[])
              */
             void opens(Set<Opens> opens) {
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                pushInt(mv, opens.size());
-                mv.visitTypeInsn(ANEWARRAY, "java/lang/module/ModuleDescriptor$Opens");
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(opens.size())
+                   .anewarray(CD_OPENS);
                 int arrayIndex = 0;
                 for (Opens open : sorted(opens)) {
-                    mv.visitInsn(DUP);    // arrayref
-                    pushInt(mv, arrayIndex++);
+                    cob.dup()    // arrayref
+                       .constantInstruction(arrayIndex++);
                     newOpens(open.modifiers(), open.source(), open.targets());
-                    mv.visitInsn(AASTORE);
+                    cob.aastore();
                 }
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "opens", OPENS_ARRAY_SIG, false);
+                cob.invokevirtual(CD_MODULE_BUILDER,
+                                  "opens",
+                                  MTD_OPENS_ARRAY)
+                    .pop();
             }
 
             /*
@@ -1242,19 +1207,21 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Builder.newOpens(mods, pn, targets);
              */
             void newOpens(Set<Opens.Modifier> ms, String pn, Set<String> targets) {
-                int modifiersSetIndex = dedupSetBuilder.indexOfOpensModifiers(ms);
+                int modifiersSetIndex = dedupSetBuilder.indexOfOpensModifiers(cob, ms);
                 if (!targets.isEmpty()) {
-                    int stringSetIndex = dedupSetBuilder.indexOfStringSet(targets);
-                    mv.visitVarInsn(ALOAD, modifiersSetIndex);
-                    mv.visitLdcInsn(pn);
-                    mv.visitVarInsn(ALOAD, stringSetIndex);
-                    mv.visitMethodInsn(INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newOpens", OPENS_MODIFIER_SET_STRING_SET_SIG, false);
+                    int stringSetIndex = dedupSetBuilder.indexOfStringSet(cob, targets);
+                    cob.aload(modifiersSetIndex)
+                       .constantInstruction(pn)
+                       .aload(stringSetIndex)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newOpens",
+                                     MTD_OPENS_MODIFIER_SET_STRING_SET);
                 } else {
-                    mv.visitVarInsn(ALOAD, modifiersSetIndex);
-                    mv.visitLdcInsn(pn);
-                    mv.visitMethodInsn(INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                        "newOpens", OPENS_MODIFIER_SET_STRING_SIG, false);
+                    cob.aload(modifiersSetIndex)
+                       .constantInstruction(pn)
+                       .invokestatic(CD_MODULE_BUILDER,
+                                     "newOpens",
+                                     MTD_OPENS_MODIFIER_SET_STRING);
                 }
             }
 
@@ -1262,12 +1229,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Invoke Builder.uses(Set<String> uses)
              */
             void uses(Set<String> uses) {
-                int varIndex = dedupSetBuilder.indexOfStringSet(uses);
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                mv.visitVarInsn(ALOAD, varIndex);
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "uses", SET_SIG, false);
-                mv.visitInsn(POP);
+                int varIndex = dedupSetBuilder.indexOfStringSet(cob, uses);
+                cob.aload(BUILDER_VAR)
+                   .aload(varIndex)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "uses",
+                                  MTD_SET)
+                   .pop();
             }
 
             /*
@@ -1277,18 +1245,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             *
             */
             void provides(Collection<Provides> provides) {
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                pushInt(mv, provides.size());
-                mv.visitTypeInsn(ANEWARRAY, "java/lang/module/ModuleDescriptor$Provides");
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(provides.size())
+                   .anewarray(CD_PROVIDES);
                 int arrayIndex = 0;
                 for (Provides provide : sorted(provides)) {
-                    mv.visitInsn(DUP);    // arrayref
-                    pushInt(mv, arrayIndex++);
+                    cob.dup()    // arrayref
+                       .constantInstruction(arrayIndex++);
                     newProvides(provide.service(), provide.providers());
-                    mv.visitInsn(AASTORE);
+                    cob.aastore();
                 }
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "provides", PROVIDES_ARRAY_SIG, false);
+                cob.invokevirtual(CD_MODULE_BUILDER,
+                                  "provides",
+                                  MTD_PROVIDES_ARRAY)
+                    .pop();
             }
 
             /*
@@ -1301,80 +1271,86 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Builder.newProvides(service, providers);
              */
             void newProvides(String service, List<String> providers) {
-                mv.visitLdcInsn(service);
-                pushInt(mv, providers.size());
-                mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+                cob.constantInstruction(service)
+                   .constantInstruction(providers.size())
+                   .anewarray(CD_String);
                 int arrayIndex = 0;
                 for (String provider : providers) {
-                    mv.visitInsn(DUP);    // arrayref
-                    pushInt(mv, arrayIndex++);
-                    mv.visitLdcInsn(provider);
-                    mv.visitInsn(AASTORE);
+                    cob.dup()    // arrayref
+                       .constantInstruction(arrayIndex++)
+                       .constantInstruction(provider)
+                       .aastore();
                 }
-                mv.visitMethodInsn(INVOKESTATIC, "java/util/List",
-                    "of", "([Ljava/lang/Object;)Ljava/util/List;", true);
-                mv.visitMethodInsn(INVOKESTATIC, MODULE_DESCRIPTOR_BUILDER,
-                    "newProvides", PROVIDES_STRING_LIST_SIG, false);
+                cob.invokestatic(CD_List,
+                                 "of",
+                                 MethodTypeDesc.ofDescriptor(
+                                        "([Ljava/lang/Object;)Ljava/util/List;"),
+                                 true)
+                   .invokestatic(CD_MODULE_BUILDER,
+                                 "newProvides",
+                                 MTD_PROVIDES_STRING_LIST);
             }
 
             /*
              * Invoke Builder.packages(String pn)
              */
             void packages(Set<String> packages) {
-                int varIndex = dedupSetBuilder.newStringSet(packages);
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                mv.visitVarInsn(ALOAD, varIndex);
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "packages", SET_SIG, false);
-                mv.visitInsn(POP);
+                int varIndex = dedupSetBuilder.newStringSet(cob, packages);
+                cob.aload(BUILDER_VAR)
+                   .aload(varIndex)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "packages",
+                                  MTD_SET)
+                   .pop();
             }
 
             /*
              * Invoke Builder.mainClass(String cn)
              */
             void mainClass(String cn) {
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                mv.visitLdcInsn(cn);
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "mainClass", STRING_SIG, false);
-                mv.visitInsn(POP);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(cn)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "mainClass",
+                                  MTD_STRING)
+                   .pop();
             }
 
             /*
              * Invoke Builder.version(Version v);
              */
             void version(Version v) {
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                mv.visitLdcInsn(v.toString());
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    "version", STRING_SIG, false);
-                mv.visitInsn(POP);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(v.toString())
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  "version",
+                                  MTD_STRING)
+                   .pop();
             }
 
             void invokeBuilderMethod(String methodName, String value) {
-                mv.visitVarInsn(ALOAD, BUILDER_VAR);
-                mv.visitLdcInsn(value);
-                mv.visitMethodInsn(INVOKEVIRTUAL, MODULE_DESCRIPTOR_BUILDER,
-                    methodName, STRING_SIG, false);
-                mv.visitInsn(POP);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(value)
+                   .invokevirtual(CD_MODULE_BUILDER,
+                                  methodName,
+                                  MTD_STRING)
+                   .pop();
             }
         }
 
         class ModuleHashesBuilder {
-            private static final String MODULE_HASHES_BUILDER =
-                "jdk/internal/module/ModuleHashes$Builder";
-            private static final String MODULE_HASHES_BUILDER_TYPE =
-                "L" + MODULE_HASHES_BUILDER + ";";
-            static final String STRING_BYTE_ARRAY_SIG =
-                "(Ljava/lang/String;[B)" + MODULE_HASHES_BUILDER_TYPE;
+            private static final ClassDesc MODULE_HASHES_BUILDER =
+                ClassDesc.ofInternalName("jdk/internal/module/ModuleHashes$Builder");
+            static final MethodTypeDesc STRING_BYTE_ARRAY_SIG =
+                MethodTypeDesc.of(MODULE_HASHES_BUILDER, CD_String, CD_byte.arrayType());
 
             final ModuleHashes recordedHashes;
-            final MethodVisitor hmv;
+            final CodeBuilder cob;
             final int index;
 
-            ModuleHashesBuilder(ModuleHashes hashes, int index, MethodVisitor hmv) {
+            ModuleHashesBuilder(ModuleHashes hashes, int index, CodeBuilder cob) {
                 this.recordedHashes = hashes;
-                this.hmv = hmv;
+                this.cob = cob;
                 this.index = index;
             }
 
@@ -1404,14 +1380,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Create ModuleHashes.Builder instance
              */
             void newModuleHashesBuilder() {
-                hmv.visitTypeInsn(NEW, MODULE_HASHES_BUILDER);
-                hmv.visitInsn(DUP);
-                hmv.visitLdcInsn(recordedHashes.algorithm());
-                pushInt(hmv, ((4 * recordedHashes.names().size()) / 3) + 1);
-                hmv.visitMethodInsn(INVOKESPECIAL, MODULE_HASHES_BUILDER,
-                    "<init>", "(Ljava/lang/String;I)V", false);
-                hmv.visitVarInsn(ASTORE, BUILDER_VAR);
-                hmv.visitVarInsn(ALOAD, BUILDER_VAR);
+                cob.new_(MODULE_HASHES_BUILDER)
+                   .dup()
+                   .constantInstruction(recordedHashes.algorithm())
+                   .constantInstruction(((4 * recordedHashes.names().size()) / 3) + 1)
+                   .invokespecial(MODULE_HASHES_BUILDER,
+                                  "<init>",
+                                  MethodTypeDesc.of(CD_void, CD_String, CD_int))
+                   .astore(BUILDER_VAR)
+                   .aload(BUILDER_VAR);
             }
 
 
@@ -1420,41 +1397,41 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * ModuleHashes to the hashes array
              */
             void pushModuleHashes() {
-                hmv.visitVarInsn(ALOAD, MH_VAR);
-                pushInt(hmv, index);
-                hmv.visitVarInsn(ALOAD, BUILDER_VAR);
-                hmv.visitMethodInsn(INVOKEVIRTUAL, MODULE_HASHES_BUILDER,
-                    "build", "()Ljdk/internal/module/ModuleHashes;",
-                    false);
-                hmv.visitInsn(AASTORE);
+                cob.aload(MH_VAR)
+                   .constantInstruction(index)
+                   .aload(BUILDER_VAR)
+                   .invokevirtual(MODULE_HASHES_BUILDER,
+                                  "build",
+                                  MethodTypeDesc.of(CD_MODULE_HASHES))
+                   .aastore();
             }
 
             /*
              * Invoke ModuleHashes.Builder.hashForModule(String name, byte[] hash);
              */
             void hashForModule(String name, byte[] hash) {
-                hmv.visitVarInsn(ALOAD, BUILDER_VAR);
-                hmv.visitLdcInsn(name);
-
-                pushInt(hmv, hash.length);
-                hmv.visitIntInsn(NEWARRAY, T_BYTE);
+                cob.aload(BUILDER_VAR)
+                   .constantInstruction(name)
+                   .constantInstruction(hash.length)
+                   .newarray(TypeKind.ByteType);
                 for (int i = 0; i < hash.length; i++) {
-                    hmv.visitInsn(DUP);              // arrayref
-                    pushInt(hmv, i);
-                    hmv.visitIntInsn(BIPUSH, hash[i]);
-                    hmv.visitInsn(BASTORE);
+                    cob.dup()              // arrayref
+                       .constantInstruction(i)
+                       .constantInstruction((int)hash[i])
+                       .bastore();
                 }
 
-                hmv.visitMethodInsn(INVOKEVIRTUAL, MODULE_HASHES_BUILDER,
-                    "hashForModule", STRING_BYTE_ARRAY_SIG, false);
-                hmv.visitInsn(POP);
+                cob.invokevirtual(MODULE_HASHES_BUILDER,
+                                  "hashForModule",
+                                  STRING_BYTE_ARRAY_SIG)
+                   .pop();
             }
         }
 
         /*
          * Wraps set creation, ensuring identical sets are properly deduplicated.
          */
-        class DedupSetBuilder {
+        static class DedupSetBuilder {
             // map Set<String> to a specialized builder to allow them to be
             // deduplicated as they are requested
             final Map<Set<String>, SetBuilder<String>> stringSets = new HashMap<>();
@@ -1498,7 +1475,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void exportsModifiers(Set<Exports.Modifier> mods) {
                 exportsModifiersSets.computeIfAbsent(mods, s ->
-                                new EnumSetBuilder<>(s, EXPORTS_MODIFIER_CLASSNAME,
+                                new EnumSetBuilder<>(s, CD_EXPORTS_MODIFIER,
                                         enumSetVar, localVarSupplier)
                 ).increment();
             }
@@ -1508,7 +1485,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void opensModifiers(Set<Opens.Modifier> mods) {
                 opensModifiersSets.computeIfAbsent(mods, s ->
-                                new EnumSetBuilder<>(s, OPENS_MODIFIER_CLASSNAME,
+                                new EnumSetBuilder<>(s, CD_OPENS_MODIFIER,
                                         enumSetVar, localVarSupplier)
                 ).increment();
             }
@@ -1518,7 +1495,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              */
             void requiresModifiers(Set<Requires.Modifier> mods) {
                 requiresModifiersSets.computeIfAbsent(mods, s ->
-                    new EnumSetBuilder<>(s, REQUIRES_MODIFIER_CLASSNAME,
+                    new EnumSetBuilder<>(s, CD_REQUIRES_MODIFIER,
                                          enumSetVar, localVarSupplier)
                 ).increment();
             }
@@ -1527,24 +1504,24 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Retrieve the index to the given set of Strings. Emit code to
              * generate it when SetBuilder::build is called.
              */
-            int indexOfStringSet(Set<String> names) {
-                return stringSets.get(names).build();
+            int indexOfStringSet(CodeBuilder cob, Set<String> names) {
+                return stringSets.get(names).build(cob);
             }
 
             /*
              * Retrieve the index to the given set of Exports.Modifier.
              * Emit code to generate it when EnumSetBuilder::build is called.
              */
-            int indexOfExportsModifiers(Set<Exports.Modifier> mods) {
-                return exportsModifiersSets.get(mods).build();
+            int indexOfExportsModifiers(CodeBuilder cob, Set<Exports.Modifier> mods) {
+                return exportsModifiersSets.get(mods).build(cob);
             }
 
             /**
              * Retrieve the index to the given set of Opens.Modifier.
              * Emit code to generate it when EnumSetBuilder::build is called.
              */
-            int indexOfOpensModifiers(Set<Opens.Modifier> mods) {
-                return opensModifiersSets.get(mods).build();
+            int indexOfOpensModifiers(CodeBuilder cob, Set<Opens.Modifier> mods) {
+                return opensModifiersSets.get(mods).build(cob);
             }
 
 
@@ -1552,15 +1529,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Retrieve the index to the given set of Requires.Modifier.
              * Emit code to generate it when EnumSetBuilder::build is called.
              */
-            int indexOfRequiresModifiers(Set<Requires.Modifier> mods) {
-                return requiresModifiersSets.get(mods).build();
+            int indexOfRequiresModifiers(CodeBuilder cob, Set<Requires.Modifier> mods) {
+                return requiresModifiersSets.get(mods).build(cob);
             }
 
             /*
              * Build a new string set without any attempt to deduplicate it.
              */
-            int newStringSet(Set<String> names) {
-                int index = new SetBuilder<>(names, stringSetVar, localVarSupplier).build();
+            int newStringSet(CodeBuilder cob, Set<String> names) {
+                int index = new SetBuilder<>(names, stringSetVar, localVarSupplier).build(cob);
                 assert index == stringSetVar;
                 return index;
             }
@@ -1573,7 +1550,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * it will reuse defaultVarIndex.  For a Set with multiple references,
          * it will use a new local variable retrieved from the nextLocalVar
          */
-        class SetBuilder<T extends Comparable<T>> {
+        static class SetBuilder<T extends Comparable<T>> {
             private final Set<T> elements;
             private final int defaultVarIndex;
             private final IntSupplier nextLocalVar;
@@ -1599,8 +1576,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              * Generate the appropriate instructions to load an object reference
              * to the element onto the stack.
              */
-            void visitElement(T element, MethodVisitor mv) {
-                mv.visitLdcInsn(element);
+            void visitElement(T element, CodeBuilder cob) {
+                cob.constantInstruction((ConstantDesc)element);
             }
 
             /*
@@ -1610,7 +1587,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
              *
              * @return local variable index of the generated set.
              */
-            final int build() {
+            final int build(CodeBuilder cob) {
                 int index = localVarIndex;
                 if (localVarIndex == 0) {
                     // if non-empty and more than one set reference this builder,
@@ -1624,38 +1601,42 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         index = defaultVarIndex;
                     }
 
-                    generateSetOf(index);
+                    generateSetOf(cob, index);
                 }
                 return index;
             }
 
-            private void generateSetOf(int index) {
+            private void generateSetOf(CodeBuilder cob, int index) {
                 if (elements.size() <= 10) {
                     // call Set.of(e1, e2, ...)
-                    StringBuilder sb = new StringBuilder("(");
                     for (T t : sorted(elements)) {
-                        sb.append("Ljava/lang/Object;");
-                        visitElement(t, mv);
+                        visitElement(t, cob);
                     }
-                    sb.append(")Ljava/util/Set;");
-                    mv.visitMethodInsn(INVOKESTATIC, "java/util/Set",
-                            "of", sb.toString(), true);
+                    var mtdArgs = new ClassDesc[elements.size()];
+                    Arrays.fill(mtdArgs, CD_Object);
+                    cob.invokestatic(CD_Set,
+                                     "of",
+                                     MethodTypeDesc.of(CD_Set, mtdArgs),
+                                     true);
                 } else {
                     // call Set.of(E... elements)
-                    pushInt(mv, elements.size());
-                    mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
+                    cob.constantInstruction(elements.size())
+                       .anewarray(CD_String);
                     int arrayIndex = 0;
                     for (T t : sorted(elements)) {
-                        mv.visitInsn(DUP);    // arrayref
-                        pushInt(mv, arrayIndex);
-                        visitElement(t, mv);  // value
-                        mv.visitInsn(AASTORE);
+                        cob.dup()    // arrayref
+                           .constantInstruction(arrayIndex);
+                        visitElement(t, cob);  // value
+                        cob.aastore();
                         arrayIndex++;
                     }
-                    mv.visitMethodInsn(INVOKESTATIC, "java/util/Set",
-                            "of", "([Ljava/lang/Object;)Ljava/util/Set;", true);
+                    cob.invokestatic(CD_Set,
+                                     "of",
+                                     MethodTypeDesc.ofDescriptor(
+                                            "([Ljava/lang/Object;)Ljava/util/Set;"),
+                                     true);
                 }
-                mv.visitVarInsn(ASTORE, index);
+                cob.astore(index);
             }
         }
 
@@ -1663,24 +1644,22 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generates bytecode to create one single instance of EnumSet
          * for a given set of modifiers and assign to a local variable slot.
          */
-        class EnumSetBuilder<T extends Comparable<T>> extends SetBuilder<T> {
+        static class EnumSetBuilder<T extends Comparable<T>> extends SetBuilder<T> {
+            private final ClassDesc classDesc;
 
-            private final String className;
-
-            EnumSetBuilder(Set<T> modifiers, String className,
+            EnumSetBuilder(Set<T> modifiers, ClassDesc classDesc,
                            int defaultVarIndex,
                            IntSupplier nextLocalVar) {
                 super(modifiers, defaultVarIndex, nextLocalVar);
-                this.className = className;
+                this.classDesc = classDesc;
             }
 
             /**
              * Loads an Enum field.
              */
             @Override
-            void visitElement(T t, MethodVisitor mv) {
-                mv.visitFieldInsn(GETSTATIC, className, t.toString(),
-                                  "L" + className + ";");
+            void visitElement(T t, CodeBuilder cob) {
+                cob.getstatic(classDesc, t.toString(), classDesc);
             }
         }
     }
@@ -1690,116 +1669,95 @@ public final class SystemModulesPlugin extends AbstractPlugin {
      *
      * @return the name of the class resource added to the pool
      */
-    private String genSystemModulesMapClass(String allSystemModulesClassName,
-                                            String defaultSystemModulesClassName,
+    private String genSystemModulesMapClass(ClassDesc allSystemModules,
+                                            ClassDesc defaultSystemModules,
                                             Map<String, String> map,
                                             ResourcePoolBuilder out) {
-        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS
-                                         + ClassWriter.COMPUTE_FRAMES);
-        cw.visit(Opcodes.V1_8,
-                 ACC_FINAL+ACC_SUPER,
-                 SYSTEM_MODULES_MAP_CLASS,
-                 null,
-                 "java/lang/Object",
-                 null);
-
-        // <init>
-        MethodVisitor mv = cw.visitMethod(0, "<init>", "()V", null, null);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitMethodInsn(INVOKESPECIAL,
-                           "java/lang/Object",
-                           "<init>",
-                           "()V",
-                           false);
-        mv.visitInsn(RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        // allSystemModules()
-        mv = cw.visitMethod(ACC_STATIC,
-                            "allSystemModules",
-                            "()Ljdk/internal/module/SystemModules;",
-                            "()Ljdk/internal/module/SystemModules;",
-                            null);
-        mv.visitCode();
-        mv.visitTypeInsn(NEW, allSystemModulesClassName);
-        mv.visitInsn(DUP);
-        mv.visitMethodInsn(INVOKESPECIAL,
-                           allSystemModulesClassName,
-                           "<init>",
-                           "()V",
-                           false);
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        // defaultSystemModules()
-        mv = cw.visitMethod(ACC_STATIC,
-                            "defaultSystemModules",
-                            "()Ljdk/internal/module/SystemModules;",
-                            "()Ljdk/internal/module/SystemModules;",
-                            null);
-        mv.visitCode();
-        mv.visitTypeInsn(NEW, defaultSystemModulesClassName);
-        mv.visitInsn(DUP);
-        mv.visitMethodInsn(INVOKESPECIAL,
-                           defaultSystemModulesClassName,
-                           "<init>",
-                           "()V",
-                           false);
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        // moduleNames()
-        mv = cw.visitMethod(ACC_STATIC,
-                            "moduleNames",
-                            "()[Ljava/lang/String;",
-                            "()[Ljava/lang/String;",
-                            null);
-        mv.visitCode();
-        pushInt(mv, map.size());
-        mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
-
-        int index = 0;
-        for (String moduleName : sorted(map.keySet())) {
-            mv.visitInsn(DUP);                  // arrayref
-            pushInt(mv, index);
-            mv.visitLdcInsn(moduleName);
-            mv.visitInsn(AASTORE);
-            index++;
-        }
-
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-
-        // classNames()
-        mv = cw.visitMethod(ACC_STATIC,
-                            "classNames",
-                            "()[Ljava/lang/String;",
-                            "()[Ljava/lang/String;",
-                            null);
-        mv.visitCode();
-        pushInt(mv, map.size());
-        mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
-
-        index = 0;
-        for (String className : sorted(map.values())) {
-            mv.visitInsn(DUP);                  // arrayref
-            pushInt(mv, index);
-            mv.visitLdcInsn(className.replace('/', '.'));
-            mv.visitInsn(AASTORE);
-            index++;
-        }
-
-        mv.visitInsn(ARETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
 
         // write the class file to the pool as a resource
-        String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASS + ".class";
-        ResourcePoolEntry e = ResourcePoolEntry.create(rn, cw.toByteArray());
+        String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASSNAME + ".class";
+        ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.build(
+                CD_SYSTEM_MODULES_MAP,
+                clb -> clb.withFlags(ACC_FINAL + ACC_SUPER)
+                          .withVersion(52, 0)
+
+                          // <init>
+                          .withMethodBody(
+                                  "<init>",
+                                  MethodTypeDesc.of(CD_void),
+                                  0,
+                                  cob -> cob.aload(0)
+                                            .invokespecial(CD_Object,
+                                                           "<init>",
+                                                           MethodTypeDesc.of(CD_void))
+                                            .return_())
+
+                          // allSystemModules()
+                          .withMethodBody(
+                                  "allSystemModules",
+                                  MethodTypeDesc.of(CD_SYSTEM_MODULES),
+                                  ACC_STATIC,
+                                  cob -> cob.new_(allSystemModules)
+                                            .dup()
+                                            .invokespecial(allSystemModules,
+                                                           "<init>",
+                                                           MethodTypeDesc.of(CD_void))
+                                            .areturn())
+
+                          // defaultSystemModules()
+                          .withMethodBody(
+                                  "defaultSystemModules",
+                                   MethodTypeDesc.of(CD_SYSTEM_MODULES),
+                                   ACC_STATIC,
+                                   cob -> cob.new_(defaultSystemModules)
+                                             .dup()
+                                             .invokespecial(defaultSystemModules,
+                                                            "<init>",
+                                                            MethodTypeDesc.of(CD_void))
+                                             .areturn())
+
+                          // moduleNames()
+                          .withMethodBody(
+                                  "moduleNames",
+                                  MethodTypeDesc.of(CD_String.arrayType()),
+                                  ACC_STATIC,
+                                  cob -> {
+                                      cob.constantInstruction(map.size());
+                                      cob.anewarray(CD_String);
+
+                                      int index = 0;
+                                      for (String moduleName : sorted(map.keySet())) {
+                                          cob.dup() // arrayref
+                                             .constantInstruction(index)
+                                             .constantInstruction(moduleName)
+                                             .aastore();
+                                          index++;
+                                      }
+
+                                      cob.areturn();
+                                  })
+
+                          // classNames()
+                          .withMethodBody(
+                                  "classNames",
+                                  MethodTypeDesc.of(CD_String.arrayType()),
+                                  ACC_STATIC,
+                                  cob -> {
+                                      cob.constantInstruction(map.size())
+                                         .anewarray(CD_String);
+
+                                      int index = 0;
+                                      for (String className : sorted(map.values())) {
+                                          cob.dup() // arrayref
+                                             .constantInstruction(index)
+                                             .constantInstruction(className.replace('/', '.'))
+                                             .aastore();
+                                          index++;
+                                      }
+
+                                      cob.areturn();
+                                  })));
+
         out.add(e);
 
         return rn;
@@ -1816,21 +1774,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         var l = new ArrayList<T>(c);
         Collections.sort(l);
         return l;
-    }
-
-    /**
-     * Pushes an int constant
-     */
-    private static void pushInt(MethodVisitor mv, int value) {
-        if (value <= 5) {
-            mv.visitInsn(ICONST_0 + value);
-        } else if (value < Byte.MAX_VALUE) {
-            mv.visitIntInsn(BIPUSH, value);
-        } else if (value < Short.MAX_VALUE) {
-            mv.visitIntInsn(SIPUSH, value);
-        } else {
-            throw new IllegalArgumentException("exceed limit: " + value);
-        }
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,9 +94,9 @@ void SafepointMechanism::pd_initialize() {
     }
   }
   if (map_address == (char*)MAP_FAILED) {
-    map_address = (char*) ::mmap(NULL, map_size, prot, flags, -1, 0);
+    map_address = (char*) ::mmap(nullptr, map_size, prot, flags, -1, 0);
   }
-  guarantee(map_address != (char*)MAP_FAILED && map_address != NULL,
+  guarantee(map_address != (char*)MAP_FAILED && map_address != nullptr,
             "SafepointMechanism::pd_initialize: failed to allocate polling page");
   log_info(os)("SafePoint Polling address: " INTPTR_FORMAT, p2i(map_address));
   _polling_page = (address)(map_address);

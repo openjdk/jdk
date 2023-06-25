@@ -1,6 +1,6 @@
 //
 // Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
-// Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+// Copyright (c) 2012, 2023 SAP SE. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -2189,6 +2189,10 @@ const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* 
   return false;
 }
 
+const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+  return false;
+}
+
 const RegMask* Matcher::predicate_reg_mask(void) {
   return NULL;
 }
@@ -2237,6 +2241,10 @@ const int Matcher::max_vector_size(const BasicType bt) {
 
 const int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
+}
+
+const int Matcher::superword_max_vector_size(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
 }
 
 const int Matcher::scalable_vector_reg_size(const BasicType bt) {
@@ -3412,6 +3420,7 @@ encode %{
     if (!_method) {
       // A call to a runtime wrapper, e.g. new, new_typeArray_Java, uncommon_trap.
       emit_call_with_trampoline_stub(_masm, entry_point, relocInfo::runtime_call_type);
+      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
     } else {
       // Remember the offset not the address.
       const int start_offset = __ offset();
@@ -3582,6 +3591,7 @@ encode %{
       // to determine who we intended to call.
       __ relocate(virtual_call_Relocation::spec(virtual_call_meta_addr));
       emit_call_with_trampoline_stub(_masm, (address)$meth$$method, relocInfo::none);
+      if (ciEnv::current()->failing()) { return; } // Code cache may be full.
       assert(((MachCallDynamicJavaNode*)this)->ret_addr_offset() == __ offset() - start_offset,
              "Fix constant in ret_addr_offset(), expected %d", __ offset() - start_offset);
     } else {
@@ -3593,7 +3603,7 @@ encode %{
       __ load_klass(R11_scratch1, R3);
 
       int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-      int v_off = entry_offset + vtableEntry::method_offset_in_bytes();
+      int v_off = entry_offset + in_bytes(vtableEntry::method_offset());
       __ li(R19_method, v_off);
       __ ldx(R19_method/*method*/, R19_method/*method offset*/, R11_scratch1/*class*/);
       // NOTE: for vtable dispatches, the vtable entry will never be
@@ -3789,7 +3799,7 @@ frame %{
   // out_preserve_stack_slots for calls to C. Supports the var-args
   // backing area for register parms.
   //
-  varargs_C_out_slots_killed(((frame::abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size));
+  varargs_C_out_slots_killed(((frame::native_abi_reg_args_size - frame::jit_out_preserve_size) / VMRegImpl::stack_slot_size));
 
   // The after-PROLOG location of the return address. Location of
   // return address specifies a type (REG or STACK) and a number
@@ -11431,7 +11441,7 @@ instruct cmpL3_reg_reg(iRegIdst dst, iRegLsrc src1, iRegLsrc src2, flagsRegCR0 c
   match(Set dst (CmpL3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 5);
-  size(VM_Version::has_brw() ? 16 : 20);
+  size((VM_Version::has_brw() ? 16 : 20));
 
   format %{ "cmpL3_reg_reg $dst, $src1, $src2" %}
 
@@ -11766,7 +11776,7 @@ instruct cmpF3_reg_reg(iRegIdst dst, regF src1, regF src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpF3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
-  size(VM_Version::has_brw() ? 20 : 24);
+  size((VM_Version::has_brw() ? 20 : 24));
 
   format %{ "cmpF3_reg_reg $dst, $src1, $src2" %}
 
@@ -11850,7 +11860,7 @@ instruct cmpD3_reg_reg(iRegIdst dst, regD src1, regD src2, flagsRegCR0 cr0) %{
   match(Set dst (CmpD3 src1 src2));
   effect(KILL cr0);
   ins_cost(DEFAULT_COST * 6);
-  size(VM_Version::has_brw() ? 20 : 24);
+  size((VM_Version::has_brw() ? 20 : 24));
 
   format %{ "cmpD3_reg_reg $dst, $src1, $src2" %}
 
@@ -12129,10 +12139,9 @@ instruct partialSubtypeCheck(iRegPdst result, iRegP_N2P subklass, iRegP_N2P supe
 
 // inlined locking and unlocking
 
-instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
+instruct cmpFastLock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2) %{
   match(Set crx (FastLock oop box));
   effect(TEMP tmp1, TEMP tmp2);
-  predicate(!Compile::current()->use_rtm());
 
   format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
@@ -12145,53 +12154,14 @@ instruct cmpFastLock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iR
   ins_pipe(pipe_class_compare);
 %}
 
-// Separate version for TM. Use bound register for box to enable USE_KILL.
-instruct cmpFastLock_tm(flagsReg crx, iRegPdst oop, rarg2RegP box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
-  match(Set crx (FastLock oop box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3, USE_KILL box);
-  predicate(Compile::current()->use_rtm());
-
-  format %{ "FASTLOCK  $oop, $box, $tmp1, $tmp2, $tmp3 (TM)" %}
-  ins_encode %{
-    __ compiler_fast_lock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                 $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                                 _rtm_counters, _stack_rtm_counters,
-                                 ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
-                                 /*RTM*/ true, ra_->C->profile_rtm());
-    // If locking was successful, crx should indicate 'EQ'.
-    // The compiler generates a branch to the runtime call to
-    // _complete_monitor_locking_Java for the case where crx is 'NE'.
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmpFastUnlock(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
+instruct cmpFastUnlock(flagsRegCR0 crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
   match(Set crx (FastUnlock oop box));
   effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
-  predicate(!Compile::current()->use_rtm());
 
   format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2" %}
   ins_encode %{
     __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                                   false);
-    // If unlocking was successful, crx should indicate 'EQ'.
-    // The compiler generates a branch to the runtime call to
-    // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
-  %}
-  ins_pipe(pipe_class_compare);
-%}
-
-instruct cmpFastUnlock_tm(flagsReg crx, iRegPdst oop, iRegPdst box, iRegPdst tmp1, iRegPdst tmp2, iRegPdst tmp3) %{
-  match(Set crx (FastUnlock oop box));
-  effect(TEMP tmp1, TEMP tmp2, TEMP tmp3);
-  predicate(Compile::current()->use_rtm());
-
-  format %{ "FASTUNLOCK  $oop, $box, $tmp1, $tmp2 (TM)" %}
-  ins_encode %{
-    __ compiler_fast_unlock_object($crx$$CondRegister, $oop$$Register, $box$$Register,
-                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register,
-                                   /*RTM*/ true);
+                                   $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
     // If unlocking was successful, crx should indicate 'EQ'.
     // The compiler generates a branch to the runtime call to
     // _complete_monitor_unlocking_Java for the case where crx is 'NE'.
@@ -14393,7 +14363,7 @@ instruct CallStaticJavaDirect(method meth) %{
   ins_num_consts(3 /* up to 3 patchable constants: inline cache, 2 call targets. */);
 
   format %{ "CALL,static $meth \t// ==> " %}
-  size(Continuations::enabled() ? 8 : 4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode( enc_java_static_call(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14414,7 +14384,7 @@ instruct CallDynamicJavaDirectSched(method meth) %{
   ins_num_consts(1 /* 1 patchable constant: call destination */);
 
   format %{ "BL        \t// dynamic $meth ==> " %}
-  size(Continuations::enabled() ? 8 : 4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode( enc_java_dynamic_call_sched(meth) );
   ins_pipe(pipe_class_call);
 %}
@@ -14492,7 +14462,7 @@ instruct CallLeafDirect(method meth) %{
   predicate(false);  // but never match.
 
   format %{ "BCTRL     \t// leaf call $meth ==> " %}
-  size(Continuations::enabled() ? 8 : 4);
+  size((Continuations::enabled() ? 8 : 4));
   ins_encode %{
     __ bctrl();
     __ post_call_nop();

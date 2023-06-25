@@ -535,8 +535,11 @@ public:
     // Has this block been cloned for a loop backedge?
     bool                             _backedge_copy;
 
-    // This block is entry to irreducible loop.
-    bool                             _irreducible_entry;
+    // This block is a loop head of an irreducible loop.
+    bool                             _irreducible_loop_head;
+
+    // This block is a secondary entry to an irreducible loop (entry but not head).
+    bool                             _irreducible_loop_secondary_entry;
 
     // This block has monitor entry point.
     bool                             _has_monitorenter;
@@ -687,8 +690,11 @@ public:
     Loop*  loop() const                  { return _loop; }
     void   set_loop(Loop* lp)            { _loop = lp; }
     bool   is_loop_head() const          { return _loop && _loop->head() == this; }
-    void   set_irreducible_entry(bool c) { _irreducible_entry = c; }
-    bool   is_irreducible_entry() const  { return _irreducible_entry; }
+    bool   is_in_irreducible_loop() const;
+    void   set_irreducible_loop_head()   { _irreducible_loop_head = true; }
+    bool   is_irreducible_loop_head() const { return _irreducible_loop_head; }
+    void   set_irreducible_loop_secondary_entry() { _irreducible_loop_secondary_entry = true; }
+    bool   is_irreducible_loop_secondary_entry() const { return _irreducible_loop_secondary_entry; }
     void   set_has_monitorenter()        { _has_monitorenter = true; }
     bool   has_monitorenter() const      { return _has_monitorenter; }
     bool   is_visited() const            { return has_pre_order(); }
@@ -755,7 +761,8 @@ public:
     // Mark non-single entry to loop
     void set_irreducible(Block* entry) {
       _irreducible = true;
-      entry->set_irreducible_entry(true);
+      head()->set_irreducible_loop_head();
+      entry->set_irreducible_loop_secondary_entry();
     }
     bool is_irreducible() const { return _irreducible; }
 
@@ -879,7 +886,7 @@ public:
   JsrRecord* make_jsr_record(int entry_address, int return_address);
 
   void  set_loop_tree_root(Loop* ltr) { _loop_tree_root = ltr; }
-  Loop* loop_tree_root()              { return _loop_tree_root; }
+  Loop* loop_tree_root() const        { return _loop_tree_root; }
 
 private:
   // Get the initial state for start_bci:
