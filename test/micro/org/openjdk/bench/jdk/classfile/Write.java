@@ -24,29 +24,31 @@
  */
 package org.openjdk.bench.jdk.classfile;
 
-import jdk.internal.classfile.AccessFlags;
 import java.lang.reflect.AccessFlag;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.attribute.SourceFileAttribute;
 import jdk.internal.org.objectweb.asm.*;
 import org.openjdk.jmh.annotations.*;
 
 import java.io.FileOutputStream;
-import java.lang.constant.ClassDesc;
+
 import static java.lang.constant.ConstantDescs.*;
-import java.lang.constant.MethodTypeDesc;
+
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static jdk.internal.classfile.Classfile.*;
+import static jdk.internal.classfile.Opcode.BIPUSH;
+import static jdk.internal.classfile.Opcode.GETSTATIC;
+import static jdk.internal.classfile.Opcode.GOTO;
+import static jdk.internal.classfile.Opcode.ICONST_1;
+import static jdk.internal.classfile.Opcode.IF_ICMPGE;
+import static jdk.internal.classfile.Opcode.IMUL;
+import static jdk.internal.classfile.Opcode.INVOKEVIRTUAL;
 import static org.openjdk.bench.jdk.classfile.TestConstants.CD_PrintStream;
 import static org.openjdk.bench.jdk.classfile.TestConstants.CD_System;
-import static org.openjdk.bench.jdk.classfile.TestConstants.MTD_INT_VOID;
-import static org.openjdk.bench.jdk.classfile.TestConstants.MTD_VOID;
-import static jdk.internal.classfile.Opcode.*;
+import static org.openjdk.bench.jdk.classfile.TestConstants.MTD_void_int;
 import static jdk.internal.classfile.TypeKind.*;
-import static jdk.internal.classfile.TypeKind.IntType;
-import static jdk.internal.org.objectweb.asm.Opcodes.V12;
 
 /**
  * Write
@@ -85,7 +87,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] asmStream() {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES);
-        cw.visit(V12, Opcodes.ACC_PUBLIC, "MyClass", null, "java/lang/Object", null);
+        cw.visit(Opcodes.V12, Opcodes.ACC_PUBLIC, "MyClass", null, "java/lang/Object", null);
         cw.visitSource("MyClass.java", null);
 
         {
@@ -149,26 +151,28 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTree() {
 
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = Classfile.build(TestConstants.CD_MyClass, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
-            cb.withVersion(52, 0);
+            cb.withVersion(JAVA_12_VERSION, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
-              .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
-                      .withCode(codeb -> codeb.loadInstruction(TypeKind.ReferenceType, 0)
-                                              .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                              .returnInstruction(VoidType)
-                      )
+              .withMethodBody(INIT_NAME, MTD_void, 0, codeb -> codeb
+                      .aload(0)
+                      .invokespecial(CD_Object, INIT_NAME, MTD_void)
+                      .return_()
               );
             for (int xi = 0; xi < 40; ++xi) {
-                cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                              AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
-                              mb -> mb.withCode(c0 -> {
-                                  jdk.internal.classfile.Label loopTop = c0.newLabel();
-                                  jdk.internal.classfile.Label loopEnd = c0.newLabel();
+                cb.withMethodBody("main" + ((xi == 0) ? "" : String.valueOf(xi)), TestConstants.MTD_void_StringArray,
+                              ACC_PUBLIC | ACC_STATIC, c0 -> {
+                                  var loopTop = c0.newLabel();
+                                  var loopEnd = c0.newLabel();
+                                  var startLabel = c0.startLabel();
+                                  var endLabel = c0.endLabel();
+                                  var iStart = c0.newLabel();
                                   int vFac = 1;
                                   int vI = 2;
                                   c0.constantInstruction(ICONST_1, 1)         // 0
                                     .storeInstruction(IntType, vFac)        // 1
+                                    .labelBinding(iStart)
                                     .constantInstruction(ICONST_1, 1)         // 2
                                     .storeInstruction(IntType, vI)          // 3
                                     .labelBinding(loopTop)
@@ -184,57 +188,11 @@ public class Write {
                                     .labelBinding(loopEnd)
                                     .fieldInstruction(GETSTATIC, CD_System, "out", CD_PrintStream)   // 13
                                     .loadInstruction(IntType, vFac)
-                                    .invokeInstruction(INVOKEVIRTUAL, CD_PrintStream, "println", MTD_INT_VOID, false)  // 15
-                                    .returnInstruction(VoidType);
-                        }));
-            }
-        });
-        if (writeClassBc) writeClass(bytes, checkFileBc);
-        return bytes;
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.Throughput)
-    public byte[] jdkTreePrimitive() {
-
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
-            cb.withFlags(AccessFlag.PUBLIC);
-            cb.withVersion(52, 0);
-            cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
-              .withMethod("<init>", MethodTypeDesc.of(CD_void), 0,
-                          mb -> mb.withCode(codeb -> codeb.loadInstruction(ReferenceType, 0)
-                                                          .invokeInstruction(INVOKESPECIAL, CD_Object, "<init>", MTD_VOID, false)
-                                                          .returnInstruction(VoidType)
-                          )
-              );
-            for (int xi = 0; xi < 40; ++xi) {
-                cb.withMethod("main" + ((xi == 0) ? "" : "" + xi), MethodTypeDesc.of(CD_void, CD_String.arrayType()),
-                              AccessFlags.ofMethod(AccessFlag.STATIC, AccessFlag.PUBLIC).flagsMask(),
-                              mb -> mb.withCode(c0 -> {
-                                  jdk.internal.classfile.Label loopTop = c0.newLabel();
-                                  jdk.internal.classfile.Label loopEnd = c0.newLabel();
-                                  int vFac = 1;
-                                  int vI = 2;
-                                  c0.constantInstruction(ICONST_1, 1)        // 0
-                                    .storeInstruction(IntType, 1)          // 1
-                                    .constantInstruction(ICONST_1, 1)        // 2
-                                    .storeInstruction(IntType, 2)          // 3
-                                    .labelBinding(loopTop)
-                                    .loadInstruction(IntType, 2)           // 4
-                                    .constantInstruction(BIPUSH, 10)         // 5
-                                    .branchInstruction(IF_ICMPGE, loopEnd) // 6
-                                    .loadInstruction(IntType, 1)           // 7
-                                    .loadInstruction(IntType, 2)           // 8
-                                    .operatorInstruction(IMUL)             // 9
-                                    .storeInstruction(IntType, 1)          // 10
-                                    .incrementInstruction(2, 1)    // 11
-                                    .branchInstruction(GOTO, loopTop)     // 12
-                                    .labelBinding(loopEnd)
-                                    .fieldInstruction(GETSTATIC, CD_System, "out", CD_PrintStream)   // 13
-                                    .loadInstruction(IntType, 1)
-                                    .invokeInstruction(INVOKEVIRTUAL, CD_PrintStream, "println", MTD_INT_VOID, false)  // 15
-                                    .returnInstruction(VoidType);
-                        }));
+                                    .invokeInstruction(INVOKEVIRTUAL, CD_PrintStream, "println", MTD_void_int, false)  // 15
+                                    .returnInstruction(VoidType)
+                                    .localVariable(vFac, "fac", CD_int, startLabel, endLabel)
+                                    .localVariable(vI, "i", CD_int, iStart, loopEnd);
+                        });
             }
         });
         if (writeClassBc) writeClass(bytes, checkFileBc);
