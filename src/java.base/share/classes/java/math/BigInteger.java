@@ -45,6 +45,7 @@ import java.util.concurrent.ThreadLocalRandom;
 
 import jdk.internal.math.DoubleConsts;
 import jdk.internal.math.FloatConsts;
+import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -3950,7 +3951,7 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
             return -1;
         if (len1 > len2)
             return 1;
-        int i = Arrays.mismatch(m1, 0, len1, m2, 0, len2);
+        int i = ArraysSupport.mismatch(m1, 0, m2, 0, len1);
         if (i != -1)
             return ((m1[i] & LONG_MASK) < (m2[i] & LONG_MASK)) ? -1 : 1;
         return 0;
@@ -4018,7 +4019,10 @@ public class BigInteger extends Number implements Comparable<BigInteger> {
         if (xInt.signum != signum)
             return false;
 
-        return Arrays.equals(mag, 0, mag.length, xInt.mag, 0, xInt.mag.length);
+        if (mag.length != xInt.mag.length)
+            return false;
+
+        return ArraysSupport.mismatch(mag, 0, xInt.mag, 0, mag.length) == -1;
     }
 
     /**
