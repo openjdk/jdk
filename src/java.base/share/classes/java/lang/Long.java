@@ -215,6 +215,9 @@ public final class Long extends Number
         if (i >= 0)
             return toString(i, radix);
         else {
+            if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX) {
+                radix = 10;
+            }
             return switch (radix) {
                 case 2  -> toBinaryString(i);
                 case 4  -> toUnsignedString0(i, 2);
@@ -234,7 +237,11 @@ public final class Long extends Number
                 }
                 case 16 -> toHexString(i);
                 case 32 -> toUnsignedString0(i, 5);
-                default -> toUnsignedBigInteger(i).toString(radix);
+                default -> {
+                    long leadingDigits = divideUnsigned(i, radix);  // always positive
+                    int lastDigit = (int)remainderUnsigned(i, radix);
+                    yield toString(leadingDigits, radix) + Integer.digits[lastDigit];
+                }
             };
         }
     }
