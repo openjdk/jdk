@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,49 +20,72 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 4512215 4818420 4819436
  * @summary Updated currency data.
+ * @run junit Bug4512215
  */
 
 import java.util.Currency;
 import java.util.Locale;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Bug4512215 {
 
-    public static void main(String[] args) throws Exception {
-        testCurrencyDefined("XBD", -1);
-        testCountryCurrency("TJ", "TJS", 2);
-        testCountryCurrency("FO", "DKK", 2);
-        testCountryCurrency("FK", "FKP", 2);
-
-        testCountryCurrency("AF", "AFN", 2);    // changed from "AFA"
-
-        // Newsletter V-5 on ISO 3166-1 (2002-05-20)
-        testCountryCurrency("TL", "USD", 2);    // successor to TP/TPE
-
-        // Newsletter V-8 on ISO 3166-1 (2003-07-23)
-        testCountryCurrency("CS", "CSD", 2);    // successor to YU/YUM
-    }
-
-    private static void testCountryCurrency(String country, String currencyCode,
-            int digits) {
-        testCurrencyDefined(currencyCode, digits);
+    /**
+     * Tests that the given country has the expected currency code from
+     * calling getCurrencyCode().
+     */
+    @ParameterizedTest
+    @MethodSource("twoDigitDecimals")
+    public void currencyCountryTest(String currencyCode, int digits, String country) {
+        // digits parameter is not used, exists so that data provider can
+        // be shared among multiple tests
         Currency currency = Currency.getInstance(Locale.of("", country));
-        if (!currency.getCurrencyCode().equals(currencyCode)) {
-            throw new RuntimeException("[" + country
-                    + "] expected: " + currencyCode
-                    + "; got: " + currency.getCurrencyCode());
-        }
+        assertEquals(currency.getCurrencyCode(), currencyCode, String.format(
+                "[%s] expected %s; got: %s", country, currencyCode, currency.getCurrencyCode()));
     }
 
-    private static void testCurrencyDefined(String currencyCode, int digits) {
+    /**
+     * Tests that the given currencyCode has the expected number of
+     * decimal digits from calling getDefaultFractionDigits().
+     */
+    @ParameterizedTest
+    @MethodSource({"twoDigitDecimals", "nonTwoDigitDecimals"})
+    public void currencyDefinedTest(String currencyCode, int digits) {
         Currency currency = Currency.getInstance(currencyCode);
-        if (currency.getDefaultFractionDigits() != digits) {
-            throw new RuntimeException("[" + currencyCode
-                    + "] expected: " + digits
-                    + "; got: " + currency.getDefaultFractionDigits());
-        }
+        assertEquals(currency.getDefaultFractionDigits(), digits, String.format(
+                "[%s] expected: %s; got: %s", currencyCode, digits, currency.getDefaultFractionDigits()));
+    }
+
+    private static Stream<Arguments> twoDigitDecimals() {
+        return Stream.of(
+                Arguments.of("TJS", 2, "TJ"),
+                Arguments.of("DKK", 2, "FO"),
+                Arguments.of("FKP", 2, "FK"),
+                Arguments.of("AFN", 2, "AF"), // changed from "AFA"
+                // Newsletter V-5 on ISO 3166-1 (2002-05-20)
+                Arguments.of("USD", 2, "TL"), // successor to TP/TPE
+                // Newsletter V-8 on ISO 3166-1 (2003-07-23)
+                Arguments.of("CSD", 2, "CS") // successor to YU/YUM
+        );
+    }
+    
+    private static Stream<Arguments> nonTwoDigitDecimals() {
+        return Stream.of(
+                Arguments.of("XBD", -1),
+                Arguments.of("XAG", -1),
+                Arguments.of("XAU", -1),
+                Arguments.of("XBA", -1),
+                Arguments.of("XBB", -1)
+        );
     }
 }
