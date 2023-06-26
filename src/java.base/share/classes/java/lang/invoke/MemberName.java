@@ -992,7 +992,7 @@ final class MemberName implements Member, Cloneable {
             if (result.isResolved())
                 return result;
             ReflectiveOperationException ex = result.makeAccessException();
-            if (ex instanceof IllegalAccessException iae)  throw iae;
+            if (ex instanceof IllegalAccessException iae) throw iae;
             throw nsmClass.cast(ex);
         }
         /** Produce a resolved version of the given member.
