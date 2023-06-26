@@ -412,6 +412,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
       old_heuristics->prime_collection_set(collection_set);
     } else {
       // This is a global collection and does not need to prime cset
+      assert(_generation->is_global(), "Expected global collection here");
     }
 
     // Call the subclasses to add young-gen regions into the collection set.

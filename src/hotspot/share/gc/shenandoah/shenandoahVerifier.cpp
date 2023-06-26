@@ -800,7 +800,7 @@ void ShenandoahVerifier::verify_at_safepoint(const char* label,
         break;
       case _verify_gcstate_evacuation:
         enabled = true;
-        expected = ShenandoahHeap::HAS_FORWARDED | ShenandoahHeap::EVACUATION;
+        expected = ShenandoahHeap::EVACUATION;
         if (!_heap->is_stw_gc_in_progress()) {
           // Only concurrent GC sets this.
           expected |= ShenandoahHeap::WEAK_ROOTS;
