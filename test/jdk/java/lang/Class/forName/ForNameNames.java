@@ -43,7 +43,7 @@ public class ForNameNames {
                 Arguments.of("java.lang.String", String.class),
                 Arguments.of("[Ljava.lang.String;", String[].class),
                 Arguments.of("ForNameNames$Inner", Inner.class),
-                Arguments.of("[LForNameNames$Inner;", Inner.class),
+                Arguments.of("[LForNameNames$Inner;", Inner[].class),
                 Arguments.of("[[I", int[][].class)
         );
     }
