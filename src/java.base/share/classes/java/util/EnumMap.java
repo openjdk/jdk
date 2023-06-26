@@ -608,10 +608,10 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
                     return false;
 
                 V ourValue = unmaskNull(vals[index]);
-                Object theirValue = e.getValue();
+                Object otherValue = e.getValue();
                 return (e.getKey() == keyUniverse[index] &&
-                        (ourValue == theirValue ||
-                         (ourValue != null && ourValue.equals(theirValue))));
+                        (ourValue == otherValue ||
+                         (ourValue != null && ourValue.equals(otherValue))));
             }
 
             public int hashCode() {
@@ -685,9 +685,9 @@ public class EnumMap<K extends Enum<K>, V> extends AbstractMap<K, V>
         // Key types match, compare each value
         for (int i = 0; i < keyUniverse.length; i++) {
             Object ourValue =    vals[i];
-            Object theirValue = em.vals[i];
-            if (theirValue != ourValue &&
-                (theirValue == null || !theirValue.equals(ourValue)))
+            Object otherValue = em.vals[i];
+            if (otherValue != ourValue &&
+                (otherValue == null || !otherValue.equals(ourValue)))
                 return false;
         }
         return true;

@@ -383,20 +383,20 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 continue;
             String member = memberMethod.getName();
             Object ourValue = memberValues.get(member);
-            Object theirValue = null;
-            AnnotationInvocationHandler theirHandler = asOneOfUs(o);
-            if (theirHandler != null) {
-                theirValue = theirHandler.memberValues.get(member);
+            Object otherValue = null;
+            AnnotationInvocationHandler otherHandler = asOneOfUs(o);
+            if (otherHandler != null) {
+                otherValue = otherHandler.memberValues.get(member);
             } else {
                 try {
-                    theirValue = memberMethod.invoke(o);
+                    otherValue = memberMethod.invoke(o);
                 } catch (InvocationTargetException e) {
                     return false;
                 } catch (IllegalAccessException e) {
                     throw new AssertionError(e);
                 }
             }
-            if (!memberValueEquals(ourValue, theirValue))
+            if (!memberValueEquals(ourValue, otherValue))
                 return false;
         }
         return true;
