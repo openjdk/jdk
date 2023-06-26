@@ -2103,11 +2103,43 @@ public class IRNode {
      * If {@code sizeTagString} is a size tag, return the list of accepted sizes, else return sizeTagString.
      */
     public static String parseVectorNodeSizeTag(String sizeTagString, String typeString, VMInfo vmInfo) {
+        // Parse out "min(a,b,c,...)"
+        if (sizeTagString.startsWith("min(")) {
+            TestFormat.checkNoReport(sizeTagString.endsWith(")"), "Vector node size \"min(...)\" must end with \")\" \"" + sizeTagString + "\"");
+            String[] tags = sizeTagString.substring(4,sizeTagString.length() - 1).split(",");
+            TestFormat.checkNoReport(tags.length > 1, "Vector node size \"min(...)\" must have at least 2 comma separated arguments, got \"" + sizeTagString + "\"");
+            int min_val = 1024;
+            for (int i = 0; i < tags.length; i++) {
+                String tag = parseVectorNodeSizeTag(tags[i].trim(), typeString, vmInfo);
+                int tag_val = 0;
+                try {
+                    tag_val = Integer.parseInt(tag);
+                } catch (NumberFormatException e) {
+                    TestFormat.checkNoReport(false, "Vector node has invalid size in \"min(...)\", argument " + i + ", \"" + tag + "\", in \"" + sizeTagString + "\"");
+                }
+                min_val = Math.min(min_val, tag_val);
+            }
+            return String.valueOf(min_val);
+        }
+
+        // Parse individual tags
         switch (sizeTagString) {
         case "max_for_type":
             return String.valueOf(getMaxElementsForType(typeString, vmInfo));
+        case "max_byte":
+            return parseVectorNodeSizeTag("max_for_type", "byte", vmInfo);
+        case "max_char":
+            return parseVectorNodeSizeTag("max_for_type", "char", vmInfo);
+        case "max_short":
+            return parseVectorNodeSizeTag("max_for_type", "short", vmInfo);
         case "max_int":
             return parseVectorNodeSizeTag("max_for_type", "int", vmInfo);
+        case "max_long":
+            return parseVectorNodeSizeTag("max_for_type", "long", vmInfo);
+        case "max_float":
+            return parseVectorNodeSizeTag("max_for_type", "float", vmInfo);
+        case "max_double":
+            return parseVectorNodeSizeTag("max_for_type", "double", vmInfo);
         default:
             return sizeTagString;
         }

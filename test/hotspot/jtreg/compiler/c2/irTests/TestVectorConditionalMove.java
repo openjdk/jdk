@@ -496,8 +496,8 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VI, ">0",
-                  IRNode.LOAD_VF, ">0",
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
+                  IRNode.LOAD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0",
                   IRNode.VECTOR_MASK_CMP, ">0",
                   IRNode.VECTOR_BLEND, ">0",
                   IRNode.STORE_VECTOR, ">0"},
@@ -556,8 +556,8 @@ public class TestVectorConditionalMove {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VL, ">0",
-                  IRNode.LOAD_VD, ">0",
+    @IR(counts = {IRNode.LOAD_VL, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
+                  IRNode.LOAD_VD, IRNode.VECTOR_SIZE + "min(max_long, max_double)", ">0",
                   IRNode.VECTOR_MASK_CMP, ">0",
                   IRNode.VECTOR_BLEND, ">0",
                   IRNode.STORE_VECTOR, ">0"},
