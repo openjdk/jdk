@@ -807,19 +807,28 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Determines if the specified {@code Class} object represents a
-     * primitive type.
+     * Determines if this {@code Class} object represents a primitive
+     * type or void.
      *
-     * <p> There are nine predefined {@code Class} objects to represent
-     * the eight primitive types and void.  These are created by the Java
-     * Virtual Machine, and have the same names as the primitive types that
-     * they represent, namely {@code boolean}, {@code byte},
-     * {@code char}, {@code short}, {@code int},
-     * {@code long}, {@code float}, and {@code double}.
+     * <p> There are nine predefined {@code Class} objects to
+     * represent the eight primitive types and void.  These are
+     * created by the Java Virtual Machine, and have the same
+     * {@linkplain #getName() names} as the primitive types that they
+     * represent, namely {@code boolean}, {@code byte}, {@code char},
+     * {@code short}, {@code int}, {@code long}, {@code float}, and
+     * {@code double}.
      *
-     * <p> These objects may only be accessed via the following public static
-     * final variables, and are the only {@code Class} objects for which
-     * this method returns {@code true}.
+     * <p>No other class objects are considered primitive.
+     *
+     * @apiNote
+     * A {@code Class} object represented by a primitive type can be
+     * accessed via the {@code TYPE} public static final variables
+     * defined in the primitive wrapper classes such as {@link
+     * java.lang.Integer#TYPE Integer.TYPE}. In the Java programming
+     * language, the objects may be referred to by a class literal
+     * expression such as {@code int.class}.  The {@code Class} object
+     * for void can be expressed as {@code void.class} or {@link
+     * java.lang.Void#TYPE Void.TYPE}.
      *
      * @return true if and only if this class represents a primitive type
      *
@@ -833,6 +842,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.Double#TYPE
      * @see     java.lang.Void#TYPE
      * @since 1.1
+     * @jls 15.8.2 Class Literals
      */
     @IntrinsicCandidate
     public native boolean isPrimitive();

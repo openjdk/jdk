@@ -2846,6 +2846,31 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   }
 }
 
+// The constant pool is on stack if any of the methods are executing or
+// referenced by handles.
+bool InstanceKlass::on_stack() const {
+  return _constants->on_stack();
+}
+
+Symbol* InstanceKlass::source_file_name() const               { return _constants->source_file_name(); }
+u2 InstanceKlass::source_file_name_index() const              { return _constants->source_file_name_index(); }
+void InstanceKlass::set_source_file_name_index(u2 sourcefile_index) { _constants->set_source_file_name_index(sourcefile_index); }
+
+// minor and major version numbers of class file
+u2 InstanceKlass::minor_version() const                 { return _constants->minor_version(); }
+void InstanceKlass::set_minor_version(u2 minor_version) { _constants->set_minor_version(minor_version); }
+u2 InstanceKlass::major_version() const                 { return _constants->major_version(); }
+void InstanceKlass::set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
+
+InstanceKlass* InstanceKlass::get_klass_version(int version) {
+  for (InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
+    if (ik->constants()->version() == version) {
+      return ik;
+    }
+  }
+  return nullptr;
+}
+
 void InstanceKlass::set_source_debug_extension(const char* array, int length) {
   if (array == nullptr) {
     _source_debug_extension = nullptr;
@@ -2863,6 +2888,10 @@ void InstanceKlass::set_source_debug_extension(const char* array, int length) {
     _source_debug_extension = sde;
   }
 }
+
+Symbol* InstanceKlass::generic_signature() const                   { return _constants->generic_signature(); }
+u2 InstanceKlass::generic_signature_index() const                  { return _constants->generic_signature_index(); }
+void InstanceKlass::set_generic_signature_index(u2 sig_index)      { _constants->set_generic_signature_index(sig_index); }
 
 const char* InstanceKlass::signature_name() const {
 
