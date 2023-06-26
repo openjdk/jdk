@@ -30,7 +30,7 @@
  *          language tag(s) in lowercase.
  *          Also, checks the filterTags() to return only unique
  *          (ignoring case considerations) matching tags.
- * @run junit Bug8032842
+ * @run junit PreserveTagCase
  */
 
 import java.util.List;
@@ -45,7 +45,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Bug8032842 {
+public class PreserveTagCase {
 
     /**
      * This test ensures that Locale.filterTags() preserves the case of matching
