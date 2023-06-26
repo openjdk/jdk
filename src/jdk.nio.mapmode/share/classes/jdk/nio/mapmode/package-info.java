@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,17 +23,11 @@
  * questions.
  */
 
-#ifndef _JAVASOFT_JNI_MD_H_
-#define _JAVASOFT_JNI_MD_H_
+/**
+ * JDK-specific map modes for use with
+ * {@linkplain java.nio.channels.FileChannel#map FileChannel::map}.
+ *
+ * @since 14
+ */
 
-#ifndef JNIEXPORT
-  #define JNIEXPORT __declspec(dllexport)
-#endif
-#define JNIIMPORT __declspec(dllimport)
-#define JNICALL __stdcall
-
-typedef int jint;
-typedef long long jlong;
-typedef signed char jbyte;
-
-#endif /* !_JAVASOFT_JNI_MD_H_ */
+package jdk.nio.mapmode;

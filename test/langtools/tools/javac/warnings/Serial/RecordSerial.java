@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8202056 8310835
+ * @bug 8202056 8310861
  * @compile/ref=RecordSerial.out -XDrawDiagnostics -Xlint:serial RecordSerial.java
  */
 

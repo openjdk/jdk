@@ -43,10 +43,7 @@ public class TestVectorConditionalMove {
     private static final Random RANDOM = Utils.getRandomInstance();
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:-TieredCompilation",
-                                   "-XX:+UseCMoveUnconditionally",
-                                   "-XX:+UseVectorCmov",
-                                   "-XX:CompileCommand=compileonly,*.TestVectorConditionalMove.test*");
+        TestFramework.runWithFlags("-XX:+UseCMoveUnconditionally", "-XX:+UseVectorCmov");
     }
 
     // Compare 2 values, and pick one of them

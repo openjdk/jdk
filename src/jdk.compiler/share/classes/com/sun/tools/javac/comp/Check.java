@@ -5048,16 +5048,19 @@ public class Check {
              if ((spf.flags() & (PRIVATE | STATIC | FINAL)) !=
                  (PRIVATE | STATIC | FINAL)) {
                  log.warning(LintCategory.SERIAL,
-                             TreeInfo.diagnosticPositionFor(spf, tree), Warnings.ImproperSPF);
+                             TreeInfo.diagnosticPositionFor(spf, tree),
+                             Warnings.ImproperSPF);
              }
 
              if (!types.isSameType(spf.type, OSF_TYPE)) {
                  log.warning(LintCategory.SERIAL,
-                             TreeInfo.diagnosticPositionFor(spf, tree), Warnings.OSFArraySPF);
+                             TreeInfo.diagnosticPositionFor(spf, tree),
+                             Warnings.OSFArraySPF);
              }
 
             if (isExternalizable((Type)(e.asType()))) {
-                log.warning(LintCategory.SERIAL, tree.pos(),
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(spf, tree),
                             Warnings.IneffectualSerialFieldExternalizable);
             }
 
@@ -5457,7 +5460,7 @@ public class Check {
             // If the enclosing class is externalizable, warn for the method
             if (isExternalizable((Type)enclosing.asType())) {
                 log.warning(LintCategory.SERIAL, TreeInfo.diagnosticPositionFor(method, tree),
-                            Warnings.IneffectualSerialMethodExternalizable(method.getSimpleName()));
+                            Warnings.IneffectualExternalizableMethodRecord(method.getSimpleName()));
             }
             return;
         }
