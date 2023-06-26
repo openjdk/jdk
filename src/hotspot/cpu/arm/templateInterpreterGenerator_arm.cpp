@@ -36,6 +36,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/methodHandles.hpp"
@@ -364,23 +365,31 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
 
   const Register Rcache = R2_tmp;
   const Register Rindex = R3_tmp;
-  __ get_cache_and_index_at_bcp(Rcache, Rindex, 1, index_size);
 
-  __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
-  __ ldrb(Rtemp, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-  __ check_stack_top();
-  __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
+  if (index_size == sizeof(u4)) {
+    __ load_resolved_indy_entry(Rcache, Rindex);
+    __ ldrh(Rcache, Address(Rcache, in_bytes(ResolvedIndyEntry::num_parameters_offset())));
+    __ check_stack_top();
+    __ add(Rstack_top, Rstack_top, AsmOperand(Rcache, lsl, Interpreter::logStackElementSize));
+  } else {
+    // Pop N words from the stack
+    __ get_cache_and_index_at_bcp(Rcache, Rindex, 1, index_size);
+
+    __ add(Rtemp, Rcache, AsmOperand(Rindex, lsl, LogBytesPerWord));
+    __ ldrb(Rtemp, Address(Rtemp, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
+    __ check_stack_top();
+    __ add(Rstack_top, Rstack_top, AsmOperand(Rtemp, lsl, Interpreter::logStackElementSize));
+  }
 
   __ convert_retval_to_tos(state);
 
- __ check_and_handle_popframe();
- __ check_and_handle_earlyret();
+  __ check_and_handle_popframe();
+  __ check_and_handle_earlyret();
 
   __ dispatch_next(state, step);
 
   return entry;
 }
-
 
 address TemplateInterpreterGenerator::generate_deopt_entry_for(TosState state, int step, address continuation) {
   address entry = __ pc();
@@ -591,7 +600,7 @@ void TemplateInterpreterGenerator::lock_method() {
                                               // add space for a monitor entry
   __ str(Rstack_top, Address(FP, frame::interpreter_frame_monitor_block_top_offset * wordSize));
                                               // set new monitor block top
-  __ str(R0, Address(Rstack_top, BasicObjectLock::obj_offset_in_bytes()));
+  __ str(R0, Address(Rstack_top, BasicObjectLock::obj_offset()));
                                               // store object
   __ mov(R1, Rstack_top);                     // monitor entry address
   __ lock_object(R1);
@@ -650,7 +659,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   __ ldr(Rtemp, Address(Rmethod, Method::const_offset()));
   __ ldr(Rtemp, Address(Rtemp, ConstMethod::constants_offset()));
-  __ ldr(Rtemp, Address(Rtemp, ConstantPool::cache_offset_in_bytes()));
+  __ ldr(Rtemp, Address(Rtemp, ConstantPool::cache_offset()));
   __ push(Rtemp);                                      // set constant pool cache
   __ sub(Rtemp, Rlocals, FP);
   __ logical_shift_right(Rtemp, Rtemp, Interpreter::logStackElementSize); // Rtemp = Rlocals - fp();
@@ -1046,7 +1055,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Zero handles and last_java_sp
   __ reset_last_Java_frame(Rtemp);
   __ ldr(R3, Address(Rthread, JavaThread::active_handles_offset()));
-  __ str_32(__ zero_register(Rtemp), Address(R3, JNIHandleBlock::top_offset_in_bytes()));
+  __ str_32(__ zero_register(Rtemp), Address(R3, JNIHandleBlock::top_offset()));
   if (CheckJNICalls) {
     __ str(__ zero_register(Rtemp), Address(Rthread, JavaThread::pending_jni_exception_check_fn_offset()));
   }

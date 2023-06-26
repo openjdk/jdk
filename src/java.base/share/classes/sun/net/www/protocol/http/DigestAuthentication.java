@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -296,12 +296,11 @@ class DigestAuthentication extends AuthenticationInfo {
      */
     public DigestAuthentication(boolean isProxy, URL url, String realm,
                                 String authMethod, PasswordAuthentication pw,
-                                Parameters params, String authenticatorKey) {
+                                Parameters params){
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               AuthScheme.DIGEST,
               url,
-              realm,
-              Objects.requireNonNull(authenticatorKey));
+              realm);
         this.authMethod = authMethod;
         this.pw = pw;
         this.params = params;
@@ -309,13 +308,12 @@ class DigestAuthentication extends AuthenticationInfo {
 
     public DigestAuthentication(boolean isProxy, String host, int port, String realm,
                                 String authMethod, PasswordAuthentication pw,
-                                Parameters params, String authenticatorKey) {
+                                Parameters params) {
         super(isProxy ? PROXY_AUTHENTICATION : SERVER_AUTHENTICATION,
               AuthScheme.DIGEST,
               host,
               port,
-              realm,
-              Objects.requireNonNull(authenticatorKey));
+              realm);
         this.authMethod = authMethod;
         this.pw = pw;
         this.params = params;
@@ -436,7 +434,7 @@ class DigestAuthentication extends AuthenticationInfo {
             // It really does need to start with an upper case letter
             // here.
             authMethod = Character.toUpperCase(authMethod.charAt(0))
-                        + authMethod.substring(1).toLowerCase();
+                        + authMethod.substring(1).toLowerCase(Locale.ROOT);
         }
 
         if (!setAlgorithmNames(p, params))
@@ -515,7 +513,7 @@ class DigestAuthentication extends AuthenticationInfo {
         String ncstring=null;
 
         if (nccount != -1) {
-            ncstring = Integer.toHexString (nccount).toLowerCase();
+            ncstring = Integer.toHexString(nccount);
             int len = ncstring.length();
             if (len < 8)
                 ncstring = zeroPad [len] + ncstring;

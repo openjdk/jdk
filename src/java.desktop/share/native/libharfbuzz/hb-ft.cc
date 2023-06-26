@@ -85,7 +85,7 @@
  */
 
 
-using hb_ft_advance_cache_t = hb_cache_t<16, 8, 8, false>;
+using hb_ft_advance_cache_t = hb_cache_t<16, 24, 8, false>;
 
 struct hb_ft_font_t
 {

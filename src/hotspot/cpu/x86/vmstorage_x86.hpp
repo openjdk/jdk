@@ -82,7 +82,7 @@ constexpr inline VMStorage as_VMStorage(XMMRegister reg) {
   return VMStorage::reg_storage(StorageType::VECTOR, XMM_MASK, reg->encoding());
 }
 
-inline VMStorage as_VMStorage(VMReg reg) {
+inline VMStorage as_VMStorage(VMReg reg, BasicType bt) {
   if (reg->is_Register()) {
     return as_VMStorage(reg->as_Register());
   } else if (reg->is_XMMRegister()) {

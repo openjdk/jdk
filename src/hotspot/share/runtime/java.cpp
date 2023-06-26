@@ -54,6 +54,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/continuation.hpp"
 #include "runtime/deoptimization.hpp"
@@ -478,11 +479,6 @@ void before_exit(JavaThread* thread, bool halt) {
   StatSampler::disengage();
   StatSampler::destroy();
 
-  // Shut down string deduplication if running.
-  if (StringDedup::is_enabled()) {
-    StringDedup::stop();
-  }
-
   // Stop concurrent GC threads
   Universe::heap()->stop();
 
@@ -516,7 +512,7 @@ void before_exit(JavaThread* thread, bool halt) {
   // Always call even when there are not JVMTI environments yet, since environments
   // may be attached late and JVMTI must track phases of VM execution
   JvmtiExport::post_vm_death();
-  Threads::shutdown_vm_agents();
+  JvmtiAgentList::unload_agents();
 
   // Terminate the signal thread
   // Note: we don't wait until it actually dies.

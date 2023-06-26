@@ -33,8 +33,11 @@ import java.util.stream.StreamSupport;
 /**
  * The root interface in the <i>collection hierarchy</i>.  A collection
  * represents a group of objects, known as its <i>elements</i>.  Some
- * collections allow duplicate elements and others do not.  Some are ordered
- * and others unordered.  The JDK does not provide any <i>direct</i>
+ * collections allow duplicate elements and others do not.  Some are ordered,
+ * and others are unordered. Collections that have a defined
+ * <a href="SequencedCollection.html#encounter">encounter order</a>
+ * are generally subtypes of the {@link SequencedCollection} interface.
+ * The JDK does not provide any <i>direct</i>
  * implementations of this interface: it provides implementations of more
  * specific subinterfaces like {@code Set} and {@code List}.  This interface
  * is typically used to pass collections around and manipulate them where
@@ -121,8 +124,9 @@ import java.util.stream.StreamSupport;
  * Other examples of view collections include collections that provide a
  * different representation of the same elements, for example, as
  * provided by {@link List#subList List.subList},
- * {@link NavigableSet#subSet NavigableSet.subSet}, or
- * {@link Map#entrySet Map.entrySet}.
+ * {@link NavigableSet#subSet NavigableSet.subSet},
+ * {@link Map#entrySet Map.entrySet}, or
+ * {@link SequencedCollection#reversed SequencedCollection.reversed}.
  * Any changes made to the backing collection are visible in the view collection.
  * Correspondingly, any changes made to the view collection &mdash; if changes
  * are permitted &mdash; are written through to the backing collection.
@@ -202,7 +206,8 @@ import java.util.stream.StreamSupport;
  * serializability of such collections is described in the specification of the method
  * that creates them, or in some other suitable place. In cases where the serializability
  * of a collection is not specified, there is no guarantee about the serializability of such
- * collections. In particular, many <a href="#view">view collections</a> are not serializable.
+ * collections. In particular, many <a href="#view">view collections</a> are not serializable,
+ * even if the original collection is serializable.
  *
  * <p>A collection implementation that implements the {@code Serializable} interface cannot
  * be guaranteed to be serializable. The reason is that in general, collections
@@ -501,7 +506,9 @@ public interface Collection<E> extends Iterable<E> {
      * the specified collection is modified while the operation is in progress.
      * (This implies that the behavior of this call is undefined if the
      * specified collection is this collection, and this collection is
-     * nonempty.)
+     * nonempty.) If the specified collection has a defined
+     * <a href="SequencedCollection.html#encounter">encounter order</a>,
+     * processing of its elements generally occurs in that order.
      *
      * @param c collection containing elements to be added to this collection
      * @return {@code true} if this collection changed as a result of the call

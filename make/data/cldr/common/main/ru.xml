@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1073,6 +1073,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="ZW">Зимбабве</territory>
 			<territory type="ZZ">неизвестный регион</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">Англия</subdivision>
+			<subdivision type="gbsct">Шотландия</subdivision>
+			<subdivision type="gbwls">Уэльс</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901" draft="contributed">Традиционная немецкая орфография</variant>
 			<variant type="1994" draft="contributed">Стандартизированная резьянская орфография</variant>
@@ -2073,6 +2078,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 							<day type="thu">чт</day>
 							<day type="fri">пт</day>
 							<day type="sat">сб</day>
+						</dayWidth>
+						<dayWidth type="narrow">
+							<day type="sun">В</day>
+							<day type="mon">П</day>
+							<day type="tue">В</day>
+							<day type="wed">С</day>
+							<day type="thu">Ч</day>
+							<day type="fri">П</day>
+							<day type="sat">С</day>
 						</dayWidth>
 						<dayWidth type="short">
 							<day type="sun">вс</day>
@@ -4871,6 +4885,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>Эрмосильо</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>Сьюдад-Хуарес</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>Масатлан</exemplarCity>
@@ -8480,7 +8497,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="few" case="dative">квадратным {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" case="genitive">квадратных {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" case="instrumental">квадратными {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" case="locative">квадратных {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" case="prepositional">квадратных {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" case="vocative">квадратных {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" gender="feminine">квадратные {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" gender="feminine" case="accusative">квадратные {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" gender="feminine" case="dative">квадратным {0}</compoundUnitPattern1>
@@ -8569,7 +8588,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="few" case="dative">кубическим {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" case="genitive">кубических {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" case="instrumental">кубическими {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" case="locative">кубических {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" case="prepositional">кубических {0}</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few" case="vocative">кубических {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" gender="feminine">кубические {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" gender="feminine" case="accusative">кубические {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few" gender="feminine" case="dative">кубическим {0}</compoundUnitPattern1>
@@ -8629,6 +8650,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<compoundUnitPattern1 count="other" gender="masculine" case="instrumental">кубического {0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other" gender="masculine" case="prepositional">кубического {0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<gender>masculine</gender>
 				<displayName>ускорение свободного падения</displayName>
@@ -8661,7 +8685,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} g</unitPattern>
 				<unitPattern count="other" case="genitive">{0} g</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} g</unitPattern>
+				<unitPattern count="other" case="locative">{0} g</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} g</unitPattern>
+				<unitPattern count="other" case="vocative">{0} g</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<gender>masculine</gender>
@@ -8857,6 +8883,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} квадратными километрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} квадратных километрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} квадратных километрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} квадратных километра</unitPattern>
 				<unitPattern count="many">{0} квадратных километров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} квадратных километров</unitPattern>
 				<unitPattern count="many" case="dative">{0} квадратным километрам</unitPattern>
@@ -8864,12 +8891,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} квадратными километрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} квадратных километрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} квадратных километрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} квадратных километров</unitPattern>
 				<unitPattern count="other">{0} квадратного километра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} квадратного километра</unitPattern>
 				<unitPattern count="other" case="dative">{0} квадратного километра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} квадратного километра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} квадратного километра</unitPattern>
+				<unitPattern count="other" case="locative">{0} квадратного километра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} квадратного километра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} квадратного километра</unitPattern>
 				<perUnitPattern>{0} на квадратный километр</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
@@ -8890,6 +8920,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} гектарами</unitPattern>
 				<unitPattern count="few" case="locative">{0} гектарах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} гектарах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} гектара</unitPattern>
 				<unitPattern count="many">{0} гектаров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} гектаров</unitPattern>
 				<unitPattern count="many" case="dative">{0} гектарам</unitPattern>
@@ -8897,12 +8928,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} гектарами</unitPattern>
 				<unitPattern count="many" case="locative">{0} гектарах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} гектарах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} гектаров</unitPattern>
 				<unitPattern count="other">{0} гектара</unitPattern>
 				<unitPattern count="other" case="accusative">{0} гектара</unitPattern>
 				<unitPattern count="other" case="dative">{0} гектара</unitPattern>
 				<unitPattern count="other" case="genitive">{0} гектара</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} гектара</unitPattern>
+				<unitPattern count="other" case="locative">{0} гектара</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} гектара</unitPattern>
+				<unitPattern count="other" case="vocative">{0} гектара</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
 				<gender>masculine</gender>
@@ -8951,6 +8985,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} квадратными сантиметрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} квадратных сантиметрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} квадратных сантиметрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} квадратных сантиметра</unitPattern>
 				<unitPattern count="many">{0} квадратных сантиметров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} квадратных сантиметров</unitPattern>
 				<unitPattern count="many" case="dative">{0} квадратным сантиметрам</unitPattern>
@@ -8958,12 +8993,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} квадратными сантиметрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} квадратных сантиметрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} квадратных сантиметрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} квадратных сантиметров</unitPattern>
 				<unitPattern count="other">{0} квадратного сантиметра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} квадратного сантиметра</unitPattern>
 				<unitPattern count="other" case="dative">{0} квадратного сантиметра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} квадратного сантиметра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} квадратного сантиметра</unitPattern>
+				<unitPattern count="other" case="locative">{0} квадратного сантиметра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} квадратного сантиметра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} квадратного сантиметра</unitPattern>
 				<perUnitPattern>{0} на квадратный сантиметр</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
@@ -8992,11 +9030,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} квадратными милями</unitPattern>
 				<unitPattern count="many" case="locative">{0} квадратных милях</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} квадратных милях</unitPattern>
+				<unitPattern count="many" case="vocative">{0} квадратных миль</unitPattern>
 				<unitPattern count="other">{0} квадратной мили</unitPattern>
 				<unitPattern count="other" case="accusative">{0} квадратной мили</unitPattern>
 				<unitPattern count="other" case="dative">{0} квадратной мили</unitPattern>
 				<unitPattern count="other" case="genitive">{0} квадратной мили</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} квадратной мили</unitPattern>
+				<unitPattern count="other" case="locative">{0} квадратной мили</unitPattern>
+				<unitPattern count="other" case="vocative">{0} квадратной мили</unitPattern>
 				<perUnitPattern>{0} на квадратную милю</perUnitPattern>
 			</unit>
 			<unit type="area-acre">
@@ -9017,6 +9058,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} акрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} акрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} акрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} акра</unitPattern>
 				<unitPattern count="many">{0} акров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} акров</unitPattern>
 				<unitPattern count="many" case="dative">{0} акрам</unitPattern>
@@ -9024,11 +9066,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} акрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} акрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} акрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} акров</unitPattern>
 				<unitPattern count="other">{0} акра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} акра</unitPattern>
 				<unitPattern count="other" case="dative">{0} акра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} акра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} акра</unitPattern>
+				<unitPattern count="other" case="locative">{0} акра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} акра</unitPattern>
 			</unit>
 			<unit type="area-square-yard">
 				<displayName>квадратные ярды</displayName>
@@ -9055,6 +9100,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} квадратными футами</unitPattern>
 				<unitPattern count="few" case="locative">{0} квадратных футах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} квадратных футах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} квадратных фута</unitPattern>
 				<unitPattern count="many">{0} квадратных футов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} квадратных футов</unitPattern>
 				<unitPattern count="many" case="dative">{0} квадратным футам</unitPattern>
@@ -9062,11 +9108,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} квадратными футами</unitPattern>
 				<unitPattern count="many" case="locative">{0} квадратных футах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} квадратных футах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} квадратных футов</unitPattern>
 				<unitPattern count="other">{0} квадратного фута</unitPattern>
 				<unitPattern count="other" case="accusative">{0} квадратного фута</unitPattern>
 				<unitPattern count="other" case="dative">{0} квадратного фута</unitPattern>
 				<unitPattern count="other" case="genitive">{0} квадратного фута</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} квадратного фута</unitPattern>
+				<unitPattern count="other" case="locative">{0} квадратного фута</unitPattern>
+				<unitPattern count="other" case="vocative">{0} квадратного фута</unitPattern>
 			</unit>
 			<unit type="area-square-inch">
 				<displayName>квадратные дюймы</displayName>
@@ -9220,6 +9269,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} процентами</unitPattern>
 				<unitPattern count="few" case="locative">{0} процентах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} процентах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} процента</unitPattern>
 				<unitPattern count="many">{0} процентов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} процентов</unitPattern>
 				<unitPattern count="many" case="dative">{0} процентам</unitPattern>
@@ -9227,12 +9277,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} процентами</unitPattern>
 				<unitPattern count="many" case="locative">{0} процентах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} процентах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} процентов</unitPattern>
 				<unitPattern count="other">{0} процента</unitPattern>
 				<unitPattern count="other" case="accusative">{0} процента</unitPattern>
 				<unitPattern count="other" case="dative">{0} процента</unitPattern>
 				<unitPattern count="other" case="genitive">{0} процента</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} процента</unitPattern>
+				<unitPattern count="other" case="locative">{0} процента</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} процента</unitPattern>
+				<unitPattern count="other" case="vocative">{0} процента</unitPattern>
 			</unit>
 			<unit type="concentr-permille">
 				<gender>feminine</gender>
@@ -9364,6 +9417,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} литрами на 100 километров</unitPattern>
 				<unitPattern count="few" case="locative">{0} литрах на 100 километров</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} литрах на 100 километров</unitPattern>
+				<unitPattern count="few" case="vocative">{0} литра на 100 километров</unitPattern>
 				<unitPattern count="many">{0} литров на 100 километров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} литров на 100 километров</unitPattern>
 				<unitPattern count="many" case="dative">{0} литрам на 100 километров</unitPattern>
@@ -9371,12 +9425,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} литрами на 100 километров</unitPattern>
 				<unitPattern count="many" case="locative">{0} литрах на 100 километров</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} литрах на 100 километров</unitPattern>
+				<unitPattern count="many" case="vocative">{0} литров на 100 километров</unitPattern>
 				<unitPattern count="other">{0} литра на 100 километров</unitPattern>
 				<unitPattern count="other" case="accusative">{0} литра на 100 километров</unitPattern>
 				<unitPattern count="other" case="dative">{0} литра на 100 километров</unitPattern>
 				<unitPattern count="other" case="genitive">{0} литра на 100 километров</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} литра на 100 километров</unitPattern>
+				<unitPattern count="other" case="locative">{0} литра на 100 километров</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} литра на 100 километров</unitPattern>
+				<unitPattern count="other" case="vocative">{0} литра на 100 километров</unitPattern>
 			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<gender>feminine</gender>
@@ -9439,11 +9496,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} милями на имп. галлон</unitPattern>
 				<unitPattern count="many" case="locative">{0} милях на имп. галлон</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} милях на имп. галлон</unitPattern>
+				<unitPattern count="many" case="vocative">{0} миль на имп. галлон</unitPattern>
 				<unitPattern count="other">{0} мили на имп. галлон</unitPattern>
 				<unitPattern count="other" case="accusative">{0} мили на имп. галлон</unitPattern>
 				<unitPattern count="other" case="dative">{0} мили на имп. галлон</unitPattern>
 				<unitPattern count="other" case="genitive">{0} мили на имп. галлон</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} мили на имп. галлон</unitPattern>
+				<unitPattern count="other" case="locative">{0} мили на имп. галлон</unitPattern>
+				<unitPattern count="other" case="vocative">{0} мили на имп. галлон</unitPattern>
 			</unit>
 			<unit type="digital-petabyte">
 				<gender>masculine</gender>
@@ -9491,6 +9551,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} терабайтами</unitPattern>
 				<unitPattern count="few" case="locative">{0} терабайтах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} терабайтах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} терабайта</unitPattern>
 				<unitPattern count="many">{0} терабайт</unitPattern>
 				<unitPattern count="many" case="accusative">{0} терабайт</unitPattern>
 				<unitPattern count="many" case="dative">{0} терабайтам</unitPattern>
@@ -9498,6 +9559,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} терабайтами</unitPattern>
 				<unitPattern count="many" case="locative">{0} терабайтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} терабайтах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} терабайт</unitPattern>
 				<unitPattern count="other">{0} терабайта</unitPattern>
 				<unitPattern count="other" case="accusative">{0} терабайта</unitPattern>
 				<unitPattern count="other" case="dative">{0} терабайта</unitPattern>
@@ -9523,6 +9585,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} терабитами</unitPattern>
 				<unitPattern count="few" case="locative">{0} терабитах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} терабитах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} терабита</unitPattern>
 				<unitPattern count="many">{0} терабит</unitPattern>
 				<unitPattern count="many" case="accusative">{0} терабит</unitPattern>
 				<unitPattern count="many" case="dative">{0} терабитам</unitPattern>
@@ -9530,6 +9593,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} терабитами</unitPattern>
 				<unitPattern count="many" case="locative">{0} терабитах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} терабитах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} терабит</unitPattern>
 				<unitPattern count="other">{0} терабита</unitPattern>
 				<unitPattern count="other" case="accusative">{0} терабита</unitPattern>
 				<unitPattern count="other" case="dative">{0} терабита</unitPattern>
@@ -9555,6 +9619,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} гигабайтами</unitPattern>
 				<unitPattern count="few" case="locative">{0} гигабайтах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} гигабайтах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} гигабайта</unitPattern>
 				<unitPattern count="many">{0} гигабайт</unitPattern>
 				<unitPattern count="many" case="accusative">{0} гигабайт</unitPattern>
 				<unitPattern count="many" case="dative">{0} гигабайтам</unitPattern>
@@ -9562,6 +9627,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} гигабайтами</unitPattern>
 				<unitPattern count="many" case="locative">{0} гигабайтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} гигабайтах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} гигабайт</unitPattern>
 				<unitPattern count="other">{0} гигабайта</unitPattern>
 				<unitPattern count="other" case="accusative">{0} гигабайта</unitPattern>
 				<unitPattern count="other" case="dative">{0} гигабайта</unitPattern>
@@ -9587,6 +9653,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} гигабитами</unitPattern>
 				<unitPattern count="few" case="locative">{0} гигабитах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} гигабитах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} гигабита</unitPattern>
 				<unitPattern count="many">{0} гигабит</unitPattern>
 				<unitPattern count="many" case="accusative">{0} гигабит</unitPattern>
 				<unitPattern count="many" case="dative">{0} гигабитам</unitPattern>
@@ -9594,6 +9661,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} гигабитами</unitPattern>
 				<unitPattern count="many" case="locative">{0} гигабитах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} гигабитах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} гигабит</unitPattern>
 				<unitPattern count="other">{0} гигабита</unitPattern>
 				<unitPattern count="other" case="accusative">{0} гигабита</unitPattern>
 				<unitPattern count="other" case="dative">{0} гигабита</unitPattern>
@@ -9619,6 +9687,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} мегабайтами</unitPattern>
 				<unitPattern count="few" case="locative">{0} мегабайтах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} мегабайтах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} мегабайта</unitPattern>
 				<unitPattern count="many">{0} мегабайт</unitPattern>
 				<unitPattern count="many" case="accusative">{0} мегабайт</unitPattern>
 				<unitPattern count="many" case="dative">{0} мегабайтам</unitPattern>
@@ -9626,6 +9695,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} мегабайтами</unitPattern>
 				<unitPattern count="many" case="locative">{0} мегабайтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} мегабайтах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} мегабайт</unitPattern>
 				<unitPattern count="other">{0} мегабайта</unitPattern>
 				<unitPattern count="other" case="accusative">{0} мегабайта</unitPattern>
 				<unitPattern count="other" case="dative">{0} мегабайта</unitPattern>
@@ -9651,6 +9721,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} мегабитами</unitPattern>
 				<unitPattern count="few" case="locative">{0} мегабитах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} мегабитах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} мегабита</unitPattern>
 				<unitPattern count="many">{0} мегабит</unitPattern>
 				<unitPattern count="many" case="accusative">{0} мегабит</unitPattern>
 				<unitPattern count="many" case="dative">{0} мегабитам</unitPattern>
@@ -9658,6 +9729,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} мегабитами</unitPattern>
 				<unitPattern count="many" case="locative">{0} мегабитах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} мегабитах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} мегабит</unitPattern>
 				<unitPattern count="other">{0} мегабита</unitPattern>
 				<unitPattern count="other" case="accusative">{0} мегабита</unitPattern>
 				<unitPattern count="other" case="dative">{0} мегабита</unitPattern>
@@ -9683,6 +9755,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} килобайтами</unitPattern>
 				<unitPattern count="few" case="locative">{0} килобайтах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} килобайтах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} килобайта</unitPattern>
 				<unitPattern count="many">{0} килобайт</unitPattern>
 				<unitPattern count="many" case="accusative">{0} килобайт</unitPattern>
 				<unitPattern count="many" case="dative">{0} килобайтам</unitPattern>
@@ -9690,6 +9763,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} килобайтами</unitPattern>
 				<unitPattern count="many" case="locative">{0} килобайтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} килобайтах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} килобайт</unitPattern>
 				<unitPattern count="other">{0} килобайта</unitPattern>
 				<unitPattern count="other" case="accusative">{0} килобайта</unitPattern>
 				<unitPattern count="other" case="dative">{0} килобайта</unitPattern>
@@ -9715,6 +9789,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} килобитами</unitPattern>
 				<unitPattern count="few" case="locative">{0} килобитах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} килобитах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} килобита</unitPattern>
 				<unitPattern count="many">{0} килобит</unitPattern>
 				<unitPattern count="many" case="accusative">{0} килобит</unitPattern>
 				<unitPattern count="many" case="dative">{0} килобитам</unitPattern>
@@ -9722,6 +9797,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} килобитами</unitPattern>
 				<unitPattern count="many" case="locative">{0} килобитах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} килобитах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} килобит</unitPattern>
 				<unitPattern count="other">{0} килобита</unitPattern>
 				<unitPattern count="other" case="accusative">{0} килобита</unitPattern>
 				<unitPattern count="other" case="dative">{0} килобита</unitPattern>
@@ -9859,6 +9935,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} годами</unitPattern>
 				<unitPattern count="few" case="locative">{0} годах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} годах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} года</unitPattern>
 				<unitPattern count="many">{0} лет</unitPattern>
 				<unitPattern count="many" case="accusative">{0} лет</unitPattern>
 				<unitPattern count="many" case="dative">{0} годам</unitPattern>
@@ -9866,12 +9943,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} годами</unitPattern>
 				<unitPattern count="many" case="locative">{0} годах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} годах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} лет</unitPattern>
 				<unitPattern count="other">{0} года</unitPattern>
 				<unitPattern count="other" case="accusative">{0} года</unitPattern>
 				<unitPattern count="other" case="dative">{0} года</unitPattern>
 				<unitPattern count="other" case="genitive">{0} года</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} года</unitPattern>
+				<unitPattern count="other" case="locative">{0} года</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} года</unitPattern>
+				<unitPattern count="other" case="vocative">{0} года</unitPattern>
 				<perUnitPattern>{0} в год</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
@@ -9921,6 +10001,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} месяцами</unitPattern>
 				<unitPattern count="few" case="locative">{0} месяцах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} месяцах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} месяца</unitPattern>
 				<unitPattern count="many">{0} месяцев</unitPattern>
 				<unitPattern count="many" case="accusative">{0} месяцев</unitPattern>
 				<unitPattern count="many" case="dative">{0} месяцам</unitPattern>
@@ -9928,12 +10009,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} месяцами</unitPattern>
 				<unitPattern count="many" case="locative">{0} месяцах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} месяцах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} месяцев</unitPattern>
 				<unitPattern count="other">{0} месяца</unitPattern>
 				<unitPattern count="other" case="accusative">{0} месяца</unitPattern>
 				<unitPattern count="other" case="dative">{0} месяца</unitPattern>
 				<unitPattern count="other" case="genitive">{0} месяца</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} месяца</unitPattern>
+				<unitPattern count="other" case="locative">{0} месяца</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} месяца</unitPattern>
+				<unitPattern count="other" case="vocative">{0} месяца</unitPattern>
 				<perUnitPattern>{0} в месяц</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
@@ -9962,12 +10046,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} неделями</unitPattern>
 				<unitPattern count="many" case="locative">{0} неделях</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} неделях</unitPattern>
+				<unitPattern count="many" case="vocative">{0} недель</unitPattern>
 				<unitPattern count="other">{0} недели</unitPattern>
 				<unitPattern count="other" case="accusative">{0} недели</unitPattern>
 				<unitPattern count="other" case="dative">{0} недели</unitPattern>
 				<unitPattern count="other" case="genitive">{0} недели</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} недели</unitPattern>
+				<unitPattern count="other" case="locative">{0} недели</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} недели</unitPattern>
+				<unitPattern count="other" case="vocative">{0} недели</unitPattern>
 				<perUnitPattern>{0} в неделю</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
@@ -9988,6 +10075,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} днями</unitPattern>
 				<unitPattern count="few" case="locative">{0} днях</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} днях</unitPattern>
+				<unitPattern count="few" case="vocative">{0} дня</unitPattern>
 				<unitPattern count="many">{0} дней</unitPattern>
 				<unitPattern count="many" case="accusative">{0} дней</unitPattern>
 				<unitPattern count="many" case="dative">{0} дням</unitPattern>
@@ -9995,12 +10083,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} днями</unitPattern>
 				<unitPattern count="many" case="locative">{0} днях</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} днях</unitPattern>
+				<unitPattern count="many" case="vocative">{0} дней</unitPattern>
 				<unitPattern count="other">{0} дня</unitPattern>
 				<unitPattern count="other" case="accusative">{0} дня</unitPattern>
 				<unitPattern count="other" case="dative">{0} дня</unitPattern>
 				<unitPattern count="other" case="genitive">{0} дня</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} дня</unitPattern>
+				<unitPattern count="other" case="locative">{0} дня</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} дня</unitPattern>
+				<unitPattern count="other" case="vocative">{0} дня</unitPattern>
 				<perUnitPattern>{0} в день</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
@@ -10021,6 +10112,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} часами</unitPattern>
 				<unitPattern count="few" case="locative">{0} часах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} часах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} часа</unitPattern>
 				<unitPattern count="many">{0} часов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} часов</unitPattern>
 				<unitPattern count="many" case="dative">{0} часам</unitPattern>
@@ -10028,12 +10120,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} часами</unitPattern>
 				<unitPattern count="many" case="locative">{0} часах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} часах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} часов</unitPattern>
 				<unitPattern count="other">{0} часа</unitPattern>
 				<unitPattern count="other" case="accusative">{0} часа</unitPattern>
 				<unitPattern count="other" case="dative">{0} часа</unitPattern>
 				<unitPattern count="other" case="genitive">{0} часа</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} часа</unitPattern>
+				<unitPattern count="other" case="locative">{0} часа</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} часа</unitPattern>
+				<unitPattern count="other" case="vocative">{0} часа</unitPattern>
 				<perUnitPattern>{0} в час</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
@@ -10062,12 +10157,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} минутами</unitPattern>
 				<unitPattern count="many" case="locative">{0} минутах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} минутах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} минут</unitPattern>
 				<unitPattern count="other">{0} минуты</unitPattern>
 				<unitPattern count="other" case="accusative">{0} минуты</unitPattern>
 				<unitPattern count="other" case="dative">{0} минуты</unitPattern>
 				<unitPattern count="other" case="genitive">{0} минуты</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} минуты</unitPattern>
+				<unitPattern count="other" case="locative">{0} минуты</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} минуты</unitPattern>
+				<unitPattern count="other" case="vocative">{0} минуты</unitPattern>
 				<perUnitPattern>{0} в минуту</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
@@ -10096,12 +10194,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} секундами</unitPattern>
 				<unitPattern count="many" case="locative">{0} секундах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} секундах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} секунд</unitPattern>
 				<unitPattern count="other">{0} секунды</unitPattern>
 				<unitPattern count="other" case="accusative">{0} секунды</unitPattern>
 				<unitPattern count="other" case="dative">{0} секунды</unitPattern>
 				<unitPattern count="other" case="genitive">{0} секунды</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} секунды</unitPattern>
+				<unitPattern count="other" case="locative">{0} секунды</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} секунды</unitPattern>
+				<unitPattern count="other" case="vocative">{0} секунды</unitPattern>
 				<perUnitPattern>{0} в секунду</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
@@ -10326,11 +10427,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} килокалориями</unitPattern>
 				<unitPattern count="many" case="locative">{0} килокалориях</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} килокалориях</unitPattern>
+				<unitPattern count="many" case="vocative">{0} килокалорий</unitPattern>
 				<unitPattern count="other">{0} килокалории</unitPattern>
 				<unitPattern count="other" case="accusative">{0} килокалории</unitPattern>
 				<unitPattern count="other" case="dative">{0} килокалории</unitPattern>
 				<unitPattern count="other" case="genitive">{0} килокалории</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} килокалории</unitPattern>
+				<unitPattern count="other" case="locative">{0} килокалории</unitPattern>
+				<unitPattern count="other" case="vocative">{0} килокалории</unitPattern>
 			</unit>
 			<unit type="energy-calorie">
 				<gender>feminine</gender>
@@ -10840,6 +10944,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} километрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} километрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} километрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} километра</unitPattern>
 				<unitPattern count="many">{0} километров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} километров</unitPattern>
 				<unitPattern count="many" case="dative">{0} километрам</unitPattern>
@@ -10847,12 +10952,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} километрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} километрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} километрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} километров</unitPattern>
 				<unitPattern count="other">{0} километра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} километра</unitPattern>
 				<unitPattern count="other" case="dative">{0} километра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} километра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} километра</unitPattern>
+				<unitPattern count="other" case="locative">{0} километра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} километра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} километра</unitPattern>
 				<perUnitPattern>{0} на километр</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
@@ -10873,6 +10981,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} метрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} метрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} метрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} метра</unitPattern>
 				<unitPattern count="many">{0} метров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} метров</unitPattern>
 				<unitPattern count="many" case="dative">{0} метрам</unitPattern>
@@ -10880,12 +10989,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} метрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} метрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} метрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} метров</unitPattern>
 				<unitPattern count="other">{0} метра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} метра</unitPattern>
 				<unitPattern count="other" case="dative">{0} метра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} метра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} метра</unitPattern>
+				<unitPattern count="other" case="locative">{0} метра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} метра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} метра</unitPattern>
 				<perUnitPattern>{0} на метр</perUnitPattern>
 			</unit>
 			<unit type="length-decimeter">
@@ -10934,6 +11046,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} сантиметрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} сантиметрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} сантиметрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} сантиметра</unitPattern>
 				<unitPattern count="many">{0} сантиметров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} сантиметров</unitPattern>
 				<unitPattern count="many" case="dative">{0} сантиметрам</unitPattern>
@@ -10941,12 +11054,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} сантиметрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} сантиметрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} сантиметрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} сантиметров</unitPattern>
 				<unitPattern count="other">{0} сантиметра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} сантиметра</unitPattern>
 				<unitPattern count="other" case="dative">{0} сантиметра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} сантиметра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} сантиметра</unitPattern>
+				<unitPattern count="other" case="locative">{0} сантиметра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} сантиметра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} сантиметра</unitPattern>
 				<perUnitPattern>{0} на сантиметр</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
@@ -10967,6 +11083,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} миллиметрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} миллиметрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} миллиметрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} миллиметра</unitPattern>
 				<unitPattern count="many">{0} миллиметров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} миллиметров</unitPattern>
 				<unitPattern count="many" case="dative">{0} миллиметрам</unitPattern>
@@ -10974,12 +11091,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} миллиметрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} миллиметрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} миллиметрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} миллиметров</unitPattern>
 				<unitPattern count="other">{0} миллиметра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} миллиметра</unitPattern>
 				<unitPattern count="other" case="dative">{0} миллиметра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} миллиметра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} миллиметра</unitPattern>
+				<unitPattern count="other" case="locative">{0} миллиметра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} миллиметра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} миллиметра</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<gender>masculine</gender>
@@ -11055,6 +11175,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} пикометрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} пикометрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} пикометрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} пикометра</unitPattern>
 				<unitPattern count="many">{0} пикометров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} пикометров</unitPattern>
 				<unitPattern count="many" case="dative">{0} пикометрам</unitPattern>
@@ -11062,12 +11183,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} пикометрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} пикометрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} пикометрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} пикометров</unitPattern>
 				<unitPattern count="other">{0} пикометра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} пикометра</unitPattern>
 				<unitPattern count="other" case="dative">{0} пикометра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} пикометра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} пикометра</unitPattern>
+				<unitPattern count="other" case="locative">{0} пикометра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} пикометра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} пикометра</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<gender>feminine</gender>
@@ -11095,11 +11219,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} милями</unitPattern>
 				<unitPattern count="many" case="locative">{0} милях</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} милях</unitPattern>
+				<unitPattern count="many" case="vocative">{0} миль</unitPattern>
 				<unitPattern count="other">{0} мили</unitPattern>
 				<unitPattern count="other" case="accusative">{0} мили</unitPattern>
 				<unitPattern count="other" case="dative">{0} мили</unitPattern>
 				<unitPattern count="other" case="genitive">{0} мили</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} мили</unitPattern>
+				<unitPattern count="other" case="locative">{0} мили</unitPattern>
+				<unitPattern count="other" case="vocative">{0} мили</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<gender>masculine</gender>
@@ -11119,6 +11246,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} ярдами</unitPattern>
 				<unitPattern count="few" case="locative">{0} ярдах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} ярдах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} ярда</unitPattern>
 				<unitPattern count="many">{0} ярдов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} ярдов</unitPattern>
 				<unitPattern count="many" case="dative">{0} ярдам</unitPattern>
@@ -11126,11 +11254,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} ярдами</unitPattern>
 				<unitPattern count="many" case="locative">{0} ярдах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} ярдах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} ярдов</unitPattern>
 				<unitPattern count="other">{0} ярда</unitPattern>
 				<unitPattern count="other" case="accusative">{0} ярда</unitPattern>
 				<unitPattern count="other" case="dative">{0} ярда</unitPattern>
 				<unitPattern count="other" case="genitive">{0} ярда</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} ярда</unitPattern>
+				<unitPattern count="other" case="locative">{0} ярда</unitPattern>
+				<unitPattern count="other" case="vocative">{0} ярда</unitPattern>
 			</unit>
 			<unit type="length-foot">
 				<gender>masculine</gender>
@@ -11150,6 +11281,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} футами</unitPattern>
 				<unitPattern count="few" case="locative">{0} футах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} футах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} фута</unitPattern>
 				<unitPattern count="many">{0} футов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} футов</unitPattern>
 				<unitPattern count="many" case="dative">{0} футам</unitPattern>
@@ -11157,11 +11289,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} футами</unitPattern>
 				<unitPattern count="many" case="locative">{0} футах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} футах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} футов</unitPattern>
 				<unitPattern count="other">{0} фута</unitPattern>
 				<unitPattern count="other" case="accusative">{0} фута</unitPattern>
 				<unitPattern count="other" case="dative">{0} фута</unitPattern>
 				<unitPattern count="other" case="genitive">{0} фута</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} фута</unitPattern>
+				<unitPattern count="other" case="locative">{0} фута</unitPattern>
+				<unitPattern count="other" case="vocative">{0} фута</unitPattern>
 				<perUnitPattern>{0} на фут</perUnitPattern>
 			</unit>
 			<unit type="length-inch">
@@ -11182,6 +11317,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} дюймами</unitPattern>
 				<unitPattern count="few" case="locative">{0} дюймах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} дюймах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} дюйма</unitPattern>
 				<unitPattern count="many">{0} дюймов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} дюймов</unitPattern>
 				<unitPattern count="many" case="dative">{0} дюймам</unitPattern>
@@ -11189,11 +11325,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} дюймами</unitPattern>
 				<unitPattern count="many" case="locative">{0} дюймах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} дюймах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} дюймов</unitPattern>
 				<unitPattern count="other">{0} дюйма</unitPattern>
 				<unitPattern count="other" case="accusative">{0} дюйма</unitPattern>
 				<unitPattern count="other" case="dative">{0} дюйма</unitPattern>
 				<unitPattern count="other" case="genitive">{0} дюйма</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} дюйма</unitPattern>
+				<unitPattern count="other" case="locative">{0} дюйма</unitPattern>
+				<unitPattern count="other" case="vocative">{0} дюйма</unitPattern>
 				<perUnitPattern>{0} на дюйм</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
@@ -11214,6 +11353,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} парсеками</unitPattern>
 				<unitPattern count="few" case="locative">{0} парсеках</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} парсеках</unitPattern>
+				<unitPattern count="few" case="vocative">{0} парсека</unitPattern>
 				<unitPattern count="many">{0} парсеков</unitPattern>
 				<unitPattern count="many" case="accusative">{0} парсеков</unitPattern>
 				<unitPattern count="many" case="dative">{0} парсекам</unitPattern>
@@ -11221,11 +11361,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} парсеками</unitPattern>
 				<unitPattern count="many" case="locative">{0} парсеках</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} парсеках</unitPattern>
+				<unitPattern count="many" case="vocative">{0} парсеков</unitPattern>
 				<unitPattern count="other">{0} парсека</unitPattern>
 				<unitPattern count="other" case="accusative">{0} парсека</unitPattern>
 				<unitPattern count="other" case="dative">{0} парсека</unitPattern>
 				<unitPattern count="other" case="genitive">{0} парсека</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} парсека</unitPattern>
+				<unitPattern count="other" case="locative">{0} парсека</unitPattern>
+				<unitPattern count="other" case="vocative">{0} парсека</unitPattern>
 			</unit>
 			<unit type="length-light-year">
 				<displayName>световые годы</displayName>
@@ -11307,6 +11450,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="instrumental">{0} солнечным радиусом</unitPattern>
 				<unitPattern count="one" case="locative">{0} солнечном радиусе</unitPattern>
 				<unitPattern count="one" case="prepositional">{0} солнечном радиусе</unitPattern>
+				<unitPattern count="one" case="vocative">{0} солнечный радиус</unitPattern>
 				<unitPattern count="few">{0} солнечных радиуса</unitPattern>
 				<unitPattern count="few" case="accusative">{0} солнечных радиуса</unitPattern>
 				<unitPattern count="few" case="dative">{0} солнечным радиусам</unitPattern>
@@ -11322,11 +11466,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} солнечными радиусами</unitPattern>
 				<unitPattern count="many" case="locative">{0} солнечных радиусах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} солнечных радиусах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} солнечных радиусов</unitPattern>
 				<unitPattern count="other">{0} солнечного радиуса</unitPattern>
 				<unitPattern count="other" case="accusative">{0} солнечного радиуса</unitPattern>
 				<unitPattern count="other" case="dative">{0} солнечного радиуса</unitPattern>
 				<unitPattern count="other" case="genitive">{0} солнечного радиуса</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} солнечного радиуса</unitPattern>
+				<unitPattern count="other" case="locative">{0} солнечного радиуса</unitPattern>
+				<unitPattern count="other" case="vocative">{0} солнечного радиуса</unitPattern>
 			</unit>
 			<unit type="light-lux">
 				<gender>masculine</gender>
@@ -11438,11 +11585,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} солнечными светимостями</unitPattern>
 				<unitPattern count="many" case="locative">{0} солнечных светимостях</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} солнечных светимостях</unitPattern>
+				<unitPattern count="many" case="vocative">{0} солнечных светимостей</unitPattern>
 				<unitPattern count="other">{0} солнечной светимости</unitPattern>
 				<unitPattern count="other" case="accusative">{0} солнечной светимости</unitPattern>
 				<unitPattern count="other" case="dative">{0} солнечной светимости</unitPattern>
 				<unitPattern count="other" case="genitive">{0} солнечной светимости</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} солнечной светимости</unitPattern>
+				<unitPattern count="other" case="locative">{0} солнечной светимости</unitPattern>
+				<unitPattern count="other" case="vocative">{0} солнечной светимости</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<gender>feminine</gender>
@@ -11490,6 +11640,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} килограммами</unitPattern>
 				<unitPattern count="few" case="locative">{0} килограммах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} килограммах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} килограмма</unitPattern>
 				<unitPattern count="many">{0} килограмм</unitPattern>
 				<unitPattern count="many" case="accusative">{0} килограмм</unitPattern>
 				<unitPattern count="many" case="dative">{0} килограммам</unitPattern>
@@ -11497,12 +11648,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} килограммами</unitPattern>
 				<unitPattern count="many" case="locative">{0} килограммах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} килограммах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} килограмм</unitPattern>
 				<unitPattern count="other">{0} килограмма</unitPattern>
 				<unitPattern count="other" case="accusative">{0} килограмма</unitPattern>
 				<unitPattern count="other" case="dative">{0} килограмма</unitPattern>
 				<unitPattern count="other" case="genitive">{0} килограмма</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} килограмма</unitPattern>
+				<unitPattern count="other" case="locative">{0} килограмма</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} килограмма</unitPattern>
+				<unitPattern count="other" case="vocative">{0} килограмма</unitPattern>
 				<perUnitPattern>{0} на килограмм</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
@@ -11523,6 +11677,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} граммами</unitPattern>
 				<unitPattern count="few" case="locative">{0} граммах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} граммах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} грамма</unitPattern>
 				<unitPattern count="many">{0} грамм</unitPattern>
 				<unitPattern count="many" case="accusative">{0} грамм</unitPattern>
 				<unitPattern count="many" case="dative">{0} граммам</unitPattern>
@@ -11530,12 +11685,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} граммами</unitPattern>
 				<unitPattern count="many" case="locative">{0} граммах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} граммах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} грамм</unitPattern>
 				<unitPattern count="other">{0} грамма</unitPattern>
 				<unitPattern count="other" case="accusative">{0} грамма</unitPattern>
 				<unitPattern count="other" case="dative">{0} грамма</unitPattern>
 				<unitPattern count="other" case="genitive">{0} грамма</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} грамма</unitPattern>
+				<unitPattern count="other" case="locative">{0} грамма</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} грамма</unitPattern>
+				<unitPattern count="other" case="vocative">{0} грамма</unitPattern>
 				<perUnitPattern>{0} на грамм</perUnitPattern>
 			</unit>
 			<unit type="mass-milligram">
@@ -11556,6 +11714,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} миллиграммами</unitPattern>
 				<unitPattern count="few" case="locative">{0} миллиграммах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} миллиграммах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} миллиграмма</unitPattern>
 				<unitPattern count="many">{0} миллиграмм</unitPattern>
 				<unitPattern count="many" case="accusative">{0} миллиграмм</unitPattern>
 				<unitPattern count="many" case="dative">{0} миллиграммам</unitPattern>
@@ -11569,7 +11728,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} миллиграмма</unitPattern>
 				<unitPattern count="other" case="genitive">{0} миллиграмма</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} миллиграмма</unitPattern>
+				<unitPattern count="other" case="locative">{0} миллиграмма</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} миллиграмма</unitPattern>
+				<unitPattern count="other" case="vocative">{0} миллиграмма</unitPattern>
 			</unit>
 			<unit type="mass-microgram">
 				<gender>masculine</gender>
@@ -11631,6 +11792,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} фунтами</unitPattern>
 				<unitPattern count="few" case="locative">{0} фунтах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} фунтах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} фунта</unitPattern>
 				<unitPattern count="many">{0} фунтов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} фунтов</unitPattern>
 				<unitPattern count="many" case="dative">{0} фунтам</unitPattern>
@@ -11638,11 +11800,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} фунтами</unitPattern>
 				<unitPattern count="many" case="locative">{0} фунтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} фунтах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} фунтов</unitPattern>
 				<unitPattern count="other">{0} фунта</unitPattern>
 				<unitPattern count="other" case="accusative">{0} фунта</unitPattern>
 				<unitPattern count="other" case="dative">{0} фунта</unitPattern>
 				<unitPattern count="other" case="genitive">{0} фунта</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} фунта</unitPattern>
+				<unitPattern count="other" case="locative">{0} фунта</unitPattern>
+				<unitPattern count="other" case="vocative">{0} фунта</unitPattern>
 				<perUnitPattern>{0} на фунт</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
@@ -11671,11 +11836,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} унциями</unitPattern>
 				<unitPattern count="many" case="locative">{0} унциях</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} унциях</unitPattern>
+				<unitPattern count="many" case="vocative">{0} унций</unitPattern>
 				<unitPattern count="other">{0} унции</unitPattern>
 				<unitPattern count="other" case="accusative">{0} унции</unitPattern>
 				<unitPattern count="other" case="dative">{0} унции</unitPattern>
 				<unitPattern count="other" case="genitive">{0} унции</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} унции</unitPattern>
+				<unitPattern count="other" case="locative">{0} унции</unitPattern>
+				<unitPattern count="other" case="vocative">{0} унции</unitPattern>
 				<perUnitPattern>{0} на унцию</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
@@ -11723,6 +11891,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="instrumental">{0} дальтоном</unitPattern>
 				<unitPattern count="one" case="locative">{0} дальтоне</unitPattern>
 				<unitPattern count="one" case="prepositional">{0} дальтоне</unitPattern>
+				<unitPattern count="one" case="vocative">{0} дальтон</unitPattern>
 				<unitPattern count="few">{0} дальтона</unitPattern>
 				<unitPattern count="few" case="accusative">{0} дальтона</unitPattern>
 				<unitPattern count="few" case="dative">{0} дальтонам</unitPattern>
@@ -11744,6 +11913,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} дальтона</unitPattern>
 				<unitPattern count="other" case="genitive">{0} дальтона</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} дальтона</unitPattern>
+				<unitPattern count="other" case="locative">{0} дальтона</unitPattern>
+				<unitPattern count="other" case="vocative">{0} дальтона</unitPattern>
 			</unit>
 			<unit type="mass-earth-mass">
 				<gender>feminine</gender>
@@ -11771,11 +11942,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} массами Земли</unitPattern>
 				<unitPattern count="many" case="locative">{0} массах Земли</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} массах Земли</unitPattern>
+				<unitPattern count="many" case="vocative">{0} масс Земли</unitPattern>
 				<unitPattern count="other">{0} массы Земли</unitPattern>
 				<unitPattern count="other" case="accusative">{0} массы Земли</unitPattern>
 				<unitPattern count="other" case="dative">{0} массы Земли</unitPattern>
 				<unitPattern count="other" case="genitive">{0} массы Земли</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} массы Земли</unitPattern>
+				<unitPattern count="other" case="locative">{0} массы Земли</unitPattern>
+				<unitPattern count="other" case="vocative">{0} массы Земли</unitPattern>
 			</unit>
 			<unit type="mass-solar-mass">
 				<gender>feminine</gender>
@@ -11787,6 +11961,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="instrumental">{0} солнечной массой</unitPattern>
 				<unitPattern count="one" case="locative">{0} солнечной массе</unitPattern>
 				<unitPattern count="one" case="prepositional">{0} солнечной массе</unitPattern>
+				<unitPattern count="one" case="vocative">{0} солнечная масса</unitPattern>
 				<unitPattern count="few">{0} солнечные массы</unitPattern>
 				<unitPattern count="few" case="accusative">{0} солнечные массы</unitPattern>
 				<unitPattern count="few" case="dative">{0} солнечным массам</unitPattern>
@@ -11794,6 +11969,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} солнечными массами</unitPattern>
 				<unitPattern count="few" case="locative">{0} солнечных массах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} солнечных массах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} солнечные массы</unitPattern>
 				<unitPattern count="many">{0} солнечных масс</unitPattern>
 				<unitPattern count="many" case="accusative">{0} солнечных масс</unitPattern>
 				<unitPattern count="many" case="dative">{0} солнечным массам</unitPattern>
@@ -11807,6 +11983,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} солнечной массы</unitPattern>
 				<unitPattern count="other" case="genitive">{0} солнечной массы</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} солнечной массы</unitPattern>
+				<unitPattern count="other" case="locative">{0} солнечной массы</unitPattern>
+				<unitPattern count="other" case="vocative">{0} солнечной массы</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<gender>masculine</gender>
@@ -11826,6 +12004,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} гранами</unitPattern>
 				<unitPattern count="few" case="locative">{0} гранах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} гранах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} грана</unitPattern>
 				<unitPattern count="many">{0} гранов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} гранов</unitPattern>
 				<unitPattern count="many" case="dative">{0} гранам</unitPattern>
@@ -12168,6 +12347,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} килопаскалями</unitPattern>
 				<unitPattern count="few" case="locative">{0} килопаскалях</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} килопаскалях</unitPattern>
+				<unitPattern count="few" case="vocative">{0} килопаскаля</unitPattern>
 				<unitPattern count="many">{0} килопаскалей</unitPattern>
 				<unitPattern count="many" case="accusative">{0} килопаскалей</unitPattern>
 				<unitPattern count="many" case="dative">{0} килопаскалям</unitPattern>
@@ -12175,12 +12355,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} килопаскалями</unitPattern>
 				<unitPattern count="many" case="locative">{0} килопаскалях</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} килопаскалях</unitPattern>
+				<unitPattern count="many" case="vocative">{0} килопаскалей</unitPattern>
 				<unitPattern count="other">{0} килопаскаля</unitPattern>
 				<unitPattern count="other" case="accusative">{0} килопаскаля</unitPattern>
 				<unitPattern count="other" case="dative">{0} килопаскаля</unitPattern>
 				<unitPattern count="other" case="genitive">{0} килопаскаля</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} килопаскаля</unitPattern>
+				<unitPattern count="other" case="locative">{0} килопаскаля</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} килопаскаля</unitPattern>
+				<unitPattern count="other" case="vocative">{0} килопаскаля</unitPattern>
 			</unit>
 			<unit type="pressure-megapascal">
 				<gender>masculine</gender>
@@ -12228,6 +12411,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} километрами в час</unitPattern>
 				<unitPattern count="few" case="locative">{0} километрах в час</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} километрах в час</unitPattern>
+				<unitPattern count="few" case="vocative">{0} километра в час</unitPattern>
 				<unitPattern count="many">{0} километров в час</unitPattern>
 				<unitPattern count="many" case="accusative">{0} километров в час</unitPattern>
 				<unitPattern count="many" case="dative">{0} километрам в час</unitPattern>
@@ -12235,12 +12419,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} километрами в час</unitPattern>
 				<unitPattern count="many" case="locative">{0} километрах в час</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} километрах в час</unitPattern>
+				<unitPattern count="many" case="vocative">{0} километров в час</unitPattern>
 				<unitPattern count="other">{0} километра в час</unitPattern>
 				<unitPattern count="other" case="accusative">{0} километра в час</unitPattern>
 				<unitPattern count="other" case="dative">{0} километра в час</unitPattern>
 				<unitPattern count="other" case="genitive">{0} километра в час</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} километра в час</unitPattern>
+				<unitPattern count="other" case="locative">{0} километра в час</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} километра в час</unitPattern>
+				<unitPattern count="other" case="vocative">{0} километра в час</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
 				<gender>masculine</gender>
@@ -12260,6 +12447,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} метрами в секунду</unitPattern>
 				<unitPattern count="few" case="locative">{0} метрах в секунду</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} метрах в секунду</unitPattern>
+				<unitPattern count="few" case="vocative">{0} метра в секунду</unitPattern>
 				<unitPattern count="many">{0} метров в секунду</unitPattern>
 				<unitPattern count="many" case="accusative">{0} метров в секунду</unitPattern>
 				<unitPattern count="many" case="dative">{0} метрам в секунду</unitPattern>
@@ -12267,12 +12455,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} метрами в секунду</unitPattern>
 				<unitPattern count="many" case="locative">{0} метрах в секунду</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} метрах в секунду</unitPattern>
+				<unitPattern count="many" case="vocative">{0} метров в секунду</unitPattern>
 				<unitPattern count="other">{0} метра в секунду</unitPattern>
 				<unitPattern count="other" case="accusative">{0} метра в секунду</unitPattern>
 				<unitPattern count="other" case="dative">{0} метра в секунду</unitPattern>
 				<unitPattern count="other" case="genitive">{0} метра в секунду</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} метра в секунду</unitPattern>
+				<unitPattern count="other" case="locative">{0} метра в секунду</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} метра в секунду</unitPattern>
+				<unitPattern count="other" case="vocative">{0} метра в секунду</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<gender>feminine</gender>
@@ -12300,11 +12491,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} милями в час</unitPattern>
 				<unitPattern count="many" case="locative">{0} милях в час</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} милях в час</unitPattern>
+				<unitPattern count="many" case="vocative">{0} миль в час</unitPattern>
 				<unitPattern count="other">{0} мили в час</unitPattern>
 				<unitPattern count="other" case="accusative">{0} мили в час</unitPattern>
 				<unitPattern count="other" case="dative">{0} мили в час</unitPattern>
 				<unitPattern count="other" case="genitive">{0} мили в час</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} мили в час</unitPattern>
+				<unitPattern count="other" case="locative">{0} мили в час</unitPattern>
+				<unitPattern count="other" case="vocative">{0} мили в час</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<displayName>узел</displayName>
@@ -12367,6 +12561,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} градусами Цельсия</unitPattern>
 				<unitPattern count="few" case="locative">{0} градусах Цельсия</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} градусах Цельсия</unitPattern>
+				<unitPattern count="few" case="vocative">{0} градуса Цельсия</unitPattern>
 				<unitPattern count="many">{0} градусов Цельсия</unitPattern>
 				<unitPattern count="many" case="accusative">{0} градусов Цельсия</unitPattern>
 				<unitPattern count="many" case="dative">{0} градусам Цельсия</unitPattern>
@@ -12374,12 +12569,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} градусами Цельсия</unitPattern>
 				<unitPattern count="many" case="locative">{0} градусах Цельсия</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} градусах Цельсия</unitPattern>
+				<unitPattern count="many" case="vocative">{0} градусов Цельсия</unitPattern>
 				<unitPattern count="other">{0} градуса Цельсия</unitPattern>
 				<unitPattern count="other" case="accusative">{0} градуса Цельсия</unitPattern>
 				<unitPattern count="other" case="dative">{0} градуса Цельсия</unitPattern>
 				<unitPattern count="other" case="genitive">{0} градуса Цельсия</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} градуса Цельсия</unitPattern>
+				<unitPattern count="other" case="locative">{0} градуса Цельсия</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} градуса Цельсия</unitPattern>
+				<unitPattern count="other" case="vocative">{0} градуса Цельсия</unitPattern>
 			</unit>
 			<unit type="temperature-fahrenheit">
 				<gender>masculine</gender>
@@ -12399,6 +12597,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} градусами Фаренгейта</unitPattern>
 				<unitPattern count="few" case="locative">{0} градусах Фаренгейта</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} градусах Фаренгейта</unitPattern>
+				<unitPattern count="few" case="vocative">{0} градуса Фаренгейта</unitPattern>
 				<unitPattern count="many">{0} градусов Фаренгейта</unitPattern>
 				<unitPattern count="many" case="accusative">{0} градусов Фаренгейта</unitPattern>
 				<unitPattern count="many" case="dative">{0} градусам Фаренгейта</unitPattern>
@@ -12406,11 +12605,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} градусами Фаренгейта</unitPattern>
 				<unitPattern count="many" case="locative">{0} градусах Фаренгейта</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} градусах Фаренгейта</unitPattern>
+				<unitPattern count="many" case="vocative">{0} градусов Фаренгейта</unitPattern>
 				<unitPattern count="other">{0} градуса Фаренгейта</unitPattern>
 				<unitPattern count="other" case="accusative">{0} градуса Фаренгейта</unitPattern>
 				<unitPattern count="other" case="dative">{0} градуса Фаренгейта</unitPattern>
 				<unitPattern count="other" case="genitive">{0} градуса Фаренгейта</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} градуса Фаренгейта</unitPattern>
+				<unitPattern count="other" case="locative">{0} градуса Фаренгейта</unitPattern>
+				<unitPattern count="other" case="vocative">{0} градуса Фаренгейта</unitPattern>
 			</unit>
 			<unit type="temperature-kelvin">
 				<gender>masculine</gender>
@@ -12422,6 +12624,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="instrumental">{0} кельвином</unitPattern>
 				<unitPattern count="one" case="locative">{0} кельвине</unitPattern>
 				<unitPattern count="one" case="prepositional">{0} кельвине</unitPattern>
+				<unitPattern count="one" case="vocative">{0} кельвин</unitPattern>
 				<unitPattern count="few">{0} кельвина</unitPattern>
 				<unitPattern count="few" case="accusative">{0} кельвина</unitPattern>
 				<unitPattern count="few" case="dative">{0} кельвинам</unitPattern>
@@ -12429,6 +12632,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} кельвинами</unitPattern>
 				<unitPattern count="few" case="locative">{0} кельвинах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} кельвинах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} кельвина</unitPattern>
 				<unitPattern count="many">{0} кельвинов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} кельвинов</unitPattern>
 				<unitPattern count="many" case="dative">{0} кельвинам</unitPattern>
@@ -12436,12 +12640,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} кельвинами</unitPattern>
 				<unitPattern count="many" case="locative">{0} кельвинах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} кельвинах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} кельвинов</unitPattern>
 				<unitPattern count="other">{0} кельвина</unitPattern>
 				<unitPattern count="other" case="accusative">{0} кельвина</unitPattern>
 				<unitPattern count="other" case="dative">{0} кельвина</unitPattern>
 				<unitPattern count="other" case="genitive">{0} кельвина</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} кельвина</unitPattern>
+				<unitPattern count="other" case="locative">{0} кельвина</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} кельвина</unitPattern>
+				<unitPattern count="other" case="vocative">{0} кельвина</unitPattern>
 			</unit>
 			<unit type="torque-pound-force-foot">
 				<displayName>фунт-футы</displayName>
@@ -12553,6 +12760,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} кубическими сантиметрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} кубических сантиметрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} кубических сантиметрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} кубических сантиметра</unitPattern>
 				<unitPattern count="many">{0} кубических сантиметров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} кубических сантиметров</unitPattern>
 				<unitPattern count="many" case="dative">{0} кубическим сантиметрам</unitPattern>
@@ -12560,12 +12768,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} кубическими сантиметрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} кубических сантиметрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} кубических сантиметрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} кубических сантиметров</unitPattern>
 				<unitPattern count="other">{0} кубического сантиметра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} кубического сантиметра</unitPattern>
 				<unitPattern count="other" case="dative">{0} кубического сантиметра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} кубического сантиметра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} кубического сантиметра</unitPattern>
+				<unitPattern count="other" case="locative">{0} кубического сантиметра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} кубического сантиметра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} кубического сантиметра</unitPattern>
 				<perUnitPattern>{0} на кубический сантиметр</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
@@ -12594,11 +12805,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} кубическими милями</unitPattern>
 				<unitPattern count="many" case="locative">{0} кубических милях</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} кубических милях</unitPattern>
+				<unitPattern count="many" case="vocative">{0} кубических миль</unitPattern>
 				<unitPattern count="other">{0} кубической мили</unitPattern>
 				<unitPattern count="other" case="accusative">{0} кубической мили</unitPattern>
 				<unitPattern count="other" case="dative">{0} кубической мили</unitPattern>
 				<unitPattern count="other" case="genitive">{0} кубической мили</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} кубической мили</unitPattern>
+				<unitPattern count="other" case="locative">{0} кубической мили</unitPattern>
+				<unitPattern count="other" case="vocative">{0} кубической мили</unitPattern>
 			</unit>
 			<unit type="volume-cubic-yard">
 				<displayName>кубические ярды</displayName>
@@ -12625,6 +12839,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} кубическими футами</unitPattern>
 				<unitPattern count="few" case="locative">{0} кубических футах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} кубических футах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} кубических фута</unitPattern>
 				<unitPattern count="many">{0} кубических футов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} кубических футов</unitPattern>
 				<unitPattern count="many" case="dative">{0} кубическим футам</unitPattern>
@@ -12632,11 +12847,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} кубическими футами</unitPattern>
 				<unitPattern count="many" case="locative">{0} кубических футах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} кубических футах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} кубических футов</unitPattern>
 				<unitPattern count="other">{0} кубического фута</unitPattern>
 				<unitPattern count="other" case="accusative">{0} кубического фута</unitPattern>
 				<unitPattern count="other" case="dative">{0} кубического фута</unitPattern>
 				<unitPattern count="other" case="genitive">{0} кубического фута</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} кубического фута</unitPattern>
+				<unitPattern count="other" case="locative">{0} кубического фута</unitPattern>
+				<unitPattern count="other" case="vocative">{0} кубического фута</unitPattern>
 			</unit>
 			<unit type="volume-cubic-inch">
 				<displayName>кубические дюймы</displayName>
@@ -12719,6 +12937,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} литрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} литрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} литрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} литра</unitPattern>
 				<unitPattern count="many">{0} литров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} литров</unitPattern>
 				<unitPattern count="many" case="dative">{0} литрам</unitPattern>
@@ -12726,12 +12945,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} литрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} литрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} литрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} литров</unitPattern>
 				<unitPattern count="other">{0} литра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} литра</unitPattern>
 				<unitPattern count="other" case="dative">{0} литра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} литра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} литра</unitPattern>
+				<unitPattern count="other" case="locative">{0} литра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} литра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} литра</unitPattern>
 				<perUnitPattern>{0} на литр</perUnitPattern>
 			</unit>
 			<unit type="volume-deciliter">
@@ -12752,6 +12974,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} децилитрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} децилитрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} децилитрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} децилитра</unitPattern>
 				<unitPattern count="many">{0} децилитров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} децилитров</unitPattern>
 				<unitPattern count="many" case="dative">{0} децилитрам</unitPattern>
@@ -12759,12 +12982,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} децилитрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} децилитрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} децилитрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} децилитров</unitPattern>
 				<unitPattern count="other">{0} децилитра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} децилитра</unitPattern>
 				<unitPattern count="other" case="dative">{0} децилитра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} децилитра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} децилитра</unitPattern>
+				<unitPattern count="other" case="locative">{0} децилитра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} децилитра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} децилитра</unitPattern>
 			</unit>
 			<unit type="volume-centiliter">
 				<gender>masculine</gender>
@@ -12784,6 +13010,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} сантилитрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} сантилитрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} сантилитрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} сантилитра</unitPattern>
 				<unitPattern count="many">{0} сантилитров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} сантилитров</unitPattern>
 				<unitPattern count="many" case="dative">{0} сантилитрам</unitPattern>
@@ -12791,12 +13018,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} сантилитрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} сантилитрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} сантилитрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} сантилитров</unitPattern>
 				<unitPattern count="other">{0} сантилитра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} сантилитра</unitPattern>
 				<unitPattern count="other" case="dative">{0} сантилитра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} сантилитра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} сантилитра</unitPattern>
+				<unitPattern count="other" case="locative">{0} сантилитра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} сантилитра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} сантилитра</unitPattern>
 			</unit>
 			<unit type="volume-milliliter">
 				<gender>masculine</gender>
@@ -12816,6 +13046,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} миллилитрами</unitPattern>
 				<unitPattern count="few" case="locative">{0} миллилитрах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} миллилитрах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} миллилитра</unitPattern>
 				<unitPattern count="many">{0} миллилитров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} миллилитров</unitPattern>
 				<unitPattern count="many" case="dative">{0} миллилитрам</unitPattern>
@@ -12823,12 +13054,15 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} миллилитрами</unitPattern>
 				<unitPattern count="many" case="locative">{0} миллилитрах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} миллилитрах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} миллилитров</unitPattern>
 				<unitPattern count="other">{0} миллилитра</unitPattern>
 				<unitPattern count="other" case="accusative">{0} миллилитра</unitPattern>
 				<unitPattern count="other" case="dative">{0} миллилитра</unitPattern>
 				<unitPattern count="other" case="genitive">{0} миллилитра</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} миллилитра</unitPattern>
+				<unitPattern count="other" case="locative">{0} миллилитра</unitPattern>
 				<unitPattern count="other" case="prepositional">{0} миллилитра</unitPattern>
+				<unitPattern count="other" case="vocative">{0} миллилитра</unitPattern>
 			</unit>
 			<unit type="volume-pint-metric">
 				<gender>feminine</gender>
@@ -12946,6 +13180,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="instrumental">{0} имп. галлоном</unitPattern>
 				<unitPattern count="one" case="locative">{0} имп. галлоне</unitPattern>
 				<unitPattern count="one" case="prepositional">{0} имп. галлоне</unitPattern>
+				<unitPattern count="one" case="vocative">{0} имп. галлон</unitPattern>
 				<unitPattern count="few">{0} имп. галлона</unitPattern>
 				<unitPattern count="few" case="accusative">{0} имп. галлона</unitPattern>
 				<unitPattern count="few" case="dative">{0} имп. галлонам</unitPattern>
@@ -12953,6 +13188,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} имп. галлонами</unitPattern>
 				<unitPattern count="few" case="locative">{0} имп. галлонах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} имп. галлонах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} имп. галлона</unitPattern>
 				<unitPattern count="many">{0} имп. галлонов</unitPattern>
 				<unitPattern count="many" case="accusative">{0} имп. галлонов</unitPattern>
 				<unitPattern count="many" case="dative">{0} имп. галлонам</unitPattern>
@@ -12960,11 +13196,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} имп. галлонами</unitPattern>
 				<unitPattern count="many" case="locative">{0} имп. галлонах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} имп. галлонах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} имп. галлонов</unitPattern>
 				<unitPattern count="other">{0} имп. галлона</unitPattern>
 				<unitPattern count="other" case="accusative">{0} имп. галлона</unitPattern>
 				<unitPattern count="other" case="dative">{0} имп. галлона</unitPattern>
 				<unitPattern count="other" case="genitive">{0} имп. галлона</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} имп. галлона</unitPattern>
+				<unitPattern count="other" case="locative">{0} имп. галлона</unitPattern>
+				<unitPattern count="other" case="vocative">{0} имп. галлона</unitPattern>
 				<perUnitPattern>{0} на имп. галлон</perUnitPattern>
 			</unit>
 			<unit type="volume-quart">
@@ -13028,6 +13267,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} амер. пинтами</unitPattern>
 				<unitPattern count="many" case="locative">{0} амер. пинтах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} амер. пинтах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} амер. пинт</unitPattern>
 				<unitPattern count="other">{0} амер. пинты</unitPattern>
 				<unitPattern count="other" case="accusative">{0} амер. пинты</unitPattern>
 				<unitPattern count="other" case="dative">{0} амер. пинты</unitPattern>
@@ -13151,6 +13391,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="instrumental">{0} столовой ложкой</unitPattern>
 				<unitPattern count="one" case="locative">{0} столовой ложке</unitPattern>
 				<unitPattern count="one" case="prepositional">{0} столовой ложке</unitPattern>
+				<unitPattern count="one" case="vocative">{0} столовая ложка</unitPattern>
 				<unitPattern count="few">{0} столовые ложки</unitPattern>
 				<unitPattern count="few" case="accusative">{0} столовые ложки</unitPattern>
 				<unitPattern count="few" case="dative">{0} столовым ложкам</unitPattern>
@@ -13172,6 +13413,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} столовой ложки</unitPattern>
 				<unitPattern count="other" case="genitive">{0} столовой ложки</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} столовой ложки</unitPattern>
+				<unitPattern count="other" case="locative">{0} столовой ложки</unitPattern>
+				<unitPattern count="other" case="vocative">{0} столовой ложки</unitPattern>
 			</unit>
 			<unit type="volume-teaspoon">
 				<gender>feminine</gender>
@@ -13183,6 +13426,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one" case="instrumental">{0} чайной ложкой</unitPattern>
 				<unitPattern count="one" case="locative">{0} чайной ложке</unitPattern>
 				<unitPattern count="one" case="prepositional">{0} чайной ложке</unitPattern>
+				<unitPattern count="one" case="vocative">{0} чайная ложка</unitPattern>
 				<unitPattern count="few">{0} чайные ложки</unitPattern>
 				<unitPattern count="few" case="accusative">{0} чайные ложки</unitPattern>
 				<unitPattern count="few" case="dative">{0} чайным ложкам</unitPattern>
@@ -13190,6 +13434,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} чайными ложками</unitPattern>
 				<unitPattern count="few" case="locative">{0} чайных ложках</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} чайных ложках</unitPattern>
+				<unitPattern count="few" case="vocative">{0} чайные ложки</unitPattern>
 				<unitPattern count="many">{0} чайных ложек</unitPattern>
 				<unitPattern count="many" case="accusative">{0} чайных ложек</unitPattern>
 				<unitPattern count="many" case="dative">{0} чайным ложкам</unitPattern>
@@ -13197,11 +13442,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} чайными ложками</unitPattern>
 				<unitPattern count="many" case="locative">{0} чайных ложках</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} чайных ложках</unitPattern>
+				<unitPattern count="many" case="vocative">{0} чайных ложек</unitPattern>
 				<unitPattern count="other">{0} чайной ложки</unitPattern>
 				<unitPattern count="other" case="accusative">{0} чайной ложки</unitPattern>
 				<unitPattern count="other" case="dative">{0} чайной ложки</unitPattern>
 				<unitPattern count="other" case="genitive">{0} чайной ложки</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} чайной ложки</unitPattern>
+				<unitPattern count="other" case="locative">{0} чайной ложки</unitPattern>
+				<unitPattern count="other" case="vocative">{0} чайной ложки</unitPattern>
 			</unit>
 			<unit type="volume-barrel">
 				<displayName>баррели</displayName>
@@ -13312,6 +13560,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} капли</unitPattern>
 				<unitPattern count="other" case="genitive">{0} капли</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} капли</unitPattern>
+				<unitPattern count="other" case="locative">{0} капли</unitPattern>
+				<unitPattern count="other" case="vocative">{0} капли</unitPattern>
 			</unit>
 			<unit type="volume-dram">
 				<gender>feminine</gender>
@@ -13366,6 +13616,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few" case="instrumental">{0} джиггерами</unitPattern>
 				<unitPattern count="few" case="locative">{0} джиггерах</unitPattern>
 				<unitPattern count="few" case="prepositional">{0} джиггерах</unitPattern>
+				<unitPattern count="few" case="vocative">{0} джиггера</unitPattern>
 				<unitPattern count="many">{0} джиггеров</unitPattern>
 				<unitPattern count="many" case="accusative">{0} джиггеров</unitPattern>
 				<unitPattern count="many" case="dative">{0} джиггерам</unitPattern>
@@ -13373,6 +13624,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many" case="instrumental">{0} джиггерами</unitPattern>
 				<unitPattern count="many" case="locative">{0} джиггерах</unitPattern>
 				<unitPattern count="many" case="prepositional">{0} джиггерах</unitPattern>
+				<unitPattern count="many" case="vocative">{0} джиггеров</unitPattern>
 				<unitPattern count="other">{0} джиггера</unitPattern>
 				<unitPattern count="other" case="accusative">{0} джиггера</unitPattern>
 				<unitPattern count="other" case="dative">{0} джиггера</unitPattern>
@@ -13413,6 +13665,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} щепотки</unitPattern>
 				<unitPattern count="other" case="genitive">{0} щепотки</unitPattern>
 				<unitPattern count="other" case="instrumental">{0} щепотки</unitPattern>
+				<unitPattern count="other" case="locative">{0} щепотки</unitPattern>
+				<unitPattern count="other" case="vocative">{0} щепотки</unitPattern>
 			</unit>
 			<unit type="volume-quart-imperial">
 				<gender>feminine</gender>
@@ -13544,6 +13798,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</compoundUnit>
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
+			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
 				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
@@ -14137,6 +14397,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} тчк</unitPattern>
 				<unitPattern count="other">{0} тчк</unitPattern>
 			</unit>
+			<unit type="length-earth-radius">
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="few">{0} R⊕</unitPattern>
+				<unitPattern count="many">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>км</displayName>
 				<unitPattern count="one">{0} км</unitPattern>
@@ -14310,6 +14576,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} лм</unitPattern>
 				<unitPattern count="other">{0} лм</unitPattern>
 			</unit>
+			<unit type="light-solar-luminosity">
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="few">{0} L☉</unitPattern>
+				<unitPattern count="many">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
+			</unit>
 			<unit type="mass-tonne">
 				<displayName>т</displayName>
 				<unitPattern count="one">{0} т</unitPattern>
@@ -14397,6 +14669,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} Да</unitPattern>
 				<unitPattern count="many">{0} Да</unitPattern>
 				<unitPattern count="other">{0} Да</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="few">{0} M⊕</unitPattern>
+				<unitPattern count="many">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="few">{0} M☉</unitPattern>
+				<unitPattern count="many">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
 			</unit>
 			<unit type="mass-grain">
 				<displayName>гран</displayName>
@@ -14926,14 +15210,29 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<compoundUnit type="per">
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
+			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="one">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="few">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="many">{0}²</compoundUnitPattern1>
+				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
+			</compoundUnit>
 			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="one">{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="few">{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="many">{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>g</displayName>
+				<unitPattern count="one">{0} g</unitPattern>
+				<unitPattern count="few">{0} g</unitPattern>
+				<unitPattern count="many">{0} g</unitPattern>
+				<unitPattern count="other">{0} g</unitPattern>
 			</unit>
 			<unit type="acceleration-meter-per-square-second">
 				<displayName>м/с²</displayName>
@@ -14942,45 +15241,136 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} м/с²</unitPattern>
 				<unitPattern count="other">{0} м/с²</unitPattern>
 			</unit>
+			<unit type="angle-revolution">
+				<displayName>об.</displayName>
+				<unitPattern count="one">{0} об.</unitPattern>
+				<unitPattern count="few">{0} об.</unitPattern>
+				<unitPattern count="many">{0} об.</unitPattern>
+				<unitPattern count="other">{0} об.</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>рад</displayName>
+				<unitPattern count="one">{0} рад</unitPattern>
+				<unitPattern count="few">{0} рад</unitPattern>
+				<unitPattern count="many">{0} рад</unitPattern>
+				<unitPattern count="other">{0} рад</unitPattern>
+			</unit>
 			<unit type="angle-degree">
+				<displayName>°</displayName>
 				<unitPattern count="one">{0}°</unitPattern>
 				<unitPattern count="few">{0}°</unitPattern>
 				<unitPattern count="many">{0}°</unitPattern>
 				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="angle-arc-minute">
+				<displayName>′</displayName>
 				<unitPattern count="one">{0}′</unitPattern>
 				<unitPattern count="few">{0}′</unitPattern>
 				<unitPattern count="many">{0}′</unitPattern>
 				<unitPattern count="other">{0}′</unitPattern>
 			</unit>
 			<unit type="angle-arc-second">
+				<displayName>″</displayName>
 				<unitPattern count="one">{0}″</unitPattern>
 				<unitPattern count="few">{0}″</unitPattern>
 				<unitPattern count="many">{0}″</unitPattern>
 				<unitPattern count="other">{0}″</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
+				<displayName>км²</displayName>
 				<unitPattern count="one">{0} км²</unitPattern>
 				<unitPattern count="few">{0} км²</unitPattern>
 				<unitPattern count="many">{0} км²</unitPattern>
 				<unitPattern count="other">{0} км²</unitPattern>
+				<perUnitPattern>{0}/км²</perUnitPattern>
 			</unit>
 			<unit type="area-hectare">
+				<displayName>га</displayName>
 				<unitPattern count="one">{0} га</unitPattern>
 				<unitPattern count="few">{0} га</unitPattern>
 				<unitPattern count="many">{0} га</unitPattern>
 				<unitPattern count="other">{0} га</unitPattern>
 			</unit>
 			<unit type="area-square-meter">
+				<displayName>м²</displayName>
 				<unitPattern count="one">{0} м²</unitPattern>
 				<unitPattern count="few">{0} м²</unitPattern>
 				<unitPattern count="many">{0} м²</unitPattern>
 				<unitPattern count="other">{0} м²</unitPattern>
+				<perUnitPattern>{0}/м²</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>см²</displayName>
+				<unitPattern count="one">{0} см²</unitPattern>
+				<unitPattern count="few">{0} см²</unitPattern>
+				<unitPattern count="many">{0} см²</unitPattern>
+				<unitPattern count="other">{0} см²</unitPattern>
+				<perUnitPattern>{0}/см²</perUnitPattern>
 			</unit>
 			<unit type="area-square-mile">
 				<displayName>ми²</displayName>
+				<unitPattern count="one">{0} ми²</unitPattern>
+				<unitPattern count="few">{0} ми²</unitPattern>
+				<unitPattern count="many">{0} ми²</unitPattern>
+				<unitPattern count="other">{0} ми²</unitPattern>
 				<perUnitPattern>{0}/ми²</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName>акр.</displayName>
+				<unitPattern count="one">{0} акр</unitPattern>
+				<unitPattern count="few">{0} акр.</unitPattern>
+				<unitPattern count="many">{0} акр.</unitPattern>
+				<unitPattern count="other">{0} акр.</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>ярд²</displayName>
+				<unitPattern count="one">{0} ярд²</unitPattern>
+				<unitPattern count="few">{0} ярд²</unitPattern>
+				<unitPattern count="many">{0} ярд²</unitPattern>
+				<unitPattern count="other">{0} ярд²</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>фт²</displayName>
+				<unitPattern count="one">{0} фт²</unitPattern>
+				<unitPattern count="few">{0} фт²</unitPattern>
+				<unitPattern count="many">{0} фт²</unitPattern>
+				<unitPattern count="other">{0} фт²</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>дюйм²</displayName>
+				<unitPattern count="one">{0} дюйм²</unitPattern>
+				<unitPattern count="few">{0} дюйм²</unitPattern>
+				<unitPattern count="many">{0} дюйм²</unitPattern>
+				<unitPattern count="other">{0} дюйм²</unitPattern>
+				<perUnitPattern>{0}/дюйм²</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>дун.</displayName>
+				<unitPattern count="one">{0} дун.</unitPattern>
+				<unitPattern count="few">{0} дун.</unitPattern>
+				<unitPattern count="many">{0} дун.</unitPattern>
+				<unitPattern count="other">{0} дун.</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>кар</displayName>
+				<unitPattern count="one">{0} кар</unitPattern>
+				<unitPattern count="few">{0} кар</unitPattern>
+				<unitPattern count="many">{0} кар</unitPattern>
+				<unitPattern count="other">{0} кар</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>мг/дл</displayName>
+				<unitPattern count="one">{0} мг/дл</unitPattern>
+				<unitPattern count="few">{0} мг/дл</unitPattern>
+				<unitPattern count="many">{0} мг/дл</unitPattern>
+				<unitPattern count="other">{0} мг/дл</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>ммоль/л</displayName>
+				<unitPattern count="one">{0} ммоль/л</unitPattern>
+				<unitPattern count="few">{0} ммоль/л</unitPattern>
+				<unitPattern count="many">{0} ммоль/л</unitPattern>
+				<unitPattern count="other">{0} ммоль/л</unitPattern>
 			</unit>
 			<unit type="concentr-item">
 				<displayName>объекты</displayName>
@@ -14989,12 +15379,47 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} объектов</unitPattern>
 				<unitPattern count="other">{0} объекта</unitPattern>
 			</unit>
+			<unit type="concentr-permillion">
+				<displayName>ppm</displayName>
+				<unitPattern count="one">{0} ppm</unitPattern>
+				<unitPattern count="few">{0} ppm</unitPattern>
+				<unitPattern count="many">{0} ppm</unitPattern>
+				<unitPattern count="other">{0} ppm</unitPattern>
+			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="one">{0}%</unitPattern>
 				<unitPattern count="few">{0}%</unitPattern>
 				<unitPattern count="many">{0}%</unitPattern>
 				<unitPattern count="other">{0}%</unitPattern>
+			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="one">{0} ‰</unitPattern>
+				<unitPattern count="few">{0} ‰</unitPattern>
+				<unitPattern count="many">{0} ‰</unitPattern>
+				<unitPattern count="other">{0} ‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>‱</displayName>
+				<unitPattern count="one">{0} ‱</unitPattern>
+				<unitPattern count="few">{0} ‱</unitPattern>
+				<unitPattern count="many">{0} ‱</unitPattern>
+				<unitPattern count="other">{0} ‱</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>моль</displayName>
+				<unitPattern count="one">{0} моль</unitPattern>
+				<unitPattern count="few">{0} моль</unitPattern>
+				<unitPattern count="many">{0} моль</unitPattern>
+				<unitPattern count="other">{0} моль</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>л/км</displayName>
+				<unitPattern count="one">{0} л/км</unitPattern>
+				<unitPattern count="few">{0} л/км</unitPattern>
+				<unitPattern count="many">{0} л/км</unitPattern>
+				<unitPattern count="other">{0} л/км</unitPattern>
 			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>л/100 км</displayName>
@@ -15017,12 +15442,96 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ми/имп. гал</unitPattern>
 				<unitPattern count="other">{0} ми/имп. гал</unitPattern>
 			</unit>
+			<unit type="digital-petabyte">
+				<displayName>ПБ</displayName>
+				<unitPattern count="one">{0} ПБ</unitPattern>
+				<unitPattern count="few">{0} ПБ</unitPattern>
+				<unitPattern count="many">{0} ПБ</unitPattern>
+				<unitPattern count="other">{0} ПБ</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>ТБ</displayName>
+				<unitPattern count="one">{0} ТБ</unitPattern>
+				<unitPattern count="few">{0} ТБ</unitPattern>
+				<unitPattern count="many">{0} ТБ</unitPattern>
+				<unitPattern count="other">{0} ТБ</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Тбит</displayName>
+				<unitPattern count="one">{0} Тбит</unitPattern>
+				<unitPattern count="few">{0} Тбит</unitPattern>
+				<unitPattern count="many">{0} Тбит</unitPattern>
+				<unitPattern count="other">{0} Тбит</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>ГБ</displayName>
+				<unitPattern count="one">{0} ГБ</unitPattern>
+				<unitPattern count="few">{0} ГБ</unitPattern>
+				<unitPattern count="many">{0} ГБ</unitPattern>
+				<unitPattern count="other">{0} ГБ</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Гбит</displayName>
+				<unitPattern count="one">{0} Гбит</unitPattern>
+				<unitPattern count="few">{0} Гбит</unitPattern>
+				<unitPattern count="many">{0} Гбит</unitPattern>
+				<unitPattern count="other">{0} Гбит</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>МБ</displayName>
+				<unitPattern count="one">{0} МБ</unitPattern>
+				<unitPattern count="few">{0} МБ</unitPattern>
+				<unitPattern count="many">{0} МБ</unitPattern>
+				<unitPattern count="other">{0} МБ</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Мбит</displayName>
+				<unitPattern count="one">{0} Мбит</unitPattern>
+				<unitPattern count="few">{0} Мбит</unitPattern>
+				<unitPattern count="many">{0} Мбит</unitPattern>
+				<unitPattern count="other">{0} Мбит</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>кБ</displayName>
+				<unitPattern count="one">{0} кБ</unitPattern>
+				<unitPattern count="few">{0} кБ</unitPattern>
+				<unitPattern count="many">{0} кБ</unitPattern>
+				<unitPattern count="other">{0} кБ</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>кбит</displayName>
+				<unitPattern count="one">{0} кбит</unitPattern>
+				<unitPattern count="few">{0} кбит</unitPattern>
+				<unitPattern count="many">{0} кбит</unitPattern>
+				<unitPattern count="other">{0} кбит</unitPattern>
+			</unit>
+			<unit type="digital-byte">
+				<displayName>Б</displayName>
+				<unitPattern count="one">{0} Б</unitPattern>
+				<unitPattern count="few">{0} Б</unitPattern>
+				<unitPattern count="many">{0} Б</unitPattern>
+				<unitPattern count="other">{0} Б</unitPattern>
+			</unit>
+			<unit type="digital-bit">
+				<displayName>бит</displayName>
+				<unitPattern count="one">{0} бит</unitPattern>
+				<unitPattern count="few">{0} бита</unitPattern>
+				<unitPattern count="many">{0} бит</unitPattern>
+				<unitPattern count="other">{0} бита</unitPattern>
+			</unit>
 			<unit type="duration-century">
 				<displayName>в.</displayName>
 				<unitPattern count="one">{0} в.</unitPattern>
 				<unitPattern count="few">{0} в.</unitPattern>
 				<unitPattern count="many">{0} в.</unitPattern>
 				<unitPattern count="other">{0} в.</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>10-летие</displayName>
+				<unitPattern count="one">{0} 10-летие</unitPattern>
+				<unitPattern count="few">{0} 10-летия</unitPattern>
+				<unitPattern count="many">{0} 10-летий</unitPattern>
+				<unitPattern count="other">{0} 10-летия</unitPattern>
 			</unit>
 			<unit type="duration-year">
 				<displayName>г.</displayName>
@@ -15070,6 +15579,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} ч</unitPattern>
 				<unitPattern count="many">{0} ч</unitPattern>
 				<unitPattern count="other">{0} ч</unitPattern>
+				<perUnitPattern>{0}/ч</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>мин</displayName>
@@ -15077,6 +15587,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} мин</unitPattern>
 				<unitPattern count="many">{0} мин</unitPattern>
 				<unitPattern count="other">{0} мин</unitPattern>
+				<perUnitPattern>{0}/мин</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>c</displayName>
@@ -15107,12 +15618,208 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} нс</unitPattern>
 				<unitPattern count="other">{0} нс</unitPattern>
 			</unit>
+			<unit type="electric-ampere">
+				<displayName>А</displayName>
+				<unitPattern count="one">{0} А</unitPattern>
+				<unitPattern count="few">{0} А</unitPattern>
+				<unitPattern count="many">{0} А</unitPattern>
+				<unitPattern count="other">{0} А</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>мА</displayName>
+				<unitPattern count="one">{0} мА</unitPattern>
+				<unitPattern count="few">{0} мА</unitPattern>
+				<unitPattern count="many">{0} мА</unitPattern>
+				<unitPattern count="other">{0} мА</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>Ом</displayName>
+				<unitPattern count="one">{0} Ом</unitPattern>
+				<unitPattern count="few">{0} Ом</unitPattern>
+				<unitPattern count="many">{0} Ом</unitPattern>
+				<unitPattern count="other">{0} Ом</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>В</displayName>
+				<unitPattern count="one">{0} В</unitPattern>
+				<unitPattern count="few">{0} В</unitPattern>
+				<unitPattern count="many">{0} В</unitPattern>
+				<unitPattern count="other">{0} В</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>ккал</displayName>
+				<unitPattern count="one">{0} ккал</unitPattern>
+				<unitPattern count="few">{0} ккал</unitPattern>
+				<unitPattern count="many">{0} ккал</unitPattern>
+				<unitPattern count="other">{0} ккал</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>кал</displayName>
+				<unitPattern count="one">{0} кал</unitPattern>
+				<unitPattern count="few">{0} кал</unitPattern>
+				<unitPattern count="many">{0} кал</unitPattern>
+				<unitPattern count="other">{0} кал</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>ккал</displayName>
+				<unitPattern count="one">{0} ккал</unitPattern>
+				<unitPattern count="few">{0} ккал</unitPattern>
+				<unitPattern count="many">{0} ккал</unitPattern>
+				<unitPattern count="other">{0} ккал</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>кДж</displayName>
+				<unitPattern count="one">{0} кДж</unitPattern>
+				<unitPattern count="few">{0} кДж</unitPattern>
+				<unitPattern count="many">{0} кДж</unitPattern>
+				<unitPattern count="other">{0} кДж</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>Дж</displayName>
+				<unitPattern count="one">{0} Дж</unitPattern>
+				<unitPattern count="few">{0} Дж</unitPattern>
+				<unitPattern count="many">{0} Дж</unitPattern>
+				<unitPattern count="other">{0} Дж</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>кВт⋅ч</displayName>
+				<unitPattern count="one">{0} кВт⋅ч</unitPattern>
+				<unitPattern count="few">{0} кВт⋅ч</unitPattern>
+				<unitPattern count="many">{0} кВт⋅ч</unitPattern>
+				<unitPattern count="other">{0} кВт⋅ч</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>эВ</displayName>
+				<unitPattern count="one">{0} эВ</unitPattern>
+				<unitPattern count="few">{0} эВ</unitPattern>
+				<unitPattern count="many">{0} эВ</unitPattern>
+				<unitPattern count="other">{0} эВ</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>БТЕ</displayName>
+				<unitPattern count="one">{0} БТЕ</unitPattern>
+				<unitPattern count="few">{0} БТЕ</unitPattern>
+				<unitPattern count="many">{0} БТЕ</unitPattern>
+				<unitPattern count="other">{0} БТЕ</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>терм США</displayName>
+				<unitPattern count="one">{0} терм США</unitPattern>
+				<unitPattern count="few">{0} терма США</unitPattern>
+				<unitPattern count="many">{0} термов США</unitPattern>
+				<unitPattern count="other">{0} терма США</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>фнт-с</displayName>
+				<unitPattern count="one">{0} фнт-с</unitPattern>
+				<unitPattern count="few">{0} фнт-с</unitPattern>
+				<unitPattern count="many">{0} фнт-с</unitPattern>
+				<unitPattern count="other">{0} фнт-с</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>Н</displayName>
+				<unitPattern count="one">{0} Н</unitPattern>
+				<unitPattern count="few">{0} Н</unitPattern>
+				<unitPattern count="many">{0} Н</unitPattern>
+				<unitPattern count="other">{0} Н</unitPattern>
+			</unit>
 			<unit type="force-kilowatt-hour-per-100-kilometer">
 				<displayName>кВт⋅ч/100 км</displayName>
 				<unitPattern count="one">{0} кВт⋅ч/100 км</unitPattern>
 				<unitPattern count="few">{0} кВт⋅ч/100 км</unitPattern>
 				<unitPattern count="many">{0} кВт⋅ч/100 км</unitPattern>
 				<unitPattern count="other">{0} кВт⋅ч/100 км</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>ГГц</displayName>
+				<unitPattern count="one">{0} ГГц</unitPattern>
+				<unitPattern count="few">{0} ГГц</unitPattern>
+				<unitPattern count="many">{0} ГГц</unitPattern>
+				<unitPattern count="other">{0} ГГц</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>МГц</displayName>
+				<unitPattern count="one">{0} МГц</unitPattern>
+				<unitPattern count="few">{0} МГц</unitPattern>
+				<unitPattern count="many">{0} МГц</unitPattern>
+				<unitPattern count="other">{0} МГц</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>кГц</displayName>
+				<unitPattern count="one">{0} кГц</unitPattern>
+				<unitPattern count="few">{0} кГц</unitPattern>
+				<unitPattern count="many">{0} кГц</unitPattern>
+				<unitPattern count="other">{0} кГц</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>Гц</displayName>
+				<unitPattern count="one">{0} Гц</unitPattern>
+				<unitPattern count="few">{0} Гц</unitPattern>
+				<unitPattern count="many">{0} Гц</unitPattern>
+				<unitPattern count="other">{0} Гц</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>эм</displayName>
+				<unitPattern count="one">{0} эм</unitPattern>
+				<unitPattern count="few">{0} эм</unitPattern>
+				<unitPattern count="many">{0} эм</unitPattern>
+				<unitPattern count="other">{0} эм</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>пкс</displayName>
+				<unitPattern count="one">{0} пкс</unitPattern>
+				<unitPattern count="few">{0} пкс</unitPattern>
+				<unitPattern count="many">{0} пкс</unitPattern>
+				<unitPattern count="other">{0} пкс</unitPattern>
+			</unit>
+			<unit type="graphics-megapixel">
+				<displayName>Мпкс</displayName>
+				<unitPattern count="one">{0} Мпкс</unitPattern>
+				<unitPattern count="few">{0} Мпкс</unitPattern>
+				<unitPattern count="many">{0} Мпкс</unitPattern>
+				<unitPattern count="other">{0} Мпкс</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-centimeter">
+				<displayName>пкс/см</displayName>
+				<unitPattern count="one">{0} пкс/см</unitPattern>
+				<unitPattern count="few">{0} пкс/см</unitPattern>
+				<unitPattern count="many">{0} пкс/см</unitPattern>
+				<unitPattern count="other">{0} пкс/см</unitPattern>
+			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>пкс/дюйм</displayName>
+				<unitPattern count="one">{0} пкс/дюйм</unitPattern>
+				<unitPattern count="few">{0} пкс/дюйм</unitPattern>
+				<unitPattern count="many">{0} пкс/дюйм</unitPattern>
+				<unitPattern count="other">{0} пкс/дюйм</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>тчк/см</displayName>
+				<unitPattern count="one">{0} тчк/см</unitPattern>
+				<unitPattern count="few">{0} тчк/см</unitPattern>
+				<unitPattern count="many">{0} тчк/см</unitPattern>
+				<unitPattern count="other">{0} тчк/см</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>тчк/дюйм</displayName>
+				<unitPattern count="one">{0} тчк/дюйм</unitPattern>
+				<unitPattern count="few">{0} тчк/дюйм</unitPattern>
+				<unitPattern count="many">{0} тчк/дюйм</unitPattern>
+				<unitPattern count="other">{0} тчк/дюйм</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>тчк</displayName>
+				<unitPattern count="one">{0} тчк</unitPattern>
+				<unitPattern count="few">{0} тчк</unitPattern>
+				<unitPattern count="many">{0} тчк</unitPattern>
+				<unitPattern count="other">{0} тчк</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>R⊕</displayName>
+				<unitPattern count="one">{0} R⊕</unitPattern>
+				<unitPattern count="few">{0} R⊕</unitPattern>
+				<unitPattern count="many">{0} R⊕</unitPattern>
+				<unitPattern count="other">{0} R⊕</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>км</displayName>
@@ -15168,6 +15875,17 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="length-picometer">
 				<displayName>пм</displayName>
+				<unitPattern count="one">{0} пм</unitPattern>
+				<unitPattern count="few">{0} пм</unitPattern>
+				<unitPattern count="many">{0} пм</unitPattern>
+				<unitPattern count="other">{0} пм</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>ми</displayName>
+				<unitPattern count="one">{0} ми</unitPattern>
+				<unitPattern count="few">{0} ми</unitPattern>
+				<unitPattern count="many">{0} ми</unitPattern>
+				<unitPattern count="other">{0} ми</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>ярд.</displayName>
@@ -15190,6 +15908,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} дюйм.</unitPattern>
 				<unitPattern count="many">{0} дюйм.</unitPattern>
 				<unitPattern count="other">{0} дюйм.</unitPattern>
+				<perUnitPattern>{0}/дюйм</perUnitPattern>
 			</unit>
 			<unit type="length-parsec">
 				<displayName>пк</displayName>
@@ -15199,6 +15918,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} пк</unitPattern>
 			</unit>
 			<unit type="length-light-year">
+				<displayName>св. г.</displayName>
 				<unitPattern count="one">{0} св. г.</unitPattern>
 				<unitPattern count="few">{0} св. г.</unitPattern>
 				<unitPattern count="many">{0} св. л.</unitPattern>
@@ -15245,6 +15965,41 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} пкт</unitPattern>
 				<unitPattern count="many">{0} пкт</unitPattern>
 				<unitPattern count="other">{0} пкт</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>R☉</displayName>
+				<unitPattern count="one">{0} R☉</unitPattern>
+				<unitPattern count="few">{0} R☉</unitPattern>
+				<unitPattern count="many">{0} R☉</unitPattern>
+				<unitPattern count="other">{0} R☉</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>лк</displayName>
+				<unitPattern count="one">{0} лк</unitPattern>
+				<unitPattern count="few">{0} лк</unitPattern>
+				<unitPattern count="many">{0} лк</unitPattern>
+				<unitPattern count="other">{0} лк</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>кд</displayName>
+				<unitPattern count="one">{0} кд</unitPattern>
+				<unitPattern count="few">{0} кд</unitPattern>
+				<unitPattern count="many">{0} кд</unitPattern>
+				<unitPattern count="other">{0} кд</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>лм</displayName>
+				<unitPattern count="one">{0} лм</unitPattern>
+				<unitPattern count="few">{0} лм</unitPattern>
+				<unitPattern count="many">{0} лм</unitPattern>
+				<unitPattern count="other">{0} лм</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>L☉</displayName>
+				<unitPattern count="one">{0} L☉</unitPattern>
+				<unitPattern count="few">{0} L☉</unitPattern>
+				<unitPattern count="many">{0} L☉</unitPattern>
+				<unitPattern count="other">{0} L☉</unitPattern>
 			</unit>
 			<unit type="mass-tonne">
 				<displayName>т</displayName>
@@ -15299,10 +16054,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="mass-pound">
 				<displayName>фнт</displayName>
+				<unitPattern count="one">{0} фнт</unitPattern>
+				<unitPattern count="few">{0} фнт</unitPattern>
+				<unitPattern count="many">{0} фнт</unitPattern>
+				<unitPattern count="other">{0} фнт</unitPattern>
 				<perUnitPattern>{0}/фнт</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
 				<displayName>унц.</displayName>
+				<unitPattern count="one">{0} унц.</unitPattern>
+				<unitPattern count="few">{0} унц.</unitPattern>
+				<unitPattern count="many">{0} унц.</unitPattern>
+				<unitPattern count="other">{0} унц.</unitPattern>
+				<perUnitPattern>{0}/унц</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce-troy">
 				<displayName>тр. унц.</displayName>
@@ -15318,17 +16082,75 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} кар</unitPattern>
 				<unitPattern count="other">{0} кар</unitPattern>
 			</unit>
+			<unit type="mass-dalton">
+				<displayName>Да</displayName>
+				<unitPattern count="one">{0} Да</unitPattern>
+				<unitPattern count="few">{0} Да</unitPattern>
+				<unitPattern count="many">{0} Да</unitPattern>
+				<unitPattern count="other">{0} Да</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>M⊕</displayName>
+				<unitPattern count="one">{0} M⊕</unitPattern>
+				<unitPattern count="few">{0} M⊕</unitPattern>
+				<unitPattern count="many">{0} M⊕</unitPattern>
+				<unitPattern count="other">{0} M⊕</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>M☉</displayName>
+				<unitPattern count="one">{0} M☉</unitPattern>
+				<unitPattern count="few">{0} M☉</unitPattern>
+				<unitPattern count="many">{0} M☉</unitPattern>
+				<unitPattern count="other">{0} M☉</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>гран</displayName>
+				<unitPattern count="one">{0} гран</unitPattern>
+				<unitPattern count="few">{0} грана</unitPattern>
+				<unitPattern count="many">{0} гранов</unitPattern>
+				<unitPattern count="other">{0} грана</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>ГВт</displayName>
+				<unitPattern count="one">{0} ГВт</unitPattern>
+				<unitPattern count="few">{0} ГВт</unitPattern>
+				<unitPattern count="many">{0} ГВт</unitPattern>
+				<unitPattern count="other">{0} ГВт</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>МВт</displayName>
+				<unitPattern count="one">{0} МВт</unitPattern>
+				<unitPattern count="few">{0} МВт</unitPattern>
+				<unitPattern count="many">{0} МВт</unitPattern>
+				<unitPattern count="other">{0} МВт</unitPattern>
+			</unit>
 			<unit type="power-kilowatt">
+				<displayName>кВт</displayName>
 				<unitPattern count="one">{0} кВт</unitPattern>
 				<unitPattern count="few">{0} кВт</unitPattern>
 				<unitPattern count="many">{0} кВт</unitPattern>
 				<unitPattern count="other">{0} кВт</unitPattern>
 			</unit>
 			<unit type="power-watt">
+				<displayName>Вт</displayName>
 				<unitPattern count="one">{0} Вт</unitPattern>
 				<unitPattern count="few">{0} Вт</unitPattern>
 				<unitPattern count="many">{0} Вт</unitPattern>
 				<unitPattern count="other">{0} Вт</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>мВт</displayName>
+				<unitPattern count="one">{0} мВт</unitPattern>
+				<unitPattern count="few">{0} мВт</unitPattern>
+				<unitPattern count="many">{0} мВт</unitPattern>
+				<unitPattern count="other">{0} мВт</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>л. с.</displayName>
+				<unitPattern count="one">{0} л. с.</unitPattern>
+				<unitPattern count="few">{0} л. с.</unitPattern>
+				<unitPattern count="many">{0} л. с.</unitPattern>
+				<unitPattern count="other">{0} л. с.</unitPattern>
 			</unit>
 			<unit type="pressure-millimeter-ofhg">
 				<displayName>мм рт. ст.</displayName>
@@ -15339,9 +16161,24 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
 				<displayName>ф. на дюйм²</displayName>
+				<unitPattern count="one">{0} ф/дюйм²</unitPattern>
+				<unitPattern count="few">{0} ф/дюйм²</unitPattern>
+				<unitPattern count="many">{0} ф/дюйм²</unitPattern>
+				<unitPattern count="other">{0} ф/дюйм²</unitPattern>
 			</unit>
 			<unit type="pressure-inch-ofhg">
 				<displayName>д. рт. ст.</displayName>
+				<unitPattern count="one">{0} д. рт. ст.</unitPattern>
+				<unitPattern count="few">{0} д. рт. ст.</unitPattern>
+				<unitPattern count="many">{0} д. рт. ст.</unitPattern>
+				<unitPattern count="other">{0} д. рт. ст.</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>бар</displayName>
+				<unitPattern count="one">{0} бар</unitPattern>
+				<unitPattern count="few">{0} бар</unitPattern>
+				<unitPattern count="many">{0} бар</unitPattern>
+				<unitPattern count="other">{0} бар</unitPattern>
 			</unit>
 			<unit type="pressure-millibar">
 				<displayName>мбар</displayName>
@@ -15350,12 +16187,40 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} мбар</unitPattern>
 				<unitPattern count="other">{0} мбар</unitPattern>
 			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>атм</displayName>
+				<unitPattern count="one">{0} атм</unitPattern>
+				<unitPattern count="few">{0} атм</unitPattern>
+				<unitPattern count="many">{0} атм</unitPattern>
+				<unitPattern count="other">{0} атм</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>Па</displayName>
+				<unitPattern count="one">{0} Па</unitPattern>
+				<unitPattern count="few">{0} Па</unitPattern>
+				<unitPattern count="many">{0} Па</unitPattern>
+				<unitPattern count="other">{0} Па</unitPattern>
+			</unit>
 			<unit type="pressure-hectopascal">
 				<displayName>гПа</displayName>
 				<unitPattern count="one">{0} гПа</unitPattern>
 				<unitPattern count="few">{0} гПа</unitPattern>
 				<unitPattern count="many">{0} гПа</unitPattern>
 				<unitPattern count="other">{0} гПа</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>кПа</displayName>
+				<unitPattern count="one">{0} кПа</unitPattern>
+				<unitPattern count="few">{0} кПа</unitPattern>
+				<unitPattern count="many">{0} кПа</unitPattern>
+				<unitPattern count="other">{0} кПа</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>МПа</displayName>
+				<unitPattern count="one">{0} МПа</unitPattern>
+				<unitPattern count="few">{0} МПа</unitPattern>
+				<unitPattern count="many">{0} МПа</unitPattern>
+				<unitPattern count="other">{0} МПа</unitPattern>
 			</unit>
 			<unit type="speed-kilometer-per-hour">
 				<displayName>км/ч</displayName>
@@ -15370,6 +16235,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="few">{0} м/с</unitPattern>
 				<unitPattern count="many">{0} м/с</unitPattern>
 				<unitPattern count="other">{0} м/с</unitPattern>
+			</unit>
+			<unit type="speed-mile-per-hour">
+				<displayName>ми/ч</displayName>
+				<unitPattern count="one">{0} ми/ч</unitPattern>
+				<unitPattern count="few">{0} ми/ч</unitPattern>
+				<unitPattern count="many">{0} ми/ч</unitPattern>
+				<unitPattern count="other">{0} ми/ч</unitPattern>
 			</unit>
 			<unit type="speed-knot">
 				<displayName>уз</displayName>
@@ -15406,11 +16278,42 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} K</unitPattern>
 				<unitPattern count="other">{0} K</unitPattern>
 			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>фнт-фт</displayName>
+				<unitPattern count="one">{0} фнт-фт</unitPattern>
+				<unitPattern count="few">{0} фнт-фт</unitPattern>
+				<unitPattern count="many">{0} фнт-фт</unitPattern>
+				<unitPattern count="other">{0} фнт-фт</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>Н⋅м</displayName>
+				<unitPattern count="one">{0} Н⋅м</unitPattern>
+				<unitPattern count="few">{0} Н⋅м</unitPattern>
+				<unitPattern count="many">{0} Н⋅м</unitPattern>
+				<unitPattern count="other">{0} Н⋅м</unitPattern>
+			</unit>
 			<unit type="volume-cubic-kilometer">
+				<displayName>км³</displayName>
 				<unitPattern count="one">{0} км³</unitPattern>
 				<unitPattern count="few">{0} км³</unitPattern>
 				<unitPattern count="many">{0} км³</unitPattern>
 				<unitPattern count="other">{0} км³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>м³</displayName>
+				<unitPattern count="one">{0} м³</unitPattern>
+				<unitPattern count="few">{0} м³</unitPattern>
+				<unitPattern count="many">{0} м³</unitPattern>
+				<unitPattern count="other">{0} м³</unitPattern>
+				<perUnitPattern>{0}/м³</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>см³</displayName>
+				<unitPattern count="one">{0} см³</unitPattern>
+				<unitPattern count="few">{0} см³</unitPattern>
+				<unitPattern count="many">{0} см³</unitPattern>
+				<unitPattern count="other">{0} см³</unitPattern>
+				<perUnitPattern>{0}/см³</perUnitPattern>
 			</unit>
 			<unit type="volume-cubic-mile">
 				<displayName>ми³</displayName>
@@ -15419,12 +16322,218 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="many">{0} ми³</unitPattern>
 				<unitPattern count="other">{0} ми³</unitPattern>
 			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>ярд³</displayName>
+				<unitPattern count="one">{0} ярд³</unitPattern>
+				<unitPattern count="few">{0} ярд³</unitPattern>
+				<unitPattern count="many">{0} ярд³</unitPattern>
+				<unitPattern count="other">{0} ярд³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>фт³</displayName>
+				<unitPattern count="one">{0} фт³</unitPattern>
+				<unitPattern count="few">{0} фт³</unitPattern>
+				<unitPattern count="many">{0} фт³</unitPattern>
+				<unitPattern count="other">{0} фт³</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>дюйм³</displayName>
+				<unitPattern count="one">{0} дюйм³</unitPattern>
+				<unitPattern count="few">{0} дюйм³</unitPattern>
+				<unitPattern count="many">{0} дюйм³</unitPattern>
+				<unitPattern count="other">{0} дюйм³</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>Мл</displayName>
+				<unitPattern count="one">{0} Мл</unitPattern>
+				<unitPattern count="few">{0} Мл</unitPattern>
+				<unitPattern count="many">{0} Мл</unitPattern>
+				<unitPattern count="other">{0} Мл</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>гл</displayName>
+				<unitPattern count="one">{0} гл</unitPattern>
+				<unitPattern count="few">{0} гл</unitPattern>
+				<unitPattern count="many">{0} гл</unitPattern>
+				<unitPattern count="other">{0} гл</unitPattern>
+			</unit>
 			<unit type="volume-liter">
 				<displayName>л</displayName>
 				<unitPattern count="one">{0} л</unitPattern>
 				<unitPattern count="few">{0} л</unitPattern>
 				<unitPattern count="many">{0} л</unitPattern>
 				<unitPattern count="other">{0} л</unitPattern>
+				<perUnitPattern>{0}/л</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>дл</displayName>
+				<unitPattern count="one">{0} дл</unitPattern>
+				<unitPattern count="few">{0} дл</unitPattern>
+				<unitPattern count="many">{0} дл</unitPattern>
+				<unitPattern count="other">{0} дл</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>сл</displayName>
+				<unitPattern count="one">{0} сл</unitPattern>
+				<unitPattern count="few">{0} сл</unitPattern>
+				<unitPattern count="many">{0} сл</unitPattern>
+				<unitPattern count="other">{0} сл</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>мл</displayName>
+				<unitPattern count="one">{0} мл</unitPattern>
+				<unitPattern count="few">{0} мл</unitPattern>
+				<unitPattern count="many">{0} мл</unitPattern>
+				<unitPattern count="other">{0} мл</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>мпт</displayName>
+				<unitPattern count="one">{0} мпт</unitPattern>
+				<unitPattern count="few">{0} мпт</unitPattern>
+				<unitPattern count="many">{0} мпт</unitPattern>
+				<unitPattern count="other">{0} мпт</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>м. чаш.</displayName>
+				<unitPattern count="one">{0} м. чаш.</unitPattern>
+				<unitPattern count="few">{0} м. чаш.</unitPattern>
+				<unitPattern count="many">{0} м. чаш.</unitPattern>
+				<unitPattern count="other">{0} м. чаш.</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>акрофут.</displayName>
+				<unitPattern count="one">{0} акрофут</unitPattern>
+				<unitPattern count="few">{0} акрофут.</unitPattern>
+				<unitPattern count="many">{0} акрофут.</unitPattern>
+				<unitPattern count="other">{0} акрофут.</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>буш.</displayName>
+				<unitPattern count="one">{0} буш.</unitPattern>
+				<unitPattern count="few">{0} буш.</unitPattern>
+				<unitPattern count="many">{0} буш.</unitPattern>
+				<unitPattern count="other">{0} буш.</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>ам. гал.</displayName>
+				<unitPattern count="one">{0} ам. гал.</unitPattern>
+				<unitPattern count="few">{0} ам. гал.</unitPattern>
+				<unitPattern count="many">{0} ам. гал.</unitPattern>
+				<unitPattern count="other">{0} ам. гал.</unitPattern>
+				<perUnitPattern>{0}/ам. гал</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>имп. гал.</displayName>
+				<unitPattern count="one">{0} имп. гал.</unitPattern>
+				<unitPattern count="few">{0} имп. гал.</unitPattern>
+				<unitPattern count="many">{0} имп. гал.</unitPattern>
+				<unitPattern count="other">{0} имп. гал.</unitPattern>
+				<perUnitPattern>{0}/имп. гал</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>ам. кварт.</displayName>
+				<unitPattern count="one">{0} ам. кварт.</unitPattern>
+				<unitPattern count="few">{0} ам. кварт.</unitPattern>
+				<unitPattern count="many">{0} ам. кварт.</unitPattern>
+				<unitPattern count="other">{0} ам. кварт.</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>ам. пинт.</displayName>
+				<unitPattern count="one">{0} ам. пинт.</unitPattern>
+				<unitPattern count="few">{0} ам. пинт.</unitPattern>
+				<unitPattern count="many">{0} ам. пинт.</unitPattern>
+				<unitPattern count="other">{0} ам. пинт.</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>ам. чаш.</displayName>
+				<unitPattern count="one">{0} ам. чаш.</unitPattern>
+				<unitPattern count="few">{0} ам. чаш.</unitPattern>
+				<unitPattern count="many">{0} ам. чаш.</unitPattern>
+				<unitPattern count="other">{0} ам. чаш.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>ам. жидк. унц.</displayName>
+				<unitPattern count="one">{0} ам. жидк. унц.</unitPattern>
+				<unitPattern count="few">{0} ам. жидк. унц.</unitPattern>
+				<unitPattern count="many">{0} ам. жидк. унц.</unitPattern>
+				<unitPattern count="other">{0} ам. жидк. унц.</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>имп. жидк. унц.</displayName>
+				<unitPattern count="one">{0} имп. жидк. унц.</unitPattern>
+				<unitPattern count="few">{0} имп. жидк. унц.</unitPattern>
+				<unitPattern count="many">{0} имп. жидк. унц.</unitPattern>
+				<unitPattern count="other">{0} имп. жидк. унц.</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>ст. л.</displayName>
+				<unitPattern count="one">{0} ст. л.</unitPattern>
+				<unitPattern count="few">{0} ст. л.</unitPattern>
+				<unitPattern count="many">{0} ст. л.</unitPattern>
+				<unitPattern count="other">{0} ст. л.</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>ч. л.</displayName>
+				<unitPattern count="one">{0} ч. л.</unitPattern>
+				<unitPattern count="few">{0} ч. л.</unitPattern>
+				<unitPattern count="many">{0} ч. л.</unitPattern>
+				<unitPattern count="other">{0} ч. л.</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>барр.</displayName>
+				<unitPattern count="one">{0} барр.</unitPattern>
+				<unitPattern count="few">{0} барр.</unitPattern>
+				<unitPattern count="many">{0} барр.</unitPattern>
+				<unitPattern count="other">{0} барр.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>дес. л.</displayName>
+				<unitPattern count="one">{0} дес. л.</unitPattern>
+				<unitPattern count="few">{0} дес. л.</unitPattern>
+				<unitPattern count="many">{0} дес. л.</unitPattern>
+				<unitPattern count="other">{0} дес. л.</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>имп. дес. л.</displayName>
+				<unitPattern count="one">{0} имп. дес. л.</unitPattern>
+				<unitPattern count="few">{0} имп. дес. л.</unitPattern>
+				<unitPattern count="many">{0} имп. дес. л.</unitPattern>
+				<unitPattern count="other">{0} имп. дес. л.</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>кап.</displayName>
+				<unitPattern count="one">{0} кап.</unitPattern>
+				<unitPattern count="few">{0} кап.</unitPattern>
+				<unitPattern count="many">{0} кап.</unitPattern>
+				<unitPattern count="other">{0} кап.</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>жидк. др.</displayName>
+				<unitPattern count="one">{0} жидк. др.</unitPattern>
+				<unitPattern count="few">{0} жидк. др.</unitPattern>
+				<unitPattern count="many">{0} жидк. др.</unitPattern>
+				<unitPattern count="other">{0} жидк. др.</unitPattern>
+			</unit>
+			<unit type="volume-jigger">
+				<displayName>джиггер</displayName>
+				<unitPattern count="one">{0} джиггер</unitPattern>
+				<unitPattern count="few">{0} джиггера</unitPattern>
+				<unitPattern count="many">{0} джиггеров</unitPattern>
+				<unitPattern count="other">{0} джиггера</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>щепот.</displayName>
+				<unitPattern count="one">{0} щепот.</unitPattern>
+				<unitPattern count="few">{0} щепот.</unitPattern>
+				<unitPattern count="many">{0} щепот.</unitPattern>
+				<unitPattern count="other">{0} щепот.</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>имп. кварт.</displayName>
+				<unitPattern count="one">{0} имп. кварт.</unitPattern>
+				<unitPattern count="few">{0} имп. кварт.</unitPattern>
+				<unitPattern count="many">{0} имп. кварт.</unitPattern>
+				<unitPattern count="other">{0} имп. кварт.</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>напр.</displayName>
@@ -15457,7 +16566,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<listPatternPart type="end">{0} или {1}</listPatternPart>
 			<listPatternPart type="2">{0} или {1}</listPatternPart>
 		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} или {1}</listPatternPart>
+			<listPatternPart type="2">{0} или {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
+			<listPatternPart type="end">{0} или {1}</listPatternPart>
+			<listPatternPart type="2">{0} или {1}</listPatternPart>
+		</listPattern>
 		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}, {1}</listPatternPart>
+			<listPatternPart type="middle">{0}, {1}</listPatternPart>
 			<listPatternPart type="end">{0}, {1}</listPatternPart>
 			<listPatternPart type="2">{0}, {1}</listPatternPart>
 		</listPattern>
@@ -15671,13 +16794,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<personName order="givenFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{given} {given2} {surname}, {suffix}</namePattern>
+			<namePattern>{title} {given} {given2} {surname} — {generation}, {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -15688,11 +16811,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
 			<namePattern>{given-informal-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} — {generation}, {credentials}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{given-informal} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -15710,7 +16836,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal} {surname-initial}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -15722,13 +16848,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2}, {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -15740,13 +16866,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname-monogram-allCaps}{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2-initial}, {suffix}</namePattern>
+			<namePattern>{surname} {given} {given2-initial}, {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -15764,7 +16890,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname} {given-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{prefix} {surname}</namePattern>
+			<namePattern>{title} {surname}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -15793,27 +16919,51 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">Сергей</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">Ирина</nameField>
 			<nameField type="surname">Амосова</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">Дмитрий</nameField>
-			<nameField type="given2">Альберт</nameField>
+			<nameField type="given2">Петрович</nameField>
 			<nameField type="surname">Васильев</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">проф., д-р</nameField>
-			<nameField type="given">Анна</nameField>
-			<nameField type="given-informal">Аня</nameField>
-			<nameField type="given2">Аделина</nameField>
-			<nameField type="surname-prefix">ван ден</nameField>
-			<nameField type="surname-core">Вольф</nameField>
-			<nameField type="surname2">Стоцкая</nameField>
-			<nameField type="suffix">к. м. н.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">∅∅∅</nameField>
+			<nameField type="given">Иван</nameField>
+			<nameField type="given-informal">Ваня</nameField>
+			<nameField type="given2">Васильевич</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">Купцов</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">∅∅∅</nameField>
+			<nameField type="credentials">∅∅∅</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">Синдбад</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">Кете</nameField>
+			<nameField type="surname">Мюллер</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">Цецилия</nameField>
+			<nameField type="given2">Хэмиш</nameField>
+			<nameField type="surname">Штёбер</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">проф., д-р</nameField>
+			<nameField type="given">Ада Корнелия</nameField>
+			<nameField type="given-informal">Неле</nameField>
+			<nameField type="given2">Сезар Мартин</nameField>
+			<nameField type="surname-prefix">фон</nameField>
+			<nameField type="surname-core">Брюль</nameField>
+			<nameField type="surname2">Гонсалес Доминго</nameField>
+			<nameField type="generation">мл.</nameField>
+			<nameField type="credentials">к. м. н.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

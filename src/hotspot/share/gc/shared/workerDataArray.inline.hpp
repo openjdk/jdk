@@ -133,7 +133,7 @@ double WorkerDataArray<T>::average() const {
   if (contributing_threads == 0) {
     return 0.0;
   }
-  return sum() / (double) contributing_threads;
+  return (double) sum() / (double) contributing_threads;
 }
 
 template <typename T>
@@ -178,7 +178,7 @@ void WorkerDataArray<T>::print_summary_on(outputStream* out, bool print_sum) con
     }
     T diff = max - min;
     assert(contributing_threads != 0, "Must be since we found a used value for the start index");
-    double avg = sum / (double) contributing_threads;
+    double avg = (double) sum / (double) contributing_threads;
     WDAPrinter::summary(out, min, avg, max, diff, sum, print_sum);
     out->print_cr(", Workers: %d", contributing_threads);
   } else {

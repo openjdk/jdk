@@ -860,7 +860,7 @@ class ZipFileSystem extends FileSystem {
             if (e == null)
                 throw new NoSuchFileException(getString(path));
             if (e.isDir())
-                throw new FileSystemException(getString(path), "is a directory", null);
+                throw new FileSystemException(getString(path), null, "is a directory");
             return getInputStream(e);
         } finally {
             endRead();

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -75,14 +75,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few" draft="contributed">{0} أمتار في الثانية المربعة</unitPattern>
 				<unitPattern count="many" draft="contributed">{0} مترًا في الثانية المربعة</unitPattern>
 				<unitPattern count="other" draft="contributed">{0} متر في الثانية المربعة</unitPattern>
-			</unit>
-			<unit type="angle-arc-minute">
-				<unitPattern count="zero">{0} دقيقة قوسية</unitPattern>
-				<unitPattern count="one">دقيقة قوسية</unitPattern>
-				<unitPattern count="two">دقيقتان قوسيتان</unitPattern>
-				<unitPattern count="few">{0} دقائق قوسية</unitPattern>
-				<unitPattern count="many">{0} دقيقة قوسية</unitPattern>
-				<unitPattern count="other">{0} دقيقة قوسية</unitPattern>
 			</unit>
 			<unit type="area-square-kilometer">
 				<unitPattern count="zero">{0} كيلومتر مربع</unitPattern>
@@ -543,14 +535,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} سنة</unitPattern>
 				<unitPattern count="other">{0} سنة</unitPattern>
 			</unit>
-			<unit type="energy-british-thermal-unit">
-				<unitPattern count="zero">{0} وحدة حرارية بريطانية</unitPattern>
-				<unitPattern count="one">{0} وحدة حرارية بريطانية</unitPattern>
-				<unitPattern count="two">{0} وحدة حرارية بريطانية</unitPattern>
-				<unitPattern count="few">{0} وحدات حرارية بريطانية</unitPattern>
-				<unitPattern count="many">{0} وحدة حرارية بريطانية</unitPattern>
-				<unitPattern count="other">{0} وحدة حرارية بريطانية</unitPattern>
-			</unit>
 			<unit type="length-mile">
 				<unitPattern count="zero">{0} ميل</unitPattern>
 				<unitPattern count="one">ميل</unitPattern>
@@ -784,6 +768,40 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</coordinateUnit>
 		</unitLength>
 		<unitLength type="narrow">
+			<unit type="angle-revolution">
+				<unitPattern count="two">دورتان</unitPattern>
+				<unitPattern count="few">{0} دورات</unitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<unitPattern count="two">هكتاران</unitPattern>
+				<unitPattern count="few">{0} هكتارات</unitPattern>
+				<unitPattern count="many">{0} هكتارًا</unitPattern>
+			</unit>
+			<unit type="area-acre">
+				<unitPattern count="two">فدانان</unitPattern>
+				<unitPattern count="few">{0} أفدنة</unitPattern>
+				<unitPattern count="many">{0} فدانًا</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<unitPattern count="two">قيراطان</unitPattern>
+				<unitPattern count="few">{0} قراريط</unitPattern>
+				<unitPattern count="many">{0} قيراطًا</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<unitPattern count="two">جزءان/مليون</unitPattern>
+				<unitPattern count="few">{0} أجزاء/مليون</unitPattern>
+				<unitPattern count="many">{0} جزءًا/مليون</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<unitPattern count="two">ميلان/غالون</unitPattern>
+				<unitPattern count="few">{0} أميال/غالون</unitPattern>
+				<unitPattern count="many">{0} ميلًا/غالون</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<unitPattern count="two">ميلان/غ. إمبراطوري</unitPattern>
+				<unitPattern count="few">{0} أميال/غ. إمبراطوري</unitPattern>
+				<unitPattern count="many">{0} ميلًا/غ. إمبراطوري</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<unitPattern count="zero">{0} سنة</unitPattern>
 				<unitPattern count="one">سنة</unitPattern>
@@ -792,13 +810,32 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="many">{0} سنة</unitPattern>
 				<unitPattern count="other">{0} سنة</unitPattern>
 			</unit>
-			<unit type="duration-month">
-				<unitPattern count="zero">{0} شهر</unitPattern>
-				<unitPattern count="one">شهر</unitPattern>
-				<unitPattern count="two">شهران</unitPattern>
-				<unitPattern count="few">{0} أشهر</unitPattern>
-				<unitPattern count="many">{0} شهرًا</unitPattern>
-				<unitPattern count="other">{0} شهر</unitPattern>
+			<unit type="length-yard">
+				<unitPattern count="two">ياردتان</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<unitPattern count="two">قدمان</unitPattern>
+				<unitPattern count="few">{0} أقدام</unitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<unitPattern count="two">فرسخان فلكيان</unitPattern>
+				<unitPattern count="few">{0} فراسخ فلكية</unitPattern>
+				<unitPattern count="many">{0} فرسخًا فلكيًا</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<unitPattern count="two">ميلان بحريان</unitPattern>
+				<unitPattern count="few">{0} أميال بحرية</unitPattern>
+				<unitPattern count="many">{0} ميلًا بحريًا</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<unitPattern count="two">ميلان اسكندنافيان</unitPattern>
+				<unitPattern count="few">{0} أميال اسكندنافية</unitPattern>
+				<unitPattern count="many">{0} ميلًا اسكندنافيًا</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<unitPattern count="two">ضياءان شمسيان</unitPattern>
+				<unitPattern count="few">{0} ضياءات شمسية</unitPattern>
+				<unitPattern count="many">{0} ضياءً شمسيًا</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>كغم</displayName>
@@ -817,6 +854,87 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="few">{0} غم</unitPattern>
 				<unitPattern count="many">{0} غم</unitPattern>
 				<unitPattern count="other">{0} غم</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<unitPattern count="two">طنان</unitPattern>
+				<unitPattern count="few">{0} أطنان</unitPattern>
+				<unitPattern count="many">{0} طنًا</unitPattern>
+			</unit>
+			<unit type="mass-pound">
+				<unitPattern count="two">رطلان</unitPattern>
+				<unitPattern count="few">{0} أرطال</unitPattern>
+				<unitPattern count="many">{0} رطلُا</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<unitPattern count="two">قيراطان</unitPattern>
+				<unitPattern count="few">{0} قراريط</unitPattern>
+				<unitPattern count="many">{0} قيراطًا</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<unitPattern count="two">كتلتان أرضيتان</unitPattern>
+				<unitPattern count="few">{0} كتل أرضية</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<unitPattern count="two">كتلتان شمسيتان</unitPattern>
+				<unitPattern count="few">{0} كتل شمسية</unitPattern>
+			</unit>
+			<unit type="pressure-pound-force-per-square-inch">
+				<unitPattern count="two">رطلان/بوصة²</unitPattern>
+				<unitPattern count="few">{0} أرطال/بوصة²</unitPattern>
+				<unitPattern count="many">{0} رطلًا/بوصة²</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>كيلوباسكال</displayName>
+				<unitPattern count="zero">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="one">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="two">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="few">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="many">{0} كيلوباسكال</unitPattern>
+				<unitPattern count="other">{0} كيلوباسكال</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>ميغاباسكال</displayName>
+				<unitPattern count="zero">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="one">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="two">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="few">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="many">{0} ميغاباسكال</unitPattern>
+				<unitPattern count="other">{0} ميغاباسكال</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<unitPattern count="two">عقدتان</unitPattern>
+				<unitPattern count="few">{0} عقد</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>درجة كلفن</displayName>
+				<unitPattern count="zero">{0} درجة كلفن</unitPattern>
+				<unitPattern count="one">{0} درجة كلفن</unitPattern>
+				<unitPattern count="two">{0} درجة كلفن</unitPattern>
+				<unitPattern count="few">{0} درجة كلفن</unitPattern>
+				<unitPattern count="many">{0} درجة كلفن</unitPattern>
+				<unitPattern count="other">{0} درجة كلفن</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<unitPattern count="two">مكيالان متريان</unitPattern>
+				<unitPattern count="few">{0} مكاييل مترية</unitPattern>
+				<unitPattern count="many">{0} مكيالًا متريًا</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<unitPattern count="two">كوبان متريان</unitPattern>
+				<unitPattern count="few">{0} أكواب مترية</unitPattern>
+				<unitPattern count="many">{0} كوبًا متريًا</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<unitPattern count="two">كوبان</unitPattern>
+				<unitPattern count="few">{0} أكواب</unitPattern>
+				<unitPattern count="many">{0} كوبًا</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<unitPattern count="two">أونصتان سائلتان</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<unitPattern count="two">{0} ملعقتان ص</unitPattern>
+				<unitPattern count="few">{0} ملاعق ص</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<coordinateUnitPattern type="south">{0} جنوب</coordinateUnitPattern>

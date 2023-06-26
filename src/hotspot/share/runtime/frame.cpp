@@ -1012,7 +1012,7 @@ class CompiledArgumentOopFinder: public SignatureIterator {
       }
       tty->print_cr("Error walking frame oops:");
       _fr.print_on(tty);
-      assert(loc != nullptr, "missing register map entry reg: " INTPTR_FORMAT " %s loc: " INTPTR_FORMAT, reg->value(), reg->name(), p2i(loc));
+      assert(loc != nullptr, "missing register map entry reg: %d %s loc: " INTPTR_FORMAT, reg->value(), reg->name(), p2i(loc));
     }
   #endif
     _f->do_oop(loc);
@@ -1241,7 +1241,7 @@ class FrameValuesOopClosure: public OopClosure, public DerivedOopClosure {
 private:
   GrowableArray<oop*>* _oops;
   GrowableArray<narrowOop*>* _narrow_oops;
-  GrowableArray<oop*>* _base;
+  GrowableArray<derived_base*>* _base;
   GrowableArray<derived_pointer*>* _derived;
   NoSafepointVerifier nsv;
 
@@ -1249,7 +1249,7 @@ public:
   FrameValuesOopClosure() {
     _oops = new (mtThread) GrowableArray<oop*>(100, mtThread);
     _narrow_oops = new (mtThread) GrowableArray<narrowOop*>(100, mtThread);
-    _base = new (mtThread) GrowableArray<oop*>(100, mtThread);
+    _base = new (mtThread) GrowableArray<derived_base*>(100, mtThread);
     _derived = new (mtThread) GrowableArray<derived_pointer*>(100, mtThread);
   }
   ~FrameValuesOopClosure() {
@@ -1261,7 +1261,7 @@ public:
 
   virtual void do_oop(oop* p) override { _oops->push(p); }
   virtual void do_oop(narrowOop* p) override { _narrow_oops->push(p); }
-  virtual void do_derived_oop(oop* base_loc, derived_pointer* derived_loc) override {
+  virtual void do_derived_oop(derived_base* base_loc, derived_pointer* derived_loc) override {
     _base->push(base_loc);
     _derived->push(derived_loc);
   }
@@ -1281,7 +1281,7 @@ public:
     }
     assert(_base->length() == _derived->length(), "should be the same");
     for (int i = 0; i < _base->length(); i++) {
-      oop* base = _base->at(i);
+      derived_base* base = _base->at(i);
       derived_pointer* derived = _derived->at(i);
       values.describe(frame_no, (intptr_t*)derived, err_msg("derived pointer (base: " INTPTR_FORMAT ") for #%d", p2i(base), frame_no));
     }
@@ -1441,7 +1441,7 @@ void frame::describe(FrameValues& values, int frame_no, const RegisterMap* reg_m
         assert(t == sig_bt[sig_index], "sigs in sync");
         VMReg fst = regs[sig_index].first();
         if (fst->is_stack()) {
-          assert(((int)fst->reg2stack()) >= 0, "reg2stack: " INTPTR_FORMAT, fst->reg2stack());
+          assert(((int)fst->reg2stack()) >= 0, "reg2stack: %d", fst->reg2stack());
           int offset = (fst->reg2stack() + out_preserve) * VMRegImpl::stack_slot_size + stack_slot_offset;
           intptr_t* stack_address = (intptr_t*)((address)unextended_sp() + offset);
           if (at_this) {

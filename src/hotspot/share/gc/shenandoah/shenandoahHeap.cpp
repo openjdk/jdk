@@ -58,7 +58,6 @@
 #include "gc/shenandoah/shenandoahParallelCleaning.inline.hpp"
 #include "gc/shenandoah/shenandoahReferenceProcessor.hpp"
 #include "gc/shenandoah/shenandoahRootProcessor.inline.hpp"
-#include "gc/shenandoah/shenandoahStringDedup.hpp"
 #include "gc/shenandoah/shenandoahSTWMark.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
@@ -478,8 +477,8 @@ ShenandoahHeap::ShenandoahHeap(ShenandoahCollectorPolicy* policy) :
   _phase_timings(nullptr),
   _monitoring_support(nullptr),
   _memory_pool(nullptr),
-  _stw_memory_manager("Shenandoah Pauses", "end of GC pause"),
-  _cycle_memory_manager("Shenandoah Cycles", "end of GC cycle"),
+  _stw_memory_manager("Shenandoah Pauses"),
+  _cycle_memory_manager("Shenandoah Cycles"),
   _gc_timer(new ConcurrentGCTimer()),
   _soft_ref_policy(),
   _log_min_obj_alignment_in_bytes(LogMinObjAlignmentInBytes),
@@ -594,6 +593,7 @@ void ShenandoahHeap::print_on(outputStream* st) const {
   MetaspaceUtils::print_on(st);
 
   if (Verbose) {
+    st->cr();
     print_heap_regions_on(st);
   }
 }
@@ -1022,10 +1022,13 @@ void ShenandoahHeap::trash_cset_regions() {
 
 void ShenandoahHeap::print_heap_regions_on(outputStream* st) const {
   st->print_cr("Heap Regions:");
-  st->print_cr("EU=empty-uncommitted, EC=empty-committed, R=regular, H=humongous start, HC=humongous continuation, CS=collection set, T=trash, P=pinned");
-  st->print_cr("BTE=bottom/top/end, U=used, T=TLAB allocs, G=GCLAB allocs, S=shared allocs, L=live data");
-  st->print_cr("R=root, CP=critical pins, TAMS=top-at-mark-start, UWM=update watermark");
-  st->print_cr("SN=alloc sequence number");
+  st->print_cr("Region state: EU=empty-uncommitted, EC=empty-committed, R=regular, H=humongous start, HP=pinned humongous start");
+  st->print_cr("              HC=humongous continuation, CS=collection set, TR=trash, P=pinned, CSP=pinned collection set");
+  st->print_cr("BTE=bottom/top/end, TAMS=top-at-mark-start");
+  st->print_cr("UWM=update watermark, U=used");
+  st->print_cr("T=TLAB allocs, G=GCLAB allocs");
+  st->print_cr("S=shared allocs, L=live data");
+  st->print_cr("CP=critical pins");
 
   for (size_t i = 0; i < num_regions(); i++) {
     get_region(i)->print_on(st);
@@ -1185,9 +1188,6 @@ void ShenandoahHeap::gc_threads_do(ThreadClosure* tcl) const {
   workers()->threads_do(tcl);
   if (_safepoint_workers != nullptr) {
     _safepoint_workers->threads_do(tcl);
-  }
-  if (ShenandoahStringDedup::is_enabled()) {
-    ShenandoahStringDedup::threads_do(tcl);
   }
 }
 
@@ -1507,7 +1507,7 @@ public:
 
     size_t max = _heap->num_regions();
     while (Atomic::load(&_index) < max) {
-      size_t cur = Atomic::fetch_and_add(&_index, stride, memory_order_relaxed);
+      size_t cur = Atomic::fetch_then_add(&_index, stride, memory_order_relaxed);
       size_t start = cur;
       size_t end = MIN2(cur + stride, max);
       if (start >= max) break;
@@ -1740,20 +1740,8 @@ size_t ShenandoahHeap::tlab_used(Thread* thread) const {
 }
 
 bool ShenandoahHeap::try_cancel_gc() {
-  while (true) {
-    jbyte prev = _cancelled_gc.cmpxchg(CANCELLED, CANCELLABLE);
-    if (prev == CANCELLABLE) return true;
-    else if (prev == CANCELLED) return false;
-    assert(ShenandoahSuspendibleWorkers, "should not get here when not using suspendible workers");
-    assert(prev == NOT_CANCELLED, "must be NOT_CANCELLED");
-    Thread* thread = Thread::current();
-    if (thread->is_Java_thread()) {
-      // We need to provide a safepoint here, otherwise we might
-      // spin forever if a SP is pending.
-      ThreadBlockInVM sp(JavaThread::cast(thread));
-      SpinPause();
-    }
-  }
+  jbyte prev = _cancelled_gc.cmpxchg(CANCELLED, CANCELLABLE);
+  return prev == CANCELLABLE;
 }
 
 void ShenandoahHeap::cancel_gc(GCCause::Cause cause) {
@@ -2131,6 +2119,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
 
 void ShenandoahHeap::print_extended_on(outputStream *st) const {
   print_on(st);
+  st->cr();
   print_heap_regions_on(st);
 }
 
@@ -2205,13 +2194,13 @@ bool ShenandoahHeap::uncommit_bitmap_slice(ShenandoahHeapRegion *r) {
 }
 
 void ShenandoahHeap::safepoint_synchronize_begin() {
-  if (ShenandoahSuspendibleWorkers || UseStringDeduplication) {
+  if (ShenandoahSuspendibleWorkers) {
     SuspendibleThreadSet::synchronize();
   }
 }
 
 void ShenandoahHeap::safepoint_synchronize_end() {
-  if (ShenandoahSuspendibleWorkers || UseStringDeduplication) {
+  if (ShenandoahSuspendibleWorkers) {
     SuspendibleThreadSet::desynchronize();
   }
 }

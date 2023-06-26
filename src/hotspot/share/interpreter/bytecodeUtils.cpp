@@ -271,12 +271,12 @@ static void print_klass_name(outputStream *os, Symbol *klass) {
 
 // Prints the name of the method that is described at constant pool
 // index cp_index in the constant pool of method 'method'.
-static void print_method_name(outputStream *os, Method* method, int cp_index) {
+static void print_method_name(outputStream *os, Method* method, int cp_index, Bytecodes::Code bc) {
   ResourceMark rm;
   ConstantPool* cp  = method->constants();
-  Symbol* klass     = cp->klass_ref_at_noresolve(cp_index);
-  Symbol* name      = cp->name_ref_at(cp_index);
-  Symbol* signature = cp->signature_ref_at(cp_index);
+  Symbol* klass     = cp->klass_ref_at_noresolve(cp_index, bc);
+  Symbol* name      = cp->name_ref_at(cp_index, bc);
+  Symbol* signature = cp->signature_ref_at(cp_index, bc);
 
   print_klass_name(os, klass);
   os->print(".%s(", name->as_C_string());
@@ -287,19 +287,19 @@ static void print_method_name(outputStream *os, Method* method, int cp_index) {
 
 // Prints the name of the field that is described at constant pool
 // index cp_index in the constant pool of method 'method'.
-static void print_field_and_class(outputStream *os, Method* method, int cp_index) {
+static void print_field_and_class(outputStream *os, Method* method, int cp_index, Bytecodes::Code bc) {
   ResourceMark rm;
   ConstantPool* cp = method->constants();
-  Symbol* klass    = cp->klass_ref_at_noresolve(cp_index);
-  Symbol *name     = cp->name_ref_at(cp_index);
+  Symbol* klass    = cp->klass_ref_at_noresolve(cp_index, bc);
+  Symbol *name     = cp->name_ref_at(cp_index, bc);
   print_klass_name(os, klass);
   os->print(".%s", name->as_C_string());
 }
 
 // Returns the name of the field that is described at constant pool
 // index cp_index in the constant pool of method 'method'.
-static char const* get_field_name(Method* method, int cp_index) {
-  Symbol* name = method->constants()->name_ref_at(cp_index);
+static char const* get_field_name(Method* method, int cp_index, Bytecodes::Code bc) {
+  Symbol* name = method->constants()->name_ref_at(cp_index, bc);
   return name->as_C_string();
 }
 
@@ -353,7 +353,7 @@ static void print_local_var(outputStream *os, unsigned int bci, Method* method, 
 
 StackSlotAnalysisData::StackSlotAnalysisData(BasicType type) : _bci(INVALID), _type(type) {}
 
-StackSlotAnalysisData::StackSlotAnalysisData(int bci, BasicType type) : _bci(bci), _type(type) {
+StackSlotAnalysisData::StackSlotAnalysisData(int bci, BasicType type) : _bci((u2)bci), _type(type) {
   assert(bci >= 0, "BCI must be >= 0");
   assert(bci < 65536, "BCI must be < 65536");
 }
@@ -476,7 +476,7 @@ ExceptionMessageBuilder::ExceptionMessageBuilder(Method* method, int bci) :
   _stacks->at_put(0, new SimulatedOperandStack());
 
   // And initialize the start of all exception handlers.
-  if (const_method->has_exception_handler()) {
+  if (const_method->has_exception_table()) {
     ExceptionTableElement *et = const_method->exception_table_start();
     for (int i = 0; i < const_method->exception_table_length(); ++i) {
       u2 index = et[i].handler_pc;
@@ -970,7 +970,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
       // Find out the type of the field accessed.
       int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
       Symbol* signature = cp->symbol_at(type_index);
       // Simulate the bytecode: pop the address, push the 'value' loaded
@@ -984,7 +984,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
     case Bytecodes::_putfield: {
       int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
       ConstantPool* cp = _method->constants();
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
       Symbol* signature = cp->symbol_at(type_index);
       BasicType bt = Signature::basic_type(signature);
@@ -1006,7 +1006,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
         cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
       }
 
-      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+      int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
       int type_index = cp->signature_ref_index_at(name_and_type_index);
       Symbol* signature = cp->symbol_at(type_index);
 
@@ -1081,7 +1081,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
   }
 
   // If we have more than one branch target, process these too.
-  for (int64_t i = 0; i < dests.length(); ++i) {
+  for (int i = 0; i < dests.length(); ++i) {
     if (_stacks->at(dests.at(i)) == nullptr) {
       _added_one = true;
     }
@@ -1134,7 +1134,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_putfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int type_index = cp->signature_ref_index_at(name_and_type_index);
         Symbol* signature = cp->symbol_at(type_index);
         BasicType bt = Signature::basic_type(signature);
@@ -1145,7 +1145,7 @@ int ExceptionMessageBuilder::get_NPE_null_slot(int bci) {
     case Bytecodes::_invokeinterface: {
         int cp_index = Bytes::get_native_u2(code_base+ pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int name_index = cp->name_ref_index_at(name_and_type_index);
         Symbol* name = cp->symbol_at(name_index);
 
@@ -1327,7 +1327,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
 
     case Bytecodes::_getstatic: {
       int cp_index = Bytes::get_native_u2(code_base + pos) + ConstantPool::CPCACHE_INDEX_TAG;
-      print_field_and_class(os, _method, cp_index);
+      print_field_and_class(os, _method, cp_index, code);
       return true;
     }
 
@@ -1338,7 +1338,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
         os->print(".");
       }
       int cp_index = Bytes::get_native_u2(code_base + pos) + ConstantPool::CPCACHE_INDEX_TAG;
-      os->print("%s", get_field_name(_method, cp_index));
+      os->print("%s", get_field_name(_method, cp_index, code));
       return true;
     }
 
@@ -1350,7 +1350,7 @@ bool ExceptionMessageBuilder::print_NPE_cause0(outputStream* os, int bci, int sl
       if (max_detail == _max_cause_detail && !inner_expr) {
         os->print(" because the return value of \"");
       }
-      print_method_name(os, _method, cp_index);
+      print_method_name(os, _method, cp_index, code);
       return true;
     }
 
@@ -1416,21 +1416,21 @@ void ExceptionMessageBuilder::print_NPE_failed_action(outputStream *os, int bci)
     case Bytecodes::_getfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         ConstantPool* cp = _method->constants();
-        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index);
+        int name_and_type_index = cp->name_and_type_ref_index_at(cp_index, code);
         int name_index = cp->name_ref_index_at(name_and_type_index);
         Symbol* name = cp->symbol_at(name_index);
         os->print("Cannot read field \"%s\"", name->as_C_string());
       } break;
     case Bytecodes::_putfield: {
         int cp_index = Bytes::get_native_u2(code_base + pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
-        os->print("Cannot assign field \"%s\"", get_field_name(_method, cp_index));
+        os->print("Cannot assign field \"%s\"", get_field_name(_method, cp_index, code));
       } break;
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokeinterface: {
         int cp_index = Bytes::get_native_u2(code_base+ pos) DEBUG_ONLY(+ ConstantPool::CPCACHE_INDEX_TAG);
         os->print("Cannot invoke \"");
-        print_method_name(os, _method, cp_index);
+        print_method_name(os, _method, cp_index, code);
         os->print("\"");
       } break;
 
@@ -1447,7 +1447,7 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
 
   // If this NPE was created via reflection, we have no real NPE.
   if (method->method_holder() ==
-      vmClasses::reflect_NativeConstructorAccessorImpl_klass()) {
+      vmClasses::reflect_DirectConstructorHandleAccessor_NativeAccessor_klass()) {
     return false;
   }
 
