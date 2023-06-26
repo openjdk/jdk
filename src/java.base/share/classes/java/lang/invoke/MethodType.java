@@ -896,7 +896,8 @@ class MethodType
         if (x instanceof MethodType mt) {
             return equals(mt);
         }
-        if (x instanceof ConcurrentWeakInternSet.WeakEntry<?> e && e.get() instanceof MethodType mt) {
+        if (x instanceof ConcurrentWeakInternSet.WeakEntry<?> e
+                && e.get() instanceof MethodType mt) {
             return equals(mt);
         }
         return false;
