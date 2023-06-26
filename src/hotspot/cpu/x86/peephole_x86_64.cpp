@@ -134,12 +134,12 @@ bool lea_coalesce_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseReg
 
 // This function removes the TEST instruction when it detected shapes likes AND r1, r2; TEST r1, r1
 bool test_may_remove_helper(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                               MachNode* (*new_root)(), uint inst0_rule, std::initializer_list<uint> rules_to_match) {
+                               MachNode* (*new_root)(), uint inst0_rule, uint num_rules, ...) {
   MachNode* inst0 = block->get_node(block_index)->as_Mach();
   assert(inst0->rule() == inst0_rule, "sanity");
 
   Node* inst1 = inst0->in(1);
-  // Only remove test if the block order is inst1 -> MachProjNode (cause AND specifies KILL cr) -> inst0
+  // Only remove test if the block order is inst1 -> MachProjNode (because AND specifies KILL cr) -> inst0
   // So inst1 must be at index - 2
   if (block_index < 2 || block->get_node(block_index - 2) != inst1) {
     return false;
@@ -147,7 +147,10 @@ bool test_may_remove_helper(Block* block, int block_index, PhaseCFG* cfg_, Phase
   if (inst1 != nullptr) {
     MachNode* maybeAndNode = inst1->isa_Mach();
     if (maybeAndNode != nullptr) {
-      for (const uint rule : rules_to_match) {
+      va_list rules_to_match;
+      va_start(rules_to_match, num_rules);
+      for (uint i = 0; i < num_rules; i++) {
+        uint rule = va_arg(rules_to_match, uint);
         if (maybeAndNode->rule() == rule) {
           MachProjNode* machProjNode = block->get_node(block_index - 1)->isa_MachProj();
           assert(machProjNode != nullptr, "Expected a MachProj node here!");
@@ -181,8 +184,7 @@ bool Peephole::lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, P
 bool Peephole::test_may_remove_5(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                  MachNode* (*new_root)(), uint inst0_rule, uint inst1_rule, uint inst2_rule,
                                  uint inst3_rule, uint inst4_rule, uint inst5_rule) {
-  std::initializer_list<uint> rules = {inst1_rule, inst2_rule, inst3_rule, inst4_rule, inst5_rule};
-  return test_may_remove_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, rules);
+  return test_may_remove_helper(block, block_index, cfg_, ra_, new_root, inst0_rule, 5, inst1_rule, inst2_rule, inst3_rule, inst4_rule, inst5_rule);
 }
 
 #endif // COMPILER2
