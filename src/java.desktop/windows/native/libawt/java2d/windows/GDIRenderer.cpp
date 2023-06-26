@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ extern "C" {
 
 #define POLYTEMPSIZE    (512 / sizeof(POINT))
 
-static void AngleToCoord(jint angle, jint w, jint h, jint *x, jint *y)
+static void AngleToCoord(int angle, int w, int h, int *x, int *y)
 {
     const double pi = 3.1415926535;
     const double toRadians = 2 * pi / 360;
@@ -322,7 +322,7 @@ Java_sun_java2d_windows_GDIRenderer_doDrawArc
         return;
     }
 
-    long sx, sy, ex, ey;
+    int sx, sy, ex, ey;
     if (angleExtent >= 360 || angleExtent <= -360) {
         sx = ex = x + w;
         sy = ey = y + h/2;
@@ -602,7 +602,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillArc
     if (wsdo == NULL) {
         return;
     }
-    long sx, sy, ex, ey;
+    int sx, sy, ex, ey;
     int angleEnd;
     if (angleExtent < 0) {
         angleEnd = angleStart;
