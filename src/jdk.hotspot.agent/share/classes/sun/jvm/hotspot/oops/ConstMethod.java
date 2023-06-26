@@ -429,18 +429,74 @@ public class ConstMethod extends Metadata {
     return (getFlags() & HAS_METHOD_ANNOTATIONS) != 0;
   }
 
+  public U1Array getMethodAnnotations() {
+    if (hasMethodAnnotations()) {
+      Address addr = getAddress().getAddressAt((getSize() - 1) * VM.getVM().getAddressSize());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
+  }
+
   private boolean hasParameterAnnotations() {
     return (getFlags() & HAS_PARAMETER_ANNOTATIONS) != 0;
   }
 
-  private boolean hasDefaultAnnotations() {
-    return (getFlags() & HAS_DEFAULT_ANNOTATIONS) != 0;
+  public U1Array getParameterAnnotations() {
+    if (hasParameterAnnotations()) {
+      int offset = 1;
+      if (hasMethodAnnotations()) {
+        offset += 1;
+      }
+      Address addr = getAddress().getAddressAt((getSize() - offset) * VM.getVM().getAddressSize());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
   }
 
   private boolean hasTypeAnnotations() {
     return (getFlags() & HAS_TYPE_ANNOTATIONS) != 0;
   }
 
+  public U1Array getTypeAnnotations() {
+    if (hasTypeAnnotations()) {
+      int offset = 1;
+      if (hasMethodAnnotations()) {
+        offset += 1;
+      }
+      if (hasParameterAnnotations()) {
+        offset += 1;
+      }
+      Address addr = getAddress().getAddressAt((getSize() - offset) * VM.getVM().getAddressSize());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
+  }
+
+  private boolean hasDefaultAnnotations() {
+    return (getFlags() & HAS_DEFAULT_ANNOTATIONS) != 0;
+  }
+
+  public U1Array getDefaultAnnotations() {
+    if (hasDefaultAnnotations()) {
+      int offset = 1;
+      if (hasMethodAnnotations()) {
+        offset += 1;
+      }
+      if (hasParameterAnnotations()) {
+        offset += 1;
+      }
+      if (hasTypeAnnotations()) {
+        offset += 1;
+      }
+      Address addr = getAddress().getAddressAt((getSize() - offset) * VM.getVM().getAddressSize());
+      return VMObjectFactory.newObject(U1Array.class, addr);
+    } else {
+      return null;
+    }
+  }
 
   //---------------------------------------------------------------------------
   // Internals only below this point
