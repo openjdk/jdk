@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -295,7 +295,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             if (!(utils.isPublic(inheritedClass) || utils.isLinkable(inheritedClass))) {
                 continue;
             }
-            if (inheritedClass == typeElement) {
+            if (Objects.equals(inheritedClass, typeElement)) {
                 continue;
             }
             if (utils.hasHiddenTag(inheritedClass)) {
@@ -303,7 +303,7 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
             }
 
             List<? extends Element> members = inheritedMembersFromMap.stream()
-                    .filter(e -> utils.getEnclosingTypeElement(e) == inheritedClass)
+                    .filter(e -> Objects.equals(utils.getEnclosingTypeElement(e), inheritedClass))
                     .toList();
 
             if (!members.isEmpty()) {
@@ -318,13 +318,15 @@ public abstract class MemberSummaryBuilder extends AbstractMemberBuilder {
         }
     }
 
-    private void addSummaryFootNote(TypeElement inheritedClass, SortedSet<Element> inheritedMembers,
+    private void addSummaryFootNote(TypeElement inheritedClass, Iterable<Element> inheritedMembers,
                                     Content links, MemberSummaryWriter writer) {
-        for (Element member : inheritedMembers) {
+        boolean isFirst = true;
+        for (var iterator = inheritedMembers.iterator(); iterator.hasNext(); ) {
+            var member = iterator.next();
             TypeElement t = utils.isUndocumentedEnclosure(inheritedClass)
                     ? typeElement : inheritedClass;
-            writer.addInheritedMemberSummary(t, member, inheritedMembers.first() == member,
-                    inheritedMembers.last() == member, links);
+            writer.addInheritedMemberSummary(t, member, isFirst, !iterator.hasNext(), links);
+            isFirst = false;
         }
     }
 

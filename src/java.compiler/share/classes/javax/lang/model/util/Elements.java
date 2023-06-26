@@ -254,6 +254,11 @@ public interface Elements {
      * @implSpec The default implementation of this method returns
      * an empty set.
      *
+     * @apiNote
+     * When an environment includes modules, both named modules and
+     * {@linkplain ModuleElement#isUnnamed() unnamed modules} may be
+     * returned.
+     *
      * @return the known module elements, or an empty set if there are no modules
      * @see #getModuleElement(CharSequence)
      * @since 9

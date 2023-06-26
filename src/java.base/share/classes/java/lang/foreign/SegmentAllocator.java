@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,25 +32,27 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.Function;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
-import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.Utils;
 import jdk.internal.javac.PreviewFeature;
 
 /**
  * An object that may be used to allocate {@linkplain MemorySegment memory segments}. Clients implementing this interface
- * must implement the {@link #allocate(long, long)} method. This interface defines several default methods
+ * must implement the {@link #allocate(long, long)} method. A segment allocator defines several methods
  * which can be useful to create segments from several kinds of Java values such as primitives and arrays.
- * This interface is a {@linkplain FunctionalInterface functional interface}: clients can easily obtain a new segment allocator
- * by using either a lambda expression or a method reference.
  * <p>
- * This interface also defines factories for commonly used allocators:
+ * {@code SegmentAllocator} is a {@linkplain FunctionalInterface functional interface}. Clients can easily obtain a new
+ * segment allocator by using either a lambda expression or a method reference:
+ *
+ * {@snippet lang=java :
+ * SegmentAllocator autoAllocator = (byteSize, byteAlignment) -> Arena.ofAuto().allocate(byteSize, byteAlignment);
+ * }
+ * <p>
+ * This interface defines factories for commonly used allocators:
  * <ul>
- *     <li>{@link #nativeAllocator(SegmentScope)} obtains a simple allocator which can
- *     be used to allocate native segments;</li>
  *     <li>{@link #slicingAllocator(MemorySegment)} obtains an efficient slicing allocator, where memory
  *     is allocated by repeatedly slicing the provided memory segment;</li>
- *     <li>{@link #prefixAllocator(MemorySegment)} obtains an allocator which wraps a segment (either on-heap or off-heap)
+ *     <li>{@link #prefixAllocator(MemorySegment)} obtains an allocator which wraps a segment
  *     and recycles its content upon each new allocation request.</li>
  * </ul>
  * <p>
@@ -58,7 +60,17 @@ import jdk.internal.javac.PreviewFeature;
  * the results of a certain operation (performed by the API) should be stored, as a memory segment. For instance,
  * {@linkplain Linker#downcallHandle(FunctionDescriptor, Linker.Option...) downcall method handles} can accept an additional
  * {@link SegmentAllocator} parameter if the underlying foreign function is known to return a struct by-value. Effectively,
- * the allocator parameter tells the linker runtime where to store the return value of the foreign function.
+ * the allocator parameter tells the linker where to store the return value of the foreign function.
+ *
+ * @apiNote Unless otherwise specified, the {@link #allocate(long, long)} method is not thread-safe.
+ * Furthermore, memory segments allocated by a segment allocator can be associated with different
+ * lifetimes, and can even be backed by overlapping regions of memory. For these reasons, clients should generally
+ * only interact with a segment allocator they own.
+ * <p>
+ * Clients should consider using an {@linkplain Arena arena} instead, which, provides strong thread-safety,
+ * lifetime and non-overlapping guarantees.
+ *
+ * @since 19
  */
 @FunctionalInterface
 @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
@@ -201,7 +213,7 @@ public interface SegmentAllocator {
      * @param value the value to be set on the newly allocated memory block.
      * @return a segment for the newly allocated memory block.
      */
-    default MemorySegment allocate(ValueLayout.OfAddress layout, MemorySegment value) {
+    default MemorySegment allocate(AddressLayout layout, MemorySegment value) {
         Objects.requireNonNull(value);
         Objects.requireNonNull(layout);
         MemorySegment segment = allocate(layout);
@@ -314,6 +326,7 @@ public interface SegmentAllocator {
      * @param elementLayout the array element layout.
      * @param count the array element count.
      * @return a segment for the newly allocated memory block.
+     * @throws IllegalArgumentException if {@code elementLayout.byteSize() * count} overflows.
      * @throws IllegalArgumentException if {@code count < 0}.
      */
     default MemorySegment allocateArray(MemoryLayout elementLayout, long count) {
@@ -341,7 +354,7 @@ public interface SegmentAllocator {
      * @param byteAlignment the alignment (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
      * @throws IllegalArgumentException if {@code byteSize < 0}, {@code byteAlignment <= 0},
-     * or if {@code alignmentBytes} is not a power of 2.
+     * or if {@code byteAlignment} is not a power of 2.
      */
     MemorySegment allocate(long byteSize, long byteAlignment);
 
@@ -350,8 +363,9 @@ public interface SegmentAllocator {
      * obtained from the provided segment. Each new allocation request will return a new slice starting at the
      * current offset (modulo additional padding to satisfy alignment constraint), with given size.
      * <p>
-     * When the returned allocator cannot satisfy an allocation request, e.g. because a slice of the provided
-     * segment with the requested size cannot be found, an {@link IndexOutOfBoundsException} is thrown.
+     * The returned allocator throws {@link IndexOutOfBoundsException} when a slice of the provided
+     * segment with the requested size and alignment cannot be found.
+     * @implNote A slicing allocator is not <em>thread-safe</em>.
      *
      * @param segment the segment which the returned allocator should slice from.
      * @return a new slicing allocator
@@ -363,19 +377,20 @@ public interface SegmentAllocator {
 
     /**
      * Returns a segment allocator which responds to allocation requests by recycling a single segment. Each
-     * new allocation request will return a new slice starting at the segment offset {@code 0} (alignment
-     * constraints are ignored by this allocator), hence the name <em>prefix allocator</em>.
+     * new allocation request will return a new slice starting at the segment offset {@code 0}, hence the name
+     * <em>prefix allocator</em>.
      * Equivalent to (but likely more efficient than) the following code:
      * {@snippet lang=java :
      * MemorySegment segment = ...
-     * SegmentAllocator prefixAllocator = (size, align) -> segment.asSlice(0, size);
+     * SegmentAllocator prefixAllocator = (size, align) -> segment.asSlice(0, size, align);
      * }
-     * <p>
-     * This allocator can be useful to limit allocation requests in case a client
+     * The returned allocator throws {@link IndexOutOfBoundsException} when a slice of the provided
+     * segment with the requested size and alignment cannot be found.
+     *
+     * @apiNote A prefix allocator can be useful to limit allocation requests in case a client
      * knows that they have fully processed the contents of the allocated segment before the subsequent allocation request
      * takes place.
-     * <p>
-     * While the allocator returned by this method is <em>thread-safe</em>, concurrent access on the same recycling
+     * @implNote While a prefix allocator is <em>thread-safe</em>, concurrent access on the same recycling
      * allocator might cause a thread to overwrite contents written to the underlying segment by a different thread.
      *
      * @param segment the memory segment to be recycled by the returned allocator.
@@ -383,32 +398,5 @@ public interface SegmentAllocator {
      */
     static SegmentAllocator prefixAllocator(MemorySegment segment) {
         return (AbstractMemorySegmentImpl)Objects.requireNonNull(segment);
-    }
-
-    /**
-     * Simple allocator used to allocate native segments. The returned allocator responds to an allocation request by
-     * returning a native segment backed by a fresh off-heap region of memory, with given byte size and alignment constraint.
-     * <p>
-     * Each native segment obtained by the returned allocator is associated with the provided scope. As such,
-     * the off-heap region which backs the returned segment is freed when the scope becomes not
-     * {@linkplain SegmentScope#isAlive() alive}.
-     * <p>
-     * The {@link MemorySegment#address()} of the native segments obtained by the returned allocator is the starting address of
-     * the newly allocated off-heap memory region backing the segment. Moreover, the {@linkplain MemorySegment#address() address}
-     * of the native segment will be aligned according the provided alignment constraint.
-     * <p>
-     * The off-heap region of memory backing a native segment obtained by the returned allocator is initialized to zero.
-     * <p>
-     * This is equivalent to the following code:
-     * {@snippet lang = java:
-     * SegmentAllocator nativeAllocator = (byteSize, byteAlignment) ->
-     *     MemorySegment.allocateNative(byteSize, byteAlignment, scope);
-     * }
-     * @param scope the scope associated with the segments returned by the native allocator.
-     * @return a simple allocator used to allocate native segments.
-     */
-    static SegmentAllocator nativeAllocator(SegmentScope scope) {
-        Objects.requireNonNull(scope);
-        return (MemorySessionImpl)scope;
     }
 }

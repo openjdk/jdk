@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 #include "classfile/vmSymbols.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
 #include "gc/shared/genCollectedHeap.hpp"
-#include "gc/shared/genOopClosures.inline.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/space.inline.hpp"
 #include "gc/shared/spaceDecorator.inline.hpp"
@@ -49,7 +48,7 @@
 
 HeapWord* DirtyCardToOopClosure::get_actual_top(HeapWord* top,
                                                 HeapWord* top_obj) {
-  if (top_obj != NULL && top_obj < (_sp->toContiguousSpace())->top()) {
+  if (top_obj != nullptr && top_obj < (_sp->toContiguousSpace())->top()) {
     if (cast_to_oop(top_obj)->is_objArray() || cast_to_oop(top_obj)->is_typeArray()) {
       // An arrayOop is starting on the dirty card - since we do exact
       // store checks for objArrays we are done.
@@ -76,16 +75,7 @@ void DirtyCardToOopClosure::walk_mem_region(MemRegion mr,
   // examining cards here.
   assert(bottom < top, "ought to be at least one obj on a dirty card.");
 
-  if (_boundary != NULL) {
-    // We have a boundary outside of which we don't want to look
-    // at objects, so create a filtering closure around the
-    // oop closure before walking the region.
-    FilteringClosure filter(_boundary, _cl);
-    walk_mem_region_with_cl(mr, bottom, top, &filter);
-  } else {
-    // No boundary, simply walk the heap with the oop closure.
-    walk_mem_region_with_cl(mr, bottom, top, _cl);
-  }
+  walk_mem_region_with_cl(mr, bottom, top, _cl);
 }
 
 // We get called with "mr" representing the dirty region
@@ -103,7 +93,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   HeapWord* bottom_obj;
   HeapWord* top_obj;
 
-  assert(_last_bottom == NULL || top <= _last_bottom,
+  assert(_last_bottom == nullptr || top <= _last_bottom,
          "Not decreasing");
   NOT_PRODUCT(_last_bottom = mr.start());
 
@@ -119,7 +109,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   top = get_actual_top(top, top_obj);
 
   // If the previous call did some part of this region, don't redo.
-  if (_min_done != NULL && _min_done < top) {
+  if (_min_done != nullptr && _min_done < top) {
     top = _min_done;
   }
 
@@ -129,7 +119,7 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   bottom = MIN2(bottom, top);
   MemRegion extended_mr = MemRegion(bottom, top);
   assert(bottom <= top &&
-         (_min_done == NULL || top <= _min_done),
+         (_min_done == nullptr || top <= _min_done),
          "overlap!");
 
   // Walk the region if it is not empty; otherwise there is nothing to do.
@@ -140,38 +130,23 @@ void DirtyCardToOopClosure::do_MemRegion(MemRegion mr) {
   _min_done = bottom;
 }
 
-// We must replicate this so that the static type of "FilteringClosure"
-// (see above) is apparent at the oop_iterate calls.
-#define DirtyCardToOopClosure__walk_mem_region_with_cl_DEFN(ClosureType) \
-void DirtyCardToOopClosure::walk_mem_region_with_cl(MemRegion mr,        \
-                                                    HeapWord* bottom,    \
-                                                    HeapWord* top,       \
-                                                    ClosureType* cl) {   \
-  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);               \
-  if (bottom < top) {                                                    \
-    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();           \
-    while (next_obj < top) {                                             \
-      /* Bottom lies entirely below top, so we can call the */           \
-      /* non-memRegion version of oop_iterate below. */                  \
-      cast_to_oop(bottom)->oop_iterate(cl);                              \
-      bottom = next_obj;                                                 \
-      next_obj = bottom + cast_to_oop(bottom)->size();                   \
-    }                                                                    \
-    /* Last object. */                                                   \
-    cast_to_oop(bottom)->oop_iterate(cl, mr);                            \
-  }                                                                      \
-}
-
-// (There are only two of these, rather than N, because the split is due
-// only to the introduction of the FilteringClosure, a local part of the
-// impl of this abstraction.)
-DirtyCardToOopClosure__walk_mem_region_with_cl_DEFN(OopIterateClosure)
-DirtyCardToOopClosure__walk_mem_region_with_cl_DEFN(FilteringClosure)
-
-DirtyCardToOopClosure*
-ContiguousSpace::new_dcto_cl(OopIterateClosure* cl,
-                             HeapWord* boundary) {
-  return new DirtyCardToOopClosure(this, cl, boundary);
+void DirtyCardToOopClosure::walk_mem_region_with_cl(MemRegion mr,
+                                                    HeapWord* bottom,
+                                                    HeapWord* top,
+                                                    OopIterateClosure* cl) {
+  bottom += cast_to_oop(bottom)->oop_iterate_size(cl, mr);
+  if (bottom < top) {
+    HeapWord* next_obj = bottom + cast_to_oop(bottom)->size();
+    while (next_obj < top) {
+      /* Bottom lies entirely below top, so we can call the */
+      /* non-memRegion version of oop_iterate below. */
+      cast_to_oop(bottom)->oop_iterate(cl);
+      bottom = next_obj;
+      next_obj = bottom + cast_to_oop(bottom)->size();
+    }
+    /* Last object. */
+    cast_to_oop(bottom)->oop_iterate(cl, mr);
+  }
 }
 
 void Space::initialize(MemRegion mr,
@@ -192,7 +167,10 @@ void Space::clear(bool mangle_space) {
   }
 }
 
-ContiguousSpace::ContiguousSpace(): CompactibleSpace(), _top(NULL) {
+ContiguousSpace::ContiguousSpace(): Space(),
+  _compaction_top(nullptr),
+  _next_compaction_space(nullptr),
+  _top(nullptr) {
   _mangler = new GenSpaceMangler(this);
 }
 
@@ -204,13 +182,16 @@ void ContiguousSpace::initialize(MemRegion mr,
                                  bool clear_space,
                                  bool mangle_space)
 {
-  CompactibleSpace::initialize(mr, clear_space, mangle_space);
+  Space::initialize(mr, clear_space, mangle_space);
+  set_compaction_top(bottom());
+  _next_compaction_space = nullptr;
 }
 
 void ContiguousSpace::clear(bool mangle_space) {
   set_top(bottom());
   set_saved_mark();
-  CompactibleSpace::clear(mangle_space);
+  Space::clear(mangle_space);
+  _compaction_top = bottom();
 }
 
 bool ContiguousSpace::is_free_block(const HeapWord* p) const {
@@ -263,20 +244,8 @@ void ContiguousSpace::mangle_unused_area_complete() {
 }
 #endif  // NOT_PRODUCT
 
-void CompactibleSpace::initialize(MemRegion mr,
-                                  bool clear_space,
-                                  bool mangle_space) {
-  Space::initialize(mr, clear_space, mangle_space);
-  set_compaction_top(bottom());
-  _next_compaction_space = NULL;
-}
 
-void CompactibleSpace::clear(bool mangle_space) {
-  Space::clear(mangle_space);
-  _compaction_top = bottom();
-}
-
-HeapWord* CompactibleSpace::forward(oop q, size_t size,
+HeapWord* ContiguousSpace::forward(oop q, size_t size,
                                     CompactPoint* cp, HeapWord* compact_top) {
   // q is alive
   // First check if we should switch compaction space
@@ -286,11 +255,11 @@ HeapWord* CompactibleSpace::forward(oop q, size_t size,
     // switch to next compaction space
     cp->space->set_compaction_top(compact_top);
     cp->space = cp->space->next_compaction_space();
-    if (cp->space == NULL) {
+    if (cp->space == nullptr) {
       cp->gen = GenCollectedHeap::heap()->young_gen();
-      assert(cp->gen != NULL, "compaction must succeed");
+      assert(cp->gen != nullptr, "compaction must succeed");
       cp->space = cp->gen->first_compaction_space();
-      assert(cp->space != NULL, "generation must have a first compaction space");
+      assert(cp->space != nullptr, "generation must have a first compaction space");
     }
     compact_top = cp->space->bottom();
     cp->space->set_compaction_top(compact_top);
@@ -328,8 +297,8 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
   // space, so this is a good time to initialize this:
   set_compaction_top(bottom());
 
-  if (cp->space == NULL) {
-    assert(cp->gen != NULL, "need a generation");
+  if (cp->space == nullptr) {
+    assert(cp->gen != nullptr, "need a generation");
     assert(cp->gen->first_compaction_space() == this, "just checking");
     cp->space = cp->gen->first_compaction_space();
     cp->space->initialize_threshold();
@@ -341,7 +310,7 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
   DeadSpacer dead_spacer(this);
 
   HeapWord*  end_of_live = bottom();  // One byte beyond the last byte of the last live object.
-  HeapWord*  first_dead = NULL; // The first dead object.
+  HeapWord*  first_dead = nullptr; // The first dead object.
 
   const intx interval = PrefetchScanIntervalInBytes;
 
@@ -378,7 +347,7 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
         *(HeapWord**)cur_obj = end;
 
         // see if this is the first dead region.
-        if (first_dead == NULL) {
+        if (first_dead == nullptr) {
           first_dead = cur_obj;
         }
       }
@@ -390,7 +359,7 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
 
   assert(cur_obj == scan_limit, "just checking");
   _end_of_live = end_of_live;
-  if (first_dead != NULL) {
+  if (first_dead != nullptr) {
     _first_dead = first_dead;
   } else {
     _first_dead = end_of_live;
@@ -400,7 +369,7 @@ void ContiguousSpace::prepare_for_compaction(CompactPoint* cp) {
   cp->space->set_compaction_top(compact_top);
 }
 
-void CompactibleSpace::adjust_pointers() {
+void ContiguousSpace::adjust_pointers() {
   // Check first is there is any work to do.
   if (used() == 0) {
     return;   // Nothing to do.
@@ -417,7 +386,7 @@ void CompactibleSpace::adjust_pointers() {
 
   const intx interval = PrefetchScanIntervalInBytes;
 
-  debug_only(HeapWord* prev_obj = NULL);
+  debug_only(HeapWord* prev_obj = nullptr);
   while (cur_obj < end_of_live) {
     Prefetch::write(cur_obj, interval);
     if (cur_obj < first_dead || cast_to_oop(cur_obj)->is_gc_marked()) {
@@ -437,7 +406,7 @@ void CompactibleSpace::adjust_pointers() {
   assert(cur_obj == end_of_live, "just checking");
 }
 
-void CompactibleSpace::compact() {
+void ContiguousSpace::compact() {
   // Copy all live objects to their new location
   // Used by MarkSweep::mark_sweep_phase4()
 
@@ -464,7 +433,7 @@ void CompactibleSpace::compact() {
     cur_obj = *(HeapWord**)(_first_dead);
   }
 
-  debug_only(HeapWord* prev_obj = NULL);
+  debug_only(HeapWord* prev_obj = nullptr);
   while (cur_obj < end_of_live) {
     if (!cast_to_oop(cur_obj)->is_forwarded()) {
       debug_only(prev_obj = cur_obj);
@@ -490,7 +459,7 @@ void CompactibleSpace::compact() {
       ContinuationGCSupport::transform_stack_chunk(new_obj);
 
       new_obj->init_mark();
-      assert(new_obj->klass() != NULL, "should have a class");
+      assert(new_obj->klass() != nullptr, "should have a class");
 
       debug_only(prev_obj = cur_obj);
       cur_obj += size;
@@ -535,7 +504,7 @@ void TenuredSpace::print_on(outputStream* st) const {
 void ContiguousSpace::verify() const {
   HeapWord* p = bottom();
   HeapWord* t = top();
-  HeapWord* prev_p = NULL;
+  HeapWord* prev_p = nullptr;
   while (p < t) {
     oopDesc::verify(cast_to_oop(p));
     prev_p = p;
@@ -632,7 +601,7 @@ inline HeapWord* ContiguousSpace::allocate_impl(size_t size) {
     assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
     return obj;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -651,7 +620,7 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size) {
         return obj;
       }
     } else {
-      return NULL;
+      return nullptr;
     }
   } while (true);
 }
@@ -689,7 +658,7 @@ TenuredSpace::TenuredSpace(BlockOffsetSharedArray* sharedOffsetArray,
 
 void TenuredSpace::verify() const {
   HeapWord* p = bottom();
-  HeapWord* prev_p = NULL;
+  HeapWord* prev_p = nullptr;
   int objs = 0;
   int blocks = 0;
 

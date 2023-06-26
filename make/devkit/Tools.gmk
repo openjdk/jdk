@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ else ifeq ($(BASE_OS), Fedora)
     BASE_URL := http://fedora.riscv.rocks/repos-dist/$(BASE_OS_VERSION)/$(ARCH)/Packages/
   else
     DEFAULT_OS_VERSION := 27
+    LATEST_ARCHIVED_OS_VERSION := 35
     ifeq ($(BASE_OS_VERSION), )
       BASE_OS_VERSION := $(DEFAULT_OS_VERSION)
     endif
@@ -79,11 +80,11 @@ else ifeq ($(BASE_OS), Fedora)
     else
       FEDORA_TYPE := fedora/linux
     endif
-    ARCHIVED := $(shell [ $(BASE_OS_VERSION) -lt $(DEFAULT_OS_VERSION) ] && echo true)
-    ifeq ($(ARCHIVED),true)
-      BASE_URL := https://archives.fedoraproject.org/pub/archive/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
-    else
+    NOT_ARCHIVED := $(shell [ $(BASE_OS_VERSION) -gt $(LATEST_ARCHIVED_OS_VERSION) ] && echo true)
+    ifeq ($(NOT_ARCHIVED),true)
       BASE_URL := https://dl.fedoraproject.org/pub/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
+    else
+      BASE_URL := https://archives.fedoraproject.org/pub/archive/$(FEDORA_TYPE)/releases/$(BASE_OS_VERSION)/Everything/$(ARCH)/os/Packages/
     endif
   endif
   LINUX_VERSION := Fedora_$(BASE_OS_VERSION)
@@ -449,7 +450,7 @@ $(BUILDDIR)/$(binutils_ver)/Makefile \
 	  $(PATHPRE) $(ENVS) CFLAGS="-O2 $(CFLAGS)" \
 	      $(BINUTILS_CFG) \
 	      $(CONFIG) \
-        $(LINKER_CONFIG) \
+	      $(LINKER_CONFIG) \
 	      --with-sysroot=$(SYSROOT) \
 	      --disable-nls \
 	      --program-prefix=$(TARGET)- \

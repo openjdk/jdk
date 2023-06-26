@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016, 2022 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -37,7 +37,7 @@ frame JavaThread::pd_last_frame() {
   // Last_Java_pc is not set if we come here from compiled code.
   // Assume spill slot for Z_R14 (return register) contains a suitable pc.
   // Should have been filled by method entry code.
-  if (pc == NULL) {
+  if (pc == nullptr) {
     pc = (address) *(sp + 14);
   }
 
@@ -60,17 +60,17 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
     ucontext_t* uc = (ucontext_t*) ucontext;
     address pc = (address)uc->uc_mcontext.psw.addr;
 
-    if (pc == NULL) {
+    if (pc == nullptr) {
       // ucontext wasn't useful
       return false;
     }
 
     frame ret_frame((intptr_t*)uc->uc_mcontext.gregs[15/*Z_SP*/], pc);
 
-    if (ret_frame.fp() == NULL) {
+    if (ret_frame.fp() == nullptr) {
       // The found frame does not have a valid frame pointer.
       // Bail out because this will create big trouble later on, either
-      //  - when using istate, calculated as (NULL - z_ijava_state_size (= 0x70 (dbg) or 0x68 (rel)) or
+      //  - when using istate, calculated as (nullptr - z_ijava_state_size (= 0x70 (dbg) or 0x68 (rel)) or
       //  - when using fp() directly in safe_for_sender()
       //
       // There is no conclusive description (yet) how this could happen, but it does:
@@ -92,9 +92,9 @@ bool JavaThread::pd_get_top_frame_for_profiling(frame* fr_addr, void* ucontext, 
       // contents of r6:  0xffffffffffffff90
       //
       // Here is the sequence of what happens:
-      //  - ret_frame is constructed with _fp == NULL (for whatever reason)
+      //  - ret_frame is constructed with _fp == nullptr (for whatever reason)
       //  - ijava_state_unchecked() calculates it's result as
-      //      istate = fp() - z_ijava_state_size() = NULL - 0x68 DEBUG_ONLY(-8)
+      //      istate = fp() - z_ijava_state_size() = nullptr - 0x68 DEBUG_ONLY(-8)
       //  - istate->method dereferences memory at offset 8 from istate
       return false;
     }

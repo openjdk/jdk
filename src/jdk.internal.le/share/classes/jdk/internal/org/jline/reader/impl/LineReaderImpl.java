@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002-2020, the original author or authors.
+ * Copyright (c) 2002-2022, the original author or authors.
  *
  * This software is distributable under the BSD license. See the terms of the
  * BSD license in the documentation provided with this software.
@@ -281,7 +281,7 @@ public class LineReaderImpl implements LineReader, Flushable
     int candidateStartPosition = 0;
 
     public LineReaderImpl(Terminal terminal) throws IOException {
-        this(terminal, null, null);
+        this(terminal, terminal.getName(), null);
     }
 
     public LineReaderImpl(Terminal terminal, String appName) throws IOException {
@@ -633,7 +633,8 @@ public class LineReaderImpl implements LineReader, Flushable
 
                 callWidget(CALLBACK_INIT);
 
-                undo.newState(buf.copy());
+                if (!isSet(Option.DISABLE_UNDO))
+                    undo.newState(buf.copy());
 
                 // Draw initial prompt
                 redrawLine();
@@ -679,7 +680,7 @@ public class LineReaderImpl implements LineReader, Flushable
                     if (!w.apply()) {
                         beep();
                     }
-                    if (!isUndo && copy != null && buf.length() <= getInt(FEATURES_MAX_BUFFER_SIZE, DEFAULT_FEATURES_MAX_BUFFER_SIZE)
+                    if (!isSet(Option.DISABLE_UNDO) && !isUndo && copy != null && buf.length() <= getInt(FEATURES_MAX_BUFFER_SIZE, DEFAULT_FEATURES_MAX_BUFFER_SIZE)
                             && !copy.toString().equals(buf.toString())) {
                         undo.newState(buf.copy());
                     }
@@ -739,8 +740,8 @@ public class LineReaderImpl implements LineReader, Flushable
                 }
             } finally {
                 lock.unlock();
+                startedReading.set(false);
             }
-            startedReading.set(false);
         }
     }
 
@@ -1082,18 +1083,18 @@ public class LineReaderImpl implements LineReader, Flushable
         if (isSet(Option.BRACKETED_PASTE)) {
             terminal.writer().write(BRACKETED_PASTE_OFF);
         }
-        Constructor<?> ctor = Class.forName("org.jline.builtins.Nano").getConstructor(Terminal.class, File.class);
+        Constructor<?> ctor = Class.forName("jdk.internal.org.jline.builtins.Nano").getConstructor(Terminal.class, File.class);
         Editor editor = (Editor) ctor.newInstance(terminal, new File(file.getParent()));
         editor.setRestricted(true);
         editor.open(Collections.singletonList(file.getName()));
         editor.run();
-        BufferedReader br = new BufferedReader(new FileReader(file));
-        String line;
-        commandsBuffer.clear();
-        while ((line = br.readLine()) != null) {
-            commandsBuffer.add(line);
+        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+            String line;
+            commandsBuffer.clear();
+            while ((line = br.readLine()) != null) {
+                commandsBuffer.add(line);
+            }
         }
-        br.close();
     }
 
     //
@@ -3595,9 +3596,9 @@ public class LineReaderImpl implements LineReader, Flushable
         File file = null;
         try {
             file = File.createTempFile("jline-execute-", null);
-            FileWriter writer = new FileWriter(file);
-            writer.write(buf.toString());
-            writer.close();
+            try (FileWriter writer = new FileWriter(file)) {
+                writer.write(buf.toString());
+            }
             editAndAddInBuffer(file);
         } catch (Exception e) {
             e.printStackTrace(terminal.writer());
@@ -3796,6 +3797,9 @@ public class LineReaderImpl implements LineReader, Flushable
 
             Status status = Status.getStatus(terminal, false);
             if (status != null) {
+                if (terminal.getType().startsWith(AbstractWindowsTerminal.TYPE_WINDOWS)) {
+                    status.resize();
+                }
                 status.redraw();
             }
 
@@ -3947,7 +3951,8 @@ public class LineReaderImpl implements LineReader, Flushable
         StringBuilder sb = new StringBuilder();
         for (char c: buffer.replace("\\", "\\\\").toCharArray()) {
             if (c == '(' || c == ')' || c == '[' || c == ']' || c == '{' || c == '}' || c == '^' || c == '*'
-                     || c == '$' || c == '.' || c == '?' || c == '+') {
+                     || c == '$' || c == '.' || c == '?' || c == '+' || c == '|' || c == '<' || c == '>' || c == '!'
+                     || c == '-') {
                 sb.append('\\');
             }
             sb.append(c);
@@ -4520,7 +4525,7 @@ public class LineReaderImpl implements LineReader, Flushable
         }
     }
 
-    private CompletingParsedLine wrap(ParsedLine line) {
+    protected static CompletingParsedLine wrap(ParsedLine line) {
         if (line instanceof CompletingParsedLine) {
             return (CompletingParsedLine) line;
         } else {
@@ -4623,6 +4628,11 @@ public class LineReaderImpl implements LineReader, Flushable
 
     private int displayRows(Status status) {
         return size.getRows() - (status != null ? status.size() : 0);
+    }
+
+    private int visibleDisplayRows() {
+        Status status = Status.getStatus(terminal, false);
+        return terminal.getSize().getRows() - (status != null ? status.size() : 0);
     }
 
     private int promptLines() {
@@ -5070,18 +5080,19 @@ public class LineReaderImpl implements LineReader, Flushable
 
     protected PostResult computePost(List<Candidate> possible, Candidate selection, List<Candidate> ordered, String completed, Function<String, Integer> wcwidth, int width, boolean autoGroup, boolean groupName, boolean rowsFirst) {
         List<Object> strings = new ArrayList<>();
+        boolean customOrder = possible.stream().anyMatch(c -> c.sort() != 0);
         if (groupName) {
             Comparator<String> groupComparator = getGroupComparator();
-            Map<String, Map<String, Candidate>> sorted;
+            Map<String, Map<Object, Candidate>> sorted;
             sorted = groupComparator != null
                         ? new TreeMap<>(groupComparator)
                         : new LinkedHashMap<>();
             for (Candidate cand : possible) {
                 String group = cand.group();
                 sorted.computeIfAbsent(group != null ? group : "", s -> new LinkedHashMap<>())
-                        .put(cand.value(), cand);
+                        .put((customOrder ? cand.sort() : cand.value()), cand);
             }
-            for (Map.Entry<String, Map<String, Candidate>> entry : sorted.entrySet()) {
+            for (Map.Entry<String, Map<Object, Candidate>> entry : sorted.entrySet()) {
                 String group = entry.getKey();
                 if (group.isEmpty() && sorted.size() > 1) {
                     group = getOthersGroupName();
@@ -5096,13 +5107,13 @@ public class LineReaderImpl implements LineReader, Flushable
             }
         } else {
             Set<String> groups = new LinkedHashSet<>();
-            TreeMap<String, Candidate> sorted = new TreeMap<>();
+            TreeMap<Object, Candidate> sorted = new TreeMap<>();
             for (Candidate cand : possible) {
                 String group = cand.group();
                 if (group != null) {
                     groups.add(group);
                 }
-                sorted.put(cand.value(), cand);
+                sorted.put((customOrder ? cand.sort() : cand.value()), cand);
             }
             if (autoGroup) {
                 strings.addAll(groups);
@@ -5129,7 +5140,7 @@ public class LineReaderImpl implements LineReader, Flushable
             this.startPos = startPos;
             endLine = line.substring(line.lastIndexOf('\n') + 1);
             boolean first = true;
-            while (endLine.length() + (first ? startPos : 0) > width) {
+            while (endLine.length() + (first ? startPos : 0) > width && width > 0) {
                 if (first) {
                     endLine = endLine.substring(width - startPos);
                 } else {
@@ -5207,7 +5218,7 @@ public class LineReaderImpl implements LineReader, Flushable
         AttributedStringBuilder sb = new AttributedStringBuilder();
         if (listSize > 0) {
             if (isSet(Option.AUTO_MENU_LIST)
-                    && listSize < Math.min(getInt(MENU_LIST_MAX, DEFAULT_MENU_LIST_MAX), displayRows() - promptLines())) {
+                    && listSize < Math.min(getInt(MENU_LIST_MAX, DEFAULT_MENU_LIST_MAX), visibleDisplayRows() - promptLines())) {
                 maxWidth = Math.max(maxWidth, MENU_LIST_WIDTH);
                 sb.tabs(Math.max(Math.min(candidateStartPosition, width - maxWidth - 1), 1));
                 width = maxWidth + 2;

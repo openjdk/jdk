@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -448,7 +448,7 @@ inline NativePostCallNop* nativePostCallNop_at(address address) {
   if (nop->check()) {
     return nop;
   }
-  return NULL;
+  return nullptr;
 }
 
 class NativeDeoptInstruction: public NativeInstruction {
@@ -464,7 +464,7 @@ public:
   void  verify();
 
   static bool is_deopt_at(address instr) {
-    assert(instr != NULL, "");
+    assert(instr != nullptr, "");
     uint32_t value = *(uint32_t *) instr;
     return value == 0xe7fdecfa;
   }

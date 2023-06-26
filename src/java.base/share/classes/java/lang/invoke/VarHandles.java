@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.foreign.Utils;
 import sun.invoke.util.Wrapper;
 
 import java.lang.reflect.Constructor;
@@ -114,52 +115,53 @@ final class VarHandles {
             if (UNSAFE.shouldBeInitialized(refc))
                 UNSAFE.ensureClassInitialized(refc);
 
+            Class<?> decl = f.getDeclaringClass();
             Object base = MethodHandleNatives.staticFieldBase(f);
             long foffset = MethodHandleNatives.staticFieldOffset(f);
             if (!type.isPrimitive()) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleReferences.FieldStaticReadOnly(refc, base, foffset, type)
-                       : new VarHandleReferences.FieldStaticReadWrite(refc, base, foffset, type));
+                       ? new VarHandleReferences.FieldStaticReadOnly(decl, base, foffset, type)
+                       : new VarHandleReferences.FieldStaticReadWrite(decl, base, foffset, type));
             }
             else if (type == boolean.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleBooleans.FieldStaticReadOnly(refc, base, foffset)
-                       : new VarHandleBooleans.FieldStaticReadWrite(refc, base, foffset));
+                       ? new VarHandleBooleans.FieldStaticReadOnly(decl, base, foffset)
+                       : new VarHandleBooleans.FieldStaticReadWrite(decl, base, foffset));
             }
             else if (type == byte.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleBytes.FieldStaticReadOnly(refc, base, foffset)
-                       : new VarHandleBytes.FieldStaticReadWrite(refc, base, foffset));
+                       ? new VarHandleBytes.FieldStaticReadOnly(decl, base, foffset)
+                       : new VarHandleBytes.FieldStaticReadWrite(decl, base, foffset));
             }
             else if (type == short.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleShorts.FieldStaticReadOnly(refc, base, foffset)
-                       : new VarHandleShorts.FieldStaticReadWrite(refc, base, foffset));
+                       ? new VarHandleShorts.FieldStaticReadOnly(decl, base, foffset)
+                       : new VarHandleShorts.FieldStaticReadWrite(decl, base, foffset));
             }
             else if (type == char.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleChars.FieldStaticReadOnly(refc, base, foffset)
-                       : new VarHandleChars.FieldStaticReadWrite(refc, base, foffset));
+                       ? new VarHandleChars.FieldStaticReadOnly(decl, base, foffset)
+                       : new VarHandleChars.FieldStaticReadWrite(decl, base, foffset));
             }
             else if (type == int.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleInts.FieldStaticReadOnly(refc, base, foffset)
-                       : new VarHandleInts.FieldStaticReadWrite(refc, base, foffset));
+                       ? new VarHandleInts.FieldStaticReadOnly(decl, base, foffset)
+                       : new VarHandleInts.FieldStaticReadWrite(decl, base, foffset));
             }
             else if (type == long.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleLongs.FieldStaticReadOnly(refc, base, foffset)
-                       : new VarHandleLongs.FieldStaticReadWrite(refc, base, foffset));
+                       ? new VarHandleLongs.FieldStaticReadOnly(decl, base, foffset)
+                       : new VarHandleLongs.FieldStaticReadWrite(decl, base, foffset));
             }
             else if (type == float.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleFloats.FieldStaticReadOnly(refc, base, foffset)
-                       : new VarHandleFloats.FieldStaticReadWrite(refc, base, foffset));
+                       ? new VarHandleFloats.FieldStaticReadOnly(decl, base, foffset)
+                       : new VarHandleFloats.FieldStaticReadWrite(decl, base, foffset));
             }
             else if (type == double.class) {
                 return maybeAdapt(f.isFinal() && !isWriteAllowedOnFinalFields
-                       ? new VarHandleDoubles.FieldStaticReadOnly(refc, base, foffset)
-                       : new VarHandleDoubles.FieldStaticReadWrite(refc, base, foffset));
+                       ? new VarHandleDoubles.FieldStaticReadOnly(decl, base, foffset)
+                       : new VarHandleDoubles.FieldStaticReadWrite(decl, base, foffset));
             }
             else {
                 throw new UnsupportedOperationException();
@@ -183,10 +185,10 @@ final class VarHandles {
     }
 
     // Required by instance static field handles
-    static Field getStaticFieldFromBaseAndOffset(Class<?> receiverType,
+    static Field getStaticFieldFromBaseAndOffset(Class<?> declaringClass,
                                                  long offset,
                                                  Class<?> fieldType) {
-        for (Field f : receiverType.getDeclaredFields()) {
+        for (Field f : declaringClass.getDeclaredFields()) {
             if (!Modifier.isStatic(f.getModifiers())) continue;
 
             if (offset == UNSAFE.staticFieldOffset(f)) {
@@ -313,7 +315,7 @@ final class VarHandles {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
-        long size = Wrapper.forPrimitiveType(carrier).bitWidth() / 8;
+        long size = Utils.byteWidthOfPrimitive(carrier);
         boolean be = byteOrder == ByteOrder.BIG_ENDIAN;
         boolean exact = false;
 

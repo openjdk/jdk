@@ -138,7 +138,7 @@ DocComment[DOC_COMMENT, pos:1
   firstSentence: 1
     Erroneous[ERRONEOUS, pos:1, prefPos:37
       code: compiler.err.dc.unterminated.inline.tag
-      body: {@literal_if_(a_...<_b)_{_}|_@author_jjg
+      body: {@literal_if_(a_<_b)_{_}|_@author_jjg
     ]
   body: empty
   block tags: empty

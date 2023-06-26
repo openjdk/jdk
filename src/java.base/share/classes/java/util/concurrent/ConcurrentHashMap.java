@@ -1531,7 +1531,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     // ConcurrentMap methods
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @return the previous value associated with the specified key,
      *         or {@code null} if there was no mapping for the key
@@ -1542,9 +1542,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @throws NullPointerException if the specified key is null
+     * @return {@inheritDoc ConcurrentMap}
      */
     public boolean remove(Object key, Object value) {
         if (key == null)
@@ -1553,9 +1554,10 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @throws NullPointerException if any of the arguments are null
+     * @return {@inheritDoc ConcurrentMap}
      */
     public boolean replace(K key, V oldValue, V newValue) {
         if (key == null || oldValue == null || newValue == null)
@@ -1564,7 +1566,7 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ConcurrentMap}
      *
      * @return the previous value associated with the specified key,
      *         or {@code null} if there was no mapping for the key
@@ -2862,22 +2864,20 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
          * Possibly blocks awaiting root lock.
          */
         private final void contendedLock() {
-            boolean waiting = false;
+            Thread current = Thread.currentThread(), w;
             for (int s;;) {
                 if (((s = lockState) & ~WAITER) == 0) {
                     if (U.compareAndSetInt(this, LOCKSTATE, s, WRITER)) {
-                        if (waiting)
-                            waiter = null;
+                        if (waiter == current)
+                            U.compareAndSetReference(this, WAITERTHREAD, current, null);
                         return;
                     }
                 }
-                else if ((s & WAITER) == 0) {
-                    if (U.compareAndSetInt(this, LOCKSTATE, s, s | WAITER)) {
-                        waiting = true;
-                        waiter = Thread.currentThread();
-                    }
-                }
-                else if (waiting)
+                else if ((s & WAITER) == 0)
+                    U.compareAndSetInt(this, LOCKSTATE, s, s | WAITER);
+                else if ((w = waiter) == null)
+                    U.compareAndSetReference(this, WAITERTHREAD, null, current);
+                else if (w == current)
                     LockSupport.park(this);
             }
         }
@@ -3296,6 +3296,8 @@ public class ConcurrentHashMap<K,V> extends AbstractMap<K,V>
 
         private static final long LOCKSTATE
             = U.objectFieldOffset(TreeBin.class, "lockState");
+        private static final long WAITERTHREAD
+            = U.objectFieldOffset(TreeBin.class, "waiter");
     }
 
     /* ----------------Table Traversal -------------- */

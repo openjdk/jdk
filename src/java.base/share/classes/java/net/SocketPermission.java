@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import java.security.PermissionCollection;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.StringTokenizer;
@@ -134,6 +135,8 @@ import sun.security.util.Debug;
  * transfer and share confidential data among parties who may not
  * otherwise have access to the data.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2732
+ *      RFC 2732: Format for Literal IPv6 Addresses in URL's
  * @see java.security.Permissions
  * @see SocketPermission
  *
@@ -458,7 +461,7 @@ public final class SocketPermission extends Permission
             if (host.equals("*")) {
                 cname = "";
             } else if (host.startsWith("*.")) {
-                cname = host.substring(1).toLowerCase();
+                cname = host.substring(1).toLowerCase(Locale.ROOT);
             } else {
               throw new
                IllegalArgumentException("invalid host wildcard specification");
@@ -668,10 +671,10 @@ public final class SocketPermission extends Permission
             // we have to do this check, otherwise we might not
             // get the fully qualified domain name
             if (init_with_ip) {
-                cname = addresses[0].getHostName(false).toLowerCase();
+                cname = addresses[0].getHostName(false).toLowerCase(Locale.ROOT);
             } else {
              cname = InetAddress.getByName(addresses[0].getHostAddress()).
-                                              getHostName(false).toLowerCase();
+                                              getHostName(false).toLowerCase(Locale.ROOT);
             }
         } catch (UnknownHostException uhe) {
             invalid = true;
@@ -694,8 +697,8 @@ public final class SocketPermission extends Permission
     }
 
     private boolean match(String cname, String hname) {
-        String a = checkForIDN(cname.toLowerCase());
-        String b = checkForIDN(hname.toLowerCase());
+        String a = checkForIDN(cname.toLowerCase(Locale.ROOT));
+        String b = checkForIDN(hname.toLowerCase(Locale.ROOT));
         if (a.startsWith(b)  &&
             ((a.length() == b.length()) || (a.charAt(b.length()) == '.'))) {
             return true;
@@ -1383,27 +1386,20 @@ final class SocketPermissionCollection extends PermissionCollection
                 "attempt to add a Permission to a readonly PermissionCollection");
 
         // Add permission to map if it is absent, or replace with new
-        // permission if applicable. NOTE: cannot use lambda for
-        // remappingFunction parameter until JDK-8076596 is fixed.
-        perms.merge(sp.getName(), sp,
-            new java.util.function.BiFunction<>() {
-                @Override
-                public SocketPermission apply(SocketPermission existingVal,
-                                              SocketPermission newVal) {
-                    int oldMask = existingVal.getMask();
-                    int newMask = newVal.getMask();
-                    if (oldMask != newMask) {
-                        int effective = oldMask | newMask;
-                        if (effective == newMask) {
-                            return newVal;
-                        }
-                        if (effective != oldMask) {
-                            return new SocketPermission(sp.getName(),
-                                                        effective);
-                        }
+        // permission if applicable.
+        perms.merge(sp.getName(), sp, (existingVal, newVal) -> {
+                int oldMask = existingVal.getMask();
+                int newMask = newVal.getMask();
+                if (oldMask != newMask) {
+                    int effective = oldMask | newMask;
+                    if (effective == newMask) {
+                        return newVal;
                     }
-                    return existingVal;
+                    if (effective != oldMask) {
+                        return new SocketPermission(sp.getName(), effective);
+                    }
                 }
+                return existingVal;
             }
         );
     }

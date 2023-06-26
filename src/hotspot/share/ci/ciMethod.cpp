@@ -40,6 +40,8 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "interpreter/oopMapCache.hpp"
+#include "logging/log.hpp"
+#include "logging/logStream.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
@@ -82,8 +84,8 @@ ciMethod::ciMethod(const methodHandle& h_m, ciInstanceKlass* holder) :
   _code_size          = h_m->code_size();
   _handler_count      = h_m->exception_table_length();
   _size_of_parameters = h_m->size_of_parameters();
-  _uses_monitors      = h_m->access_flags().has_monitor_bytecodes();
-  _balanced_monitors  = !_uses_monitors || h_m->access_flags().is_monitor_matching();
+  _uses_monitors      = h_m->has_monitor_bytecodes();
+  _balanced_monitors  = !_uses_monitors || h_m->guaranteed_monitor_matching();
   _is_c1_compilable   = !h_m->is_not_c1_compilable();
   _is_c2_compilable   = !h_m->is_not_c2_compilable();
   _can_be_parsed      = true;
@@ -728,12 +730,14 @@ ciMethod* ciMethod::find_monomorphic_target(ciInstanceKlass* caller,
   }
 
 #ifndef PRODUCT
-  if (TraceDependencies && target() != nullptr && target() != root_m->get_Method()) {
-    tty->print("found a non-root unique target method");
-    tty->print_cr("  context = %s", actual_recv->get_Klass()->external_name());
-    tty->print("  method  = ");
-    target->print_short_name(tty);
-    tty->cr();
+  LogTarget(Debug, dependencies) lt;
+  if (lt.is_enabled() && target() != nullptr && target() != root_m->get_Method()) {
+    LogStream ls(&lt);
+    ls.print("found a non-root unique target method");
+    ls.print_cr("  context = %s", actual_recv->get_Klass()->external_name());
+    ls.print("  method  = ");
+    target->print_short_name(&ls);
+    ls.cr();
   }
 #endif //PRODUCT
 
@@ -1174,9 +1178,9 @@ bool ciMethod::has_unloaded_classes_in_signature() {
 
 // ------------------------------------------------------------------
 // ciMethod::is_klass_loaded
-bool ciMethod::is_klass_loaded(int refinfo_index, bool must_be_resolved) const {
+bool ciMethod::is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved) const {
   VM_ENTRY_MARK;
-  return get_Method()->is_klass_loaded(refinfo_index, must_be_resolved);
+  return get_Method()->is_klass_loaded(refinfo_index, bc, must_be_resolved);
 }
 
 // ------------------------------------------------------------------

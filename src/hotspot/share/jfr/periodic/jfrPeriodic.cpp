@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "jfr/periodic/jfrOSInterface.hpp"
 #include "jfr/periodic/jfrThreadCPULoadEvent.hpp"
 #include "jfr/periodic/jfrThreadDumpEvent.hpp"
+#include "jfr/periodic/jfrNativeMemoryEvent.hpp"
 #include "jfr/periodic/jfrNetworkUtilization.hpp"
 #include "jfr/recorder/jfrRecorder.hpp"
 #include "jfr/utilities/jfrThreadIterator.hpp"
@@ -51,6 +52,7 @@
 #include "memory/heapInspection.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/oop.inline.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/globals.hpp"
@@ -63,7 +65,7 @@
 #include "runtime/vm_version.hpp"
 #include "services/classLoadingService.hpp"
 #include "services/management.hpp"
-#include "services/memJfrReporter.hpp"
+#include "services/memoryPool.hpp"
 #include "services/threadService.hpp"
 #include "utilities/exceptions.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -91,6 +93,10 @@ Ticks JfrPeriodicEventSet::timestamp(void) {
 
 PeriodicType JfrPeriodicEventSet::type(void) {
   return _type;
+}
+
+TRACE_REQUEST_FUNC(ResidentSetSize) {
+  os::jfr_report_memory_info();
 }
 
 TRACE_REQUEST_FUNC(JVMInformation) {
@@ -230,7 +236,7 @@ TRACE_REQUEST_FUNC(CPUTimeStampCounter) {
 
 TRACE_REQUEST_FUNC(SystemProcess) {
   char pid_buf[16];
-  SystemProcess* processes = NULL;
+  SystemProcess* processes = nullptr;
   int num_of_processes = 0;
   JfrTicks start_time = JfrTicks::now();
   int ret_val = JfrOSInterface::system_processes(&processes, &num_of_processes);
@@ -244,16 +250,16 @@ TRACE_REQUEST_FUNC(SystemProcess) {
   }
   if (ret_val == OS_OK) {
     // feature is implemented, write real event
-    while (processes != NULL) {
+    while (processes != nullptr) {
       SystemProcess* tmp = processes;
       const char* info = processes->command_line();
-      if (info == NULL) {
+      if (info == nullptr) {
          info = processes->path();
       }
-      if (info == NULL) {
+      if (info == nullptr) {
          info = processes->name();
       }
-      if (info == NULL) {
+      if (info == nullptr) {
          info = "?";
       }
       jio_snprintf(pid_buf, sizeof(pid_buf), "%d", processes->pid());
@@ -267,6 +273,43 @@ TRACE_REQUEST_FUNC(SystemProcess) {
       delete tmp;
     }
   }
+}
+
+template <typename AgentEvent>
+static void send_agent_event(AgentEvent& event, const JvmtiAgent* agent) {
+  event.set_name(agent->name());
+  event.set_options(agent->options());
+  event.set_dynamic(agent->is_dynamic());
+  event.set_initializationTime(agent->initialization_time());
+  event.set_initializationDuration(agent->initialization_duration());
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(JavaAgent) {
+  const JvmtiAgentList::Iterator it =JvmtiAgentList::java_agents();
+  while (it.has_next()) {
+    const JvmtiAgent* agent = it.next();
+    assert(agent->is_jplis(), "invariant");
+    EventJavaAgent event;
+    send_agent_event(event, agent);
+  }
+}
+
+static void send_native_agent_events(const JvmtiAgentList::Iterator& it) {
+  while (it.has_next()) {
+    const JvmtiAgent* agent = it.next();
+    assert(!agent->is_jplis(), "invariant");
+    EventNativeAgent event;
+    event.set_path(agent->os_lib_path());
+    send_agent_event(event, agent);
+  }
+}
+
+TRACE_REQUEST_FUNC(NativeAgent) {
+  const JvmtiAgentList::Iterator native_agents_it = JvmtiAgentList::native_agents();
+  send_native_agent_events(native_agents_it);
+  const JvmtiAgentList::Iterator xrun_agents_it = JvmtiAgentList::xrun_agents();
+  send_native_agent_events(xrun_agents_it);
 }
 
 TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
@@ -295,7 +338,7 @@ TRACE_REQUEST_FUNC(ThreadContextSwitchRate) {
 #define SEND_FLAGS_OF_TYPE(eventType, flagType)                   \
   do {                                                            \
     JVMFlag *flag = JVMFlag::flags;                               \
-    while (flag->name() != NULL) {                                \
+    while (flag->name() != nullptr) {                                \
       if (flag->is_ ## flagType()) {                              \
         if (flag->is_unlocked()) {                                \
           Event ## eventType event;                               \
@@ -341,7 +384,7 @@ TRACE_REQUEST_FUNC(StringFlag) {
 
 class VM_GC_SendObjectCountEvent : public VM_GC_HeapInspection {
  public:
-  VM_GC_SendObjectCountEvent() : VM_GC_HeapInspection(NULL, true) {}
+  VM_GC_SendObjectCountEvent() : VM_GC_HeapInspection(nullptr, true) {}
   virtual void doit() {
     ObjectCountEventSender::enable_requestable_event();
     collect();
@@ -421,7 +464,7 @@ TRACE_REQUEST_FUNC(YoungGenerationConfiguration) {
 TRACE_REQUEST_FUNC(InitialSystemProperty) {
   SystemProperty* p = Arguments::system_properties();
   JfrTicks time_stamp = JfrTicks::now();
-  while (p !=  NULL) {
+  while (p !=  nullptr) {
     if (!p->internal()) {
       EventInitialSystemProperty event(UNTIMED);
       event.set_key(p->key());
@@ -443,7 +486,7 @@ TRACE_REQUEST_FUNC(ThreadAllocationStatistics) {
   JfrJavaThreadIterator iter;
   while (iter.has_next()) {
     JavaThread* const jt = iter.next();
-    assert(jt != NULL, "invariant");
+    assert(jt != nullptr, "invariant");
     allocated.append(jt->cooked_allocated_bytes());
     thread_ids.append(JFR_JVM_THREAD_ID(jt));
   }
@@ -488,6 +531,37 @@ TRACE_REQUEST_FUNC(JavaThreadStatistics) {
   event.commit();
 }
 
+TRACE_REQUEST_FUNC(GCHeapMemoryUsage) {
+  MemoryUsage usage = Universe::heap()->memory_usage();
+  EventGCHeapMemoryUsage event(UNTIMED);
+  event.set_used(usage.used());
+  event.set_committed(usage.committed());
+  event.set_max(usage.max_size());
+  event.set_starttime(timestamp());
+  event.set_endtime(timestamp());
+  event.commit();
+}
+
+TRACE_REQUEST_FUNC(GCHeapMemoryPoolUsage) {
+  ResourceMark mark;
+  GrowableArray<MemoryPool*> pools = Universe::heap()->memory_pools();
+  for (int i = 0; i < pools.length(); i++) {
+    MemoryPool* pool = pools.at(i);
+    if (pool->is_heap()) {
+      MemoryUsage usage = pool->get_memory_usage();
+      EventGCHeapMemoryPoolUsage event(UNTIMED);
+      event.set_name(pool->name());
+      event.set_used(usage.used());
+      event.set_committed(usage.committed());
+      event.set_max(usage.max_size());
+      event.set_starttime(timestamp());
+      event.set_endtime(timestamp());
+      event.commit();
+    }
+  }
+}
+
+
 TRACE_REQUEST_FUNC(ClassLoadingStatistics) {
 #if INCLUDE_MANAGEMENT
   EventClassLoadingStatistics event;
@@ -501,13 +575,13 @@ TRACE_REQUEST_FUNC(ClassLoadingStatistics) {
 
 class JfrClassLoaderStatsClosure : public ClassLoaderStatsClosure {
 public:
-  JfrClassLoaderStatsClosure() : ClassLoaderStatsClosure(NULL) {}
+  JfrClassLoaderStatsClosure() : ClassLoaderStatsClosure(nullptr) {}
 
   bool do_entry(oop const& key, ClassLoaderStats const& cls) {
-    const ClassLoaderData* this_cld = cls._class_loader != NULL ?
-      java_lang_ClassLoader::loader_data_acquire(cls._class_loader) : NULL;
-    const ClassLoaderData* parent_cld = cls._parent != NULL ?
-      java_lang_ClassLoader::loader_data_acquire(cls._parent) : NULL;
+    const ClassLoaderData* this_cld = cls._class_loader != nullptr ?
+      java_lang_ClassLoader::loader_data_acquire(cls._class_loader) : nullptr;
+    const ClassLoaderData* parent_cld = cls._parent != nullptr ?
+      java_lang_ClassLoader::loader_data_acquire(cls._parent) : nullptr;
     EventClassLoaderStatistics event;
     event.set_classLoader(this_cld);
     event.set_parentClassLoader(parent_cld);
@@ -529,7 +603,7 @@ public:
 
 class JfrClassLoaderStatsVMOperation : public ClassLoaderStatsVMOperation {
  public:
-  JfrClassLoaderStatsVMOperation() : ClassLoaderStatsVMOperation(NULL) { }
+  JfrClassLoaderStatsVMOperation() : ClassLoaderStatsVMOperation(nullptr) { }
 
   void doit() {
     JfrClassLoaderStatsClosure clsc;
@@ -643,9 +717,9 @@ TRACE_REQUEST_FUNC(FinalizerStatistics) {
 }
 
 TRACE_REQUEST_FUNC(NativeMemoryUsage) {
-  MemJFRReporter::send_type_events();
+  JfrNativeMemoryEvent::send_type_events(timestamp());
 }
 
 TRACE_REQUEST_FUNC(NativeMemoryUsageTotal) {
-  MemJFRReporter::send_total_event();
+  JfrNativeMemoryEvent::send_total_event(timestamp());
 }

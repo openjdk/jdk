@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,20 +22,29 @@
  */
 
 /*
- * @test
+ * @test id=default
  * @summary Stress test virtual threads with a variation of the Skynet 1M benchmark
  * @requires vm.continuations
- * @enablePreview
+ * @requires !vm.debug | vm.gc != "Z"
  * @run main/othervm/timeout=300 -Xmx1g Skynet
  */
 
 /*
- * @test
+ * @test id=ZSinglegen
  * @requires vm.debug == true & vm.continuations
- * @requires vm.gc.Z
- * @enablePreview
+ * @requires vm.gc.ZSinglegen
  * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
- *     -XX:+ZVerifyViews -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
+ *     -XX:+UseZGC -XX:-ZGenerational
+ *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
+ */
+
+/*
+ * @test id=ZGenerational
+ * @requires vm.debug == true & vm.continuations
+ * @requires vm.gc.ZGenerational
+ * @run main/othervm/timeout=300 -XX:+UnlockDiagnosticVMOptions
+ *     -XX:+UseZGC -XX:+ZGenerational
+ *     -XX:+ZVerifyOops -XX:ZCollectionInterval=0.01 -Xmx1g Skynet
  */
 
 import java.util.concurrent.BlockingQueue;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_GENERATEOOPMAP_HPP
 #define SHARE_OOPS_GENERATEOOPMAP_HPP
 
-#include "interpreter/bytecodeStream.hpp"
 #include "memory/allocation.hpp"
 #include "oops/method.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -33,6 +32,7 @@
 #include "utilities/bitMap.hpp"
 
 // Forward definition
+class BytecodeStream;
 class GenerateOopMap;
 class BasicBlock;
 class CellTypeState;
@@ -77,7 +77,7 @@ class RetTable {
 
   void add_jsr(int return_bci, int target_bci);   // Adds entry to list
  public:
-  RetTable()                                                  { _first = NULL; }
+  RetTable()                                                  { _first = nullptr; }
   void compute_ret_table(const methodHandle& method);
   void update_ret_table(int bci, int delta);
   RetTableEntry* find_jsrs_for_target(int targBci);
@@ -396,8 +396,8 @@ class GenerateOopMap {
   void  do_ldc                              (int bci);
   void  do_astore                           (int idx);
   void  do_jsr                              (int delta);
-  void  do_field                            (int is_get, int is_static, int idx, int bci);
-  void  do_method                           (int is_static, int is_interface, int idx, int bci);
+  void  do_field                            (int is_get, int is_static, int idx, int bci, Bytecodes::Code bc);
+  void  do_method                           (int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc);
   void  do_multianewarray                   (int dims, int bci);
   void  do_monitorenter                     (int bci);
   void  do_monitorexit                      (int bci);

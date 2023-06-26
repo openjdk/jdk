@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,10 @@ package gc.z;
 
 /*
  * @test TestUncommit
- * @requires vm.gc.Z
+ * @requires vm.gc.ZGenerational
  * @summary Test ZGC uncommit unused memory
  * @library /test/lib
- * @run main/othervm -XX:+UseZGC -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xlog:gc*,gc+heap=debug,gc+stats=off -Xms128M -Xmx512M -XX:ZUncommitDelay=10 gc.z.TestUncommit
  */
 
 import java.util.ArrayList;

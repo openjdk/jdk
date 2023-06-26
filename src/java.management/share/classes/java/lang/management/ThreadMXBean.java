@@ -65,17 +65,16 @@ import java.util.Map;
  * of thread IDs as the input parameter and return per-thread information.
  *
  * <h2>Thread CPU time</h2>
- * A Java virtual machine implementation may support measuring
- * the CPU time for the current thread, for any thread, or for no threads.
+ * A Java virtual machine implementation may support measuring the CPU time
+ * for the current platform thread, for any platform thread, or for no threads.
  *
  * <p>
  * The {@link #isThreadCpuTimeSupported} method can be used to determine
  * if a Java virtual machine supports measuring of the CPU time for any
- * thread.  The {@link #isCurrentThreadCpuTimeSupported} method can
- * be used to determine if a Java virtual machine supports measuring of
- * the CPU time for the current  thread.
- * A Java virtual machine implementation that supports CPU time measurement
- * for any thread will also support that for the current thread.
+ * platform thread.  The {@link #isCurrentThreadCpuTimeSupported()} method
+ * can be used to determine if a Java virtual machine supports measuring of
+ * the CPU time with the {@link #getCurrentThreadCpuTime()} and
+ * {@link #getCurrentThreadUserTime()} methods from a platform thread.
  *
  * <p> The CPU time provided by this interface has nanosecond precision
  * but not necessarily nanosecond accuracy.
@@ -411,8 +410,9 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *   {@link #getThreadCpuTime getThreadCpuTime}(Thread.currentThread().threadId());
      * </pre></blockquote>
      *
-     * @return the total CPU time for the current thread if CPU time
-     * measurement is enabled; {@code -1} otherwise.
+     * @return the total CPU time for the current thread if the current
+     * thread is a platform thread and if CPU time measurement is enabled;
+     * {@code -1} otherwise.
      *
      * @throws UnsupportedOperationException if the Java
      * virtual machine does not support CPU time measurement for
@@ -438,8 +438,9 @@ public interface ThreadMXBean extends PlatformManagedObject {
      *   {@link #getThreadUserTime getThreadUserTime}(Thread.currentThread().threadId());
      * </pre></blockquote>
      *
-     * @return the user-level CPU time for the current thread if CPU time
-     * measurement is enabled; {@code -1} otherwise.
+     * @return the user-level CPU time for the current thread if the current
+     * thread is a platform thread and if CPU time measurement is enabled;
+     * {@code -1} otherwise.
      *
      * @throws UnsupportedOperationException if the Java
      * virtual machine does not support CPU time measurement for
@@ -472,8 +473,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * where CPU time measurement starts.
      *
      * @param id the thread ID of a thread
-     * @return the total CPU time for a thread of the specified ID
-     * if the thread of the specified ID exists, the thread is alive,
+     * @return the total CPU time for a thread of the specified ID if the
+     * thread of the specified ID is a platform thread, the thread is alive,
      * and CPU time measurement is enabled;
      * {@code -1} otherwise.
      *
@@ -507,8 +508,8 @@ public interface ThreadMXBean extends PlatformManagedObject {
      * where CPU time measurement starts.
      *
      * @param id the thread ID of a thread
-     * @return the user-level CPU time for a thread of the specified ID
-     * if the thread of the specified ID exists, the thread is alive,
+     * @return the user-level CPU time for a thread of the specified ID if the
+     * thread of the specified ID is a platform thread, the thread is alive,
      * and CPU time measurement is enabled;
      * {@code -1} otherwise.
      *
@@ -526,29 +527,31 @@ public interface ThreadMXBean extends PlatformManagedObject {
 
     /**
      * Tests if the Java virtual machine implementation supports CPU time
-     * measurement for any thread.
+     * measurement for any platform thread.
      * A Java virtual machine implementation that supports CPU time
-     * measurement for any thread will also support CPU time
-     * measurement for the current thread.
+     * measurement for any platform thread will also support CPU time
+     * measurement for the current thread, when the current thread is a
+     * platform thread.
      *
      * @return
      *   {@code true}
      *     if the Java virtual machine supports CPU time
-     *     measurement for any thread;
+     *     measurement for any platform thread;
      *   {@code false} otherwise.
      */
     public boolean isThreadCpuTimeSupported();
 
     /**
-     * Tests if the Java virtual machine supports CPU time
-     * measurement for the current thread.
+     * Tests if the Java virtual machine supports CPU time measurement from
+     * a platform thread with the {@link #getCurrentThreadCpuTime()} and
+     * {@link #getCurrentThreadUserTime()} methods.
      * This method returns {@code true} if {@link #isThreadCpuTimeSupported}
      * returns {@code true}.
      *
      * @return
      *   {@code true}
-     *     if the Java virtual machine supports CPU time
-     *     measurement for current thread;
+     *     if the Java virtual machine supports CPU time measurement
+     *     of the current platform thread;
      *   {@code false} otherwise.
      */
     public boolean isCurrentThreadCpuTimeSupported();

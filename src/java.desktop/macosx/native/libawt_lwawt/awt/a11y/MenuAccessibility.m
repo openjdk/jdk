@@ -32,9 +32,13 @@
 @implementation MenuAccessibility
 - (NSAccessibilityRole _Nonnull)accessibilityRole
 {
-        return [[[self parent] javaRole] isEqualToString:@"combobox"]
-               ? NSAccessibilityPopUpButtonRole
-               : NSAccessibilityMenuRole;
+        if ([[[self parent] javaRole] isEqualToString:@"combobox"]) {
+            return NSAccessibilityPopUpButtonRole;
+        } else if ([[[self parent] javaRole] isEqualToString:@"menubar"]) {
+            return NSAccessibilityMenuBarItemRole;
+        } else {
+            return NSAccessibilityMenuRole;
+        }
 }
 
 - (BOOL)isAccessibilityElement

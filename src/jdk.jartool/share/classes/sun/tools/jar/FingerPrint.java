@@ -25,16 +25,22 @@
 
 package sun.tools.jar;
 
-import jdk.internal.org.objectweb.asm.*;
-
 import java.io.IOException;
-import java.io.InputStream;
+import java.lang.reflect.AccessFlag;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+import jdk.internal.classfile.AccessFlags;
+import jdk.internal.classfile.Attributes;
+import jdk.internal.classfile.ClassElement;
+import jdk.internal.classfile.Classfile;
+import jdk.internal.classfile.constantpool.*;
+import jdk.internal.classfile.FieldModel;
+import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
+import jdk.internal.classfile.attribute.InnerClassesAttribute;
 
 /**
  * A FingerPrint is an abstract representation of a JarFile entry that contains
@@ -91,7 +97,7 @@ final class FingerPrint {
     }
 
     public boolean isNestedClass() {
-        return attrs.nestedClass;
+        return attrs.maybeNestedClass && attrs.outerClassName != null;
     }
 
     public boolean isPublicClass() {
@@ -159,10 +165,14 @@ final class FingerPrint {
         return true;
     }
 
-    private ClassAttributes getClassAttributes(byte[] bytes) {
-        ClassReader rdr = new ClassReader(bytes);
-        ClassAttributes attrs = new ClassAttributes();
-        rdr.accept(attrs, 0);
+    private static ClassAttributes getClassAttributes(byte[] bytes) {
+        var cm = Classfile.parse(bytes);
+        ClassAttributes attrs = new ClassAttributes(
+                cm.flags(),
+                cm.thisClass().asInternalName(),
+                cm.superclass().map(ClassEntry::asInternalName).orElse(null),
+                cm.majorVersion());
+        cm.forEachElement(attrs);
         return attrs;
     }
 
@@ -232,85 +242,73 @@ final class FingerPrint {
         }
     }
 
-    private static final class ClassAttributes extends ClassVisitor {
-        private String name;
+    private static final class ClassAttributes implements Consumer<ClassElement> {
+        private final String name;
         private String outerClassName;
-        private String superName;
-        private int majorVersion;
-        private int access;
-        private boolean publicClass;
-        private boolean nestedClass;
+        private final String superName;
+        private final int majorVersion;
+        private final int access;
+        private final boolean publicClass;
+        private final boolean maybeNestedClass;
         private final Set<Field> fields = new HashSet<>();
         private final Set<Method> methods = new HashSet<>();
 
-        public ClassAttributes() {
-            super(Opcodes.ASM9);
-        }
-
-        private boolean isPublic(int access) {
-            return ((access & Opcodes.ACC_PUBLIC) == Opcodes.ACC_PUBLIC)
-                    || ((access & Opcodes.ACC_PROTECTED) == Opcodes.ACC_PROTECTED);
-        }
-
-        @Override
-        public void visit(int version, int access, String name, String signature,
-                          String superName, String[] interfaces) {
-            this.majorVersion = version & 0xFFFF; // JDK-8296329: extract major version only
-            this.access = access;
+        public ClassAttributes(AccessFlags access, String name, String superName, int majorVersion) {
+            this.majorVersion = majorVersion; // JDK-8296329: extract major version only
+            this.access = access.flagsMask();
             this.name = name;
-            this.nestedClass = name.contains("$");
+            this.maybeNestedClass = name.contains("$");
             this.superName = superName;
             this.publicClass = isPublic(access);
         }
 
         @Override
-        public void visitOuterClass(String owner, String name, String desc) {
-            if (!this.nestedClass) return;
-            this.outerClassName = owner;
-        }
-
-        @Override
-        public void visitInnerClass(String name, String outerName, String innerName,
-                                    int access) {
-            if (!this.nestedClass) return;
-            if (outerName == null) return;
-            if (!this.name.equals(name)) return;
-            if (this.outerClassName == null) this.outerClassName = outerName;
-        }
-
-        @Override
-        public FieldVisitor visitField(int access, String name, String desc,
-                                       String signature, Object value) {
-            if (isPublic(access)) {
-                fields.add(new Field(access, name, desc));
-            }
-            return null;
-        }
-
-        @Override
-        public MethodVisitor visitMethod(int access, String name, String desc,
-                                         String signature, String[] exceptions) {
-            if (isPublic(access)) {
-                Set<String> exceptionSet = new HashSet<>();
-                if (exceptions != null) {
-                    for (String e : exceptions) {
-                        exceptionSet.add(e);
+        public void accept(ClassElement cle) {
+            switch (cle) {
+                case InnerClassesAttribute ica -> {
+                    for (var icm : ica.classes()) {
+                        if (this.maybeNestedClass && icm.outerClass().isPresent()
+                                && this.name.equals(icm.innerClass().asInternalName())
+                                && this.outerClassName == null) {
+                            this.outerClassName = icm.outerClass().get().asInternalName();
+                        }
                     }
                 }
-                // treat type descriptor as a proxy for signature because signature
-                // is usually null, need to strip off the return type though
-                int n;
-                if (desc != null && (n = desc.lastIndexOf(')')) != -1) {
-                    desc = desc.substring(0, n + 1);
-                    methods.add(new Method(access, name, desc, exceptionSet));
+                case FieldModel fm -> {
+                    if (isPublic(fm.flags())) {
+                        fields.add(new Field(fm.flags().flagsMask(),
+                                             fm.fieldName().stringValue(),
+                                             fm.fieldType().stringValue()));
+                    }
                 }
+                case MethodModel mm -> {
+                    if (isPublic(mm.flags())) {
+                        Set<String> exceptionSet = new HashSet<>();
+                        mm.findAttribute(Attributes.EXCEPTIONS).ifPresent(ea ->
+                                ea.exceptions().forEach(e ->
+                                        exceptionSet.add(e.asInternalName())));
+                        // treat type descriptor as a proxy for signature because signature
+                        // is usually null, need to strip off the return type though
+                        int n;
+                        var desc = mm.methodType().stringValue();
+                        if (desc != null && (n = desc.lastIndexOf(')')) != -1) {
+                            desc = desc.substring(0, n + 1);
+                            methods.add(new Method(mm.flags().flagsMask(),
+                                    mm.methodName().stringValue(), desc, exceptionSet));
+                        }
+                    }
+                }
+                case EnclosingMethodAttribute ema -> {
+                    if (this.maybeNestedClass) {
+                        this.outerClassName = ema.enclosingClass().asInternalName();
+                    }
+                }
+                default -> {}
             }
-            return null;
         }
 
-        @Override
-        public void visitEnd() {
-            this.nestedClass = this.outerClassName != null;
+        private static boolean isPublic(AccessFlags access) {
+            return access.has(AccessFlag.PUBLIC) || access.has(AccessFlag.PROTECTED);
         }
 
         @Override

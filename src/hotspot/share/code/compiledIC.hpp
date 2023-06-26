@@ -90,7 +90,7 @@ class CompiledICInfo : public StackObj {
   Metadata*    cached_metadata() const         { assert(!_is_icholder, ""); return (Metadata*)_cached_value; }
   CompiledICHolder*    claim_cached_icholder() {
     assert(_is_icholder, "");
-    assert(_cached_value != nullptr, "must be non-nullptr");
+    assert(_cached_value != nullptr, "must be non-null");
     _release_icholder = false;
     CompiledICHolder* icholder = (CompiledICHolder*)_cached_value;
     icholder->claim();
@@ -338,6 +338,8 @@ class StaticCallInfo {
 class CompiledStaticCall : public ResourceObj {
  public:
   // Code
+
+  // Returns null if CodeBuffer::expand fails
   static address emit_to_interp_stub(CodeBuffer &cbuf, address mark = nullptr);
   static int to_interp_stub_size();
   static int to_trampoline_stub_size();

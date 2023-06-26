@@ -144,7 +144,7 @@ bool ciObject::equals(ciObject* obj) {
 //
 // Implementation note: we use the address of the ciObject as the
 // basis for the hash.  Use the _ident field, which is well-behaved.
-int ciObject::hash() {
+uint ciObject::hash() {
   return ident() * 31;
 }
 
@@ -166,6 +166,38 @@ int ciObject::hash() {
 jobject ciObject::constant_encoding() {
   assert(is_null_object() || handle() != nullptr, "cannot embed null pointer");
   return handle();
+}
+
+// ------------------------------------------------------------------
+// ciObject::check_constant_value_cache()
+//
+// Cache constant value lookups to ensure that consistent values are observed
+// during compilation because fields may be (re-)initialized concurrently.
+ciConstant ciObject::check_constant_value_cache(int off, BasicType bt) {
+  if (_constant_values != nullptr) {
+    for (int i = 0; i < _constant_values->length(); ++i) {
+      ConstantValue cached_val = _constant_values->at(i);
+      if (cached_val.off() == off) {
+        assert(cached_val.value().basic_type() == bt, "unexpected type");
+        return cached_val.value();
+      }
+    }
+  }
+  return ciConstant();
+}
+
+// ------------------------------------------------------------------
+// ciObject::add_to_constant_value_cache()
+//
+// Add a constant value to the cache.
+void ciObject::add_to_constant_value_cache(int off, ciConstant val) {
+  assert(val.is_valid(), "value must be valid");
+  assert(!check_constant_value_cache(off, val.basic_type()).is_valid(), "duplicate");
+  if (_constant_values == nullptr) {
+    Arena* arena = CURRENT_ENV->arena();
+    _constant_values = new (arena) GrowableArray<ConstantValue>(arena, 1, 0, ConstantValue());
+  }
+  _constant_values->append(ConstantValue(off, val));
 }
 
 // ------------------------------------------------------------------

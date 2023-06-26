@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,12 +170,6 @@ public class SunCommandLineLauncher extends AbstractLauncher {
         if (quote.length() > 1) {
             throw new IllegalConnectorArgumentsException("Invalid length",
                                                          ARG_QUOTE);
-        }
-
-        if ((options.indexOf("-Djava.compiler=") != -1) &&
-            (options.toLowerCase().indexOf("-djava.compiler=none") == -1)) {
-            throw new IllegalConnectorArgumentsException("Cannot debug with a JIT compiler",
-                                                         ARG_OPTIONS);
         }
 
         /*

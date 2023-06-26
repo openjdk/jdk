@@ -549,7 +549,7 @@ class SignatureChekker : public SignatureIterator {
     if (v != 0) {
       // v is a "handle" referring to an oop, cast to integral type.
       // There shouldn't be any handles in very low memory.
-      guarantee((size_t)v >= (size_t)os::vm_page_size(),
+      guarantee((size_t)v >= os::vm_page_size(),
                 "Bad JNI oop argument %d: " PTR_FORMAT, _pos, v);
       // Verify the pointee.
       oop vv = resolve_indirect_oop(v, _value_state[_pos]);

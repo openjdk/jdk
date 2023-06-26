@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,6 +57,8 @@ import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
 import jdk.jfr.internal.consumer.EventLog;
 import jdk.jfr.internal.instrument.JDKEvents;
+import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.util.Utils;
 
 public final class PlatformRecorder {
 
@@ -71,6 +73,7 @@ public final class PlatformRecorder {
     private long recordingCounter = 0;
     private RepositoryChunk currentChunk;
     private boolean inShutdown;
+    private boolean runPeriodicTask;
 
     public PlatformRecorder() throws Exception {
         repository = Repository.getRepository();
@@ -97,7 +100,7 @@ public final class PlatformRecorder {
             jvm.exclude(t);
             t.start();
             t.join();
-            return result.get(0);
+            return result.getFirst();
         } catch (InterruptedException e) {
             throw new IllegalStateException("Not able to create timer task. " + e.getMessage(), e);
         }
@@ -242,7 +245,7 @@ public final class PlatformRecorder {
             }
             currentChunk = newChunk;
             jvm.beginRecording();
-            startNanos = Utils.getChunkStartNanos();
+            startNanos = JVMSupport.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             if (currentChunk != null) {
                 currentChunk.setStartTime(startTime);
@@ -251,6 +254,7 @@ public final class PlatformRecorder {
             updateSettings(false);
             recording.setStartTime(startTime);
             writeMetaEvents();
+            setRunPeriodicTask(true);
         } else {
             RepositoryChunk newChunk = null;
             if (toDisk) {
@@ -258,12 +262,12 @@ public final class PlatformRecorder {
                 if (EventLog.shouldLog()) {
                     EventLog.start();
                 }
-                RequestEngine.doChunkEnd();
+                PeriodicEvents.doChunkEnd();
                 String p = newChunk.getFile().toString();
                 startTime = MetadataRepository.getInstance().setOutput(p);
                 newChunk.setStartTime(startTime);
             }
-            startNanos = Utils.getChunkStartNanos();
+            startNanos = JVMSupport.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             recording.setStartTime(startTime);
             recording.setState(RecordingState.RUNNING);
@@ -275,9 +279,9 @@ public final class PlatformRecorder {
             currentChunk = newChunk;
         }
         if (toDisk) {
-            RequestEngine.setFlushInterval(streamInterval);
+            PeriodicEvents.setFlushInterval(streamInterval);
         }
-        RequestEngine.doChunkBegin();
+        PeriodicEvents.doChunkBegin();
         Duration duration = recording.getDuration();
         if (duration != null) {
             recording.setStopTime(startTime.plus(duration));
@@ -310,10 +314,10 @@ public final class PlatformRecorder {
             }
         }
         OldObjectSample.emit(recording);
-        recording.setFinalStartnanos(Utils.getChunkStartNanos());
+        recording.setFinalStartnanos(JVMSupport.getChunkStartNanos());
 
         if (endPhysical) {
-            RequestEngine.doChunkEnd();
+            PeriodicEvents.doChunkEnd();
             if (recording.isToDisk()) {
                 if (inShutdown) {
                     jvm.markChunkFinal();
@@ -328,9 +332,10 @@ public final class PlatformRecorder {
             jvm.endRecording();
             recording.setStopTime(stopTime);
             disableEvents();
+            setRunPeriodicTask(false);
         } else {
             RepositoryChunk newChunk = null;
-            RequestEngine.doChunkEnd();
+            PeriodicEvents.doChunkEnd();
             updateSettingsButIgnoreRecording(recording, false);
 
             String path = null;
@@ -348,13 +353,13 @@ public final class PlatformRecorder {
                 finishChunk(currentChunk, stopTime, null);
             }
             currentChunk = newChunk;
-            RequestEngine.doChunkBegin();
+            PeriodicEvents.doChunkBegin();
         }
 
         if (toDisk) {
-            RequestEngine.setFlushInterval(streamInterval);
+            PeriodicEvents.setFlushInterval(streamInterval);
         } else {
-            RequestEngine.setFlushInterval(Long.MAX_VALUE);
+            PeriodicEvents.setFlushInterval(Long.MAX_VALUE);
         }
         recording.setState(RecordingState.STOPPED);
         if (!isToDisk()) {
@@ -394,7 +399,7 @@ public final class PlatformRecorder {
 
     synchronized void rotateDisk() {
         RepositoryChunk newChunk = repository.newChunk();
-        RequestEngine.doChunkEnd();
+        PeriodicEvents.doChunkEnd();
         String path = newChunk.getFile().toString();
         Instant timestamp = MetadataRepository.getInstance().setOutput(path);
         newChunk.setStartTime(timestamp);
@@ -403,7 +408,7 @@ public final class PlatformRecorder {
             finishChunk(currentChunk, timestamp, null);
         }
         currentChunk = newChunk;
-        RequestEngine.doChunkBegin();
+        PeriodicEvents.doChunkBegin();
     }
 
     private List<PlatformRecording> getRunningRecordings() {
@@ -416,7 +421,7 @@ public final class PlatformRecorder {
         return runningRecordings;
     }
 
-    private List<RepositoryChunk> makeChunkList(Instant startTime, Instant endTime) {
+    public List<RepositoryChunk> makeChunkList(Instant startTime, Instant endTime) {
         Set<RepositoryChunk> chunkSet = new HashSet<>();
         for (PlatformRecording r : getRecordings()) {
             chunkSet.addAll(r.getChunks());
@@ -434,7 +439,7 @@ public final class PlatformRecorder {
             return chunks;
         }
 
-        return Collections.emptyList();
+        return new ArrayList<>();
     }
 
     private void startDiskMonitor() {
@@ -450,6 +455,8 @@ public final class PlatformRecorder {
                 r.appendChunk(chunk);
             }
         }
+        // Decrease initial reference count
+        chunk.release();
         FilePurger.purge();
     }
 
@@ -470,6 +477,7 @@ public final class PlatformRecorder {
                         r.getId(),
                         r.getName(),
                         path == null ? null : path.getRealPathText(),
+                        r.isToDisk(),
                         age == null ? Long.MAX_VALUE : age.toMillis(),
                         flush == null ? Long.MAX_VALUE : flush.toMillis(),
                         size == null ? Long.MAX_VALUE : size,
@@ -499,7 +507,7 @@ public final class PlatformRecorder {
                     EventLog.update();
                 }
             }
-            long minDelta = RequestEngine.doPeriodic();
+            long minDelta = PeriodicEvents.doPeriodic();
             long wait = Math.min(minDelta, Options.getWaitInterval());
             takeNap(wait);
         }
@@ -517,9 +525,21 @@ public final class PlatformRecorder {
         return false;
     }
 
+    private void setRunPeriodicTask(boolean runPeriodicTask) {
+        synchronized (JVM.CHUNK_ROTATION_MONITOR) {
+            this.runPeriodicTask = runPeriodicTask;
+            if (runPeriodicTask) {
+                JVM.CHUNK_ROTATION_MONITOR.notifyAll();
+            }
+        }
+    }
+
     private void takeNap(long duration) {
         try {
             synchronized (JVM.CHUNK_ROTATION_MONITOR) {
+                if (!runPeriodicTask) {
+                    duration = Long.MAX_VALUE;
+                }
                 JVM.CHUNK_ROTATION_MONITOR.wait(duration < 10 ? 10 : duration);
             }
         } catch (InterruptedException e) {
@@ -641,5 +661,9 @@ public final class PlatformRecorder {
             jvm.markChunkFinal();
             rotateDisk();
         }
+    }
+
+    public RepositoryChunk getCurrentChunk() {
+        return currentChunk;
     }
 }

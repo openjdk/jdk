@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,7 +81,7 @@ class WindowsFileCopy {
             }
             if (option == null)
                 throw new NullPointerException();
-            throw new UnsupportedOperationException("Unsupported copy option");
+            throw new UnsupportedOperationException("Unsupported copy option: " + option);
         }
 
         // check permissions. If the source file is a symbolic link then
@@ -238,9 +238,9 @@ class WindowsFileCopy {
             } else {
                 String linkTarget = WindowsLinkSupport.readLink(source);
                 int flags = SYMBOLIC_LINK_FLAG_DIRECTORY;
-                CreateSymbolicLink(targetPath,
-                                   WindowsPath.addPrefixIfNeeded(linkTarget),
-                                   flags);
+                WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                      WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                      flags);
             }
         } catch (WindowsException x) {
             x.rethrowAsIOException(target);
@@ -301,7 +301,7 @@ class WindowsFileCopy {
                 continue;
             }
             if (option == null) throw new NullPointerException();
-            throw new UnsupportedOperationException("Unsupported copy option");
+            throw new UnsupportedOperationException("Unsupported option: " + option);
         }
 
         @SuppressWarnings("removal")
@@ -441,9 +441,9 @@ class WindowsFileCopy {
                 CreateDirectory(targetPath, 0L);
             } else {
                 String linkTarget = WindowsLinkSupport.readLink(source);
-                CreateSymbolicLink(targetPath,
-                                   WindowsPath.addPrefixIfNeeded(linkTarget),
-                                   SYMBOLIC_LINK_FLAG_DIRECTORY);
+                WindowsLinkSupport.createSymbolicLink(targetPath,
+                                                      WindowsPath.addPrefixIfNeeded(linkTarget),
+                                                      SYMBOLIC_LINK_FLAG_DIRECTORY);
             }
         } catch (WindowsException x) {
             x.rethrowAsIOException(target);

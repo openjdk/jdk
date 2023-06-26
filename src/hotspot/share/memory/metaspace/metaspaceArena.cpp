@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,9 +129,9 @@ MetaspaceArena::MetaspaceArena(ChunkManager* chunk_manager, const ArenaGrowthPol
 
 MetaspaceArena::~MetaspaceArena() {
 #ifdef ASSERT
-  verify();
+  SOMETIMES(verify();)
   if (Settings::use_allocation_guard()) {
-    verify_allocation_guards();
+    SOMETIMES(verify_allocation_guards();)
   }
 #endif
 
@@ -156,7 +156,7 @@ MetaspaceArena::~MetaspaceArena() {
       return_counter.count(), return_counter.total_size());
 
   _total_used_words_counter->decrement_by(return_counter.total_size());
-  DEBUG_ONLY(chunk_manager()->verify();)
+  SOMETIMES(chunk_manager()->verify();)
   delete _fbl;
   UL(debug, ": dies.");
 
@@ -316,9 +316,6 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
           METACHUNK_FORMAT_ARGS(new_chunk), requested_word_size);
 
       assert(new_chunk->free_below_committed_words() >= raw_word_size, "Sanity");
-      if (Settings::new_chunks_are_fully_committed()) {
-        assert(new_chunk->is_fully_committed(), "Chunk should be fully committed.");
-      }
 
       // We have a new chunk. Before making it the current chunk, retire the old one.
       if (current_chunk() != nullptr) {
@@ -346,7 +343,7 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
   SOMETIMES(verify_locked();)
 
   if (p == nullptr) {
-    UL(info, "allocation failed, returned nullptr.");
+    UL(info, "allocation failed, returned null.");
   } else {
     UL2(trace, "after allocation: %u chunk(s), current:" METACHUNK_FULL_FORMAT,
         _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));
@@ -371,7 +368,7 @@ void MetaspaceArena::deallocate_locked(MetaWord* p, size_t word_size) {
   size_t raw_word_size = get_raw_word_size_for_requested_word_size(word_size);
   add_allocation_to_fbl(p, raw_word_size);
 
-  DEBUG_ONLY(verify_locked();)
+  SOMETIMES(verify_locked();)
 }
 
 // Prematurely returns a metaspace allocation to the _block_freelists because it is not

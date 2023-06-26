@@ -303,6 +303,17 @@ final class MethodHandleAccessorFactory {
 
     /*
      * Returns true if NativeAccessor should be used.
+     *
+     * Native accessor, i.e. VM reflection implementation, is used if one of
+     * the following conditions is met:
+     * 1. during VM early startup before method handle support is fully initialized
+     * 2. a Java native method
+     * 3. -Djdk.reflect.useNativeAccessorOnly=true is set
+     * 4. the member takes a variable number of arguments and the last parameter
+     *    is not an array (see details below)
+     * 5. the member's method type has an arity >= 255
+     *
+     * Otherwise, direct invocation of method handles is used.
      */
     private static boolean useNativeAccessor(Executable member) {
         if (!VM.isJavaLangInvokeInited())

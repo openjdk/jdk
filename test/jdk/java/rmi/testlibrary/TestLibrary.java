@@ -401,7 +401,7 @@ public class TestLibrary {
     /**
      * Creates an RMI {@link Registry} on a random, un-reserved port.
      *
-     * @returns an RMI Registry, using a random port.
+     * @return an RMI Registry, using a random port.
      * @throws RemoteException if there was a problem creating a Registry.
      */
     public static Registry createRegistryOnUnusedPort() throws RemoteException {
@@ -411,7 +411,7 @@ public class TestLibrary {
     /**
      * Creates an RMI {@link Registry} on an ephemeral port.
      *
-     * @returns an RMI Registry
+     * @return an RMI Registry
      * @throws RemoteException if there was a problem creating a Registry.
      */
     public static Registry createRegistryOnEphemeralPort() throws RemoteException {

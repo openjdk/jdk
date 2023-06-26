@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
  * @bug 6207322
  * @summary SSLEngine is returning a premature FINISHED message when doing
  *     an abbreviated handshake.
+ * @library /javax/net/ssl/templates
  * @run main/othervm RehandshakeFinished
  * @author Brad Wetmore
  */
@@ -86,11 +87,9 @@
 
 import javax.net.ssl.*;
 import javax.net.ssl.SSLEngineResult.*;
-import java.io.*;
-import java.security.*;
 import java.nio.*;
 
-public class RehandshakeFinished {
+public class RehandshakeFinished extends SSLContextTemplate {
 
     /*
      * Enables logging of the SSLEngine operations.
@@ -108,7 +107,7 @@ public class RehandshakeFinished {
      */
     private static boolean debug = false;
 
-    static private SSLContext sslc;
+    private final SSLContext sslc;
 
     private SSLEngine clientEngine;     // client Engine
     private ByteBuffer clientOut;       // write side of clientEngine
@@ -126,46 +125,8 @@ public class RehandshakeFinished {
     private ByteBuffer cTOs;            // "reliable" transport client->server
     private ByteBuffer sTOc;            // "reliable" transport server->client
 
-    /*
-     * The following is to set up the keystores.
-     */
-    private static String pathToStores = "../../../../javax/net/ssl/etc";
-    private static String keyStoreFile = "keystore";
-    private static String trustStoreFile = "truststore";
-    private static String passwd = "passphrase";
-
-    private static String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-    private static String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
-
-    private static Exception loadException = null;
-
-    static {
-        try {
-            KeyStore ks = KeyStore.getInstance("JKS");
-            KeyStore ts = KeyStore.getInstance("JKS");
-
-            char[] passphrase = "passphrase".toCharArray();
-
-            ks.load(new FileInputStream(keyFilename), passphrase);
-            ts.load(new FileInputStream(trustFilename), passphrase);
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
-            kmf.init(ks, passphrase);
-
-            TrustManagerFactory tmf =
-                TrustManagerFactory.getInstance("SunX509");
-            tmf.init(ts);
-
-            SSLContext sslCtx = SSLContext.getInstance("TLSv1.2");
-            sslCtx.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);
-            sslc = sslCtx;
-        } catch (Exception e) {
-            loadException = e;
-        }
+    public RehandshakeFinished() throws Exception {
+        sslc = createServerSSLContext();
     }
 
     /*
@@ -176,14 +137,10 @@ public class RehandshakeFinished {
             System.setProperty("javax.net.debug", "all");
         }
 
-        if (loadException != null) {
-            throw loadException;
-        }
-
+        RehandshakeFinished test = new RehandshakeFinished();
         // Prime the session cache with a good session
         // Second connection should be a simple session resumption.
-        if ((new RehandshakeFinished().runTest()) !=
-                new RehandshakeFinished().runRehandshake()) {
+        if (test.runTest() != test.runRehandshake()) {
             throw new Exception("Sessions not equivalent");
         }
 
@@ -410,6 +367,11 @@ public class RehandshakeFinished {
          */
         clientEngine = sslc.createSSLEngine("client", 80);
         clientEngine.setUseClientMode(true);
+    }
+
+    @Override
+    protected ContextParameters getServerContextParameters() {
+        return new ContextParameters("TLSv1.2", "PKIX", "NewSunX509");
     }
 
     /*

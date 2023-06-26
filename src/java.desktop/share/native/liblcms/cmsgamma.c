@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -851,6 +851,10 @@ cmsToneCurve* CMSEXPORT cmsBuildSegmentedToneCurve(cmsContext ContextID,
 cmsToneCurve* CMSEXPORT cmsBuildTabulatedToneCurveFloat(cmsContext ContextID, cmsUInt32Number nEntries, const cmsFloat32Number values[])
 {
     cmsCurveSegment Seg[3];
+
+    // Do some housekeeping
+    if (nEntries == 0 || values == NULL)
+        return NULL;
 
     // A segmented tone curve should have function segments in the first and last positions
     // Initialize segmented curve part up to 0 to constant value = samples[0]

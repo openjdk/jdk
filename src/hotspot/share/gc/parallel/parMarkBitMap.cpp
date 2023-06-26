@@ -47,12 +47,12 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   const size_t granularity = os::vm_allocation_granularity();
   _reserved_byte_size = align_up(raw_bytes, MAX2(page_sz, granularity));
 
-  const size_t rs_align = page_sz == (size_t) os::vm_page_size() ? 0 :
+  const size_t rs_align = page_sz == os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
   ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
   const size_t used_page_sz = rs.page_size();
-  os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes, used_page_sz,
-                       rs.base(), rs.size());
+  os::trace_page_sizes("Mark Bitmap", raw_bytes, raw_bytes,
+                       rs.base(), rs.size(), used_page_sz);
 
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 

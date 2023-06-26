@@ -997,7 +997,7 @@ inline size_t ConcurrentHashTable<CONFIG, F>::
       if (dels < num_del) {
         ndel[dels] = rem_n;
       } else {
-        guarantee(dels < std::numeric_limits<int>::max(),
+        guarantee(dels < INT_MAX,
                   "Growable array size is limited by a (signed) int, something is seriously bad if we reach this point, better exit");
         extra.append(rem_n);
       }
@@ -1292,7 +1292,7 @@ inline bool ConcurrentHashTable<CONFIG, F>::
   if (!try_resize_lock(thread)) {
     return false;
   }
-  assert(_new_table == nullptr || _new_table == POISON_PTR, "Must be nullptr");
+  assert(_new_table == nullptr || _new_table == POISON_PTR, "Must be null");
   for (size_t bucket_it = 0; bucket_it < _table->_size; bucket_it++) {
     Bucket* bucket = _table->get_bucket(bucket_it);
     assert(!bucket->have_redirect() && !bucket->is_locked(), "Table must be uncontended");

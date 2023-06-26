@@ -734,7 +734,7 @@ public:
   }
 };
 
-// This task not only evacuates/updates marked weak roots, but also "NULL"
+// This task not only evacuates/updates marked weak roots, but also "null"
 // dead weak roots.
 class ShenandoahConcurrentWeakRootsEvacUpdateTask : public WorkerTask {
 private:
@@ -770,6 +770,7 @@ public:
 
   void work(uint worker_id) {
     ShenandoahConcurrentWorkerSession worker_session(worker_id);
+    ShenandoahSuspendibleThreadSetJoiner sts_join;
     {
       ShenandoahEvacOOMScope oom;
       // jni_roots and weak_roots are OopStorage backed roots, concurrent iteration
@@ -782,7 +783,7 @@ public:
     // cleanup the weak oops in CLD and determinate nmethod's unloading state, so that we
     // can cleanup immediate garbage sooner.
     if (ShenandoahHeap::heap()->unload_classes()) {
-      // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either NULL the
+      // Applies ShenandoahIsCLDAlive closure to CLDs, native barrier will either null the
       // CLD's holder or evacuate it.
       {
         ShenandoahIsCLDAliveClosure is_cld_alive;
@@ -953,7 +954,7 @@ void ShenandoahUpdateThreadClosure::do_thread(Thread* thread) {
   if (thread->is_Java_thread()) {
     JavaThread* jt = JavaThread::cast(thread);
     ResourceMark rm;
-    jt->oops_do(&_cl, NULL);
+    jt->oops_do(&_cl, nullptr);
   }
 }
 

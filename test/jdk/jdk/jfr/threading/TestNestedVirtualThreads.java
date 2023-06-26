@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,6 @@ import jdk.test.lib.jfr.Events;
  * @requires vm.hasJFR & vm.continuations
  * @library /test/lib /test/jdk
  * @modules jdk.jfr/jdk.jfr.internal
- * @enablePreview
  * @run main/othervm jdk.jfr.threading.TestNestedVirtualThreads
  */
 public class TestNestedVirtualThreads {
@@ -71,8 +70,8 @@ public class TestNestedVirtualThreads {
             r.stop();
             List<RecordedEvent> events = Events.fromRecording(r);
             Events.hasEvents(events);
-            System.out.println(events.get(0));
-            RecordedEvent e = events.get(0);
+            System.out.println(events.getFirst());
+            RecordedEvent e = events.getFirst();
             RecordedThread t = e.getThread();
             Asserts.assertTrue(t.isVirtual());
             Asserts.assertEquals(t.getJavaName(), ""); // vthreads default name is the empty string.

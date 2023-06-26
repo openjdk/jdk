@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,8 +27,9 @@ package java.nio.charset;
 
 import jdk.internal.misc.ThreadTracker;
 import jdk.internal.misc.VM;
+import jdk.internal.util.StaticProperty;
+import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.ThreadLocalCoders;
-import sun.security.action.GetPropertyAction;
 
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -37,7 +38,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map;
@@ -48,7 +48,6 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.jar.JarFile;
 
 
 /**
@@ -263,6 +262,13 @@ import java.util.jar.JarFile;
  * of chars) and sequences of bytes. </p>
  *
  *
+ * @spec http://www.iana.org/assignments/character-sets Character Sets
+ * @spec https://www.rfc-editor.org/info/rfc2278
+ *      RFC 2278: IANA Charset Registration Procedures
+ * @spec https://www.rfc-editor.org/info/rfc2279
+ *      RFC 2279: UTF-8, a transformation format of ISO 10646
+ * @spec https://www.rfc-editor.org/info/rfc2781
+ *      RFC 2781: UTF-16, an encoding of ISO 10646
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
@@ -628,7 +634,7 @@ public abstract class Charset
             });
     }
 
-    private static volatile Charset defaultCharset;
+    private @Stable static Charset defaultCharset;
 
     /**
      * Returns the default charset of this Java virtual machine.
@@ -651,9 +657,8 @@ public abstract class Charset
     public static Charset defaultCharset() {
         if (defaultCharset == null) {
             synchronized (Charset.class) {
-                String csn = GetPropertyAction
-                        .privilegedGetProperty("file.encoding");
-                Charset cs = lookup(csn);
+                // do not look for providers other than the standard one
+                Charset cs = standardProvider.charsetForName(StaticProperty.fileEncoding());
                 if (cs != null)
                     defaultCharset = cs;
                 else
@@ -668,7 +673,7 @@ public abstract class Charset
 
     private final String name;          // tickles a bug in oldjavac
     private final String[] aliases;     // tickles a bug in oldjavac
-    private Set<String> aliasSet = null;
+    private Set<String> aliasSet;
 
     /**
      * Initializes a new charset with the given canonical name and alias
@@ -715,14 +720,12 @@ public abstract class Charset
      * @return  An immutable set of this charset's aliases
      */
     public final Set<String> aliases() {
-        if (aliasSet != null)
-            return aliasSet;
-        int n = aliases.length;
-        HashSet<String> hs = HashSet.newHashSet(n);
-        for (int i = 0; i < n; i++)
-            hs.add(aliases[i]);
-        aliasSet = Collections.unmodifiableSet(hs);
-        return aliasSet;
+        Set<String> set = this.aliasSet;
+        if (set == null) {
+            set = Set.of(aliases);
+            this.aliasSet = set;
+        }
+        return set;
     }
 
     /**
@@ -745,6 +748,7 @@ public abstract class Charset
      *
      * @return  {@code true} if, and only if, this charset is known by its
      *          implementor to be registered with the IANA
+     * @spec http://www.iana.org/assignments/character-sets Character Sets
      */
     public final boolean isRegistered() {
         return !name.startsWith("X-") && !name.startsWith("x-");
@@ -836,11 +840,12 @@ public abstract class Charset
      * <p> An invocation of this method upon a charset {@code cs} returns the
      * same result as the expression
      *
-     * <pre>
+     * {@snippet lang=java :
      *     cs.newDecoder()
      *       .onMalformedInput(CodingErrorAction.REPLACE)
      *       .onUnmappableCharacter(CodingErrorAction.REPLACE)
-     *       .decode(bb); </pre>
+     *       .decode(bb);
+     * }
      *
      * except that it is potentially more efficient because it can cache
      * decoders between successive invocations.
@@ -872,11 +877,12 @@ public abstract class Charset
      * <p> An invocation of this method upon a charset {@code cs} returns the
      * same result as the expression
      *
-     * <pre>
+     * {@snippet lang=java :
      *     cs.newEncoder()
      *       .onMalformedInput(CodingErrorAction.REPLACE)
      *       .onUnmappableCharacter(CodingErrorAction.REPLACE)
-     *       .encode(bb); </pre>
+     *       .encode(bb);
+     * }
      *
      * except that it is potentially more efficient because it can cache
      * encoders between successive invocations.
@@ -907,8 +913,9 @@ public abstract class Charset
      * <p> An invocation of this method upon a charset {@code cs} returns the
      * same result as the expression
      *
-     * <pre>
-     *     cs.encode(CharBuffer.wrap(s)); </pre>
+     * {@snippet lang=java :
+     *     cs.encode(CharBuffer.wrap(s));
+     * }
      *
      * @param  str  The string to be encoded
      *

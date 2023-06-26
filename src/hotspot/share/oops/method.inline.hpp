@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,7 +69,7 @@ inline void CompressedLineNumberWriteStream::write_pair_inline(int bci, int line
   // Check if bci is 5-bit and line number 3-bit unsigned.
   if (((bci_delta & ~0x1F) == 0) && ((line_delta & ~0x7) == 0)) {
     // Compress into single byte.
-    jubyte value = ((jubyte) bci_delta << 3) | (jubyte) line_delta;
+    jubyte value = (jubyte)((bci_delta << 3) | line_delta);
     // Check that value doesn't match escape character.
     if (value != 0xFF) {
       write_byte(value);
@@ -83,7 +83,7 @@ inline void CompressedLineNumberWriteStream::write_pair(int bci, int line) {
   write_pair_inline(bci, line);
 }
 
-inline bool Method::has_compiled_code() const { return code() != NULL; }
+inline bool Method::has_compiled_code() const { return code() != nullptr; }
 
 inline bool Method::is_empty_method() const {
   return  code_size() == 1

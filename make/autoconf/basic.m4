@@ -60,6 +60,7 @@ AC_DEFUN([BASIC_CHECK_LEFTOVER_OVERRIDDEN],
 
 ###############################################################################
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
+# Make sure to only use tools set up in BASIC_SETUP_FUNDAMENTAL_TOOLS.
 AC_DEFUN_ONCE([BASIC_SETUP_PATHS],
 [
   # Save the current directory this script was started from
@@ -477,7 +478,11 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
     # df on AIX does not understand -l. On modern AIXes it understands "-T local" which
     # is the same. On older AIXes we just continue to live with a "not local build" warning.
     if test "x$OPENJDK_TARGET_OS" = xaix; then
-      DF_LOCAL_ONLY_OPTION='-T local'
+      if "$DF -T local > /dev/null 2>&1"; then
+        DF_LOCAL_ONLY_OPTION='-T local'
+      else # AIX may use GNU-utils instead
+        DF_LOCAL_ONLY_OPTION='-l'
+      fi
     elif test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.wsl1"; then
       # In WSL1, we can only build on a drvfs file system (that is, a mounted real Windows drive)
       DF_LOCAL_ONLY_OPTION='-t drvfs'

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -140,7 +140,7 @@ public:
   // The architecture description provides short branch variants for some long
   // branch instructions. Replace eligible long branches with short branches.
   void shorten_branches(uint* blk_starts);
-  // If "objs" contains an ObjectValue whose id is "id", returns it, else NULL.
+  // If "objs" contains an ObjectValue whose id is "id", returns it, else null.
   static ObjectValue* sv_for_node_id(GrowableArray<ScopeValue*> *objs, int id);
   static void set_sv_for_object_node(GrowableArray<ScopeValue*> *objs, ObjectValue* sv);
   void FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
@@ -188,6 +188,8 @@ public:
   void       set_in_scratch_emit_size(bool x)   {        _in_scratch_emit_size = x; }
   bool           in_scratch_emit_size() const   { return _in_scratch_emit_size;     }
 
+  BufferSizingData* buffer_sizing_data()        { return &_buf_sizes; }
+
   enum ScratchBufferBlob {
     MAX_inst_size       = 2048,
     MAX_locs_size       = 128, // number of relocInfo elements
@@ -220,7 +222,8 @@ public:
   void BuildOopMaps();
 
 #ifndef PRODUCT
-  void print_scheduling();
+  void print_scheduling(outputStream* output_stream);
+  void print_scheduling(); // to tty for debugging
   static void print_statistics();
 #endif
 };

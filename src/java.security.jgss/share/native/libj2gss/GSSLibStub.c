@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,7 +198,7 @@ gss_channel_bindings_t newGSSCB(JNIEnv *env, jobject jcb) {
 
   cb = malloc(sizeof(struct gss_channel_bindings_struct));
   if (cb == NULL) {
-    throwOutOfMemoryError(env,NULL);
+    gssThrowOutOfMemoryError(env, NULL);
     return NULL;
   }
 
@@ -1189,7 +1189,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_inquireContext(JNIEnv *env,
   OM_uint32 flags;
   int isInitiator, isEstablished;
 #if defined (_WIN32) && defined (_MSC_VER)
-  __declspec(align(8))
+  _Alignas(8)
 #endif
   jlong result[6];
   jlongArray jresult;

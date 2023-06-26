@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ class WorkerThreads;
 
 class G1HeapRegionTable : public G1BiasedMappedArray<HeapRegion*> {
  protected:
-  virtual HeapRegion* default_value() const { return NULL; }
+  virtual HeapRegion* default_value() const { return nullptr; }
 };
 
 // This class keeps track of the actual heap memory, auxiliary data
@@ -76,7 +76,6 @@ class HeapRegionManager: public CHeapObj<mtGC> {
 
   G1RegionToSpaceMapper* _bot_mapper;
   G1RegionToSpaceMapper* _cardtable_mapper;
-  G1RegionToSpaceMapper* _card_counts_mapper;
 
   // Keeps track of the currently committed regions in the heap. The committed regions
   // can either be active (ready for use) or inactive (ready for uncommit).
@@ -89,7 +88,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   HeapWord* heap_end() const {return _regions.end_address_mapped(); }
 
   // Pass down commit calls to the VirtualSpace.
-  void commit_regions(uint index, size_t num_regions = 1, WorkerThreads* pretouch_workers = NULL);
+  void commit_regions(uint index, size_t num_regions = 1, WorkerThreads* pretouch_workers = nullptr);
 
   // Initialize the HeapRegions in the range and put them on the free list.
   void initialize_regions(uint start, uint num_regions);
@@ -126,7 +125,7 @@ class HeapRegionManager: public CHeapObj<mtGC> {
   G1RegionToSpaceMapper* _bitmap_mapper;
   FreeRegionList _free_list;
 
-  void expand(uint index, uint num_regions, WorkerThreads* pretouch_workers = NULL);
+  void expand(uint index, uint num_regions, WorkerThreads* pretouch_workers = nullptr);
 
   // G1RegionCommittedMap helpers. These functions do the work that comes with
   // the state changes tracked by G1CommittedRegionMap. To make sure this is
@@ -163,8 +162,7 @@ public:
   void initialize(G1RegionToSpaceMapper* heap_storage,
                   G1RegionToSpaceMapper* bitmap,
                   G1RegionToSpaceMapper* bot,
-                  G1RegionToSpaceMapper* cardtable,
-                  G1RegionToSpaceMapper* card_counts);
+                  G1RegionToSpaceMapper* cardtable);
 
   // Return the "dummy" region used for G1AllocRegion. This is currently a hardwired
   // new HeapRegion that owns HeapRegion at index 0. Since at the moment we commit
@@ -176,7 +174,7 @@ public:
   // is valid.
   inline HeapRegion* at(uint index) const;
 
-  // Return the HeapRegion at the given index, NULL if the index
+  // Return the HeapRegion at the given index, null if the index
   // is for an unavailable region.
   inline HeapRegion* at_or_null(uint index) const;
 
@@ -188,7 +186,7 @@ public:
   inline HeapRegion* next_region_in_humongous(HeapRegion* hr) const;
 
   // If addr is within the committed space return its corresponding
-  // HeapRegion, otherwise return NULL.
+  // HeapRegion, otherwise return null.
   inline HeapRegion* addr_to_region(HeapWord* addr) const;
 
   // Insert the given region into the free region list.

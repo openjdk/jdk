@@ -124,8 +124,9 @@ class AutoJavaByteArray {
 public:
   // check env->ExceptionOccurred() after ctor
   AutoJavaByteArray(JNIEnv* env, jbyteArray byteArray, jint releaseMode = JNI_ABORT)
-    : env(env), byteArray(byteArray), releaseMode(releaseMode),
-      bytePtr(env->GetByteArrayElements(byteArray, nullptr)) {
+    : env(env), byteArray(byteArray),
+      bytePtr(env->GetByteArrayElements(byteArray, nullptr)),
+      releaseMode(releaseMode) {
   }
 
   ~AutoJavaByteArray() {
@@ -184,11 +185,12 @@ static void throwNewDebuggerException(JNIEnv* env, const char* errMsg) {
   do { \
     const HRESULT hr = (v); \
     if (hr != S_OK) { \
-      AutoArrayPtr<char> errmsg(new char[strlen(str) + 32]); \
+      size_t errmsg_size = strlen(str) + 32; \
+      AutoArrayPtr<char> errmsg(new char[errmsg_size]); \
       if (errmsg == nullptr) { \
         THROW_NEW_DEBUGGER_EXCEPTION_(str, retValue); \
       } else { \
-        sprintf(errmsg, "%s (hr: 0x%08X)", str, hr); \
+        snprintf(errmsg, errmsg_size, "%s (hr: 0x%08X)", str, hr); \
         THROW_NEW_DEBUGGER_EXCEPTION_(errmsg, retValue); \
       } \
     } \

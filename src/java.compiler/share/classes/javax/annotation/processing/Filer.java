@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package javax.annotation.processing;
 import javax.tools.JavaFileManager;
 import javax.tools.*;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import java.io.IOException;
 
@@ -123,6 +124,8 @@ import java.io.IOException;
  * annotation if the environment is configured so that that class or
  * interface is accessible.
  *
+ * @spec https://www.rfc-editor.org/info/rfc3986
+ *      RFC 3986: Uniform Resource Identifier (URI): Generic Syntax
  * @apiNote Some of the effect of overwriting a file can be
  * achieved by using a <i>decorator</i>-style pattern.  Instead of
  * modifying a class directly, the class is designed so that either
@@ -173,6 +176,13 @@ public interface Filer {
      *
      * <p>Creating a source file in or for an <em>unnamed</em> package in a <em>named</em>
      * module is <em>not</em> supported.
+     *
+     * <p>If the environment is configured to support {@linkplain
+     * TypeElement#isUnnamed unnamed classes}, the name argument is
+     * used to provide the leading component of the name used for the
+     * output file. For example {@code filer.createSourceFile("Foo")}
+     * to create an unnamed class hosted in {@code Foo.java}. All
+     * unnamed classes must be in an unnamed package.
      *
      * @apiNote To use a particular {@linkplain
      * java.nio.charset.Charset charset} to encode the contents of the
@@ -252,6 +262,13 @@ public interface Filer {
      *
      * <p>Creating a class file in or for an <em>unnamed</em> package in a <em>named</em>
      * module is <em>not</em> supported.
+     *
+     * <p>If the environment is configured to support {@linkplain
+     * TypeElement#isUnnamed unnamed classes}, the name argument is
+     * used to provide the leading component of the name used for the
+     * output file. For example {@code filer.createClassFile("Foo")} to
+     * create an unnamed class hosted in {@code Foo.class}. All unnamed
+     * classes must be in an unnamed package.
      *
      * @apiNote To avoid subsequent errors, the contents of the class
      * file should be compatible with the {@linkplain

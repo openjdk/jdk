@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,15 +83,22 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static void leaving_dying_thread_env_iteration()  { --_dying_thread_env_iteration_count; }
   static bool is_inside_dying_thread_env_iteration(){ return _dying_thread_env_iteration_count > 0; }
 
+  // This function is to support agents loaded into running VM.
+  static bool enable_virtual_threads_notify_jvmti();
+
+  // This function is used in WhiteBox, only needed to test the function above.
+  // It is unsafe to use this function when virtual threads are executed.
+  static bool disable_virtual_threads_notify_jvmti();
+
   static jvmtiError suspend_thread(oop thread_oop, JavaThread* java_thread, bool single_suspend,
                                    int* need_safepoint_p);
   static jvmtiError resume_thread(oop thread_oop, JavaThread* java_thread, bool single_resume);
   static jvmtiError check_thread_list(jint count, const jthread* list);
   static bool is_in_thread_list(jint count, const jthread* list, oop jt_oop);
 
-  // check if thread_oop represents a passive carrier thread
-  static bool is_passive_carrier_thread(JavaThread* java_thread, oop thread_oop) {
-    return java_thread != NULL && java_thread->jvmti_vthread() != NULL
+  // check if thread_oop represents a thread carrying a virtual thread
+  static bool is_thread_carrying_vthread(JavaThread* java_thread, oop thread_oop) {
+    return java_thread != nullptr && java_thread->jvmti_vthread() != nullptr
                                && java_thread->jvmti_vthread() != thread_oop
                                && java_thread->threadObj() == thread_oop;
   }
@@ -128,7 +135,6 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   void env_dispose();
 
   void set_env_local_storage(const void* data)     { _env_local_storage = data; }
-  const void* get_env_local_storage()              { return _env_local_storage; }
 
   void record_class_file_load_hook_enabled();
   void record_first_time_class_file_load_hook_enabled();
@@ -149,7 +155,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   void set_next_environment(JvmtiEnvBase* env)     { _next = env; }
   static JvmtiEnv* head_environment()              {
     JVMTI_ONLY(return (JvmtiEnv*)_head_environment);
-    NOT_JVMTI(return NULL);
+    NOT_JVMTI(return nullptr);
   }
 
  public:
@@ -163,35 +169,37 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
 
   bool is_retransformable()                        { return _is_retransformable; }
 
+  const void* get_env_local_storage() { return _env_local_storage; }
+
   static ByteSize jvmti_external_offset() {
     return byte_offset_of(JvmtiEnvBase, _jvmti_external);
   };
 
-  // If (thread == NULL) then return current thread object.
+  // If (thread == nullptr) then return current thread object.
   // Otherwise return JNIHandles::resolve_external_guard(thread).
   static oop current_thread_obj_or_resolve_external_guard(jthread thread);
 
   // Return true if the thread identified with a pair <jt,thr_obj> is current.
-  // A passive carrier thread is not treated as current.
+  // A thread carrying a virtual thread is not treated as current.
   static bool is_JavaThread_current(JavaThread* jt, oop thr_obj) {
     JavaThread* current = JavaThread::current();
-    // jt can be NULL in case of a virtual thread
-    if (jt == NULL || jt != current) {
+    // jt can be null in case of a virtual thread
+    if (jt == nullptr || jt != current) {
       return false;
     }
     oop cur_obj = current->jvmti_vthread();
 
-    // cur_obj == NULL is true for normal platform threads only
+    // cur_obj == nullptr is true for normal platform threads only
     // otherwise it can be virtual or carrier thread.
-    return cur_obj == NULL || cur_obj == thr_obj;
+    return cur_obj == nullptr || cur_obj == thr_obj;
   }
 
   static jvmtiError get_JavaThread(ThreadsList* tlist, jthread thread, JavaThread** jt_pp) {
     jvmtiError err = JVMTI_ERROR_NONE;
-    if (thread == NULL) {
+    if (thread == nullptr) {
       *jt_pp = JavaThread::current();
     } else {
-      err = JvmtiExport::cv_external_thread_to_JavaThread(tlist, thread, jt_pp, NULL);
+      err = JvmtiExport::cv_external_thread_to_JavaThread(tlist, thread, jt_pp, nullptr);
     }
     return err;
   }
@@ -200,18 +208,27 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // return virtual thread oop. Otherwise, return thread oop.
   static oop get_vthread_or_thread_oop(JavaThread* jt) {
     oop result = jt->threadObj();
-    if (jt->jvmti_vthread() != NULL) {
+    if (jt->jvmti_vthread() != nullptr) {
       result = jt->jvmti_vthread();
     }
     return result;
   }
 
+  static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread, JavaThread* cur_thread,
+                                                 JavaThread** jt_pp, oop* thread_oop_p);
   static jvmtiError get_threadOop_and_JavaThread(ThreadsList* t_list, jthread thread,
                                                  JavaThread** jt_pp, oop* thread_oop_p);
 
   // Return true if java thread is a carrier thread with a mounted virtual thread.
   static bool is_cthread_with_mounted_vthread(JavaThread* jt);
   static bool is_cthread_with_continuation(JavaThread* jt);
+
+  // Check if VirtualThread or BoundVirtualThread is suspended.
+  static bool is_vthread_suspended(oop vt_oop, JavaThread* jt);
+
+  // Check for JVMTI_ERROR_NOT_SUSPENDED and JVMTI_ERROR_OPAQUE_FRAME errors.
+  // Used in PopFrame and ForceEarlyReturn implementations.
+  static jvmtiError check_non_suspended_or_opaque_frame(JavaThread* jt, oop thr_obj, bool self);
 
   static JvmtiEnv* JvmtiEnv_from_jvmti_env(jvmtiEnv *env) {
     return (JvmtiEnv*)((intptr_t)env - in_bytes(jvmti_external_offset()));
@@ -236,7 +253,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // not yet been deallocated.  As a result, this test should only be used as an
   // optimization for the no environment case.
   static bool environments_might_exist() {
-    return head_environment() != NULL;
+    return head_environment() != nullptr;
   }
 
   static void check_for_periodic_clean_up();
@@ -250,10 +267,10 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
       return JVMTI_ERROR_ILLEGAL_ARGUMENT;
     }
     if (size == 0) {
-      *mem_ptr = NULL;
+      *mem_ptr = nullptr;
     } else {
       *mem_ptr = (unsigned char *)os::malloc((size_t)size, mtInternal);
-      if (*mem_ptr == NULL) {
+      if (*mem_ptr == nullptr) {
         return JVMTI_ERROR_OUT_OF_MEMORY;
       }
     }
@@ -261,7 +278,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   }
 
   jvmtiError deallocate(unsigned char* mem) {
-    if (mem != NULL) {
+    if (mem != nullptr) {
       os::free(mem);
     }
     return JVMTI_ERROR_NONE;
@@ -294,7 +311,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   bool has_callback(jvmtiEvent event_type) {
     assert(event_type >= JVMTI_MIN_EVENT_TYPE_VAL &&
            event_type <= JVMTI_MAX_EVENT_TYPE_VAL, "checking");
-    return ((void**)&_event_callbacks)[event_type-JVMTI_MIN_EVENT_TYPE_VAL] != NULL;
+    return ((void**)&_event_callbacks)[event_type-JVMTI_MIN_EVENT_TYPE_VAL] != nullptr;
   }
 
   jvmtiEventCallbacks* callbacks() {
@@ -358,7 +375,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // check if virtual thread is not terminated (alive)
   static bool is_vthread_alive(oop vt);
 
-  // return JavaThread if virtual thread is mounted, NULL otherwise
+  // return JavaThread if virtual thread is mounted, null otherwise
   static JavaThread* get_JavaThread_or_null(oop vthread);
 
   // get virtual thread last java vframe
@@ -367,7 +384,8 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   // get carrier thread last java vframe
   static javaVFrame* get_cthread_last_java_vframe(JavaThread* jt, RegisterMap* reg_map);
 
-  // get ordinary thread thread state
+  // get platform thread state
+  static jint get_thread_state_base(oop thread_oop, JavaThread* jt);
   static jint get_thread_state(oop thread_oop, JavaThread* jt);
 
   // get virtual thread thread state
@@ -611,10 +629,10 @@ public:
   MultipleStackTracesCollector(JvmtiEnv *env, jint max_frame_count)
     : _env(env),
       _max_frame_count(max_frame_count),
-      _stack_info(NULL),
+      _stack_info(nullptr),
       _result(JVMTI_ERROR_NONE),
       _frame_count_total(0),
-      _head(NULL) {
+      _head(nullptr) {
   }
   void set_result(jvmtiError result)  { _result = result; }
   void fill_frames(jthread jt, JavaThread *thr, oop thread_oop);

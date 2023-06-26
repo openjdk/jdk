@@ -131,7 +131,7 @@ CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear)
 }
 
 CHeapBitMap::~CHeapBitMap() {
-  free(map(), size());
+  free(map(), size_in_words());
 }
 
 bm_word_t* CHeapBitMap::allocate(idx_t size_in_words) const {
@@ -293,11 +293,11 @@ void BitMap::clear_large_range(idx_t beg, idx_t end) {
   clear_range_within_word(bit_index(end_full_word), end);
 }
 
-void BitMap::at_put(idx_t offset, bool value) {
+void BitMap::at_put(idx_t bit, bool value) {
   if (value) {
-    set_bit(offset);
+    set_bit(bit);
   } else {
-    clear_bit(offset);
+    clear_bit(bit);
   }
 }
 
@@ -320,11 +320,11 @@ bool BitMap::par_at_put(idx_t bit, bool value) {
   return value ? par_set_bit(bit) : par_clear_bit(bit);
 }
 
-void BitMap::at_put_range(idx_t beg_offset, idx_t end_offset, bool value) {
+void BitMap::at_put_range(idx_t beg, idx_t end, bool value) {
   if (value) {
-    set_range(beg_offset, end_offset);
+    set_range(beg, end);
   } else {
-    clear_range(beg_offset, end_offset);
+    clear_range(beg, end);
   }
 }
 
@@ -638,7 +638,7 @@ BitMap::idx_t BitMap::count_one_bits(idx_t beg, idx_t end) const {
     sum += count_one_bits_within_word(boundary, end);
   }
 
-  assert(sum <= (beg - end), "must be");
+  assert(sum <= (end - beg), "must be");
 
   return sum;
 
@@ -653,6 +653,12 @@ void BitMap::write_to(bm_word_t* buffer, size_t buffer_size_in_bytes) const {
   assert(buffer_size_in_bytes == size_in_bytes(), "must be");
   memcpy(buffer, _map, size_in_bytes());
 }
+
+#ifdef ASSERT
+void BitMap::IteratorImpl::assert_not_empty() const {
+  assert(!is_empty(), "empty iterator");
+}
+#endif
 
 #ifndef PRODUCT
 

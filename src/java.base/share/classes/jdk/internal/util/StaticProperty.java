@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package jdk.internal.util;
 
 import java.util.Properties;
-import java.nio.charset.Charset;
 
 /**
  * System Property access for internal use only.
@@ -54,8 +53,10 @@ public final class StaticProperty {
     private static final String FILE_ENCODING;
     private static final String JAVA_PROPERTIES_DATE;
     private static final String SUN_JNU_ENCODING;
-    private static final Charset jnuCharset;
     private static final String JAVA_LOCALE_USE_OLD_ISO_CODES;
+    private static final String OS_NAME;
+    private static final String OS_ARCH;
+    private static final String OS_VERSION;
 
     private StaticProperty() {}
 
@@ -74,8 +75,10 @@ public final class StaticProperty {
         FILE_ENCODING = getProperty(props, "file.encoding");
         JAVA_PROPERTIES_DATE = getProperty(props, "java.properties.date", null);
         SUN_JNU_ENCODING = getProperty(props, "sun.jnu.encoding");
-        jnuCharset = Charset.forName(SUN_JNU_ENCODING, Charset.defaultCharset());
         JAVA_LOCALE_USE_OLD_ISO_CODES = getProperty(props, "java.locale.useOldISOCodes", "");
+        OS_NAME = getProperty(props, "os.name");
+        OS_ARCH = getProperty(props, "os.arch");
+        OS_VERSION = getProperty(props, "os.version");
     }
 
     private static String getProperty(Properties props, String key) {
@@ -237,16 +240,6 @@ public final class StaticProperty {
     }
 
     /**
-     * {@return {@code Charset} for {@code sun.jnu.encoding} system property}
-     *
-     * <strong>If {@code sun.jnu.encoding} system property has invalid
-     * encoding name, {@link Charset#defaultCharset()} is returned.</strong>
-     */
-    public static Charset jnuCharset() {
-        return jnuCharset;
-    }
-
-    /**
      * {@return the {@code java.locale.useOldISOCodes} system property}
      *
      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
@@ -256,4 +249,31 @@ public final class StaticProperty {
     public static String javaLocaleUseOldISOCodes() {
         return JAVA_LOCALE_USE_OLD_ISO_CODES;
     }
+
+     /**
+      * {@return the {@code os.name} system property}
+      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+      * in this method. This property is not considered security sensitive.</strong>
+      */
+     public static String osName() {
+         return OS_NAME;
+     }
+
+     /**
+      * {@return the {@code os.arch} system property}
+      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+      * in this method. This property is not considered security sensitive.</strong>
+      */
+     public static String osArch() {
+         return OS_ARCH;
+     }
+
+     /**
+      * {@return the {@code os.version} system property}
+      * <strong>{@link SecurityManager#checkPropertyAccess} is NOT checked
+      * in this method. This property is not considered security sensitive.</strong>
+      */
+     public static String osVersion() {
+         return OS_VERSION;
+     }
 }

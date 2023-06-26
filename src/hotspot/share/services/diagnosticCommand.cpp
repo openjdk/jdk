@@ -42,6 +42,7 @@
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/typeArrayOop.inline.hpp"
+#include "prims/jvmtiAgentList.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/flags/jvmFlag.hpp"
 #include "runtime/handles.inline.hpp"
@@ -56,6 +57,7 @@
 #include "services/diagnosticFramework.hpp"
 #include "services/heapDumper.hpp"
 #include "services/management.hpp"
+#include "services/nmtDCmd.hpp"
 #include "services/writeableFlags.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/events.hpp"
@@ -63,6 +65,7 @@
 #include "utilities/macros.hpp"
 #ifdef LINUX
 #include "trimCHeapDCmd.hpp"
+#include "mallocInfoDcmd.hpp"
 #endif
 
 static void loadAgentModule(TRAPS) {
@@ -79,7 +82,7 @@ static void loadAgentModule(TRAPS) {
                          THREAD);
 }
 
-void DCmdRegistrant::register_dcmds(){
+void DCmd::register_dcmds(){
   // Registration of the diagnostic commands
   // First argument specifies which interfaces will export the command
   // Second argument specifies if the command is enabled
@@ -126,6 +129,7 @@ void DCmdRegistrant::register_dcmds(){
 #ifdef LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<PerfMapDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<TrimCLibcHeapDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<MallocInfoDcmd>(full_export, true, false));
 #endif // LINUX
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeHeapAnalyticsDCmd>(full_export, true, false));
 
@@ -151,14 +155,9 @@ void DCmdRegistrant::register_dcmds(){
 #if INCLUDE_CDS
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<DumpSharedArchiveDCmd>(full_export, true, false));
 #endif // INCLUDE_CDS
-}
 
-#ifndef HAVE_EXTRA_DCMD
-void DCmdRegistrant::register_dcmds_ext(){
-   // Do nothing here
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<NMTDCmd>(full_export, true, false));
 }
-#endif
-
 
 HelpDCmd::HelpDCmd(outputStream* output, bool heap) : DCmdWithParser(output, heap),
   _all("-all", "Show help for all commands", "BOOLEAN", false, "false"),
@@ -195,16 +194,6 @@ void HelpDCmd::execute(DCmdSource source, TRAPS) {
                          factory->is_enabled() ? "" : " [disabled]");
       output()->print_cr("%s", factory->description());
       output()->print_cr("\nImpact: %s", factory->impact());
-      JavaPermission p = factory->permission();
-      if(p._class != nullptr) {
-        if(p._action != nullptr) {
-          output()->print_cr("\nPermission: %s(%s, %s)",
-                  p._class, p._name == nullptr ? "null" : p._name, p._action);
-        } else {
-          output()->print_cr("\nPermission: %s(%s)",
-                  p._class, p._name == nullptr ? "null" : p._name);
-        }
-      }
       output()->cr();
       cmd = factory->create_resource_instance(output());
       if (cmd != nullptr) {
@@ -309,8 +298,7 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
 
   if (is_java_agent) {
     if (_option.value() == nullptr) {
-      JvmtiExport::load_agent_library("instrument", "false",
-                                      _libpath.value(), output());
+      JvmtiAgentList::load_agent("instrument", "false", _libpath.value(), output());
     } else {
       size_t opt_len = strlen(_libpath.value()) + strlen(_option.value()) + 2;
       if (opt_len > 4096) {
@@ -327,13 +315,12 @@ void JVMTIAgentLoadDCmd::execute(DCmdSource source, TRAPS) {
       }
 
       jio_snprintf(opt, opt_len, "%s=%s", _libpath.value(), _option.value());
-      JvmtiExport::load_agent_library("instrument", "false", opt, output());
+      JvmtiAgentList::load_agent("instrument", "false", opt, output());
 
       os::free(opt);
     }
   } else {
-    JvmtiExport::load_agent_library(_libpath.value(), "true",
-                                    _option.value(), output());
+    JvmtiAgentList::load_agent(_libpath.value(), "true", _option.value(), output());
   }
 }
 
@@ -805,7 +792,8 @@ void JMXStatusDCmd::execute(DCmdSource source, TRAPS) {
   if (str != nullptr) {
       char* out = java_lang_String::as_utf8_string(str);
       if (out) {
-          output()->print_cr("%s", out);
+          // Avoid using print_cr() because length maybe longer than O_BUFLEN
+          output()->print_raw_cr(out);
           return;
       }
   }
@@ -1042,7 +1030,9 @@ void DebugOnCmdStartDCmd::execute(DCmdSource source, TRAPS) {
   const char *error = "Could not find jdwp agent.";
 
   if (!dvc_start_ptr) {
-    for (AgentLibrary* agent = Arguments::agents(); agent != nullptr; agent = agent->next()) {
+    JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
+    while (it.has_next()) {
+      JvmtiAgent* agent = it.next();
       if ((strcmp("jdwp", agent->name()) == 0) && (dvc_start_ptr == nullptr)) {
         char const* func = "debugInit_startDebuggingViaCommand";
         dvc_start_ptr = (debugInit_startDebuggingViaCommandPtr) os::find_agent_function(agent, false, &func, 1);
@@ -1072,17 +1062,6 @@ ThreadDumpToFileDCmd::ThreadDumpToFileDCmd(outputStream* output, bool heap) :
   _dcmdparser.add_dcmd_option(&_overwrite);
   _dcmdparser.add_dcmd_option(&_format);
   _dcmdparser.add_dcmd_argument(&_filepath);
-}
-
-int ThreadDumpToFileDCmd::num_arguments() {
-  ResourceMark rm;
-  ThreadDumpToFileDCmd* dcmd = new ThreadDumpToFileDCmd(nullptr, false);
-  if (dcmd != nullptr) {
-    DCmdMark mark(dcmd);
-    return dcmd->_dcmdparser.num_arguments();
-  } else {
-    return 0;
-  }
 }
 
 void ThreadDumpToFileDCmd::execute(DCmdSource source, TRAPS) {

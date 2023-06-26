@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,6 +264,11 @@ public class CoderResult {
      * @throws  UnmappableCharacterException
      *          If this object represents an unmappable-character error; the
      *          exception's length value will be that of this object
+     *
+     * @throws  CharacterCodingException
+     *          {@code MalformedInputException} if this object represents a
+     *          malformed-input error; {@code UnmappableCharacterException}
+     *          if this object represents an unmappable-character error
      */
     public void throwException()
         throws CharacterCodingException

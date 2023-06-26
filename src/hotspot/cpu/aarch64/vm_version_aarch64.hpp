@@ -170,6 +170,8 @@ enum Ampere_CPU_Model {
 
   static bool supports_on_spin_wait() { return _spin_wait.inst() != SpinWait::NONE; }
 
+  static bool supports_float16() { return true; }
+
 #ifdef __APPLE__
   // Is the CPU running emulated (for example macOS Rosetta running x86_64 code on M1 ARM (aarch64)
   static bool is_cpu_emulated();

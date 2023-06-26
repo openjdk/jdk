@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2014, Red Hat Inc. All rights reserved.
  * Copyright (c) 2021, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -143,14 +143,14 @@ address os::fetch_frame_from_context(const void* ucVoid,
   address epc;
   const ucontext_t* uc = (const ucontext_t*)ucVoid;
 
-  if (uc != NULL) {
+  if (uc != nullptr) {
     epc = os::Posix::ucontext_get_pc(uc);
     if (ret_sp) *ret_sp = os::Bsd::ucontext_get_sp(uc);
     if (ret_fp) *ret_fp = os::Bsd::ucontext_get_fp(uc);
   } else {
-    epc = NULL;
-    if (ret_sp) *ret_sp = (intptr_t *)NULL;
-    if (ret_fp) *ret_fp = (intptr_t *)NULL;
+    epc = nullptr;
+    if (ret_sp) *ret_sp = (intptr_t *)nullptr;
+    if (ret_fp) *ret_fp = (intptr_t *)nullptr;
   }
 
   return epc;
@@ -209,12 +209,12 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
   ThreadWXEnable wx(WXWrite, thread);
 
   // decide if this trap can be handled by a stub
-  address stub = NULL;
+  address stub = nullptr;
 
-  address pc          = NULL;
+  address pc          = nullptr;
 
   //%note os_trap_1
-  if (info != NULL && uc != NULL && thread != NULL) {
+  if (info != nullptr && uc != nullptr && thread != nullptr) {
     pc = (address) os::Posix::ucontext_get_pc(uc);
 
     // Handle ALL stack overflow variations here
@@ -240,7 +240,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     // check is not required on other platforms, because on other
     // platforms we check for SIGSEGV only or SIGBUS only, where here
     // we have to check for both SIGSEGV and SIGBUS.
-    if (thread->thread_state() == _thread_in_Java && stub == NULL) {
+    if (thread->thread_state() == _thread_in_Java && stub == nullptr) {
       // Java thread running in Java code => find exception handler if any
       // a fault inside compiled code, the interpreter, or a stub
 
@@ -256,8 +256,8 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 #if defined(__APPLE__)
       // 32-bit Darwin reports a SIGBUS for nearly all memory access exceptions.
       // 64-bit Darwin may also use a SIGBUS (seen with compressed oops).
-      // Catching SIGBUS here prevents the implicit SIGBUS NULL check below from
-      // being called, so only do so if the implicit NULL check is not necessary.
+      // Catching SIGBUS here prevents the implicit SIGBUS null check below from
+      // being called, so only do so if the implicit null check is not necessary.
       } else if (sig == SIGBUS && !MacroAssembler::uses_implicit_null_check(info->si_addr)) {
 #else
       } else if (sig == SIGBUS /* && info->si_code == BUS_OBJERR */) {
@@ -266,9 +266,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
         // here if the underlying file has been truncated.
         // Do not crash the VM in such a case.
         CodeBlob* cb = CodeCache::find_blob(pc);
-        CompiledMethod* nm = (cb != NULL) ? cb->as_compiled_method_or_null() : NULL;
+        CompiledMethod* nm = (cb != nullptr) ? cb->as_compiled_method_or_null() : nullptr;
         bool is_unsafe_arraycopy = (thread->doing_unsafe_access() && UnsafeCopyMemory::contains_pc(pc));
-        if ((nm != NULL && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
+        if ((nm != nullptr && nm->has_unsafe_access()) || is_unsafe_arraycopy) {
           address next_pc = pc + NativeCall::instruction_size;
           if (is_unsafe_arraycopy) {
             next_pc = UnsafeCopyMemory::page_error_continue_pc(pc);
@@ -288,7 +288,7 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
 
         // End life with a fatal error, message and detail message and the context.
         // Note: no need to do any post-processing here (e.g. signal chaining)
-        report_and_die(thread, uc, NULL, 0, msg, "%s", detail_msg);
+        report_and_die(thread, uc, nullptr, 0, msg, "%s", detail_msg);
         ShouldNotReachHere();
 
       } else if (sig == SIGFPE &&
@@ -325,9 +325,9 @@ bool PosixSignals::pd_hotspot_signal_handler(int sig, siginfo_t* info,
     }
   }
 
-  if (stub != NULL) {
+  if (stub != nullptr) {
     // save all thread context in case we need to restore it
-    if (thread != NULL) thread->set_saved_exception_pc(pc);
+    if (thread != nullptr) thread->set_saved_exception_pc(pc);
 
     os::Posix::ucontext_set_pc(uc, stub);
     return true;
@@ -414,7 +414,7 @@ size_t os::current_stack_size() {
 // helper functions for fatal error handler
 
 void os::print_context(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t *uc = (const ucontext_t*)context;
 
@@ -465,7 +465,7 @@ void os::print_context(outputStream *st, const void *context) {
 }
 
 void os::print_tos_pc(outputStream *st, const void *context) {
-  if (context == NULL) return;
+  if (context == nullptr) return;
 
   const ucontext_t* uc = (const ucontext_t*)context;
 
@@ -481,51 +481,34 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == NULL) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = 29 /* x0-x28 */ + 3 /* fp, lr, sp */;
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
-  // this is only for the "general purpose" registers
-
-  st->print(" x0="); print_location(st, uc->context_x[ 0]);
-  st->print(" x1="); print_location(st, uc->context_x[ 1]);
-  st->print(" x2="); print_location(st, uc->context_x[ 2]);
-  st->print(" x3="); print_location(st, uc->context_x[ 3]);
-  st->print(" x4="); print_location(st, uc->context_x[ 4]);
-  st->print(" x5="); print_location(st, uc->context_x[ 5]);
-  st->print(" x6="); print_location(st, uc->context_x[ 6]);
-  st->print(" x7="); print_location(st, uc->context_x[ 7]);
-  st->print(" x8="); print_location(st, uc->context_x[ 8]);
-  st->print(" x9="); print_location(st, uc->context_x[ 9]);
-  st->print("x10="); print_location(st, uc->context_x[10]);
-  st->print("x11="); print_location(st, uc->context_x[11]);
-  st->print("x12="); print_location(st, uc->context_x[12]);
-  st->print("x13="); print_location(st, uc->context_x[13]);
-  st->print("x14="); print_location(st, uc->context_x[14]);
-  st->print("x15="); print_location(st, uc->context_x[15]);
-  st->print("x16="); print_location(st, uc->context_x[16]);
-  st->print("x17="); print_location(st, uc->context_x[17]);
-  st->print("x18="); print_location(st, uc->context_x[18]);
-  st->print("x19="); print_location(st, uc->context_x[19]);
-  st->print("x20="); print_location(st, uc->context_x[20]);
-  st->print("x21="); print_location(st, uc->context_x[21]);
-  st->print("x22="); print_location(st, uc->context_x[22]);
-  st->print("x23="); print_location(st, uc->context_x[23]);
-  st->print("x24="); print_location(st, uc->context_x[24]);
-  st->print("x25="); print_location(st, uc->context_x[25]);
-  st->print("x26="); print_location(st, uc->context_x[26]);
-  st->print("x27="); print_location(st, uc->context_x[27]);
-  st->print("x28="); print_location(st, uc->context_x[28]);
-
-  st->cr();
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+    switch (n) {
+    case 29:
+      st->print(" fp="); print_location(st, uc->context_fp);
+      break;
+    case 30:
+      st->print(" lr="); print_location(st, uc->context_lr);
+      break;
+    case 31:
+      st->print(" sp="); print_location(st, uc->context_sp);
+      break;
+    default:
+      st->print("x%-2d=",n); print_location(st, uc->context_x[n]);
+      break;
+    }
+    ++n;
+  }
 }
 
 void os::setup_fpu() {

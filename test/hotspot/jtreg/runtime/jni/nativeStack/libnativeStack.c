@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,13 @@ static void * thread_start(void* unused) {
     (*env)->ExceptionDescribe(env);
     exit(1);
   }
+
+  res = (*jvm)->DetachCurrentThread(jvm);
+  if (res != JNI_OK) {
+    fprintf(stderr, "Test ERROR. Can't detach current thread: %d\n", res);
+    exit(1);
+  }
+
   printf("Native thread terminating\n");
 
   return NULL;
@@ -102,10 +109,17 @@ Java_TestNativeStack_triggerJNIStackTrace
 
   warning = warn;
 
-  if ((res = pthread_create(&thread, NULL, thread_start, NULL)) != 0) {
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  size_t stack_size = 0x100000;
+  pthread_attr_setstacksize(&attr, stack_size);
+
+  if ((res = pthread_create(&thread, &attr, thread_start, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_create failed: %s (%d)\n", strerror(res), res);
     exit(1);
   }
+
+  pthread_attr_destroy(&attr);
 
   if ((res = pthread_join(thread, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_join failed: %s (%d)\n", strerror(res), res);

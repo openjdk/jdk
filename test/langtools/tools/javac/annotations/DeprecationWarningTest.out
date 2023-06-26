@@ -1,0 +1,4 @@
+DeprecationWarningTest.java:14:7: compiler.warn.has.been.deprecated: b(), Anno
+- compiler.err.warnings.and.werror
+1 error
+1 warning

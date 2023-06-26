@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,8 +57,8 @@ class UnixPath implements Path {
     // internal representation
     private final byte[] path;
 
-    // String representation (created lazily)
-    private volatile String stringValue;
+    // String representation (created lazily, no need to be volatile)
+    private String stringValue;
 
     // cached hashcode (created lazily, no need to be volatile)
     private int hash;
@@ -761,8 +761,9 @@ class UnixPath implements Path {
     @Override
     public String toString() {
         // OK if two or more threads create a String
+        String stringValue = this.stringValue;
         if (stringValue == null) {
-            stringValue = fs.normalizeJavaPath(Util.toString(path));     // platform encoding
+            this.stringValue = stringValue = fs.normalizeJavaPath(Util.toString(path));     // platform encoding
         }
         return stringValue;
     }
@@ -904,12 +905,20 @@ class UnixPath implements Path {
             }
             final UnixFileKey elementKey = attrs.fileKey();
 
+            // Obtain the directory stream pointer. It will be closed by
+            // UnixDirectoryStream::close.
+            long dp = -1;
+            try {
+                dp = opendir(path);
+            } catch (UnixException x) {
+                x.rethrowAsIOException(path);
+            }
+
             // Obtain the stream of entries in the directory corresponding
             // to the path constructed thus far, and extract the entry whose
             // key is equal to the key of the current element
-            FileSystemProvider provider = getFileSystem().provider();
             DirectoryStream.Filter<Path> filter = (p) -> { return true; };
-            try (DirectoryStream<Path> entries = provider.newDirectoryStream(path, filter)) {
+            try (DirectoryStream<Path> entries = new UnixDirectoryStream(path, dp, filter)) {
                 boolean found = false;
                 for (Path entry : entries) {
                     UnixPath p = path.resolve(entry.getFileName());

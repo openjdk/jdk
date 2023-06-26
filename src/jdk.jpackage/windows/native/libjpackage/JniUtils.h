@@ -26,6 +26,7 @@
 #ifndef JNIUTILS_H
 #define JNIUTILS_H
 
+#include <cstddef>
 #include <memory>
 #include "jni.h"
 #include "tstrings.h"
@@ -41,12 +42,23 @@ struct JniObjWithEnv {
     JniObjWithEnv(JNIEnv *env, jobject obj) : env(env), obj(obj) {
     }
 
+    JniObjWithEnv(const std::nullptr_t ptr) : env(ptr), obj(ptr) {
+    }
+
     bool operator == (const JniObjWithEnv& other) const {
         return env == other.env && obj == other.obj;
     }
 
     bool operator != (const JniObjWithEnv& other) const {
         return ! operator == (other);
+    }
+
+    bool operator == (const std::nullptr_t ptr) const {
+        return env == ptr || obj == ptr;
+    }
+
+    bool operator != (const std::nullptr_t ptr) const {
+        return env != ptr && obj != ptr;
     }
 
     explicit operator bool() const {

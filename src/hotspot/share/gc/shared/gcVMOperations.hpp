@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,8 @@ class VM_GC_Operation: public VM_GC_Sync_Operation {
   }
   ~VM_GC_Operation();
 
+  virtual const char* cause() const;
+
   // Acquire the Heap_lock and determine if this VM operation should be executed
   // (i.e. not skipped). Return this result, and also store it in _prologue_succeeded.
   virtual bool doit_prologue();
@@ -171,6 +173,7 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
   ~VM_GC_HeapInspection() {}
   virtual VMOp_Type type() const { return VMOp_GC_HeapInspection; }
   virtual bool skip_operation() const;
+  virtual bool doit_prologue();
   virtual void doit();
  protected:
   bool collect();
@@ -179,7 +182,7 @@ class VM_GC_HeapInspection: public VM_GC_Operation {
 class VM_CollectForAllocation : public VM_GC_Operation {
  protected:
   size_t    _word_size; // Size of object to be allocated (in number of words)
-  HeapWord* _result;    // Allocation result (NULL if allocation failed)
+  HeapWord* _result;    // Allocation result (null if allocation failed)
 
  public:
   VM_CollectForAllocation(size_t word_size, uint gc_count_before, GCCause::Cause cause);

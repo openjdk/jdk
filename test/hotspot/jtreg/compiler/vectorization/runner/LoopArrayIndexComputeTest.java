@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022, 2023, Arm Limited. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,9 +105,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public int[] indexPlusInvariant() {
         int[] res = new int[SIZE];
@@ -132,9 +133,9 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.STORE_VECTOR, ">0"})
-    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4_1", "true"},
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse4.1", "true"},
         counts = {IRNode.MUL_V, ">0"})
     public int[] indexWithInvariantAndConstant() {
         int[] res = new int[SIZE];
@@ -160,12 +161,25 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     @Test
-    // Note that this case cannot be vectorized due to data dependence.
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    public int[] indexWithDifferentConstants() {
+    // No true dependency in read-forward case.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    public int[] indexWithDifferentConstantsPos() {
         int[] res = new int[SIZE];
         for (int i = 0; i < SIZE / 4; i++) {
             res[i] = ints[i + 1];
+        }
+        return res;
+    }
+
+    @Test
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    public int[] indexWithDifferentConstantsNeg() {
+        int[] res = new int[SIZE];
+        for (int i = 1; i < SIZE / 4; i++) {
+            res[i] = ints[i - 1];
         }
         return res;
     }
@@ -245,10 +259,13 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     }
 
     // ---------------- Subword Type Arrays ----------------
+
     @Test
-    // Note that this case cannot be vectorized due to data dependence.
-    @IR(failOn = {IRNode.STORE_VECTOR})
-    public short[] shortArrayWithDependence() {
+    // No true dependency in read-forward case.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    public short[] shortArrayWithDependencePos() {
         short[] res = new short[SIZE];
         System.arraycopy(shorts, 0, res, 0, SIZE);
         for (int i = 0; i < SIZE / 2; i++) {
@@ -260,7 +277,21 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Test
     // Note that this case cannot be vectorized due to data dependence.
     @IR(failOn = {IRNode.STORE_VECTOR})
-    public char[] charArrayWithDependence() {
+    public short[] shortArrayWithDependenceNeg() {
+        short[] res = new short[SIZE];
+        System.arraycopy(shorts, 0, res, 0, SIZE);
+        for (int i = 1; i < SIZE / 2; i++) {
+            res[i] *= shorts[i - 1];
+        }
+        return res;
+    }
+
+    @Test
+    // No true dependency in read-forward case.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    public char[] charArrayWithDependencePos() {
         char[] res = new char[SIZE];
         System.arraycopy(chars, 0, res, 0, SIZE);
         for (int i = 0; i < SIZE / 2; i++) {
@@ -272,7 +303,21 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
     @Test
     // Note that this case cannot be vectorized due to data dependence.
     @IR(failOn = {IRNode.STORE_VECTOR})
-    public byte[] byteArrayWithDependence() {
+    public char[] charArrayWithDependenceNeg() {
+        char[] res = new char[SIZE];
+        System.arraycopy(chars, 0, res, 0, SIZE);
+        for (int i = 2; i < SIZE / 2; i++) {
+            res[i] *= chars[i - 2];
+        }
+        return res;
+    }
+
+    @Test
+    // No true dependency in read-forward case.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    public byte[] byteArrayWithDependencePos() {
         byte[] res = new byte[SIZE];
         System.arraycopy(bytes, 0, res, 0, SIZE);
         for (int i = 0; i < SIZE / 2; i++) {
@@ -281,14 +326,41 @@ public class LoopArrayIndexComputeTest extends VectorizationTestRunner {
         return res;
     }
 
+
     @Test
     // Note that this case cannot be vectorized due to data dependence.
     @IR(failOn = {IRNode.STORE_VECTOR})
-    public boolean[] booleanArrayWithDependence() {
+    public byte[] byteArrayWithDependenceNeg() {
+        byte[] res = new byte[SIZE];
+        System.arraycopy(bytes, 0, res, 0, SIZE);
+        for (int i = 3; i < SIZE / 2; i++) {
+            res[i] *= bytes[i - 3];
+        }
+        return res;
+    }
+
+    @Test
+    // No true dependency in read-forward case.
+    @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse2", "true"},
+        applyIf = {"AlignVector", "false"},
+        counts = {IRNode.STORE_VECTOR, ">0"})
+    public boolean[] booleanArrayWithDependencePos() {
         boolean[] res = new boolean[SIZE];
         System.arraycopy(booleans, 0, res, 0, SIZE);
         for (int i = 0; i < SIZE / 2; i++) {
             res[i] |= booleans[i + 4];
+        }
+        return res;
+    }
+
+    @Test
+    // Note that this case cannot be vectorized due to data dependence.
+    @IR(failOn = {IRNode.STORE_VECTOR})
+    public boolean[] booleanArrayWithDependenceNeg() {
+        boolean[] res = new boolean[SIZE];
+        System.arraycopy(booleans, 0, res, 0, SIZE);
+        for (int i = 4; i < SIZE / 2; i++) {
+            res[i] |= booleans[i - 4];
         }
         return res;
     }

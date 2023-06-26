@@ -116,7 +116,7 @@ public abstract class AccumulativeRunnable<T> implements Runnable {
      * appends arguments and sends this {@code Runnable} for the
      * execution if needed.
      * <p>
-     * This implementation uses {@see #submit} to send this
+     * This implementation uses {@link #submit} to send this
      * {@code Runnable} for execution.
      * @param args the arguments to accumulate
      */

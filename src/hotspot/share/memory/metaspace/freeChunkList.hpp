@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2020, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@
 #include "memory/metaspace/counters.hpp"
 #include "memory/metaspace/metachunk.hpp"
 #include "memory/metaspace/metachunkList.hpp"
+#include "memory/metaspace/metaspaceCommon.hpp"
 
 class outputStream;
 
@@ -51,15 +52,6 @@ namespace metaspace {
 //  of at least n committed words to satisfy the caller requested
 //  committed word size. We stop searching at the first fully uncommitted
 //  chunk.
-//
-// Note that even though this is an O(n) search, partially committed chunks are
-//  very rare. A partially committed chunk is one spanning multiple commit
-//  granules, of which some are committed and some are not.
-// If metaspace reclamation is on (MetaspaceReclaimPolicy=balanced|aggressive), these
-//  chunks will become uncommitted after they are returned to the ChunkManager.
-// If metaspace reclamation is off (MetaspaceReclaimPolicy=none) they are fully
-//  committed when handed out and will not be uncommitted when returned to the
-//  ChunkManager.
 //
 // Therefore in all likelihood the chunk lists only contain fully committed or
 // fully uncommitted chunks; either way search will stop at the first chunk.
@@ -111,7 +103,7 @@ public:
 
   // Remove given chunk from anywhere in the list.
   Metachunk* remove(Metachunk* c) {
-    assert(contains(c), "Must be contained here");
+    ASSERT_SOMETIMES(contains(c), "Must be contained here");
     Metachunk* pred = c->prev();
     Metachunk* succ = c->next();
     if (pred) {
@@ -133,7 +125,7 @@ public:
   }
 
   void add(Metachunk* c) {
-    assert(contains(c) == false, "Chunk already in freelist");
+    ASSERT_SOMETIMES(contains(c) == false, "Chunk already in freelist");
     assert(_first == nullptr || _first->level() == c->level(),
            "List should only contains chunks of the same level.");
     // Uncommitted chunks go to the back, fully or partially committed to the front.

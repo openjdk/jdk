@@ -47,9 +47,9 @@ public class WErrorGen extends JavacTestingAbstractProcessor {
         if (++round == 1) {
             try {
                 JavaFileObject fo = filer.createSourceFile("Gen");
-                Writer out = fo.openWriter();
-                out.write("import java.util.*; class Gen { List l; }");
-                out.close();
+                try (Writer out = fo.openWriter()) {
+                    out.write("import java.util.*; class Gen { List l; }");
+                }
             } catch (IOException e) {
             }
         }

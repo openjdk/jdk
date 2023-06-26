@@ -36,16 +36,27 @@ package gc;
  *      gc.TestReferenceClearDuringReferenceProcessing
  */
 
-/* @test id=Z
+/* @test id=ZSinglegen
  * @bug 8256517
- * @requires vm.gc.Z
- * @requires vm.gc != "null"
+ * @requires vm.gc.ZSinglegen
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm
  *      -Xbootclasspath/a:.
- *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:-ZGenerational
+ *      gc.TestReferenceClearDuringReferenceProcessing
+ */
+
+/* @test id=ZGenerational
+ * @bug 8256517
+ * @requires vm.gc.ZGenerational
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm
+ *      -Xbootclasspath/a:.
+ *      -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UseZGC -XX:+ZGenerational
  *      gc.TestReferenceClearDuringReferenceProcessing
  */
 

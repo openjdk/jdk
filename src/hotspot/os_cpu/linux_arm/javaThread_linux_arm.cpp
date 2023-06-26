@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
 
 frame JavaThread::pd_last_frame() {
   assert(has_last_Java_frame(), "must have last_Java_sp() when suspended");
-  if (_anchor.last_Java_pc() != NULL) {
+  if (_anchor.last_Java_pc() != nullptr) {
     return frame(_anchor.last_Java_sp(), _anchor.last_Java_fp(), _anchor.last_Java_pc());
   } else {
     // This will pick up pc from sp
@@ -46,7 +46,7 @@ void JavaThread::cache_global_variables() {
   if (bs->is_a(BarrierSet::CardTableBarrierSet)) {
     _card_table_base = (address) (barrier_set_cast<CardTableBarrierSet>(bs)->card_table()->byte_map_base());
   } else {
-    _card_table_base = NULL;
+    _card_table_base = nullptr;
   }
 
 }
@@ -86,7 +86,7 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
     intptr_t* ret_fp;
     intptr_t* ret_sp;
     address addr = os::fetch_frame_from_context(uc, &ret_sp, &ret_fp);
-    if (addr == NULL || ret_sp == NULL ) {
+    if (addr == nullptr || ret_sp == nullptr ) {
       // ucontext wasn't useful
       return false;
     }
@@ -94,8 +94,8 @@ bool JavaThread::pd_get_top_frame(frame* fr_addr, void* ucontext, bool isInJava)
     frame ret_frame(ret_sp, ret_fp, addr);
     if (!ret_frame.safe_for_sender(this)) {
 #ifdef COMPILER2
-      // C2 uses ebp as a general register see if NULL fp helps
-      frame ret_frame2(ret_sp, NULL, addr);
+      // C2 uses ebp as a general register see if null fp helps
+      frame ret_frame2(ret_sp, nullptr, addr);
       if (!ret_frame2.safe_for_sender(this)) {
         // nothing else to try if the frame isn't good
         return false;
