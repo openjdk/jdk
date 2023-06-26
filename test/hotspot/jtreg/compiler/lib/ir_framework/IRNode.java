@@ -1581,19 +1581,79 @@ public class IRNode {
         vectorNode(MASK_CMP_VD, "VectorMaskCmp", "double");
     }
 
-    public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
+    public static final String VECTOR_CAST_B2S = VECTOR_PREFIX + "VECTOR_CAST_B2S" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_B2X, "VectorCastB2X");
+        vectorNode(VECTOR_CAST_B2S, "VectorCastB2", "short");
     }
 
-    public static final String VECTOR_CAST_D2X = PREFIX + "VECTOR_CAST_D2X" + POSTFIX;
+    public static final String VECTOR_CAST_B2I = VECTOR_PREFIX + "VECTOR_CAST_B2I" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_D2X, "VectorCastD2X");
+        vectorNode(VECTOR_CAST_B2I, "VectorCastB2", "int");
     }
 
-    public static final String VECTOR_CAST_F2X = PREFIX + "VECTOR_CAST_F2X" + POSTFIX;
+    public static final String VECTOR_CAST_B2L = VECTOR_PREFIX + "VECTOR_CAST_B2L" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_F2X, "VectorCastF2X");
+        vectorNode(VECTOR_CAST_B2L, "VectorCastB2", "long");
+    }
+
+    public static final String VECTOR_CAST_B2F = VECTOR_PREFIX + "VECTOR_CAST_B2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_B2F, "VectorCastB2", "float");
+    }
+
+    public static final String VECTOR_CAST_B2D = VECTOR_PREFIX + "VECTOR_CAST_B2D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_B2D, "VectorCastB2", "double");
+    }
+
+    public static final String VECTOR_CAST_D2B = VECTOR_PREFIX + "VECTOR_CAST_D2B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2B, "VectorCastD2X", "byte");
+    }
+
+    public static final String VECTOR_CAST_D2S = VECTOR_PREFIX + "VECTOR_CAST_D2S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2S, "VectorCastD2X", "short");
+    }
+
+    public static final String VECTOR_CAST_D2I = VECTOR_PREFIX + "VECTOR_CAST_D2I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2I, "VectorCastD2X", "int");
+    }
+
+    public static final String VECTOR_CAST_D2L = VECTOR_PREFIX + "VECTOR_CAST_D2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2L, "VectorCastD2X", "long");
+    }
+
+    public static final String VECTOR_CAST_D2F = VECTOR_PREFIX + "VECTOR_CAST_D2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_D2F, "VectorCastD2X", "float");
+    }
+
+    public static final String VECTOR_CAST_F2B = VECTOR_PREFIX + "VECTOR_CAST_F2B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2B, "VectorCastF2X", "byte");
+    }
+
+    public static final String VECTOR_CAST_F2S = VECTOR_PREFIX + "VECTOR_CAST_F2S" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2S, "VectorCastF2X", "short");
+    }
+
+    public static final String VECTOR_CAST_F2I = VECTOR_PREFIX + "VECTOR_CAST_F2I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2I, "VectorCastF2X", "int");
+    }
+
+    public static final String VECTOR_CAST_F2L = VECTOR_PREFIX + "VECTOR_CAST_F2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2L, "VectorCastF2X", "long");
+    }
+
+    public static final String VECTOR_CAST_F2D = VECTOR_PREFIX + "VECTOR_CAST_F2D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2D, "VectorCastF2X", "double");
     }
 
     public static final String VECTOR_CAST_I2B = VECTOR_PREFIX + "VECTOR_CAST_I2B" + POSTFIX;
@@ -1604,11 +1664,6 @@ public class IRNode {
     public static final String VECTOR_CAST_I2S = VECTOR_PREFIX + "VECTOR_CAST_I2S" + POSTFIX;
     static {
         vectorNode(VECTOR_CAST_I2S, "VectorCastI2X", "short");
-    }
-
-    public static final String VECTOR_CAST_I2C = VECTOR_PREFIX + "VECTOR_CAST_I2C" + POSTFIX;
-    static {
-        vectorNode(VECTOR_CAST_I2C, "VectorCastI2X", "char");
     }
 
     public static final String VECTOR_CAST_I2L = VECTOR_PREFIX + "VECTOR_CAST_I2L" + POSTFIX;
@@ -1626,24 +1681,64 @@ public class IRNode {
         vectorNode(VECTOR_CAST_I2D, "VectorCastI2X", "double");
     }
 
-    public static final String VECTOR_CAST_L2X = PREFIX + "VECTOR_CAST_L2X" + POSTFIX;
+    public static final String VECTOR_CAST_L2B = VECTOR_PREFIX + "VECTOR_CAST_L2B" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_L2X, "VectorCastL2X");
+        vectorNode(VECTOR_CAST_L2B, "VectorCastL2X", "byte");
     }
 
-    public static final String VECTOR_CAST_S2X = PREFIX + "VECTOR_CAST_S2X" + POSTFIX;
+    public static final String VECTOR_CAST_L2S = VECTOR_PREFIX + "VECTOR_CAST_L2S" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_S2X, "VectorCastS2X");
+        vectorNode(VECTOR_CAST_L2S, "VectorCastL2X", "short");
     }
 
-    public static final String VECTOR_CAST_F2HF = PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
+    public static final String VECTOR_CAST_L2I = VECTOR_PREFIX + "VECTOR_CAST_L2I" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_F2HF, "VectorCastF2HF");
+        vectorNode(VECTOR_CAST_L2I, "VectorCastL2X", "int");
     }
 
-    public static final String VECTOR_CAST_HF2F = PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
+    public static final String VECTOR_CAST_L2F = VECTOR_PREFIX + "VECTOR_CAST_L2F" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_CAST_HF2F, "VectorCastHF2F");
+        vectorNode(VECTOR_CAST_L2F, "VectorCastL2X", "float");
+    }
+
+    public static final String VECTOR_CAST_L2D = VECTOR_PREFIX + "VECTOR_CAST_L2D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_L2D, "VectorCastL2X", "double");
+    }
+
+    public static final String VECTOR_CAST_S2B = VECTOR_PREFIX + "VECTOR_CAST_S2B" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2B, "VectorCastS2X", "byte");
+    }
+
+    public static final String VECTOR_CAST_S2I = VECTOR_PREFIX + "VECTOR_CAST_S2I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2I, "VectorCastS2X", "int");
+    }
+
+    public static final String VECTOR_CAST_S2L = VECTOR_PREFIX + "VECTOR_CAST_S2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2L, "VectorCastS2X", "long");
+    }
+
+    public static final String VECTOR_CAST_S2F = VECTOR_PREFIX + "VECTOR_CAST_S2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2F, "VectorCastS2X", "float");
+    }
+
+    public static final String VECTOR_CAST_S2D = VECTOR_PREFIX + "VECTOR_CAST_S2D" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_S2D, "VectorCastS2X", "double");
+    }
+
+    public static final String VECTOR_CAST_F2HF = VECTOR_PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_F2HF, "VectorCastF2HF", "short");
+    }
+
+    public static final String VECTOR_CAST_HF2F = VECTOR_PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
+    static {
+        vectorNode(VECTOR_CAST_HF2F, "VectorCastHF2F", "float");
     }
 
     public static final String VECTOR_MASK_CAST = PREFIX + "VECTOR_MASK_CAST" + POSTFIX;
@@ -1656,19 +1751,34 @@ public class IRNode {
         beforeMatchingNameRegex(VECTOR_REINTERPRET, "VectorReinterpret");
     }
 
-    public static final String VECTOR_UCAST_B2X = PREFIX + "VECTOR_UCAST_B2X" + POSTFIX;
+    public static final String VECTOR_UCAST_B2S = VECTOR_PREFIX + "VECTOR_UCAST_B2S" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_UCAST_B2X, "VectorUCastB2X");
+        vectorNode(VECTOR_UCAST_B2S, "VectorUCastB2X", "short");
     }
 
-    public static final String VECTOR_UCAST_I2X = PREFIX + "VECTOR_UCAST_I2X" + POSTFIX;
+    public static final String VECTOR_UCAST_B2I = VECTOR_PREFIX + "VECTOR_UCAST_B2I" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_UCAST_I2X, "VectorUCastI2X");
+        vectorNode(VECTOR_UCAST_B2I, "VectorUCastB2X", "int");
     }
 
-    public static final String VECTOR_UCAST_S2X = PREFIX + "VECTOR_UCAST_S2X" + POSTFIX;
+    public static final String VECTOR_UCAST_B2L = VECTOR_PREFIX + "VECTOR_UCAST_B2L" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_UCAST_S2X, "VectorUCastS2X");
+        vectorNode(VECTOR_UCAST_B2L, "VectorUCastB2X", "long");
+    }
+
+    public static final String VECTOR_UCAST_I2L = VECTOR_PREFIX + "VECTOR_UCAST_I2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_UCAST_I2L, "VectorUCastI2X", "long");
+    }
+
+    public static final String VECTOR_UCAST_S2I = VECTOR_PREFIX + "VECTOR_UCAST_S2I" + POSTFIX;
+    static {
+        vectorNode(VECTOR_UCAST_S2I, "VectorUCastS2X", "int");
+    }
+
+    public static final String VECTOR_UCAST_S2L = VECTOR_PREFIX + "VECTOR_UCAST_S2L" + POSTFIX;
+    static {
+        vectorNode(VECTOR_UCAST_S2L, "VectorUCastS2X", "long");
     }
 
     public static final String VECTOR_TEST = PREFIX + "VECTOR_TEST" + POSTFIX;
