@@ -112,7 +112,7 @@ public class Longs {
         }
     }
 
-    /** Performs toUnsignedString(long, int) on negative values and every indices */
+    /** Performs toUnsignedString(long, int) on negative values and every radices */
     @Benchmark
     public void toUnsignedStringNegative(Blackhole bh) {
         for (long v : longArrayNegative) {
