@@ -26,12 +26,9 @@
  * @bug 8140527
  * @key headful
  * @requires (os.family == "windows")
- * @modules java.desktop/sun.awt
  * @summary InternalFrame has incorrect title button width
  * @run main InternalFrameTitleButtonTest
  */
-
-import sun.awt.OSInfo;
 
 import java.awt.Component;
 import java.awt.Insets;
@@ -52,18 +49,21 @@ public class InternalFrameTitleButtonTest {
     private static JInternalFrame iframe;
 
     public static void main(String[] args) throws Exception {
-        if (OSInfo.getOSType() == OSInfo.OSType.WINDOWS) {
-            UIManager.setLookAndFeel(
-                   "com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
-            try {
-                test();
-            } finally {
-                SwingUtilities.invokeAndWait(() -> {
-                    if (frame != null) {
-                        frame.dispose();
-                    }
-                });
-            }
+        String osName = System.getProperty("os.name");
+        if(!osName.toLowerCase().contains("win")) {
+            System.out.println("The test is applicable only for Windows.");
+            return;
+        }
+        UIManager.setLookAndFeel(
+               "com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
+        try {
+            test();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
         System.out.println("ok");
     }
@@ -99,8 +99,8 @@ public class InternalFrameTitleButtonTest {
                 Component c = title.getComponent(i);
                 if (c instanceof JButton) {
                     Icon icon = ((JButton) c).getIcon();
-                    if (icon.getIconHeight() > height - 4 ||
-                        icon.getIconWidth() > height - 2) {
+                    if (icon.getIconHeight() > height - 4
+                        || icon.getIconWidth() > height - 2) {
                         throw new RuntimeException("Wrong title icon size");
                     }
                     if (UIManager.getInt("InternalFrame.titleButtonWidth")

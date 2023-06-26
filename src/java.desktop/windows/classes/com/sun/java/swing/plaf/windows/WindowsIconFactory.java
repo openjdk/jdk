@@ -289,7 +289,7 @@ public class WindowsIconFactory implements Serializable
                 // Assume for now that height is correct and derive width from height
                 width = UIManager.getInt("InternalFrame.titleButtonHeight") + 2;
             } else {
-                width = UIManager.getInt("InternalFrame.titleButtonHeight") -2;
+                width = UIManager.getInt("InternalFrame.titleButtonHeight") - 2;
             }
             UIManager.put("InternalFrame.titleButtonWidth", width);
             return width;
