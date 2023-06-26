@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,30 +20,43 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
-    @test
-    @summary Locale variant should not be uppercased
-    @run main Bug4210525
-    @bug 4210525
-*/
+
+/*
+ * @test
+ * @bug 4210525
+ * @summary Locale variant should not be case folded
+ * @run junit CaseCheckVariant
+ */
 
 import java.util.Locale;
+import java.util.stream.Stream;
 
-public class Bug4210525 {
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-    public static void main(String[] args) throws Exception {
-        String language = "en";
-        String country = "US";
-        String variant = "socal";
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-        Locale aLocale = Locale.of(language, country, variant);
+public class CaseCheckVariant {
 
+    static final String LANG = "en";
+    static final String COUNTRY = "US";
+
+    /**
+     * When a locale is created with a given variant, ensure
+     * that the variant is not case normalized.
+     */
+    @ParameterizedTest
+    @MethodSource("variants")
+    public void variantCaseTest(String variant) {
+        Locale aLocale = Locale.of(LANG, COUNTRY, variant);
         String localeVariant = aLocale.getVariant();
-        if (localeVariant.equals(variant)) {
-            System.out.println("passed");
-        } else {
-            System.out.println("failed");
-            throw new Exception("Bug4210525 test failed.");
-        }
+        assertEquals(localeVariant, variant);
+    }
+
+    private static Stream<String> variants() {
+        return Stream.of(
+                "socal",
+                "Norcal"
+        );
     }
 }

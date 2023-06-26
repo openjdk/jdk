@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -897,7 +897,7 @@ static void GDIWinSD_GetRasInfo(JNIEnv *env,
     }
     if (wsdo->lockFlags & SD_LOCK_LUT) {
         pRasInfo->lutBase =
-            (long *) wsdo->device->GetSystemPaletteEntries();
+            (jint *) wsdo->device->GetSystemPaletteEntries();
         pRasInfo->lutSize = 256;
     } else {
         pRasInfo->lutBase = NULL;
