@@ -163,8 +163,6 @@ public final class ByteArrayLittleEndian {
      * {@return a {@code float} from the provided {@code array} at the given {@code offset}
      * using little endian order}.
      * <p>
-     * Variants of {@linkplain Float#NaN } values are canonized to a single NaN value.
-     * <p>
      * There are no access alignment requirements.
      *
      * @param array  to get a value from.
@@ -175,8 +173,6 @@ public final class ByteArrayLittleEndian {
      */
     @ForceInline
     public static float getFloat(byte[] array, int offset) {
-        // Using Float.intBitsToFloat collapses NaN values to a single
-        // "canonical" NaN value
         return Float.intBitsToFloat(getInt(array, offset));
     }
 
@@ -204,8 +200,6 @@ public final class ByteArrayLittleEndian {
      * {@return a {@code double} from the provided {@code array} at the given {@code offset}
      * using little endian order}.
      * <p>
-     * Variants of {@linkplain Double#NaN } values are canonized to a single NaN value.
-     * <p>
      * There are no access alignment requirements.
      *
      * @param array  to get a value from.
@@ -216,8 +210,6 @@ public final class ByteArrayLittleEndian {
      */
     @ForceInline
     public static double getDouble(byte[] array, int offset) {
-        // Using Double.longBitsToDouble collapses NaN values to a single
-        // "canonical" NaN value
         return Double.longBitsToDouble(getLong(array, offset));
     }
 
