@@ -123,7 +123,7 @@ inline int stackChunkOopDesc::to_offset(intptr_t* p) const {
   assert(is_in_chunk(p)
     || (p >= start_address() && (p - start_address()) <= stack_size() + frame::metadata_words),
     "p: " PTR_FORMAT " start: " PTR_FORMAT " end: " PTR_FORMAT, p2i(p), p2i(start_address()), p2i(bottom_address()));
-  return p - start_address();
+  return (int)(p - start_address());
 }
 
 inline intptr_t* stackChunkOopDesc::from_offset(int offset) const {

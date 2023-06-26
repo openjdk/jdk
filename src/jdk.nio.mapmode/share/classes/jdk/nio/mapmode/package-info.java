@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,20 +22,12 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- * @test
- * @bug 6277243
- * @summary Verify that there is Locale.ROOT constant, and it is equal to Locale("", "", "")
+
+/**
+ * JDK-specific map modes for use with
+ * {@linkplain java.nio.channels.FileChannel#map FileChannel::map}.
+ *
+ * @since 14
  */
 
-import java.util.Locale;
-
-public class bug6277243 {
-
-    public static void main(String[] args) throws Exception {
-        Locale root = Locale.of("", "", "");
-        if (!Locale.ROOT.equals(root)) {
-            throw new RuntimeException("Locale.ROOT is not equal to Locale(\"\", \"\", \"\")");
-        }
-    }
-}
+package jdk.nio.mapmode;
