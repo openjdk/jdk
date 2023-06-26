@@ -27,7 +27,7 @@
  * @summary Verify that getAvailableLocales() in locale sensitive services
  * classes return compatible set of locales as in JDK7.
  * @modules jdk.localedata
- * @run junit Bug8001562
+ * @run junit JDK7LocaleServiceDiffs
  */
 
 import java.text.BreakIterator;
@@ -46,7 +46,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-public class Bug8001562 {
+public class JDK7LocaleServiceDiffs {
 
     static final List<String> jdk7availTags = List.of(
             "ar", "ar-AE", "ar-BH", "ar-DZ", "ar-EG", "ar-IQ", "ar-JO", "ar-KW",
