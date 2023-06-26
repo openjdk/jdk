@@ -1102,16 +1102,16 @@ class BadIRNodeForPhase {
 
     @Test
     @FailCount(6)
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.LOAD_VI, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
     @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.LOAD_VI, phase = CompilePhase.BEFORE_MATCHING) // works
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
     @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.BEFORE_MATCHING) // works
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.LOAD_VI, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
     @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
     @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
-    @IR(failOn = IRNode.LOAD_VECTOR, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.LOAD_VI, phase = CompilePhase.FINAL_CODE)
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.FINAL_CODE)
     @IR(failOn = IRNode.VECTOR_CAST_B2X, phase = CompilePhase.FINAL_CODE)
     public void vector() {}
