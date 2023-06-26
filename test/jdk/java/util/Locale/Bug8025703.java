@@ -43,7 +43,9 @@ public class Bug8025703 {
 
     /**
      * This test checks that parsing a range returns the expected
-     * language priority list by matching the correct tag(s).
+     * language priority list by matching the correct tag(s). This test
+     * was originally created to verify an older update to the LSR data file,
+     * and the test may be deprecated by LanguageSubtagRegistryTest.java
      */
     @ParameterizedTest
     @MethodSource("mappings")
