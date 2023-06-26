@@ -1228,10 +1228,10 @@ class MethodType
      * @apiNote
      * This is not a strict inverse of {@link #fromMethodDescriptorString
      * fromMethodDescriptorString} which requires a method type descriptor
-     * (JVMS {@jvms 4.3.3}) and a suitable class loader argument. A method
-     * type produced by changing a component class object to a distinct
-     * class object with the same name but a different class loader will
-     * have the same descriptor string.
+     * (JVMS {@jvms 4.3.3}) and a suitable class loader argument.
+     * Two distinct classes which share a common name but have different class loaders
+     * produce identical component descriptors in descriptor strings.
+     *
      * <p>
      * This method is included for the benefit of applications that must
      * generate bytecodes that process method handles and {@code invokedynamic}.
