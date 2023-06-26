@@ -38,7 +38,7 @@ public class RandomGeneratorNextBytes {
     @Param({"Random", "L32X64MixRandom"})
     private String algo;
 
-    @Param({"1", "2", "3", "4", "6", "7", "9", "10", "48", "512", "1000"})
+    @Param({"1", "2", "3", "4", "6", "8", "16", "24", "36", "48", "64", "128", "256", "1024", "4096"})
     private int length;
 
     private RandomGenerator generator;
