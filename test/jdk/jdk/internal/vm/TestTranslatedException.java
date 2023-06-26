@@ -62,6 +62,7 @@ public class TestTranslatedException {
     private void encodeDecode(Throwable throwable) throws Exception {
         Unsafe unsafe = Unsafe.getUnsafe();
         int bufferSize = 512;
+        int format = 0;
         long buffer = 0L;
         while (true) {
             buffer = unsafe.allocateMemory(bufferSize);
@@ -71,7 +72,7 @@ public class TestTranslatedException {
                     bufferSize = -res;
                 } else {
                     try {
-                        VMSupport.decodeAndThrowThrowable(buffer, true);
+                        VMSupport.decodeAndThrowThrowable(format, buffer, true);
                         throw new AssertionError("expected decodeAndThrowThrowable to throw an exception");
                     } catch (Throwable decoded) {
                         assertThrowableEquals(throwable, decoded);
