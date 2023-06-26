@@ -132,7 +132,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
     // ---------------- Convert I/L to F/D ----------------
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "avx", "true"},
-        counts = {IRNode.VECTOR_CAST_I2X, ">0"})
+        counts = {IRNode.VECTOR_CAST_I2F, IRNode.VECTOR_SIZE + "min(max_int, max_float)", ">0"})
     public float[] convertIntToFloat() {
         float[] res = new float[SIZE];
         for (int i = 0; i < SIZE; i++) {
@@ -146,7 +146,7 @@ public class ArrayTypeConvertTest extends VectorizationTestRunner {
         // The vectorization of some conversions may fail when `+AlignVector`.
         // We can remove the condition after JDK-8303827.
         applyIf = {"AlignVector", "false"},
-        counts = {IRNode.VECTOR_CAST_I2X, ">0"})
+        counts = {IRNode.VECTOR_CAST_I2D, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0"})
     public double[] convertIntToDouble() {
         double[] res = new double[SIZE];
         for (int i = 0; i < SIZE; i++) {

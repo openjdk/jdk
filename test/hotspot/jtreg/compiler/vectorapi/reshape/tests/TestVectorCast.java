@@ -26,6 +26,7 @@ package compiler.vectorapi.reshape.tests;
 import compiler.lib.ir_framework.IR;
 import compiler.lib.ir_framework.Run;
 import compiler.lib.ir_framework.Test;
+import compiler.lib.ir_framework.IRNode;
 
 import static compiler.vectorapi.reshape.utils.VectorReshapeHelper.*;
 import static jdk.incubator.vector.VectorOperators.*;
@@ -484,7 +485,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_2, "1"})
     public static void testI64toB64(int[] input, byte[] output) {
         vectorCast(I2B, ISPEC64, BSPEC64, input, output);
     }
@@ -495,7 +496,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_4, "1"})
     public static void testI128toB64(int[] input, byte[] output) {
         vectorCast(I2B, ISPEC128, BSPEC64, input, output);
     }
@@ -506,7 +507,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_8, "1"})
     public static void testI256toB64(int[] input, byte[] output) {
         vectorCast(I2B, ISPEC256, BSPEC64, input, output);
     }
@@ -517,7 +518,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2B, IRNode.VECTOR_SIZE_16, "1"})
     public static void testI512toB128(int[] input, byte[] output) {
         vectorCast(I2B, ISPEC512, BSPEC128, input, output);
     }
@@ -528,7 +529,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_2, "1"})
     public static void testI64toS64(int[] input, short[] output) {
         vectorCast(I2S, ISPEC64, SSPEC64, input, output);
     }
@@ -539,7 +540,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_4, "1"})
     public static void testI128toS64(int[] input, short[] output) {
         vectorCast(I2S, ISPEC128, SSPEC64, input, output);
     }
@@ -550,7 +551,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_8, "1"})
     public static void testI256toS128(int[] input, short[] output) {
         vectorCast(I2S, ISPEC256, SSPEC128, input, output);
     }
@@ -561,7 +562,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2S, IRNode.VECTOR_SIZE_16, "1"})
     public static void testI512toS256(int[] input, short[] output) {
         vectorCast(I2S, ISPEC512, SSPEC256, input, output);
     }
@@ -572,7 +573,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE_2, "1"})
     public static void testI64toL64(int[] input, long[] output) {
         vectorCast(I2L, ISPEC64, LSPEC64, input, output);
     }
@@ -583,7 +584,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE_2, "1"})
     public static void testI64toL128(int[] input, long[] output) {
         vectorCast(I2L, ISPEC64, LSPEC128, input, output);
     }
@@ -594,7 +595,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE_4, "1"})
     public static void testI128toL256(int[] input, long[] output) {
         vectorCast(I2L, ISPEC128, LSPEC256, input, output);
     }
@@ -605,7 +606,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE_8, "1"})
     public static void testI256toL512(int[] input, long[] output) {
         vectorCast(I2L, ISPEC256, LSPEC512, input, output);
     }
@@ -616,7 +617,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2F, IRNode.VECTOR_SIZE_2, "1"})
     public static void testI64toF64(int[] input, float[] output) {
         vectorCast(I2F, ISPEC64, FSPEC64, input, output);
     }
@@ -627,7 +628,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2F, IRNode.VECTOR_SIZE_4, "1"})
     public static void testI128toF128(int[] input, float[] output) {
         vectorCast(I2F, ISPEC128, FSPEC128, input, output);
     }
@@ -638,7 +639,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2F, IRNode.VECTOR_SIZE_8, "1"})
     public static void testI256toF256(int[] input, float[] output) {
         vectorCast(I2F, ISPEC256, FSPEC256, input, output);
     }
@@ -649,7 +650,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2F, IRNode.VECTOR_SIZE_16, "1"})
     public static void testI512toF512(int[] input, float[] output) {
         vectorCast(I2F, ISPEC512, FSPEC512, input, output);
     }
@@ -660,7 +661,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2D, IRNode.VECTOR_SIZE_2, "1"})
     public static void testI64toD64(int[] input, double[] output) {
         vectorCast(I2D, ISPEC64, DSPEC64, input, output);
     }
@@ -671,7 +672,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2D, IRNode.VECTOR_SIZE_2, "1"})
     public static void testI64toD128(int[] input, double[] output) {
         vectorCast(I2D, ISPEC64, DSPEC128, input, output);
     }
@@ -682,7 +683,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2D, IRNode.VECTOR_SIZE_4, "1"})
     public static void testI128toD256(int[] input, double[] output) {
         vectorCast(I2D, ISPEC128, DSPEC256, input, output);
     }
@@ -693,7 +694,7 @@ public class TestVectorCast {
     }
 
     @Test
-    @IR(counts = {I2X_NODE, "1"})
+    @IR(counts = {IRNode.VECTOR_CAST_I2D, IRNode.VECTOR_SIZE_8, "1"})
     public static void testI256toD512(int[] input, double[] output) {
         vectorCast(I2D, ISPEC256, DSPEC512, input, output);
     }

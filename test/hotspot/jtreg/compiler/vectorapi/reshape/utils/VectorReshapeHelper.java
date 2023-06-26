@@ -73,7 +73,6 @@ public class VectorReshapeHelper {
 
     public static final String B2X_NODE  = IRNode.VECTOR_CAST_B2X;
     public static final String S2X_NODE  = IRNode.VECTOR_CAST_S2X;
-    public static final String I2X_NODE  = IRNode.VECTOR_CAST_I2X;
     public static final String L2X_NODE  = IRNode.VECTOR_CAST_L2X;
     public static final String F2X_NODE  = IRNode.VECTOR_CAST_F2X;
     public static final String D2X_NODE  = IRNode.VECTOR_CAST_D2X;
