@@ -102,7 +102,7 @@ class ObjectSample : public JfrCHeapObj {
 
   bool is_dead() const;
 
-  const oop object() const;
+  oop object() const;
   void set_object(oop object);
 
   const oop* object_addr() const;
@@ -141,7 +141,7 @@ class ObjectSample : public JfrCHeapObj {
     return _allocation_time;
   }
 
-  const void set_allocation_time(const JfrTicks& time) {
+  void set_allocation_time(const JfrTicks& time) {
     _allocation_time = Ticks(time.value());
   }
 

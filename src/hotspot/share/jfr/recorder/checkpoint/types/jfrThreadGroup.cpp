@@ -53,7 +53,7 @@ class JfrThreadGroupPointers : public ResourceObj {
   JfrThreadGroupPointers(Handle thread_group_handle, jweak thread_group_weak_ref);
   Handle thread_group_handle() const;
   jweak thread_group_weak_ref() const;
-  oopDesc* const thread_group_oop() const;
+  oopDesc* thread_group_oop() const;
   jweak transfer_weak_global_handle_ownership();
   void clear_weak_ref();
 };
@@ -70,7 +70,7 @@ jweak JfrThreadGroupPointers::thread_group_weak_ref() const {
   return _thread_group_weak_ref;
 }
 
-oopDesc* const JfrThreadGroupPointers::thread_group_oop() const {
+oopDesc* JfrThreadGroupPointers::thread_group_oop() const {
   assert(_thread_group_weak_ref == nullptr ||
          JNIHandles::resolve_non_null(_thread_group_weak_ref) == _thread_group_handle(), "invariant");
   return _thread_group_handle();
@@ -209,7 +209,7 @@ class JfrThreadGroup::JfrThreadGroupEntry : public JfrCHeapObj {
   traceid thread_group_id() const { return _thread_group_id; }
   void set_thread_group_id(traceid tgid) { _thread_group_id = tgid; }
 
-  const char* const thread_group_name() const { return _thread_group_name; }
+  const char* thread_group_name() const { return _thread_group_name; }
   void set_thread_group_name(const char* tgname);
 
   traceid parent_group_id() const { return _parent_group_id; }
@@ -217,7 +217,7 @@ class JfrThreadGroup::JfrThreadGroupEntry : public JfrCHeapObj {
 
   void set_thread_group(JfrThreadGroupPointers& ptrs);
   bool is_equal(const JfrThreadGroupPointers& ptrs) const;
-  const oop thread_group() const;
+  oop thread_group() const;
 };
 
 JfrThreadGroup::JfrThreadGroupEntry::JfrThreadGroupEntry(const char* tgname, JfrThreadGroupPointers& ptrs) :
@@ -248,7 +248,7 @@ void JfrThreadGroup::JfrThreadGroupEntry::set_thread_group_name(const char* tgna
   }
 }
 
-const oop JfrThreadGroup::JfrThreadGroupEntry::thread_group() const {
+oop JfrThreadGroup::JfrThreadGroupEntry::thread_group() const {
   return _thread_group_weak_ref != nullptr ? JNIHandles::resolve(_thread_group_weak_ref) : _thread_group_oop;
 }
 

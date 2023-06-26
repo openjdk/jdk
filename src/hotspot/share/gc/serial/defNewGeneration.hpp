@@ -167,7 +167,7 @@ class DefNewGeneration: public Generation {
 
   // allocate and initialize ("weak") refs processing support
   void ref_processor_init();
-  ReferenceProcessor* const ref_processor() { return _ref_processor; }
+  ReferenceProcessor* ref_processor() { return _ref_processor; }
 
   // Accessing spaces
   ContiguousSpace* eden() const           { return _eden_space; }

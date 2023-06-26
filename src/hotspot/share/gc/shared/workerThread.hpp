@@ -48,7 +48,7 @@ private:
     _gc_id(GCId::current_or_undefined()) {}
 
   const char* name() const { return _name; }
-  const uint gc_id() const { return _gc_id; }
+  uint gc_id() const { return _gc_id; }
 
   virtual void work(uint worker_id) = 0;
 };

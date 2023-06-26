@@ -1718,7 +1718,7 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 
 //=============================================================================
 
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   if (EnableVectorSupport && UseVectorStubs) {
     return true;
   }

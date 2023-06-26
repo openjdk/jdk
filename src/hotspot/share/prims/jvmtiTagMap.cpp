@@ -1405,16 +1405,16 @@ class AdvancedHeapWalkContext: public HeapWalkContext {
   jint heap_filter() const         { return _heap_filter; }
   Klass* klass_filter() const      { return _klass_filter; }
 
-  const jvmtiHeapReferenceCallback heap_reference_callback() const {
+  jvmtiHeapReferenceCallback heap_reference_callback() const {
     return _heap_callbacks->heap_reference_callback;
   };
-  const jvmtiPrimitiveFieldCallback primitive_field_callback() const {
+  jvmtiPrimitiveFieldCallback primitive_field_callback() const {
     return _heap_callbacks->primitive_field_callback;
   }
-  const jvmtiArrayPrimitiveValueCallback array_primitive_value_callback() const {
+  jvmtiArrayPrimitiveValueCallback array_primitive_value_callback() const {
     return _heap_callbacks->array_primitive_value_callback;
   }
-  const jvmtiStringPrimitiveValueCallback string_primitive_value_callback() const {
+  jvmtiStringPrimitiveValueCallback string_primitive_value_callback() const {
     return _heap_callbacks->string_primitive_value_callback;
   }
 };

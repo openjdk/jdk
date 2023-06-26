@@ -35,7 +35,7 @@ void ObjectSample::reset() {
   _virtual_thread = false;
 }
 
-const oop ObjectSample::object() const {
+oop ObjectSample::object() const {
   return _object.resolve();
 }
 

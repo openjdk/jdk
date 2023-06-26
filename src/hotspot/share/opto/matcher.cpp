@@ -447,7 +447,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   return rms;
 }
 
-const int Matcher::scalable_predicate_reg_slots() {
+int Matcher::scalable_predicate_reg_slots() {
   assert(Matcher::has_predicated_vectors() && Matcher::supports_scalable_vector(),
         "scalable predicate vector should be supported");
   int vector_reg_bit_size = Matcher::scalable_vector_reg_size(T_BYTE) << LogBitsPerByte;

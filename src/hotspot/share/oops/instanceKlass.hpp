@@ -116,7 +116,7 @@ class OopMapBlock {
   }
 
   // sizeof(OopMapBlock) in words.
-  static const int size_in_words() {
+  static int size_in_words() {
     return align_up((int)sizeof(OopMapBlock), wordSize) >>
       LogBytesPerWord;
   }

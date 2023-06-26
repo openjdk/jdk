@@ -189,7 +189,7 @@ public:
     page->undo_alloc_object(addr, size);
   }
 
-  const size_t in_place_count() const {
+  size_t in_place_count() const {
     return _in_place_count;
   }
 };
@@ -266,7 +266,7 @@ public:
     page->undo_alloc_object_atomic(addr, size);
   }
 
-  const size_t in_place_count() const {
+  size_t in_place_count() const {
     return _in_place_count;
   }
 };

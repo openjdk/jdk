@@ -32,7 +32,7 @@
 
 #define DEFINE_TRACE_ID_METHODS \
   traceid trace_id() const { return _trace_id; } \
-  traceid* const trace_id_addr() const { return &_trace_id; } \
+  traceid* trace_id_addr() const { return &_trace_id; } \
   void set_trace_id(traceid id) const { _trace_id = id; }
 
 #define DEFINE_TRACE_ID_SIZE \

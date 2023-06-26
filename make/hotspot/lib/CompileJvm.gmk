@@ -84,11 +84,11 @@ CFLAGS_VM_VERSION := \
 # Disabled warnings
 
 DISABLED_WARNINGS_gcc := array-bounds comment delete-non-virtual-dtor \
-    empty-body ignored-qualifiers implicit-fallthrough int-in-bool-context \
+    empty-body implicit-fallthrough int-in-bool-context \
     maybe-uninitialized missing-field-initializers parentheses \
     shift-negative-value unknown-pragmas
 
-DISABLED_WARNINGS_clang := ignored-qualifiers sometimes-uninitialized \
+DISABLED_WARNINGS_clang := sometimes-uninitialized \
     missing-braces delete-non-abstract-non-virtual-dtor unknown-pragmas
 
 ifneq ($(DEBUG_LEVEL), release)

@@ -410,7 +410,7 @@ class Method : public Metadata {
   // nmethod/verified compiler entry
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  CompiledMethod* volatile code() const;
+  CompiledMethod* code() const;
 
   // Locks CompiledMethod_lock if not held.
   void unlink_code(CompiledMethod *compare);

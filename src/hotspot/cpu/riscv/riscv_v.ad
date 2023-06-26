@@ -46,13 +46,13 @@ source %{
     }
   }
 
-  const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
   // Identify extra cases that we might want to provide match rules for vector nodes
   // and other intrinsics guarded with vector length (vlen) and element type (bt).
-  const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     if (!UseRVV) {
       return false;
     }
@@ -79,14 +79,14 @@ source %{
     return true;
   }
 
-  const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
     if (!UseRVV) {
       return false;
     }
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
-  const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
     return false;
   }
 

@@ -65,16 +65,16 @@ static bool initialize(TRAPS) {
   return initialized;
 }
 
-static const typeArrayOop invoke(jlong trace_id,
-                                 jboolean force_instrumentation,
-                                 jboolean boot_class_loader,
-                                 jclass class_being_redefined,
-                                 jint class_data_len,
-                                 const unsigned char* class_data,
-                                 Symbol* method_sym,
-                                 Symbol* signature_sym,
-                                 jint& new_bytes_length,
-                                 TRAPS) {
+static typeArrayOop invoke(jlong trace_id,
+                           jboolean force_instrumentation,
+                           jboolean boot_class_loader,
+                           jclass class_being_redefined,
+                           jint class_data_len,
+                           const unsigned char* class_data,
+                           Symbol* method_sym,
+                           Symbol* signature_sym,
+                           jint& new_bytes_length,
+                           TRAPS) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   const Klass* klass = SystemDictionary::resolve_or_fail(jvm_upcalls_class_sym, true, CHECK_NULL);
   assert(klass != nullptr, "invariant");

@@ -4211,7 +4211,7 @@ Instruction_aarch64::~Instruction_aarch64() {
 #undef starti
 
 // Invert a condition
-inline const Assembler::Condition operator~(const Assembler::Condition cond) {
+inline Assembler::Condition operator~(const Assembler::Condition cond) {
   return Assembler::Condition(int(cond) ^ 1);
 }
 

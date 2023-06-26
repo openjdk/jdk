@@ -45,7 +45,7 @@ inline void Method::set_method_data(MethodData* data) {
   Atomic::release_store(&_method_data, data);
 }
 
-inline CompiledMethod* volatile Method::code() const {
+inline CompiledMethod* Method::code() const {
   assert( check_code(), "" );
   return Atomic::load_acquire(&_code);
 }

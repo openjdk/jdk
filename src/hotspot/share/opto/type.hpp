@@ -999,8 +999,8 @@ public:
   const int _offset;            // Offset into oop, with TOP & BOT
   const PTR _ptr;               // Pointer equivalence class
 
-  const int offset() const { return _offset; }
-  const PTR ptr()    const { return _ptr; }
+  int offset() const { return _offset; }
+  PTR ptr()    const { return _ptr; }
 
   static const TypePtr *make(TYPES t, PTR ptr, int offset,
                              const TypePtr* speculative = nullptr,

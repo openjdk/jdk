@@ -308,7 +308,7 @@ class ElfFile: public CHeapObj<mtInternal> {
   static uint gnu_debuglink_crc32(uint32_t crc, uint8_t* buf, size_t len);
 
  protected:
-  FILE* const fd() const { return _file; }
+  FILE* fd() const { return _file; }
 
   // Read the section header of section 'name'.
   bool read_section_header(const char* name, Elf_Shdr& hdr) const;
