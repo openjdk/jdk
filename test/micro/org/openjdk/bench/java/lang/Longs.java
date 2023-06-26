@@ -54,6 +54,7 @@ public class Longs {
     private String[] strings;
     private long[] longArraySmall;
     private long[] longArrayBig;
+    private long[] longArrayNegative;
 
     @Setup
     public void setup() {
@@ -63,10 +64,12 @@ public class Longs {
         res = new long[size];
         longArraySmall = new long[size];
         longArrayBig = new long[size];
+        longArrayNegative = new long[size];
         for (int i = 0; i < size; i++) {
             strings[i] = "" + (random.nextLong(10000) - 5000);
             longArraySmall[i] = 100L * i + i + 103L;
             longArrayBig[i] = ((100L * i + i) << 32) + 4543 + i * 4L;
+            longArrayNegative[i] = random.nextLong(Long.MIN_VALUE, 0L);
         }
     }
 
@@ -106,6 +109,16 @@ public class Longs {
     public void compress(Blackhole bh) {
         for (long i : longArrayBig) {
             bh.consume(Long.compress(i, 0x000000000F0F0F1FL));
+        }
+    }
+
+    /** Performs toUnsignedString(long, int) on negative values and every indices */
+    @Benchmark
+    public void toUnsignedStringNegative(Blackhole bh) {
+        for (long v : longArrayNegative) {
+            for (int r = Character.MIN_RADIX; r <= Character.MAX_RADIX; r++) {
+                bh.consume(Long.toUnsignedString(v, r));
+            }
         }
     }
 
