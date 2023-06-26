@@ -767,6 +767,13 @@ public final class String
         return new String(dst, UTF16);
     }
 
+    @ForceInline
+    static String newStringLatin1NoRepl(byte[] src) {
+        if (COMPACT_STRINGS)
+            return new String(src, LATIN1);
+        return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+    }
+
     static String newStringNoRepl(byte[] src, Charset cs) throws CharacterCodingException {
         try {
             return newStringNoRepl1(src, cs);
@@ -790,9 +797,7 @@ public final class String
             return newStringUTF8NoRepl(src, 0, src.length, false);
         }
         if (cs == ISO_8859_1.INSTANCE) {
-            if (COMPACT_STRINGS)
-                return new String(src, LATIN1);
-            return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+            return newStringLatin1NoRepl(src);
         }
         if (cs == US_ASCII.INSTANCE) {
             if (!StringCoding.hasNegatives(src, 0, src.length)) {

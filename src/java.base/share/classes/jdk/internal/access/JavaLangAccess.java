@@ -339,6 +339,17 @@ public interface JavaLangAccess {
     byte[] getBytesNoRepl(String s, Charset cs) throws CharacterCodingException;
 
     /**
+     * Constructs a new {@code String} from the given Latin-1 bytes array.
+     *
+     * The caller of this method shall relinquish and transfer the ownership of
+     * the byte array to the callee since the later will not make a copy.
+     *
+     * @param bytes the byte array source
+     * @return the newly created string
+     */
+    String newStringLatin1NoRepl(byte[] bytes);
+
+    /**
      * Returns a new string by decoding from the given utf8 bytes array.
      *
      * @param off the index of the first byte to decode
