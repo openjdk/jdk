@@ -159,7 +159,12 @@ address generate_poly1305_processBlocks2() {
   //   __ copy_3_to_5_regs(v_u0, u0[0]._lo, u0[1]._lo, u0[2]._lo);
   // }
 
-  {
+    __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "\n\nBefore\n  u0");
+    __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
+    __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "v[2]");
+    __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "v[3]");
+
+    {
     Label DONE, LOOP;
 
     __ subsw(rscratch1, length, POLY1305_BLOCK_LENGTH * 8);
@@ -174,12 +179,10 @@ address generate_poly1305_processBlocks2() {
       constexpr int COLS = 3;
       LambdaAccumulator gen[COLS];
 
-      // __ poly1305_add(gen[0], S0, u0);
       __ poly1305_step(gen[0], S0, u0, input_start);
       __ poly1305_multiply(gen[0], u0, S0, R, RR2, regs);
       __ poly1305_reduce(gen[0], u0, "  u0");
 
-      // __ poly1305_add(gen[1], S1, u1);
       __ poly1305_step(gen[1], S1, u1, input_start);
       __ poly1305_multiply(gen[1], u1, S1, R, RR2, regs);
       __ poly1305_reduce(gen[1], u1, "  u1");
@@ -212,6 +215,11 @@ address generate_poly1305_processBlocks2() {
           }
         }
       }
+
+      __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "  u0");
+      __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
+      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "v[2]");
+      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "v[3]");
 
       for (int col = 0; col < COLS; col++) {
         assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
