@@ -59,38 +59,17 @@ public class RawIRNode {
             nodeRegex = IRNode.getRegexForCompilePhase(node, compilePhase);
             if (IRNode.isVectorIRNode(node)) {
                 String type = IRNode.getVectorNodeType(node);
+                TestFormat.checkNoReport(IRNode.getTypeSizeInBytes(type) > 0, "Vector node's type must have valid type, got \"" + type + "\" for \"" + node + "\"");
                 String size;
                 if (userPostfix.isValid()) {
                     String value = userPostfix.value();
-                    TestFormat.checkNoReport(value.startsWith(IRNode.VECTOR_SIZE), "Vector node's vector type must start with IRNode.VECTOR_SIZE, got: \"" + value + "\"");
+                    TestFormat.checkNoReport(value.startsWith(IRNode.VECTOR_SIZE), "Vector node's vector size must start with IRNode.VECTOR_SIZE, got: \"" + value + "\"");
                     size = value.substring(2);
                 } else {
                     size = vectorSizeDefault;
                 }
-                // Parse type
-                TestFormat.checkNoReport(IRNode.getTypeSizeInBytes(type) > 0, "Vector node's type must have valid type, got \"" + type + "\" for \"" + node + "\"");
-                // Parse size
-                String sizes_regex = size;
-                if (size.equals("any")) {
-                    sizes_regex = "\\\\d+";
-                } else {
-                    size = IRNode.parseSizeTags(size, type, vmInfo);
-                    String[] sizes = size.split(",");
-                    sizes_regex = "";
-                    for (int i = 0; i < sizes.length; i++) {
-                        int s = 0;
-                        try {
-                            s = Integer.parseInt(sizes[i]);
-                        } catch (NumberFormatException e) {
-                            TestFormat.checkNoReport(false, "Vector node has invalid size \"" + sizes[i] + "\", in \"" + size + "\" for \"" + node + "\"");
-                        }
-                        sizes_regex += ((i > 0) ? "|" : "") + s;
-                    }
-                    if (sizes.length > 1) {
-                       sizes_regex = "(" + sizes_regex + ")";
-                    }
-                }
-                nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, "vector[A-Za-z]\\\\[" + sizes_regex + "\\\\]:\\\\{" + type + "\\\\}");
+                String size_regex = IRNode.parseVectorNodeSize(size, type, vmInfo);
+                nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, "vector[A-Za-z]\\\\[" + size_regex + "\\\\]:\\\\{" + type + "\\\\}");
             } else {
                 if (userPostfix.isValid()) {
                     nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, userPostfix.value());

@@ -72,7 +72,7 @@ public class CheckAttributeReader<R> {
             String irNode = IRNode.getIRNodeAccessString(node);
             if (iterator.hasNext()) {
                 String maybe_vt = iterator.next();
-                if (IRNode.isVectorType(maybe_vt)) {
+                if (IRNode.isVectorSize(maybe_vt)) {
                     return new CheckAttributeString(maybe_vt);
                 }
                 // If we do not find that pattern, then revert the iterator once

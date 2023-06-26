@@ -2066,21 +2066,48 @@ public class IRNode {
     }
 
     /**
-     * Is {@code irVectorTypeString} a vector size string?
+     * Is {@code irVectorSizeString} a vector size string?
      */
-    public static boolean isVectorType(String irVectorTypeString) {
-        return irVectorTypeString.startsWith(VECTOR_SIZE);
+    public static boolean isVectorSize(String irVectorSizeString) {
+        return irVectorSizeString.startsWith(VECTOR_SIZE);
     }
- 
+
+    /**
+     * Parse {@code sizeString} and generate a regex pattern to match for the size in the IR dump.
+     */
+    public static String parseVectorNodeSize(String sizeString, String typeString, VMInfo vmInfo) {
+        if (sizeString.equals("any")) {
+            return "\\\\d+"; // match with any number
+        }
+        // Try to parse any tags, convert to comma separated list of ints
+        sizeString = parseVectorNodeSizeTag(sizeString, typeString, vmInfo);
+        // Parse comma separated list of numbers
+        String[] sizes = sizeString.split(",");
+        String regex = "";
+        for (int i = 0; i < sizes.length; i++) {
+            int s = 0;
+            try {
+                s = Integer.parseInt(sizes[i]);
+            } catch (NumberFormatException e) {
+                TestFormat.checkNoReport(false, "Vector node has invalid size \"" + sizes[i] + "\", in \"" + sizeString + "\"");
+            }
+            regex += ((i > 0) ? "|" : "") + s;
+        }
+        if (sizes.length > 1) {
+           regex = "(" + regex + ")";
+        }
+        return regex;
+    }
+
     /**
      * If {@code sizeTagString} is a size tag, return the list of accepted sizes, else return sizeTagString.
      */
-    public static String parseSizeTags(String sizeTagString, String typeString, VMInfo vmInfo) {
+    public static String parseVectorNodeSizeTag(String sizeTagString, String typeString, VMInfo vmInfo) {
         switch (sizeTagString) {
         case "max_for_type":
             return String.valueOf(getMaxElementsForType(typeString, vmInfo));
         case "max_int":
-            return parseSizeTags("max_for_type", "int", vmInfo);
+            return parseVectorNodeSizeTag("max_for_type", "int", vmInfo);
         default:
             return sizeTagString;
         }
