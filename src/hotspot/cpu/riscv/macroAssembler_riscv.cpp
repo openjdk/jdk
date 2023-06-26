@@ -4327,6 +4327,7 @@ void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp
   }
 
   if (shamt != 0) {
+    assert_different_registers(Rs2, tmp);
     slli(tmp, Rs1, shamt);
     add(Rd, Rs2, tmp);
   } else {
