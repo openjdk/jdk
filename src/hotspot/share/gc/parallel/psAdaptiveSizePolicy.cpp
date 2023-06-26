@@ -526,7 +526,7 @@ void PSAdaptiveSizePolicy::compute_old_gen_free_space(
     log_debug(gc, ergo)(
           "PSAdaptiveSizePolicy::compute_old_gen_free_space: gc time limit"
           " gc_cost: %f "
-          " GCTimeLimit: " UINT32_FORMAT,
+          " GCTimeLimit: %u",
           gc_cost(), GCTimeLimit);
   }
 

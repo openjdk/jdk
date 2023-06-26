@@ -95,7 +95,7 @@ void GCOverheadChecker::check_gc_overhead_limit(GCOverheadTester* time_overhead,
       reset_gc_overhead_limit_count();
     } else if (print_gc_overhead_limit_would_be_exceeded) {
       assert(_gc_overhead_limit_count > 0, "Should not be printing");
-      log_trace(gc, ergo)("GC would exceed overhead limit of %u %% %d consecutive time(s)",
+      log_trace(gc, ergo)("GC would exceed overhead limit of %u%% %d consecutive time(s)",
                           GCTimeLimit, _gc_overhead_limit_count);
     }
   }

@@ -212,12 +212,12 @@
   /* where does the range max value of (max_jint - 1) come from? */         \
   product(size_t, MarkStackSizeMax, NOT_LP64(4*M) LP64_ONLY(512*M),         \
           "Maximum size of marking stack")                                  \
-          range(1, (SIZE_MAX - 1))                                          \
+          range(1, (INT_MAX - 1))                                          \
                                                                             \
   product(size_t, MarkStackSize, NOT_LP64(64*K) LP64_ONLY(4*M),             \
           "Size of marking stack")                                          \
           constraint(MarkStackSizeConstraintFunc,AfterErgo)                 \
-          range(1, (SIZE_MAX - 1))                                          \
+          range(1, (INT_MAX - 1))                                          \
                                                                             \
   product(bool, ParallelRefProcEnabled, false,                              \
           "Enable parallel reference processing whenever possible")         \
@@ -682,10 +682,10 @@
   develop(uintx, GCExpandToAllocateDelayMillis, 0,                          \
           "Delay between expansion and allocation (in milliseconds)")       \
                                                                             \
-  product(size_t, GCDrainStackTargetSize, 64,                               \
+  product(uintx, GCDrainStackTargetSize, 64,                                \
           "Number of entries we will try to leave on the stack "            \
           "during parallel gc")                                             \
-          range(0, SIZE_MAX)                                                \
+          range(0, max_juint)                                               \
                                                                             \
   product(uint, GCCardSizeInBytes, 512,                                     \
           "Card table entry size (in bytes) for card based collectors")     \
