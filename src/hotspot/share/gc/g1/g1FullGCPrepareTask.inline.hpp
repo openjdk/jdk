@@ -42,7 +42,7 @@ void G1DetermineCompactionQueueClosure::free_empty_humongous_region(HeapRegion* 
 inline bool G1DetermineCompactionQueueClosure::should_compact(HeapRegion* hr) const {
   // There is no need to iterate and forward objects in non-movable regions ie.
   // prepare them for compaction.
-  if (hr->is_humongous()) {
+  if (hr->is_humongous() || hr->has_pinned_objects()) {
     return false;
   }
   size_t live_words = _collector->live_words(hr->hrm_index());
@@ -79,7 +79,14 @@ inline bool G1DetermineCompactionQueueClosure::do_heap_region(HeapRegion* hr) {
     add_to_compaction_queue(hr);
   } else {
     assert(hr->containing_set() == nullptr, "already cleared by PrepareRegionsClosure");
-    if (hr->is_humongous()) {
+    if (hr->has_pinned_objects() ||
+        (hr->is_humongous() && hr->humongous_start_region()->has_pinned_objects())) {
+      // First check regions with pinned objects: they need to be skipped regardless
+      // of region type and never be considered for reclamation.
+      assert(_collector->is_skip_compacting(hr->hrm_index()), "pinned region %u must be skip_compacting", hr->hrm_index());
+      log_trace(gc, phases)("Phase 2: skip compaction region index: %u (%s), has pinned objects",
+                            hr->hrm_index(), hr->get_short_type_str());
+    } else if (hr->is_humongous()) {
       oop obj = cast_to_oop(hr->humongous_start_region()->bottom());
       bool is_empty = !_collector->mark_bitmap()->is_marked(obj);
       if (is_empty) {

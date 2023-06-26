@@ -243,9 +243,6 @@ private:
   uint calculate_young_desired_length(size_t pending_cards, size_t card_rs_length, size_t code_root_rs_length) const;
   // Limit the given desired young length to available free regions.
   uint calculate_young_target_length(uint desired_young_length) const;
-  // The GCLocker might cause us to need more regions than the target. Calculate
-  // the maximum number of regions to use in that case.
-  uint calculate_young_max_length(uint target_young_length) const;
 
   size_t predict_bytes_to_copy(HeapRegion* hr) const;
   double predict_survivor_regions_evac_time() const;
@@ -304,7 +301,7 @@ public:
 
   // Record the start and end of the young gc pause.
   void record_young_gc_pause_start();
-  void record_young_gc_pause_end(bool evacuation_failed);
+  void record_young_gc_pause_end(bool evacuation_retained);
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
@@ -335,18 +332,20 @@ public:
 
   // Amount of allowed waste in bytes in the collection set.
   size_t allowed_waste_in_collection_set() const;
-  // Calculate and fill in the initial and optional old gen candidate regions from
+  // Calculate and fill in the initial, optional and pinned old gen candidate regions from
   // the given candidate list and the remaining time.
   // Returns the remaining time.
   double select_candidates_from_marking(G1CollectionCandidateList* marking_list,
                                         double time_remaining_ms,
                                         G1CollectionCandidateRegionList* initial_old_regions,
-                                        G1CollectionCandidateRegionList* optional_old_regions);
+                                        G1CollectionCandidateRegionList* optional_old_regions,
+                                        G1CollectionCandidateRegionList* pinned_old_regions);
 
   void select_candidates_from_retained(G1CollectionCandidateList* retained_list,
                                        double time_remaining_ms,
                                        G1CollectionCandidateRegionList* initial_old_regions,
-                                       G1CollectionCandidateRegionList* optional_old_regions);
+                                       G1CollectionCandidateRegionList* optional_old_regions,
+                                       G1CollectionCandidateRegionList* pinned_old_regions);
 
   // Calculate the number of optional regions from the given collection set candidates,
   // the remaining time and the maximum number of these regions and return the number
@@ -383,11 +382,8 @@ public:
 
   uint young_list_desired_length() const { return Atomic::load(&_young_list_desired_length); }
   uint young_list_target_length() const { return Atomic::load(&_young_list_target_length); }
-  uint young_list_max_length() const { return Atomic::load(&_young_list_max_length); }
 
   bool should_allocate_mutator_region() const;
-
-  bool can_expand_young_list() const;
 
   bool use_adaptive_young_list_length() const;
 

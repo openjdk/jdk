@@ -55,17 +55,17 @@ public:
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::RecalculateUsedTask : public G1AbstractSubTask {
-  bool _evacuation_failed;
+  bool _retained;
 
 public:
-  RecalculateUsedTask(bool evacuation_failed) : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed), _evacuation_failed(evacuation_failed) { }
+  RecalculateUsedTask(bool retained) : G1AbstractSubTask(G1GCPhaseTimes::RecalculateUsed), _retained(retained) { }
 
   double worker_cost() const override {
     // If there is no evacuation failure, the work to perform is minimal.
-    return _evacuation_failed ? 1.0 : AlmostNoWork;
+    return _retained ? 1.0 : AlmostNoWork;
   }
 
-  void do_work(uint worker_id) override { G1CollectedHeap::heap()->update_used_after_gc(_evacuation_failed); }
+  void do_work(uint worker_id) override { G1CollectedHeap::heap()->update_used_after_gc(_retained); }
 };
 
 class G1PostEvacuateCollectionSetCleanupTask1::SampleCollectionSetCandidatesTask : public G1AbstractSubTask {
@@ -104,10 +104,10 @@ public:
   }
 
   double worker_cost() const override {
-    assert(_evac_failure_regions->evacuation_failed(), "Should not call this if not executed");
+    assert(_evac_failure_regions->has_regions_retained(), "Should not call this if not executed");
 
     double workers_per_region = (double)G1CollectedHeap::get_chunks_per_region() / G1RestoreRetainedRegionChunksPerWorker;
-    return workers_per_region * _evac_failure_regions->num_regions_failed_evacuation();
+    return workers_per_region * _evac_failure_regions->num_regions_retained();
   }
 
   void do_work(uint worker_id) override {
@@ -119,15 +119,15 @@ G1PostEvacuateCollectionSetCleanupTask1::G1PostEvacuateCollectionSetCleanupTask1
                                                                                  G1EvacFailureRegions* evac_failure_regions) :
   G1BatchedTask("Post Evacuate Cleanup 1", G1CollectedHeap::heap()->phase_times())
 {
-  bool evacuation_failed = evac_failure_regions->evacuation_failed();
+  bool retained = evac_failure_regions->has_regions_retained();
 
   add_serial_task(new MergePssTask(per_thread_states));
-  add_serial_task(new RecalculateUsedTask(evacuation_failed));
+  add_serial_task(new RecalculateUsedTask(retained));
   if (SampleCollectionSetCandidatesTask::should_execute()) {
     add_serial_task(new SampleCollectionSetCandidatesTask());
   }
   add_parallel_task(G1CollectedHeap::heap()->rem_set()->create_cleanup_after_scan_heap_roots_task());
-  if (evacuation_failed) {
+  if (retained) {
     add_parallel_task(new RestoreRetainedRegionsTask(evac_failure_regions));
   }
 }
@@ -380,7 +380,7 @@ public:
   }
 
   double worker_cost() const override {
-    return _evac_failure_regions->num_regions_failed_evacuation();
+    return _evac_failure_regions->num_regions_retained();
   }
 
   void do_work(uint worker_id) override {
@@ -568,10 +568,13 @@ class FreeCSetClosure : public HeapRegionClosure {
     G1GCPhaseTimes* p = _g1h->phase_times();
     assert(r->in_collection_set(), "Failed evacuation of region %u not in collection set", r->hrm_index());
 
+    bool is_pinned = r->has_pinned_objects();
+
     p->record_or_add_thread_work_item(G1GCPhaseTimes::RestoreRetainedRegions,
                                       _worker_id,
                                       1,
-                                      G1GCPhaseTimes::RestoreRetainedRegionsFailedNum);
+                                      is_pinned ? G1GCPhaseTimes::RestoreRetainedRegionsPinnedNum
+                                                : G1GCPhaseTimes::RestoreRetainedRegionsFailedNum);
 
     bool retain_region = _g1h->policy()->should_retain_evac_failed_region(r);
     // Update the region state due to the failed evacuation.
@@ -766,7 +769,7 @@ G1PostEvacuateCollectionSetCleanupTask2::G1PostEvacuateCollectionSetCleanupTask2
     add_serial_task(new EagerlyReclaimHumongousObjectsTask());
   }
 
-  if (evac_failure_regions->evacuation_failed()) {
+  if (evac_failure_regions->has_regions_retained()) {
     add_parallel_task(new RestorePreservedMarksTask(per_thread_states->preserved_marks_set()));
     add_parallel_task(new ProcessEvacuationFailedRegionsTask(evac_failure_regions));
   }

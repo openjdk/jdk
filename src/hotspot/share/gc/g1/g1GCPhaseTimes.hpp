@@ -148,6 +148,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   enum RestoreRetainedRegionsWorkItems {
     RestoreRetainedRegionsFailedNum,
+    RestoreRetainedRegionsPinnedNum,
     RestoreRetainedRegionsRetainedNum
   };
 
@@ -240,7 +241,7 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double print_merge_heap_roots_time() const;
   double print_evacuate_initial_collection_set() const;
   double print_evacuate_optional_collection_set() const;
-  double print_post_evacuate_collection_set(bool evacuation_failed) const;
+  double print_post_evacuate_collection_set(bool evacuation_retained) const;
   void print_other(double accounted_ms) const;
 
  public:

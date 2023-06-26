@@ -32,6 +32,7 @@
 #include "gc/g1/g1OopClosures.inline.hpp"
 #include "gc/g1/heapRegion.inline.hpp"
 #include "gc/g1/heapRegionRemSet.inline.hpp"
+#include "gc/shared/collectedHeap.hpp"
 #include "oops/access.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -193,7 +194,7 @@ G1RemoveSelfForwardsTask::G1RemoveSelfForwardsTask(G1EvacFailureRegions* evac_fa
   _evac_failure_regions(evac_failure_regions),
   _chunk_bitmap(mtGC) {
 
-  _num_evac_fail_regions = _evac_failure_regions->num_regions_failed_evacuation();
+  _num_evac_fail_regions = _evac_failure_regions->num_regions_retained();
   _num_chunks_per_region = G1CollectedHeap::get_chunks_per_region();
 
   _chunk_size = static_cast<uint>(HeapRegion::GrainWords / _num_chunks_per_region);

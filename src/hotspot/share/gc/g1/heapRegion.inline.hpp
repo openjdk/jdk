@@ -259,6 +259,10 @@ inline void HeapRegion::update_bot_for_obj(HeapWord* obj_start, size_t obj_size)
   _bot_part.update_for_block(obj_start, obj_end);
 }
 
+inline bool HeapRegion::can_reclaim() const {
+  return !has_pinned_objects();
+}
+
 inline HeapWord* HeapRegion::top_at_mark_start() const {
   return Atomic::load(&_top_at_mark_start);
 }
@@ -546,6 +550,14 @@ inline void HeapRegion::record_surv_words_in_group(size_t words_survived) {
   assert(has_valid_age_in_surv_rate(), "pre-condition");
   int age_in_group = age_in_surv_rate_group();
   _surv_rate_group->record_surviving_words(age_in_group, words_survived);
+}
+
+inline void HeapRegion::increment_pinned_object_count() {
+  Atomic::add(&_pinned_object_count, 1u, memory_order_relaxed);
+}
+
+inline void HeapRegion::decrement_pinned_object_count() {
+  Atomic::sub(&_pinned_object_count, 1u, memory_order_relaxed);
 }
 
 #endif // SHARE_GC_G1_HEAPREGION_INLINE_HPP

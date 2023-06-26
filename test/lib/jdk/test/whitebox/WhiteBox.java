@@ -784,6 +784,10 @@ public class WhiteBox {
 
   public native void unlockCritical();
 
+  public native void pinObject(Object o);
+
+  public native void unpinObject(Object o);
+
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
 
   public native void preTouchMemory(long addr, long size);

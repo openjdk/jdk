@@ -29,16 +29,26 @@
 #include "gc/g1/g1EvacFailureRegions.hpp"
 #include "runtime/atomic.hpp"
 
-bool G1EvacFailureRegions::record(uint region_idx) {
-  bool success = _regions_failed_evacuation.par_set_bit(region_idx,
+bool G1EvacFailureRegions::record(uint region_idx, bool cause_pinned) {
+  bool success = _regions_retained.par_set_bit(region_idx,
                                                         memory_order_relaxed);
   if (success) {
-    size_t offset = Atomic::fetch_then_add(&_evac_failure_regions_cur_length, 1u);
-    _evac_failure_regions[offset] = region_idx;
+    size_t offset = Atomic::fetch_then_add(&_evac_retained_regions_cur_length, 1u);
+    _evac_retained_regions[offset] = region_idx;
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     HeapRegion* hr = g1h->region_at(region_idx);
     hr->note_evacuation_failure();
+  }
+
+  if (cause_pinned) {
+    if (_regions_pinned.par_set_bit(region_idx, memory_order_relaxed)) {
+      Atomic::inc(&_evac_failure_regions_pinned, memory_order_relaxed);
+    }
+  } else {
+    if (_regions_failed_evacuation.par_set_bit(region_idx, memory_order_relaxed)) {
+      Atomic::inc(&_evac_failure_regions_failed_evacuation, memory_order_relaxed);
+    }
   }
   return success;
 }

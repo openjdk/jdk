@@ -133,7 +133,8 @@ G1GCPhaseTimes::G1GCPhaseTimes(STWGCTimer* gc_timer, uint max_gc_threads) :
   _gc_par_phases[MergePSS]->create_thread_work_items("Evac Fail Extra Cards", MergePSSEvacFailExtra);
 
   _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Evacuation Failed Regions:", RestoreRetainedRegionsFailedNum);
-  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("New Retained Regions:", RestoreRetainedRegionsRetainedNum);
+  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Pinned Regions:", RestoreRetainedRegionsPinnedNum);
+  _gc_par_phases[RestoreRetainedRegions]->create_thread_work_items("Retained Regions:", RestoreRetainedRegionsRetainedNum);
 
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Forward Chunks:", RemoveSelfForwardChunksNum);
   _gc_par_phases[RemoveSelfForwards]->create_thread_work_items("Empty Forward Chunks:", RemoveSelfForwardEmptyChunksNum);
@@ -478,7 +479,7 @@ double G1GCPhaseTimes::print_evacuate_initial_collection_set() const {
   return _cur_collection_initial_evac_time_ms + _cur_merge_heap_roots_time_ms;
 }
 
-double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed) const {
+double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_retained) const {
   const double sum_ms = _cur_collection_nmethod_list_cleanup_time_ms +
                         _cur_ref_proc_time_ms +
                         (_weak_phase_times.total_time_sec() * MILLIUNITS) +
@@ -501,13 +502,13 @@ double G1GCPhaseTimes::print_post_evacuate_collection_set(bool evacuation_failed
   debug_phase(_gc_par_phases[MergePSS], 1);
   debug_phase(_gc_par_phases[ClearCardTable], 1);
   debug_phase(_gc_par_phases[RecalculateUsed], 1);
-  if (evacuation_failed) {
+  if (evacuation_retained) {
     debug_phase(_gc_par_phases[RestoreRetainedRegions], 1);
     debug_phase(_gc_par_phases[RemoveSelfForwards], 2);
   }
 
   debug_time("Post Evacuate Cleanup 2", _cur_post_evacuate_cleanup_2_time_ms);
-  if (evacuation_failed) {
+  if (evacuation_retained) {
     debug_phase(_gc_par_phases[RecalculateUsed], 1);
     debug_phase(_gc_par_phases[RestorePreservedMarks], 1);
     debug_phase(_gc_par_phases[ProcessEvacuationFailedRegions], 1);

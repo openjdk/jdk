@@ -267,7 +267,8 @@ public class TestGCLogMessages {
         new LogMessageWithLevel("Restore Retained Regions", Level.DEBUG),
         new LogMessageWithLevel("Process Evacuation Failed Regions", Level.DEBUG),
         new LogMessageWithLevel("Evacuation Failed Regions", Level.DEBUG),
-        new LogMessageWithLevel("New Retained Regions", Level.DEBUG),
+        new LogMessageWithLevel("Pinned Regions", Level.DEBUG),
+        new LogMessageWithLevel("Retained Regions", Level.DEBUG),
     };
 
     private void testWithEvacuationFailureLogs() throws Exception {

@@ -131,6 +131,10 @@ class G1YoungCollector {
   void post_evacuate_collection_set(G1EvacInfo* evacuation_info,
                                     G1ParScanThreadStateSet* per_thread_states);
 
+  // True iff an evacuation required retaining in the most-recent collection.
+  bool evacuation_retained() const;
+  // True iff an evacuation has pinned in the most-recent collection.
+  bool evacuation_pinned() const;
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() const;
 

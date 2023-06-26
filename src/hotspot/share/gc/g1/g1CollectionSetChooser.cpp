@@ -39,7 +39,7 @@
 // moved to the destination.
 class G1BuildCandidateRegionsTask : public WorkerTask {
 
-  using CandidateInfo = G1CollectionCandidateList::CandidateInfo;
+  using CandidateInfo = G1CollectionSetCandidateInfo;
 
   // Work area for building the set of collection set candidates. Contains references
   // to heap regions with their GC efficiencies calculated. To reduce contention

@@ -79,9 +79,10 @@ class G1YoungGCTraceTime {
   const char* update_young_gc_name() {
     snprintf(_young_gc_name_data,
              MaxYoungGCNameLength,
-             "Pause Young (%s) (%s)%s",
+             "Pause Young (%s) (%s)%s%s",
              G1GCPauseTypeHelper::to_string(_pause_type),
              GCCause::to_string(_pause_cause),
+             _collector->evacuation_pinned() ? " (Pinned)" : "",
              _collector->evacuation_failed() ? " (Evacuation Failure)" : "");
     return _young_gc_name_data;
   }
@@ -113,7 +114,7 @@ public:
   }
 
   ~G1YoungGCNotifyPauseMark() {
-    G1CollectedHeap::heap()->policy()->record_young_gc_pause_end(_collector->evacuation_failed());
+    G1CollectedHeap::heap()->policy()->record_young_gc_pause_end(_collector->evacuation_retained());
   }
 };
 
@@ -164,7 +165,7 @@ public:
   ~G1YoungGCVerifierMark() {
     // Inject evacuation failure tag into type if needed.
     G1HeapVerifier::G1VerifyType type = _type;
-    if (_collector->evacuation_failed()) {
+    if (_collector->evacuation_retained()) {
       type = (G1HeapVerifier::G1VerifyType)(type | G1HeapVerifier::G1VerifyYoungEvacFail);
     }
     G1CollectedHeap::heap()->verify_after_young_collection(type);
@@ -314,6 +315,10 @@ class G1PrepareEvacuationTask : public WorkerTask {
       if (!region->rem_set()->is_complete()) {
         return false;
       }
+      // We also cannot collect the humongous object if it is pinned.
+      if (region->has_pinned_objects()) {
+        return false;
+      }
       // Candidate selection must satisfy the following constraints
       // while concurrent marking is in progress:
       //
@@ -386,13 +391,15 @@ class G1PrepareEvacuationTask : public WorkerTask {
       } else {
         _g1h->register_region_with_region_attr(hr);
       }
-      log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu marked %d reclaim candidate %d type array %d",
+      log_debug(gc, humongous)("Humongous region %u (object size %zu @ " PTR_FORMAT ") remset %zu code roots %zu "
+                               "marked %d pinned count %u reclaim candidate %d type array %d",
                                index,
                                cast_to_oop(hr->bottom())->size() * HeapWordSize,
                                p2i(hr->bottom()),
                                hr->rem_set()->occupied(),
                                hr->rem_set()->code_roots_list_length(),
                                _g1h->concurrent_mark()->mark_bitmap()->is_marked(hr->bottom()),
+                               hr->pinned_count(),
                                _g1h->is_humongous_reclaim_candidate(index),
                                cast_to_oop(hr->bottom())->is_typeArray()
                               );
@@ -419,7 +426,7 @@ public:
     _g1h(g1h),
     _claimer(_g1h->workers()->active_workers()),
     _humongous_total(0),
-    _humongous_candidates(0) { }
+    _humongous_candidates(0)  { }
 
   void work(uint worker_id) {
     G1PrepareRegionsClosure cl(_g1h, this);
@@ -1009,8 +1016,16 @@ void G1YoungCollector::post_evacuate_collection_set(G1EvacInfo* evacuation_info,
   _g1h->expand_heap_after_young_collection();
 }
 
+bool G1YoungCollector::evacuation_retained() const {
+  return _evac_failure_regions.has_regions_retained();
+}
+
+bool G1YoungCollector::evacuation_pinned() const {
+  return _evac_failure_regions.has_regions_evac_pinned();
+}
+
 bool G1YoungCollector::evacuation_failed() const {
-  return _evac_failure_regions.evacuation_failed();
+  return _evac_failure_regions.has_regions_evac_failed();
 }
 
 G1YoungCollector::G1YoungCollector(GCCause::Cause gc_cause) :

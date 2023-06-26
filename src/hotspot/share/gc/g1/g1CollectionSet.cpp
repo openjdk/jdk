@@ -325,12 +325,15 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
 
     G1CollectionCandidateRegionList initial_old_regions;
     assert(_optional_old_regions.length() == 0, "must be");
+    G1CollectionCandidateRegionList pinned_marking_regions;
+    G1CollectionCandidateRegionList pinned_retained_regions;
 
     if (collector_state()->in_mixed_phase()) {
       time_remaining_ms = _policy->select_candidates_from_marking(&candidates()->marking_regions(),
                                                                   time_remaining_ms,
                                                                   &initial_old_regions,
-                                                                  &_optional_old_regions);
+                                                                  &_optional_old_regions,
+                                                                  &pinned_marking_regions);
     } else {
       log_debug(gc, ergo, cset)("Do not add marking candidates to collection set due to pause type.");
     }
@@ -338,12 +341,26 @@ void G1CollectionSet::finalize_old_part(double time_remaining_ms) {
     _policy->select_candidates_from_retained(&candidates()->retained_regions(),
                                              time_remaining_ms,
                                              &initial_old_regions,
-                                             &_optional_old_regions);
+                                             &_optional_old_regions,
+                                             &pinned_retained_regions);
 
     // Move initially selected old regions to collection set directly.
     move_candidates_to_collection_set(&initial_old_regions);
     // Only prepare selected optional regions for now.
     prepare_optional_regions(&_optional_old_regions);
+    // Move pinned marking regions we came across to retained candidates so that
+    // there is progress in the mixed gc phase.
+    move_pinned_marking_to_retained(&pinned_marking_regions);
+    // Drop pinned retained regions to make progress with retained regions. Regions
+    // in that list have must have been pinned for at least two GCs and hence are
+    // considered "long lived".
+    // Two GCs because:
+    // * the GC the region it has been put in the retained regions list. Either due
+    //   due to being a pinned young region or observing a real evacuation failure.
+    // * (if it started off as marking region, the GC it has been moved to the
+    //   retained candidates)
+    // * the GC it has been detected to be pinned (again), i.e. this GC.
+    drop_pinned_retained_regions(&pinned_retained_regions);
 
     candidates()->verify();
   } else {
@@ -375,6 +392,32 @@ void G1CollectionSet::prepare_optional_regions(G1CollectionCandidateRegionList* 
     _g1h->register_optional_region_with_region_attr(r);
 
     r->set_index_in_opt_cset(cur_index++);
+  }
+}
+
+void G1CollectionSet::move_pinned_marking_to_retained(G1CollectionCandidateRegionList* regions) {
+  if (regions->length() == 0) {
+    return;
+  }
+  candidates()->remove(regions);
+
+  for (HeapRegion* r : *regions) {
+    assert(r->has_pinned_objects(), "must be pinned");
+    assert(r->rem_set()->is_complete(), "must be complete");
+    candidates()->add_retained_region_unsorted(r);
+  }
+  candidates()->sort_by_efficiency();
+}
+
+void G1CollectionSet::drop_pinned_retained_regions(G1CollectionCandidateRegionList* regions) {
+  if (regions->length() == 0) {
+    return;
+  }
+  candidates()->remove(regions);
+
+  // We can now drop these region's remembered sets.
+  for (HeapRegion* r : *regions) {
+    r->rem_set()->clear(true /* only_cardset */);
   }
 }
 

@@ -231,7 +231,7 @@ public:
   void reset_trim_ticks();
 
   // An attempt to evacuate "obj" has failed; take necessary steps.
-  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz);
+  oop handle_evacuation_failure_par(oop obj, markWord m, size_t word_sz, bool cause_pinned);
 
   template <typename T>
   inline void remember_root_into_optional_region(T* p);
