@@ -369,7 +369,7 @@ void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum,
   }
 }
 
-#define TIME_FORMAT "%.1lfms"
+#define TIME_FORMAT "%.2lfms"
 
 void G1GCPhaseTimes::info_time(const char* name, double value) const {
   log_info(gc, phases)("  %s: " TIME_FORMAT, name, value);
