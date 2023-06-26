@@ -23,14 +23,14 @@
  * questions.
  */
 
-package java.lang.runtime;
+package jdk.internal.referencedkey;
 
 import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
 import java.util.Objects;
 
 /**
- * {@link WeakReference} wrapper key for entries in the backing map.
+ * {@link SoftReference} wrapper key for entries in the backing map.
  *
  * @param <T> key type
  *
@@ -39,9 +39,9 @@ import java.util.Objects;
  * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
  *          Do not rely on its availability.
  */
-final class WeakReferenceKey<T> extends WeakReference<T> implements ReferenceKey<T> {
+final class SoftReferenceKey<T> extends SoftReference<T> implements ReferenceKey<T> {
     /**
-     * Saved hashcode of the key. Used when {@link WeakReference} is
+     * Saved hashcode of the key. Used when {@link SoftReference} is
      * null.
      */
     private final int hashcode;
@@ -52,7 +52,7 @@ final class WeakReferenceKey<T> extends WeakReference<T> implements ReferenceKey
      * @param key   unwrapped key value
      * @param queue reference queue
      */
-    WeakReferenceKey(T key, ReferenceQueue<T> queue) {
+    SoftReferenceKey(T key, ReferenceQueue<T> queue) {
         super(key, queue);
         this.hashcode = Objects.hashCode(key);
     }

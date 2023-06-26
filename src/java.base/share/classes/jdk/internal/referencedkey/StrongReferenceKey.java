@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.lang.runtime;
+package jdk.internal.referencedkey;
 
 import java.util.Objects;
 

@@ -23,7 +23,7 @@
  * questions.
  */
 
-package java.lang.runtime;
+package jdk.internal.referencedkey;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
@@ -82,7 +82,7 @@ import java.util.stream.Stream;
  * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
  *          Do not rely on its availability.
  */
-final class ReferencedKeyMap<K, V> implements Map<K, V> {
+public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     /**
      * true if {@link SoftReference} keys are to be used,
      * {@link WeakReference} otherwise.
@@ -124,7 +124,7 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
      * @param <K> the type of keys maintained by the new map
      * @param <V> the type of mapped values
      */
-    static <K, V> ReferencedKeyMap<K, V>
+    public static <K, V> ReferencedKeyMap<K, V>
     create(boolean isSoft, Supplier<Map<ReferenceKey<K>, V>> supplier) {
         return new ReferencedKeyMap<K, V>(isSoft, supplier.get());
     }
@@ -140,7 +140,7 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
      * @param <K> the type of keys maintained by the new map
      * @param <V> the type of mapped values
      */
-    static <K, V> ReferencedKeyMap<K, V>
+    public static <K, V> ReferencedKeyMap<K, V>
     create(Supplier<Map<ReferenceKey<K>, V>> supplier) {
         return new ReferencedKeyMap<K, V>(false, supplier.get());
     }
@@ -329,6 +329,51 @@ final class ReferencedKeyMap<K, V> implements Map<K, V> {
             }
             map.remove(key);
         }
+    }
+
+    /**
+     * Puts an entry where the key and the value are the same. Used for
+     * interning values.
+     *
+     * @implNote Requires a {@link ReferencedKeyMap} whose {@code V} type
+     * is {@code ReferenceKey<K>}. Otherwise, a {@link ClassCastException} will
+     * be thrown.
+     *
+     * @param key  key to add
+     *
+     * @return the old key instance unless null then the new key instance
+     *
+     * @throws ClassCastException if {@code V} is not {@code EntryKey<K>}
+     */
+    @SuppressWarnings("unchecked")
+    K intern(K key) {
+        removeStaleReferences();
+        ReferenceKey<K> entryKey = (ReferenceKey<K>)get(lookupKey(key));
+        if (entryKey != null) {
+            K value = entryKey.get();
+            if (value != null) {
+                return value;
+            }
+        }
+        entryKey = entryKey(key);
+        K interned;
+        do {
+            removeStaleReferences();
+            ReferenceKey<K> existing =
+                    (ReferenceKey<K>)map.putIfAbsent(entryKey, (V)entryKey);
+            if (existing == null) {
+                return key;
+            } else {
+                // If {@code putIfAbsent} returns non-null then was actually a
+                // {@code replace} and older key was used. In that case the new
+                // key was not used and the reference marked stale.
+                interned = existing.get();
+                if (interned != null) {
+                    entryKey.unused();
+                }
+            }
+        } while (interned == null);
+        return interned;
     }
 
 }
