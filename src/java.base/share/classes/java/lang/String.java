@@ -812,9 +812,7 @@ public final class String
         if (cd instanceof ArrayDecoder ad &&
                 ad.isASCIICompatible() &&
                 !StringCoding.hasNegatives(src, 0, src.length)) {
-            if (COMPACT_STRINGS)
-                return new String(src, LATIN1);
-            return new String(src, 0, src.length, ISO_8859_1.INSTANCE);
+            return newStringLatin1NoRepl(src);
         }
         int en = scale(len, cd.maxCharsPerByte());
         char[] ca = new char[en];
