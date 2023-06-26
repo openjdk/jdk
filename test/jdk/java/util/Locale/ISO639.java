@@ -25,9 +25,9 @@
  * @test
  * @summary test ISO639-2 language codes
  * @library /java/text/testlib
- * @compile -encoding ascii Bug4175998Test.java
+ * @compile -encoding ascii ISO639.java
  * @bug 4175998 8303917
- * @run junit Bug4175998Test
+ * @run junit ISO639
  */
 
 /*
@@ -57,7 +57,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Bug4175998Test{
+public class ISO639 {
 
     /**
      * This test verifies for a given locale created from the ISO639 2-letter code,
