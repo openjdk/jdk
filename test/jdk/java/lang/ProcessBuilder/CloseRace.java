@@ -35,7 +35,7 @@
  * @test
  * @comment Turn up heap size to lower amount of GCs
  * @requires vm.gc.Z & vm.opt.final.ZGenerational
- * @run main/othervm -Xmx32M -Dtest.duration=2 CloseRace
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational -Xmx32M -Dtest.duration=2 CloseRace
  */
 
 import java.io.*;

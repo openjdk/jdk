@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,28 @@
  * questions.
  */
 
+import java.security.KeyPairGenerator;
+import java.security.PublicKey;
+
 /*
  * @test
- * @bug 8004240
- * @summary Verify that getAdapterPreference returns an unmodifiable list.
- * @modules java.base/sun.util.locale.provider
- * @compile -XDignore.symbol.file Bug8004240.java
- * @run main Bug8004240
+ * @bug 8308808
+ * @requires os.family == "windows"
+ * @modules jdk.crypto.mscapi
+ * @run main EncodingMutability
  */
+public class EncodingMutability {
 
-import java.util.List;
-import sun.util.locale.provider.LocaleProviderAdapter;
+    public static void main(String[] args) throws Exception {
+        KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA", "SunMSCAPI");
+        PublicKey publicKey = keyGen.generateKeyPair().getPublic();
+        byte initialByte = publicKey.getEncoded()[0];
+        publicKey.getEncoded()[0] = 0;
+        byte mutatedByte = publicKey.getEncoded()[0];
 
-public class Bug8004240 {
-
-    public static void main(String[] args) {
-        List<LocaleProviderAdapter.Type> types = LocaleProviderAdapter.getAdapterPreference();
-
-        try {
-            types.set(0, null);
-        } catch (UnsupportedOperationException e) {
-            // success
-            return;
+        if (initialByte != mutatedByte) {
+            System.out.println("Was able to mutate first byte of pubkey from " + initialByte + " to " + mutatedByte);
+            throw new RuntimeException("Pubkey was mutated via getEncoded");
         }
-
-        throw new RuntimeException("LocaleProviderAdapter.getAdapterPrefence() returned a modifiable list.");
     }
 }
