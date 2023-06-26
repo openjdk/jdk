@@ -2140,6 +2140,8 @@ public class IRNode {
             return parseVectorNodeSizeTag("max_for_type", "float", vmInfo);
         case "max_double":
             return parseVectorNodeSizeTag("max_for_type", "double", vmInfo);
+        case "LoopMaxUnroll":
+            return String.valueOf(vmInfo.getLong("LoopMaxUnroll", -1));
         default:
             return sizeTagString;
         }

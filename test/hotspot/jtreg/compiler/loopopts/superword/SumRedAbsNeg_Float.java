@@ -94,8 +94,8 @@ public class SumRedAbsNeg_Float {
     @IR(applyIfCPUFeature = {"sse2", "true"},
         applyIfAnd = {"SuperWordReductions", "true", "LoopMaxUnroll", ">= 8"},
         counts = {IRNode.ADD_REDUCTION_VF, ">= 1",
-                  IRNode.ABS_VF, IRNode.VECTOR_SIZE_ANY, ">= 1", // Unrolling can limit packing
-                  IRNode.NEG_VF, IRNode.VECTOR_SIZE_ANY, ">= 1"})
+                  IRNode.ABS_VF, IRNode.VECTOR_SIZE + "min(LoopMaxUnroll, max_float)", ">= 1",
+                  IRNode.NEG_VF, IRNode.VECTOR_SIZE + "min(LoopMaxUnroll, max_float)", ">= 1"})
     public static float sumReductionImplement(
             float[] a,
             float[] b,

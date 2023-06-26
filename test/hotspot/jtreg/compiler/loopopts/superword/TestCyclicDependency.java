@@ -346,7 +346,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.ADD_VF, IRNode.VECTOR_SIZE_ANY, "> 0"},
+    @IR(counts = {IRNode.ADD_VF, IRNode.VECTOR_SIZE + "min(max_int, max_float)", "> 0"},
         applyIf = {"AlignVector", "false"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     // Some aarch64 machines have AlignVector == true, like ThunderX2

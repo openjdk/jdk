@@ -377,6 +377,8 @@ public class IREncodingPrinter {
         vmInfo.append("cpuFeatures:" + cpuFeatures).append(System.lineSeparator());
         long maxVectorSize = WHITE_BOX.getIntxVMFlag("MaxVectorSize");
         vmInfo.append("MaxVectorSize:" + maxVectorSize).append(System.lineSeparator());
+        long loopMaxUnroll = WHITE_BOX.getIntxVMFlag("LoopMaxUnroll");
+        vmInfo.append("LoopMaxUnroll:" + loopMaxUnroll).append(System.lineSeparator());
         vmInfo.append(END_VMINFO);
         TestFrameworkSocket.write(vmInfo.toString(), "VMInfo");
     }
