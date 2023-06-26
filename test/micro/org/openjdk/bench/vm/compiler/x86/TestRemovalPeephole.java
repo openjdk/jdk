@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @Measurement(iterations = 4, time = 2, timeUnit = TimeUnit.SECONDS)
 @State(Scope.Thread)
-public class AndTestPeephole {
+public class TestRemovalPeephole {
     long[] valuesLong1;
     long[] valuesLong2;
     int[] valuesInt1;
@@ -81,6 +81,54 @@ public class AndTestPeephole {
             long value2 = valuesLong2[i];
             long withAnd1 = value1 & 0xFFFFFFFFFFL;
             long withAnd2 = value2 & 0xFFFFFFFFFFL;
+
+            bh.consume(withAnd1 > 0x0L && withAnd2 > 0x0L && withAnd1 < 0xFFFFFFFFFFL && withAnd2 < 0xFFFFFFFFFFL);
+        }
+    }
+
+    @Benchmark
+    public void benchmarkOrTestFusableInt(Blackhole bh) {
+        for (int i = 0; i < valuesInt1.length; i++) {
+            int value1 = valuesInt1[i];
+            int value2 = valuesInt2[i];
+            int withAnd1 = value1 | 0xF;
+            int withAnd2 = value2 | 0xF;
+
+            bh.consume(withAnd1 > 0x0 && withAnd2 > 0x0 && withAnd1 < 0xF && withAnd2 < 0xF);
+        }
+    }
+
+    @Benchmark
+    public void benchmarkOrTestFusableLong(Blackhole bh) {
+        for (int i = 0; i < valuesLong1.length; i++) {
+            long value1 = valuesLong1[i];
+            long value2 = valuesLong2[i];
+            long withAnd1 = value1 | 0xFFFFFFFFFFL;
+            long withAnd2 = value2 | 0xFFFFFFFFFFL;
+
+            bh.consume(withAnd1 > 0x0L && withAnd2 > 0x0L && withAnd1 < 0xFFFFFFFFFFL && withAnd2 < 0xFFFFFFFFFFL);
+        }
+    }
+
+    @Benchmark
+    public void benchmarkXorTestFusableInt(Blackhole bh) {
+        for (int i = 0; i < valuesInt1.length; i++) {
+            int value1 = valuesInt1[i];
+            int value2 = valuesInt2[i];
+            int withAnd1 = value1 ^ 0xF;
+            int withAnd2 = value2 ^ 0xF;
+
+            bh.consume(withAnd1 > 0x0 && withAnd2 > 0x0 && withAnd1 < 0xF && withAnd2 < 0xF);
+        }
+    }
+
+    @Benchmark
+    public void benchmarkXorTestFusableLong(Blackhole bh) {
+        for (int i = 0; i < valuesLong1.length; i++) {
+            long value1 = valuesLong1[i];
+            long value2 = valuesLong2[i];
+            long withAnd1 = value1 ^ 0xFFFFFFFFFFL;
+            long withAnd2 = value2 ^ 0xFFFFFFFFFFL;
 
             bh.consume(withAnd1 > 0x0L && withAnd2 > 0x0L && withAnd1 < 0xFFFFFFFFFFL && withAnd2 < 0xFFFFFFFFFFL);
         }

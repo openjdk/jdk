@@ -13930,9 +13930,9 @@ peephole
 
 peephole
 %{
-  peepmatch (testI_reg xorL_rReg xorL_rReg_imm xorL_rReg_mem xorL_mem_rReg xorL_mem_imm);
+  peepmatch (testL_reg xorL_rReg xorL_rReg_imm xorL_rReg_mem xorL_mem_rReg xorL_mem_imm);
   peepprocedure (test_may_remove_5);
-  peepreplace (testI_reg_empty_peep());
+  peepreplace (testL_reg_empty_peep());
 %}
 
 
