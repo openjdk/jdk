@@ -363,7 +363,9 @@ static void addIdentitiesToKeystore(JNIEnv *env, jobject keyStore)
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeKeyRef = ptr_to_jlong(privateKeyRef);
             (*env)->CallVoidMethod(env, keyStore, jm_createKeyEntry, alias, creationDate, nativeKeyRef, certRefArray, javaCertArray);
-            JNU_CHECK_EXCEPTION(env);
+            if ((*env)->ExceptionCheck(env)) {
+                goto errOut;
+            }
         }
     } while (searchResult == noErr);
 
@@ -380,6 +382,35 @@ errOut:
 }
 
 #define ADDNULL(list) (*env)->CallBooleanMethod(env, list, jm_listAdd, NULL)
+
+
+static void addTrustSettingsToInputTrust(JNIEnv *env, jmethodID jm_listAdd, CFArrayRef trustSettings, jobject inputTrust)
+{
+    CFIndex count = CFArrayGetCount(trustSettings);
+    for (int i = 0; i < count; i++) {
+        CFDictionaryRef oneTrust = (CFDictionaryRef) CFArrayGetValueAtIndex(trustSettings, i);
+        CFIndex size = CFDictionaryGetCount(oneTrust);
+        const void * keys [size];
+        const void * values [size];
+        CFDictionaryGetKeysAndValues(oneTrust, keys, values);
+        for (int j = 0; j < size; j++) {
+            NSString* s = [NSString stringWithFormat:@"%@", keys[j]];
+            ADD(inputTrust, s);
+            s = [NSString stringWithFormat:@"%@", values[j]];
+            ADD(inputTrust, s);
+        }
+        SecPolicyRef certPolicy;
+        certPolicy = (SecPolicyRef)CFDictionaryGetValue(oneTrust, kSecTrustSettingsPolicy);
+        if (certPolicy != NULL) {
+            CFDictionaryRef policyDict = SecPolicyCopyProperties(certPolicy);
+            ADD(inputTrust, @"SecPolicyOid");
+            NSString* s = [NSString stringWithFormat:@"%@", CFDictionaryGetValue(policyDict, @"SecPolicyOid")];
+            ADD(inputTrust, s);
+            CFRelease(policyDict);
+        }
+        ADDNULL(inputTrust);
+    }
+}
 
 static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
 {
@@ -435,46 +466,40 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
                 goto errOut;
             }
 
-            // Only add certificates with trusted settings
-            CFArrayRef trustSettings;
-            if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainUser, &trustSettings)
-                    == errSecItemNotFound) {
+            // See KeychainStore::createTrustedCertEntry for content of inputTrust
+            // We load trust settings from domains kSecTrustSettingsDomainUser and kSecTrustSettingsDomainAdmin
+            // kSecTrustSettingsDomainSystem is ignored because it seems to only contain data for root certificates
+            jobject inputTrust = NULL;
+            CFArrayRef trustSettings = NULL;
+
+            // Load user trustSettings into inputTrust
+            if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainUser, &trustSettings) == errSecSuccess && trustSettings != NULL) {
+                inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+                if (inputTrust == NULL) {
+                    CFRelease(trustSettings);
+                    goto errOut;
+                }
+                addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
+                CFRelease(trustSettings);
+            }
+            // Load admin trustSettings into inputTrust
+            trustSettings = NULL;
+            if (SecTrustSettingsCopyTrustSettings(certRef, kSecTrustSettingsDomainAdmin, &trustSettings) == errSecSuccess && trustSettings != NULL) {
+                if (inputTrust == NULL) {
+                    inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
+                }
+                if (inputTrust == NULL) {
+                    CFRelease(trustSettings);
+                    goto errOut;
+                }
+                addTrustSettingsToInputTrust(env, jm_listAdd, trustSettings, inputTrust);
+                CFRelease(trustSettings);
+            }
+
+            // Only add certificates with trust settings
+            if (inputTrust == NULL) {
                 continue;
             }
-
-            // See KeychainStore::createTrustedCertEntry for content of inputTrust
-            jobject inputTrust = (*env)->NewObject(env, jc_arrayListClass, jm_arrayListCons);
-            if (inputTrust == NULL) {
-                CFRelease(trustSettings);
-                goto errOut;
-            }
-
-            // Dump everything inside trustSettings into inputTrust
-            CFIndex count = CFArrayGetCount(trustSettings);
-            for (int i = 0; i < count; i++) {
-                CFDictionaryRef oneTrust = (CFDictionaryRef) CFArrayGetValueAtIndex(trustSettings, i);
-                CFIndex size = CFDictionaryGetCount(oneTrust);
-                const void * keys [size];
-                const void * values [size];
-                CFDictionaryGetKeysAndValues(oneTrust, keys, values);
-                for (int j = 0; j < size; j++) {
-                    NSString* s = [NSString stringWithFormat:@"%@", keys[j]];
-                    ADD(inputTrust, s);
-                    s = [NSString stringWithFormat:@"%@", values[j]];
-                    ADD(inputTrust, s);
-                }
-                SecPolicyRef certPolicy;
-                certPolicy = (SecPolicyRef)CFDictionaryGetValue(oneTrust, kSecTrustSettingsPolicy);
-                if (certPolicy != NULL) {
-                    CFDictionaryRef policyDict = SecPolicyCopyProperties(certPolicy);
-                    ADD(inputTrust, @"SecPolicyOid");
-                    NSString* s = [NSString stringWithFormat:@"%@", CFDictionaryGetValue(policyDict, @"SecPolicyOid")];
-                    ADD(inputTrust, s);
-                    CFRelease(policyDict);
-                }
-                ADDNULL(inputTrust);
-            }
-            CFRelease(trustSettings);
 
             // Find the creation date.
             jlong creationDate = getModDateFromItem(env, theItem);
@@ -482,7 +507,9 @@ static void addCertificatesToKeystore(JNIEnv *env, jobject keyStore)
             // Call back to the Java object to create Java objects corresponding to this security object.
             jlong nativeRef = ptr_to_jlong(certRef);
             (*env)->CallVoidMethod(env, keyStore, jm_createTrustedCertEntry, alias, inputTrust, nativeRef, creationDate, certData);
-            JNU_CHECK_EXCEPTION(env);
+            if ((*env)->ExceptionCheck(env)) {
+                goto errOut;
+            }
         }
     } while (searchResult == noErr);
 

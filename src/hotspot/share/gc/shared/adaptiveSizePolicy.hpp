@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,14 +367,14 @@ class AdaptiveSizePolicy : public CHeapObj<mtGC> {
     return _major_collection_estimator;
   }
 
-  float minor_pause_young_slope() {
+  double minor_pause_young_slope() {
     return _minor_pause_young_estimator->slope();
   }
 
-  float minor_collection_slope() { return _minor_collection_estimator->slope();}
-  float major_collection_slope() { return _major_collection_estimator->slope();}
+  double minor_collection_slope() { return _minor_collection_estimator->slope();}
+  double major_collection_slope() { return _major_collection_estimator->slope();}
 
-  float minor_pause_old_slope() {
+  double minor_pause_old_slope() {
     return _minor_pause_old_estimator->slope();
   }
 

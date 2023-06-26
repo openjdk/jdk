@@ -893,35 +893,35 @@ public abstract class AbstractMap<K,V> implements Map<K,V> {
      * <p>
      * Ideally this would be a private class within SequencedMap, but private
      * classes aren't permitted within interfaces.
+     * <p>
+     * The non-sequenced map view is obtained by calling the abstract view()
+     * method for each operation.
      *
      * @param <E> the view's element type
      */
     /* non-public */ abstract static class ViewCollection<E> implements Collection<E> {
         UnsupportedOperationException uoe() { return new UnsupportedOperationException(); }
-        final Collection<E> view;
-
-        ViewCollection(Collection<E> view) { this.view = view; }
+        abstract Collection<E> view();
 
         public boolean add(E t) { throw uoe(); }
         public boolean addAll(Collection<? extends E> c) { throw uoe(); }
-        public void clear() { view.clear(); }
-        public boolean contains(Object o) { return view.contains(o); }
-        public boolean containsAll(Collection<?> c) { return view.containsAll(c); }
-        public boolean equals(Object o) { return view.equals(o); }
-        public void forEach(Consumer<? super E> c) { view.forEach(c); }
-        public int hashCode() { return view.hashCode(); }
-        public boolean isEmpty() { return view.isEmpty(); }
-        public Iterator<E> iterator() { return view.iterator(); }
-        public Stream<E> parallelStream() { return view.parallelStream(); }
-        public boolean remove(Object o) { return view.remove(o); }
-        public boolean removeAll(Collection<?> c) { return view.removeAll(c); }
-        public boolean removeIf(Predicate<? super E> filter) { return view.removeIf(filter); }
-        public boolean retainAll(Collection<?> c) { return view.retainAll(c); }
-        public int size() { return view.size(); }
-        public Spliterator<E> spliterator() { return view.spliterator(); }
-        public Stream<E> stream() { return view.stream(); }
-        public Object[] toArray() { return view.toArray(); }
-        public <T> T[] toArray(IntFunction<T[]> generator) { return view.toArray(generator); }
-        public <T> T[] toArray(T[] a) { return view.toArray(a); }
+        public void clear() { view().clear(); }
+        public boolean contains(Object o) { return view().contains(o); }
+        public boolean containsAll(Collection<?> c) { return view().containsAll(c); }
+        public void forEach(Consumer<? super E> c) { view().forEach(c); }
+        public boolean isEmpty() { return view().isEmpty(); }
+        public Iterator<E> iterator() { return view().iterator(); }
+        public Stream<E> parallelStream() { return view().parallelStream(); }
+        public boolean remove(Object o) { return view().remove(o); }
+        public boolean removeAll(Collection<?> c) { return view().removeAll(c); }
+        public boolean removeIf(Predicate<? super E> filter) { return view().removeIf(filter); }
+        public boolean retainAll(Collection<?> c) { return view().retainAll(c); }
+        public int size() { return view().size(); }
+        public Spliterator<E> spliterator() { return view().spliterator(); }
+        public Stream<E> stream() { return view().stream(); }
+        public Object[] toArray() { return view().toArray(); }
+        public <T> T[] toArray(IntFunction<T[]> generator) { return view().toArray(generator); }
+        public <T> T[] toArray(T[] a) { return view().toArray(a); }
+        public String toString() { return view().toString(); }
     }
 }

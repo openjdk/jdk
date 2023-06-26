@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,10 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.ThrowsTree;
 
+import com.sun.source.util.DocTreePath;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
@@ -59,6 +61,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * A taglet that processes {@link ThrowsTree}, which represents {@code @throws}
@@ -165,12 +168,12 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     private final Utils utils;
 
     @Override
-    public Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
         // This method shouldn't be called because {@inheritDoc} tags inside
         // exception tags aren't dealt with individually. {@inheritDoc} tags
         // inside exception tags are collectively dealt with in
         // getAllBlockTagOutput.
-        throw newAssertionError(owner, tag, isFirstSentence);
+        throw newAssertionError(dst, tag, isFirstSentence);
     }
 
     @Override
@@ -193,6 +196,9 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             } else if (f instanceof Failure.UnsupportedTypeParameter e) {
                 var path = ch.getDocTreePath(e.tag().getExceptionName());
                 messages.warning(path, "doclet.throwsInheritDocUnsupported");
+            } else if (f instanceof Failure.NoOverrideFound e) {
+                var path = ch.getDocTreePath(e.inheritDoc);
+                messages.error(path, "doclet.inheritDocBadSupertype");
             } else if (f instanceof Failure.Undocumented e) {
                 messages.warning(ch.getDocTreePath(e.tag()), "doclet.inheritDocNoDoc", diagnosticDescriptionOf(e.exceptionElement));
             } else {
@@ -200,7 +206,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 //  readability and exhaustiveness when it's available
                 throw newAssertionError(f);
             }
-        } catch (DocFinder.NoOverriddenMethodsFound e) {
+        } catch (DocFinder.NoOverriddenMethodFound e) {
             // since {@inheritDoc} in @throws is processed by ThrowsTaglet (this taglet) rather than
             // InheritDocTaglet, we have to duplicate some of the behavior of the latter taglet
             String signature = utils.getSimpleName(holder)
@@ -217,7 +223,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                    Failure.Invalid,
                    Failure.Undocumented,
                    Failure.UnsupportedTypeParameter,
-                   DocFinder.NoOverriddenMethodsFound
+                   Failure.NoOverrideFound,
+            DocFinder.NoOverriddenMethodFound
     {
         ElementKind kind = holder.getKind();
         if (kind != ElementKind.METHOD && kind != ElementKind.CONSTRUCTOR) {
@@ -253,8 +260,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 Element exceptionElement = utils.typeUtils.asElement(exceptionType);
                 Map<ThrowsTree, ExecutableElement> r;
                 try {
-                    r = expandShallowly(exceptionElement, executable);
-                } catch (Failure | DocFinder.NoOverriddenMethodsFound e) {
+                    r = expandShallowly(exceptionElement, executable, Optional.empty());
+                } catch (Failure | DocFinder.NoOverriddenMethodFound e) {
                     // Ignore errors here because unlike @throws tags, the `throws` clause is implicit
                     // documentation inheritance. It triggers a best-effort attempt to inherit
                     // documentation. If there are errors in ancestors, they will likely be caught
@@ -304,7 +311,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                    Failure.Invalid,
                    Failure.Undocumented,
                    Failure.UnsupportedTypeParameter,
-                   DocFinder.NoOverriddenMethodsFound
+                   Failure.NoOverrideFound,
+            DocFinder.NoOverriddenMethodFound
     {
         outputAnExceptionTagDeeply(exceptionSection, originalExceptionElement, tag, holder, true, alreadyDocumentedExceptions, typeSubstitutions, writer);
     }
@@ -322,8 +330,8 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                    Failure.Invalid,
                    Failure.Undocumented,
                    Failure.UnsupportedTypeParameter,
-                   DocFinder.NoOverriddenMethodsFound
-    {
+                   Failure.NoOverrideFound,
+            DocFinder.NoOverriddenMethodFound {
         var originalExceptionType = originalExceptionElement.asType();
         var exceptionType = typeSubstitutions.getOrDefault(originalExceptionType, originalExceptionType); // FIXME: ugh..........
         alreadyDocumentedExceptions.add(exceptionType);
@@ -368,9 +376,34 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 Content beforeInheritDoc = writer.commentTagsToOutput(holder, description.subList(0, i));
                 exceptionSection.continueEntry(beforeInheritDoc);
             }
+
+            var inheritDoc = (InheritDocTree) tag.getDescription().get(i);
+            var ch = utils.getCommentHelper(holder);
+            // Sadly, almost exact duplicating code from InheritDocTaglet:
+            ExecutableElement src = null;
+            if (inheritDoc.getSupertype() != null) {
+                var supertype = (TypeElement) ch.getReferencedElement(inheritDoc.getSupertype());
+                if (supertype == null) {
+                    throw new Failure.NoOverrideFound(tag, holder, inheritDoc);
+                }
+                VisibleMemberTable visibleMemberTable = configuration.getVisibleMemberTable(supertype);
+                List<Element> methods = visibleMemberTable.getAllVisibleMembers(VisibleMemberTable.Kind.METHODS);
+                for (Element e : methods) {
+                    ExecutableElement m = (ExecutableElement) e;
+                    if (utils.elementUtils.overrides(holder, m, (TypeElement) holder.getEnclosingElement())) {
+                        assert !holder.equals(m) : Utils.diagnosticDescriptionOf(holder);
+                        src = m;
+                        break;
+                    }
+                }
+                if (src == null) {
+                    throw new Failure.NoOverrideFound(tag, holder, inheritDoc);
+                }
+            }
+
             Map<ThrowsTree, ExecutableElement> tags;
             try {
-                tags = expandShallowly(originalExceptionElement, holder);
+                tags = expandShallowly(originalExceptionElement, holder, Optional.ofNullable(src));
             } catch (Failure.UnsupportedTypeParameter e) {
                 // repack to fill in missing tag information
                 throw new Failure.UnsupportedTypeParameter(e.element, tag, holder);
@@ -516,6 +549,16 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
             @Override ThrowsTree tag() { return (ThrowsTree) super.tag(); }
         }
+
+        static final class NoOverrideFound extends Failure {
+
+            private final InheritDocTree inheritDoc;
+
+            public NoOverrideFound(DocTree tag, ExecutableElement holder, InheritDocTree inheritDoc) {
+                super(tag, holder);
+                this.inheritDoc = inheritDoc;
+            }
+        }
     }
 
     /*
@@ -526,12 +569,13 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      * are non-null.
      */
     private Map<ThrowsTree, ExecutableElement> expandShallowly(Element exceptionType,
-                                                               ExecutableElement holder)
+                                                               ExecutableElement holder,
+                                                               Optional<ExecutableElement> src)
             throws Failure.ExceptionTypeNotFound,
                    Failure.NotExceptionType,
                    Failure.Invalid,
                    Failure.UnsupportedTypeParameter,
-                   DocFinder.NoOverriddenMethodsFound
+            DocFinder.NoOverriddenMethodFound
     {
         ElementKind kind = exceptionType.getKind();
         DocFinder.Criterion<Map<ThrowsTree, ExecutableElement>, Failure> criterion;
@@ -562,7 +606,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         }
         Result<Map<ThrowsTree, ExecutableElement>> result;
         try {
-            result = utils.docFinder().trySearch(holder, criterion);
+            if (src.isPresent()) {
+                result = utils.docFinder().search(src.get(), criterion);
+            } else {
+                result = utils.docFinder().find(holder, criterion);
+            }
         } catch (Failure.NotExceptionType
                  | Failure.ExceptionTypeNotFound
                  | Failure.UnsupportedTypeParameter x) {

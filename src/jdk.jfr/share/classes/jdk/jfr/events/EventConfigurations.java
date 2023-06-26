@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,15 +24,15 @@
  */
 
 package jdk.jfr.events;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.JVMSupport;
 import jdk.jfr.internal.event.EventConfiguration;
 
 public final class EventConfigurations {
-    public static final EventConfiguration SOCKET_READ = Utils.getConfiguration(SocketReadEvent.class);
-    public static final EventConfiguration SOCKET_WRITE = Utils.getConfiguration(SocketWriteEvent.class);
-    public static final EventConfiguration FILE_READ = Utils.getConfiguration(FileReadEvent.class);
-    public static final EventConfiguration FILE_WRITE = Utils.getConfiguration(FileWriteEvent.class);
-    public static final EventConfiguration FILE_FORCE = Utils.getConfiguration(FileForceEvent.class);
-    public static final EventConfiguration ERROR_THROWN = Utils.getConfiguration(ErrorThrownEvent.class);
-    public static final EventConfiguration EXCEPTION_THROWN = Utils.getConfiguration(ExceptionThrownEvent.class);
+    public static final EventConfiguration SOCKET_READ = JVMSupport.getConfiguration(SocketReadEvent.class);
+    public static final EventConfiguration SOCKET_WRITE = JVMSupport.getConfiguration(SocketWriteEvent.class);
+    public static final EventConfiguration FILE_READ = JVMSupport.getConfiguration(FileReadEvent.class);
+    public static final EventConfiguration FILE_WRITE = JVMSupport.getConfiguration(FileWriteEvent.class);
+    public static final EventConfiguration FILE_FORCE = JVMSupport.getConfiguration(FileForceEvent.class);
+    public static final EventConfiguration ERROR_THROWN = JVMSupport.getConfiguration(ErrorThrownEvent.class);
+    public static final EventConfiguration EXCEPTION_THROWN = JVMSupport.getConfiguration(ExceptionThrownEvent.class);
 }

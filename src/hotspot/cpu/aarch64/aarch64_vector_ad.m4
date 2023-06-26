@@ -305,10 +305,6 @@ source %{
     }
   }
 
-  const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
-    return false;
-  }
-
   // Assert that the given node is not a variable shift.
   bool assert_not_var_shift(const Node* n) {
     assert(!n->as_ShiftV()->is_var_shift(), "illegal variable shift");
@@ -3822,6 +3818,30 @@ instruct vmask_truecount_sve(iRegINoSp dst, pReg src) %{
   ins_pipe(pipe_slow);
 %}
 
+// Combined rule for VectorMaskTrueCount (VectorStoreMask) when the vector element type is not T_BYTE.
+
+instruct vstoremask_truecount_neon(iRegINoSp dst, vReg src, immI_gt_1 size, vReg vtmp) %{
+  match(Set dst (VectorMaskTrueCount (VectorStoreMask src size)));
+  effect(TEMP vtmp);
+  format %{ "vstoremask_truecount_neon $dst, $src\t# KILL $vtmp" %}
+  ins_encode %{
+    // Input "src" is a vector mask represented as lanes with
+    // 0/-1 as element values.
+    uint esize = (uint)$size$$constant;
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
+    Assembler::SIMD_Arrangement arrangement = Assembler::esize2arrangement(esize,
+                                                                           /* isQ */ length_in_bytes == 16);
+    if (arrangement == __ T2D || arrangement == __ T2S) {
+      __ addpv($vtmp$$FloatRegister, arrangement, $src$$FloatRegister, $src$$FloatRegister);
+    } else {
+      __ addv($vtmp$$FloatRegister, arrangement, $src$$FloatRegister);
+    }
+    __ smov($dst$$Register, $vtmp$$FloatRegister, __ B, 0);
+    __ neg($dst$$Register, $dst$$Register);
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // first true
 
 instruct vmask_firsttrue_lt8e(iRegINoSp dst, vReg src, rFlagsReg cr) %{
@@ -4404,6 +4424,41 @@ instruct vtest_alltrue_sve(rFlagsReg cr, pReg src1, pReg src2, pReg ptmp) %{
   ins_pipe(pipe_slow);
 %}
 
+// ------------------------------ Vector shuffle -------------------------------
+
+instruct loadshuffle(vReg dst, vReg src) %{
+  match(Set dst (VectorLoadShuffle src));
+  format %{ "loadshuffle $dst, $src" %}
+  ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this);
+    if (bt == T_BYTE) {
+      if ($dst$$FloatRegister != $src$$FloatRegister) {
+        if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+          __ orr($dst$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
+                 $src$$FloatRegister, $src$$FloatRegister);
+        } else {
+          assert(UseSVE > 0, "must be sve");
+          __ sve_orr($dst$$FloatRegister, $src$$FloatRegister, $src$$FloatRegister);
+        }
+      }
+    } else {
+      if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+        // 4S/8S, 4I, 4F
+        __ uxtl($dst$$FloatRegister, __ T8H, $src$$FloatRegister, __ T8B);
+        if (type2aelembytes(bt) == 4) {
+          __ uxtl($dst$$FloatRegister, __ T4S, $dst$$FloatRegister, __ T4H);
+        }
+      } else {
+        assert(UseSVE > 0, "must be sve");
+        __ sve_vector_extend($dst$$FloatRegister,  __ elemType_to_regVariant(bt),
+                             $src$$FloatRegister, __ B);
+      }
+    }
+  %}
+  ins_pipe(pipe_slow);
+%}
+
 // ------------------------------ Vector rearrange -----------------------------
 
 // Here is an example that rearranges a NEON vector with 4 ints:
@@ -4426,7 +4481,6 @@ instruct vtest_alltrue_sve(rFlagsReg cr, pReg src1, pReg src2, pReg ptmp) %{
 //   need to lookup 2/4 bytes as a group. For VectorRearrange long, we use bsl
 //   to implement rearrange.
 
-// Maybe move the shuffle preparation to VectorLoadShuffle
 instruct rearrange_HS_neon(vReg dst, vReg src, vReg shuffle, vReg tmp1, vReg tmp2) %{
   predicate(UseSVE == 0 &&
             (Matcher::vector_element_basic_type(n) == T_SHORT ||
