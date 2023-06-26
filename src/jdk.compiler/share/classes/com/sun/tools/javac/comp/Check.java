@@ -5456,15 +5456,6 @@ public class Check {
             return;
         }
 
-        private void checkExternalizableRecord(JCClassDecl tree, Element enclosing, MethodSymbol method) {
-            // If the enclosing class is externalizable, warn for the method
-            if (isExternalizable((Type)enclosing.asType())) {
-                log.warning(LintCategory.SERIAL, TreeInfo.diagnosticPositionFor(method, tree),
-                            Warnings.IneffectualExternalizableMethodRecord(method.getSimpleName().toString()));
-            }
-            return;
-        }
-
         private void checkExceptions(JCClassDecl tree,
                                      Element enclosing,
                                      MethodSymbol method,
