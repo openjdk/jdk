@@ -224,7 +224,7 @@ public:
       }
 
       o->oop_iterate(&isLive);
-      if (_hr->obj_in_unparsable_area(o, _hr->parsable_bottom())) {
+      if (!_hr->is_in_parsable_area(o)) {
         size_t obj_size = o->size();
         _live_bytes += (obj_size * HeapWordSize);
       }
@@ -433,6 +433,8 @@ void G1HeapVerifier::verify_region_sets() {
   VerifyRegionListsClosure cl(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
   _g1h->heap_region_iterate(&cl);
   cl.verify_counts(&_g1h->_old_set, &_g1h->_humongous_set, &_g1h->_hrm);
+
+  _g1h->collection_set()->candidates()->verify();
 }
 
 void G1HeapVerifier::prepare_for_verify() {

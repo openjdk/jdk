@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -39,7 +39,7 @@ import org.xml.sax.SAXNotSupportedException;
 /**
  * @author Rajiv Mordani
  * @author Edwin Goei
- * @LastModified: May 2021
+ * @LastModified: Mar 2023
  */
 public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
     /** These are DocumentBuilderFactory attributes not DOM attributes */
@@ -148,7 +148,7 @@ public class DocumentBuilderFactoryImpl extends DocumentBuilderFactory {
         //check if the property is managed by security manager
         String pName;
         if ((pName = fSecurityManager.find(name)) != null) {
-            return attributes.get(pName);
+            return fSecurityManager.getLimitAsString(pName);
         } else if ((pName = fSecurityPropertyMgr.find(name)) != null) {
             return attributes.get(pName);
         }

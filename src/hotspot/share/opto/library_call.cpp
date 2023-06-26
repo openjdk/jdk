@@ -698,8 +698,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_nary_operation(3);
   case vmIntrinsics::_VectorFromBitsCoerced:
     return inline_vector_frombits_coerced();
+  case vmIntrinsics::_VectorShuffleIota:
+    return inline_vector_shuffle_iota();
   case vmIntrinsics::_VectorMaskOp:
     return inline_vector_mask_operation();
+  case vmIntrinsics::_VectorShuffleToVector:
+    return inline_vector_shuffle_to_vector();
   case vmIntrinsics::_VectorLoadOp:
     return inline_vector_mem_operation(/*is_store=*/false);
   case vmIntrinsics::_VectorLoadMaskedOp:
@@ -4237,7 +4241,7 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
   // Get the Method* out of the appropriate vtable entry.
   int entry_offset  = in_bytes(Klass::vtable_start_offset()) +
                      vtable_index*vtableEntry::size_in_bytes() +
-                     vtableEntry::method_offset_in_bytes();
+                     in_bytes(vtableEntry::method_offset());
   Node* entry_addr  = basic_plus_adr(obj_klass, entry_offset);
   Node* target_call = make_load(nullptr, entry_addr, TypePtr::NOTNULL, T_ADDRESS, MemNode::unordered);
 

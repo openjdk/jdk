@@ -162,7 +162,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
   // No offset when dealing with UTC
   time_t UTC_to_local = 0;
   if (!utc) {
-#if defined(_ALLBSD_SOURCE) || defined(_GNU_SOURCE)
+#if (defined(_ALLBSD_SOURCE) || defined(_GNU_SOURCE)) && !defined(AIX)
     UTC_to_local = -(time_struct.tm_gmtoff);
 #elif defined(_WINDOWS)
     long zone;
@@ -878,8 +878,8 @@ bool os::print_function_and_library_name(outputStream* st,
   // this as a function descriptor for the reader (see below).
   if (!have_function_name && os::is_readable_pointer(addr)) {
     address addr2 = (address)os::resolve_function_descriptor(addr);
-    if (have_function_name = is_function_descriptor =
-        dll_address_to_function_name(addr2, p, buflen, &offset, demangle)) {
+    if ((have_function_name = is_function_descriptor =
+        dll_address_to_function_name(addr2, p, buflen, &offset, demangle))) {
       addr = addr2;
     }
   }
@@ -1009,6 +1009,11 @@ void os::print_environment_variables(outputStream* st, const char** env_list) {
   }
 }
 
+void os::print_register_info(outputStream* st, const void* context) {
+  int continuation = 0;
+  print_register_info(st, context, continuation);
+}
+
 void os::print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   // cpu
   st->print("CPU:");
@@ -1123,7 +1128,7 @@ void os::print_location(outputStream* st, intptr_t x, bool verbose) {
   address addr = (address)x;
   // Handle null first, so later checks don't need to protect against it.
   if (addr == nullptr) {
-    st->print_cr("0x0 is nullptr");
+    st->print_cr("0x0 is null");
     return;
   }
 
@@ -1377,6 +1382,22 @@ bool os::file_exists(const char* filename) {
   }
   return os::stat(filename, &statbuf) == 0;
 }
+
+bool os::write(int fd, const void *buf, size_t nBytes) {
+  ssize_t res;
+
+  while (nBytes > 0) {
+    res = pd_write(fd, buf, nBytes);
+    if (res == OS_ERR) {
+      return false;
+    }
+    buf = (void *)((char *)buf + nBytes);
+    nBytes -= res;
+  }
+
+  return true;
+}
+
 
 // Splits a path, based on its separator, the number of
 // elements is returned back in "elements".
@@ -1634,43 +1655,43 @@ const char* os::errno_name(int e) {
 void os::trace_page_sizes(const char* str,
                           const size_t region_min_size,
                           const size_t region_max_size,
-                          const size_t page_size,
                           const char* base,
-                          const size_t size) {
+                          const size_t size,
+                          const size_t page_size) {
 
   log_info(pagesize)("%s: "
                      " min=" SIZE_FORMAT "%s"
                      " max=" SIZE_FORMAT "%s"
                      " base=" PTR_FORMAT
-                     " page_size=" SIZE_FORMAT "%s"
-                     " size=" SIZE_FORMAT "%s",
+                     " size=" SIZE_FORMAT "%s"
+                     " page_size=" SIZE_FORMAT "%s",
                      str,
                      trace_page_size_params(region_min_size),
                      trace_page_size_params(region_max_size),
                      p2i(base),
-                     trace_page_size_params(page_size),
-                     trace_page_size_params(size));
+                     trace_page_size_params(size),
+                     trace_page_size_params(page_size));
 }
 
 void os::trace_page_sizes_for_requested_size(const char* str,
                                              const size_t requested_size,
-                                             const size_t page_size,
-                                             const size_t alignment,
+                                             const size_t requested_page_size,
                                              const char* base,
-                                             const size_t size) {
+                                             const size_t size,
+                                             const size_t page_size) {
 
   log_info(pagesize)("%s:"
                      " req_size=" SIZE_FORMAT "%s"
+                     " req_page_size=" SIZE_FORMAT "%s"
                      " base=" PTR_FORMAT
-                     " page_size=" SIZE_FORMAT "%s"
-                     " alignment=" SIZE_FORMAT "%s"
-                     " size=" SIZE_FORMAT "%s",
+                     " size=" SIZE_FORMAT "%s"
+                     " page_size=" SIZE_FORMAT "%s",
                      str,
                      trace_page_size_params(requested_size),
+                     trace_page_size_params(requested_page_size),
                      p2i(base),
-                     trace_page_size_params(page_size),
-                     trace_page_size_params(alignment),
-                     trace_page_size_params(size));
+                     trace_page_size_params(size),
+                     trace_page_size_params(page_size));
 }
 
 

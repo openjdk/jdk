@@ -1824,7 +1824,7 @@ bool DwarfFile::MarkedDwarfFileReader::read_sleb128(int64_t* result, const int8_
   return read_leb128((uint64_t*)result, check_size, true);
 }
 
-// If result is a nullptr, we do not care about the content of the string being read.
+// If result is a null, we do not care about the content of the string being read.
 bool DwarfFile::MarkedDwarfFileReader::read_string(char* result, const size_t result_len) {
   char first_char;
   if (!read_non_null_char(&first_char)) {

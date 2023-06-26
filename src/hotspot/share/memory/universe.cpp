@@ -114,6 +114,7 @@ enum OutOfMemoryInstance { _oom_java_heap,
                            _oom_count };
 
 OopHandle Universe::_out_of_memory_errors;
+OopHandle Universe:: _class_init_stack_overflow_error;
 OopHandle Universe::_delayed_stack_overflow_error_message;
 OopHandle Universe::_preallocated_out_of_memory_error_array;
 volatile jint Universe::_preallocated_out_of_memory_error_avail_count = 0;
@@ -261,25 +262,25 @@ void Universe::serialize(SerializeClosure* f) {
 
 #if INCLUDE_CDS_JAVA_HEAP
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
-    f->do_u4((u4*)&_archived_basic_type_mirror_indices[i]);
+    f->do_int(&_archived_basic_type_mirror_indices[i]);
     // if f->reading(): We can't call HeapShared::get_root() yet, as the heap
     // contents may need to be relocated. _basic_type_mirrors[i] will be
     // updated later in Universe::update_archived_basic_type_mirrors().
   }
 #endif
 
-  f->do_ptr((void**)&_fillerArrayKlassObj);
+  f->do_ptr(&_fillerArrayKlassObj);
   for (int i = 0; i < T_LONG+1; i++) {
-    f->do_ptr((void**)&_typeArrayKlassObjs[i]);
+    f->do_ptr(&_typeArrayKlassObjs[i]);
   }
 
-  f->do_ptr((void**)&_objectArrayKlassObj);
-  f->do_ptr((void**)&_the_array_interfaces_array);
-  f->do_ptr((void**)&_the_empty_int_array);
-  f->do_ptr((void**)&_the_empty_short_array);
-  f->do_ptr((void**)&_the_empty_method_array);
-  f->do_ptr((void**)&_the_empty_klass_array);
-  f->do_ptr((void**)&_the_empty_instance_klass_array);
+  f->do_ptr(&_objectArrayKlassObj);
+  f->do_ptr(&_the_array_interfaces_array);
+  f->do_ptr(&_the_empty_int_array);
+  f->do_ptr(&_the_empty_short_array);
+  f->do_ptr(&_the_empty_method_array);
+  f->do_ptr(&_the_empty_klass_array);
+  f->do_ptr(&_the_empty_instance_klass_array);
   _finalizer_register_cache->serialize(f);
   _loader_addClass_cache->serialize(f);
   _throw_illegal_access_error_cache->serialize(f);
@@ -466,7 +467,7 @@ void Universe::initialize_basic_type_mirrors(TRAPS) {
       for (int i = T_BOOLEAN; i < T_VOID+1; i++) {
         if (!is_reference_type((BasicType)i)) {
           oop m = _basic_type_mirrors[i].resolve();
-          assert(m != nullptr, "archived mirrors should not be nullptr");
+          assert(m != nullptr, "archived mirrors should not be null");
         }
       }
     } else
@@ -610,6 +611,9 @@ oop Universe::out_of_memory_error_realloc_objects() {
 
 // Throw default _out_of_memory_error_retry object as it will never propagate out of the VM
 oop Universe::out_of_memory_error_retry()              { return out_of_memory_errors()->obj_at(_oom_retry);  }
+
+oop Universe::class_init_out_of_memory_error()         { return out_of_memory_errors()->obj_at(_oom_java_heap); }
+oop Universe::class_init_stack_overflow_error()        { return _class_init_stack_overflow_error.resolve(); }
 oop Universe::delayed_stack_overflow_error_message()   { return _delayed_stack_overflow_error_message.resolve(); }
 
 
@@ -1028,6 +1032,11 @@ bool universe_post_init() {
   Handle msg = java_lang_String::create_from_str("/ by zero", CHECK_false);
   java_lang_Throwable::set_message(Universe::arithmetic_exception_instance(), msg());
 
+  // Setup preallocated StackOverflowError for use with class initialization failure
+  k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_StackOverflowError(), true, CHECK_false);
+  instance = InstanceKlass::cast(k)->allocate_instance(CHECK_false);
+  Universe::_class_init_stack_overflow_error = OopHandle(Universe::vm_global(), instance);
+
   Universe::initialize_known_methods(CHECK_false);
 
   // This needs to be done before the first scavenge/gc, since
@@ -1216,6 +1225,11 @@ void Universe::calculate_verify_data(HeapWord* low_boundary, HeapWord* high_boun
   _verify_oop_bits = bits;
 }
 
+void Universe::set_verify_data(uintptr_t mask, uintptr_t bits) {
+  _verify_oop_mask = mask;
+  _verify_oop_bits = bits;
+}
+
 // Oop verification (see MacroAssembler::verify_oop)
 
 uintptr_t Universe::verify_oop_mask() {
@@ -1261,6 +1275,10 @@ Method* LatestMethodCache::get_method() {
   Method* m = ik->method_with_idnum(method_idnum());
   assert(m != nullptr, "sanity check");
   return m;
+}
+
+void LatestMethodCache::serialize(SerializeClosure* f) {
+  f->do_ptr(&_klass);
 }
 
 #ifdef ASSERT

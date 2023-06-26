@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,11 @@
  */
 
 #include "precompiled.hpp"
+#include "gc/z/zGeneration.inline.hpp"
 #include "gc/z/zHeap.inline.hpp"
 #include "gc/z/zLiveMap.inline.hpp"
 #include "gc/z/zStat.hpp"
-#include "gc/z/zThread.inline.hpp"
+#include "gc/z/zUtils.hpp"
 #include "logging/log.hpp"
 #include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
@@ -39,8 +40,8 @@ static size_t bitmap_size(uint32_t size, size_t nsegments) {
   return MAX2<size_t>(size, nsegments) * 2;
 }
 
-ZLiveMap::ZLiveMap(uint32_t size) :
-    _seqnum(0),
+ZLiveMap::ZLiveMap(uint32_t size)
+  : _seqnum(0),
     _live_objects(0),
     _live_bytes(0),
     _segment_live_bits(0),
@@ -48,14 +49,15 @@ ZLiveMap::ZLiveMap(uint32_t size) :
     _bitmap(bitmap_size(size, nsegments)),
     _segment_shift(exact_log2(segment_size())) {}
 
-void ZLiveMap::reset(size_t index) {
+void ZLiveMap::reset(ZGenerationId id) {
+  ZGeneration* const generation = ZGeneration::generation(id);
   const uint32_t seqnum_initializing = (uint32_t)-1;
   bool contention = false;
 
   // Multiple threads can enter here, make sure only one of them
   // resets the marking information while the others busy wait.
   for (uint32_t seqnum = Atomic::load_acquire(&_seqnum);
-       seqnum != ZGlobalSeqNum;
+       seqnum != generation->seqnum();
        seqnum = Atomic::load_acquire(&_seqnum)) {
     if ((seqnum != seqnum_initializing) &&
         (Atomic::cmpxchg(&_seqnum, seqnum, seqnum_initializing) == seqnum)) {
@@ -73,7 +75,7 @@ void ZLiveMap::reset(size_t index) {
       // before the update of the page seqnum, such that when the
       // up-to-date seqnum is load acquired, the bit maps will not
       // contain stale information.
-      Atomic::release_store(&_seqnum, ZGlobalSeqNum);
+      Atomic::release_store(&_seqnum, generation->seqnum());
       break;
     }
 
@@ -83,8 +85,8 @@ void ZLiveMap::reset(size_t index) {
       ZStatInc(ZCounterMarkSeqNumResetContention);
       contention = true;
 
-      log_trace(gc)("Mark seqnum reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", bit: " SIZE_FORMAT,
-                    ZThread::id(), ZThread::name(), p2i(this), index);
+      log_trace(gc)("Mark seqnum reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT,
+                    p2i(Thread::current()), ZUtils::thread_name(), p2i(this));
     }
   }
 }
@@ -102,7 +104,7 @@ void ZLiveMap::reset_segment(BitMap::idx_t segment) {
         contention = true;
 
         log_trace(gc)("Mark segment reset contention, thread: " PTR_FORMAT " (%s), map: " PTR_FORMAT ", segment: " SIZE_FORMAT,
-                      ZThread::id(), ZThread::name(), p2i(this), segment);
+                      p2i(Thread::current()), ZUtils::thread_name(), p2i(this), segment);
       }
     }
 

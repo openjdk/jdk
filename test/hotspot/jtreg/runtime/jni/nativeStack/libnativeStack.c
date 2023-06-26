@@ -109,10 +109,17 @@ Java_TestNativeStack_triggerJNIStackTrace
 
   warning = warn;
 
-  if ((res = pthread_create(&thread, NULL, thread_start, NULL)) != 0) {
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  size_t stack_size = 0x100000;
+  pthread_attr_setstacksize(&attr, stack_size);
+
+  if ((res = pthread_create(&thread, &attr, thread_start, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_create failed: %s (%d)\n", strerror(res), res);
     exit(1);
   }
+
+  pthread_attr_destroy(&attr);
 
   if ((res = pthread_join(thread, NULL)) != 0) {
     fprintf(stderr, "TEST ERROR: pthread_join failed: %s (%d)\n", strerror(res), res);

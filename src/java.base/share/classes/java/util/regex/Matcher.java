@@ -274,30 +274,26 @@ public final class Matcher implements MatchResult {
      * @since 1.5
      */
     public MatchResult toMatchResult() {
-        return toMatchResult(text.toString());
-    }
-
-    private MatchResult toMatchResult(String text) {
-        return new ImmutableMatchResult(this.first,
-                                        this.last,
-                                        groupCount(),
-                                        this.groups.clone(),
-                                        text,
-                                        namedGroups());
+        String capturedText = hasMatch()
+                ? text.subSequence(first, last).toString()
+                : null;
+        return new ImmutableMatchResult(first, last, groupCount(),
+                groups.clone(), capturedText,
+                namedGroups()
+        );
     }
 
     private static class ImmutableMatchResult implements MatchResult {
         private final int first;
         private final int last;
-        private final int[] groups;
         private final int groupCount;
+        private final int[] groups;
         private final String text;
         private final Map<String, Integer> namedGroups;
 
         ImmutableMatchResult(int first, int last, int groupCount,
                              int[] groups, String text,
-                             Map<String, Integer> namedGroups)
-        {
+                             Map<String, Integer> namedGroups) {
             this.first = first;
             this.last = last;
             this.groupCount = groupCount;
@@ -349,7 +345,7 @@ public final class Matcher implements MatchResult {
             checkGroup(group);
             if ((groups[group * 2] == -1) || (groups[group * 2 + 1] == -1))
                 return null;
-            return text.subSequence(groups[group * 2], groups[group * 2 + 1]).toString();
+            return text.substring(groups[group * 2] - first, groups[group * 2 + 1] - first);
         }
 
         @Override
@@ -370,7 +366,6 @@ public final class Matcher implements MatchResult {
         private void checkMatch() {
             if (!hasMatch())
                 throw new IllegalStateException("No match found");
-
         }
 
     }
@@ -395,6 +390,7 @@ public final class Matcher implements MatchResult {
         if (newPattern == null)
             throw new IllegalArgumentException("Pattern cannot be null");
         parentPattern = newPattern;
+        namedGroups = null;
 
         // Reallocate state storage
         int parentGroupCount = Math.max(newPattern.capturingGroupCount, 10);
@@ -1075,10 +1071,11 @@ public final class Matcher implements MatchResult {
                             throw new IllegalArgumentException(
                                     "capturing group name {" + gname +
                                             "} starts with digit character");
-                        if (!namedGroups().containsKey(gname))
+                        Integer number = namedGroups().get(gname);
+                        if (number == null)
                             throw new IllegalArgumentException(
                                     "No group with name {" + gname + "}");
-                        refNum = namedGroups().get(gname);
+                        refNum = number;
                         cursor++;
                     } else {
                         // The first number is always a group
@@ -1318,9 +1315,6 @@ public final class Matcher implements MatchResult {
             // State for concurrent modification checking
             // -1 for uninitialized
             int expectedCount = -1;
-            // The input sequence as a string, set once only after first find
-            // Avoids repeated conversion from CharSequence for each match
-            String textAsString;
 
             @Override
             public MatchResult next() {
@@ -1331,7 +1325,7 @@ public final class Matcher implements MatchResult {
                     throw new NoSuchElementException();
 
                 state = -1;
-                return toMatchResult(textAsString);
+                return toMatchResult();
             }
 
             @Override
@@ -1346,9 +1340,6 @@ public final class Matcher implements MatchResult {
                     return true;
 
                 boolean found = find();
-                // Capture the input sequence as a string on first find
-                if (found && state < 0)
-                    textAsString = text.toString();
                 state = found ? 1 : 0;
                 expectedCount = modCount;
                 return found;
@@ -1371,12 +1362,9 @@ public final class Matcher implements MatchResult {
                 if (s < 0 && !find())
                     return;
 
-                // Capture the input sequence as a string on first find
-                textAsString = text.toString();
-
                 do {
                     int ec = modCount;
-                    action.accept(toMatchResult(textAsString));
+                    action.accept(toMatchResult());
                     if (ec != modCount)
                         throw new ConcurrentModificationException();
                 } while (find());
@@ -1819,9 +1807,10 @@ public final class Matcher implements MatchResult {
     int getMatchedGroupIndex(String name) {
         Objects.requireNonNull(name, "Group name");
         checkMatch();
-        if (!namedGroups().containsKey(name))
+        Integer number = namedGroups().get(name);
+        if (number == null)
             throw new IllegalArgumentException("No group with name <" + name + ">");
-        return namedGroups().get(name);
+        return number;
     }
 
     private void checkGroup(int group) {
@@ -1839,7 +1828,7 @@ public final class Matcher implements MatchResult {
      *
      * @return {@inheritDoc}
      *
-     * @since {@inheritDoc}
+     * @since 20
      */
     @Override
     public Map<String, Integer> namedGroups() {
@@ -1854,7 +1843,7 @@ public final class Matcher implements MatchResult {
      *
      * @return {@inheritDoc}
      *
-     * @since {@inheritDoc}
+     * @since 20
      */
     @Override
     public boolean hasMatch() {

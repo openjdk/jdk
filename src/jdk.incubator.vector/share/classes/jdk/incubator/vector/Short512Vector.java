@@ -141,9 +141,24 @@ final class Short512Vector extends ShortVector {
     @ForceInline
     Short512Shuffle iotaShuffle() { return Short512Shuffle.IOTA; }
 
+    @ForceInline
+    Short512Shuffle iotaShuffle(int start, int step, boolean wrap) {
+      if (wrap) {
+        return (Short512Shuffle)VectorSupport.shuffleIota(ETYPE, Short512Shuffle.class, VSPECIES, VLENGTH, start, step, 1,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (VectorIntrinsics.wrapToRange(i*lstep + lstart, l))));
+      } else {
+        return (Short512Shuffle)VectorSupport.shuffleIota(ETYPE, Short512Shuffle.class, VSPECIES, VLENGTH, start, step, 0,
+                (l, lstart, lstep, s) -> s.shuffleFromOp(i -> (i*lstep + lstart)));
+      }
+    }
+
     @Override
     @ForceInline
-    Short512Shuffle shuffleFromArray(int[] indices, int i) { return new Short512Shuffle(indices, i); }
+    Short512Shuffle shuffleFromBytes(byte[] reorder) { return new Short512Shuffle(reorder); }
+
+    @Override
+    @ForceInline
+    Short512Shuffle shuffleFromArray(int[] indexes, int i) { return new Short512Shuffle(indexes, i); }
 
     @Override
     @ForceInline
@@ -342,11 +357,9 @@ final class Short512Vector extends ShortVector {
         return (long) super.reduceLanesTemplate(op, Short512Mask.class, (Short512Mask) m);  // specialized
     }
 
-    @Override
     @ForceInline
-    public final
-    <F> VectorShuffle<F> toShuffle(AbstractSpecies<F> dsp) {
-        return super.toShuffleTemplate(dsp);
+    public VectorShuffle<Short> toShuffle() {
+        return super.toShuffleTemplate(Short512Shuffle.class); // specialize
     }
 
     // Specialized unary testing
@@ -823,26 +836,23 @@ final class Short512Vector extends ShortVector {
         static final int VLENGTH = VSPECIES.laneCount();    // used by the JVM
         static final Class<Short> ETYPE = short.class; // used by the JVM
 
-        Short512Shuffle(short[] indices) {
-            super(indices);
-            assert(VLENGTH == indices.length);
-            assert(indicesInRange(indices));
+        Short512Shuffle(byte[] reorder) {
+            super(VLENGTH, reorder);
         }
 
-        Short512Shuffle(int[] indices, int i) {
-            this(prepare(indices, i));
+        public Short512Shuffle(int[] reorder) {
+            super(VLENGTH, reorder);
         }
 
-        Short512Shuffle(IntUnaryOperator fn) {
-            this(prepare(fn));
+        public Short512Shuffle(int[] reorder, int i) {
+            super(VLENGTH, reorder, i);
         }
 
-        short[] indices() {
-            return (short[])getPayload();
+        public Short512Shuffle(IntUnaryOperator fn) {
+            super(VLENGTH, fn);
         }
 
         @Override
-        @ForceInline
         public ShortSpecies vspecies() {
             return VSPECIES;
         }
@@ -850,77 +860,40 @@ final class Short512Vector extends ShortVector {
         static {
             // There must be enough bits in the shuffle lanes to encode
             // VLENGTH valid indexes and VLENGTH exceptional ones.
-            assert(VLENGTH < Short.MAX_VALUE);
-            assert(Short.MIN_VALUE <= -VLENGTH);
+            assert(VLENGTH < Byte.MAX_VALUE);
+            assert(Byte.MIN_VALUE <= -VLENGTH);
         }
         static final Short512Shuffle IOTA = new Short512Shuffle(IDENTITY);
 
         @Override
         @ForceInline
-        Short512Vector toBitsVector() {
-            return (Short512Vector) super.toBitsVectorTemplate();
+        public Short512Vector toVector() {
+            return VectorSupport.shuffleToVector(VCLASS, ETYPE, Short512Shuffle.class, this, VLENGTH,
+                                                    (s) -> ((Short512Vector)(((AbstractShuffle<Short>)(s)).toVectorTemplate())));
         }
 
         @Override
         @ForceInline
-        ShortVector toBitsVector0() {
-            return Short512Vector.VSPECIES.dummyVector().vectorFactory(indices());
+        public <F> VectorShuffle<F> cast(VectorSpecies<F> s) {
+            AbstractSpecies<F> species = (AbstractSpecies<F>) s;
+            if (length() != species.laneCount())
+                throw new IllegalArgumentException("VectorShuffle length and species length differ");
+            int[] shuffleArray = toArray();
+            return s.shuffleFromArray(shuffleArray, 0).check(s);
         }
 
-        @Override
         @ForceInline
-        public int laneSource(int i) {
-            return (int)toBitsVector().lane(i);
-        }
-
         @Override
-        @ForceInline
-        public void intoArray(int[] a, int offset) {
-            VectorSpecies<Integer> species = IntVector.SPECIES_512;
-            Vector<Short> v = toBitsVector();
-            v.convertShape(VectorOperators.S2I, species, 0)
-                    .reinterpretAsInts()
-                    .intoArray(a, offset);
-            v.convertShape(VectorOperators.S2I, species, 1)
-                    .reinterpretAsInts()
-                    .intoArray(a, offset + species.length());
-        }
-
-        private static short[] prepare(int[] indices, int offset) {
-            short[] a = new short[VLENGTH];
-            for (int i = 0; i < VLENGTH; i++) {
-                int si = indices[offset + i];
-                si = partiallyWrapIndex(si, VLENGTH);
-                a[i] = (short)si;
+        public Short512Shuffle rearrange(VectorShuffle<Short> shuffle) {
+            Short512Shuffle s = (Short512Shuffle) shuffle;
+            byte[] reorder1 = reorder();
+            byte[] reorder2 = s.reorder();
+            byte[] r = new byte[reorder1.length];
+            for (int i = 0; i < reorder1.length; i++) {
+                int ssi = reorder2[i];
+                r[i] = reorder1[ssi];  // throws on exceptional index
             }
-            return a;
-        }
-
-        private static short[] prepare(IntUnaryOperator f) {
-            short[] a = new short[VLENGTH];
-            for (int i = 0; i < VLENGTH; i++) {
-                int si = f.applyAsInt(i);
-                si = partiallyWrapIndex(si, VLENGTH);
-                a[i] = (short)si;
-            }
-            return a;
-        }
-
-        private static boolean indicesInRange(short[] indices) {
-            int length = indices.length;
-            for (short si : indices) {
-                if (si >= (short)length || si < (short)(-length)) {
-                    boolean assertsEnabled = false;
-                    assert(assertsEnabled = true);
-                    if (assertsEnabled) {
-                        String msg = ("index "+si+"out of range ["+length+"] in "+
-                                  java.util.Arrays.toString(indices));
-                        throw new AssertionError(msg);
-                    }
-                    return false;
-                }
-            }
-            return true;
+            return new Short512Shuffle(r);
         }
     }
 

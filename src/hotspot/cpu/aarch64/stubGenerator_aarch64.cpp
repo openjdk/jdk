@@ -3332,9 +3332,36 @@ class StubGenerator: public StubCodeGenerator {
      return start;
   }
 
+  class Cached64Bytes {
+  private:
+    MacroAssembler *_masm;
+    Register _regs[8];
+
+  public:
+    Cached64Bytes(MacroAssembler *masm, RegSet rs): _masm(masm) {
+      assert(rs.size() == 8, "%u registers are used to cache 16 4-byte data", rs.size());
+      auto it = rs.begin();
+      for (auto &r: _regs) {
+        r = *it;
+        ++it;
+      }
+    }
+
+    void gen_loads(Register base) {
+      for (int i = 0; i < 8; i += 2) {
+        __ ldp(_regs[i], _regs[i + 1], Address(base, 8 * i));
+      }
+    }
+
+    // Generate code extracting i-th unsigned word (4 bytes) from cached 64 bytes.
+    void extract_u32(Register dest, int i) {
+      __ ubfx(dest, _regs[i / 2], 32 * (i % 2), 32);
+    }
+  };
+
   // Utility routines for md5.
   // Clobbers r10 and r11.
-  void md5_FF(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_FF(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
@@ -3343,7 +3370,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch2, t);
     __ andw(rscratch3, rscratch3, r2);
     __ addw(rscratch4, r1, rscratch2);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch3, r4);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3351,14 +3378,14 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(r1, rscratch2, r2);
   }
 
-  void md5_GG(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_GG(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
 
     __ andw(rscratch3, r2, r4);
     __ bicw(rscratch4, r3, r4);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ movw(rscratch2, t);
     __ orrw(rscratch3, rscratch3, rscratch4);
     __ addw(rscratch4, r1, rscratch2);
@@ -3368,7 +3395,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(r1, rscratch2, r2);
   }
 
-  void md5_HH(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_HH(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
@@ -3376,7 +3403,7 @@ class StubGenerator: public StubCodeGenerator {
     __ eorw(rscratch3, r3, r4);
     __ movw(rscratch2, t);
     __ addw(rscratch4, r1, rscratch2);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch3, r2);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3384,7 +3411,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(r1, rscratch2, r2);
   }
 
-  void md5_II(Register buf, Register r1, Register r2, Register r3, Register r4,
+  void md5_II(Cached64Bytes& reg_cache, Register r1, Register r2, Register r3, Register r4,
               int k, int s, int t) {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
@@ -3392,7 +3419,7 @@ class StubGenerator: public StubCodeGenerator {
     __ movw(rscratch3, t);
     __ ornw(rscratch2, r2, r4);
     __ addw(rscratch4, r1, rscratch3);
-    __ ldrw(rscratch1, Address(buf, k*4));
+    reg_cache.extract_u32(rscratch1, k);
     __ eorw(rscratch3, rscratch2, r3);
     __ addw(rscratch4, rscratch4, rscratch1);
     __ addw(rscratch3, rscratch3, rscratch4);
@@ -3424,103 +3451,104 @@ class StubGenerator: public StubCodeGenerator {
     Register rscratch3 = r10;
     Register rscratch4 = r11;
 
+    Register state_regs[2] = { r12, r13 };
+    RegSet saved_regs = RegSet::range(r16, r22) - r18_tls;
+    Cached64Bytes reg_cache(_masm, RegSet::of(r14, r15) + saved_regs);  // using 8 registers
+
+    __ push(saved_regs, sp);
+
+    __ ldp(state_regs[0], state_regs[1], Address(state));
+    __ ubfx(a, state_regs[0],  0, 32);
+    __ ubfx(b, state_regs[0], 32, 32);
+    __ ubfx(c, state_regs[1],  0, 32);
+    __ ubfx(d, state_regs[1], 32, 32);
+
     Label md5_loop;
     __ BIND(md5_loop);
 
-    // Save hash values for addition after rounds
-    __ ldrw(a, Address(state,  0));
-    __ ldrw(b, Address(state,  4));
-    __ ldrw(c, Address(state,  8));
-    __ ldrw(d, Address(state, 12));
+    reg_cache.gen_loads(buf);
 
     // Round 1
-    md5_FF(buf, a, b, c, d,  0,  7, 0xd76aa478);
-    md5_FF(buf, d, a, b, c,  1, 12, 0xe8c7b756);
-    md5_FF(buf, c, d, a, b,  2, 17, 0x242070db);
-    md5_FF(buf, b, c, d, a,  3, 22, 0xc1bdceee);
-    md5_FF(buf, a, b, c, d,  4,  7, 0xf57c0faf);
-    md5_FF(buf, d, a, b, c,  5, 12, 0x4787c62a);
-    md5_FF(buf, c, d, a, b,  6, 17, 0xa8304613);
-    md5_FF(buf, b, c, d, a,  7, 22, 0xfd469501);
-    md5_FF(buf, a, b, c, d,  8,  7, 0x698098d8);
-    md5_FF(buf, d, a, b, c,  9, 12, 0x8b44f7af);
-    md5_FF(buf, c, d, a, b, 10, 17, 0xffff5bb1);
-    md5_FF(buf, b, c, d, a, 11, 22, 0x895cd7be);
-    md5_FF(buf, a, b, c, d, 12,  7, 0x6b901122);
-    md5_FF(buf, d, a, b, c, 13, 12, 0xfd987193);
-    md5_FF(buf, c, d, a, b, 14, 17, 0xa679438e);
-    md5_FF(buf, b, c, d, a, 15, 22, 0x49b40821);
+    md5_FF(reg_cache, a, b, c, d,  0,  7, 0xd76aa478);
+    md5_FF(reg_cache, d, a, b, c,  1, 12, 0xe8c7b756);
+    md5_FF(reg_cache, c, d, a, b,  2, 17, 0x242070db);
+    md5_FF(reg_cache, b, c, d, a,  3, 22, 0xc1bdceee);
+    md5_FF(reg_cache, a, b, c, d,  4,  7, 0xf57c0faf);
+    md5_FF(reg_cache, d, a, b, c,  5, 12, 0x4787c62a);
+    md5_FF(reg_cache, c, d, a, b,  6, 17, 0xa8304613);
+    md5_FF(reg_cache, b, c, d, a,  7, 22, 0xfd469501);
+    md5_FF(reg_cache, a, b, c, d,  8,  7, 0x698098d8);
+    md5_FF(reg_cache, d, a, b, c,  9, 12, 0x8b44f7af);
+    md5_FF(reg_cache, c, d, a, b, 10, 17, 0xffff5bb1);
+    md5_FF(reg_cache, b, c, d, a, 11, 22, 0x895cd7be);
+    md5_FF(reg_cache, a, b, c, d, 12,  7, 0x6b901122);
+    md5_FF(reg_cache, d, a, b, c, 13, 12, 0xfd987193);
+    md5_FF(reg_cache, c, d, a, b, 14, 17, 0xa679438e);
+    md5_FF(reg_cache, b, c, d, a, 15, 22, 0x49b40821);
 
     // Round 2
-    md5_GG(buf, a, b, c, d,  1,  5, 0xf61e2562);
-    md5_GG(buf, d, a, b, c,  6,  9, 0xc040b340);
-    md5_GG(buf, c, d, a, b, 11, 14, 0x265e5a51);
-    md5_GG(buf, b, c, d, a,  0, 20, 0xe9b6c7aa);
-    md5_GG(buf, a, b, c, d,  5,  5, 0xd62f105d);
-    md5_GG(buf, d, a, b, c, 10,  9, 0x02441453);
-    md5_GG(buf, c, d, a, b, 15, 14, 0xd8a1e681);
-    md5_GG(buf, b, c, d, a,  4, 20, 0xe7d3fbc8);
-    md5_GG(buf, a, b, c, d,  9,  5, 0x21e1cde6);
-    md5_GG(buf, d, a, b, c, 14,  9, 0xc33707d6);
-    md5_GG(buf, c, d, a, b,  3, 14, 0xf4d50d87);
-    md5_GG(buf, b, c, d, a,  8, 20, 0x455a14ed);
-    md5_GG(buf, a, b, c, d, 13,  5, 0xa9e3e905);
-    md5_GG(buf, d, a, b, c,  2,  9, 0xfcefa3f8);
-    md5_GG(buf, c, d, a, b,  7, 14, 0x676f02d9);
-    md5_GG(buf, b, c, d, a, 12, 20, 0x8d2a4c8a);
+    md5_GG(reg_cache, a, b, c, d,  1,  5, 0xf61e2562);
+    md5_GG(reg_cache, d, a, b, c,  6,  9, 0xc040b340);
+    md5_GG(reg_cache, c, d, a, b, 11, 14, 0x265e5a51);
+    md5_GG(reg_cache, b, c, d, a,  0, 20, 0xe9b6c7aa);
+    md5_GG(reg_cache, a, b, c, d,  5,  5, 0xd62f105d);
+    md5_GG(reg_cache, d, a, b, c, 10,  9, 0x02441453);
+    md5_GG(reg_cache, c, d, a, b, 15, 14, 0xd8a1e681);
+    md5_GG(reg_cache, b, c, d, a,  4, 20, 0xe7d3fbc8);
+    md5_GG(reg_cache, a, b, c, d,  9,  5, 0x21e1cde6);
+    md5_GG(reg_cache, d, a, b, c, 14,  9, 0xc33707d6);
+    md5_GG(reg_cache, c, d, a, b,  3, 14, 0xf4d50d87);
+    md5_GG(reg_cache, b, c, d, a,  8, 20, 0x455a14ed);
+    md5_GG(reg_cache, a, b, c, d, 13,  5, 0xa9e3e905);
+    md5_GG(reg_cache, d, a, b, c,  2,  9, 0xfcefa3f8);
+    md5_GG(reg_cache, c, d, a, b,  7, 14, 0x676f02d9);
+    md5_GG(reg_cache, b, c, d, a, 12, 20, 0x8d2a4c8a);
 
     // Round 3
-    md5_HH(buf, a, b, c, d,  5,  4, 0xfffa3942);
-    md5_HH(buf, d, a, b, c,  8, 11, 0x8771f681);
-    md5_HH(buf, c, d, a, b, 11, 16, 0x6d9d6122);
-    md5_HH(buf, b, c, d, a, 14, 23, 0xfde5380c);
-    md5_HH(buf, a, b, c, d,  1,  4, 0xa4beea44);
-    md5_HH(buf, d, a, b, c,  4, 11, 0x4bdecfa9);
-    md5_HH(buf, c, d, a, b,  7, 16, 0xf6bb4b60);
-    md5_HH(buf, b, c, d, a, 10, 23, 0xbebfbc70);
-    md5_HH(buf, a, b, c, d, 13,  4, 0x289b7ec6);
-    md5_HH(buf, d, a, b, c,  0, 11, 0xeaa127fa);
-    md5_HH(buf, c, d, a, b,  3, 16, 0xd4ef3085);
-    md5_HH(buf, b, c, d, a,  6, 23, 0x04881d05);
-    md5_HH(buf, a, b, c, d,  9,  4, 0xd9d4d039);
-    md5_HH(buf, d, a, b, c, 12, 11, 0xe6db99e5);
-    md5_HH(buf, c, d, a, b, 15, 16, 0x1fa27cf8);
-    md5_HH(buf, b, c, d, a,  2, 23, 0xc4ac5665);
+    md5_HH(reg_cache, a, b, c, d,  5,  4, 0xfffa3942);
+    md5_HH(reg_cache, d, a, b, c,  8, 11, 0x8771f681);
+    md5_HH(reg_cache, c, d, a, b, 11, 16, 0x6d9d6122);
+    md5_HH(reg_cache, b, c, d, a, 14, 23, 0xfde5380c);
+    md5_HH(reg_cache, a, b, c, d,  1,  4, 0xa4beea44);
+    md5_HH(reg_cache, d, a, b, c,  4, 11, 0x4bdecfa9);
+    md5_HH(reg_cache, c, d, a, b,  7, 16, 0xf6bb4b60);
+    md5_HH(reg_cache, b, c, d, a, 10, 23, 0xbebfbc70);
+    md5_HH(reg_cache, a, b, c, d, 13,  4, 0x289b7ec6);
+    md5_HH(reg_cache, d, a, b, c,  0, 11, 0xeaa127fa);
+    md5_HH(reg_cache, c, d, a, b,  3, 16, 0xd4ef3085);
+    md5_HH(reg_cache, b, c, d, a,  6, 23, 0x04881d05);
+    md5_HH(reg_cache, a, b, c, d,  9,  4, 0xd9d4d039);
+    md5_HH(reg_cache, d, a, b, c, 12, 11, 0xe6db99e5);
+    md5_HH(reg_cache, c, d, a, b, 15, 16, 0x1fa27cf8);
+    md5_HH(reg_cache, b, c, d, a,  2, 23, 0xc4ac5665);
 
     // Round 4
-    md5_II(buf, a, b, c, d,  0,  6, 0xf4292244);
-    md5_II(buf, d, a, b, c,  7, 10, 0x432aff97);
-    md5_II(buf, c, d, a, b, 14, 15, 0xab9423a7);
-    md5_II(buf, b, c, d, a,  5, 21, 0xfc93a039);
-    md5_II(buf, a, b, c, d, 12,  6, 0x655b59c3);
-    md5_II(buf, d, a, b, c,  3, 10, 0x8f0ccc92);
-    md5_II(buf, c, d, a, b, 10, 15, 0xffeff47d);
-    md5_II(buf, b, c, d, a,  1, 21, 0x85845dd1);
-    md5_II(buf, a, b, c, d,  8,  6, 0x6fa87e4f);
-    md5_II(buf, d, a, b, c, 15, 10, 0xfe2ce6e0);
-    md5_II(buf, c, d, a, b,  6, 15, 0xa3014314);
-    md5_II(buf, b, c, d, a, 13, 21, 0x4e0811a1);
-    md5_II(buf, a, b, c, d,  4,  6, 0xf7537e82);
-    md5_II(buf, d, a, b, c, 11, 10, 0xbd3af235);
-    md5_II(buf, c, d, a, b,  2, 15, 0x2ad7d2bb);
-    md5_II(buf, b, c, d, a,  9, 21, 0xeb86d391);
+    md5_II(reg_cache, a, b, c, d,  0,  6, 0xf4292244);
+    md5_II(reg_cache, d, a, b, c,  7, 10, 0x432aff97);
+    md5_II(reg_cache, c, d, a, b, 14, 15, 0xab9423a7);
+    md5_II(reg_cache, b, c, d, a,  5, 21, 0xfc93a039);
+    md5_II(reg_cache, a, b, c, d, 12,  6, 0x655b59c3);
+    md5_II(reg_cache, d, a, b, c,  3, 10, 0x8f0ccc92);
+    md5_II(reg_cache, c, d, a, b, 10, 15, 0xffeff47d);
+    md5_II(reg_cache, b, c, d, a,  1, 21, 0x85845dd1);
+    md5_II(reg_cache, a, b, c, d,  8,  6, 0x6fa87e4f);
+    md5_II(reg_cache, d, a, b, c, 15, 10, 0xfe2ce6e0);
+    md5_II(reg_cache, c, d, a, b,  6, 15, 0xa3014314);
+    md5_II(reg_cache, b, c, d, a, 13, 21, 0x4e0811a1);
+    md5_II(reg_cache, a, b, c, d,  4,  6, 0xf7537e82);
+    md5_II(reg_cache, d, a, b, c, 11, 10, 0xbd3af235);
+    md5_II(reg_cache, c, d, a, b,  2, 15, 0x2ad7d2bb);
+    md5_II(reg_cache, b, c, d, a,  9, 21, 0xeb86d391);
 
-    // write hash values back in the correct order
-    __ ldrw(rscratch1, Address(state,  0));
-    __ addw(rscratch1, rscratch1, a);
-    __ strw(rscratch1, Address(state,  0));
+    __ addw(a, state_regs[0], a);
+    __ ubfx(rscratch2, state_regs[0], 32, 32);
+    __ addw(b, rscratch2, b);
+    __ addw(c, state_regs[1], c);
+    __ ubfx(rscratch4, state_regs[1], 32, 32);
+    __ addw(d, rscratch4, d);
 
-    __ ldrw(rscratch2, Address(state,  4));
-    __ addw(rscratch2, rscratch2, b);
-    __ strw(rscratch2, Address(state,  4));
-
-    __ ldrw(rscratch3, Address(state,  8));
-    __ addw(rscratch3, rscratch3, c);
-    __ strw(rscratch3, Address(state,  8));
-
-    __ ldrw(rscratch4, Address(state, 12));
-    __ addw(rscratch4, rscratch4, d);
-    __ strw(rscratch4, Address(state, 12));
+    __ orr(state_regs[0], a, b, Assembler::LSL, 32);
+    __ orr(state_regs[1], c, d, Assembler::LSL, 32);
 
     if (multi_block) {
       __ add(buf, buf, 64);
@@ -3529,6 +3557,11 @@ class StubGenerator: public StubCodeGenerator {
       __ br(Assembler::LE, md5_loop);
       __ mov(c_rarg0, ofs); // return ofs
     }
+
+    // write hash values back in the correct order
+    __ stp(state_regs[0], state_regs[1], Address(state));
+
+    __ pop(saved_regs, sp);
 
     __ ret(lr);
 
@@ -5151,6 +5184,7 @@ class StubGenerator: public StubCodeGenerator {
   // result = r0 - return value. Already contains "false"
   // cnt1 = r10 - amount of elements left to check, reduced by wordSize
   // r3-r5 are reserved temporary registers
+  // Clobbers: v0-v7 when UseSIMDForArrayEquals, rscratch1, rscratch2
   address generate_large_array_equals() {
     Register a1 = r1, a2 = r2, result = r0, cnt1 = r10, tmp1 = rscratch1,
         tmp2 = rscratch2, tmp3 = r3, tmp4 = r4, tmp5 = r5, tmp6 = r11,
@@ -5734,6 +5768,8 @@ class StubGenerator: public StubCodeGenerator {
   // R2 = cnt1
   // R3 = str1
   // R4 = cnt2
+  // Clobbers: rscratch1, rscratch2, v0, v1, rflags
+  //
   // This generic linear code use few additional ideas, which makes it faster:
   // 1) we can safely keep at least 1st register of pattern(since length >= 8)
   // in order to skip initial loading(help in systems with 1 ld pipeline)
@@ -6048,6 +6084,7 @@ class StubGenerator: public StubCodeGenerator {
   // R3 = len >> 3
   // V0 = 0
   // v1 = loaded 8 bytes
+  // Clobbers: r0, r1, r3, rscratch1, rflags, v0-v6
   address generate_large_byte_array_inflate() {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "large_byte_array_inflate");
@@ -7005,6 +7042,171 @@ class StubGenerator: public StubCodeGenerator {
     address start = __ pc();
 
     generate_cont_thaw(Continuation::thaw_return_barrier_exception);
+
+    return start;
+  }
+
+  // In sun.security.util.math.intpoly.IntegerPolynomial1305, integers
+  // are represented as long[5], with BITS_PER_LIMB = 26.
+  // Pack five 26-bit limbs into three 64-bit registers.
+  void pack_26(Register dest0, Register dest1, Register dest2, Register src) {
+    __ ldp(dest0, rscratch1, Address(src, 0));     // 26 bits
+    __ add(dest0, dest0, rscratch1, Assembler::LSL, 26);  // 26 bits
+    __ ldp(rscratch1, rscratch2, Address(src, 2 * sizeof (jlong)));
+    __ add(dest0, dest0, rscratch1, Assembler::LSL, 52);  // 12 bits
+
+    __ add(dest1, zr, rscratch1, Assembler::LSR, 12);     // 14 bits
+    __ add(dest1, dest1, rscratch2, Assembler::LSL, 14);  // 26 bits
+    __ ldr(rscratch1, Address(src, 4 * sizeof (jlong)));
+    __ add(dest1, dest1, rscratch1, Assembler::LSL, 40);  // 24 bits
+
+    if (dest2->is_valid()) {
+      __ add(dest2, zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+    } else {
+#ifdef ASSERT
+      Label OK;
+      __ cmp(zr, rscratch1, Assembler::LSR, 24);     // 2 bits
+      __ br(__ EQ, OK);
+      __ stop("high bits of Poly1305 integer should be zero");
+      __ should_not_reach_here();
+      __ bind(OK);
+#endif
+    }
+  }
+
+  // As above, but return only a 128-bit integer, packed into two
+  // 64-bit registers.
+  void pack_26(Register dest0, Register dest1, Register src) {
+    pack_26(dest0, dest1, noreg, src);
+  }
+
+  // Multiply and multiply-accumulate unsigned 64-bit registers.
+  void wide_mul(Register prod_lo, Register prod_hi, Register n, Register m) {
+    __ mul(prod_lo, n, m);
+    __ umulh(prod_hi, n, m);
+  }
+  void wide_madd(Register sum_lo, Register sum_hi, Register n, Register m) {
+    wide_mul(rscratch1, rscratch2, n, m);
+    __ adds(sum_lo, sum_lo, rscratch1);
+    __ adc(sum_hi, sum_hi, rscratch2);
+  }
+
+  // Poly1305, RFC 7539
+
+  // See https://loup-vaillant.fr/tutorials/poly1305-design for a
+  // description of the tricks used to simplify and accelerate this
+  // computation.
+
+  address generate_poly1305_processBlocks() {
+    __ align(CodeEntryAlignment);
+    StubCodeMark mark(this, "StubRoutines", "poly1305_processBlocks");
+    address start = __ pc();
+    Label here;
+    __ enter();
+    RegSet callee_saved = RegSet::range(r19, r28);
+    __ push(callee_saved, sp);
+
+    RegSetIterator<Register> regs = (RegSet::range(c_rarg0, r28) - r18_tls - rscratch1 - rscratch2).begin();
+
+    // Arguments
+    const Register input_start = *regs, length = *++regs, acc_start = *++regs, r_start = *++regs;
+
+    // R_n is the 128-bit randomly-generated key, packed into two
+    // registers.  The caller passes this key to us as long[5], with
+    // BITS_PER_LIMB = 26.
+    const Register R_0 = *++regs, R_1 = *++regs;
+    pack_26(R_0, R_1, r_start);
+
+    // RR_n is (R_n >> 2) * 5
+    const Register RR_0 = *++regs, RR_1 = *++regs;
+    __ lsr(RR_0, R_0, 2);
+    __ add(RR_0, RR_0, RR_0, Assembler::LSL, 2);
+    __ lsr(RR_1, R_1, 2);
+    __ add(RR_1, RR_1, RR_1, Assembler::LSL, 2);
+
+    // U_n is the current checksum
+    const Register U_0 = *++regs, U_1 = *++regs, U_2 = *++regs;
+    pack_26(U_0, U_1, U_2, acc_start);
+
+    static constexpr int BLOCK_LENGTH = 16;
+    Label DONE, LOOP;
+
+    __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
+    __ br(Assembler::LT, DONE); {
+      __ bind(LOOP);
+
+      // S_n is to be the sum of U_n and the next block of data
+      const Register S_0 = *++regs, S_1 = *++regs, S_2 = *++regs;
+      __ ldp(S_0, S_1, __ post(input_start, 2 * wordSize));
+      __ adds(S_0, U_0, S_0);
+      __ adcs(S_1, U_1, S_1);
+      __ adc(S_2, U_2, zr);
+      __ add(S_2, S_2, 1);
+
+      const Register U_0HI = *++regs, U_1HI = *++regs;
+
+      // NB: this logic depends on some of the special properties of
+      // Poly1305 keys. In particular, because we know that the top
+      // four bits of R_0 and R_1 are zero, we can add together
+      // partial products without any risk of needing to propagate a
+      // carry out.
+      wide_mul(U_0, U_0HI, S_0, R_0);  wide_madd(U_0, U_0HI, S_1, RR_1); wide_madd(U_0, U_0HI, S_2, RR_0);
+      wide_mul(U_1, U_1HI, S_0, R_1);  wide_madd(U_1, U_1HI, S_1, R_0);  wide_madd(U_1, U_1HI, S_2, RR_1);
+      __ andr(U_2, R_0, 3);
+      __ mul(U_2, S_2, U_2);
+
+      // Recycle registers S_0, S_1, S_2
+      regs = (regs.remaining() + S_0 + S_1 + S_2).begin();
+
+      // Partial reduction mod 2**130 - 5
+      __ adds(U_1, U_0HI, U_1);
+      __ adc(U_2, U_1HI, U_2);
+      // Sum now in U_2:U_1:U_0.
+      // Dead: U_0HI, U_1HI.
+      regs = (regs.remaining() + U_0HI + U_1HI).begin();
+
+      // U_2:U_1:U_0 += (U_2 >> 2) * 5 in two steps
+
+      // First, U_2:U_1:U_0 += (U_2 >> 2)
+      __ lsr(rscratch1, U_2, 2);
+      __ andr(U_2, U_2, (u8)3);
+      __ adds(U_0, U_0, rscratch1);
+      __ adcs(U_1, U_1, zr);
+      __ adc(U_2, U_2, zr);
+      // Second, U_2:U_1:U_0 += (U_2 >> 2) << 2
+      __ adds(U_0, U_0, rscratch1, Assembler::LSL, 2);
+      __ adcs(U_1, U_1, zr);
+      __ adc(U_2, U_2, zr);
+
+      __ sub(length, length, checked_cast<u1>(BLOCK_LENGTH));
+      __ cmp(length, checked_cast<u1>(BLOCK_LENGTH));
+      __ br(~ Assembler::LT, LOOP);
+    }
+
+    // Further reduce modulo 2^130 - 5
+    __ lsr(rscratch1, U_2, 2);
+    __ add(rscratch1, rscratch1, rscratch1, Assembler::LSL, 2); // rscratch1 = U_2 * 5
+    __ adds(U_0, U_0, rscratch1); // U_0 += U_2 * 5
+    __ adcs(U_1, U_1, zr);
+    __ andr(U_2, U_2, (u1)3);
+    __ adc(U_2, U_2, zr);
+
+    // Unpack the sum into five 26-bit limbs and write to memory.
+    __ ubfiz(rscratch1, U_0, 0, 26);
+    __ ubfx(rscratch2, U_0, 26, 26);
+    __ stp(rscratch1, rscratch2, Address(acc_start));
+    __ ubfx(rscratch1, U_0, 52, 12);
+    __ bfi(rscratch1, U_1, 12, 14);
+    __ ubfx(rscratch2, U_1, 14, 26);
+    __ stp(rscratch1, rscratch2, Address(acc_start, 2 * sizeof (jlong)));
+    __ ubfx(rscratch1, U_1, 40, 24);
+    __ bfi(rscratch1, U_2, 24, 3);
+    __ str(rscratch1, Address(acc_start, 4 * sizeof (jlong)));
+
+    __ bind(DONE);
+    __ pop(callee_saved, sp);
+    __ leave();
+    __ ret(lr);
 
     return start;
   }
@@ -8095,6 +8297,10 @@ class StubGenerator: public StubCodeGenerator {
     }
 
     StubRoutines::aarch64::_spin_wait = generate_spin_wait();
+
+    if (UsePoly1305Intrinsics) {
+      StubRoutines::_poly1305_processBlocks = generate_poly1305_processBlocks();
+    }
 
 #if defined (LINUX) && !defined (__ARM_FEATURE_ATOMICS)
 

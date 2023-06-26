@@ -1175,7 +1175,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
       if (arg_val > p) {
         return __ intcon(i + d);
       }
-      p = 10 * p;
+      p = java_multiply(10, p);
     }
     return __ intcon(10 + d);
   }
@@ -1214,7 +1214,7 @@ Node* PhaseStringOpts::int_stringSize(GraphKit& kit, Node* arg) {
   Node* final_size = new PhiNode(final_merge, TypeInt::INT);
   kit.gvn().set_type(final_size, TypeInt::INT);
 
-  kit.add_empty_predicates();
+  kit.add_parse_predicates();
   C->set_has_loops(true);
 
   RegionNode* loop = new RegionNode(3);
@@ -1299,8 +1299,8 @@ void PhaseStringOpts::getChars(GraphKit& kit, Node* arg, Node* dst_array, BasicT
   //     if (i == 0) break;
   // }
 
-  // Add loop predicate first.
-  kit.add_empty_predicates();
+  // Add Parse Predicates first.
+  kit.add_parse_predicates();
 
   C->set_has_loops(true);
   RegionNode* head = new RegionNode(3);

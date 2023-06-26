@@ -37,6 +37,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -1976,7 +1977,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ compare64_and_branch(Z_RET, (intptr_t) 0, Assembler::bcondEqual, dispatch);
 
     // Nmethod may have been invalidated (VM may block upon call_VM return).
-    __ z_cliy(nmethod::state_offset(), Z_RET, nmethod::in_use);
+    __ z_cliy(in_bytes(nmethod::state_offset()), Z_RET, nmethod::in_use);
     __ z_brne(dispatch);
 
     // Migrate the interpreter frame off of the stack.
@@ -3555,7 +3556,7 @@ void TemplateTable::invokevirtual_helper(Register index,
   __ z_sllg(index, index, exact_log2(vtableEntry::size_in_bytes()));
   __ mem2reg_opt(method,
                  Address(Z_tmp_2, index,
-                         Klass::vtable_start_offset() + in_ByteSize(vtableEntry::method_offset_in_bytes())));
+                         Klass::vtable_start_offset() + vtableEntry::method_offset()));
   __ profile_arguments_type(Z_ARG4, method, Z_ARG5, true);
   __ jump_from_interpreted(method, Z_ARG4);
   BLOCK_COMMENT("} invokevirtual_helper");
@@ -4178,7 +4179,7 @@ void TemplateTable::monitorenter() {
 
     __ bind(loop);
     // Check if current entry is used.
-    __ load_and_test_long(Rlocked_obj, Address(Rcurr_monitor, BasicObjectLock::obj_offset_in_bytes()));
+    __ load_and_test_long(Rlocked_obj, Address(Rcurr_monitor, BasicObjectLock::obj_offset()));
     __ z_brne(not_free);
     // If not used then remember entry in Rfree_slot.
     __ z_lgr(Rfree_slot, Rcurr_monitor);
@@ -4210,7 +4211,7 @@ void TemplateTable::monitorenter() {
   __ add2reg(Z_bcp, 1, Z_bcp);
 
   // Store object.
-  __ z_stg(Z_tos, BasicObjectLock::obj_offset_in_bytes(), Rfree_slot);
+  __ z_stg(Z_tos, in_bytes(BasicObjectLock::obj_offset()), Rfree_slot);
   __ lock_object(Rfree_slot, Z_tos);
 
   // Check to make sure this monitor doesn't cause stack overflow after locking.
@@ -4266,7 +4267,7 @@ void TemplateTable::monitorexit() {
 
     __ bind(loop);
     // Check if current entry is for same object.
-    __ z_lg(Rlocked_obj, Address(Rcurr_monitor, BasicObjectLock::obj_offset_in_bytes()));
+    __ z_lg(Rlocked_obj, Address(Rcurr_monitor, BasicObjectLock::obj_offset()));
     // If same object then stop searching.
     __ compareU64_and_branch(Rlocked_obj, Z_tos, Assembler::bcondEqual, found);
     // Otherwise advance to next entry.

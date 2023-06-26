@@ -125,20 +125,17 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * the {@code ResourceBundle} class using the
  * {@link #getBundle(java.lang.String, java.util.Locale) getBundle}
  * method:
- * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * ResourceBundle myResources =
  *      ResourceBundle.getBundle("MyResources", currentLocale);
- * </pre>
- * </blockquote>
+ * }
  *
  * <P>
  * Resource bundles contain key/value pairs. The keys uniquely
  * identify a locale-specific object in the bundle. Here's an
  * example of a {@code ListResourceBundle} that contains
  * two key/value pairs:
- * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * public class MyResources extends ListResourceBundle {
  *     protected Object[][] getContents() {
  *         return new Object[][] {
@@ -149,8 +146,7 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  *        };
  *     }
  * }
- * </pre>
- * </blockquote>
+ * }
  * Keys are always {@code String}s.
  * In this example, the keys are "OkKey" and "CancelKey".
  * In the above example, the values
@@ -161,12 +157,10 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * You retrieve an object from resource bundle using the appropriate
  * getter method. Because "OkKey" and "CancelKey"
  * are both strings, you would use {@code getString} to retrieve them:
- * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * button1 = new Button(myResources.getString("OkKey"));
  * button2 = new Button(myResources.getString("CancelKey"));
- * </pre>
- * </blockquote>
+ * }
  * The getter methods all require the key as an argument and return
  * the object if found. If the object is not found, the getter method
  * throws a {@code MissingResourceException}.
@@ -177,11 +171,9 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * as well as a generic {@code getObject} method for any other
  * type of object. When using {@code getObject}, you'll
  * have to cast the result to the appropriate type. For example:
- * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * int[] myIntegers = (int[]) myResources.getObject("intList");
- * </pre>
- * </blockquote>
+ * }
  *
  * <P>
  * The Java Platform provides two subclasses of {@code ResourceBundle},
@@ -330,24 +322,27 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * Notice that you don't need to supply a value if
  * a "parent-level" {@code ResourceBundle} handles the same
  * key with the same value (as for the okKey below).
- * <blockquote>
- * <pre>
+ * {@snippet lang=java :
  * // default (English language, United States)
  * public class MyResources extends ResourceBundle {
  *     public Object handleGetObject(String key) {
- *         if (key.equals("okKey")) return "Ok";
- *         if (key.equals("cancelKey")) return "Cancel";
+ *         if (key.equals("okKey")) {
+ *            return "Ok";
+ *         }
+ *         if (key.equals("cancelKey")) {
+ *            return "Cancel";
+ *         }
  *         return null;
  *     }
  *
- *     public Enumeration&lt;String&gt; getKeys() {
+ *     public Enumeration<String> getKeys() {
  *         return Collections.enumeration(keySet());
  *     }
  *
  *     // Overrides handleKeySet() so that the getKeys() implementation
  *     // can rely on the keySet() value.
- *     protected Set&lt;String&gt; handleKeySet() {
- *         return new HashSet&lt;String&gt;(Arrays.asList("okKey", "cancelKey"));
+ *     protected Set<String> handleKeySet() {
+ *         return new HashSet<String>(Arrays.asList("okKey", "cancelKey"));
  *     }
  * }
  *
@@ -355,16 +350,17 @@ import static sun.security.util.SecurityConstants.GET_CLASSLOADER_PERMISSION;
  * public class MyResources_de extends MyResources {
  *     public Object handleGetObject(String key) {
  *         // don't need okKey, since parent level handles it.
- *         if (key.equals("cancelKey")) return "Abbrechen";
+ *         if (key.equals("cancelKey")) {
+ *            return "Abbrechen";
+ *         }
  *         return null;
  *     }
  *
- *     protected Set&lt;String&gt; handleKeySet() {
- *         return new HashSet&lt;String&gt;(Arrays.asList("cancelKey"));
+ *     protected Set<String> handleKeySet() {
+ *         return new HashSet<String>(Arrays.asList("cancelKey"));
  *     }
  * }
- * </pre>
- * </blockquote>
+ * }
  * You do not have to restrict yourself to using a single family of
  * {@code ResourceBundle}s. For example, you could have a set of bundles for
  * exception messages, {@code ExceptionResources}
@@ -512,9 +508,10 @@ public abstract class ResourceBundle {
     /**
      * Gets a string for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
-     * <blockquote>
-     * <code>(String) {@link #getObject(java.lang.String) getObject}(key)</code>.
-     * </blockquote>
+     * {@snippet lang=java :
+     *     // @link substring="getObject" target="#getObject(java.lang.String)"
+     *     (String[]) getObject(key);
+     * }
      *
      * @param key the key for the desired string
      * @throws    NullPointerException if {@code key} is {@code null}
@@ -529,9 +526,10 @@ public abstract class ResourceBundle {
     /**
      * Gets a string array for the given key from this resource bundle or one of its parents.
      * Calling this method is equivalent to calling
-     * <blockquote>
-     * <code>(String[]) {@link #getObject(java.lang.String) getObject}(key)</code>.
-     * </blockquote>
+     * {@snippet lang=java :
+     *     // @link substring="getObject" target="#getObject(java.lang.String)"
+     *     (String[]) getObject(key);
+     * }
      *
      * @param key the key for the desired string array
      * @throws    NullPointerException if {@code key} is {@code null}
@@ -721,8 +719,7 @@ public abstract class ResourceBundle {
             if (this == other) {
                 return true;
             }
-            try {
-                final CacheKey otherEntry = (CacheKey)other;
+            if (other instanceof CacheKey otherEntry) {
                 //quick check to see if they are not equal
                 if (modulesHash != otherEntry.modulesHash) {
                     return false;
@@ -740,7 +737,6 @@ public abstract class ResourceBundle {
                 Module caller = getCallerModule();
                 return ((module != null) && (module.equals(otherEntry.getModule())) &&
                         (caller != null) && (caller.equals(otherEntry.getCallerModule())));
-            } catch (NullPointerException | ClassCastException e) {
             }
             return false;
         }
@@ -842,9 +838,9 @@ public abstract class ResourceBundle {
     /**
      * Gets a resource bundle using the specified base name, the default locale,
      * and the caller module. Calling this method is equivalent to calling
-     * <blockquote>
-     * {@code getBundle(baseName, Locale.getDefault(), callerModule)},
-     * </blockquote>
+     * {@snippet lang=java :
+     *     getBundle(baseName, Locale.getDefault(), callerModule);
+     * }
      *
      * @param baseName the base name of the resource bundle, a fully qualified class name
      * @throws    java.lang.NullPointerException
@@ -868,10 +864,10 @@ public abstract class ResourceBundle {
      * Returns a resource bundle using the specified base name, the
      * default locale and the specified control. Calling this method
      * is equivalent to calling
-     * <pre>
+     * {@snippet lang=java :
      * getBundle(baseName, Locale.getDefault(),
-     *           this.getClass().getClassLoader(), control),
-     * </pre>
+     *           this.getClass().getClassLoader(), control);
+     * }
      * except that {@code getClassLoader()} is run with the security
      * privileges of {@code ResourceBundle}.  See {@link
      * #getBundle(String, Locale, ClassLoader, Control) getBundle} for the
@@ -912,9 +908,9 @@ public abstract class ResourceBundle {
     /**
      * Gets a resource bundle using the specified base name and locale,
      * and the caller module. Calling this method is equivalent to calling
-     * <blockquote>
-     * {@code getBundle(baseName, locale, callerModule)},
-     * </blockquote>
+     * {@snippet lang=java :
+     *     getBundle(baseName, locale, callerModule);
+     * }
      *
      * @param baseName
      *        the base name of the resource bundle, a fully qualified class name
@@ -941,9 +937,9 @@ public abstract class ResourceBundle {
     /**
      * Gets a resource bundle using the specified base name and the default locale
      * on behalf of the specified module. This method is equivalent to calling
-     * <blockquote>
-     * {@code getBundle(baseName, Locale.getDefault(), module)}
-     * </blockquote>
+     * {@snippet lang=java :
+     *     getBundle(baseName, Locale.getDefault(), module);
+     * }
      *
      * @param baseName the base name of the resource bundle,
      *                 a fully qualified class name
@@ -1024,10 +1020,10 @@ public abstract class ResourceBundle {
      * Returns a resource bundle using the specified base name, target
      * locale and control, and the caller's class loader. Calling this
      * method is equivalent to calling
-     * <pre>
+     * {@snippet lang=java :
      * getBundle(baseName, targetLocale, this.getClass().getClassLoader(),
-     *           control),
-     * </pre>
+     *           control);
+     * }
      * except that {@code getClassLoader()} is run with the security
      * privileges of {@code ResourceBundle}.  See {@link
      * #getBundle(String, Locale, ClassLoader, Control) getBundle} for the
@@ -1075,14 +1071,14 @@ public abstract class ResourceBundle {
      * <p>When this method is called from a named module and the given
      * loader is the class loader of the caller module, this is equivalent
      * to calling:
-     * <blockquote><pre>
-     * getBundle(baseName, targetLocale, callerModule)
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     getBundle(baseName, targetLocale, callerModule);
+     * }
      *
      * otherwise, this is equivalent to calling:
-     * <blockquote><pre>
-     * getBundle(baseName, targetLocale, loader, control)
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     getBundle(baseName, targetLocale, loader, control);
+     * }
      * where {@code control} is the default instance of {@link Control} unless
      * a {@code Control} instance is provided by
      * {@link ResourceBundleControlProvider} SPI.  Refer to the
@@ -2432,14 +2428,14 @@ public abstract class ResourceBundle {
      * <p>The following code lets {@code ResourceBundle.getBundle} look
      * up only properties-based resources.
      *
-     * <pre>
+     * {@snippet lang=java :
      * import java.util.*;
      * import static java.util.ResourceBundle.Control.*;
-     * ...
+     * code: // @replace substring="code:" replacement="..."
      * ResourceBundle bundle =
      *   ResourceBundle.getBundle("MyResources", Locale.forLanguageTag("fr-CH"),
      *                            ResourceBundle.Control.getControl(FORMAT_PROPERTIES));
-     * </pre>
+     * }
      *
      * Given the resource bundles in the <a
      * href="./ResourceBundle.html#default_behavior_example">example</a> in
@@ -2456,10 +2452,10 @@ public abstract class ResourceBundle {
      * using {@link Properties#loadFromXML(java.io.InputStream)
      * Properties.loadFromXML}.
      *
-     * <pre>
+     * {@snippet lang=java :
      * ResourceBundle rb = ResourceBundle.getBundle("Messages",
      *     new ResourceBundle.Control() {
-     *         public List&lt;String&gt; getFormats(String baseName) {
+     *         public List<String> getFormats(String baseName) {
      *             if (baseName == null)
      *                 throw new NullPointerException();
      *             return Arrays.asList("xml");
@@ -2504,7 +2500,7 @@ public abstract class ResourceBundle {
      *         }
      *     });
      *
-     * ...
+     * code: // @replace substring="code:" replacement="..."
      *
      * private static class XMLResourceBundle extends ResourceBundle {
      *     private Properties props;
@@ -2515,11 +2511,11 @@ public abstract class ResourceBundle {
      *     protected Object handleGetObject(String key) {
      *         return props.getProperty(key);
      *     }
-     *     public Enumeration&lt;String&gt; getKeys() {
-     *         ...
+     *     public Enumeration<String> getKeys() {
+     *         code: // @replace substring="code:" replacement="..."
      *     }
      * }
-     * </pre>
+     * }
      *
      * @apiNote {@code ResourceBundle.Control} is not supported
      * in named modules. If the {@code ResourceBundle.getBundle} method with
