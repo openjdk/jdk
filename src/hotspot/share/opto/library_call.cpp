@@ -3978,6 +3978,7 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
   Node* mirror;
   Node* count_val;
   if (uninitialized) {
+    null_check_receiver();
     mirror    = argument(1);
     count_val = argument(2);
   } else {
