@@ -618,6 +618,42 @@ class SocketChannelImpl
         }
     }
 
+    /**
+     * Marks the beginning of a transfer to this channel.
+     * @throws ClosedChannelException if channel is closed or the output is shutdown
+     * @throws NotYetConnectedException if open and not connected
+     */
+    void beforeTransferTo() throws ClosedChannelException {
+        boolean completed = false;
+        writeLock.lock();
+        try {
+            synchronized (stateLock) {
+                ensureOpenAndConnected();
+                if (isOutputClosed)
+                    throw new ClosedChannelException();
+                writerThread = NativeThread.current();
+                completed = true;
+            }
+        } finally {
+            if (!completed) {
+                writeLock.unlock();
+            }
+        }
+    }
+
+    /**
+     * Marks the end of a transfer to this channel.
+     */
+    void afterTransferTo() {
+        synchronized (stateLock) {
+            writerThread = 0;
+            if (state == ST_CLOSING) {
+                tryFinishClose();
+            }
+        }
+        writeLock.unlock();
+    }
+
     @Override
     protected void implConfigureBlocking(boolean block) throws IOException {
         readLock.lock();
