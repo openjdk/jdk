@@ -176,15 +176,15 @@ final class ProviderConfig {
                 return null;
             }
 
-            switch (provName) {
+            p = switch (provName) {
                 case "SUN", "sun.security.provider.Sun" ->
-                    p = new sun.security.provider.Sun();
+                    new sun.security.provider.Sun();
                 case "SunRsaSign", "sun.security.rsa.SunRsaSign" ->
-                    p = new sun.security.rsa.SunRsaSign();
+                    new sun.security.rsa.SunRsaSign();
                 case "SunJCE", "com.sun.crypto.provider.SunJCE" ->
-                    p = new com.sun.crypto.provider.SunJCE();
-                case "SunJSSE" -> p = new sun.security.ssl.SunJSSE();
-                case "SunEC" -> p = new sun.security.ec.SunEC();
+                    new com.sun.crypto.provider.SunJCE();
+                case "SunJSSE" -> new sun.security.ssl.SunJSSE();
+                case "SunEC" -> new sun.security.ec.SunEC();
                 case "Apple", "apple.security.AppleProvider" -> {
                     // Reflection is needed for compile time as the class
                     // is not available for non-macosx systems
@@ -209,7 +209,7 @@ final class ProviderConfig {
                                 return null;
                             }
                         });
-                    p = tmp;
+                    yield tmp;
                 }
                 default -> {
                     if (isLoading) {
@@ -219,17 +219,17 @@ final class ProviderConfig {
                             debug.println("Recursion loading provider: " + this);
                             new Exception("Call trace").printStackTrace();
                         }
-                        return null;
+                        yield null;
                     }
                     try {
                         isLoading = true;
                         tries++;
-                        p = doLoadProvider();
+                        yield doLoadProvider();
                     } finally {
                         isLoading = false;
                     }
                 }
-            }
+            };
             provider = p;
         }
         return provider;

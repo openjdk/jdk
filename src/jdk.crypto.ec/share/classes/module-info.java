@@ -33,5 +33,4 @@
  */
 @Deprecated(since="22", forRemoval = true)
 module jdk.crypto.ec {
-    //provides java.security.Provider with sun.security.ec.SunEC;
 }

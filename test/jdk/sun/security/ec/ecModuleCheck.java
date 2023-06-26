@@ -21,25 +21,26 @@
  * questions.
  */
 
-import java.util.Optional;
+import java.lang.module.ModuleFinder;
+import static jdk.test.lib.Asserts.*;
 
 /*
  * @test
  * @bug 8308398
- * @summary Verify jdk.crypto.ec dummy module exists
- * @modules jdk.crypto.ec
+ * @library /test/lib
+ * @summary Verify jdk.crypto.ec empty module
  * @run main ecModuleCheck
  */
 
-/* This test verifies that with jdk.crypto.ec loaded that the EC modules is
- * available. The KeyPairGenerator is just to verify SunEC is working.  Other
- * tests access internal sun.security.ec APIs from java.base (see TestEC.java)
+/* This test verifies jdk.crypto.ec is in the image, but not resolvable.
  */
 public class ecModuleCheck {
     public static void main(String[] args) throws Exception {
-        if (!ModuleLayer.boot().findModule("jdk.crypto.ec").isPresent()) {
-            throw new AssertionError("jdk.crypto.ec module does not exist");
-        }
-        System.out.println("jdk.crypto.ec module exists");
+        // True if module is found in the image.
+        assertTrue(ModuleFinder.ofSystem().find("jdk.crypto.ec").isPresent(),
+            "jdk.crypto.ec was not found in image.");
+        // Since the module empty, isPresent() should be false.
+        assertFalse(ModuleLayer.boot().findModule("jdk.crypto.ec").
+            isPresent(), "jdk.crypto.ec shouldn't be resolvable.");
     }
 }

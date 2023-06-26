@@ -75,4 +75,9 @@
  *              -DCLIENT_PROTOCOL=TLSv1.3
  *              -DCIPHER=TLS_AES_256_GCM_SHA384
  *          TestJSSE
+ * @run main/othervm --limit-modules java.base
+ *              -DSERVER_PROTOCOL=SSLv3,TLSv1,TLSv1.1,TLSv1.2,TLSv1.3
+ *              -DCLIENT_PROTOCOL=TLSv1.3
+ *              -DCIPHER=TLS_AES_256_GCM_SHA384
+ *          TestJSSE
  */

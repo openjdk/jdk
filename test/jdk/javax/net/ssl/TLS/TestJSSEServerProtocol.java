@@ -60,4 +60,9 @@
  *              -DCLIENT_PROTOCOL=TLSv1.3
  *              -DCIPHER=TLS_AES_256_GCM_SHA384
  *          TestJSSE javax.net.ssl.SSLHandshakeException
+ * @run main/othervm --limit-modules java.base
+ *              -DSERVER_PROTOCOL=TLSv1.2
+ *              -DCLIENT_PROTOCOL=TLSv1.3
+ *              -DCIPHER=TLS_AES_256_GCM_SHA384
+ *          TestJSSE javax.net.ssl.SSLHandshakeException
  */
