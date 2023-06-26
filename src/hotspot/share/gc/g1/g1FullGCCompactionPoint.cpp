@@ -93,7 +93,7 @@ void G1FullGCCompactionPoint::switch_region() {
   initialize_values();
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 void G1FullGCCompactionPoint::forward(oop object, size_t size) {
   assert(_current_region != nullptr, "Must have been initialized");
 
@@ -150,7 +150,7 @@ void G1FullGCCompactionPoint::add_humongous(HeapRegion* hr) {
                                      });
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 uint G1FullGCCompactionPoint::forward_humongous(HeapRegion* hr) {
   assert(hr->is_starts_humongous(), "Sanity!");
 

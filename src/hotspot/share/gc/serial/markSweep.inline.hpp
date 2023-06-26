@@ -55,16 +55,16 @@ inline void MarkSweep::adjust_pointer(T* p) {
   }
 }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 template <typename T>
 void AdjustPointerClosure<ALT_FWD>::do_oop_work(T* p)           { MarkSweep::adjust_pointer<ALT_FWD>(p); }
 template <bool ALT_FWD>
 inline void AdjustPointerClosure<ALT_FWD>::do_oop(oop* p)       { do_oop_work(p); }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 inline void AdjustPointerClosure<ALT_FWD>::do_oop(narrowOop* p) { do_oop_work(p); }
 
-template<bool ALT_FWD>
+template <bool ALT_FWD>
 inline size_t MarkSweep::adjust_pointers(oop obj) {
   AdjustPointerClosure<ALT_FWD> adjust_pointer_closure;
   return obj->oop_iterate_size(&adjust_pointer_closure);
