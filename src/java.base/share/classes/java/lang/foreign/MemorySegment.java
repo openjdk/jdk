@@ -749,30 +749,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
     Optional<MemorySegment> asOverlappingSlice(MemorySegment other);
 
     /**
-     * Returns the offset, in bytes, of the provided segment, relative to this
-     * segment.
-     *
-     * <p>The offset is relative to the address of this segment and can be
-     * a negative or positive value. For instance, if both segments are native
-     * segments, or heap segments backed by the same array, the resulting offset
-     * can be computed as follows:
-     *
-     * {@snippet lang=java :
-     * other.address() - address()
-     * }
-     *
-     * If the segments share the same address, {@code 0} is returned. If
-     * {@code other} is a slice of this segment, the offset is always
-     * {@code 0 <= x < this.byteSize()}.
-     *
-     * @param other the segment to retrieve an offset to.
-     * @throws UnsupportedOperationException if the two segments cannot be compared, e.g. because they are of
-     * different kinds, or because they are backed by different Java arrays.
-     * @return the relative offset, in bytes, of the provided segment.
-     */
-    long segmentOffset(MemorySegment other);
-
-    /**
      * Fills the contents of this memory segment with the given value.
      * <p>
      * More specifically, the given value is written into each address of this
