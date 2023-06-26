@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8032842 8175539
@@ -29,71 +30,85 @@
  *          language tag(s) in lowercase.
  *          Also, checks the filterTags() to return only unique
  *          (ignoring case considerations) matching tags.
- *
+ * @run junit Bug8032842
  */
 
 import java.util.List;
 import java.util.Locale;
 import java.util.Locale.FilteringMode;
 import java.util.Locale.LanguageRange;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Bug8032842 {
 
-    public static void main(String[] args) {
-
-        // test filterBasic() for preserving the case of matching tags for
-        // the language range '*', with no duplicates in the matching tags
-        testFilter("*", List.of("de-CH", "hi-in", "En-GB", "ja-Latn-JP",
-                "JA-JP", "en-GB"),
-                List.of("de-CH", "hi-in", "En-GB", "ja-Latn-JP", "JA-JP"),
-                FilteringMode.AUTOSELECT_FILTERING);
-
-        // test filterBasic() for preserving the case of matching tags for
-        // basic ranges other than *, with no duplicates in the matching tags
-        testFilter("mtm-RU, en-GB", List.of("En-Gb", "mTm-RU", "en-US",
-                "en-latn", "en-GB"),
-                List.of("mTm-RU", "En-Gb"), FilteringMode.AUTOSELECT_FILTERING);
-
-        // test filterExtended() for preserving the case of matching tags for
-        // the language range '*', with no duplicates in the matching tags
-        testFilter("*", List.of("de-CH", "hi-in", "En-GB", "hi-IN",
-                "ja-Latn-JP", "JA-JP"),
-                List.of("de-CH", "hi-in", "En-GB", "ja-Latn-JP", "JA-JP"),
-                FilteringMode.EXTENDED_FILTERING);
-
-        // test filterExtended() for preserving the case of matching tags for
-        // extended ranges other than *, with no duplicates in the matching tags
-        testFilter("*-ch;q=0.5, *-Latn;q=0.4", List.of("fr-CH", "de-Ch",
-                "en-latn", "en-US", "en-Latn"),
-                List.of("fr-CH", "de-Ch", "en-latn"),
-                FilteringMode.EXTENDED_FILTERING);
-
-        // test lookupTag() for preserving the case of matching tag
-        testLookup("*-ch;q=0.5", List.of("en", "fR-cH"), "fR-cH");
-
-    }
-
-    public static void testFilter(String ranges, List<String> tags,
-            List<String> expected, FilteringMode mode) {
+    /**
+     * This test ensures that Locale.filterTags() preserves the case of matching
+     * language tag(s).
+     */
+    @ParameterizedTest
+    @MethodSource("filterProvider")
+    public static void testFilterTags(String ranges, List<String> tags,
+                                  List<String> expected, FilteringMode mode) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         List<String> actual = Locale.filterTags(priorityList, tags, mode);
-        if (!actual.equals(expected)) {
-            throw new RuntimeException("[filterTags() failed for the language"
-                    + " range: " + ranges + ", Expected: " + expected
-                    + ", Found: " + actual + "]");
-        }
+        assertEquals(actual, expected, String.format("[filterTags() failed for " +
+                "the language range: %s, Expected: %s, Found: %s]", ranges, expected, actual));
     }
 
-    public static void testLookup(String ranges, List<String> tags,
-            String expected) {
+    /**
+     * This test ensures that Locale.lookupTag() preserves the case of matching
+     * language tag(s).
+     */
+    @ParameterizedTest
+    @MethodSource("lookupProvider")
+    public static void testLookupTag(String ranges, List<String> tags,
+                                  String expected) {
         List<LanguageRange> priorityList = LanguageRange.parse(ranges);
         String actual = Locale.lookupTag(priorityList, tags);
-        if (!actual.equals(expected)) {
-            throw new RuntimeException("[lookupTag() failed for the language"
-                    + " range: " + ranges + ", Expected: " + expected
-                    + ", Found: " + actual + "]");
-        }
+        assertEquals(actual, expected, String.format("[lookupTags() failed for " +
+                "the language range: %s, Expected: %s, Found: %s]", ranges, expected, actual));
     }
 
-}
+    private static Stream<Arguments> filterProvider() {
+        return Stream.of(
+                // test filterBasic() for preserving the case of matching tags for
+                // the language range '*', with no duplicates in the matching tags
+                Arguments.of("*",
+                        List.of("de-CH", "hi-in", "En-GB", "ja-Latn-JP", "JA-JP", "en-GB"),
+                        List.of("de-CH", "hi-in", "En-GB", "ja-Latn-JP", "JA-JP"),
+                        FilteringMode.AUTOSELECT_FILTERING),
+                // test filterBasic() for preserving the case of matching tags for
+                // basic ranges other than *, with no duplicates in the matching tags
+                Arguments.of("mtm-RU, en-GB",
+                        List.of("En-Gb", "mTm-RU", "en-US", "en-latn", "en-GB"),
+                        List.of("mTm-RU", "En-Gb"),
+                        FilteringMode.AUTOSELECT_FILTERING),
+                // test filterExtended() for preserving the case of matching tags for
+                // the language range '*', with no duplicates in the matching tags
+                Arguments.of("*",
+                        List.of("de-CH", "hi-in", "En-GB", "hi-IN", "ja-Latn-JP", "JA-JP"),
+                        List.of("de-CH", "hi-in", "En-GB", "ja-Latn-JP", "JA-JP"),
+                        FilteringMode.EXTENDED_FILTERING),
+                // test filterExtended() for preserving the case of matching tags for
+                // extended ranges other than *, with no duplicates in the matching tags
+                Arguments.of("*-ch;q=0.5, *-Latn;q=0.4",
+                        List.of("fr-CH", "de-Ch", "en-latn", "en-US", "en-Latn"),
+                        List.of("fr-CH", "de-Ch", "en-latn"),
+                        FilteringMode.EXTENDED_FILTERING)
+        );
+    }
 
+    private static Stream<Arguments> lookupProvider() {
+        return Stream.of(
+                // test lookupTag() for preserving the case of matching tag
+                Arguments.of("*-ch;q=0.5", List.of("en", "fR-cH"), "fR-cH"),
+                Arguments.of("*-Latn;q=0.4", List.of("en", "fR-LATn"), "fR-LATn")
+        );
+    }
+}
