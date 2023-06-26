@@ -25,6 +25,8 @@
 
 package java.util;
 
+import sun.nio.cs.ISO_8859_1;
+
 import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
@@ -33,7 +35,6 @@ import jdk.internal.util.ByteArray;
 import jdk.internal.util.HexDigits;
 
 import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -512,7 +513,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                         | digits[((int) lsb) & 0xff]);
 
         try {
-            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
+            return jla.newStringNoRepl(buf, ISO_8859_1.INSTANCE);
         } catch (CharacterCodingException cce) {
             throw new AssertionError(cce);
         }
