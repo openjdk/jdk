@@ -341,8 +341,8 @@ public interface JavaLangAccess {
     /**
      * Constructs a new {@code String} from the given Latin-1 bytes array.
      *
-     * The caller of this method shall relinquish and transfer the ownership of
-     * the byte array to the callee since the later will not make a copy.
+     * This byte array should not be modified after calling this method since
+     * it may not make a copy.
      *
      * @param bytes the byte array source
      * @return the newly created string

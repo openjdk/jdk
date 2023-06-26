@@ -680,7 +680,6 @@ public final class HexFormat {
         byte[] rep = new byte[2];
         rep[0] = (byte)toHighHexDigit(value);
         rep[1] = (byte)toLowHexDigit(value);
-
         return JLA.newStringLatin1NoRepl(rep);
     }
 
@@ -712,7 +711,6 @@ public final class HexFormat {
         rep[1] = (byte)toLowHexDigit((byte)(value >> 8));
         rep[2] = (byte)toHighHexDigit((byte)value);
         rep[3] = (byte)toLowHexDigit((byte)value);
-
         return JLA.newStringLatin1NoRepl(rep);
     }
 
@@ -736,7 +734,6 @@ public final class HexFormat {
         rep[5] = (byte)toLowHexDigit((byte)(value >> 8));
         rep[6] = (byte)toHighHexDigit((byte)value);
         rep[7] = (byte)toLowHexDigit((byte)value);
-
         return JLA.newStringLatin1NoRepl(rep);
     }
 
@@ -768,7 +765,6 @@ public final class HexFormat {
         rep[13] = (byte)toLowHexDigit((byte)(value >>> 8));
         rep[14] = (byte)toHighHexDigit((byte)value);
         rep[15] = (byte)toLowHexDigit((byte)value);
-
         return JLA.newStringLatin1NoRepl(rep);
     }
 
@@ -793,7 +789,6 @@ public final class HexFormat {
             rep[i] = (byte)toLowHexDigit((byte)(value));
             value = value >>> 4;
         }
-
         return JLA.newStringLatin1NoRepl(rep);
     }
 
