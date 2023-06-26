@@ -30,7 +30,7 @@
 class outputStream;
 template <typename T> class JVMTypedFlagLimit;
 
-enum class JVMFlagConstraintPhase : int {
+enum class JVMFlagConstraintPhase : char {
   // Will be validated during argument processing (Arguments::parse_argument).
   AtParse         = 0,
   // Will be validated inside Threads::create_vm(), right after Arguments::apply_ergo().
@@ -103,7 +103,7 @@ public:
   char phase() const { return _phase; }
   char kind()  const { return _kind; }
 
-  constexpr JVMFlagLimit(int type_enum, short func, short phase, short kind)
+  constexpr JVMFlagLimit(int type_enum, short func, char phase, char kind)
     : _constraint_func(func), _phase(phase), _kind(kind) DEBUG_ONLY(COMMA _type_enum(type_enum)) {}
 
   static const JVMFlagLimit* get_range(const JVMFlag* flag) {
@@ -162,15 +162,15 @@ public:
     JVMFlagLimit(type_enum, 0, 0, HAS_RANGE), _min(min), _max(max) {}
 
   // constraint only
-  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, int phase) :
+  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, char phase) :
     JVMFlagLimit(type_enum, func, phase, HAS_CONSTRAINT), _min(0), _max(0) {}
 
   // range and constraint
-  constexpr JVMTypedFlagLimit(int type_enum, T min, T max, ConstraintMarker dummy2, short func, int phase)  :
+  constexpr JVMTypedFlagLimit(int type_enum, T min, T max, ConstraintMarker dummy2, short func, char phase)  :
     JVMFlagLimit(type_enum, func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
 
   // constraint and range
-  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, int phase, T min, T max)  :
+  constexpr JVMTypedFlagLimit(int type_enum, ConstraintMarker dummy2, short func, char phase, T min, T max)  :
     JVMFlagLimit(type_enum, func, phase, HAS_RANGE | HAS_CONSTRAINT), _min(min), _max(max) {}
 
   T min() const { return _min; }
