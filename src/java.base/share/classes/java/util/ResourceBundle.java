@@ -725,11 +725,11 @@ public abstract class ResourceBundle {
                     return false;
                 }
                 //are the names the same?
-                if (!Objects.equals(name, otherEntry.name)) {
+                if (!name.equals(otherEntry.name)) {
                     return false;
                 }
                 // are the locales the same?
-                if (!Objects.equals(locale, otherEntry.locale)) {
+                if (!locale.equals(otherEntry.locale)) {
                     return false;
                 }
                 // are modules and callerModules the same and non-null?
