@@ -2705,7 +2705,7 @@ void AdapterHandlerLibrary::initialize() {
   AdapterBlob* obj_int_arg_blob = nullptr;
   AdapterBlob* obj_obj_arg_blob = nullptr;
   {
-    _adapter_handler_table = new (mtClass) AHTable();
+    _adapter_handler_table = new (mtCode) AHTable();
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
     // Create a special handler for abstract methods.  Abstract methods
