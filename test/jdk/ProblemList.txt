@@ -472,13 +472,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 ############################################################################
 
-# jdk_foreign
-
-java/foreign/callarranger/TestAarch64CallArranger.java generic-x86
-java/foreign/TestLargeSegmentCopy.java generic-x86
-
-############################################################################
-
 # jdk_lang
 
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
