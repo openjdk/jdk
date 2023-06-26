@@ -801,9 +801,7 @@ public final class String
         }
         if (cs == US_ASCII.INSTANCE) {
             if (!StringCoding.hasNegatives(src, 0, src.length)) {
-                if (COMPACT_STRINGS)
-                    return new String(src, LATIN1);
-                return new String(StringLatin1.inflate(src, 0, src.length), UTF16);
+                return newStringLatin1NoRepl(src);
             } else {
                 throwMalformed(src);
             }
