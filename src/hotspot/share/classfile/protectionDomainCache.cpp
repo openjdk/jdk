@@ -51,16 +51,16 @@ bool ProtectionDomainCacheTable::equals(const WeakHandle& protection_domain1, co
 
 // WeakHandle is both the key and the value.  We need it as the key to compare the oops that each point to
 // for equality.  We need it as the value to return the one that already exists to link in the DictionaryEntry.
-using PDCTable = ResourceHashtable<WeakHandle, WeakHandle, 1009, AnyObj::C_HEAP, mtClass,
+using InternalProtectionDomainCacheTable = ResourceHashtable<WeakHandle, WeakHandle, 1009, AnyObj::C_HEAP, mtClass,
                   ProtectionDomainCacheTable::compute_hash,
                   ProtectionDomainCacheTable::equals>;
-static PDCTable* _pd_cache_table;
+static InternalProtectionDomainCacheTable* _pd_cache_table;
 
 bool ProtectionDomainCacheTable::_dead_entries = false;
 int  ProtectionDomainCacheTable::_total_oops_removed = 0;
 
 void ProtectionDomainCacheTable::initialize(){
-  _pd_cache_table = new (mtClass) PDCTable();
+  _pd_cache_table = new (mtClass) InternalProtectionDomainCacheTable();
 }
 void ProtectionDomainCacheTable::trigger_cleanup() {
   MutexLocker ml(Service_lock, Mutex::_no_safepoint_check_flag);

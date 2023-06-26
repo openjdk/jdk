@@ -109,8 +109,8 @@ class ConstraintSet {                               // copied into hashtable as 
 };
 
 
-using LCTable = ResourceHashtable<SymbolHandle, ConstraintSet, 107, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
-static LCTable* _loader_constraint_table;
+using InternalLoaderConstraintTable = ResourceHashtable<SymbolHandle, ConstraintSet, 107, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
+static InternalLoaderConstraintTable* _loader_constraint_table;
 
 void LoaderConstraint::extend_loader_constraint(Symbol* class_name,
                                                 ClassLoaderData* loader,
@@ -136,7 +136,7 @@ void LoaderConstraint::extend_loader_constraint(Symbol* class_name,
 // entries in the table could be being dynamically resized.
 
 void LoaderConstraintTable::initialize() {
-  _loader_constraint_table = new (mtClass) LCTable();
+  _loader_constraint_table = new (mtClass) InternalLoaderConstraintTable();
 }
 
 LoaderConstraint* LoaderConstraintTable::find_loader_constraint(

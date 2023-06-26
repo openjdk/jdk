@@ -50,9 +50,9 @@ class PlaceholderKey {
 };
 
 const int _placeholder_table_size = 503;   // Does this really have to be prime?
-using PHTable = ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
+using InternalPlaceholderTable = ResourceHashtable<PlaceholderKey, PlaceholderEntry, _placeholder_table_size, AnyObj::C_HEAP, mtClass,
                   PlaceholderKey::hash, PlaceholderKey::equals>;
-static PHTable* _placeholders;
+static InternalPlaceholderTable* _placeholders;
 
 // SeenThread objects represent list of threads that are
 // currently performing a load action on a class.
@@ -273,7 +273,7 @@ PlaceholderEntry* PlaceholderTable::find_and_add(Symbol* name,
 }
 
 void PlaceholderTable::initialize(){
-  _placeholders = new (mtClass) PHTable();
+  _placeholders = new (mtClass) InternalPlaceholderTable();
 }
 
 

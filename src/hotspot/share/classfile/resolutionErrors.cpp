@@ -54,14 +54,14 @@ class ResolutionErrorKey {
   }
 };
 
-using RETable = ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
+using InternalResolutionErrorTable = ResourceHashtable<ResolutionErrorKey, ResolutionErrorEntry*, 107, AnyObj::C_HEAP, mtClass,
                   ResolutionErrorKey::hash,
                   ResolutionErrorKey::equals>;
 
-static RETable* _resolution_error_table;
+static InternalResolutionErrorTable* _resolution_error_table;
 
 void ResolutionErrorTable::initialize() {
-  _resolution_error_table = new (mtClass) RETable();
+  _resolution_error_table = new (mtClass) InternalResolutionErrorTable();
 }
 
 // create new error entry

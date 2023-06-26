@@ -978,8 +978,8 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-using IETable = ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
-static IETable* _initialization_error_table;
+using InitializationErrorTable = ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
+static InitializationErrorTable* _initialization_error_table;
 
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {
   // Create the same exception with a message indicating the thread name,
@@ -1007,7 +1007,7 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   OopHandle elem = OopHandle(Universe::vm_global(), init_error());
   bool created;
   if (_initialization_error_table == nullptr) {
-    _initialization_error_table = new (mtClass) IETable();
+    _initialization_error_table = new (mtClass) InitializationErrorTable();
   }
   _initialization_error_table->put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");

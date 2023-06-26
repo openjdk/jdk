@@ -2627,11 +2627,11 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
 };
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
-using AHTable = ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
+using AdapterHandlerTable = ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
                   AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
                   AdapterFingerPrint::equals>;
-static AHTable* _adapter_handler_table;
+static AdapterHandlerTable* _adapter_handler_table;
 
 // Find a entry with the same fingerprint if it exists
 static AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt) {
@@ -2705,7 +2705,7 @@ void AdapterHandlerLibrary::initialize() {
   AdapterBlob* obj_int_arg_blob = nullptr;
   AdapterBlob* obj_obj_arg_blob = nullptr;
   {
-    _adapter_handler_table = new (mtCode) AHTable();
+    _adapter_handler_table = new (mtCode) AdapterHandlerTable();
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
     // Create a special handler for abstract methods.  Abstract methods
