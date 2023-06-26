@@ -5460,7 +5460,7 @@ public class Check {
             // If the enclosing class is externalizable, warn for the method
             if (isExternalizable((Type)enclosing.asType())) {
                 log.warning(LintCategory.SERIAL, TreeInfo.diagnosticPositionFor(method, tree),
-                            Warnings.IneffectualExternalizableMethodRecord(method.getSimpleName()));
+                            Warnings.IneffectualExternalizableMethodRecord(method.getSimpleName().toString()));
             }
             return;
         }
