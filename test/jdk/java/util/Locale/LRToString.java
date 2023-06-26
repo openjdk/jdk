@@ -25,7 +25,7 @@
  * @test
  * @bug 8026766
  * @summary Confirm that LanguageRange.toString() returns an expected result.
- * @run junit Bug8026766
+ * @run junit LRToString
  */
 
 import java.util.Locale.LanguageRange;
@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Bug8026766 {
+public class LRToString {
 
     /**
      * This test ensures that the output of LanguageRange.toString()
