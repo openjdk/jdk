@@ -139,7 +139,7 @@ bool test_may_remove_helper(Block* block, int block_index, PhaseCFG* cfg_, Phase
   assert(inst0->rule() == inst0_rule, "sanity");
 
   Node* inst1 = inst0->in(1);
-  // Only remove test if the block order is inst1 -> MachProjNode (because AND specifies KILL cr) -> inst0
+  // Only remove test if the block order is inst1 -> MachProjNode (because the node to match must specify KILL cr) -> inst0
   // So inst1 must be at index - 2
   if (block_index < 2 || block->get_node(block_index - 2) != inst1) {
     return false;
