@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,47 +25,58 @@
  * @test
  * @bug 8025703
  * @summary Verify implementation for Locale matching.
- * @run main Bug8025703
+ * @run junit Bug8025703
  */
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale.LanguageRange;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Bug8025703 {
 
-    public static void main(String[] args) {
-        boolean err = false;
-
-        String[][] mappings = {{"ilw", "gal"},
-                               {"meg", "cir"},
-                               {"pcr", "adx"},
-                               {"xia", "acn"},
-                               {"yos", "zom"}};
-
-        for (int i = 0; i < mappings.length; i++) {
-            List<LanguageRange> got = LanguageRange.parse(mappings[i][0]);
-            ArrayList<LanguageRange> expected = new ArrayList<>();
-            expected.add(new LanguageRange(mappings[i][0], 1.0));
-            expected.add(new LanguageRange(mappings[i][1], 1.0));
-
-            if (!expected.equals(got)) {
-                err = true;
-                System.err.println("Incorrect language ranges. ");
-                for (LanguageRange lr : expected) {
-                    System.err.println("  Expected: range="
-                        + lr.getRange() + ", weight=" + lr.getWeight());
-                }
-                for (LanguageRange lr : got) {
-                    System.err.println("  Got:      range="
-                        + lr.getRange() + ", weight=" + lr.getWeight());
-                }
-            }
-        }
-
-        if (err) {
-            throw new RuntimeException("Failed.");
-        }
+    /**
+     * This test checks that parsing a range returns the expected
+     * language priority list by matching the correct tag(s).
+     */
+    @ParameterizedTest
+    @MethodSource("mappings")
+    public void localeMatchingTest(String range1, String range2) {
+        List<LanguageRange> actual = LanguageRange.parse(range1);
+        ArrayList<LanguageRange> expected = new ArrayList<>();
+        expected.add(new LanguageRange(range1, 1.0));
+        expected.add(new LanguageRange(range2, 1.0));
+        assertEquals(expected, actual, () -> getRangeAndWeights(expected, actual));
     }
 
-}
+    // Tags that map to each other
+    private static Stream<Arguments> mappings() {
+        return Stream.of(
+                Arguments.of("ilw", "gal"),
+                Arguments.of("meg", "cir"),
+                Arguments.of("pcr", "adx"),
+                Arguments.of("xia", "acn"),
+                Arguments.of("yos", "zom")
+        );
+    }
 
+    // Helper function to log differences
+    private String getRangeAndWeights(ArrayList<LanguageRange> expected, List<LanguageRange> actual) {
+       StringBuilder errOutput = new StringBuilder();
+        for (LanguageRange lr : expected) {
+            errOutput.append(String.format("%nExpected: " +
+                    "range='%s', weight='%s'", lr.getRange(), lr.getWeight()));
+        }
+        for (LanguageRange lr : actual) {
+            errOutput.append(String.format("%nActual: " +
+                    "range='%s', weight='%s'", lr.getRange(), lr.getWeight()));
+        }
+       return errOutput.toString();
+    }
+}
