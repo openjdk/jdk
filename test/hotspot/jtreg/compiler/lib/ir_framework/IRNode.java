@@ -1551,14 +1551,34 @@ public class IRNode {
         machOnlyNameRegex(VAND_NOT_L, "vand_notL");
     }
 
-    public static final String VECTOR_BLEND = PREFIX + "VECTOR_BLEND" + POSTFIX;
+    public static final String BLEND_VF = VECTOR_PREFIX + "BLEND_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_BLEND, "VectorBlend");
+        vectorNode(BLEND_VF, "VectorBlend", "float");
     }
 
-    public static final String VECTOR_MASK_CMP = PREFIX + "VECTOR_MASK_CMP" + POSTFIX;
+    public static final String BLEND_VD = VECTOR_PREFIX + "BLEND_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(VECTOR_MASK_CMP, "VectorMaskCmp");
+        vectorNode(BLEND_VD, "VectorBlend", "double");
+    }
+
+    public static final String MASK_CMP_VI = VECTOR_PREFIX + "MASK_CMP_VI" + POSTFIX;
+    static {
+        vectorNode(MASK_CMP_VI, "VectorMaskCmp", "int");
+    }
+
+    public static final String MASK_CMP_VL = VECTOR_PREFIX + "MASK_CMP_VL" + POSTFIX;
+    static {
+        vectorNode(MASK_CMP_VL, "VectorMaskCmp", "long");
+    }
+
+    public static final String MASK_CMP_VF = VECTOR_PREFIX + "MASK_CMP_VF" + POSTFIX;
+    static {
+        vectorNode(MASK_CMP_VF, "VectorMaskCmp", "float");
+    }
+
+    public static final String MASK_CMP_VD = VECTOR_PREFIX + "MASK_CMP_VD" + POSTFIX;
+    static {
+        vectorNode(MASK_CMP_VD, "VectorMaskCmp", "double");
     }
 
     public static final String VECTOR_CAST_B2X = PREFIX + "VECTOR_CAST_B2X" + POSTFIX;
@@ -1936,7 +1956,7 @@ public class IRNode {
      * type {@code typeString} and the vector size (number of elements), {@see VECTOR_SIZE}.
      */
     private static void vectorNode(String irNodePlaceholder, String irNodeRegex, String typeString) {
-        TestFramework.check(isVectorIRNode(irNodePlaceholder), "vectorNode: failed check for irNodePlaceholder " + irNodePlaceholder);
+        TestFramework.check(isVectorIRNode(irNodePlaceholder), "vectorNode: failed prefix check for irNodePlaceholder " + irNodePlaceholder + " -> did you use VECTOR_PREFIX?");
         // IS_REPLACED is later replaced with the specific type and size of the vector.
         String regex = START + irNodeRegex + MID  + IS_REPLACED + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
