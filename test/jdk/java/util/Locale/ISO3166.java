@@ -27,7 +27,7 @@
  * @summary Test obsolete ISO3166-1 alpha-2 country codes should not be retrieved.
  * ISO3166-1 alpha-2, ISO3166-1 alpha-3, ISO3166-3 country codes
  * from overloaded getISOCountries(Iso3166 type) are retrieved correctly.
- * @run junit Bug8071929
+ * @run junit ISO3166
  */
 
 import java.util.HashSet;
@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
-public class Bug8071929 {
+public class ISO3166 {
 
     private static final List<String> ISO3166_1_ALPHA2_OBSOLETE_CODES = List.of("AN", "BU", "CS",
             "NT", "SF", "TP", "YU", "ZR");
