@@ -719,8 +719,7 @@ public abstract class ResourceBundle {
             if (this == other) {
                 return true;
             }
-            try {
-                final CacheKey otherEntry = (CacheKey)other;
+            if (other instanceof CacheKey otherEntry) {
                 //quick check to see if they are not equal
                 if (modulesHash != otherEntry.modulesHash) {
                     return false;
@@ -738,7 +737,6 @@ public abstract class ResourceBundle {
                 Module caller = getCallerModule();
                 return ((module != null) && (module.equals(otherEntry.getModule())) &&
                         (caller != null) && (caller.equals(otherEntry.getCallerModule())));
-            } catch (NullPointerException | ClassCastException e) {
             }
             return false;
         }
