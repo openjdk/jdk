@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
 /*
  * @test
  * @requires vm.jvmci
+ * @library /test/lib /
  * @modules jdk.internal.vm.ci/jdk.vm.ci.hotspot
  *          jdk.internal.vm.ci/jdk.vm.ci.runtime
  *          jdk.internal.vm.ci/jdk.vm.ci.meta
@@ -46,6 +47,8 @@ import java.util.function.Predicate;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
+import jdk.test.lib.process.ProcessTools;
+import jdk.test.lib.process.OutputAnalyzer;
 import jdk.vm.ci.hotspot.HotSpotJVMCIRuntime;
 import jdk.vm.ci.meta.MetaAccessProvider;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -120,6 +123,56 @@ public class TestHotSpotJVMCIRuntime {
             boolean expected = cl == null || cl == jvmciLoader || cl == platformLoader;
             boolean actual = predicate.test(metaAccess.lookupJavaType(c));
             Assert.assertEquals(expected, actual, c + ": cl=" + cl);
+        }
+    }
+
+    /**
+     * Test program that calls into the VM and expects an {@code OutOfMemoryError} to be
+     * raised when {@code test.jvmci.forceEnomemOnLibjvmciInit == true}.
+     *
+     * For example:
+     * <pre>
+     * Exception in thread "main" java.lang.OutOfMemoryError: JNI_ENOMEM creating or attaching to libjvmci
+     *    at jdk.internal.vm.ci/jdk.vm.ci.hotspot.CompilerToVM.attachCurrentThread(Native Method)
+     *    at jdk.internal.vm.ci/jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.attachCurrentThread(HotSpotJVMCIRuntime.java:1385)
+     *    at jdk.vm.ci.hotspot.test.TestHotSpotJVMCIRuntime$JNIEnomemVMCall.main(TestHotSpotJVMCIRuntime.java:133)
+     * </pre>
+     */
+    public static class JNIEnomemVMCall {
+        public static void main(String[] args) {
+            String name = args[0];
+            HotSpotJVMCIRuntime runtime = HotSpotJVMCIRuntime.runtime();
+            MetaAccessProvider metaAccess = runtime.getHostJVMCIBackend().getMetaAccess();
+            if (name.equals("translate")) {
+                runtime.translate("object");
+            } else if (name.equals("attachCurrentThread")) {
+                runtime.attachCurrentThread(false, null);
+            } else if (name.equals("registerNativeMethods")) {
+                runtime.registerNativeMethods(JNIEnomemVMCall.class);
+            } else {
+                throw new InternalError("Unknown method: " + name);
+            }
+        }
+    }
+
+    @Test
+    public void jniEnomemTest() throws Exception {
+        String[] names = {"translate", "attachCurrentThread", "registerNativeMethods"};
+        for (String name : names) {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+                "-XX:+UnlockExperimentalVMOptions",
+                "-XX:+EnableJVMCI",
+                "-XX:-UseJVMCICompiler",
+                "-XX:+UseJVMCINativeLibrary",
+                "-Dtest.jvmci.forceEnomemOnLibjvmciInit=true",
+                "--add-exports=jdk.internal.vm.ci/jdk.vm.ci.services=ALL-UNNAMED",
+                "--add-exports=jdk.internal.vm.ci/jdk.vm.ci.runtime=ALL-UNNAMED",
+                "--add-exports=jdk.internal.vm.ci/jdk.vm.ci.hotspot=ALL-UNNAMED",
+                "-Xbootclasspath/a:.",
+                JNIEnomemVMCall.class.getName(), name);
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldContain("java.lang.OutOfMemoryError: JNI_ENOMEM creating or attaching to libjvmci");
+            output.shouldNotHaveExitValue(0);
         }
     }
 }

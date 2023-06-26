@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,10 +23,10 @@
 
 /*
  * @test
- * @bug 8215294
- * @requires os.family == "linux"
+ * @bug 8215294 8241800
  * @library /test/lib
  * @build jdk.test.lib.NetworkConfiguration
+ *        jdk.test.lib.Platform
  *        PromiscuousIPv6
  * @run main PromiscuousIPv6
  * @key randomness
@@ -38,6 +38,7 @@ import java.net.*;
 import java.util.*;
 import java.io.IOException;
 import jdk.test.lib.NetworkConfiguration;
+import jdk.test.lib.Platform;
 import jtreg.SkippedException;
 import static java.net.StandardProtocolFamily.*;
 import static java.nio.charset.StandardCharsets.UTF_8;
@@ -145,6 +146,7 @@ public class PromiscuousIPv6 {
 
     static void test(ProtocolFamily family,
                      NetworkInterface nif,
+                     boolean bindToWildcard,
                      InetAddress group1,
                      InetAddress group2)
             throws IOException
@@ -154,8 +156,13 @@ public class PromiscuousIPv6 {
 
         // Bind addresses should include the same network interface / scope, so
         // as to not reply on the default route when there are multiple interfaces
-        InetAddress bindAddr1 = Inet6Address.getByAddress(null, group1.getAddress(), nif);
-        InetAddress bindAddr2 = Inet6Address.getByAddress(null, group2.getAddress(), nif);
+        InetAddress bindAddr1 = bindToWildcard
+                ? InetAddress.getByName("::0")
+                : Inet6Address.getByAddress(null, group1.getAddress(), nif);
+
+        InetAddress bindAddr2 = bindToWildcard
+                ? InetAddress.getByName("::0")
+                : Inet6Address.getByAddress(null, group2.getAddress(), nif);
 
         DatagramChannel dc1 = (family == UNSPEC) ?
                 DatagramChannel.open() : DatagramChannel.open(family);
@@ -194,19 +201,25 @@ public class PromiscuousIPv6 {
         }
     }
 
+    /*
+     * returns true if platform allows an IPv6 socket join an IPv4 multicast group
+     */
+    private static boolean supportedByPlatform() {
+        return Platform.isOSX() || Platform.isLinux();
+    }
+
     public static void main(String[] args) throws IOException {
 
-        String os = System.getProperty("os.name");
+        boolean hasIPV6MulticastAll;
 
-        if (!os.equals("Linux")) {
-            throw new SkippedException("This test should be run only on Linux");
+        if (!supportedByPlatform()) {
+            throw new SkippedException("This test should not be run on this platform");
         } else {
-            String osVersion = System.getProperty("os.version");
-            String prefix = "3.10.0";
-            if (osVersion.startsWith(prefix)) {
-                throw new SkippedException(
-                        String.format("The behavior under test is known NOT to work on '%s' kernels", prefix));
-            }
+            int major = Platform.getOsVersionMajor();
+            int minor = Platform.getOsVersionMinor();
+            hasIPV6MulticastAll =
+                Platform.isOSX() ||
+                (Platform.isLinux() && ((major > 4) || ((major == 4 && minor >= 20))));
         }
 
         NetworkConfiguration.printSystemConfiguration(System.out);
@@ -226,8 +239,12 @@ public class PromiscuousIPv6 {
         InetAddress linkLocal2 = InetAddress.getByName("ff12::6.7.8.9");
 
         for (NetworkInterface nif : nifs) {
-            test(INET6, nif, interfaceLocal1, interfaceLocal2);
-            test(INET6, nif, linkLocal1, linkLocal2);
+            test(INET6, nif, false, interfaceLocal1, interfaceLocal2);
+            test(INET6, nif, false, linkLocal1, linkLocal2);
+            if (hasIPV6MulticastAll) {
+                test(INET6, nif, true, interfaceLocal1, interfaceLocal2);
+                test(INET6, nif, true, linkLocal1, linkLocal2);
+            }
         }
     }
 }

@@ -203,24 +203,6 @@ class SWNodeInfo {
 };
 
 class SuperWord;
-class CMoveKit {
- friend class SuperWord;
- private:
-  SuperWord* _sw;
-  Dict* _dict;
-  CMoveKit(Arena* a, SuperWord* sw) : _sw(sw)  {_dict = new Dict(cmpkey, hashkey, a);}
-  void*     _2p(Node* key)        const  { return (void*)(intptr_t)key; } // 2 conversion functions to make gcc happy
-  Dict*     dict()                const  { return _dict; }
-  void map(Node* key, Node_List* val)    { assert(_dict->operator[](_2p(key)) == nullptr, "key existed"); _dict->Insert(_2p(key), (void*)val); }
-  void unmap(Node* key)                  { _dict->Delete(_2p(key)); }
-  Node_List* pack(Node* key)      const  { return (Node_List*)_dict->operator[](_2p(key)); }
-  Node* is_Bool_candidate(Node* nd) const; // if it is the right candidate return corresponding CMove* ,
-  Node* is_Cmp_candidate(Node* nd) const; // otherwise return null
-  // Determine if the current pack is a cmove candidate that can be vectorized.
-  bool can_merge_cmove_pack(Node_List* cmove_pk);
-  void make_cmove_pack(Node_List* cmove_pk);
-  bool test_cmp_pack(Node_List* cmp_pk, Node_List* cmove_pk);
-};//class CMoveKit
 
 // JVMCI: OrderedPair is moved up to deal with compilation issues on Windows
 //------------------------------OrderedPair---------------------------
@@ -307,11 +289,8 @@ class SuperWord : public ResourceObj {
   GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
   GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
-  GrowableArray<Node*> _iteration_first; // nodes in the generation that has deps from phi
-  GrowableArray<Node*> _iteration_last;  // nodes in the generation that has deps to   phi
   GrowableArray<SWNodeInfo> _node_info;  // Info needed per node
   CloneMap&            _clone_map;       // map of nodes created in cloning
-  CMoveKit             _cmovev_kit;      // support for vectorization of CMov
   MemNode* _align_to_ref;                // Memory reference that pre-loop will align to
 
   GrowableArray<OrderedPair> _disjoint_ptrs; // runtime disambiguated pointer pairs
@@ -367,9 +346,6 @@ class SuperWord : public ResourceObj {
   bool           _do_reserve_copy; // do reserve copy of the graph(loop) before final modification in output
   int            _num_work_vecs;   // Number of non memory vector operations
   int            _num_reductions;  // Number of reduction expressions applied
-  int            _ii_first;        // generation with direct deps from mem phi
-  int            _ii_last;         // generation with direct deps to   mem phi
-  GrowableArray<int> _ii_order;
 #ifndef PRODUCT
   uintx          _vector_loop_debug; // provide more printing in debug mode
 #endif
@@ -463,9 +439,6 @@ class SuperWord : public ResourceObj {
  private:
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing bunches of Cmp, Bool, CMov nodes.
-  bool is_cmov_pack(Node_List* p);
-  bool is_cmov_pack_internal_node(Node_List* p, Node* nd) { return is_cmov_pack(p) && !nd->is_CMove(); }
-  static bool is_cmove_fp_opcode(int opc) { return (opc == Op_CMoveF || opc == Op_CMoveD); }
   static bool requires_long_to_int_conversion(int opc);
   // For pack p, are all idx operands the same?
   bool same_inputs(Node_List* p, int idx);
@@ -540,37 +513,17 @@ private:
   void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
   void print_loop(bool whole);
   #endif
-  // Check if we can create the pack pairs for mem_ref:
-  // If required, enforce strict alignment requirements of hardware.
-  // Else, only enforce alignment within a memory slice, so that there cannot be any
-  // memory-dependence between different vector "lanes".
-  bool can_create_pairs(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
-                        MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                        Node_List &align_to_refs);
-  // Check if alignment of mem_ref is consistent with the other packs of the same memory slice.
-  bool is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment, Node_List &align_to_refs);
+  // If strict memory alignment is required (vectors_should_be_aligned), then check if
+  // mem_ref is aligned with best_align_to_mem_ref.
+  bool mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                                          MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                                          Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.
   int get_iv_adjustment(MemNode* mem);
   // Can the preloop align the reference to position zero in the vector?
   bool ref_is_alignable(SWPointer& p);
-  // rebuild the graph so all loads in different iterations of cloned loop become dependent on phi node (in _do_vector_loop only)
-  bool hoist_loads_in_graph();
-  // Test whether MemNode::Memory dependency to the same load but in the first iteration of this loop is coming from memory phi
-  // Return false if failed
-  Node* find_phi_for_mem_dep(LoadNode* ld);
-  // Return same node but from the first generation. Return 0, if not found
-  Node* first_node(Node* nd);
-  // Return same node as this but from the last generation. Return 0, if not found
-  Node* last_node(Node* n);
-  // Mark nodes belonging to first and last generation
-  // returns first generation index or -1 if vectorization/simd is impossible
-  int mark_generations();
-  // swapping inputs of commutative instruction (Add or Mul)
-  bool fix_commutative_inputs(Node* gold, Node* fix);
-  // make packs forcefully (in _do_vector_loop only)
-  bool pack_parallel();
   // Construct dependency graph.
   void dependence_graph();
   // Return a memory slice (node list) in predecessor order starting at "start"
@@ -616,9 +569,8 @@ private:
   void construct_my_pack_map();
   // Remove packs that are not implemented or not profitable.
   void filter_packs();
-  // Merge CMove into new vector-nodes
-  void merge_packs_to_cmove();
-  // Verify that for every pack, all nodes are mutually independent
+  // Verify that for every pack, all nodes are mutually independent.
+  // Also verify that packset and my_pack are consistent.
   DEBUG_ONLY(void verify_packs();)
   // Adjust the memory graph for the packed operations
   void schedule();
@@ -670,8 +622,6 @@ private:
   // Is the use of d1 in u1 at the same operand position as d2 in u2?
   bool opnd_positions_match(Node* d1, Node* u1, Node* d2, Node* u2);
   void init();
-  // clean up some basic structures - used if the ideal graph was rebuilt
-  void restart();
 
   // print methods
   void print_packset();

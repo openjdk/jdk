@@ -34,7 +34,7 @@
 #include "utilities/debug.hpp"
 
 inline XHeap* XHeap::heap() {
-  assert(_heap != NULL, "Not initialized");
+  assert(_heap != nullptr, "Not initialized");
   return _heap;
 }
 
@@ -89,7 +89,7 @@ inline uintptr_t XHeap::relocate_object(uintptr_t addr) {
   assert(XGlobalPhase == XPhaseRelocate, "Relocate not allowed");
 
   XForwarding* const forwarding = _forwarding_table.get(addr);
-  if (forwarding == NULL) {
+  if (forwarding == nullptr) {
     // Not forwarding
     return XAddress::good(addr);
   }
@@ -103,7 +103,7 @@ inline uintptr_t XHeap::remap_object(uintptr_t addr) {
          XGlobalPhase == XPhaseMarkCompleted, "Forward not allowed");
 
   XForwarding* const forwarding = _forwarding_table.get(addr);
-  if (forwarding == NULL) {
+  if (forwarding == nullptr) {
     // Not forwarding
     return XAddress::good(addr);
   }

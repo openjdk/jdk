@@ -45,8 +45,8 @@ inline ZPage* ZPageTable::at(size_t index) const {
   return _map.at(index);
 }
 
-inline ZPageTableIterator::ZPageTableIterator(const ZPageTable* table) :
-    _iter(&table->_map),
+inline ZPageTableIterator::ZPageTableIterator(const ZPageTable* table)
+  : _iter(&table->_map),
     _prev(nullptr) {}
 
 inline bool ZPageTableIterator::next(ZPage** page) {
@@ -62,8 +62,8 @@ inline bool ZPageTableIterator::next(ZPage** page) {
   return false;
 }
 
-inline ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* table) :
-    _table(table),
+inline ZPageTableParallelIterator::ZPageTableParallelIterator(const ZPageTable* table)
+  : _table(table),
     _index_distributor(int(ZAddressOffsetMax >> ZGranuleSizeShift)) {}
 
 template <typename Function>

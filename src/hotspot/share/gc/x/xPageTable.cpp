@@ -40,7 +40,7 @@ void XPageTable::insert(XPage* page) {
   // visible before updating the page table.
   OrderAccess::storestore();
 
-  assert(_map.get(offset) == NULL, "Invalid entry");
+  assert(_map.get(offset) == nullptr, "Invalid entry");
   _map.put(offset, size, page);
 }
 
@@ -49,5 +49,5 @@ void XPageTable::remove(XPage* page) {
   const size_t size = page->size();
 
   assert(_map.get(offset) == page, "Invalid entry");
-  _map.put(offset, size, NULL);
+  _map.put(offset, size, nullptr);
 }

@@ -41,6 +41,7 @@
 #include "jfr/recorder/storage/jfrStorageControl.hpp"
 #include "jfr/recorder/stringpool/jfrStringPool.hpp"
 #include "jfr/utilities/jfrAllocation.hpp"
+#include "jfr/utilities/jfrThreadIterator.hpp"
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrJavaEventWriter.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
@@ -120,6 +121,30 @@ class JfrRotationLock : public StackObj {
 const Thread* JfrRotationLock::_owner_thread = nullptr;
 const int JfrRotationLock::retry_wait_millis = 10;
 volatile int JfrRotationLock::_lock = 0;
+
+// Reset thread local state used for object allocation sampling.
+class ClearObjectAllocationSampling : public ThreadClosure {
+ public:
+  void do_thread(Thread* t) {
+    assert(t != nullptr, "invariant");
+    t->jfr_thread_local()->clear_last_allocated_bytes();
+  }
+};
+
+template <typename Iterator>
+static inline void iterate(Iterator& it, ClearObjectAllocationSampling& coas) {
+  while (it.has_next()) {
+    coas.do_thread(it.next());
+  }
+}
+
+static void clear_object_allocation_sampling() {
+  ClearObjectAllocationSampling coas;
+  JfrJavaThreadIterator jit;
+  iterate(jit, coas);
+  JfrNonJavaThreadIterator njit;
+  iterate(njit, coas);
+}
 
 template <typename Instance, size_t(Instance::*func)()>
 class Content {
@@ -313,18 +338,20 @@ static size_t write_storage(JfrStorage& storage, JfrChunkWriter& chunkwriter) {
   return invoke(fs);
 }
 
-typedef Content<JfrStringPool, &JfrStringPool::write> StringPool;
-typedef WriteCheckpointEvent<StringPool> WriteStringPool;
+typedef Content<JfrStringPool, &JfrStringPool::flush> FlushStringPoolFunctor;
+typedef Content<JfrStringPool, &JfrStringPool::write> WriteStringPoolFunctor;
+typedef WriteCheckpointEvent<FlushStringPoolFunctor> FlushStringPool;
+typedef WriteCheckpointEvent<WriteStringPoolFunctor> WriteStringPool;
 
 static u4 flush_stringpool(JfrStringPool& string_pool, JfrChunkWriter& chunkwriter) {
-  StringPool sp(string_pool);
-  WriteStringPool wsp(chunkwriter, sp, TYPE_STRING);
-  return invoke(wsp);
+  FlushStringPoolFunctor fspf(string_pool);
+  FlushStringPool fsp(chunkwriter, fspf, TYPE_STRING);
+  return invoke(fsp);
 }
 
 static u4 write_stringpool(JfrStringPool& string_pool, JfrChunkWriter& chunkwriter) {
-  StringPool sp(string_pool);
-  WriteStringPool wsp(chunkwriter, sp, TYPE_STRING);
+  WriteStringPoolFunctor wspf(string_pool);
+  WriteStringPool wsp(chunkwriter, wspf, TYPE_STRING);
   return invoke(wsp);
 }
 
@@ -435,7 +462,7 @@ void JfrRecorderService::clear() {
 }
 
 void JfrRecorderService::pre_safepoint_clear() {
-  _string_pool.clear();
+  clear_object_allocation_sampling();
   _storage.clear();
   JfrStackTraceRepository::clear();
 }
@@ -449,7 +476,6 @@ void JfrRecorderService::invoke_safepoint_clear() {
 void JfrRecorderService::safepoint_clear() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   _checkpoint_manager.begin_epoch_shift();
-  _string_pool.clear();
   _storage.clear();
   _chunkwriter.set_time_stamp();
   JfrStackTraceRepository::clear();
@@ -457,6 +483,7 @@ void JfrRecorderService::safepoint_clear() {
 }
 
 void JfrRecorderService::post_safepoint_clear() {
+  _string_pool.clear();
   _checkpoint_manager.clear();
 }
 
@@ -541,9 +568,6 @@ void JfrRecorderService::pre_safepoint_write() {
     // The sampler is released (unlocked) later in post_safepoint_write.
     ObjectSampleCheckpoint::on_rotation(ObjectSampler::acquire());
   }
-  if (_string_pool.is_modified()) {
-    write_stringpool(_string_pool, _chunkwriter);
-  }
   write_storage(_storage, _chunkwriter);
   if (_stack_trace_repository.is_modified()) {
     write_stacktrace(_stack_trace_repository, _chunkwriter, false);
@@ -561,9 +585,6 @@ void JfrRecorderService::safepoint_write() {
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   _checkpoint_manager.begin_epoch_shift();
   JfrStackTraceRepository::clear_leak_profiler();
-  if (_string_pool.is_modified()) {
-    write_stringpool(_string_pool, _chunkwriter);
-  }
   _checkpoint_manager.on_rotation();
   _storage.write_at_safepoint();
   _chunkwriter.set_time_stamp();
@@ -577,6 +598,7 @@ void JfrRecorderService::post_safepoint_write() {
   // Type tagging is epoch relative which entails we are able to write out the
   // already tagged artifacts for the previous epoch. We can accomplish this concurrently
   // with threads now tagging artifacts in relation to the new, now updated, epoch and remain outside of a safepoint.
+  write_stringpool(_string_pool, _chunkwriter);
   _checkpoint_manager.write_type_set();
   if (LeakProfiler::is_running()) {
     // The object sampler instance was exclusively acquired and locked in pre_safepoint_write.

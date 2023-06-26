@@ -56,17 +56,16 @@ import static org.testng.Assert.*;
 public class TestSegmentAllocators {
 
     final static int ELEMS = 128;
-    final static Class<?> ADDRESS_CARRIER = ValueLayout.ADDRESS.bitSize() == 64 ? long.class : int.class;
 
     @Test(dataProvider = "scalarAllocations")
     @SuppressWarnings("unchecked")
     public <Z, L extends ValueLayout> void testAllocation(Z value, AllocationFactory allocationFactory, L layout, AllocationFunction<Z, L> allocationFunction, Function<MemoryLayout, VarHandle> handleFactory) {
-        layout = (L)layout.withBitAlignment(layout.bitSize());
+        layout = (L)layout.withByteAlignment(layout.byteSize());
         L[] layouts = (L[])new ValueLayout[] {
                 layout,
-                layout.withBitAlignment(layout.bitAlignment() * 2),
-                layout.withBitAlignment(layout.bitAlignment() * 4),
-                layout.withBitAlignment(layout.bitAlignment() * 8)
+                layout.withByteAlignment(layout.byteAlignment() * 2),
+                layout.withByteAlignment(layout.byteAlignment() * 4),
+                layout.withByteAlignment(layout.byteAlignment() * 8)
         };
         for (L alignedLayout : layouts) {
             List<MemorySegment> addressList = new ArrayList<>();
@@ -150,6 +149,11 @@ public class TestSegmentAllocators {
     @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
     public void testBadAllocationArrayNegSize(SegmentAllocator allocator) {
         allocator.allocateArray(ValueLayout.JAVA_BYTE, -1);
+    }
+
+    @Test(dataProvider = "allocators", expectedExceptions = IllegalArgumentException.class)
+    public void testBadAllocationArrayOverflow(SegmentAllocator allocator) {
+        allocator.allocateArray(ValueLayout.JAVA_LONG,  Long.MAX_VALUE);
     }
 
     @Test(expectedExceptions = OutOfMemoryError.class)

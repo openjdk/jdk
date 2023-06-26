@@ -109,8 +109,8 @@ static const ZStatSampler ZSamplerJavaThreads("System", "Java Threads", ZStatUni
 ZGenerationYoung* ZGeneration::_young;
 ZGenerationOld*   ZGeneration::_old;
 
-ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    _id(id),
+ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocator* page_allocator)
+  : _id(id),
     _page_allocator(page_allocator),
     _page_table(page_table),
     _forwarding_table(),
@@ -128,8 +128,7 @@ ZGeneration::ZGeneration(ZGenerationId id, ZPageTable* page_table, ZPageAllocato
     _stat_workers(),
     _stat_mark(),
     _stat_relocation(),
-    _gc_timer(nullptr) {
-}
+    _gc_timer(nullptr) {}
 
 bool ZGeneration::is_initialized() const {
   return _mark.is_initialized();
@@ -399,13 +398,19 @@ const char* ZGeneration::phase_to_string() const {
 
 class VM_ZOperation : public VM_Operation {
 private:
-  const uint _gc_id;
-  bool       _success;
+  const uint           _gc_id;
+  const GCCause::Cause _gc_cause;
+  bool                 _success;
 
 public:
-  VM_ZOperation() :
-      _gc_id(GCId::current()),
+  VM_ZOperation(GCCause::Cause gc_cause)
+    : _gc_id(GCId::current()),
+      _gc_cause(gc_cause),
       _success(false) {}
+
+  virtual const char* cause() const {
+    return GCCause::to_string(_gc_cause);
+  }
 
   virtual bool block_jni_critical() const {
     // Blocking JNI critical regions is needed in operations where we change
@@ -475,8 +480,8 @@ ZYoungTypeSetter::~ZYoungTypeSetter() {
 
 ZGenerationYoung::ZGenerationYoung(ZPageTable* page_table,
                                    const ZForwardingTable* old_forwarding_table,
-                                   ZPageAllocator* page_allocator) :
-    ZGeneration(ZGenerationId::young, page_table, page_allocator),
+                                   ZPageAllocator* page_allocator)
+  : ZGeneration(ZGenerationId::young, page_table, page_allocator),
     _active_type(ZYoungType::none),
     _tenuring_threshold(0),
     _remembered(page_table, old_forwarding_table, page_allocator),
@@ -494,8 +499,8 @@ private:
   ZStatTimer       _stat_timer;
 
 public:
-  ZGenerationCollectionScopeYoung(ZYoungType type, ConcurrentGCTimer* gc_timer) :
-      _type_setter(type),
+  ZGenerationCollectionScopeYoung(ZYoungType type, ConcurrentGCTimer* gc_timer)
+    : _type_setter(type),
       _stat_timer(ZPhaseGenerationYoung[(int)type], gc_timer) {
     // Update statistics and set the GC timer
     ZGeneration::young()->at_collection_start(gc_timer);
@@ -559,6 +564,9 @@ void ZGenerationYoung::collect(ZYoungType type, ConcurrentGCTimer* timer) {
 
 class VM_ZMarkStartYoungAndOld : public VM_ZOperation {
 public:
+  VM_ZMarkStartYoungAndOld()
+    : VM_ZOperation(ZDriver::major()->gc_cause()) {}
+
   virtual VMOp_Type type() const {
     return VMOp_ZMarkStartYoungAndOld;
   }
@@ -579,7 +587,22 @@ public:
   }
 };
 
-class VM_ZMarkStartYoung : public VM_ZOperation {
+class VM_ZYoungOperation : public VM_ZOperation {
+private:
+  static ZDriver* driver() {
+    if (ZGeneration::young()->type() == ZYoungType::minor) {
+      return ZDriver::minor();
+    } else {
+      return ZDriver::major();
+    }
+  }
+
+public:
+  VM_ZYoungOperation()
+    : VM_ZOperation(driver()->gc_cause()) {}
+};
+
+class VM_ZMarkStartYoung : public VM_ZYoungOperation {
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkStartYoung;
@@ -627,7 +650,7 @@ void ZGenerationYoung::concurrent_mark() {
   mark_follow();
 }
 
-class VM_ZMarkEndYoung : public VM_ZOperation {
+class VM_ZMarkEndYoung : public VM_ZYoungOperation {
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZMarkEndYoung;
@@ -786,7 +809,8 @@ void ZGenerationYoung::concurrent_select_relocation_set() {
   select_relocation_set(_id, promote_all);
 }
 
-class VM_ZRelocateStartYoung : public VM_ZOperation {
+class VM_ZRelocateStartYoung : public VM_ZYoungOperation {
+
 public:
   virtual VMOp_Type type() const {
     return VMOp_ZRelocateStartYoung;
@@ -933,8 +957,8 @@ ZGenerationTracer* ZGenerationYoung::jfr_tracer() {
   return &_jfr_tracer;
 }
 
-ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-    ZGeneration(ZGenerationId::old, page_table, page_allocator),
+ZGenerationOld::ZGenerationOld(ZPageTable* page_table, ZPageAllocator* page_allocator)
+  : ZGeneration(ZGenerationId::old, page_table, page_allocator),
     _reference_processor(&_workers),
     _weak_roots_processor(&_workers),
     _unload(&_workers),
@@ -950,8 +974,8 @@ private:
   ZDriverUnlocker _unlocker;
 
 public:
-  ZGenerationCollectionScopeOld(ConcurrentGCTimer* gc_timer) :
-      _stat_timer(ZPhaseGenerationOld, gc_timer),
+  ZGenerationCollectionScopeOld(ConcurrentGCTimer* gc_timer)
+    : _stat_timer(ZPhaseGenerationOld, gc_timer),
       _unlocker() {
     // Update statistics and set the GC timer
     ZGeneration::old()->at_collection_start(gc_timer);
@@ -1048,6 +1072,9 @@ void ZGenerationOld::concurrent_mark() {
 
 class VM_ZMarkEndOld : public VM_ZOperation {
 public:
+  VM_ZMarkEndOld()
+    : VM_ZOperation(ZDriver::major()->gc_cause()) {}
+
   virtual VMOp_Type type() const {
     return VMOp_ZMarkEndOld;
   }
@@ -1126,6 +1153,9 @@ void ZGenerationOld::concurrent_select_relocation_set() {
 
 class VM_ZRelocateStartOld : public VM_ZOperation {
 public:
+  VM_ZRelocateStartOld()
+    : VM_ZOperation(ZDriver::major()->gc_cause()) {}
+
   virtual VMOp_Type type() const {
     return VMOp_ZRelocateStartOld;
   }
@@ -1248,8 +1278,8 @@ void ZGenerationOld::set_soft_reference_policy(bool clear) {
 
 class ZRendezvousHandshakeClosure : public HandshakeClosure {
 public:
-  ZRendezvousHandshakeClosure() :
-      HandshakeClosure("ZRendezvous") {}
+  ZRendezvousHandshakeClosure()
+    : HandshakeClosure("ZRendezvous") {}
 
   void do_thread(Thread* thread) {
     // Does nothing
@@ -1377,8 +1407,8 @@ private:
   ZBarrierSetNMethod* const _bs_nm;
 
 public:
-  ZRemapNMethodClosure() :
-      _bs_nm(static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())) {}
+  ZRemapNMethodClosure()
+    : _bs_nm(static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())) {}
 
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
@@ -1414,21 +1444,15 @@ private:
   ZRemapNMethodClosure             _nm_cl;
 
 public:
-  ZRemapYoungRootsTask(ZPageTable* page_table, ZPageAllocator* page_allocator) :
-      ZTask("ZRemapYoungRootsTask"),
+  ZRemapYoungRootsTask(ZPageTable* page_table, ZPageAllocator* page_allocator)
+    : ZTask("ZRemapYoungRootsTask"),
       _old_pages_parallel_iterator(page_table, ZGenerationId::old, page_allocator),
       _roots_colored(ZGenerationIdOptional::old),
       _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
       _cld_cl(&_cl_colored),
       _thread_cl(),
-      _nm_cl() {
-    ClassLoaderDataGraph_lock->lock();
-  }
-
-  ~ZRemapYoungRootsTask() {
-    ClassLoaderDataGraph_lock->unlock();
-  }
+      _nm_cl() {}
 
   virtual void work() {
     {

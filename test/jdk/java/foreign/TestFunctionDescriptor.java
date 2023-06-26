@@ -125,7 +125,7 @@ public class TestFunctionDescriptor extends NativeTestHelper {
                 C_INT,
                 MemoryLayout.structLayout(C_INT, C_INT),
                 MemoryLayout.sequenceLayout(3, C_INT),
-                MemoryLayout.paddingLayout(32));
+                MemoryLayout.paddingLayout(4));
         fd.toMethodType(); // should throw
     }
 
@@ -143,27 +143,27 @@ public class TestFunctionDescriptor extends NativeTestHelper {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadPaddingInVoidFunction() {
-        FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(8));
+        FunctionDescriptor.ofVoid(MemoryLayout.paddingLayout(1));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadPaddingInNonVoidFunction() {
-        FunctionDescriptor.of(MemoryLayout.paddingLayout(8));
+        FunctionDescriptor.of(MemoryLayout.paddingLayout(1));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadPaddingInAppendArgLayouts() {
-        FunctionDescriptor.ofVoid().appendArgumentLayouts(MemoryLayout.paddingLayout(8));
+        FunctionDescriptor.ofVoid().appendArgumentLayouts(MemoryLayout.paddingLayout(1));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadPaddingInInsertArgLayouts() {
-        FunctionDescriptor.ofVoid().insertArgumentLayouts(0, MemoryLayout.paddingLayout(8));
+        FunctionDescriptor.ofVoid().insertArgumentLayouts(0, MemoryLayout.paddingLayout(1));
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testBadPaddingInChangeRetLayout() {
-        FunctionDescriptor.ofVoid().changeReturnLayout(MemoryLayout.paddingLayout(8));
+        FunctionDescriptor.ofVoid().changeReturnLayout(MemoryLayout.paddingLayout(1));
     }
 
 }

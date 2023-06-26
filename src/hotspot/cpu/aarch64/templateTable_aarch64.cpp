@@ -38,6 +38,7 @@
 #include "oops/method.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -3832,7 +3833,7 @@ void TemplateTable::monitorenter()
     __ bind(loop);
     // check if current entry is used
     // if not used then remember entry in c_rarg1
-    __ ldr(rscratch1, Address(c_rarg3, BasicObjectLock::obj_offset_in_bytes()));
+    __ ldr(rscratch1, Address(c_rarg3, BasicObjectLock::obj_offset()));
     __ cmp(zr, rscratch1);
     __ csel(c_rarg1, c_rarg3, c_rarg1, Assembler::EQ);
     // check if current entry is for same object
@@ -3892,7 +3893,7 @@ void TemplateTable::monitorenter()
   __ increment(rbcp);
 
   // store object
-  __ str(r0, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+  __ str(r0, Address(c_rarg1, BasicObjectLock::obj_offset()));
   __ lock_object(c_rarg1);
 
   // check to make sure this monitor doesn't cause stack overflow after locking
@@ -3931,7 +3932,7 @@ void TemplateTable::monitorexit()
 
     __ bind(loop);
     // check if current entry is for same object
-    __ ldr(rscratch1, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+    __ ldr(rscratch1, Address(c_rarg1, BasicObjectLock::obj_offset()));
     __ cmp(r0, rscratch1);
     // if same object then stop searching
     __ br(Assembler::EQ, found);
