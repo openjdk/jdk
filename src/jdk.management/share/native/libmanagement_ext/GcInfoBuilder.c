@@ -193,7 +193,7 @@ static void setDoubleValueAtObjectArray(JNIEnv *env, jobjectArray array,
 static void setFloatValueAtObjectArray(JNIEnv *env, jobjectArray array,
                                        jsize index, jfloat value) {
     static const char* class_name = "java/lang/Float";
-    static const char* signature = "(D)V";
+    static const char* signature = "(F)V";
     jobject obj = JNU_NewObjectByName(env, class_name, signature, value);
     if ((*env)->ExceptionCheck(env)) {
         return;
