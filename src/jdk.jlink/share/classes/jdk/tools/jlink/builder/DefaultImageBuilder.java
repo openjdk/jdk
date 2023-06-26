@@ -151,18 +151,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
      *
      * @param root The image root directory.
      * @param launchers mapping of launcher command name to their module/main class
-     * @throws IOException
-     * @throws NullPointerException If any of the params is null
-     */
-    public DefaultImageBuilder(Path root, Map<String, String> launchers) throws IOException {
-        this(root, launchers, Platform.UNKNOWN);
-    }
-
-    /**
-     * Default image builder constructor.
-     *
-     * @param root The image root directory.
-     * @param launchers mapping of launcher command name to their module/main class
      * @param targetPlatform target platform of the image
      * @throws IOException
      * @throws NullPointerException If any of the params is null
@@ -184,19 +172,6 @@ public final class DefaultImageBuilder implements ImageBuilder {
     @Override
     public void storeFiles(ResourcePool files) {
         try {
-            String value = files.moduleView()
-                                .findModule("java.base")
-                                .map(ResourcePoolModule::targetPlatform)
-                                .orElse(null);
-            if (value == null) {
-                throw new PluginException("ModuleTarget attribute is missing for java.base module");
-            }
-            try {
-                this.platform = Platform.parsePlatform(value);
-            } catch (IllegalArgumentException iae) {
-                throw new PluginException("ModuleTarget is malformed: " + iae.getMessage());
-            }
-
             checkResourcePool(files);
 
             Path bin = root.resolve(BIN_DIRNAME);
