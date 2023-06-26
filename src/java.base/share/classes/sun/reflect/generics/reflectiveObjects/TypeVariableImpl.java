@@ -27,7 +27,6 @@ package sun.reflect.generics.reflectiveObjects;
 
 import java.lang.annotation.*;
 import java.lang.reflect.AnnotatedType;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Member;
@@ -42,7 +41,6 @@ import sun.reflect.annotation.TypeAnnotationParser;
 import sun.reflect.annotation.AnnotationType;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.tree.FieldTypeSignature;
-import sun.reflect.generics.visitor.Reifier;
 import sun.reflect.misc.ReflectUtil;
 
 /**
@@ -159,17 +157,10 @@ public class TypeVariableImpl<D extends GenericDeclaration>
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof TypeVariable<?> that &&
-                o.getClass() == TypeVariableImpl.class) {
-
-            GenericDeclaration thatDecl = that.getGenericDeclaration();
-            String thatName = that.getName();
-
-            return Objects.equals(genericDeclaration, thatDecl) &&
-                Objects.equals(name, thatName);
-
-        } else
-            return false;
+        return o instanceof TypeVariable<?> that &&
+                o.getClass() == TypeVariableImpl.class &&
+                Objects.equals(genericDeclaration, that.getGenericDeclaration()) &&
+                Objects.equals(name, that.getName());
     }
 
     @Override

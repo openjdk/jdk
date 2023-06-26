@@ -249,15 +249,12 @@ public final class AnnotatedTypeFactory {
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof AnnotatedType that &&
+            return o instanceof AnnotatedType that &&
                 !(o instanceof AnnotatedArrayType) &&
                 !(o instanceof AnnotatedTypeVariable) &&
                 !(o instanceof AnnotatedParameterizedType) &&
-                !(o instanceof AnnotatedWildcardType)) {
-                return equalsTypeAndAnnotations(that);
-            } else {
-                return false;
-            }
+                !(o instanceof AnnotatedWildcardType) &&
+                equalsTypeAndAnnotations(that);
         }
 
         @Override
@@ -332,13 +329,10 @@ public final class AnnotatedTypeFactory {
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof AnnotatedArrayType that) {
-                return equalsTypeAndAnnotations(that) &&
+            return o instanceof AnnotatedArrayType that &&
+                    equalsTypeAndAnnotations(that) &&
                     Objects.equals(getAnnotatedGenericComponentType(),
                                    that.getAnnotatedGenericComponentType());
-            } else {
-                return false;
-            }
         }
 
         @Override
@@ -376,11 +370,8 @@ public final class AnnotatedTypeFactory {
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof AnnotatedTypeVariable that) {
-                return equalsTypeAndAnnotations(that);
-            } else {
-                return false;
-            }
+            return o instanceof AnnotatedTypeVariable that
+                    && equalsTypeAndAnnotations(that);
         }
     }
 
@@ -455,12 +446,9 @@ public final class AnnotatedTypeFactory {
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof AnnotatedParameterizedType that) {
-                return equalsTypeAndAnnotations(that) &&
+            return o instanceof AnnotatedParameterizedType that &&
+                    equalsTypeAndAnnotations(that) &&
                     Arrays.equals(getAnnotatedActualTypeArguments(), that.getAnnotatedActualTypeArguments());
-            } else {
-                return false;
-            }
         }
 
         @Override
@@ -566,15 +554,12 @@ public final class AnnotatedTypeFactory {
 
         @Override
         public boolean equals(Object o) {
-            if (o instanceof AnnotatedWildcardType that) {
-                return equalsTypeAndAnnotations(that) &&
+            return o instanceof AnnotatedWildcardType that &&
+                    equalsTypeAndAnnotations(that) &&
                     // Treats ordering as significant
                     Arrays.equals(getAnnotatedLowerBounds(), that.getAnnotatedLowerBounds()) &&
                     // Treats ordering as significant
                     Arrays.equals(getAnnotatedUpperBounds(), that.getAnnotatedUpperBounds());
-            } else {
-                return false;
-            }
         }
 
         @Override

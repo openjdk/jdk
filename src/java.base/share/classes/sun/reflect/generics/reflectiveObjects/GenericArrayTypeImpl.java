@@ -70,10 +70,8 @@ public class GenericArrayTypeImpl
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof GenericArrayType that) {
-            return Objects.equals(genericComponentType, that.getGenericComponentType());
-        } else
-            return false;
+        return o instanceof GenericArrayType that
+                && Objects.equals(genericComponentType, that.getGenericComponentType());
     }
 
     @Override

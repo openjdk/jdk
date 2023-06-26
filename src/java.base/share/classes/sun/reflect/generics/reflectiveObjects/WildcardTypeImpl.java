@@ -30,7 +30,6 @@ import java.lang.reflect.Type;
 import java.lang.reflect.WildcardType;
 import sun.reflect.generics.factory.GenericsFactory;
 import sun.reflect.generics.tree.FieldTypeSignature;
-import sun.reflect.generics.visitor.Reifier;
 import java.util.Arrays;
 import java.util.StringJoiner;
 
@@ -168,14 +167,9 @@ public class WildcardTypeImpl extends LazyReflectiveObjectGenerator
 
     @Override
     public boolean equals(Object o) {
-        if (o instanceof WildcardType that) {
-            return
-                Arrays.equals(this.getLowerBounds(),
-                              that.getLowerBounds()) &&
-                Arrays.equals(this.getUpperBounds(),
-                              that.getUpperBounds());
-        } else
-            return false;
+        return o instanceof WildcardType that
+                && Arrays.equals(this.getLowerBounds(), that.getLowerBounds())
+                && Arrays.equals(this.getUpperBounds(), that.getUpperBounds());
     }
 
     @Override
