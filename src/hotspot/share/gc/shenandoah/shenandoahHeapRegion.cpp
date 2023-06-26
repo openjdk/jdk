@@ -71,6 +71,7 @@ ShenandoahHeapRegion::ShenandoahHeapRegion(HeapWord* start, size_t index, bool c
   _end(start + RegionSizeWords),
   _new_top(nullptr),
   _empty_time(os::elapsedTime()),
+  _top_before_promoted(nullptr),
   _state(committed ? _empty_committed : _empty_uncommitted),
   _top(start),
   _tlab_allocs(0),

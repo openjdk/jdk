@@ -185,8 +185,8 @@ inline size_t ShenandoahHeapRegion::garbage() const {
 }
 
 inline size_t ShenandoahHeapRegion::garbage_before_padded_for_promote() const {
-  size_t used_before_promote = byte_size(bottom(), get_top_before_promote());
   assert(get_top_before_promote() != nullptr, "top before promote should not equal null");
+  size_t used_before_promote = byte_size(bottom(), get_top_before_promote());
   assert(used_before_promote >= get_live_data_bytes(),
          "Live Data must be a subset of used before promotion live: " SIZE_FORMAT " used: " SIZE_FORMAT,
          get_live_data_bytes(), used_before_promote);
@@ -251,11 +251,8 @@ inline void ShenandoahHeapRegion::save_top_before_promote() {
 
 inline void ShenandoahHeapRegion::restore_top_before_promote() {
   _top = _top_before_promoted;
-#ifdef ASSERT
   _top_before_promoted = nullptr;
-#endif
  }
-
 
 
 #endif // SHARE_GC_SHENANDOAH_SHENANDOAHHEAPREGION_INLINE_HPP

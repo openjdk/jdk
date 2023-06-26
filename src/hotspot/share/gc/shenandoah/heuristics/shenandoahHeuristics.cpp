@@ -41,6 +41,20 @@
 #include "runtime/globals_extension.hpp"
 #include "utilities/quickSort.hpp"
 
+inline void assert_no_in_place_promotions() {
+#ifdef ASSERT
+  class ShenandoahNoInPlacePromotions : public ShenandoahHeapRegionClosure {
+  public:
+    void heap_region_do(ShenandoahHeapRegion *r) override {
+      assert(r->get_top_before_promote() == nullptr,
+             "Region " SIZE_FORMAT " should not be ready for in-place promotion", r->index());
+    }
+  } cl;
+  ShenandoahHeap::heap()->heap_region_iterate(&cl);
+#endif
+}
+
+
 // sort by decreasing garbage (so most garbage comes first)
 int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
   if (a._u._garbage > b._u._garbage)
@@ -125,6 +139,10 @@ static int compare_by_aged_live(AgedRegionData a, AgedRegionData b) {
 // Returns bytes of old-gen memory consumed by selected aged regions
 size_t ShenandoahHeuristics::select_aged_regions(size_t old_available, size_t num_regions,
                                                  bool candidate_regions_for_promotion_by_copy[]) {
+
+  // There should be no regions configured for subsequent in-place-promotions carried over from the previous cycle.
+  assert_no_in_place_promotions();
+
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   assert(heap->mode()->is_generational(), "Only in generational mode");
   ShenandoahMarkingContext* const ctx = heap->marking_context();
@@ -153,22 +171,27 @@ size_t ShenandoahHeuristics::select_aged_regions(size_t old_available, size_t nu
       continue;
     }
     if (r->age() >= InitialTenuringThreshold) {
-      r->save_top_before_promote();
       if ((r->garbage() < old_garbage_threshold)) {
         HeapWord* tams = ctx->top_at_mark_start(r);
         HeapWord* original_top = r->top();
         if (tams == original_top) {
-          // Fill the remnant memory within this region to assure no allocations prior to promote in place.  Otherwise,
-          // newly allocated objects will not be parseable when promote in place tries to register them.  Furthermore, any
-          // new allocations would not necessarily be eligible for promotion.  This addresses both issues.
+          // No allocations from this region have been made during concurrent mark. It meets all the criteria
+          // for in-place-promotion. Though we only need the value of top when we fill the end of the region,
+          // we use this field to indicate that this region should be promoted in place during the evacuation
+          // phase.
+          r->save_top_before_promote();
+
           size_t remnant_size = r->free() / HeapWordSize;
           if (remnant_size > ShenandoahHeap::min_fill_size()) {
             ShenandoahHeap::fill_with_object(original_top, remnant_size);
+            // Fill the remnant memory within this region to assure no allocations prior to promote in place.  Otherwise,
+            // newly allocated objects will not be parseable when promote in place tries to register them.  Furthermore, any
+            // new allocations would not necessarily be eligible for promotion.  This addresses both issues.
             r->set_top(r->end());
             promote_in_place_pad += remnant_size * HeapWordSize;
           } else {
             // Since the remnant is so small that it cannot be filled, we don't have to worry about any accidental
-            // allocations occuring within this region before the region is promoted in place.
+            // allocations occurring within this region before the region is promoted in place.
           }
           promote_in_place_regions++;
           promote_in_place_live += r->get_live_data_bytes();
@@ -319,7 +342,7 @@ void ShenandoahHeuristics::choose_collection_set(ShenandoahCollectionSet* collec
           // ShenandoahOldGarbageThreshold so it will be promoted in place, or because there is not sufficient room
           // in old gen to hold the evacuated copies of this region's live data.  In both cases, we choose not to
           // place this region into the collection set.
-          if (region->garbage_before_padded_for_promote() < old_garbage_threshold) {
+          if (region->get_top_before_promote() != nullptr) {
             regular_regions_promoted_in_place++;
             regular_regions_promoted_usage += region->used_before_promote();
           }
