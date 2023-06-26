@@ -136,7 +136,7 @@ import java.nio.CharBuffer;
 public final class HexFormat {
 
     // Access to create strings from a byte array.
-    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     private static final byte[] UPPERCASE_DIGITS = {
             '0', '1', '2', '3', '4', '5', '6', '7',
@@ -463,7 +463,7 @@ public final class HexFormat {
         }
 
         // Return a new string using the bytes without making a copy
-        return jla.newStringLatin1NoRepl(rep);
+        return JLA.newStringLatin1NoRepl(rep);
     }
 
     /**
@@ -681,7 +681,7 @@ public final class HexFormat {
         rep[0] = (byte)toHighHexDigit(value);
         rep[1] = (byte)toLowHexDigit(value);
 
-        return jla.newStringLatin1NoRepl(rep);
+        return JLA.newStringLatin1NoRepl(rep);
     }
 
     /**
@@ -713,7 +713,7 @@ public final class HexFormat {
         rep[2] = (byte)toHighHexDigit((byte)value);
         rep[3] = (byte)toLowHexDigit((byte)value);
 
-        return jla.newStringLatin1NoRepl(rep);
+        return JLA.newStringLatin1NoRepl(rep);
     }
 
     /**
@@ -737,7 +737,7 @@ public final class HexFormat {
         rep[6] = (byte)toHighHexDigit((byte)value);
         rep[7] = (byte)toLowHexDigit((byte)value);
 
-        return jla.newStringLatin1NoRepl(rep);
+        return JLA.newStringLatin1NoRepl(rep);
     }
 
     /**
@@ -769,7 +769,7 @@ public final class HexFormat {
         rep[14] = (byte)toHighHexDigit((byte)value);
         rep[15] = (byte)toLowHexDigit((byte)value);
 
-        return jla.newStringLatin1NoRepl(rep);
+        return JLA.newStringLatin1NoRepl(rep);
     }
 
     /**
@@ -794,7 +794,7 @@ public final class HexFormat {
             value = value >>> 4;
         }
 
-        return jla.newStringLatin1NoRepl(rep);
+        return JLA.newStringLatin1NoRepl(rep);
     }
 
     /**
