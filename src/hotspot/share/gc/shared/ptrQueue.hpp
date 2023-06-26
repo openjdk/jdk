@@ -32,6 +32,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/lockFreeStack.hpp"
 #include "utilities/sizes.hpp"
+#include <limits>
 
 // There are various techniques that require threads to be able to log
 // addresses.  For example, a generational write barrier might log
@@ -119,12 +120,19 @@ protected:
 };
 
 class BufferNode {
-  size_t _index;
+  using InternalSizeType = LP64_ONLY(uint32_t) NOT_LP64(uint16_t);
+  static_assert(sizeof(InternalSizeType) <= sizeof(size_t), "assumption");
+
+  InternalSizeType _index;
+  InternalSizeType _capacity;
   BufferNode* volatile _next;
   void* _buffer[1];             // Pseudo flexible array member.
 
-  BufferNode() : _index(0), _next(nullptr) { }
-  ~BufferNode() { }
+  BufferNode(InternalSizeType capacity)
+    : _index(capacity), _capacity(capacity), _next(nullptr)
+  {}
+
+  ~BufferNode() = default;
 
   NONCOPYABLE(BufferNode);
 
@@ -133,13 +141,23 @@ class BufferNode {
   }
 
 public:
+  static constexpr size_t max_size() {
+    return std::numeric_limits<InternalSizeType>::max();
+  }
+
   static BufferNode* volatile* next_ptr(BufferNode& bn) { return &bn._next; }
   typedef LockFreeStack<BufferNode, &next_ptr> Stack;
 
   BufferNode* next() const     { return _next;  }
   void set_next(BufferNode* n) { _next = n;     }
   size_t index() const         { return _index; }
-  void set_index(size_t i)     { _index = i; }
+
+  void set_index(size_t i)     {
+    assert(i <= capacity(), "precondition");
+    _index = static_cast<InternalSizeType>(i);
+  }
+
+  size_t capacity() const      { return _capacity; }
 
   // Return the BufferNode containing the buffer, after setting its index.
   static BufferNode* make_node_from_buffer(void** buffer, size_t index) {
@@ -166,6 +184,7 @@ public:
 // FreeListAllocator.
 class BufferNode::AllocatorConfig : public FreeListConfig {
   const size_t _buffer_capacity;
+
 public:
   explicit AllocatorConfig(size_t size);
 

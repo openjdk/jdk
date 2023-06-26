@@ -38,10 +38,23 @@ PtrQueue::~PtrQueue() {
   assert(_buf == nullptr, "queue must be flushed before delete");
 }
 
-BufferNode::AllocatorConfig::AllocatorConfig(size_t size) : _buffer_capacity(size) {}
+size_t PtrQueue::current_capacity() const {
+  if (_buf == nullptr) {
+    return 0;
+  } else {
+    return BufferNode::make_node_from_buffer(_buf)->capacity();
+  }
+}
+
+BufferNode::AllocatorConfig::AllocatorConfig(size_t size)
+  : _buffer_capacity(size)
+{
+  assert(size >= 1, "Invalid buffer capacity %zu", size);
+  assert(size <= max_size(), "Invalid buffer capacity %zu", size);
+}
 
 void* BufferNode::AllocatorConfig::allocate() {
-  size_t byte_size = _buffer_capacity * sizeof(void*);
+  size_t byte_size = buffer_capacity() * sizeof(void*);
   return NEW_C_HEAP_ARRAY(char, buffer_offset() + byte_size, mtGC);
 }
 
@@ -53,21 +66,22 @@ void BufferNode::AllocatorConfig::deallocate(void* node) {
 BufferNode::Allocator::Allocator(const char* name, size_t buffer_capacity) :
   _config(buffer_capacity),
   _free_list(name, &_config)
-{
-
-}
+{}
 
 size_t BufferNode::Allocator::free_count() const {
   return _free_list.free_count();
 }
 
 BufferNode* BufferNode::Allocator::allocate() {
-  return ::new (_free_list.allocate()) BufferNode();
+  auto internal_capacity = static_cast<InternalSizeType>(buffer_capacity());
+  return ::new (_free_list.allocate()) BufferNode(internal_capacity);
 }
 
 void BufferNode::Allocator::release(BufferNode* node) {
   assert(node != nullptr, "precondition");
   assert(node->next() == nullptr, "precondition");
+  assert(node->capacity() == buffer_capacity(),
+         "Wrong size %zu, expected %zu", node->capacity(), buffer_capacity());
   node->~BufferNode();
   _free_list.release(node);
 }
