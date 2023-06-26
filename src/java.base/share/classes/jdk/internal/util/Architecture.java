@@ -57,7 +57,7 @@ public enum Architecture {
     private final ByteOrder byteOrder;
 
     /**
-     * Construct an Arctecture with number of address bits and byte order.
+     * Construct an Architecture with number of address bits and byte order.
      * @param addrSize number of address bits, typically 64 or 32
      * @param byteOrder the byte order, big-endian or little-endian
      */
