@@ -131,7 +131,7 @@ public class VMSupport {
             String context = String.format("while encoding an exception to translate it %s the JVM heap",
                     inJVMHeap ? "to" : "from");
             if (format == -1) {
-                throw new InternalError("native errorOrBuffer could not be allocated " + context);
+                throw new InternalError("native buffer could not be allocated " + context);
             }
             if (format == -2L) {
                 throw new OutOfMemoryError("OutOfMemoryError occurred " + context);

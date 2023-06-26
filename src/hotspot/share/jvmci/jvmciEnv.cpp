@@ -395,6 +395,7 @@ class ExceptionTranslation: public StackObj {
       ResourceMark rm;
       jlong buffer = (jlong) NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jbyte, buffer_size);
       if (buffer == 0L) {
+        JVMCI_event_1("error translating exception: translation buffer allocation failed");
         decode(THREAD, vmSupport, -1, 0L);
         return;
       }
@@ -403,6 +404,7 @@ class ExceptionTranslation: public StackObj {
         // Cannot get name of exception thrown by `encode` as that involves
         // calling into libjvmci which in turn can raise another exception.
         _from_env->clear_pending_exception();
+        JVMCI_event_1("error translating exception: unknown error");
         decode(THREAD, vmSupport, -3, 0L);
         return;
       } else if (HAS_PENDING_EXCEPTION) {
@@ -410,6 +412,7 @@ class ExceptionTranslation: public StackObj {
         Symbol *ex_name = throwable->klass()->name();
         CLEAR_PENDING_EXCEPTION;
         if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+          JVMCI_event_1("error translating exception: OutOfMemoryError");
           decode(THREAD, vmSupport, -2, 0L);
         } else {
           char* char_buffer = (char*) buffer + 4;
