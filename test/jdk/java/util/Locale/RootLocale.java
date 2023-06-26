@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,29 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
-    @test
-    @summary Locale constructor should allow language-only argument
-    @bug 4316602
-    @author joconner
-*/
+
+/*
+ * @test
+ * @bug 6277243
+ * @summary Verify that there is Locale.ROOT constant, and it is equal to Locale("", "", "")
+ * @run junit RootLocale
+ */
 
 import java.util.Locale;
 
-public class Bug4316602 {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) throws Exception {
-        String language = "ja";
-        Locale aLocale = Locale.of(language);
-        if (aLocale.toString().equals(language)) {
-            System.out.println("passed");
-        } else {
-            System.out.println("Bug4316602 failed");
-            throw new Exception("Bug4316602 failed");
-        }
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class RootLocale {
+
+    /**
+     * Locale.ROOT should exist and match an empty Locale given as
+     * Locale("", "", "").
+     */
+    @Test
+    public void rootTest() {
+        Locale root = Locale.of("", "", "");
+        assertEquals(Locale.ROOT, root, "Locale.ROOT is not equal to Locale(\"\", \"\", \"\")");
     }
-
 }

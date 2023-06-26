@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,7 +145,7 @@ int AwtMenuBar::CountItem(jobject menuBar)
     return nCount;
 }
 
-AwtMenuItem* AwtMenuBar::GetItem(jobject target, long index)
+AwtMenuItem* AwtMenuBar::GetItem(jobject target, jint index)
 {
     JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
     if (env->EnsureLocalCapacity(2) < 0) {
