@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,8 +31,8 @@ import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.digits.Hex256;
 import jdk.internal.util.ByteArray;
-import jdk.internal.util.Hex256;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -476,7 +476,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 0,
                 ((long) hex256[((int) (msb >> 56)) & 0xff] << 48)
                         | ((long) hex256[((int) (msb >> 48)) & 0xff] << 32)
-                        | ((long) hex256[((int) (msb >> 40)) & 0xff] << 16)
+                        | (hex256[((int) (msb >> 40)) & 0xff] << 16)
                         | hex256[((int) (msb >> 32)) & 0xff]);
         buf[8] = '-';
         ByteArray.setInt(

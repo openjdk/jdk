@@ -29,7 +29,7 @@ import java.lang.invoke.MethodHandle;
 
 import jdk.internal.vm.annotation.Stable;
 
-import jdk.internal.util.Hex256;
+import jdk.internal.digits.Hex256;
 
 /**
  * Digits class for hexadecimal digits.

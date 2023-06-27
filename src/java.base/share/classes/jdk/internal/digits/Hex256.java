@@ -23,17 +23,62 @@
  * questions.
  */
 
-package jdk.internal.util;
+package jdk.internal.digits;
 
 import jdk.internal.vm.annotation.Stable;
 
 /**
- * Provides a hexadecimal cache array of values from 0 to 255
+ * Provides a hexadecimal cache array of values from 0 to 255.
  */
 public final class Hex256 {
     private Hex256() {
     }
 
+    /**
+     * Each element of the array represents the ascii encoded
+     * hex relative to its index, for example:<p>
+     * <pre>
+     *       0 -> '00' -> ('0' << 8) | '0' -> 12336
+     *       1 -> '01' -> ('0' << 8) | '1' -> 12337
+     *       2 -> '02' -> ('0' << 8) | '2' -> 12338
+     *
+     *     ...
+     *
+     *      10 -> '0a' -> ('0' << 8) | 'a' -> 12385
+     *      11 -> '0b' -> ('0' << 8) | 'b' -> 12386
+     *      12 -> '0c' -> ('0' << 8) | 'b' -> 12387
+     *
+     *     ...
+     *
+     *      26 -> '1a' -> ('1' << 8) | 'a' -> 12641
+     *      27 -> '1b' -> ('1' << 8) | 'b' -> 12642
+     *      28 -> '1c' -> ('1' << 8) | 'c' -> 12643
+     *
+     *     ...
+     *
+     *     253 -> 'fd' -> ('f' << 8) | 'd' -> 26212
+     *     254 -> 'fe' -> ('f' << 8) | 'e' -> 26213
+     *     255 -> 'ff' -> ('f' << 8) | 'f' -> 26214
+     * </pre>
+     * <p>use like this:
+     * <pre>
+     *     int v = 254;
+     *
+     *     char[] chars = new char[2];
+     *
+     *     short i = Hex256.DIGITS[v]; // 26213
+     *
+     *     chars[0] = (char) (byte) (i >> 8); // 'f'
+     *     chars[1] = (char) (byte) i;        // 'e'
+     * </pre>
+     * In the byte [] encoded in LATIN1, it can be used combined with jdk.internal.util.ByteArray, such as:
+     * <pre>
+     *     int v = 254;
+     *
+     *     byte[] bytes = new byte[2];
+     *     ByteArray.setShort(bytes, 0, Hex256.DIGITS[v]);
+     * </pre>
+     */
     @Stable
     public static final short[] DIGITS;
 
