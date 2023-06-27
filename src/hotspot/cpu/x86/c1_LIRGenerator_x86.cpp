@@ -968,7 +968,7 @@ void LIRGenerator::do_LibmIntrinsic(Intrinsic* x) {
       break;
     case vmIntrinsics::_dpow:
        if (StubRoutines::dpow() != nullptr) {
-      __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
+        __ call_runtime_leaf(StubRoutines::dpow(), getThreadTemp(), result_reg, cc->args());
       } else {
         __ call_runtime_leaf(CAST_FROM_FN_PTR(address, SharedRuntime::dpow), getThreadTemp(), result_reg, cc->args());
       }

@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2023, Huawei Technologies Co., Ltd. All rights reserved.
+ * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,9 +31,19 @@
 #include "utilities/formatBuffer.hpp"
 #include "utilities/macros.hpp"
 
-const char* VM_Version::_uarch = "";
-const char* VM_Version::_vm_mode = "";
+#include <ctype.h>
+
 uint32_t VM_Version::_initial_vector_length = 0;
+
+#define DEF_RV_FEATURE(NAME, PRETTY, BIT, FSTRING, FLAGF)       \
+VM_Version::NAME##RVFeatureValue VM_Version::NAME(PRETTY, BIT, FSTRING);
+RV_FEATURE_FLAGS(DEF_RV_FEATURE)
+
+#define ADD_RV_FEATURE_IN_LIST(NAME, PRETTY, BIT, FSTRING, FLAGF) \
+    &VM_Version::NAME,
+VM_Version::RVFeatureValue* VM_Version::_feature_list[] = {
+RV_FEATURE_FLAGS(ADD_RV_FEATURE_IN_LIST)
+  nullptr};
 
 void VM_Version::initialize() {
   _supports_cx8 = true;
@@ -41,13 +52,14 @@ void VM_Version::initialize() {
   _supports_atomic_getset8 = true;
   _supports_atomic_getadd8 = true;
 
-  get_os_cpu_info();
+  setup_cpu_available_features();
 
   // check if satp.mode is supported, currently supports up to SV48(RV64)
-  if (get_satp_mode() > VM_SV48) {
+  if (satp_mode.value() > VM_SV48 || satp_mode.value() < VM_MBARE) {
     vm_exit_during_initialization(
-      err_msg("Unsupported satp mode: %s. Only satp modes up to sv48 are supported for now.",
-              _vm_mode));
+      err_msg(
+         "Unsupported satp mode: SV%d. Only satp modes up to sv48 are supported for now.",
+         (int)satp_mode.value()));
   }
 
   // https://github.com/riscv/riscv-profiles/blob/main/profiles.adoc#rva20-profiles
@@ -165,16 +177,16 @@ void VM_Version::initialize() {
   }
 
   if (UseRVV) {
-    if (!(_features & CPU_V)) {
+    if (!ext_V.enabled()) {
       warning("RVV is not supported on this CPU");
       FLAG_SET_DEFAULT(UseRVV, false);
     } else {
       // read vector length from vector CSR vlenb
-      _initial_vector_length = get_current_vector_length();
+      _initial_vector_length = cpu_vector_length();
     }
   }
 
-  if (UseRVC && !(_features & CPU_C)) {
+  if (UseRVC && !ext_C.enabled()) {
     warning("RVC is not supported on this CPU");
     FLAG_SET_DEFAULT(UseRVC, false);
 
@@ -185,7 +197,11 @@ void VM_Version::initialize() {
   }
 
   if (FLAG_IS_DEFAULT(AvoidUnalignedAccesses)) {
-    FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
+    if (unaligned_access.value() != MISALIGNED_FAST) {
+      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, true);
+    } else {
+      FLAG_SET_DEFAULT(AvoidUnalignedAccesses, false);
+    }
   }
 
   if (UseZbb) {
@@ -207,16 +223,6 @@ void VM_Version::initialize() {
     warning("Block zeroing is not available");
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
-
-  char buf[512];
-  buf[0] = '\0';
-  if (_uarch != nullptr && strcmp(_uarch, "") != 0) snprintf(buf, sizeof(buf), "%s,", _uarch);
-  strcat(buf, "rv64");
-#define ADD_FEATURE_IF_SUPPORTED(id, name, bit) if (_features & CPU_##id) strcat(buf, name);
-  CPU_FEATURE_FLAGS(ADD_FEATURE_IF_SUPPORTED)
-#undef ADD_FEATURE_IF_SUPPORTED
-
-  _features_string = os::strdup(buf);
 
 #ifdef COMPILER2
   c2_initialize();
@@ -333,6 +339,6 @@ void VM_Version::initialize_cpu_information(void) {
   _no_of_threads = _no_of_cores;
   _no_of_sockets = _no_of_cores;
   snprintf(_cpu_name, CPU_TYPE_DESC_BUF_SIZE - 1, "RISCV64");
-  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", _features_string);
+  snprintf(_cpu_desc, CPU_DETAILED_DESC_BUF_SIZE, "RISCV64 %s", features_string());
   _initialized = true;
 }

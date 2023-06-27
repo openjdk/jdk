@@ -353,7 +353,7 @@ static void print_local_var(outputStream *os, unsigned int bci, Method* method, 
 
 StackSlotAnalysisData::StackSlotAnalysisData(BasicType type) : _bci(INVALID), _type(type) {}
 
-StackSlotAnalysisData::StackSlotAnalysisData(int bci, BasicType type) : _bci(bci), _type(type) {
+StackSlotAnalysisData::StackSlotAnalysisData(int bci, BasicType type) : _bci((u2)bci), _type(type) {
   assert(bci >= 0, "BCI must be >= 0");
   assert(bci < 65536, "BCI must be < 65536");
 }
@@ -1081,7 +1081,7 @@ int ExceptionMessageBuilder::do_instruction(int bci) {
   }
 
   // If we have more than one branch target, process these too.
-  for (int64_t i = 0; i < dests.length(); ++i) {
+  for (int i = 0; i < dests.length(); ++i) {
     if (_stacks->at(dests.at(i)) == nullptr) {
       _added_one = true;
     }
@@ -1447,7 +1447,7 @@ bool BytecodeUtils::get_NPE_message_at(outputStream* ss, Method* method, int bci
 
   // If this NPE was created via reflection, we have no real NPE.
   if (method->method_holder() ==
-      vmClasses::reflect_NativeConstructorAccessorImpl_klass()) {
+      vmClasses::reflect_DirectConstructorHandleAccessor_NativeAccessor_klass()) {
     return false;
   }
 

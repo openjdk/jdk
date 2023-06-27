@@ -47,27 +47,28 @@ import org.openjdk.jmh.annotations.*;
 @Measurement(iterations = 4)
 public class RebuildMethodBodies {
 
-    List<ClassModel> shared, unshared;
-    Iterator<ClassModel> it1, it2;
+    Classfile shared, unshared;
+    List<ClassModel> models;
+    Iterator<ClassModel> it;
 
     @Setup(Level.Trial)
     public void setup() throws IOException {
-        shared = new ArrayList<>();
-        unshared = new ArrayList<>();
+        shared = Classfile.of(
+                            Classfile.ConstantPoolSharingOption.SHARED_POOL,
+                            Classfile.DebugElementsOption.DROP_DEBUG,
+                            Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
+        unshared = Classfile.of(
+                            Classfile.ConstantPoolSharingOption.NEW_POOL,
+                            Classfile.DebugElementsOption.DROP_DEBUG,
+                            Classfile.LineNumbersOption.DROP_LINE_NUMBERS);
+        models = new ArrayList<>();
         Files.walk(FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java")).forEach(p -> {
             if (Files.isRegularFile(p) && p.toString().endsWith(".class")) try {
-                var clm = Classfile.parse(p,
-                        Classfile.Option.constantPoolSharing(true),
-                        Classfile.Option.processDebug(false),
-                        Classfile.Option.processLineNumbers(false));
-                shared.add(clm);
-                transform(clm); //dry run to expand model and symbols
-                clm = Classfile.parse(p,
-                        Classfile.Option.constantPoolSharing(false),
-                        Classfile.Option.processDebug(false),
-                        Classfile.Option.processLineNumbers(false));
-                unshared.add(clm);
-                transform(clm); //dry run to expand model and symbols
+                var clm = shared.parse(p);
+                models.add(clm);
+                //dry run to expand model and symbols
+                transform(shared, clm);
+                transform(unshared, clm);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -76,22 +77,22 @@ public class RebuildMethodBodies {
 
     @Benchmark
     public void shared() {
-        if (it1 == null || !it1.hasNext())
-            it1 = shared.iterator();
+        if (it == null || !it.hasNext())
+            it = models.iterator();
         //model and symbols were already expanded, so benchmark is focused more on builder performance
-        transform(it1.next());
+        transform(shared, it.next());
     }
 
     @Benchmark
     public void unshared() {
-        if (it2 == null || !it2.hasNext())
-            it2 = unshared.iterator();
+        if (it == null || !it.hasNext())
+            it = models.iterator();
         //model and symbols were already expanded, so benchmark is focused more on builder performance
-        transform(it2.next());
+        transform(unshared, it.next());
     }
 
-    private static void transform(ClassModel clm) {
-        clm.transform(ClassTransform.transformingMethodBodies((cob, coe) -> {
+    private static void transform(Classfile cc, ClassModel clm) {
+        cc.transform(clm, ClassTransform.transformingMethodBodies((cob, coe) -> {
             switch (coe) {
                 case FieldInstruction i ->
                     cob.fieldInstruction(i.opcode(), i.owner().asSymbol(), i.name().stringValue(), i.typeSymbol());

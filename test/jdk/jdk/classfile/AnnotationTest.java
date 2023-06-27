@@ -127,12 +127,13 @@ class AnnotationTest {
 
     @Test
     void testAnnos() {
-        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+        var cc = Classfile.of();
+        byte[] bytes = cc.build(ClassDesc.of("Foo"), cb -> {
             ((DirectClassBuilder) cb).writeAttribute(buildAnnotationsWithCPB(cb.constantPool()));
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0, mb -> mb.with(buildAnnotationsWithCPB(mb.constantPool())));
             cb.withField("foo", CD_int, fb -> fb.with(buildAnnotationsWithCPB(fb.constantPool())));
         });
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = cc.parse(bytes);
         List<ClassElement> ces = cm.elementList();
         List<Annotation> annos = ces.stream()
                 .filter(ce -> ce instanceof RuntimeVisibleAnnotationsAttribute)
@@ -172,12 +173,13 @@ class AnnotationTest {
 
     @Test
     void testAnnosNoCPB() {
-        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+        var cc = Classfile.of();
+        byte[] bytes = cc.build(ClassDesc.of("Foo"), cb -> {
             ((DirectClassBuilder) cb).writeAttribute(buildAnnotations());
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0, mb -> mb.with(buildAnnotations()));
             cb.withField("foo", CD_int, fb -> fb.with(buildAnnotations()));
         });
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = cc.parse(bytes);
         List<ClassElement> ces = cm.elementList();
         List<Annotation> annos = ces.stream()
                 .filter(ce -> ce instanceof RuntimeVisibleAnnotationsAttribute)

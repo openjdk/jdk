@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,26 @@
  * @bug 4422044
  * @summary Ensure that keys in available-charset map
  *          are identical to canonical names
+ * @run junit AvailableCharsetNames
  */
 
-import java.io.*;
-import java.nio.*;
-import java.nio.charset.*;
-import java.util.*;
+import java.nio.charset.Charset;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class AvailableCharsetNames {
 
-    public static void main(String[] args) throws Exception {
-        Iterator charsetIterator = Charset.availableCharsets().keySet().iterator();
-        while (charsetIterator.hasNext()) {
-            String charsetName = (String) charsetIterator.next();
+    /**
+     * Test that the keys in Charset.availableCharsets()
+     * are equal to the associated Charset.name() value.
+     */
+    @Test
+    public void canonicalNamesTest() {
+        for (String charsetName : Charset.availableCharsets().keySet()) {
             Charset charset = Charset.forName(charsetName);
-            if (!charset.name().equals(charsetName)) {
-                throw new Exception("Error: Charset name mismatch - expected "
-                                   + charsetName + ", got " + charset.name());
-            }
+            assertEquals(charset.name(), charsetName, "Charset name mismatch");
         }
-
     }
-
 }

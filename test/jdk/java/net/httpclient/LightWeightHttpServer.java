@@ -33,7 +33,6 @@ import com.sun.net.httpserver.HttpContext;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import com.sun.net.httpserver.HttpsConfigurator;
 import com.sun.net.httpserver.HttpsServer;
 import java.io.IOException;
 import java.io.InputStream;
@@ -50,6 +49,8 @@ import java.util.logging.ConsoleHandler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLContext;
+
+import jdk.httpclient.test.lib.common.TestServerConfigurator;
 import jdk.test.lib.net.SimpleSSLContext;
 
 public class LightWeightHttpServer {
@@ -111,7 +112,7 @@ public class LightWeightHttpServer {
         httpServer.setExecutor(executor);
         httpsServer.setExecutor(executor);
         ctx = new SimpleSSLContext().get();
-        httpsServer.setHttpsConfigurator(new HttpsConfigurator(ctx));
+        httpsServer.setHttpsConfigurator(new TestServerConfigurator(addr.getAddress(), ctx));
         httpServer.start();
         httpsServer.start();
 
