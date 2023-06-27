@@ -434,8 +434,8 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
 
         // Check for array of string, class, enum const, annotation,
         // or ExceptionProxy
-        if (v1 instanceof Object[] && v2 instanceof Object[])
-            return Arrays.equals((Object[]) v1, (Object[]) v2);
+        if (v1 instanceof Object[] a1 && v2 instanceof Object[] a2)
+            return Arrays.equals(a1, a2);
 
         // Check for ill formed annotation(s)
         if (v2.getClass() != type)
