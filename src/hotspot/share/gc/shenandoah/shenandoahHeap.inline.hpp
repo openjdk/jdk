@@ -80,7 +80,7 @@ inline size_t ShenandoahHeap::heap_region_index_containing(const void* addr) con
   return index;
 }
 
-inline ShenandoahHeapRegion* const ShenandoahHeap::heap_region_containing(const void* addr) const {
+inline ShenandoahHeapRegion* ShenandoahHeap::heap_region_containing(const void* addr) const {
   size_t index = heap_region_index_containing(addr);
   ShenandoahHeapRegion* const result = get_region(index);
   assert(addr >= result->bottom() && addr < result->end(), "Heap region contains the address: " PTR_FORMAT, p2i(addr));
@@ -548,7 +548,7 @@ inline void ShenandoahHeap::marked_object_oop_iterate(ShenandoahHeapRegion* regi
   }
 }
 
-inline ShenandoahHeapRegion* const ShenandoahHeap::get_region(size_t region_idx) const {
+inline ShenandoahHeapRegion* ShenandoahHeap::get_region(size_t region_idx) const {
   if (region_idx < _num_regions) {
     return _regions[region_idx];
   } else {

@@ -236,10 +236,10 @@ public:
   inline size_t num_regions() const { return _num_regions; }
   inline bool is_heap_region_special() { return _heap_region_special; }
 
-  inline ShenandoahHeapRegion* const heap_region_containing(const void* addr) const;
+  inline ShenandoahHeapRegion* heap_region_containing(const void* addr) const;
   inline size_t heap_region_index_containing(const void* addr) const;
 
-  inline ShenandoahHeapRegion* const get_region(size_t region_idx) const;
+  inline ShenandoahHeapRegion* get_region(size_t region_idx) const;
 
   void heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
