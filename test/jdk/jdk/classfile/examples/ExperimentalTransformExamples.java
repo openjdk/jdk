@@ -54,7 +54,7 @@ public class ExperimentalTransformExamples {
     };
 
     public byte[] deleteAnnotations(ClassModel cm) {
-        return cm.transform((cb, ce) -> {
+        return Classfile.of().transform(cm, (cb, ce) -> {
             switch (ce) {
                 case MethodModel m -> cb.transformMethod(m, dropMethodAnnos);
                 case FieldModel f -> cb.transformField(f, dropFieldAnnos);
