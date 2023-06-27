@@ -39,8 +39,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.lang.reflect.AccessFlag;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.impl.ModuleAttributeBuilderImpl;
 import jdk.internal.classfile.impl.Util;
 
@@ -136,6 +136,19 @@ public sealed interface ModuleAttribute
      * @param attrHandler a handler that receives a {@link ModuleAttributeBuilder}
      */
     static ModuleAttribute of(ModuleDesc moduleName,
+                              Consumer<ModuleAttributeBuilder> attrHandler) {
+        var mb = new ModuleAttributeBuilderImpl(moduleName);
+        attrHandler.accept(mb);
+        return  mb.build();
+    }
+
+    /**
+     * {@return a {@code Module} attribute}
+     *
+     * @param moduleName the module name
+     * @param attrHandler a handler that receives a {@link ModuleAttributeBuilder}
+     */
+    static ModuleAttribute of(ModuleEntry moduleName,
                               Consumer<ModuleAttributeBuilder> attrHandler) {
         var mb = new ModuleAttributeBuilderImpl(moduleName);
         attrHandler.accept(mb);

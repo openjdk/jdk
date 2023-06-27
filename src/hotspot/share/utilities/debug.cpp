@@ -76,8 +76,19 @@ static intx g_asserting_thread = 0;
 static void* g_assertion_context = nullptr;
 #endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
-// Set to suppress secondary error reporting.
-bool Debugging = false;
+int DebuggingContext::_enabled = 0; // Initially disabled.
+
+DebuggingContext::DebuggingContext() {
+  _enabled += 1;                // Increase nesting count.
+}
+
+DebuggingContext::~DebuggingContext() {
+  if (is_enabled()) {
+    _enabled -= 1;              // Decrease nesting count.
+  } else {
+    fatal("Debugging nesting confusion");
+  }
+}
 
 #ifndef ASSERT
 #  ifdef _DEBUG
@@ -166,7 +177,6 @@ static void print_error_for_unit_test(const char* message, const char* detail_fm
 
 void report_vm_error(const char* file, int line, const char* error_msg, const char* detail_fmt, ...)
 {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -188,7 +198,6 @@ void report_vm_status_error(const char* file, int line, const char* error_msg,
 }
 
 void report_fatal(VMErrorType error_type, const char* file, int line, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
   void* context = nullptr;
@@ -208,7 +217,6 @@ void report_fatal(VMErrorType error_type, const char* file, int line, const char
 
 void report_vm_out_of_memory(const char* file, int line, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt, ...) {
-  if (Debugging) return;
   va_list detail_args;
   va_start(detail_args, detail_fmt);
 
@@ -278,13 +286,11 @@ void report_java_out_of_memory(const char* message) {
 
 class Command : public StackObj {
  private:
-  ResourceMark rm;
-  bool debug_save;
+  ResourceMark _rm;
+  DebuggingContext _debugging;
  public:
   static int level;
   Command(const char* str) {
-    debug_save = Debugging;
-    Debugging = true;
     if (level++ > 0)  return;
     tty->cr();
     tty->print_cr("\"Executing %s\"", str);
@@ -292,7 +298,6 @@ class Command : public StackObj {
 
   ~Command() {
     tty->flush();
-    Debugging = debug_save;
     level--;
   }
 };
@@ -393,15 +398,8 @@ extern "C" JNIEXPORT void pp(void* p) {
     // catch the signal and disable the pp() command for further use.
     // In order to avoid that, switch off SIGSEGV handling with "handle SIGSEGV nostop" before
     // invoking pp()
-    if (MemTracker::enabled()) {
-      // Does it point into a known mmapped region?
-      if (VirtualMemoryTracker::print_containing_region(p, tty)) {
-        return;
-      }
-      // Does it look like the start of a malloced block?
-      if (MallocTracker::print_pointer_information(p, tty)) {
-        return;
-      }
+    if (MemTracker::print_containing_region(p, tty)) {
+      return;
     }
     tty->print_cr(PTR_FORMAT, p2i(p));
   }
@@ -536,10 +534,7 @@ extern "C" JNIEXPORT void findpc(intptr_t x) {
 }
 
 // For findmethod() and findclass():
-// - The patterns are matched by StringUtils::is_star_match()
-// - class_name_pattern matches Klass::external_name(). E.g., "java/lang/Object" or "*ang/Object"
-// - method_pattern may optionally the signature. E.g., "wait", "wait:()V" or "*ai*t:(*)V"
-// - flags must be OR'ed from ClassPrinter::Mode for findclass/findmethod
+//   See comments in classPrinter.hpp about the meanings of class_name_pattern, method_pattern and flags.
 // Examples (in gdb):
 //   call findclass("java/lang/Object", 0x3)             -> find j.l.Object and disasm all of its methods
 //   call findmethod("*ang/Object*", "wait", 0xff)       -> detailed disasm of all "wait" methods in j.l.Object
@@ -656,7 +651,8 @@ extern "C" JNIEXPORT void pns(void* sp, void* fp, void* pc) { // print native st
 extern "C" JNIEXPORT void pns2() { // print native stack
   Command c("pns2");
   static char buf[O_BUFLEN];
-  if (os::platform_print_native_stack(tty, nullptr, buf, sizeof(buf))) {
+  address lastpc = nullptr;
+  if (os::platform_print_native_stack(tty, nullptr, buf, sizeof(buf), lastpc)) {
     // We have printed the native stack in platform-specific code,
     // so nothing else to do in this case.
   } else {

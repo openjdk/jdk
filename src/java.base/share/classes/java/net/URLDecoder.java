@@ -176,6 +176,8 @@ public class URLDecoder {
      * @throws NullPointerException if {@code s} or {@code charset} is {@code null}
      * @throws IllegalArgumentException if the implementation encounters illegal
      * characters
+     *
+     * @spec https://www.w3.org/TR/html4 HTML 4.01 Specification
      * @see URLEncoder#encode(java.lang.String, Charset)
      * @since 10
      */

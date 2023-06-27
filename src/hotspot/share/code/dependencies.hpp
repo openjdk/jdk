@@ -465,6 +465,8 @@ class Dependencies: public ResourceObj {
 
   void copy_to(nmethod* nm);
 
+  static bool _verify_in_progress;  // turn off logging dependencies
+
   DepType validate_dependencies(CompileTask* task, char** failure_detail = nullptr);
 
   void log_all_dependencies();
@@ -640,7 +642,7 @@ class Dependencies: public ResourceObj {
     void log_dependency(Klass* witness = nullptr);
 
     // Print the current dependency to tty.
-    void print_dependency(Klass* witness = nullptr, bool verbose = false, outputStream* st = tty);
+    void print_dependency(outputStream* st, Klass* witness = nullptr, bool verbose = false);
   };
   friend class Dependencies::DepStream;
 
@@ -701,6 +703,7 @@ class DepChange : public StackObj {
   }
 
   void print();
+  void print_on(outputStream* st);
 
  public:
   enum ChangeType {
@@ -714,7 +717,7 @@ class DepChange : public StackObj {
 
   // Usage:
   // for (DepChange::ContextStream str(changes); str.next(); ) {
-  //   Klass* k = str.klass();
+  //   InstanceKlass* k = str.klass();
   //   switch (str.change_type()) {
   //     ...
   //   }
@@ -725,8 +728,8 @@ class DepChange : public StackObj {
     friend class DepChange;
 
     // iteration variables:
-    ChangeType  _change_type;
-    Klass*      _klass;
+    ChangeType     _change_type;
+    InstanceKlass* _klass;
     Array<InstanceKlass*>* _ti_base;    // i.e., transitive_interfaces
     int         _ti_index;
     int         _ti_limit;
@@ -747,7 +750,7 @@ class DepChange : public StackObj {
     bool next();
 
     ChangeType change_type()     { return _change_type; }
-    Klass*     klass()           { return _klass; }
+    InstanceKlass* klass()       { return _klass; }
   };
   friend class DepChange::ContextStream;
 };

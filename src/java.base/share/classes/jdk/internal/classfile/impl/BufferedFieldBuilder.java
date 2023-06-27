@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 public final class BufferedFieldBuilder
         implements TerminalFieldBuilder {
     private final SplitConstantPool constantPool;
+    private final ClassfileImpl context;
     private final Utf8Entry name;
     private final Utf8Entry desc;
     private final List<FieldElement> elements = new ArrayList<>();
@@ -43,10 +44,12 @@ public final class BufferedFieldBuilder
     private final FieldModel original;
 
     public BufferedFieldBuilder(SplitConstantPool constantPool,
+                                ClassfileImpl context,
                                 Utf8Entry name,
                                 Utf8Entry type,
                                 FieldModel original) {
         this.constantPool = constantPool;
+        this.context = context;
         this.name = name;
         this.desc = type;
         this.flags = AccessFlags.ofField();
@@ -108,8 +111,18 @@ public final class BufferedFieldBuilder
         }
 
         @Override
+        public void writeTo(DirectClassBuilder builder) {
+            builder.withField(name, desc, new Consumer<FieldBuilder>() {
+                @Override
+                public void accept(FieldBuilder fieldBuilder) {
+                    elements.forEach(fieldBuilder);
+                }
+            });
+        }
+
+        @Override
         public void writeTo(BufWriter buf) {
-            DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, name, desc, null);
+            DirectFieldBuilder fb = new DirectFieldBuilder(constantPool, context, name, desc, null);
             elements.forEach(fb);
             fb.writeTo(buf);
         }

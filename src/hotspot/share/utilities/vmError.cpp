@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2017, 2020 SAP SE. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. and/or its affiliates.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +33,7 @@
 #include "gc/shared/gcLogPrecious.hpp"
 #include "jvm.h"
 #include "logging/logConfiguration.hpp"
+#include "memory/allocation.hpp"
 #include "memory/metaspace.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.inline.hpp"
@@ -49,6 +51,7 @@
 #include "runtime/safefetch.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackFrameStream.inline.hpp"
+#include "runtime/stackOverflow.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
 #include "runtime/vmThread.hpp"
@@ -59,8 +62,10 @@
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
-#include "utilities/vmError.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 #if INCLUDE_JFR
 #include "jfr/jfr.hpp"
 #endif
@@ -80,6 +85,7 @@ volatile jlong    VMError::_reporting_start_time = -1;
 volatile bool     VMError::_reporting_did_timeout = false;
 volatile jlong    VMError::_step_start_time = -1;
 volatile bool     VMError::_step_did_timeout = false;
+volatile bool     VMError::_step_did_succeed = false;
 volatile intptr_t VMError::_first_error_tid = -1;
 int               VMError::_id;
 const char*       VMError::_message;
@@ -92,6 +98,7 @@ bool              VMError::_print_native_stack_used = false;
 const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
+const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
@@ -164,6 +171,72 @@ static void print_bug_submit_message(outputStream *out, Thread *thread) {
     }
   }
   out->print_raw_cr("#");
+}
+
+static bool stack_has_headroom(size_t headroom) {
+  const size_t stack_size = os::current_stack_size();
+  const size_t guard_size = StackOverflow::stack_guard_zone_size();
+  const size_t unguarded_stack_size = stack_size - guard_size;
+
+  if (unguarded_stack_size < headroom) {
+    return false;
+  }
+
+  const address stack_base          = os::current_stack_base();
+  const address unguarded_stack_end = stack_base - unguarded_stack_size;
+  const address stack_pointer       = os::current_stack_pointer();
+
+  return stack_pointer >= unguarded_stack_end + headroom;
+}
+
+#ifdef ASSERT
+PRAGMA_DIAG_PUSH
+PRAGMA_INFINITE_RECURSION_IGNORED
+void VMError::reattempt_test_hit_stack_limit(outputStream* st) {
+  if (stack_has_headroom(_reattempt_required_stack_headroom)) {
+    // Use all but (_reattempt_required_stack_headroom - K) unguarded stack space.
+    const size_t stack_size     = os::current_stack_size();
+    const size_t guard_size     = StackOverflow::stack_guard_zone_size();
+    const address stack_base    = os::current_stack_base();
+    const address stack_pointer = os::current_stack_pointer();
+
+    const size_t unguarded_stack_size = stack_size - guard_size;
+    const address unguarded_stack_end = stack_base - unguarded_stack_size;
+    const size_t available_headroom   = stack_pointer - unguarded_stack_end;
+    const size_t allocation_size      = available_headroom - _reattempt_required_stack_headroom + K;
+
+    st->print_cr("Current Stack Pointer: " PTR_FORMAT " alloca " SIZE_FORMAT
+                 " of " SIZE_FORMAT " bytes available unguarded stack space",
+                 p2i(stack_pointer), allocation_size, available_headroom);
+
+    // Allocate byte blob on the stack. Make pointer volatile to avoid having
+    // the compiler removing later reads.
+    volatile char* stack_buffer = static_cast<char*>(alloca(allocation_size));
+    // Initialize the last byte.
+    stack_buffer[allocation_size - 1] = '\0';
+    // Recursive call should hit the stack limit.
+    reattempt_test_hit_stack_limit(st);
+    // Perform a volatile read of the last byte to avoid having the complier
+    // remove the allocation.
+    static_cast<void>(stack_buffer[allocation_size - 1] == '\0');
+  }
+  controlled_crash(14);
+}
+PRAGMA_DIAG_POP
+#endif // ASSERT
+
+bool VMError::can_reattempt_step(const char* &stop_reason) {
+  if (!stack_has_headroom(_reattempt_required_stack_headroom)) {
+    stop_reason = "Stack headroom limit reached";
+    return false;
+  }
+
+  if (_step_did_timeout) {
+    stop_reason = "Step time limit reached";
+    return false;
+  }
+
+  return true;
 }
 
 void VMError::record_coredump_status(const char* message, bool status) {
@@ -314,6 +387,27 @@ static bool print_code(outputStream* st, Thread* thread, address pc, bool is_cra
   return false;
 }
 
+// Like above, but only try to figure out a short name. Return nullptr if not found.
+static const char* find_code_name(address pc) {
+  if (Interpreter::contains(pc)) {
+    InterpreterCodelet* codelet = Interpreter::codelet_containing(pc);
+    if (codelet != nullptr) {
+      return codelet->description();
+    }
+  } else {
+    StubCodeDesc* desc = StubCodeDesc::desc_for(pc);
+    if (desc != nullptr) {
+      return desc->name();
+    } else {
+      CodeBlob* cb = CodeCache::find_blob(pc);
+      if (cb != nullptr) {
+        return cb->name();
+      }
+    }
+  }
+  return nullptr;
+}
+
 /**
  * Gets the caller frame of `fr`.
  *
@@ -422,6 +516,32 @@ static void print_oom_reasons(outputStream* st) {
   st->print_cr("# This output file may be truncated or incomplete.");
 }
 
+static void print_stack_location(outputStream* st, void* context, int& continuation) {
+  const int number_of_stack_slots = 8;
+
+  int i = continuation;
+  // Update continuation with next index before fetching frame
+  continuation = i + 1;
+  const frame fr = os::fetch_frame_from_context(context);
+  while (i < number_of_stack_slots) {
+    // Update continuation with next index before printing location
+    continuation = i + 1;
+    // decode stack contents if possible
+    const intptr_t *sp = fr.sp();
+    const intptr_t *slot = sp + i;
+    if (!is_aligned(slot, sizeof(intptr_t))) {
+      st->print_cr("Misaligned sp: " PTR_FORMAT, p2i(sp));
+      break;
+    } else if (os::is_readable_pointer(slot)) {
+      st->print("stack at sp + %d slots: ", i);
+      os::print_location(st, *(slot));
+    } else {
+      st->print_cr("unreadable stack slot at sp + %d", i);
+    }
+    ++i;
+  }
+}
+
 static void report_vm_version(outputStream* st, char* buf, int buflen) {
    // VM version
    st->print_cr("#");
@@ -526,35 +646,59 @@ void VMError::clear_step_start_time() {
 // thread can report error, so large buffers are statically allocated in data
 // segment.
 void VMError::report(outputStream* st, bool _verbose) {
-
+  // Used by reattempt step logic
+  static int continuation = 0;
+  const char* stop_reattempt_reason = nullptr;
 # define BEGIN                                             \
   if (_current_step == 0) {                                \
+    _step_did_succeed = false;                             \
     _current_step = __LINE__;                              \
     {
       // [Begin logic]
 
-# define STEP_IF(s,cond)                                   \
+# define STEP_IF(s, cond)                                  \
     }                                                      \
+    _step_did_succeed = true;                              \
   }                                                        \
   if (_current_step < __LINE__) {                          \
+    _step_did_succeed = false;                             \
     _current_step = __LINE__;                              \
     _current_step_info = s;                                \
-    record_step_start_time();                              \
-    _step_did_timeout = false;                             \
-    if ((cond)) {
+    if ((cond)) {                                          \
+      record_step_start_time();                            \
+      _step_did_timeout = false;
       // [Step logic]
 
 # define STEP(s) STEP_IF(s, true)
 
+# define REATTEMPT_STEP_IF(s, cond)                        \
+    }                                                      \
+    _step_did_succeed = true;                              \
+  }                                                        \
+  if (_current_step < __LINE__ && !_step_did_succeed) {    \
+    _current_step = __LINE__;                              \
+    _current_step_info = s;                                \
+    const bool cond_value = (cond);                        \
+    if (cond_value && !can_reattempt_step(                 \
+                          stop_reattempt_reason)) {        \
+      st->print_cr("[stop reattempt (%s) reason: %s]",     \
+                   _current_step_info,                     \
+                   stop_reattempt_reason);                 \
+    } else if (cond_value) {
+      // [Continue Step logic]
+
 # define END                                               \
     }                                                      \
+    _step_did_succeed = true;                              \
     clear_step_start_time();                               \
   }
 
   // don't allocate large buffer on stack
   static char buf[O_BUFLEN];
 
-  static bool print_native_stack_succeeded = false;
+  // Native stack trace may get stuck. We try to handle the last pc if it
+  // belongs to VM generated code.
+  address lastpc = nullptr;
 
   BEGIN
 
@@ -571,6 +715,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   // Error handler self tests
   // Meaning of codes passed through in the tests.
 #define TEST_SECONDARY_CRASH 14
+#define TEST_REATTEMPT_SECONDARY_CRASH 15
 #define TEST_RESOURCE_MARK_CRASH 2
 
   // test secondary error handling. Test it twice, to test that resetting
@@ -584,6 +729,39 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
       TestCrashInErrorHandler);
     controlled_crash(TestCrashInErrorHandler);
+
+  // See corresponding test in test/runtime/ErrorHandling/ReattemptErrorTest.java
+  STEP_IF("test reattempt secondary crash",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("Will crash now (TestCrashInErrorHandler=%u)...",
+      TestCrashInErrorHandler);
+    controlled_crash(14);
+
+  REATTEMPT_STEP_IF("test reattempt secondary crash, attempt 2",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt secondary crash. attempt 2");
+
+  REATTEMPT_STEP_IF("test reattempt secondary crash, attempt 3",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt secondary crash. attempt 3");
+
+  STEP_IF("test reattempt timeout",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt timeout");
+    os::infinite_sleep();
+
+  REATTEMPT_STEP_IF("test reattempt timeout, attempt 2",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt timeout, attempt 2");
+
+  STEP_IF("test reattempt stack headroom",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt stack headroom");
+    reattempt_test_hit_stack_limit(st);
+
+  REATTEMPT_STEP_IF("test reattempt stack headroom, attempt 2",
+      _verbose && TestCrashInErrorHandler == TEST_REATTEMPT_SECONDARY_CRASH)
+    st->print_cr("test reattempt stack headroom, attempt 2");
 
   STEP_IF("test missing ResourceMark does not crash",
       _verbose && TestCrashInErrorHandler == TEST_RESOURCE_MARK_CRASH)
@@ -810,9 +988,16 @@ void VMError::report(outputStream* st, bool _verbose) {
     st->cr();
 
   STEP_IF("printing native stack (with source info)", _verbose)
-    if (os::platform_print_native_stack(st, _context, buf, sizeof(buf))) {
+    if (os::platform_print_native_stack(st, _context, buf, sizeof(buf), lastpc)) {
       // We have printed the native stack in platform-specific code
       // Windows/x64 needs special handling.
+      // Stack walking may get stuck. Try to find the calling code.
+      if (lastpc != nullptr) {
+        const char* name = find_code_name(lastpc);
+        if (name != nullptr) {
+          st->print_cr("The last pc belongs to %s (printed below).", name);
+        }
+      }
     } else {
       frame fr = _context ? os::fetch_frame_from_context(_context)
                           : os::current_frame();
@@ -820,9 +1005,8 @@ void VMError::report(outputStream* st, bool _verbose) {
       print_native_stack(st, fr, _thread, true, -1, buf, sizeof(buf));
       _print_native_stack_used = true;
     }
-    print_native_stack_succeeded = true;
 
-  STEP_IF("retry printing native stack (no source info)", _verbose && !print_native_stack_succeeded)
+  REATTEMPT_STEP_IF("retry printing native stack (no source info)", _verbose)
     st->cr();
     st->print_cr("Retrying call stack printing without source information...");
     frame fr = _context ? os::fetch_frame_from_context(_context) : os::current_frame();
@@ -862,37 +1046,50 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP_IF("printing register info",
       _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
-    // decode register contents if possible
+    continuation = 0;
     ResourceMark rm(_thread);
-    os::print_register_info(st, _context);
+    st->print_cr("Register to memory mapping:");
+    st->cr();
+    os::print_register_info(st, _context, continuation);
     st->cr();
 
+  REATTEMPT_STEP_IF("printing register info, attempt 2",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
+    ResourceMark rm(_thread);
+    os::print_register_info(st, _context, continuation);
+    st->cr();
 
-  STEP("printing top of stack, instructions near pc")
+  REATTEMPT_STEP_IF("printing register info, attempt 3",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
+    ResourceMark rm(_thread);
+    os::print_register_info(st, _context, continuation);
+    st->cr();
 
-  STEP_IF("printing top of stack, instructions near pc", _verbose && _context)
+  STEP_IF("printing top of stack, instructions near pc", _verbose && _context != nullptr)
     // printing top of stack, instructions near pc
     os::print_tos_pc(st, _context);
     st->cr();
 
   STEP_IF("inspecting top of stack",
       _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
-    // decode stack contents if possible
-    frame fr = os::fetch_frame_from_context(_context);
-    const int slots = 8;
-    const intptr_t *start = fr.sp();
-    const intptr_t *end = start + slots;
-    if (is_aligned(start, sizeof(intptr_t)) && os::is_readable_range(start, end)) {
-      st->print_cr("Stack slot to memory mapping:");
-      for (int i = 0; i < slots; ++i) {
-        st->print("stack at sp + %d slots: ", i);
-        ResourceMark rm(_thread);
-        os::print_location(st, *(start + i));
-      }
-    }
+    continuation = 0;
+    ResourceMark rm(_thread);
+    st->print_cr("Stack slot to memory mapping:");
+    st->cr();
+    print_stack_location(st, _context, continuation);
     st->cr();
 
-  STEP("printing code blobs if possible")
+  REATTEMPT_STEP_IF("inspecting top of stack, attempt 2",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
+    ResourceMark rm(_thread);
+    print_stack_location(st, _context, continuation);
+    st->cr();
+
+  REATTEMPT_STEP_IF("inspecting top of stack, attempt 3",
+      _verbose && _context != nullptr && _thread != nullptr && Universe::is_fully_initialized())
+    ResourceMark rm(_thread);
+    print_stack_location(st, _context, continuation);
+    st->cr();
 
   STEP_IF("printing code blobs if possible", _verbose)
     const int printed_capacity = max_error_log_print_code;
@@ -905,6 +1102,13 @@ void VMError::report(outputStream* st, bool _verbose) {
     // value outside the range.
     int limit = MIN2(ErrorLogPrintCodeLimit, printed_capacity);
     if (limit > 0) {
+      // Check if a pc was found by native stack trace above.
+      if (lastpc != nullptr) {
+        if (print_code(st, _thread, lastpc, true, printed, printed_capacity)) {
+          printed_len++;
+        }
+      }
+
       // Scan the native stack
       if (!_print_native_stack_used) {
         // Only try to print code of the crashing frame since
@@ -946,7 +1150,13 @@ void VMError::report(outputStream* st, bool _verbose) {
       st->cr();
     }
 
-  STEP("printing process")
+  STEP_IF("printing registered callbacks", _verbose && _thread != nullptr);
+    for (VMErrorCallback* callback = _thread->_vm_error_callbacks;
+        callback != nullptr;
+        callback = callback->_next) {
+      callback->call(st);
+      st->cr();
+    }
 
   STEP_IF("printing process", _verbose)
     st->cr();
@@ -956,7 +1166,7 @@ void VMError::report(outputStream* st, bool _verbose) {
   STEP_IF("printing user info", ExtensiveErrorReports && _verbose)
     os::print_user_info(st);
 
-  STEP_IF("printing all threads", _verbose && _thread)
+  STEP_IF("printing all threads", _verbose && _thread != nullptr)
     // all threads
     Threads::print_on_error(st, _thread, buf, sizeof(buf));
     st->cr();
@@ -1105,6 +1315,7 @@ void VMError::report(outputStream* st, bool _verbose) {
 # undef BEGIN
 # undef STEP_IF
 # undef STEP
+# undef REATTEMPT_STEP_IF
 # undef END
 }
 
@@ -1744,43 +1955,68 @@ void VMError::show_message_box(char *buf, int buflen) {
   } while (yes);
 }
 
-// Timeout handling: check if a timeout happened (either a single step did
-// timeout or the whole of error reporting hit ErrorLogTimeout). Interrupt
-// the reporting thread if that is the case.
+// Fatal error handling is subject to several timeouts:
+// - a global timeout (controlled via ErrorLogTimeout)
+// - local error reporting step timeouts.
+//
+// The latter aims to "give the JVM a kick" if it gets stuck in one particular place during
+// error reporting. This prevents one error reporting step from hogging all the time allotted
+// to error reporting under ErrorLogTimeout.
+//
+// VMError::check_timeout() is called from the watcher thread and checks for either global
+// or step timeout. If a timeout happened, we interrupt the reporting thread and set either
+// _reporting_did_timeout or _step_did_timeout to signal which timeout fired. Function returns
+// true if the *global* timeout fired, which will cause WatcherThread to shut down the JVM
+// immediately.
 bool VMError::check_timeout() {
+
+  // This function is supposed to be called from watcher thread during fatal error handling only.
+  assert(VMError::is_error_reported(), "Only call during error handling");
+  assert(Thread::current()->is_Watcher_thread(), "Only call from watcher thread");
 
   if (ErrorLogTimeout == 0) {
     return false;
   }
 
-  // Do not check for timeouts if we still have a message box to show to the
-  // user or if there are OnError handlers to be run.
-  if (ShowMessageBoxOnError
-      || (OnError != nullptr && OnError[0] != '\0')
-      || Arguments::abort_hook() != nullptr) {
-    return false;
-  }
+  // There are three situations where we suppress the *global* error timeout:
+  // - if the JVM is embedded and the launcher has its abort hook installed.
+  //   That must be allowed to run.
+  // - if the user specified one or more OnError commands to run, and these
+  //   did not yet run. These must have finished.
+  // - if the user (typically developer) specified ShowMessageBoxOnError,
+  //   and the error box has not yet been shown
+  const bool ignore_global_timeout =
+      (ShowMessageBoxOnError
+            || (OnError != nullptr && OnError[0] != '\0')
+            || Arguments::abort_hook() != nullptr);
 
-  const jlong reporting_start_time_l = get_reporting_start_time();
   const jlong now = get_current_timestamp();
-  // Timestamp is stored in nanos.
-  if (reporting_start_time_l > 0) {
-    const jlong end = reporting_start_time_l + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
-    if (end <= now && !_reporting_did_timeout) {
-      // We hit ErrorLogTimeout and we haven't interrupted the reporting
-      // thread yet.
-      _reporting_did_timeout = true;
-      interrupt_reporting_thread();
-      return true; // global timeout
+
+  // Global timeout hit?
+  if (!ignore_global_timeout) {
+    const jlong reporting_start_time = get_reporting_start_time();
+    // Timestamp is stored in nanos.
+    if (reporting_start_time > 0) {
+      const jlong end = reporting_start_time + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR;
+      if (end <= now && !_reporting_did_timeout) {
+        // We hit ErrorLogTimeout and we haven't interrupted the reporting
+        // thread yet.
+        _reporting_did_timeout = true;
+        interrupt_reporting_thread();
+        return true; // global timeout
+      }
     }
   }
 
-  const jlong step_start_time_l = get_step_start_time();
-  if (step_start_time_l > 0) {
+  // Reporting step timeout?
+  const jlong step_start_time = get_step_start_time();
+  if (step_start_time > 0) {
     // A step times out after a quarter of the total timeout. Steps are mostly fast unless they
     // hang for some reason, so this simple rule allows for three hanging step and still
     // hopefully leaves time enough for the rest of the steps to finish.
-    const jlong end = step_start_time_l + (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR / 4;
+    const int max_step_timeout_secs = 5;
+    const jlong timeout_duration = MAX2((jlong)max_step_timeout_secs, (jlong)ErrorLogTimeout * TIMESTAMP_TO_SECONDS_FACTOR / 4);
+    const jlong end = step_start_time + timeout_duration;
     if (end <= now && !_step_did_timeout) {
       // The step timed out and we haven't interrupted the reporting
       // thread yet.
@@ -1869,3 +2105,14 @@ void VMError::controlled_crash(int how) {
   ShouldNotReachHere();
 }
 #endif // !ASSERT
+
+VMErrorCallbackMark::VMErrorCallbackMark(VMErrorCallback* callback)
+  : _thread(Thread::current()) {
+  callback->_next = _thread->_vm_error_callbacks;
+  _thread->_vm_error_callbacks = callback;
+}
+
+VMErrorCallbackMark::~VMErrorCallbackMark() {
+  assert(_thread->_vm_error_callbacks != nullptr, "Popped too far");
+  _thread->_vm_error_callbacks = _thread->_vm_error_callbacks->_next;
+}

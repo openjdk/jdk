@@ -775,14 +775,6 @@ final class Byte512Vector extends ByteVector {
 
         @Override
         @ForceInline
-        public Byte512Mask eq(VectorMask<Byte> mask) {
-            Objects.requireNonNull(mask);
-            Byte512Mask m = (Byte512Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Byte512Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Byte512Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -829,9 +821,9 @@ final class Byte512Vector extends ByteVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Byte512Mask xor(VectorMask<Byte> mask) {
+        public Byte512Mask xor(VectorMask<Byte> mask) {
             Objects.requireNonNull(mask);
             Byte512Mask m = (Byte512Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Byte512Mask.class, null, byte.class, VLENGTH,

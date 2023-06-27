@@ -110,6 +110,7 @@ public class TypeAnnotations {
     final Annotate annotate;
     final Attr attr;
 
+    @SuppressWarnings("this-escape")
     protected TypeAnnotations(Context context) {
         context.put(typeAnnosKey, this);
         names = Names.instance(context);

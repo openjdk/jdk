@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ class Array: public MetaspaceObj {
   friend class JVMCIVMStructs;
   friend class MethodHandleCompiler;           // special case
   friend class WhiteBox;
+  friend class FieldInfoStream;
 protected:
   int _length;                                 // the number of array elements
   T   _data[1];                                // the array memory

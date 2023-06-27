@@ -261,7 +261,7 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
       // Overflow of the primary_supers array forces me to be secondary.
       super_check_cell = &_secondary_super_cache;
     }
-    set_super_check_offset((address)super_check_cell - (address) this);
+    set_super_check_offset(u4((address)super_check_cell - (address) this));
 
 #ifdef ASSERT
     {
@@ -603,7 +603,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(cds, mirror)("%s has raw archived mirror", external_name());
-    if (ArchiveHeapLoader::are_archived_mirrors_available()) {
+    if (ArchiveHeapLoader::is_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);

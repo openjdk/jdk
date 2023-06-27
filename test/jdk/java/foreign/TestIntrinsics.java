@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 /*
  * @test
  * @enablePreview
- * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64" | os.arch=="riscv64"
+ * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @run testng/othervm
- *   -Djdk.internal.foreign.ProgrammableInvoker.USE_SPEC=true
+ *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   --enable-native-access=ALL-UNNAMED
  *   -Xbatch
  *   TestIntrinsics
@@ -108,8 +108,8 @@ public class TestIntrinsics extends NativeTestHelper {
         { // identity_va
             MemorySegment ma = findNativeOrThrow("identity_va");
             FunctionDescriptor fd = FunctionDescriptor.of(C_INT, C_INT,
-                                                                 C_DOUBLE, C_INT, C_FLOAT, C_LONG_LONG);
-            tests.add(abi.downcallHandle(ma, fd, firstVariadicArg(1)), 1, 1, 10D, 2, 3F, 4L);
+                                                                 C_DOUBLE, C_INT, C_DOUBLE, C_LONG_LONG);
+            tests.add(abi.downcallHandle(ma, fd, firstVariadicArg(1)), 1, 1, 10D, 2, 3D, 4L);
         }
 
         { // high_arity

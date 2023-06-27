@@ -61,7 +61,7 @@ class BuilderBlockTest {
         // Ensure that start=0 at top level, end is undefined until code is done, then end=1
         Label startEnd[] = new Label[2];
 
-        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0,
                           mb -> mb.withCode(xb -> {
                               startEnd[0] = xb.startLabel();
@@ -80,7 +80,7 @@ class BuilderBlockTest {
     void testStartEndBlock() throws Exception {
         Label startEnd[] = new Label[4];
 
-        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.of(CD_void), 0,
                           mb -> mb.withCode(xb -> {
                               startEnd[0] = xb.startLabel();
@@ -103,7 +103,7 @@ class BuilderBlockTest {
 
     @Test
     void testIfThenReturn() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
                           AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
@@ -122,7 +122,7 @@ class BuilderBlockTest {
 
     @Test
     void testIfThenElseReturn() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
                           AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
@@ -140,7 +140,7 @@ class BuilderBlockTest {
 
     @Test
     void testIfThenBadOpcode()  {
-        Classfile.build(ClassDesc.of("Foo"), cb -> {
+        Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
@@ -160,7 +160,7 @@ class BuilderBlockTest {
 
     @Test
     void testIfThenElseImplicitBreak() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
                           AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
@@ -180,7 +180,7 @@ class BuilderBlockTest {
 
     @Test
     void testIfThenElseExplicitBreak() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
@@ -199,7 +199,7 @@ class BuilderBlockTest {
 
     @Test
     void testIfThenElseOpcode() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("Foo"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
@@ -224,7 +224,7 @@ class BuilderBlockTest {
 
     @Test
     void testIfThenElseBadOpcode()  {
-        Classfile.build(ClassDesc.of("Foo"), cb -> {
+        Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("foo", MethodTypeDesc.of(CD_int, CD_int, CD_int),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(),
@@ -245,7 +245,7 @@ class BuilderBlockTest {
 
     @Test
     void testAllocateLocal() {
-        Classfile.build(ClassDesc.of("Foo"), cb -> {
+        Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), Classfile.ACC_STATIC,
                           mb -> mb.withCode(xb -> {
                               int slot1 = xb.allocateLocal(TypeKind.IntType);
@@ -255,13 +255,14 @@ class BuilderBlockTest {
                               assertEquals(slot1, 4);
                               assertEquals(slot2, 5);
                               assertEquals(slot3, 7);
+                              xb.return_();
                           }));
         });
     }
 
     @Test
     void testAllocateLocalBlock() {
-        Classfile.build(ClassDesc.of("Foo"), cb -> {
+        Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), Classfile.ACC_STATIC,
                           mb -> mb.withCode(xb -> {
                               xb.block(bb -> {
@@ -275,13 +276,14 @@ class BuilderBlockTest {
                               });
                               int slot4 = xb.allocateLocal(TypeKind.IntType);
                               assertEquals(slot4, 4);
+                              xb.return_();
                           }));
         });
     }
 
     @Test
     void testAllocateLocalIfThen() {
-        Classfile.build(ClassDesc.of("Foo"), cb -> {
+        Classfile.of().build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), Classfile.ACC_STATIC,
                           mb -> mb.withCode(xb -> {
                               xb.iconst_0();

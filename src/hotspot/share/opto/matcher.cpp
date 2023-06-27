@@ -62,6 +62,7 @@ const uint Matcher::_end_rematerialize   = _END_REMATERIALIZE;
 Matcher::Matcher()
 : PhaseTransform( Phase::Ins_Select ),
   _states_arena(Chunk::medium_size, mtCompiler),
+  _new_nodes(C->comp_arena()),
   _visited(&_states_arena),
   _shared(&_states_arena),
   _dontcare(&_states_arena),
@@ -142,6 +143,7 @@ OptoReg::Name Matcher::warp_incoming_stk_arg( VMReg reg ) {
       _in_arg_limit = OptoReg::add(warped, 1); // Bump max stack slot seen
     if (!RegMask::can_represent_arg(warped)) {
       // the compiler cannot represent this method's calling sequence
+      // Bailout. We do not have space to represent all arguments.
       C->record_method_not_compilable("unsupported incoming calling sequence");
       return OptoReg::Bad;
     }
@@ -311,6 +313,7 @@ void Matcher::match( ) {
 
   if (!RegMask::can_represent_arg(OptoReg::add(_out_arg_limit,-1))) {
     // the compiler cannot represent this method's calling sequence
+    // Bailout. We do not have space to represent all arguments.
     C->record_method_not_compilable("must be able to represent all call arguments in reg mask");
   }
 
@@ -332,7 +335,7 @@ void Matcher::match( ) {
   Node* new_ideal_null = ConNode::make(TypePtr::NULL_PTR);
 
   // Swap out to old-space; emptying new-space
-  Arena *old = C->node_arena()->move_contents(C->old_arena());
+  Arena* old = C->swap_old_and_new();
 
   // Save debug and profile information for nodes in old space:
   _old_node_note_array = C->node_note_array();
@@ -358,6 +361,7 @@ void Matcher::match( ) {
     Node* xroot =        xform( C->root(), 1 );
     if (xroot == nullptr) {
       Matcher::soft_match_failure();  // recursive matching process failed
+      assert(false, "instruction match failed");
       C->record_method_not_compilable("instruction match failed");
     } else {
       // During matching shared constants were attached to C->root()
@@ -389,7 +393,15 @@ void Matcher::match( ) {
     }
   }
   if (C->top() == nullptr || C->root() == nullptr) {
-    C->record_method_not_compilable("graph lost"); // %%% cannot happen?
+    // New graph lost. This is due to a compilation failure we encountered earlier.
+    stringStream ss;
+    if (C->failure_reason() != nullptr) {
+      ss.print("graph lost: %s", C->failure_reason());
+    } else {
+      assert(C->failure_reason() != nullptr, "graph lost: reason unknown");
+      ss.print("graph lost: reason unknown");
+    }
+    C->record_method_not_compilable(ss.as_string());
   }
   if (C->failing()) {
     // delete old;
@@ -1242,6 +1254,7 @@ OptoReg::Name Matcher::warp_outgoing_stk_arg( VMReg reg, OptoReg::Name begin_out
     if( warped >= out_arg_limit_per_call )
       out_arg_limit_per_call = OptoReg::add(warped,1);
     if (!RegMask::can_represent_arg(warped)) {
+      // Bailout. For example not enough space on stack for all arguments. Happens for methods with too many arguments.
       C->record_method_not_compilable("unsupported calling sequence");
       return OptoReg::Bad;
     }
@@ -1434,6 +1447,7 @@ MachNode *Matcher::match_sfpt( SafePointNode *sfpt ) {
     uint r_cnt = mcall->tf()->range()->cnt();
     MachProjNode *proj = new MachProjNode( mcall, r_cnt+10000, RegMask::Empty, MachProjNode::fat_proj );
     if (!RegMask::can_represent_arg(OptoReg::Name(out_arg_limit_per_call-1))) {
+      // Bailout. We do not have space to represent all arguments.
       C->record_method_not_compilable("unsupported outgoing calling sequence");
     } else {
       for (int i = begin_out_arg_area; i < out_arg_limit_per_call; i++)
@@ -1621,6 +1635,7 @@ Node* Matcher::Label_Root(const Node* n, State* svec, Node* control, Node*& mem)
   // out of stack space.  See bugs 6272980 & 6227033 for more info.
   LabelRootDepth++;
   if (LabelRootDepth > MaxLabelRootDepth) {
+    // Bailout. Can for example be hit with a deep chain of operations.
     C->record_method_not_compilable("Out of stack space, increase MaxLabelRootDepth");
     return nullptr;
   }
@@ -1721,7 +1736,7 @@ MachNode* Matcher::find_shared_node(Node* leaf, uint rule) {
   if (!leaf->is_Con() && !leaf->is_DecodeNarrowPtr()) return nullptr;
 
   // See if this Con has already been reduced using this rule.
-  if (_shared_nodes.Size() <= leaf->_idx) return nullptr;
+  if (_shared_nodes.max() <= leaf->_idx) return nullptr;
   MachNode* last = (MachNode*)_shared_nodes.at(leaf->_idx);
   if (last != nullptr && rule == last->rule()) {
     // Don't expect control change for DecodeN
@@ -2365,20 +2380,6 @@ void Matcher::find_shared_post_visit(Node* n, uint opcode) {
       // or vice-versa, but I do not want to debug this for Ladybird.
       // 10/2/2000 CNC.
       Node* pair1 = new BinaryNode(n->in(1), n->in(1)->in(1));
-      n->set_req(1, pair1);
-      Node* pair2 = new BinaryNode(n->in(2), n->in(3));
-      n->set_req(2, pair2);
-      n->del_req(3);
-      break;
-    }
-    case Op_CMoveVF:
-    case Op_CMoveVD: {
-      // Restructure into a binary tree for Matching:
-      // CMoveVF (Binary bool mask) (Binary src1 src2)
-      Node* in_cc = n->in(1);
-      assert(in_cc->is_Con(), "The condition input of cmove vector node must be a constant.");
-      Node* bol = new BoolNode(in_cc, (BoolTest::mask)in_cc->get_int());
-      Node* pair1 = new BinaryNode(bol, in_cc);
       n->set_req(1, pair1);
       Node* pair2 = new BinaryNode(n->in(2), n->in(3));
       n->set_req(2, pair2);

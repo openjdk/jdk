@@ -158,9 +158,6 @@ protected:
   void *Arealloc( void *old_ptr, size_t old_size, size_t new_size,
       AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
 
-  // Move contents of this arena into an empty arena
-  Arena *move_contents(Arena *empty_arena);
-
   // Determine if pointer belongs to this Arena or not.
   bool contains( const void *ptr ) const;
 
@@ -173,7 +170,7 @@ protected:
 
 private:
   // Reset this Arena to empty, access will trigger grow if necessary
-  void   reset(void) {
+  void reset(void) {
     _first = _chunk = nullptr;
     _hwm = _max = nullptr;
     set_size_in_bytes(0);

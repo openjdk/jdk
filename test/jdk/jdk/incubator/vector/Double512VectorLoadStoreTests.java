@@ -32,7 +32,7 @@
 // -- This file was mechanically generated: Do not edit! -- //
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SegmentScope;
+import java.lang.foreign.Arena;
 import java.lang.foreign.ValueLayout;
 import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.VectorMask;
@@ -54,7 +54,7 @@ public class Double512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     static final int INVOC_COUNT = Integer.getInteger("jdk.incubator.vector.test.loop-iterations", 100);
 
-    static final ValueLayout.OfDouble ELEMENT_LAYOUT = ValueLayout.JAVA_DOUBLE.withBitAlignment(8);
+    static final ValueLayout.OfDouble ELEMENT_LAYOUT = ValueLayout.JAVA_DOUBLE.withByteAlignment(1);
 
 
     static final int BUFFER_REPS = Integer.getInteger("jdk.incubator.vector.test.buffer-vectors", 25000 / 512);
@@ -479,8 +479,8 @@ public class Double512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "doubleByteProviderForIOOBE")
     static void loadMemorySegmentIOOBE(IntFunction<double[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Double.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Double.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -508,8 +508,8 @@ public class Double512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "doubleByteProviderForIOOBE")
     static void storeMemorySegmentIOOBE(IntFunction<double[]> fa, IntFunction<Integer> fi) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Double.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Double.SIZE);
 
         int l = (int) a.byteSize();
         int s = SPECIES.vectorByteSize();
@@ -572,8 +572,8 @@ public class Double512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "doubleByteMaskProviderForIOOBE")
     static void loadMemorySegmentMaskIOOBE(IntFunction<double[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Double.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Double.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromValues(SPECIES, mask);
 
@@ -603,8 +603,8 @@ public class Double512VectorLoadStoreTests extends AbstractVectorLoadStoreTest {
 
     @Test(dataProvider = "doubleByteMaskProviderForIOOBE")
     static void storeMemorySegmentMaskIOOBE(IntFunction<double[]> fa, IntFunction<Integer> fi, IntFunction<boolean[]> fm) {
-        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> MemorySegment.allocateNative(i, Double.SIZE, SegmentScope.auto()));
-        MemorySegment r = MemorySegment.allocateNative(a.byteSize(), Double.SIZE, SegmentScope.auto());
+        MemorySegment a = toSegment(fa.apply(SPECIES.length()), i -> Arena.ofAuto().allocate(i, Double.SIZE));
+        MemorySegment r = Arena.ofAuto().allocate(a.byteSize(), Double.SIZE);
         boolean[] mask = fm.apply(SPECIES.length());
         VectorMask<Double> vmask = VectorMask.fromValues(SPECIES, mask);
 

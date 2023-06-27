@@ -245,6 +245,11 @@ class LibraryCallKit : public GraphKit {
   bool inline_native_setScopedValueCache();
 
   bool inline_native_time_funcs(address method, const char* funcName);
+#if INCLUDE_JVMTI
+  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
+  bool inline_native_notify_jvmti_hide();
+#endif
+
 #ifdef JFR_HAVE_INTRINSICS
   bool inline_native_classID();
   bool inline_native_getEventWriter();

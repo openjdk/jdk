@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,6 @@ public:
   static const char* retry_no_escape_analysis();
   static const char* retry_no_iterative_escape_analysis();
   static const char* retry_no_locks_coarsening();
-  static const char* retry_class_loading_during_parsing();
 
   // Print compilation timers and statistics
   void print_timers();
@@ -61,13 +60,7 @@ public:
   // possible for only a limited set of available intrinsics whereas
   // a non-virtual dispatch is possible for all available intrinsics.)
   // Return false otherwise.
-  virtual bool is_intrinsic_supported(const methodHandle& method) {
-    return is_intrinsic_supported(method, false);
-  }
-
-  // Check if the compiler supports an intrinsic for 'method' given the
-  // the dispatch mode specified by the 'is_virtual' parameter.
-  bool is_intrinsic_supported(const methodHandle& method, bool is_virtual);
+  virtual bool is_intrinsic_supported(const methodHandle& method);
 
   // Initial size of the code buffer (may be increased at runtime)
   static int initial_code_buffer_size(int const_size = initial_const_capacity);

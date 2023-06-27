@@ -1050,7 +1050,7 @@ public abstract class DateFormat extends Format {
 
         /**
          * Constant identifying the time of day indicator
-         * (e.g. "a.m." or "p.m.") field.
+         * ({@literal e.g.} "a.m." or "p.m.") field.
          */
         public static final Field AM_PM = new
                             Field("am pm", Calendar.AM_PM);

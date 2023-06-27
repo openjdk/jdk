@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,11 +52,11 @@ public:
   class RegisterImpl: public AbstractRegisterImpl {
     friend class Register;
 
-    static constexpr RegisterImpl* first();
+    static constexpr const RegisterImpl* first();
 
   public:
     // accessors
-    constexpr int   raw_encoding() const { return this - first(); }
+    constexpr int   raw_encoding() const { return checked_cast<int>(this - first()); }
     constexpr int       encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
     constexpr bool      is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
     bool  has_byte_register() const { return 0 <= raw_encoding() && raw_encoding() < number_of_byte_registers; }
@@ -77,9 +77,9 @@ public:
   constexpr const RegisterImpl* operator->() const { return RegisterImpl::first() + _encoding; }
 };
 
-extern Register::RegisterImpl all_RegisterImpls[Register::number_of_registers + 1] INTERNAL_VISIBILITY;
+extern const Register::RegisterImpl all_RegisterImpls[Register::number_of_registers + 1] INTERNAL_VISIBILITY;
 
-inline constexpr Register::RegisterImpl* Register::RegisterImpl::first() {
+inline constexpr const Register::RegisterImpl* Register::RegisterImpl::first() {
   return all_RegisterImpls + 1;
 }
 
@@ -135,11 +135,11 @@ public:
   class FloatRegisterImpl: public AbstractRegisterImpl {
     friend class FloatRegister;
 
-    static constexpr FloatRegisterImpl* first();
+    static constexpr const FloatRegisterImpl* first();
 
   public:
     // accessors
-    int   raw_encoding() const { return this - first(); }
+    int   raw_encoding() const { return checked_cast<int>(this - first()); }
     int   encoding() const     { assert(is_valid(), "invalid register"); return raw_encoding(); }
     bool  is_valid() const     { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
@@ -159,9 +159,9 @@ public:
   const FloatRegisterImpl* operator->() const { return FloatRegisterImpl::first() + _encoding; }
 };
 
-extern FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
+extern const FloatRegister::FloatRegisterImpl all_FloatRegisterImpls[FloatRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
 
-inline constexpr FloatRegister::FloatRegisterImpl* FloatRegister::FloatRegisterImpl::first() {
+inline constexpr const FloatRegister::FloatRegisterImpl* FloatRegister::FloatRegisterImpl::first() {
   return all_FloatRegisterImpls + 1;
 }
 
@@ -198,11 +198,11 @@ public:
   class XMMRegisterImpl: public AbstractRegisterImpl {
     friend class XMMRegister;
 
-    static constexpr XMMRegisterImpl* first();
+    static constexpr const XMMRegisterImpl* first();
 
   public:
     // accessors
-    constexpr int raw_encoding() const { return this - first(); }
+    constexpr int raw_encoding() const { return checked_cast<int>(this - first()); }
     constexpr int     encoding() const { assert(is_valid(), "invalid register"); return raw_encoding(); }
     constexpr bool    is_valid() const { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
@@ -232,9 +232,9 @@ public:
   }
 };
 
-extern XMMRegister::XMMRegisterImpl all_XMMRegisterImpls[XMMRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
+extern const XMMRegister::XMMRegisterImpl all_XMMRegisterImpls[XMMRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
 
-inline constexpr XMMRegister::XMMRegisterImpl* XMMRegister::XMMRegisterImpl::first() {
+inline constexpr const XMMRegister::XMMRegisterImpl* XMMRegister::XMMRegisterImpl::first() {
   return all_XMMRegisterImpls + 1;
 }
 
@@ -308,12 +308,12 @@ public:
   class KRegisterImpl: public AbstractRegisterImpl {
     friend class KRegister;
 
-    static constexpr KRegisterImpl* first();
+    static constexpr const KRegisterImpl* first();
 
   public:
 
     // accessors
-    int   raw_encoding() const { return this - first(); }
+    int   raw_encoding() const { return checked_cast<int>(this - first()); }
     int   encoding() const     { assert(is_valid(), "invalid register"); return raw_encoding(); }
     bool  is_valid() const     { return 0 <= raw_encoding() && raw_encoding() < number_of_registers; }
 
@@ -333,9 +333,9 @@ public:
   const KRegisterImpl* operator->() const { return KRegisterImpl::first() + _encoding; }
 };
 
-extern KRegister::KRegisterImpl all_KRegisterImpls[KRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
+extern const KRegister::KRegisterImpl all_KRegisterImpls[KRegister::number_of_registers + 1] INTERNAL_VISIBILITY;
 
-inline constexpr KRegister::KRegisterImpl* KRegister::KRegisterImpl::first() {
+inline constexpr const KRegister::KRegisterImpl* KRegister::KRegisterImpl::first() {
   return all_KRegisterImpls + 1;
 }
 

@@ -109,7 +109,7 @@ public:
   bool is_updating() { return _state == Updating; }
   bool is_complete() { return _state == Complete; }
 
-  inline void set_state_empty();
+  inline void set_state_untracked();
   inline void set_state_updating();
   inline void set_state_complete();
 

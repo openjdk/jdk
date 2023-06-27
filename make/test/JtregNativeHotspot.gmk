@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -94,16 +94,6 @@ MLVM_STRESS_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
     -I$(VM_TESTBASE_DIR)/nsk/share/jni
 
-NSK_GC_LOCK_JVMTI_INCLUDES := \
-    -I$(VM_TESTBASE_DIR)/nsk/share/gc/lock/jvmti \
-    -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
-
-NSK_GC_LOCK_MALLOC_INCLUDES := \
-    -I$(VM_TESTBASE_DIR)/nsk/share/gc/lock/malloc \
-    -I$(VM_TESTBASE_DIR)/nsk/share/native \
-    -I$(VM_TESTBASE_DIR)/nsk/share/jni
-
 NSK_GC_LOCK_JNI_INCLUDES := \
     -I$(VM_TESTBASE_DIR)/nsk/share/gc/lock/jni \
     -I$(VM_TESTBASE_DIR)/nsk/share/native \
@@ -176,10 +166,6 @@ BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libstepBreakPopReturn := $(MLVM_JVMTI_INCLU
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libIndyRedefineClass := $(MLVM_JVMTI_INCLUDES)
 
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libnativeAndMH := $(MLVM_STRESS_INCLUDES)
-
-BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libJVMTIAllocLocker := $(NSK_GC_LOCK_JVMTI_INCLUDES)
-
-BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libMallocLocker := $(NSK_GC_LOCK_MALLOC_INCLUDES)
 
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libBooleanArrayCriticalLocker := $(NSK_GC_LOCK_JNI_INCLUDES)
 BUILD_HOTSPOT_JTREG_LIBRARIES_CFLAGS_libByteArrayCriticalLocker := $(NSK_GC_LOCK_JNI_INCLUDES)
@@ -874,7 +860,7 @@ BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exesigtest := -ljvm
 
 ifeq ($(call isTargetOs, windows), true)
   BUILD_HOTSPOT_JTREG_EXECUTABLES_CFLAGS_exeFPRegs := -MT
-  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libTestPsig.c libnativeStack.c
+  BUILD_HOTSPOT_JTREG_EXCLUDE += exesigtest.c libterminatedThread.c libTestJNI.c libCompleteExit.c libTestPsig.c libnativeStack.c exeGetCreatedJavaVMs.c
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit := jvm.lib
   BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exedaemonDestroy := jvm.lib
 else
@@ -1516,6 +1502,7 @@ else
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libatExit += -ljvm
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libCompleteExit += -lpthread
   BUILD_HOTSPOT_JTREG_LIBRARIES_LIBS_libnativeStack += -lpthread
+  BUILD_HOTSPOT_JTREG_EXECUTABLES_LIBS_exeGetCreatedJavaVMs := -ljvm -lpthread
 endif
 
 ifeq ($(ASAN_ENABLED), true)

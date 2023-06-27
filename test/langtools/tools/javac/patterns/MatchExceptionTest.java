@@ -30,7 +30,7 @@
  *          jdk.compiler/com.sun.tools.javac.main
  *          jdk.jdeps/com.sun.tools.classfile
  * @build toolbox.ToolBox toolbox.JavacTask
- * @run main/othervm --enable-preview MatchExceptionTest
+ * @run main MatchExceptionTest
  */
 
 import java.nio.file.Path;
@@ -90,11 +90,10 @@ public class MatchExceptionTest extends TestRunner {
             }
         }
         Setup[] variants = new Setup[] {
-            new Setup(false, "-source", "20"),
-            new Setup(false, "-source", JAVA_VERSION),
-            new Setup(true, "-source", JAVA_VERSION, "--enable-preview"),
+            new Setup(false, "--release", "20"),
+            new Setup(true),
         };
-        record Source(String source, boolean needsPreview) {}
+        record Source(String source, boolean needs21) {}
         Source[] sources = new Source[] {
             new Source(codeStatement, true),
             new Source(codeExpression, false),
@@ -102,8 +101,8 @@ public class MatchExceptionTest extends TestRunner {
         Path curPath = Path.of(".");
         for (Source source : sources) {
             for (Setup variant : variants) {
-                if (source.needsPreview &&
-                    !Arrays.asList(variant.options).contains("--enable-preview")) {
+                if (source.needs21 &&
+                    !Arrays.asList(variant.options).contains("21")) {
                     continue;
                 }
                 new JavacTask(tb)

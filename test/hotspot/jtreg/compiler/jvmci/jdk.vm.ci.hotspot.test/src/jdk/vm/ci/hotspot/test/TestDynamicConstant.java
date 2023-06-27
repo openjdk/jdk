@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -194,7 +194,7 @@ public class TestDynamicConstant implements Opcodes {
             String sig = "(Ljava/lang/invoke/MethodHandles$Lookup;Ljava/lang/String;Ljava/lang/invoke/MethodType;Ljava/lang/String;[Ljava/lang/Object;)Ljava/lang/invoke/CallSite;";
             Handle handle = new Handle(H_INVOKESTATIC, Type.getInternalName(StringConcatFactory.class), "makeConcatWithConstants", sig, false);
             String recipe = "var arg=\u0001, const arg=\u0002";
-            Object[] bsmArgs = {recipe};
+            Object[] bsmArgs = {recipe, condy};
             concat.visitLdcInsn(condy);
             concat.visitInvokeDynamicInsn("do_concat", "(" + desc + ")Ljava/lang/String;", handle, bsmArgs);
             concat.visitInsn(ARETURN);
@@ -249,6 +249,7 @@ public class TestDynamicConstant implements Opcodes {
                         long.class,
                         double.class,
                         String.class,
+                        Object.class,
                         List.class
         };
 
@@ -275,14 +276,20 @@ public class TestDynamicConstant implements Opcodes {
                 // with condy resolved via ConstantPool
                 Object expect = m.invoke(null);
                 Object actual;
-                if (lastConstant instanceof PrimitiveConstant) {
+                if (lastConstant == PrimitiveConstant.NULL_POINTER) {
+                    actual = null;
+                } else if (lastConstant instanceof PrimitiveConstant) {
                     actual = ((PrimitiveConstant) lastConstant).asBoxedPrimitive();
                 } else {
                     actual = ((HotSpotObjectConstant) lastConstant).asObject(type);
                 }
                 Assert.assertEquals(actual, expect, m + ":");
 
-                testLookupBootstrapMethodInvocation(condyType, metaAccess, testClass, getTagAt);
+                if (type != Object.class) {
+                    testLookupBootstrapMethodInvocation(condyType, metaAccess, testClass, getTagAt);
+                } else {
+                    // StringConcatFactoryStringConcatFactory cannot accept null constants
+                }
             }
         }
     }
@@ -316,6 +323,25 @@ public class TestDynamicConstant implements Opcodes {
                 Assert.assertNull(bsmi, String.valueOf(bsmi));
             }
         }
+
+        testLoadReferencedType(concat);
+    }
+
+    private static int beS4(byte[] data, int bci) {
+        return (data[bci] << 24) | ((data[bci + 1] & 0xff) << 16) | ((data[bci + 2] & 0xff) << 8) | (data[bci + 3] & 0xff);
+    }
+
+    private static final int LDC2_W = 20;
+    private static void testLoadReferencedType(ResolvedJavaMethod method) {
+        // Make sure that loadReferencedType for an invokedynamic call site works.
+        byte[] code = method.getCode();
+        Assert.assertTrue(code[0] == LDC || code[0] == LDC2_W, "unexpected ldc sequence");
+        int bci = code[0] == LDC ? 2 : 3;
+        Assert.assertTrue((code[bci] & 0xff) == INVOKEDYNAMIC, "unexpected bytecode");
+        int cpi = beS4(code, bci + 1);
+        method.getConstantPool().loadReferencedType(cpi, INVOKEDYNAMIC, false);
+        BootstrapMethodInvocation bmi = method.getConstantPool().lookupBootstrapMethodInvocation(cpi, INVOKEDYNAMIC);
+        Assert.assertEquals(bmi.getName(), "do_concat");
     }
 
     // @formatter:off
@@ -328,6 +354,7 @@ public class TestDynamicConstant implements Opcodes {
     @SuppressWarnings("unused") public static long    getLongBSM   (MethodHandles.Lookup l, String name, Class<?> type) { return Long.MAX_VALUE; }
     @SuppressWarnings("unused") public static double  getDoubleBSM (MethodHandles.Lookup l, String name, Class<?> type) { return Double.MAX_VALUE; }
     @SuppressWarnings("unused") public static String  getStringBSM (MethodHandles.Lookup l, String name, Class<?> type) { return "a string"; }
+    @SuppressWarnings("unused") public static Object  getObjectBSM (MethodHandles.Lookup l, String name, Class<?> type) { return null; }
     @SuppressWarnings("unused") public static List<?> getListBSM   (MethodHandles.Lookup l, String name, Class<?> type) { return List.of("element"); }
 
 
@@ -340,6 +367,7 @@ public class TestDynamicConstant implements Opcodes {
     public static long    getLong   () { return Long.MAX_VALUE; }
     public static double  getDouble () { return Double.MAX_VALUE; }
     public static String  getString () { return "a string"; }
+    public static Object  getObject () { return null; }
     public static List<?> getList   () { return List.of("element"); }
 
     public static boolean getBoolean(boolean v1, boolean v2) { return v1 || v2; }
@@ -351,6 +379,7 @@ public class TestDynamicConstant implements Opcodes {
     public static long    getLong   (long v1, long v2)       { return v1 ^ v2; }
     public static double  getDouble (double v1, double v2)   { return v1 * v2; }
     public static String  getString (String v1, String v2)   { return v1 + v2; }
+    public static Object  getObject (Object v1, Object v2)   { return null; }
     public static List<?> getList   (List<?> v1, List<?> v2) { return List.of(v1, v2); }
     // @formatter:on
 }

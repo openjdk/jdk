@@ -61,14 +61,15 @@ public final class DirectClassBuilder
     private int sizeHint;
 
     public DirectClassBuilder(SplitConstantPool constantPool,
+                              ClassfileImpl context,
                               ClassEntry thisClass) {
-        super(constantPool);
+        super(constantPool, context);
         this.thisClassEntry = AbstractPoolEntry.maybeClone(constantPool, thisClass);
         this.flags = Classfile.DEFAULT_CLASS_FLAGS;
         this.superclassEntry = null;
         this.interfaceEntries = Collections.emptyList();
-        this.majorVersion = Classfile.LATEST_MAJOR_VERSION;
-        this.minorVersion = Classfile.LATEST_MINOR_VERSION;
+        this.majorVersion = Classfile.latestMajorVersion();
+        this.minorVersion = Classfile.latestMinorVersion();
     }
 
     @Override
@@ -81,13 +82,13 @@ public final class DirectClassBuilder
     public ClassBuilder withField(Utf8Entry name,
                                   Utf8Entry descriptor,
                                   Consumer<? super FieldBuilder> handler) {
-        return withField(new DirectFieldBuilder(constantPool, name, descriptor, null)
+        return withField(new DirectFieldBuilder(constantPool, context, name, descriptor, null)
                                  .run(handler));
     }
 
     @Override
     public ClassBuilder transformField(FieldModel field, FieldTransform transform) {
-        DirectFieldBuilder builder = new DirectFieldBuilder(constantPool, field.fieldName(),
+        DirectFieldBuilder builder = new DirectFieldBuilder(constantPool, context, field.fieldName(),
                                                             field.fieldType(), field);
         builder.transform(field, transform);
         return withField(builder);
@@ -98,13 +99,13 @@ public final class DirectClassBuilder
                                    Utf8Entry descriptor,
                                    int flags,
                                    Consumer<? super MethodBuilder> handler) {
-        return withMethod(new DirectMethodBuilder(constantPool, name, descriptor, flags, null)
+        return withMethod(new DirectMethodBuilder(constantPool, context, name, descriptor, flags, null)
                                   .run(handler));
     }
 
     @Override
     public ClassBuilder transformMethod(MethodModel method, MethodTransform transform) {
-        DirectMethodBuilder builder = new DirectMethodBuilder(constantPool, method.methodName(),
+        DirectMethodBuilder builder = new DirectMethodBuilder(constantPool, context, method.methodName(),
                                                               method.methodType(),
                                                               method.flags().flagsMask(),
                                                               method);
@@ -141,7 +142,7 @@ public final class DirectClassBuilder
         this.flags = flags;
     }
 
-    void setSizeHint(int sizeHint) {
+    public void setSizeHint(int sizeHint) {
         this.sizeHint = sizeHint;
     }
 
@@ -166,9 +167,8 @@ public final class DirectClassBuilder
 
         // We maintain two writers, and then we join them at the end
         int size = sizeHint == 0 ? 256 : sizeHint;
-        BufWriter head = new BufWriterImpl(constantPool, size);
-        BufWriterImpl tail = new BufWriterImpl(constantPool, size);
-        tail.setThisClass(thisClassEntry);
+        BufWriter head = new BufWriterImpl(constantPool, context, size);
+        BufWriterImpl tail = new BufWriterImpl(constantPool, context, size, thisClassEntry, majorVersion);
 
         // The tail consists of fields and methods, and attributes
         // This should trigger all the CP/BSM mutation

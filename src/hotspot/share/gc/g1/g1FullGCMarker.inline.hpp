@@ -45,10 +45,6 @@
 #include "utilities/debug.hpp"
 
 inline bool G1FullGCMarker::mark_object(oop obj) {
-  if (_collector->is_skip_marking(obj)) {
-    return false;
-  }
-
   // Try to mark.
   if (!_bitmap->par_mark(obj)) {
     // Lost mark race.
@@ -83,11 +79,8 @@ template <class T> inline void G1FullGCMarker::mark_and_push(T* p) {
     oop obj = CompressedOops::decode_not_null(heap_oop);
     if (mark_object(obj)) {
       _oop_stack.push(obj);
-      assert(_bitmap->is_marked(obj), "Must be marked now - map self");
-    } else {
-      assert(_bitmap->is_marked(obj) || _collector->is_skip_marking(obj),
-             "Must be marked by other or object in skip marking region");
     }
+    assert(_bitmap->is_marked(obj), "Must be marked");
   }
 }
 

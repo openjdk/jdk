@@ -655,14 +655,6 @@ final class Int128Vector extends IntVector {
 
         @Override
         @ForceInline
-        public Int128Mask eq(VectorMask<Integer> mask) {
-            Objects.requireNonNull(mask);
-            Int128Mask m = (Int128Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Int128Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Int128Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -709,9 +701,9 @@ final class Int128Vector extends IntVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Int128Mask xor(VectorMask<Integer> mask) {
+        public Int128Mask xor(VectorMask<Integer> mask) {
             Objects.requireNonNull(mask);
             Int128Mask m = (Int128Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Int128Mask.class, null, int.class, VLENGTH,

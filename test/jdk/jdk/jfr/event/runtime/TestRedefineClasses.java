@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -79,7 +79,7 @@ public class TestRedefineClasses {
     public static void main(String[] args) throws Throwable {
         List<RecordedEvent> events = RecordingFile.readAllEvents(DUMP_PATH);
         Asserts.assertEquals(events.size(), 1, "Expected one RedefineClasses event");
-        RecordedEvent event = events.get(0);
+        RecordedEvent event = events.getFirst();
 
         System.out.println(event);
 

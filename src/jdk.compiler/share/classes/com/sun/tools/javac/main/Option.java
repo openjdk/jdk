@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,11 @@ import static com.sun.tools.javac.main.Option.OptionKind.*;
  * whether an argument is needed and where to find it;
  * {@code handleOption} then calls {@link #process process} providing a suitable
  * {@link OptionHelper} to provide access the compiler state.
+ *
+ *
+ * <p>Maintenance note: when adding new annotation processing related
+ * options, the list of options regarded as requesting explicit
+ * annotation processing in JavaCompiler should be updated.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
@@ -285,7 +290,7 @@ public enum Option {
         }
     },
 
-    PROC("-proc:", "opt.proc.none.only", STANDARD, BASIC,  ONEOF, "none", "only"),
+    PROC("-proc:", "opt.proc.none.only", STANDARD, BASIC, ONEOF, "none", "only", "full"),
 
     PROCESSOR("-processor", "opt.arg.class.list", "opt.processor", STANDARD, BASIC),
 

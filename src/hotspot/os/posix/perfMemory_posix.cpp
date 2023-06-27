@@ -97,33 +97,21 @@ static void save_memory_to_file(char* addr, size_t size) {
 
   RESTARTABLE(os::open(destfile, O_CREAT|O_WRONLY|O_TRUNC, S_IRUSR|S_IWUSR), fd);
   if (fd == OS_ERR) {
-    if (PrintMiscellaneous && Verbose) {
-      warning("Could not create Perfdata save file: %s: %s\n",
-              destfile, os::strerror(errno));
-    }
+    warning("Could not create Perfdata save file: %s: %s\n",
+            destfile, os::strerror(errno));
   } else {
     ssize_t result;
 
-    for (size_t remaining = size; remaining > 0;) {
-
-      result = os::write(fd, addr, remaining);
-      if (result == OS_ERR) {
-        if (PrintMiscellaneous && Verbose) {
-          warning("Could not write Perfdata save file: %s: %s\n",
-                  destfile, os::strerror(errno));
-        }
-        break;
-      }
-
-      remaining -= (size_t)result;
-      addr += result;
+    bool successful_write = os::write(fd, addr, size);
+    if (!successful_write) {
+      warning("Could not write Perfdata save file: %s: %s\n",
+              destfile, os::strerror(errno));
     }
 
+
     result = ::close(fd);
-    if (PrintMiscellaneous && Verbose) {
-      if (result == OS_ERR) {
-        warning("Could not close %s: %s\n", destfile, os::strerror(errno));
-      }
+    if (result == OS_ERR) {
+      warning("Could not close %s: %s\n", destfile, os::strerror(errno));
     }
   }
   FREE_C_HEAP_ARRAY(char, destfile);
@@ -961,11 +949,11 @@ static int create_sharedmem_file(const char* dirname, const char* filename, size
     int zero_int = 0;
     result = (int)os::seek_to_file_offset(fd, (jlong)(seekpos));
     if (result == -1 ) break;
-    result = os::write(fd, &zero_int, 1);
-    if (result != 1) {
+    if (!os::write(fd, &zero_int, 1)) {
       if (errno == ENOSPC) {
         warning("Insufficient space for shared memory file:\n   %s\nTry using the -Djava.io.tmpdir= option to select an alternate temp location.\n", filename);
       }
+      result = OS_ERR;
       break;
     }
   }
