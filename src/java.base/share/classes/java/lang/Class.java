@@ -377,7 +377,7 @@ public final class Class<T> implements java.io.Serializable,
      * the current class.
      *
      * <p> For example, the following code fragment returns the
-     * runtime {@code Class} descriptor for the class named
+     * runtime {@code Class} object for the class named
      * {@code java.lang.Thread}:
      *
      * {@snippet lang="java" :
@@ -392,9 +392,10 @@ public final class Class<T> implements java.io.Serializable,
      * caller frame on the stack (e.g. when called directly from a JNI
      * attached thread), the system class loader is used.
      *
-     * @param      className   the fully qualified name of the desired class.
-     * @return     the {@code Class} object for the class with the
-     *             specified name.
+     * @param     className the {@linkplain ClassLoader##binary-name binary name}
+     *                      of the class or the string representing an array type
+     * @return    the {@code Class} object for the class with the
+     *            specified name.
      * @throws    LinkageError if the linkage fails
      * @throws    ExceptionInInitializerError if the initialization provoked
      *            by this method fails
@@ -423,45 +424,52 @@ public final class Class<T> implements java.io.Serializable,
     /**
      * Returns the {@code Class} object associated with the class or
      * interface with the given string name, using the given class loader.
-     * Given the fully qualified name for a class or interface (in the same
-     * format returned by {@code getName}) this method attempts to
-     * locate and load the class or interface.  The specified class
-     * loader is used to load the class or interface.  If the parameter
-     * {@code loader} is null, the class is loaded through the bootstrap
+     * Given the {@linkplain ClassLoader##binary-name binary name} for a class or interface,
+     * this method attempts to locate and load the class or interface. The specified
+     * class loader is used to load the class or interface.  If the parameter
+     * {@code loader} is {@code null}, the class is loaded through the bootstrap
      * class loader.  The class is initialized only if the
      * {@code initialize} parameter is {@code true} and if it has
      * not been initialized earlier.
      *
-     * <p> If {@code name} denotes a primitive type or void, an attempt
-     * will be made to locate a user-defined class in the unnamed package whose
-     * name is {@code name}. Therefore, this method cannot be used to
-     * obtain any of the {@code Class} objects representing primitive
-     * types or void.
+     * <p> This method cannot be used to obtain any of the {@code Class} objects
+     * representing primitive types or void, hidden classes or interfaces,
+     * or array classes whose element type is a hidden class or interface.
+     * If {@code name} denotes a primitive type or void, for example {@code I},
+     * an attempt will be made to locate a user-defined class in the unnamed package
+     * whose name is {@code I} instead.
      *
-     * <p> If {@code name} denotes an array class, the component type of
-     * the array class is loaded but not initialized.
+     * <p> To obtain the {@code Class} object associated with an array class,
+     * the name consists of one or more {@code '['} representing the depth
+     * of the array nesting, followed by the element type as encoded in
+     * {@linkplain ##nameFormat the table} specified in {@code Class.getName()}.
      *
-     * <p> For example, in an instance method the expression:
-     *
+     * <p> Examples:
      * {@snippet lang="java" :
-     * Class.forName("Foo")
+     * Class<?> threadClass = Class.forName("java.lang.Thread", false, currentLoader);
+     * Class<?> stringArrayClass = Class.forName("[Ljava.lang.String;", false, currentLoader);
+     * Class<?> intArrayClass = Class.forName("[[[I", false, currentLoader);   // Class of int[][][]
+     * Class<?> nestedClass = Class.forName("java.lang.Character$UnicodeBlock", false, currentLoader);
+     * Class<?> fooClass = Class.forName("Foo", true, currentLoader);
      * }
      *
-     * is equivalent to:
+     * <p> A call to {@code getName()} on the {@code Class} object returned
+     * from {@code forName(}<i>N</i>{@code )} returns <i>N</i>.
      *
-     * {@snippet lang="java" :
-     * Class.forName("Foo", true, this.getClass().getClassLoader())
-     * }
+     * <p> A call to {@code forName("[L}<i>N</i>{@code ;")} causes the element type
+     * named <i>N</i> to be loaded but not initialized regardless of the value
+     * of the {@code initialize} parameter.
      *
-     * Note that this method throws errors related to loading, linking
-     * or initializing as specified in Sections {@jls 12.2}, {@jls
-     * 12.3}, and {@jls 12.4} of <cite>The Java Language
-     * Specification</cite>.
-     * Note that this method does not check whether the requested class
+     * @apiNote
+     * This method throws errors related to loading, linking or initializing
+     * as specified in Sections {@jls 12.2}, {@jls 12.3}, and {@jls 12.4} of
+     * <cite>The Java Language Specification</cite>.
+     * In addition, this method does not check whether the requested class
      * is accessible to its caller.
      *
-     * @param name       fully qualified name of the desired class
-
+     * @param name       the {@linkplain ClassLoader##binary-name binary name}
+     *                   of the class or the string representing an array class
+     *
      * @param initialize if {@code true} the class will be initialized
      *                   (which implies linking). See Section {@jls
      *                   12.4} of <cite>The Java Language
@@ -486,6 +494,7 @@ public final class Class<T> implements java.io.Serializable,
      * @jls 12.2 Loading of Classes and Interfaces
      * @jls 12.3 Linking of Classes and Interfaces
      * @jls 12.4 Initialization of Classes and Interfaces
+     * @jls 13.1 The Form of a Binary
      * @since     1.2
      */
     @CallerSensitive
@@ -548,7 +557,9 @@ public final class Class<T> implements java.io.Serializable,
      * accessible to its caller. </p>
      *
      * @apiNote
-     * This method returns {@code null} on failure rather than
+     * This method does not support loading of array types, unlike
+     * {@link #forName(String, boolean, ClassLoader)}. The class name must be
+     * a binary name.  This method returns {@code null} on failure rather than
      * throwing a {@link ClassNotFoundException}, as is done by
      * the {@link #forName(String, boolean, ClassLoader)} method.
      * The security check is a stack-based permission check if the caller
@@ -888,7 +899,7 @@ public final class Class<T> implements java.io.Serializable,
      * representing the depth of the array nesting, followed by the element
      * type as encoded using the following table:
      *
-     * <blockquote><table class="striped">
+     * <blockquote><table class="striped" id="nameFormat">
      * <caption style="display:none">Element types and encodings</caption>
      * <thead>
      * <tr><th scope="col"> Element Type <th scope="col"> Encoding
@@ -915,6 +926,8 @@ public final class Class<T> implements java.io.Serializable,
      * <blockquote><pre>
      * String.class.getName()
      *     returns "java.lang.String"
+     * Character.UnicodeBlock.class.getName()
+     *     returns "java.lang.Character$UnicodeBlock"
      * byte.class.getName()
      *     returns "byte"
      * (new Object[3]).getClass().getName()
