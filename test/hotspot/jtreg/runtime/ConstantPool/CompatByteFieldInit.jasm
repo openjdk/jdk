@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,30 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
-    @test
-    @summary Locale variant should not be uppercased
-    @run main Bug4210525
-    @bug 4210525
-*/
 
-import java.util.Locale;
 
-public class Bug4210525 {
+super class CompatByteFieldInit
+	version 65:0
+{
+  public static final Field b:B	= int 0x80;
+  public static final Field s:S	= int 0x8000;
 
-    public static void main(String[] args) throws Exception {
-        String language = "en";
-        String country = "US";
-        String variant = "socal";
-
-        Locale aLocale = Locale.of(language, country, variant);
-
-        String localeVariant = aLocale.getVariant();
-        if (localeVariant.equals(variant)) {
-            System.out.println("passed");
-        } else {
-            System.out.println("failed");
-            throw new Exception("Bug4210525 test failed.");
-        }
-    }
-}
+  Method "<init>":"()V"
+	stack 1 locals 1
+  {
+		aload_0;
+		invokespecial	Method java/lang/Object."<init>":"()V";
+		return;
+  }
+} // end Class CompatByteFieldInit

@@ -243,8 +243,6 @@ const int BitsPerLong        = 1 << LogBitsPerLong;
 const int WordAlignmentMask  = (1 << LogBytesPerWord) - 1;
 const int LongAlignmentMask  = (1 << LogBytesPerLong) - 1;
 
-const int WordsPerLong       = 2;       // Number of stack entries for longs
-
 const int oopSize            = sizeof(char*); // Full-width oop
 extern int heapOopSize;                       // Oop within a java object
 const int wordSize           = sizeof(char*);
@@ -517,7 +515,7 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // everything: it isn't intended to make sure that pointer types are
 // compatible, for example.
 template <typename T2, typename T1>
-T2 checked_cast(T1 thing) {
+constexpr T2 checked_cast(T1 thing) {
   T2 result = static_cast<T2>(thing);
   assert(static_cast<T1>(result) == thing, "must be");
   return result;
@@ -715,7 +713,7 @@ void basic_types_init(); // cannot define here; uses assert
 
 
 // NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
-enum BasicType {
+enum BasicType : u1 {
 // The values T_BOOLEAN..T_LONG (4..11) are derived from the JVMS.
   T_BOOLEAN     = JVM_T_BOOLEAN,
   T_CHAR        = JVM_T_CHAR,

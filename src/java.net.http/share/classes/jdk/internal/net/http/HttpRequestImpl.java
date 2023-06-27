@@ -42,6 +42,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpHeaders;
 import java.net.http.HttpRequest;
 
+import jdk.internal.net.http.common.Alpns;
 import jdk.internal.net.http.common.HttpHeadersBuilder;
 import jdk.internal.net.http.common.Utils;
 import jdk.internal.net.http.websocket.WebSocketRequest;
@@ -288,7 +289,7 @@ public class HttpRequestImpl extends HttpRequest implements WebSocketRequest {
 
     void setH2Upgrade(Http2ClientImpl h2client) {
         systemHeadersBuilder.setHeader("Connection", "Upgrade, HTTP2-Settings");
-        systemHeadersBuilder.setHeader("Upgrade", "h2c");
+        systemHeadersBuilder.setHeader("Upgrade", Alpns.H2C);
         systemHeadersBuilder.setHeader("HTTP2-Settings", h2client.getSettingsString());
     }
 

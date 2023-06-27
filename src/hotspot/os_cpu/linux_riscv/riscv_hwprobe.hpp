@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,32 +20,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8004240
- * @summary Verify that getAdapterPreference returns an unmodifiable list.
- * @modules java.base/sun.util.locale.provider
- * @compile -XDignore.symbol.file Bug8004240.java
- * @run main Bug8004240
- */
+#ifndef OS_LINUX_RISCV_HWPROBE_LINUX_HPP
+#define OS_LINUX_RISCV_HWPROBE_LINUX_HPP
 
-import java.util.List;
-import sun.util.locale.provider.LocaleProviderAdapter;
+#include "memory/allStatic.hpp"
+#include "runtime/vm_version.hpp"
+#include "utilities/growableArray.hpp"
 
-public class Bug8004240 {
+class RiscvHwprobe: public AllStatic {
+  static void add_features_from_query_result();
+ public:
+  static bool probe_features();
+};
 
-    public static void main(String[] args) {
-        List<LocaleProviderAdapter.Type> types = LocaleProviderAdapter.getAdapterPreference();
-
-        try {
-            types.set(0, null);
-        } catch (UnsupportedOperationException e) {
-            // success
-            return;
-        }
-
-        throw new RuntimeException("LocaleProviderAdapter.getAdapterPrefence() returned a modifiable list.");
-    }
-}
+#endif // OS_LINUX_RISCV_HWPROBE_LINUX_HPP
