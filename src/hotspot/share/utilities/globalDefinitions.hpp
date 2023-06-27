@@ -521,9 +521,10 @@ constexpr T2 checked_cast(T1 thing) {
   return result;
 }
 
-// delta usually called with pointers or intptr_t that returns an int
-// used for code buffer and other nearby address calculations.
-// This allows the left side to be less than the right side.
+// delta_as_int is called to do pointer subtraction for nearby pointers that
+// returns an int, usually used as a size of a code buffer range.
+// This allows the left side to be less than the right side, unlike pointer_delta,
+// and scales to sizeof(T)
 template <typename T>
 inline int delta_as_int(const volatile T* left, const volatile T* right) {
   return checked_cast<int>(left - right);
