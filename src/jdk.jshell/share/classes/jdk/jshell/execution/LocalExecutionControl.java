@@ -80,8 +80,9 @@ public class LocalExecutionControl extends DirectExecutionControl {
     private static final MethodTypeDesc MTD_void = MethodTypeDesc.of(ConstantDescs.CD_void);
 
     private static byte[] instrument(byte[] classFile) {
-        return Classfile.parse(classFile)
-                        .transform(ClassTransform.transformingMethodBodies((cob, coe) -> {
+        var cc = Classfile.of();
+        return cc.transform(cc.parse(classFile),
+                        ClassTransform.transformingMethodBodies((cob, coe) -> {
                             if (coe instanceof BranchInstruction)
                                 cob.invokestatic(CD_Cancel, "stopCheck", MTD_void);
                             cob.with(coe);
@@ -89,7 +90,7 @@ public class LocalExecutionControl extends DirectExecutionControl {
     }
 
     private static ClassBytecodes genCancelClass() {
-        return new ClassBytecodes(CANCEL_CLASS, Classfile.build(CD_Cancel, clb ->
+        return new ClassBytecodes(CANCEL_CLASS, Classfile.of().build(CD_Cancel, clb ->
              clb.withFlags(Classfile.ACC_PUBLIC)
                 .withField("allStop", ConstantDescs.CD_boolean, Classfile.ACC_PUBLIC | Classfile.ACC_STATIC | Classfile.ACC_VOLATILE)
                 .withMethodBody("stopCheck", MTD_void, Classfile.ACC_PUBLIC | Classfile.ACC_STATIC, cob ->

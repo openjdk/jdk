@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -366,9 +366,9 @@ public interface AnnotatedElement {
          T[] result = getDeclaredAnnotationsByType(annotationClass);
 
          if (result.length == 0 && // Neither directly nor indirectly present
-             this instanceof Class && // the element is a class
+             this instanceof Class<?> cls && // the element is a class
              AnnotationType.getInstance(annotationClass).isInherited()) { // Inheritable
-             Class<?> superClass = ((Class<?>) this).getSuperclass();
+             Class<?> superClass = cls.getSuperclass();
              if (superClass != null) {
                  // Determine if the annotation is associated with the
                  // superclass

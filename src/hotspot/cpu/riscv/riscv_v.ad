@@ -90,9 +90,6 @@ source %{
     return false;
   }
 
-  const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
-    return false;
-  }
 %}
 
 definitions %{
@@ -626,120 +623,70 @@ instruct vmin_masked(vReg dst_src1, vReg src2, vRegMask_V0 v0) %{
 
 // vector float-point max/min
 
-instruct vmaxF(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
+instruct vmax_fp(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT ||
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (MaxV src1 src2));
   effect(TEMP_DEF dst, TEMP v0);
   ins_cost(VEC_COST);
-  format %{ "vmaxF $dst, $src1, $src2" %}
+  format %{ "vmax_fp $dst, $src1, $src2" %}
   ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
     __ minmax_fp_v(as_VectorRegister($dst$$reg),
                    as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
-                   false /* is_double */, false /* is_min */, Matcher::vector_length(this));
+                   bt, false /* is_min */, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vmaxD(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
-  match(Set dst (MaxV src1 src2));
-  effect(TEMP_DEF dst, TEMP v0);
-  ins_cost(VEC_COST);
-  format %{ "vmaxD $dst, $src1, $src2" %}
-  ins_encode %{
-    __ minmax_fp_v(as_VectorRegister($dst$$reg),
-                   as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
-                   true /* is_double */, false /* is_min */, Matcher::vector_length(this));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vminF(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
+instruct vmin_fp(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT ||
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst (MinV src1 src2));
   effect(TEMP_DEF dst, TEMP v0);
   ins_cost(VEC_COST);
-  format %{ "vminF $dst, $src1, $src2" %}
+  format %{ "vmin_fp $dst, $src1, $src2" %}
   ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
     __ minmax_fp_v(as_VectorRegister($dst$$reg),
                    as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
-                   false /* is_double */, true /* is_min */, Matcher::vector_length(this));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vminD(vReg dst, vReg src1, vReg src2, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
-  match(Set dst (MinV src1 src2));
-  effect(TEMP_DEF dst, TEMP v0);
-  ins_cost(VEC_COST);
-  format %{ "vminD $dst, $src1, $src2" %}
-  ins_encode %{
-    __ minmax_fp_v(as_VectorRegister($dst$$reg),
-                   as_VectorRegister($src1$$reg), as_VectorRegister($src2$$reg),
-                   true /* is_double */, true /* is_min */, Matcher::vector_length(this));
+                   bt, true /* is_min */, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}
 
 // vector float-point max/min - predicated
 
-instruct vmaxF_masked(vReg dst_src1, vReg src2, vRegMask vmask, vReg tmp1, vReg tmp2, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
+instruct vmax_fp_masked(vReg dst_src1, vReg src2, vRegMask vmask, vReg tmp1, vReg tmp2, vRegMask_V0 v0) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT ||
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst_src1 (MaxV (Binary dst_src1 src2) vmask));
   effect(TEMP_DEF dst_src1, TEMP tmp1, TEMP tmp2, TEMP v0);
   ins_cost(VEC_COST);
-  format %{ "vmaxF_masked $dst_src1, $dst_src1, $src2, $vmask\t# KILL $tmp1, $tmp2, $v0" %}
+  format %{ "vmax_fp_masked $dst_src1, $dst_src1, $src2, $vmask\t# KILL $tmp1, $tmp2, $v0" %}
   ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
     __ minmax_fp_masked_v(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
                           as_VectorRegister($src2$$reg), as_VectorRegister($vmask$$reg),
                           as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                          false /* is_double */, false /* is_min */, Matcher::vector_length(this));
+                          bt, false /* is_min */, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}
 
-instruct vmaxD_masked(vReg dst_src1, vReg src2, vRegMask vmask, vReg tmp1, vReg tmp2, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
-  match(Set dst_src1 (MaxV (Binary dst_src1 src2) vmask));
-  effect(TEMP_DEF dst_src1, TEMP tmp1, TEMP tmp2, TEMP v0);
-  ins_cost(VEC_COST);
-  format %{ "vmaxD_masked $dst_src1, $dst_src1, $src2, $vmask\t# KILL $tmp1, $tmp2, $v0" %}
-  ins_encode %{
-    __ minmax_fp_masked_v(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
-                          as_VectorRegister($src2$$reg), as_VectorRegister($vmask$$reg),
-                          as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                          true /* is_double */, false /* is_min */, Matcher::vector_length(this));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vminF_masked(vReg dst_src1, vReg src2, vRegMask vmask, vReg tmp1, vReg tmp2, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT);
+instruct vmin_fp_masked(vReg dst_src1, vReg src2, vRegMask vmask, vReg tmp1, vReg tmp2, vRegMask_V0 v0) %{
+  predicate(Matcher::vector_element_basic_type(n) == T_FLOAT ||
+            Matcher::vector_element_basic_type(n) == T_DOUBLE);
   match(Set dst_src1 (MinV (Binary dst_src1 src2) vmask));
   effect(TEMP_DEF dst_src1, TEMP tmp1, TEMP tmp2, TEMP v0);
   ins_cost(VEC_COST);
-  format %{ "vminF_masked $dst_src1, $dst_src1, $src2, $vmask\t# KILL $tmp1, $tmp2, $v0" %}
+  format %{ "vmin_fp_masked $dst_src1, $dst_src1, $src2, $vmask\t# KILL $tmp1, $tmp2, $v0" %}
   ins_encode %{
+    BasicType bt = Matcher::vector_element_basic_type(this);
     __ minmax_fp_masked_v(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
                           as_VectorRegister($src2$$reg), as_VectorRegister($vmask$$reg),
                           as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                          false /* is_double */, true /* is_min */, Matcher::vector_length(this));
-  %}
-  ins_pipe(pipe_slow);
-%}
-
-instruct vminD_masked(vReg dst_src1, vReg src2, vRegMask vmask, vReg tmp1, vReg tmp2, vRegMask_V0 v0) %{
-  predicate(Matcher::vector_element_basic_type(n) == T_DOUBLE);
-  match(Set dst_src1 (MinV (Binary dst_src1 src2) vmask));
-  effect(TEMP_DEF dst_src1, TEMP tmp1, TEMP tmp2, TEMP v0);
-  ins_cost(VEC_COST);
-  format %{ "vminD_masked $dst_src1, $dst_src1, $src2, $vmask\t# KILL $tmp1, $tmp2, $v0" %}
-  ins_encode %{
-    __ minmax_fp_masked_v(as_VectorRegister($dst_src1$$reg), as_VectorRegister($dst_src1$$reg),
-                          as_VectorRegister($src2$$reg), as_VectorRegister($vmask$$reg),
-                          as_VectorRegister($tmp1$$reg), as_VectorRegister($tmp2$$reg),
-                          true /* is_double */, true /* is_min */, Matcher::vector_length(this));
+                          bt, true /* is_min */, Matcher::vector_length(this));
   %}
   ins_pipe(pipe_slow);
 %}
