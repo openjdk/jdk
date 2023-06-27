@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8299576
+ * @bug 8299576 8310843
  * @modules java.base/jdk.internal.util
  * @summary Verify that reads and writes of primitives are correct
  * @run junit ReadWriteValues
