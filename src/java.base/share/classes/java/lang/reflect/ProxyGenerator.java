@@ -118,7 +118,7 @@ final class ProxyGenerator {
     /**
      * Classfile context
      */
-    private final List<Classfile.Option> classfileContext;
+    private final Classfile classfileContext;
 
     /**
      * Name of proxy class
@@ -157,8 +157,8 @@ final class ProxyGenerator {
      */
     private ProxyGenerator(ClassLoader loader, String className, List<Class<?>> interfaces,
                            int accessFlags) {
-        this.classfileContext = List.of(
-                Classfile.Option.classHierarchyResolver(
+        this.classfileContext = Classfile.of(
+                Classfile.ClassHierarchyResolverOption.of(
                         ClassHierarchyResolver.ofClassLoading(loader).cached()));
         this.classDesc = ClassDesc.of(className);
         this.interfaces = interfaces;
@@ -411,7 +411,7 @@ final class ProxyGenerator {
      * class file generation process.
      */
     private byte[] generateClassFile() {
-        return Classfile.build(classDesc, classfileContext, clb -> {
+        return classfileContext.build(classDesc, clb -> {
             clb.withFlags(accessFlags);
             clb.withSuperclass(CD_Proxy);
             clb.withInterfaceSymbols(interfaces.stream().map(ProxyGenerator::toClassDesc).toList());
