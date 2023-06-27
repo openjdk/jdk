@@ -149,7 +149,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTree() {
 
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -197,7 +197,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTreePrimitive() {
 
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))

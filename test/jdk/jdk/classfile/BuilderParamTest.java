@@ -44,8 +44,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class BuilderParamTest {
     @Test
     void testDirectBuilder() {
-
-        Classfile.build(ClassDesc.of("Foo"), cb -> {
+        var cc = Classfile.of();
+        cc.build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), 0,
                           mb -> mb.withCode(xb -> {
                 assertEquals(xb.receiverSlot(), 0);
@@ -55,8 +55,7 @@ class BuilderParamTest {
                 xb.return_();
             }));
         });
-
-        Classfile.build(ClassDesc.of("Foo"), cb -> {
+        cc.build(ClassDesc.of("Foo"), cb -> {
             cb.withMethod("foo", MethodTypeDesc.ofDescriptor("(IJI)V"), ACC_STATIC,
                           mb -> mb.withCode(xb -> {
                               assertEquals(xb.parameterSlot(0), 0);

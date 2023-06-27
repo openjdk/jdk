@@ -53,7 +53,7 @@ public final class PrimitiveClassConstantTest {
     public void test() throws Throwable {
         ClassDesc ape = ClassDesc.of("Ape");
         var lookup = MethodHandles.lookup();
-        Class<?> a = lookup.defineClass(Classfile.build(ape, clb -> {
+        Class<?> a = lookup.defineClass(Classfile.of().build(ape, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(Supplier.class.describeConstable().orElseThrow());
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {

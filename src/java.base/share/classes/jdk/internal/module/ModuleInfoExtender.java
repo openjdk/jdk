@@ -150,9 +150,10 @@ public final class ModuleInfoExtender {
      * be discarded.
      */
     public byte[] toByteArray() throws IOException {
-        var cm = Classfile.parse(in.readAllBytes());
+        var cc = Classfile.of();
+        var cm = cc.parse(in.readAllBytes());
         Version v = ModuleInfoExtender.this.version;
-        return cm.transform(ClassTransform.endHandler(clb -> {
+        return cc.transform(cm, ClassTransform.endHandler(clb -> {
             // ModuleMainClass attribute
             if (mainClass != null) {
                 clb.with(ModuleMainClassAttribute.of(ClassDesc.of(mainClass)));
