@@ -55,9 +55,9 @@ class VM_Version : public Abstract_VM_Version {
       _enabled = true;
       _value = value;
     }
-    const char* const pretty()   { return _pretty; }
-    const uint64_t feature_bit() { return _feature_bit; }
-    const bool feature_string()  { return _feature_string; }
+    const char* pretty()         { return _pretty; }
+    uint64_t feature_bit()       { return _feature_bit; }
+    bool feature_string()        { return _feature_string; }
     bool enabled()               { return _enabled; }
     int64_t value()              { return _value; }
     virtual void update_flag() = 0;

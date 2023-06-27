@@ -270,7 +270,7 @@ class Address {
     return _mode != literal && base() == reg;
   }
 
-  const address target() const {
+  address target() const {
     assert_is_literal();
     return _literal._target;
   }
