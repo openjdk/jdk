@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package jdk.jfr.internal.util;
 import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -39,6 +40,23 @@ import jdk.jfr.consumer.RecordedClass;
 import jdk.jfr.consumer.RecordedMethod;
 
 public final class ValueFormatter {
+    private static enum TimespanUnit {
+        NANOSECONDS("ns", 1000),
+        MICROSECONDS("us", 1000),
+        MILLISECONDS("ms", 1000),
+        SECONDS("s", 60), MINUTES("m", 60),
+        HOURS("h", 24),
+        DAYS("d", 7);
+
+        private final String text;
+        private final long amount;
+
+        TimespanUnit(String unit, long amount) {
+            this.text = unit;
+            this.amount = amount;
+        }
+    }
+
     private static final NumberFormat NUMBER_FORMAT = NumberFormat.getNumberInstance();
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("HH:mm:ss");
     private static final Duration MICRO_SECOND = Duration.ofNanos(1_000);
@@ -50,6 +68,47 @@ public final class ValueFormatter {
     private static final int MILL_SIGNIFICANT_FIGURES = 3;
     private static final int DISPLAY_NANO_DIGIT = 3;
     private static final int BASE = 10;
+
+    public static String formatTimespan(Duration dValue, String separation) {
+        if (dValue == null) {
+            return "0";
+        }
+        long value = dValue.toNanos();
+        TimespanUnit result = TimespanUnit.NANOSECONDS;
+        for (TimespanUnit unit : TimespanUnit.values()) {
+            result = unit;
+            long amount = unit.amount;
+            if (result == TimespanUnit.DAYS || value < amount || value % amount != 0) {
+                break;
+            }
+            value /= amount;
+        }
+        return String.format("%d%s%s", value, separation, result.text);
+    }
+
+    // This method reduces the number of loaded classes
+    // compared to DateTimeFormatter
+    public static String formatDateTime(LocalDateTime time) {
+        StringBuilder sb = new StringBuilder(19);
+        sb.append(time.getYear() / 100);
+        appendPadded(sb, time.getYear() % 100, true);
+        appendPadded(sb, time.getMonth().getValue(), true);
+        appendPadded(sb, time.getDayOfMonth(), true);
+        appendPadded(sb, time.getHour(), true);
+        appendPadded(sb, time.getMinute(), true);
+        appendPadded(sb, time.getSecond(), false);
+        return sb.toString();
+    }
+
+    private static void appendPadded(StringBuilder text, int number, boolean separator) {
+        if (number < 10) {
+            text.append('0');
+        }
+        text.append(number);
+        if (separator) {
+            text.append('_');
+        }
+    }
 
     public static String formatNumber(Number n) {
         return NUMBER_FORMAT.format(n);
@@ -146,11 +205,13 @@ public final class ValueFormatter {
         return name;
     }
 
-    // handle Long.MIN_VALUE as a special case since its absolute value is negative
     private static String formatDataAmount(String formatter, long amount) {
-        int exp = (amount == Long.MIN_VALUE) ? 6 : (int) (Math.log(Math.abs(amount)) / Math.log(1024));
-        char unitPrefix = "kMGTPE".charAt(exp - 1);
-        return String.format(formatter, amount / Math.pow(1024, exp), unitPrefix);
+        if (amount == Long.MIN_VALUE) {
+            return "N/A";
+        }
+        int exp = (int) (Math.log(Math.abs(amount)) / Math.log(1024));
+        char unit = "kMGTPE".charAt(exp - 1);
+        return String.format(formatter, amount / Math.pow(1024, exp), unit);
     }
 
     public static String formatBytesCompact(long bytes) {
@@ -220,7 +281,7 @@ public final class ValueFormatter {
         return sb.toString();
     }
 
-    private static List<String> decodeDescriptors(String descriptor, String arraySize) {
+    public static List<String> decodeDescriptors(String descriptor, String arraySize) {
         List<String> descriptors = new ArrayList<>();
         for (int index = 0; index < descriptor.length(); index++) {
             String arrayBrackets = "";

@@ -46,7 +46,8 @@ import jdk.internal.classfile.instruction.ConstantInstruction;
 class LDCTest {
     @Test
     void testLDCisConvertedToLDCW() throws Exception {
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = Classfile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
@@ -75,7 +76,7 @@ class LDCTest {
                               }));
         });
 
-        var model = Classfile.parse(bytes);
+        var model = cc.parse(bytes);
         var code = model.elementStream()
                 .filter(e -> e instanceof MethodModel)
                 .map(e -> (MethodModel) e)

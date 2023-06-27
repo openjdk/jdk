@@ -40,6 +40,7 @@
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -1786,8 +1787,7 @@ void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
   //   _counters[_index] ++;
   Register counter_addr = t1;
   __ mv(x7, (address) &BytecodePairHistogram::_counters);
-  __ slli(index, index, LogBytesPerInt);
-  __ add(counter_addr, x7, index);
+  __ shadd(counter_addr, index, x7, counter_addr, LogBytesPerInt);
   __ atomic_addw(noreg, 1, counter_addr);
  }
 

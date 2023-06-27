@@ -37,7 +37,7 @@ import java.util.List;
  * variables.
  * Delivered as a {@link jdk.internal.classfile.instruction.LocalVariable} when traversing the
  * elements of a {@link jdk.internal.classfile.CodeModel}, according to the setting of the
- * {@link jdk.internal.classfile.Classfile.Option#processLineNumbers(boolean)} option.
+ * {@link jdk.internal.classfile.Classfile.LineNumbersOption} option.
  */
 public sealed interface LocalVariableTypeTableAttribute
         extends Attribute<LocalVariableTypeTableAttribute>

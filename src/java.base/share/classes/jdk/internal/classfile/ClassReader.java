@@ -52,7 +52,7 @@ public sealed interface ClassReader extends ConstantPool
 
     /**
      * {@return the table of custom attribute mappers}  This is derived from
-     * the processing option {@link Classfile.Option#attributeMapper(Function)}.
+     * the processing option {@link Classfile.AttributeMapperOption}.
      */
     Function<Utf8Entry, AttributeMapper<?>> customAttributes();
 

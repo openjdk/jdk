@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,14 +105,12 @@
   do_klass(Continuation_klass,                          jdk_internal_vm_Continuation                          ) \
   do_klass(StackChunk_klass,                            jdk_internal_vm_StackChunk                            ) \
                                                                                                                 \
-  do_klass(reflect_MagicAccessorImpl_klass,             reflect_MagicAccessorImpl                             ) \
   do_klass(reflect_MethodAccessorImpl_klass,            reflect_MethodAccessorImpl                            ) \
-  do_klass(reflect_ConstructorAccessorImpl_klass,       reflect_ConstructorAccessorImpl                       ) \
   do_klass(reflect_DelegatingClassLoader_klass,         reflect_DelegatingClassLoader                         ) \
   do_klass(reflect_ConstantPool_klass,                  reflect_ConstantPool                                  ) \
-  do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, reflect_UnsafeStaticFieldAccessorImpl                 ) \
   do_klass(reflect_CallerSensitive_klass,               reflect_CallerSensitive                               ) \
-  do_klass(reflect_NativeConstructorAccessorImpl_klass, reflect_NativeConstructorAccessorImpl                 ) \
+  do_klass(reflect_DirectConstructorHandleAccessor_NativeAccessor_klass, reflect_DirectConstructorHandleAccessor_NativeAccessor) \
+  do_klass(reflect_SerializationConstructorAccessorImpl_klass,           reflect_SerializationConstructorAccessorImpl ) \
                                                                                                                 \
   /* support for dynamic typing */                                                                              \
   do_klass(DirectMethodHandle_klass,                    java_lang_invoke_DirectMethodHandle                   ) \

@@ -513,15 +513,11 @@ private:
   void find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best_iv_adjustment);
   void print_loop(bool whole);
   #endif
-  // Check if we can create the pack pairs for mem_ref:
-  // If required, enforce strict alignment requirements of hardware.
-  // Else, only enforce alignment within a memory slice, so that there cannot be any
-  // memory-dependence between different vector "lanes".
-  bool can_create_pairs(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
-                        MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                        Node_List &align_to_refs);
-  // Check if alignment of mem_ref is consistent with the other packs of the same memory slice.
-  bool is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment, Node_List &align_to_refs);
+  // If strict memory alignment is required (vectors_should_be_aligned), then check if
+  // mem_ref is aligned with best_align_to_mem_ref.
+  bool mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                                          MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                                          Node_List &align_to_refs);
   // Find a memory reference to align the loop induction variable to.
   MemNode* find_align_to_ref(Node_List &memops, int &idx);
   // Calculate loop's iv adjustment for this memory ops.

@@ -40,7 +40,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.management.StreamBarrier;
 
 /**

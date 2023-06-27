@@ -1374,16 +1374,16 @@ public class GenerateOopMap {
     case Bytecodes._jsr:               doJsr(itr.dest());          break;
     case Bytecodes._jsr_w:             doJsr(itr.dest_w());        break;
 
-    case Bytecodes._getstatic:         doField(true,  true,  itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._putstatic:         doField(false, true,  itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._getfield:          doField(true,  false, itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._putfield:          doField(false, false, itr.getIndexU2Cpcache(), itr.bci()); break;
+    case Bytecodes._getstatic:         doField(true,  true,  itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._putstatic:         doField(false, true,  itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._getfield:          doField(true,  false, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._putfield:          doField(false, false, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
 
     case Bytecodes._invokevirtual:
-    case Bytecodes._invokespecial:     doMethod(false, false, itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._invokestatic:      doMethod(true,  false, itr.getIndexU2Cpcache(), itr.bci()); break;
-    case Bytecodes._invokedynamic:     doMethod(true,  false, itr.getIndexU4(),        itr.bci()); break;
-    case Bytecodes._invokeinterface:   doMethod(false,  true, itr.getIndexU2Cpcache(), itr.bci()); break;
+    case Bytecodes._invokespecial:     doMethod(false, false, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._invokestatic:      doMethod(true,  false, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
+    case Bytecodes._invokedynamic:     doMethod(true,  false, itr.getIndexU4(),        itr.bci(), itr.code()); break;
+    case Bytecodes._invokeinterface:   doMethod(false,  true, itr.getIndexU2Cpcache(), itr.bci(), itr.code()); break;
     case Bytecodes._newarray:
     case Bytecodes._anewarray:         ppNewRef(vCTS, itr.bci()); break;
     case Bytecodes._checkcast:         doCheckcast(); break;
@@ -1688,10 +1688,10 @@ public class GenerateOopMap {
     push(CellTypeState.makeAddr(targBCI));
   }
 
-  void  doField                             (boolean is_get, boolean is_static, int idx, int bci) {
+  void  doField                             (boolean is_get, boolean is_static, int idx, int bci, int bc) {
     // Dig up signature for field in constant pool
     ConstantPool cp        = method().getConstants();
-    int nameAndTypeIdx     = cp.getNameAndTypeRefIndexAt(idx);
+    int nameAndTypeIdx     = cp.getNameAndTypeRefIndexAt(idx, bc);
     int signatureIdx       = cp.getSignatureRefIndexAt(nameAndTypeIdx);
     Symbol signature       = cp.getSymbolAt(signatureIdx);
 
@@ -1724,10 +1724,10 @@ public class GenerateOopMap {
     pp(in, out);
   }
 
-  void  doMethod                            (boolean is_static, boolean is_interface, int idx, int bci) {
+  void  doMethod                            (boolean is_static, boolean is_interface, int idx, int bci, int bc) {
     // Dig up signature for field in constant pool
     ConstantPool cp       = _method.getConstants();
-    Symbol signature      = cp.getSignatureRefAt(idx);
+    Symbol signature      = cp.getSignatureRefAt(idx, bc);
 
     // Parse method signature
     CellTypeStateList out = new CellTypeStateList(4);

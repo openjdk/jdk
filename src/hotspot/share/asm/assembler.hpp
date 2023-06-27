@@ -252,7 +252,7 @@ class AbstractAssembler : public ResourceObj  {
     InlineSkippedInstructionsCounter(AbstractAssembler* assm) : _assm(assm), _start(assm->pc()) {
     }
     ~InlineSkippedInstructionsCounter() {
-      _assm->register_skipped(_assm->pc() - _start);
+      _assm->register_skipped(checked_cast<int>(_assm->pc() - _start));
     }
   };
 

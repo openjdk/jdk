@@ -166,7 +166,7 @@ final class FingerPrint {
     }
 
     private static ClassAttributes getClassAttributes(byte[] bytes) {
-        var cm = Classfile.parse(bytes);
+        var cm = Classfile.of().parse(bytes);
         ClassAttributes attrs = new ClassAttributes(
                 cm.flags(),
                 cm.thisClass().asInternalName(),

@@ -43,7 +43,8 @@ import static org.junit.jupiter.api.Assertions.*;
 class ClassPrinterTest {
 
     ClassModel getClassModel() {
-        return Classfile.parse(Classfile.build(ClassDesc.of("Foo"), clb ->
+        var cc = Classfile.of();
+        return cc.parse(cc.build(ClassDesc.of("Foo"), clb ->
             clb.withVersion(61, 0)
                 .withFlags(Classfile.ACC_PUBLIC)
                 .with(SourceFileAttribute.of("Foo.java"))

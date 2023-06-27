@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,9 +39,9 @@ public:
   virtual void do_card_ptr(CardValue* card_ptr, uint worker_id) = 0;
 
   // Process all the card_ptrs in node.
-  void apply_to_buffer(BufferNode* node, size_t buffer_size, uint worker_id) {
+  void apply_to_buffer(BufferNode* node, size_t buffer_capacity, uint worker_id) {
     void** buffer = BufferNode::make_buffer_from_node(node);
-    for (size_t i = node->index(); i < buffer_size; ++i) {
+    for (size_t i = node->index(); i < buffer_capacity; ++i) {
       CardValue* card_ptr = static_cast<CardValue*>(buffer[i]);
       do_card_ptr(card_ptr, worker_id);
     }
