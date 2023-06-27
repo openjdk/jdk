@@ -58,7 +58,7 @@ public final class ThemeReader {
     /**
      * List of widget parts for which we need to get the part size for the current DPI.
      */
-    private static final List<Integer> partSizeParts =
+    private static final List<Integer> partSizeWidgetParts =
             List.of(Part.BP_RADIOBUTTON.getValue(),
                     Part.BP_CHECKBOX.getValue(),
                     Part.MP_POPUPCHECK.getValue());
@@ -181,7 +181,7 @@ public final class ThemeReader {
             /* For widgets and parts in the lists, we get the part size
             for the current screen DPI to scale them better. */
             Dimension d = (partSizeWidgets.contains(widget)
-                          && partSizeParts.contains(Integer.valueOf(part)))
+                          && partSizeWidgetParts.contains(Integer.valueOf(part)))
                           ? getPartSize(getTheme(widget, dpi), part, state)
                           : new Dimension(w, h);
 
