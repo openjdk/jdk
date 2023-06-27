@@ -810,7 +810,7 @@ public class JlinkTask {
 
                 try (Stream<Archive.Entry> entries = modularJarArchive.entries()) {
                     boolean hasSignatures = entries.anyMatch((entry) -> {
-                        String name = entry.name().toUpperCase(Locale.ENGLISH);
+                        String name = entry.name().toUpperCase(Locale.ROOT);
 
                         return name.startsWith("META-INF/") && name.indexOf('/', 9) == -1 && (
                                 name.endsWith(".SF") ||
