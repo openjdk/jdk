@@ -29,8 +29,6 @@ import java.lang.invoke.MethodHandle;
 
 import jdk.internal.vm.annotation.Stable;
 
-import static jdk.internal.digits.Hex256.hex256;
-
 /**
  * Digits class for hexadecimal digits.
  *
@@ -74,7 +72,7 @@ final class HexDigits implements Digits {
      *     chars[0] = (char) (byte) (i >> 8); // 'f'
      *     chars[1] = (char) (byte) i;        // 'e'
      * </pre>
-     * In the byte [] encoded in LATIN1, it can be used combined with jdk.internal.util.ByteArray, such as:
+     * In the byte[] encoded in LATIN1, it can be used combined with jdk.internal.util.ByteArray, such as:
      * <pre>
      *     int v = 254;
      *
