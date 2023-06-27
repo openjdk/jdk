@@ -400,7 +400,7 @@ public final class ScopedValue<T> {
          * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
          * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
          * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-         * as a <em>structure violation</em> when the operation completes (normally or ith an
+         * as a <em>structure violation</em> when the operation completes (normally or with an
          * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
          * is closed and {@link StructureViolationException} is thrown.
          *
@@ -430,7 +430,7 @@ public final class ScopedValue<T> {
          * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
          * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
          * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-         * as a <em>structure violation</em> when the operation completes (normally or ith an
+         * as a <em>structure violation</em> when the operation completes (normally or with an
          * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
          * is closed and {@link StructureViolationException} is thrown.
          *
@@ -494,7 +494,7 @@ public final class ScopedValue<T> {
          * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
          * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
          * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-         * as a <em>structure violation</em> when the operation completes (normally or ith an
+         * as a <em>structure violation</em> when the operation completes (normally or with an
          * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
          * is closed and {@link StructureViolationException} is thrown.
          *
@@ -562,7 +562,7 @@ public final class ScopedValue<T> {
      * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
      * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
      * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-     * as a <em>structure violation</em> when the operation completes (normally or ith an
+     * as a <em>structure violation</em> when the operation completes (normally or with an
      * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
      * is closed and {@link StructureViolationException} is thrown.
      *
@@ -598,7 +598,7 @@ public final class ScopedValue<T> {
      * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
      * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
      * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-     * as a <em>structure violation</em> when the operation completes (normally or ith an
+     * as a <em>structure violation</em> when the operation completes (normally or with an
      * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
      * is closed and {@link StructureViolationException} is thrown.
      *
@@ -633,7 +633,7 @@ public final class ScopedValue<T> {
      * <p> Scoped values are intended to be used in a <em>structured manner</em>. If code
      * invoked directly or indirectly by the operation creates a {@link StructuredTaskScope}
      * but does not {@linkplain StructuredTaskScope#close() close} it, then it is detected
-     * as a <em>structure violation</em> when the operation completes (normally or ith an
+     * as a <em>structure violation</em> when the operation completes (normally or with an
      * exception). In that case, the underlying construct of the {@code StructuredTaskScope}
      * is closed and {@link StructureViolationException} is thrown.
      *
