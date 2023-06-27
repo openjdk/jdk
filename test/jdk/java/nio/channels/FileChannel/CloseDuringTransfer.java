@@ -191,7 +191,7 @@ class CloseDuringTransfer {
      */
     @ParameterizedTest
     @MethodSource("sources")
-    void testInterruptTransferDuring(ReadableByteChannel src) throws Exception {
+    void testInterruptTransferDuringTransferFrom(ReadableByteChannel src) throws Exception {
         try (src; FileChannel target = fileChannelTarget()) {
             Future<?> interrupter = scheduleInterrupt();
             try {

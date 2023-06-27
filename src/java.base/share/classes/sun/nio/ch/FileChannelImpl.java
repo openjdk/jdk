@@ -544,12 +544,12 @@ public class FileChannelImpl
         }
     }
 
-    // Assume at first that the underlying kernel supports sendfile();
+    // Assume at first that the underlying kernel supports sendfile/equivalent;
     // set this to true if we find out later that it doesn't
     //
     private static volatile boolean transferToDirectNotSupported;
 
-    // Assume that the underlying kernel sendfile() will work if the target
+    // Assume that the underlying kernel sendfile/equivalent will work if the target
     // fd is a file; set this to true if we find out later that it doesn't
     //
     private static volatile boolean transferToFileDirectNotSupported;
