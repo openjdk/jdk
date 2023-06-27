@@ -525,7 +525,7 @@ constexpr T2 checked_cast(T1 thing) {
 // used for code buffer and other nearby address calculations.
 // This allows the left side to be less than the right side.
 template <typename T>
-inline int delta_as_int(const volatile T left, const volatile T right) {
+inline int delta_as_int(const volatile T* left, const volatile T* right) {
   return checked_cast<int>(left - right);
 }
 
