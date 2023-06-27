@@ -493,7 +493,7 @@ void MemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t curr
   outputStream* out = output();
   out->print("arena=" SIZE_FORMAT "%s", amount_in_current_scale(current_amount), scale);
   if (diff_in_current_scale(current_amount, early_amount) != 0) {
-    out->print(" " INT64_PLUS_FORMAT "d", diff_in_current_scale(current_amount, early_amount));
+    out->print(" " INT64_PLUS_FORMAT "d%s", diff_in_current_scale(current_amount, early_amount), scale);
   }
 
   out->print(" #" SIZE_FORMAT "", current_count);
