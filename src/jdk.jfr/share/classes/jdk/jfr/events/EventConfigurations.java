@@ -28,8 +28,6 @@ import jdk.jfr.internal.Utils;
 import jdk.jfr.internal.event.EventConfiguration;
 
 public final class EventConfigurations {
-    public static final EventConfiguration SOCKET_READ = Utils.getConfiguration(SocketReadEvent.class);
-    public static final EventConfiguration SOCKET_WRITE = Utils.getConfiguration(SocketWriteEvent.class);
     public static final EventConfiguration FILE_READ = Utils.getConfiguration(FileReadEvent.class);
     public static final EventConfiguration FILE_WRITE = Utils.getConfiguration(FileWriteEvent.class);
     public static final EventConfiguration FILE_FORCE = Utils.getConfiguration(FileForceEvent.class);

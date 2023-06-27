@@ -413,7 +413,7 @@ class SocketChannelImpl
         try {
             nbytes = implRead(buf);
         } finally {
-            SocketReadEvent.checkForCommit(start, nbytes, getRemoteAddress(), 0);
+            SocketReadEvent.checkForCommit(start, nbytes, remoteAddress(), 0);
         }
         return nbytes;
     }
@@ -463,7 +463,7 @@ class SocketChannelImpl
     public long read(ByteBuffer[] dsts, int offset, int length)
         throws IOException
     {
-        if (! SocketReadEvent.enabled()) {
+        if (!SocketReadEvent.enabled()) {
             return implRead(dsts, offset, length);
         }
         long nbytes = 0;
@@ -471,7 +471,7 @@ class SocketChannelImpl
         try {
             nbytes = implRead(dsts, offset, length);
         } finally {
-            SocketReadEvent.checkForCommit(start, nbytes, getRemoteAddress(), 0);
+            SocketReadEvent.checkForCommit(start, nbytes, remoteAddress(), 0);
         }
         return nbytes;
     }
@@ -562,7 +562,7 @@ class SocketChannelImpl
 
     @Override
     public int write(ByteBuffer buf) throws IOException {
-        if (! SocketWriteEvent.enabled()) {
+        if (!SocketWriteEvent.enabled()) {
             return implWrite(buf);
         }
         int nbytes = 0;
@@ -570,7 +570,7 @@ class SocketChannelImpl
         try {
             nbytes = implWrite(buf);
         } finally {
-            SocketWriteEvent.checkForCommit(start, nbytes, getRemoteAddress());
+            SocketWriteEvent.checkForCommit(start, nbytes, remoteAddress());
         }
         return nbytes;
     }
@@ -607,7 +607,7 @@ class SocketChannelImpl
     public long write(ByteBuffer[] srcs, int offset, int length)
         throws IOException
     {
-        if (! SocketWriteEvent.enabled()) {
+        if (!SocketWriteEvent.enabled()) {
             return implWrite(srcs, offset, length);
         }
         long nbytes = 0;
@@ -615,7 +615,7 @@ class SocketChannelImpl
         try {
             nbytes = implWrite(srcs, offset, length);
         } finally {
-            SocketWriteEvent.checkForCommit(start, nbytes, getRemoteAddress());
+            SocketWriteEvent.checkForCommit(start, nbytes, remoteAddress());
         }
         return nbytes;
     }

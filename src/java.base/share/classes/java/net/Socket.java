@@ -1098,7 +1098,7 @@ public class Socket implements java.io.Closeable {
         }
         @Override
         public int read(byte[] b, int off, int len) throws IOException {
-            if (! SocketReadEvent.enabled()) {
+            if (!SocketReadEvent.enabled()) {
                 return implRead(b, off, len);
             }
             int nbytes = 0;
@@ -1106,7 +1106,7 @@ public class Socket implements java.io.Closeable {
             try {
                 nbytes = implRead(b, off, len);
             } finally {
-                SocketReadEvent.checkForCommit(start, nbytes, parent.getRemoteSocketAddress(), parent.getSoTimeout());
+                SocketReadEvent.checkForCommit(start, nbytes, parent.getRemoteSocketAddress(), getSoTimeout());
             }
             return nbytes;
         }
@@ -1125,6 +1125,16 @@ public class Socket implements java.io.Closeable {
                 throw e;
             }
         }
+
+        private int getSoTimeout() {
+            try {
+                return parent.getSoTimeout();
+            } catch (Throwable t) {
+                // ignored - avoiding exceptions in jfr event data gathering
+            }
+            return 0;
+        }
+
         @Override
         public int available() throws IOException {
             return in.available();
