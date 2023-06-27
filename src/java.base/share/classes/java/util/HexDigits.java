@@ -29,7 +29,7 @@ import java.lang.invoke.MethodHandle;
 
 import jdk.internal.vm.annotation.Stable;
 
-import jdk.internal.digits.Hex256;
+import static jdk.internal.digits.Hex256.hex256;
 
 /**
  * Digits class for hexadecimal digits.
@@ -38,9 +38,72 @@ import jdk.internal.digits.Hex256;
  */
 final class HexDigits implements Digits {
     /**
+     * Each element of the array represents the ascii encoded
+     * hex relative to its index, for example:<p>
+     * <pre>
+     *       0 -> '00' -> ('0' << 8) | '0' -> 12336
+     *       1 -> '01' -> ('0' << 8) | '1' -> 12337
+     *       2 -> '02' -> ('0' << 8) | '2' -> 12338
+     *
+     *     ...
+     *
+     *      10 -> '0a' -> ('0' << 8) | 'a' -> 12385
+     *      11 -> '0b' -> ('0' << 8) | 'b' -> 12386
+     *      12 -> '0c' -> ('0' << 8) | 'b' -> 12387
+     *
+     *     ...
+     *
+     *      26 -> '1a' -> ('1' << 8) | 'a' -> 12641
+     *      27 -> '1b' -> ('1' << 8) | 'b' -> 12642
+     *      28 -> '1c' -> ('1' << 8) | 'c' -> 12643
+     *
+     *     ...
+     *
+     *     253 -> 'fd' -> ('f' << 8) | 'd' -> 26212
+     *     254 -> 'fe' -> ('f' << 8) | 'e' -> 26213
+     *     255 -> 'ff' -> ('f' << 8) | 'f' -> 26214
+     * </pre>
+     * <p>use like this:
+     * <pre>
+     *     int v = 254;
+     *
+     *     char[] chars = new char[2];
+     *
+     *     short i = DIGITS[v]; // 26213
+     *
+     *     chars[0] = (char) (byte) (i >> 8); // 'f'
+     *     chars[1] = (char) (byte) i;        // 'e'
+     * </pre>
+     * In the byte [] encoded in LATIN1, it can be used combined with jdk.internal.util.ByteArray, such as:
+     * <pre>
+     *     int v = 254;
+     *
+     *     byte[] bytes = new byte[2];
+     *     ByteArray.setShort(bytes, 0, DIGITS[v]);
+     * </pre>
+     */
+    @Stable
+    static final short[] DIGITS;
+
+    /**
      * Singleton instance of HexDigits.
      */
     static final Digits INSTANCE = new HexDigits();
+
+    static {
+        short[] digits = new short[16 * 16];
+
+        for (int i = 0; i < 16; i++) {
+            short hi = (short) ((i < 10 ? i + '0' : i - 10 + 'a') << 8);
+
+            for (int j = 0; j < 16; j++) {
+                short lo = (short) (j < 10 ? j + '0' : j - 10 + 'a');
+                digits[(i << 4) + j] = (short) (hi | lo);
+            }
+        }
+
+        DIGITS = digits;
+    }
 
     /**
      * Constructor.
@@ -51,15 +114,14 @@ final class HexDigits implements Digits {
     @Override
     public int digits(long value, byte[] buffer, int index,
                       MethodHandle putCharMH) throws Throwable {
-        short[] hex256 = Hex256.DIGITS;
         while ((value & ~0xFF) != 0) {
-            int digits = hex256[(int) (value & 0xFF)];
+            int digits = DIGITS[(int) (value & 0xFF)];
             value >>>= 8;
             putCharMH.invokeExact(buffer, --index, digits & 0xFF);
             putCharMH.invokeExact(buffer, --index, digits >> 8);
         }
 
-        int digits = hex256[(int) (value & 0xFF)];
+        int digits = DIGITS[(int) (value & 0xFF)];
         putCharMH.invokeExact(buffer, --index, digits & 0xFF);
 
         if (0xF < value) {

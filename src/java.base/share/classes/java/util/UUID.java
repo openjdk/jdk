@@ -31,7 +31,6 @@ import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.digits.Hex256;
 import jdk.internal.util.ByteArray;
 
 /**
@@ -469,46 +468,46 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     public String toString() {
         long lsb = leastSigBits;
         long msb = mostSigBits;
-        short[] hex256 = Hex256.DIGITS;
+        short[] digits = HexDigits.DIGITS;
         byte[] buf = new byte[36];
         ByteArray.setLong(
                 buf,
                 0,
-                ((long) hex256[((int) (msb >> 56)) & 0xff] << 48)
-                        | ((long) hex256[((int) (msb >> 48)) & 0xff] << 32)
-                        | (hex256[((int) (msb >> 40)) & 0xff] << 16)
-                        | hex256[((int) (msb >> 32)) & 0xff]);
+                ((long) digits[((int) (msb >> 56)) & 0xff] << 48)
+                        | ((long) digits[((int) (msb >> 48)) & 0xff] << 32)
+                        | (digits[((int) (msb >> 40)) & 0xff] << 16)
+                        | digits[((int) (msb >> 32)) & 0xff]);
         buf[8] = '-';
         ByteArray.setInt(
                 buf,
                 9,
-                (hex256[(((int) msb) >> 24) & 0xff] << 16)
-                        | hex256[(((int) msb) >> 16) & 0xff]);
+                (digits[(((int) msb) >> 24) & 0xff] << 16)
+                        | digits[(((int) msb) >> 16) & 0xff]);
         buf[13] = '-';
         ByteArray.setInt(
                 buf,
                 14,
-                (hex256[(((int) msb) >> 8) & 0xff] << 16)
-                        | hex256[((int) msb) & 0xff]);
+                (digits[(((int) msb) >> 8) & 0xff] << 16)
+                        | digits[((int) msb) & 0xff]);
         buf[18] = '-';
         ByteArray.setInt(
                 buf,
                 19,
-                (hex256[(((int) (lsb >> 56))) & 0xff] << 16)
-                        | hex256[(((int) (lsb >> 48))) & 0xff]);
+                (digits[(((int) (lsb >> 56))) & 0xff] << 16)
+                        | digits[(((int) (lsb >> 48))) & 0xff]);
         buf[23] = '-';
         ByteArray.setLong(
                 buf,
                 24,
-                ((long) hex256[(((int) (lsb >> 40))) & 0xff] << 48)
-                        | ((long) hex256[((int) (lsb >> 32)) & 0xff] << 32)
-                        | ((long) hex256[(((int) lsb) >> 24) & 0xff] << 16)
-                        | hex256[(((int) lsb) >> 16) & 0xff]);
+                ((long) digits[(((int) (lsb >> 40))) & 0xff] << 48)
+                        | ((long) digits[((int) (lsb >> 32)) & 0xff] << 32)
+                        | ((long) digits[(((int) lsb) >> 24) & 0xff] << 16)
+                        | digits[(((int) lsb) >> 16) & 0xff]);
         ByteArray.setInt(
                 buf,
                 32,
-                (hex256[(((int) lsb) >> 8) & 0xff] << 16)
-                        | hex256[((int) lsb) & 0xff]);
+                (digits[(((int) lsb) >> 8) & 0xff] << 16)
+                        | digits[((int) lsb) & 0xff]);
 
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
