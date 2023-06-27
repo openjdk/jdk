@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  * @test
- * @bug 8304915 8308452
+ * @bug 8304915 8308452 8310982
  * @summary Verify Architecture enum maps to system property os.arch
  * @modules java.base/jdk.internal.util
  * @modules java.base/jdk.internal.misc
