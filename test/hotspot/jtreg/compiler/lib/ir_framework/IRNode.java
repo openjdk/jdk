@@ -2321,9 +2321,9 @@ public class IRNode {
         boolean avx512bw = vmInfo.hasCPUFeature("avx512bw");
         if (avx512) {
             maxBytes = 64;
-	} else if (avx2) {
+        } else if (avx2) {
             maxBytes = 32;
-	} else if (avx1) {
+        } else if (avx1) {
             maxBytes = 16;
         }
         if (avx1 && (typeString.equals("float") || typeString.equals("double"))) {
