@@ -51,16 +51,17 @@ class BoundAttributeTest {
 
     @Test
     void testReadMethodParametersAttributeWithoutParameterName() {
+        var cc = Classfile.of();
         // build a simple method: void method(int)
         MethodTypeDesc methodTypeDesc = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_int);
-        byte[] raw = Classfile.build(ClassDesc.of("TestClass"), builder -> {
+        byte[] raw = cc.build(ClassDesc.of("TestClass"), builder -> {
             builder.withMethod("method", methodTypeDesc, 0, mb -> {
                 mb.withCode(CodeBuilder::return_);
                 // add a MethodParameters attribute without name for the parameter
                 mb.with(MethodParametersAttribute.of(MethodParameterInfo.ofParameter(Optional.empty(), 0)));
             });
         });
-        ClassModel model = Classfile.parse(raw);
+        ClassModel model = cc.parse(raw);
         MethodParametersAttribute methodParametersAttribute = model.methods().get(0)
                 .findAttribute(Attributes.METHOD_PARAMETERS)
                 .orElseThrow(() -> new AssertionFailedError("Attribute not present"));
