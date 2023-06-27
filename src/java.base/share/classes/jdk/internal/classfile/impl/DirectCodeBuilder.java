@@ -41,6 +41,7 @@ import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
 import jdk.internal.classfile.CodeModel;
+import jdk.internal.classfile.Instruction;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.Opcode;
 import jdk.internal.classfile.TypeKind;
@@ -101,14 +102,15 @@ public final class DirectCodeBuilder
     public static Attribute<CodeAttribute> build(MethodInfo methodInfo,
                                                  Consumer<? super CodeBuilder> handler,
                                                  SplitConstantPool constantPool,
+                                                 ClassfileImpl context,
                                                  CodeModel original) {
         DirectCodeBuilder cb;
         try {
-            handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, original, false));
+            handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, context, original, false));
             cb.buildContent();
         } catch (LabelOverflowException loe) {
-            if (constantPool.options().fixJumps) {
-                handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, original, true));
+            if (context.shortJumpsOption() == Classfile.ShortJumpsOption.FIX_SHORT_JUMPS) {
+                handler.accept(cb = new DirectCodeBuilder(methodInfo, constantPool, context, original, true));
                 cb.buildContent();
             }
             else
@@ -119,15 +121,16 @@ public final class DirectCodeBuilder
 
     private DirectCodeBuilder(MethodInfo methodInfo,
                               SplitConstantPool constantPool,
+                              ClassfileImpl context,
                               CodeModel original,
                               boolean transformFwdJumps) {
-        super(constantPool);
+        super(constantPool, context);
         setOriginal(original);
         this.methodInfo = methodInfo;
         this.transformFwdJumps = transformFwdJumps;
-        this.transformBackJumps = constantPool.options().fixJumps;
-        bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, cai.codeLength())
-                                                               : new BufWriterImpl(constantPool);
+        this.transformBackJumps = context.shortJumpsOption() == Classfile.ShortJumpsOption.FIX_SHORT_JUMPS;
+        bytecodesBufWriter = (original instanceof CodeImpl cai) ? new BufWriterImpl(constantPool, context, cai.codeLength())
+                                                               : new BufWriterImpl(constantPool, context);
         this.startLabel = new LabelImpl(this, 0);
         this.endLabel = new LabelImpl(this, -1);
         this.topLocal = Util.maxLocals(methodInfo.methodFlags(), methodInfo.methodTypeSymbol());
@@ -196,7 +199,7 @@ public final class DirectCodeBuilder
             int endPc = labelToBci(h.tryEnd());
             int handlerPc = labelToBci(h.handler());
             if (startPc == -1 || endPc == -1 || handlerPc == -1) {
-                if (constantPool.options().filterDeadLabels) {
+                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                     handlersSize--;
                 } else {
                     throw new IllegalArgumentException("Unbound label in exception handler");
@@ -220,7 +223,7 @@ public final class DirectCodeBuilder
         // Backfill branches for which Label didn't have position yet
         processDeferredLabels();
 
-        if (constantPool.options().processDebug) {
+        if (context.debugElementsOption() == Classfile.DebugElementsOption.PASS_DEBUG) {
             if (!characterRanges.isEmpty()) {
                 Attribute<?> a = new UnboundAttribute.AdHocAttribute<>(Attributes.CHARACTER_RANGE_TABLE) {
 
@@ -233,7 +236,7 @@ public final class DirectCodeBuilder
                             var start = labelToBci(cr.startScope());
                             var end = labelToBci(cr.endScope());
                             if (start == -1 || end == -1) {
-                                if (constantPool.options().filterDeadLabels) {
+                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     crSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in character range");
@@ -262,7 +265,7 @@ public final class DirectCodeBuilder
                         b.writeU2(lvSize);
                         for (LocalVariable l : localVariables) {
                             if (!l.writeTo(b)) {
-                                if (constantPool.options().filterDeadLabels) {
+                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     lvSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
@@ -285,7 +288,7 @@ public final class DirectCodeBuilder
                         b.writeU2(localVariableTypes.size());
                         for (LocalVariableType l : localVariableTypes) {
                             if (!l.writeTo(b)) {
-                                if (constantPool.options().filterDeadLabels) {
+                                if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     lvtSize--;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
@@ -305,6 +308,44 @@ public final class DirectCodeBuilder
         }
 
         content = new UnboundAttribute.AdHocAttribute<>(Attributes.CODE) {
+
+            private void writeCounters(boolean codeMatch, BufWriterImpl buf) {
+                if (codeMatch) {
+                    buf.writeU2(original.maxStack());
+                    buf.writeU2(original.maxLocals());
+                } else {
+                    StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
+                    buf.writeU2(cntr.maxStack());
+                    buf.writeU2(cntr.maxLocals());
+                }
+            }
+
+            private void generateStackMaps(BufWriterImpl buf) throws IllegalArgumentException {
+                //new instance of generator immediately calculates maxStack, maxLocals, all frames,
+                // patches dead bytecode blocks and removes them from exception table
+                StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
+                attributes.withAttribute(gen.stackMapTableAttribute());
+                buf.writeU2(gen.maxStack());
+                buf.writeU2(gen.maxLocals());
+            }
+
+            private void tryGenerateStackMaps(boolean codeMatch, BufWriterImpl buf) {
+                if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION) {
+                    try {
+                        generateStackMaps(buf);
+                    } catch (IllegalArgumentException e) {
+                        //failover following JVMS-4.10
+                        if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION) {
+                            writeCounters(codeMatch, buf);
+                        } else {
+                            throw e;
+                        }
+                    }
+                } else {
+                    writeCounters(codeMatch, buf);
+                }
+            }
+
             @Override
             public void writeBody(BufWriter b) {
                 BufWriterImpl buf = (BufWriterImpl) b;
@@ -318,52 +359,29 @@ public final class DirectCodeBuilder
                             methodInfo.methodName().stringValue(),
                             methodInfo.methodTypeSymbol().displayDescriptor()));
                 }
-                int maxStack, maxLocals;
-                Attribute<? extends StackMapTableAttribute> stackMapAttr;
-                boolean canReuseStackmaps = codeAndExceptionsMatch(codeLength);
 
-                if (!constantPool.options().generateStackmaps) {
-                    StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
-                    maxStack = cntr.maxStack();
-                    maxLocals = cntr.maxLocals();
-                    stackMapAttr = null;
-                }
-                else if (canReuseStackmaps) {
-                    maxLocals = original.maxLocals();
-                    maxStack = original.maxStack();
-                    stackMapAttr = original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null);
-                }
-                else if (buf.getMajorVersion() >= Classfile.JAVA_6_VERSION) {
-                    try {
-                        //new instance of generator immediately calculates maxStack, maxLocals, all frames,
-                        // patches dead bytecode blocks and removes them from exception table
-                        StackMapGenerator gen = StackMapGenerator.of(DirectCodeBuilder.this, buf);
-                        maxStack = gen.maxStack();
-                        maxLocals = gen.maxLocals();
-                        stackMapAttr = gen.stackMapTableAttribute();
-                    } catch (IllegalArgumentException e) {
-                        if (buf.getMajorVersion() == Classfile.JAVA_6_VERSION) {
-                            //failover following JVMS-4.10
-                            StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
-                            maxStack = cntr.maxStack();
-                            maxLocals = cntr.maxLocals();
-                            stackMapAttr = null;
-                        } else {
-                            throw e;
+                if (codeAndExceptionsMatch(codeLength)) {
+                    switch (context.stackMapsOption()) {
+                        case STACK_MAPS_WHEN_REQUIRED -> {
+                            attributes.withAttribute(original.findAttribute(Attributes.STACK_MAP_TABLE).orElse(null));
+                            writeCounters(true, buf);
                         }
+                        case GENERATE_STACK_MAPS ->
+                            generateStackMaps(buf);
+                        case DROP_STACK_MAPS ->
+                            writeCounters(true, buf);
+                    }
+                } else {
+                    switch (context.stackMapsOption()) {
+                        case STACK_MAPS_WHEN_REQUIRED ->
+                            tryGenerateStackMaps(false, buf);
+                        case GENERATE_STACK_MAPS ->
+                            generateStackMaps(buf);
+                        case DROP_STACK_MAPS ->
+                            writeCounters(false, buf);
                     }
                 }
-                else {
-                    StackCounter cntr = StackCounter.of(DirectCodeBuilder.this, buf);
-                    maxStack = cntr.maxStack();
-                    maxLocals = cntr.maxLocals();
-                    stackMapAttr = null;
-                }
 
-                attributes.withAttribute(stackMapAttr);
-
-                buf.writeU2(maxStack);
-                buf.writeU2(maxLocals);
                 buf.writeInt(codeLength);
                 buf.writeBytes(bytecodesBufWriter);
                 writeExceptionHandlers(b);
@@ -377,9 +395,9 @@ public final class DirectCodeBuilder
         private final BufWriterImpl buf;
         private int lastPc, lastLine, writtenLine;
 
-        public DedupLineNumberTableAttribute(ConstantPoolBuilder constantPool) {
+        public DedupLineNumberTableAttribute(ConstantPoolBuilder constantPool, ClassfileImpl context) {
             super(Attributes.LINE_NUMBER_TABLE);
-            buf = new BufWriterImpl(constantPool);
+            buf = new BufWriterImpl(constantPool, context);
             lastPc = -1;
             writtenLine = -1;
         }
@@ -424,7 +442,7 @@ public final class DirectCodeBuilder
             codeAttributesMatch = cai.codeLength == curPc()
                                   && cai.compareCodeBytes(bytecodesBufWriter, 0, codeLength);
             if (codeAttributesMatch) {
-                BufWriter bw = new BufWriterImpl(constantPool);
+                BufWriter bw = new BufWriterImpl(constantPool, context);
                 writeExceptionHandlers(bw);
                 codeAttributesMatch = cai.classReader.compare(bw, 0, cai.exceptionHandlerPos, bw.size());
             }
@@ -682,7 +700,7 @@ public final class DirectCodeBuilder
 
     public void setLineNumber(int lineNo) {
         if (lineNumberWriter == null)
-            lineNumberWriter = new DedupLineNumberTableAttribute(constantPool);
+            lineNumberWriter = new DedupLineNumberTableAttribute(constantPool, context);
         lineNumberWriter.writeLineNumber(curPc(), lineNo);
     }
 

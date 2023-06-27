@@ -26,6 +26,7 @@
 package jdk.tools.jlink.internal.plugins;
 
 import java.util.Map;
+import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.CodeElement;
@@ -99,7 +100,8 @@ abstract class VersionPropsPlugin extends AbstractPlugin {
 
     @SuppressWarnings("deprecation")
     private byte[] redefine(String path, byte[] classFile) {
-        return newClassReader(path, classFile).transform(ClassTransform.transformingMethodBodies(
+        return Classfile.of().transform(newClassReader(path, classFile),
+            ClassTransform.transformingMethodBodies(
                 mm -> mm.methodName().equalsString("<clinit>"),
                 new CodeTransform() {
                     private CodeElement pendingLDC = null;

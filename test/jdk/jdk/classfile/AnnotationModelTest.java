@@ -55,7 +55,7 @@ class AnnotationModelTest {
 
     @Test
     void readAnnos() {
-        var model = Classfile.parse(fileBytes);
+        var model = Classfile.of().parse(fileBytes);
         var annotations = model.findAttribute(Attributes.RUNTIME_VISIBLE_ANNOTATIONS).get().annotations();
 
         assertEquals(annotations.size(), 3);

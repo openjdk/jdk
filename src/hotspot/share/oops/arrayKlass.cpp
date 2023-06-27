@@ -183,6 +183,16 @@ void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle p
     ak->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }
 }
+
+void ArrayKlass::cds_print_value_on(outputStream* st) const {
+  assert(is_klass(), "must be klass");
+  st->print("      - array: %s", internal_name());
+  if (_higher_dimension != nullptr) {
+    ArrayKlass* ak = ArrayKlass::cast(higher_dimension());
+    st->cr();
+    ak->cds_print_value_on(st);
+  }
+}
 #endif // INCLUDE_CDS
 
 // Printing

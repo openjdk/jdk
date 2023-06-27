@@ -33,6 +33,11 @@ grant codeBase "file:${test.classes}/../../../../test/lib/-" {
     permission java.io.FilePermission "${test.src}/../../../../lib/jdk/test/lib/net/testkeys", "read";
 };
 
+// for jdk/httpclient/test/lib/* classes
+grant codeBase "file:${test.classes}/../../../../test/jdk/java/net/httpclient/lib/-" {
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
+};
+
 grant codeBase "file:${test.classes}/*" {
     permission java.io.FilePermission "${test.src}${/}docs${/}files${/}smallfile.txt", "read";
     permission java.io.FilePermission "${test.src}${/}docs${/}files${/}notsobigfile.txt", "read";
@@ -52,4 +57,6 @@ grant codeBase "file:${test.classes}/*" {
 
     permission java.util.PropertyPermission "*", "read";
     permission java.lang.RuntimePermission "modifyThread";
+
+    permission java.lang.RuntimePermission "accessClassInPackage.jdk.internal.net.http.common";
 };

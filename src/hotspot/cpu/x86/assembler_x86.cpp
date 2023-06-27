@@ -1324,6 +1324,13 @@ void Assembler::addb(Address dst, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::addb(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst, src);
+  emit_int8(0x00);
+  emit_operand(src, dst, 0);
+}
+
 void Assembler::addw(Register dst, Register src) {
   emit_int8(0x66);
   (void)prefix_and_encode(dst->encoding(), src->encoding());
@@ -1337,6 +1344,14 @@ void Assembler::addw(Address dst, int imm16) {
   emit_int8((unsigned char)0x81);
   emit_operand(rax, dst, 2);
   emit_int16(imm16);
+}
+
+void Assembler::addw(Address dst, Register src) {
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(dst, src);
+  emit_int8(0x01);
+  emit_operand(src, dst, 0);
 }
 
 void Assembler::addl(Address dst, Register src) {
@@ -1907,7 +1922,7 @@ void Assembler::crc32(Register crc, Address adr, int8_t sizeInBytes) {
   int8_t w = 0x01;
   Prefix p = Prefix_EMPTY;
 
-  emit_int8((int8_t)0xF2);
+  emit_int8((uint8_t)0xF2);
   switch (sizeInBytes) {
   case 1:
     w = 0;
@@ -2507,7 +2522,7 @@ void Assembler::jmp_literal(address dest, RelocationHolder const& rspec) {
   assert(dest != nullptr, "must have a target");
   intptr_t disp = dest - (pc() + sizeof(int32_t));
   assert(is_simm32(disp), "must be 32bit offset (jmp)");
-  emit_data(disp, rspec, call32_operand);
+  emit_data(checked_cast<int32_t>(disp), rspec, call32_operand);
 }
 
 void Assembler::jmpb_0(Label& L, const char* file, int line) {

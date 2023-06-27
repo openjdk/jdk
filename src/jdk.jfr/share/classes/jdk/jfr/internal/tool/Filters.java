@@ -34,6 +34,7 @@ import java.util.function.Predicate;
 import jdk.jfr.EventType;
 import jdk.jfr.consumer.RecordedThread;
 import jdk.jfr.internal.util.UserSyntaxException;
+import jdk.jfr.internal.util.Matcher;
 import jdk.jfr.consumer.RecordedEvent;
 
 /**
@@ -46,7 +47,7 @@ public class Filters {
         Predicate<EventType> f = eventType -> {
             for (String category : eventType.getCategoryNames()) {
                 for (String filter : filters) {
-                    if (match(category, filter)) {
+                    if (Matcher.match(category, filter)) {
                         return true;
                     }
                     if (category.contains(" ") && acronymify(category).equals(filter)) {
@@ -67,11 +68,11 @@ public class Filters {
         Predicate<EventType> f = eventType -> {
             for (String filter : filters) {
                 String fullEventName = eventType.getName();
-                if (match(fullEventName, filter)) {
+                if (Matcher.match(fullEventName, filter)) {
                     return true;
                 }
                 String eventName = fullEventName.substring(fullEventName.lastIndexOf(".") + 1);
-                if (match(eventName, filter)) {
+                if (Matcher.match(eventName, filter)) {
                     return true;
                 }
             }
@@ -95,7 +96,7 @@ public class Filters {
             return t -> true;
         }
         if (filters.size() == 1) {
-            return filters.get(0);
+            return filters.getFirst();
         }
         return t -> {
             for (Predicate<T> p : filters) {
@@ -127,7 +128,7 @@ public class Filters {
         return thread -> {
             String threadName = thread.getJavaName();
             for (String filter : filters) {
-                if (match(threadName, filter)) {
+                if (Matcher.match(threadName, filter)) {
                     return true;
                 }
             }
@@ -152,30 +153,6 @@ public class Filters {
             newWord = Character.isWhitespace(c);
         }
         return acronym;
-    }
-
-    private static boolean match(String text, String filter) {
-        if (filter.length() == 0) {
-            // empty filter string matches if string is empty
-            return text.length() == 0;
-        }
-        if (filter.charAt(0) == '*') { // recursive check
-            filter = filter.substring(1);
-            for (int n = 0; n <= text.length(); n++) {
-                if (match(text.substring(n), filter))
-                    return true;
-            }
-        } else if (text.length() == 0) {
-            // empty string and non-empty filter does not match
-            return false;
-        } else if (filter.charAt(0) == '?') {
-            // eat any char and move on
-            return match(text.substring(1), filter.substring(1));
-        } else if (filter.charAt(0) == text.charAt(0)) {
-            // eat chars and move on
-            return match(text.substring(1), filter.substring(1));
-        }
-        return false;
     }
 
     private static List<String> explodeFilter(String filter) throws UserSyntaxException {

@@ -60,8 +60,9 @@ public class BSMTest {
 
     @Test
     void testSevenOfThirteenIterator() throws Exception {
-        ClassModel cm = Classfile.parse(testClassPath);
-        byte[] newBytes = cm.transform((cb, ce) -> {
+        var cc = Classfile.of();
+        ClassModel cm = cc.parse(testClassPath);
+        byte[] newBytes = cc.transform(cm, (cb, ce) -> {
             if (ce instanceof MethodModel mm) {
                 cb.transformMethod(mm, (mb, me) -> {
                     if (me instanceof CodeModel xm) {
