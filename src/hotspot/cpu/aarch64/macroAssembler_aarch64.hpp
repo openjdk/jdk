@@ -1726,11 +1726,11 @@ public:
 
   void poly1305_step_vec(LambdaAccumulator &acc,
                          const FloatRegister s[], const FloatRegister u[],
-                         const FloatRegister upper_bits, Register input_start,
+                         const FloatRegister zero, Register input_start,
                          AbstractRegSet<FloatRegister> scratch);
   void poly1305_step_vec1(LambdaAccumulator &acc,
                          const FloatRegister s[], const FloatRegister u[],
-                         const FloatRegister upper_bits, Register input_start,
+                         const FloatRegister zero, Register input_start,
                          AbstractRegSet<FloatRegister> scratch);
   void poly1305_multiply_vec(LambdaAccumulator &acc,
                            const FloatRegister u_v[],
