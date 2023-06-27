@@ -31,7 +31,7 @@ import jdk.internal.vm.annotation.Stable;
  * Provides a hexadecimal cache array of values from 0 to 255
  */
 public final class Hex256 {
-    private Hex256(){
+    private Hex256() {
     }
 
     @Stable
