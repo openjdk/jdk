@@ -73,8 +73,6 @@ import org.testng.annotations.Test;
 
 /**
  * Test tick clock.
- *
- * @bug 8310232
  */
 @Test
 public class TestClock_Tick {
