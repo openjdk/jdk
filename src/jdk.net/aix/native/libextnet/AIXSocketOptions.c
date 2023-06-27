@@ -86,7 +86,7 @@ JNIEXPORT void JNICALL Java_jdk_net_AIXSocketOptions_setQuickAck0
     int optval;
     int rv;
     optval = (on ? 1 : 0);
-    rv = setsockopt(fd, SOL_SOCKET, TCP_NODELAYACK, &optval, sizeof (optval));
+    rv = setsockopt(fd, IPPROTO_TCP, TCP_NODELAYACK, &optval, sizeof (optval));
     handleError(env, rv, "set option TCP_NODELAYACK failed");
 }
 
@@ -99,7 +99,7 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_AIXSocketOptions_getQuickAck0
 (JNIEnv *env, jobject unused, jint fd) {
     int on;
     socklen_t sz = sizeof (on);
-    int rv = getsockopt(fd, SOL_SOCKET, TCP_NODELAYACK, &on, &sz);
+    int rv = getsockopt(fd, IPPROTO_TCP, TCP_NODELAYACK, &on, &sz);
     handleError(env, rv, "get option TCP_NODELAYACK failed");
     return on != 0;
 }
@@ -111,7 +111,7 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_AIXSocketOptions_getQuickAck0
  */
 JNIEXPORT jboolean JNICALL Java_jdk_net_AIXSocketOptions_quickAckSupported0
 (JNIEnv *env, jobject unused) {
-    return socketOptionSupported(SOL_SOCKET, TCP_NODELAYACK);
+    return socketOptionSupported(IPPROTO_TCP, TCP_NODELAYACK);
 }
 
 /*
