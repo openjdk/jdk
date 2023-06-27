@@ -35,7 +35,6 @@ import java.util.function.Consumer;
 
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.*;
-import jdk.internal.classfile.java.lang.constant.*;
 import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
 import jdk.jfr.AnnotationElement;
 import jdk.jfr.Event;
@@ -110,7 +109,7 @@ public final class EventClassBuilder {
 
     private byte[] buildClassInfo(Consumer<ClassBuilder> config) {
         String internalSuperName = ASMToolkit.getInternalName(Event.class.getName());
-        return Classfile.build(type, clb -> {
+        return Classfile.of().build(type, clb -> {
             clb.withFlags(Classfile.ACC_PUBLIC + Classfile.ACC_FINAL + Classfile.ACC_SUPER);
             clb.withSuperclass(ClassDesc.ofInternalName(internalSuperName));
             if (annotationElements.isEmpty())

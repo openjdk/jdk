@@ -106,6 +106,7 @@ public final class EventInstrumentation {
     private static final String METHOD_SHOULD_COMMIT_LONG = "shouldCommit";
     private static final MethodTypeDesc METHOD_SHOULD_COMMIT_LONG_DESC = MethodTypeDesc.of(CD_boolean, CD_long);
 
+    private final Classfile clasfileContext;
     private final ClassModel classNode;
     private final ClassDesc className;
     private final List<SettingInfo> settingInfos;
@@ -121,7 +122,8 @@ public final class EventInstrumentation {
     EventInstrumentation(Class<?> superClass, byte[] bytes, long id, boolean isJDK, boolean guardEventConfiguration) {
         this.eventTypeId = id;
         this.superClass = superClass;
-        this.classNode = Classfile.parse(bytes);
+        this.clasfileContext = Classfile.of();
+        this.classNode = clasfileContext.parse(bytes);
         this.className = classNode.thisClass().asSymbol();
         this.settingInfos = buildSettingInfos(superClass, classNode);
         this.fieldInfos = buildFieldInfos(superClass, classNode);
@@ -313,11 +315,11 @@ public final class EventInstrumentation {
     }
 
     public byte[] buildInstrumented() {
-        return classNode.transform(makeInstrumented());
+        return clasfileContext.transform(classNode, makeInstrumented());
     }
 
     public byte[] buildUninstrumented() {
-        return classNode.transform(makeUninstrumented());
+        return clasfileContext.transform(classNode,makeUninstrumented());
     }
 
     private Predicate<MethodModel> adaptPredicate = new Predicate<MethodModel>() {

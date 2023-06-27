@@ -85,8 +85,9 @@ final class JIClassInstrumentation {
         instrumentorName = instrumentor.getName();
         this.targetName = target.getName();
         this.instrumentor = instrumentor;
-        this.targetClassModel = Classfile.parse(old_target_bytes);
-        this.instrClassModel = Classfile.parse(getOriginalClassBytes(instrumentor));
+        var cc = Classfile.of();
+        this.targetClassModel = cc.parse(old_target_bytes);
+        this.instrClassModel = cc.parse(getOriginalClassBytes(instrumentor));
         //target model have invalid stack maps, so it needs to be extra scanned to resolve all labels
         for (var m : targetClassModel.methods()) {
             m.code().ifPresent(c -> c.forEachElement(el -> {
@@ -148,7 +149,7 @@ final class JIClassInstrumentation {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return target.transform(
+        return Classfile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
@@ -171,7 +172,7 @@ final class JIClassInstrumentation {
                                                 if (!mm.flags().has(AccessFlag.STATIC))
                                                     storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
-                                                    var tk = TypeKind.fromDescriptor(pt.descriptorString());
+                                                    var tk = TypeKind.from(pt);
                                                     storeStack.push(StoreInstruction.of(tk, slot));
                                                     slot += tk.slotSize();
                                                 }

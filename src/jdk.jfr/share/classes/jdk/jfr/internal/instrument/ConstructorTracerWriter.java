@@ -44,7 +44,8 @@ final class ConstructorTracerWriter {
     static byte[] generateBytes(Class<?> clz, byte[] oldBytes) {
         String shortClassName = clz.getSimpleName();
         String fullClassName = clz.getName().replace('.', '/');
-        return Classfile.parse(oldBytes).transform(
+        var cc = Classfile.of();
+        return cc.transform(cc.parse(oldBytes),
                 ClassTransform.transformingMethods(adaptTest, (mb, me) -> {
                     MethodModel mm = mb.original().orElseThrow();
                     boolean useInputParameter = mm.methodType().stringValue().startsWith("(Ljava/lang/String;");

@@ -93,7 +93,7 @@ final class ASMToolkit {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();
             PrintWriter w = new PrintWriter(baos);
             w.println("Bytecode:");
-            ClassPrinter.toYaml(Classfile.parse(bytes), ClassPrinter.Verbosity.TRACE_ALL, w::append);
+            ClassPrinter.toYaml(Classfile.of().parse(bytes), ClassPrinter.Verbosity.TRACE_ALL, w::append);
             Logger.log(LogTag.JFR_SYSTEM_BYTECODE, LogLevel.TRACE, baos.toString());
         };
     }
