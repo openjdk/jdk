@@ -39,7 +39,7 @@ class LimitsTest {
 
     @Test
     void testCPSizeLimit() {
-        Classfile.build(ClassDesc.of("BigClass"), cb -> {
+        Classfile.of().build(ClassDesc.of("BigClass"), cb -> {
             for (int i = 1; i < 65000; i++) {
                 cb.withField("field" + i, ConstantDescs.CD_int, fb -> {});
             }
@@ -48,7 +48,7 @@ class LimitsTest {
 
     @Test
     void testCPOverLimit() {
-        assertThrows(IllegalArgumentException.class, () -> Classfile.build(ClassDesc.of("BigClass"), cb -> {
+        assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("BigClass"), cb -> {
             for (int i = 1; i < 66000; i++) {
                 cb.withField("field" + i, ConstantDescs.CD_int, fb -> {});
             }
@@ -57,7 +57,7 @@ class LimitsTest {
 
     @Test
     void testCodeOverLimit() {
-        assertThrows(IllegalArgumentException.class, () -> Classfile.build(ClassDesc.of("BigClass"), cb -> cb.withMethodBody(
+        assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("BigClass"), cb -> cb.withMethodBody(
                 "bigMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     for (int i = 0; i < 65535; i++) {
                         cob.nop();
@@ -68,7 +68,7 @@ class LimitsTest {
 
     @Test
     void testEmptyCode() {
-        assertThrows(IllegalArgumentException.class, () -> Classfile.build(ClassDesc.of("EmptyClass"), cb -> cb.withMethodBody(
+        assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("EmptyClass"), cb -> cb.withMethodBody(
                 "emptyMethod", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {})));
     }
 }

@@ -55,7 +55,8 @@ class TempConstantPoolBuilderTest {
 
     @Test
     void addAnno() {
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = Classfile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC)
               .with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
               .withMethod("<init>", MethodTypeDesc.of(CD_void), 0, mb -> mb
@@ -67,7 +68,7 @@ class TempConstantPoolBuilderTest {
                                                                                       AnnotationElement.ofString("foo", "bar"))))
               );
         });
-        ClassModel m = Classfile.parse(bytes);
+        ClassModel m = cc.parse(bytes);
         //ClassPrinter.toJson(m, ClassPrinter.Verbosity.TRACE_ALL, System.out::println);
     }
 }
