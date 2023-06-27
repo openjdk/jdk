@@ -643,8 +643,9 @@ class SocketChannelImpl
 
     /**
      * Marks the end of a transfer to this channel.
+     * @throws AsynchronousCloseException if not completed and the channel is closed
      */
-    void afterTransferTo() {
+    void afterTransferTo(boolean completed) throws AsynchronousCloseException {
         synchronized (stateLock) {
             writerThread = 0;
             if (state == ST_CLOSING) {
@@ -652,6 +653,9 @@ class SocketChannelImpl
             }
         }
         writeLock.unlock();
+        if (!completed && !isOpen()) {
+            throw new AsynchronousCloseException();
+        }
     }
 
     @Override

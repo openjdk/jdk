@@ -570,9 +570,13 @@ public class FileChannelImpl
 
     /**
      * Marks the end of a transfer to or from this channel.
+     * @throws AsynchronousCloseException if not completed and the channel is closed
      */
-    private void afterTransfer(int ti) {
+    private void afterTransfer(boolean completed, int ti) throws AsynchronousCloseException {
         threads.remove(ti);
+        if (!completed && !isOpen()) {
+            throw new AsynchronousCloseException();
+        }
     }
 
     /**
@@ -641,14 +645,14 @@ public class FileChannelImpl
             return IOStatus.UNSUPPORTED_CASE;
 
         final FileChannelImpl source = this;
-        long n = -1;
+        boolean completed = false;
         try {
             beginBlocking();
             int sourceIndex = source.beforeTransfer();
             try {
                 int targetIndex = target.beforeTransfer();
                 try {
-                    n = transferToFileDescriptor(position, count, target.fd);
+                    long n = transferToFileDescriptor(position, count, target.fd);
                     if (n == IOStatus.UNSUPPORTED_CASE) {
                         transferToFileDirectNotSupported = true;
                         return IOStatus.UNSUPPORTED_CASE;
@@ -657,15 +661,16 @@ public class FileChannelImpl
                         transferToDirectNotSupported = true;
                         return IOStatus.UNSUPPORTED;
                     }
+                    completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {
-                    target.afterTransfer(targetIndex);
+                    target.afterTransfer(completed, targetIndex);
                 }
             } finally {
-                source.afterTransfer(sourceIndex);
+                source.afterTransfer(completed, sourceIndex);
             }
         } finally {
-            endBlocking(n >= 0);
+            endBlocking(completed);
         }
     }
 
@@ -676,14 +681,14 @@ public class FileChannelImpl
         throws IOException
     {
         final FileChannelImpl source = this;
-        long n = -1;
+        boolean completed = false;
         try {
             beginBlocking();
             int sourceIndex = source.beforeTransfer();
             try {
                 target.beforeTransferTo();
                 try {
-                    n = transferToFileDescriptor(position, count, target.getFD());
+                    long n = transferToFileDescriptor(position, count, target.getFD());
                     if (n == IOStatus.UNSUPPORTED_CASE) {
                         return IOStatus.UNSUPPORTED_CASE;
                     }
@@ -691,15 +696,16 @@ public class FileChannelImpl
                         transferToDirectNotSupported = true;
                         return IOStatus.UNSUPPORTED;
                     }
+                    completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {
-                    target.afterTransferTo();
+                    target.afterTransferTo(completed);
                 }
             } finally {
-                source.threads.remove(sourceIndex);
+                source.afterTransfer(completed, sourceIndex);
             }
         } finally {
-            endBlocking(n >= 0);
+            endBlocking(completed);
         }
     }
 
@@ -931,27 +937,28 @@ public class FileChannelImpl
         if (transferFromDirectNotSupported)
             return IOStatus.UNSUPPORTED;
 
-        long n = -1;
+        boolean completed = false;
         try {
             beginBlocking();
             int thisIndex = this.beforeTransfer();
             try {
                 int srcIndex = src.beforeTransfer();
                 try {
-                    n = transferFromFileDescriptor(src.fd, position, count);
+                    long n = transferFromFileDescriptor(src.fd, position, count);
                     if (n == IOStatus.UNSUPPORTED) {
                         transferFromDirectNotSupported = true;
                         return IOStatus.UNSUPPORTED;
                     }
+                    completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {
-                    src.afterTransfer(srcIndex);
+                    src.afterTransfer(completed, srcIndex);
                 }
             } finally {
-                this.afterTransfer(thisIndex);
+                this.afterTransfer(completed, thisIndex);
             }
         } finally {
-            end (n >= 0);
+            endBlocking(completed);
         }
     }
 
