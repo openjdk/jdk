@@ -96,12 +96,12 @@ public class TestJcmdView {
             systemGC.await();
             gcHeapSummary.await();
             oldCollection.countDown();
-            // Wait for Instant.now() to advance 1 s passed the last event timestamp.
+            // Wait for Instant.now() to advance 1 s past the last event timestamp.
             // The rationale for this is twofold:
             // - DcmdView starts one second before Instant.now() (to make the command
             //   responsive for the user).
-            // - Instant.now() and the event timestamp uses different time source
-            //   and they need to synchronize
+            // - Instant.now() and the event timestamp use different time sources
+            //   and they need to synchronize.
             Instant end = lastTimestamp.plusSeconds(1);
             while (Instant.now().isBefore(end)) {
                 Thread.sleep(10);
