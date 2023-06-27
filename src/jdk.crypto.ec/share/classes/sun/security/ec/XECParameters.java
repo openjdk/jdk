@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,11 @@ import sun.security.x509.AlgorithmId;
 
 public class XECParameters {
 
-    static ParametersMap<XECParameters> namedParams = new ParametersMap<>();
+    static final XECParameters X25519;
+    static final XECParameters X448;
+
+    private static final ParametersMap<XECParameters> namedParams =
+        new ParametersMap<>();
 
     // Naming/identification parameters
     private final ObjectIdentifier oid;
@@ -114,41 +118,27 @@ public class XECParameters {
         Map<String, XECParameters> byName = new HashMap<>();
 
         // set up X25519
-        try {
-            BigInteger p = TWO.pow(255).subtract(BigInteger.valueOf(19));
-            addParameters(255, p, 121665, (byte)0x09, 3,
-                KnownOIDs.X25519.value(), NamedParameterSpec.X25519.getName(),
-                bySize, byOid, byName);
-
-        } catch (IOException ex) {
-            // Unable to set X25519 parameters---it will be disabled
-        }
+        BigInteger p2 = TWO.pow(255).subtract(BigInteger.valueOf(19));
+        X25519 = addParameters(255, p2, 121665, (byte)0x09, 3,
+            KnownOIDs.X25519, NamedParameterSpec.X25519.getName());
 
         // set up X448
-        try {
-            BigInteger p = TWO.pow(448).subtract(TWO.pow(224))
-                .subtract(BigInteger.ONE);
-            addParameters(448, p, 39081, (byte)0x05, 2,
-                KnownOIDs.X448.value(), NamedParameterSpec.X448.getName(),
-                bySize, byOid, byName);
-
-        } catch (IOException ex) {
-            // Unable to set X448 parameters---it will be disabled
-        }
+        BigInteger p4 = TWO.pow(448).subtract(TWO.pow(224))
+            .subtract(BigInteger.ONE);
+        X448 = addParameters(448, p4, 39081, (byte)0x05, 2,
+            KnownOIDs.X448, NamedParameterSpec.X448.getName());
 
         namedParams.fix();
     }
 
-    private static void addParameters(int bits, BigInteger p, int a24,
-        byte basePoint, int logCofactor, String objectId, String name,
-        Map<Integer, XECParameters> bySize,
-        Map<ObjectIdentifier, XECParameters> byOid,
-        Map<String, XECParameters> byName) throws IOException {
+    private static XECParameters addParameters(int bits, BigInteger p, int a24,
+        byte basePoint, int logCofactor, KnownOIDs koid, String name) {
 
-        ObjectIdentifier oid = ObjectIdentifier.of(objectId);
+        ObjectIdentifier oid = ObjectIdentifier.of(koid);
         XECParameters params =
             new XECParameters(bits, p, a24, basePoint, logCofactor, oid, name);
         namedParams.put(name.toLowerCase(), oid, bits, params);
+        return params;
     }
 
     boolean oidEquals(XECParameters other) {

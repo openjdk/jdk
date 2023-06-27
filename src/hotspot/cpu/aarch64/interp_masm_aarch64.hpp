@@ -129,12 +129,12 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_constant_pool_cache(Register reg) {
     get_constant_pool(reg);
-    ldr(reg, Address(reg, ConstantPool::cache_offset_in_bytes()));
+    ldr(reg, Address(reg, ConstantPool::cache_offset()));
   }
 
   void get_cpool_and_tags(Register cpool, Register tags) {
     get_constant_pool(cpool);
-    ldr(tags, Address(cpool, ConstantPool::tags_offset_in_bytes()));
+    ldr(tags, Address(cpool, ConstantPool::tags_offset()));
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
@@ -175,7 +175,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void empty_expression_stack() {
     ldr(esp, Address(rfp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    // NULL last_sp until next java call
+    // null last_sp until next java call
     str(zr, Address(rfp, frame::interpreter_frame_last_sp_offset * wordSize));
   }
 

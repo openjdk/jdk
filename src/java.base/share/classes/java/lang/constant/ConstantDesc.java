@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,9 +99,9 @@ public sealed interface ConstantDesc
      * could not be reflectively resolved in the course of resolution
      * @throws LinkageError if a linkage error occurs
      *
-     * @apiNote {@linkplain MethodTypeDesc} can represent method type descriptors
-     * that are not representable by {@linkplain MethodType}, such as methods with
-     * more than 255 parameter slots, so attempts to resolve these may result in errors.
+     * @apiNote Some constant descriptors, such as {@linkplain MethodTypeDesc}, can represent
+     * a value that is not representable by run-time entities. Attempts to resolve these may
+     * result in errors.
      *
      * @jvms 5.4.3 Resolution
      * @jvms 5.4.4 Access Control

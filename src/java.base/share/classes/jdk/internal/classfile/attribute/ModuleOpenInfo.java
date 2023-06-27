@@ -30,8 +30,8 @@ import java.util.Set;
 
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.ModuleDesc;
+import java.lang.constant.PackageDesc;
 import java.lang.reflect.AccessFlag;
 
 import jdk.internal.classfile.impl.TemporaryConstantPool;
@@ -130,7 +130,7 @@ public sealed interface ModuleOpenInfo
      */
     static ModuleOpenInfo of(PackageDesc opens, int opensFlags,
                              List<ModuleDesc> opensTo) {
-        return of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(opens.packageInternalName())),
+        return of(TemporaryConstantPool.INSTANCE.packageEntry(TemporaryConstantPool.INSTANCE.utf8Entry(opens.internalName())),
                 opensFlags,
                 Util.moduleEntryList(opensTo));
     }

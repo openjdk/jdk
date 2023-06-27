@@ -54,6 +54,7 @@ public:
     assert(is_valid_region(i), "must be");
     _base_region_crc[i] = c;
   }
+  void print(outputStream* st);
 };
 
 class DynamicArchive : AllStatic {

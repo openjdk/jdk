@@ -77,7 +77,7 @@ Node* SubNode::Identity(PhaseGVN* phase) {
 
 //------------------------------Value------------------------------------------
 // A subtract node differences it's two inputs.
-const Type* SubNode::Value_common(PhaseTransform *phase) const {
+const Type* SubNode::Value_common(PhaseValues* phase) const {
   const Node* in1 = in(1);
   const Node* in2 = in(2);
   // Either input is TOP ==> the result is TOP
@@ -175,7 +175,7 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
   if( t2->base() == Type::Int ){        // Might be bottom or top...
     const TypeInt *i = t2->is_int();
     if( i->is_con() )
-      return new AddINode(in1, phase->intcon(-i->get_con()));
+      return new AddINode(in1, phase->intcon(java_negate(i->get_con())));
   }
 
   // Convert "(x+c0) - y" into (x-y) + c0"
@@ -205,7 +205,7 @@ Node *SubINode::Ideal(PhaseGVN *phase, bool can_reshape){
     } else {
       // Match x
       Node* sub2 = phase->transform(new SubINode(in1, in21));
-      Node* neg_c0 = phase->intcon(-c0);
+      Node* neg_c0 = phase->intcon(java_negate(c0));
       return new AddINode(sub2, neg_c0);
     }
   }
@@ -360,7 +360,7 @@ Node *SubLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Convert "x-c0" into "x+ -c0".
   if( i &&                      // Might be bottom or top...
       i->is_con() )
-    return new AddLNode(in1, phase->longcon(-i->get_con()));
+    return new AddLNode(in1, phase->longcon(java_negate(i->get_con())));
 
   // Convert "(x+c0) - y" into (x-y) + c0"
   // Do not collapse (x+c0)-y if "+" is a loop increment or

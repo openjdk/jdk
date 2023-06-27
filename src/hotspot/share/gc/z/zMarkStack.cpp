@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,18 +24,25 @@
 #include "precompiled.hpp"
 #include "gc/z/zMarkStack.inline.hpp"
 #include "gc/z/zMarkStackAllocator.hpp"
+#include "gc/z/zMarkTerminate.inline.hpp"
 #include "logging/log.hpp"
+#include "runtime/atomic.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ZMarkStripe::ZMarkStripe() :
-    _published(),
-    _overflowed() {}
+ZMarkStripe::ZMarkStripe(uintptr_t base)
+  : _published(base),
+    _overflowed(base) {}
 
-ZMarkStripeSet::ZMarkStripeSet() :
-    _nstripes(0),
-    _nstripes_mask(0),
-    _stripes() {}
+ZMarkStripeSet::ZMarkStripeSet(uintptr_t base)
+  : _nstripes_mask(0),
+    _stripes() {
+
+  // Re-construct array elements with the correct base
+  for (size_t i = 0; i < ARRAY_SIZE(_stripes); i++) {
+    _stripes[i] = ZMarkStripe(base);
+  }
+}
 
 void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   assert(is_power_of_2(nstripes), "Must be a power of two");
@@ -43,14 +50,19 @@ void ZMarkStripeSet::set_nstripes(size_t nstripes) {
   assert(nstripes >= 1, "Invalid number of stripes");
   assert(nstripes <= ZMarkStripesMax, "Invalid number of stripes");
 
-  _nstripes = nstripes;
-  _nstripes_mask = nstripes - 1;
+  // Mutators may read these values concurrently. It doesn't matter
+  // if they see the old or new values.
+  Atomic::store(&_nstripes_mask, nstripes - 1);
 
-  log_debug(gc, marking)("Using " SIZE_FORMAT " mark stripes", _nstripes);
+  log_debug(gc, marking)("Using " SIZE_FORMAT " mark stripes", nstripes);
+}
+
+size_t ZMarkStripeSet::nstripes() const {
+  return Atomic::load(&_nstripes_mask) + 1;
 }
 
 bool ZMarkStripeSet::is_empty() const {
-  for (size_t i = 0; i < _nstripes; i++) {
+  for (size_t i = 0; i < ZMarkStripesMax; i++) {
     if (!_stripes[i].is_empty()) {
       return false;
     }
@@ -60,35 +72,38 @@ bool ZMarkStripeSet::is_empty() const {
 }
 
 ZMarkStripe* ZMarkStripeSet::stripe_for_worker(uint nworkers, uint worker_id) {
-  const size_t spillover_limit = (nworkers / _nstripes) * _nstripes;
+  const size_t mask = Atomic::load(&_nstripes_mask);
+  const size_t nstripes = mask + 1;
+
+  const size_t spillover_limit = (nworkers / nstripes) * nstripes;
   size_t index;
 
   if (worker_id < spillover_limit) {
     // Not a spillover worker, use natural stripe
-    index = worker_id & _nstripes_mask;
+    index = worker_id & mask;
   } else {
     // Distribute spillover workers evenly across stripes
     const size_t spillover_nworkers = nworkers - spillover_limit;
     const size_t spillover_worker_id = worker_id - spillover_limit;
-    const double spillover_chunk = (double)_nstripes / (double)spillover_nworkers;
+    const double spillover_chunk = (double)nstripes / (double)spillover_nworkers;
     index = spillover_worker_id * spillover_chunk;
   }
 
-  assert(index < _nstripes, "Invalid index");
+  assert(index < nstripes, "Invalid index");
   return &_stripes[index];
 }
 
-ZMarkThreadLocalStacks::ZMarkThreadLocalStacks() :
-    _magazine(NULL) {
+ZMarkThreadLocalStacks::ZMarkThreadLocalStacks()
+  : _magazine(nullptr) {
   for (size_t i = 0; i < ZMarkStripesMax; i++) {
-    _stacks[i] = NULL;
+    _stacks[i] = nullptr;
   }
 }
 
 bool ZMarkThreadLocalStacks::is_empty(const ZMarkStripeSet* stripes) const {
-  for (size_t i = 0; i < stripes->nstripes(); i++) {
+  for (size_t i = 0; i < ZMarkStripesMax; i++) {
     ZMarkStack* const stack = _stacks[i];
-    if (stack != NULL) {
+    if (stack != nullptr) {
       return false;
     }
   }
@@ -97,21 +112,21 @@ bool ZMarkThreadLocalStacks::is_empty(const ZMarkStripeSet* stripes) const {
 }
 
 ZMarkStack* ZMarkThreadLocalStacks::allocate_stack(ZMarkStackAllocator* allocator) {
-  if (_magazine == NULL) {
+  if (_magazine == nullptr) {
     // Allocate new magazine
     _magazine = allocator->alloc_magazine();
-    if (_magazine == NULL) {
-      return NULL;
+    if (_magazine == nullptr) {
+      return nullptr;
     }
   }
 
-  ZMarkStack* stack = NULL;
+  ZMarkStack* stack = nullptr;
 
   if (!_magazine->pop(stack)) {
     // Magazine is empty, convert magazine into a new stack
     _magazine->~ZMarkStackMagazine();
     stack = new ((void*)_magazine) ZMarkStack();
-    _magazine = NULL;
+    _magazine = nullptr;
   }
 
   return stack;
@@ -119,7 +134,7 @@ ZMarkStack* ZMarkThreadLocalStacks::allocate_stack(ZMarkStackAllocator* allocato
 
 void ZMarkThreadLocalStacks::free_stack(ZMarkStackAllocator* allocator, ZMarkStack* stack) {
   for (;;) {
-    if (_magazine == NULL) {
+    if (_magazine == nullptr) {
       // Convert stack into a new magazine
       stack->~ZMarkStack();
       _magazine = new ((void*)stack) ZMarkStackMagazine();
@@ -133,22 +148,23 @@ void ZMarkThreadLocalStacks::free_stack(ZMarkStackAllocator* allocator, ZMarkSta
 
     // Free and uninstall full magazine
     allocator->free_magazine(_magazine);
-    _magazine = NULL;
+    _magazine = nullptr;
   }
 }
 
 bool ZMarkThreadLocalStacks::push_slow(ZMarkStackAllocator* allocator,
                                        ZMarkStripe* stripe,
                                        ZMarkStack** stackp,
+                                       ZMarkTerminate* terminate,
                                        ZMarkStackEntry entry,
                                        bool publish) {
   ZMarkStack* stack = *stackp;
 
   for (;;) {
-    if (stack == NULL) {
+    if (stack == nullptr) {
       // Allocate and install new stack
       *stackp = stack = allocate_stack(allocator);
-      if (stack == NULL) {
+      if (stack == nullptr) {
         // Out of mark stack memory
         return false;
       }
@@ -160,8 +176,8 @@ bool ZMarkThreadLocalStacks::push_slow(ZMarkStackAllocator* allocator,
     }
 
     // Publish/Overflow and uninstall stack
-    stripe->publish_stack(stack, publish);
-    *stackp = stack = NULL;
+    stripe->publish_stack(stack, terminate, publish);
+    *stackp = stack = nullptr;
   }
 }
 
@@ -172,10 +188,10 @@ bool ZMarkThreadLocalStacks::pop_slow(ZMarkStackAllocator* allocator,
   ZMarkStack* stack = *stackp;
 
   for (;;) {
-    if (stack == NULL) {
+    if (stack == nullptr) {
       // Try steal and install stack
       *stackp = stack = stripe->steal_stack();
-      if (stack == NULL) {
+      if (stack == nullptr) {
         // Nothing to steal
         return false;
       }
@@ -188,19 +204,19 @@ bool ZMarkThreadLocalStacks::pop_slow(ZMarkStackAllocator* allocator,
 
     // Free and uninstall stack
     free_stack(allocator, stack);
-    *stackp = stack = NULL;
+    *stackp = stack = nullptr;
   }
 }
 
-bool ZMarkThreadLocalStacks::flush(ZMarkStackAllocator* allocator, ZMarkStripeSet* stripes) {
+bool ZMarkThreadLocalStacks::flush(ZMarkStackAllocator* allocator, ZMarkStripeSet* stripes, ZMarkTerminate* terminate) {
   bool flushed = false;
 
   // Flush all stacks
-  for (size_t i = 0; i < stripes->nstripes(); i++) {
+  for (size_t i = 0; i < ZMarkStripesMax; i++) {
     ZMarkStripe* const stripe = stripes->stripe_at(i);
     ZMarkStack** const stackp = &_stacks[i];
     ZMarkStack* const stack = *stackp;
-    if (stack == NULL) {
+    if (stack == nullptr) {
       continue;
     }
 
@@ -208,10 +224,10 @@ bool ZMarkThreadLocalStacks::flush(ZMarkStackAllocator* allocator, ZMarkStripeSe
     if (stack->is_empty()) {
       free_stack(allocator, stack);
     } else {
-      stripe->publish_stack(stack);
+      stripe->publish_stack(stack, terminate, true /* publish */);
       flushed = true;
     }
-    *stackp = NULL;
+    *stackp = nullptr;
   }
 
   return flushed;
@@ -219,8 +235,8 @@ bool ZMarkThreadLocalStacks::flush(ZMarkStackAllocator* allocator, ZMarkStripeSe
 
 void ZMarkThreadLocalStacks::free(ZMarkStackAllocator* allocator) {
   // Free and uninstall magazine
-  if (_magazine != NULL) {
+  if (_magazine != nullptr) {
     allocator->free_magazine(_magazine);
-    _magazine = NULL;
+    _magazine = nullptr;
   }
 }

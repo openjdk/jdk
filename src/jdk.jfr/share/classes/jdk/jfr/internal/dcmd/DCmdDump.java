@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ import jdk.jfr.internal.PlatformRecorder;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.PrivateAccess;
 import jdk.jfr.internal.SecuritySupport.SafePath;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.ValueParser;
 import jdk.jfr.internal.WriteableUserPath;
 
 /**
@@ -171,7 +171,7 @@ final class DCmdDump extends AbstractDCmd {
 
         if (time.startsWith("-")) {
             try {
-                long durationNanos = Utils.parseTimespan(time.substring(1));
+                long durationNanos = ValueParser.parseTimespan(time.substring(1));
                 Duration duration = Duration.ofNanos(durationNanos);
                 return Instant.now().minus(duration);
             } catch (NumberFormatException nfe) {
@@ -281,24 +281,24 @@ final class DCmdDump extends AbstractDCmd {
         return new Argument[] {
            new Argument("name",
                "Recording name, e.g. \\\"My Recording\\\"",
-               "STRING", false, null, false),
+               "STRING", false, true, null, false),
            new Argument("filename",
                "Copy recording data to file, e.g. \\\"" + exampleFilename() + "\\\"",
-               "STRING", false, null, false),
+               "STRING", false, true, null, false),
            new Argument("maxage",
                "Maximum duration to dump, in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit",
-               "NANOTIME", false, null, false),
+               "NANOTIME", false, true, null, false),
            new Argument("maxsize", "Maximum amount of bytes to dump, in (M)B or (G)B, e.g. 500M, or 0 for no limit",
-               "MEMORY SIZE", false, "hotspot-pid-xxxxx-id-y-YYYY_MM_dd_HH_mm_ss.jfr", false),
+               "MEMORY SIZE", false, true, "hotspot-pid-xxxxx-id-y-YYYY_MM_dd_HH_mm_ss.jfr", false),
            new Argument("begin",
                "Point in time to dump data from, e.g. 09:00, 21:35:00, 2018-06-03T18:12:56.827Z, 2018-06-03T20:13:46.832, -10m, -3h, or -1d",
-               "STRING", false, null, false),
+               "STRING", false, true, null, false),
            new Argument("end",
                "Point in time to dump data to, e.g. 09:00, 21:35:00, 2018-06-03T18:12:56.827Z, 2018-06-03T20:13:46.832, -10m, -3h, or -1d",
-               "STRING", false, null, false),
+               "STRING", false, true, null, false),
            new Argument("path-to-gc-roots",
                "Collect path to GC roots",
-               "BOOLEAN", false, "false", false)
+               "BOOLEAN", false, true, "false", false)
         };
     }
 }

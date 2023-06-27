@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2020, 2021, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -36,7 +36,7 @@
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const {
     if (order != memory_order_relaxed) {
       FULL_MEM_BARRIER;
     }
@@ -50,8 +50,8 @@ struct Atomic::PlatformAdd {
   }
 
   template<typename D, typename I>
-  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_and_fetch(dest, add_value, order) - add_value;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_then_fetch(dest, add_value, order) - add_value;
   }
 };
 

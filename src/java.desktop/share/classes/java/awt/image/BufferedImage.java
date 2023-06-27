@@ -1540,6 +1540,12 @@ public class BufferedImage extends java.awt.Image
   /**
    * Adds a tile observer.  If the observer is already present,
    * it receives multiple notifications.
+   * <p>
+   * This method ignores its parameters and does nothing,
+   * since {@code BufferedImage} is always checked out
+   * for writing and cannot be made read-only,
+   * so there can never be events to dispatch.
+   *
    * @param to the specified {@link TileObserver}
    */
     public void addTileObserver (TileObserver to) {
@@ -1549,6 +1555,10 @@ public class BufferedImage extends java.awt.Image
    * Removes a tile observer.  If the observer was not registered,
    * nothing happens.  If the observer was registered for multiple
    * notifications, it is now registered for one fewer notification.
+   * <p>
+   * This method ignores the given observer,
+   * since {@link #addTileObserver(TileObserver)} adds none.
+   *
    * @param to the specified {@code TileObserver}.
    */
     public void removeTileObserver (TileObserver to) {
@@ -1556,13 +1566,18 @@ public class BufferedImage extends java.awt.Image
 
     /**
      * Returns whether or not a tile is currently checked out for writing.
+     * The only tile in a {@code BufferedImage} is at (0,0) and it is always
+     * writable, so calling this method with (0,0) will always return
+     * {@code true}, and any other coordinate will cause an exception
+     * to be thrown.
+     *
      * @param tileX the x index of the tile.
      * @param tileY the y index of the tile.
      * @return {@code true} if the tile specified by the specified
      *          indices is checked out for writing; {@code false}
      *          otherwise.
-     * @throws ArrayIndexOutOfBoundsException if both
-     *          {@code tileX} and {@code tileY} are not equal
+     * @throws IllegalArgumentException if either
+     *          {@code tileX} or {@code tileY} is not equal
      *          to 0
      */
     public boolean isTileWritable (int tileX, int tileY) {
@@ -1576,13 +1591,23 @@ public class BufferedImage extends java.awt.Image
      * Returns an array of {@link Point} objects indicating which tiles
      * are checked out for writing.  Returns {@code null} if none are
      * checked out.
+     * <p>
+     * Since a {@code BufferedImage} consists of a single tile,
+     * and that tile is always checked out for writing,
+     * this method returns an array of one point.
+     * Further, the offset shall be consistent with
+     * {@link #getMinTileX()} and {@link #getMinTileY()},
+     * which are always (0,0) in {@code BufferedImage}.
+     * That will always be the coordinates of the single
+     * returned {@code Point}.
+     *
      * @return a {@code Point} array that indicates the tiles that
      *          are checked out for writing, or {@code null} if no
      *          tiles are checked out for writing.
      */
     public Point[] getWritableTileIndices() {
         Point[] p = new Point[1];
-        p[0] = new Point(0, 0);
+        p[0] = new Point();         // Default to (0,0).
 
         return p;
     }
@@ -1604,6 +1629,12 @@ public class BufferedImage extends java.awt.Image
    * Checks out a tile for writing.  All registered
    * {@code TileObservers} are notified when a tile goes from having
    * no writers to having one writer.
+   * <p>
+   * This method unconditionally returns the
+   * {@linkplain #getRaster() single tile} without checking
+   * the passed values. No listeners are notified since the
+   * returned tile is always checked out for writing.
+   *
    * @param tileX the x index of the tile
    * @param tileY the y index of the tile
    * @return a {@code WritableRaster} that is the tile, indicated by
@@ -1621,6 +1652,11 @@ public class BufferedImage extends java.awt.Image
    * to undefined results.  All registered {@code TileObservers}
    * are notified when a tile goes from having one writer to having no
    * writers.
+   * <p>
+   * This method immediately returns without checking the passed values.
+   * No listeners are notified since the {@linkplain #getRaster() single tile}
+   * is always checked out for writing.
+   *
    * @param tileX the x index of the tile
    * @param tileY the y index of the tile
    */

@@ -69,6 +69,9 @@
 #include "utilities/events.hpp"
 #include "utilities/growableArray.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 // put OS-includes here
 # include <dlfcn.h>
@@ -101,6 +104,7 @@
 #endif
 
 #ifdef __APPLE__
+  #include <mach/task_info.h>
   #include <mach-o/dyld.h>
 #endif
 
@@ -135,6 +139,10 @@ static volatile int processor_id_next = 0;
 // utility functions
 
 julong os::available_memory() {
+  return Bsd::available_memory();
+}
+
+julong os::free_memory() {
   return Bsd::available_memory();
 }
 
@@ -586,7 +594,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -679,7 +687,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
 
   if (osthread == nullptr) {
     return false;
@@ -708,9 +716,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", pthread id: " UINTX_FORMAT
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), (uintx) pthread_self(),
-                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
   return true;
 }
 
@@ -2073,7 +2081,7 @@ uint os::processor_id() {
     // Assign processor id to APIC id
     processor_id = Atomic::cmpxchg(&processor_id_map[apic_id], processor_id_unassigned, processor_id_assigning);
     if (processor_id == processor_id_unassigned) {
-      processor_id = Atomic::fetch_and_add(&processor_id_next, 1) % os::processor_count();
+      processor_id = Atomic::fetch_then_add(&processor_id_next, 1) % os::processor_count();
       Atomic::store(&processor_id_map[apic_id], processor_id);
     }
   }
@@ -2449,3 +2457,31 @@ bool os::start_debugging(char *buf, int buflen) {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+
+#if INCLUDE_JFR
+
+void os::jfr_report_memory_info() {
+#ifdef __APPLE__
+  mach_task_basic_info info;
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+
+  kern_return_t ret = task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t)&info, &count);
+  if (ret == KERN_SUCCESS) {
+    // Send the RSS JFR event
+    EventResidentSetSize event;
+    event.set_size(info.resident_size);
+    event.set_peak(info.resident_size_max);
+    event.commit();
+  } else {
+    // Log a warning
+    static bool first_warning = true;
+    if (first_warning) {
+      log_warning(jfr)("Error fetching RSS values: task_info failed");
+      first_warning = false;
+    }
+  }
+
+#endif // __APPLE__
+}
+
+#endif // INCLUDE_JFR

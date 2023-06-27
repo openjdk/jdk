@@ -266,5 +266,5 @@ void LambdaFormInvokers::read_static_archive_invokers() {
 }
 
 void LambdaFormInvokers::serialize(SerializeClosure* soc) {
-  soc->do_ptr((void**)&_static_archive_invokers);
+  soc->do_ptr(&_static_archive_invokers);
 }

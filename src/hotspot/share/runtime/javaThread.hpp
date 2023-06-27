@@ -34,6 +34,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/handshake.hpp"
 #include "runtime/javaFrameAnchor.hpp"
+#include "runtime/lockStack.hpp"
 #include "runtime/park.hpp"
 #include "runtime/safepointMechanism.hpp"
 #include "runtime/stackWatermarkSet.hpp"
@@ -512,9 +513,7 @@ private:
   virtual bool is_Java_thread() const            { return true;  }
   virtual bool can_call_java() const             { return true; }
 
-  virtual bool is_active_Java_thread() const {
-    return on_thread_list() && !is_terminated();
-  }
+  virtual bool is_active_Java_thread() const;
 
   // Thread oop. threadObj() can be null for initial JavaThread
   // (or for threads attached via JNI)
@@ -1142,20 +1141,33 @@ private:
   ParkEvent * _SleepEvent;
 public:
   bool sleep(jlong millis);
+  bool sleep_nanos(jlong nanos);
 
   // java.lang.Thread interruption support
   void interrupt();
   bool is_interrupted(bool clear_interrupted);
+
+private:
+  LockStack _lock_stack;
+
+public:
+  LockStack& lock_stack() { return _lock_stack; }
+
+  static ByteSize lock_stack_offset()      { return byte_offset_of(JavaThread, _lock_stack); }
+  // Those offsets are used in code generators to access the LockStack that is embedded in this
+  // JavaThread structure. Those accesses are relative to the current thread, which
+  // is typically in a dedicated register.
+  static ByteSize lock_stack_top_offset()  { return lock_stack_offset() + LockStack::top_offset(); }
+  static ByteSize lock_stack_base_offset() { return lock_stack_offset() + LockStack::base_offset(); }
 
   static OopStorage* thread_oop_storage();
 
   static void verify_cross_modify_fence_failure(JavaThread *thread) PRODUCT_RETURN;
 
   // Helper function to create the java.lang.Thread object for a
-  // VM-internal thread. The thread will have the given name, be
-  // part of the System ThreadGroup and if is_visible is true will be
-  // discoverable via the system ThreadGroup.
-  static Handle create_system_thread_object(const char* name, bool is_visible, TRAPS);
+  // VM-internal thread. The thread will have the given name and be
+  // part of the System ThreadGroup.
+  static Handle create_system_thread_object(const char* name, TRAPS);
 
   // Helper function to start a VM-internal daemon thread.
   // E.g. ServiceThread, NotificationThread, CompilerThread etc.

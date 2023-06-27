@@ -213,8 +213,8 @@ void SimpleCompactHashtable::serialize_header(SerializeClosure* soc) {
   // calculate_header_size() accordingly.
   soc->do_u4(&_entry_count);
   soc->do_u4(&_bucket_count);
-  soc->do_ptr((void**)&_buckets);
-  soc->do_ptr((void**)&_entries);
+  soc->do_ptr(&_buckets);
+  soc->do_ptr(&_entries);
   if (soc->reading()) {
     _base_address = (address)SharedBaseAddress;
   }

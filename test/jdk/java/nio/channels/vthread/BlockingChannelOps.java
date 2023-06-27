@@ -25,7 +25,6 @@
  * @test id=default
  * @bug 8284161
  * @summary Test virtual threads doing blocking I/O on NIO channels
- * @enablePreview
  * @library /test/lib
  * @run junit BlockingChannelOps
  */
@@ -34,7 +33,6 @@
  * @test id=direct-register
  * @summary Test virtual threads doing blocking I/O on NIO channels and with
  *    the I/O poller configured to use direct registration
- * @enablePreview
  * @library /test/lib
  * @run junit/othervm -Djdk.useDirectRegister BlockingChannelOps
  */
@@ -42,7 +40,6 @@
 /**
  * @test id=no-vmcontinuations
  * @requires vm.continuations
- * @enablePreview
  * @library /test/lib
  * @run junit/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations BlockingChannelOps
  */

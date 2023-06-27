@@ -104,6 +104,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
@@ -1400,8 +1401,8 @@ public class HtmlDocletWriter {
                 @Override
                 public Boolean visitStartElement(StartElementTree node, Content content) {
                     Content attrs = new ContentBuilder();
-                    if (node.getName().toString().matches("(?i)h[1-6]") && !hasIdAttribute(node)) {
-                        generateHeadingId(node, trees, attrs);
+                    if (node.getName().toString().matches("(?i)h[1-6]")) {
+                        createSectionIdAndIndex(node, trees, attrs, element, context);
                     }
                     for (DocTree dt : node.getAttributes()) {
                         dt.accept(this, attrs);
@@ -1476,14 +1477,20 @@ public class HtmlDocletWriter {
         return name != null && name.toString().equalsIgnoreCase(s);
     }
 
-    private boolean hasIdAttribute(StartElementTree node) {
-        return node.getAttributes().stream().anyMatch(
-                dt -> dt instanceof AttributeTree at && equalsIgnoreCase(at.getName(), "id"));
+    private Optional<String> getIdAttributeValue(StartElementTree node) {
+         return node.getAttributes().stream()
+                 .filter(dt -> dt instanceof AttributeTree at && equalsIgnoreCase(at.getName(), "id"))
+                 .map(dt -> ((AttributeTree)dt).getValue().toString())
+                 .findFirst();
     }
 
-    private void generateHeadingId(StartElementTree node, List<? extends DocTree> trees, Content content) {
+    private void createSectionIdAndIndex(StartElementTree node, List<? extends DocTree> trees, Content attrs,
+                                         Element element, TagletWriterImpl.Context context) {
+        // Use existing id attribute if available
+        String id = getIdAttributeValue(node).orElse(null);
         StringBuilder sb = new StringBuilder();
         String tagName = node.getName().toString().toLowerCase(Locale.ROOT);
+        // Go through heading content to collect content and look for existing id
         for (DocTree docTree : trees.subList(trees.indexOf(node) + 1, trees.size())) {
             if (docTree instanceof TextTree text) {
                 sb.append(text.getBody());
@@ -1492,17 +1499,31 @@ public class HtmlDocletWriter {
             } else if (docTree instanceof LinkTree link) {
                 var label = link.getLabel();
                 sb.append(label.isEmpty() ? link.getReference().getSignature() : label.toString());
+            } else if (id == null && docTree instanceof StartElementTree nested
+                    && equalsIgnoreCase(nested.getName(), "a")) {
+                // Use id of embedded anchor element if present
+                id = getIdAttributeValue(nested).orElse(null);
             } else if (docTree instanceof EndElementTree endElement
                     && equalsIgnoreCase(endElement.getName(), tagName)) {
                 break;
-            } else if (docTree instanceof StartElementTree nested
-                    && equalsIgnoreCase(nested.getName(), "a")
-                    && hasIdAttribute(nested)) {
-                return; // Avoid generating id if embedded <a id=...> is present
             }
         }
-        HtmlId htmlId = htmlIds.forHeading(sb, headingIds);
-        content.add("id=\"").add(htmlId.name()).add("\"");
+        String headingContent = sb.toString().trim();
+        if (id == null) {
+            // Generate id attribute
+            HtmlId htmlId = htmlIds.forHeading(headingContent, headingIds);
+            id = htmlId.name();
+            attrs.add("id=\"").add(htmlId.name()).add("\"");
+        }
+        // Generate index item
+        if (!headingContent.isEmpty() && configuration.mainIndex != null) {
+            String tagText = headingContent.replaceAll("\\s+", " ");
+            IndexItem item = IndexItem.of(element, node, tagText,
+                    getTagletWriterInstance(context).getHolderName(element),
+                    resources.getText("doclet.Section"),
+                    new DocLink(path, id));
+            configuration.mainIndex.add(item);
+        }
     }
 
     /**

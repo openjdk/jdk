@@ -431,7 +431,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         boolean hasModulePackages() throws IOException {
             try (InputStream in = getInputStream()) {
                 // parse module-info.class
-                return Classfile.parse(in.readAllBytes()).elementStream()
+                return Classfile.of().parse(in.readAllBytes()).elementStream()
                         .anyMatch(e -> e instanceof ModulePackagesAttribute mpa
                                     && !mpa.packages().isEmpty());
             }
@@ -579,7 +579,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate SystemModules class
          */
         public byte[] genClassBytes(Configuration cf) {
-            return Classfile.build(classDesc,
+            return Classfile.of().build(classDesc,
                     clb -> {
                         clb.withFlags(ACC_FINAL + ACC_SUPER)
                            .withInterfaceSymbols(List.of(CD_SYSTEM_MODULES))
@@ -1085,7 +1085,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
                 cob.invokevirtual(CD_MODULE_BUILDER,
                                   "requires",
-                                  MTD_REQUIRES_ARRAY);
+                                  MTD_REQUIRES_ARRAY)
+                    .pop();
             }
 
             /*
@@ -1129,7 +1130,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
                 cob.invokevirtual(CD_MODULE_BUILDER,
                                   "exports",
-                                  MTD_EXPORTS_ARRAY);
+                                  MTD_EXPORTS_ARRAY)
+                    .pop();
             }
 
             /*
@@ -1185,7 +1187,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
                 cob.invokevirtual(CD_MODULE_BUILDER,
                                   "opens",
-                                  MTD_OPENS_ARRAY);
+                                  MTD_OPENS_ARRAY)
+                    .pop();
             }
 
             /*
@@ -1254,7 +1257,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
                 cob.invokevirtual(CD_MODULE_BUILDER,
                                   "provides",
-                                  MTD_PROVIDES_ARRAY);
+                                  MTD_PROVIDES_ARRAY)
+                    .pop();
             }
 
             /*
@@ -1672,7 +1676,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         // write the class file to the pool as a resource
         String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASSNAME + ".class";
-        ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.build(
+        ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.of().build(
                 CD_SYSTEM_MODULES_MAP,
                 clb -> clb.withFlags(ACC_FINAL + ACC_SUPER)
                           .withVersion(52, 0)

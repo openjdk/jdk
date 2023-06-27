@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -30,13 +30,8 @@
  * @run testng/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true -Xverify:all TestMemoryAccess
  */
 
-import java.lang.foreign.Arena;
-import java.lang.foreign.GroupLayout;
-import java.lang.foreign.MemoryLayout;
+import java.lang.foreign.*;
 import java.lang.foreign.MemoryLayout.PathElement;
-import java.lang.foreign.MemorySegment;
-import java.lang.foreign.SequenceLayout;
-import java.lang.foreign.ValueLayout;
 
 import java.lang.invoke.VarHandle;
 import java.nio.ByteOrder;
@@ -55,7 +50,7 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "elements")
     public void testPaddedAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Checker checker) {
-        GroupLayout layout = MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"));
+        GroupLayout layout = MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.byteSize()), elemLayout.withName("elem"));
         testAccessInternal(viewFactory, layout, layout.varHandle(PathElement.groupElement("elem")), checker);
     }
 
@@ -79,7 +74,7 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "arrayElements")
     public void testPaddedArrayAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
-        SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem")));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.byteSize()), elemLayout.withName("elem")));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.groupElement("elem")), checker);
     }
 
@@ -91,8 +86,8 @@ public class TestMemoryAccess {
 
     private void testAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout layout, VarHandle handle, Checker checker) {
         MemorySegment outer_segment;
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(layout, arena.scope()));
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = viewFactory.apply(arena.allocate(layout));
             boolean isRO = segment.isReadOnly();
             try {
                 checker.check(handle, segment);
@@ -123,8 +118,8 @@ public class TestMemoryAccess {
 
     private void testArrayAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, ArrayChecker checker) {
         MemorySegment outer_segment;
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, arena.scope()));
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = viewFactory.apply(arena.allocate(seq));
             boolean isRO = segment.isReadOnly();
             try {
                 for (int i = 0; i < seq.elementCount(); i++) {
@@ -173,7 +168,7 @@ public class TestMemoryAccess {
     @Test(dataProvider = "matrixElements")
     public void testPaddedMatrixAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, MatrixChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(20,
-                MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"))));
+                MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.byteSize()), elemLayout.withName("elem"))));
         testMatrixAccessInternal(viewFactory, seq,
                 seq.varHandle(
                         PathElement.sequenceElement(), PathElement.sequenceElement(), PathElement.groupElement("elem")),
@@ -192,8 +187,8 @@ public class TestMemoryAccess {
 
     private void testMatrixAccessInternal(Function<MemorySegment, MemorySegment> viewFactory, SequenceLayout seq, VarHandle handle, MatrixChecker checker) {
         MemorySegment outer_segment;
-        try (Arena arena = Arena.openConfined()) {
-            MemorySegment segment = viewFactory.apply(MemorySegment.allocateNative(seq, arena.scope()));
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = viewFactory.apply(arena.allocate(seq));
             boolean isRO = segment.isReadOnly();
             try {
                 for (int i = 0; i < seq.elementCount(); i++) {

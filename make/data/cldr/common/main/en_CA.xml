@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -86,6 +86,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="lw">line breaks in words setting</key>
 			<key type="m0">transform rules</key>
 			<key type="ms">measurement system</key>
+			<key type="mu">measurement unit</key>
 			<key type="numbers">numbers</key>
 			<key type="rg">region for supplemental data</key>
 			<key type="s0">transform source</key>
@@ -220,6 +221,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<calendar type="chinese">
 				<months>
 					<monthContext type="format">
+						<monthWidth type="wide">
+							<month type="1">first month</month>
+							<month type="2">second month</month>
+							<month type="3">third month</month>
+							<month type="4">fourth month</month>
+							<month type="5">fifth month</month>
+							<month type="6">sixth month</month>
+							<month type="7">seventh month</month>
+							<month type="8">eighth month</month>
+							<month type="9">ninth month</month>
+							<month type="10">tenth month</month>
+							<month type="11">eleventh month</month>
+							<month type="12">twelfth month</month>
+						</monthWidth>
+					</monthContext>
+					<monthContext type="stand-alone">
 						<monthWidth type="wide">
 							<month type="1">first month</month>
 							<month type="2">second month</month>
@@ -557,7 +574,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateFormatLength>
 					<dateFormatLength type="short">
 						<dateFormat>
-							<pattern>M/d/yy</pattern>
+							<pattern>y-MM-dd</pattern>
 							<pattern alt="variant">d/M/yy</pattern>
 						</dateFormat>
 					</dateFormatLength>
@@ -607,11 +624,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateTimeFormatLength>
 					<availableFormats>
 						<dateFormatItem id="Ed">E d</dateFormatItem>
+						<dateFormatItem id="GyMd">y-MM-dd G</dateFormatItem>
+						<dateFormatItem id="Md">MM-dd</dateFormatItem>
 						<dateFormatItem id="Md" alt="variant">d/M</dateFormatItem>
+						<dateFormatItem id="MEd">E, MM-dd</dateFormatItem>
 						<dateFormatItem id="MEd" alt="variant">E, d/M</dateFormatItem>
-						<dateFormatItem id="MMdd">MM/dd</dateFormatItem>
+						<dateFormatItem id="MMdd">MM-dd</dateFormatItem>
 						<dateFormatItem id="MMdd" alt="variant">dd/MM</dateFormatItem>
+						<dateFormatItem id="yM">y-MM</dateFormatItem>
+						<dateFormatItem id="yMd">y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yMd" alt="variant">d/M/y</dateFormatItem>
+						<dateFormatItem id="yMEd">E, y-MM-dd</dateFormatItem>
 						<dateFormatItem id="yMEd" alt="variant">E, d/M/y</dateFormatItem>
 					</availableFormats>
 					<intervalFormats>
@@ -2226,6 +2249,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="area-square-meter">
 				<displayName>metres²</displayName>
 			</unit>
+			<unit type="area-square-inch">
+				<perUnitPattern>{0}/sq in</perUnitPattern>
+			</unit>
 			<unit type="consumption-mile-per-gallon">
 				<displayName>mpg US</displayName>
 				<unitPattern count="one">{0}mpgUS</unitPattern>
@@ -2240,9 +2266,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="one">{0}bit</unitPattern>
 				<unitPattern count="other">{0}bits</unitPattern>
 			</unit>
+			<unit type="duration-year">
+				<perUnitPattern>{0}/yr</perUnitPattern>
+			</unit>
+			<unit type="duration-month">
+				<perUnitPattern>{0}/mo</perUnitPattern>
+			</unit>
+			<unit type="duration-week">
+				<perUnitPattern>{0}/wk</perUnitPattern>
+			</unit>
+			<unit type="duration-hour">
+				<perUnitPattern>{0}/hr</perUnitPattern>
+			</unit>
 			<unit type="duration-minute">
 				<unitPattern count="one">{0}min</unitPattern>
 				<unitPattern count="other">{0}min</unitPattern>
+			</unit>
+			<unit type="duration-second">
+				<perUnitPattern>{0}/sec</perUnitPattern>
 			</unit>
 			<unit type="electric-ampere">
 				<displayName>A</displayName>
@@ -2279,6 +2320,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="speed-mile-per-hour">
 				<displayName>mph</displayName>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>deg</displayName>
 			</unit>
 			<unit type="temperature-celsius">
 				<unitPattern count="one">{0}°</unitPattern>
@@ -2402,4 +2446,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="800">extrabold</styleName>
 		<styleName type="wght" subtype="950">extrablack</styleName>
 	</typographicNames>
+	<personNames>
+		<sampleName item="nativeFull">
+			<nameField type="generation">Jr.</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="generation">Jr.</nameField>
+		</sampleName>
+	</personNames>
 </ldml>

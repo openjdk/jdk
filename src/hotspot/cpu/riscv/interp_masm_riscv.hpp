@@ -125,19 +125,19 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_constant_pool_cache(Register reg) {
     get_constant_pool(reg);
-    ld(reg, Address(reg, ConstantPool::cache_offset_in_bytes()));
+    ld(reg, Address(reg, ConstantPool::cache_offset()));
   }
 
   void get_cpool_and_tags(Register cpool, Register tags) {
     get_constant_pool(cpool);
-    ld(tags, Address(cpool, ConstantPool::tags_offset_in_bytes()));
+    ld(tags, Address(cpool, ConstantPool::tags_offset()));
   }
 
   void get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset);
   void get_cache_and_index_at_bcp(Register cache, Register index, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_and_index_and_bytecode_at_bcp(Register cache, Register index, Register bytecode, int byte_no, int bcp_offset, size_t index_size = sizeof(u2));
   void get_cache_entry_pointer_at_bcp(Register cache, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
-  void get_cache_index_at_bcp(Register index, int bcp_offset, size_t index_size = sizeof(u2));
+  void get_cache_index_at_bcp(Register index, Register tmp, int bcp_offset, size_t index_size = sizeof(u2));
   void get_method_counters(Register method, Register mcs, Label& skip);
 
   // Load cpool->resolved_references(index).
@@ -164,7 +164,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void empty_expression_stack() {
     ld(esp, Address(fp, frame::interpreter_frame_monitor_block_top_offset * wordSize));
-    // NULL last_sp until next java call
+    // null last_sp until next java call
     sd(zr, Address(fp, frame::interpreter_frame_last_sp_offset * wordSize));
   }
 
@@ -172,7 +172,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_ptr(int n, Register val);
   void store_ptr(int n, Register val);
 
-  // Load float value from 'address'. The value is loaded onto the FPU register v0.
+  // Load float value from 'address'. The value is loaded onto the fp register f10.
   void load_float(Address src);
   void load_double(Address src);
 
@@ -302,7 +302,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
   void load_resolved_indy_entry(Register cache, Register index);
 
 #ifdef ASSERT
-  void verify_access_flags(Register access_flags, uint32_t flag_bits,
+  void verify_access_flags(Register access_flags, uint32_t flag,
                            const char* msg, bool stop_by_hit = true);
   void verify_frame_setup();
 #endif

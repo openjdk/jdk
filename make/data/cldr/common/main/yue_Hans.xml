@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -1136,6 +1136,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="ZW">辛巴威</territory>
 			<territory type="ZZ">未知区域</territory>
 		</territories>
+		<subdivisions>
+			<subdivision type="gbeng">英伦</subdivision>
+			<subdivision type="gbsct">苏格兰</subdivision>
+			<subdivision type="gbwls">威尔斯</subdivision>
+		</subdivisions>
 		<variants>
 			<variant type="1901">传统德语拼字学</variant>
 			<variant type="1994" draft="contributed">标准雷西亚拼字</variant>
@@ -2283,6 +2288,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="long">
 						<dateTimeFormat>
@@ -2302,6 +2310,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -2877,6 +2888,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
+							<pattern>{1} {0}</pattern>
+						</dateTimeFormat>
+						<dateTimeFormat type="atTime">
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
@@ -3975,6 +3989,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>年</displayName>
+				<relative type="-1">旧年</relative>
+				<relative type="0">今年</relative>
+				<relative type="1">下年</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} 年后</relativeTimePattern>
 				</relativeTime>
@@ -3984,6 +4001,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-narrow">
 				<displayName>年</displayName>
+				<relative type="-1">旧年</relative>
+				<relative type="0">今年</relative>
+				<relative type="1">下年</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} 年后</relativeTimePattern>
 				</relativeTime>
@@ -4041,6 +4061,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName>月</displayName>
+				<relative type="-1">上个月</relative>
+				<relative type="0">今个月</relative>
+				<relative type="1">下个月</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} 个月后</relativeTimePattern>
 				</relativeTime>
@@ -4050,6 +4073,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-narrow">
 				<displayName>月</displayName>
+				<relative type="-1">上个月</relative>
+				<relative type="0">今个月</relative>
+				<relative type="1">下个月</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} 个月后</relativeTimePattern>
 				</relativeTime>
@@ -4072,6 +4098,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName>周</displayName>
+				<relative type="-1">上星期</relative>
+				<relative type="0">今个星期</relative>
+				<relative type="1">下星期</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} 个星期后</relativeTimePattern>
 				</relativeTime>
@@ -4082,6 +4111,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-narrow">
 				<displayName>周</displayName>
+				<relative type="-1">上星期</relative>
+				<relative type="0">今个星期</relative>
+				<relative type="1">下星期</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} 个星期后</relativeTimePattern>
 				</relativeTime>
@@ -4115,6 +4147,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>日</displayName>
+				<relative type="-1">寻日</relative>
+				<relative type="0">今日</relative>
+				<relative type="1">听日</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} 日后</relativeTimePattern>
 				</relativeTime>
@@ -4124,6 +4159,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-narrow">
 				<displayName>日</displayName>
+				<relative type="-1">寻日</relative>
+				<relative type="0">今日</relative>
+				<relative type="1">听日</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} 日后</relativeTimePattern>
 				</relativeTime>
@@ -5293,6 +5331,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>埃莫西约</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>华雷斯城</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>马萨特兰</exemplarCity>
@@ -6783,6 +6824,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<percentSign>%</percentSign>
 			<plusSign draft="contributed">+</plusSign>
 			<minusSign draft="contributed">-</minusSign>
+			<approximatelySign>~</approximatelySign>
 			<exponential>E</exponential>
 			<superscriptingExponent>×</superscriptingExponent>
 			<perMille>‰</perMille>
@@ -8630,6 +8672,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1>立方{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">立方{0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
 			<unit type="acceleration-g-force">
 				<displayName>G 力</displayName>
 				<unitPattern count="other">{0} G 力</unitPattern>
@@ -9239,6 +9284,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="temperature-kelvin">
 				<displayName>克耳文</displayName>
 				<unitPattern count="other">{0} 克耳文</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>尺磅</displayName>
+				<unitPattern count="other">{0} 尺磅</unitPattern>
 			</unit>
 			<unit type="torque-newton-meter">
 				<displayName>牛顿米</displayName>
@@ -10352,23 +10401,190 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern1>立方{0}</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">立方{0}</compoundUnitPattern1>
 			</compoundUnit>
+			<compoundUnit type="times">
+				<compoundUnitPattern>{0}⋅{1}</compoundUnitPattern>
+			</compoundUnit>
+			<unit type="acceleration-g-force">
+				<displayName>G 力</displayName>
+				<unitPattern count="other">{0} G 力</unitPattern>
+			</unit>
 			<unit type="acceleration-meter-per-square-second">
+				<displayName>公尺/平方秒</displayName>
 				<unitPattern count="other">{0}m/s²</unitPattern>
+			</unit>
+			<unit type="angle-revolution">
+				<displayName>圈数</displayName>
+				<unitPattern count="other">{0} 圈</unitPattern>
+			</unit>
+			<unit type="angle-radian">
+				<displayName>弧度</displayName>
+				<unitPattern count="other">{0} 弧度</unitPattern>
+			</unit>
+			<unit type="angle-degree">
+				<displayName>角度</displayName>
+				<unitPattern count="other">{0} 度</unitPattern>
+			</unit>
+			<unit type="angle-arc-minute">
+				<displayName>角分</displayName>
+				<unitPattern count="other">{0} 角分</unitPattern>
+			</unit>
+			<unit type="angle-arc-second">
+				<displayName>角秒</displayName>
+				<unitPattern count="other">{0} 角秒</unitPattern>
+			</unit>
+			<unit type="area-square-kilometer">
+				<displayName>平方公里</displayName>
+				<unitPattern count="other">{0} 平方公里</unitPattern>
+				<perUnitPattern>每平方公里{0}</perUnitPattern>
+			</unit>
+			<unit type="area-hectare">
+				<displayName>公顷</displayName>
+				<unitPattern count="other">{0} 公顷</unitPattern>
+			</unit>
+			<unit type="area-square-meter">
+				<displayName>平方公尺</displayName>
+				<unitPattern count="other">{0} 平方公尺</unitPattern>
+				<perUnitPattern>每平方米{0}</perUnitPattern>
+			</unit>
+			<unit type="area-square-centimeter">
+				<displayName>平方公分</displayName>
+				<unitPattern count="other">{0} 平方公分</unitPattern>
+				<perUnitPattern>每平方厘米{0}</perUnitPattern>
+			</unit>
+			<unit type="area-square-mile">
+				<displayName>平方英里</displayName>
+				<unitPattern count="other">{0} 平方英里</unitPattern>
+				<perUnitPattern>每平方英里{0}</perUnitPattern>
+			</unit>
+			<unit type="area-acre">
+				<displayName>英亩</displayName>
+				<unitPattern count="other">{0} 英亩</unitPattern>
+			</unit>
+			<unit type="area-square-yard">
+				<displayName>平方码</displayName>
+				<unitPattern count="other">{0} 平方码</unitPattern>
+			</unit>
+			<unit type="area-square-foot">
+				<displayName>平方英尺</displayName>
+				<unitPattern count="other">{0} 平方英尺</unitPattern>
+			</unit>
+			<unit type="area-square-inch">
+				<displayName>平方英寸</displayName>
+				<unitPattern count="other">{0} 平方英寸</unitPattern>
+				<perUnitPattern>每平方吋{0}</perUnitPattern>
+			</unit>
+			<unit type="area-dunam">
+				<displayName>德南</displayName>
+				<unitPattern count="other">{0} 德南</unitPattern>
+			</unit>
+			<unit type="concentr-karat">
+				<displayName>克拉</displayName>
+				<unitPattern count="other">{0} 克拉</unitPattern>
+			</unit>
+			<unit type="concentr-milligram-ofglucose-per-deciliter">
+				<displayName>毫克/公合</displayName>
+				<unitPattern count="other">{0} 毫克/公合</unitPattern>
+			</unit>
+			<unit type="concentr-millimole-per-liter">
+				<displayName>毫摩尔/公升</displayName>
+				<unitPattern count="other">{0} 毫摩尔/公升</unitPattern>
+			</unit>
+			<unit type="concentr-item">
+				<displayName>项</displayName>
+				<unitPattern count="other">{0} 项</unitPattern>
+			</unit>
+			<unit type="concentr-permillion">
+				<displayName>百万分率</displayName>
+				<unitPattern count="other">{0} 百万分率</unitPattern>
 			</unit>
 			<unit type="concentr-percent">
 				<displayName>%</displayName>
 				<unitPattern count="other">{0}%</unitPattern>
 			</unit>
+			<unit type="concentr-permille">
+				<displayName>‰</displayName>
+				<unitPattern count="other">{0}‰</unitPattern>
+			</unit>
+			<unit type="concentr-permyriad">
+				<displayName>点子</displayName>
+				<unitPattern count="other">{0} 点子</unitPattern>
+			</unit>
+			<unit type="concentr-mole">
+				<displayName>摩尔</displayName>
+				<unitPattern count="other">{0} 摩尔</unitPattern>
+			</unit>
+			<unit type="consumption-liter-per-kilometer">
+				<displayName>公升/公里</displayName>
+				<unitPattern count="other">每公里{0}公升</unitPattern>
+			</unit>
 			<unit type="consumption-liter-per-100-kilometer">
 				<displayName>升/100公里</displayName>
+				<unitPattern count="other">每100公里 {0} 升</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon">
+				<displayName>英里/加仑</displayName>
+				<unitPattern count="other">每加仑{0}英里</unitPattern>
+			</unit>
+			<unit type="consumption-mile-per-gallon-imperial">
+				<displayName>英里/英制加仑</displayName>
+				<unitPattern count="other">{0} 英里/英制加仑</unitPattern>
+			</unit>
+			<unit type="digital-petabyte">
+				<displayName>PB</displayName>
+				<unitPattern count="other">{0} PB</unitPattern>
+			</unit>
+			<unit type="digital-terabyte">
+				<displayName>TB</displayName>
+				<unitPattern count="other">{0} TB</unitPattern>
+			</unit>
+			<unit type="digital-terabit">
+				<displayName>Tb</displayName>
+				<unitPattern count="other">{0} Tb</unitPattern>
+			</unit>
+			<unit type="digital-gigabyte">
+				<displayName>GB</displayName>
+				<unitPattern count="other">{0} GB</unitPattern>
+			</unit>
+			<unit type="digital-gigabit">
+				<displayName>Gb</displayName>
+				<unitPattern count="other">{0} Gb</unitPattern>
+			</unit>
+			<unit type="digital-megabyte">
+				<displayName>MB</displayName>
+				<unitPattern count="other">{0} MB</unitPattern>
+			</unit>
+			<unit type="digital-megabit">
+				<displayName>Mb</displayName>
+				<unitPattern count="other">{0} Mb</unitPattern>
+			</unit>
+			<unit type="digital-kilobyte">
+				<displayName>kB</displayName>
+				<unitPattern count="other">{0} kB</unitPattern>
+			</unit>
+			<unit type="digital-kilobit">
+				<displayName>kb</displayName>
+				<unitPattern count="other">{0} kb</unitPattern>
 			</unit>
 			<unit type="digital-byte">
 				<displayName>B</displayName>
 				<unitPattern count="other">{0}byte</unitPattern>
 			</unit>
+			<unit type="digital-bit">
+				<displayName>bit</displayName>
+				<unitPattern count="other">{0} bit</unitPattern>
+			</unit>
+			<unit type="duration-century">
+				<displayName>世纪</displayName>
+				<unitPattern count="other">{0} 世纪</unitPattern>
+			</unit>
+			<unit type="duration-decade">
+				<displayName>十年</displayName>
+				<unitPattern count="other">{0} 个十年</unitPattern>
+			</unit>
 			<unit type="duration-year">
 				<displayName>年</displayName>
 				<unitPattern count="other">{0} 年</unitPattern>
+				<perUnitPattern>每年{0}</perUnitPattern>
 			</unit>
 			<unit type="duration-quarter">
 				<displayName>季</displayName>
@@ -10378,30 +10594,132 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<unit type="duration-month">
 				<displayName>月</displayName>
 				<unitPattern count="other">{0} 个月</unitPattern>
+				<perUnitPattern>每月{0}</perUnitPattern>
 			</unit>
 			<unit type="duration-week">
 				<displayName>周</displayName>
 				<unitPattern count="other">{0} 周</unitPattern>
+				<perUnitPattern>每周{0}</perUnitPattern>
 			</unit>
 			<unit type="duration-day">
 				<displayName>天</displayName>
 				<unitPattern count="other">{0} 天</unitPattern>
+				<perUnitPattern>每日{0}</perUnitPattern>
 			</unit>
 			<unit type="duration-hour">
 				<displayName>小时</displayName>
 				<unitPattern count="other">{0} 小时</unitPattern>
+				<perUnitPattern>每小时{0}</perUnitPattern>
 			</unit>
 			<unit type="duration-minute">
 				<displayName>分钟</displayName>
 				<unitPattern count="other">{0} 分钟</unitPattern>
+				<perUnitPattern>每分钟{0}</perUnitPattern>
 			</unit>
 			<unit type="duration-second">
 				<displayName>秒</displayName>
 				<unitPattern count="other">{0} 秒</unitPattern>
+				<perUnitPattern>每秒{0}</perUnitPattern>
 			</unit>
 			<unit type="duration-millisecond">
 				<displayName>毫秒</displayName>
 				<unitPattern count="other">{0} 毫秒</unitPattern>
+			</unit>
+			<unit type="duration-microsecond">
+				<displayName>微秒</displayName>
+				<unitPattern count="other">{0} 微秒</unitPattern>
+			</unit>
+			<unit type="duration-nanosecond">
+				<displayName>奈秒</displayName>
+				<unitPattern count="other">{0} 奈秒</unitPattern>
+			</unit>
+			<unit type="electric-ampere">
+				<displayName>安培</displayName>
+				<unitPattern count="other">{0} 安培</unitPattern>
+			</unit>
+			<unit type="electric-milliampere">
+				<displayName>毫安培</displayName>
+				<unitPattern count="other">{0} 毫安培</unitPattern>
+			</unit>
+			<unit type="electric-ohm">
+				<displayName>欧姆</displayName>
+				<unitPattern count="other">{0} 欧姆</unitPattern>
+			</unit>
+			<unit type="electric-volt">
+				<displayName>伏特</displayName>
+				<unitPattern count="other">{0} 伏</unitPattern>
+			</unit>
+			<unit type="energy-kilocalorie">
+				<displayName>千卡</displayName>
+				<unitPattern count="other">{0} 千卡</unitPattern>
+			</unit>
+			<unit type="energy-calorie">
+				<displayName>卡路里</displayName>
+				<unitPattern count="other">{0} 卡</unitPattern>
+			</unit>
+			<unit type="energy-foodcalorie">
+				<displayName>大卡</displayName>
+				<unitPattern count="other">{0} 大卡</unitPattern>
+			</unit>
+			<unit type="energy-kilojoule">
+				<displayName>千焦耳</displayName>
+				<unitPattern count="other">{0} 千焦</unitPattern>
+			</unit>
+			<unit type="energy-joule">
+				<displayName>焦耳</displayName>
+				<unitPattern count="other">{0} 焦</unitPattern>
+			</unit>
+			<unit type="energy-kilowatt-hour">
+				<displayName>千瓦小时</displayName>
+				<unitPattern count="other">{0} 千瓦小时</unitPattern>
+			</unit>
+			<unit type="energy-electronvolt">
+				<displayName>电子伏特</displayName>
+				<unitPattern count="other">{0} 电子伏特</unitPattern>
+			</unit>
+			<unit type="energy-british-thermal-unit">
+				<displayName>英制热量单位</displayName>
+				<unitPattern count="other">{0} 英制热量单位</unitPattern>
+			</unit>
+			<unit type="energy-therm-us">
+				<displayName>美制热量单位</displayName>
+				<unitPattern count="other">{0} 美制热量单位</unitPattern>
+			</unit>
+			<unit type="force-pound-force">
+				<displayName>磅力</displayName>
+				<unitPattern count="other">{0} 磅力</unitPattern>
+			</unit>
+			<unit type="force-newton">
+				<displayName>牛顿</displayName>
+				<unitPattern count="other">{0} 牛顿</unitPattern>
+			</unit>
+			<unit type="force-kilowatt-hour-per-100-kilometer">
+				<displayName>千瓦时/每 100 公里</displayName>
+				<unitPattern count="other">{0} 千瓦时/每 100 公里</unitPattern>
+			</unit>
+			<unit type="frequency-gigahertz">
+				<displayName>吉赫</displayName>
+				<unitPattern count="other">{0} 吉赫</unitPattern>
+			</unit>
+			<unit type="frequency-megahertz">
+				<displayName>兆赫</displayName>
+				<unitPattern count="other">{0} 兆赫</unitPattern>
+			</unit>
+			<unit type="frequency-kilohertz">
+				<displayName>千赫</displayName>
+				<unitPattern count="other">{0} 千赫</unitPattern>
+			</unit>
+			<unit type="frequency-hertz">
+				<displayName>赫兹</displayName>
+				<unitPattern count="other">{0} 赫兹</unitPattern>
+			</unit>
+			<unit type="graphics-em">
+				<displayName>em</displayName>
+				<unitPattern count="other">{0} em</unitPattern>
+			</unit>
+			<unit type="graphics-pixel">
+				<displayName>像素</displayName>
+				<unitPattern count="other">{0} 像素</unitPattern>
 			</unit>
 			<unit type="graphics-megapixel">
 				<displayName>MP</displayName>
@@ -10411,69 +10729,439 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>ppcm</displayName>
 				<unitPattern count="other">{0}ppcm</unitPattern>
 			</unit>
+			<unit type="graphics-pixel-per-inch">
+				<displayName>每吋像素</displayName>
+				<unitPattern count="other">{0} 像素/吋</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-centimeter">
+				<displayName>每厘米点数</displayName>
+				<unitPattern count="other">{0} 点/厘米</unitPattern>
+			</unit>
+			<unit type="graphics-dot-per-inch">
+				<displayName>每吋点数</displayName>
+				<unitPattern count="other">{0} 点/吋</unitPattern>
+			</unit>
+			<unit type="graphics-dot">
+				<displayName>圆点</displayName>
+				<unitPattern count="other">{0} 个圆点</unitPattern>
+			</unit>
+			<unit type="length-earth-radius">
+				<displayName>地球半径</displayName>
+				<unitPattern count="other">{0} 地球半径</unitPattern>
+			</unit>
 			<unit type="length-kilometer">
 				<displayName>公里</displayName>
 				<unitPattern count="other">{0} 公里</unitPattern>
+				<perUnitPattern>每公里{0}</perUnitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>公尺</displayName>
 				<unitPattern count="other">{0} 公尺</unitPattern>
+				<perUnitPattern>每米{0}</perUnitPattern>
+			</unit>
+			<unit type="length-decimeter">
+				<displayName>公寸</displayName>
+				<unitPattern count="other">{0} 公寸</unitPattern>
 			</unit>
 			<unit type="length-centimeter">
 				<displayName>公分</displayName>
 				<unitPattern count="other">{0} 公分</unitPattern>
+				<perUnitPattern>每厘米{0}</perUnitPattern>
 			</unit>
 			<unit type="length-millimeter">
 				<displayName>公厘</displayName>
 				<unitPattern count="other">{0} 公厘</unitPattern>
 			</unit>
+			<unit type="length-micrometer">
+				<displayName>微米</displayName>
+				<unitPattern count="other">{0} 微米</unitPattern>
+			</unit>
+			<unit type="length-nanometer">
+				<displayName>奈米</displayName>
+				<unitPattern count="other">{0} 奈米</unitPattern>
+			</unit>
+			<unit type="length-picometer">
+				<displayName>皮米</displayName>
+				<unitPattern count="other">{0} 皮米</unitPattern>
+			</unit>
+			<unit type="length-mile">
+				<displayName>英里</displayName>
+				<unitPattern count="other">{0} 英里</unitPattern>
+			</unit>
+			<unit type="length-yard">
+				<displayName>码</displayName>
+				<unitPattern count="other">{0} 码</unitPattern>
+			</unit>
+			<unit type="length-foot">
+				<displayName>英尺</displayName>
+				<unitPattern count="other">{0} 呎</unitPattern>
+				<perUnitPattern>每呎{0}</perUnitPattern>
+			</unit>
 			<unit type="length-inch">
+				<displayName>英寸</displayName>
+				<unitPattern count="other">{0} 吋</unitPattern>
 				<perUnitPattern>每英寸 {0}</perUnitPattern>
+			</unit>
+			<unit type="length-parsec">
+				<displayName>秒差距</displayName>
+				<unitPattern count="other">{0} 秒差距</unitPattern>
+			</unit>
+			<unit type="length-light-year">
+				<displayName>光年</displayName>
+				<unitPattern count="other">{0} 光年</unitPattern>
+			</unit>
+			<unit type="length-astronomical-unit">
+				<displayName>au</displayName>
+				<unitPattern count="other">{0} 天文单位</unitPattern>
 			</unit>
 			<unit type="length-furlong">
 				<displayName>化朗</displayName>
+				<unitPattern count="other">{0} 化朗</unitPattern>
 			</unit>
 			<unit type="length-fathom">
 				<displayName>英寻</displayName>
+				<unitPattern count="other">{0} 英寻</unitPattern>
+			</unit>
+			<unit type="length-nautical-mile">
+				<displayName>海里</displayName>
+				<unitPattern count="other">{0} 海里</unitPattern>
+			</unit>
+			<unit type="length-mile-scandinavian">
+				<displayName>斯堪地那维亚英里</displayName>
+				<unitPattern count="other">{0} 斯堪地那维亚英里</unitPattern>
+			</unit>
+			<unit type="length-point">
+				<displayName>点</displayName>
+				<unitPattern count="other">{0} 点</unitPattern>
+			</unit>
+			<unit type="length-solar-radius">
+				<displayName>太阳半径</displayName>
+				<unitPattern count="other">{0} 太阳半径</unitPattern>
+			</unit>
+			<unit type="light-lux">
+				<displayName>勒克斯</displayName>
+				<unitPattern count="other">{0} 勒克斯</unitPattern>
+			</unit>
+			<unit type="light-candela">
+				<displayName>坎德拉</displayName>
+				<unitPattern count="other">{0} 坎德拉</unitPattern>
+			</unit>
+			<unit type="light-lumen">
+				<displayName>流明</displayName>
+				<unitPattern count="other">{0} 流明</unitPattern>
+			</unit>
+			<unit type="light-solar-luminosity">
+				<displayName>太阳光度</displayName>
+				<unitPattern count="other">{0} 太阳光度</unitPattern>
+			</unit>
+			<unit type="mass-tonne">
+				<displayName>公吨</displayName>
+				<unitPattern count="other">{0} 公吨</unitPattern>
 			</unit>
 			<unit type="mass-kilogram">
 				<displayName>公斤</displayName>
+				<unitPattern count="other">{0} 公斤</unitPattern>
 				<perUnitPattern>每公斤 {0}</perUnitPattern>
 			</unit>
 			<unit type="mass-gram">
 				<displayName>克</displayName>
+				<unitPattern count="other">{0} 克</unitPattern>
 				<perUnitPattern>每克 {0}</perUnitPattern>
+			</unit>
+			<unit type="mass-milligram">
+				<displayName>毫克</displayName>
+				<unitPattern count="other">{0} 毫克</unitPattern>
+			</unit>
+			<unit type="mass-microgram">
+				<displayName>微克</displayName>
+				<unitPattern count="other">{0} 微克</unitPattern>
+			</unit>
+			<unit type="mass-ton">
+				<displayName>英吨</displayName>
+				<unitPattern count="other">{0} 英吨</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>英石</displayName>
+				<unitPattern count="other">{0} 英石</unitPattern>
 			</unit>
 			<unit type="mass-pound">
+				<displayName>磅</displayName>
+				<unitPattern count="other">{0} 磅</unitPattern>
 				<perUnitPattern>每磅 {0}</perUnitPattern>
 			</unit>
 			<unit type="mass-ounce">
+				<displayName>盎司</displayName>
+				<unitPattern count="other">{0} 盎司</unitPattern>
 				<perUnitPattern>每安士 {0}</perUnitPattern>
 			</unit>
+			<unit type="mass-ounce-troy">
+				<displayName>金衡盎司</displayName>
+				<unitPattern count="other">{0} 金衡盎司</unitPattern>
+			</unit>
+			<unit type="mass-carat">
+				<displayName>克拉</displayName>
+				<unitPattern count="other">{0} 克拉</unitPattern>
+			</unit>
+			<unit type="mass-dalton">
+				<displayName>道尔顿</displayName>
+				<unitPattern count="other">{0} 道尔顿</unitPattern>
+			</unit>
+			<unit type="mass-earth-mass">
+				<displayName>地球质量</displayName>
+				<unitPattern count="other">{0} 地球质量</unitPattern>
+			</unit>
+			<unit type="mass-solar-mass">
+				<displayName>太阳质量</displayName>
+				<unitPattern count="other">{0} 太阳质量</unitPattern>
+			</unit>
+			<unit type="mass-grain">
+				<displayName>喱</displayName>
+				<unitPattern count="other">{0} 喱</unitPattern>
+			</unit>
+			<unit type="power-gigawatt">
+				<displayName>吉瓦</displayName>
+				<unitPattern count="other">{0} 吉瓦</unitPattern>
+			</unit>
+			<unit type="power-megawatt">
+				<displayName>百万瓦</displayName>
+				<unitPattern count="other">{0} 百万瓦</unitPattern>
+			</unit>
+			<unit type="power-kilowatt">
+				<displayName>千瓦</displayName>
+				<unitPattern count="other">{0} 千瓦</unitPattern>
+			</unit>
+			<unit type="power-watt">
+				<displayName>瓦特</displayName>
+				<unitPattern count="other">{0} 瓦</unitPattern>
+			</unit>
+			<unit type="power-milliwatt">
+				<displayName>毫瓦</displayName>
+				<unitPattern count="other">{0} 毫瓦</unitPattern>
+			</unit>
+			<unit type="power-horsepower">
+				<displayName>匹</displayName>
+				<unitPattern count="other">{0} 匹</unitPattern>
+			</unit>
+			<unit type="pressure-millimeter-ofhg">
+				<displayName>毫米汞柱</displayName>
+				<unitPattern count="other">{0} 毫米汞柱</unitPattern>
+			</unit>
 			<unit type="pressure-pound-force-per-square-inch">
+				<displayName>磅力/平方英寸</displayName>
 				<unitPattern count="other">{0}psi</unitPattern>
 			</unit>
+			<unit type="pressure-inch-ofhg">
+				<displayName>英寸汞柱</displayName>
+				<unitPattern count="other">{0} 英寸汞柱</unitPattern>
+			</unit>
+			<unit type="pressure-bar">
+				<displayName>巴</displayName>
+				<unitPattern count="other">{0} 巴</unitPattern>
+			</unit>
+			<unit type="pressure-millibar">
+				<displayName>毫巴</displayName>
+				<unitPattern count="other">{0} 毫巴</unitPattern>
+			</unit>
+			<unit type="pressure-atmosphere">
+				<displayName>atm</displayName>
+				<unitPattern count="other">{0} atm</unitPattern>
+			</unit>
+			<unit type="pressure-pascal">
+				<displayName>帕斯卡</displayName>
+				<unitPattern count="other">{0} 帕斯卡</unitPattern>
+			</unit>
+			<unit type="pressure-hectopascal">
+				<displayName>百帕</displayName>
+				<unitPattern count="other">{0} 百帕</unitPattern>
+			</unit>
+			<unit type="pressure-kilopascal">
+				<displayName>千帕</displayName>
+				<unitPattern count="other">{0} 千帕</unitPattern>
+			</unit>
+			<unit type="pressure-megapascal">
+				<displayName>兆帕</displayName>
+				<unitPattern count="other">{0} 兆帕</unitPattern>
+			</unit>
 			<unit type="speed-kilometer-per-hour">
+				<displayName>公里/小时</displayName>
 				<unitPattern count="other">{0}公里/小时</unitPattern>
 			</unit>
 			<unit type="speed-meter-per-second">
+				<displayName>公尺/秒</displayName>
 				<unitPattern count="other">{0}m/s</unitPattern>
 			</unit>
 			<unit type="speed-mile-per-hour">
+				<displayName>英里/小时</displayName>
 				<unitPattern count="other">{0}英里/小时</unitPattern>
+			</unit>
+			<unit type="speed-knot">
+				<displayName>节</displayName>
+				<unitPattern count="other">{0} 节</unitPattern>
+			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="other">{0}°</unitPattern>
 			</unit>
 			<unit type="temperature-celsius">
 				<displayName>°C</displayName>
 				<unitPattern count="other">{0}°C</unitPattern>
 			</unit>
+			<unit type="temperature-fahrenheit">
+				<displayName>华氏</displayName>
+				<unitPattern count="other">{0}°F</unitPattern>
+			</unit>
+			<unit type="temperature-kelvin">
+				<displayName>K</displayName>
+				<unitPattern count="other">{0} K</unitPattern>
+			</unit>
+			<unit type="torque-pound-force-foot">
+				<displayName>尺磅</displayName>
+				<unitPattern count="other">{0} 尺磅</unitPattern>
+			</unit>
+			<unit type="torque-newton-meter">
+				<displayName>牛顿米</displayName>
+				<unitPattern count="other">{0} 牛顿米</unitPattern>
+			</unit>
+			<unit type="volume-cubic-kilometer">
+				<displayName>立方公里</displayName>
+				<unitPattern count="other">{0} 立方公里</unitPattern>
+			</unit>
+			<unit type="volume-cubic-meter">
+				<displayName>立方公尺</displayName>
+				<unitPattern count="other">{0} 立方公尺</unitPattern>
+				<perUnitPattern>每立方米{0}</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-centimeter">
+				<displayName>立方公分</displayName>
+				<unitPattern count="other">{0} 立方公分</unitPattern>
+				<perUnitPattern>每立方厘米{0}</perUnitPattern>
+			</unit>
+			<unit type="volume-cubic-mile">
+				<displayName>立方英里</displayName>
+				<unitPattern count="other">{0} 立方英里</unitPattern>
+			</unit>
+			<unit type="volume-cubic-yard">
+				<displayName>立方码</displayName>
+				<unitPattern count="other">{0} 立方码</unitPattern>
+			</unit>
+			<unit type="volume-cubic-foot">
+				<displayName>立方英尺</displayName>
+				<unitPattern count="other">{0} 立方英尺</unitPattern>
+			</unit>
+			<unit type="volume-cubic-inch">
+				<displayName>立方英寸</displayName>
+				<unitPattern count="other">{0} 立方英寸</unitPattern>
+			</unit>
+			<unit type="volume-megaliter">
+				<displayName>兆升</displayName>
+				<unitPattern count="other">{0} 兆升</unitPattern>
+			</unit>
+			<unit type="volume-hectoliter">
+				<displayName>公石</displayName>
+				<unitPattern count="other">{0} 公石</unitPattern>
+			</unit>
 			<unit type="volume-liter">
 				<displayName>公升</displayName>
+				<unitPattern count="other">{0} 升</unitPattern>
+				<perUnitPattern>每升{0}</perUnitPattern>
+			</unit>
+			<unit type="volume-deciliter">
+				<displayName>公合</displayName>
+				<unitPattern count="other">{0} 公合</unitPattern>
+			</unit>
+			<unit type="volume-centiliter">
+				<displayName>厘升</displayName>
+				<unitPattern count="other">{0} 厘升</unitPattern>
+			</unit>
+			<unit type="volume-milliliter">
+				<displayName>毫升</displayName>
+				<unitPattern count="other">{0} 毫升</unitPattern>
+			</unit>
+			<unit type="volume-pint-metric">
+				<displayName>公制品脱</displayName>
+				<unitPattern count="other">{0} 公制品脱</unitPattern>
+			</unit>
+			<unit type="volume-cup-metric">
+				<displayName>公制量杯</displayName>
+				<unitPattern count="other">{0} 公制杯</unitPattern>
+			</unit>
+			<unit type="volume-acre-foot">
+				<displayName>英亩英尺</displayName>
+				<unitPattern count="other">{0} 英亩英尺</unitPattern>
+			</unit>
+			<unit type="volume-bushel">
+				<displayName>bu</displayName>
+				<unitPattern count="other">{0} 蒲式耳</unitPattern>
+			</unit>
+			<unit type="volume-gallon">
+				<displayName>加仑</displayName>
+				<unitPattern count="other">{0} 加仑</unitPattern>
+				<perUnitPattern>每加仑{0}</perUnitPattern>
+			</unit>
+			<unit type="volume-gallon-imperial">
+				<displayName>英制加仑</displayName>
+				<unitPattern count="other">{0} 英制加仑</unitPattern>
+				<perUnitPattern>每英制加仑{0}</perUnitPattern>
+			</unit>
+			<unit type="volume-quart">
+				<displayName>夸脱</displayName>
+				<unitPattern count="other">{0} 夸脱</unitPattern>
+			</unit>
+			<unit type="volume-pint">
+				<displayName>品脱</displayName>
+				<unitPattern count="other">{0} 品脱</unitPattern>
+			</unit>
+			<unit type="volume-cup">
+				<displayName>量杯</displayName>
+				<unitPattern count="other">{0} 杯</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce">
+				<displayName>液盎司</displayName>
+				<unitPattern count="other">{0} 液盎司</unitPattern>
+			</unit>
+			<unit type="volume-fluid-ounce-imperial">
+				<displayName>英制液盎司</displayName>
+				<unitPattern count="other">{0} 英制液盎司</unitPattern>
+			</unit>
+			<unit type="volume-tablespoon">
+				<displayName>汤匙</displayName>
+				<unitPattern count="other">{0} 汤匙</unitPattern>
+			</unit>
+			<unit type="volume-teaspoon">
+				<displayName>茶匙</displayName>
+				<unitPattern count="other">{0} 茶匙</unitPattern>
+			</unit>
+			<unit type="volume-barrel">
+				<displayName>桶</displayName>
+				<unitPattern count="other">{0} 桶</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon">
+				<displayName>甜品匙</displayName>
+				<unitPattern count="other">{0}甜品匙</unitPattern>
+			</unit>
+			<unit type="volume-dessert-spoon-imperial">
+				<displayName>英制甜品匙</displayName>
+				<unitPattern count="other">{0}英制甜品匙</unitPattern>
+			</unit>
+			<unit type="volume-drop">
+				<displayName>滴</displayName>
+				<unitPattern count="other">{0}滴</unitPattern>
+			</unit>
+			<unit type="volume-dram">
+				<displayName>英制液量打兰</displayName>
+				<unitPattern count="other">{0}英制液量打兰</unitPattern>
 			</unit>
 			<unit type="volume-jigger">
+				<displayName>量酒杯</displayName>
 				<unitPattern count="other">量酒器{0}杯</unitPattern>
+			</unit>
+			<unit type="volume-pinch">
+				<displayName>小撮</displayName>
+				<unitPattern count="other">{0} 小撮</unitPattern>
+			</unit>
+			<unit type="volume-quart-imperial">
+				<displayName>英制夸脱</displayName>
+				<unitPattern count="other">{0} 英制夸脱</unitPattern>
 			</unit>
 			<coordinateUnit>
 				<displayName>方向</displayName>
@@ -10505,6 +11193,24 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<listPatternPart type="middle">{0}、{1}</listPatternPart>
 			<listPatternPart type="end">{0} 或 {1}</listPatternPart>
 			<listPatternPart type="2">{0} 或 {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-narrow">
+			<listPatternPart type="start">{0}、{1}</listPatternPart>
+			<listPatternPart type="middle">{0}、{1}</listPatternPart>
+			<listPatternPart type="end">{0} 或 {1}</listPatternPart>
+			<listPatternPart type="2">{0} 或 {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="or-short">
+			<listPatternPart type="start">{0}、{1}</listPatternPart>
+			<listPatternPart type="middle">{0}、{1}</listPatternPart>
+			<listPatternPart type="end">{0} 或 {1}</listPatternPart>
+			<listPatternPart type="2">{0} 或 {1}</listPatternPart>
+		</listPattern>
+		<listPattern type="standard-narrow">
+			<listPatternPart type="start">{0}、{1}</listPatternPart>
+			<listPatternPart type="middle">{0}、{1}</listPatternPart>
+			<listPatternPart type="end">{0}同{1}</listPatternPart>
+			<listPatternPart type="2">{0}同{1}</listPatternPart>
 		</listPattern>
 		<listPattern type="standard-short">
 			<listPatternPart type="start">{0}、{1}</listPatternPart>
@@ -10709,32 +11415,62 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</typographicNames>
 	<personNames>
 		<initialPattern type="initial">{0}</initialPattern>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname}{prefix}</namePattern>
+			<namePattern>{surname}{title}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname}{prefix}</namePattern>
+			<namePattern>{surname}{title}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname}{prefix}</namePattern>
+			<namePattern>{surname}{title}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
 		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}{given}{suffix} {given2}</namePattern>
+			<namePattern>{surname}{given}{credentials} {given2}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname}{prefix}</namePattern>
+			<namePattern>{surname}{title}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10743,13 +11479,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}{given}{suffix} {given2-initial}</namePattern>
+			<namePattern>{surname}{given}{credentials} {given2-initial}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname}{prefix}</namePattern>
+			<namePattern>{surname}{title}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10767,7 +11503,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname}{given}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname}{prefix}</namePattern>
+			<namePattern>{surname}{title}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
 			<namePattern>{given-informal}</namePattern>
@@ -10779,13 +11515,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-informal-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname}{given}{suffix} {given2}</namePattern>
+			<namePattern>{surname}{given}{credentials} {given2}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname}{given}{suffix} {given2-initial}</namePattern>
+			<namePattern>{surname}{given}{credentials} {given2-initial}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
@@ -10796,23 +11532,47 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<personName order="sorting" length="short" usage="referring" formality="informal">
 			<namePattern>{surname}{given-informal}</namePattern>
 		</personName>
-		<sampleName item="givenOnly">
+		<sampleName item="nativeG">
 			<nameField type="given">大文</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
+		<sampleName item="nativeGS">
 			<nameField type="given">大文</nameField>
 			<nameField type="surname">陈</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
+		<sampleName item="nativeGGS">
 			<nameField type="given">大文</nameField>
-			<nameField type="given2">John</nameField>
+			<nameField type="given2">明德</nameField>
 			<nameField type="surname">陈</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">先生</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">先生</nameField>
+			<nameField type="given">子媚</nameField>
+			<nameField type="given-informal">阿媚</nameField>
+			<nameField type="given2">惠仪</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">陈</nameField>
+			<nameField type="surname2">∅∅∅</nameField>
+			<nameField type="generation">小</nameField>
+			<nameField type="credentials">太平绅士</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">凯晴</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">永翘</nameField>
+			<nameField type="surname">黄</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">永强</nameField>
+			<nameField type="given2">德安</nameField>
+			<nameField type="surname">吴</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">先生</nameField>
 			<nameField type="given">大文</nameField>
 			<nameField type="given-informal">小二</nameField>
-			<nameField type="suffix">博士</nameField>
+			<nameField type="generation">小</nameField>
+			<nameField type="credentials">博士</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

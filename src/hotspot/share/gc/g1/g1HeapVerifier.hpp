@@ -80,8 +80,6 @@ public:
   void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_young_regions() PRODUCT_RETURN;
-
-  static void verify_archive_regions();
 };
 
 #endif // SHARE_GC_G1_G1HEAPVERIFIER_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -365,7 +365,7 @@ public final class Currency implements Serializable {
      * of the respective countries.
      * <p>
      * If the specified {@code locale} contains "cu" and/or "rg"
-     * <a href="./Locale.html#def_locale_extension">Unicode extensions</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the instance returned from this method reflects
      * the values specified with those extensions. If both "cu" and "rg" are
      * specified, the currency from the "cu" extension supersedes the implicit one
@@ -514,7 +514,7 @@ public final class Currency implements Serializable {
      * <p>
      * If the default {@link Locale.Category#DISPLAY DISPLAY} locale
      * contains "rg" (region override)
-     * <a href="./Locale.html#def_locale_extension">Unicode extension</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the symbol returned from this method reflects
      * the value specified with that extension.
      * <p>
@@ -536,7 +536,7 @@ public final class Currency implements Serializable {
      * symbol can be determined, the ISO 4217 currency code is returned.
      * <p>
      * If the specified {@code locale} contains "rg" (region override)
-     * <a href="./Locale.html#def_locale_extension">Unicode extension</a>,
+     * {@linkplain Locale##def_locale_extension Unicode extensions},
      * the symbol returned from this method reflects
      * the value specified with that extension.
      *

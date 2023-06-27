@@ -96,7 +96,7 @@ public class JavadocTokenizer extends JavaTokenizer {
         /**
          * StringBuilder used to extract the relevant portion of the Javadoc comment.
          */
-        private final StringBuilder sb;
+        private StringBuilder sb;
 
         /**
          * Indicates if newline is required.
@@ -166,6 +166,8 @@ public class JavadocTokenizer extends JavaTokenizer {
                 super.scanDocComment();
             } finally {
                 docComment = sb.toString();
+                sb = null;
+                offsetMap.trim();
             }
         }
     }
@@ -308,6 +310,13 @@ public class JavadocTokenizer extends JavaTokenizer {
             } else if (grow != map.length) {
                 map = Arrays.copyOf(map, grow);
             }
+        }
+
+        /**
+         * Reduce map to minimum size.
+         */
+        void trim() {
+            map = Arrays.copyOf(map, size);
         }
 
         /**

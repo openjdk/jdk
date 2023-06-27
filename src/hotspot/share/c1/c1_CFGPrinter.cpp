@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ void CFGPrinter::print_intervals(IntervalList* intervals, const char* name) {
 
 
 CFGPrinterOutput::CFGPrinterOutput(Compilation* compilation)
- : _output(NULL),
+ : _output(nullptr),
    _compilation(compilation),
    _do_print_HIR(false),
    _do_print_LIR(false)
@@ -209,7 +209,7 @@ void CFGPrinterOutput::print_HIR(BlockBegin* block) {
   print_begin("HIR");
 
   Value cur = block->next();
-  while (cur != NULL) {
+  while (cur != nullptr) {
     print_HIR(cur);
     cur = cur->next();
   }
@@ -233,7 +233,7 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
   print_begin("block");
   print("name \"B%d\"", block->block_id());
   print("from_bci %d", block->bci());
-  print("to_bci %d", (block->end() == NULL ? -1 : block->end()->printable_bci()));
+  print("to_bci %d", (block->end() == nullptr ? -1 : block->end()->printable_bci()));
 
   output()->indent();
   output()->print("predecessors ");
@@ -245,7 +245,7 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
 
   output()->indent();
   output()->print("successors ");
-  if (block->end() != NULL) {
+  if (block->end() != nullptr) {
     for (i = 0; i < block->number_of_sux(); i++) {
       output()->print("\"B%d\" ", block->sux_at(i)->block_id());
     }
@@ -272,7 +272,7 @@ void CFGPrinterOutput::print_block(BlockBegin* block) {
   if (block->is_set(BlockBegin::linear_scan_loop_end_flag))     output()->print("\"lle\" ");
   output()->cr();
 
-  if (block->dominator() != NULL) {
+  if (block->dominator() != nullptr) {
     print("dominator \"B%d\"", block->dominator()->block_id());
   }
   if (block->loop_index() != -1) {
@@ -324,7 +324,7 @@ void CFGPrinterOutput::print_intervals(IntervalList* intervals, const char* name
   print("name \"%s\"", name);
 
   for (int i = 0; i < intervals->length(); i++) {
-    if (intervals->at(i) != NULL) {
+    if (intervals->at(i) != nullptr) {
       intervals->at(i)->print_on(output(), true);
     }
   }

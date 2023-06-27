@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,8 @@
  * questions.
  */
 package jdk.jpackage.internal;
+
+import jdk.internal.util.OperatingSystem;
 
 import java.io.File;
 import java.io.IOException;
@@ -58,6 +60,10 @@ final class LauncherData {
 
     String qualifiedClassName() {
         return qualifiedClassName;
+    }
+
+    boolean isClassNameFromMainJar() {
+        return jarMainClass != null;
     }
 
     String packageName() {
@@ -209,6 +215,7 @@ final class LauncherData {
                 if (attrs != null) {
                     launcherData.qualifiedClassName = attrs.getValue(
                             Attributes.Name.MAIN_CLASS);
+                    launcherData.jarMainClass = launcherData.qualifiedClassName;
                 }
             }
         }
@@ -315,6 +322,7 @@ final class LauncherData {
     }
 
     private String qualifiedClassName;
+    private String jarMainClass;
     private Path mainJarName;
     private List<Path> classPath;
     private List<Path> modulePath;
@@ -352,7 +360,7 @@ final class LauncherData {
             // of `release` file.
 
             final Path releaseFile;
-            if (!Platform.isMac()) {
+            if (!OperatingSystem.isMacOS()) {
                 releaseFile = cookedRuntime.resolve("release");
             } else {
                 // On Mac `cookedRuntime` can be runtime root or runtime home.

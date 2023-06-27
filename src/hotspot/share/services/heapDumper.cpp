@@ -1958,6 +1958,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   }
 
   VMOp_Type type() const { return VMOp_HeapDumper; }
+  virtual bool doit_prologue();
   void doit();
   void work(uint worker_id);
 };
@@ -2133,6 +2134,17 @@ void VM_HeapDumper::do_threads() {
     assert(num_frames == _stack_traces[i]->get_stack_depth(),
            "total number of Java frames not matched");
   }
+}
+
+bool VM_HeapDumper::doit_prologue() {
+  if (_gc_before_heap_dump && UseZGC) {
+    // ZGC cannot perform a synchronous GC cycle from within the VM thread.
+    // So ZCollectedHeap::collect_as_vm_thread() is a noop. To respect the
+    // _gc_before_heap_dump flag a synchronous GC cycle is performed from
+    // the caller thread in the prologue.
+    Universe::heap()->collect(GCCause::_heap_dump);
+  }
+  return VM_GC_Operation::doit_prologue();
 }
 
 

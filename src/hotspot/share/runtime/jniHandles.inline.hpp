@@ -113,7 +113,7 @@ inline bool JNIHandles::is_same_object(jobject handle1, jobject handle2) {
 inline oop JNIHandles::resolve_non_null(jobject handle) {
   assert(handle != nullptr, "JNI handle should not be null");
   oop result = resolve_impl<DECORATORS_NONE, false /* external_guard */>(handle);
-  assert(result != nullptr, "nullptr read from jni handle");
+  assert(result != nullptr, "null read from jni handle");
   return result;
 }
 

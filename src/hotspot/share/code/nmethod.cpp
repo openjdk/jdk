@@ -550,9 +550,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
-  int nmethod_mirror_index,
-  const char* nmethod_mirror_name,
-  FailedSpeculation** failed_speculations
+  JVMCINMethodData* jvmci_data
 #endif
 )
 {
@@ -561,7 +559,7 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
   // create nmethod
   nmethod* nm = nullptr;
 #if INCLUDE_JVMCI
-  int jvmci_data_size = !compiler->is_jvmci() ? 0 : JVMCINMethodData::compute_size(nmethod_mirror_name);
+  int jvmci_data_size = compiler->is_jvmci() ? jvmci_data->size() : 0;
 #endif
   int nmethod_size =
     CodeBlob::allocation_size(code_buffer, sizeof(nmethod))
@@ -588,17 +586,11 @@ nmethod* nmethod::new_nmethod(const methodHandle& method,
 #if INCLUDE_JVMCI
             , speculations,
             speculations_len,
-            jvmci_data_size
+            jvmci_data
 #endif
             );
 
     if (nm != nullptr) {
-#if INCLUDE_JVMCI
-      if (compiler->is_jvmci()) {
-        // Initialize the JVMCINMethodData object inlined into nm
-        nm->jvmci_nmethod_data()->initialize(nmethod_mirror_index, nmethod_mirror_name, failed_speculations);
-      }
-#endif
       // To make dependency checking during class loading fast, record
       // the nmethod dependencies in the classes it is dependent on.
       // This allows the dependency checking code to simply walk the
@@ -786,7 +778,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
   , char* speculations,
   int speculations_len,
-  int jvmci_data_size
+  JVMCINMethodData* jvmci_data
 #endif
   )
   : CompiledMethod(method, "nmethod", type, nmethod_size, sizeof(nmethod), code_buffer, offsets->value(CodeOffsets::Frame_Complete), frame_size, oop_maps, false, true),
@@ -866,6 +858,7 @@ nmethod::nmethod(
 #if INCLUDE_JVMCI
     _speculations_offset     = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
     _jvmci_data_offset       = _speculations_offset  + align_up(speculations_len, oopSize);
+    int jvmci_data_size      = compiler->is_jvmci() ? jvmci_data->size() : 0;
     _nmethod_end_offset      = _jvmci_data_offset    + align_up(jvmci_data_size, oopSize);
 #else
     _nmethod_end_offset      = _nul_chk_table_offset + align_up(nul_chk_table->size_in_bytes(), oopSize);
@@ -884,6 +877,13 @@ nmethod::nmethod(
     debug_info->copy_to(this);
     dependencies->copy_to(this);
     clear_unloading_state();
+
+#if INCLUDE_JVMCI
+    if (compiler->is_jvmci()) {
+      // Initialize the JVMCINMethodData object inlined into nm
+      jvmci_nmethod_data()->copy(jvmci_data);
+    }
+#endif
 
     Universe::heap()->register_nmethod(this);
     debug_only(Universe::heap()->verify_nmethod(this));
@@ -1132,7 +1132,7 @@ static void install_post_call_nop_displacement(nmethod* nm, address pc) {
   intptr_t cbaddr = (intptr_t) nm;
   intptr_t offset = ((intptr_t) pc) - cbaddr;
 
-  int oopmap_slot = nm->oop_maps()->find_slot_for_offset((intptr_t) pc - (intptr_t) nm->code_begin());
+  int oopmap_slot = nm->oop_maps()->find_slot_for_offset(int((intptr_t) pc - (intptr_t) nm->code_begin()));
   if (oopmap_slot < 0) { // this can happen at asynchronous (non-safepoint) stackwalks
     log_debug(codecache)("failed to find oopmap for cb: " INTPTR_FORMAT " offset: %d", cbaddr, (int) offset);
   } else if (((oopmap_slot & 0xff) == oopmap_slot) && ((offset & 0xffffff) == offset)) {
@@ -1274,7 +1274,7 @@ void nmethod::inc_decompile_count() {
   mdo->inc_decompile_count();
 }
 
-bool nmethod::try_transition(int new_state_int) {
+bool nmethod::try_transition(signed char new_state_int) {
   signed char new_state = new_state_int;
   assert_lock_strong(CompiledMethod_lock);
   signed char old_state = _state;
@@ -1671,7 +1671,7 @@ class IsUnloadingState: public AllStatic {
   static const uint8_t _unloading_cycle_shift = 1;
 
   static uint8_t set_is_unloading(uint8_t state, bool value) {
-    state &= ~_is_unloading_mask;
+    state &= (uint8_t)~_is_unloading_mask;
     if (value) {
       state |= 1 << _is_unloading_shift;
     }
@@ -1680,8 +1680,8 @@ class IsUnloadingState: public AllStatic {
   }
 
   static uint8_t set_unloading_cycle(uint8_t state, uint8_t value) {
-    state &= ~_unloading_cycle_mask;
-    state |= value << _unloading_cycle_shift;
+    state &= (uint8_t)~_unloading_cycle_mask;
+    state |= (uint8_t)(value << _unloading_cycle_shift);
     assert(unloading_cycle(state) == value, "unexpected unloading cycle overflow");
     return state;
   }
@@ -2136,7 +2136,11 @@ PcDesc* PcDescContainer::find_pc_desc_internal(address pc, bool approximate, con
 
   if (match_desc(upper, pc_offset, approximate)) {
     assert(upper == linear_search(search, pc_offset, approximate), "search ok");
-    _pc_desc_cache.add_pc_desc(upper);
+    if (!Thread::current_in_asgct()) {
+      // we don't want to modify the cache if we're in ASGCT
+      // which is typically called in a signal handler
+      _pc_desc_cache.add_pc_desc(upper);
+    }
     return upper;
   } else {
     assert(nullptr == linear_search(search, pc_offset, approximate), "search ok");
@@ -2691,7 +2695,7 @@ void nmethod::print_constant_pool(outputStream* st) {
       Disassembler::print_hexdata(cp, n, st, true);
       st->cr();
     } else {
-      n = (uintptr_t)cp&(bytes_per_line-1);
+      n = (int)((uintptr_t)cp & (bytes_per_line-1));
       st->print_cr("[Constant Pool (unaligned)]");
     }
 
@@ -2879,7 +2883,7 @@ void nmethod::decode2(outputStream* ost) const {
       //---<  Now, finally, print the actual instruction bytes  >---
       unsigned char* p0 = p;
       p = Disassembler::decode_instruction_abstract(p, st, instruction_size_in_bytes, instr_maxlen);
-      compressed_format_idx += p - p0;
+      compressed_format_idx += (int)(p - p0);
 
       if (Disassembler::start_newline(compressed_format_idx-1)) {
         st->cr();
@@ -3133,7 +3137,7 @@ bool nmethod::has_code_comment(address begin, address end) {
   if (str != nullptr) return true;
 
   // implicit exceptions?
-  int cont_offset = ImplicitExceptionTable(this).continuation_offset(begin - code_begin());
+  int cont_offset = ImplicitExceptionTable(this).continuation_offset((uint)(begin - code_begin()));
   if (cont_offset != 0) return true;
 
   return false;
@@ -3141,7 +3145,7 @@ bool nmethod::has_code_comment(address begin, address end) {
 
 void nmethod::print_code_comment_on(outputStream* st, int column, address begin, address end) {
   ImplicitExceptionTable implicit_table(this);
-  int pc_offset = begin - code_begin();
+  int pc_offset = (int)(begin - code_begin());
   int cont_offset = implicit_table.continuation_offset(pc_offset);
   bool oop_map_required = false;
   if (cont_offset != 0) {

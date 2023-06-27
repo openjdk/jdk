@@ -25,7 +25,6 @@
  * @test
  * @summary Test virtual threads using park/unpark
  * @library /test/lib
- * @enablePreview
  * @run junit Parking
  */
 

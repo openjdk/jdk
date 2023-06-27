@@ -34,7 +34,6 @@ import javax.lang.model.element.ElementKind;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.CaseTree;
-import com.sun.source.tree.EnhancedForLoopTree;
 import com.sun.source.tree.IdentifierTree;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.source.tree.MemberSelectTree;
@@ -171,8 +170,8 @@ public class Attr extends JCTree.Visitor {
         allowRecords = Feature.RECORDS.allowedInSource(source);
         allowPatternSwitch = (preview.isEnabled() || !preview.isPreview(Feature.PATTERN_SWITCH)) &&
                              Feature.PATTERN_SWITCH.allowedInSource(source);
-        allowUnconditionalPatternsInstanceOf = (preview.isEnabled() || !preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) &&
-                                     Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
+        allowUnconditionalPatternsInstanceOf =
+                             Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.allowedInSource(source);
         sourceName = source.name;
         useBeforeDeclarationWarning = options.isSet("useBeforeDeclarationWarning");
 
@@ -1448,12 +1447,7 @@ public class Attr extends JCTree.Visitor {
     public void visitDoLoop(JCDoWhileLoop tree) {
         attribStat(tree.body, env.dup(tree));
         attribExpr(tree.cond, env, syms.booleanType);
-        if (!breaksOutOf(tree, tree.body)) {
-            //include condition's body when false after the while, if cannot get out of the loop
-            MatchBindings condBindings = matchBindings;
-            condBindings.bindingsWhenFalse.forEach(env.info.scope::enter);
-            condBindings.bindingsWhenFalse.forEach(BindingSymbol::preserveBinding);
-        }
+        handleLoopConditionBindings(matchBindings, tree, tree.body);
         result = null;
     }
 
@@ -1467,17 +1461,8 @@ public class Attr extends JCTree.Visitor {
         } finally {
             whileEnv.info.scope.leave();
         }
-        if (!breaksOutOf(tree, tree.body)) {
-            //include condition's bindings when false after the while, if cannot get out of the loop
-            condBindings.bindingsWhenFalse.forEach(env.info.scope::enter);
-            condBindings.bindingsWhenFalse.forEach(BindingSymbol::preserveBinding);
-        }
+        handleLoopConditionBindings(condBindings, tree, tree.body);
         result = null;
-    }
-
-    private boolean breaksOutOf(JCTree loop, JCTree body) {
-        preFlow(body);
-        return flow.breaksOutOf(env, loop, body, make);
     }
 
     public void visitForLoop(JCForLoop tree) {
@@ -1504,35 +1489,73 @@ public class Attr extends JCTree.Visitor {
         finally {
             loopEnv.info.scope.leave();
         }
-        if (!breaksOutOf(tree, tree.body)) {
-            //include condition's body when false after the while, if cannot get out of the loop
-            condBindings.bindingsWhenFalse.forEach(env.info.scope::enter);
-            condBindings.bindingsWhenFalse.forEach(BindingSymbol::preserveBinding);
+        handleLoopConditionBindings(condBindings, tree, tree.body);
+    }
+
+    /**
+     * Include condition's bindings when false after the loop, if cannot get out of the loop
+     */
+    private void handleLoopConditionBindings(MatchBindings condBindings,
+                                             JCStatement loop,
+                                             JCStatement loopBody) {
+        if (condBindings.bindingsWhenFalse.nonEmpty() &&
+            !breaksTo(env, loop, loopBody)) {
+            addBindings2Scope(loop, condBindings.bindingsWhenFalse);
         }
+    }
+
+    private boolean breaksTo(Env<AttrContext> env, JCTree loop, JCTree body) {
+        preFlow(body);
+        return flow.breaksToTree(env, loop, body, make);
+    }
+
+    /**
+     * Add given bindings to the current scope, unless there's a break to
+     * an immediately enclosing labeled statement.
+     */
+    private void addBindings2Scope(JCStatement introducingStatement,
+                                   List<BindingSymbol> bindings) {
+        if (bindings.isEmpty()) {
+            return ;
+        }
+
+        var searchEnv = env;
+        while (searchEnv.tree instanceof JCLabeledStatement labeled &&
+               labeled.body == introducingStatement) {
+            if (breaksTo(env, labeled, labeled.body)) {
+                //breaking to an immediately enclosing labeled statement
+                return ;
+            }
+            searchEnv = searchEnv.next;
+            introducingStatement = labeled;
+        }
+
+        //include condition's body when false after the while, if cannot get out of the loop
+        bindings.forEach(env.info.scope::enter);
+        bindings.forEach(BindingSymbol::preserveBinding);
     }
 
     public void visitForeachLoop(JCEnhancedForLoop tree) {
         Env<AttrContext> loopEnv =
             env.dup(env.tree, env.info.dup(env.info.scope.dup()));
-
         try {
             //the Formal Parameter of a for-each loop is not in the scope when
             //attributing the for-each expression; we mimic this by attributing
             //the for-each expression first (against original scope).
             Type exprType = types.cvarUpperBound(attribExpr(tree.expr, loopEnv));
             chk.checkNonVoid(tree.pos(), exprType);
-            tree.elementType = types.elemtype(exprType); // perhaps expr is an array?
-            if (tree.elementType == null) {
+            Type elemtype = types.elemtype(exprType); // perhaps expr is an array?
+            if (elemtype == null) {
                 // or perhaps expr implements Iterable<T>?
                 Type base = types.asSuper(exprType, syms.iterableType.tsym);
                 if (base == null) {
                     log.error(tree.expr.pos(),
                               Errors.ForeachNotApplicableToType(exprType,
                                                                 Fragments.TypeReqArrayOrIterable));
-                    tree.elementType = types.createErrorType(exprType);
+                    elemtype = types.createErrorType(exprType);
                 } else {
                     List<Type> iterableParams = base.allparams();
-                    tree.elementType = iterableParams.isEmpty()
+                    elemtype = iterableParams.isEmpty()
                         ? syms.objectType
                         : types.wildUpperBound(iterableParams.head);
 
@@ -1546,40 +1569,14 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
             }
-            if (tree.varOrRecordPattern instanceof JCVariableDecl jcVariableDecl) {
-                if (jcVariableDecl.isImplicitlyTyped()) {
-                    Type inferredType = chk.checkLocalVarType(jcVariableDecl, tree.elementType, jcVariableDecl.name);
-                    setSyntheticVariableType(jcVariableDecl, inferredType);
-                }
-                attribStat(jcVariableDecl, loopEnv);
-                chk.checkType(tree.expr.pos(), tree.elementType, jcVariableDecl.sym.type);
-
-                loopEnv.tree = tree; // before, we were not in loop!
-                attribStat(tree.body, loopEnv);
-            } else {
-                Assert.check(tree.getDeclarationKind() == EnhancedForLoopTree.DeclarationKind.PATTERN);
-                JCRecordPattern jcRecordPattern = (JCRecordPattern) tree.varOrRecordPattern;
-
-                attribExpr(jcRecordPattern, loopEnv, tree.elementType);
-
-                // for(<pattern> x : xs) { y }
-                // we include x's bindings when true in y
-                // we don't do anything with x's bindings when false
-
-                MatchBindings forWithRecordPatternBindings = matchBindings;
-                Env<AttrContext> recordPatternEnv = bindingEnv(loopEnv, forWithRecordPatternBindings.bindingsWhenTrue);
-
-                Type clazztype = jcRecordPattern.type;
-
-                checkCastablePattern(tree.expr.pos(), tree.elementType, clazztype);
-
-                recordPatternEnv.tree = tree; // before, we were not in loop!
-                try {
-                    attribStat(tree.body, recordPatternEnv);
-                } finally {
-                    recordPatternEnv.info.scope.leave();
-                }
+            if (tree.var.isImplicitlyTyped()) {
+                Type inferredType = chk.checkLocalVarType(tree.var, elemtype, tree.var.name);
+                setSyntheticVariableType(tree.var, inferredType);
             }
+            attribStat(tree.var, loopEnv);
+            chk.checkType(tree.expr.pos(), elemtype, tree.var.sym.type);
+            loopEnv.tree = tree; // before, we were not in loop!
+            attribStat(tree.body, loopEnv);
             result = null;
         }
         finally {
@@ -1685,9 +1682,9 @@ public class Attr extends JCTree.Visitor {
             boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = types.isSameType(seltype, syms.stringType);
             boolean errorEnumSwitch = TreeInfo.isErrorEnumSwitch(selector, cases);
+            boolean intSwitch = types.isAssignable(seltype, syms.intType);
             boolean patternSwitch;
-            if (!enumSwitch && !stringSwitch && !errorEnumSwitch &&
-                !types.isAssignable(seltype, syms.intType)) {
+            if (!enumSwitch && !stringSwitch && !errorEnumSwitch && !intSwitch) {
                 preview.checkSourceLevel(selector.pos(), Feature.PATTERN_SWITCH);
                 patternSwitch = true;
             } else {
@@ -1716,8 +1713,9 @@ public class Attr extends JCTree.Visitor {
                     wasError = true;
                 }
                 MatchBindings currentBindings = null;
-                boolean wasUnconditionalPattern = hasUnconditionalPattern;
-                for (JCCaseLabel label : c.labels) {
+                MatchBindings guardBindings = null;
+                for (List<JCCaseLabel> labels = c.labels; labels.nonEmpty(); labels = labels.tail) {
+                    JCCaseLabel label = labels.head;
                     if (label instanceof JCConstantCaseLabel constLabel) {
                         JCExpression expr = constLabel.expr;
                         if (TreeInfo.isNull(expr)) {
@@ -1731,7 +1729,15 @@ public class Attr extends JCTree.Visitor {
                         } else if (enumSwitch) {
                             Symbol sym = enumConstant(expr, seltype);
                             if (sym == null) {
-                                log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
+                                if (allowPatternSwitch) {
+                                    attribTree(expr, switchEnv, caseLabelResultInfo(seltype));
+                                    Symbol enumSym = TreeInfo.symbol(expr);
+                                    if (enumSym == null || !enumSym.isEnum() || enumSym.kind != VAR) {
+                                        log.error(expr.pos(), Errors.EnumLabelMustBeEnumConstant);
+                                    }
+                                } else {
+                                    log.error(expr.pos(), Errors.EnumLabelMustBeUnqualifiedEnum);
+                                }
                             } else if (!constants.add(sym)) {
                                 log.error(label.pos(), Errors.DuplicateCaseLabel);
                             }
@@ -1747,21 +1753,20 @@ public class Attr extends JCTree.Visitor {
                                 rs.basicLogResolveHelper = prevResolveHelper;
                             }
                         } else {
-                            ResultInfo valTypInfo = new ResultInfo(KindSelector.VAL_TYP,
-                                                                   !seltype.hasTag(ERROR) ? seltype
-                                                                                          : Type.noType);
-                            Type pattype = attribTree(expr, switchEnv, valTypInfo);
+                            Type pattype = attribTree(expr, switchEnv, caseLabelResultInfo(seltype));
                             if (!pattype.hasTag(ERROR)) {
                                 if (pattype.constValue() == null) {
                                     Symbol s = TreeInfo.symbol(expr);
-                                    if (s != null && s.kind == TYP && allowPatternSwitch) {
+                                    if (s != null && s.kind == TYP) {
                                         log.error(expr.pos(),
                                                   Errors.PatternExpected);
-                                    } else {
+                                    } else if (s == null || !s.isEnum()) {
                                         log.error(expr.pos(),
-                                                  (stringSwitch ? Errors.StringConstReq : Errors.ConstExprReq));
+                                                  (stringSwitch ? Errors.StringConstReq
+                                                                : intSwitch ? Errors.ConstExprReq
+                                                                            : Errors.PatternOrEnumReq));
                                     }
-                                } else if (!stringSwitch && !types.isAssignable(seltype, syms.intType)) {
+                                } else if (!stringSwitch && !intSwitch) {
                                     log.error(label.pos(), Errors.ConstantLabelNotCompatible(pattype, seltype));
                                 } else if (!constants.add(pattype.constValue())) {
                                     log.error(c.pos(), Errors.DuplicateCaseLabel);
@@ -1786,8 +1791,8 @@ public class Attr extends JCTree.Visitor {
                         }
                         checkCastablePattern(pat.pos(), seltype, primaryType);
                         Type patternType = types.erasure(primaryType);
-                        JCExpression guard = patternlabel.guard;
-                        if (guard != null) {
+                        JCExpression guard = c.guard;
+                        if (guardBindings == null && guard != null) {
                             MatchBindings afterPattern = matchBindings;
                             Env<AttrContext> bodyEnv = bindingEnv(switchEnv, matchBindings.bindingsWhenTrue);
                             try {
@@ -1795,13 +1800,15 @@ public class Attr extends JCTree.Visitor {
                             } finally {
                                 bodyEnv.info.scope.leave();
                             }
-                            matchBindings = matchBindingsComputer.caseGuard(c, afterPattern, matchBindings);
+
+                            guardBindings = matchBindings;
+                            matchBindings = afterPattern;
 
                             if (TreeInfo.isBooleanWithValue(guard, 0)) {
                                 log.error(guard.pos(), Errors.GuardHasConstantExpressionFalse);
                             }
                         }
-                        boolean unguarded = TreeInfo.unguardedCaseLabel(label) && !pat.hasTag(RECORDPATTERN);
+                        boolean unguarded = TreeInfo.unguardedCase(c) && !pat.hasTag(RECORDPATTERN);
                         boolean unconditional =
                                 unguarded &&
                                 !patternType.isErroneous() &&
@@ -1820,6 +1827,10 @@ public class Attr extends JCTree.Visitor {
                         Assert.error();
                     }
                     currentBindings = matchBindingsComputer.switchCase(label, currentBindings, matchBindings);
+                }
+
+                if (guardBindings != null) {
+                    currentBindings = matchBindingsComputer.caseGuard(c, currentBindings, guardBindings);
                 }
 
                 Env<AttrContext> caseEnv =
@@ -1854,6 +1865,11 @@ public class Attr extends JCTree.Visitor {
         }
     }
     // where
+        private ResultInfo caseLabelResultInfo(Type seltype) {
+            return new ResultInfo(KindSelector.VAL_TYP,
+                                  !seltype.hasTag(ERROR) ? seltype
+                                                         : Type.noType);
+        }
         /** Add any variables defined in stats to the switch scope. */
         private static void addVars(List<JCStatement> stats, WriteableScope switchScope) {
             for (;stats.nonEmpty(); stats = stats.tail) {
@@ -2251,8 +2267,7 @@ public class Attr extends JCTree.Visitor {
             afterIfBindings = condBindings.bindingsWhenFalse;
         }
 
-        afterIfBindings.forEach(env.info.scope::enter);
-        afterIfBindings.forEach(BindingSymbol::preserveBinding);
+        addBindings2Scope(tree, afterIfBindings);
 
         result = null;
     }
@@ -4101,7 +4116,6 @@ public class Attr extends JCTree.Visitor {
         Type clazztype;
         JCTree typeTree;
         if (tree.pattern.getTag() == BINDINGPATTERN ||
-            tree.pattern.getTag() == PARENTHESIZEDPATTERN ||
             tree.pattern.getTag() == RECORDPATTERN) {
             attribExpr(tree.pattern, env, exprtype);
             clazztype = tree.pattern.type;
@@ -4109,9 +4123,8 @@ public class Attr extends JCTree.Visitor {
                 !exprtype.isErroneous() && !clazztype.isErroneous() &&
                 tree.pattern.getTag() != RECORDPATTERN) {
                 if (!allowUnconditionalPatternsInstanceOf) {
-                    log.error(tree.pos(), Errors.InstanceofPatternNoSubtype(exprtype, clazztype));
-                } else if (preview.isPreview(Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF)) {
-                    preview.warnPreview(tree.pattern.pos(), Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF);
+                    log.error(DiagnosticFlag.SOURCE_LEVEL, tree.pos(),
+                              Feature.UNCONDITIONAL_PATTERN_IN_INSTANCEOF.error(this.sourceName));
                 }
             }
             typeTree = TreeInfo.primaryPatternTypeTree((JCPattern) tree.pattern);
@@ -4168,6 +4181,11 @@ public class Attr extends JCTree.Visitor {
         }
     }
 
+    @Override
+    public void visitAnyPattern(JCAnyPattern tree) {
+        result = tree.type = resultInfo.pt;
+    }
+
     public void visitBindingPattern(JCBindingPattern tree) {
         Type type;
         if (tree.var.vartype != null) {
@@ -4189,22 +4207,35 @@ public class Attr extends JCTree.Visitor {
         }
         chk.validate(tree.var.vartype, env, true);
         result = tree.type;
-        matchBindings = new MatchBindings(List.of(v), List.nil());
+        if (v.isUnnamedVariable()) {
+            matchBindings = MatchBindingsComputer.EMPTY;
+        } else {
+            matchBindings = new MatchBindings(List.of(v), List.nil());
+        }
     }
 
     @Override
     public void visitRecordPattern(JCRecordPattern tree) {
-        Type type = attribType(tree.deconstructor, env);
-        if (type.isRaw() && type.tsym.getTypeParameters().nonEmpty()) {
-            Type inferred = infer.instantiatePatternType(resultInfo.pt, type.tsym);
-            if (inferred == null) {
-                log.error(tree.pos(), Errors.PatternTypeCannotInfer);
-            } else {
-                type = inferred;
+        Type site;
+
+        if (tree.deconstructor == null) {
+            log.error(tree.pos(), Errors.DeconstructionPatternVarNotAllowed);
+            tree.record = syms.errSymbol;
+            site = tree.type = types.createErrorType(tree.record.type);
+        } else {
+            Type type = attribType(tree.deconstructor, env);
+            if (type.isRaw() && type.tsym.getTypeParameters().nonEmpty()) {
+                Type inferred = infer.instantiatePatternType(resultInfo.pt, type.tsym);
+                if (inferred == null) {
+                    log.error(tree.pos(), Errors.PatternTypeCannotInfer);
+                } else {
+                    type = inferred;
+                }
             }
+            tree.type = tree.deconstructor.type = type;
+            site = types.capture(tree.type);
         }
-        tree.type = tree.deconstructor.type = type;
-        Type site = types.capture(tree.type);
+
         List<Type> expectedRecordTypes;
         if (site.tsym.kind == Kind.TYP && ((ClassSymbol) site.tsym).isRecord()) {
             ClassSymbol record = (ClassSymbol) site.tsym;
@@ -4251,11 +4282,6 @@ public class Attr extends JCTree.Visitor {
         chk.validate(tree.deconstructor, env, true);
         result = tree.type;
         matchBindings = new MatchBindings(outBindings.toList(), List.nil());
-    }
-
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-        attribExpr(tree.pattern, env);
-        result = tree.type = tree.pattern.type;
     }
 
     public void visitIndexed(JCArrayAccess tree) {
@@ -4984,6 +5010,27 @@ public class Attr extends JCTree.Visitor {
         return (tag == CLASS) ? syms.stringType : syms.typeOfTag[tag.ordinal()];
     }
 
+    public void visitStringTemplate(JCStringTemplate tree) {
+        JCExpression processor = tree.processor;
+        Type resultType = syms.stringTemplateType;
+
+        if (processor != null) {
+            resultType = attribTree(processor, env, new ResultInfo(KindSelector.VAL, Type.noType));
+            resultType = chk.checkProcessorType(processor, resultType, env);
+        }
+
+        Env<AttrContext> localEnv = env.dup(tree, env.info.dup());
+
+        for (JCExpression arg : tree.expressions) {
+            chk.checkNonVoid(arg.pos(), attribExpr(arg, localEnv));
+        }
+
+        tree.type = resultType;
+        result = resultType;
+
+        check(tree, resultType, KindSelector.VAL, resultInfo);
+    }
+
     public void visitTypeIdent(JCPrimitiveTypeTree tree) {
         result = check(tree, syms.typeOfTag[tree.typetag.ordinal()], KindSelector.TYP, resultInfo);
     }
@@ -5488,6 +5535,10 @@ public class Attr extends JCTree.Visitor {
                 chk.checkClassOverrideEqualsAndHashIfNeeded(env.tree.pos(), c);
                 chk.checkFunctionalInterface((JCClassDecl) env.tree, c);
                 chk.checkLeaksNotAccessible(env, (JCClassDecl) env.tree);
+
+                if ((c.flags_field & Flags.UNNAMED_CLASS) != 0) {
+                    chk.checkHasMain(env.tree.pos(), c);
+                }
             } finally {
                 env.info.returnResult = prevReturnRes;
                 log.useSource(prev);

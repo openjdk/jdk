@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,7 +59,7 @@ class HttpContextImpl extends HttpContext {
         if (path == null || protocol == null || path.length() < 1 || path.charAt(0) != '/') {
             throw new IllegalArgumentException ("Illegal value for path or protocol");
         }
-        this.protocol = protocol.toLowerCase();
+        this.protocol = protocol.toLowerCase(Locale.ROOT);
         this.path = path;
         if (!this.protocol.equals ("http") && !this.protocol.equals ("https")) {
             throw new IllegalArgumentException ("Illegal value for protocol");

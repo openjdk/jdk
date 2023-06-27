@@ -156,7 +156,7 @@ void ShenandoahBarrierSetAssembler::arraycopy_prologue(MacroAssembler *masm, Dec
   }
 
   // Invoke runtime.
-  address jrt_address = NULL;
+  address jrt_address = nullptr;
   if (UseCompressedOops) {
     jrt_address = CAST_FROM_FN_PTR(address, ShenandoahRuntime::arraycopy_barrier_narrow_oop_entry);
   } else {
@@ -686,7 +686,7 @@ void ShenandoahBarrierSetAssembler::cmpxchg_oop(MacroAssembler *masm, Register b
                 false, success_flag, true);
   } else {
     __ cmpxchgd(CCR0, current_value, expected, new_val, base_addr, MacroAssembler::MemBarNone,
-                false, success_flag, NULL, true);
+                false, success_flag, nullptr, true);
   }
 
   // Skip the rest of the barrier if the CAS operation succeeds immediately.
@@ -963,7 +963,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
   bool is_phantom = ShenandoahBarrierSet::is_phantom_access(decorators);
   bool is_native  = ShenandoahBarrierSet::is_native_access(decorators);
 
-  address jrt_address = NULL;
+  address jrt_address = nullptr;
 
   if (is_strong) {
     if (is_native) {
@@ -987,7 +987,7 @@ void ShenandoahBarrierSetAssembler::generate_c1_load_reference_barrier_runtime_s
     assert(is_native, "phantom load reference barrier must be called off-heap");
     jrt_address = CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom);
   }
-  assert(jrt_address != NULL, "load reference barrier runtime routine cannot be found");
+  assert(jrt_address != nullptr, "load reference barrier runtime routine cannot be found");
 
   __ save_LR_CR(R11_tmp);
   __ push_frame_reg_args(nbytes_save, R11_tmp);

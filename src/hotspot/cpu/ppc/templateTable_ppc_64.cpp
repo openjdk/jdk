@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -313,7 +314,7 @@ void TemplateTable::fast_aldc(LdcType type) {
   __ get_cache_index_at_bcp(R31, 1, index_size);  // Load index.
   __ load_resolved_reference_at_index(R17_tos, R31, R11_scratch1, R12_scratch2, &is_null);
 
-  // Convert null sentinel to NULL
+  // Convert null sentinel to null
   int simm16_rest = __ load_const_optimized(R11_scratch1, Universe::the_null_sentinel_addr(), R0, true);
   __ ld(R31, simm16_rest, R11_scratch1);
   __ resolve_oop_handle(R31, R11_scratch1, R12_scratch2, MacroAssembler::PRESERVATION_NONE);
@@ -995,7 +996,7 @@ void TemplateTable::aastore() {
   // Rindex is dead!
   Register Rscratch3 = Rindex;
 
-  // Do array store check - check for NULL value first.
+  // Do array store check - check for null value first.
   __ cmpdi(CCR0, R17_tos, 0);
   __ beq(CCR0, Lis_null);
 
@@ -1736,7 +1737,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ beq(CCR0, Lforward);
 
     // Has the nmethod been invalidated already?
-    __ lbz(R0, nmethod::state_offset(), R3_RET);
+    __ lbz(R0, in_bytes(nmethod::state_offset()), R3_RET);
     __ cmpwi(CCR0, R0, nmethod::in_use);
     __ bne(CCR0, Lforward);
 
@@ -2240,7 +2241,7 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
 
     __ load_resolved_method_at_index(byte_no, Rcache, method);
     __ load_method_holder(klass, method);
-    __ clinit_barrier(klass, R16_thread, NULL /*L_fast_path*/, &L_clinit_barrier_slow);
+    __ clinit_barrier(klass, R16_thread, nullptr /*L_fast_path*/, &L_clinit_barrier_slow);
   }
 
   __ bind(Ldone);
@@ -2294,7 +2295,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ load_resolved_indy_entry(cache, index);
   __ ld_ptr(method, array_base_offset + in_bytes(ResolvedIndyEntry::method_offset()), cache);
 
-  // The invokedynamic is unresolved iff method is NULL
+  // The invokedynamic is unresolved iff method is null
   __ cmpdi(CCR0, method, 0);
   __ bne(CCR0, resolved);
 
@@ -2457,7 +2458,7 @@ void TemplateTable::jvmti_post_field_access(Register Rcache, Register Rscratch, 
       }
       __ verify_oop(R17_tos);
     }
-    // tos:   object pointer or NULL if static
+    // tos:   object pointer or null if static
     // cache: cache entry pointer
     __ call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::post_field_access), R17_tos, Rcache);
     if (!is_static && has_tos) {
@@ -3459,11 +3460,11 @@ void TemplateTable::generate_vtable_call(Register Rrecv_klass, Register Rindex, 
   const Register Rtarget_method = Rindex;
 
   // Get target method & entry point.
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   // Calc vtable addr scale the vtable index by 8.
   __ sldi(Rindex, Rindex, exact_log2(vtableEntry::size_in_bytes()));
   // Load target.
-  __ addi(Rrecv_klass, Rrecv_klass, base + vtableEntry::method_offset_in_bytes());
+  __ addi(Rrecv_klass, Rrecv_klass, in_bytes(base + vtableEntry::method_offset()));
   __ ldx(Rtarget_method, Rindex, Rrecv_klass);
   // Argument and return type profiling.
   __ profile_arguments_type(Rtarget_method, Rrecv_klass /* scratch1 */, Rtemp /* scratch2 */, true);
@@ -3546,7 +3547,7 @@ void TemplateTable::invokevfinal_helper(Register Rmethod, Register Rflags, Regis
   __ sldi(Rret_type, Rret_type, LogBytesPerWord);
   __ ldx(Rret_addr, Rret_type, Rtable_addr);
 
-  // Load receiver and receiver NULL check.
+  // Load receiver and receiver null check.
   __ load_receiver(Rnum_params, Rrecv);
   __ null_check_throw(Rrecv, -1, Rscratch1);
 
@@ -3570,7 +3571,7 @@ void TemplateTable::invokespecial(int byte_no) {
 
   prepare_invoke(byte_no, Rmethod, Rret_addr, noreg, Rreceiver, Rflags, R11_scratch1, R12_scratch2);
 
-  // Receiver NULL check.
+  // Receiver null check.
   __ null_check_throw(Rreceiver, -1, R11_scratch1);
 
   __ profile_call(R11_scratch1, R12_scratch2);
@@ -3705,7 +3706,7 @@ void TemplateTable::invokeinterface(int byte_no) {
   __ profile_arguments_type(Rmethod2, Rscratch1, Rscratch2, true);
   __ call_from_interpreter(Rmethod2, Rret_addr, Rscratch1, Rscratch2);
 
-  // Vtable entry was NULL => Throw abstract method error.
+  // Vtable entry was null => Throw abstract method error.
   __ bind(Lthrow_ame);
   // Pass arguments for generating a verbose error message.
   call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::throw_AbstractMethodErrorVerbose),
@@ -4135,10 +4136,10 @@ void TemplateTable::monitorenter() {
     Register Rlimit = Rcurrent_monitor;
 
     // Set up search loop - start with topmost monitor.
-    __ addi(Rcurrent_obj_addr, R26_monitor, BasicObjectLock::obj_offset_in_bytes());
+    __ addi(Rcurrent_obj_addr, R26_monitor, in_bytes(BasicObjectLock::obj_offset()));
 
     __ ld(Rlimit, 0, R1_SP);
-    __ addi(Rlimit, Rlimit, - (frame::ijava_state_size + frame::interpreter_frame_monitor_size_in_bytes() - BasicObjectLock::obj_offset_in_bytes())); // Monitor base
+    __ addi(Rlimit, Rlimit, - (frame::ijava_state_size + frame::interpreter_frame_monitor_size_in_bytes() - in_bytes(BasicObjectLock::obj_offset()))); // Monitor base
 
     // Check if any slot is present => short cut to allocation if not.
     __ cmpld(reached_limit, Rcurrent_obj_addr, Rlimit);
@@ -4169,7 +4170,7 @@ void TemplateTable::monitorenter() {
   // Check if we found a free slot.
   __ bind(Lexit);
 
-  __ addi(Rcurrent_monitor, Rcurrent_obj_addr, -(frame::interpreter_frame_monitor_size() * wordSize) - BasicObjectLock::obj_offset_in_bytes());
+  __ addi(Rcurrent_monitor, Rcurrent_obj_addr, -(frame::interpreter_frame_monitor_size() * wordSize) - in_bytes(BasicObjectLock::obj_offset()));
   __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, - frame::interpreter_frame_monitor_size() * wordSize);
   __ b(Lfound);
 
@@ -4178,7 +4179,7 @@ void TemplateTable::monitorenter() {
   __ bind(Lallocate_new);
   __ add_monitor_to_stack(false, Rscratch1, Rscratch2);
   __ mr(Rcurrent_monitor, R26_monitor);
-  __ addi(Rcurrent_obj_addr, R26_monitor, BasicObjectLock::obj_offset_in_bytes());
+  __ addi(Rcurrent_obj_addr, R26_monitor, in_bytes(BasicObjectLock::obj_offset()));
 
   // ------------------------------------------------------------------------------
   // We now have a slot to lock.
@@ -4225,8 +4226,8 @@ void TemplateTable::monitorexit() {
     Label Lloop;
 
     // Start with topmost monitor.
-    __ addi(Rcurrent_obj_addr, R26_monitor, BasicObjectLock::obj_offset_in_bytes());
-    __ addi(Rlimit, Rlimit, BasicObjectLock::obj_offset_in_bytes());
+    __ addi(Rcurrent_obj_addr, R26_monitor, in_bytes(BasicObjectLock::obj_offset()));
+    __ addi(Rlimit, Rlimit, in_bytes(BasicObjectLock::obj_offset()));
     __ ld(Rcurrent_obj, 0, Rcurrent_obj_addr);
     __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size() * wordSize);
 
@@ -4253,7 +4254,7 @@ void TemplateTable::monitorexit() {
   __ align(32, 12);
   __ bind(Lfound);
   __ addi(Rcurrent_monitor, Rcurrent_obj_addr,
-          -(frame::interpreter_frame_monitor_size() * wordSize) - BasicObjectLock::obj_offset_in_bytes());
+          -(frame::interpreter_frame_monitor_size() * wordSize) - in_bytes(BasicObjectLock::obj_offset()));
   __ unlock_object(Rcurrent_monitor);
 }
 

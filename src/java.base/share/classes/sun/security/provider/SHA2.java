@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,7 @@ import static sun.security.provider.ByteArrayAccess.*;
 abstract class SHA2 extends DigestBase {
 
     private static final int ITERATION = 64;
+    private static final int BLOCKSIZE = 64;
     // Constants for each round
     private static final int[] ROUND_CONSTS = {
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
@@ -81,7 +82,7 @@ abstract class SHA2 extends DigestBase {
      * Creates a new SHA object.
      */
     SHA2(String name, int digestLength, int[] initialHashes) {
-        super(name, digestLength, 64);
+        super(name, digestLength, BLOCKSIZE);
         this.initialHashes = initialHashes;
         state = new int[8];
         resetHashes();
@@ -115,6 +116,17 @@ abstract class SHA2 extends DigestBase {
         i2bBig(state, 0, out, ofs, engineGetDigestLength());
     }
 
+
+    protected void implDigestFixedLengthPreprocessed(
+            byte[] input, int inLen, byte[] output, int outOffset, int outLen) {
+        implReset();
+
+        for (int ofs = 0; ofs < inLen; ofs += BLOCKSIZE) {
+            implCompress0(input, ofs);
+        }
+        i2bBig(state, 0, output, outOffset, outLen);
+    }
+
     /**
      * Process the current block to update the state variable state.
      */
@@ -129,7 +141,7 @@ abstract class SHA2 extends DigestBase {
         // Checks similar to those performed by the method 'b2iBig64'
         // are sufficient for the case when the method 'implCompress0' is
         // replaced with a compiler intrinsic.
-        Preconditions.checkFromIndexSize(ofs, 64, buf.length, Preconditions.AIOOBE_FORMATTER);
+        Preconditions.checkFromIndexSize(ofs, BLOCKSIZE, buf.length, Preconditions.AIOOBE_FORMATTER);
     }
 
     // The method 'implCompressImpl' seems not to use its parameters.

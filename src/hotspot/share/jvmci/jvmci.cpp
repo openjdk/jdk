@@ -233,12 +233,12 @@ void JVMCI::vtrace(int level, const char* format, va_list ap) {
       ResourceMark rm(thread);
       JavaThreadState state = JavaThread::cast(thread)->thread_state();
       if (state == _thread_in_vm || state == _thread_in_Java || state == _thread_new) {
-        tty->print("JVMCITrace-%d[%s]:%*c", level, thread->name(), level, ' ');
+        tty->print("JVMCITrace-%d[" PTR_FORMAT " \"%s\"]:%*c", level, p2i(thread), thread->name(), level, ' ');
       } else {
         // According to check_access_thread_state, it's unsafe to
         // resolve the j.l.Thread object unless the thread is in
         // one of the states above.
-        tty->print("JVMCITrace-%d[%s@" PTR_FORMAT "]:%*c", level, thread->type_name(), p2i(thread), level, ' ');
+        tty->print("JVMCITrace-%d[" PTR_FORMAT " <%s>]:%*c", level, p2i(thread), thread->type_name(), level, ' ');
       }
     } else {
       tty->print("JVMCITrace-%d[?]:%*c", level, level, ' ');

@@ -103,7 +103,7 @@ void HeapRegionRemSet::print_static_mem_size(outputStream* out) {
 // When not at safepoint the CodeCache_lock must be held during modifications.
 
 void HeapRegionRemSet::add_code_root(nmethod* nm) {
-  assert(nm != NULL, "sanity");
+  assert(nm != nullptr, "sanity");
   assert((!CodeCache_lock->owned_by_self() || SafepointSynchronize::is_at_safepoint()),
           "should call add_code_root_locked instead. CodeCache_lock->owned_by_self(): %s, is_at_safepoint(): %s",
           BOOL_TO_STR(CodeCache_lock->owned_by_self()), BOOL_TO_STR(SafepointSynchronize::is_at_safepoint()));
@@ -113,7 +113,7 @@ void HeapRegionRemSet::add_code_root(nmethod* nm) {
 }
 
 void HeapRegionRemSet::add_code_root_locked(nmethod* nm) {
-  assert(nm != NULL, "sanity");
+  assert(nm != nullptr, "sanity");
   assert((CodeCache_lock->owned_by_self() ||
          (SafepointSynchronize::is_at_safepoint() &&
           (_m.owned_by_self() || Thread::current()->is_VM_thread()))),
@@ -127,10 +127,10 @@ void HeapRegionRemSet::add_code_root_locked(nmethod* nm) {
 }
 
 void HeapRegionRemSet::remove_code_root(nmethod* nm) {
-  assert(nm != NULL, "sanity");
+  assert(nm != nullptr, "sanity");
   assert_locked_or_safepoint(CodeCache_lock);
 
-  MutexLocker ml(CodeCache_lock->owned_by_self() ? NULL : &_m, Mutex::_no_safepoint_check_flag);
+  MutexLocker ml(CodeCache_lock->owned_by_self() ? nullptr : &_m, Mutex::_no_safepoint_check_flag);
   _code_roots.remove(nm);
 
   // Check that there were no duplicates

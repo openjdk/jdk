@@ -56,16 +56,16 @@ public class ReferenceClassDescResolve {
 
     @Benchmark
     public Class<?> resolveClassOrInterface() throws ReflectiveOperationException {
-        return (Class<?>) CLASS_OR_INTERFACE.resolveConstantDesc(LOOKUP);
+        return CLASS_OR_INTERFACE.resolveConstantDesc(LOOKUP);
     }
 
     @Benchmark
     public Class<?> resolveReferenceArray() throws ReflectiveOperationException {
-        return (Class<?>) REFERENCE_ARRAY.resolveConstantDesc(LOOKUP);
+        return REFERENCE_ARRAY.resolveConstantDesc(LOOKUP);
     }
 
     @Benchmark
     public Class<?> resolvePrimitiveArray() throws ReflectiveOperationException {
-        return (Class<?>) PRIMITIVE_ARRAY.resolveConstantDesc(LOOKUP);
+        return PRIMITIVE_ARRAY.resolveConstantDesc(LOOKUP);
     }
 }
