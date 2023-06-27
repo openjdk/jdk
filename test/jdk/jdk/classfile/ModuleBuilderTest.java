@@ -64,7 +64,8 @@ class ModuleBuilderTest {
     private final ModuleAttribute attr;
 
     public ModuleBuilderTest() {
-        byte[] modInfo = Classfile.buildModule(
+        var cc = Classfile.of();
+        byte[] modInfo = cc.buildModule(
                 ModuleAttribute.of(modName, mb -> mb
                         .moduleVersion(modVsn)
 
@@ -88,7 +89,7 @@ class ModuleBuilderTest {
                 clb -> clb.with(ModuleMainClassAttribute.of(ClassDesc.of("main.Class")))
                           .with(ModulePackagesAttribute.ofNames(PackageDesc.of("foo.bar.baz"), PackageDesc.of("quux")))
                           .with(ModuleMainClassAttribute.of(ClassDesc.of("overwritten.main.Class"))));
-        moduleModel = Classfile.parse(modInfo);
+        moduleModel = cc.parse(modInfo);
         attr = ((ModuleAttribute) moduleModel.attributes().stream()
                 .filter(a -> a.attributeMapper() == Attributes.MODULE)
                 .findFirst()
@@ -98,10 +99,11 @@ class ModuleBuilderTest {
     @Test
     void testCreateModuleInfo() {
         // Build the module-info.class bytes
-        byte[] modBytes = Classfile.buildModule(ModuleAttribute.of(modName, mb -> mb.moduleVersion(modVsn)));
+        var cc = Classfile.of();
+        byte[] modBytes = cc.buildModule(ModuleAttribute.of(modName, mb -> mb.moduleVersion(modVsn)));
 
         // Verify
-        var cm = Classfile.parse(modBytes);
+        var cm = cc.parse(modBytes);
 
         var attr =cm.findAttribute(Attributes.MODULE).get();
         assertEquals(attr.moduleName().name().stringValue(), modName.name());
@@ -195,7 +197,7 @@ class ModuleBuilderTest {
     void verifyIsModuleInfo() throws Exception {
         assertTrue(moduleModel.isModuleInfo());
 
-        ClassModel m = Classfile.parse(Paths.get(URI.create(ModuleBuilderTest.class.getResource("ModuleBuilderTest.class").toString())));
+        ClassModel m = Classfile.of().parse(Paths.get(URI.create(ModuleBuilderTest.class.getResource("ModuleBuilderTest.class").toString())));
         assertFalse(m.isModuleInfo());
     }
 }

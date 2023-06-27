@@ -75,8 +75,9 @@ class AdvancedTransformationsTest {
     @Test
     void testShiftLocals() throws Exception {
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
-            var clm = Classfile.parse(in.readAllBytes());
-            var remapped = Classfile.parse(clm.transform((clb, cle) -> {
+            var cc = Classfile.of();
+            var clm = cc.parse(in.readAllBytes());
+            var remapped = cc.parse(cc.transform(clm, (clb, cle) -> {
                 if (cle instanceof MethodModel mm) {
                     clb.transformMethod(mm, (mb, me) -> {
                         if (me instanceof CodeModel com) {
@@ -113,8 +114,9 @@ class AdvancedTransformationsTest {
                 ClassDesc.ofDescriptor(StackMapGenerator.class.descriptorString()), ClassDesc.of("remapped.StackMapGenerator")
         );
         try (var in = StackMapGenerator.class.getResourceAsStream("StackMapGenerator.class")) {
-            var clm = Classfile.parse(in.readAllBytes());
-            var remapped = Classfile.parse(ClassRemapper.of(map).remapClass(clm));
+            var cc = Classfile.of();
+            var clm = cc.parse(in.readAllBytes());
+            var remapped = cc.parse(ClassRemapper.of(map).remapClass(cc, clm));
             assertEmpty(remapped.verify(
                     ClassHierarchyResolver.of(Set.of(ClassDesc.of("remapped.List")), Map.of(
                             ClassDesc.of("remapped.RemappedBytecode"), ConstantDescs.CD_Object,
@@ -167,11 +169,12 @@ class AdvancedTransformationsTest {
     void testRemapModule() throws Exception {
         var foo = ClassDesc.ofDescriptor(Foo.class.descriptorString());
         var bar = ClassDesc.ofDescriptor(Bar.class.descriptorString());
-
-        var ma = Classfile.parse(
+        var cc = Classfile.of();
+        var ma = cc.parse(
                 ClassRemapper.of(Map.of(foo, bar)).remapClass(
-                        Classfile.parse(
-                                Classfile.buildModule(
+                        cc,
+                        cc.parse(
+                                cc.buildModule(
                                         ModuleAttribute.of(ModuleDesc.of("MyModule"), mab ->
                                                 mab.uses(foo).provides(foo, foo)))))).findAttribute(Attributes.MODULE).get();
         assertEquals(ma.uses().get(0).asSymbol(), bar);
@@ -187,10 +190,11 @@ class AdvancedTransformationsTest {
         var fooAnno = ClassDesc.ofDescriptor(FooAnno.class.descriptorString());
         var barAnno = ClassDesc.ofDescriptor(BarAnno.class.descriptorString());
         var rec = ClassDesc.ofDescriptor(Rec.class.descriptorString());
-
-        var remapped = Classfile.parse(
+        var cc = Classfile.of();
+        var remapped = cc.parse(
                 ClassRemapper.of(Map.of(foo, bar, fooAnno, barAnno)).remapClass(
-                        Classfile.parse(
+                        cc,
+                        cc.parse(
                                 Rec.class.getResourceAsStream(Rec.class.getName() + ".class")
                                         .readAllBytes())));
         var sb = new StringBuilder();
@@ -233,10 +237,11 @@ class AdvancedTransformationsTest {
 
     @Test
     void testInstrumentClass() throws Exception {
-        var instrumentor = Classfile.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$InstrumentorClass.class").readAllBytes());
-        var target = Classfile.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$TargetClass.class").readAllBytes());
+        var cc = Classfile.of();
+        var instrumentor = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$InstrumentorClass.class").readAllBytes());
+        var target = cc.parse(AdvancedTransformationsTest.class.getResourceAsStream("AdvancedTransformationsTest$TargetClass.class").readAllBytes());
         var instrumentedBytes = instrument(target, instrumentor, mm -> mm.methodName().stringValue().equals("instrumentedMethod"));
-        assertEmpty(Classfile.parse(instrumentedBytes).verify(null)); //System.out::print));
+        assertEmpty(cc.parse(instrumentedBytes).verify(null)); //System.out::print));
         var targetClass = new ByteArrayClassLoader(AdvancedTransformationsTest.class.getClassLoader(), "AdvancedTransformationsTest$TargetClass", instrumentedBytes).loadClass("AdvancedTransformationsTest$TargetClass");
         assertEquals(targetClass.getDeclaredMethod("instrumentedMethod", Boolean.class).invoke(targetClass.getDeclaredConstructor().newInstance(), false), 34);
     }
@@ -297,7 +302,7 @@ class AdvancedTransformationsTest {
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return target.transform(
+        return Classfile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {

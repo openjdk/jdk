@@ -151,7 +151,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTree() {
 
-        byte[] bytes = Classfile.build(TestConstants.CD_MyClass, cb -> {
+        byte[] bytes = Classfile.of().build(TestConstants.CD_MyClass, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(JAVA_12_VERSION, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))

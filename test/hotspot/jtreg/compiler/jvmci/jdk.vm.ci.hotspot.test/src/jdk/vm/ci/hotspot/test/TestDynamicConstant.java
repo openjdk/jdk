@@ -249,6 +249,7 @@ public class TestDynamicConstant implements Opcodes {
                         long.class,
                         double.class,
                         String.class,
+                        Object.class,
                         List.class
         };
 
@@ -275,14 +276,20 @@ public class TestDynamicConstant implements Opcodes {
                 // with condy resolved via ConstantPool
                 Object expect = m.invoke(null);
                 Object actual;
-                if (lastConstant instanceof PrimitiveConstant) {
+                if (lastConstant == PrimitiveConstant.NULL_POINTER) {
+                    actual = null;
+                } else if (lastConstant instanceof PrimitiveConstant) {
                     actual = ((PrimitiveConstant) lastConstant).asBoxedPrimitive();
                 } else {
                     actual = ((HotSpotObjectConstant) lastConstant).asObject(type);
                 }
                 Assert.assertEquals(actual, expect, m + ":");
 
-                testLookupBootstrapMethodInvocation(condyType, metaAccess, testClass, getTagAt);
+                if (type != Object.class) {
+                    testLookupBootstrapMethodInvocation(condyType, metaAccess, testClass, getTagAt);
+                } else {
+                    // StringConcatFactoryStringConcatFactory cannot accept null constants
+                }
             }
         }
     }
@@ -347,6 +354,7 @@ public class TestDynamicConstant implements Opcodes {
     @SuppressWarnings("unused") public static long    getLongBSM   (MethodHandles.Lookup l, String name, Class<?> type) { return Long.MAX_VALUE; }
     @SuppressWarnings("unused") public static double  getDoubleBSM (MethodHandles.Lookup l, String name, Class<?> type) { return Double.MAX_VALUE; }
     @SuppressWarnings("unused") public static String  getStringBSM (MethodHandles.Lookup l, String name, Class<?> type) { return "a string"; }
+    @SuppressWarnings("unused") public static Object  getObjectBSM (MethodHandles.Lookup l, String name, Class<?> type) { return null; }
     @SuppressWarnings("unused") public static List<?> getListBSM   (MethodHandles.Lookup l, String name, Class<?> type) { return List.of("element"); }
 
 
@@ -359,6 +367,7 @@ public class TestDynamicConstant implements Opcodes {
     public static long    getLong   () { return Long.MAX_VALUE; }
     public static double  getDouble () { return Double.MAX_VALUE; }
     public static String  getString () { return "a string"; }
+    public static Object  getObject () { return null; }
     public static List<?> getList   () { return List.of("element"); }
 
     public static boolean getBoolean(boolean v1, boolean v2) { return v1 || v2; }
@@ -370,6 +379,7 @@ public class TestDynamicConstant implements Opcodes {
     public static long    getLong   (long v1, long v2)       { return v1 ^ v2; }
     public static double  getDouble (double v1, double v2)   { return v1 * v2; }
     public static String  getString (String v1, String v2)   { return v1 + v2; }
+    public static Object  getObject (Object v1, Object v2)   { return null; }
     public static List<?> getList   (List<?> v1, List<?> v2) { return List.of(v1, v2); }
     // @formatter:on
 }
