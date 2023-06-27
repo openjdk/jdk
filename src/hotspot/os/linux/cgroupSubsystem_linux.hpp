@@ -132,7 +132,7 @@ template <typename T> int subsystem_file_line_contents(CgroupController* c,
   } else {
     // File consists of multiple lines in a "key value"
     // fashion, we have to find the key.
-    const int key_len = strlen(key);
+    const int key_len = (int)strlen(key);
     for (; line != nullptr; line = fgets(buf, buf_len, fp)) {
       char* key_substr = strstr(line, key);
       char after_key = line[key_len];

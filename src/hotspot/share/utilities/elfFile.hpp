@@ -255,7 +255,7 @@ class ElfFile: public CHeapObj<mtInternal> {
     }
 
     void update_null_terminator_index() {
-      _null_terminator_index = strlen(_path);
+      _null_terminator_index = checked_cast<uint16_t>(strlen(_path));
     }
 
     bool copy_to_path_index(uint16_t index_in_path, const char* src);

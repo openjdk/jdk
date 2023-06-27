@@ -666,7 +666,7 @@ class DependencySignature : public ResourceObj {
   }
 
   static bool     equals(DependencySignature const& s1, DependencySignature const& s2);
-  static unsigned hash  (DependencySignature const& s1) { return s1.arg(0) >> 2; }
+  static unsigned hash  (DependencySignature const& s1) { return (unsigned)(s1.arg(0) >> 2); }
 
   int args_count()             const { return _args_count; }
   uintptr_t arg(int idx)       const { return _argument_hash[idx]; }

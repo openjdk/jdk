@@ -521,6 +521,14 @@ constexpr T2 checked_cast(T1 thing) {
   return result;
 }
 
+// delta usually called with pointers or intptr_t that returns an int
+// used for code buffer and other nearby address calculations.
+// This allows the left side to be less than the right side.
+template <typename T>
+inline int delta_as_int(const volatile T left, const volatile T right) {
+  return checked_cast<int>(left - right);
+}
+
 // Need the correct linkage to call qsort without warnings
 extern "C" {
   typedef int (*_sort_Fn)(const void *, const void *);
@@ -662,7 +670,7 @@ inline double fabsd(double value) {
 // is zero, return 0.0.
 template<typename T>
 inline double percent_of(T numerator, T denominator) {
-  return denominator != 0 ? (double)numerator / denominator * 100.0 : 0.0;
+  return denominator != 0 ? (double)numerator / (double)denominator * 100.0 : 0.0;
 }
 
 //----------------------------------------------------------------------------------------------------
