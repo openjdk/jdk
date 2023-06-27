@@ -92,6 +92,16 @@ public class LazyInitializingTest {
     }
 
     @Test
+    public void testInitializationOnToMethodHandleUse() throws Throwable {
+        var initialized = new boolean[1];
+        var ci = createSampleClass(new SampleData(() -> initialized[0] = true, 42));
+        var mh = ci.vh.toMethodHandle(VarHandle.AccessMode.GET);
+
+        assertEquals(42, (int) mh.invokeExact(), "VH does not read value set in class initializer");
+        assertTrue(initialized[0], "class initialization not captured");
+    }
+
+    @Test
     public void testParentChildLoading() throws Throwable {
         // ChildSample: ensure only ParentSample (field declarer) is initialized
         var l = new ParentChildLoader();
