@@ -151,8 +151,8 @@ public class CoreUtils {
                     throw new SkippedException("Cannot produce core file with hardened binary on OSX 10.15 and later");
                 }
             } else {
-                // codesign has to add entitlements using the plist, if this is not present we might not generate a core file
-                if (!Platform.hasPlistEntriesOSX()) {
+                // codesign has to add entitlements using the plist. If this is not present we might not generate a core file.
+                if (!Platform.hasOSXPlistEntries()) {
                     throw new SkippedException("Cannot produce core file with binary having no plist entitlement entries");
                 }
             }

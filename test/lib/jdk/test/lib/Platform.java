@@ -273,7 +273,7 @@ public class Platform {
         return codesignProcess;
     }
 
-    public static boolean hasPlistEntriesOSX() throws IOException {
+    public static boolean hasOSXPlistEntries() throws IOException {
         Process codesignProcess = launchCodesignOnJavaBinary();
         BufferedReader is = new BufferedReader(new InputStreamReader(codesignProcess.getInputStream()));
         String line;
