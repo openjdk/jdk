@@ -1551,6 +1551,11 @@ public class IRNode {
         machOnlyNameRegex(VAND_NOT_L, "vand_notL");
     }
 
+    public static final String BLEND_VB = VECTOR_PREFIX + "BLEND_VB" + POSTFIX;
+    static {
+        vectorNode(BLEND_VB, "VectorBlend", "byte");
+    }
+
     public static final String BLEND_VF = VECTOR_PREFIX + "BLEND_VF" + POSTFIX;
     static {
         vectorNode(BLEND_VF, "VectorBlend", "float");
