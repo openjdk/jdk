@@ -28,19 +28,19 @@ package jdk.internal.util;
 import jdk.internal.vm.annotation.Stable;
 
 /**
- * Digits class for hexadecimal digits.
- *
+ * Provides a hexadecimal cache array of values from 0 to 255
  */
-public final class HexDigits {
+public final class Hex256 {
+    private Hex256(){
+    }
+
     @Stable
     public static final short[] DIGITS;
 
     static {
         short[] digits = new short[16 * 16];
-
         for (int i = 0; i < 16; i++) {
             short hi = (short) ((i < 10 ? i + '0' : i - 10 + 'a') << 8);
-
             for (int j = 0; j < 16; j++) {
                 short lo = (short) (j < 10 ? j + '0' : j - 10 + 'a');
                 digits[(i << 4) + j] = (short) (hi | lo);

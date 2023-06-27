@@ -29,7 +29,7 @@ import java.lang.invoke.MethodHandle;
 
 import jdk.internal.vm.annotation.Stable;
 
-import static jdk.internal.util.HexDigits.DIGITS;
+import jdk.internal.util.Hex256;
 
 /**
  * Digits class for hexadecimal digits.
@@ -51,14 +51,15 @@ final class HexDigits implements Digits {
     @Override
     public int digits(long value, byte[] buffer, int index,
                       MethodHandle putCharMH) throws Throwable {
+        short[] hex256 = Hex256.DIGITS;
         while ((value & ~0xFF) != 0) {
-            int digits = DIGITS[(int) (value & 0xFF)];
+            int digits = hex256[(int) (value & 0xFF)];
             value >>>= 8;
             putCharMH.invokeExact(buffer, --index, digits & 0xFF);
             putCharMH.invokeExact(buffer, --index, digits >> 8);
         }
 
-        int digits = DIGITS[(int) (value & 0xFF)];
+        int digits = hex256[(int) (value & 0xFF)];
         putCharMH.invokeExact(buffer, --index, digits & 0xFF);
 
         if (0xF < value) {
