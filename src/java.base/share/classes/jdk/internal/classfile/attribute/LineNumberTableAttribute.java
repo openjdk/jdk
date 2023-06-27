@@ -36,7 +36,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * the code table and line numbers in the source file.
  * Delivered as a {@link jdk.internal.classfile.instruction.LineNumber} when traversing the
  * elements of a {@link jdk.internal.classfile.CodeModel}, according to the setting of the
- * {@link jdk.internal.classfile.Classfile.Option#processLineNumbers(boolean)} option.
+ * {@link jdk.internal.classfile.Classfile.LineNumbersOption} option.
  */
 public sealed interface LineNumberTableAttribute
         extends Attribute<LineNumberTableAttribute>

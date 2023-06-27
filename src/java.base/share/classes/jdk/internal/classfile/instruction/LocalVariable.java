@@ -42,7 +42,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
  * A pseudo-instruction which models a single entry in the
  * {@link LocalVariableTableAttribute}.  Delivered as a {@link CodeElement}
  * during traversal of the elements of a {@link CodeModel}, according to
- * the setting of the {@link Classfile.Option#processDebug(boolean)} option.
+ * the setting of the {@link Classfile.DebugElementsOption} option.
  *
  * @see PseudoInstruction
  */

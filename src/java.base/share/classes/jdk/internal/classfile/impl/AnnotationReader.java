@@ -58,19 +58,19 @@ class AnnotationReader {
         char tag = (char) classReader.readU1(p);
         ++p;
         return switch (tag) {
-            case 'B' -> new AnnotationImpl.OfByteImpl((IntegerEntry)classReader.readEntry(p));
-            case 'C' -> new AnnotationImpl.OfCharacterImpl((IntegerEntry)classReader.readEntry(p));
-            case 'D' -> new AnnotationImpl.OfDoubleImpl((DoubleEntry)classReader.readEntry(p));
-            case 'F' -> new AnnotationImpl.OfFloatImpl((FloatEntry)classReader.readEntry(p));
-            case 'I' -> new AnnotationImpl.OfIntegerImpl((IntegerEntry)classReader.readEntry(p));
-            case 'J' -> new AnnotationImpl.OfLongImpl((LongEntry)classReader.readEntry(p));
-            case 'S' -> new AnnotationImpl.OfShortImpl((IntegerEntry)classReader.readEntry(p));
-            case 'Z' -> new AnnotationImpl.OfBooleanImpl((IntegerEntry)classReader.readEntry(p));
-            case 's' -> new AnnotationImpl.OfStringImpl(classReader.readUtf8Entry(p));
-            case 'e' -> new AnnotationImpl.OfEnumImpl(classReader.readUtf8Entry(p), classReader.readUtf8Entry(p + 2));
-            case 'c' -> new AnnotationImpl.OfClassImpl(classReader.readUtf8Entry(p));
-            case '@' -> new AnnotationImpl.OfAnnotationImpl(readAnnotation(classReader, p));
-            case '[' -> {
+            case AEV_BYTE -> new AnnotationImpl.OfByteImpl((IntegerEntry)classReader.readEntry(p));
+            case AEV_CHAR -> new AnnotationImpl.OfCharacterImpl((IntegerEntry)classReader.readEntry(p));
+            case AEV_DOUBLE -> new AnnotationImpl.OfDoubleImpl((DoubleEntry)classReader.readEntry(p));
+            case AEV_FLOAT -> new AnnotationImpl.OfFloatImpl((FloatEntry)classReader.readEntry(p));
+            case AEV_INT -> new AnnotationImpl.OfIntegerImpl((IntegerEntry)classReader.readEntry(p));
+            case AEV_LONG -> new AnnotationImpl.OfLongImpl((LongEntry)classReader.readEntry(p));
+            case AEV_SHORT -> new AnnotationImpl.OfShortImpl((IntegerEntry)classReader.readEntry(p));
+            case AEV_BOOLEAN -> new AnnotationImpl.OfBooleanImpl((IntegerEntry)classReader.readEntry(p));
+            case AEV_STRING -> new AnnotationImpl.OfStringImpl(classReader.readUtf8Entry(p));
+            case AEV_ENUM -> new AnnotationImpl.OfEnumImpl(classReader.readUtf8Entry(p), classReader.readUtf8Entry(p + 2));
+            case AEV_CLASS -> new AnnotationImpl.OfClassImpl(classReader.readUtf8Entry(p));
+            case AEV_ANNOTATION -> new AnnotationImpl.OfAnnotationImpl(readAnnotation(classReader, p));
+            case AEV_ARRAY -> {
                 int numValues = classReader.readU2(p);
                 p += 2;
                 var values = new Object[numValues];
