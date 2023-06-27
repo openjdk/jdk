@@ -53,6 +53,12 @@ final class LazyInitializingVarHandle extends VarHandle {
     }
 
     @Override
+    boolean checkAccessModeThenIsDirect(AccessDescriptor ad) {
+        super.checkAccessModeThenIsDirect(ad);
+        return false;
+    }
+
+    @Override
     MethodType accessModeTypeUncached(AccessType at) {
         return target.accessModeType(at.ordinal());
     }
@@ -87,7 +93,7 @@ final class LazyInitializingVarHandle extends VarHandle {
     @Override
     public MethodHandle getMethodHandleUncached(int accessMode) {
         ensureInitialized();
-        return methodHandleTable[accessMode];
+        return target.getMethodHandle(accessMode);
     }
 
     @ForceInline
@@ -130,6 +136,6 @@ final class LazyInitializingVarHandle extends VarHandle {
             return mh;
 
         // Add barrier
-        return MethodHandles.filterArgument(mh, 0, ensureInitializedMh()).bindTo(this);
+        return MethodHandles.collectArguments(mh, 0, ensureInitializedMh()).bindTo(this);
     }
 }
