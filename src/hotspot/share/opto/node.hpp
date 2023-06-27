@@ -1215,7 +1215,8 @@ public:
  public:
   Node* find(int idx, bool only_ctrl = false); // Search the graph for the given idx.
   Node* find_ctrl(int idx); // Search control ancestors for the given idx.
-  void dump_bfs(const int max_distance, Node* target, const char* options) const; // Print BFS traversal
+  void dump_bfs(const int max_distance, Node* target, const char* options, outputStream* st) const;
+  void dump_bfs(const int max_distance, Node* target, const char* options) const; // directly to tty
   void dump_bfs(const int max_distance) const; // dump_bfs(max_distance, nullptr, nullptr)
   class DumpConfig {
    public:

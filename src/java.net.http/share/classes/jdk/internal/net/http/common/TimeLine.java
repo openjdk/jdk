@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,26 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.net.http.common;
+
 /**
-    @test
-    @summary Locale constructor should allow language-only argument
-    @bug 4316602
-    @author joconner
-*/
-
-import java.util.Locale;
-
-public class Bug4316602 {
-
-    public static void main(String[] args) throws Exception {
-        String language = "ja";
-        Locale aLocale = Locale.of(language);
-        if (aLocale.toString().equals(language)) {
-            System.out.println("passed");
-        } else {
-            System.out.println("Bug4316602 failed");
-            throw new Exception("Bug4316602 failed");
-        }
-    }
-
+ * An alternative timeline that can deliver deadline instants.
+ */
+public interface TimeLine {
+    /**
+     * {@return the current instant on this alternative timeline}
+     */
+    Deadline instant();
 }
