@@ -827,7 +827,7 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 in = new DigestInputStream(in, md);
                 in = sizeIn = new SizeInputStream(in);
             }
-            ClassModel cm = Classfile.parse(in.readAllBytes(), Classfile.Option.processUnknownAttributes(true));
+            ClassModel cm = Classfile.of().parse(in.readAllBytes());
             byte[] digest = (md == null) ? null : md.digest();
             int size = (sizeIn == null) ? -1 : sizeIn.size();
             return new ClassFileInfo(fo, cm, digest, size);
