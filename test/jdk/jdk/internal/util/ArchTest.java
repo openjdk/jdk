@@ -75,7 +75,7 @@ public class ArchTest {
         return Stream.of(
                 Arguments.of("aarch64", AARCH64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isAARCH64()),
                 Arguments.of("amd64", X64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isX64()),
-                Arguments.of("arm", ARM, 32, ByteOrder.LITTLE_ENDIAN, Architecture.isAARCH64()),
+                Arguments.of("arm", ARM, 32, ByteOrder.LITTLE_ENDIAN, Architecture.isARM()),
                 Arguments.of("i386", X86, 32, ByteOrder.LITTLE_ENDIAN, Architecture.isX86()),
                 Arguments.of("loongarch64", LOONGARCH64, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isLOONGARCH64()),
                 Arguments.of("mips64el", MIPS64EL, 64, ByteOrder.LITTLE_ENDIAN, Architecture.isMIPS64EL()),
