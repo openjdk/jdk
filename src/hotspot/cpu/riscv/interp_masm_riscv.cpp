@@ -764,6 +764,10 @@ void InterpreterMacroAssembler::remove_activation(
     // testing if reserved zone needs to be re-enabled
     Label no_reserved_zone_enabling;
 
+    // check if already enabled - if so no re-enabling needed
+    ld(t0, Address(rthread, JavaThread::stack_guard_state_offset()));
+    beq(t0, StackOverflow::stack_guard_enabled, no_reserved_zone_enabling);
+
     ld(t0, Address(xthread, JavaThread::reserved_stack_activation_offset()));
     ble(t1, t0, no_reserved_zone_enabling);
 
