@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,36 +20,42 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8154295
  * @summary Check getNumericCodeAsString() method which returns numeric code as a 3 digit String.
+ * @run junit Bug8154295
  */
 
 import java.util.Currency;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Bug8154295 {
 
-    public static void main(String[] args) {
-
-        String numericCode = Currency.getInstance("AFA").getNumericCodeAsString();
-        if (!numericCode.equals("004")) { //should return "004" (a 3 digit string)
-           throw new RuntimeException("[Expected 004, "
-                + "found "+numericCode+" for AFA]");
-        }
-
-        numericCode = Currency.getInstance("AUD").getNumericCodeAsString();
-        if (!numericCode.equals("036")) { //should return "036" (a 3 digit string)
-            throw new RuntimeException("[Expected 036, "
-                + "found "+numericCode+" for AUD]");
-        }
-
-        numericCode = Currency.getInstance("USD").getNumericCodeAsString();
-        if (!numericCode.equals("840")) {// should return "840" (a 3 digit string)
-            throw new RuntimeException("[Expected 840, "
-                + "found "+numericCode+" for USD]");
-        }
-
+    /**
+     * Ensure getNumericCodeAsString() returns the correct 3-digit numeric code
+     * for the associated currency Code.
+     */
+    @ParameterizedTest
+    @MethodSource("codeProvider")
+    public void checkNumCodeTest(String currCode, String expectedNumCode) {
+        String actualNumCode = Currency.getInstance(currCode).getNumericCodeAsString();
+        assertEquals(expectedNumCode, actualNumCode, String.format(
+                "Expected: %s, but got: %s, for %s", expectedNumCode, actualNumCode, currCode));
     }
 
+    private static Stream<Arguments> codeProvider() {
+        return Stream.of(
+                Arguments.of("AFA", "004"),
+                Arguments.of("AUD", "036"),
+                Arguments.of("USD", "840")
+        );
+    }
 }
