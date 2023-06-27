@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,6 +55,8 @@ import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.SecuritySupport.SafePath;
+import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 
 public final class PlatformRecording implements AutoCloseable {
 
@@ -126,16 +128,16 @@ public final class PlatformRecording implements AutoCloseable {
                     options.add("disk=false");
                 }
                 if (maxAge != null) {
-                    options.add("maxage=" + Utils.formatTimespan(maxAge, ""));
+                    options.add("maxage=" + ValueFormatter.formatTimespan(maxAge, ""));
                 }
                 if (maxSize != 0) {
-                    options.add("maxsize=" + Utils.formatBytesCompact(maxSize));
+                    options.add("maxsize=" + ValueFormatter.formatBytesCompact(maxSize));
                 }
                 if (dumpOnExit) {
                     options.add("dumponexit=true");
                 }
                 if (duration != null) {
-                    options.add("duration=" + Utils.formatTimespan(duration, ""));
+                    options.add("duration=" + ValueFormatter.formatTimespan(duration, ""));
                 }
                 if (destination != null) {
                     options.add("filename=" + destination.getRealPathText());
@@ -795,7 +797,7 @@ public final class PlatformRecording implements AutoCloseable {
         }
         // always keep at least one chunk
         if (result.isEmpty()) {
-            result.add(input.get(0));
+            result.add(input.getFirst());
         }
         return result;
     }

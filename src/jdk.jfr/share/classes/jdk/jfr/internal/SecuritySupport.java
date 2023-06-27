@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,12 @@ import jdk.jfr.internal.consumer.FileAccess;
  * {@link AccessController#doPrivileged(PrivilegedAction)}
  */
 public final class SecuritySupport {
+    private static final String EVENTS_PACKAGE_NAME = "jdk.jfr.events";
+    private static final String INSTRUMENT_PACKAGE_NAME = "jdk.jfr.internal.instrument";
+    private static final String EVENT_PACKAGE_NAME = "jdk.jfr.internal.event";
+
+    public static final String REGISTER_EVENT = "registerEvent";
+    public static final String ACCESS_FLIGHT_RECORDER = "accessFlightRecorder";
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static final Module JFR_MODULE = Event.class.getModule();
     public  static final SafePath JFC_DIRECTORY = getPathInProperty("java.home", "lib/jfr");
@@ -206,6 +212,22 @@ public final class SecuritySupport {
         public T call();
     }
 
+    public static void checkAccessFlightRecorder() throws SecurityException {
+        @SuppressWarnings("removal")
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new FlightRecorderPermission(ACCESS_FLIGHT_RECORDER));
+        }
+    }
+
+    public static void checkRegisterPermission() throws SecurityException {
+        @SuppressWarnings("removal")
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(new FlightRecorderPermission(REGISTER_EVENT));
+        }
+    }
+
     @SuppressWarnings("removal")
     private static <U> U doPrivilegedIOWithReturn(Callable<U> function) throws IOException {
         try {
@@ -293,15 +315,15 @@ public final class SecuritySupport {
      * (for EventConfiguration and EventWriter)
      */
     static void addInternalEventExport(Class<?> clazz) {
-        Modules.addExports(JFR_MODULE, Utils.EVENT_PACKAGE_NAME, clazz.getModule());
+        Modules.addExports(JFR_MODULE, EVENT_PACKAGE_NAME, clazz.getModule());
     }
 
     static void addEventsExport(Class<?> clazz) {
-        Modules.addExports(JFR_MODULE, Utils.EVENTS_PACKAGE_NAME, clazz.getModule());
+        Modules.addExports(JFR_MODULE, EVENTS_PACKAGE_NAME, clazz.getModule());
     }
 
     static void addInstrumentExport(Class<?> clazz) {
-        Modules.addExports(JFR_MODULE, Utils.INSTRUMENT_PACKAGE_NAME, clazz.getModule());
+        Modules.addExports(JFR_MODULE, INSTRUMENT_PACKAGE_NAME, clazz.getModule());
     }
 
     static void addReadEdge(Class<?> clazz) {
@@ -309,11 +331,11 @@ public final class SecuritySupport {
     }
 
     public static void registerEvent(Class<? extends jdk.internal.event.Event> eventClass) {
-        doPrivileged(() ->  MetadataRepository.getInstance().register(eventClass), new FlightRecorderPermission(Utils.REGISTER_EVENT));
+        doPrivileged(() ->  MetadataRepository.getInstance().register(eventClass), new FlightRecorderPermission(REGISTER_EVENT));
     }
 
     public static void registerMirror(Class<? extends Event> eventClass) {
-        doPrivileged(() ->  MetadataRepository.getInstance().registerMirror(eventClass), new FlightRecorderPermission(Utils.REGISTER_EVENT));
+        doPrivileged(() ->  MetadataRepository.getInstance().registerMirror(eventClass), new FlightRecorderPermission(REGISTER_EVENT));
     }
 
     public static void setProperty(String propertyName, String value) {
@@ -419,7 +441,7 @@ public final class SecuritySupport {
     }
 
     @SuppressWarnings("removal")
-    static void ensureClassIsInitialized(Class<?> clazz) {
+    public static void ensureClassIsInitialized(Class<?> clazz) {
         try {
             MethodHandles.Lookup lookup;
             if (System.getSecurityManager() == null) {

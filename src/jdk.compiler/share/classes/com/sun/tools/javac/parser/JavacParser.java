@@ -3995,6 +3995,7 @@ public class JavacParser implements Parser {
                 }
 
                 if (isTopLevelMethodOrField) {
+                    checkSourceLevel(token.pos, Feature.UNNAMED_CLASSES);
                     defs.appendList(topLevelMethodOrFieldDeclaration(mods));
                     isUnnamedClass = true;
                 } else {
@@ -4025,8 +4026,6 @@ public class JavacParser implements Parser {
 
     // Restructure top level to be an unnamed class.
     private List<JCTree> constructUnnamedClass(List<JCTree> origDefs) {
-        checkSourceLevel(Feature.UNNAMED_CLASSES);
-
         ListBuffer<JCTree> topDefs = new ListBuffer<>();
         ListBuffer<JCTree> defs = new ListBuffer<>();
 
@@ -4040,7 +4039,7 @@ public class JavacParser implements Parser {
             }
         }
 
-        int primaryPos = defs.first().pos;
+        int primaryPos = getStartPos(defs.first());
         String simplename = PathFileObject.getSimpleName(log.currentSourceFile());
 
         if (simplename.endsWith(".java")) {
@@ -4051,7 +4050,7 @@ public class JavacParser implements Parser {
         }
 
         Name name = names.fromString(simplename);
-        JCModifiers unnamedMods = F.at(primaryPos)
+        JCModifiers unnamedMods = F.at(Position.NOPOS)
                 .Modifiers(Flags.FINAL|Flags.SYNTHETIC|Flags.UNNAMED_CLASS, List.nil());
         JCClassDecl unnamed = F.at(primaryPos).ClassDef(
                 unnamedMods, name, List.nil(), null, List.nil(), List.nil(),
