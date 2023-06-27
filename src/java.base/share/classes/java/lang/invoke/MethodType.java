@@ -1230,7 +1230,7 @@ class MethodType
      * fromMethodDescriptorString} which requires a method type descriptor
      * (JVMS {@jvms 4.3.3}) and a suitable class loader argument.
      * Two distinct classes which share a common name but have different class loaders
-     * produce identical component descriptors in descriptor strings.
+     * cannot be distinguished in descriptor strings.
      *
      * <p>
      * This method is included for the benefit of applications that must
