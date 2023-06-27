@@ -64,7 +64,7 @@ public:
     verbose |= (origin == JVMFlagOrigin::ERGONOMIC);
     T value = *((T*)value_addr);
     const JVMTypedFlagLimit<T>* constraint = (const JVMTypedFlagLimit<T>*)JVMFlagLimit::get_constraint(flag);
-    if (constraint != nullptr && constraint->phase() <= static_cast<int>(JVMFlagLimit::validating_phase())) {
+    if (constraint != nullptr && constraint->phase() <= JVMFlagLimit::validating_phase()) {
       JVMFlag::Error err = typed_check_constraint(constraint->constraint_func(), value, verbose);
       if (err != JVMFlag::SUCCESS) {
         if (origin == JVMFlagOrigin::ERGONOMIC) {
