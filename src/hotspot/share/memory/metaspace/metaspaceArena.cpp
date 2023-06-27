@@ -343,7 +343,7 @@ MetaWord* MetaspaceArena::allocate_inner(size_t requested_word_size) {
   SOMETIMES(verify_locked();)
 
   if (p == nullptr) {
-    UL(info, "allocation failed, returned nullptr.");
+    UL(info, "allocation failed, returned null.");
   } else {
     UL2(trace, "after allocation: %u chunk(s), current:" METACHUNK_FULL_FORMAT,
         _chunks.count(), METACHUNK_FULL_FORMAT_ARGS(current_chunk()));

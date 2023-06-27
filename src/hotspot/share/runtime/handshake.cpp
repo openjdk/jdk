@@ -238,6 +238,8 @@ class VM_HandshakeAllThreads: public VM_Operation {
  public:
   VM_HandshakeAllThreads(HandshakeOperation* op) : _op(op) {}
 
+  const char* cause() const { return _op->name(); }
+
   bool evaluate_at_safepoint() const { return false; }
 
   void doit() {

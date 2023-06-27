@@ -32,10 +32,6 @@
 
 #define SUPPORT_MONITOR_COUNT
 
-#ifdef __APPLE__
-#define FFI_GO_CLOSURES 0
-#endif
-
 #include <ffi.h>
 
 // Indicates whether the C calling conventions require that

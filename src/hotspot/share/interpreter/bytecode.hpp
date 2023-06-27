@@ -32,6 +32,7 @@
 #include "utilities/bytes.hpp"
 
 class ciBytecodeStream;
+class ResolvedIndyEntry;
 
 // The base class for different kinds of bytecode abstractions.
 // Provides the primitive operations to manipulate code relative

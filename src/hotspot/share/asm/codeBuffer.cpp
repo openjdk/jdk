@@ -1250,6 +1250,7 @@ bool DbgStrings::is_empty() const {
 
 void DbgStrings::share(const DbgStrings &src) {
   precond(is_empty());
+  clear();
   _strings = src._strings->reuse();
 }
 

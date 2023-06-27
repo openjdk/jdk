@@ -184,7 +184,7 @@ inline bool XBarrierSet::AccessBarrier<decorators, BarrierSetT>::oop_arraycopy_i
   if (!HasDecorator<decorators, ARRAYCOPY_CHECKCAST>::value) {
     // No check cast, bulk barrier and bulk copy
     XBarrier::load_barrier_on_oop_array(src, length);
-    return Raw::oop_arraycopy_in_heap(nullptr, 0, src, NULL, 0, dst, length);
+    return Raw::oop_arraycopy_in_heap(nullptr, 0, src, nullptr, 0, dst, length);
   }
 
   // Check cast and copy each elements

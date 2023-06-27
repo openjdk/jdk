@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,8 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
+import jdk.internal.util.OperatingSystem;
+import jdk.internal.util.OSVersion;
 import static jdk.jpackage.internal.MacAppBundler.BUNDLE_ID_SIGNING_PREFIX;
 import static jdk.jpackage.internal.MacAppBundler.DEVELOPER_ID_APP_SIGNING_KEY;
 import static jdk.jpackage.internal.MacBaseInstallerBundler.SIGNING_KEYCHAIN;
@@ -401,7 +403,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
                         ENTITLEMENTS.fetchFrom(params));
             }
             restoreKeychainList(params);
-        } else if (Platform.isMac()) {
+        } else if (OperatingSystem.isMacOS()) {
             signAppBundle(params, root, "-", null, null);
         } else {
             // Calling signAppBundle() without signingIdentity will result in
@@ -608,9 +610,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void addNewKeychain(Map<String, ? super Object> params)
                                     throws IOException, InterruptedException {
-        if (Platform.getMajorVersion() < 10 ||
-                (Platform.getMajorVersion() == 10 &&
-                Platform.getMinorVersion() < 12)) {
+        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }
@@ -662,9 +662,7 @@ public class MacAppImageBuilder extends AbstractAppImageBuilder {
 
     public static void restoreKeychainList(Map<String, ? super Object> params)
             throws IOException{
-        if (Platform.getMajorVersion() < 10 ||
-                (Platform.getMajorVersion() == 10 &&
-                Platform.getMinorVersion() < 12)) {
+        if (OSVersion.current().compareTo(new OSVersion(10, 12)) < 0) {
             // we need this for OS X 10.12+
             return;
         }

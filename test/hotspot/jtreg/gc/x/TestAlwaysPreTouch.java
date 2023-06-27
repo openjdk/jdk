@@ -25,7 +25,7 @@ package gc.x;
 
 /*
  * @test TestAlwaysPreTouch
- * @requires vm.gc.Z & !vm.opt.final.ZGenerational
+ * @requires vm.gc.ZSinglegen
  * @summary Test ZGC parallel pre-touch
  * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xlog:gc* -XX:-AlwaysPreTouch -Xms128M -Xmx128M gc.x.TestAlwaysPreTouch
  * @run main/othervm -XX:+UseZGC -XX:-ZGenerational -Xlog:gc* -XX:+AlwaysPreTouch -XX:ParallelGCThreads=1 -Xms2M -Xmx128M gc.x.TestAlwaysPreTouch

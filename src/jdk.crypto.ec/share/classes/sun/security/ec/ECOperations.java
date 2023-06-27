@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -541,7 +541,7 @@ public class ECOperations {
 
         final class Secp256R1GeneratorMultiplier implements PointMultiplier {
             private static final ECPoint generator =
-                    CurveDB.lookup("secp256r1").getGenerator();
+                    CurveDB.P_256.getGenerator();
             private static final PointMultiplier multiplier =
                     new Secp256R1GeneratorMultiplier();
 

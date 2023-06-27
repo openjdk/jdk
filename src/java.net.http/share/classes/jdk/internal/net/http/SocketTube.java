@@ -149,7 +149,7 @@ final class SocketTube implements FlowTube {
     //                           Events                                      //
     // ======================================================================//
 
-    void signalClosed() {
+    void signalClosed(Throwable cause) {
         // Ensures that the subscriber will be terminated and that future
         // subscribers will be notified when the connection is closed.
         if (Log.channel()) {
@@ -157,7 +157,7 @@ final class SocketTube implements FlowTube {
                     channelDescr());
         }
         readPublisher.subscriptionImpl.signalError(
-                new IOException("connection closed locally"));
+                new IOException("connection closed locally", cause));
     }
 
     /**
@@ -210,10 +210,10 @@ final class SocketTube implements FlowTube {
             long wd = wdemand == null ? 0 : wdemand.get();
 
             state.append(when).append(" Reading: [ops=")
-                    .append(rops).append(", demand=").append(rd)
+                    .append(Utils.describeOps(rops)).append(", demand=").append(rd)
                     .append(", stopped=")
                     .append((sub == null ? false : sub.readScheduler.isStopped()))
-                    .append("], Writing: [ops=").append(wops)
+                    .append("], Writing: [ops=").append(Utils.describeOps(wops))
                     .append(", demand=").append(wd)
                     .append("]");
             debug.log(state.toString());

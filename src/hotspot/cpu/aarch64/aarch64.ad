@@ -15018,42 +15018,6 @@ instruct convL2I_reg(iRegINoSp dst, iRegL src) %{
   ins_pipe(ialu_reg);
 %}
 
-instruct convI2B(iRegINoSp dst, iRegIorL2I src, rFlagsReg cr)
-%{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-
-  format %{
-    "cmpw $src, zr\n\t"
-    "cset $dst, ne"
-  %}
-
-  ins_encode %{
-    __ cmpw(as_Register($src$$reg), zr);
-    __ cset(as_Register($dst$$reg), Assembler::NE);
-  %}
-
-  ins_pipe(ialu_reg);
-%}
-
-instruct convP2B(iRegINoSp dst, iRegP src, rFlagsReg cr)
-%{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-
-  format %{
-    "cmp  $src, zr\n\t"
-    "cset $dst, ne"
-  %}
-
-  ins_encode %{
-    __ cmp(as_Register($src$$reg), zr);
-    __ cset(as_Register($dst$$reg), Assembler::NE);
-  %}
-
-  ins_pipe(ialu_reg);
-%}
-
 instruct convD2F_reg(vRegF dst, vRegD src) %{
   match(Set dst (ConvD2F src));
 

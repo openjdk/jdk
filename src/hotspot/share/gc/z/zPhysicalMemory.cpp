@@ -276,15 +276,22 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
 }
 
 void ZPhysicalMemoryManager::nmt_commit(zoffset offset, size_t size) const {
-  const zaddress addr = ZOffset::address(offset);
-  MemTracker::record_virtual_memory_commit((void*)untype(addr), size, CALLER_PC);
+  // NMT expects a 1-to-1 mapping between virtual and physical memory.
+  // ZGC can temporarily have multiple virtual addresses pointing to
+  // the same physical memory.
+  //
+  // When this function is called we don't know where in the virtual memory
+  // this physical memory will be mapped. So we fake that the virtual memory
+  // address is the heap base + the given offset.
+  const uintptr_t addr = ZAddressHeapBase + untype(offset);
+  MemTracker::record_virtual_memory_commit((void*)addr, size, CALLER_PC);
 }
 
 void ZPhysicalMemoryManager::nmt_uncommit(zoffset offset, size_t size) const {
   if (MemTracker::enabled()) {
-    const zaddress addr = ZOffset::address(offset);
+    const uintptr_t addr = ZAddressHeapBase + untype(offset);
     Tracker tracker(Tracker::uncommit);
-    tracker.record((address)untype(addr), size);
+    tracker.record((address)addr, size);
   }
 }
 
@@ -320,6 +327,11 @@ bool ZPhysicalMemoryManager::commit(ZPhysicalMemory& pmem) {
 
     // Commit segment
     const size_t committed = _backing.commit(segment.start(), segment.size());
+
+    // Register with NMT
+    nmt_commit(segment.start(), committed);
+
+    // Register committed segment
     if (!pmem.commit_segment(i, committed)) {
       // Failed or partially failed
       return false;
@@ -341,6 +353,11 @@ bool ZPhysicalMemoryManager::uncommit(ZPhysicalMemory& pmem) {
 
     // Uncommit segment
     const size_t uncommitted = _backing.uncommit(segment.start(), segment.size());
+
+    // Unregister with NMT
+    nmt_uncommit(segment.start(), uncommitted);
+
+    // Deregister uncommitted segment
     if (!pmem.uncommit_segment(i, uncommitted)) {
       // Failed or partially failed
       return false;
@@ -351,12 +368,16 @@ bool ZPhysicalMemoryManager::uncommit(ZPhysicalMemory& pmem) {
   return true;
 }
 
-void ZPhysicalMemoryManager::pretouch_view(zaddress addr, size_t size) const {
+void ZPhysicalMemoryManager::pretouch(zoffset offset, size_t size) const {
+  const uintptr_t addr = untype(ZOffset::address(offset));
   const size_t page_size = ZLargePages::is_explicit() ? ZGranuleSize : os::vm_page_size();
-  os::pretouch_memory((void*)untype(addr), (void*)(untype(addr) + size), page_size);
+  os::pretouch_memory((void*)addr, (void*)(addr + size), page_size);
 }
 
-void ZPhysicalMemoryManager::map_view(zaddress_unsafe addr, const ZPhysicalMemory& pmem) const {
+// Map virtual memory to physcial memory
+void ZPhysicalMemoryManager::map(zoffset offset, const ZPhysicalMemory& pmem) const {
+  const zaddress_unsafe addr = ZOffset::address_unsafe(offset);
+
   size_t size = 0;
 
   // Map segments
@@ -375,27 +396,9 @@ void ZPhysicalMemoryManager::map_view(zaddress_unsafe addr, const ZPhysicalMemor
   }
 }
 
-void ZPhysicalMemoryManager::unmap_view(zaddress_unsafe addr, size_t size) const {
-  _backing.unmap(addr, size);
-}
-
-void ZPhysicalMemoryManager::pretouch(zoffset offset, size_t size) const {
-  // Pre-touch all views
-  pretouch_view(ZOffset::address(offset), size);
-}
-
-void ZPhysicalMemoryManager::map(zoffset offset, const ZPhysicalMemory& pmem) const {
-  const size_t size = pmem.size();
-
-  // Map all views
-  map_view(ZOffset::address_unsafe(offset), pmem);
-
-  nmt_commit(offset, size);
-}
-
+// Unmap virtual memory from physical memory
 void ZPhysicalMemoryManager::unmap(zoffset offset, size_t size) const {
-  nmt_uncommit(offset, size);
+  const zaddress_unsafe addr = ZOffset::address_unsafe(offset);
 
-  // Unmap all views
-  unmap_view(ZOffset::address_unsafe(offset), size);
+  _backing.unmap(addr, size);
 }

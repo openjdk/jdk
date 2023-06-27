@@ -46,19 +46,16 @@ import jdk.vm.ci.runtime.JVMCICompilerFactory;
 import jdk.vm.ci.runtime.JVMCIRuntime;
 
 import java.io.File;
-import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
 
-    /**
-     * Name of file whose existence implies that a JVMCICompiler has been created.
-     */
-    static String tmpFileName = "ErrorCompilerCreated." + System.nanoTime();
+    static volatile boolean compilerCreationErrorOccurred;
 
     /**
      * @param args if args.length != 0, then executing in subprocess
@@ -68,19 +65,11 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
             testSubprocess(false);
             testSubprocess(true);
         } else {
-            File watch = new File(tmpFileName);
             int total = 0;
-            long start = System.currentTimeMillis();
-
-            // Use a 10 sec timeout to prevent endless loop if
-            // JVMCI compiler creation fails
-            while (System.currentTimeMillis() - start < 10_000) {
+            while (!compilerCreationErrorOccurred) {
+                // Do some random work to trigger compilation
                 total += getTime();
-                if (watch.exists()) {
-                    System.err.println("saw " + watch + " - exiting loop");
-                    watch.delete();
-                    break;
-                }
+                total += String.valueOf(total).hashCode();
             }
             System.out.println(total);
         }
@@ -101,7 +90,16 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
             "-XX:+PrintWarnings",
             "-Xbootclasspath/a:.",
             TestUncaughtErrorInCompileMethod.class.getName(), "true");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        Process p = pb.start();
+        OutputAnalyzer output = new OutputAnalyzer(p);
+
+        if (!waitForProcess(p)) {
+            // The subprocess might not enter JVMCI compilation.
+            // Print the subprocess output and pass the test in this case.
+            System.out.println(output.getOutput());
+            return;
+        }
+
         if (fatalError) {
             output.shouldContain("testing JVMCI fatal exception handling");
             output.shouldNotHaveExitValue(0);
@@ -137,6 +135,31 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
         }
     }
 
+    /**
+     * @return true if {@code p} exited on its own, false if it had to be destroyed
+     */
+    private static boolean waitForProcess(Process p) {
+        while (true) {
+            try {
+                boolean exited = p.waitFor(10, TimeUnit.SECONDS);
+                if (!exited) {
+                    System.out.println("destroying process: " + p);
+                    p.destroy();
+                    Thread.sleep(1000);
+                    while (p.isAlive()) {
+                        System.out.println("forcibly destroying process: " + p);
+                        Thread.sleep(1000);
+                        p.destroyForcibly();
+                    }
+                    return false;
+                }
+                return true;
+            } catch (InterruptedException e) {
+                e.printStackTrace(System.out);
+            }
+        }
+    }
+
     public TestUncaughtErrorInCompileMethod() {
     }
 
@@ -161,18 +184,10 @@ public class TestUncaughtErrorInCompileMethod extends JVMCIServiceLocator {
                     int attempt = counter.incrementAndGet();
                     CompilerCreationError e = new CompilerCreationError(attempt);
                     e.printStackTrace();
-                    if (attempt == 10) {
-                        // Delay the creation of the file that causes the
-                        // loop in main to exit so that compilation failures
+                    if (attempt >= 10) {
+                        // Delay notifying the loop in main so that compilation failures
                         // have time to be reported by -XX:+PrintCompilation.
-                        File watch = new File(tmpFileName);
-                        try {
-                            System.err.println("creating " + watch);
-                            watch.createNewFile();
-                            System.err.println("created " + watch);
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
-                        }
+                        compilerCreationErrorOccurred = true;
                     }
                     throw e;
                 }

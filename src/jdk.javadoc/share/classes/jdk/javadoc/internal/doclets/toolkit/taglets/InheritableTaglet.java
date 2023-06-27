@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,8 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 public interface InheritableTaglet extends Taglet {
 
     /*
-     * Called by InheritDocTaglet on an inheritable taglet to expand {@inheritDoc}
-     * found inside a tag corresponding to that taglet.
+     * Called by InheritDocTaglet on an inheritable taglet to expand {@inheritDoc S}
+     * found inside a tag corresponding to that taglet in a method (dst).
      *
      * When inheriting failed some assumption, or caused an error, the taglet
      * can return either of:
@@ -52,7 +52,7 @@ public interface InheritableTaglet extends Taglet {
      * In the future, this could be reworked using some other mechanism,
      * such as throwing an exception.
      */
-    Output inherit(Element owner, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration);
+    Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration);
 
     record Output(DocTree holderTag,
                   Element holder,

@@ -82,9 +82,11 @@ public class Poly1305DigestBench extends CryptoBase {
     }
 
     @Setup
-    public void setup() {
+    public void setup() throws Throwable {
         setupProvider();
         data = fillRandom(new byte[SET_SIZE][dataSize]);
+        byte[] d = data[0];
+        polyEngineInit.invoke(polyObj, new SecretKeySpec(d, 0, 32, "Poly1305"), null);
     }
 
     @Benchmark
@@ -95,6 +97,17 @@ public class Poly1305DigestBench extends CryptoBase {
             polyEngineInit.invoke(polyObj, new SecretKeySpec(d, 0, 32, "Poly1305"), null);
             polyEngineUpdate.invoke(polyObj, d, 0, d.length);
             return (byte[])polyEngineFinal.invoke(polyObj);
+        } catch (Throwable ex) {
+            throw new RuntimeException(ex);
+        }
+    }
+
+    @Benchmark
+    public void updateBytes() {
+        try {
+            byte[] d = data[index];
+            // index = (index +1) % SET_SIZE;
+            polyEngineUpdate.invoke(polyObj, d, 0, d.length);
         } catch (Throwable ex) {
             throw new RuntimeException(ex);
         }

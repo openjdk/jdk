@@ -259,9 +259,7 @@ class ConstantPool : public Metadata {
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
   // From there, uncached_name/signature_ref_at will get the name/type.
-  u2 invokedynamic_bootstrap_ref_index_at(int indy_index) const {
-    return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
-  }
+  inline u2 invokedynamic_bootstrap_ref_index_at(int indy_index) const;
 
   // Assembly code support
   static ByteSize tags_offset()         { return byte_offset_of(ConstantPool, _tags); }
@@ -922,15 +920,9 @@ class ConstantPool : public Metadata {
   const char* internal_name() const { return "{constant pool}"; }
 
   // ResolvedIndyEntry getters
-  ResolvedIndyEntry* resolved_indy_entry_at(int index) {
-    return cache()->resolved_indy_entry_at(index);
-  }
-  int resolved_indy_entries_length() {
-    return cache()->resolved_indy_entries_length();
-  }
-  oop resolved_reference_from_indy(int index) {
-    return resolved_references()->obj_at(cache()->resolved_indy_entry_at(index)->resolved_references_index());
-  }
+  inline ResolvedIndyEntry* resolved_indy_entry_at(int index);
+  inline int resolved_indy_entries_length() const;
+  inline oop resolved_reference_from_indy(int index) const;
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

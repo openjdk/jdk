@@ -2968,13 +2968,14 @@ void JvmtiTagMap::iterate_over_reachable_objects(jvmtiHeapRootCallback heap_root
                                                  jvmtiStackReferenceCallback stack_ref_callback,
                                                  jvmtiObjectReferenceCallback object_ref_callback,
                                                  const void* user_data) {
+  // VTMS transitions must be disabled before the EscapeBarrier.
+  JvmtiVTMSTransitionDisabler disabler;
+
   JavaThread* jt = JavaThread::current();
   EscapeBarrier eb(true, jt);
   eb.deoptimize_objects_all_threads();
   Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
-
-  JvmtiVTMSTransitionDisabler disabler;
 
   {
     MutexLocker ml(Heap_lock);
@@ -3015,6 +3016,9 @@ void JvmtiTagMap::follow_references(jint heap_filter,
                                     const jvmtiHeapCallbacks* callbacks,
                                     const void* user_data)
 {
+  // VTMS transitions must be disabled before the EscapeBarrier.
+  JvmtiVTMSTransitionDisabler disabler;
+
   oop obj = JNIHandles::resolve(object);
   JavaThread* jt = JavaThread::current();
   Handle initial_object(jt, obj);
@@ -3026,8 +3030,6 @@ void JvmtiTagMap::follow_references(jint heap_filter,
 
   Arena dead_object_arena(mtServiceability);
   GrowableArray<jlong> dead_objects(&dead_object_arena, 10, 0, 0);
-
-  JvmtiVTMSTransitionDisabler disabler;
 
   {
     MutexLocker ml(Heap_lock);
