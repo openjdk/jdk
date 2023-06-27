@@ -660,7 +660,7 @@ void GenerateOopMap::restore_state(BasicBlock *bb)
 }
 
 int GenerateOopMap::next_bb_start_pc(BasicBlock *bb) {
- int bbNum = (int)(bb - _basic_blocks + 1);
+ intptr_t bbNum = bb - _basic_blocks + 1;
  if (bbNum == _bb_count)
     return method()->code_size();
 
@@ -2057,7 +2057,7 @@ void GenerateOopMap::print_time() {
   tty->print_cr ("---------------------------");
   tty->print_cr ("  Total : %3.3f sec.", GenerateOopMap::_total_oopmap_time.seconds());
   tty->print_cr ("  (%3.0f bytecodes per sec) ",
-  (float)GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
+  (double)GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
 }
 
 //
