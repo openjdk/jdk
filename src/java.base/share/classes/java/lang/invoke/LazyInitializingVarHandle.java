@@ -60,6 +60,7 @@ final class LazyInitializingVarHandle extends VarHandle {
         return target.accessModeType(at.ordinal());
     }
 
+    @Override
     @ForceInline
     VarHandle asDirect() {
         return target;

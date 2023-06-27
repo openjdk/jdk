@@ -2207,7 +2207,7 @@ public abstract sealed class VarHandle implements Constable
     }
 
     /**
-     * Computes a method handle that can be passed the {@linkplain #target() direct}
+     * Computes a method handle that can be passed the {@linkplain #asDirect() direct}
      * var handle of this var handle with the given access mode. Pre/postprocessing
      * such as argument or return value filtering should be done by the returned
      * method handle.
