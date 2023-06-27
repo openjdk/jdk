@@ -2833,7 +2833,9 @@ static jbyteArray get_encoded_annotation_data(InstanceKlass* holder, AnnotationA
   Handle jcp = reflect_ConstantPool::create(CHECK_NULL);
   reflect_ConstantPool::set_cp(jcp(), holder->constants());
 
-  Klass* k = vmClasses::VMSupport_klass();
+  // load VMSupport
+  Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
+  Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK_NULL);
 
   InstanceKlass* vm_support = InstanceKlass::cast(k);
   if (vm_support->should_be_initialized()) {

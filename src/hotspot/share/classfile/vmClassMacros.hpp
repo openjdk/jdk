@@ -104,7 +104,6 @@
   do_klass(ContinuationScope_klass,                     jdk_internal_vm_ContinuationScope                     ) \
   do_klass(Continuation_klass,                          jdk_internal_vm_Continuation                          ) \
   do_klass(StackChunk_klass,                            jdk_internal_vm_StackChunk                            ) \
-  do_klass(VMSupport_klass,                             jdk_internal_vm_VMSupport                             ) \
                                                                                                                 \
   do_klass(reflect_MethodAccessorImpl_klass,            reflect_MethodAccessorImpl                            ) \
   do_klass(reflect_DelegatingClassLoader_klass,         reflect_DelegatingClassLoader                         ) \
