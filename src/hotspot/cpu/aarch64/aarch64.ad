@@ -2289,7 +2289,6 @@ const bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
 
-  bool ret_value = true;
   switch (opcode) {
     case Op_OnSpinWait:
       return VM_Version::supports_on_spin_wait();
@@ -2297,18 +2296,26 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CacheWBPreSync:
     case Op_CacheWBPostSync:
       if (!VM_Version::supports_data_cache_line_flush()) {
-        ret_value = false;
+        return false;
       }
       break;
     case Op_ExpandBits:
     case Op_CompressBits:
       if (!(UseSVE > 1 && VM_Version::supports_svebitperm())) {
-        ret_value = false;
+        return false;
+      }
+      break;
+    case Op_FmaF:
+    case Op_FmaD:
+    case Op_FmaVF:
+    case Op_FmaVD:
+      if (!UseFMA) {
+        return false;
       }
       break;
   }
 
-  return ret_value; // Per default match rules are supported.
+  return true; // Per default match rules are supported.
 }
 
 const RegMask* Matcher::predicate_reg_mask(void) {

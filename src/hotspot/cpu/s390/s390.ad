@@ -1505,6 +1505,9 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_PopCountL:
       // PopCount supported by H/W from z/Architecture G5 (z196) on.
       return (UsePopCountInstruction && VM_Version::has_PopCount());
+    case Op_FmaF:
+    case Op_FmaD:
+      return UseFMA;
   }
 
   return true; // Per default match rules are supported.

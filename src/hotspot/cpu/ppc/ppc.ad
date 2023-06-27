@@ -2148,6 +2148,9 @@ const bool Matcher::match_rule_supported(int opcode) {
       return SuperwordUseVSX;
     case Op_PopCountVI:
       return (SuperwordUseVSX && UsePopCountInstruction);
+    case Op_FmaF:
+    case Op_FmaD:
+      return UseFMA;
     case Op_FmaVF:
     case Op_FmaVD:
       return (SuperwordUseVSX && UseFMA);

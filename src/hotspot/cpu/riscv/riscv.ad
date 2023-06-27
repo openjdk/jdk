@@ -1907,6 +1907,11 @@ const bool Matcher::match_rule_supported(int opcode) {
     case Op_CountTrailingZerosI:
     case Op_CountTrailingZerosL:
       return UseZbb;
+    case Op_FmaF:
+    case Op_FmaD:
+    case Op_FmaVF:
+    case Op_FmaVD:
+      return UseFMA;
   }
 
   return true; // Per default match rules are supported.

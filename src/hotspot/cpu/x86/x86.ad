@@ -1566,6 +1566,8 @@ const bool Matcher::match_rule_supported(int opcode) {
         return false;
       }
       break;
+    case Op_FmaF:
+    case Op_FmaD:
     case Op_FmaVD:
     case Op_FmaVF:
       if (!UseFMA) {
