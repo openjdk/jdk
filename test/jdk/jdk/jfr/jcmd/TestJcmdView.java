@@ -25,7 +25,6 @@ package jdk.jfr.jcmd;
 
 import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.atomic.AtomicReference;
 
 import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordedEvent;
