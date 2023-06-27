@@ -113,9 +113,9 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-using InvokeMethodIntrisicTable = ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
+using InvokeMethodIntrinsicTable = ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
                   InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison>;
-static InvokeMethodIntrisicTable* _invoke_method_intrinsic_table;
+static InvokeMethodIntrinsicTable* _invoke_method_intrinsic_table;
 using InvokeMethodTypeTable = ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
 static InvokeMethodTypeTable* _invoke_method_type_table;
 
@@ -1603,9 +1603,9 @@ void SystemDictionary::methods_do(void f(Method*)) {
 // Initialization
 
 void SystemDictionary::initialize(TRAPS) {
-  ResolutionErrorTable::initialize();
-  _invoke_method_intrinsic_table = new (mtClass) InvokeMethodIntrisicTable();
+  _invoke_method_intrinsic_table = new (mtClass) InvokeMethodIntrinsicTable();
   _invoke_method_type_table = new (mtClass) InvokeMethodTypeTable();
+  ResolutionErrorTable::initialize();
   LoaderConstraintTable::initialize();
   PlaceholderTable::initialize();
   ProtectionDomainCacheTable::initialize();
