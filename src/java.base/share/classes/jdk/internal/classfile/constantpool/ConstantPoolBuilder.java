@@ -39,7 +39,7 @@ import jdk.internal.classfile.ClassBuilder;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.impl.ClassReaderImpl;
-import jdk.internal.classfile.impl.Options;
+import jdk.internal.classfile.impl.ClassfileImpl;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.WritableElement;
@@ -63,29 +63,22 @@ public sealed interface ConstantPoolBuilder
         permits SplitConstantPool, TemporaryConstantPool {
 
     /**
-     * {@return a new constant pool builder}  The new constant pool builder
-     * will inherit the classfile processing options of the specified class.
-     * If the processing options include {@link Classfile.Option#constantPoolSharing(boolean)},
-     * (the default) the new constant pool builder will be also be pre-populated with the
-     * contents of the constant pool associated with the class reader.
+     * {@return a new constant pool builder}  The new constant pool builder will
+     * be pre-populated with the contents of the constant pool associated with
+     * the class reader.
      *
      * @param classModel the class to copy from
      */
     static ConstantPoolBuilder of(ClassModel classModel) {
-        ClassReaderImpl reader = (ClassReaderImpl) classModel.constantPool();
-        return reader.options().cpSharing
-          ? new SplitConstantPool(reader)
-          : new SplitConstantPool(reader.options());
+        return new SplitConstantPool((ClassReaderImpl) classModel.constantPool());
     }
 
     /**
      * {@return a new constant pool builder}  The new constant pool builder
-     * will be empty and have the specified classfile processing options.
-     *
-     * @param options the processing options
+     * will be empty.
      */
-    static ConstantPoolBuilder of(Collection<Classfile.Option> options) {
-        return new SplitConstantPool(new Options(options));
+    static ConstantPoolBuilder of() {
+        return new SplitConstantPool();
     }
 
     /**

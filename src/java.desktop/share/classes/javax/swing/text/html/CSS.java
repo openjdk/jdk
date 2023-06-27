@@ -38,6 +38,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Objects;
 
 import javax.swing.ImageIcon;
 import javax.swing.SizeRequirements;
@@ -126,6 +127,7 @@ import javax.swing.text.View;
  * unless noted, so that
  * p { margin-top: 10% } will be treated as if no margin-top was specified.</b>
  *
+ * @spec https://www.w3.org/TR/REC-CSS1 Cascading Style Sheets, level 1
  * @author  Timothy Prinzing
  * @author  Scott Violet
  * @see StyleSheet
@@ -2023,6 +2025,18 @@ public class CSS implements Serializable {
         boolean isSup() {
             return (svalue.contains("sup"));
         }
+
+        @Override
+        public int hashCode() {
+            return (this.svalue != null) ? this.svalue.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.StringValue strVal
+                   && Objects.equals(this.svalue, strVal.svalue);
+        }
+
     }
 
     /**
@@ -2200,6 +2214,21 @@ public class CSS implements Serializable {
             return Integer.valueOf(getValue(null, null));
         }
 
+        @Override
+        public int hashCode() {
+            return Float.hashCode(value)
+                   | Boolean.hashCode(index)
+                   | Objects.hashCode(lu);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.FontSize size
+                   && value == size.value
+                   && index == size.index
+                   && Objects.equals(lu, size.lu);
+        }
+
         float value;
         boolean index;
         LengthUnit lu;
@@ -2300,6 +2329,17 @@ public class CSS implements Serializable {
             return family;
         }
 
+        @Override
+        public int hashCode() {
+            return (family != null) ? family.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.FontFamily font
+                   && Objects.equals(family, font.family);
+        }
+
         String family;
     }
 
@@ -2363,6 +2403,17 @@ public class CSS implements Serializable {
             return (weight > 500);
         }
 
+        @Override
+        public int hashCode() {
+            return Integer.hashCode(weight);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.FontWeight fontWeight
+                   && weight == fontWeight.weight;
+        }
+
         int weight;
     }
 
@@ -2423,6 +2474,16 @@ public class CSS implements Serializable {
             return c;
         }
 
+        @Override
+        public int hashCode() {
+            return (c != null) ? c.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.ColorValue color && c.equals(color.c);
+        }
+
         Color c;
     }
 
@@ -2475,6 +2536,16 @@ public class CSS implements Serializable {
             if (value != null) {
                 style = CSS.getValue((String)value);
             }
+        }
+
+        @Override
+        public int hashCode() {
+            return (style != null) ? style.hashCode() : 0;
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.BorderStyle border && style.equals(border.style);
         }
 
         // CSS.Values are static, don't archive it.
@@ -2604,9 +2675,25 @@ public class CSS implements Serializable {
             return Float.valueOf(getValue(false));
         }
 
+        @Override
+        public int hashCode() {
+            return Float.hashCode(span)
+                   | Boolean.hashCode(percentage)
+                   | Objects.hashCode(units);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.LengthValue lu
+                   && percentage == lu.percentage
+                   && span == lu.span
+                   && Objects.equals(units, lu.units);
+        }
+
         /** If true, span is a percentage value, and that to determine
          * the length another value needs to be passed in. */
         boolean percentage;
+
         /** Either the absolute value (percentage == false) or
          * a percentage value. */
         float span;
@@ -2823,6 +2910,21 @@ public class CSS implements Serializable {
         float getVerticalPosition() {
             return verticalPosition;
         }
+
+        @Override
+        public int hashCode() {
+            return Float.hashCode(horizontalPosition)
+                   | Float.hashCode(verticalPosition)
+                   | Short.hashCode(relative);
+        }
+
+        @Override
+        public boolean equals(Object val) {
+            return val instanceof CSS.BackgroundPosition bp
+                    && horizontalPosition == bp.horizontalPosition
+                    && verticalPosition == bp.verticalPosition
+                    && relative == bp.relative;
+        }
     }
 
 
@@ -2980,6 +3082,21 @@ public class CSS implements Serializable {
 
         public String toString() {
             return type + " " + value;
+        }
+
+        @Override
+        public int hashCode() {
+            return Float.hashCode(value)
+                   | Short.hashCode(type)
+                   | Objects.hashCode(units);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof LengthUnit lu
+                   && type == lu.type
+                   && value == lu.value
+                   && Objects.equals(units, lu.units);
         }
 
         // 0 - value indicates real value

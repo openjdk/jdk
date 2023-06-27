@@ -851,47 +851,6 @@ class StubGenerator: public StubCodeGenerator {
 
   Label copy_f, copy_b;
 
-  // All-singing all-dancing memory copy.
-  //
-  // Copy count units of memory from s to d.  The size of a unit is
-  // step, which can be positive or negative depending on the direction
-  // of copy.  If is_aligned is false, we align the source address.
-  //
-  /*
-   * if (is_aligned) {
-   *   if (count >= 32)
-   *     goto copy32_loop;
-   *   if (count >= 8)
-   *     goto copy8_loop;
-   *   goto copy_small;
-   * }
-   * bool is_backwards = step < 0;
-   * int granularity = uabs(step);
-   * count = count  *  granularity;   * count bytes
-   *
-   * if (is_backwards) {
-   *   s += count;
-   *   d += count;
-   * }
-   *
-   * count limit maybe greater than 16, for better performance
-   * if (count < 16) {
-   *   goto copy_small;
-   * }
-   *
-   * if ((dst % 8) == (src % 8)) {
-   *   aligned;
-   *   goto copy_big;
-   * }
-   *
-   * copy_big:
-   * if the amount to copy is more than (or equal to) 32 bytes goto copy32_loop
-   *  else goto copy8_loop
-   * copy_small:
-   *   load element one by one;
-   * done;
-   */
-
   typedef void (MacroAssembler::*copy_insn)(Register Rd, const Address &adr, Register temp);
 
   void copy_memory_v(Register s, Register d, Register count, int step) {
@@ -915,7 +874,10 @@ class StubGenerator: public StubCodeGenerator {
 
     __ vlex_v(v0, src, sew);
     __ sub(cnt, cnt, vl);
-    __ slli(vl, vl, (int)sew);
+    if (sew != Assembler::e8) {
+      // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
+      __ slli(vl, vl, sew);
+    }
     __ add(src, src, vl);
 
     __ vsex_v(v0, dst, sew);
@@ -927,7 +889,10 @@ class StubGenerator: public StubCodeGenerator {
 
       __ bind(loop_backward);
       __ sub(t0, cnt, vl);
-      __ slli(t0, t0, sew);
+      if (sew != Assembler::e8) {
+        // when sew == e8 (e.g., elem size is 1 byte), slli R, R, 0 is a nop and unnecessary
+        __ slli(t0, t0, sew);
+      }
       __ add(tmp1, s, t0);
       __ vlex_v(v0, tmp1, sew);
       __ add(tmp2, d, t0);
@@ -938,6 +903,12 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
+  // All-singing all-dancing memory copy.
+  //
+  // Copy count units of memory from s to d.  The size of a unit is
+  // step, which can be positive or negative depending on the direction
+  // of copy.
+  //
   void copy_memory(DecoratorSet decorators, BasicType type, bool is_aligned,
                    Register s, Register d, Register count, int step) {
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -1031,7 +1002,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(cnt, done); // if that's all - done
 
     __ addi(t0, cnt, -8); // if not - copy the reminder
-    __ bltz(t0, copy_small); // cnt < 8, go to copy_small, else fall throught to copy8_loop
+    __ bltz(t0, copy_small); // cnt < 8, go to copy_small, else fall through to copy8_loop
 
     __ bind(copy8_loop);
     if (is_backwards) {
@@ -3331,8 +3302,7 @@ class StubGenerator: public StubCodeGenerator {
       assert(tmp1->encoding() < x28->encoding(), "register corruption");
       assert(tmp2->encoding() < x28->encoding(), "register corruption");
 
-      slli(tmp1, len, LogBytesPerWord);
-      add(s, s, tmp1);
+      shadd(s, len, s, tmp1, LogBytesPerWord);
       mv(tmp1, len);
       unroll_2(tmp1,  &MontgomeryMultiplyGenerator::reverse1, d, s, tmp2);
       slli(tmp1, len, LogBytesPerWord);

@@ -64,7 +64,7 @@ public sealed interface MethodTypeDesc
      * @since 21
      */
     static MethodTypeDesc of(ClassDesc returnDesc) {
-        return new MethodTypeDescImpl(returnDesc, ConstantUtils.EMPTY_CLASSDESC);
+        return MethodTypeDescImpl.ofTrusted(returnDesc, ConstantUtils.EMPTY_CLASSDESC);
     }
 
     /**
@@ -95,7 +95,7 @@ public sealed interface MethodTypeDesc
      * {@link ClassDesc} for {@code void}
      */
     static MethodTypeDesc of(ClassDesc returnDesc, ClassDesc... paramDescs) {
-        return new MethodTypeDescImpl(returnDesc, paramDescs);
+        return MethodTypeDescImpl.ofTrusted(returnDesc, paramDescs.clone());
     }
 
     /**
@@ -119,7 +119,7 @@ public sealed interface MethodTypeDesc
      * @param index the index of the parameter to retrieve
      * @return a {@link ClassDesc} describing the desired parameter type
      * @throws IndexOutOfBoundsException if the index is outside the half-open
-     * range {[0, parameterCount())}
+     * range {@code [0, parameterCount())}
      */
     ClassDesc parameterType(int index);
 
@@ -156,7 +156,7 @@ public sealed interface MethodTypeDesc
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
      * @throws NullPointerException if any argument is {@code null}
      * @throws IndexOutOfBoundsException if the index is outside the half-open
-     * range {[0, parameterCount)}
+     * range {@code [0, parameterCount)}
      */
     MethodTypeDesc changeParameterType(int index, ClassDesc paramType);
 
@@ -183,7 +183,7 @@ public sealed interface MethodTypeDesc
      * @return a {@linkplain MethodTypeDesc} describing the desired method type
      * @throws NullPointerException if any argument or its contents are {@code null}
      * @throws IndexOutOfBoundsException if {@code pos} is outside the closed
-     * range {[0, parameterCount]}
+     * range {@code [0, parameterCount]}
      * @throws IllegalArgumentException if any element of {@code paramTypes}
      * is a {@link ClassDesc} for {@code void}
      */
@@ -195,13 +195,7 @@ public sealed interface MethodTypeDesc
      * @return the method type descriptor string
      * @jvms 4.3.3 Method Descriptors
      */
-    default String descriptorString() {
-        return String.format("(%s)%s",
-                             Stream.of(parameterArray())
-                                   .map(ClassDesc::descriptorString)
-                                   .collect(Collectors.joining()),
-                             returnType().descriptorString());
-    }
+    String descriptorString();
 
     /**
      * Returns a human-readable descriptor for this method type, using the

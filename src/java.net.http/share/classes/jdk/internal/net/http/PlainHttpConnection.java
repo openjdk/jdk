@@ -36,7 +36,6 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
@@ -44,6 +43,7 @@ import java.util.function.Function;
 import jdk.internal.net.http.common.FlowTube;
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.MinimalFuture;
+import jdk.internal.net.http.common.TimeSource;
 import jdk.internal.net.http.common.Utils;
 
 /**
@@ -290,7 +290,7 @@ class PlainHttpConnection extends HttpConnection {
         if (unsuccessfulAttempts > 0) return false;
         ConnectTimerEvent timer = connectTimerEvent;
         if (timer == null) return true;
-        return timer.deadline().isAfter(Instant.now());
+        return timer.deadline().isAfter(TimeSource.now());
     }
 
     @Override
@@ -401,11 +401,13 @@ class PlainHttpConnection extends HttpConnection {
         return "PlainHttpConnection: " + super.toString();
     }
 
-    /**
-     * Closes this connection
-     */
     @Override
     public void close() {
+        close(null);
+    }
+
+    @Override
+    void close(Throwable cause) {
         var closed = this.closed;
         if (closed) return;
         stateLock.lock();
@@ -423,7 +425,7 @@ class PlainHttpConnection extends HttpConnection {
             }
             try {
                 chan.close();
-                tube.signalClosed();
+                tube.signalClosed(cause);
             } finally {
                 client().connectionClosed(this);
             }

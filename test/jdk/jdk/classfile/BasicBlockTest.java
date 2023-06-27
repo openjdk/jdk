@@ -57,8 +57,9 @@ class BasicBlockTest {
     @Test
     void testPatternsCausingBasicBlockTroubles() throws IOException {
         try (InputStream in = BasicBlockTest.class.getResourceAsStream("BasicBlockTest.class")) {
-            var classModel = Classfile.parse(in.readAllBytes());
-            Classfile.build(classModel.thisClass().asSymbol(), cb -> classModel.forEachElement(cb));
+            var cc = Classfile.of();
+            var classModel = cc.parse(in.readAllBytes());
+            cc.build(classModel.thisClass().asSymbol(), cb -> classModel.forEachElement(cb));
         }
     }
 }
