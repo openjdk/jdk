@@ -46,6 +46,7 @@ import java.util.stream.Stream;
 
 import jdk.internal.access.JavaLangReflectAccess;
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.TypeKind;
@@ -53,7 +54,6 @@ import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ClassFileDumper;
-import sun.invoke.WrapperInstance;
 import sun.reflect.misc.ReflectUtil;
 
 import static java.lang.constant.ConstantDescs.*;
@@ -272,7 +272,8 @@ public class MethodHandleProxies {
             }
 
             Set<Class<?>> referencedTypes = stats.referencedTypes;
-            Module targetModule = newDynamicModule(intfc.getClassLoader(), referencedTypes);
+            var loader = intfc.getClassLoader();
+            Module targetModule = newDynamicModule(loader, referencedTypes);
 
             // generate a class file in the package of the dynamic module
             String pn = targetModule.getName();
@@ -280,7 +281,7 @@ public class MethodHandleProxies {
             int i = n.lastIndexOf('.');
             String cn = i > 0 ? pn + "." + n.substring(i+1) : pn + "." + n;
             ClassDesc proxyDesc = ClassDesc.of(cn);
-            byte[] template = createTemplate(proxyDesc, desc(intfc), stats.singleName, infos);
+            byte[] template = createTemplate(loader, proxyDesc, desc(intfc), stats.singleName, infos);
             var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
             Lookup lookup;
 
@@ -321,16 +322,21 @@ public class MethodHandleProxies {
 
     private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
-    private static final ClassDesc CD_WrapperInstance = desc(WrapperInstance.class);
+    private static final ClassDesc CD_IllegalAccessException = desc(IllegalAccessException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
     private static final MethodType MT_void_Lookup_MethodHandle_MethodHandle = methodType(void.class, Lookup.class, MethodHandle.class, MethodHandle.class);
     private static final MethodType MT_Object_Lookup_MethodHandle_MethodHandle = MT_void_Lookup_MethodHandle_MethodHandle.changeReturnType(Object.class);
     private static final MethodType MT_MethodHandle_Object = methodType(MethodHandle.class, Object.class);
     private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle = desc(MT_void_Lookup_MethodHandle_MethodHandle);
-    private static final MethodTypeDesc MTD_void_Lookup_Class = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup, CD_Class);
+    private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
     private static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDesc.of(CD_MethodHandle, CD_MethodType);
+    private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
+    private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
+    private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
+    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
     private static final String ORIGINAL_TARGET_NAME = "originalTarget";
     private static final String ORIGINAL_TYPE_NAME = "originalType";
+    private static final String ENSURE_ORIGINAL_LOOKUP = "ensureOriginalLookup";
 
     /**
      * Creates an implementation class file for a given interface. One implementation class is
@@ -341,8 +347,10 @@ public class MethodHandleProxies {
      * @param methods the information for implementation methods
      * @return the bytes of the implementation classes
      */
-    private static byte[] createTemplate(ClassDesc proxyDesc, ClassDesc ifaceDesc, String methodName, List<LocalMethodInfo> methods) {
-        return Classfile.build(proxyDesc, clb -> {
+    private static byte[] createTemplate(ClassLoader loader, ClassDesc proxyDesc, ClassDesc ifaceDesc,
+                                         String methodName, List<LocalMethodInfo> methods) {
+        return Classfile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader)))
+                .build(proxyDesc, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
             clb.withInterfaceSymbols(ifaceDesc);
@@ -368,8 +376,7 @@ public class MethodHandleProxies {
 
                 // WrapperInstance.ensureOriginalLookup
                 cob.aload(1);
-                cob.constantInstruction(proxyDesc);
-                cob.invokestatic(CD_WrapperInstance, "ensureOriginalLookup", MTD_void_Lookup_Class);
+                cob.invokestatic(proxyDesc, "ensureOriginalLookup", MTD_void_Lookup);
 
                 // keep original target
                 // this.originalTarget = originalHandle;
@@ -389,6 +396,31 @@ public class MethodHandleProxies {
 
                 // complete
                 cob.return_();
+            });
+
+            clb.withMethodBody(ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup, ACC_PRIVATE | ACC_STATIC, cob -> {
+                var failLabel = cob.newLabel();
+                // check lookupClass
+                cob.aload(0);
+                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupClass", MTD_Class);
+                cob.constantInstruction(proxyDesc);
+                cob.if_acmpne(failLabel);
+                // check original access
+                cob.aload(0);
+                cob.invokevirtual(CD_MethodHandles_Lookup, "lookupModes", MTD_int);
+                cob.constantInstruction(Lookup.ORIGINAL);
+                cob.iand();
+                cob.ifeq(failLabel);
+                // success
+                cob.return_();
+                // throw exception
+                cob.labelBinding(failLabel);
+                cob.new_(CD_IllegalAccessException);
+                cob.dup();
+                cob.aload(0); // lookup
+                cob.invokevirtual(CD_Object, "toString", MTD_String);
+                cob.invokespecial(CD_IllegalAccessException, INIT_NAME, MTD_void_String);
+                cob.athrow();
             });
 
             // implementation methods
@@ -547,7 +579,6 @@ public class MethodHandleProxies {
         Modules.addReads(dynModule, javaBase);
         Modules.addOpens(dynModule, mn, javaBase);
 
-        ensureAccess(dynModule, WrapperInstance.class);
         for (Class<?> c : types) {
             ensureAccess(dynModule, c);
         }

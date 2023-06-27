@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -682,7 +682,7 @@ public abstract class ClassLoader {
     private void checkPackageAccess(Class<?> cls, ProtectionDomain pd) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            if (ReflectUtil.isNonPublicProxyClass(cls) || ReflectUtil.isMethodHandleProxiesClass(cls)) {
+            if (ReflectUtil.isNonPublicProxyClass(cls)) {
                 for (Class<?> intf: cls.getInterfaces()) {
                     checkPackageAccess(intf, pd);
                 }

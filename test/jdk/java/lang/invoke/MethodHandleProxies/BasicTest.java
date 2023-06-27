@@ -141,7 +141,6 @@ public class BasicTest {
         String pn = c1.getPackageName();
         assertFalse(m1.isExported(pn));
         assertTrue(m1.isExported(pn, MethodHandleProxies.class.getModule()));
-        assertTrue(Object.class.getModule().isExported("sun.invoke", m1));
         assertTrue(m1.isNamed());
         assertTrue(m1.getName().startsWith("jdk.MHProxy"));
     }
@@ -208,7 +207,7 @@ public class BasicTest {
     private Class<?> loadHidden() throws IllegalAccessException {
         ClassDesc baseCd = ClassDesc.of("BasicTest$HiddenItf");
         var objMtd = MethodTypeDesc.of(CD_Object);
-        var baseBytes = Classfile.build(baseCd, clb -> {
+        var baseBytes = Classfile.of().build(baseCd, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT);
             clb.withMethod("value", objMtd, ACC_PUBLIC | ACC_ABSTRACT, mb -> {});
@@ -226,11 +225,11 @@ public class BasicTest {
         var objMtd = MethodTypeDesc.of(CD_Object);
         var integerMtd = MethodTypeDesc.of(CD_Integer);
         var intMtd = MethodTypeDesc.of(CD_int);
-        var chi = ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER.orElse(
+        var classfile = Classfile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.defaultResolver().orElse(
                 ClassHierarchyResolver.of(List.of(baseCd, childCd), Map.ofEntries(Map.entry(baseCd, CD_Object),
-                        Map.entry(childCd, CD_Object))));
+                        Map.entry(childCd, CD_Object))))));
 
-        var baseBytes = Classfile.build(baseCd, List.of(Option.classHierarchyResolver(chi)), clb -> {
+        var baseBytes = classfile.build(baseCd, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT);
             clb.withMethod("value", objMtd, ACC_PUBLIC | ACC_ABSTRACT, mb -> {});
@@ -239,7 +238,7 @@ public class BasicTest {
         var lookup = MethodHandles.lookup();
         var base = lookup.ensureInitialized(lookup.defineClass(baseBytes));
 
-        var childBytes = Classfile.build(childCd, List.of(Option.classHierarchyResolver(chi)), clb -> {
+        var childBytes = classfile.build(childCd, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(baseCd);
             clb.withFlags(ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT);

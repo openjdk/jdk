@@ -173,10 +173,4 @@ public interface JavaLangInvokeAccess {
      * @return an array of exceptions, or {@code null}.
      */
     Class<?>[] exceptionTypes(MethodHandle handle);
-
-    /**
-     * Checks whether a given class is a MethodHandle proxy instance. It can bypass certain
-     * security manager package access checks.
-     */
-    boolean isMethodHandleProxiesClass(Class<?> cls);
 }
