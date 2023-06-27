@@ -324,7 +324,7 @@ import jdk.internal.classfile.CodeBuilder;
             interfaces = new ArrayList<>(itfs);
         }
         final boolean finalAccidentallySerializable = accidentallySerializable;
-        final byte[] classBytes = Classfile.build(lambdaClassDesc, new Consumer<ClassBuilder>() {
+        final byte[] classBytes = Classfile.of().build(lambdaClassDesc, new Consumer<ClassBuilder>() {
             @Override
             public void accept(ClassBuilder clb) {
                 clb.withFlags(ACC_SUPER + ACC_FINAL + ACC_SYNTHETIC);

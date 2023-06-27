@@ -270,7 +270,7 @@ class InvokerBytecodeGenerator {
     private byte[] classFilePrologue(Consumer<? super ClassBuilder> config) {
         final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
         try {
-            return Classfile.build(classDesc, new Consumer<>() {
+            return Classfile.of().build(classDesc, new Consumer<>() {
                 @Override
                 public void accept(ClassBuilder clb) {
                     clb.withFlags(NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER);

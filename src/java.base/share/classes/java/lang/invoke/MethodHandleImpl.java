@@ -1263,7 +1263,7 @@ abstract class MethodHandleImpl {
             //     }
             // }
             // }
-            return Classfile.build(ClassDesc.of("InjectedInvoker"), clb -> clb
+            return Classfile.of().build(ClassDesc.of("InjectedInvoker"), clb -> clb
                     .withFlags(Classfile.ACC_PRIVATE | Classfile.ACC_SUPER)
                     .withVersion(CLASSFILE_VERSION, 0)
                     .withMethodBody(

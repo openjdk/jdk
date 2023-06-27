@@ -2300,7 +2300,7 @@ public class MethodHandles {
                 String name;
                 int accessFlags;
                 try {
-                    ClassModel cm = Classfile.parse(bytes);
+                    ClassModel cm = Classfile.of().parse(bytes);
                     name = cm.thisClass().asInternalName();
                     accessFlags = cm.flags().flagsMask();
                 } catch (RuntimeException e) {

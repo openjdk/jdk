@@ -516,7 +516,7 @@ class GenerateJLIClassesHelper {
      * a class with a specified name.
      */
     private static byte[] generateCodeBytesForLFs(String className, String[] names, LambdaForm[] forms) {
-        return Classfile.build(ClassDesc.ofInternalName(className), new Consumer<ClassBuilder>() {
+        return Classfile.of().build(ClassDesc.ofInternalName(className), new Consumer<ClassBuilder>() {
             @Override
             public void accept(ClassBuilder clb) {
                 clb.withFlags(Classfile.ACC_PRIVATE + Classfile.ACC_FINAL + Classfile.ACC_SUPER);

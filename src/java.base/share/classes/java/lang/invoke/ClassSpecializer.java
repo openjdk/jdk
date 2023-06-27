@@ -605,7 +605,7 @@ abstract class ClassSpecializer<T,K,S extends ClassSpecializer<T,K,S>.SpeciesDat
             final ClassDesc classDesc = ClassDesc.of(className0);
             final ClassDesc superClassDesc = ClassDesc.ofDescriptor(speciesData.deriveSuperClass().descriptorString());
             final int NOT_ACC_PUBLIC = 0;  // not ACC_PUBLIC
-            return Classfile.build(classDesc, clb -> {
+            return Classfile.of().build(classDesc, clb -> {
                 clb.withFlags(NOT_ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
                 clb.withSuperclass(superClassDesc);
 
