@@ -79,10 +79,10 @@ public class GetThreadStateMountedTest {
         final Object syncObj = new Object();
         Thread vthread = createPinnedVThread(() -> {
             ready.countDown();
-            synchronized(syncObj) {
+            synchronized (syncObj) {
             }
         });
-        synchronized(syncObj) {
+        synchronized (syncObj) {
             vthread.start();
             ready.await();
             Thread.sleep(500); // wait some time to ensure the thread is blocked on monitor
