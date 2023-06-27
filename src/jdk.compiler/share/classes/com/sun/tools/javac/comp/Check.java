@@ -4765,8 +4765,7 @@ public class Check {
     boolean isExternalizable(Type t) {
         try {
             syms.externalizableType.complete();
-        }
-        catch (CompletionFailure e) {
+        } catch (CompletionFailure e) {
             return false;
         }
         return types.isSubtype(t, syms.externalizableType);
@@ -5428,12 +5427,8 @@ public class Check {
                                                  MethodSymbol method,
                                                  Type expectedType) {
             var parameters= method.getParameters();
-
-            if (parameters.size() != 1) {
-                return false;
-            }
-
-            return types.isSameType(parameters.get(0).asType(), expectedType);
+            return (parameters.size() == 1) &&
+                types.isSameType(parameters.get(0).asType(), expectedType);
         }
 
 
