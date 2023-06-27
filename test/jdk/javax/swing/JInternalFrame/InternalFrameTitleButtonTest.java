@@ -50,7 +50,7 @@ public class InternalFrameTitleButtonTest {
 
     public static void main(String[] args) throws Exception {
         String osName = System.getProperty("os.name");
-        if(!osName.toLowerCase().contains("win")) {
+        if (!osName.toLowerCase().contains("win")) {
             System.out.println("The test is applicable only for Windows.");
             return;
         }
