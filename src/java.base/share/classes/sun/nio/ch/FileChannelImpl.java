@@ -586,7 +586,7 @@ public class FileChannelImpl
         if (cce instanceof ClosedByInterruptException e) {
             assert Thread.currentThread().isInterrupted();
             cbie = e;
-        } else if (Thread.currentThread().isInterrupted()) {
+        } else if (!uninterruptible && Thread.currentThread().isInterrupted()) {
             cbie = new ClosedByInterruptException();
         }
         if (cbie != null) {
@@ -788,7 +788,7 @@ public class FileChannelImpl
             try {
                 MappedByteBuffer dbb = map(MapMode.READ_ONLY, position, size);
                 try {
-                    // write may block, closing this channel will wakeup write
+                    // write may block, closing this channel will not wake it up
                     int n = target.write(dbb);
                     assert n >= 0;
                     remaining -= n;
@@ -830,7 +830,7 @@ public class FileChannelImpl
                 if (nr <= 0)
                     break;
                 bb.flip();
-                // read may block, closing this channel will wakeup write
+                // write may block, closing this channel will not wake it up
                 int nw = target.write(bb);
                 tw += nw;
                 if (nw != nr)
@@ -1018,7 +1018,7 @@ public class FileChannelImpl
         try {
             while (tw < count) {
                 bb.limit((int) Math.min((count - tw), TRANSFER_SIZE));
-                // read may block, closing this channel will wakeup read
+                // read may block, closing this channel will not wake it up
                 int nr = src.read(bb);
                 if (nr <= 0)
                     break;

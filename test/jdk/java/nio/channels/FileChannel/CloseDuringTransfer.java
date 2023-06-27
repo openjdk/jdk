@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class CloseDuringTransfer {
     private static final int SOURCE_SIZE = 1024 * 1024;
-    private static Random RAND = RandomFactory.getRandom();
+    private static final Random RAND = RandomFactory.getRandom();
 
     // used for schedule close and interrupt
     private static ScheduledExecutorService scheduler;
@@ -337,15 +337,13 @@ class CloseDuringTransfer {
         Pipe.SourceChannel source = pipe.source();
         Pipe.SinkChannel sink = pipe.sink();
         scheduler.submit(() -> {
-            scheduler.submit(() -> {
-                try (sink) {
-                    ByteBuffer bb = ByteBuffer.allocate(size);
-                    while (bb.hasRemaining()) {
-                        sink.write(bb);
-                    }
+            try (sink) {
+                ByteBuffer bb = ByteBuffer.allocate(size);
+                while (bb.hasRemaining()) {
+                    sink.write(bb);
                 }
-                return null;
-            });
+            }
+            return null;
         });
         return source;
     }
