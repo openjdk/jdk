@@ -553,7 +553,7 @@ bool PSScavenge::invoke_no_policy() {
                                                            _tenuring_threshold,
                                                            survivor_limit);
 
-       log_debug(gc, age)("Desired survivor size " SIZE_FORMAT " bytes, new threshold %u (max threshold " UINTX_FORMAT ")",
+       log_debug(gc, age)("Desired survivor size %zu bytes, new threshold %u (max threshold %u)",
                           size_policy->calculated_survivor_size_in_bytes(),
                           _tenuring_threshold, MaxTenuringThreshold);
 
