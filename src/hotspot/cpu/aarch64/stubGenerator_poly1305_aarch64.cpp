@@ -135,12 +135,13 @@ address generate_poly1305_processBlocks2() {
   const FloatRegister v_u0[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
   const FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
 
-  const FloatRegister zero = *vregs++;
+  const FloatRegister upper_bits = *vregs++;
   const FloatRegister r_v[] = {*vregs++, *vregs++};
   const FloatRegister rr_v[] = {*vregs++, *vregs++};
 
   // if (use_vec) {
-    __ movi(zero, __ T16B, 0);
+    __ movi(upper_bits, __ T16B, 0xff);
+    __ shl(upper_bits, __ T2D, upper_bits, 26);  // upper_bits == 0xfffffffffc000000
 
     __ copy_3_regs_to_5_elements(r_v, R[0], R[1], R[2]);
 
@@ -186,9 +187,9 @@ address generate_poly1305_processBlocks2() {
       __ poly1305_multiply(gen[1], u1, S1, R, RR2, regs);
       __ poly1305_reduce(gen[1], u1, "  u1");
 
-      __ poly1305_step_vec1(gen[2], s_v, v_u0, zero, input_start, vregs.remaining());
+      __ poly1305_step_vec(gen[2], s_v, v_u0, upper_bits, input_start, vregs.remaining());
       __ poly1305_multiply_vec(gen[2], v_u0, vregs.remaining(), s_v, r_v, rr_v);
-      __ poly1305_reduce_vec(gen[2], v_u0, zero, vregs.remaining());
+      __ poly1305_reduce_vec(gen[2], v_u0, upper_bits, vregs.remaining());
 
       LambdaAccumulator::Iterator it[COLS];
       int len[COLS];

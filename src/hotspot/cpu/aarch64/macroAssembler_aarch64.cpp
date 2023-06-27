@@ -6529,7 +6529,7 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
   gen {
     m_print26(S, s[4], s[3], s[2], s[1], s[0], 0, "s[2]");
     m_print26(S, s[4], s[3], s[2], s[1], s[0], 1, "s[3]");
-  }
+  };
 }
 
 void MacroAssembler::poly1305_step_vec1(LambdaAccumulator &acc,
