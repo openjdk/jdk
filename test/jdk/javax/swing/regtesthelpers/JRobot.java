@@ -21,16 +21,6 @@
  * questions.
  */
 
-/**
- * JRobot is a wrapper around java.awt.Robot that provides some convenience
- * methods.
- * <p>When using jtreg you would include this class via something like:
- * <pre>
- * @library ../../../regtesthelpers
- * @build JRobot
- * </pre>
- *
- */
 import java.awt.AWTException;
 import java.awt.Component;
 import java.awt.EventQueue;
@@ -42,9 +32,20 @@ import java.lang.reflect.InvocationTargetException;
 
 import javax.swing.SwingUtilities;
 
+/**
+ * JRobot is a wrapper around java.awt.Robot that provides some convenience
+ * methods.
+ * <p>When using jtreg you would include this class via something like:
+ * <pre>
+ * @library ../../../regtesthelpers
+ * @build JRobot
+ * </pre>
+ *
+ */
+
 public class JRobot extends java.awt.Robot {
-    private static int DEFAULT_DELAY = 550;
-    private static int INTERNAL_DELAY = 250;
+    final private static int DEFAULT_DELAY = 550;
+    final private static int INTERNAL_DELAY = 250;
 
     private int delay;
     private boolean delaysEnabled;
@@ -191,7 +192,7 @@ public class JRobot extends java.awt.Robot {
     /**
      * Click the first mouse button in the center of the given Component
      * <p>
-     * <b>Note:</b> This method uses EDT
+     * <b>Note:</b> This method is executed on EDT.
      *
      * @param c the Component to click on
      */
@@ -264,7 +265,7 @@ public class JRobot extends java.awt.Robot {
      * Convert a rectangle from coordinate system of Component c to
      * screen coordinate system.
      * <p>
-     * <b>Note:</b> This method uses EDT
+     * <b>Note:</b> This method is executed on EDT.
      *
      * @param r a non-null Rectangle
      * @param c a Component whose coordinate system is used for conversion
