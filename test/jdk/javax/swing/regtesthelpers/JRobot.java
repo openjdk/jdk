@@ -37,9 +37,10 @@ import java.awt.EventQueue;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.event.InputEvent;
-import javax.swing.SwingUtilities;
 import java.util.concurrent.atomic.AtomicReference;
 import java.lang.reflect.InvocationTargetException;
+
+import javax.swing.SwingUtilities;
 
 public class JRobot extends java.awt.Robot {
     private static int DEFAULT_DELAY = 550;
@@ -113,7 +114,7 @@ public class JRobot extends java.awt.Robot {
     /**
      * Move mouse cursor to the center of the Component.
      * <p>
-     * <b>Note:</b> This method is executed on EDT
+     * <b>Note:</b> This method is executed on EDT.
      *
      * @param c Component the mouse is placed over
      */
@@ -175,12 +176,12 @@ public class JRobot extends java.awt.Robot {
     }
 
     /**
-     * Click in the center of the given Component
+     * Click in the center of the given Component.
      * <p>
-     * <b>Note:</b> This method uses EDT
+     * <b>Note:</b> This method is executed on EDT.
      *
      * @param c the Component to click on
-     * @param buttons mouse button(s).
+     * @param buttons mouse button(s)
      */
     public void clickMouseOn(Component c, int buttons) {
         moveMouseTo(c);
