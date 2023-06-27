@@ -60,14 +60,13 @@ class BytecodePrinter {
   bool      is_linked() const        { return _is_linked; }
   void      align()                  { _next_pc = align_up(_next_pc, sizeof(jint)); }
   int       get_byte()               { return *(jbyte*) _next_pc++; }  // signed
-  short     get_short()              { short i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
-  int       get_int()                { int i=Bytes::get_Java_u4(_next_pc); _next_pc+=4; return i; }
-
-  int       get_index_u1()           { return *(address)_next_pc++; }
-  int       get_native_index_u2()    { int i=Bytes::get_native_u2(_next_pc); _next_pc+=2; return i; }
-  int       get_native_index_u4()    { int i=Bytes::get_native_u4(_next_pc); _next_pc+=4; return i; }
-  int       get_Java_index_u2()      { int i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
-  int       get_Java_index_u4()      { int i=Bytes::get_Java_u4(_next_pc); _next_pc+=4; return i; }
+  int       get_index_u1()           { return *(address)_next_pc++; }  // returns 0x00 - 0xff as an int
+  short     get_short()              { short i = Bytes::get_Java_u2  (_next_pc); _next_pc += 2; return i; }
+  int       get_int()                { int   i = Bytes::get_Java_u4  (_next_pc); _next_pc += 4; return i; }
+  int       get_native_index_u2()    { int   i = Bytes::get_native_u2(_next_pc); _next_pc += 2; return i; }
+  int       get_native_index_u4()    { int   i = Bytes::get_native_u4(_next_pc); _next_pc += 4; return i; }
+  int       get_Java_index_u2()      { int   i = Bytes::get_Java_u2  (_next_pc); _next_pc += 2; return i; }
+  int       get_Java_index_u4()      { int   i = Bytes::get_Java_u4  (_next_pc); _next_pc += 4; return i; }
   int       get_index_special()      { return (is_wide()) ? get_Java_index_u2() : get_index_u1(); }
   Method*   method() const           { return _current_method; }
   bool      is_wide() const          { return _is_wide; }
@@ -356,6 +355,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (Bytecodes::uses_cp_cache(raw_code())) {
+          assert(is_linked(), "fast ldc bytecode must be in linked classes");
           int obj_index = get_index_u1();
           cp_index = constants()->object_to_cp_index(obj_index);
         } else {
@@ -370,6 +370,7 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       {
         int cp_index;
         if (Bytecodes::uses_cp_cache(raw_code())) {
+          assert(is_linked(), "fast ldc bytecode must be in linked classes");
           int obj_index = get_native_index_u2();
           cp_index = constants()->object_to_cp_index(obj_index);
         } else {
