@@ -33,7 +33,9 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Supplier;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -43,6 +45,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
+import jdk.internal.referencedkey.ReferencedKeySet;
+import jdk.internal.referencedkey.ReferenceKey;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyType;
@@ -228,7 +232,13 @@ class MethodType
         return new IndexOutOfBoundsException(num.toString());
     }
 
-    static final ConcurrentWeakInternSet<MethodType> internTable = new ConcurrentWeakInternSet<>();
+    static final ReferencedKeySet<MethodType> internTable =
+        ReferencedKeySet.create(false, new Supplier<>() {
+            @Override
+            public Map<ReferenceKey<MethodType>, ReferenceKey<MethodType>> get() {
+                return new ConcurrentHashMap<>(512);
+            }
+        });
 
     static final Class<?>[] NO_PTYPES = {};
 
@@ -406,7 +416,7 @@ class MethodType
             mt = new MethodType(rtype, ptypes);
         }
         mt.form = MethodTypeForm.findForm(mt);
-        return internTable.add(mt);
+        return internTable.intern(mt);
     }
     private static final @Stable MethodType[] objectOnlyTypes = new MethodType[20];
 
@@ -896,12 +906,6 @@ class MethodType
         if (x instanceof MethodType) {
             return equals((MethodType)x);
         }
-        if (x instanceof ConcurrentWeakInternSet.WeakEntry) {
-            Object o = ((ConcurrentWeakInternSet.WeakEntry)x).get();
-            if (o instanceof MethodType) {
-                return equals((MethodType)o);
-            }
-        }
         return false;
     }
 
@@ -1389,113 +1393,6 @@ s.writeObject(this.parameterArray());
         MethodType mt = ((MethodType[])wrapAlt)[0];
         wrapAlt = null;
         return mt;
-    }
-
-    /**
-     * Simple implementation of weak concurrent intern set.
-     *
-     * @param <T> interned type
-     */
-    private static class ConcurrentWeakInternSet<T> {
-
-        private final ConcurrentMap<WeakEntry<T>, WeakEntry<T>> map;
-        private final ReferenceQueue<T> stale;
-
-        public ConcurrentWeakInternSet() {
-            this.map = new ConcurrentHashMap<>(512);
-            this.stale = SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue();
-        }
-
-        /**
-         * Get the existing interned element.
-         * This method returns null if no element is interned.
-         *
-         * @param elem element to look up
-         * @return the interned element
-         */
-        public T get(T elem) {
-            if (elem == null) throw new NullPointerException();
-            expungeStaleElements();
-
-            WeakEntry<T> value = map.get(elem);
-            if (value != null) {
-                T res = value.get();
-                if (res != null) {
-                    return res;
-                }
-            }
-            return null;
-        }
-
-        /**
-         * Interns the element.
-         * Always returns non-null element, matching the one in the intern set.
-         * Under the race against another add(), it can return <i>different</i>
-         * element, if another thread beats us to interning it.
-         *
-         * @param elem element to add
-         * @return element that was actually added
-         */
-        public T add(T elem) {
-            if (elem == null) throw new NullPointerException();
-
-            // Playing double race here, and so spinloop is required.
-            // First race is with two concurrent updaters.
-            // Second race is with GC purging weak ref under our feet.
-            // Hopefully, we almost always end up with a single pass.
-            T interned;
-            WeakEntry<T> e = new WeakEntry<>(elem, stale);
-            do {
-                expungeStaleElements();
-                WeakEntry<T> exist = map.putIfAbsent(e, e);
-                interned = (exist == null) ? elem : exist.get();
-            } while (interned == null);
-            return interned;
-        }
-
-        private void expungeStaleElements() {
-            Reference<? extends T> reference;
-            while ((reference = stale.poll()) != null) {
-                map.remove(reference);
-            }
-        }
-
-        private static class WeakEntry<T> extends WeakReference<T> {
-
-            public final int hashcode;
-
-            public WeakEntry(T key, ReferenceQueue<T> queue) {
-                super(key, queue);
-                hashcode = key.hashCode();
-            }
-
-            /**
-             * This implementation returns {@code true} if {@code obj} is another
-             * {@code WeakEntry} whose referent is equal to this referent, or
-             * if {@code obj} is equal to the referent of this. This allows
-             * lookups to be made without wrapping in a {@code WeakEntry}.
-             *
-             * @param obj the object to compare
-             * @return true if {@code obj} is equal to this or the referent of this
-             * @see MethodType#equals(Object)
-             * @see Object#equals(Object)
-             */
-            @Override
-            public boolean equals(Object obj) {
-                Object mine = get();
-                if (obj instanceof WeakEntry) {
-                    Object that = ((WeakEntry) obj).get();
-                    return (that == null || mine == null) ? (this == obj) : mine.equals(that);
-                }
-                return (mine == null) ? (obj == null) : mine.equals(obj);
-            }
-
-            @Override
-            public int hashCode() {
-                return hashcode;
-            }
-
-        }
     }
 
 }
