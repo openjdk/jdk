@@ -731,16 +731,7 @@ final class VarHandles {
 //            Object getAndUpdate(Object value);
 //        }
 //
-//        static class HandleType {
-//            final Class<?> receiver;
-//            final Class<?>[] intermediates;
-//            final Class<?> value;
-//
-//            HandleType(Class<?> receiver, Class<?> value, Class<?>... intermediates) {
-//                this.receiver = receiver;
-//                this.intermediates = intermediates;
-//                this.value = value;
-//            }
+//        record HandleType(Class<?> receiver, Class<?> value, Class<?>... intermediates) {
 //        }
 //
 //        /**
@@ -816,10 +807,8 @@ final class VarHandles {
 //            List<Class<?>> params = new ArrayList<>();
 //            if (receiver != null)
 //                params.add(receiver);
-//            for (int i = 0; i < intermediates.length; i++) {
-//                params.add(intermediates[i]);
-//            }
-//            for (Parameter p : m.getParameters()) {
+//            java.util.Collections.addAll(params, intermediates);
+//            for (var p : m.getParameters()) {
 //                params.add(value);
 //            }
 //            return MethodType.methodType(returnType, params);
@@ -828,7 +817,7 @@ final class VarHandles {
 //        static String generateMethod(MethodType mt) {
 //            Class<?> returnType = mt.returnType();
 //
-//            LinkedHashMap<String, Class<?>> params = new LinkedHashMap<>();
+//            var params = new java.util.LinkedHashMap<String, Class<?>>();
 //            params.put("handle", VarHandle.class);
 //            for (int i = 0; i < mt.parameterCount(); i++) {
 //                params.put("arg" + i, mt.parameterType(i));
@@ -841,7 +830,7 @@ final class VarHandles {
 //            String SIGNATURE = getSignature(mt);
 //            String PARAMS = params.entrySet().stream().
 //                    map(e -> className(e.getValue()) + " " + e.getKey()).
-//                    collect(Collectors.joining(", "));
+//                    collect(java.util.stream.Collectors.joining(", "));
 //            String METHOD = GUARD_METHOD_SIG_TEMPLATE.
 //                    replace("<RETURN>", RETURN).
 //                    replace("<NAME>", NAME).
@@ -855,7 +844,7 @@ final class VarHandles {
 //            LINK_TO_STATIC_ARGS.add("handle.vform.getMemberName(ad.mode)");
 //
 //            List<String> LINK_TO_INVOKER_ARGS = new ArrayList<>(params.keySet());
-//            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".target()");
+//            LINK_TO_INVOKER_ARGS.set(0, LINK_TO_INVOKER_ARGS.get(0) + ".asDirect()");
 //
 //            RETURN = returnType == void.class
 //                     ? ""
@@ -882,10 +871,8 @@ final class VarHandles {
 //                    replaceAll("<RETURN>", RETURN).
 //                    replace("<RESULT_ERASED>", RESULT_ERASED).
 //                    replace("<RETURN_ERASED>", RETURN_ERASED).
-//                    replaceAll("<LINK_TO_STATIC_ARGS>", LINK_TO_STATIC_ARGS.stream().
-//                            collect(Collectors.joining(", "))).
-//                    replace("<LINK_TO_INVOKER_ARGS>", LINK_TO_INVOKER_ARGS.stream().
-//                            collect(Collectors.joining(", ")))
+//                    replaceAll("<LINK_TO_STATIC_ARGS>", String.join(", ", LINK_TO_STATIC_ARGS)).
+//                    replace("<LINK_TO_INVOKER_ARGS>", String.join(", ", LINK_TO_INVOKER_ARGS))
 //                    .indent(4);
 //        }
 //
@@ -914,30 +901,7 @@ final class VarHandles {
 //        }
 //
 //        static char getCharType(Class<?> pt) {
-//            if (pt == void.class) {
-//                return 'V';
-//            }
-//            else if (!pt.isPrimitive()) {
-//                return 'L';
-//            }
-//            else if (pt == boolean.class) {
-//                return 'Z';
-//            }
-//            else if (pt == int.class) {
-//                return 'I';
-//            }
-//            else if (pt == long.class) {
-//                return 'J';
-//            }
-//            else if (pt == float.class) {
-//                return 'F';
-//            }
-//            else if (pt == double.class) {
-//                return 'D';
-//            }
-//            else {
-//                throw new IllegalStateException(pt.getName());
-//            }
+//            return Wrapper.forBasicType(pt).basicTypeChar();
 //        }
 //    }
 }

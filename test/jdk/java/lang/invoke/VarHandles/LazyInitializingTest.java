@@ -27,6 +27,7 @@
  * @summary Checks interaction of static field VarHandle with class
  *          initialization mechanism..
  * @run junit LazyInitializingTest
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true LazyInitializingTest
  */
 
 import org.junit.jupiter.api.Test;
@@ -55,6 +56,9 @@ public class LazyInitializingTest {
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
+    /**
+     * Meta test to ensure the testing mechanism to check initialization is correct.
+     */
     @Test
     public void testMeta() throws IllegalAccessException {
         boolean[] val = new boolean[1];
@@ -83,7 +87,7 @@ public class LazyInitializingTest {
         var ci = createSampleClass(new SampleData(() -> initialized[0] = true, 42));
         var vh = ci.vh;
 
-        assertEquals(42, vh.get(), "VH does not read value set in class initializer");
+        assertEquals(42, (int) vh.get(), "VH does not read value set in class initializer");
         assertTrue(initialized[0], "class initialization not captured");
     }
 

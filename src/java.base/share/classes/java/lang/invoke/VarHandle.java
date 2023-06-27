@@ -520,16 +520,23 @@ public abstract sealed class VarHandle implements Constable
     }
 
     /**
+     * Direct VH implementations call this method to
+     * unwrap lazy initializing VarHandles.
+     */
+    @ForceInline
+    VarHandle target() {
+        return asDirect();
+    }
+
+    /**
      * The VarHandle to be passed to {@link #getMethodHandle}, in Invokers
      * LambdaForms and VarHandleGuards.
-     * Direct VH implementation methods also call this method to
-     * unwrap lazy initializing VarHandles.
      *
      * @see #getMethodHandle(int)
      * @see #checkAccessModeThenIsDirect(AccessDescriptor)
      */
     @ForceInline
-    VarHandle target() {
+    VarHandle asDirect() {
         return this;
     }
 
@@ -2081,7 +2088,7 @@ public abstract sealed class VarHandle implements Constable
      * @return true if this is a direct VarHandle, false if it's an indirect
      *         VarHandle.
      * @throws WrongMethodTypeException if there's an access type mismatch
-     * @see #target()
+     * @see #asDirect()
      */
     @ForceInline
     boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
@@ -2157,7 +2164,7 @@ public abstract sealed class VarHandle implements Constable
     public MethodHandle toMethodHandle(AccessMode accessMode) {
         if (isAccessModeSupported(accessMode)) {
             MethodHandle mh = getMethodHandle(accessMode.ordinal());
-            return mh.bindTo(target());
+            return mh.bindTo(asDirect());
         }
         else {
             // Ensure an UnsupportedOperationException is thrown

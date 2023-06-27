@@ -42,6 +42,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  */
 final class LazyInitializingVarHandle extends VarHandle {
 
+    // Implementation notes:
+    // We put a barrier on both target() (for VH form impl direct invocation)
+    // and on getMethodHandle() (for indirect VH invocation, toMethodHandle)
     private final VarHandle target;
     private final Class<?> refc;
     private @Stable boolean initialized;
@@ -53,19 +56,19 @@ final class LazyInitializingVarHandle extends VarHandle {
     }
 
     @Override
-    boolean checkAccessModeThenIsDirect(AccessDescriptor ad) {
-        super.checkAccessModeThenIsDirect(ad);
-        return false;
-    }
-
-    @Override
     MethodType accessModeTypeUncached(AccessType at) {
         return target.accessModeType(at.ordinal());
+    }
+
+    @ForceInline
+    VarHandle asDirect() {
+        return target;
     }
 
     @Override
     @ForceInline
     VarHandle target() {
+        ensureInitialized();
         return target;
     }
 
@@ -92,8 +95,11 @@ final class LazyInitializingVarHandle extends VarHandle {
 
     @Override
     public MethodHandle getMethodHandleUncached(int accessMode) {
-        ensureInitialized();
-        return target.getMethodHandle(accessMode);
+        var mh = target.getMethodHandle(accessMode);
+        if (this.initialized)
+            return mh;
+
+        return MethodHandles.collectArguments(mh, 0, ensureInitializedMh()).bindTo(this);
     }
 
     @ForceInline
@@ -125,17 +131,5 @@ final class LazyInitializingVarHandle extends VarHandle {
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
-    }
-
-    // regular impl uses getMethodHandle which we avoid, for our getMethodHandle
-    // serves as an initialization barrier
-    @Override
-    public MethodHandle toMethodHandle(AccessMode accessMode) {
-        var mh = target.toMethodHandle(accessMode);
-        if (initialized)
-            return mh;
-
-        // Add barrier
-        return MethodHandles.collectArguments(mh, 0, ensureInitializedMh()).bindTo(this);
     }
 }

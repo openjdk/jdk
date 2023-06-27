@@ -57,7 +57,7 @@ import java.util.function.BiFunction;
         super(form, exact);
         this.handleFactory = handleFactory;
         this.target = target;
-        this.directTarget = target.target();
+        this.directTarget = target.asDirect();
         this.value = value;
         this.coordinates = coordinates;
     }
@@ -69,22 +69,22 @@ import java.util.function.BiFunction;
 
     @Override
     @ForceInline
-    VarHandle target() {
-        return this.directTarget;
+    VarHandle asDirect() {
+        return directTarget;
     }
 
     @Override
     public VarHandle withInvokeExactBehavior() {
         return hasInvokeExactBehavior()
-            ? this
-            : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
+                ? this
+                : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
     }
 
     @Override
     public VarHandle withInvokeBehavior() {
         return !hasInvokeExactBehavior()
-            ? this
-            : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, false);
+                ? this
+                : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, false);
     }
 
     @Override
