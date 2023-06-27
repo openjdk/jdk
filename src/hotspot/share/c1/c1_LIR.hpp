@@ -918,6 +918,7 @@ enum LIR_Code {
       , lir_membar
       , lir_membar_acquire
       , lir_membar_release
+      , lir_membar_volatile
       , lir_membar_loadload
       , lir_membar_storestore
       , lir_membar_loadstore
@@ -2181,6 +2182,7 @@ class LIR_List: public CompilationResourceObj {
   void membar()                                  { append(new LIR_Op0(lir_membar)); }
   void membar_acquire()                          { append(new LIR_Op0(lir_membar_acquire)); }
   void membar_release()                          { append(new LIR_Op0(lir_membar_release)); }
+  void membar_volatile()                         { append(new LIR_Op0(lir_membar_volatile)); }
   void membar_loadload()                         { append(new LIR_Op0(lir_membar_loadload)); }
   void membar_storestore()                       { append(new LIR_Op0(lir_membar_storestore)); }
   void membar_loadstore()                        { append(new LIR_Op0(lir_membar_loadstore)); }

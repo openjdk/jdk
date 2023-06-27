@@ -4000,6 +4000,10 @@ void LIR_Assembler::membar_release() {
   // No x86 machines currently require store fences
 }
 
+void LIR_Assembler::membar_volatile() {
+  __ membar( Assembler::Membar_mask_bits(Assembler::StoreLoad));
+}
+
 void LIR_Assembler::membar_loadload() {
   // no-op
   //__ membar(Assembler::Membar_mask_bits(Assembler::loadload));

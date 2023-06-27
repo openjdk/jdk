@@ -2697,6 +2697,10 @@ void LIR_Assembler::membar_release() {
   __ membar(MacroAssembler::Membar_mask_bits(MacroAssembler::StoreStore | MacroAssembler::LoadStore), Rtemp);
 }
 
+void LIR_Assembler::membar_volatile() {
+  __ membar(MacroAssembler::StoreLoad, Rtemp);
+}
+
 void LIR_Assembler::membar_loadload() {
   __ membar(MacroAssembler::LoadLoad, Rtemp);
 }

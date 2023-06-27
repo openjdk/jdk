@@ -2976,6 +2976,10 @@ void LIR_Assembler::membar_release() {
   __ membar(Assembler::LoadStore|Assembler::StoreStore);
 }
 
+void LIR_Assembler::membar_volatile() {
+  __ membar(Assembler::StoreLoad);
+}
+
 void LIR_Assembler::membar_loadload() {
   __ membar(Assembler::LoadLoad);
 }

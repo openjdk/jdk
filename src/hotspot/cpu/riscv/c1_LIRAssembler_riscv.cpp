@@ -1918,6 +1918,10 @@ void LIR_Assembler::membar_release() {
   __ membar(MacroAssembler::LoadStore | MacroAssembler::StoreStore);
 }
 
+void LIR_Assembler::membar_volatile() {
+  __ membar(MacroAssembler::StoreLoad);
+}
+
 void LIR_Assembler::membar_loadload() {
   __ membar(MacroAssembler::LoadLoad);
 }

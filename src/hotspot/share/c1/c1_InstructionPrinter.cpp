@@ -873,6 +873,7 @@ void InstructionPrinter::do_MemBar(MemBar* x) {
   switch (code) {
   case lir_membar_acquire   : output()->print("membar_acquire"); break;
   case lir_membar_release   : output()->print("membar_release"); break;
+  case lir_membar_volatile  : output()->print("membar_volatile"); break;
   case lir_membar           : output()->print("membar"); break;
   case lir_membar_loadload  : output()->print("membar_loadload"); break;
   case lir_membar_storestore: output()->print("membar_storestore"); break;

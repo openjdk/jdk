@@ -2910,6 +2910,10 @@ void LIR_Assembler::membar_release() {
   __ release();
 }
 
+void LIR_Assembler::membar_volatile() {
+  __ membar(Assembler::StoreLoad);
+}
+
 void LIR_Assembler::membar_loadload() {
   __ membar(Assembler::LoadLoad);
 }

@@ -3542,6 +3542,7 @@ void LIRGenerator::do_MemBar(MemBar* x) {
   switch(code) {
   case lir_membar_acquire   : __ membar_acquire(); break;
   case lir_membar_release   : __ membar_release(); break;
+  case lir_membar_volatile  : __ membar_volatile(); break;
   case lir_membar           : __ membar(); break;
   case lir_membar_loadload  : __ membar_loadload(); break;
   case lir_membar_storestore: __ membar_storestore(); break;

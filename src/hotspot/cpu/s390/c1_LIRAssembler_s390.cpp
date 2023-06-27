@@ -2886,6 +2886,10 @@ void LIR_Assembler::membar_release() {
   __ z_release();
 }
 
+void LIR_Assembler::membar_volatile() {
+  __ z_fence();
+}
+
 void LIR_Assembler::membar_loadload() {
   __ z_acquire();
 }

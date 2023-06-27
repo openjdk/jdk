@@ -161,7 +161,7 @@ void BarrierSetC1::store_at_resolved(LIRAccess& access, LIR_Opr value) {
   }
 
   if (is_volatile && !support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ membar();
+    __ membar_volatile();
   }
 }
 

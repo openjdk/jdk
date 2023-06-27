@@ -403,6 +403,7 @@ void LIR_OpVisitState::visit(LIR_Op* op) {
     case lir_membar:                   // result and info always invalid
     case lir_membar_acquire:           // result and info always invalid
     case lir_membar_release:           // result and info always invalid
+    case lir_membar_volatile:          // result and info always invalid
     case lir_membar_loadload:          // result and info always invalid
     case lir_membar_storestore:        // result and info always invalid
     case lir_membar_loadstore:         // result and info always invalid
@@ -1695,6 +1696,7 @@ const char * LIR_Op::name() const {
      case lir_membar:                s = "membar";        break;
      case lir_membar_acquire:        s = "membar_acquire"; break;
      case lir_membar_release:        s = "membar_release"; break;
+     case lir_membar_volatile:       s = "membar_volatile"; break;
      case lir_membar_loadload:       s = "membar_loadload";   break;
      case lir_membar_storestore:     s = "membar_storestore"; break;
      case lir_membar_loadstore:      s = "membar_loadstore";  break;
