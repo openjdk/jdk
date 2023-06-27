@@ -32,15 +32,15 @@
 
 #if INCLUDE_JVMCI
 JVMCICleaningTask::JVMCICleaningTask() :
-  _cleaning_claimed(0) {
+  _cleaning_claimed(false) {
 }
 
 bool JVMCICleaningTask::claim_cleaning_task() {
-  if (_cleaning_claimed) {
+  if (Atomic::load(&_cleaning_claimed)) {
     return false;
   }
 
-  return Atomic::cmpxchg(&_cleaning_claimed, 0, 1) == 0;
+  return !Atomic::cmpxchg(&_cleaning_claimed, false, true);
 }
 
 void JVMCICleaningTask::work(bool unloading_occurred) {

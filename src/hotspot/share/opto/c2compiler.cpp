@@ -52,9 +52,6 @@ const char* C2Compiler::retry_no_locks_coarsening() {
 const char* C2Compiler::retry_no_iterative_escape_analysis() {
   return "retry without iterative escape analysis";
 }
-const char* C2Compiler::retry_class_loading_during_parsing() {
-  return "retry class loading during parsing";
-}
 
 void compiler_stubs_init(bool in_compiler_thread);
 
@@ -119,10 +116,6 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != nullptr) {
-      if (C.failure_reason_is(retry_class_loading_during_parsing())) {
-        env->report_failure(C.failure_reason());
-        continue;  // retry
-      }
       if (C.failure_reason_is(retry_no_subsuming_loads())) {
         assert(subsume_loads, "must make progress");
         subsume_loads = false;
@@ -754,6 +747,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_VectorBinaryOp:
   case vmIntrinsics::_VectorTernaryOp:
   case vmIntrinsics::_VectorFromBitsCoerced:
+  case vmIntrinsics::_VectorShuffleIota:
+  case vmIntrinsics::_VectorShuffleToVector:
   case vmIntrinsics::_VectorLoadOp:
   case vmIntrinsics::_VectorLoadMaskedOp:
   case vmIntrinsics::_VectorStoreOp:

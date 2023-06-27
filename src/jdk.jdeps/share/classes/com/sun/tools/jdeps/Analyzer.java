@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,10 +178,8 @@ public class Analyzer {
             }
             stream.sorted(Comparator.comparing(Archive::getName))
                   .forEach(archive -> {
-                      Profile profile = result.getTargetProfile(archive);
                       v.visitDependence(source.getName(), source,
-                                        profile != null ? profile.profileName()
-                                                        : archive.getName(), archive);
+                                        archive.getName(), archive);
                   });
         } else {
             Dependences result = results.get(source);
@@ -216,7 +214,6 @@ public class Analyzer {
         protected final Set<Dep> deps;
         protected final Type level;
         protected final Predicate<Archive> targetFilter;
-        private Profile profile;
         Dependences(Archive archive, Type level) {
             this(archive, level, ANY);
         }
@@ -234,14 +231,6 @@ public class Analyzer {
 
         Set<Archive> requires() {
             return requires;
-        }
-
-        Profile getTargetProfile(Archive target) {
-            if (target.getModule().isJDK()) {
-                return Profile.getProfile((Module) target);
-            } else {
-                return null;
-            }
         }
 
         /*
@@ -282,12 +271,6 @@ public class Analyzer {
                 addDep(o, t);
                 if (archive != targetArchive && !requires.contains(targetArchive)) {
                     requires.add(targetArchive);
-                }
-            }
-            if (targetArchive.getModule().isNamed()) {
-                Profile p = Profile.getProfile(t.getPackageName());
-                if (profile == null || (p != null && p.compareTo(profile) > 0)) {
-                    profile = p;
                 }
             }
         }

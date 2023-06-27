@@ -37,6 +37,7 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/deoptimization.hpp"
+#include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/thread.inline.hpp"
@@ -44,9 +45,6 @@
 #include "jvmci/jniAccessMark.inline.hpp"
 #include "jvmci/jvmciCompiler.hpp"
 #include "jvmci/jvmciRuntime.hpp"
-
-jbyte* JVMCIEnv::_serialized_saved_properties = nullptr;
-int JVMCIEnv::_serialized_saved_properties_len = 0;
 
 JVMCICompileState::JVMCICompileState(CompileTask* task, JVMCICompiler* compiler):
   _task(task),
@@ -115,76 +113,6 @@ bool JVMCICompileState::jvmti_state_changed() const {
     return true;
   }
   return false;
-}
-
-jbyte* JVMCIEnv::get_serialized_saved_properties(int& props_len, TRAPS) {
-  jbyte* props = _serialized_saved_properties;
-  if (props == nullptr) {
-    // load VMSupport
-    Symbol* klass = vmSymbols::jdk_internal_vm_VMSupport();
-    Klass* k = SystemDictionary::resolve_or_fail(klass, true, CHECK_NULL);
-
-    InstanceKlass* ik = InstanceKlass::cast(k);
-    if (ik->should_be_initialized()) {
-      ik->initialize(CHECK_NULL);
-    }
-
-    // invoke the serializeSavedPropertiesToByteArray method
-    JavaValue result(T_OBJECT);
-    JavaCallArguments args;
-
-    Symbol* signature = vmSymbols::void_byte_array_signature();
-    JavaCalls::call_static(&result,
-                           ik,
-                           vmSymbols::serializeSavedPropertiesToByteArray_name(),
-                           signature,
-                           &args,
-                           CHECK_NULL);
-
-    oop res = result.get_oop();
-    assert(res->is_typeArray(), "must be");
-    assert(TypeArrayKlass::cast(res->klass())->element_type() == T_BYTE, "must be");
-    typeArrayOop ba = typeArrayOop(res);
-    props_len = ba->length();
-
-    // Copy serialized saved properties from HotSpot object into C heap
-    props = NEW_C_HEAP_ARRAY(jbyte, props_len, mtJVMCI);
-    memcpy(props, ba->byte_at_addr(0), props_len);
-
-    _serialized_saved_properties_len = props_len;
-    _serialized_saved_properties = props;
-  } else {
-    props_len = _serialized_saved_properties_len;
-  }
-  return props;
-}
-
-void JVMCIEnv::copy_saved_properties(jbyte* properties, int properties_len, JVMCI_TRAPS) {
-  assert(!is_hotspot(), "can only copy saved properties from HotSpot to native image");
-  JavaThread* thread = JavaThread::current(); // For exception macros.
-
-  // Copy native buffer into shared library object
-  JVMCIPrimitiveArray buf = new_byteArray(properties_len, this);
-  if (has_pending_exception()) {
-    _runtime->fatal_exception(JVMCIENV, "Error in copy_saved_properties");
-  }
-  copy_bytes_from(properties, buf, 0, properties_len);
-  if (has_pending_exception()) {
-    _runtime->fatal_exception(JVMCIENV, "Error in copy_saved_properties");
-  }
-
-  // Initialize saved properties in shared library
-  jclass servicesClass = JNIJVMCI::Services::clazz();
-  jmethodID initializeSavedProperties = JNIJVMCI::Services::initializeSavedProperties_method();
-  bool exception = false;
-  {
-    JNIAccessMark jni(this, thread);
-    jni()->CallStaticVoidMethod(servicesClass, initializeSavedProperties, buf.as_jobject());
-    exception = jni()->ExceptionCheck();
-  }
-  if (exception) {
-    _runtime->fatal_exception(JVMCIENV, "Error calling jdk.vm.ci.services.Services.initializeSavedProperties");
-  }
 }
 
 void JVMCIEnv::init_env_mode_runtime(JavaThread* thread, JNIEnv* parent_env, bool jni_enomem_is_fatal) {
@@ -1937,7 +1865,7 @@ nmethod* JVMCIEnv::get_nmethod(JVMCIObject obj) {
   }
 #define STATIC_INT_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jint, Int, EMPTY_CAST)
 #define STATIC_BOOLEAN_FIELD(className, name) STATIC_PRIMITIVE_FIELD(className, name, jboolean, Boolean, EMPTY_CAST)
-#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName, args)
+#define METHOD(jniCallType, jniGetMethod, hsCallType, returnType, className, methodName, signatureSymbolName)
 #define CONSTRUCTOR(className, signature)
 
 JVMCI_CLASSES_DO(START_CLASS, END_CLASS, CHAR_FIELD, INT_FIELD, BOOLEAN_FIELD, LONG_FIELD, FLOAT_FIELD, OBJECT_FIELD, PRIMARRAY_FIELD, OBJECTARRAY_FIELD, STATIC_OBJECT_FIELD, STATIC_OBJECTARRAY_FIELD, STATIC_INT_FIELD, STATIC_BOOLEAN_FIELD, METHOD, CONSTRUCTOR)

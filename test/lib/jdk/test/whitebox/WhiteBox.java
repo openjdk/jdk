@@ -163,6 +163,19 @@ public class WhiteBox {
     return getIndyCPIndex0(aClass, index);
   }
 
+  private native String printClasses0(String classNamePattern, int flags);
+  public         String printClasses(String classNamePattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    return printClasses0(classNamePattern, flags);
+  }
+
+  private native String printMethods0(String classNamePattern, String methodPattern, int flags);
+  public         String printMethods(String classNamePattern, String methodPattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    Objects.requireNonNull(methodPattern);
+    return printMethods0(classNamePattern, methodPattern, flags);
+  }
+
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
   public         void addToBootstrapClassLoaderSearch(String segment){
@@ -608,6 +621,7 @@ public class WhiteBox {
 
   // VM flags
   public native boolean isConstantVMFlag(String name);
+  public native boolean isDefaultVMFlag(String name);
   public native boolean isLockedVMFlag(String name);
   public native void    setBooleanVMFlag(String name, boolean value);
   public native void    setIntVMFlag(String name, long value);

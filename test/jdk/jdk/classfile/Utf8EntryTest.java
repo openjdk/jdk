@@ -83,7 +83,7 @@ class Utf8EntryTest {
     void testParse(String s) {
         byte[] classfile = createClassfile(s);
 
-        ClassModel cm = Classfile.parse(classfile);
+        ClassModel cm = Classfile.of().parse(classfile);
         StringEntry se = obtainStringEntry(cm.constantPool());
 
         Utf8Entry utf8Entry = se.utf8();
@@ -163,7 +163,7 @@ class Utf8EntryTest {
         byte[] classfile = createClassfile(marker);
         replace(classfile, marker, f);
 
-        ClassModel cm = Classfile.parse(classfile);
+        ClassModel cm = Classfile.of().parse(classfile);
         StringEntry se = obtainStringEntry(cm.constantPool());
 
         assertThrows(RuntimeException.class, () -> {
@@ -197,7 +197,7 @@ class Utf8EntryTest {
     }
 
     static byte[] createClassfile(String s) {
-        return Classfile.build(ClassDesc.of("C"),
+        return Classfile.of().build(ClassDesc.of("C"),
                                clb -> clb.withMethod("m", MethodTypeDesc.of(CD_void), 0,
                                                      mb -> mb.withCode(cb -> cb.constantInstruction(s)
                                                                                .returnInstruction(VoidType))));

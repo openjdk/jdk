@@ -31,9 +31,12 @@ import static jdk.internal.util.Architecture.AARCH64;
 import static jdk.internal.util.Architecture.ARM;
 import static jdk.internal.util.Architecture.PPC64;
 import static jdk.internal.util.Architecture.RISCV64;
+import static jdk.internal.util.Architecture.LOONGARCH64;
 import static jdk.internal.util.Architecture.S390;
 import static jdk.internal.util.Architecture.X64;
 import static jdk.internal.util.Architecture.X86;
+import static jdk.internal.util.Architecture.MIPSEL;
+import static jdk.internal.util.Architecture.MIPS64EL;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -70,8 +73,11 @@ public class ArchTest {
             case "aarch64" -> AARCH64;
             case "arm" -> ARM;
             case "riscv64" -> RISCV64;
+            case "loongarch64" -> LOONGARCH64;
             case "s390x", "s390" -> S390;
             case "ppc64", "ppc64le" -> PPC64;
+            case "mipsel" -> MIPSEL;
+            case "mips64el" -> MIPS64EL;
             default -> OTHER;
         };
         assertEquals(Architecture.current(), arch, "mismatch in Architecture.current vs " + osArch);
@@ -88,7 +94,10 @@ public class ArchTest {
                 Arguments.of(AARCH64, Architecture.isAARCH64()),
                 Arguments.of(ARM, Architecture.isARM()),
                 Arguments.of(RISCV64, Architecture.isRISCV64()),
+                Arguments.of(LOONGARCH64, Architecture.isLOONGARCH64()),
                 Arguments.of(S390, Architecture.isS390()),
+                Arguments.of(MIPSEL, Architecture.isMIPSEL()),
+                Arguments.of(MIPS64EL, Architecture.isMIPS64EL()),
                 Arguments.of(PPC64, Architecture.isPPC64())
         );
     }
