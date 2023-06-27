@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import compiler.lib.ir_framework.*;
  * @bug 8281429
  * @summary Tests that C2 can correctly scalar replace some object allocation merges.
  * @library /test/lib /
- * @requires vm.bits == 64 & vm.compiler2.enabled & vm.opt.final.UseCompressedOops & vm.opt.final.EliminateAllocations
+ * @requires vm.debug == true & vm.bits == 64 & vm.compiler2.enabled & vm.opt.final.UseCompressedOops & vm.opt.final.EliminateAllocations
  * @run driver compiler.c2.irTests.scalarReplacement.AllocationMergesTests
  */
 public class AllocationMergesTests {
@@ -39,7 +39,8 @@ public class AllocationMergesTests {
     private static Point global_escape = new Point(2022, 2023);
 
     public static void main(String[] args) {
-        TestFramework.runWithFlags("-XX:+ReduceAllocationMerges",
+        TestFramework.runWithFlags("-XX:+UnlockDiagnosticVMOptions",
+                                   "-XX:+ReduceAllocationMerges",
                                    "-XX:+TraceReduceAllocationMerges",
                                    "-XX:+DeoptimizeALot",
                                    "-XX:CompileCommand=exclude,*::dummy*");
