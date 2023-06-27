@@ -78,7 +78,7 @@ public class Bug4512215 {
                 Arguments.of("CSD", 2, "CS") // successor to YU/YUM
         );
     }
-    
+
     private static Stream<Arguments> nonTwoDigitDecimals() {
         return Stream.of(
                 Arguments.of("XBD", -1),
