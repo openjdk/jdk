@@ -620,7 +620,7 @@ private:
   void do_compress();
 
 public:
-  DumpWriter(FileWriter* writer, AbstractCompressor* compressor);
+  DumpWriter(const char* path, bool overwrite, AbstractCompressor* compressor);
   ~DumpWriter();
   julong bytes_written() const override        { return (julong) _bytes_written; }
   void set_bytes_written(julong bytes_written) { _bytes_written = bytes_written; }
@@ -635,9 +635,9 @@ public:
   void flush() override;
 };
 
-DumpWriter::DumpWriter(FileWriter* writer, AbstractCompressor* compressor) :
+DumpWriter::DumpWriter(const char* path, bool overwrite, AbstractCompressor* compressor) :
   AbstractDumpWriter(),
-  _writer(writer),
+  _writer(new (std::nothrow) FileWriter(path, overwrite)),
   _compressor(compressor),
   _bytes_written(0),
   _error(nullptr),
@@ -675,6 +675,9 @@ DumpWriter::~DumpWriter(){
   }
   if (_tmp_buffer != nullptr) {
     os::free(_tmp_buffer);
+  }
+  if (_writer != NULL) {
+    delete _writer;
   }
   _bytes_written = -1;
 }
@@ -1570,7 +1573,7 @@ void HeapDumpMergeClosure::merge_file(char* path) {
   }
 
   jlong total = 0;
-  int cnt = 0;
+  size_t cnt = 0;
   char read_buf[4096];
   while ((cnt = segment_fs.read(read_buf, 1, 4096)) != 0) {
     _writer->write_raw(read_buf, cnt);
@@ -1650,7 +1653,7 @@ class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
   bool skip_operation() const;
 
   // create dump writer for every parallel dump thread
-  DumpWriter* create_dump_writer();
+  DumpWriter* create_local_writer();
 
   // writes a HPROF_LOAD_CLASS record
   static void do_load_class(Klass* k);
@@ -1967,7 +1970,7 @@ void VM_HeapDumper::doit() {
      !can_parallel_dump()) {             // can not dump in parallel?
     // Use serial dump, set dumper threads and writer threads number to 1.
     _num_dumper_threads = 1;
-    work(0);
+    work(VMDumperWorkerId);
   } else {
     // Use parallel dump otherwise
     _num_dumper_threads = clamp(requested_num_dump_thread, 2U, num_active_workers);
@@ -1985,7 +1988,7 @@ void VM_HeapDumper::doit() {
 }
 
 // prepare DumpWriter for every parallel dump thread
-DumpWriter* VM_HeapDumper::create_dump_writer() {
+DumpWriter* VM_HeapDumper::create_local_writer() {
   char* path = NEW_RESOURCE_ARRAY(char, JVM_MAXPATHLEN);
   memset(path, 0, JVM_MAXPATHLEN);
 
@@ -1996,9 +1999,8 @@ DumpWriter* VM_HeapDumper::create_dump_writer() {
   os::snprintf(path, JVM_MAXPATHLEN, "%s.p%d", base_path, seq);
 
   // create corresponding writer for that
-  FileWriter* file_writer = new (std::nothrow) FileWriter(path, writer()->is_overwrite());
-  DumpWriter* new_writer = new DumpWriter(file_writer, compressor);
-  return new_writer;
+  DumpWriter* local_writer = new DumpWriter(path, writer()->is_overwrite(), compressor);
+  return local_writer;
 }
 
 void VM_HeapDumper::work(uint worker_id) {
@@ -2057,7 +2059,7 @@ void VM_HeapDumper::work(uint worker_id) {
   // The HPROF_GC_CLASS_DUMP and HPROF_GC_INSTANCE_DUMP are the vast bulk
   // of the heap dump.
   if (!is_parallel_dump()) {
-    assert(worker_id == 0, "must be");
+    assert(is_vm_dumper(worker_id), "must be");
     // == Serial dump
     TraceTime timer("Dump heap objects", TRACETIME_LOG(Info, heapdump));
     HeapObjectDumper obj_dumper(writer());
@@ -2070,17 +2072,17 @@ void VM_HeapDumper::work(uint worker_id) {
     // == Parallel dump
     ResourceMark rm;
     TraceTime timer("Dump heap objects in parallel", TRACETIME_LOG(Info, heapdump));
-    DumpWriter* dw = is_vm_dumper(worker_id) ? writer() : create_dump_writer();
-    if (!dw->has_error()) {
-      HeapObjectDumper obj_dumper(dw);
+    DumpWriter* local_writer = is_vm_dumper(worker_id) ? writer() : create_local_writer();
+    if (!local_writer->has_error()) {
+      HeapObjectDumper obj_dumper(local_writer);
       _poi->object_iterate(&obj_dumper, worker_id);
-      dw->finish_dump_segment();
-      dw->flush();
+      local_writer->finish_dump_segment();
+      local_writer->flush();
     }
     if (is_vm_dumper(worker_id)) {
       _dumper_controller->wait_all_dumpers_complete();
     } else {
-      _dumper_controller->dumper_complete(dw, writer());
+      _dumper_controller->dumper_complete(local_writer, writer());
       return;
     }
   }
@@ -2169,7 +2171,7 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     }
   }
 
-  DumpWriter writer(new (std::nothrow) FileWriter(path, overwrite), compressor);
+  DumpWriter writer(path, overwrite, compressor);
 
   if (writer.error() != nullptr) {
     set_error(writer.error());
@@ -2187,6 +2189,25 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   // record any error that the writer may have encountered
   set_error(writer.error());
 
+  // For serial dump, once VM_HeapDumper completes, the whole heap dump process
+  // is done, no further phases needed. For parallel dump, the whole heap dump
+  // process is done in two phases
+  //
+  // Phase 1: Concurrent threads directly write data to multiple heap files.
+  //          This is done by VM_HeapDumper, which is performed within safepoint.
+  //
+  // Phase 2: Merge multiple heap files into one complete heap dump file.
+  //          This is done within HeapDumpMergeClosure by attach listener thread,
+  //          this prevents us from occupying the VM Thread, which in turn affects
+  //          the occurrence of GC and other VM operations.
+  if (dumper.is_parallel_dump()) {
+    Thread* calling_thread = Thread::current();
+    ThreadsListHandle tlh(calling_thread);
+    HeapDumpMergeClosure closure(path, &writer, dumper.dump_seq());
+    Handshake::execute(&closure, AttachListener::attach_listener_thread());
+    set_error(writer.error());
+  }
+
   // emit JFR event
   if (error() == nullptr) {
     event.set_destination(path);
@@ -2198,18 +2219,6 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
     event.commit();
   } else {
     log_debug(cds, heap)("Error %s while dumping heap", error());
-  }
-
-  // merge segmented dump files into a complete one, this is not required for serial dump
-  if (dumper.is_parallel_dump()) {
-    Thread* calling_thread = Thread::current();
-    ThreadsListHandle tlh(calling_thread);
-    // perform heapdump file merge operation via attach listener thread instead of
-    // posting a VM operation, this prevents us from occupying the VM Thread, which
-    // in turn affects the occurrence of GC and other VM operations.
-    HeapDumpMergeClosure closure(path, &writer, dumper.dump_seq());
-    Handshake::execute(&closure, AttachListener::attach_listener_thread());
-    set_error(writer.error());
   }
 
   // print message in interactive case
