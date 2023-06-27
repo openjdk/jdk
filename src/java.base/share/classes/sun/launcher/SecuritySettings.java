@@ -40,8 +40,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import jdk.internal.access.SharedSecrets;
-import static sun.launcher.LauncherHelper.INDENT;
-import static sun.launcher.LauncherHelper.TWOINDENT;
 
 /**
  * A utility class for security libs functionality
@@ -49,7 +47,9 @@ import static sun.launcher.LauncherHelper.TWOINDENT;
  */
 public final class SecuritySettings {
 
-    private static final String THREEINDENT = TWOINDENT + INDENT;
+    private static final String INDENT = " ".repeat(4);
+    private static final String TWOINDENT = " ".repeat(8);
+    private static final String THREEINDENT = " ".repeat(12);
     private static final String PROV_INFO_STRING = "Provider information: ";
     private static PrintStream ostream = null;
 

@@ -112,8 +112,7 @@ public final class LauncherHelper {
 
     private static StringBuilder outBuf = new StringBuilder();
 
-    static final String INDENT = "    ";
-    static final String TWOINDENT = INDENT + INDENT;
+    private static final String INDENT = " ".repeat(4);
     private static final String VM_SETTINGS     = "VM settings:";
     private static final String PROP_SETTINGS   = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
@@ -273,7 +272,7 @@ public final class LauncherHelper {
                 ostream.println(s);
                 first = false;
             } else { // following lines prefix with indents
-                ostream.println(TWOINDENT + s);
+                ostream.println(INDENT + INDENT + s);
             }
         }
     }
@@ -321,7 +320,7 @@ public final class LauncherHelper {
             // print columns of 8
             if ((i + 1) % 8 == 0) {
                 ostream.println();
-                ostream.print(TWOINDENT);
+                ostream.print(INDENT + INDENT);
             }
         }
         ostream.println();
