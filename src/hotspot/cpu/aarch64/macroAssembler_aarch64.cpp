@@ -6491,7 +6491,7 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
   mov(d[1], D, 0, s2);
 }
 
-void MacroAssembler::poly1305_step_vec1(LambdaAccumulator &acc,
+void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
                                        const FloatRegister s[], const FloatRegister u[],
                                        const FloatRegister zero, Register input_start,
                                        AbstractRegSet<FloatRegister> scratch) {

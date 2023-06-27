@@ -183,6 +183,11 @@ void print52(u64 x2, u64 x1, u64 x0, const char *s) {
 }
 
 void print26(u64 x4, u64 x3, u64 x2, u64 x1, u64 x0, const char *s) {
+  // printf("      %06lx ", x4);
+  // printf("%06lx ", x3);
+  // printf("%06lx ", x2);
+  // printf("%06lx ", x1);
+  // printf("%06lx\n", x0);
   x1 += x0 >> 26; x0 %= 1 <<26;
   x4 += x3 >> 26; x3 %= 1 <<26;
   x2 += x1 >> 26; x1 %= 1 <<26;
@@ -190,6 +195,10 @@ void print26(u64 x4, u64 x3, u64 x2, u64 x1, u64 x0, const char *s) {
   x3 += x2 >> 26; x2 %= 1 <<26;
   x1 += x0 >> 26; x0 %= 1 <<26;
   x4 += x3 >> 26; x3 %= 1 <<26;
+
+  if (strcmp(s, "v[2]") == 0) {
+    asm("nop");
+  }
 
   u128 sum = 0;
   sum = sum
