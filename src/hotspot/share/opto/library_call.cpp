@@ -292,7 +292,7 @@ bool LibraryCallKit::try_to_inline(int predicate) {
 
   case vmIntrinsics::_arraycopy:                return inline_arraycopy();
 
-  case vmIntrinsics::_arraySort:               return inline_arraysort(intrinsic_id());
+  case vmIntrinsics::_arraySort:               return inline_arraysort();
 
   case vmIntrinsics::_compareToL:               return inline_string_compareTo(StrIntrinsicNode::LL);
   case vmIntrinsics::_compareToU:               return inline_string_compareTo(StrIntrinsicNode::UU);
@@ -5195,7 +5195,7 @@ void LibraryCallKit::create_new_uncommon_trap(CallStaticJavaNode* uncommon_trap_
 }
 
 //------------------------------inline_arraysort-----------------------
-bool LibraryCallKit::inline_arraysort(vmIntrinsics::ID id) {
+bool LibraryCallKit::inline_arraysort() {
 
   address stubAddr = nullptr;
   const char *stubName;
