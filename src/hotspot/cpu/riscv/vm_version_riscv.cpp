@@ -232,6 +232,13 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
+  // This machine allows unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses,
+      unaligned_access.value() != MISALIGNED_UNKNOWN &&
+      unaligned_access.value() != MISALIGNED_UNSUPPORTED);
+  }
+
 #ifdef COMPILER2
   c2_initialize();
 #endif // COMPILER2
