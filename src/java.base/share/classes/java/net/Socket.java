@@ -1129,7 +1129,7 @@ public class Socket implements java.io.Closeable {
         private int getSoTimeout() {
             try {
                 return parent.getSoTimeout();
-            } catch (Throwable t) {
+            } catch (SocketException e) {
                 // ignored - avoiding exceptions in jfr event data gathering
             }
             return 0;
