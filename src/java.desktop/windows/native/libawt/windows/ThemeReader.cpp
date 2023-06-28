@@ -90,7 +90,7 @@ typedef HRESULT (__stdcall *PFNGETTHEMETRANSITIONDURATION)
                 (HTHEME hTheme, int iPartId, int iStateIdFrom, int iStateIdTo,
                  int iPropId, DWORD *pdwDuration);
 
-static PFNOPENTHEMEDATAFORDPI OpenThemeDataFuncForDpi = NULL;
+static PFNOPENTHEMEDATAFORDPI OpenThemeDataForDpiFunc = NULL;
 static PFNDRAWTHEMEBACKGROUND DrawThemeBackgroundFunc = NULL;
 static PFNCLOSETHEMEDATA CloseThemeDataFunc = NULL;
 static PFNDRAWTHEMETEXT DrawThemeTextFunc = NULL;
@@ -116,7 +116,7 @@ BOOL InitThemes() {
     DTRACE_PRINTLN1("InitThemes hModThemes = %x\n", hModThemes);
     if(hModThemes) {
         DTRACE_PRINTLN("Loaded UxTheme.dll\n");
-        OpenThemeDataFuncForDpi = (PFNOPENTHEMEDATAFORDPI)GetProcAddress(
+        OpenThemeDataForDpiFunc = (PFNOPENTHEMEDATAFORDPI)GetProcAddress(
                                    hModThemes, "OpenThemeDataForDpi");
         DrawThemeBackgroundFunc = (PFNDRAWTHEMEBACKGROUND)GetProcAddress(
                                         hModThemes, "DrawThemeBackground");
@@ -152,7 +152,7 @@ BOOL InitThemes() {
             (PFNGETTHEMETRANSITIONDURATION)GetProcAddress(hModThemes,
                                         "GetThemeTransitionDuration");
 
-        if(OpenThemeDataFuncForDpi
+        if(OpenThemeDataForDpiFunc
            && DrawThemeBackgroundFunc
            && CloseThemeDataFunc
            && DrawThemeTextFunc
@@ -174,7 +174,7 @@ BOOL InitThemes() {
               // We need to make sure we can load the Theme.
               // Use the default DPI value of 96 on windows.
               constexpr unsigned int defaultDPI = 96;
-              HTHEME hTheme = OpenThemeDataFuncForDpi (
+              HTHEME hTheme = OpenThemeDataForDpiFunc (
                               AwtToolkit::GetInstance().GetHWnd(),
                               L"Button", defaultDPI);
               if(hTheme) {
@@ -248,7 +248,7 @@ JNIEXPORT jlong JNICALL Java_sun_awt_windows_ThemeReader_openTheme
     }
     // We need to open the Theme on a Window that will stick around.
     // The best one for that purpose is the Toolkit window.
-    HTHEME htheme = OpenThemeDataFuncForDpi(
+    HTHEME htheme = OpenThemeDataForDpiFunc(
                     AwtToolkit::GetInstance().GetHWnd(),
                     str, dpi);
     JNU_ReleaseStringPlatformChars(env, widget, str);
