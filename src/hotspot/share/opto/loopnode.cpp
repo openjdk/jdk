@@ -3531,8 +3531,8 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
 }
 
 //------------------------------allpaths_check_safepts----------------------------
-// Allpaths backwards scan from loop tail, terminating each path at first safepoint
-// encountered.  Helper for check_safepts.
+// Allpaths backwards scan. Starting at the head, traversing all backedges, and the body. Terminating each path at first
+// safepoint encountered.  Helper for check_safepts.
 void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack) {
   assert(stack.size() == 0, "empty stack");
   stack.push(_head);
@@ -3545,7 +3545,8 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
         if (_required_safept == nullptr) _required_safept = new Node_List();
-        _required_safept->push(n);  // save the one closest to the tail
+        // save the first we run into on that path: closest to the tail if the head has a single backedge
+        _required_safept->push(n);
       }
       // Terminate this path
     } else {
