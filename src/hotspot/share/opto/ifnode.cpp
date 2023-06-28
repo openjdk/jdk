@@ -92,7 +92,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   Node *con1=nullptr;
   uint i4;
   RegionNode* phi_region = phi->region();
-  for(i4 = 1; i4 < phi->req(); i4++ ) {
+  for (i4 = 1; i4 < phi->req(); i4++ ) {
     con1 = phi->in(i4);
     // Do not optimize partially collapsed merges
     if (con1 == nullptr || phi_region->in(i4) == nullptr || igvn->type(phi_region->in(i4)) == Type::TOP) {
