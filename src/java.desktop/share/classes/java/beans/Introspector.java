@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1158,6 +1158,8 @@ public class Introspector {
         // For overriden methods we need to find the most derived version.
         // So we start with the given class and walk up the superclass chain.
         for (Class<?> cl = start; cl != null; cl = cl.getSuperclass()) {
+            Class<?> type = null;
+            Method foundMethod = null;
             for (Method method : ClassInfo.get(cl).getMethods()) {
                 // make sure method signature matches.
                 if (method.getName().equals(methodName)) {
@@ -1177,9 +1179,16 @@ public class Introspector {
                                 }
                             }
                         }
-                        return method;
+                        Class<?> rt = method.getReturnType();
+                        if (foundMethod == null || type.isAssignableFrom(rt)) {
+                            foundMethod = method;
+                            type = rt;
+                        }
                     }
                 }
+            }
+            if (foundMethod != null) {
+                return foundMethod;
             }
         }
         // Now check any inherited interfaces.  This is necessary both when
