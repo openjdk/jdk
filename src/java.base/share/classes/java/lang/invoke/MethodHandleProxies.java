@@ -41,6 +41,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import java.util.WeakHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
 
@@ -223,55 +224,74 @@ public class MethodHandleProxies {
          * which has access to the types referenced by the members of I including
          * the parameter types, return type and exception types.
          */
-        ProxyClassInfo info = getProxyClassInfo(intfc); // throws IllegalArgumentException
-
+        Lookup lookup = getProxyClassLookup(intfc);  // throws IllegalArgumentException
         Object proxy;
         try {
-            proxy = info.constructor.invokeExact(info.originalLookup, target, mh);
-        } catch (Throwable e) {
-            throw uncaughtException(e); // propagates WrongMethodTypeException
+            MethodHandle constructor = lookup.findConstructor(lookup.lookupClass(), MT_void_Lookup_MethodHandle_MethodHandle)
+                    .asType(MT_Object_Lookup_MethodHandle_MethodHandle);
+            proxy = constructor.invokeExact(lookup, target, mh);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
         }
-
         assert proxy.getClass().getModule().isNamed() : proxy.getClass() + " " + proxy.getClass().getModule();
         return intfc.cast(proxy);
     }
 
     private record LocalMethodInfo(MethodTypeDesc desc, List<ClassDesc> thrown, String fieldName) {}
 
-    private record ProxyClassInfo(MethodHandle constructor, Lookup originalLookup,
-                                  MethodHandle targetGetter) {}
-
     private static final ClassFileDumper DUMPER = ClassFileDumper.getInstance(
             "jdk.invoke.MethodHandleProxies.dumpClassFiles", "DUMP_MH_PROXY_CLASSFILES");
 
-    /*
-     * A map from a given interface to the ProxyClassDefiner.
-     * This creates a dynamic module for each interface.
-     */
-    private static final ClassValue<SoftReference<ProxyClassInfo>> PROXY_CLASS_INFOS = new ClassValue<>() {
+    private static final WeakHashMap<Class<?>, Boolean> WRAPPER_TYPES = new WeakHashMap<>();
+    private static final ClassValue<SoftReference<Lookup>> PROXY_LOOKUPS = new ClassValue<>() {
         @Override
-        protected SoftReference<ProxyClassInfo> computeValue(Class<?> intfc) {
+        protected SoftReference<Lookup> computeValue(Class<?> intfc) {
+            List<LocalMethodInfo> methods = new ArrayList<>();
+            Set<Class<?>> referencedTypes = new HashSet<>();
+            referencedTypes.add(intfc);
+            String uniqueName = null;
+            int count = 0;
+            for (Method m : intfc.getMethods()) {
+                if (Modifier.isStatic(m.getModifiers()))
+                    continue;
 
-            final SamInfo stats = getStats(intfc);
-            if (stats == null)
-                throw newIllegalArgumentException("not a single-method interface", intfc.getName());
+                if (isObjectMethod(m))
+                    continue;
 
-            List<LocalMethodInfo> infos = new ArrayList<>(stats.methods.size());
-            for (int i = 0; i < stats.methods.size(); i++) {
-                String fieldName = "m" + i;
-                Method m = stats.methods.get(i);
+                if (!Modifier.isAbstract(m.getModifiers()))
+                    continue;
+
+                String mname = m.getName();
+                if (uniqueName == null) {
+                    uniqueName = mname;
+                } else if (!uniqueName.equals(mname)) {
+                    // too many abstract methods
+                    throw newIllegalArgumentException("not a single-method interface", intfc.getName());
+                }
+
+                // the field name holding the method handle for this method
+                String fieldName = "m" + count++;
                 MethodType mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
                 MethodTypeDesc mtDesc = desc(mt);
                 var thrown = JLRA.getExecutableSharedExceptionTypes(m);
                 if (thrown.length == 0) {
-                    infos.add(new LocalMethodInfo(mtDesc, DEFAULT_RETHROWS, fieldName));
+                    methods.add(new LocalMethodInfo(mtDesc, DEFAULT_RETHROWS, fieldName));
                 } else {
-                    infos.add(new LocalMethodInfo(mtDesc, Stream.concat(DEFAULT_RETHROWS.stream(),
-                            Arrays.stream(thrown).map(MethodHandleProxies::desc)).distinct().toList(), fieldName));
+                    var exceptionTypeDescs =
+                            Stream.concat(DEFAULT_RETHROWS.stream(),
+                                    Arrays.stream(thrown).map(MethodHandleProxies::desc)).distinct().toList();
+                    methods.add(new LocalMethodInfo(mtDesc, exceptionTypeDescs, fieldName));
                 }
+
+                // find the types referenced by this method
+                addElementType(referencedTypes, m.getReturnType());
+                addElementTypes(referencedTypes, JLRA.getExecutableSharedParameterTypes(m));
+                addElementTypes(referencedTypes, JLRA.getExecutableSharedExceptionTypes(m));
             }
 
-            Set<Class<?>> referencedTypes = stats.referencedTypes;
+            if (uniqueName == null)
+                throw newIllegalArgumentException("no method in ", intfc.getName());
+
             var loader = intfc.getClassLoader();
             Module targetModule = newDynamicModule(loader, referencedTypes);
 
@@ -281,12 +301,12 @@ public class MethodHandleProxies {
             int i = n.lastIndexOf('.');
             String cn = i > 0 ? pn + "." + n.substring(i+1) : pn + "." + n;
             ClassDesc proxyDesc = ClassDesc.of(cn);
-            byte[] template = createTemplate(loader, proxyDesc, desc(intfc), stats.singleName, infos);
+            byte[] template = createTemplate(loader, proxyDesc, desc(intfc), uniqueName, methods);
             var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
-            Lookup lookup;
 
             @SuppressWarnings("removal")
             var sm = System.getSecurityManager();
+            Lookup lookup;
             if (sm != null) {
                 @SuppressWarnings("removal")
                 var l = AccessController.doPrivileged((PrivilegedAction<Lookup>) () -> definer.defineClassAsLookup(true));
@@ -294,30 +314,18 @@ public class MethodHandleProxies {
             } else {
                 lookup = definer.defineClassAsLookup(true);
             }
-
-            MethodHandle constructor;
-            MethodHandle targetGetter;
-            try {
-                constructor = lookup.findConstructor(lookup.lookupClass(), MT_void_Lookup_MethodHandle_MethodHandle)
-                        .asType(MT_Object_Lookup_MethodHandle_MethodHandle);
-                targetGetter = lookup.findGetter(lookup.lookupClass(), ORIGINAL_TARGET_NAME, MethodHandle.class)
-                        .asType(MT_MethodHandle_Object);
-            } catch (Throwable ex) {
-                throw uncaughtException(ex);
-            }
-            return new SoftReference<>(new ProxyClassInfo(constructor, lookup, targetGetter));
+            WRAPPER_TYPES.put(lookup.lookupClass(), Boolean.TRUE);
+            return new SoftReference<>(lookup);
         }
     };
 
-    private static ProxyClassInfo getProxyClassInfo(Class<?> intfc) throws IllegalArgumentException {
-        while (true) {
-            var maybeInfo = PROXY_CLASS_INFOS.get(intfc); // throws IllegalArgumentException
-            var info = maybeInfo.get();
-            if (info != null) {
-                return info;
-            }
-            PROXY_CLASS_INFOS.remove(intfc); // force recomputation
+    private static Lookup getProxyClassLookup(Class<?> intfc) {
+        SoftReference<Lookup> r = PROXY_LOOKUPS.get(intfc);
+        if (r.refersTo(null)) {
+            PROXY_LOOKUPS.remove(intfc);
+            r = PROXY_LOOKUPS.get(intfc);
         }
+        return r.get();
     }
 
     private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
@@ -465,43 +473,10 @@ public class MethodHandleProxies {
         return isWrapperClass(x.getClass());
     }
 
-    static boolean isWrapperClass(Class<?> cls) {
-        try {
-            return WRAPPER_TYPES.get(cls) != null;
-        } catch (IllegalArgumentException ex) {
-            return false;
-        }
+    private static boolean isWrapperClass(Class<?> cls) {
+        Boolean value = WRAPPER_TYPES.get(cls);
+        return value != null ? value : false;
     }
-
-    private static final ClassValue<Class<?>> WRAPPER_TYPES = new ClassValue<>() {
-        @Override
-        protected Class<?> computeValue(Class<?> type) {
-            MethodHandle originalTypeField;
-            try {
-                originalTypeField = new Lookup(type).findStaticGetter(type, ORIGINAL_TYPE_NAME, Class.class);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                return null;
-            }
-
-            Class<?> originalType;
-            try {
-                originalType = (Class<?>) originalTypeField.invokeExact();
-            } catch (Throwable e) {
-                throw uncaughtException(e);
-            }
-
-            if (originalType == null)
-                return null;
-
-            try {
-                getProxyClassInfo(originalType); // throws IAE
-            } catch (IllegalArgumentException ex) {
-                return null;
-            }
-
-            return originalType;
-        }
-    };
 
     /**
      * Produces or recovers a target method handle which is behaviorally
@@ -516,9 +491,10 @@ public class MethodHandleProxies {
         if (!isWrapperInstance(x))
             throw new IllegalArgumentException("not a wrapper instance: " + x);
 
-        var getter = getProxyClassInfo(WRAPPER_TYPES.get(x.getClass())).targetGetter;
-
         try {
+            Class<?> type = x.getClass();
+            MethodHandle getter = new Lookup(type).findGetter(type, ORIGINAL_TARGET_NAME, MethodHandle.class)
+                                                  .asType(MT_MethodHandle_Object);
             return (MethodHandle) getter.invokeExact(x);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
@@ -537,7 +513,13 @@ public class MethodHandleProxies {
         if (!isWrapperInstance(x))
             throw new IllegalArgumentException("not a wrapper instance: " + x);
 
-        return WRAPPER_TYPES.get(x.getClass());
+        try {
+            Class<?> type = x.getClass();
+            MethodHandle originalTypeField = new Lookup(type).findStaticGetter(type, ORIGINAL_TYPE_NAME, Class.class);
+            return (Class<?>) originalTypeField.invokeExact();
+        } catch (Throwable e) {
+            throw uncaughtException(e);
+        }
     }
 
     private static ClassDesc desc(Class<?> cl) {
@@ -596,55 +578,6 @@ public class MethodHandleProxies {
                     && JLRA.getExecutableSharedParameterTypes(m)[0] == Object.class;
             default -> false;
         };
-    }
-
-    /**
-     * Stores the result of iteration over methods in a given single-abstract-method interface.
-     *
-     * @param singleName the single abstract method's name in the given interface
-     * @param methods the abstract methods to implement in the given interface
-     * @param referencedTypes a set of types that are referenced by the instance methods of the given interface
-     */
-    private record SamInfo(String singleName, List<Method> methods, Set<Class<?>> referencedTypes) {
-    }
-
-    /*
-     * Returns null if given interface is not SAM
-     */
-    private static SamInfo getStats(Class<?> intfc) {
-        if (!intfc.isInterface()) {
-            throw new IllegalArgumentException(intfc + " not an inteface");
-        }
-
-        ArrayList<Method> methods = new ArrayList<>();
-        var types = new HashSet<Class<?>>();
-        types.add(intfc);
-        String uniqueName = null;
-        for (Method m : intfc.getMethods()) {
-            if (Modifier.isStatic(m.getModifiers()))
-                continue;
-
-            if (isObjectMethod(m))
-                continue; // covered by java.base reads
-
-            addElementType(types, m.getReturnType());
-            addElementTypes(types, JLRA.getExecutableSharedParameterTypes(m));
-            addElementTypes(types, JLRA.getExecutableSharedExceptionTypes(m));
-
-            if (!Modifier.isAbstract(m.getModifiers()))
-                continue;
-            String mname = m.getName();
-            if (uniqueName == null)
-                uniqueName = mname;
-            else if (!uniqueName.equals(mname))
-                return null;  // too many abstract methods
-            methods.add(m);
-        }
-
-        if (uniqueName == null)
-            return null;
-
-        return new SamInfo(uniqueName, methods, types);
     }
 
     /*
