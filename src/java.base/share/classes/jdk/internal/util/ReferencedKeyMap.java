@@ -323,7 +323,7 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     @SuppressWarnings("unchecked")
     public void removeStaleReferences() {
         while (true) {
-            WeakReferenceKey<K> key = (WeakReferenceKey<K>)stale.poll();
+            Object key = stale.poll();
             if (key == null) {
                 break;
             }
