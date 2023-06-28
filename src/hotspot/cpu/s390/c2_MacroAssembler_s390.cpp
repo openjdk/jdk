@@ -1322,4 +1322,3 @@ unsigned int C2_MacroAssembler::string_indexof_char(Register result, Register ha
 
   return offset() - block_start;
 }
-

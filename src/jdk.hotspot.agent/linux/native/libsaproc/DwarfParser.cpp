@@ -231,4 +231,3 @@ JNIEXPORT jboolean JNICALL Java_sun_jvm_hotspot_debugger_linux_amd64_DwarfParser
   DwarfParser *parser = reinterpret_cast<DwarfParser *>(get_dwarf_context(env, this_obj));
   return parser->is_bp_offset_available();
 }
-

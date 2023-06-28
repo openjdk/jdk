@@ -225,4 +225,3 @@ TEST_VM(metaspace, BinList_random_test_16)    { BinListBasicTest< BinListImpl<2,
 TEST_VM(metaspace, BinList_random_test_32)    { BinListBasicTest<BinList32>::random_test(); }
 TEST_VM(metaspace, BinList_random_test_1331)  { BinListBasicTest< BinListImpl<13, 31> >::random_test(); }
 TEST_VM(metaspace, BinList_random_test_131)   { BinListBasicTest< BinListImpl<13, 1> >::random_test(); }
-

@@ -117,4 +117,3 @@ void JfrArtifactSet::increment_checkpoint_id() {
   assert(_symbol_table != nullptr, "invariant");
   _symbol_table->increment_checkpoint_id();
 }
-

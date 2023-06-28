@@ -1520,4 +1520,3 @@ void MacroAssembler::sha512_AVX2(XMMRegister msg, XMMRegister state0, XMMRegiste
 }
 
 #endif //#ifdef _LP64
-

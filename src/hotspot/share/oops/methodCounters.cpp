@@ -72,5 +72,3 @@ void MethodCounters::print_value_on(outputStream* st) const {
   st->print("method counters");
   print_address_on(st);
 }
-
-

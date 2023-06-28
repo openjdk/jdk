@@ -66,4 +66,3 @@ void* InlineCacheBuffer::ic_buffer_cached_value(address code_begin) {
   void* o = (void*)move->data();
   return o;
 }
-

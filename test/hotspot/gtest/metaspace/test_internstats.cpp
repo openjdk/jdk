@@ -40,4 +40,3 @@ TEST_VM(metaspace, internstats) {
   ASSERT_GT(metaspace::InternalStats::num_chunks_taken_from_freelist(), (uint64_t)0);
 
 }
-

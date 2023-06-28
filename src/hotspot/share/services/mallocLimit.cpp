@@ -231,4 +231,3 @@ void MallocLimitHandler::print_on(outputStream* st) {
     st->print_cr("MallocLimit: unset");
   }
 }
-

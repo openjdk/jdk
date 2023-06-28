@@ -145,4 +145,3 @@ jni_create_vmoptions(int size, char *args[], int argsCnt)
 }
 
 /*************************************************************/
-

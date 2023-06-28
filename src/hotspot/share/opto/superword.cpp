@@ -4930,4 +4930,3 @@ bool SuperWord::same_origin_idx(Node* a, Node* b) const {
 bool SuperWord::same_generation(Node* a, Node* b) const {
   return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
 }
-

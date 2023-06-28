@@ -83,4 +83,3 @@ void MetaspaceContext::verify() const {
 #endif // ASSERT
 
 } // namespace metaspace
-

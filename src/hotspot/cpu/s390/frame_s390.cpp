@@ -661,4 +661,3 @@ BasicObjectLock* frame::interpreter_frame_monitor_end() const {
 intptr_t* frame::interpreter_frame_tos_at(jint offset) const {
   return &interpreter_frame_tos_address()[offset];
 }
-

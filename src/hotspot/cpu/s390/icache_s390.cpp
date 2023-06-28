@@ -43,4 +43,3 @@ void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flu
   // First call to flush itself.
   ICache::invalidate_range((address)(*flush_icache_stub), 0);
 };
-

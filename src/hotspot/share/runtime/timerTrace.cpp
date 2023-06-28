@@ -85,4 +85,3 @@ TraceTime::~TraceTime() {
     tty->flush();
   }
 }
-

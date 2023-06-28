@@ -224,4 +224,3 @@ void GCNotifier::sendNotificationInternal(TRAPS) {
                             CHECK);
   }
 }
-

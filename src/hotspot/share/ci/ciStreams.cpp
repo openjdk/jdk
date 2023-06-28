@@ -543,4 +543,3 @@ int ciBytecodeStream::get_method_signature_index(const constantPoolHandle& cpool
     return cpool->signature_ref_index_at(name_and_type_index);
   )
 }
-

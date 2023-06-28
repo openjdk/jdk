@@ -47,4 +47,3 @@ void Decoder::print_state_on(outputStream* st) {
   WindowsDbgHelp::print_state_on(st);
   SymbolEngine::print_state_on(st);
 }
-

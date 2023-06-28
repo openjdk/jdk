@@ -394,4 +394,3 @@ bool LoadedLibraries::for_each(os::LoadedModulesCallbackFunc cb, void* param) {
 
   return for_each_internal(cb, param);
 }
-

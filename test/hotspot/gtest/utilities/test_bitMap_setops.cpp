@@ -420,4 +420,3 @@ CHECK_MOD_SETOPS(set_intersection, even, even, even)
 CHECK_MOD_SETOPS(set_intersection, even, odd, zero)
 CHECK_MOD_SETOPS(set_intersection, even, one, even)
 CHECK_MOD_SETOPS(set_intersection, even, zero, zero)
-

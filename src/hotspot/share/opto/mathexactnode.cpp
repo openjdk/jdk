@@ -264,4 +264,3 @@ const Type* OverflowINode::Value(PhaseGVN* phase) const {
 const Type* OverflowLNode::Value(PhaseGVN* phase) const {
   return IdealHelper<OverflowLNode>::Value(this, phase);
 }
-

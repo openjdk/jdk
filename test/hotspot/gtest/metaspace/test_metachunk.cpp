@@ -427,4 +427,3 @@ TEST_VM(metaspace, chunk_enlarge_in_place) {
   context.return_chunk(c);
 
 }
-

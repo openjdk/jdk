@@ -484,4 +484,3 @@ void MetaspaceArena::print_on_locked(outputStream* st) const {
 }
 
 } // namespace metaspace
-

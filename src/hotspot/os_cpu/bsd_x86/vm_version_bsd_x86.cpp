@@ -45,4 +45,3 @@ bool VM_Version::is_cpu_emulated() {
 }
 
 #endif
-

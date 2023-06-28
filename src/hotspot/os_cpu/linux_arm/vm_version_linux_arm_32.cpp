@@ -45,4 +45,3 @@ void VM_Version::get_os_cpu_info() {
     _arm_arch = (int)(name.machine[4] - '0');
   }
 }
-

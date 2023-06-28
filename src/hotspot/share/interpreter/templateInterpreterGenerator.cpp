@@ -502,4 +502,3 @@ address TemplateInterpreterGenerator::generate_intrinsic_entry(AbstractInterpret
   }
   return entry_point;
 }
-

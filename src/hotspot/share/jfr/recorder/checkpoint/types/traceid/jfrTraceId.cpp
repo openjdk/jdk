@@ -294,4 +294,3 @@ void JfrTraceId::untag_jdk_jfr_event_sub(const Klass* k) {
   }
   assert(IS_NOT_AN_EVENT_SUB_KLASS(k), "invariant");
 }
-

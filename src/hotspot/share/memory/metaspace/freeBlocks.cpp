@@ -61,4 +61,3 @@ MetaWord* FreeBlocks::remove_block(size_t requested_word_size) {
 }
 
 } // namespace metaspace
-

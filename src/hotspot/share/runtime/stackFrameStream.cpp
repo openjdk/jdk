@@ -40,4 +40,3 @@ StackFrameStream::StackFrameStream(JavaThread *thread, bool update, bool process
   }
 #endif
 }
-

@@ -79,4 +79,3 @@ bool JfrEventSetting::bounds_check_event(jlong id) {
   return true;
 }
 #endif // ASSERT
-

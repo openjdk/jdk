@@ -71,4 +71,3 @@ extern "C" JNIEXPORT jint JNICALL Agent_OnLoad(JavaVM *vm, char *options, void *
     fflush(stdout);
     return JVMTI_ERROR_NONE;
 }
-

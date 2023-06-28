@@ -107,4 +107,3 @@ void jdk_internal_vm_StackChunk::serialize_offsets(SerializeClosure* f) {
   STACKCHUNK_INJECTED_FIELDS(INJECTED_FIELD_SERIALIZE_OFFSET);
 }
 #endif
-

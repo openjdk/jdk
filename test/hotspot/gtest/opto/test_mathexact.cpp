@@ -37,4 +37,3 @@ TEST_VM(opto, mathexact) {
   ASSERT_FALSE(OverflowMulLNode::is_overflow(min_jlong + 1, -1));
   ASSERT_TRUE(OverflowMulLNode::is_overflow(min_jlong + 1, 2));
 }
-

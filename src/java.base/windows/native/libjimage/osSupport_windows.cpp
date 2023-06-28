@@ -132,4 +132,3 @@ SimpleCriticalSection::SimpleCriticalSection() {
 //SimpleCriticalSection::~SimpleCriticalSection() {
 //    DeleteCriticalSection(&critical_section);
 //}
-

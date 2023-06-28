@@ -446,4 +446,3 @@ uint32_t encoding_for_fp_immediate(float immediate)
   res = (s << 7) | (r << 4) | f;
   return res;
 }
-

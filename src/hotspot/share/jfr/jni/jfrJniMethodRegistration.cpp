@@ -109,4 +109,3 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
     env->DeleteLocalRef(jfr_clz);
   }
 }
-

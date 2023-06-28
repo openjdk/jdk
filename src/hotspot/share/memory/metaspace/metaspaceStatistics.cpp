@@ -242,4 +242,3 @@ void ClmsStats::verify() const {
 #endif
 
 } // end namespace metaspace
-

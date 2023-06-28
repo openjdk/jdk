@@ -94,4 +94,3 @@ size_t RunningCounters::free_chunks_words_nonclass() {
 }
 
 } // namespace metaspace
-

@@ -5232,4 +5232,3 @@ Node* Compile::narrow_value(BasicType bt, Node* value, const Type* type, PhaseGV
   }
   return result;
 }
-

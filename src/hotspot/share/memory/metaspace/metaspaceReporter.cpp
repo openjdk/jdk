@@ -395,4 +395,3 @@ void MetaspaceReporter::print_report(outputStream* out, size_t scale, int flags)
 } // MetaspaceUtils::print_report()
 
 } // namespace metaspace
-

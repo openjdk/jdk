@@ -643,6 +643,3 @@ BOOL AccessibleNode::displayAPIWindow() {
 
     return TRUE;
 }
-
-
-

@@ -104,4 +104,3 @@ ciArrayKlass* ciArrayKlass::make(ciType* element_type) {
     return ciObjArrayKlass::make(element_type->as_klass());
   }
 }
-

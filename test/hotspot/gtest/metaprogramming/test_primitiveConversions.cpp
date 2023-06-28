@@ -186,4 +186,3 @@ TEST(PrimitiveConversionsTranslateTest, scoped_enum) {
   EXPECT_EQ(PrimitiveConversions::Translate<TestEnum>::decay(TestEnum::B), 1);
   EXPECT_EQ(PrimitiveConversions::Translate<TestEnum>::recover(1), TestEnum::B);
 }
-

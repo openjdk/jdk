@@ -326,4 +326,3 @@ void MemBaseline::virtual_memory_sites_to_reservation_site_order() {
     _virtual_memory_sites_order = by_size;
   }
 }
-

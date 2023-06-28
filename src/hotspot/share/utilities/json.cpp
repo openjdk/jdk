@@ -685,4 +685,3 @@ void JSON::error(JSON_ERROR e, const char* format, ...) {
     _st->print_cr("%s", line_start);
   }
 }
-

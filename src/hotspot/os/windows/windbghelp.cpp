@@ -301,4 +301,3 @@ void WindowsDbgHelp::print_state_on(outputStream* st) {
   }
   st->cr();
 }
-

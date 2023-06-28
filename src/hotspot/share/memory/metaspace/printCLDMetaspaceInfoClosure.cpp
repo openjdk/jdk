@@ -169,4 +169,3 @@ void PrintCLDMetaspaceInfoClosure::do_cld(ClassLoaderData* cld) {
 }
 
 } // namespace metaspace
-

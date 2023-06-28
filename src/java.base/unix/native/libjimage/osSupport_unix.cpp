@@ -108,4 +108,3 @@ SimpleCriticalSection::SimpleCriticalSection() {
 //SimpleCriticalSection::~SimpleCriticalSection() {
 //    pthread_mutex_destroy(&mutex);
 //}
-

@@ -476,4 +476,3 @@ void CompileTask::print_inlining_ul(ciMethod* method, int inline_level, int bci,
     print_inlining_inner(&ls, method, inline_level, bci, msg);
   }
 }
-

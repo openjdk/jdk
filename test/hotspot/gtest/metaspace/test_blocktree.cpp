@@ -432,4 +432,3 @@ DO_TEST_ALL_PATTERNS(wide, BlockTree::MinWordSize, 128 * K);
 DO_TEST_ALL_PATTERNS(narrow, BlockTree::MinWordSize, 16)
 DO_TEST_ALL_PATTERNS(129, BlockTree::MinWordSize, 129)
 DO_TEST_ALL_PATTERNS(4K, BlockTree::MinWordSize, 4*K)
-

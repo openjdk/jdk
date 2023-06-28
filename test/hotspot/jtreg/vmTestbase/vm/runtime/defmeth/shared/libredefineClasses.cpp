@@ -28,4 +28,3 @@
 #include "jvmti_tools.cpp"
 #include "agent_tools.cpp"
 #include "native_thread.cpp"
-

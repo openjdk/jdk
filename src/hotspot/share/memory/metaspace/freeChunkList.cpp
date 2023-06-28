@@ -179,4 +179,3 @@ bool FreeChunkListVector::contains(const Metachunk* c) const {
 #endif // ASSERT
 
 } // namespace metaspace
-

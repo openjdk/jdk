@@ -238,4 +238,3 @@ TEST_VM(metaspace, freeblocks_medium) {
 TEST_VM(metaspace, freeblocks_large) {
   FreeBlocksTest::test_large_allocations();
 }
-

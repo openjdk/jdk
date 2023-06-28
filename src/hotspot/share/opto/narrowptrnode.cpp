@@ -106,4 +106,3 @@ const Type* EncodePKlassNode::Value(PhaseGVN* phase) const {
   assert(UseCompressedClassPointers && t->isa_klassptr(), "only klass ptr here");
   return t->make_narrowklass();
 }
-

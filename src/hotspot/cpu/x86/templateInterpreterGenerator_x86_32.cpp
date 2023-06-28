@@ -503,4 +503,3 @@ address TemplateInterpreterGenerator::generate_math_entry(AbstractInterpreter::M
 
 // Not supported
 address TemplateInterpreterGenerator::generate_currentThread() { return nullptr; }
-

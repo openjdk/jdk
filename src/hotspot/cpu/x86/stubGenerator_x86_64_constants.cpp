@@ -233,4 +233,3 @@ ATTRIBUTE_ALIGNED(16) static const juint _Ctable[] = {
     0x00000000UL, 0x3ff00000UL
 };
 address StubGenerator::Ctable = (address)_Ctable;
-

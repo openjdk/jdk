@@ -40,4 +40,3 @@ TEST_VM_F(PerfMemoryTest, destroy) {
   ASSERT_NE(PerfMemoryTest::prologue(), (PerfDataPrologue*)NULL) << "PerfMemory::_prologue should not be NULL";
   ASSERT_NE(PerfMemory::capacity(), (size_t)0) << "PerfMemory::_capacity should not be 0";
 }
-

@@ -103,4 +103,3 @@ bool PosixSemaphore::timedwait(struct timespec ts) {
   }
 }
 #endif // __APPLE__
-

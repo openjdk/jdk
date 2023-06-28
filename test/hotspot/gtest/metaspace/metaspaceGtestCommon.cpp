@@ -95,4 +95,3 @@ void check_marked_range(const MetaWord* p, size_t word_size) {
   uintx pattern = (uintx)p2i(p);
   check_marked_range(p, word_size, pattern);
 }
-

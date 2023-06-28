@@ -48,4 +48,3 @@ void InternalStats::print_on(outputStream* st) {
 }
 
 } // namespace metaspace
-

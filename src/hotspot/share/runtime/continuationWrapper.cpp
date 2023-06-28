@@ -96,4 +96,3 @@ bool ContinuationWrapper::chunk_invariant() const {
   return true;
 }
 #endif // ASSERT
-

@@ -450,4 +450,3 @@ JVMFlag::Error ControlIntrinsicConstraintFunc(ccstrlist value, bool verbose) {
 
   return JVMFlag::SUCCESS;
 }
-

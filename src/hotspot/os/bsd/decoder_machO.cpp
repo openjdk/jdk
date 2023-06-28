@@ -169,5 +169,3 @@ char* MachODecoder::mach_find_in_stringtable(char *strtab, uint32_t tablesize, i
 
 
 #endif
-
-

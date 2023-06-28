@@ -53,4 +53,3 @@ JVM_LEAF(void, JVM_RegisterUpcallHandlerMethods(JNIEnv *env, jclass UH_class))
   guarantee(status == JNI_OK && !env->ExceptionOccurred(),
             "register jdk.internal.foreign.abi.UpcallStubs natives");
 JVM_END
-

@@ -54,4 +54,3 @@ CommitLimiter* CommitLimiter::globalLimiter() {
 }
 
 } // namespace metaspace
-

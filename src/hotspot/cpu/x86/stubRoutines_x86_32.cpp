@@ -45,4 +45,3 @@ jint StubRoutines::x86::_mxcsr_std = 0;
 
 jint StubRoutines::x86::_fpu_subnormal_bias1[3] = { 0, 0, 0 };
 jint StubRoutines::x86::_fpu_subnormal_bias2[3] = { 0, 0, 0 };
-

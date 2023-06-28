@@ -123,4 +123,3 @@ const ArenaGrowthPolicy* ArenaGrowthPolicy::policy_for_space_type(Metaspace::Met
 }
 
 } // namespace
-

@@ -230,4 +230,3 @@ bool JdkJfrEvent::is_visible(const jclass jc) {
 bool JdkJfrEvent::is_excluded(const jclass jc) {
   return !JfrTraceId::in_visible_set(jc);
 }
-

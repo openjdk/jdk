@@ -37,5 +37,3 @@
 #include "utilities/globalDefinitions.hpp"
 #include "vmreg_aarch64.inline.hpp"
 #endif
-
-

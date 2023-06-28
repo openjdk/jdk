@@ -89,4 +89,3 @@ void ChunkHeaderPool::verify() const {
 #endif
 
 } // namespace metaspace
-

@@ -55,4 +55,3 @@ void LIR_Address::verify() const {
          "wrong type for addresses");
 }
 #endif // PRODUCT
-

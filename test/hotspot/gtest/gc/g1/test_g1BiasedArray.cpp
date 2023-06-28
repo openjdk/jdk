@@ -133,4 +133,3 @@ TEST_VM(G1BiasedArray, simple) {
   }
   ASSERT_EQ((size_t) 3, num_zeros);
 }
-

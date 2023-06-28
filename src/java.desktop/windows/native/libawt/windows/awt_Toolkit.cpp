@@ -3231,4 +3231,3 @@ LRESULT AwtToolkit::InvokeInputMethodFunction(UINT msg, WPARAM wParam, LPARAM lP
         return 0;
     }
 }
-

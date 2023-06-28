@@ -339,4 +339,3 @@ void WatcherThread::print_on(outputStream* st) const {
   Thread::print_on(st);
   st->cr();
 }
-

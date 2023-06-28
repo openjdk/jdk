@@ -94,4 +94,3 @@ void CommitMask::print_on(outputStream* st) const {
 }
 
 } // namespace metaspace
-

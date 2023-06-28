@@ -446,4 +446,3 @@ TEST_VM(metaspace, MetaspaceArena_random_allocs_1_bed_no_commit_limit) {
   MetaspaceArenaTest test(max_uintx, 1);
   test.test();
 }
-

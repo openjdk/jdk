@@ -592,4 +592,3 @@ bool DirectivesParser::callback(JSON_TYPE t, JSON_VAL* v, uint rlimit) {
     }
   }
 }
-

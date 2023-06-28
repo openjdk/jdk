@@ -40,4 +40,3 @@ TEST_VM(opto, compress_expand_bits) {
   ASSERT_EQ(ExpandBitsNode::expand_bits(-2147483648LL, -65535LL, 64), -70368744177664LL);
   ASSERT_EQ(ExpandBitsNode::expand_bits(-2147483648LL, -65535LL, 32), 0LL);
 }
-

@@ -187,4 +187,3 @@ size_t get_raw_word_size_for_requested_word_size(size_t word_size) {
 }
 
 } // namespace metaspace
-

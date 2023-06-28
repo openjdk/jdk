@@ -115,4 +115,3 @@ TEST_VM(metaspace, chunklevel_utils)   {
   EXPECT_EQ(level_fitting_word_size(8 * K - 13), LP64_ONLY(CHUNK_LEVEL_64K) NOT_LP64(CHUNK_LEVEL_32K));
 
 }
-

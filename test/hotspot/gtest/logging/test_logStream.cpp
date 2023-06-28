@@ -155,4 +155,3 @@ TEST_VM_F(LogStreamTest, autoflush_on_destruction) {
   }
   EXPECT_TRUE(file_contains_substring(TestLogFileName, "ABCD\n"));
 }
-

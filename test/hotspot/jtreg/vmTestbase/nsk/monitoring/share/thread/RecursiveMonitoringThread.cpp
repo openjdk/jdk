@@ -165,4 +165,3 @@ JNIEXPORT void JNICALL Java_nsk_monitoring_share_thread_RecursiveMonitoringThrea
 }
 
 }
-

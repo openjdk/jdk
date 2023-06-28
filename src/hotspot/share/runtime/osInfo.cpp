@@ -27,4 +27,3 @@
 
 size_t OSInfo::_vm_page_size = 0;
 size_t OSInfo::_vm_allocation_granularity = 0;
-

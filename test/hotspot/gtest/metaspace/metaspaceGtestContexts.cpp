@@ -167,4 +167,3 @@ void ChunkGtestContext::uncommit_chunk_with_test(Metachunk* c) {
 }
 
 /////// SparseArray<T> ////////////////
-

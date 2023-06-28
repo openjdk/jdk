@@ -123,4 +123,3 @@ bool Decoder::get_source_info(address pc, char* filename, size_t filename_len, i
 }
 
 #endif // !_WINDOWS
-

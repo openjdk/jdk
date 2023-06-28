@@ -268,4 +268,3 @@ TEST_VM(metaspace, freechunklist_retrieval) {
   context.return_chunk(c_2g);
 
 }
-

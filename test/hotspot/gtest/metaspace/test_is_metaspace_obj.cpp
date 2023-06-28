@@ -109,4 +109,3 @@ TEST_VM(metaspace, is_metaspace_obj_class) {
   MetaspaceIsMetaspaceObjTest test;
   test.do_test(Metaspace::ClassType);
 }
-
