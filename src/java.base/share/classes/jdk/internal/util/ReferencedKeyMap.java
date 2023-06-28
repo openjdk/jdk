@@ -320,7 +320,6 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     /**
      * Removes enqueued weak references from map.
      */
-    @SuppressWarnings("unchecked")
     public void removeStaleReferences() {
         while (true) {
             Object key = stale.poll();
