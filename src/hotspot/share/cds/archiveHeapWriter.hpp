@@ -192,6 +192,19 @@ public:
   static oop source_obj_to_requested_obj(oop src_obj);
   static oop buffered_addr_to_source_obj(address buffered_addr);
   static address buffered_addr_to_requested_addr(address buffered_addr);
+
+  // Archived heap object headers carry pre-computed narrow Klass ids calculated with the
+  // following scheme:
+  // 1) (mapping start - base) == 0, so base is the future mapping start address. nKlass are relative
+  //    to base: we can map the archive anywhere but then need to set encoding base to that address.
+  // 2) shift must be large enough to result in an encoding range that covers the future Klass range.
+  //    That Klass range is defined by CDS archive size and future class space size. Luckily, the maximum
+  //    size can be predicted: archive size is assumed to be <1G, class space size capped at 3G, and at
+  //    runtime we put both regions adjacent to each other. Therefore, future Klass range size < 4G.
+  //    Since nKlass itself is 32 bit, our encoding range len is 4G, and since we set the base directly
+  //    at mapping start, these 4G are enough. Therefore, we don't need to shift at all (shift=0).
+  static constexpr int precomputed_narrow_klass_shift = 0;
+  static constexpr size_t precomputed_narrow_klass_base_delta = 0;
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 #endif // SHARE_CDS_ARCHIVEHEAPWRITER_HPP

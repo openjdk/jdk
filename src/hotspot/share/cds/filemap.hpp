@@ -194,7 +194,8 @@ private:
   bool   _compact_strings;                        // value of CompactStrings
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
-  int     _narrow_klass_shift;                    // save narrow klass base and shift
+  size_t  _narrow_klass_base_delta;               // narrow Klass base and shift used to pre-calculate nKlass ids
+  int     _narrow_klass_shift;                    //  in archived objects (see comment in archiveHeapWriter.hpp)
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
@@ -262,8 +263,8 @@ public:
   bool compact_strings()                   const { return _compact_strings; }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
+  size_t narrow_klass_base_delta()         const { return _narrow_klass_base_delta; }
   int narrow_klass_shift()                 const { return _narrow_klass_shift; }
-  address narrow_klass_base()              const { return (address)mapped_base_address(); }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
   address heap_begin()                     const { return _heap_begin; }
@@ -382,7 +383,7 @@ public:
   address narrow_oop_base()    const { return header()->narrow_oop_base(); }
   int     narrow_oop_shift()   const { return header()->narrow_oop_shift(); }
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
-  address narrow_klass_base()  const { return header()->narrow_klass_base(); }
+  size_t  narrow_klass_base_delta() const { return header()->narrow_klass_base_delta(); }
   int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
 
