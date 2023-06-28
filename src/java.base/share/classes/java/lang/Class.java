@@ -1592,10 +1592,8 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     private static Class<?> toClass(Type o) {
-        if (o instanceof GenericArrayType)
-            return Array.newInstance(toClass(((GenericArrayType)o).getGenericComponentType()),
-                                     0)
-                .getClass();
+        if (o instanceof GenericArrayType gat)
+            return toClass(gat.getGenericComponentType()).arrayType();
         return (Class<?>)o;
      }
 
@@ -3016,8 +3014,8 @@ public final class Class<T> implements java.io.Serializable,
                 // need for a URL connection
                 if (cl == null) {
                     return BootLoader.findResourceAsStream(mn, name);
-                } else if (cl instanceof BuiltinClassLoader) {
-                    return ((BuiltinClassLoader) cl).findResourceAsStream(mn, name);
+                } else if (cl instanceof BuiltinClassLoader bcl) {
+                    return bcl.findResourceAsStream(mn, name);
                 } else {
                     URL url = cl.findResource(mn, name);
                     return (url != null) ? url.openStream() : null;
