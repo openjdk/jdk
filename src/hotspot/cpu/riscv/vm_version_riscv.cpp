@@ -231,7 +231,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
-
 #ifdef COMPILER2
   c2_initialize();
 #endif // COMPILER2
