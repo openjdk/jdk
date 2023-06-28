@@ -66,6 +66,7 @@ static NSTimeInterval gNextKeyEventTime;
 static CGEventFlags initFlags;
 
 static inline CGKeyCode GetCGKeyCode(jint javaKeyCode);
+static inline int GetCGKeyMask(int cgKeyCode);
 
 static void PostMouseEvent(const CGPoint point, CGMouseButton button,
                            CGEventType type, int clickCount, int eventNumber);
@@ -125,7 +126,7 @@ Java_sun_lwawt_macosx_CRobot_initRobot
             // initialize CGEventFlags here - which is used in keyEvent
             initFlags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
 
-            // Toggle the Function flag bits if they are set
+            // Clear Function flag bits if they are set
             if ((initFlags & kCGEventFlagMaskSecondaryFn) != 0) {
                 initFlags ^= kCGEventFlagMaskSecondaryFn;
             }
@@ -305,22 +306,16 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
 
         if (event != NULL) {
             NSLog(@"BEFORE Contents of Flag: %llu", initFlags);
-            switch (keyCode) {
-                case OSX_Shift:
-                    initFlags = keyPressed ? (initFlags | kCGEventFlagMaskShift) : (initFlags & ~kCGEventFlagMaskShift);
-                    break;
-                case OSX_CapsLock:
-                    initFlags ^= kCGEventFlagMaskAlphaShift;
-                    break;
-                case OSX_Control:
-                    initFlags = keyPressed ? (initFlags | kCGEventFlagMaskControl) : (initFlags & ~kCGEventFlagMaskControl);
-                    break;
-                case OSX_Option:
-                    initFlags = keyPressed ? (initFlags | kCGEventFlagMaskAlternate) : (initFlags & ~kCGEventFlagMaskAlternate);
-                    break;
-                case OSX_Command:
-                    initFlags = keyPressed ? (initFlags | kCGEventFlagMaskCommand) : (initFlags & ~kCGEventFlagMaskCommand);
-                    break;
+            int flagMaskValue = GetCGKeyMask(keyCode);
+            if (OSX_Undefined != flagMaskValue) {
+                NSLog(@"KeyCode %d and Mask Value: %d", keyCode, flagMaskValue);
+                if (keyCode == OSX_CapsLock) {
+                    initFlags ^= flagMaskValue;
+                } else {
+                    initFlags = keyPressed
+                                ? (initFlags | flagMaskValue)    // add flag bits if modifier key pressed
+                                : (initFlags & ~flagMaskValue);  // clear flag bits if modifier key released
+                }
             }
 
             CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
@@ -428,6 +423,12 @@ static inline CGKeyCode GetCGKeyCode(jint javaKeyCode)
 {
     CRobotKeyCodeMapping *keyCodeMapping = [CRobotKeyCodeMapping sharedInstance];
     return [keyCodeMapping getOSXKeyCodeForJavaKey:javaKeyCode];
+}
+
+static inline int GetCGKeyMask(int cgKeyCode)
+{
+    CRobotKeyCodeMapping *keyCodeMapping = [CRobotKeyCodeMapping sharedInstance];
+    return [keyCodeMapping getFlagMaskForCGKey:cgKeyCode];
 }
 
 static int GetClickCount(BOOL isDown) {

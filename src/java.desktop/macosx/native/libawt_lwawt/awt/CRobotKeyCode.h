@@ -148,9 +148,11 @@ const static int OSX_Undefined                  = 0x7F;
 }
 
 @property (readwrite, retain) NSDictionary *javaToMacKeyMap;
+@property (readwrite, retain) NSDictionary *modifierKeyToMaskMap;
 
 + (CRobotKeyCodeMapping *)sharedInstance ;
 - (int)getOSXKeyCodeForJavaKey:(int) javaKey;
+- (int)getFlagMaskForCGKey:(int) cgKeyCode;
 
 @end
 
