@@ -520,8 +520,8 @@ public abstract sealed class VarHandle implements Constable
     }
 
     /**
-     * Direct VH implementations call this method to
-     * unwrap lazy initializing VarHandles.
+     * Returns the target VarHandle.   Subclasses may override this method to implement
+     * additional logic for example lazily initializing the declaring class of a static field var handle.
      */
     @ForceInline
     VarHandle target() {
@@ -529,8 +529,8 @@ public abstract sealed class VarHandle implements Constable
     }
 
     /**
-     * The VarHandle to be passed to {@link #getMethodHandle}, in Invokers
-     * LambdaForms and VarHandleGuards.
+     * Returns the direct target VarHandle.   Indirect VarHandle subclasses should implement
+     * this method.
      *
      * @see #getMethodHandle(int)
      * @see #checkAccessModeThenIsDirect(AccessDescriptor)
