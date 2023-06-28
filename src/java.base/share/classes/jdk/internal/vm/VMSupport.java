@@ -118,9 +118,9 @@ public class VMSupport {
      * @param format specifies how to interpret {@code buffer}:
      *            <pre>
      *             0: {@code buffer} was created by {@link #encodeThrowable}
-     *            -1: native memory for {@code buffer} could not be allocated
-     *            -2: an OutOfMemoryError was thrown while encoding the exception
-     *            -3: some other problem occured while encoding the exception. If {@code buffer != 0},
+     *             1: native memory for {@code buffer} could not be allocated
+     *             2: an OutOfMemoryError was thrown while encoding the exception
+     *             3: some other problem occured while encoding the exception. If {@code buffer != 0},
      *                it contains a {@code struct { u4 len; char[len] desc}} where {@code desc} describes the problem
      *            </pre>
      * @param buffer encoded info about the exception to throw (depends on {@code format})
@@ -130,13 +130,13 @@ public class VMSupport {
         if (format != 0) {
             String context = String.format("while encoding an exception to translate it %s the JVM heap",
                     inJVMHeap ? "to" : "from");
-            if (format == -1) {
+            if (format == 1) {
                 throw new InternalError("native buffer could not be allocated " + context);
             }
-            if (format == -2L) {
+            if (format == 2) {
                 throw new OutOfMemoryError("OutOfMemoryError occurred " + context);
             }
-            if (format == -3L) {
+            if (format == 3 && buffer != 0L) {
                 byte[] bytes = bufferToBytes(buffer);
                 throw new InternalError("unexpected problem occurred " + context + ": " + new String(bytes, StandardCharsets.UTF_8));
             }
@@ -146,6 +146,9 @@ public class VMSupport {
     }
 
     private static byte[] bufferToBytes(long buffer) {
+        if (buffer == 0) {
+            return null;
+        }
         int len = U.getInt(buffer);
         byte[] bytes = new byte[len];
         U.copyMemory(null, buffer + 4, bytes, Unsafe.ARRAY_BYTE_BASE_OFFSET, len);

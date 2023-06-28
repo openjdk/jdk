@@ -374,6 +374,15 @@ bool JVMCIEnv::pending_exception_as_string(const char** to_string, const char** 
 // Shared code for translating an exception from HotSpot to libjvmci or vice versa.
 class ExceptionTranslation: public StackObj {
  protected:
+  enum DecodeFormat {
+    _encoded_ok        = 0, // exception was successfully encoded into buffer
+    _buffer_alloc_fail = 1, // native memory for buffer could not be allocated
+    _encode_oome_fail  = 2, // OutOfMemoryError thrown during encoding
+    _encode_fail       = 3  // some other problem occured during encoding. If buffer != 0,
+                            // buffer contains a `struct { u4 len; char[len] desc}`
+                            // describing the problem
+  };
+
   JVMCIEnv*  _from_env; // Source of translation. Can be null.
   JVMCIEnv*  _to_env;   // Destination of translation. Never null.
 
@@ -384,8 +393,8 @@ class ExceptionTranslation: public StackObj {
   // and the encoding was written to `buffer` otherwise returns -N.
   virtual int encode(JavaThread* THREAD, jlong buffer, int buffer_size) = 0;
 
-  // Decodes the exception in `format` and `buffer` in `_to_env` and throws it.
-  virtual void decode(JavaThread* THREAD, jint format, jlong buffer) = 0;
+  // Decodes the exception in `buffer` in `_to_env` and throws it.
+  virtual void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) = 0;
 
  public:
   void doit(JavaThread* THREAD) {
@@ -395,41 +404,21 @@ class ExceptionTranslation: public StackObj {
       jlong buffer = (jlong) NEW_RESOURCE_ARRAY_IN_THREAD_RETURN_NULL(THREAD, jbyte, buffer_size);
       if (buffer == 0L) {
         JVMCI_event_1("error translating exception: translation buffer allocation failed");
-        decode(THREAD, -1, 0L);
+        decode(THREAD, _buffer_alloc_fail, 0L);
         return;
       }
       int res = encode(THREAD, buffer, buffer_size);
-      if (_from_env != nullptr && !_from_env->is_hotspot() && _from_env->has_pending_exception()) {
-        // Cannot get name of exception thrown by `encode` as that involves
-        // calling into libjvmci which in turn can raise another exception.
-        _from_env->clear_pending_exception();
-        JVMCI_event_1("error translating exception: unknown error");
-        decode(THREAD, -3, 0L);
+      if (_to_env->has_pending_exception()) {
+        // Propagate pending exception
         return;
-      } else if (HAS_PENDING_EXCEPTION) {
-        Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
-        Symbol *ex_name = throwable->klass()->name();
-        CLEAR_PENDING_EXCEPTION;
-        if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
-          JVMCI_event_1("error translating exception: OutOfMemoryError");
-          decode(THREAD, -2, 0L);
-        } else {
-          char* char_buffer = (char*) buffer + 4;
-          stringStream st(char_buffer, (size_t) buffer_size - 4);
-          java_lang_Throwable::print_stack_trace(throwable, &st);
-          int len = st.size();
-          *((u4*) buffer) = len;
-          JVMCI_event_1("error translating exception: %s", char_buffer);
-          decode(THREAD, -3, buffer);
-        }
-        return;
-      } else if (res < 0) {
+      }
+      if (res < 0) {
         int required_buffer_size = -res;
         if (required_buffer_size > buffer_size) {
           buffer_size = required_buffer_size;
         }
       } else {
-        decode(THREAD, 0, buffer);
+        decode(THREAD, _encoded_ok, buffer);
         if (!_to_env->has_pending_exception()) {
           _to_env->throw_InternalError("decodeAndThrowThrowable should have thrown an exception");
         }
@@ -447,7 +436,21 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
   int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
     Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
     if (HAS_PENDING_EXCEPTION) {
-      // Propagate pending exception
+      Handle throwable = Handle(THREAD, PENDING_EXCEPTION);
+      Symbol *ex_name = throwable->klass()->name();
+      CLEAR_PENDING_EXCEPTION;
+      if (ex_name == vmSymbols::java_lang_OutOfMemoryError()) {
+        JVMCI_event_1("error translating exception: OutOfMemoryError");
+        decode(THREAD, _encode_oome_fail, 0L);
+      } else {
+        char* char_buffer = (char*) buffer + 4;
+        stringStream st(char_buffer, (size_t) buffer_size - 4);
+        java_lang_Throwable::print_stack_trace(throwable, &st);
+        int len = st.size();
+        *((u4*) buffer) = len;
+        JVMCI_event_1("error translating exception: %s", char_buffer);
+        decode(THREAD, _encode_fail, buffer);
+      }
       return 0;
     }
     JavaCallArguments jargs;
@@ -462,7 +465,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
     return result.get_jint();
   }
 
-  void decode(JavaThread* THREAD, jint format, jlong buffer) {
+  void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
     JNIAccessMark jni(_to_env, THREAD);
     jni()->CallStaticVoidMethod(JNIJVMCI::VMSupport::clazz(),
                                 JNIJVMCI::VMSupport::decodeAndThrowThrowable_method(),
@@ -480,17 +483,21 @@ class SharedLibraryToHotSpotExceptionTranslation : public ExceptionTranslation {
 
   int encode(JavaThread* THREAD, jlong buffer, int buffer_size) {
     JNIAccessMark jni(_from_env, THREAD);
-    return jni()->CallStaticIntMethod(JNIJVMCI::VMSupport::clazz(),
+    int res = jni()->CallStaticIntMethod(JNIJVMCI::VMSupport::clazz(),
                                       JNIJVMCI::VMSupport::encodeThrowable_method(),
                                       _throwable, buffer, buffer_size);
+    if (jni()->ExceptionCheck()) {
+      // Cannot get name of exception thrown as that can raise another exception.
+      jni()->ExceptionClear();
+      JVMCI_event_1("error translating exception: unknown error");
+      decode(THREAD, _encode_fail, 0L);
+      return 0;
+    }
+    return res;
   }
 
-  void decode(JavaThread* THREAD, jint format, jlong buffer) {
-    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, THREAD);
-    if (HAS_PENDING_EXCEPTION) {
-      // Propagate pending exception
-      return;
-    }
+  void decode(JavaThread* THREAD, DecodeFormat format, jlong buffer) {
+    Klass* vmSupport = SystemDictionary::resolve_or_fail(vmSymbols::jdk_internal_vm_VMSupport(), true, CHECK);
     JavaCallArguments jargs;
     jargs.push_int(format);
     jargs.push_long(buffer);
