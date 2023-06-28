@@ -2346,9 +2346,10 @@ public abstract class ResourceBundle {
      * @since 1.6
      */
     protected Set<String> handleKeySet() {
-        if (keySet == null) {
+      Set<String> keySet = this.keySet;
+      if (keySet == null) {
             synchronized (this) {
-                if (keySet == null) {
+                if ((keySet = this.keySet) == null) {
                     Set<String> keys = new HashSet<>();
                     Enumeration<String> enumKeys = getKeys();
                     while (enumKeys.hasMoreElements()) {
@@ -2357,7 +2358,7 @@ public abstract class ResourceBundle {
                             keys.add(key);
                         }
                     }
-                    keySet = keys;
+                    this.keySet = keySet = keys;
                 }
             }
         }
