@@ -35,7 +35,7 @@ import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import jdk.internal.misc.Unsafe;
-import jdk.internal.referencedkey.ReferencedKeyMap;
+import jdk.internal.util.ReferencedKeyMap;
 
 import static java.lang.invoke.MethodType.methodType;
 

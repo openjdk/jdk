@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.internal.referencedkey;
+package jdk.internal.util;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;

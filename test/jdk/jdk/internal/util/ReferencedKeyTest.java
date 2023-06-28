@@ -25,19 +25,20 @@
  * @test
  * @bug 8285932 8310913
  * @summary Test features provided by the ReferencedKeyMap/ReferencedKeySet classes.
- * @modules java.base/jdk.internal.referencedkey
+ * @modules java.base/jdk.internal.util
  * @compile --patch-module java.base=${test.src} ReferencedKeyTest.java
- * @run main/othervm --patch-module java.base=${test.class.path} jdk.internal.referencedkey.ReferencedKeyTest
+ * @run main/othervm --patch-module java.base=${test.class.path} jdk.internal.util.ReferencedKeyTest
  */
 
-package jdk.internal.referencedkey;
+package jdk.internal.util;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
-class ReferencedKeyTest {
+public class ReferencedKeyTest {
     static long BASE_KEY = 10_000_000L;
 
     public static void main(String[] args) {

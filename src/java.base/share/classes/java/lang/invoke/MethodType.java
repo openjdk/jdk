@@ -45,8 +45,8 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.referencedkey.ReferencedKeySet;
-import jdk.internal.referencedkey.ReferenceKey;
+import jdk.internal.util.ReferencedKeySet;
+import jdk.internal.util.ReferenceKey;
 import jdk.internal.vm.annotation.Stable;
 import sun.invoke.util.BytecodeDescriptor;
 import sun.invoke.util.VerifyType;
