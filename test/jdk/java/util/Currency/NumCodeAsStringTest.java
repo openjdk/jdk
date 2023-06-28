@@ -25,7 +25,7 @@
  * @test
  * @bug 8154295
  * @summary Check getNumericCodeAsString() method which returns numeric code as a 3 digit String.
- * @run junit Bug8154295
+ * @run junit NumCodeAsStringTest
  */
 
 import java.util.Currency;
@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Bug8154295 {
+public class NumCodeAsStringTest {
 
     /**
      * Ensure getNumericCodeAsString() returns the correct 3-digit numeric code
