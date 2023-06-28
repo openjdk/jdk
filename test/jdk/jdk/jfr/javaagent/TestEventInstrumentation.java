@@ -23,7 +23,6 @@
 package jdk.jfr.javaagent;
 
 import java.lang.constant.ClassDesc;
-import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.ClassFileTransformer;
 import java.lang.instrument.IllegalClassFormatException;
 import java.lang.instrument.Instrumentation;
@@ -42,7 +41,6 @@ import jdk.jfr.Recording;
 import jdk.jfr.consumer.RecordingFile;
 import jdk.test.lib.Asserts;
 
-import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 import static java.lang.constant.ConstantDescs.MTD_void;
 
@@ -118,7 +116,8 @@ public class TestEventInstrumentation {
                     return null;
                 }
 
-                result = Classfile.parse(bytes).transform((clb, ce) -> {
+                var cf = Classfile.of();
+                result = cf.transform(cf.parse(bytes), (clb, ce) -> {
                     if (ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)) {
                         clb.transformMethod(mm, MethodTransform.transformingCode(new CodeTransform() {
                             @Override

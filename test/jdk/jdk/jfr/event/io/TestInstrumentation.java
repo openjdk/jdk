@@ -317,7 +317,8 @@ public class TestInstrumentation implements ClassFileTransformer {
         log("instrument class(" + className + ") " + (isRedefinition ? "redef" : "load"));
 
         instrClassesDone.add(target);
-        return Classfile.parse(bytes).transform((clb, ce) -> {
+        var cf = Classfile.of();
+        return cf.transform(cf.parse(bytes), (clb, ce) -> {
             MethodKey key;
             if (ce instanceof MethodModel mm && instrMethodKeys.contains(key = new MethodKey(
                     target, mm.methodName().stringValue(), mm.methodTypeSymbol()))) {

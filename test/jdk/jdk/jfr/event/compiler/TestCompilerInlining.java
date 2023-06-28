@@ -51,7 +51,7 @@ import static java.lang.constant.ConstantDescs.CD_Object;
 import static java.lang.constant.ConstantDescs.CD_void;
 import static java.lang.constant.ConstantDescs.INIT_NAME;
 
-/**
+/*
  * @test CompilerInliningTest
  * @bug 8073607
  * @key jfr
@@ -378,7 +378,7 @@ class InlineCalls {
             if (stream == null) {
                 throw new IOException("Cannot find class file for " + aClass.getName());
             }
-            clm = Classfile.parse(stream.readAllBytes());
+            clm = Classfile.of().parse(stream.readAllBytes());
         } catch (IOException e) {
             throw new Error("TESTBUG : unexpected IOE during class reading", e);
         }
