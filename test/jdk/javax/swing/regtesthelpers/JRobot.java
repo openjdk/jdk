@@ -36,11 +36,10 @@ import javax.swing.SwingUtilities;
  * JRobot is a wrapper around java.awt.Robot that provides some convenience
  * methods.
  * <p>When using jtreg you would include this class via something like:
- * <pre>
+ * <pre>{@code
  * @library ../../../regtesthelpers
  * @build JRobot
- * </pre>
- *
+ * }</pre>
  */
 
 public class JRobot extends java.awt.Robot {
