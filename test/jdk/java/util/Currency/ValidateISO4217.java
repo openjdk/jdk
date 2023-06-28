@@ -222,6 +222,12 @@ public class ValidateISO4217 {
         }
     }
 
+    // Check that the data file is up-to-date
+    @Test
+    public void dataVersionTest() {
+        CheckDataVersion.check();
+    }
+
     /**
      * Tests the JDK's ISO4217 data and ensures the values for getNumericCode(),
      * getDefaultFractionDigits(), and getCurrencyCode() are as expected.
