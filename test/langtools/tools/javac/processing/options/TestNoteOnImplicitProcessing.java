@@ -62,6 +62,9 @@ import toolbox.JarTask;
  * $ javac -cp ImplicitProcTestProc.jar -proc:only                          HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -Xlint:-options                     HelloWorldTest.java
  * $ javac -cp ImplicitProcTestProc.jar -Xlint:none                         HelloWorldTest.java
+ *
+ * Does _not_ generate a note and the processor _doesn't_ run.
+ * $ javac -cp ImplicitProcTestProc.jar -proc:none                          HelloWorldTest.java
  */
 
 public class TestNoteOnImplicitProcessing extends TestRunner {
@@ -80,18 +83,19 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
     }
 
     private Path createProcessorJarFile() throws Exception {
+        Path apDir = Paths.get(".");
+
         // Write out shared-use source file
-        tb.writeFile("HelloWorldTest.java",
-                     """
-                     public class HelloWorldTest {
-                         public static void main(String... args) {
-                             System.out.println("Hello world test.");
-                         }
-                     }
-                     """);
+        tb.writeJavaFiles(apDir,
+                          """
+                          public class HelloWorldTest {
+                              public static void main(String... args) {
+                                  System.out.println("Hello world test.");
+                              }
+                          }
+                          """);
 
         JarTask jarTask = new JarTask(tb, processorName + ".jar");
-        Path apDir = Paths.get(".");
 
         // write out META-INF/services file for the processor
         Path servicesFile =
@@ -99,36 +103,35 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             .resolve("META-INF")
             .resolve("services")
             .resolve(Processor.class.getCanonicalName());
-        tb.writeFile(servicesFile,
-                     processorName);
+        tb.writeFile(servicesFile, processorName);
 
         // write out processor source file
-        tb.writeFile(processorName + ".java",
-                     """
-                     import java.util.Set;
-                     import javax.annotation.processing.*;
-                     import javax.lang.model.SourceVersion;
-                     import javax.lang.model.element.TypeElement;
+        tb.writeJavaFiles(apDir,
+                          """
+                          import java.util.Set;
+                          import javax.annotation.processing.*;
+                          import javax.lang.model.SourceVersion;
+                          import javax.lang.model.element.TypeElement;
 
-                     @SupportedAnnotationTypes("*")
-                     public class ImplicitProcTestProc extends AbstractProcessor {
-                         public ImplicitProcTestProc() {super();}
+                          @SupportedAnnotationTypes("*")
+                          public class ImplicitProcTestProc extends AbstractProcessor {
+                              public ImplicitProcTestProc() {super();}
 
-                         @Override
-                         public boolean process(Set<? extends TypeElement> annotations,
-                                                RoundEnvironment roundEnv) {
-                             if (roundEnv.processingOver()) {
-                                 System.out.println("ImplicitProcTestProc run");
-                             }
-                             return true;
-                         }
+                              @Override
+                              public boolean process(Set<? extends TypeElement> annotations,
+                                                     RoundEnvironment roundEnv) {
+                                  if (roundEnv.processingOver()) {
+                                      System.out.println("ImplicitProcTestProc run");
+                                  }
+                                  return true;
+                              }
 
-                         @Override
-                         public SourceVersion getSupportedSourceVersion() {
-                             return SourceVersion.latest();
-                         }
-                     }
-                     """);
+                              @Override
+                              public SourceVersion getSupportedSourceVersion() {
+                                  return SourceVersion.latest();
+                              }
+                          }
+                          """);
 
         // Compile the processor
         new JavacTask(tb)
@@ -248,6 +251,21 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
         checkForCompilerNote(javacResult, false);
     }
 
+    @Test
+    public void procNone(Path base, Path jarFile) {
+        Task.Result javacResult =
+            new JavacTask(tb)
+            .options("-classpath", jarFile.toString(),
+                     "-proc:none",
+                     "-XDrawDiagnostics")
+            .files("HelloWorldTest.java")
+            .run(Expect.SUCCESS)
+            .writeAll();
+
+        checkForProcessorMessage(javacResult, false);
+        checkForCompilerNote(javacResult, false);
+    }
+
     private void checkForProcessorMessage(Task.Result javacResult, boolean expectedPresent) {
         List<String> outputLines = javacResult.getOutputLines(Task.OutputKind.STDOUT);
 
@@ -267,7 +285,8 @@ public class TestNoteOnImplicitProcessing extends TestRunner {
             return;
         }
 
-        if (expectedPresent ^ outputLines.get(0).contains("- compiler.note.implicit.annotation.processing")) {
+        if (expectedPresent ^
+            outputLines.get(0).contains("- compiler.note.implicit.annotation.processing")) {
             throw new RuntimeException("Expected note not printed");
         }
     }

@@ -432,6 +432,9 @@ public class JavaCompiler {
         moduleFinder.moduleNameFromSourceReader = this::readModuleName;
 
         options = Options.instance(context);
+        // See if lint options checking was explicitly disabled by the
+        // user; this is distinct from the options check being
+        // enabled/disabled.
         optionsCheckingInitiallyDisabled =
             options.isSet(Option.XLINT_CUSTOM, "-options") ||
             options.isSet(Option.XLINT_CUSTOM, "none");
