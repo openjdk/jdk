@@ -204,6 +204,13 @@ void VM_Version::initialize() {
     }
   }
 
+  // See JDK-8026049
+  // This machine has fast unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses,
+      unaligned_access.value() == MISALIGNED_FAST);
+  }
+
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_DEFAULT(UsePopCountInstruction, true);
@@ -224,12 +231,6 @@ void VM_Version::initialize() {
     FLAG_SET_DEFAULT(UseBlockZeroing, false);
   }
 
-  // This machine allows unaligned memory accesses
-  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
-    FLAG_SET_DEFAULT(UseUnalignedAccesses,
-      unaligned_access.value() != MISALIGNED_UNKNOWN &&
-      unaligned_access.value() != MISALIGNED_UNSUPPORTED);
-  }
 
 #ifdef COMPILER2
   c2_initialize();
