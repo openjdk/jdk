@@ -1995,7 +1995,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(const methodHand
   for (int i = 0; i < member_arg_pos; i++) {
     VMReg a =    regs_with_member_name[i].first();
     VMReg b = regs_without_member_name[i].first();
-    assert(a->value() == b->value(), "register allocation mismatch: a=" INTX_FORMAT ", b=" INTX_FORMAT, a->value(), b->value());
+    assert(a->value() == b->value(), "register allocation mismatch: a= %d, b= %d", a->value(), b->value());
   }
   assert(regs_with_member_name[member_arg_pos].first()->is_valid(), "bad member arg");
 }

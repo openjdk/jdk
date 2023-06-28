@@ -102,8 +102,8 @@ class InterpreterOopMap: ResourceObj {
   // access methods
   Method*        method() const                  { return _method; }
   void           set_method(Method* v)           { _method = v; }
-  int            bci() const                     { return _bci; }
-  void           set_bci(int v)                  { _bci = v; }
+  unsigned short bci() const                     { return _bci; }
+  void           set_bci(unsigned short v)       { _bci = v; }
   int            mask_size() const               { return _mask_size; }
   void           set_mask_size(int v)            { _mask_size = v; }
   // Test bit mask size and return either the in-line bit mask or allocated
