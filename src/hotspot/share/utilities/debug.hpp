@@ -289,6 +289,8 @@ extern "C" {
   void print52(unsigned long hi, unsigned long mid, unsigned long lo, const char *s = nullptr);
   void print26(unsigned long x4, unsigned long x3, unsigned long x2, unsigned long x1, unsigned long x0,
                const char *s = nullptr);
+  void print26_(unsigned long x2, unsigned long x1, unsigned long x0,
+               const char *s = nullptr);
   extern int should_print;
 }
 #endif // SHARE_UTILITIES_DEBUG_HPP

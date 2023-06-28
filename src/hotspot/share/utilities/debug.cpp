@@ -182,6 +182,10 @@ void print52(u64 x2, u64 x1, u64 x0, const char *s) {
   printf("\n");
 }
 
+void print26_(u64 x2, u64 x1, u64 x0, const char *s) {
+  print26(x2, x1 >> 32, x1 & 0xffffffff, x0 >> 32, x0 & 0xffffffff, s);
+}
+
 void print26(u64 x4, u64 x3, u64 x2, u64 x1, u64 x0, const char *s) {
   printf("      %06lx ", x4);
   printf("%06lx ", x3);
