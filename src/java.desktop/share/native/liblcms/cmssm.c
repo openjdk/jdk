@@ -762,4 +762,3 @@ cmsBool cmsGBDdumpVRML(cmsHANDLE hGBD, const char* fname)
     return TRUE;
 }
 #endif
-

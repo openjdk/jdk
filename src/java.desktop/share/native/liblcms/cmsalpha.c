@@ -671,5 +671,3 @@ void _cmsHandleExtraChannels(_cmsTRANSFORM* p, const void* in,
         }
     }
 }
-
-

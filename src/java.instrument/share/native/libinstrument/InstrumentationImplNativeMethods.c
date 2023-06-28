@@ -198,4 +198,3 @@ JNIEXPORT void JNICALL Java_sun_instrument_InstrumentationImpl_loadAgent0
         }
     }
 }
-

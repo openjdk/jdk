@@ -52,4 +52,3 @@ JNIEXPORT void JNICALL Java_TestJNI_doSomething(JNIEnv *env, jclass klass, jint 
 #ifdef __cplusplus
 }
 #endif
-

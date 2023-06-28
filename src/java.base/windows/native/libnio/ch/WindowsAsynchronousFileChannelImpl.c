@@ -120,4 +120,3 @@ Java_sun_nio_ch_WindowsAsynchronousFileChannelImpl_lockFile(JNIEnv *env, jobject
     }
     return 0;
 }
-

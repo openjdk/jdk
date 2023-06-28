@@ -64,4 +64,3 @@ JNI_OnUnload(JavaVM *vm, void *reserved) {
     printf("Native library unloaded.\n");
     fflush(stdout);
 }
-

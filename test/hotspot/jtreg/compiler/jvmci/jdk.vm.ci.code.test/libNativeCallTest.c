@@ -225,4 +225,3 @@ JNIEXPORT jint JNICALL Java_jdk_vm_ci_code_test_NativeCallTest__1I32I(JNIEnv *en
 #ifdef __cplusplus
 }
 #endif
-

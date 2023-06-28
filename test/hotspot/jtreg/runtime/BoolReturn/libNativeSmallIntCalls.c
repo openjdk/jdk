@@ -54,4 +54,3 @@ Java_NativeSmallIntCallsTest_nativeCastToBoolCallFalse(JNIEnv* env, jobject obj)
 
     return 44;
 }
-

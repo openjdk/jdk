@@ -47,4 +47,3 @@ JNIEXPORT HMODULE JDK_LoadSystemLibrary(const char* name) {
     }
     return handle;
 }
-

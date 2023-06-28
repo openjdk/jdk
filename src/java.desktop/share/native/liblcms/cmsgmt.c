@@ -685,4 +685,3 @@ cmsFloat64Number CMSEXPORT cmsDetectRGBProfileGamma(cmsHPROFILE hProfile, cmsFlo
 
     return gamma;
 }
-

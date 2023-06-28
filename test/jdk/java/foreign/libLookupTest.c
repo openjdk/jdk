@@ -30,4 +30,3 @@
 
  EXPORT void f() { }
  EXPORT int c = 42;
-

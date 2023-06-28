@@ -586,4 +586,3 @@ JNIEXPORT jint JNICALL Java_sun_nio_ch_sctp_SctpChannelImpl_send0
 
     return rv;
 }
-

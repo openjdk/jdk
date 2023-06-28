@@ -123,4 +123,3 @@ Java_CanGenerateAllClassHook_getOnLoadClassHookAvail(JNIEnv *env, jclass cls) {
 #ifdef __cplusplus
 }
 #endif
-

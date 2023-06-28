@@ -96,4 +96,3 @@ JNIEXPORT void JNICALL Java_jdk_internal_loader_RawNativeLibraries_unload0
     JVM_UnloadLibrary(handle);
     JNU_ReleaseStringPlatformChars(env, name, cname);
 }
-

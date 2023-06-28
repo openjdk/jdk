@@ -1996,6 +1996,3 @@ cmsBool CMSEXPORT _cmsOptimizePipeline(cmsContext ContextID,
     // Only simple optimizations succeeded
     return AnySuccess;
 }
-
-
-

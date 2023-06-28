@@ -190,4 +190,3 @@ Java_sun_nio_ch_UnixDomainSockets_localAddress0(JNIEnv *env, jclass clazz, jobje
     }
     return sockaddrToUnixAddressBytes(env, &sa, sa_len);
 }
-

@@ -5845,4 +5845,3 @@ cmsTagDescriptor* _cmsGetTagDescriptor(cmsContext ContextID, cmsTagSignature sig
 
     return NULL;
 }
-

@@ -269,4 +269,3 @@ int list_is_empty(list_ptr lp)
 {
     return (lp == NULL || lp->next == NULL);
 }
-

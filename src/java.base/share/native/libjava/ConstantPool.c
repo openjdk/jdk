@@ -133,4 +133,3 @@ JNIEXPORT jbyte JNICALL Java_jdk_internal_reflect_ConstantPool_getTagAt0
 {
   return JVM_ConstantPoolGetTagAt(env, unused, jcpool, index);
 }
-

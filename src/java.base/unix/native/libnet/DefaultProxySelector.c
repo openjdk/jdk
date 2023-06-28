@@ -505,4 +505,3 @@ Java_sun_net_spi_DefaultProxySelector_getSystemProxies(JNIEnv *env,
     }
     return proxyArray;
 }
-

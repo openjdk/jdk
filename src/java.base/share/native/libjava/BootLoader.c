@@ -45,4 +45,3 @@ Java_jdk_internal_loader_BootLoader_setBootLoaderUnnamedModule0(JNIEnv *env, jcl
 {
     JVM_SetBootLoaderUnnamedModule(env, module);
 }
-

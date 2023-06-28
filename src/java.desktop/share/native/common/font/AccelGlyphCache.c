@@ -412,4 +412,3 @@ AccelGlyphCache_GetCellInfoForCache(GlyphInfo *glyph, GlyphCacheInfo *cache)
                 glyph, cache);
     return NULL;
 }
-

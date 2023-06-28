@@ -29,4 +29,3 @@ JNIEXPORT void JNICALL
                                                   jobjectArray array, jobject element, jint index) {
   (*env)->SetObjectArrayElement(env, array, index, element);
 }
-

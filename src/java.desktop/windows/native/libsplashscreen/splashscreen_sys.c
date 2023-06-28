@@ -584,4 +584,3 @@ SplashGetScaledImageName(const char* jarName, const char* fileName,
     return GetScaledImageName(fileName, scaleImageName,
         scaleFactor, scaledImageLength);
 }
-

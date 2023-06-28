@@ -420,4 +420,3 @@ Java_sun_awt_X11_GtkFileDialogPeer_run(JNIEnv * env, jobject jpeer,
 
     gtk->gdk_threads_leave();
 }
-

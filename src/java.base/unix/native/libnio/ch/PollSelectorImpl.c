@@ -52,4 +52,3 @@ Java_sun_nio_ch_PollSelectorImpl_poll(JNIEnv *env, jclass clazz,
     }
     return (jint) res;
 }
-

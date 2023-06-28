@@ -66,4 +66,3 @@ jio_fprintf(FILE *fp, const char *fmt, ...)
 }
 
 #endif
-

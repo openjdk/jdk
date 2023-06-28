@@ -315,4 +315,3 @@ Java_FieldAccessWatch_stopTest(JNIEnv *env, jclass thisClass)
 #ifdef __cplusplus
 }
 #endif
-

@@ -73,4 +73,3 @@ Java_StringPlatformChars_newString(JNIEnv *env, jclass unused, jbyteArray bytes)
 
     return JNU_NewStringPlatform(env, str);
 }
-

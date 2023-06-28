@@ -619,4 +619,3 @@ static void printiferr (errcode_t err, const char *format, ...)
         va_end (pvar);
     }
 }
-

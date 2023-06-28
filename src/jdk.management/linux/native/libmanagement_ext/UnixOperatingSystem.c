@@ -432,4 +432,3 @@ Java_com_sun_management_internal_OperatingSystemImpl_getHostOnlineCpuCount0
     }
     return n;
 }
-

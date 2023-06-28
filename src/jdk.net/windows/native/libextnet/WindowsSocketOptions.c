@@ -102,4 +102,3 @@ JNIEXPORT jboolean JNICALL Java_jdk_net_WindowsSocketOptions_getIpDontFragment0
         return optval == IP_PMTUDISC_DO ? JNI_TRUE : JNI_FALSE;
     }
 }
-

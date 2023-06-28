@@ -40,5 +40,3 @@ Java_NoClassDefFoundErrorTest_callFindClass(JNIEnv *env, jclass klass, jstring c
     }
     cls = (*env)->FindClass(env, c_name);
 }
-
-

@@ -75,4 +75,3 @@ Java_PrivateInterfaceMethods_lookupIntVoid(JNIEnv *env, jclass unused,
     m_id = (*env)->GetMethodID(env, clazz, name, "()I");
     (*env)->ReleaseStringUTFChars(env, method_name, name);
 }
-

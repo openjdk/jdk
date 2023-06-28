@@ -1240,4 +1240,3 @@ cmsBool  _cmsRegisterRenderingIntentPlugin(cmsContext id, cmsPluginBase* Data)
 
     return TRUE;
 }
-

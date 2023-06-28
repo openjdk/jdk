@@ -169,4 +169,3 @@ gboolean gtk_check_version(GtkVersion version) {
     }
     return check_version(version);
 }
-

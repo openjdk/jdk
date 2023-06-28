@@ -75,4 +75,3 @@ JNIEXPORT void JNICALL Java_TestDwarf_crashNativeMultipleMethods(JNIEnv* env, jc
     result += zero + i;
   }
 }
-

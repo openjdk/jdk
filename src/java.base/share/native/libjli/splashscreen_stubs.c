@@ -96,4 +96,3 @@ jboolean DoSplashGetScaledImageName(const char* fileName, const char* jarName,
 int     DoSplashGetScaledImgNameMaxPstfixLen(const char *fileName) {
     INVOKE(SplashGetScaledImgNameMaxPstfixLen, 0)(fileName);
 }
-

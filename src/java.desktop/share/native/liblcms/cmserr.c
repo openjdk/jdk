@@ -732,4 +732,3 @@ cmsBool _cmsRegisterParallelizationPlugin(cmsContext ContextID, cmsPluginBase* D
     // All is ok
     return TRUE;
 }
-

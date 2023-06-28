@@ -257,5 +257,3 @@ void
 setfdval(JNIEnv *env, jobject fdo, jint val) {
     (*env)->SetIntField(env, fdo, fd_fdID, val);
 }
-
-

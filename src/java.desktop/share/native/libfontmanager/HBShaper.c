@@ -314,4 +314,3 @@ JNIEXPORT jboolean JNICALL Java_sun_font_SunLayoutEngine_shape
      (*env)->ReleaseCharArrayElements(env, text, chars, JNI_ABORT);
      return ret;
 }
-
