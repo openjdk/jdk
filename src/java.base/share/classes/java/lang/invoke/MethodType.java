@@ -1229,8 +1229,9 @@ class MethodType
      * This is not a strict inverse of {@link #fromMethodDescriptorString
      * fromMethodDescriptorString} which requires a method type descriptor
      * (JVMS {@jvms 4.3.3}) and a suitable class loader argument.
-     * Two distinct classes which share a common name but have different class loaders
-     * cannot be distinguished in descriptor strings.
+     * Two distinct {@code MethodType} objects can have an identical
+     * descriptor string as distinct classes can have the same name
+     * but different class loaders.
      *
      * <p>
      * This method is included for the benefit of applications that must
