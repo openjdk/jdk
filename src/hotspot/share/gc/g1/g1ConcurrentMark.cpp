@@ -2308,7 +2308,7 @@ void G1CMTask::drain_local_queue(bool partially) {
   // of things to do) or totally (at the very end).
   size_t target_size;
   if (partially) {
-    target_size = MIN2((size_t)_task_queue->max_elems()/3, (size_t)GCDrainStackTargetSize);
+    target_size = MIN2((size_t)_task_queue->max_elems()/3, GCDrainStackTargetSize);
   } else {
     target_size = 0;
   }
