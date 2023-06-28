@@ -522,8 +522,8 @@ constexpr T2 checked_cast(T1 thing) {
 }
 
 // pointer_delta_as_int is called to do pointer subtraction for nearby pointers that
-// returns an int, usually used as a size of a code buffer range.
-// This scales to sizeof(T)
+// returns a non-negative int, usually used as a size of a code buffer range.
+// This scales to sizeof(T).
 template <typename T>
 inline int pointer_delta_as_int(const volatile T* left, const volatile T* right) {
   return checked_cast<int>(pointer_delta(left, right, sizeof(T)));
