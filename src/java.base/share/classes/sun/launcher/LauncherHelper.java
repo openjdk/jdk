@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -87,6 +87,7 @@ import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
+import sun.util.calendar.ZoneInfoFile;
 
 
 public final class LauncherHelper {
@@ -280,6 +281,8 @@ public final class LauncherHelper {
                 Locale.getDefault(Category.DISPLAY).getDisplayName());
         ostream.println(INDENT + "default format locale = " +
                 Locale.getDefault(Category.FORMAT).getDisplayName());
+        ostream.println(INDENT + "tzdata version = " +
+                ZoneInfoFile.getVersion());
         printLocales();
         ostream.println();
     }
