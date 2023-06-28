@@ -937,12 +937,13 @@ public class FileChannelImpl
         if (transferFromDirectNotSupported)
             return IOStatus.UNSUPPORTED;
 
+        final FileChannelImpl target = this;
         boolean completed = false;
         try {
             beginBlocking();
-            int thisIndex = this.beforeTransfer();
+            int srcIndex = src.beforeTransfer();
             try {
-                int srcIndex = src.beforeTransfer();
+                int targetIndex = target.beforeTransfer();
                 try {
                     long n = transferFromFileDescriptor(src.fd, position, count);
                     if (n == IOStatus.UNSUPPORTED) {
@@ -952,10 +953,10 @@ public class FileChannelImpl
                     completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {
-                    src.afterTransfer(completed, srcIndex);
+                    target.afterTransfer(completed, targetIndex);
                 }
             } finally {
-                this.afterTransfer(completed, thisIndex);
+                src.afterTransfer(completed, srcIndex);
             }
         } finally {
             endBlocking(completed);
