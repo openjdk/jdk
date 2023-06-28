@@ -571,8 +571,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
   }
 
   // Keep track of DEFS & Phis for later passes
-  Node_List defs{split_arena, 8};
-  Node_List phis{split_arena, 16};
+  Node_List defs(split_arena, 8);
+  Node_List phis(split_arena, 16);
 
   //----------PASS 1----------
   //----------Propagation & Node Insertion Code----------
