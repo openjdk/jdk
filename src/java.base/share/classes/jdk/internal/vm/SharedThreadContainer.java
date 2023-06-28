@@ -26,7 +26,6 @@ package jdk.internal.vm;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
@@ -96,6 +95,11 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     }
 
     @Override
+    public String name() {
+        return name;
+    }
+
+    @Override
     public Thread owner() {
         return null;
     }
@@ -157,16 +161,6 @@ public class SharedThreadContainer extends ThreadContainer implements AutoClosea
     public void close() {
         if (!closed && CLOSED.compareAndSet(this, false, true)) {
             ThreadContainers.deregisterContainer(key);
-        }
-    }
-
-    @Override
-    public String toString() {
-        String id = Objects.toIdentityString(this);
-        if (name != null) {
-            return name + "/" + id;
-        } else {
-            return id;
         }
     }
 }

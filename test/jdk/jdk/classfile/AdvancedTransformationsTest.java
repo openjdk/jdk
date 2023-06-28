@@ -119,7 +119,7 @@ class AdvancedTransformationsTest {
                     ClassHierarchyResolver.of(Set.of(ClassDesc.of("remapped.List")), Map.of(
                             ClassDesc.of("remapped.RemappedBytecode"), ConstantDescs.CD_Object,
                             ClassDesc.ofDescriptor(RawBytecodeHelper.class.descriptorString()), ClassDesc.of("remapped.RemappedBytecode")))
-                                          .orElse(ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER)
+                                          .orElse(ClassHierarchyResolver.defaultResolver())
                     , null)); //System.out::print));
             remapped.fields().forEach(f -> f.findAttribute(Attributes.SIGNATURE).ifPresent(sa ->
                     verifySignature(f.fieldTypeSymbol(), sa.asTypeSignature())));

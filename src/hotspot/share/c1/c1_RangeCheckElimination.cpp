@@ -1337,26 +1337,6 @@ RangeCheckEliminator::Bound::Bound(Instruction::Condition cond, Value v, int con
   }
 }
 
-// Set lower
-void RangeCheckEliminator::Bound::set_lower(int value, Value v) {
-  assert(!v || !v->as_Constant() || !v->type()->as_IntConstant(), "Must not be constant!");
-  this->_lower = value;
-  this->_lower_instr = v;
-}
-
-// Set upper
-void RangeCheckEliminator::Bound::set_upper(int value, Value v) {
-  assert(!v || !v->as_Constant() || !v->type()->as_IntConstant(), "Must not be constant!");
-  this->_upper = value;
-  this->_upper_instr = v;
-}
-
-// Add constant -> no overflow may occur
-void RangeCheckEliminator::Bound::add_constant(int value) {
-  this->_lower += value;
-  this->_upper += value;
-}
-
 // or
 void RangeCheckEliminator::Bound::or_op(Bound *b) {
   // Watch out, bound is not guaranteed not to overflow!

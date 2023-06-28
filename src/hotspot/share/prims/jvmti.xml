@@ -15392,60 +15392,52 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="13 October 2016" version="9.0.0">
       Support for modules:
-       - The majorversion is 9 now
-       - The ClassFileLoadHook events are not sent during the primordial phase anymore.
-       - Allow CompiledMethodLoad events at start phase
-       - Add new capabilities:
-          - can_generate_early_vmstart
-          - can_generate_early_class_hook_events
-       - Add new functions:
-          - GetAllModules
-          - AddModuleReads, AddModuleExports, AddModuleOpens, AddModuleUses, AddModuleProvides
-          - IsModifiableModule
-      Clarified can_redefine_any_classes, can_retransform_any_classes and IsModifiableClass API to
-      disallow some implementation defined classes.
+      The majorversion is 9 now.
+      The ClassFileLoadHook events are not sent during the primordial phase anymore.
+      Allow CompiledMethodLoad events at start phase.
+      Add new capabilities: can_generate_early_vmstart, can_generate_early_class_hook_events.
+      Add new functions: GetAllModules, AddModuleReads, AddModuleExports,
+      AddModuleOpens, AddModuleUses, AddModuleProvides, IsModifiableModule.
+      Clarified can_redefine_any_classes, can_retransform_any_classes and
+      IsModifiableClass API to disallow some implementation defined classes.
   </change>
   <change date="12 February 2017" version="9.0.0">
       Minor update for GetCurrentThread function:
-       - The function may return NULL in the start phase if the
-         can_generate_early_vmstart capability is enabled.
+      The function may return NULL in the start phase if the
+      can_generate_early_vmstart capability is enabled.
   </change>
   <change date="7 February 2018" version="11.0.0">
       Minor update for new class file NestHost and NestMembers attributes:
-        - Specify that RedefineClasses and RetransformClasses are not allowed
-          to change the class file NestHost and NestMembers attributes.
-        - Add new error JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED
-          that can be returned by RedefineClasses and RetransformClasses.
+      Specify that RedefineClasses and RetransformClasses are not allowed
+      to change the class file NestHost and NestMembers attributes;
+      Add new error JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED
+      that can be returned by RedefineClasses and RetransformClasses.
   </change>
   <change date="15 June 2018" version="11.0.0">
       Support for Low Overhead Heap Sampling:
-       - Add new capability:
-         - can_generate_sampled_object_alloc_events
-       - Add new function:
-         - SetHeapSamplingInterval
-       - Add new event type:
-         - JVMTI_EVENT_SAMPLED_OBJECT_ALLOC
+      Add new capability: can_generate_sampled_object_alloc_events.
+      Add new function: SetHeapSamplingInterval.
+      Add new event type: JVMTI_EVENT_SAMPLED_OBJECT_ALLOC.
   </change>
   <change date="20 May 2019" version="13.0.0">
       Minor spec update for the capability "can_redefine_any_class".
-      It now says:
-       "RedefineClasses can be called on any modifiable class. See IsModifiableClass.
-       (can_redefine_classes must also be set)"
+      It now says: "RedefineClasses can be called on any modifiable class."
+      See IsModifiableClass. (can_redefine_classes must also be set)
   </change>
   <change date="5 June 2019" version="13.0.0">
       Minor PopFrame spec update:
-        - The specified thread must be suspended or must be the current thread.
-          (It was not allowed to be the current thread before.)
+      The specified thread must be suspended or must be the current thread.
+     (It was not allowed to be the current thread before.)
   </change>
   <change date="10 October 2019" version="14.0.0">
       Minor update for new class file Record attribute:
-        - Specify that RedefineClasses and RetransformClasses are not allowed
-          to change the class file Record attribute.
+      Specify that RedefineClasses and RetransformClasses are not allowed
+      to change the class file Record attribute.
   </change>
   <change date="13 May 2020" version="15.0.0">
       Minor update for new class file PermittedSubclasses attribute:
-        - Specify that RedefineClasses and RetransformClasses are not allowed
-          to change the class file PermittedSubclasses attribute.
+      Specify that RedefineClasses and RetransformClasses are not allowed
+      to change the class file PermittedSubclasses attribute.
   </change>
   <change date="15 January 2021" version="17.0.0">
       Minor clarification in the section "Agent Shutdown" that says the
@@ -15456,17 +15448,15 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update to deprecate Heap functions 1.0.
   </change>
   <change date="27 April 2022" version="19.0.0">
-      Support for virtual threads:
-       - Add new capability:
-         - can_support_virtual_threads
-       - Add new functions:
-         - SuspendAllVirtualThreads
-         - ResumeAllVirtualThreads
-       - Add new event types:
-         - JVMTI_EVENT_VIRTUAL_THREAD_START
-         - JVMTI_EVENT_VIRTUAL_THREAD_END
-       - Add new error code:
-         - JVMTI_ERROR_UNSUPPORTED_OPERATION
+      Support for virtual threads (Preview):
+      Add new capability: can_support_virtual_threads.
+      Add new functions: SuspendAllVirtualThreads, ResumeAllVirtualThreads.
+      Add new event types: JVMTI_EVENT_VIRTUAL_THREAD_START, JVMTI_EVENT_VIRTUAL_THREAD_END.
+      Add new error code: JVMTI_ERROR_UNSUPPORTED_OPERATION.
+  </change>
+  <change date="7 June 2023" version="21.0.0">
+      Virtual threads finalized to be a permanent feature.
+      Agent start-up in the live phase now specified to print a warning.
   </change>
 </changehistory>
 

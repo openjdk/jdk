@@ -275,7 +275,7 @@ public abstract class Collator
      * may return a {@code Collator} instance with the Swedish traditional sorting, which
      * gives 'v' and 'w' the same sorting order, while the {@code Collator} instance
      * for the Swedish locale without "co" identifier distinguishes 'v' and 'w'.
-     * @spec https://www.unicode.org/reports/tr35/ Unicode Locale Data Markup Language
+     * @spec https://www.unicode.org/reports/tr35 Unicode Locale Data Markup Language
      *     (LDML)
      * @param desiredLocale the desired locale.
      * @return the Collator for the desired locale.

@@ -4695,7 +4695,8 @@ public class Check {
                         //the current label is potentially dominated by the existing (test) label, check:
                         boolean dominated = false;
                         if (label instanceof JCConstantCaseLabel) {
-                            dominated |= !(testCaseLabel instanceof JCConstantCaseLabel);
+                            dominated |= !(testCaseLabel instanceof JCConstantCaseLabel) &&
+                                         TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
                                    TreeInfo.unguardedCase(testCase)) {

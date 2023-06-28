@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,9 +102,6 @@ public final class RSAPadding {
     // maximum size of the data
     private final int maxDataSize;
 
-    // OAEP: main message digest
-    private MessageDigest md;
-
     // OAEP: MGF1
     private MGF1 mgf;
 
@@ -151,6 +148,8 @@ public final class RSAPadding {
             // sanity check, already verified in RSASignature/RSACipher
             throw new InvalidKeyException("Padded size must be at least 64");
         }
+        // OAEP: main message digest
+        MessageDigest md;
         switch (type) {
         case PAD_BLOCKTYPE_1:
         case PAD_BLOCKTYPE_2:

@@ -43,6 +43,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvm.h"
@@ -983,17 +984,26 @@ ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {
   // Create the same exception with a message indicating the thread name,
   // and the StackTraceElements.
-  // If the initialization error is OOM, this might not work, but if GC kicks in
-  // this would be still be helpful.
-  JavaThread* THREAD = current;
   Handle init_error = java_lang_Throwable::create_initialization_error(current, exception);
-  ResourceMark rm(THREAD);
+  ResourceMark rm(current);
   if (init_error.is_null()) {
-    log_trace(class, init)("Initialization error is null for class %s", external_name());
-    return;
+    log_trace(class, init)("Unable to create the desired initialization error for class %s", external_name());
+
+    // We failed to create the new exception, most likely due to either out-of-memory or
+    // a stackoverflow error. If the original exception was either of those then we save
+    // the shared, pre-allocated, stackless, instance of that exception.
+    if (exception->klass() == vmClasses::StackOverflowError_klass()) {
+      log_debug(class, init)("Using shared StackOverflowError as initialization error for class %s", external_name());
+      init_error = Handle(current, Universe::class_init_stack_overflow_error());
+    } else if (exception->klass() == vmClasses::OutOfMemoryError_klass()) {
+      log_debug(class, init)("Using shared OutOfMemoryError as initialization error for class %s", external_name());
+      init_error = Handle(current, Universe::class_init_out_of_memory_error());
+    } else {
+      return;
+    }
   }
 
-  MutexLocker ml(THREAD, ClassInitError_lock);
+  MutexLocker ml(current, ClassInitError_lock);
   OopHandle elem = OopHandle(Universe::vm_global(), init_error());
   bool created;
   _initialization_error_table.put_if_absent(this, elem, &created);

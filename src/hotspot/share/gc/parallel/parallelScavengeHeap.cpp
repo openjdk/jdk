@@ -785,9 +785,9 @@ void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved
     os::trace_page_sizes("Heap",
                          MinHeapSize,
                          reserved_heap_size,
-                         page_size,
                          rs.base(),
-                         rs.size());
+                         rs.size(),
+                         page_size);
   }
 }
 

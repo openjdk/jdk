@@ -74,6 +74,10 @@ public @interface PreviewFeature {
         UNNAMED,
         @JEP(number=445, title="Unnamed Classes and Instance Main Methods")
         UNNAMED_CLASSES,
+        @JEP(number=446, title="Scoped Values", status="Preview")
+        SCOPED_VALUES,
+        @JEP(number=453, title="Structured Concurrency", status="Preview")
+        STRUCTURED_CONCURRENCY,
         /**
          * A key for testing.
          */

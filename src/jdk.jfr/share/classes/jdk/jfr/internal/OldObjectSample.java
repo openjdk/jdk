@@ -33,6 +33,7 @@ import jdk.jfr.Enabled;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.settings.CutoffSetting;
 import jdk.jfr.internal.test.WhiteBox;
+import jdk.jfr.internal.util.Utils;
 
 // The Old Object event could have been implemented as a periodic event, but
 // due to chunk rotations and how settings are calculated when multiple recordings
@@ -53,7 +54,7 @@ public final class OldObjectSample {
     public static void emit(PlatformRecording recording) {
         if (isEnabled(recording)) {
             long nanos = CutoffSetting.parseValueSafe(recording.getSettings().get(OLD_OBJECT_CUTOFF));
-            long ticks = Utils.nanosToTicks(nanos);
+            long ticks = JVMSupport.nanosToTicks(nanos);
             emit(ticks);
         }
     }
@@ -74,7 +75,7 @@ public final class OldObjectSample {
             }
         }
         if (enabled) {
-            long ticks = Utils.nanosToTicks(cutoffNanos);
+            long ticks = JVMSupport.nanosToTicks(cutoffNanos);
             emit(ticks);
         }
     }

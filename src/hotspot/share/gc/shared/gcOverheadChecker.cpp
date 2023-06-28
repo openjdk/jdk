@@ -30,7 +30,6 @@
 
 GCOverheadChecker::GCOverheadChecker() :
   _gc_overhead_limit_exceeded(false),
-  _print_gc_overhead_limit_would_be_exceeded(false),
   _gc_overhead_limit_count(0) {
   assert(GCOverheadLimitThreshold > 0,
     "No opportunity to clear SoftReferences before GC overhead limit");

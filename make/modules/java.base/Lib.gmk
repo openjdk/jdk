@@ -46,6 +46,8 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBNET, \
     DISABLED_WARNINGS_gcc_net_util_md.c := format-nonliteral, \
     DISABLED_WARNINGS_gcc_NetworkInterface.c := unused-function, \
     DISABLED_WARNINGS_clang_net_util_md.c := format-nonliteral, \
+    DISABLED_WARNINGS_clang_aix_DefaultProxySelector.c := deprecated-non-prototype, \
+    DISABLED_WARNINGS_clang_aix_NetworkInterface.c := gnu-pointer-arith, \
     DISABLED_WARNINGS_microsoft_InetAddress.c := 4244, \
     DISABLED_WARNINGS_microsoft_ResolverConfigurationImpl.c := 4996, \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
@@ -226,6 +228,7 @@ ifeq ($(ENABLE_FALLBACK_LINKER), true)
       LDFLAGS := $(LDFLAGS_JDKLIB) \
                  $(call SET_SHARED_LIBRARY_ORIGIN), \
       LIBS := $(LIBFFI_LIBS), \
+      LIBS_windows := $(LIBFFI_LIBS) ws2_32.lib, \
   ))
 
   TARGETS += $(BUILD_LIBFALLBACKLINKER)
