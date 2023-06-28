@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@
 static JNINativeMethod methods[] = {
     {"start0",           "()V",        (void *)&JVM_StartThread},
     {"stop0",            "(" OBJ ")V", (void *)&JVM_StopThread},
-    {"isAlive",          "()Z",        (void *)&JVM_IsThreadAlive},
     {"suspend0",         "()V",        (void *)&JVM_SuspendThread},
     {"resume0",          "()V",        (void *)&JVM_ResumeThread},
     {"setPriority0",     "(I)V",       (void *)&JVM_SetThreadPriority},

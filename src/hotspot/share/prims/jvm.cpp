@@ -2976,12 +2976,6 @@ JVM_ENTRY(void, JVM_StopThread(JNIEnv* env, jobject jthread, jobject throwable))
 JVM_END
 
 
-JVM_ENTRY(jboolean, JVM_IsThreadAlive(JNIEnv* env, jobject jthread))
-  oop thread_oop = JNIHandles::resolve_non_null(jthread);
-  return java_lang_Thread::is_alive(thread_oop);
-JVM_END
-
-
 JVM_ENTRY(void, JVM_SuspendThread(JNIEnv* env, jobject jthread))
   ThreadsListHandle tlh(thread);
   JavaThread* receiver = NULL;

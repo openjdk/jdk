@@ -154,7 +154,6 @@ JVM_IsRecord
 JVM_IsSameClassPackage
 JVM_IsSharingEnabled
 JVM_IsSupportedJNIVersion
-JVM_IsThreadAlive
 JVM_IsVMGeneratedMethodIx
 JVM_LatestUserDefinedLoader
 JVM_LoadLibrary
