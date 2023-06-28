@@ -165,10 +165,10 @@
 
         self.modifierKeyToMaskMap = [NSDictionary dictionaryWithObjectsAndKeys:
             [NSNumber numberWithInt : kCGEventFlagMaskShift], [NSNumber numberWithInt : OSX_Shift],
-            [NSNumber numberWithInt : kCGEventFlagMaskControl], [NSNumber numberWithInt: OSX_Control],
-            [NSNumber numberWithInt : kCGEventFlagMaskAlternate], [NSNumber numberWithInt: OSX_Option],
-            [NSNumber numberWithInt : kCGEventFlagMaskCommand], [NSNumber numberWithInt: OSX_Command],
-            [NSNumber numberWithInt : kCGEventFlagMaskAlphaShift], [NSNumber numberWithInt: OSX_CapsLock],
+            [NSNumber numberWithInt : kCGEventFlagMaskControl], [NSNumber numberWithInt : OSX_Control],
+            [NSNumber numberWithInt : kCGEventFlagMaskAlternate], [NSNumber numberWithInt : OSX_Option],
+            [NSNumber numberWithInt : kCGEventFlagMaskCommand], [NSNumber numberWithInt : OSX_Command],
+            [NSNumber numberWithInt : kCGEventFlagMaskAlphaShift], [NSNumber numberWithInt : OSX_CapsLock],
 
             nil];
     }
