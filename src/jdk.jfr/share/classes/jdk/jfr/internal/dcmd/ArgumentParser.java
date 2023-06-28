@@ -110,14 +110,14 @@ final class ArgumentParser {
             sb.append("s ");
             StringJoiner sj = new StringJoiner(", ");
             while (conflictedOptions.size() > 1) {
-                sj.add(conflictedOptions.remove(0));
+                sj.add(conflictedOptions.removeFirst());
             }
             sb.append(sj);
             sb.append(" and");
         }
 
         sb.append(" ");
-        sb.append(conflictedOptions.remove(0));
+        sb.append(conflictedOptions.removeFirst());
         sb.append(" can only be specified once.");
         throw new IllegalArgumentException(sb.toString());
     }

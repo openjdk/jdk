@@ -99,9 +99,10 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsCountLoads(Blackhole bh) {
+        var cc = Classfile.of();
         for (byte[] bytes : classes) {
             int[] count = new int[1];
-            ClassModel cm = Classfile.parse(bytes);
+            ClassModel cm = cc.parse(bytes);
             cm.forEachElement(ce -> {
                 if (ce instanceof MethodModel mm) {
                     mm.forEachElement(me -> {
@@ -122,8 +123,9 @@ public class ReadDeep extends AbstractCorpusBenchmark {
     @Benchmark
     @BenchmarkMode(Mode.Throughput)
     public void jdkElementsDeepIterate(Blackhole bh) {
+        var cc = Classfile.of();
         for (byte[] bytes : classes) {
-            ClassModel cm = Classfile.parse(bytes);
+            ClassModel cm = cc.parse(bytes);
             bh.consume(iterateAll(cm));
         }
     }
