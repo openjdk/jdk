@@ -385,9 +385,9 @@ int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end)
       if (end != nullptr && aligned_bcp + 3*jintSize >= end) {
         return -1; // don't read past end of code buffer
       }
-      jlong lo = (jint)Bytes::get_Java_u4(aligned_bcp + 1*jintSize);
-      jlong hi = (jint)Bytes::get_Java_u4(aligned_bcp + 2*jintSize);
-      jlong len = (aligned_bcp - bcp) + (3 + hi - lo + 1)*jintSize;
+      int lo = Bytes::get_Java_u4(aligned_bcp + 1*jintSize);
+      int hi = Bytes::get_Java_u4(aligned_bcp + 2*jintSize);
+      int len = (int)(aligned_bcp - bcp) + (3 + hi - lo + 1)*jintSize;
       // only return len if it can be represented as a positive int;
       // return -1 otherwise
       return (len > 0 && len == (int)len) ? len : -1;
@@ -400,8 +400,8 @@ int Bytecodes::special_length_at(Bytecodes::Code code, address bcp, address end)
       if (end != nullptr && aligned_bcp + 2*jintSize >= end) {
         return -1; // don't read past end of code buffer
       }
-      jlong npairs = (jint)Bytes::get_Java_u4(aligned_bcp + jintSize);
-      jlong len = (aligned_bcp - bcp) + (2 + 2*npairs)*jintSize;
+      int npairs = Bytes::get_Java_u4(aligned_bcp + jintSize);
+      int len = (int)(aligned_bcp - bcp) + (2 + 2*npairs)*jintSize;
       // only return len if it can be represented as a positive int;
       // return -1 otherwise
       return (len > 0 && len == (int)len) ? len : -1;
@@ -439,7 +439,7 @@ void Bytecodes::def_flags(Code code, const char* format, const char* wide_format
   int len  = (format      != nullptr ? (int) strlen(format)      : 0);
   int wlen = (wide_format != nullptr ? (int) strlen(wide_format) : 0);
 #endif
-  int bc_flags = 0;
+  jchar bc_flags = 0;
   if (can_trap)           bc_flags |= _bc_can_trap;
   if (java_code != code)  bc_flags |= _bc_can_rewrite;
   _flags[(u1)code+0*(1<<BitsPerByte)] = compute_flags(format,      bc_flags);
@@ -469,9 +469,9 @@ void Bytecodes::def_flags(Code code, const char* format, const char* wide_format
 //
 // Note: For bytecodes with variable length, the format string is the empty string.
 
-int Bytecodes::compute_flags(const char* format, int more_flags) {
+jchar Bytecodes::compute_flags(const char* format, jchar more_flags) {
   if (format == nullptr)  return 0;  // not even more_flags
-  int flags = more_flags;
+  jchar flags = more_flags;
   const char* fp = format;
   switch (*fp) {
   case '\0':
@@ -491,11 +491,10 @@ int Bytecodes::compute_flags(const char* format, int more_flags) {
 
   int has_nbo = 0, has_jbo = 0, has_size = 0;
   for (;;) {
-    int this_flag = 0;
+    jchar this_flag = 0;
     char fc = *fp++;
     switch (fc) {
     case '\0':  // end of string
-      assert(flags == (jchar)flags, "change _format_flags");
       return flags;
 
     case '_': continue;         // ignore these

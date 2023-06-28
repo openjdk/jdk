@@ -36,7 +36,6 @@
 
 #define COMPILER_CONSTRAINTS(f)                         \
   f(intx,  CICompilerCountConstraintFunc)               \
-  f(intx,  AllocatePrefetchDistanceConstraintFunc)      \
   f(intx,  AllocatePrefetchInstrConstraintFunc)         \
   f(intx,  AllocatePrefetchStepSizeConstraintFunc)      \
   f(intx,  CompileThresholdConstraintFunc)              \

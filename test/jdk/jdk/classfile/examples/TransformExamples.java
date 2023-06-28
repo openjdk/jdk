@@ -28,6 +28,7 @@
  * @summary Testing Classfile TransformExamples compilation.
  * @compile TransformExamples.java
  */
+import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.FieldModel;
@@ -39,18 +40,18 @@ import jdk.internal.classfile.Attribute;
  */
 public class TransformExamples {
     public byte[] noop(ClassModel cm) {
-        return cm.transform(ClassTransform.ACCEPT_ALL);
+        return Classfile.of().transform(cm, ClassTransform.ACCEPT_ALL);
     }
 
     public byte[] deleteAllMethods(ClassModel cm) {
-        return cm.transform((b, e) -> {
+        return Classfile.of().transform(cm, (b, e) -> {
             if (!(e instanceof MethodModel))
                 b.with(e);
         });
     }
 
     public byte[] deleteFieldsWithDollarInName(ClassModel cm) {
-        return cm.transform((b, e) ->
+        return Classfile.of().transform(cm, (b, e) ->
                         {
                             if (!(e instanceof FieldModel fm && fm.fieldName().stringValue().contains("$")))
                                 b.with(e);
@@ -58,14 +59,14 @@ public class TransformExamples {
     }
 
     public byte[] deleteAttributes(ClassModel cm) {
-        return cm.transform((b, e) -> {
+        return Classfile.of().transform(cm, (b, e) -> {
             if (!(e instanceof Attribute))
                 b.with(e);
         });
     }
 
     public byte[] keepMethodsAndFields(ClassModel cm) {
-        return cm.transform((b, e) -> {
+        return Classfile.of().transform(cm, (b, e) -> {
             if (e instanceof MethodModel || e instanceof FieldModel)
                 b.with(e);
         });
