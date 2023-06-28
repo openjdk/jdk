@@ -27,6 +27,7 @@ package java.lang;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.misc.VM;
+import jdk.internal.util.ByteArray;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 import jdk.internal.vm.annotation.Stable;
@@ -453,16 +454,104 @@ public final class Integer extends Number
      */
     @IntrinsicCandidate
     public static String toString(int i) {
-        int size = stringSize(i);
-        if (COMPACT_STRINGS) {
-            byte[] buf = new byte[size];
-            getChars(i, size, buf);
-            return new String(buf, LATIN1);
-        } else {
+        if (!COMPACT_STRINGS) {
+            int size = stringSize(i);
             byte[] buf = new byte[size * 2];
             StringUTF16.getChars(i, size, buf);
             return new String(buf, UTF16);
         }
+
+        if (i == Integer.MIN_VALUE) {
+            return "-2147483648";
+        }
+
+        boolean negative = i < 0;
+        if (negative) {
+            i = -i;
+        }
+        final int[] digits = DecimalDigits.DIGITS;
+
+        int off = 0;
+        final int q1 = i / 1000;
+
+        byte[] buf;
+        if (q1 == 0) {
+            int v = digits[i];
+            final int start = v >> 24;
+            buf = new byte[(negative ? 4 : 3) - start];
+            if (negative) {
+                buf[0] = '-';
+                off = 1;
+            }
+
+            if (start == 0) {
+                buf[off] = (byte) (v >> 16);
+                ByteArray.setShort(buf, off + 1, (short) v);
+            } else if (start == 1) {
+                ByteArray.setShort(buf, off, (short) v);
+            } else {
+                buf[off] = (byte) v;
+            }
+        } else {
+            final int r1 = i - q1 * 1000;
+            final int q2 = q1 / 1000;
+            final int v1 = digits[r1];
+            if (q2 == 0) {
+                final int v2 = digits[q1];
+                int start = v2 >> 24;
+
+                buf = new byte[(negative ? 7 : 6) - start];
+                if (negative) {
+                    buf[0] = '-';
+                    off = 1;
+                }
+
+                if (start == 0) {
+                    ByteArray.setShort(buf, off, (short) (v2 >> 8));
+                    off += 2;
+                } else if (start == 1) {
+                    buf[off++] = (byte) (v2 >> 8);
+                }
+                ByteArray.setInt(buf, off, v2 << 24 | (v1 & 0xffffff));
+            } else {
+                final int r2 = q1 - q2 * 1000;
+                final int q3 = q2 / 1000;
+                final int v2 = digits[r2];
+                if (q3 == 0) {
+                    int v = digits[q2];
+                    final int start = v >> 24;
+
+                    buf = new byte[(negative ? 10 : 9) - start];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+
+                    if (start == 0) {
+                        buf[off] = (byte) (v >> 16);
+                        ByteArray.setShort(buf, off + 1, (short) v);
+                        off += 3;
+                    } else if (start == 1) {
+                        ByteArray.setShort(buf, off, (short) v);
+                        off += 2;
+                    } else {
+                        buf[off++] = (byte) v;
+                    }
+                } else {
+                    buf = new byte[negative ? 11 : 10];
+                    if (negative) {
+                        buf[0] = '-';
+                        off = 1;
+                    }
+                    ByteArray.setInt(buf, off, ((q3 + '0') << 24) | (digits[q2 - q3 * 1000] & 0xffffff));
+                    off += 4;
+                }
+
+                ByteArray.setShort(buf, off, (short) (v2 >> 8));
+                ByteArray.setInt(buf, off + 2, (v2 << 24) | (v1 & 0xffffff));
+            }
+        }
+        return new String(buf, LATIN1);
     }
 
     /**
@@ -1049,6 +1138,66 @@ public final class Integer extends Number
         }
 
         private IntegerCache() {}
+    }
+
+    /**
+     * cache array for 0-999 digits
+     */
+    static final class DecimalDigits {
+        /**
+         * Use the four bytes of int to represent one blank_size byte and three ascii bytes. The four bytes are:
+         * <pre>
+         *     blank_size, c0, c1, c2
+         * </pre>
+         * The logic for calculating blank_size is
+         * <pre>
+         *     blank_size = value < 10 ? 2 : (value < 100 ? 1 : 0)
+         * </pre>
+         * The 1000 elements are as follows :
+         * <pre>
+         *       0 -> 2 0 0 0 -> (2 << 24) | ('0' << 16) | ('0' << 8) | '0' -> 0x2303030
+         *       1 -> 2 0 0 1 -> (2 << 24) | ('0' << 16) | ('0' << 8) | '1' -> 0x2303031
+         *       2 -> 2 0 0 2 -> (2 << 24) | ('0' << 16) | ('0' << 8) | '2' -> 0x2303032
+         *
+         *     ...
+         *
+         *      10 -> 1 0 1 0 -> (1 << 24) | ('0' << 16) | ('1' << 8) | '0' -> 0x1303130
+         *      11 -> 1 0 1 1 -> (1 << 24) | ('0' << 16) | ('1' << 8) | '1' -> 0x1303131
+         *      12 -> 1 0 1 2 -> (1 << 24) | ('0' << 16) | ('1' << 8) | '2' -> 0x1303132
+         *
+         *     ...
+         *
+         *     100 -> 0 1 0 0 -> (0 << 24) | ('1' << 16) | ('0' << 8) | '0' -> 0x313030
+         *     101 -> 0 1 0 1 -> (0 << 24) | ('1' << 16) | ('0' << 8) | '1' -> 0x313031
+         *     102 -> 0 1 0 2 -> (0 << 24) | ('1' << 16) | ('0' << 8) | '2' -> 0x313032
+         *
+         *     ...
+         *
+         *     997 -> 0 9 9 7 -> (0 << 24) | ('9' << 16) | ('9' << 8) | '7' -> 0x393937
+         *     998 -> 0 9 9 8 -> (0 << 24) | ('9' << 16) | ('9' << 8) | '8' -> 0x393938
+         *     999 -> 0 9 9 9 -> (0 << 24) | ('9' << 16) | ('9' << 8) | '9' -> 0x393939
+         * </pre>
+         */
+        @Stable
+        static final int[] DIGITS;
+
+        static {
+            int[] digits = new int[1000];
+            for (int i = 0; i < 10; i++) {
+                int i100 = i * 100;
+                for (int j = 0; j < 10; j++) {
+                    int j10 = j * 10;
+                    for (int k = 0; k < 10; k++) {
+                        digits[i100 + j10 + k]
+                                = ((i == 0 && j == 0) ? 2 : (i == 0) ? 1 : 0) << 24
+                                | ((i + '0') << 16)
+                                | ((j + '0') << 8)
+                                | (k + '0');
+                    }
+                }
+            }
+            DIGITS = digits;
+        }
     }
 
     /**
