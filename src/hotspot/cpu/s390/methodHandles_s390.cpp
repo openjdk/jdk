@@ -276,10 +276,10 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     // Supplement to 8139891: _intrinsic_id exceeded 1-byte size limit.
     if (Method::intrinsic_id_size_in_bytes() == 1) {
-      __ z_cli(Address(Z_method, Method::intrinsic_id_offset_in_bytes()), (int)iid);
+      __ z_cli(Address(Z_method, Method::intrinsic_id_offset()), (int)iid);
     } else {
       assert(Method::intrinsic_id_size_in_bytes() == 2, "size error: check Method::_intrinsic_id");
-      __ z_lh(Z_R0_scratch, Address(Z_method, Method::intrinsic_id_offset_in_bytes()));
+      __ z_lh(Z_R0_scratch, Address(Z_method, Method::intrinsic_id_offset()));
       __ z_chi(Z_R0_scratch, (int)iid);
     }
     __ z_bre(L);

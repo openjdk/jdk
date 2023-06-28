@@ -105,7 +105,7 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
   verify_oop(Roop, FILE_AND_LINE);
 
   // Save object being locked into the BasicObjectLock...
-  std(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
+  std(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
 
   if (DiagnoseSyncOnValueBasedClasses != 0) {
     load_klass(Rscratch, Roop);
@@ -114,41 +114,46 @@ void C1_MacroAssembler::lock_object(Register Rmark, Register Roop, Register Rbox
     bne(CCR0, slow_int);
   }
 
-  // ... and mark it unlocked.
-  ori(Rmark, Rmark, markWord::unlocked_value);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    fast_lock(Roop, Rmark, Rscratch, slow_int);
+  } else if (LockingMode == LM_LEGACY) {
+    // ... and mark it unlocked.
+    ori(Rmark, Rmark, markWord::unlocked_value);
 
-  // Save unlocked object header into the displaced header location on the stack.
-  std(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
+    // Save unlocked object header into the displaced header location on the stack.
+    std(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
 
-  // Compare object markWord with Rmark and if equal exchange Rscratch with object markWord.
-  assert(oopDesc::mark_offset_in_bytes() == 0, "cas must take a zero displacement");
-  cmpxchgd(/*flag=*/CCR0,
-           /*current_value=*/Rscratch,
-           /*compare_value=*/Rmark,
-           /*exchange_value=*/Rbox,
-           /*where=*/Roop/*+0==mark_offset_in_bytes*/,
-           MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
-           MacroAssembler::cmpxchgx_hint_acquire_lock(),
-           noreg,
-           &cas_failed,
-           /*check without membar and ldarx first*/true);
-  // If compare/exchange succeeded we found an unlocked object and we now have locked it
-  // hence we are done.
+    // Compare object markWord with Rmark and if equal exchange Rscratch with object markWord.
+    assert(oopDesc::mark_offset_in_bytes() == 0, "cas must take a zero displacement");
+    cmpxchgd(/*flag=*/CCR0,
+             /*current_value=*/Rscratch,
+             /*compare_value=*/Rmark,
+             /*exchange_value=*/Rbox,
+             /*where=*/Roop/*+0==mark_offset_in_bytes*/,
+             MacroAssembler::MemBarRel | MacroAssembler::MemBarAcq,
+             MacroAssembler::cmpxchgx_hint_acquire_lock(),
+             noreg,
+             &cas_failed,
+             /*check without membar and ldarx first*/true);
+    // If compare/exchange succeeded we found an unlocked object and we now have locked it
+    // hence we are done.
+  }
   b(done);
 
   bind(slow_int);
   b(slow_case); // far
 
-  bind(cas_failed);
-  // We did not find an unlocked object so see if this is a recursive case.
-  sub(Rscratch, Rscratch, R1_SP);
-  load_const_optimized(R0, (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
-  and_(R0/*==0?*/, Rscratch, R0);
-  std(R0/*==0, perhaps*/, BasicLock::displaced_header_offset_in_bytes(), Rbox);
-  bne(CCR0, slow_int);
+  if (LockingMode == LM_LEGACY) {
+    bind(cas_failed);
+    // We did not find an unlocked object so see if this is a recursive case.
+    sub(Rscratch, Rscratch, R1_SP);
+    load_const_optimized(R0, (~(os::vm_page_size()-1) | markWord::lock_mask_in_place));
+    and_(R0/*==0?*/, Rscratch, R0);
+    std(R0/*==0, perhaps*/, BasicLock::displaced_header_offset_in_bytes(), Rbox);
+    bne(CCR0, slow_int);
+  }
 
   bind(done);
-
   inc_held_monitor_count(Rmark /*tmp*/);
 }
 
@@ -161,33 +166,41 @@ void C1_MacroAssembler::unlock_object(Register Rmark, Register Roop, Register Rb
   Address mark_addr(Roop, oopDesc::mark_offset_in_bytes());
   assert(mark_addr.disp() == 0, "cas must take a zero displacement");
 
-  // Test first if it is a fast recursive unlock.
-  ld(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
-  cmpdi(CCR0, Rmark, 0);
-  beq(CCR0, done);
+  if (LockingMode != LM_LIGHTWEIGHT) {
+    // Test first if it is a fast recursive unlock.
+    ld(Rmark, BasicLock::displaced_header_offset_in_bytes(), Rbox);
+    cmpdi(CCR0, Rmark, 0);
+    beq(CCR0, done);
+  }
 
   // Load object.
-  ld(Roop, BasicObjectLock::obj_offset_in_bytes(), Rbox);
+  ld(Roop, in_bytes(BasicObjectLock::obj_offset()), Rbox);
   verify_oop(Roop, FILE_AND_LINE);
 
-  // Check if it is still a light weight lock, this is is true if we see
-  // the stack address of the basicLock in the markWord of the object.
-  cmpxchgd(/*flag=*/CCR0,
-           /*current_value=*/R0,
-           /*compare_value=*/Rbox,
-           /*exchange_value=*/Rmark,
-           /*where=*/Roop,
-           MacroAssembler::MemBarRel,
-           MacroAssembler::cmpxchgx_hint_release_lock(),
-           noreg,
-           &slow_int);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    ld(Rmark, oopDesc::mark_offset_in_bytes(), Roop);
+    andi_(R0, Rmark, markWord::monitor_value);
+    bne(CCR0, slow_int);
+    fast_unlock(Roop, Rmark, slow_int);
+  } else if (LockingMode == LM_LEGACY) {
+    // Check if it is still a light weight lock, this is is true if we see
+    // the stack address of the basicLock in the markWord of the object.
+    cmpxchgd(/*flag=*/CCR0,
+             /*current_value=*/R0,
+             /*compare_value=*/Rbox,
+             /*exchange_value=*/Rmark,
+             /*where=*/Roop,
+             MacroAssembler::MemBarRel,
+             MacroAssembler::cmpxchgx_hint_release_lock(),
+             noreg,
+             &slow_int);
+  }
   b(done);
   bind(slow_int);
   b(slow_case); // far
 
   // Done
   bind(done);
-
   dec_held_monitor_count(Rmark /*tmp*/);
 }
 

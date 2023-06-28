@@ -192,21 +192,6 @@ public:
   GrowableArray<GCMemoryManager*> memory_managers();
   GrowableArray<MemoryPool*> memory_pools();
 
-  // Unfortunately, the jstat tool assumes that no space has 0
-  // capacity. In our case, given that each space is logical, it's
-  // possible that no regions will be allocated to it, hence to have 0
-  // capacity (e.g., if there are no survivor regions, the survivor
-  // space has 0 capacity). The way we deal with this is to always pad
-  // each capacity value we report to jstat by a very small amount to
-  // make sure that it's never zero. Given that we sometimes have to
-  // report a capacity of a generation that contains several spaces
-  // (e.g., young gen includes one eden, two survivor spaces), the
-  // mult parameter is provided in order to adding the appropriate
-  // padding multiple times so that the capacities add up correctly.
-  static size_t pad_capacity(size_t size_bytes, size_t mult = 1) {
-    return size_bytes + MinObjAlignmentInBytes * mult;
-  }
-
   // Recalculate all the sizes from scratch and update all the jstat
   // counters accordingly.
   void update_sizes();

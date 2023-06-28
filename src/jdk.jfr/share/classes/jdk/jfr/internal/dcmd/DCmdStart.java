@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -456,37 +456,37 @@ final class DCmdStart extends AbstractDCmd {
         return new Argument[] {
             new Argument("name",
                 "Name that can be used to identify recording, e.g. \\\"My Recording\\\"",
-                "STRING", false, null, false),
+                "STRING", false, true, null, false),
             new Argument("settings",
                 "Settings file(s), e.g. profile or default. See JAVA_HOME/lib/jfr",
-                "STRING SET", false, "deafult.jfc", true),
+                "STRING SET", false, true, "default.jfc", true),
             new Argument("delay",
                 "Delay recording start with (s)econds, (m)inutes), (h)ours), or (d)ays, e.g. 5h.",
-                "NANOTIME", false, "0s", false),
+                "NANOTIME", false, true, "0s", false),
             new Argument("duration",
                 "Duration of recording in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 300s.",
-                "NANOTIME", false, null, false),
+                "NANOTIME", false, true, null, false),
             new Argument("disk",
                 "Recording should be persisted to disk",
-                "BOOLEAN", false, "true", false),
+                "BOOLEAN", false, true, "true", false),
             new Argument("filename",
                 "Resulting recording filename, e.g. \\\"" + exampleFilename() +  "\\\"",
-                "STRING", false, "hotspot-pid-xxxxx-id-y-YYYY_MM_dd_HH_mm_ss.jfr", false),
+                "STRING", false, true, "hotspot-pid-xxxxx-id-y-YYYY_MM_dd_HH_mm_ss.jfr", false),
             new Argument("maxage",
                 "Maximum time to keep recorded data (on disk) in (s)econds, (m)inutes, (h)ours, or (d)ays, e.g. 60m, or 0 for no limit",
-                "NANOTIME", false, "0", false),
+                "NANOTIME", false, true, "0", false),
             new Argument("maxsize",
                 "Maximum amount of bytes to keep (on disk) in (k)B, (M)B or (G)B, e.g. 500M, or 0 for no limit",
-                "MEMORY SIZE", false, "250M", false),
+                "MEMORY SIZE", false, true, "250M", false),
             new Argument("flush-interval",
                 "Minimum time before flushing buffers, measured in (s)econds, e.g. 4 s, or 0 for flushing when a recording ends",
-                "NANOTIME", false, "1s", false),
+                "NANOTIME", false, true, "1s", false),
             new Argument("dumponexit",
                 "Dump running recording when JVM shuts down",
-                "BOOLEAN", false, "false", false),
+                "BOOLEAN", false, true, "false", false),
             new Argument("path-to-gc-roots",
                 "Collect path to GC roots",
-                "BOOLEAN", false, "false", false)
+                "BOOLEAN", false, true, "false", false)
         };
     }
 }

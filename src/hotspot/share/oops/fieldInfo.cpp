@@ -86,7 +86,7 @@ Array<u1>* FieldInfoStream::create_FieldInfoStream(GrowableArray<FieldInfo>* fie
 
 #ifdef ASSERT
   FieldInfoReader r(fis);
-  u2 jfc = r.next_uint();
+  int jfc = r.next_uint();
   assert(jfc == java_fields, "Must be");
   int ifc = r.next_uint();
   assert(ifc == injected_fields, "Must be");

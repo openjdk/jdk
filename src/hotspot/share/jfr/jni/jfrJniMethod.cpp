@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ NO_TRANSITION(jstring, jfr_get_pid(JNIEnv* env, jobject jvm))
   char pid_buf[32] = { 0 };
   jio_snprintf(pid_buf, sizeof(pid_buf), "%d", os::current_process_id());
   jstring pid_string = env->NewStringUTF(pid_buf);
-  return pid_string; // exception pending if NULL
+  return pid_string; // exception pending if null
 NO_TRANSITION_END
 
 NO_TRANSITION(jlong, jfr_elapsed_frequency(JNIEnv* env, jobject jvm))
@@ -183,7 +183,7 @@ NO_TRANSITION(jboolean, jfr_should_rotate_disk(JNIEnv* env, jobject jvm))
 NO_TRANSITION_END
 
 NO_TRANSITION(jlong, jfr_get_type_id_from_string(JNIEnv * env, jobject jvm, jstring type))
-  const char* type_name = env->GetStringUTFChars(type, NULL);
+  const char* type_name = env->GetStringUTFChars(type, nullptr);
   jlong id = JfrType::name_to_id(type_name);
   env->ReleaseStringUTFChars(type, type_name);
   return id;
@@ -315,10 +315,10 @@ JVM_ENTRY_NO_ENV(void, jfr_set_repository_location(JNIEnv* env, jobject repo, js
 JVM_END
 
 NO_TRANSITION(void, jfr_set_dump_path(JNIEnv* env, jobject jvm, jstring dumppath))
-  if (dumppath == NULL) {
-    JfrEmergencyDump::set_dump_path(NULL);
+  if (dumppath == nullptr) {
+    JfrEmergencyDump::set_dump_path(nullptr);
   } else {
-    const char* dump_path = env->GetStringUTFChars(dumppath, NULL);
+    const char* dump_path = env->GetStringUTFChars(dumppath, nullptr);
     JfrEmergencyDump::set_dump_path(dump_path);
     env->ReleaseStringUTFChars(dumppath, dump_path);
   }

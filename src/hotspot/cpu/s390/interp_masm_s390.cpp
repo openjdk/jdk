@@ -35,6 +35,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -391,8 +392,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(Register result
   Register tmp = index;  // reuse
   z_sllg(index, index, LogBytesPerHeapOop); // Offset into resolved references array.
   // Load pointer for resolved_references[] objArray.
-  z_lg(result, ConstantPool::cache_offset_in_bytes(), result);
-  z_lg(result, ConstantPoolCache::resolved_references_offset_in_bytes(), result);
+  z_lg(result, in_bytes(ConstantPool::cache_offset()), result);
+  z_lg(result, in_bytes(ConstantPoolCache::resolved_references_offset()), result);
   resolve_oop_handle(result); // Load resolved references array itself.
 #ifdef ASSERT
   NearLabel index_ok;
@@ -412,7 +413,7 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(Register cpool, Re
   // int resolved_klass_index = extract_low_short_from_int(value);
   z_llgh(offset, Address(cpool, offset, sizeof(ConstantPool) + 2)); // offset = resolved_klass_index (s390 is big-endian)
   z_sllg(offset, offset, LogBytesPerWord);                          // Convert 'index' to 'offset'
-  z_lg(iklass, Address(cpool, ConstantPool::resolved_klasses_offset_in_bytes())); // iklass = cpool->_resolved_klasses
+  z_lg(iklass, Address(cpool, ConstantPool::resolved_klasses_offset())); // iklass = cpool->_resolved_klasses
   z_lg(iklass, Address(iklass, offset, Array<Klass*>::base_offset_in_bytes()));
 }
 
@@ -754,12 +755,12 @@ void InterpreterMacroAssembler::get_constant_pool(Register Rdst) {
 
 void InterpreterMacroAssembler::get_constant_pool_cache(Register Rdst) {
   get_constant_pool(Rdst);
-  mem2reg_opt(Rdst, Address(Rdst, ConstantPool::cache_offset_in_bytes()));
+  mem2reg_opt(Rdst, Address(Rdst, ConstantPool::cache_offset()));
 }
 
 void InterpreterMacroAssembler::get_cpool_and_tags(Register Rcpool, Register Rtags) {
   get_constant_pool(Rcpool);
-  mem2reg_opt(Rtags, Address(Rcpool, ConstantPool::tags_offset_in_bytes()));
+  mem2reg_opt(Rtags, Address(Rcpool, ConstantPool::tags_offset()));
 }
 
 // Unlock if synchronized method.
@@ -810,7 +811,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
   // We use Z_ARG2 so that if we go slow path it will be the correct
   // register for unlock_object to pass to VM directly.
   load_address(Z_ARG2, monitor); // Address of first monitor.
-  z_lg(Z_ARG3, Address(Z_ARG2, BasicObjectLock::obj_offset_in_bytes()));
+  z_lg(Z_ARG3, Address(Z_ARG2, BasicObjectLock::obj_offset()));
   compareU64_and_branch(Z_ARG3, (intptr_t)0L, bcondNotEqual, unlock);
 
   if (throw_monitor_exception) {
@@ -877,7 +878,7 @@ void InterpreterMacroAssembler::unlock_if_synchronized_method(TosState state,
 
     bind(loop);
     // Check if current entry is used.
-    load_and_test_long(Z_R0_scratch, Address(R_current_monitor, BasicObjectLock::obj_offset_in_bytes()));
+    load_and_test_long(Z_R0_scratch, Address(R_current_monitor, BasicObjectLock::obj_offset()));
     z_brne(exception);
 
     add2reg(R_current_monitor, entry_size); // Otherwise advance to next entry.
@@ -982,7 +983,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
 //   object  - Address of the object to be locked.
 void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM(noreg, CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter), monitor);
     return;
   }
@@ -1025,7 +1026,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // monitor->lock()->set_displaced_header(displaced_header);
 
   // Initialize the box (Must happen before we update the object mark!).
-  z_stg(displaced_header, BasicObjectLock::lock_offset_in_bytes() +
+  z_stg(displaced_header, in_bytes(BasicObjectLock::lock_offset()) +
                           BasicLock::displaced_header_offset_in_bytes(), monitor);
 
   // if (Atomic::cmpxchg(/*addr*/obj->mark_addr(), /*cmp*/displaced_header, /*ex=*/monitor) == displaced_header) {
@@ -1059,7 +1060,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
   // header indicating it is a recursive lock and be done.
   z_brne(slow_case);
   z_release();  // Membar unnecessary on zarch AND because the above csg does a sync before and after.
-  z_stg(Z_R0/*==0!*/, BasicObjectLock::lock_offset_in_bytes() +
+  z_stg(Z_R0/*==0!*/, in_bytes(BasicObjectLock::lock_offset()) +
                       BasicLock::displaced_header_offset_in_bytes(), monitor);
   z_bru(done);
 
@@ -1086,7 +1087,7 @@ void InterpreterMacroAssembler::lock_object(Register monitor, Register object) {
 // Throw IllegalMonitorException if object is not locked by current thread.
 void InterpreterMacroAssembler::unlock_object(Register monitor, Register object) {
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), monitor);
     return;
   }
@@ -1107,7 +1108,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   const Register displaced_header = Z_ARG4;
   const Register current_header   = Z_R1;
-  Address obj_entry(monitor, BasicObjectLock::obj_offset_in_bytes());
+  Address obj_entry(monitor, BasicObjectLock::obj_offset());
   Label done;
 
   if (object == noreg) {
@@ -1128,7 +1129,7 @@ void InterpreterMacroAssembler::unlock_object(Register monitor, Register object)
 
   // Test first if we are in the fast recursive case.
   MacroAssembler::load_and_test_long(displaced_header,
-                                     Address(monitor, BasicObjectLock::lock_offset_in_bytes() +
+                                     Address(monitor, in_bytes(BasicObjectLock::lock_offset()) +
                                                       BasicLock::displaced_header_offset_in_bytes()));
   z_bre(done); // displaced_header == 0 -> goto done
 
@@ -1810,10 +1811,10 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       get_method(tmp);
       // Supplement to 8139891: _intrinsic_id exceeded 1-byte size limit.
       if (Method::intrinsic_id_size_in_bytes() == 1) {
-        z_cli(Method::intrinsic_id_offset_in_bytes(), tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
+        z_cli(in_bytes(Method::intrinsic_id_offset()), tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       } else {
         assert(Method::intrinsic_id_size_in_bytes() == 2, "size error: check Method::_intrinsic_id");
-        z_lh(tmp, Method::intrinsic_id_offset_in_bytes(), Z_R0, tmp);
+        z_lh(tmp, in_bytes(Method::intrinsic_id_offset()), Z_R0, tmp);
         z_chi(tmp, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       }
       z_brne(profile_continue);

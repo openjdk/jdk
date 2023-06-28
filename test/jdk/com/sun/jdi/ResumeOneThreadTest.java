@@ -45,12 +45,17 @@ class ResumeOneThreadTarg implements Runnable {
         System.out.println("    Debuggee: Howdy!");
         Thread t1 = TestScaffold.newThread(new ResumeOneThreadTarg(), name1);
         Thread t2 = TestScaffold.newThread(new ResumeOneThreadTarg(), name2);
-        // Force these threads to be non-daemon threads, even when the debuggee
-        // is being run as a vthread. See JDK-8283796.
-        t1.setDaemon(false);
-        t2.setDaemon(false);
         t1.start();
         t2.start();
+        // We must block until these threads exit. Otherwise for virtual threads
+        // there will be nothing keeping these threads alive because all the threads
+        // involved are daemon threads. See JDK-8283796.
+        try {
+            t1.join();
+            t2.join();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // This just starts two threads. Each runs to a bkpt.

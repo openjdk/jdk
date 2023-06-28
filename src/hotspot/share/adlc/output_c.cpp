@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,12 +55,12 @@ static void defineRegNames(FILE *fp, RegisterForm *registers) {
     fprintf(fp,"const char *Matcher::regName[REG_COUNT] = {\n");
 
     // Output the register name for each register in the allocation classes
-    RegDef *reg_def = NULL;
-    RegDef *next = NULL;
+    RegDef *reg_def = nullptr;
+    RegDef *next = nullptr;
     registers->reset_RegDefs();
-    for (reg_def = registers->iter_RegDefs(); reg_def != NULL; reg_def = next) {
+    for (reg_def = registers->iter_RegDefs(); reg_def != nullptr; reg_def = next) {
       next = registers->iter_RegDefs();
-      const char *comma = (next != NULL) ? "," : " // no trailing comma";
+      const char *comma = (next != nullptr) ? "," : " // no trailing comma";
       fprintf(fp,"  \"%s\"%s\n", reg_def->_regname, comma);
     }
 
@@ -70,12 +70,12 @@ static void defineRegNames(FILE *fp, RegisterForm *registers) {
     fprintf(fp,"\n");
     fprintf(fp,"// An array of character pointers to machine register names.\n");
     fprintf(fp,"const VMReg OptoReg::opto2vm[REG_COUNT] = {\n");
-    reg_def = NULL;
-    next = NULL;
+    reg_def = nullptr;
+    next = nullptr;
     registers->reset_RegDefs();
-    for (reg_def = registers->iter_RegDefs(); reg_def != NULL; reg_def = next) {
+    for (reg_def = registers->iter_RegDefs(); reg_def != nullptr; reg_def = next) {
       next = registers->iter_RegDefs();
-      const char *comma = (next != NULL) ? "," : " // no trailing comma";
+      const char *comma = (next != nullptr) ? "," : " // no trailing comma";
       fprintf(fp,"\t%s%s\n", reg_def->_concrete, comma);
     }
     // Finish defining array
@@ -95,13 +95,13 @@ static void defineRegEncodes(FILE *fp, RegisterForm *registers) {
     fprintf(fp,"const unsigned char Matcher::_regEncode[REG_COUNT] = {\n");
 
     // Output the register encoding for each register in the allocation classes
-    RegDef *reg_def = NULL;
-    RegDef *next    = NULL;
+    RegDef *reg_def = nullptr;
+    RegDef *next    = nullptr;
     registers->reset_RegDefs();
-    for (reg_def = registers->iter_RegDefs(); reg_def != NULL; reg_def = next) {
+    for (reg_def = registers->iter_RegDefs(); reg_def != nullptr; reg_def = next) {
       next = registers->iter_RegDefs();
       const char* register_encode = reg_def->register_encode();
-      const char *comma = (next != NULL) ? "," : " // no trailing comma";
+      const char *comma = (next != nullptr) ? "," : " // no trailing comma";
       int encval;
       if (!ADLParser::is_int_token(register_encode, encval)) {
         fprintf(fp,"  %s%s  // %s\n", register_encode, comma, reg_def->_regname);
@@ -125,7 +125,7 @@ static void defineRegClassEnum(FILE *fp, RegisterForm *registers) {
     fprintf(fp,"// Enumeration of register class names\n");
     fprintf(fp, "enum machRegisterClass {\n");
     registers->_rclasses.reset();
-    for (const char *class_name = NULL; (class_name = registers->_rclasses.iter()) != NULL;) {
+    for (const char *class_name = nullptr; (class_name = registers->_rclasses.iter()) != nullptr;) {
       const char * class_name_to_upper = toUpper(class_name);
       fprintf(fp,"  %s,\n", class_name_to_upper);
       delete[] class_name_to_upper;
@@ -149,7 +149,7 @@ void ArchDesc::declare_register_masks(FILE *fp_hpp) {
     fprintf(fp_hpp,"\n");
     fprintf(fp_hpp,"// Register masks, one for each register class.\n");
     _register->_rclasses.reset();
-    for (rc_name = NULL; (rc_name = _register->_rclasses.iter()) != NULL;) {
+    for (rc_name = nullptr; (rc_name = _register->_rclasses.iter()) != nullptr;) {
       RegClass *reg_class = _register->getRegClass(rc_name);
       assert(reg_class, "Using an undefined register class");
       reg_class->declare_register_masks(fp_hpp);
@@ -167,7 +167,7 @@ void ArchDesc::build_register_masks(FILE *fp_cpp) {
     fprintf(fp_cpp,"\n");
     fprintf(fp_cpp,"// Register masks, one for each register class.\n");
     _register->_rclasses.reset();
-    for (rc_name = NULL; (rc_name = _register->_rclasses.iter()) != NULL;) {
+    for (rc_name = nullptr; (rc_name = _register->_rclasses.iter()) != nullptr;) {
       RegClass *reg_class = _register->getRegClass(rc_name);
       assert(reg_class, "Using an undefined register class");
       reg_class->build_register_masks(fp_cpp);
@@ -192,7 +192,7 @@ static int pipeline_reads_initializer(FILE *fp_cpp, NameList &pipeline_reads, Pi
   if (pipeopnd && !pipeopnd->isWrite() && strcmp(pipeopnd->_stage, "Universal"))
     pipeclass->_parameters.reset();
 
-  while ( (paramname = pipeclass->_parameters.iter()) != NULL ) {
+  while ( (paramname = pipeclass->_parameters.iter()) != nullptr ) {
     const PipeClassOperandForm *tmppipeopnd =
         (const PipeClassOperandForm *)pipeclass->_localUsage[paramname];
 
@@ -221,7 +221,7 @@ static int pipeline_reads_initializer(FILE *fp_cpp, NameList &pipeline_reads, Pi
   if (pipeopnd && !pipeopnd->isWrite() && strcmp(pipeopnd->_stage, "Universal"))
     pipeclass->_parameters.reset();
 
-  while ( (paramname = pipeclass->_parameters.iter()) != NULL ) {
+  while ( (paramname = pipeclass->_parameters.iter()) != nullptr ) {
     const PipeClassOperandForm *tmppipeopnd =
         (const PipeClassOperandForm *)pipeclass->_localUsage[paramname];
     templen += snprintf_checked(&operand_stages[templen], operand_stages_size - templen, "  stage_%s%c\n",
@@ -261,7 +261,7 @@ static int pipeline_res_stages_initializer(
      res_stages[i] = 0;
 
   for (pipeclass->_resUsage.reset();
-       (piperesource = (const PipeClassResourceForm *)pipeclass->_resUsage.iter()) != NULL; ) {
+       (piperesource = (const PipeClassResourceForm *)pipeclass->_resUsage.iter()) != nullptr; ) {
     int used_mask = pipeline->_resdict[piperesource->_resource]->is_resource()->mask();
     for (i = 0; i < pipeline->_rescount; i++)
       if ((1 << i) & used_mask) {
@@ -272,20 +272,26 @@ static int pipeline_res_stages_initializer(
   }
 
   // Compute the length needed for the resource list
+  const char* resource;
   int commentlen = 0;
   int max_stage = 0;
-  for (i = 0; i < pipeline->_rescount; i++) {
-    if (res_stages[i] == 0) {
-      if (max_stage < 9)
-        max_stage = 9;
-    }
-    else {
-      int stagelen = (int)strlen(pipeline->_stages.name(res_stages[i]-1));
-      if (max_stage < stagelen)
-        max_stage = stagelen;
-    }
+  i = 0;
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != nullptr;) {
+    if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      if (res_stages[i] == 0) {
+        if (max_stage < 9) {
+          max_stage = 9;
+        }
+      } else {
+        int stagelen = (int)strlen(pipeline->_stages.name(res_stages[i]-1));
+        if (max_stage < stagelen) {
+          max_stage = stagelen;
+        }
+      }
 
-    commentlen += (int)strlen(pipeline->_reslist.name(i));
+      commentlen += (int)strlen(resource);
+      i++;
+    }
   }
 
   int templen = 1 + commentlen + pipeline->_rescount * (max_stage + 14);
@@ -295,14 +301,16 @@ static int pipeline_res_stages_initializer(
   char * resource_stages = new char [templen];
 
   templen = 0;
-  for (i = 0; i < pipeline->_rescount; i++) {
-    const char * const resname =
-      res_stages[i] == 0 ? "undefined" : pipeline->_stages.name(res_stages[i]-1);
+  i = 0;
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != nullptr;) {
+    if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      const char* const resname = res_stages[i] == 0 ? "undefined" : pipeline->_stages.name(res_stages[i] - 1);
 
-    templen += snprintf_checked(&resource_stages[templen], resource_stages_size - templen, "  stage_%s%-*s // %s\n",
-      resname, max_stage - (int)strlen(resname) + 1,
-      (i < pipeline->_rescount-1) ? "," : "",
-      pipeline->_reslist.name(i));
+      templen += snprintf_checked(&resource_stages[templen], resource_stages_size - templen,"  stage_%s%-*s // %s\n",
+          resname, max_stage - (int)strlen(resname) + 1,
+          (i < pipeline->_rescount - 1) ? "," : "", resource);
+      i++;
+    }
   }
 
   // See if the same string is in the table
@@ -339,7 +347,7 @@ static int pipeline_res_cycles_initializer(
      res_cycles[i] = 0;
 
   for (pipeclass->_resUsage.reset();
-       (piperesource = (const PipeClassResourceForm *)pipeclass->_resUsage.iter()) != NULL; ) {
+       (piperesource = (const PipeClassResourceForm *)pipeclass->_resUsage.iter()) != nullptr; ) {
     int used_mask = pipeline->_resdict[piperesource->_resource]->is_resource()->mask();
     for (i = 0; i < pipeline->_rescount; i++)
       if ((1 << i) & used_mask) {
@@ -355,13 +363,22 @@ static int pipeline_res_cycles_initializer(
   int max_cycles = 0;
   char temp[32];
 
-  for (i = 0; i < pipeline->_rescount; i++) {
-    if (max_cycles < res_cycles[i])
-      max_cycles = res_cycles[i];
-    templen = snprintf_checked(temp, sizeof(temp), "%d", res_cycles[i]);
-    if (cyclelen < templen)
-      cyclelen = templen;
-    commentlen += (int)strlen(pipeline->_reslist.name(i));
+  const char* resource;
+  i = 0;
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != nullptr;) {
+    if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      if (max_cycles < res_cycles[i]) {
+        max_cycles = res_cycles[i];
+      }
+
+      templen = snprintf_checked(temp, sizeof(temp), "%d", res_cycles[i]);
+      if (cyclelen < templen) {
+        cyclelen = templen;
+      }
+
+      commentlen += (int)strlen(resource);
+      i++;
+    }
   }
 
   templen = 1 + commentlen + (cyclelen + 8) * pipeline->_rescount;
@@ -372,9 +389,13 @@ static int pipeline_res_cycles_initializer(
 
   templen = 0;
 
-  for (i = 0; i < pipeline->_rescount; i++) {
-    templen += snprintf_checked(&resource_cycles[templen], resource_cycles_size - templen, "  %*d%c // %s\n",
-      cyclelen, res_cycles[i], (i < pipeline->_rescount-1) ? ',' : ' ', pipeline->_reslist.name(i));
+  i = 0;
+  for (pipeline->_reslist.reset(); (resource = pipeline->_reslist.iter()) != nullptr;) {
+    if (pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      templen += snprintf_checked(&resource_cycles[templen], resource_cycles_size - templen, "  %*d%c // %s\n",
+      cyclelen, res_cycles[i], (i < pipeline->_rescount-1) ? ',' : ' ', resource);
+      i++;
+    }
   }
 
   // See if the same string is in the table
@@ -418,7 +439,7 @@ static int pipeline_res_mask_initializer(
   uint resources_used_exclusively = 0;
 
   for (pipeclass->_resUsage.reset();
-       (piperesource = (const PipeClassResourceForm*)pipeclass->_resUsage.iter()) != NULL; ) {
+       (piperesource = (const PipeClassResourceForm*)pipeclass->_resUsage.iter()) != nullptr; ) {
     element_count++;
   }
 
@@ -448,12 +469,12 @@ static int pipeline_res_mask_initializer(
   // Allocate space for the resource list
   const size_t resource_mask_size = templen;
   char * resource_mask = new char [resource_mask_size];
-  char * last_comma = NULL;
+  char * last_comma = nullptr;
 
   templen = 0;
 
   for (pipeclass->_resUsage.reset();
-       (piperesource = (const PipeClassResourceForm*)pipeclass->_resUsage.iter()) != NULL; ) {
+       (piperesource = (const PipeClassResourceForm*)pipeclass->_resUsage.iter()) != nullptr; ) {
     int used_mask = pipeline->_resdict[piperesource->_resource]->is_resource()->mask();
 
     if (!used_mask) {
@@ -705,8 +726,8 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "  }\n");
   fprintf(fp_cpp, "#endif\n\n");
 #endif
-  fprintf(fp_cpp, "  assert(this, \"NULL pipeline info\");\n");
-  fprintf(fp_cpp, "  assert(pred, \"NULL predecessor pipline info\");\n\n");
+  fprintf(fp_cpp, "  assert(this, \"null pipeline info\");\n");
+  fprintf(fp_cpp, "  assert(pred, \"null predecessor pipline info\");\n\n");
   fprintf(fp_cpp, "  if (pred->hasFixedLatency())\n    return (pred->fixedLatency());\n\n");
   fprintf(fp_cpp, "  // If this is not an operand, then assume a dependence with 0 latency\n");
   fprintf(fp_cpp, "  if (opnd > _read_stage_count)\n    return (0);\n\n");
@@ -769,13 +790,13 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
 
   /* Get the length of all the resource names */
   for (_pipeline->_reslist.reset(), resourcenamelen = 0;
-       (resourcename = _pipeline->_reslist.iter()) != NULL;
+       (resourcename = _pipeline->_reslist.iter()) != nullptr;
        resourcenamelen += (int)strlen(resourcename));
 
   // Create the pipeline class description
 
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, false, NULL, NULL, NULL, Pipeline_Use(0, 0, 0, NULL));\n\n");
-  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, false, true, true, false, NULL, NULL, NULL, Pipeline_Use(0, 0, 0, NULL));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Zero_Instructions(0, 0, true, 0, 0, false, false, false, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
+  fprintf(fp_cpp, "static const Pipeline pipeline_class_Unknown_Instructions(0, 0, true, 0, 0, false, true, true, false, nullptr, nullptr, nullptr, Pipeline_Use(0, 0, 0, nullptr));\n\n");
 
   fprintf(fp_cpp, "const Pipeline_Use_Element Pipeline_Use::elaborated_elements[%d] = {\n", _pipeline->_rescount);
   for (int i1 = 0; i1 < _pipeline->_rescount; i1++) {
@@ -790,7 +811,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "const Pipeline_Use Pipeline_Use::elaborated_use(0, 0, %d, (Pipeline_Use_Element *)&elaborated_elements[0]);\n\n",
     _pipeline->_rescount);
 
-  for (_pipeline->_classlist.reset(); (classname = _pipeline->_classlist.iter()) != NULL; ) {
+  for (_pipeline->_classlist.reset(); (classname = _pipeline->_classlist.iter()) != nullptr; ) {
     fprintf(fp_cpp, "\n");
     fprintf(fp_cpp, "// Pipeline Class \"%s\"\n", classname);
     PipeClassForm *pipeclass = _pipeline->_classdict[classname]->is_pipeclass();
@@ -802,7 +823,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
     int resource_count = (_pipeline->_rescount + 3) >> 2;
 
     // Scan the operands, looking for last output stage and number of inputs
-    for (pipeclass->_parameters.reset(); (paramname = pipeclass->_parameters.iter()) != NULL; ) {
+    for (pipeclass->_parameters.reset(); (paramname = pipeclass->_parameters.iter()) != nullptr; ) {
       const PipeClassOperandForm *pipeopnd =
           (const PipeClassOperandForm *)pipeclass->_localUsage[paramname];
       if (pipeopnd) {
@@ -842,7 +863,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
     unsigned exclusive_resources_used = 0;
     unsigned resource_groups = 0;
     for (pipeclass->_resUsage.reset();
-         (piperesource = (const PipeClassResourceForm *)pipeclass->_resUsage.iter()) != NULL; ) {
+         (piperesource = (const PipeClassResourceForm *)pipeclass->_resUsage.iter()) != nullptr; ) {
       int used_mask = _pipeline->_resdict[piperesource->_resource]->is_resource()->mask();
       if (used_mask)
         resource_groups++;
@@ -855,7 +876,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
       fprintf(fp_cpp, "static const uint pipeline_res_or_masks_%03d[%d] = {",
         pipeclass->_num, resource_groups);
       for (pipeclass->_resUsage.reset(), i = 1;
-           (piperesource = (const PipeClassResourceForm *)pipeclass->_resUsage.iter()) != NULL;
+           (piperesource = (const PipeClassResourceForm *)pipeclass->_resUsage.iter()) != nullptr;
            i++ ) {
         int used_mask = _pipeline->_resdict[piperesource->_resource]->is_resource()->mask();
         if (used_mask) {
@@ -889,7 +910,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
         pipeline_reads_index+1);
     }
     else
-      fprintf(fp_cpp, " NULL,");
+      fprintf(fp_cpp, " nullptr,");
     fprintf(fp_cpp, "  (enum machPipelineStages * const) pipeline_res_stages_%03d,\n",
       pipeline_res_stages_index+1);
     fprintf(fp_cpp, "  (uint * const) pipeline_res_cycles_%03d,\n",
@@ -900,7 +921,7 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
       fprintf(fp_cpp, "&pipeline_res_mask_%03d[0]",
         pipeline_res_mask_index+1);
     else
-      fprintf(fp_cpp, "NULL");
+      fprintf(fp_cpp, "nullptr");
     fprintf(fp_cpp, "));\n");
   }
 
@@ -961,11 +982,11 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "// Descriptions for emitting different functional unit nops\n");
   const char *nop;
   int nopcnt = 0;
-  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != NULL; nopcnt++ );
+  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != nullptr; nopcnt++ );
 
   fprintf(fp_cpp, "void Bundle::initialize_nops(MachNode * nop_list[%d]) {\n", nopcnt);
   int i = 0;
-  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != NULL; i++ ) {
+  for ( _pipeline->_noplist.reset(); (nop = _pipeline->_noplist.iter()) != nullptr; i++ ) {
     fprintf(fp_cpp, "  nop_list[%d] = (MachNode *) new %sNode();\n", i, nop);
   }
   fprintf(fp_cpp, "};\n\n");
@@ -982,8 +1003,15 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
   fprintf(fp_cpp, "  };\n\n");
 
   fprintf(fp_cpp, "  static const char *resource_names[%d] = {", _pipeline->_rescount);
-  for (i = 0; i < _pipeline->_rescount; i++)
-    fprintf(fp_cpp, " \"%s\"%c", _pipeline->_reslist.name(i), i < _pipeline->_rescount-1 ? ',' : ' ');
+  // Don't add compound resources to the list of resource names
+  const char* resource;
+  i = 0;
+  for (_pipeline->_reslist.reset(); (resource = _pipeline->_reslist.iter()) != nullptr;) {
+    if (_pipeline->_resdict[resource]->is_resource()->is_discrete()) {
+      fprintf(fp_cpp, " \"%s\"%c", resource, i < _pipeline->_rescount - 1 ? ',' : ' ');
+      i++;
+    }
+  }
   fprintf(fp_cpp, "};\n\n");
 
   // See if the same string is in the table
@@ -1030,12 +1058,12 @@ static void print_block_index(FILE *fp, int inst_position) {
 static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch, PeepConstraint *pconstraint) {
   int         parent        = -1;
   int         inst_position = 0;
-  const char* inst_name     = NULL;
+  const char* inst_name     = nullptr;
   int         input         = 0;
   fprintf(fp, "  // Check instruction sub-tree\n");
   pmatch->reset();
   for( pmatch->next_instruction( parent, inst_position, inst_name, input );
-       inst_name != NULL;
+       inst_name != nullptr;
        pmatch->next_instruction( parent, inst_position, inst_name, input ) ) {
     // If this is not a placeholder
     if( ! pmatch->is_placeholder() ) {
@@ -1047,13 +1075,13 @@ static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch, Pe
         fprintf(fp, " > 0 ) {\n    Node *n = block->get_node(");
         print_block_index(fp, inst_position);
         fprintf(fp, ");\n    inst%d = (n->is_Mach()) ? ", inst_position);
-        fprintf(fp, "n->as_Mach() : NULL;\n  }\n");
+        fprintf(fp, "n->as_Mach() : nullptr;\n  }\n");
       }
 
       // When not the root
       // Test we have the correct instruction by comparing the rule.
       if( parent != -1 ) {
-        fprintf(fp, "  matches = matches && (inst%d != NULL) && (inst%d->rule() == %s_rule);\n",
+        fprintf(fp, "  matches = matches && (inst%d != nullptr) && (inst%d->rule() == %s_rule);\n",
                 inst_position, inst_position, inst_name);
       }
     } else {
@@ -1068,18 +1096,18 @@ static void check_peepmatch_instruction_sequence(FILE *fp, PeepMatch *pmatch, Pe
 static void build_instruction_index_mapping( FILE *fp, FormDict &globals, PeepMatch *pmatch ) {
   int         parent        = -1;
   int         inst_position = 0;
-  const char* inst_name     = NULL;
+  const char* inst_name     = nullptr;
   int         input         = 0;
   fprintf(fp, "      // Build map to register info\n");
   pmatch->reset();
   for( pmatch->next_instruction( parent, inst_position, inst_name, input );
-       inst_name != NULL;
+       inst_name != nullptr;
        pmatch->next_instruction( parent, inst_position, inst_name, input ) ) {
     // If this is not a placeholder
     if( ! pmatch->is_placeholder() ) {
       // Define temporaries 'inst#', based on self's inst_position
       InstructForm *inst = globals[inst_name]->is_instruction();
-      if( inst != NULL ) {
+      if( inst != nullptr ) {
         char inst_prefix[]  = "instXXXX_";
         snprintf_checked(inst_prefix, sizeof(inst_prefix), "inst%d_",   inst_position);
         char receiver[]     = "instXXXX->";
@@ -1099,10 +1127,10 @@ static void check_peepconstraints(FILE *fp, FormDict &globals, PeepMatch *pmatch
   build_instruction_index_mapping( fp, globals, pmatch );
 
   // Build constraint tests
-  if( pconstraint != NULL ) {
+  if( pconstraint != nullptr ) {
     fprintf(fp, "      matches = matches &&");
     bool   first_constraint = true;
-    while( pconstraint != NULL ) {
+    while( pconstraint != nullptr ) {
       // indentation and connecting '&&'
       const char *indentation = "      ";
       fprintf(fp, "\n%s%s", indentation, (!first_constraint ? "&& " : "  "));
@@ -1286,12 +1314,12 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
   fprintf(fp, "      if( matches ) {\n");
   fprintf(fp, "        // generate the new sub-tree\n");
   fprintf(fp, "        assert( true, \"Debug stopping point\");\n");
-  if( preplace != NULL ) {
+  if( preplace != nullptr ) {
     // Get the root of the new sub-tree
-    const char *root_inst = NULL;
+    const char *root_inst = nullptr;
     preplace->next_instruction(root_inst);
     InstructForm *root_form = globals[root_inst]->is_instruction();
-    assert( root_form != NULL, "Replacement instruction was not previously defined");
+    assert( root_form != nullptr, "Replacement instruction was not previously defined");
     fprintf(fp, "        %sNode *root = new %sNode();\n", root_inst, root_inst);
 
     int         inst_num;
@@ -1300,7 +1328,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
     // Then install the use-operands for the new sub-tree
     // preplace->reset();             // reset breaks iteration
     for( preplace->next_operand( inst_num, op_name );
-         op_name != NULL;
+         op_name != nullptr;
          preplace->next_operand( inst_num, op_name ) ) {
       InstructForm *inst_form;
       inst_form  = globals[pmatch->instruction_name(inst_num)]->is_instruction();
@@ -1335,7 +1363,7 @@ static void generate_peepreplace( FILE *fp, FormDict &globals, int peephole_numb
         fprintf(fp, "        root->_opnds[0] = inst%d->_opnds[0]->clone(); // result\n", inst_num);
         fprintf(fp, "        // ----- Done with initial setup -----\n");
       } else {
-        if( (op_form == NULL) || (op_form->is_base_constant(globals) == Form::none) ) {
+        if( (op_form == nullptr) || (op_form->is_base_constant(globals) == Form::none) ) {
           // Do not have ideal edges for constants after matching
           fprintf(fp, "        for( unsigned x%d = inst%d_idx%d; x%d < inst%d_idx%d; x%d++ )\n",
                   inst_op_num, inst_num, inst_op_num,
@@ -1382,25 +1410,25 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   // Identify the maximum instruction position,
   // generate temporaries that hold current instruction
   //
-  //   MachNode  *inst0 = NULL;
+  //   MachNode  *inst0 = nullptr;
   //   ...
-  //   MachNode  *instMAX = NULL;
+  //   MachNode  *instMAX = nullptr;
   //
   int max_position = 0;
   Peephole *peep;
-  for( peep = node->peepholes(); peep != NULL; peep = peep->next() ) {
-    if (peep->procedure() != NULL) {
+  for( peep = node->peepholes(); peep != nullptr; peep = peep->next() ) {
+    if (peep->procedure() != nullptr) {
       continue;
     }
     PeepMatch *pmatch = peep->match();
-    assert( pmatch != NULL, "fatal(), missing peepmatch rule");
+    assert( pmatch != nullptr, "fatal(), missing peepmatch rule");
     if( max_position < pmatch->max_position() )  max_position = pmatch->max_position();
   }
   for( int i = 0; i <= max_position; ++i ) {
     if( i == 0 ) {
       fprintf(fp, "  MachNode *inst0 = this;\n");
     } else {
-      fprintf(fp, "  MachNode *inst%d = NULL;\n", i);
+      fprintf(fp, "  MachNode *inst%d = nullptr;\n", i);
     }
   }
 
@@ -1408,7 +1436,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
   //   Construct a test for the desired instruction sub-tree
   //   then check the constraints
   //   If these match, Generate the new subtree
-  for( peep = node->peepholes(); peep != NULL; peep = peep->next() ) {
+  for( peep = node->peepholes(); peep != nullptr; peep = peep->next() ) {
     int         peephole_number = peep->peephole_number();
     PeepPredicate  *ppredicate  = peep->predicate();
     PeepMatch      *pmatch      = peep->match();
@@ -1422,8 +1450,8 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
 
     // Make each peephole rule individually selectable
     fprintf(fp, "  if( ((OptoPeepholeAt == -1) || (OptoPeepholeAt==%d)) && ( %s ) ) {\n",
-            peephole_number, ppredicate != NULL ? ppredicate->rule() : "true");
-    if (pprocedure == NULL) {
+            peephole_number, ppredicate != nullptr ? ppredicate->rule() : "true");
+    if (pprocedure == nullptr) {
       fprintf(fp, "    matches = true;\n");
       // Scan the peepmatch and output a test for each instruction
       check_peepmatch_instruction_sequence( fp, pmatch, pconstraint );
@@ -1441,7 +1469,7 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
       // End of scope for this peephole's constraints
       fprintf(fp, "    }\n");
     } else {
-      const char* replace_inst = NULL;
+      const char* replace_inst = nullptr;
       preplace->next_instruction(replace_inst);
       // Generate the target instruction
       fprintf(fp, "    auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
@@ -1451,11 +1479,11 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
 
       int         parent        = -1;
       int         inst_position = 0;
-      const char* inst_name     = NULL;
+      const char* inst_name     = nullptr;
       int         input         = 0;
       pmatch->reset();
       for (pmatch->next_instruction(parent, inst_position, inst_name, input);
-           inst_name != NULL;
+           inst_name != nullptr;
            pmatch->next_instruction(parent, inst_position, inst_name, input)) {
         fprintf(fp, ", %s_rule", inst_name);
       }
@@ -1489,22 +1517,22 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
   if( node->expands() ) {
     const char   *opid;
     int           new_pos, exp_pos;
-    const char   *new_id   = NULL;
-    const Form   *frm      = NULL;
-    InstructForm *new_inst = NULL;
-    OperandForm  *new_oper = NULL;
+    const char   *new_id   = nullptr;
+    const Form   *frm      = nullptr;
+    InstructForm *new_inst = nullptr;
+    OperandForm  *new_oper = nullptr;
     unsigned      numo     = node->num_opnds() +
                                 node->_exprule->_newopers.count();
 
     // If necessary, generate any operands created in expand rule
     if (node->_exprule->_newopers.count()) {
       for(node->_exprule->_newopers.reset();
-          (new_id = node->_exprule->_newopers.iter()) != NULL; cnt++) {
+          (new_id = node->_exprule->_newopers.iter()) != nullptr; cnt++) {
         frm = node->_localNames[new_id];
         assert(frm, "Invalid entry in new operands list of expand rule");
         new_oper = frm->is_operand();
         char *tmp = (char *)node->_exprule->_newopconst[new_id];
-        if (tmp == NULL) {
+        if (tmp == nullptr) {
           fprintf(fp,"  MachOper *op%d = new %sOper();\n",
                   cnt, new_oper->_ident);
         }
@@ -1521,7 +1549,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
         fprintf(fp,"  MachNode *tmp%d = this;\n", i);
       }
       else {
-        fprintf(fp,"  MachNode *tmp%d = NULL;\n", i);
+        fprintf(fp,"  MachNode *tmp%d = nullptr;\n", i);
       }
     }
     // Build mapping from num_edges to local variables
@@ -1551,13 +1579,13 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     }
 
     // Declare variable to hold root of expansion
-    fprintf(fp,"  MachNode *result = NULL;\n");
+    fprintf(fp,"  MachNode *result = nullptr;\n");
 
     // Iterate over the instructions 'node' expands into
     ExpandRule  *expand       = node->_exprule;
-    NameAndList *expand_instr = NULL;
+    NameAndList *expand_instr = nullptr;
     for (expand->reset_instructions();
-         (expand_instr = expand->iter_instructions()) != NULL; cnt++) {
+         (expand_instr = expand->iter_instructions()) != nullptr; cnt++) {
       new_id = expand_instr->name();
 
       InstructForm* expand_instruction = (InstructForm*)globalAD->globalNames()[new_id];
@@ -1618,7 +1646,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
 
       // Iterate over the new instruction's operands
       int prev_pos = -1;
-      for( expand_instr->reset(); (opid = expand_instr->iter()) != NULL; ) {
+      for( expand_instr->reset(); (opid = expand_instr->iter()) != nullptr; ) {
         // Use 'parameter' at current position in list of new instruction's formals
         // instead of 'opid' when looking up info internal to new_inst
         const char *parameter = formal_lst->iter();
@@ -1639,7 +1667,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
             fprintf(fp,"  n%d->set_opnd_array(%d, op%d->clone()); // %s\n",
                     cnt, new_pos, exp_pos-node->num_opnds(), opid);
             // Check for who defines this operand & add edge if needed
-            fprintf(fp,"  if(tmp%d != NULL)\n", exp_pos);
+            fprintf(fp,"  if(tmp%d != nullptr)\n", exp_pos);
             fprintf(fp,"    n%d->add_req(tmp%d);\n", cnt, exp_pos);
           }
         }
@@ -1648,7 +1676,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
           // ins = (InstructForm *) _globalNames[new_id];
           exp_pos = node->operand_position_format(opid);
           assert(exp_pos != -1, "Bad expand rule");
-          if (prev_pos > exp_pos && expand_instruction->_matrule != NULL) {
+          if (prev_pos > exp_pos && expand_instruction->_matrule != nullptr) {
             // For the add_req calls below to work correctly they need
             // to added in the same order that a match would add them.
             // This means that they would need to be in the order of
@@ -1720,13 +1748,13 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     // Examine each component to see if it is a DEF or KILL
     node->_components.reset();
     // Skip the first component, if already handled as (SET dst (...))
-    Component *comp = NULL;
+    Component *comp = nullptr;
     // For kills, the choice of projection numbers is arbitrary
     int proj_no = 1;
     bool declared_def  = false;
     bool declared_kill = false;
 
-    while ((comp = node->_components.iter()) != NULL) {
+    while ((comp = node->_components.iter()) != nullptr) {
       // Lookup register class associated with operand type
       Form *form = (Form*)_globalNames[comp->_type];
       assert(form, "component type must be a defined form");
@@ -1779,14 +1807,14 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     }
   }
 
-  if( !node->expands() && node->_matrule != NULL ) {
+  if( !node->expands() && node->_matrule != nullptr ) {
     // Remove duplicated operands and inputs which use the same name.
     // Search through match operands for the same name usage.
     // The matcher generates these non-unique operands. If the node
     // was constructed by an expand rule, there are no unique operands.
     uint cur_num_opnds = node->num_opnds();
     if (cur_num_opnds > 1 && cur_num_opnds != node->num_unique_opnds()) {
-      Component *comp = NULL;
+      Component *comp = nullptr;
       fprintf(fp, "  // Remove duplicated operands and inputs which use the same name.\n");
       fprintf(fp, "  if (num_opnds() == %d) {\n", cur_num_opnds);
       // Build mapping from num_edges to local variables
@@ -1927,8 +1955,8 @@ public:
 
   void clear() {
     _cleared       = true;
-    _opclass       = NULL;
-    _operand       = NULL;
+    _opclass       = nullptr;
+    _operand       = nullptr;
     _operand_idx   = 0;
     _local_name    = "";
     _operand_name  = "";
@@ -1958,7 +1986,7 @@ public:
       // check_rep_var( rep_var );
       if ( Opcode::as_opcode_type(rep_var) != Opcode::NOT_AN_OPCODE ) {
         // No state needed.
-        assert( _opclass == NULL,
+        assert( _opclass == nullptr,
                 "'primary', 'secondary' and 'tertiary' don't follow operand.");
       }
       else if ((strcmp(rep_var, "constanttablebase") == 0) ||
@@ -1982,20 +2010,20 @@ public:
         // Lookup the corresponding ins_encode parameter
         // This is the argument (actual parameter) to the encoding.
         const char *inst_rep_var = _ins_encode.rep_var_name(_inst, param_no);
-        if (inst_rep_var == NULL) {
+        if (inst_rep_var == nullptr) {
           _AD.syntax_err( _ins_encode._linenum,
                           "Parameter %s not passed to enc_class %s from instruct %s.\n",
                           rep_var, _encoding._name, _inst._ident);
-          assert(false, "inst_rep_var == NULL, cannot continue.");
+          assert(false, "inst_rep_var == null, cannot continue.");
         }
 
         // Check if instruction's actual parameter is a local name in the instruction
         const Form  *local     = _inst._localNames[inst_rep_var];
-        OpClassForm *opc       = (local != NULL) ? local->is_opclass() : NULL;
+        OpClassForm *opc       = (local != nullptr) ? local->is_opclass() : nullptr;
         // Note: assert removed to allow constant and symbolic parameters
         // assert( opc, "replacement variable was not found in local names");
         // Lookup the index position iff the replacement variable is a localName
-        int idx  = (opc != NULL) ? _inst.operand_position_format(inst_rep_var) : -1;
+        int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
 
         if ( idx != -1 ) {
           // This is a local in the instruction
@@ -2007,7 +2035,7 @@ public:
 
           // !!!!!
           // Do not support consecutive operands.
-          assert( _operand == NULL, "Unimplemented()");
+          assert( _operand == nullptr, "Unimplemented()");
           _operand = opc->is_operand();
         }
         else if( ADLParser::is_literal_constant(inst_rep_var) ) {
@@ -2020,14 +2048,14 @@ public:
           // Check later that encoding specifies $$$constant to resolve as constant
           _constant_status   = LITERAL_SEEN;
         }
-        else if((_AD.get_registers() != NULL ) && (_AD.get_registers()->getRegDef(inst_rep_var) != NULL)) {
+        else if((_AD.get_registers() != nullptr ) && (_AD.get_registers()->getRegDef(inst_rep_var) != nullptr)) {
           // Instruction provided a literal register name for this parameter
           // Check that encoding specifies $$$reg to resolve.as register.
           _reg_status        = LITERAL_SEEN;
         }
         else {
           // Check for unimplemented functionality before hard failure
-          assert(opc != NULL && strcmp(opc->_ident, "label") == 0, "Unimplemented Label");
+          assert(opc != nullptr && strcmp(opc->_ident, "label") == 0, "Unimplemented Label");
           assert(false, "ShouldNotReachHere()");
         }
       } // done checking which operand this is.
@@ -2040,7 +2068,7 @@ public:
       if ( strcmp(rep_var,"$disp") == 0 ) {
         _doing_disp = true;
         assert( _opclass, "Must use operand or operand class before '$disp'");
-        if( _operand == NULL ) {
+        if( _operand == nullptr ) {
           // Only have an operand class, generate run-time check for relocation
           _may_reloc    = true;
           _reloc_form   = RELOC_DISP;
@@ -2049,25 +2077,25 @@ public:
           // Do precise check on operand: is it a ConP or not
           //
           // Check interface for value of displacement
-          assert( ( _operand->_interface != NULL ),
+          assert( ( _operand->_interface != nullptr ),
                   "$disp can only follow memory interface operand");
           MemInterface *mem_interface= _operand->_interface->is_MemInterface();
-          assert( mem_interface != NULL,
+          assert( mem_interface != nullptr,
                   "$disp can only follow memory interface operand");
           const char *disp = mem_interface->_disp;
 
-          if( disp != NULL && (*disp == '$') ) {
+          if( disp != nullptr && (*disp == '$') ) {
             // MemInterface::disp contains a replacement variable,
             // Check if this matches a ConP
             //
             // Lookup replacement variable, in operand's component list
             const char *rep_var_name = disp + 1; // Skip '$'
             const Component *comp = _operand->_components.search(rep_var_name);
-            assert( comp != NULL,"Replacement variable not found in components");
+            assert( comp != nullptr,"Replacement variable not found in components");
             const char      *type = comp->_type;
             // Lookup operand form for replacement variable's type
             const Form *form = _AD.globalNames()[type];
-            assert( form != NULL, "Replacement variable's type not found");
+            assert( form != nullptr, "Replacement variable's type not found");
             OperandForm *op = form->is_operand();
             assert( op, "Attempting to emit a non-register or non-constant");
             // Check if this is a constant
@@ -2127,7 +2155,7 @@ public:
       // literal register parameter must be accessed as a 'reg' field.
       if ( _reg_status != LITERAL_NOT_SEEN ) {
         assert( _reg_status == LITERAL_SEEN, "Must have seen register literal before now");
-        if (strcmp(rep_var,"$reg") == 0 || reg_conversion(rep_var) != NULL) {
+        if (strcmp(rep_var,"$reg") == 0 || reg_conversion(rep_var) != nullptr) {
           _reg_status  = LITERAL_ACCESSED;
         } else {
           _AD.syntax_err(_encoding._linenum,
@@ -2190,13 +2218,13 @@ public:
     // const char *ec_rep_var = encoding->_rep_vars.iter();
     const char *rep_var;
     _strings_to_emit.reset();
-    while ( (rep_var = _strings_to_emit.iter()) != NULL ) {
+    while ( (rep_var = _strings_to_emit.iter()) != nullptr ) {
 
       if ( (*rep_var) == '$' ) {
         // A subfield variable, '$$' prefix
         emit_field( rep_var );
       } else {
-        if (_strings_to_emit.peek() != NULL &&
+        if (_strings_to_emit.peek() != nullptr &&
             strcmp(_strings_to_emit.peek(), "$Address") == 0) {
           fprintf(_fp, "Address::make_raw(");
 
@@ -2230,7 +2258,7 @@ public:
           // A replacement variable, '$' prefix
           const char* next = _strings_to_emit.peek();
           const char* next2 = _strings_to_emit.peek(2);
-          if (next != NULL && next2 != NULL && strcmp(next2, "$Register") == 0 &&
+          if (next != nullptr && next2 != nullptr && strcmp(next2, "$Register") == 0 &&
               (strcmp(next, "$base") == 0 || strcmp(next, "$index") == 0)) {
             // handle $rev_var$$base$$Register and $rev_var$$index$$Register by
             // producing as_Register(opnd_array(#)->base(ra_,this,idx1)).
@@ -2335,14 +2363,14 @@ private:
 #if defined(AARCH64)
     if (strcmp(rep_var,"$PRegister") == 0)  return "as_PRegister";
 #endif
-    return NULL;
+    return nullptr;
   }
 
   void emit_field(const char *rep_var) {
     const char* reg_convert = reg_conversion(rep_var);
 
     // A subfield variable, '$$subfield'
-    if ( strcmp(rep_var, "$reg") == 0 || reg_convert != NULL) {
+    if ( strcmp(rep_var, "$reg") == 0 || reg_convert != nullptr) {
       // $reg form or the $Register MacroAssembler type conversions
       assert( _operand_idx != -1,
               "Must use this subfield after operand");
@@ -2351,13 +2379,13 @@ private:
           const Form  *local     = _inst._localNames[_operand_name];
           OperandForm *oper      = local->is_operand();
           const RegDef* first = oper->get_RegClass()->find_first_elem();
-          if (reg_convert != NULL) {
+          if (reg_convert != nullptr) {
             fprintf(_fp, "%s(%s_enc)", reg_convert, first->_regname);
           } else {
             fprintf(_fp, "%s_enc", first->_regname);
           }
         } else {
-          fprintf(_fp,"->%s(ra_,this", reg_convert != NULL ? reg_convert : "reg");
+          fprintf(_fp,"->%s(ra_,this", reg_convert != nullptr ? reg_convert : "reg");
           // Add parameter for index position, if not result operand
           if( _operand_idx != 0 ) fprintf(_fp,",idx%d", _operand_idx);
           fprintf(_fp,")");
@@ -2431,7 +2459,7 @@ private:
     _processing_noninput = false;
     // A replacement variable, originally '$'
     if ( Opcode::as_opcode_type(rep_var) != Opcode::NOT_AN_OPCODE ) {
-      if ((_inst._opcode == NULL) || !_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(rep_var) )) {
+      if ((_inst._opcode == nullptr) || !_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(rep_var) )) {
         // Missing opcode
         _AD.syntax_err( _inst._linenum,
                         "Missing $%s opcode definition in %s, used by encoding %s\n",
@@ -2460,11 +2488,11 @@ private:
 
       // Check if instruction's actual parameter is a local name in the instruction
       const Form  *local     = _inst._localNames[inst_rep_var];
-      OpClassForm *opc       = (local != NULL) ? local->is_opclass() : NULL;
+      OpClassForm *opc       = (local != nullptr) ? local->is_opclass() : nullptr;
       // Note: assert removed to allow constant and symbolic parameters
       // assert( opc, "replacement variable was not found in local names");
       // Lookup the index position iff the replacement variable is a localName
-      int idx  = (opc != NULL) ? _inst.operand_position_format(inst_rep_var) : -1;
+      int idx  = (opc != nullptr) ? _inst.operand_position_format(inst_rep_var) : -1;
       if( idx != -1 ) {
         if (_inst.is_noninput_operand(idx)) {
           // This operand isn't a normal input so printing it is done
@@ -2487,7 +2515,7 @@ private:
       else if( Opcode::as_opcode_type(inst_rep_var) != Opcode::NOT_AN_OPCODE ) {
         // else check if "primary", "secondary", "tertiary"
         assert( _constant_status == LITERAL_ACCESSED, "Must be processing a literal constant parameter");
-        if ((_inst._opcode == NULL) || !_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(inst_rep_var) )) {
+        if ((_inst._opcode == nullptr) || !_inst._opcode->print_opcode(_fp, Opcode::as_opcode_type(inst_rep_var) )) {
           // Missing opcode
           _AD.syntax_err( _inst._linenum,
                           "Missing $%s opcode definition in %s\n",
@@ -2496,7 +2524,7 @@ private:
         }
         _constant_status = LITERAL_OUTPUT;
       }
-      else if((_AD.get_registers() != NULL ) && (_AD.get_registers()->getRegDef(inst_rep_var) != NULL)) {
+      else if((_AD.get_registers() != nullptr ) && (_AD.get_registers()->getRegDef(inst_rep_var) != nullptr)) {
         // Instruction provided a literal register name for this parameter
         // Check that encoding specifies $$$reg to resolve.as register.
         assert( _reg_status == LITERAL_ACCESSED, "Must be processing a literal register parameter");
@@ -2505,7 +2533,7 @@ private:
       }
       else {
         // Check for unimplemented functionality before hard failure
-        assert(opc != NULL && strcmp(opc->_ident, "label") == 0, "Unimplemented Label");
+        assert(opc != nullptr && strcmp(opc->_ident, "label") == 0, "Unimplemented Label");
         assert(false, "ShouldNotReachHere()");
       }
       // all done
@@ -2540,7 +2568,7 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
   fprintf(fp, "void  %sNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {\n",
           inst._ident);
 
-  assert((_encode != NULL) && (ins_encode != NULL), "You must define an encode section.");
+  assert((_encode != nullptr) && (ins_encode != nullptr), "You must define an encode section.");
 
   // Output each operand's offset into the array of registers.
   inst.index_temps(fp, _globalNames);
@@ -2549,10 +2577,10 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
   // for each parameter <par_name> specified in the encoding.
   ins_encode->reset();
   const char *ec_name = ins_encode->encode_class_iter();
-  assert(ec_name != NULL, "Postalloc expand must specify an encoding.");
+  assert(ec_name != nullptr, "Postalloc expand must specify an encoding.");
 
   EncClass *encoding = _encode->encClass(ec_name);
-  if (encoding == NULL) {
+  if (encoding == nullptr) {
     fprintf(stderr, "User did not define contents of this encode_class: %s\n", ec_name);
     abort();
   }
@@ -2573,7 +2601,7 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
   const char *type = encoding->_parameter_type.iter();
   const char *name = encoding->_parameter_name.iter();
   int param_no = 0;
-  for (; (type != NULL) && (name != NULL);
+  for (; (type != nullptr) && (name != nullptr);
        (type = encoding->_parameter_type.iter()), (name = encoding->_parameter_name.iter())) {
     const char* arg_name = ins_encode->rep_var_name(inst, param_no);
     int idx = inst.operand_position_format(arg_name);
@@ -2603,8 +2631,8 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
 
   // Output this instruction's encodings.
   fprintf(fp, "  {");
-  const char *ec_code    = NULL;
-  const char *ec_rep_var = NULL;
+  const char *ec_code    = nullptr;
+  const char *ec_rep_var = nullptr;
   assert(encoding == _encode->encClass(ec_name), "");
 
   DefineEmitState pending(fp, *this, *encoding, *ins_encode, inst);
@@ -2613,7 +2641,7 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
   // Process list of user-defined strings,
   // and occurrences of replacement variables.
   // Replacement Vars are pushed into a list and then output.
-  while ((ec_code = encoding->_code.iter()) != NULL) {
+  while ((ec_code = encoding->_code.iter()) != nullptr) {
     if (! encoding->_code.is_signal(ec_code)) {
       // Emit pending code.
       pending.emit();
@@ -2635,7 +2663,7 @@ void ArchDesc::define_postalloc_expand(FILE *fp, InstructForm &inst) {
   fprintf(fp, "}\n\n");
 
   ec_name = ins_encode->encode_class_iter();
-  assert(ec_name == NULL, "Postalloc expand may only have one encoding.");
+  assert(ec_name == nullptr, "Postalloc expand may only have one encoding.");
 }
 
 // defineEmit -----------------------------------------------------------------
@@ -2648,7 +2676,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
 
   // If user did not define an encode section,
   // provide stub that does not generate any machine code.
-  if( (_encode == NULL) || (encode == NULL) ) {
+  if( (_encode == nullptr) || (encode == nullptr) ) {
     fprintf(fp, "  // User did not define an encode section.\n");
     fprintf(fp, "}\n");
     return;
@@ -2669,15 +2697,15 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
   const char *ec_name;
   bool        user_defined = false;
   encode->reset();
-  while ((ec_name = encode->encode_class_iter()) != NULL) {
+  while ((ec_name = encode->encode_class_iter()) != nullptr) {
     fprintf(fp, "  {\n");
     // Output user-defined encoding
     user_defined           = true;
 
-    const char *ec_code    = NULL;
-    const char *ec_rep_var = NULL;
+    const char *ec_code    = nullptr;
+    const char *ec_rep_var = nullptr;
     EncClass   *encoding   = _encode->encClass(ec_name);
-    if (encoding == NULL) {
+    if (encoding == nullptr) {
       fprintf(stderr, "User did not define contents of this encode_class: %s\n", ec_name);
       abort();
     }
@@ -2694,7 +2722,7 @@ void ArchDesc::defineEmit(FILE* fp, InstructForm& inst) {
     // Process list of user-defined strings,
     // and occurrences of replacement variables.
     // Replacement Vars are pushed into a list and then output
-    while ((ec_code = encoding->_code.iter()) != NULL) {
+    while ((ec_code = encoding->_code.iter()) != nullptr) {
       if (!encoding->_code.is_signal(ec_code)) {
         // Emit pending code
         pending.emit();
@@ -2738,7 +2766,7 @@ void ArchDesc::defineEvalConstant(FILE* fp, InstructForm& inst) {
 
   // If user did not define an encode section,
   // provide stub that does not generate any machine code.
-  if ((_encode == NULL) || (encode == NULL)) {
+  if ((_encode == nullptr) || (encode == nullptr)) {
     fprintf(fp, "  // User did not define an encode section.\n");
     fprintf(fp, "}\n");
     return;
@@ -2748,15 +2776,15 @@ void ArchDesc::defineEvalConstant(FILE* fp, InstructForm& inst) {
   const char *ec_name;
   bool        user_defined = false;
   encode->reset();
-  while ((ec_name = encode->encode_class_iter()) != NULL) {
+  while ((ec_name = encode->encode_class_iter()) != nullptr) {
     fprintf(fp, "  {\n");
     // Output user-defined encoding
     user_defined           = true;
 
-    const char *ec_code    = NULL;
-    const char *ec_rep_var = NULL;
+    const char *ec_code    = nullptr;
+    const char *ec_rep_var = nullptr;
     EncClass   *encoding   = _encode->encClass(ec_name);
-    if (encoding == NULL) {
+    if (encoding == nullptr) {
       fprintf(stderr, "User did not define contents of this encode_class: %s\n", ec_name);
       abort();
     }
@@ -2773,7 +2801,7 @@ void ArchDesc::defineEvalConstant(FILE* fp, InstructForm& inst) {
     // Process list of user-defined strings,
     // and occurrences of replacement variables.
     // Replacement Vars are pushed into a list and then output
-    while ((ec_code = encoding->_code.iter()) != NULL) {
+    while ((ec_code = encoding->_code.iter()) != nullptr) {
       if (!encoding->_code.is_signal(ec_code)) {
         // Emit pending code
         pending.emit();
@@ -2821,11 +2849,11 @@ static void defineIn_RegMask(FILE *fp, FormDict &globals, OperandForm &oper) {
     // Figure out if all RegMasks are the same.
     const char* first_reg_class = oper.in_reg_class(0, globals);
     bool all_same = true;
-    assert(first_reg_class != NULL, "did not find register mask");
+    assert(first_reg_class != nullptr, "did not find register mask");
 
     for (uint index = 1; all_same && index < num_edges; index++) {
       const char* some_reg_class = oper.in_reg_class(index, globals);
-      assert(some_reg_class != NULL, "did not find register mask");
+      assert(some_reg_class != nullptr, "did not find register mask");
       if (strcmp(first_reg_class, some_reg_class) != 0) {
         all_same = false;
       }
@@ -2848,7 +2876,7 @@ static void defineIn_RegMask(FILE *fp, FormDict &globals, OperandForm &oper) {
 
       for (uint index = 0; index < num_edges; index++) {
         const char *reg_class = oper.in_reg_class(index, globals);
-        assert(reg_class != NULL, "did not find register mask");
+        assert(reg_class != nullptr, "did not find register mask");
         if( !strcmp(reg_class, "stack_slots") ) {
           fprintf(fp, "  case %d: return &(Compile::current()->FIRST_STACK_mask());\n", index);
         } else {
@@ -2859,7 +2887,7 @@ static void defineIn_RegMask(FILE *fp, FormDict &globals, OperandForm &oper) {
       }
       fprintf(fp,"  }\n");
       fprintf(fp,"  ShouldNotReachHere();\n");
-      fprintf(fp,"  return NULL;\n");
+      fprintf(fp,"  return nullptr;\n");
     }
 
     // Method close
@@ -2900,18 +2928,18 @@ static void defineClone(FILE *fp, FormDict &globalNames, OperandForm &oper) {
 // Helper functions for bug 4796752, abstracted with minimal modification
 // from define_oper_interface()
 OperandForm *rep_var_to_operand(const char *encoding, OperandForm &oper, FormDict &globals) {
-  OperandForm *op = NULL;
+  OperandForm *op = nullptr;
   // Check for replacement variable
   if( *encoding == '$' ) {
     // Replacement variable
     const char *rep_var = encoding + 1;
     // Lookup replacement variable, rep_var, in operand's component list
     const Component *comp = oper._components.search(rep_var);
-    assert( comp != NULL, "Replacement variable not found in components");
+    assert( comp != nullptr, "Replacement variable not found in components");
     // Lookup operand form for replacement variable's type
     const char      *type = comp->_type;
     Form            *form = (Form*)globals[type];
-    assert( form != NULL, "Replacement variable's type not found");
+    assert( form != nullptr, "Replacement variable's type not found");
     op = form->is_operand();
     assert( op, "Attempting to emit a non-register or non-constant");
   }
@@ -2927,11 +2955,11 @@ int rep_var_to_constant_index(const char *encoding, OperandForm &oper, FormDict 
     const char *rep_var = encoding + 1;
     // Lookup replacement variable, rep_var, in operand's component list
     const Component *comp = oper._components.search(rep_var);
-    assert( comp != NULL, "Replacement variable not found in components");
+    assert( comp != nullptr, "Replacement variable not found in components");
     // Lookup operand form for replacement variable's type
     const char      *type = comp->_type;
     Form            *form = (Form*)globals[type];
-    assert( form != NULL, "Replacement variable's type not found");
+    assert( form != nullptr, "Replacement variable's type not found");
     OperandForm *op = form->is_operand();
     assert( op, "Attempting to emit a non-register or non-constant");
     // Check that this is a constant and find constant's index:
@@ -2947,7 +2975,7 @@ bool is_regI(const char *encoding, OperandForm &oper, FormDict &globals ) {
   bool is_regI = false;
 
   OperandForm *op = rep_var_to_operand(encoding, oper, globals);
-  if( op != NULL ) {
+  if( op != nullptr ) {
     // Check that this is a register
     if ( (op->_matrule && op->_matrule->is_base_register(globals)) ) {
       // Register
@@ -2963,7 +2991,7 @@ bool is_conP(const char *encoding, OperandForm &oper, FormDict &globals ) {
   bool is_conP = false;
 
   OperandForm *op = rep_var_to_operand(encoding, oper, globals);
-  if( op != NULL ) {
+  if( op != nullptr ) {
     // Check that this is a constant pointer
     if (op->_matrule && op->_matrule->is_base_constant(globals)) {
       // Constant
@@ -3000,11 +3028,11 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
     fprintf(fp,"    // Replacement variable: %s\n", encoding+1);
     // Lookup replacement variable, rep_var, in operand's component list
     const Component *comp = oper._components.search(rep_var);
-    assert( comp != NULL, "Replacement variable not found in components");
+    assert( comp != nullptr, "Replacement variable not found in components");
     // Lookup operand form for replacement variable's type
     const char      *type = comp->_type;
     Form            *form = (Form*)globals[type];
-    assert( form != NULL, "Replacement variable's type not found");
+    assert( form != nullptr, "Replacement variable's type not found");
     OperandForm *op = form->is_operand();
     assert( op, "Attempting to emit a non-register or non-constant");
     // Check that this is a register or a constant and generate code:
@@ -3052,13 +3080,13 @@ void ArchDesc::define_oper_interface(FILE *fp, OperandForm &oper, FormDict &glob
     const char *base = mem_interface->_base;
     const char *disp = mem_interface->_disp;
     if( emit_position && (strcmp(name,"base") == 0)
-        && base != NULL && is_regI(base, oper, globals)
-        && disp != NULL && is_conP(disp, oper, globals) ) {
+        && base != nullptr && is_regI(base, oper, globals)
+        && disp != nullptr && is_conP(disp, oper, globals) ) {
       // Found a memory access using a constant pointer for a displacement
       // and a base register containing an integer offset.
       // In this case the base and disp are reversed with respect to what
       // is expected by MachNode::get_base_and_disp() and MachNode::adr_type().
-      // Provide a non-NULL return for disp_as_type() that will allow adr_type()
+      // Provide a non-null return for disp_as_type() that will allow adr_type()
       // to correctly compute the access type for alias analysis.
       //
       // See BugId 4796752, operand indOffset32X in x86_32.ad
@@ -3127,7 +3155,7 @@ void ArchDesc::defineClasses(FILE *fp) {
   // Iterate through all operands
   _operands.reset();
   OperandForm *oper;
-  for( ; (oper = (OperandForm*)_operands.iter()) != NULL; ) {
+  for( ; (oper = (OperandForm*)_operands.iter()) != nullptr; ) {
     // Ensure this is a machine-world instruction
     if ( oper->ideal_only() ) continue;
     // !!!!!
@@ -3189,7 +3217,7 @@ void ArchDesc::defineClasses(FILE *fp) {
   _instructions.reset();
   InstructForm *instr;
   MachNodeForm *machnode;
-  for( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
+  for( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
 
@@ -3199,7 +3227,7 @@ void ArchDesc::defineClasses(FILE *fp) {
   bool used = false;
   // Output the definitions for expand rules & peephole rules
   _instructions.reset();
-  for( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
+  for( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
     // If there are multiple defs/kills, or an explicit expand rule, build rule
@@ -3207,7 +3235,7 @@ void ArchDesc::defineClasses(FILE *fp) {
         instr->has_temps() ||
         instr->is_mach_constant() ||
         instr->needs_constant_base() ||
-        (instr->_matrule != NULL &&
+        (instr->_matrule != nullptr &&
          instr->num_opnds() != instr->num_unique_opnds()) )
       defineExpand(_CPP_EXPAND_file._fp, instr);
     // If there is an explicit peephole rule, build it
@@ -3226,7 +3254,7 @@ void ArchDesc::defineClasses(FILE *fp) {
 
   // Output the definitions for labels
   _instructions.reset();
-  while( (instr = (InstructForm*)_instructions.iter()) != NULL ) {
+  while( (instr = (InstructForm*)_instructions.iter()) != nullptr ) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
 
@@ -3252,7 +3280,7 @@ void ArchDesc::defineClasses(FILE *fp) {
 
   // Output the definitions for methods
   _instructions.reset();
-  while( (instr = (InstructForm*)_instructions.iter()) != NULL ) {
+  while( (instr = (InstructForm*)_instructions.iter()) != nullptr ) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
 
@@ -3270,7 +3298,7 @@ void ArchDesc::defineClasses(FILE *fp) {
 
   // Define this instruction's number of relocation entries, base is '0'
   _instructions.reset();
-  while( (instr = (InstructForm*)_instructions.iter()) != NULL ) {
+  while( (instr = (InstructForm*)_instructions.iter()) != nullptr ) {
     // Output the definition for number of relocation entries
     uint reloc_size = instr->reloc(_globalNames);
     if ( reloc_size != 0 ) {
@@ -3290,7 +3318,7 @@ void ArchDesc::defineClasses(FILE *fp) {
   // }
   //
   _instructions.reset();
-  for( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
+  for( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
 
@@ -3313,7 +3341,7 @@ void ArchDesc::defineClasses(FILE *fp) {
 
   // Output the definitions for alias analysis
   _instructions.reset();
-  for( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
+  for( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
     // Ensure this is a machine-world instruction
     if ( instr->ideal_only() ) continue;
 
@@ -3334,7 +3362,7 @@ void ArchDesc::defineClasses(FILE *fp) {
   int max_ident_len = 0;
   _instructions.reset();
 
-  for ( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
+  for ( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
     if (instr->_ins_pipe && _pipeline->_classlist.search(instr->_ins_pipe)) {
       int ident_len = (int)strlen(instr->_ident);
       if( max_ident_len < ident_len )
@@ -3344,13 +3372,13 @@ void ArchDesc::defineClasses(FILE *fp) {
 
   // Emit specifically for Node(s)
   fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*s::pipeline_class() { return %s; }\n",
-    max_ident_len, "Node", _pipeline ? "(&pipeline_class_Zero_Instructions)" : "NULL");
+    max_ident_len, "Node", _pipeline ? "(&pipeline_class_Zero_Instructions)" : "nullptr");
   fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*s::pipeline() const { return %s; }\n",
-    max_ident_len, "Node", _pipeline ? "(&pipeline_class_Zero_Instructions)" : "NULL");
+    max_ident_len, "Node", _pipeline ? "(&pipeline_class_Zero_Instructions)" : "nullptr");
   fprintf(_CPP_PIPELINE_file._fp, "\n");
 
   fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*s::pipeline_class() { return %s; }\n",
-    max_ident_len, "MachNode", _pipeline ? "(&pipeline_class_Unknown_Instructions)" : "NULL");
+    max_ident_len, "MachNode", _pipeline ? "(&pipeline_class_Unknown_Instructions)" : "nullptr");
   fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*s::pipeline() const { return pipeline_class(); }\n",
     max_ident_len, "MachNode");
   fprintf(_CPP_PIPELINE_file._fp, "\n");
@@ -3358,8 +3386,8 @@ void ArchDesc::defineClasses(FILE *fp) {
   // Output the definitions for machine node specific pipeline data
   _machnodes.reset();
 
-  if (_pipeline != NULL) {
-    for ( ; (machnode = (MachNodeForm*)_machnodes.iter()) != NULL; ) {
+  if (_pipeline != nullptr) {
+    for ( ; (machnode = (MachNodeForm*)_machnodes.iter()) != nullptr; ) {
       fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %sNode::pipeline() const { return (&pipeline_class_%03d); }\n",
               machnode->_ident, ((class PipeClassForm *)_pipeline->_classdict[machnode->_machnode_pipe])->_num);
     }
@@ -3370,8 +3398,8 @@ void ArchDesc::defineClasses(FILE *fp) {
   // Output the definitions for instruction pipeline static data references
   _instructions.reset();
 
-  if (_pipeline != NULL) {
-    for ( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
+  if (_pipeline != nullptr) {
+    for ( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
       if (instr->_ins_pipe && _pipeline->_classlist.search(instr->_ins_pipe)) {
         fprintf(_CPP_PIPELINE_file._fp, "\n");
         fprintf(_CPP_PIPELINE_file._fp, "const Pipeline * %*sNode::pipeline_class() { return (&pipeline_class_%03d); }\n",
@@ -3404,14 +3432,14 @@ public:
   }
   void map(OperandForm &oper) {
     // Most operands without match rules, e.g.  eFlagsReg, do not have a result operand
-    const char *reduce = (oper._matrule ? oper.reduce_result() : NULL);
+    const char *reduce = (oper._matrule ? oper.reduce_result() : nullptr);
     // operand stackSlot does not have a match rule, but produces a stackSlot
     if( oper.is_user_name_for_sReg() != Form::none ) reduce = oper.reduce_result();
     if( reduce )  fprintf(_cpp, "  %s_rule", reduce);
     else          fprintf(_cpp, "  0");
   }
   void map(InstructForm &inst) {
-    const char *reduce = (inst._matrule ? inst.reduce_result() : NULL);
+    const char *reduce = (inst._matrule ? inst.reduce_result() : nullptr);
     if( reduce )  fprintf(_cpp, "  %s_rule", reduce);
     else          fprintf(_cpp, "  0");
   }
@@ -3560,7 +3588,7 @@ void ArchDesc::build_map(OutputMap &map) {
   // Output the mapping for operands
   map.record_position(OutputMap::BEGIN_OPERANDS, idx );
   _operands.reset();
-  for(; (op = (OperandForm*)_operands.iter()) != NULL; ) {
+  for(; (op = (OperandForm*)_operands.iter()) != nullptr; ) {
     // Ensure this is a machine-world instruction
     if ( op->ideal_only() )  continue;
 
@@ -3573,7 +3601,7 @@ void ArchDesc::build_map(OutputMap &map) {
   // Place all user-defined operand classes into the mapping
   map.record_position(OutputMap::BEGIN_OPCLASSES, idx );
   _opclass.reset();
-  for(; (opc = (OpClassForm*)_opclass.iter()) != NULL; ) {
+  for(; (opc = (OpClassForm*)_opclass.iter()) != nullptr; ) {
     fprintf(fp_cpp, "  /* %4d */", idx); map.map(*opc); fprintf(fp_cpp, ",\n");
     ++idx;
   };
@@ -3582,8 +3610,8 @@ void ArchDesc::build_map(OutputMap &map) {
   // Place all internally defined operands into the mapping
   map.record_position(OutputMap::BEGIN_INTERNALS, idx );
   _internalOpNames.reset();
-  char *name = NULL;
-  for(; (name = (char *)_internalOpNames.iter()) != NULL; ) {
+  char *name = nullptr;
+  for(; (name = (char *)_internalOpNames.iter()) != nullptr; ) {
     fprintf(fp_cpp, "  /* %4d */", idx); map.map(name); fprintf(fp_cpp, ",\n");
     ++idx;
   };
@@ -3596,7 +3624,7 @@ void ArchDesc::build_map(OutputMap &map) {
     map.record_position(OutputMap::BEGIN_INST_CHAIN_RULES, idx );
     {
       _instructions.reset();
-      for(; (inst = (InstructForm*)_instructions.iter()) != NULL; ) {
+      for(; (inst = (InstructForm*)_instructions.iter()) != nullptr; ) {
         // Ensure this is a machine-world instruction
         if ( inst->ideal_only() )  continue;
         if ( ! inst->is_simple_chain_rule(_globalNames) ) continue;
@@ -3607,7 +3635,7 @@ void ArchDesc::build_map(OutputMap &map) {
       };
       map.record_position(OutputMap::BEGIN_REMATERIALIZE, idx );
       _instructions.reset();
-      for(; (inst = (InstructForm*)_instructions.iter()) != NULL; ) {
+      for(; (inst = (InstructForm*)_instructions.iter()) != nullptr; ) {
         // Ensure this is a machine-world instruction
         if ( inst->ideal_only() )  continue;
         if ( ! inst->is_simple_chain_rule(_globalNames) ) continue;
@@ -3621,7 +3649,7 @@ void ArchDesc::build_map(OutputMap &map) {
     // Output all instructions that are NOT simple chain rules
     {
       _instructions.reset();
-      for(; (inst = (InstructForm*)_instructions.iter()) != NULL; ) {
+      for(; (inst = (InstructForm*)_instructions.iter()) != nullptr; ) {
         // Ensure this is a machine-world instruction
         if ( inst->ideal_only() )  continue;
         if ( inst->is_simple_chain_rule(_globalNames) ) continue;
@@ -3632,7 +3660,7 @@ void ArchDesc::build_map(OutputMap &map) {
       };
       map.record_position(OutputMap::END_REMATERIALIZE, idx );
       _instructions.reset();
-      for(; (inst = (InstructForm*)_instructions.iter()) != NULL; ) {
+      for(; (inst = (InstructForm*)_instructions.iter()) != nullptr; ) {
         // Ensure this is a machine-world instruction
         if ( inst->ideal_only() )  continue;
         if ( inst->is_simple_chain_rule(_globalNames) ) continue;
@@ -3721,10 +3749,10 @@ void ArchDesc::buildReduceMaps(FILE *fp_hpp, FILE *fp_cpp) {
   fprintf(fp_cpp, "// Map from machine-independent register number to register_save_policy\n");
   fprintf(fp_cpp, "const        char register_save_policy[] = {\n");
   _register->reset_RegDefs();
-  for( rdef = _register->iter_RegDefs(); rdef != NULL; rdef = next ) {
+  for( rdef = _register->iter_RegDefs(); rdef != nullptr; rdef = next ) {
     next              = _register->iter_RegDefs();
     char policy       = reg_save_policy(rdef->_callconv);
-    const char *comma = (next != NULL) ? "," : " // no trailing comma";
+    const char *comma = (next != nullptr) ? "," : " // no trailing comma";
     fprintf(fp_cpp, "  '%c'%s // %s\n", policy, comma, rdef->_regname);
   }
   fprintf(fp_cpp, "};\n\n");
@@ -3733,10 +3761,10 @@ void ArchDesc::buildReduceMaps(FILE *fp_hpp, FILE *fp_cpp) {
   fprintf(fp_cpp, "// Map from machine-independent register number to c_reg_save_policy\n");
   fprintf(fp_cpp, "const        char c_reg_save_policy[] = {\n");
   _register->reset_RegDefs();
-  for( rdef = _register->iter_RegDefs(); rdef != NULL; rdef = next ) {
+  for( rdef = _register->iter_RegDefs(); rdef != nullptr; rdef = next ) {
     next        = _register->iter_RegDefs();
     char policy = reg_save_policy(rdef->_c_conv);
-    const char *comma = (next != NULL) ? "," : " // no trailing comma";
+    const char *comma = (next != nullptr) ? "," : " // no trailing comma";
     fprintf(fp_cpp, "  '%c'%s // %s\n", policy, comma, rdef->_regname);
   }
   fprintf(fp_cpp, "};\n\n");
@@ -3745,9 +3773,9 @@ void ArchDesc::buildReduceMaps(FILE *fp_hpp, FILE *fp_cpp) {
   fprintf(fp_cpp, "// Map from machine-independent register number to register_save_type\n");
   fprintf(fp_cpp, "const        int register_save_type[] = {\n");
   _register->reset_RegDefs();
-  for( rdef = _register->iter_RegDefs(); rdef != NULL; rdef = next ) {
+  for( rdef = _register->iter_RegDefs(); rdef != nullptr; rdef = next ) {
     next = _register->iter_RegDefs();
-    const char *comma = (next != NULL) ? "," : " // no trailing comma";
+    const char *comma = (next != nullptr) ? "," : " // no trailing comma";
     fprintf(fp_cpp, "  %s%s\n", rdef->_idealtype, comma);
   }
   fprintf(fp_cpp, "};\n\n");
@@ -3784,13 +3812,13 @@ static void path_to_constant(FILE *fp, FormDict &globals,
   if ( ! mnode) return;
 
   unsigned    position = 0;
-  const char *result   = NULL;
-  const char *name     = NULL;
-  const char *optype   = NULL;
+  const char *result   = nullptr;
+  const char *name     = nullptr;
+  const char *optype   = nullptr;
 
   // Base Case: access constant in ideal node linked to current state node
   // Each type of constant has its own access function
-  if ( (mnode->_lChild == NULL) && (mnode->_rChild == NULL)
+  if ( (mnode->_lChild == nullptr) && (mnode->_rChild == nullptr)
        && mnode->base_operand(position, globals, result, name, optype) ) {
     if (         strcmp(optype,"ConI") == 0 ) {
       fprintf(fp, "_leaf->get_int()");
@@ -3884,7 +3912,7 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
   _operands.reset();
   int  opIndex = 0;
   OperandForm *op;
-  for( ; (op =  (OperandForm*)_operands.iter()) != NULL; ) {
+  for( ; (op =  (OperandForm*)_operands.iter()) != nullptr; ) {
     // Ensure this is a machine-world instruction
     if ( op->ideal_only() )  continue;
 
@@ -3896,11 +3924,11 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
   // Place all internal operands into the mapping
   _internalOpNames.reset();
   const char *iopn;
-  for( ; (iopn =  _internalOpNames.iter()) != NULL; ) {
+  for( ; (iopn =  _internalOpNames.iter()) != nullptr; ) {
     const char *opEnumName = machOperEnum(iopn);
     // Generate the case statement for this opcode
     fprintf(fp_cpp, "  case %s:", opEnumName);
-    fprintf(fp_cpp, "    return NULL;\n");
+    fprintf(fp_cpp, "    return nullptr;\n");
   };
 
   // Generate the default case for switch(opcode)
@@ -3912,7 +3940,7 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
   fprintf(fp_cpp, "  }\n");
 
   // Generate the closing for method Matcher::MachOperGenerator
-  fprintf(fp_cpp, "  return NULL;\n");
+  fprintf(fp_cpp, "  return nullptr;\n");
   fprintf(fp_cpp, "};\n");
 }
 
@@ -3920,7 +3948,7 @@ void ArchDesc::buildMachOperGenerator(FILE *fp_cpp) {
 //---------------------------buildMachNode-------------------------------------
 // Build a new MachNode, for MachNodeGenerator or cisc-spilling
 void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *indent) {
-  const char *opType  = NULL;
+  const char *opType  = nullptr;
   const char *opClass = inst->_ident;
 
   // Create the MachNode object
@@ -3932,9 +3960,9 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     // Check if the first post-match component may be an interesting def
     bool           dont_care = false;
     ComponentList &comp_list = inst->_components;
-    Component     *comp      = NULL;
+    Component     *comp      = nullptr;
     comp_list.reset();
-    if ( comp_list.match_iter() != NULL )    dont_care = true;
+    if ( comp_list.match_iter() != nullptr )    dont_care = true;
 
     // Insert operands that are not in match-rule.
     // Only insert a DEF if the do_care flag is set
@@ -4013,7 +4041,7 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
 void InstructForm::declare_cisc_version(ArchDesc &AD, FILE *fp_hpp) {
   if( AD.can_cisc_spill() ) {
     InstructForm *inst_cisc = cisc_spill_alternate();
-    if (inst_cisc != NULL) {
+    if (inst_cisc != nullptr) {
       fprintf(fp_hpp, "  virtual int            cisc_operand() const { return %d; }\n", cisc_spill_operand());
       fprintf(fp_hpp, "  virtual MachNode      *cisc_version(int offset);\n");
       fprintf(fp_hpp, "  virtual void           use_cisc_RegMask();\n");
@@ -4026,13 +4054,13 @@ void InstructForm::declare_cisc_version(ArchDesc &AD, FILE *fp_hpp) {
 // Build CISC version of this instruction
 bool InstructForm::define_cisc_version(ArchDesc &AD, FILE *fp_cpp) {
   InstructForm *inst_cisc = this->cisc_spill_alternate();
-  if( AD.can_cisc_spill() && (inst_cisc != NULL) ) {
+  if( AD.can_cisc_spill() && (inst_cisc != nullptr) ) {
     const char   *name      = inst_cisc->_ident;
     assert( inst_cisc->num_opnds() == this->num_opnds(), "Must have same number of operands");
     OperandForm *cisc_oper = AD.cisc_spill_operand();
-    assert( cisc_oper != NULL, "insanity check");
+    assert( cisc_oper != nullptr, "insanity check");
     const char *cisc_oper_name  = cisc_oper->_ident;
-    assert( cisc_oper_name != NULL, "insanity check");
+    assert( cisc_oper_name != nullptr, "insanity check");
     //
     // Set the correct reg_mask_or_stack for the cisc operand
     fprintf(fp_cpp, "\n");
@@ -4142,13 +4170,13 @@ void ArchDesc::buildMachNodeGenerator(FILE *fp_cpp) {
   _instructions.reset();
   int  opIndex = operandFormCount();
   InstructForm *inst;
-  for( ; (inst = (InstructForm*)_instructions.iter()) != NULL; ) {
+  for( ; (inst = (InstructForm*)_instructions.iter()) != nullptr; ) {
     // Ensure that matrule is defined.
-    if ( inst->_matrule == NULL ) continue;
+    if ( inst->_matrule == nullptr ) continue;
 
     int         opcode  = opIndex++;
     const char *opClass = inst->_ident;
-    char       *opType  = NULL;
+    char       *opType  = nullptr;
 
     // Generate the case statement for this instruction
     fprintf(fp_cpp, "  case %s_rule:", opClass);
@@ -4171,7 +4199,7 @@ void ArchDesc::buildMachNodeGenerator(FILE *fp_cpp) {
   fprintf(fp_cpp, "  };\n");
 
   // Generate the closing for method Matcher::MachNodeGenerator
-  fprintf(fp_cpp, "  return NULL;\n");
+  fprintf(fp_cpp, "  return nullptr;\n");
   fprintf(fp_cpp, "}\n");
 }
 
@@ -4240,7 +4268,7 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
 
   // Interpreter's Frame Pointer Register
   fprintf(fp_cpp,"OptoReg::Name Matcher::interpreter_frame_pointer_reg() {");
-  if (_frame->_interpreter_frame_pointer_reg == NULL)
+  if (_frame->_interpreter_frame_pointer_reg == nullptr)
     fprintf(fp_cpp," return OptoReg::Bad; }\n\n");
   else
     fprintf(fp_cpp," return OptoReg::Name(%s_num); }\n\n",
@@ -4264,7 +4292,7 @@ void ArchDesc::buildFrameMethods(FILE *fp_cpp) {
   RegDef *rdef;
   int nof_saved_registers = 0;
   _register->reset_RegDefs();
-  while( (rdef = _register->iter_RegDefs()) != NULL ) {
+  while( (rdef = _register->iter_RegDefs()) != nullptr ) {
     if( !strcmp(rdef->_callconv, "SOE") ||  !strcmp(rdef->_callconv, "AS") )
       ++nof_saved_registers;
   }
@@ -4280,25 +4308,25 @@ static int PrintAdlcCisc = 0;
 // Get info for the CISC_oracle and MachNode::cisc_version()
 void ArchDesc::identify_cisc_spill_instructions() {
 
-  if (_frame == NULL)
+  if (_frame == nullptr)
     return;
 
   // Find the user-defined operand for cisc-spilling
-  if( _frame->_cisc_spilling_operand_name != NULL ) {
+  if( _frame->_cisc_spilling_operand_name != nullptr ) {
     const Form *form = _globalNames[_frame->_cisc_spilling_operand_name];
-    OperandForm *oper = form ? form->is_operand() : NULL;
+    OperandForm *oper = form ? form->is_operand() : nullptr;
     // Verify the user's suggestion
-    if( oper != NULL ) {
+    if( oper != nullptr ) {
       // Ensure that match field is defined.
-      if ( oper->_matrule != NULL )  {
+      if ( oper->_matrule != nullptr )  {
         MatchRule &mrule = *oper->_matrule;
         if( strcmp(mrule._opType,"AddP") == 0 ) {
           MatchNode *left = mrule._lChild;
           MatchNode *right= mrule._rChild;
-          if( left != NULL && right != NULL ) {
+          if( left != nullptr && right != nullptr ) {
             const Form *left_op  = _globalNames[left->_opType]->is_operand();
             const Form *right_op = _globalNames[right->_opType]->is_operand();
-            if(  (left_op != NULL && right_op != NULL)
+            if(  (left_op != nullptr && right_op != nullptr)
               && (left_op->interface_type(_globalNames) == Form::register_interface)
               && (right_op->interface_type(_globalNames) == Form::constant_interface) ) {
               // Successfully verified operand
@@ -4313,13 +4341,13 @@ void ArchDesc::identify_cisc_spill_instructions() {
     }
   }
 
-  if( cisc_spill_operand() != NULL ) {
+  if( cisc_spill_operand() != nullptr ) {
     // N^2 comparison of instructions looking for a cisc-spilling version
     _instructions.reset();
     InstructForm *instr;
-    for( ; (instr = (InstructForm*)_instructions.iter()) != NULL; ) {
+    for( ; (instr = (InstructForm*)_instructions.iter()) != nullptr; ) {
       // Ensure that match field is defined.
-      if ( instr->_matrule == NULL )  continue;
+      if ( instr->_matrule == nullptr )  continue;
 
       MatchRule &mrule = *instr->_matrule;
       Predicate *pred  =  instr->build_predicate();
@@ -4335,12 +4363,12 @@ void ArchDesc::identify_cisc_spill_instructions() {
       bool  found_cisc_alternate = false;
       _instructions.reset2();
       InstructForm *instr2;
-      for( ; !found_cisc_alternate && (instr2 = (InstructForm*)_instructions.iter2()) != NULL; ) {
+      for( ; !found_cisc_alternate && (instr2 = (InstructForm*)_instructions.iter2()) != nullptr; ) {
         // Ensure that match field is defined.
         if( PrintAdlcCisc ) fprintf(stderr, "  instr2 == %s \n", instr2->_ident ? instr2->_ident : " ");
-        if ( instr2->_matrule != NULL
+        if ( instr2->_matrule != nullptr
             && (instr != instr2 )                // Skip self
-            && (instr2->reduce_result() != NULL) // want same result
+            && (instr2->reduce_result() != nullptr) // want same result
             && (strcmp(result, instr2->reduce_result()) == 0)) {
           MatchRule &mrule2 = *instr2->_matrule;
           Predicate *pred2  =  instr2->build_predicate();
@@ -4357,8 +4385,8 @@ void ArchDesc::build_cisc_spill_instructions(FILE *fp_hpp, FILE *fp_cpp) {
   // Output the table for cisc spilling
   fprintf(fp_cpp, "//  The following instructions can cisc-spill\n");
   _instructions.reset();
-  InstructForm *inst = NULL;
-  for(; (inst = (InstructForm*)_instructions.iter()) != NULL; ) {
+  InstructForm *inst = nullptr;
+  for(; (inst = (InstructForm*)_instructions.iter()) != nullptr; ) {
     // Ensure this is a machine-world instruction
     if ( inst->ideal_only() )  continue;
     const char *inst_name = inst->_ident;
@@ -4378,14 +4406,14 @@ void ArchDesc::identify_short_branches() {
   // branching alternate.
   _instructions.reset();
   InstructForm *instr;
-  while( (instr = (InstructForm*)_instructions.iter()) != NULL ) {
+  while( (instr = (InstructForm*)_instructions.iter()) != nullptr ) {
     // The instruction must have a match rule.
-    if (instr->_matrule != NULL &&
+    if (instr->_matrule != nullptr &&
         instr->is_short_branch()) {
 
       _instructions.reset2();
       InstructForm *instr2;
-      while( (instr2 = (InstructForm*)_instructions.iter2()) != NULL ) {
+      while( (instr2 = (InstructForm*)_instructions.iter2()) != nullptr ) {
         instr2->check_branch_variant(*this, instr);
       }
     }
@@ -4399,7 +4427,7 @@ void ArchDesc::identify_unique_operands() {
   // Walk over all instructions.
   _instructions.reset();
   InstructForm *instr;
-  while( (instr = (InstructForm*)_instructions.iter()) != NULL ) {
+  while( (instr = (InstructForm*)_instructions.iter()) != nullptr ) {
     // Ensure this is a machine-world instruction
     if (!instr->ideal_only()) {
       instr->set_unique_opnds();

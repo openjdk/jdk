@@ -31,7 +31,6 @@ import jdk.internal.util.ClassFileDumper;
 import sun.security.action.GetPropertyAction;
 
 import java.lang.reflect.ClassFileFormatVersion;
-import java.nio.file.Path;
 import java.util.Properties;
 
 import static java.lang.invoke.LambdaForm.basicTypeSignature;
@@ -98,7 +97,7 @@ class MethodHandleStatics {
                 props.getProperty("java.lang.invoke.MethodHandleImpl.MAX_ARITY", "255"));
 
         DUMP_CLASS_FILES = ClassFileDumper.getInstance("jdk.invoke.MethodHandle.dumpMethodHandleInternals",
-                Path.of("DUMP_METHOD_HANDLE_INTERNALS"));
+                "DUMP_METHOD_HANDLE_INTERNALS");
 
         if (CUSTOMIZE_THRESHOLD < -1 || CUSTOMIZE_THRESHOLD > 127) {
             throw newInternalError("CUSTOMIZE_THRESHOLD should be in [-1...127] range");
@@ -186,8 +185,8 @@ class MethodHandleStatics {
     /** Propagate unchecked exceptions and errors, but wrap anything checked and throw that instead. */
     /*non-public*/
     static Error uncaughtException(Throwable ex) {
-        if (ex instanceof Error)  throw (Error) ex;
-        if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
+        if (ex instanceof Error error) throw error;
+        if (ex instanceof RuntimeException re) throw re;
         throw new InternalError("uncaught exception", ex);
     }
     private static String message(String message, Object obj) {

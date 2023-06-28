@@ -2231,8 +2231,8 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
   call_VM(oop_result, entry_point, check_exceptions);
 }
@@ -2240,10 +2240,10 @@ void MacroAssembler::call_VM(Register oop_result, address entry_point, Register 
 void MacroAssembler::call_VM(Register oop_result, address entry_point, Register arg_1, Register arg_2,
                              Register arg_3, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_3, Z_ARG2, Z_ARG3);
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
-  assert(arg_3 != Z_ARG2 && arg_3 != Z_ARG3, "smashed argument");
   lgr_if_needed(Z_ARG4, arg_3);
   call_VM(oop_result, entry_point, check_exceptions);
 }
@@ -2258,10 +2258,10 @@ void MacroAssembler::call_VM_static(Register oop_result, address entry_point, bo
 void MacroAssembler::call_VM_static(Register oop_result, address entry_point, Register arg_1, Register arg_2,
                                     Register arg_3, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_3, Z_ARG2, Z_ARG3);
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
-  assert(arg_3 != Z_ARG2 && arg_3 != Z_ARG3, "smashed argument");
   lgr_if_needed(Z_ARG4, arg_3);
   call_VM_static(oop_result, entry_point, check_exceptions);
 }
@@ -2282,8 +2282,8 @@ void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1,
                              Register arg_2, bool check_exceptions) {
    // Z_ARG1 is reserved for the thread.
+   assert_different_registers(arg_2, Z_ARG2);
    lgr_if_needed(Z_ARG2, arg_1);
-   assert(arg_2 != Z_ARG2, "smashed argument");
    lgr_if_needed(Z_ARG3, arg_2);
    call_VM(oop_result, last_java_sp, entry_point, check_exceptions);
 }
@@ -2291,10 +2291,10 @@ void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address
 void MacroAssembler::call_VM(Register oop_result, Register last_java_sp, address entry_point, Register arg_1,
                              Register arg_2, Register arg_3, bool check_exceptions) {
   // Z_ARG1 is reserved for the thread.
+  assert_different_registers(arg_3, Z_ARG2, Z_ARG3);
+  assert_different_registers(arg_2, Z_ARG2);
   lgr_if_needed(Z_ARG2, arg_1);
-  assert(arg_2 != Z_ARG2, "smashed argument");
   lgr_if_needed(Z_ARG3, arg_2);
-  assert(arg_3 != Z_ARG2 && arg_3 != Z_ARG3, "smashed argument");
   lgr_if_needed(Z_ARG4, arg_3);
   call_VM(oop_result, last_java_sp, entry_point, check_exceptions);
 }
@@ -2312,17 +2312,17 @@ void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1) {
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register arg_2) {
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
   call_VM_leaf(entry_point);
 }
 
 void MacroAssembler::call_VM_leaf(address entry_point, Register arg_1, Register arg_2, Register arg_3) {
+  assert_different_registers(arg_3, Z_ARG1, Z_ARG2);
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
-  assert(arg_3 != Z_ARG1 && arg_3 != Z_ARG2, "smashed argument");
   if (arg_3 != noreg) lgr_if_needed(Z_ARG3, arg_3);
   call_VM_leaf(entry_point);
 }
@@ -2341,17 +2341,17 @@ void MacroAssembler::call_VM_leaf_static(address entry_point, Register arg_1) {
 }
 
 void MacroAssembler::call_VM_leaf_static(address entry_point, Register arg_1, Register arg_2) {
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
   call_VM_leaf_static(entry_point);
 }
 
 void MacroAssembler::call_VM_leaf_static(address entry_point, Register arg_1, Register arg_2, Register arg_3) {
+  assert_different_registers(arg_3, Z_ARG1, Z_ARG2);
+  assert_different_registers(arg_2, Z_ARG1);
   if (arg_1 != noreg) lgr_if_needed(Z_ARG1, arg_1);
-  assert(arg_2 != Z_ARG1, "smashed argument");
   if (arg_2 != noreg) lgr_if_needed(Z_ARG2, arg_2);
-  assert(arg_3 != Z_ARG1 && arg_3 != Z_ARG2, "smashed argument");
   if (arg_3 != noreg) lgr_if_needed(Z_ARG3, arg_3);
   call_VM_leaf_static(entry_point);
 }
@@ -2766,10 +2766,8 @@ void MacroAssembler::lookup_interface_method(Register           recv_klass,
   z_sllg(vtable_len, vtable_len, exact_log2(vtableEntry::size_in_bytes()));
 
   // Loop over all itable entries until desired interfaceOop(Rinterface) found.
-  const int vtable_base_offset = in_bytes(Klass::vtable_start_offset());
-
   add2reg_with_index(itable_entry_addr,
-                     vtable_base_offset + itableOffsetEntry::interface_offset_in_bytes(),
+                     in_bytes(Klass::vtable_start_offset() + itableOffsetEntry::interface_offset()),
                      recv_klass, vtable_len);
 
   const int itable_offset_search_inc = itableOffsetEntry::size() * wordSize;
@@ -2789,8 +2787,8 @@ void MacroAssembler::lookup_interface_method(Register           recv_klass,
 
   // Entry found and itable_entry_addr points to it, get offset of vtable for interface.
   if (return_method) {
-    const int vtable_offset_offset = (itableOffsetEntry::offset_offset_in_bytes() -
-                                      itableOffsetEntry::interface_offset_in_bytes()) -
+    const int vtable_offset_offset = in_bytes(itableOffsetEntry::offset_offset() -
+                                              itableOffsetEntry::interface_offset()) -
                                      itable_offset_search_inc;
 
     // Compute itableMethodEntry and get method and entry point
@@ -2798,7 +2796,7 @@ void MacroAssembler::lookup_interface_method(Register           recv_klass,
     // for computing the entry's offset has a fixed and a dynamic part,
     // the latter depending on the matched interface entry and on the case,
     // that the itable index has been passed as a register, not a constant value.
-    int method_offset = itableMethodEntry::method_offset_in_bytes();
+    int method_offset = in_bytes(itableMethodEntry::method_offset());
                              // Fixed part (displacement), common operand.
     Register itable_offset = method_result;  // Dynamic part (index register).
 
@@ -2838,14 +2836,14 @@ void MacroAssembler::lookup_virtual_method(Register           recv_klass,
     Address vtable_entry_addr(recv_klass,
                               vtable_index.as_constant() * wordSize +
                               base +
-                              vtableEntry::method_offset_in_bytes());
+                              in_bytes(vtableEntry::method_offset()));
 
     z_lg(method_result, vtable_entry_addr);
   } else {
     // Shift index properly and load with base + index + disp.
     Register vindex = vtable_index.as_register();
     Address  vtable_entry_addr(recv_klass, vindex,
-                               base + vtableEntry::method_offset_in_bytes());
+                               base + in_bytes(vtableEntry::method_offset()));
 
     z_sllg(vindex, vindex, exact_log2(wordSize));
     z_lg(method_result, vtable_entry_addr);
@@ -3171,22 +3169,28 @@ void MacroAssembler::compiler_fast_lock_object(Register oop, Register box, Regis
   z_nill(temp, markWord::monitor_value);
   z_brne(object_has_monitor);
 
-  // Set mark to markWord | markWord::unlocked_value.
-  z_oill(displacedHeader, markWord::unlocked_value);
+  if (LockingMode != LM_MONITOR) {
+    // Set mark to markWord | markWord::unlocked_value.
+    z_oill(displacedHeader, markWord::unlocked_value);
 
-  // Load Compare Value application register.
+    // Load Compare Value application register.
 
-  // Initialize the box (must happen before we update the object mark).
-  z_stg(displacedHeader, BasicLock::displaced_header_offset_in_bytes(), box);
+    // Initialize the box (must happen before we update the object mark).
+    z_stg(displacedHeader, BasicLock::displaced_header_offset_in_bytes(), box);
 
-  // Memory Fence (in cmpxchgd)
-  // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
+    // Memory Fence (in cmpxchgd)
+    // Compare object markWord with mark and if equal exchange scratch1 with object markWord.
 
-  // If the compare-and-swap succeeded, then we found an unlocked object and we
-  // have now locked it.
-  z_csg(displacedHeader, box, 0, oop);
-  assert(currentHeader==displacedHeader, "must be same register"); // Identified two registers from z/Architecture.
-  z_bre(done);
+    // If the compare-and-swap succeeded, then we found an unlocked object and we
+    // have now locked it.
+    z_csg(displacedHeader, box, 0, oop);
+    assert(currentHeader == displacedHeader, "must be same register"); // Identified two registers from z/Architecture.
+    z_bre(done);
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path
+    z_ltgr(oop, oop);
+    z_bru(done);
+  }
 
   // We did not see an unlocked object so try the fast recursive case.
 
@@ -3238,10 +3242,12 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
 
   BLOCK_COMMENT("compiler_fast_unlock_object {");
 
-  // Find the lock address and load the displaced header from the stack.
-  // if the displaced header is zero, we have a recursive unlock.
-  load_and_test_long(displacedHeader, Address(box, BasicLock::displaced_header_offset_in_bytes()));
-  z_bre(done);
+  if (LockingMode != LM_MONITOR) {
+    // Find the lock address and load the displaced header from the stack.
+    // if the displaced header is zero, we have a recursive unlock.
+    load_and_test_long(displacedHeader, Address(box, BasicLock::displaced_header_offset_in_bytes()));
+    z_bre(done);
+  }
 
   // Handle existing monitor.
   // The object has an existing monitor iff (mark & monitor_value) != 0.
@@ -3250,12 +3256,18 @@ void MacroAssembler::compiler_fast_unlock_object(Register oop, Register box, Reg
   z_nill(currentHeader, markWord::monitor_value);
   z_brne(object_has_monitor);
 
-  // Check if it is still a light weight lock, this is true if we see
-  // the stack address of the basicLock in the markWord of the object
-  // copy box to currentHeader such that csg does not kill it.
-  z_lgr(currentHeader, box);
-  z_csg(currentHeader, displacedHeader, 0, oop);
-  z_bru(done); // Csg sets CR as desired.
+  if (LockingMode != LM_MONITOR) {
+    // Check if it is still a light weight lock, this is true if we see
+    // the stack address of the basicLock in the markWord of the object
+    // copy box to currentHeader such that csg does not kill it.
+    z_lgr(currentHeader, box);
+    z_csg(currentHeader, displacedHeader, 0, oop);
+    z_bru(done); // Csg sets CR as desired.
+  } else {
+    // Set NE to indicate 'failure' -> take slow-path
+    z_ltgr(oop, oop);
+    z_bru(done);
+  }
 
   // Handle existing monitor.
   bind(object_has_monitor);
@@ -4197,7 +4209,7 @@ void MacroAssembler::resolve_oop_handle(Register result) {
 
 void MacroAssembler::load_mirror_from_const_method(Register mirror, Register const_method) {
   mem2reg_opt(mirror, Address(const_method, ConstMethod::constants_offset()));
-  mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset_in_bytes()));
+  mem2reg_opt(mirror, Address(mirror, ConstantPool::pool_holder_offset()));
   mem2reg_opt(mirror, Address(mirror, Klass::java_mirror_offset()));
   resolve_oop_handle(mirror);
 }
@@ -4205,7 +4217,7 @@ void MacroAssembler::load_mirror_from_const_method(Register mirror, Register con
 void MacroAssembler::load_method_holder(Register holder, Register method) {
   mem2reg_opt(holder, Address(method, Method::const_offset()));
   mem2reg_opt(holder, Address(holder, ConstMethod::constants_offset()));
-  mem2reg_opt(holder, Address(holder, ConstantPool::pool_holder_offset_in_bytes()));
+  mem2reg_opt(holder, Address(holder, ConstantPool::pool_holder_offset()));
 }
 
 //---------------------------------------------------------------

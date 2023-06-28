@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.util.Set;
 
 import jdk.jfr.internal.SecuritySupport.SafePath;
 import jdk.jfr.internal.management.ChunkFilename;
+import jdk.jfr.internal.util.ValueFormatter;
 
 public final class Repository {
 
@@ -107,7 +108,7 @@ public final class Repository {
         SafePath canonicalBaseRepositoryPath = createRealBasePath(basePath);
         SafePath f = null;
 
-        String basename = Utils.formatDateTime(LocalDateTime.now()) + "_" + JVM.getJVM().getPid();
+        String basename = ValueFormatter.formatDateTime(LocalDateTime.now()) + "_" + JVM.getJVM().getPid();
         String name = basename;
 
         int i = 0;

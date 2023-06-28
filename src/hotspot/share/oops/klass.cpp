@@ -261,7 +261,7 @@ void Klass::initialize_supers(Klass* k, Array<InstanceKlass*>* transitive_interf
       // Overflow of the primary_supers array forces me to be secondary.
       super_check_cell = &_secondary_super_cache;
     }
-    set_super_check_offset((address)super_check_cell - (address) this);
+    set_super_check_offset(u4((address)super_check_cell - (address) this));
 
 #ifdef ASSERT
     {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,12 +124,12 @@ class ValueType: public CompilationResourceObj {
   bool is_long()                                 { return tag() == longTag;   }
   bool is_float()                                { return tag() == floatTag;  }
   bool is_double()                               { return tag() == doubleTag; }
-  bool is_object()                               { return as_ObjectType()   != NULL; }
-  bool is_array()                                { return as_ArrayType()    != NULL; }
-  bool is_instance()                             { return as_InstanceType() != NULL; }
-  bool is_class()                                { return as_ClassType()    != NULL; }
-  bool is_method()                               { return as_MethodType()   != NULL; }
-  bool is_address()                              { return as_AddressType()  != NULL; }
+  bool is_object()                               { return as_ObjectType()   != nullptr; }
+  bool is_array()                                { return as_ArrayType()    != nullptr; }
+  bool is_instance()                             { return as_InstanceType() != nullptr; }
+  bool is_class()                                { return as_ClassType()    != nullptr; }
+  bool is_method()                               { return as_MethodType()   != nullptr; }
+  bool is_address()                              { return as_AddressType()  != nullptr; }
   bool is_illegal()                              { return tag() == illegalTag; }
 
   bool is_int_kind() const                       { return tag() == intTag || tag() == longTag; }
@@ -140,30 +140,30 @@ class ValueType: public CompilationResourceObj {
   bool is_double_word() const                    { return _size == 2; }
 
   // casting
-  virtual VoidType*         as_VoidType()        { return NULL; }
-  virtual IntType*          as_IntType()         { return NULL; }
-  virtual LongType*         as_LongType()        { return NULL; }
-  virtual FloatType*        as_FloatType()       { return NULL; }
-  virtual DoubleType*       as_DoubleType()      { return NULL; }
-  virtual ObjectType*       as_ObjectType()      { return NULL; }
-  virtual ArrayType*        as_ArrayType()       { return NULL; }
-  virtual InstanceType*     as_InstanceType()    { return NULL; }
-  virtual ClassType*        as_ClassType()       { return NULL; }
-  virtual MetadataType*     as_MetadataType()    { return NULL; }
-  virtual MethodType*       as_MethodType()      { return NULL; }
-  virtual AddressType*      as_AddressType()     { return NULL; }
-  virtual IllegalType*      as_IllegalType()     { return NULL; }
-  virtual IntConstant*      as_IntConstant()     { return NULL; }
-  virtual LongConstant*     as_LongConstant()    { return NULL; }
-  virtual FloatConstant*    as_FloatConstant()   { return NULL; }
-  virtual DoubleConstant*   as_DoubleConstant()  { return NULL; }
-  virtual ObjectConstant*   as_ObjectConstant()  { return NULL; }
-  virtual InstanceConstant* as_InstanceConstant(){ return NULL; }
-  virtual ClassConstant*    as_ClassConstant()   { return NULL; }
-  virtual MethodConstant*   as_MethodConstant()  { return NULL; }
-  virtual ArrayConstant*    as_ArrayConstant()   { return NULL; }
-  virtual StableArrayConstant* as_StableArrayConstant()   { return NULL; }
-  virtual AddressConstant*  as_AddressConstant() { return NULL; }
+  virtual VoidType*         as_VoidType()        { return nullptr; }
+  virtual IntType*          as_IntType()         { return nullptr; }
+  virtual LongType*         as_LongType()        { return nullptr; }
+  virtual FloatType*        as_FloatType()       { return nullptr; }
+  virtual DoubleType*       as_DoubleType()      { return nullptr; }
+  virtual ObjectType*       as_ObjectType()      { return nullptr; }
+  virtual ArrayType*        as_ArrayType()       { return nullptr; }
+  virtual InstanceType*     as_InstanceType()    { return nullptr; }
+  virtual ClassType*        as_ClassType()       { return nullptr; }
+  virtual MetadataType*     as_MetadataType()    { return nullptr; }
+  virtual MethodType*       as_MethodType()      { return nullptr; }
+  virtual AddressType*      as_AddressType()     { return nullptr; }
+  virtual IllegalType*      as_IllegalType()     { return nullptr; }
+  virtual IntConstant*      as_IntConstant()     { return nullptr; }
+  virtual LongConstant*     as_LongConstant()    { return nullptr; }
+  virtual FloatConstant*    as_FloatConstant()   { return nullptr; }
+  virtual DoubleConstant*   as_DoubleConstant()  { return nullptr; }
+  virtual ObjectConstant*   as_ObjectConstant()  { return nullptr; }
+  virtual InstanceConstant* as_InstanceConstant(){ return nullptr; }
+  virtual ClassConstant*    as_ClassConstant()   { return nullptr; }
+  virtual MethodConstant*   as_MethodConstant()  { return nullptr; }
+  virtual ArrayConstant*    as_ArrayConstant()   { return nullptr; }
+  virtual StableArrayConstant* as_StableArrayConstant()   { return nullptr; }
+  virtual AddressConstant*  as_AddressConstant() { return nullptr; }
 
   // type operations
   ValueType* meet(ValueType* y) const;
@@ -286,8 +286,8 @@ class ObjectType: public ValueType {
   virtual const char tchar() const               { return 'a'; }
   virtual const char* name() const               { return "object"; }
   virtual ObjectType* as_ObjectType()            { return this; }
-  virtual ciObject* constant_value() const       { ShouldNotReachHere(); return NULL; }
-  virtual ciType* exact_type() const             { return NULL; }
+  virtual ciObject* constant_value() const       { ShouldNotReachHere(); return nullptr; }
+  virtual ciType* exact_type() const             { return nullptr; }
   bool is_loaded() const;
   jobject encoding() const;
 };
@@ -376,7 +376,7 @@ class MetadataType: public ValueType {
   virtual MetadataType* as_MetadataType()               { return this; }
   bool is_loaded() const;
   jobject encoding() const;
-  virtual ciMetadata* constant_value() const            { ShouldNotReachHere(); return NULL;  }
+  virtual ciMetadata* constant_value() const            { ShouldNotReachHere(); return nullptr;  }
 };
 
 

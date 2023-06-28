@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -971,6 +971,13 @@ public class JavaCompiler {
         } catch (Abort ex) {
             if (devVerbose)
                 ex.printStackTrace(System.err);
+
+            // In case an Abort was thrown before processAnnotations could be called,
+            // we could have deferred diagnostics that haven't been reported.
+            if (deferredDiagnosticHandler != null) {
+                deferredDiagnosticHandler.reportDeferredDiagnostics();
+                log.popDiagnosticHandler(deferredDiagnosticHandler);
+            }
         } finally {
             if (verbose) {
                 elapsed_msec = elapsed(start_msec);
@@ -1288,7 +1295,10 @@ public class JavaCompiler {
             options.isSet(PROCESSOR_PATH) ||
             options.isSet(PROCESSOR_MODULE_PATH) ||
             options.isSet(PROC, "only") ||
+            options.isSet(PROC, "full") ||
+            options.isSet(A) ||
             options.isSet(XPRINT);
+        // Skipping -XprintRounds and -XprintProcessorInfo
     }
 
     public void setDeferredDiagnosticHandler(Log.DeferredDiagnosticHandler deferredDiagnosticHandler) {
@@ -1535,11 +1545,6 @@ public class JavaCompiler {
                 super.visitRecordPattern(that);
             }
             @Override
-            public void visitParenthesizedPattern(JCTree.JCParenthesizedPattern tree) {
-                hasPatterns = true;
-                super.visitParenthesizedPattern(tree);
-            }
-            @Override
             public void visitSwitch(JCSwitch tree) {
                 hasPatterns |= tree.patternSwitch;
                 super.visitSwitch(tree);
@@ -1593,6 +1598,12 @@ public class JavaCompiler {
 
             env.tree = transTypes.translateTopLevelClass(env.tree, localMake);
             compileStates.put(env, CompileState.TRANSTYPES);
+
+            if (shouldStop(CompileState.TRANSLITERALS))
+                return;
+
+            env.tree = TransLiterals.instance(context).translateTopLevelClass(env, env.tree, localMake);
+            compileStates.put(env, CompileState.TRANSLITERALS);
 
             if (shouldStop(CompileState.TRANSPATTERNS))
                 return;

@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -31,12 +31,12 @@
 #define DEFINE_THREAD_LOCAL_FIELD_JFR mutable JfrThreadLocal _jfr_thread_local
 
 #define DEFINE_THREAD_LOCAL_OFFSET_JFR \
-  static ByteSize jfr_thread_local_offset() { return in_ByteSize(offset_of(Thread, _jfr_thread_local)); }
+  static ByteSize jfr_thread_local_offset() { return byte_offset_of(Thread, _jfr_thread_local); }
 
 #define THREAD_LOCAL_OFFSET_JFR Thread::jfr_thread_local_offset()
 
 #define DEFINE_THREAD_LOCAL_TRACE_ID_OFFSET_JFR \
-  static ByteSize trace_id_offset() { return in_ByteSize(offset_of(JfrThreadLocal, _trace_id)); }
+  static ByteSize trace_id_offset() { return byte_offset_of(JfrThreadLocal, _trace_id); }
 
 #define DEFINE_THREAD_LOCAL_ACCESSOR_JFR \
   JfrThreadLocal* jfr_thread_local() const { return &_jfr_thread_local; }

@@ -30,7 +30,6 @@
 #include "gc/shared/collectedHeap.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #include "interpreter/interpreter.hpp"
-#include "logging/log.hpp"
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "runtime/basicLock.hpp"
@@ -196,8 +195,8 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   const Register tmp2 = Rtemp; // Rtemp should be free at c1 LIR level
   assert_different_registers(hdr, obj, disp_hdr, tmp2);
 
-  assert(BasicObjectLock::lock_offset_in_bytes() == 0, "adjust this code");
-  const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
+  assert(BasicObjectLock::lock_offset() == 0, "adjust this code");
+  const ByteSize obj_offset = BasicObjectLock::obj_offset();
   const int mark_offset = BasicLock::displaced_header_offset_in_bytes();
 
   // save object being locked into the BasicObjectLock
@@ -215,7 +214,6 @@ int C1_MacroAssembler::lock_object(Register hdr, Register obj, Register disp_hdr
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    log_trace(fastlock)("C1_MacroAssembler::lock fast");
 
     Register t1 = disp_hdr; // Needs saving, probably
     Register t2 = hdr;      // blow
@@ -268,8 +266,8 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert_different_registers(hdr, obj, disp_hdr, Rtemp);
   Register tmp2 = Rtemp;
 
-  assert(BasicObjectLock::lock_offset_in_bytes() == 0, "adjust this code");
-  const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
+  assert(BasicObjectLock::lock_offset() == 0, "adjust this code");
+  const ByteSize obj_offset = BasicObjectLock::obj_offset();
   const int mark_offset = BasicLock::displaced_header_offset_in_bytes();
 
   Label done;
@@ -277,7 +275,6 @@ void C1_MacroAssembler::unlock_object(Register hdr, Register obj, Register disp_
   assert(oopDesc::mark_offset_in_bytes() == 0, "Required by atomic instructions");
 
   if (LockingMode == LM_LIGHTWEIGHT) {
-    log_trace(fastlock)("C1_MacroAssembler::unlock fast");
 
     ldr(obj, Address(disp_hdr, obj_offset));
 

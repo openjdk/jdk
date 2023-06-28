@@ -38,6 +38,7 @@
 #include "oops/methodData.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/frame.inline.hpp"
@@ -1736,7 +1737,7 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
     __ beq(CCR0, Lforward);
 
     // Has the nmethod been invalidated already?
-    __ lbz(R0, nmethod::state_offset(), R3_RET);
+    __ lbz(R0, in_bytes(nmethod::state_offset()), R3_RET);
     __ cmpwi(CCR0, R0, nmethod::in_use);
     __ bne(CCR0, Lforward);
 
@@ -2294,7 +2295,7 @@ void TemplateTable::load_invokedynamic_entry(Register method) {
   __ load_resolved_indy_entry(cache, index);
   __ ld_ptr(method, array_base_offset + in_bytes(ResolvedIndyEntry::method_offset()), cache);
 
-  // The invokedynamic is unresolved iff method is NULL
+  // The invokedynamic is unresolved iff method is null
   __ cmpdi(CCR0, method, 0);
   __ bne(CCR0, resolved);
 
@@ -3459,11 +3460,11 @@ void TemplateTable::generate_vtable_call(Register Rrecv_klass, Register Rindex, 
   const Register Rtarget_method = Rindex;
 
   // Get target method & entry point.
-  const int base = in_bytes(Klass::vtable_start_offset());
+  const ByteSize base = Klass::vtable_start_offset();
   // Calc vtable addr scale the vtable index by 8.
   __ sldi(Rindex, Rindex, exact_log2(vtableEntry::size_in_bytes()));
   // Load target.
-  __ addi(Rrecv_klass, Rrecv_klass, base + vtableEntry::method_offset_in_bytes());
+  __ addi(Rrecv_klass, Rrecv_klass, in_bytes(base + vtableEntry::method_offset()));
   __ ldx(Rtarget_method, Rindex, Rrecv_klass);
   // Argument and return type profiling.
   __ profile_arguments_type(Rtarget_method, Rrecv_klass /* scratch1 */, Rtemp /* scratch2 */, true);
@@ -4135,10 +4136,10 @@ void TemplateTable::monitorenter() {
     Register Rlimit = Rcurrent_monitor;
 
     // Set up search loop - start with topmost monitor.
-    __ addi(Rcurrent_obj_addr, R26_monitor, BasicObjectLock::obj_offset_in_bytes());
+    __ addi(Rcurrent_obj_addr, R26_monitor, in_bytes(BasicObjectLock::obj_offset()));
 
     __ ld(Rlimit, 0, R1_SP);
-    __ addi(Rlimit, Rlimit, - (frame::ijava_state_size + frame::interpreter_frame_monitor_size_in_bytes() - BasicObjectLock::obj_offset_in_bytes())); // Monitor base
+    __ addi(Rlimit, Rlimit, - (frame::ijava_state_size + frame::interpreter_frame_monitor_size_in_bytes() - in_bytes(BasicObjectLock::obj_offset()))); // Monitor base
 
     // Check if any slot is present => short cut to allocation if not.
     __ cmpld(reached_limit, Rcurrent_obj_addr, Rlimit);
@@ -4169,7 +4170,7 @@ void TemplateTable::monitorenter() {
   // Check if we found a free slot.
   __ bind(Lexit);
 
-  __ addi(Rcurrent_monitor, Rcurrent_obj_addr, -(frame::interpreter_frame_monitor_size() * wordSize) - BasicObjectLock::obj_offset_in_bytes());
+  __ addi(Rcurrent_monitor, Rcurrent_obj_addr, -(frame::interpreter_frame_monitor_size() * wordSize) - in_bytes(BasicObjectLock::obj_offset()));
   __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, - frame::interpreter_frame_monitor_size() * wordSize);
   __ b(Lfound);
 
@@ -4178,7 +4179,7 @@ void TemplateTable::monitorenter() {
   __ bind(Lallocate_new);
   __ add_monitor_to_stack(false, Rscratch1, Rscratch2);
   __ mr(Rcurrent_monitor, R26_monitor);
-  __ addi(Rcurrent_obj_addr, R26_monitor, BasicObjectLock::obj_offset_in_bytes());
+  __ addi(Rcurrent_obj_addr, R26_monitor, in_bytes(BasicObjectLock::obj_offset()));
 
   // ------------------------------------------------------------------------------
   // We now have a slot to lock.
@@ -4225,8 +4226,8 @@ void TemplateTable::monitorexit() {
     Label Lloop;
 
     // Start with topmost monitor.
-    __ addi(Rcurrent_obj_addr, R26_monitor, BasicObjectLock::obj_offset_in_bytes());
-    __ addi(Rlimit, Rlimit, BasicObjectLock::obj_offset_in_bytes());
+    __ addi(Rcurrent_obj_addr, R26_monitor, in_bytes(BasicObjectLock::obj_offset()));
+    __ addi(Rlimit, Rlimit, in_bytes(BasicObjectLock::obj_offset()));
     __ ld(Rcurrent_obj, 0, Rcurrent_obj_addr);
     __ addi(Rcurrent_obj_addr, Rcurrent_obj_addr, frame::interpreter_frame_monitor_size() * wordSize);
 
@@ -4253,7 +4254,7 @@ void TemplateTable::monitorexit() {
   __ align(32, 12);
   __ bind(Lfound);
   __ addi(Rcurrent_monitor, Rcurrent_obj_addr,
-          -(frame::interpreter_frame_monitor_size() * wordSize) - BasicObjectLock::obj_offset_in_bytes());
+          -(frame::interpreter_frame_monitor_size() * wordSize) - in_bytes(BasicObjectLock::obj_offset()));
   __ unlock_object(Rcurrent_monitor);
 }
 

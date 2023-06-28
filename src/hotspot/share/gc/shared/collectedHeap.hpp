@@ -95,6 +95,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class VMStructs;
   friend class JVMCIVMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
+  friend class DisableIsGCActiveMark; // Disable current IsGCActiveMark
   friend class MemAllocator;
   friend class ParallelObjectIterator;
 
@@ -180,8 +181,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual void trace_heap(GCWhen::Type when, const GCTracer* tracer);
 
   // Verification functions
-  virtual void check_for_non_bad_heap_word_value(HeapWord* addr, size_t size)
-    PRODUCT_RETURN;
   debug_only(static void check_for_valid_allocation_state();)
 
  public:

@@ -25,7 +25,7 @@
 package jdk.internal.classfile.constantpool;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
-import jdk.internal.classfile.java.lang.constant.ModuleDesc;
+import java.lang.constant.ModuleDesc;
 
 /**
  * Models a {@code CONSTANT_Module_info} constant in the constant pool of a

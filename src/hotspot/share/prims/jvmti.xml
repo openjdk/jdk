@@ -640,6 +640,17 @@ Agent_OnLoad_L(JavaVM *vm, char *options, void *reserved)</example>
     or implementation specific API, to attach to the running VM, and request it start a given
     agent.
     <p/>
+    The VM prints a warning on the standard error stream for each agent that it attempts
+    to start in the live phase. If an agent was previously started (in the <code>OnLoad</code>
+    phase or in the live phase), then it is implementation specific as to whether a
+    warning is printed when attempting to start the same agent a second or subsequent time.
+    Warnings can be disabled by means of an implementation-specific command line option.
+    <p/>
+    <b>Implementation Note:</b> For the HotSpot VM, the VM option
+    <code>-XX:+EnableDynamicAgentLoading</code> is used to opt-in to allow dynamic loading
+    of agents in the live phase. This option suppresses the warning to standard error when
+    starting an agent in the live phase.
+    <p/>
     If an agent is started during the live phase then its agent library
     must export a start-up function
     with the following prototype:
@@ -1405,7 +1416,7 @@ jvmtiEnv *jvmti;
         <example>
             JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_WAITING +
                 JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT +
-                JVMTI_THREAD_STATE_MONITOR_WAITING
+                JVMTI_THREAD_STATE_IN_OBJECT_WAIT
         </example>
         The state of a thread suspended while runnable would be:
         <example>
@@ -1892,7 +1903,7 @@ jvmtiEnv *jvmti;
     <function id="StopThread" num="7">
       <synopsis>Stop Thread</synopsis>
       <description>
-        Send the specified asynchronous exception to the specified platform thread.
+        Send the specified asynchronous exception to the specified thread.
       </description>
       <origin>jvmdi</origin>
       <capabilities>
@@ -1903,8 +1914,10 @@ jvmtiEnv *jvmti;
           <jthread impl="noconvert"/>
             <description>
               The thread to stop.
-              The <code>thread</code> may not be a virtual thread. Otherwise, the error code
-              <errorlink id="JVMTI_ERROR_UNSUPPORTED_OPERATION"></errorlink> will be returned.
+              The <functionlink id="StopThread"></functionlink> function may be used to send
+              an asynchronous exception to a virtual thread when it is suspended at an event.
+              An implementation may support sending an asynchronous exception to a suspended
+              virtual thread in other cases.
              </description>
         </param>
         <param id="exception">
@@ -1915,8 +1928,12 @@ jvmtiEnv *jvmti;
         </param>
       </parameters>
       <errors>
-        <error id="JVMTI_ERROR_UNSUPPORTED_OPERATION">
-          <paramlink id="thread"/> is a virtual thread.
+        <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
+          Thread is a virtual thread and was not suspended and was not the current thread.
+        </error>
+        <error id="JVMTI_ERROR_OPAQUE_FRAME">
+          The thread is a suspended virtual thread and the implementation was unable
+          to throw an asynchronous exception from the current frame.
         </error>
       </errors>
     </function>
@@ -2952,6 +2969,10 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
           <jthread impl="noconvert"/>
             <description>
               The thread whose current frame is to be popped.
+              The <functionlink id="PopFrame"></functionlink> function may be used to
+              pop the current frame of a virtual thread when it is suspended at an event.
+              An implementation may support popping the current frame of a suspended
+              virtual thread in other cases.
             </description>
         </param>
       </parameters>
@@ -2961,8 +2982,8 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
           The implementation is unable to pop this frame.
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation is unable
-          to pop this frame.
+          The thread is a suspended virtual thread and the implementation
+          was unable to pop the current frame.
         </error>
         <error id="JVMTI_ERROR_THREAD_NOT_SUSPENDED">
           Thread was not suspended and was not the current thread.
@@ -3061,8 +3082,12 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
 
   <category id="ForceEarlyReturn" label="Force Early Return">
     <intro>
-      These functions allow an agent to force a method
-      to return at any point during its execution.
+      These functions allow an agent to force a return from the current frame.
+      The specified thread must be suspended or must be the current thread.
+      These functions may be used to force a return from the current frame
+      of a virtual thread when it is suspended at an event.
+      An implementation may support forcing a return from the current frame
+      of a suspended virtual thread in other cases.
       The method which will return early is referred to as the <i>called method</i>.
       The called method is the current method
       (as defined by
@@ -3070,7 +3095,6 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
       for the specified thread at
       the time the function is called.
       <p/>
-      The specified thread must be suspended or must be the current thread.
       The return occurs when execution of Java programming
       language code is resumed on this thread.
       Between calling one of these functions and resumption
@@ -3126,7 +3150,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3178,7 +3202,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3226,7 +3250,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3271,7 +3295,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3316,7 +3340,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3355,7 +3379,7 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
           Attempted to return early from a frame
           corresponding to a native method.
-          The thread is a virtual thread and the implementation is
+          The thread is a suspended virtual thread and the implementation was
           unable to force its current frame to return.
           Or the implementation is unable to provide
           this functionality on this frame.
@@ -3517,10 +3541,10 @@ err = (*jvmti)-&gt;Deallocate(jvmti, stack_info);
             Heap root reference: monitor.
           </constant>
           <constant id="JVMTI_HEAP_REFERENCE_STACK_LOCAL" num="24">
-            Heap root reference: local variable on the stack.
+            Local variable on a thread stack.
           </constant>
           <constant id="JVMTI_HEAP_REFERENCE_JNI_LOCAL" num="25">
-            Heap root reference: JNI local reference.
+            JNI local reference.
           </constant>
           <constant id="JVMTI_HEAP_REFERENCE_THREAD" num="26">
             Heap root reference: Thread.
@@ -4535,7 +4559,7 @@ class C2 extends C1 implements I2 {
         if <code>initial_object</code> is not specified, all objects
         reachable from the heap roots.
         The heap root are the set of system classes,
-        JNI globals, references from thread stacks, and other objects used as roots
+        JNI globals, references from platform thread stacks, and other objects used as roots
         for the purposes of garbage collection.
         <p/>
         This function operates by traversing the reference graph.
@@ -5579,7 +5603,7 @@ class C2 extends C1 implements I2 {
         This function iterates over the root objects and all objects that
         are directly and indirectly reachable from the root objects.
         The root objects comprise the set of system classes,
-        JNI globals, references from thread stacks, and other objects used as roots
+        JNI globals, references from platform thread stacks, and other objects used as roots
         for the purposes of garbage collection.
         <p/>
         For each root the <paramlink id="heap_root_callback"></paramlink>
@@ -5813,9 +5837,8 @@ class C2 extends C1 implements I2 {
       The <code>GetLocalXXX</code> functions may be used to retrieve the value of
       a local variable contained in the frame of a virtual thread.
       The <code>SetLocalXXX</code> functions may be used to set the value of a
-      local variable in the topmost frame of a virtual thread suspended at a
-      breakpoint or single step event. An implementation may support setting locals
-      in other cases.
+      local variable in the topmost frame of a virtual thread suspended at an event.
+      An implementation may support setting locals in other cases.
     </intro>
 
     <function id="GetLocalObject" num="21">
@@ -6192,7 +6215,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6256,7 +6279,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6315,7 +6338,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6374,7 +6397,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -6433,7 +6456,7 @@ class C2 extends C1 implements I2 {
           Not a visible frame
         </error>
         <error id="JVMTI_ERROR_OPAQUE_FRAME">
-          The thread is a virtual thread and the implementation does not support
+          The thread is a suspended virtual thread and the implementation does not support
           setting the value of locals in the frame of the given depth.
           See <internallink id="local">Local Variables</internallink>.
         </error>
@@ -9697,6 +9720,7 @@ myInit() {
           <li><eventlink id="VMStart"></eventlink></li>
           <li><eventlink id="VMDeath"></eventlink></li>
           <li><eventlink id="ThreadStart"></eventlink></li>
+          <li><eventlink id="VirtualThreadStart"></eventlink></li>
           <li><eventlink id="CompiledMethodLoad"></eventlink></li>
           <li><eventlink id="CompiledMethodUnload"></eventlink></li>
           <li><eventlink id="DynamicCodeGenerated"></eventlink></li>
@@ -11974,7 +11998,8 @@ myInit() {
       There are no Java programming language or JNI stack frames at the specified depth.
     </errorid>
     <errorid id="JVMTI_ERROR_OPAQUE_FRAME" num="32">
-      Information about the frame is not available (e.g. for native frames).
+      Information about the frame is not available (e.g. for native frames),
+      or the function cannot be performed on the thread's current frame.
     </errorid>
     <errorid id="JVMTI_ERROR_DUPLICATE" num="40">
       Item already set.
@@ -12249,6 +12274,8 @@ myInit() {
       <li><eventlink id="VMDeath"></eventlink></li>
       <li><eventlink id="ThreadStart"></eventlink></li>
       <li><eventlink id="ThreadEnd"></eventlink></li>
+      <li><eventlink id="VirtualThreadStart"></eventlink></li>
+      <li><eventlink id="VirtualThreadEnd"></eventlink></li>
       <li><eventlink id="ClassLoad"></eventlink></li>
       <li><eventlink id="ClassPrepare"></eventlink></li>
     </ul>
@@ -12937,16 +12964,10 @@ myInit() {
       A thread start event is generated by a new thread before its initial
       method executes.
       <p/>
-      This event is generated by platform threads. It is also generated by
-      virtual threads when the capability
-      <internallink id="jvmtiCapabilities.can_support_virtual_threads">
-      <code>can_support_virtual_threads</code></internallink> is not enabled.
-      Agents without support for virtual threads that enable this event will
-      therefore be notified by all newly started threads.
+      This event is generated by platform thread. It is not generated by virtual threads.
       <p/>
-      If the capability <code>can_support_virtual_threads</code> is enabled then
-      this event is not generated by virtual threads. Agents with support for
-      virtual threads can enable <eventlink id="VirtualThreadStart"></eventlink>
+      Agents with the <code>can_support_virtual_threads</code> capability
+      can enable the <eventlink id="VirtualThreadStart"></eventlink> event
       to be notified by newly started virtual threads.
       <p/>
       A platform thread may be listed in the array returned by
@@ -12984,16 +13005,10 @@ myInit() {
       A thread end event is generated by a terminating thread after its
       initial method has finished execution.
       <p/>
-      This event is generated by platform threads. It is also generated by
-      virtual threads when the capability
-      <internallink id="jvmtiCapabilities.can_support_virtual_threads">
-      <code>can_support_virtual_threads</code></internallink> is not enabled.
-      Agents without support for virtual threads that enable this event for
-      all threads will therefore be notified by all terminating threads.
+      This event is generated by platform thread. It is not generated by virtual threads.
       <p/>
-      If the capability <code>can_support_virtual_threads</code> is enabled then
-      this event is not generated by virtual threads. Agents with support for
-      virtual threads can enable <eventlink id="VirtualThreadEnd"></eventlink>
+      Agents with the <code>can_support_virtual_threads</code> capability
+      can enable the <eventlink id="VirtualThreadEnd"></eventlink> event
       to be notified by terminating virtual threads.
       <p/>
       A platform thread may be listed in the array returned by
@@ -15377,60 +15392,52 @@ typedef void (JNICALL *jvmtiEventVMInit)
   </change>
   <change date="13 October 2016" version="9.0.0">
       Support for modules:
-       - The majorversion is 9 now
-       - The ClassFileLoadHook events are not sent during the primordial phase anymore.
-       - Allow CompiledMethodLoad events at start phase
-       - Add new capabilities:
-          - can_generate_early_vmstart
-          - can_generate_early_class_hook_events
-       - Add new functions:
-          - GetAllModules
-          - AddModuleReads, AddModuleExports, AddModuleOpens, AddModuleUses, AddModuleProvides
-          - IsModifiableModule
-      Clarified can_redefine_any_classes, can_retransform_any_classes and IsModifiableClass API to
-      disallow some implementation defined classes.
+      The majorversion is 9 now.
+      The ClassFileLoadHook events are not sent during the primordial phase anymore.
+      Allow CompiledMethodLoad events at start phase.
+      Add new capabilities: can_generate_early_vmstart, can_generate_early_class_hook_events.
+      Add new functions: GetAllModules, AddModuleReads, AddModuleExports,
+      AddModuleOpens, AddModuleUses, AddModuleProvides, IsModifiableModule.
+      Clarified can_redefine_any_classes, can_retransform_any_classes and
+      IsModifiableClass API to disallow some implementation defined classes.
   </change>
   <change date="12 February 2017" version="9.0.0">
       Minor update for GetCurrentThread function:
-       - The function may return NULL in the start phase if the
-         can_generate_early_vmstart capability is enabled.
+      The function may return NULL in the start phase if the
+      can_generate_early_vmstart capability is enabled.
   </change>
   <change date="7 February 2018" version="11.0.0">
       Minor update for new class file NestHost and NestMembers attributes:
-        - Specify that RedefineClasses and RetransformClasses are not allowed
-          to change the class file NestHost and NestMembers attributes.
-        - Add new error JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED
-          that can be returned by RedefineClasses and RetransformClasses.
+      Specify that RedefineClasses and RetransformClasses are not allowed
+      to change the class file NestHost and NestMembers attributes;
+      Add new error JVMTI_ERROR_UNSUPPORTED_REDEFINITION_CLASS_ATTRIBUTE_CHANGED
+      that can be returned by RedefineClasses and RetransformClasses.
   </change>
   <change date="15 June 2018" version="11.0.0">
       Support for Low Overhead Heap Sampling:
-       - Add new capability:
-         - can_generate_sampled_object_alloc_events
-       - Add new function:
-         - SetHeapSamplingInterval
-       - Add new event type:
-         - JVMTI_EVENT_SAMPLED_OBJECT_ALLOC
+      Add new capability: can_generate_sampled_object_alloc_events.
+      Add new function: SetHeapSamplingInterval.
+      Add new event type: JVMTI_EVENT_SAMPLED_OBJECT_ALLOC.
   </change>
   <change date="20 May 2019" version="13.0.0">
       Minor spec update for the capability "can_redefine_any_class".
-      It now says:
-       "RedefineClasses can be called on any modifiable class. See IsModifiableClass.
-       (can_redefine_classes must also be set)"
+      It now says: "RedefineClasses can be called on any modifiable class."
+      See IsModifiableClass. (can_redefine_classes must also be set)
   </change>
   <change date="5 June 2019" version="13.0.0">
       Minor PopFrame spec update:
-        - The specified thread must be suspended or must be the current thread.
-          (It was not allowed to be the current thread before.)
+      The specified thread must be suspended or must be the current thread.
+     (It was not allowed to be the current thread before.)
   </change>
   <change date="10 October 2019" version="14.0.0">
       Minor update for new class file Record attribute:
-        - Specify that RedefineClasses and RetransformClasses are not allowed
-          to change the class file Record attribute.
+      Specify that RedefineClasses and RetransformClasses are not allowed
+      to change the class file Record attribute.
   </change>
   <change date="13 May 2020" version="15.0.0">
       Minor update for new class file PermittedSubclasses attribute:
-        - Specify that RedefineClasses and RetransformClasses are not allowed
-          to change the class file PermittedSubclasses attribute.
+      Specify that RedefineClasses and RetransformClasses are not allowed
+      to change the class file PermittedSubclasses attribute.
   </change>
   <change date="15 January 2021" version="17.0.0">
       Minor clarification in the section "Agent Shutdown" that says the
@@ -15441,17 +15448,15 @@ typedef void (JNICALL *jvmtiEventVMInit)
       Minor update to deprecate Heap functions 1.0.
   </change>
   <change date="27 April 2022" version="19.0.0">
-      Support for virtual threads:
-       - Add new capability:
-         - can_support_virtual_threads
-       - Add new functions:
-         - SuspendAllVirtualThreads
-         - ResumeAllVirtualThreads
-       - Add new event types:
-         - JVMTI_EVENT_VIRTUAL_THREAD_START
-         - JVMTI_EVENT_VIRTUAL_THREAD_END
-       - Add new error code:
-         - JVMTI_ERROR_UNSUPPORTED_OPERATION
+      Support for virtual threads (Preview):
+      Add new capability: can_support_virtual_threads.
+      Add new functions: SuspendAllVirtualThreads, ResumeAllVirtualThreads.
+      Add new event types: JVMTI_EVENT_VIRTUAL_THREAD_START, JVMTI_EVENT_VIRTUAL_THREAD_END.
+      Add new error code: JVMTI_ERROR_UNSUPPORTED_OPERATION.
+  </change>
+  <change date="7 June 2023" version="21.0.0">
+      Virtual threads finalized to be a permanent feature.
+      Agent start-up in the live phase now specified to print a warning.
   </change>
 </changehistory>
 

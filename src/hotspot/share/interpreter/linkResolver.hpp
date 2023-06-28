@@ -146,8 +146,8 @@ class LinkInfo : public StackObj {
   enum class AccessCheck { required, skip };
   enum class LoaderConstraintCheck { required, skip };
 
-  LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, TRAPS);
-  LinkInfo(const constantPoolHandle& pool, int index, TRAPS);
+  LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, Bytecodes::Code code, TRAPS);
+  LinkInfo(const constantPoolHandle& pool, int index, Bytecodes::Code code, TRAPS);
 
   // Condensed information from other call sites within the vm.
   LinkInfo(Klass* resolved_klass, Symbol* name, Symbol* signature, Klass* current_klass,

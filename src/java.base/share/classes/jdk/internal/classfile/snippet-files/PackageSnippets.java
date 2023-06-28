@@ -25,15 +25,20 @@
 import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
+import java.lang.invoke.MethodHandles;
 import java.util.HashSet;
 import java.util.Set;
 
 import java.lang.reflect.AccessFlag;
+import java.util.ArrayDeque;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
 import jdk.internal.classfile.ClassElement;
+import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.ClassModel;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.Classfile;
@@ -58,7 +63,7 @@ import jdk.internal.classfile.instruction.StoreInstruction;
 class PackageSnippets {
     void enumerateFieldsMethods1(byte[] bytes) {
         // @start region="enumerateFieldsMethods1"
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = Classfile.of().parse(bytes);
         for (FieldModel fm : cm.fields())
             System.out.printf("Field %s%n", fm.fieldName().stringValue());
         for (MethodModel mm : cm.methods())
@@ -68,7 +73,7 @@ class PackageSnippets {
 
     void enumerateFieldsMethods2(byte[] bytes) {
         // @start region="enumerateFieldsMethods2"
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = Classfile.of().parse(bytes);
         for (ClassElement ce : cm) {
             switch (ce) {
                 case MethodModel mm -> System.out.printf("Method %s%n", mm.methodName().stringValue());
@@ -81,7 +86,7 @@ class PackageSnippets {
 
     void gatherDependencies1(byte[] bytes) {
         // @start region="gatherDependencies1"
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = Classfile.of().parse(bytes);
         Set<ClassDesc> dependencies = new HashSet<>();
 
         for (ClassElement ce : cm) {
@@ -104,10 +109,10 @@ class PackageSnippets {
 
     void gatherDependencies2(byte[] bytes) {
         // @start region="gatherDependencies2"
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = Classfile.of().parse(bytes);
         Set<ClassDesc> dependencies =
               cm.elementStream()
-                .flatMap(ce -> ce instanceof MethodMethod mm ? mm.elementStream() : Stream.empty())
+                .flatMap(ce -> ce instanceof MethodModel mm ? mm.elementStream() : Stream.empty())
                 .flatMap(me -> me instanceof CodeModel com ? com.elementStream() : Stream.empty())
                 .<ClassDesc>mapMulti((xe, c) -> {
                     switch (xe) {
@@ -122,7 +127,7 @@ class PackageSnippets {
 
     void writeHelloWorld() {
         // @start region="helloWorld"
-        byte[] bytes = Classfile.build(ClassDesc.of("Hello"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("Hello"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withMethod("<init>", MethodTypeDesc.of(ConstantDescs.CD_void), Classfile.ACC_PUBLIC,
                           mb -> mb.withCode(
@@ -148,8 +153,8 @@ class PackageSnippets {
 
     void stripDebugMethods1(byte[] bytes) {
         // @start region="stripDebugMethods1"
-        ClassModel classModel = Classfile.parse(bytes);
-        byte[] newBytes = Classfile.build(classModel.thisClass().asSymbol(),
+        ClassModel classModel = Classfile.of().parse(bytes);
+        byte[] newBytes = Classfile.of().build(classModel.thisClass().asSymbol(),
                                           classBuilder -> {
                                               for (ClassElement ce : classModel) {
                                                   if (!(ce instanceof MethodModel mm
@@ -166,7 +171,8 @@ class PackageSnippets {
             if (!(element instanceof MethodModel mm && mm.methodName().stringValue().startsWith("debug")))
                 builder.with(element);
         };
-        byte[] newBytes = Classfile.parse(bytes).transform(ct);
+        var cc = Classfile.of();
+        byte[] newBytes = cc.transform(cc.parse(bytes), ct);
         // @end
     }
 
@@ -198,7 +204,7 @@ class PackageSnippets {
 
     void fooToBarUnrolled(ClassModel classModel) {
         // @start region="fooToBarUnrolled"
-        byte[] newBytes = Classfile.build(classModel.thisClass().asSymbol(),
+        byte[] newBytes = Classfile.of().build(classModel.thisClass().asSymbol(),
             classBuilder -> {
               for (ClassElement ce : classModel) {
                   if (ce instanceof MethodModel mm) {
@@ -230,7 +236,7 @@ class PackageSnippets {
 
     void codeRelabeling(ClassModel classModel) {
         // @start region="codeRelabeling"
-        byte[] newBytes = classModel.transform(
+        byte[] newBytes = Classfile.of().transform(classModel,
                 ClassTransform.transformingMethodBodies(
                         CodeTransform.ofStateful(CodeRelabeler::of)));
         // @end
@@ -240,11 +246,11 @@ class PackageSnippets {
     byte[] classInstrumentation(ClassModel target, ClassModel instrumentor, Predicate<MethodModel> instrumentedMethodsFilter) {
         var instrumentorCodeMap = instrumentor.methods().stream()
                                               .filter(instrumentedMethodsFilter)
-                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElse(null)));
+                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElseThrow()));
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return target.transform(
+        return Classfile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
@@ -262,13 +268,13 @@ class PackageSnippets {
                                                 && mm.methodType().stringValue().equals(inv.type().stringValue())) {
 
                                                 //store stacked method parameters into locals
-                                                var storeStack = new LinkedList<StoreInstruction>();
+                                                var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.add(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
-                                                    storeStack.addFirst(StoreInstruction.of(tk, slot));
+                                                    storeStack.push(StoreInstruction.of(tk, slot));
                                                     slot += tk.slotSize();
                                                 }
                                                 storeStack.forEach(codeBuilder::with);
@@ -303,4 +309,11 @@ class PackageSnippets {
                             .andThen(instrumentorClassRemapper)))));
     }
     // @end
+
+    void resolverExample() {
+        // @start region="lookup-class-hierarchy-resolver"
+        MethodHandles.Lookup lookup = MethodHandles.lookup(); // @replace regex="MethodHandles\.lookup\(\)" replacement="..."
+        ClassHierarchyResolver resolver = ClassHierarchyResolver.ofClassLoading(lookup).cached();
+        // @end
+    }
 }

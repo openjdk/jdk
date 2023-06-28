@@ -590,7 +590,7 @@ public:
   // Claim the block and get the block index.
   size_t claim_and_get_block() {
     size_t block_index;
-    block_index = Atomic::fetch_and_add(&_claimed_index, 1u);
+    block_index = Atomic::fetch_then_add(&_claimed_index, 1u);
 
     PSOldGen* old_gen = ParallelScavengeHeap::heap()->old_gen();
     size_t num_claims = old_gen->num_iterable_blocks() + NumNonOldGenClaims;
@@ -785,9 +785,9 @@ void ParallelScavengeHeap::trace_actual_reserved_page_size(const size_t reserved
     os::trace_page_sizes("Heap",
                          MinHeapSize,
                          reserved_heap_size,
-                         page_size,
                          rs.base(),
-                         rs.size());
+                         rs.size(),
+                         page_size);
   }
 }
 

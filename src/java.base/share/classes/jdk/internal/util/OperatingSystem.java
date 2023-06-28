@@ -22,6 +22,7 @@
  */
 package jdk.internal.util;
 
+import java.util.Locale;
 import jdk.internal.util.PlatformProps;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -80,7 +81,8 @@ public enum OperatingSystem {
     AIX,
     ;
 
-    private static final OperatingSystem CURRENT_OS = initOS(PlatformProps.CURRENT_OS_STRING);
+    // The current OperatingSystem
+    private static final OperatingSystem CURRENT_OS = initOS();
 
     /**
      * {@return {@code true} if built for the Linux operating system}
@@ -126,35 +128,7 @@ public enum OperatingSystem {
      * Build time names are mapped to respective uppercase enum values.
      * Names not recognized throw ExceptionInInitializerError with IllegalArgumentException.
      */
-    private static OperatingSystem initOS(String osName) {
-        // Too early to use Locale conversions, manually do uppercase
-        StringBuilder sb = new StringBuilder(osName);
-        for (int i = 0; i < sb.length(); i++) {
-            char ch = sb.charAt(i);
-            if (ch >= 'a' && ch <= 'z') {
-                sb.setCharAt(i, (char)(ch - ('a' - 'A')));  // Map lower case down to uppercase
-            }
-        }
-        osName = sb.toString();
-        return OperatingSystem.valueOf(osName);
-    }
-
-    /**
-     * {@return the operating system version with major, minor, micro}
-     */
-    public static Version version() {
-        return CURRENT_VERSION;
-    }
-
-    // Parse and save the current version
-    private static final Version CURRENT_VERSION = initVersion();
-
-    private static Version initVersion() {
-        final String osVer = StaticProperty.osVersion();
-        try {
-            return Version.parse(osVer);
-        } catch (IllegalArgumentException iae) {
-            throw new InternalError("os.version malformed: " + osVer, iae);
-        }
+    private static OperatingSystem initOS() {
+        return OperatingSystem.valueOf(PlatformProps.CURRENT_OS_STRING.toUpperCase(Locale.ROOT));
     }
 }

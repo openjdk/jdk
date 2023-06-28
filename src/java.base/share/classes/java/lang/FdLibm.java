@@ -57,7 +57,7 @@ package java.lang;
  * operations in terms of floating-point operations when convenient to
  * do so.
  */
-class FdLibm {
+final class FdLibm {
     // Constants used by multiple algorithms
     private static final double INFINITY = Double.POSITIVE_INFINITY;
     private static final double TWO24    = 0x1.0p24; // 1.67772160000000000000e+07
@@ -154,7 +154,7 @@ class FdLibm {
      * Accuracy:
      *      TRIG(x) returns trig(x) nearly rounded
      */
-    static class Sin {
+    static final class Sin {
         private Sin() {throw new UnsupportedOperationException();}
 
         static double compute(double x) {
@@ -267,7 +267,7 @@ class FdLibm {
      * Accuracy:
      *      TRIG(x) returns trig(x) nearly rounded
      */
-    static class Cos {
+    static final class Cos {
         private Cos() {throw new UnsupportedOperationException();}
 
         static double compute(double x) {
@@ -393,7 +393,7 @@ class FdLibm {
      * Accuracy:
      *      TRIG(x) returns trig(x) nearly rounded
      */
-    static class Tan {
+    static final class Tan {
         private Tan() {throw new UnsupportedOperationException();}
 
         static double compute(double x) {
@@ -542,7 +542,7 @@ class FdLibm {
      * return the remainder of x rem pi/2 in y[0]+y[1]
      * use __kernel_rem_pio2()
      */
-    static class RemPio2 {
+    static final class RemPio2 {
         /*
          * Table of constants for 2/pi, 396 Hex digits (476 decimal) of 2/pi
          */
@@ -798,7 +798,7 @@ class FdLibm {
      *              it also indicates the *sign* of the result.
      *
      */
-    static class KernelRemPio2 {
+    static final class KernelRemPio2 {
         /*
          * Constants:
          * The hexadecimal values are the intended ones for the following
@@ -1058,7 +1058,7 @@ class FdLibm {
      *      if |x|>1, return NaN with invalid signal.
      *
      */
-    static class Asin {
+    static final class Asin {
         private Asin() {throw new UnsupportedOperationException();}
 
         private static final double
@@ -1146,7 +1146,7 @@ class FdLibm {
      *
      * Function needed: sqrt
      */
-    static class Acos {
+    static final class Acos {
         private Acos() {throw new UnsupportedOperationException();}
 
         private static final double
@@ -1229,7 +1229,7 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Atan {
+    static final class Atan {
         private Atan() {throw new UnsupportedOperationException();}
 
         private static final double atanhi[] = {
@@ -1347,7 +1347,7 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Atan2 {
+    static final class Atan2 {
         private Atan2() {throw new UnsupportedOperationException();}
 
         private static final double
@@ -1497,7 +1497,7 @@ class FdLibm {
      * Other methods : see the appended file at the end of the program below.
      *---------------
      */
-    static class Sqrt {
+    static final class Sqrt {
         private Sqrt() {throw new UnsupportedOperationException();}
 
         private static final double tiny = 1.0e-300;
@@ -1875,7 +1875,7 @@ class FdLibm {
      * cbrt(x)
      * Return cube root of x
      */
-    public static class Cbrt {
+    static final class Cbrt {
         // unsigned
         private static final int B1 = 715094163; /* B1 = (682-0.03306235651)*2**20 */
         private static final int B2 = 696219795; /* B2 = (664-0.03306235651)*2**20 */
@@ -1965,7 +1965,7 @@ class FdLibm {
      *      hypot(x,y) returns sqrt(x^2 + y^2) with error less
      *      than 1 ulp (unit in the last place)
      */
-    public static class Hypot {
+    static final class Hypot {
         public static final double TWO_MINUS_600 = 0x1.0p-600;
         public static final double TWO_PLUS_600  = 0x1.0p+600;
 
@@ -2108,7 +2108,7 @@ class FdLibm {
      *      always returns the correct integer provided it is
      *      representable.
      */
-    public static class Pow {
+    static final class Pow {
         private Pow() {
             throw new UnsupportedOperationException();
         }
@@ -2683,7 +2683,7 @@ class FdLibm {
      * from decimal to binary accurately enough to produce the hexadecimal values
      * shown.
      */
-    static class Log10 {
+    static final class Log10 {
         private static final double ivln10    = 0x1.bcb7b1526e50ep-2;  // 4.34294481903251816668e-01
 
         private static final double log10_2hi = 0x1.34413509f6p-2;     // 3.01029995663611771306e-01;
@@ -2792,7 +2792,7 @@ class FdLibm {
      *
      *       See HP-15C Advanced Functions Handbook, p.193.
      */
-    static class Log1p {
+    static final class Log1p {
         private static final double ln2_hi = 0x1.62e42feep-1;       // 6.93147180369123816490e-01
         private static final double ln2_lo = 0x1.a39ef35793c76p-33; // 1.90821492927058770002e-10
         private static final double Lp1    = 0x1.5555555555593p-1;  // 6.666666666666735130e-01
@@ -2984,7 +2984,7 @@ class FdLibm {
      * compiler will convert from decimal to binary accurately enough
      * to produce the hexadecimal values shown.
      */
-    static class Expm1 {
+    static final class Expm1 {
         private static final double huge        =  1.0e+300;
         private static final double tiny        =  1.0e-300;
         private static final double o_threshold =  0x1.62e42fefa39efp9;   //  7.09782712893383973096e+02

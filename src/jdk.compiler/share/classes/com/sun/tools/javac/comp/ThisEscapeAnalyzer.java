@@ -958,10 +958,6 @@ class ThisEscapeAnalyzer extends TreeScanner {
     }
 
     @Override
-    public void visitParenthesizedPattern(JCParenthesizedPattern tree) {
-    }
-
-    @Override
     public void visitRecordPattern(JCRecordPattern that) {
     }
 

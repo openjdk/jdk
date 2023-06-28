@@ -41,7 +41,7 @@ public class MemoryLayoutTypeRetentionTest {
     // withName() et al. should return the same type as the original object.
 
     private static final String NAME = "a";
-    private static final long BIT_ALIGNMENT = Byte.SIZE;
+    private static final long BYTE_ALIGNMENT = Byte.BYTES;
     private static final ByteOrder BYTE_ORDER = ByteOrder.nativeOrder() == ByteOrder.BIG_ENDIAN
             ? ByteOrder.LITTLE_ENDIAN
             : ByteOrder.BIG_ENDIAN;
@@ -49,7 +49,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testOfBoolean() {
         OfBoolean v = JAVA_BOOLEAN
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER);
@@ -59,7 +59,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testOfByte() {
         OfByte v = JAVA_BYTE
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER);
@@ -69,7 +69,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testOfShort() {
         OfShort v = JAVA_SHORT
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER);
@@ -79,7 +79,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testOfInt() {
         OfInt v = JAVA_INT
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER);
@@ -89,7 +89,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testOfChar() {
         OfChar v = JAVA_CHAR
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER);
@@ -99,7 +99,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testOfLong() {
         OfLong v = JAVA_LONG
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER);
@@ -109,7 +109,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testOfFloat() {
         OfFloat v = JAVA_FLOAT
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER);
@@ -119,7 +119,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testOfDouble() {
         OfDouble v = JAVA_DOUBLE
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER);
@@ -129,7 +129,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testValueLayout() {
         ValueLayout v = ((ValueLayout) JAVA_INT)
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withOrder(BYTE_ORDER);
@@ -139,7 +139,7 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testAddressLayout() {
         AddressLayout v = ADDRESS
-                .withBitAlignment(BIT_ALIGNMENT)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME)
                 .withoutTargetLayout()
@@ -156,8 +156,8 @@ public class MemoryLayoutTypeRetentionTest {
 
     @Test
     public void testPaddingLayout() {
-        PaddingLayout v = MemoryLayout.paddingLayout(8)
-                .withBitAlignment(BIT_ALIGNMENT)
+        PaddingLayout v = MemoryLayout.paddingLayout(1)
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME);
         check(v);
@@ -166,9 +166,9 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testGroupLayout() {
         GroupLayout v = MemoryLayout.structLayout(
-                        JAVA_INT.withBitAlignment(BIT_ALIGNMENT),
-                        JAVA_LONG.withBitAlignment(BIT_ALIGNMENT))
-                .withBitAlignment(BIT_ALIGNMENT)
+                        JAVA_INT.withByteAlignment(BYTE_ALIGNMENT),
+                        JAVA_LONG.withByteAlignment(BYTE_ALIGNMENT))
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME);
         check(v);
@@ -177,9 +177,9 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testStructLayout() {
         StructLayout v = MemoryLayout.structLayout(
-                        JAVA_INT.withBitAlignment(BIT_ALIGNMENT),
-                        JAVA_LONG.withBitAlignment(BIT_ALIGNMENT))
-                .withBitAlignment(BIT_ALIGNMENT)
+                        JAVA_INT.withByteAlignment(BYTE_ALIGNMENT),
+                        JAVA_LONG.withByteAlignment(BYTE_ALIGNMENT))
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME);
         check(v);
@@ -188,9 +188,9 @@ public class MemoryLayoutTypeRetentionTest {
     @Test
     public void testUnionLayout() {
         UnionLayout v = MemoryLayout.unionLayout(
-                    JAVA_INT.withBitAlignment(BIT_ALIGNMENT),
-                    JAVA_LONG.withBitAlignment(BIT_ALIGNMENT))
-                .withBitAlignment(BIT_ALIGNMENT)
+                    JAVA_INT.withByteAlignment(BYTE_ALIGNMENT),
+                    JAVA_LONG.withByteAlignment(BYTE_ALIGNMENT))
+                .withByteAlignment(BYTE_ALIGNMENT)
                 .withoutName()
                 .withName(NAME);
         check(v);
@@ -206,8 +206,7 @@ public class MemoryLayoutTypeRetentionTest {
         assertEquals(v.name().orElseThrow(), NAME);
         assertTrue(v.withoutName().name().isEmpty());
 
-        assertEquals(v.bitAlignment(), BIT_ALIGNMENT);
-        assertEquals(v.byteSize() * 8, v.bitSize());
+        assertEquals(v.byteAlignment(), BYTE_ALIGNMENT);
     }
 
 }

@@ -65,7 +65,15 @@ import static jdk.internal.org.objectweb.asm.Opcodes.V12;
  */
 @Warmup(iterations = 3)
 @Measurement(iterations = 5)
-@Fork(1)
+@Fork(value = 1, jvmArgsAppend = {
+        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.instruction=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.components=ALL-UNNAMED",
+        "--add-exports", "java.base/jdk.internal.classfile.impl=ALL-UNNAMED"})
 public class Write {
     static String checkFileAsm = "/tmp/asw/MyClass.class";
     static String checkFileBc = "/tmp/byw/MyClass.class";
@@ -141,7 +149,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTree() {
 
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -189,7 +197,7 @@ public class Write {
     @BenchmarkMode(Mode.Throughput)
     public byte[] jdkTreePrimitive() {
 
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))

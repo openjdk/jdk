@@ -1262,7 +1262,7 @@ nmethod* SharedRuntime::generate_native_wrapper(MacroAssembler* masm,
   __ ldr(LR, Address(Rthread, JavaThread::active_handles_offset()));
   __ reset_last_Java_frame(Rtemp); // sets Rtemp to 0 on 32-bit ARM
 
-  __ str_32(Rtemp, Address(LR, JNIHandleBlock::top_offset_in_bytes()));
+  __ str_32(Rtemp, Address(LR, JNIHandleBlock::top_offset()));
   if (CheckJNICalls) {
     __ str(__ zero_register(Rtemp), Address(Rthread, JavaThread::pending_jni_exception_check_fn_offset()));
   }
@@ -1450,7 +1450,7 @@ void SharedRuntime::generate_deopt_blob() {
   __ mov(Rublock, R0);
 
   // Reload Rkind from the UnrollBlock (might have changed)
-  __ ldr_s32(Rkind, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+  __ ldr_s32(Rkind, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset()));
   Label noException;
   __ cmp_32(Rkind, Deoptimization::Unpack_exception);   // Was exception pending?
   __ b(noException, ne);
@@ -1484,9 +1484,9 @@ void SharedRuntime::generate_deopt_blob() {
   __ add(SP, SP, RegisterSaver::reg_save_size * wordSize);
 
   // Set initial stack state before pushing interpreter frames
-  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset_in_bytes()));
-  __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
-  __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset_in_bytes()));
+  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset()));
+  __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset()));
+  __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset()));
 
   __ add(SP, SP, Rtemp);
 
@@ -1502,11 +1502,11 @@ void SharedRuntime::generate_deopt_blob() {
   // propagated to the caller of the deoptimized method. Need to get the pc
   // from the caller in LR and restore FP.
   __ ldr(LR, Address(R2, 0));
-  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset()));
   __ arm_stack_overflow_check(R8, Rtemp);
 #endif
-  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset()));
 
   // Pick up the initial fp we should save
   // XXX Note: was ldr(FP, Address(FP));
@@ -1518,9 +1518,9 @@ void SharedRuntime::generate_deopt_blob() {
   // Hence, ldr(FP, Address(FP)) is probably not correct. For x86,
   // Deoptimization::fetch_unroll_info computes the right FP value and
   // stores it in Rublock.initial_info. This has been activated for ARM.
-  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset()));
 
-  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
+  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset()));
   __ mov(Rsender, SP);
   __ sub(SP, SP, Rtemp);
 
@@ -1561,7 +1561,7 @@ void SharedRuntime::generate_deopt_blob() {
 #ifdef ASSERT
   // Reload Rkind from the UnrollBlock and check that it was not overwritten (Rkind is not callee-saved)
   { Label L;
-    __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+    __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset()));
     __ cmp_32(Rkind, Rtemp);
     __ b(L, eq);
     __ stop("Rkind was overwritten");
@@ -1671,7 +1671,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
 #ifdef ASSERT
   { Label L;
-    __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+    __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::unpack_kind_offset()));
     __ cmp_32(Rtemp, Deoptimization::Unpack_uncommon_trap);
     __ b(L, eq);
     __ stop("SharedRuntime::generate_uncommon_trap_blob: expected Unpack_uncommon_trap");
@@ -1681,9 +1681,9 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 
 
   // Set initial stack state before pushing interpreter frames
-  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset_in_bytes()));
-  __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
-  __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset_in_bytes()));
+  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::size_of_deoptimized_frame_offset()));
+  __ ldr(R2, Address(Rublock, Deoptimization::UnrollBlock::frame_pcs_offset()));
+  __ ldr(R3, Address(Rublock, Deoptimization::UnrollBlock::frame_sizes_offset()));
 
   __ add(SP, SP, Rtemp);
 
@@ -1699,16 +1699,16 @@ void SharedRuntime::generate_uncommon_trap_blob() {
   // propagated to the caller of the deoptimized method. Need to get the pc
   // from the caller in LR and restore FP.
   __ ldr(LR, Address(R2, 0));
-  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
-  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset_in_bytes()));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::total_frame_sizes_offset()));
   __ arm_stack_overflow_check(R8, Rtemp);
 #endif
-  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
-  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
+  __ ldr_s32(R8, Address(Rublock, Deoptimization::UnrollBlock::number_of_frames_offset()));
+  __ ldr_s32(Rtemp, Address(Rublock, Deoptimization::UnrollBlock::caller_adjustment_offset()));
   __ mov(Rsender, SP);
   __ sub(SP, SP, Rtemp);
   //  __ ldr(FP, Address(FP));
-  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset_in_bytes()));
+  __ ldr(FP, Address(Rublock, Deoptimization::UnrollBlock::initial_info_offset()));
 
   // Push interpreter frames in a loop
   Label loop;

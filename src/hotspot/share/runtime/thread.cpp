@@ -72,6 +72,7 @@ Thread::Thread() {
   set_stack_size(0);
   set_lgrp_id(-1);
   DEBUG_ONLY(clear_suspendible_thread();)
+  DEBUG_ONLY(clear_indirectly_suspendible_thread();)
 
   // allocated data structures
   set_osthread(nullptr);
@@ -265,7 +266,7 @@ Thread::~Thread() {
   delete handle_area();
   delete metadata_handles();
 
-  // osthread() can be nullptr, if creation of thread failed.
+  // osthread() can be null, if creation of thread failed.
   if (osthread() != nullptr) os::free_thread(osthread());
 
   // Clear Thread::current if thread is deleting itself and it has not

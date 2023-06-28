@@ -903,8 +903,8 @@ static Method* new_method(
   m->set_constants(nullptr); // This will get filled in later
   m->set_name_index(cp->utf8(name));
   m->set_signature_index(cp->utf8(sig));
-  m->compute_from_signature(sig);
-  m->set_size_of_parameters(params);
+  m->constMethod()->compute_from_signature(sig, flags.is_static());
+  assert(m->size_of_parameters() == params, "should be computed above");
   m->set_max_stack(max_stack);
   m->set_max_locals(params);
   m->constMethod()->set_stackmap_data(nullptr);

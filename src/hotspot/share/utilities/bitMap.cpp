@@ -131,7 +131,7 @@ CHeapBitMap::CHeapBitMap(idx_t size_in_bits, MEMFLAGS flags, bool clear)
 }
 
 CHeapBitMap::~CHeapBitMap() {
-  free(map(), size());
+  free(map(), size_in_words());
 }
 
 bm_word_t* CHeapBitMap::allocate(idx_t size_in_words) const {
@@ -638,7 +638,7 @@ BitMap::idx_t BitMap::count_one_bits(idx_t beg, idx_t end) const {
     sum += count_one_bits_within_word(boundary, end);
   }
 
-  assert(sum <= (beg - end), "must be");
+  assert(sum <= (end - beg), "must be");
 
   return sum;
 

@@ -60,7 +60,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
   _node_info(arena(), 8,  0, SWNodeInfo::initial),          // info needed per node
   _clone_map(phase->C->clone_map()),                        // map of nodes created in cloning
-  _cmovev_kit(_arena, this),                                // map to facilitate CMoveV creation
   _align_to_ref(nullptr),                                   // memory reference to align vectors to
   _disjoint_ptrs(arena(), 8,  0, OrderedPair::initial),     // runtime disambiguated pointer pairs
   _dg(_arena),                                              // dependence graph
@@ -80,10 +79,7 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _do_vector_loop(phase->C->do_vector_loop()),              // whether to do vectorization/simd style
   _do_reserve_copy(DoReserveCopyInSuperWord),
   _num_work_vecs(0),                                        // amount of vector work we have
-  _num_reductions(0),                                       // amount of reduction work we have
-  _ii_first(-1),                                            // first loop generation index - only if do_vector_loop()
-  _ii_last(-1),                                             // last loop generation index - only if do_vector_loop()
-  _ii_order(arena(), 8, 0, 0)
+  _num_reductions(0)                                        // amount of reduction work we have
 {
 #ifndef PRODUCT
   _vector_loop_debug = 0;
@@ -93,8 +89,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
 
 #endif
 }
-
-static const bool _do_vector_loop_experimental = false; // Experimental vectorization which uses data from loop unrolling.
 
 //------------------------------transform_loop---------------------------
 bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
@@ -609,32 +603,6 @@ bool SuperWord::SLP_extract() {
 
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   if (cl->is_main_loop()) {
-    if (_do_vector_loop_experimental) {
-      if (mark_generations() != -1) {
-        hoist_loads_in_graph(); // this only rebuild the graph; all basic structs need rebuild explicitly
-
-        if (!construct_bb()) {
-          return false; // Exit if no interesting nodes or complex graph.
-        }
-        dependence_graph();
-        compute_max_depth();
-      }
-
-#ifndef PRODUCT
-      if (TraceSuperWord) {
-        tty->print_cr("\nSuperWord::_do_vector_loop: graph after hoist_loads_in_graph");
-        _lpt->dump_head();
-        for (int j = 0; j < _block.length(); j++) {
-          Node* n = _block.at(j);
-          int d = depth(n);
-          for (int i = 0; i < d; i++) tty->print("%s", "  ");
-          tty->print("%d :", d);
-          n->dump();
-        }
-      }
-#endif
-    }
-
     compute_vector_element_type();
 
     // Attempt vectorization
@@ -647,23 +615,9 @@ bool SuperWord::SLP_extract() {
 
     extend_packlist();
 
-    if (_do_vector_loop_experimental) {
-      if (_packset.length() == 0) {
-#ifndef PRODUCT
-        if (TraceSuperWord) {
-          tty->print_cr("\nSuperWord::_do_vector_loop DFA could not build packset, now trying to build anyway");
-        }
-#endif
-        pack_parallel();
-      }
-    }
-
     combine_packs();
 
     construct_my_pack_map();
-    if (UseVectorCmov) {
-      merge_packs_to_cmove();
-    }
 
     filter_packs();
 
@@ -770,9 +724,9 @@ void SuperWord::find_adjacent_refs() {
       }
     }
 
-    if (can_create_pairs(mem_ref, iv_adjustment, align_to_ref_p,
-                         best_align_to_mem_ref, best_iv_adjustment,
-                         align_to_refs)) {
+    if (mem_ref_has_no_alignment_violation(mem_ref, iv_adjustment, align_to_ref_p,
+                                           best_align_to_mem_ref, best_iv_adjustment,
+                                           align_to_refs)) {
       // Create initial pack pairs of memory operations for which alignment was set.
       for (uint i = 0; i < memops.size(); i++) {
         Node* s1 = memops.at(i);
@@ -882,93 +836,45 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
 }
 #endif
 
-// Check if we can create the pack pairs for mem_ref:
-// If required, enforce strict alignment requirements of hardware.
-// Else, only enforce alignment within a memory slice, so that there cannot be any
-// memory-dependence between different vector "lanes".
-bool SuperWord::can_create_pairs(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
-                                 MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                                 Node_List &align_to_refs) {
-  bool is_aligned_with_best = memory_alignment(mem_ref, best_iv_adjustment) == 0;
-
-  if (vectors_should_be_aligned()) {
-    // All vectors need to be memory aligned, modulo their vector_width. This is more strict
-    // than the hardware probably requires. Most hardware at most requires 4-byte alignment.
-    //
-    // In the pre-loop, we align best_align_to_mem_ref to its vector_length. To ensure that
-    // all mem_ref's are memory aligned modulo their vector_width, we only need to check that
-    // they are all aligned to best_align_to_mem_ref, modulo their vector_width. For that,
-    // we check the following 3 conditions.
-
-    // (1) All packs are aligned with best_align_to_mem_ref.
-    if (!is_aligned_with_best) {
-      return false;
-    }
-    // (2) All other vectors have vector_size less or equal to that of best_align_to_mem_ref.
-    int vw = vector_width(mem_ref);
-    int vw_best = vector_width(best_align_to_mem_ref);
-    if (vw > vw_best) {
-      // We only align to vector_width of best_align_to_mem_ref during pre-loop.
-      // A mem_ref with a larger vector_width might thus not be vector_width aligned.
-      return false;
-    }
-    // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
-    //     address = base + k*iv + constant [+ invar]
-    //     memory_alignment ignores the invariant.
-    SWPointer p2(best_align_to_mem_ref, this, nullptr, false);
-    if (!align_to_ref_p.invar_equals(p2)) {
-      // Do not vectorize memory accesses with different invariants
-      // if unaligned memory accesses are not allowed.
-      return false;
-    }
+// If strict memory alignment is required (vectors_should_be_aligned), then check if
+// mem_ref is aligned with best_align_to_mem_ref.
+bool SuperWord::mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                                                   MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                                                   Node_List &align_to_refs) {
+  if (!vectors_should_be_aligned()) {
+    // Alignment is not required by the hardware. No violation possible.
     return true;
-  } else {
-    // Alignment is not required by the hardware.
-
-    // However, we need to ensure that the pack for mem_ref is independent, i.e. all members
-    // of the pack are mutually independent.
-
-    if (_do_vector_loop) {
-      // Wait until combine_packs to check independence of packs. For now we just know that
-      // the adjacent pairs are independent. This allows us to vectorize when we do not have
-      // alignment modulo vector_width. For example (forward read):
-      // for (int i ...) { v[i] = v[i + 1] + 5; }
-      // The following will be filtered out in combine_packs (forward write):
-      // for (int i ...) { v[i + 1] = v[i] + 5; }
-      return true;
-    }
-
-    // If all mem_ref's are modulo vector_width aligned with all other mem_ref's of their
-    // memory slice, then the VectorLoad / VectorStore regions are either exactly overlapping
-    // or completely non-overlapping. This ensures that there cannot be memory-dependencies
-    // between different vector "lanes".
-    // During SuperWord::filter_packs -> SuperWord::profitable -> SuperWord::is_vector_use,
-    // we check that all inputs are vectors that match on every element (with some reasonable
-    // exceptions). This ensures that every "lane" is isomorpic and independent to all other
-    // "lanes". This allows us to vectorize these cases:
-    // for (int i ...) { v[i] = v[i] + 5; }      // same alignment
-    // for (int i ...) { v[i] = v[i + 32] + 5; } // alignment modulo vector_width
-    if (same_memory_slice(mem_ref, best_align_to_mem_ref)) {
-      return is_aligned_with_best;
-    } else {
-      return is_mem_ref_aligned_with_same_memory_slice(mem_ref, iv_adjustment, align_to_refs);
-    }
   }
-}
 
-// Check if alignment of mem_ref is consistent with the other packs of the same memory slice
-bool SuperWord::is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment,
-                                                          Node_List &align_to_refs) {
-  for (uint i = 0; i < align_to_refs.size(); i++) {
-    MemNode* mr = align_to_refs.at(i)->as_Mem();
-    if (mr != mem_ref &&
-        same_memory_slice(mr, mem_ref) &&
-        memory_alignment(mr, iv_adjustment) != 0) {
-      // mem_ref is misaligned with mr, another ref of the same memory slice.
-      return false;
-    }
+  // All vectors need to be memory aligned, modulo their vector_width. This is more strict
+  // than the hardware probably requires. Most hardware at most requires 4-byte alignment.
+  //
+  // In the pre-loop, we align best_align_to_mem_ref to its vector_length. To ensure that
+  // all mem_ref's are memory aligned modulo their vector_width, we only need to check that
+  // they are all aligned to best_align_to_mem_ref, modulo their vector_width. For that,
+  // we check the following 3 conditions.
+
+  // (1) All packs are aligned with best_align_to_mem_ref.
+  if (memory_alignment(mem_ref, best_iv_adjustment) != 0) {
+    return false;
   }
-  // No misalignment found.
+  // (2) All other vectors have vector_size less or equal to that of best_align_to_mem_ref.
+  int vw = vector_width(mem_ref);
+  int vw_best = vector_width(best_align_to_mem_ref);
+  if (vw > vw_best) {
+    // We only align to vector_width of best_align_to_mem_ref during pre-loop.
+    // A mem_ref with a larger vector_width might thus not be vector_width aligned.
+    return false;
+  }
+  // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
+  //     address = base + k*iv + constant [+ invar]
+  //     memory_alignment ignores the invariant.
+  SWPointer p2(best_align_to_mem_ref, this, nullptr, false);
+  if (!align_to_ref_p.invar_equals(p2)) {
+    // Do not vectorize memory accesses with different invariants
+    // if unaligned memory accesses are not allowed.
+    return false;
+  }
   return true;
 }
 
@@ -1622,18 +1528,6 @@ void SuperWord::set_alignment(Node* s1, Node* s2, int align) {
 
 //------------------------------data_size---------------------------
 int SuperWord::data_size(Node* s) {
-  Node* use = nullptr; //test if the node is a candidate for CMoveV optimization, then return the size of CMov
-  if (UseVectorCmov) {
-    use = _cmovev_kit.is_Bool_candidate(s);
-    if (use != nullptr) {
-      return data_size(use);
-    }
-    use = _cmovev_kit.is_Cmp_candidate(s);
-    if (use != nullptr) {
-      return data_size(use);
-    }
-  }
-
   int bsize = type2aelembytes(velt_basic_type(s));
   assert(bsize != 0, "valid size");
   return bsize;
@@ -1959,9 +1853,14 @@ void SuperWord::combine_packs() {
       assert(is_power_of_2(max_vlen), "sanity");
       uint psize = p1->size();
       if (!is_power_of_2(psize)) {
-        // Skip pack which can't be vector.
-        // case1: for(...) { a[i] = i; }    elements values are different (i+x)
-        // case2: for(...) { a[i] = b[i+1]; }  can't align both, load and store
+        // We currently only support power-of-2 sizes for vectors.
+#ifndef PRODUCT
+        if (TraceSuperWord) {
+          tty->cr();
+          tty->print_cr("WARNING: Removed pack[%d] with size that is not a power of 2:", i);
+          print_pack(p1);
+        }
+#endif
         _packset.at_put(i, nullptr);
         continue;
       }
@@ -1980,28 +1879,41 @@ void SuperWord::combine_packs() {
     }
   }
 
-  if (_do_vector_loop) {
-    // Since we did not enforce exact alignment of the packsets, we only know that there
-    // is no dependence with distance 1, because we have checked independent(s1, s2) for
-    // all adjacent memops. But there could be a dependence of a different distance.
-    // Hence: remove the pack if there is a dependence.
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* p = _packset.at(i);
-      if (p != nullptr) {
-        Node* dependence = find_dependence(p);
-        if (dependence != nullptr) {
+  // We know that the nodes in a pair pack were independent - this gives us independence
+  // at distance 1. But now that we may have more than 2 nodes in a pack, we need to check
+  // if they are all mutually independent. If there is a dependence we remove the pack.
+  // This is better than giving up completely - we can have partial vectorization if some
+  // are rejected and others still accepted.
+  //
+  // Examples with dependence at distance 1 (pack pairs are not created):
+  // for (int i ...) { v[i + 1] = v[i] + 5; }
+  // for (int i ...) { v[i] = v[i - 1] + 5; }
+  //
+  // Example with independence at distance 1, but dependence at distance 2 (pack pairs are
+  // created and we need to filter them out now):
+  // for (int i ...) { v[i + 2] = v[i] + 5; }
+  // for (int i ...) { v[i] = v[i - 2] + 5; }
+  //
+  // Note: dependencies are created when a later load may reference the same memory location
+  // as an earlier store. This happens in "read backward" or "store forward" cases. On the
+  // other hand, "read forward" or "store backward" cases do not have such dependencies:
+  // for (int i ...) { v[i] = v[i + 1] + 5; }
+  // for (int i ...) { v[i - 1] = v[i] + 5; }
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    if (p != nullptr) {
+      Node* dependence = find_dependence(p);
+      if (dependence != nullptr) {
 #ifndef PRODUCT
-          if (TraceSuperWord) {
-            tty->cr();
-            tty->print_cr("WARNING: Found dependency.");
-            tty->print_cr("Cannot vectorize despite compile directive Vectorize.");
-            dependence->dump();
-            tty->print_cr("In pack[%d]", i);
-            print_pack(p);
-          }
-#endif
-          _packset.at_put(i, nullptr);
+        if (TraceSuperWord) {
+          tty->cr();
+          tty->print_cr("WARNING: Found dependency at distance greater than 1.");
+          dependence->dump();
+          tty->print_cr("In pack[%d]", i);
+          print_pack(p);
         }
+#endif
+        _packset.at_put(i, nullptr);
       }
     }
   }
@@ -2094,213 +2006,6 @@ void SuperWord::filter_packs() {
 #endif
 }
 
-//------------------------------merge_packs_to_cmove---------------------------
-// Merge qualified CMove into new vector-nodes
-// We want to catch this pattern and subsume Cmp and Bool into CMove
-//
-//                   Sub              Con
-//                  /  |               /
-//                 /   |           /   /
-//                /    |       /      /
-//               /     |   /         /
-//              /      /            /
-//             /    /  |           /
-//            v /      |          /
-//         Cmp         |         /
-//          |          |        /
-//          v          |       /
-//         Bool        |      /
-//           \         |     /
-//             \       |    /
-//               \     |   /
-//                 \   |  /
-//                   \ v /
-//                   CMove
-//
-
-void SuperWord::merge_packs_to_cmove() {
-  for (int i = _packset.length() - 1; i >= 0; i--) {
-    Node_List* pk = _packset.at(i);
-    if (_cmovev_kit.can_merge_cmove_pack(pk)) {
-      _cmovev_kit.make_cmove_pack(pk);
-    }
-  }
-
-  #ifndef PRODUCT
-    if (TraceSuperWord) {
-      tty->print_cr("\nSuperWord::merge_packs_to_cmove(): After merge");
-      print_packset();
-      tty->cr();
-    }
-  #endif
-}
-
-Node* CMoveKit::is_Bool_candidate(Node* def) const {
-  Node* use = nullptr;
-  if (!def->is_Bool() || def->in(0) != nullptr || def->outcnt() != 1) {
-    return nullptr;
-  }
-  for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
-    use = def->fast_out(j);
-    if (!_sw->same_generation(def, use) || !use->is_CMove()) {
-      return nullptr;
-    }
-  }
-  return use;
-}
-
-Node* CMoveKit::is_Cmp_candidate(Node* def) const {
-  Node* use = nullptr;
-  if (!def->is_Cmp() || def->in(0) != nullptr || def->outcnt() != 1) {
-    return nullptr;
-  }
-  for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
-    use = def->fast_out(j);
-    if (!_sw->same_generation(def, use) || (use = is_Bool_candidate(use)) == nullptr || !_sw->same_generation(def, use)) {
-      return nullptr;
-    }
-  }
-  return use;
-}
-
-// Determine if the current pack is an ideal cmove pack, and if its related packs,
-// i.e. bool node pack and cmp node pack, can be successfully merged for vectorization.
-bool CMoveKit::can_merge_cmove_pack(Node_List* cmove_pk) {
-  Node* cmove = cmove_pk->at(0);
-
-  if (!SuperWord::is_cmove_fp_opcode(cmove->Opcode()) ||
-      pack(cmove) != nullptr /* already in the cmove pack */) {
-    return false;
-  }
-
-  if (cmove->in(0) != nullptr) {
-    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: CMove %d has control flow, escaping...", cmove->_idx); cmove->dump();})
-    return false;
-  }
-
-  Node* bol = cmove->as_CMove()->in(CMoveNode::Condition);
-  if (!bol->is_Bool() ||
-      bol->outcnt() != 1 ||
-      !_sw->same_generation(bol, cmove) ||
-      bol->in(0) != nullptr || // Bool node has control flow!!
-      _sw->my_pack(bol) == nullptr) {
-      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Bool %d does not fit CMove %d for building vector, escaping...", bol->_idx, cmove->_idx); bol->dump();})
-    return false;
-  }
-  Node_List* bool_pk = _sw->my_pack(bol);
-  if (bool_pk->size() != cmove_pk->size() ) {
-    return false;
-  }
-
-  Node* cmp = bol->in(1);
-  if (!cmp->is_Cmp() ||
-      cmp->outcnt() != 1 ||
-      !_sw->same_generation(cmp, cmove) ||
-      cmp->in(0) != nullptr || // Cmp node has control flow!!
-      _sw->my_pack(cmp) == nullptr) {
-      NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: Cmp %d does not fit CMove %d for building vector, escaping...", cmp->_idx, cmove->_idx); cmp->dump();})
-    return false;
-  }
-  Node_List* cmp_pk = _sw->my_pack(cmp);
-  if (cmp_pk->size() != cmove_pk->size() ) {
-    return false;
-  }
-
-  if (!test_cmp_pack(cmp_pk, cmove_pk)) {
-    NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print("CMoveKit::can_merge_cmove_pack: cmp pack for Cmp %d failed vectorization test", cmp->_idx); cmp->dump();})
-    return false;
-  }
-
-  return true;
-}
-
-// Create a new cmove pack to substitute the old one, map all info to the
-// new pack and delete the old cmove pack and related packs from the packset.
-void CMoveKit::make_cmove_pack(Node_List* cmove_pk) {
-  Node* cmove = cmove_pk->at(0);
-  Node* bol = cmove->as_CMove()->in(CMoveNode::Condition);
-  Node_List* bool_pk = _sw->my_pack(bol);
-  Node* cmp = bol->in(1);
-  Node_List* cmp_pk = _sw->my_pack(cmp);
-
-  Node_List* new_cmove_pk = new Node_List();
-  uint sz = cmove_pk->size() - 1;
-  for (uint i = 0; i <= sz; ++i) {
-    Node* cmov = cmove_pk->at(i);
-    Node* bol  = bool_pk->at(i);
-    Node* cmp  = cmp_pk->at(i);
-
-    new_cmove_pk->insert(i, cmov);
-
-    map(cmov, new_cmove_pk);
-    map(bol, new_cmove_pk);
-    map(cmp, new_cmove_pk);
-
-    _sw->set_my_pack(cmov, new_cmove_pk); // and keep old packs for cmp and bool
-  }
-  _sw->_packset.remove(cmove_pk);
-  _sw->_packset.remove(bool_pk);
-  _sw->_packset.remove(cmp_pk);
-  _sw->_packset.append(new_cmove_pk);
-  NOT_PRODUCT(if(_sw->is_trace_cmov()) {tty->print_cr("CMoveKit::make_cmove_pack: added syntactic CMove pack"); _sw->print_pack(new_cmove_pk);})
-}
-
-bool CMoveKit::test_cmp_pack(Node_List* cmp_pk, Node_List* cmove_pk) {
-  Node* cmp0 = cmp_pk->at(0);
-  assert(cmp0->is_Cmp(), "CMoveKit::test_cmp_pack: should be Cmp Node");
-  assert(cmove_pk->at(0)->is_CMove(), "CMoveKit::test_cmp_pack: should be CMove");
-  assert(cmp_pk->size() == cmove_pk->size(), "CMoveKit::test_cmp_pack: should be same size");
-  Node* in1 = cmp0->in(1);
-  Node* in2 = cmp0->in(2);
-  Node_List* in1_pk = _sw->my_pack(in1);
-  Node_List* in2_pk = _sw->my_pack(in2);
-
-  if (  (in1_pk != nullptr && in1_pk->size() != cmp_pk->size())
-     || (in2_pk != nullptr && in2_pk->size() != cmp_pk->size()) ) {
-    return false;
-  }
-
-  // test if "all" in1 are in the same pack or the same node
-  if (in1_pk == nullptr) {
-    for (uint j = 1; j < cmp_pk->size(); j++) {
-      if (cmp_pk->at(j)->in(1) != in1) {
-        return false;
-      }
-    }//for: in1_pk is not pack but all Cmp nodes in the pack have the same in(1)
-  }
-  // test if "all" in2 are in the same pack or the same node
-  if (in2_pk == nullptr) {
-    for (uint j = 1; j < cmp_pk->size(); j++) {
-      if (cmp_pk->at(j)->in(2) != in2) {
-        return false;
-      }
-    }//for: in2_pk is not pack but all Cmp nodes in the pack have the same in(2)
-  }
-  //now check if cmp_pk may be subsumed in vector built for cmove_pk
-  int cmove_ind1, cmove_ind2;
-  if (cmp_pk->at(0)->in(1) == cmove_pk->at(0)->as_CMove()->in(CMoveNode::IfFalse)
-   && cmp_pk->at(0)->in(2) == cmove_pk->at(0)->as_CMove()->in(CMoveNode::IfTrue)) {
-      cmove_ind1 = CMoveNode::IfFalse;
-      cmove_ind2 = CMoveNode::IfTrue;
-  } else if (cmp_pk->at(0)->in(2) == cmove_pk->at(0)->as_CMove()->in(CMoveNode::IfFalse)
-          && cmp_pk->at(0)->in(1) == cmove_pk->at(0)->as_CMove()->in(CMoveNode::IfTrue)) {
-      cmove_ind2 = CMoveNode::IfFalse;
-      cmove_ind1 = CMoveNode::IfTrue;
-  }
-  else {
-    return false;
-  }
-
-  for (uint j = 1; j < cmp_pk->size(); j++) {
-    if (cmp_pk->at(j)->in(1) != cmove_pk->at(j)->as_CMove()->in(cmove_ind1)
-        || cmp_pk->at(j)->in(2) != cmove_pk->at(j)->as_CMove()->in(cmove_ind2)) {
-        return false;
-    }//if
-  }
-  NOT_PRODUCT(if(_sw->is_trace_cmov()) { tty->print("CMoveKit::test_cmp_pack: cmp pack for 1st Cmp %d is OK for vectorization: ", cmp0->_idx); cmp0->dump(); })
-  return true;
-}
-
 //------------------------------implemented---------------------------
 // Can code be generated for pack p?
 bool SuperWord::implemented(Node_List* p) {
@@ -2325,9 +2030,9 @@ bool SuperWord::implemented(Node_List* p) {
       // integer subword types with superword vectorization.
       // See JDK-8294816 for miscompilation issues with shorts.
       return false;
-    } else if (is_cmove_fp_opcode(opc)) {
-      retValue = is_cmov_pack(p) && VectorNode::implemented(opc, size, velt_basic_type(p0));
-      NOT_PRODUCT(if(retValue && is_trace_cmov()) {tty->print_cr("SWPointer::implemented: found cmove pack"); print_pack(p);})
+    } else if (p0->is_Cmp()) {
+      // Cmp -> Bool -> Cmove
+      retValue = UseVectorCmov;
     } else if (requires_long_to_int_conversion(opc)) {
       // Java API for Long.bitCount/numberOfLeadingZeros/numberOfTrailingZeros
       // returns int type, but Vector API for them returns long type. To unify
@@ -2348,10 +2053,6 @@ bool SuperWord::implemented(Node_List* p) {
     }
   }
   return retValue;
-}
-
-bool SuperWord::is_cmov_pack(Node_List* p) {
-  return _cmovev_kit.pack(p->at(0)) != nullptr;
 }
 
 bool SuperWord::requires_long_to_int_conversion(int opc) {
@@ -2427,9 +2128,6 @@ bool SuperWord::profitable(Node_List* p) {
     // just the ones outside the block.)
     for (uint i = 0; i < p->size(); i++) {
       Node* def = p->at(i);
-      if (is_cmov_pack_internal_node(p, def)) {
-        continue;
-      }
       for (DUIterator_Fast jmax, j = def->fast_outs(jmax); j < jmax; j++) {
         Node* use = def->fast_out(j);
         for (uint k = 0; k < use->req(); k++) {
@@ -2450,11 +2148,30 @@ bool SuperWord::profitable(Node_List* p) {
       }
     }
   }
+  if (p0->is_Cmp()) {
+    // Verify that Cmp pack only has Bool pack uses
+    for (DUIterator_Fast jmax, j = p0->fast_outs(jmax); j < jmax; j++) {
+      Node* bol = p0->fast_out(j);
+      if (!bol->is_Bool() || bol->in(0) != nullptr || !is_vector_use(bol, 1)) {
+        return false;
+      }
+    }
+  }
+  if (p0->is_Bool()) {
+    // Verify that Bool pack only has CMove pack uses
+    for (DUIterator_Fast jmax, j = p0->fast_outs(jmax); j < jmax; j++) {
+      Node* cmove = p0->fast_out(j);
+      if (!cmove->is_CMove() || cmove->in(0) != nullptr || !is_vector_use(cmove, 1)) {
+        return false;
+      }
+    }
+  }
   return true;
 }
 
 #ifdef ASSERT
 void SuperWord::verify_packs() {
+  // Verify independence at pack level.
   for (int i = 0; i < _packset.length(); i++) {
     Node_List* p = _packset.at(i);
     Node* dependence = find_dependence(p);
@@ -2472,6 +2189,27 @@ void SuperWord::verify_packs() {
       print_pack(p);
     }
     assert(dependence == nullptr, "all nodes in pack must be mutually independent");
+  }
+
+  // Verify all nodes in packset have my_pack set correctly.
+  Unique_Node_List processed;
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    for (uint k = 0; k < p->size(); k++) {
+      Node* n = p->at(k);
+      assert(in_bb(n), "only nodes in bb can be in packset");
+      assert(!processed.member(n), "node should only occur once in packset");
+      assert(my_pack(n) == p, "n has consisten packset info");
+      processed.push(n);
+    }
+  }
+
+  // Check that no other node has my_pack set.
+  for (int i = 0; i < _block.length(); i++) {
+    Node* n = _block.at(i);
+    if (!processed.member(n)) {
+      assert(my_pack(n) == nullptr, "should not have pack if not in packset");
+    }
   }
 }
 #endif
@@ -2577,7 +2315,7 @@ public:
       if (pid == 0) {
         pid = new_pid();
         set_pid(n, pid);
-        assert(_slp->my_pack(n) == nullptr || UseVectorCmov, "no packset");
+        assert(_slp->my_pack(n) == nullptr, "no packset");
       }
     }
 
@@ -2896,6 +2634,7 @@ bool SuperWord::output() {
     // Create a vector mask node for post loop, bail out if not created
     vmask = create_post_loop_vmask();
     if (vmask == nullptr) {
+      // create_post_loop_vmask checks many conditions, any of them could fail
       return false; // and reverse to backup IG
     }
   }
@@ -2950,6 +2689,7 @@ bool SuperWord::output() {
         if (val == nullptr) {
           if (do_reserve_copy()) {
             NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: val should not be null, exiting SuperWord");})
+            assert(false, "input to vector store was not created");
             return false; //and reverse to backup IG
           }
           ShouldNotReachHere();
@@ -2995,7 +2735,89 @@ bool SuperWord::output() {
         Node* one = vector_opd(p, 3);
         vn = VectorNode::make(opc, in, zero, one, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
-      } else if (n->req() == 3 && !is_cmov_pack(p)) {
+      } else if (n->is_Cmp()) {
+        // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
+        continue;
+      } else if (n->is_Bool()) {
+        // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
+        continue;
+      } else if (n->is_CMove()) {
+        // Bool + Cmp + CMove -> VectorMaskCmp + VectorBlend
+
+        BoolNode* bol = n->in(1)->as_Bool();
+        assert(bol != nullptr, "must have Bool above CMove");
+        BoolTest::mask bol_test = bol->_test._test;
+        assert(bol_test == BoolTest::eq ||
+               bol_test == BoolTest::ne ||
+               bol_test == BoolTest::ge ||
+               bol_test == BoolTest::gt ||
+               bol_test == BoolTest::lt ||
+               bol_test == BoolTest::le,
+               "CMove bool should be one of: eq,ne,ge,ge,lt,le");
+        Node_List* p_bol = my_pack(bol);
+        assert(p_bol != nullptr, "CMove must have matching Bool pack");
+
+        CmpNode* cmp = bol->in(1)->as_Cmp();
+        assert(cmp != nullptr, "must have cmp above CMove");
+        Node_List* p_cmp = my_pack(cmp);
+        assert(p_cmp != nullptr, "Bool must have matching Cmp pack");
+
+        Node* cmp_in1 = vector_opd(p_cmp, 1);
+        Node* cmp_in2 = vector_opd(p_cmp, 2);
+
+        Node* blend_in1 = vector_opd(p, 2);
+        Node* blend_in2 = vector_opd(p, 3);
+
+        if (cmp->Opcode() == Op_CmpF || cmp->Opcode() == Op_CmpD) {
+          // If we have a Float or Double comparison, we must be careful with
+          // handling NaN's correctly. CmpF and CmpD have a return code, as
+          // they are based on the java bytecodes fcmpl/dcmpl:
+          // -1: cmp_in1 <  cmp_in2, or at least one of the two is a NaN
+          //  0: cmp_in1 == cmp_in2  (no NaN)
+          //  1: cmp_in1 >  cmp_in2  (no NaN)
+          //
+          // The "bol_test" selects which of the [-1, 0, 1] cases lead to "true".
+          //
+          // Note: ordered   (O) comparison returns "false" if either input is NaN.
+          //       unordered (U) comparison returns "true"  if either input is NaN.
+          //
+          // The VectorMaskCmpNode does a comparison directly on in1 and in2, in the java
+          // standard way (all comparisons are ordered, except NEQ is unordered).
+          //
+          // In the following, "bol_test" already matches the cmp code for VectorMaskCmpNode:
+          //   BoolTest::eq:  Case 0     -> EQ_O
+          //   BoolTest::ne:  Case -1, 1 -> NEQ_U
+          //   BoolTest::ge:  Case 0, 1  -> GE_O
+          //   BoolTest::gt:  Case 1     -> GT_O
+          //
+          // But the lt and le comparisons must be converted from unordered to ordered:
+          //   BoolTest::lt:  Case -1    -> LT_U -> VectorMaskCmp would interpret lt as LT_O
+          //   BoolTest::le:  Case -1, 0 -> LE_U -> VectorMaskCmp would interpret le as LE_O
+          //
+          if (bol_test == BoolTest::lt || bol_test == BoolTest::le) {
+            // Negating the bol_test and swapping the blend-inputs leaves all non-NaN cases equal,
+            // but converts the unordered (U) to an ordered (O) comparison.
+            //      VectorBlend(VectorMaskCmp(LT_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+            // <==> VectorBlend(VectorMaskCmp(GE_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+            //      VectorBlend(VectorMaskCmp(LE_U, in1_cmp, in2_cmp), in1_blend, in2_blend)
+            // <==> VectorBlend(VectorMaskCmp(GT_O, in1_cmp, in2_cmp), in2_blend, in1_blend)
+            bol_test = bol->_test.negate();
+            swap(blend_in1, blend_in2);
+          }
+        }
+
+        // VectorMaskCmp
+        ConINode* bol_test_node  = _igvn.intcon((int)bol_test);
+        BasicType bt = velt_basic_type(cmp);
+        const TypeVect* vt = TypeVect::make(bt, vlen);
+        VectorNode* mask = new VectorMaskCmpNode(bol_test, cmp_in1, cmp_in2, bol_test_node, vt);
+        _igvn.register_new_node_with_optimizer(mask);
+        _phase->set_ctrl(mask, _phase->get_ctrl(p->at(0)));
+        _igvn._worklist.push(mask);
+
+        // VectorBlend
+        vn = new VectorBlendNode(blend_in1, blend_in2, mask);
+      } else if (n->req() == 3) {
         // Promote operands to vector
         Node* in1 = nullptr;
         bool node_isa_reduction = is_marked_reduction(n);
@@ -3007,6 +2829,7 @@ bool SuperWord::output() {
           if (in1 == nullptr) {
             if (do_reserve_copy()) {
               NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: in1 should not be null, exiting SuperWord");})
+              assert(false, "input in1 to vector operand was not created");
               return false; //and reverse to backup IG
             }
             ShouldNotReachHere();
@@ -3016,6 +2839,7 @@ bool SuperWord::output() {
         if (in2 == nullptr) {
           if (do_reserve_copy()) {
             NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: in2 should not be null, exiting SuperWord");})
+            assert(false, "input in2 to vector operand was not created");
             return false; //and reverse to backup IG
           }
           ShouldNotReachHere();
@@ -3079,85 +2903,6 @@ bool SuperWord::output() {
         int vopc = VectorCastNode::opcode(opc, in->bottom_type()->is_vect()->element_basic_type());
         vn = VectorCastNode::make(vopc, in, bt, vlen);
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
-      } else if (is_cmov_pack(p)) {
-        if (cl->is_rce_post_loop()) {
-          // do not refactor of flow in post loop context
-          return false;
-        }
-        if (!n->is_CMove()) {
-          continue;
-        }
-        // place here CMoveVDNode
-        NOT_PRODUCT(if(is_trace_cmov()) {tty->print_cr("SWPointer::output: print before CMove vectorization"); print_loop(false);})
-        Node* bol = n->in(CMoveNode::Condition);
-        if (!bol->is_Bool() && bol->Opcode() == Op_ExtractI && bol->req() > 1 ) {
-          NOT_PRODUCT(if(is_trace_cmov()) {tty->print_cr("SWPointer::output: %d is not Bool node, trying its in(1) node %d", bol->_idx, bol->in(1)->_idx); bol->dump(); bol->in(1)->dump();})
-          bol = bol->in(1); //may be ExtractNode
-        }
-
-        assert(bol->is_Bool(), "should be BoolNode - too late to bail out!");
-        if (!bol->is_Bool()) {
-          if (do_reserve_copy()) {
-            NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: expected %d bool node, exiting SuperWord", bol->_idx); bol->dump();})
-            return false; //and reverse to backup IG
-          }
-          ShouldNotReachHere();
-        }
-
-        BoolTest boltest = bol->as_Bool()->_test;
-        BoolTest::mask cond = boltest._test;
-        Node* cmp = bol->in(1);
-        // When the src order of cmp node and cmove node are the same:
-        //   cmp: CmpD src1 src2
-        //   bool: Bool cmp mask
-        //   cmove: CMoveD bool scr1 src2
-        // =====> vectorized, equivalent to
-        //   cmovev: CMoveVD mask src_vector1 src_vector2
-        //
-        // When the src order of cmp node and cmove node are different:
-        //   cmp: CmpD src2 src1
-        //   bool: Bool cmp mask
-        //   cmove: CMoveD bool scr1 src2
-        // =====> equivalent to
-        //   cmp: CmpD src1 src2
-        //   bool: Bool cmp negate(mask)
-        //   cmove: CMoveD bool scr1 src2
-        // (Note: when mask is ne or eq, we don't need to negate it even after swapping.)
-        // =====> vectorized, equivalent to
-        //   cmovev: CMoveVD negate(mask) src_vector1 src_vector2
-        if (cmp->in(2) == n->in(CMoveNode::IfFalse) && cond != BoolTest::ne && cond != BoolTest::eq) {
-          assert(cmp->in(1) == n->in(CMoveNode::IfTrue), "cmpnode and cmovenode don't share the same inputs.");
-          cond = boltest.negate();
-        }
-        Node* cc  = _igvn.intcon((int)cond);
-        NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created intcon in_cc node %d", cc->_idx); cc->dump();})
-
-        Node* src1 = vector_opd(p, 2); //2=CMoveNode::IfFalse
-        if (src1 == nullptr) {
-          if (do_reserve_copy()) {
-            NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: src1 should not be null, exiting SuperWord");})
-            return false; //and reverse to backup IG
-          }
-          ShouldNotReachHere();
-        }
-        Node* src2 = vector_opd(p, 3); //3=CMoveNode::IfTrue
-        if (src2 == nullptr) {
-          if (do_reserve_copy()) {
-            NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: src2 should not be null, exiting SuperWord");})
-            return false; //and reverse to backup IG
-          }
-          ShouldNotReachHere();
-        }
-        BasicType bt = velt_basic_type(n);
-        const TypeVect* vt = TypeVect::make(bt, vlen);
-        assert(bt == T_FLOAT || bt == T_DOUBLE, "Only vectorization for FP cmovs is supported");
-        if (bt == T_FLOAT) {
-          vn = new CMoveVFNode(cc, src1, src2, vt);
-        } else {
-          assert(bt == T_DOUBLE, "Expected double");
-          vn = new CMoveVDNode(cc, src1, src2, vt);
-        }
-        NOT_PRODUCT(if(is_trace_cmov()) {tty->print("SWPointer::output: created new CMove node %d: ", vn->_idx); vn->dump();})
       } else if (opc == Op_FmaD || opc == Op_FmaF) {
         // Promote operands to vector
         Node* in1 = vector_opd(p, 1);
@@ -3168,6 +2913,7 @@ bool SuperWord::output() {
       } else {
         if (do_reserve_copy()) {
           NOT_PRODUCT(if(is_trace_loop_reverse() || TraceLoopOpts) {tty->print_cr("SWPointer::output: Unhandled scalar opcode (%s), ShouldNotReachHere, exiting SuperWord", NodeClassNames[opc]);})
+          assert(false, "Unhandled scalar opcode (%s)", NodeClassNames[opc]);
           return false; //and reverse to backup IG
         }
         ShouldNotReachHere();
@@ -3197,12 +2943,7 @@ bool SuperWord::output() {
       if (vlen_in_bytes > max_vlen_in_bytes) {
         max_vlen_in_bytes = vlen_in_bytes;
       }
-#ifdef ASSERT
-      if (TraceNewVectors) {
-        tty->print("new Vector node: ");
-        vn->dump();
-      }
-#endif
+      VectorNode::trace_new_vector(vn, "SuperWord");
     }
   }//for (int i = 0; i < _block.length(); i++)
 
@@ -3242,6 +2983,7 @@ bool SuperWord::output() {
   if (do_reserve_copy()) {
     make_reversable.use_new();
   }
+
   NOT_PRODUCT(if(is_trace_loop_reverse()) {tty->print_cr("\n Final loop after SuperWord"); print_loop(true);})
   return true;
 }
@@ -3374,12 +3116,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
     const TypeVect* vt = TypeVect::make(iv_bt, vlen);
     Node* vn = new PopulateIndexNode(iv(), _igvn.intcon(1), vt);
-#ifdef ASSERT
-    if (TraceNewVectors) {
-      tty->print("new Vector node: ");
-      vn->dump();
-    }
-#endif
+    VectorNode::trace_new_vector(vn, "SuperWord");
     _igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));
     return vn;
@@ -3452,12 +3189,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
 
     _igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));
-#ifdef ASSERT
-    if (TraceNewVectors) {
-      tty->print("new Vector node: ");
-      vn->dump();
-    }
-#endif
+    VectorNode::trace_new_vector(vn, "SuperWord");
     return vn;
   }
 
@@ -3489,12 +3221,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   }
   _igvn.register_new_node_with_optimizer(pk);
   _phase->set_ctrl(pk, _phase->get_ctrl(opd));
-#ifdef ASSERT
-  if (TraceNewVectors) {
-    tty->print("new Vector node: ");
-    pk->dump();
-  }
-#endif
+  VectorNode::trace_new_vector(pk, "SuperWord");
   return pk;
 }
 
@@ -3516,7 +3243,7 @@ void SuperWord::insert_extracts(Node_List* p) {
         Node* n = use->in(k);
         if (def == n) {
           Node_List* u_pk = my_pack(use);
-          if ((u_pk == nullptr || !is_cmov_pack(u_pk) || use->is_CMove()) && !is_vector_use(use, k)) {
+          if ((u_pk == nullptr || use->is_CMove()) && !is_vector_use(use, k)) {
               _n_idx_list.push(use, k);
           }
         }
@@ -3718,7 +3445,7 @@ bool SuperWord::construct_bb() {
             // First see if we can map the reduction on the given system we are on, then
             // make a data entry operation for each reduction we see.
             BasicType bt = use->bottom_type()->basic_type();
-            if (ReductionNode::implemented(use->Opcode(), Matcher::min_vector_size(bt), bt)) {
+            if (ReductionNode::implemented(use->Opcode(), Matcher::superword_max_vector_size(bt), bt)) {
               reduction_uses++;
             }
           }
@@ -3741,35 +3468,16 @@ bool SuperWord::construct_bb() {
 
   int ii_current = -1;
   unsigned int load_idx = (unsigned int)-1;
-  // Build iterations order if needed
-  bool build_ii_order = _do_vector_loop_experimental && _ii_order.is_empty();
   // Create real map of block indices for nodes
   for (int j = 0; j < _block.length(); j++) {
     Node* n = _block.at(j);
     set_bb_idx(n, j);
-    if (build_ii_order && n->is_Load()) {
-      if (ii_current == -1) {
-        ii_current = _clone_map.gen(n->_idx);
-        _ii_order.push(ii_current);
-        load_idx = _clone_map.idx(n->_idx);
-      } else if (_clone_map.idx(n->_idx) == load_idx && _clone_map.gen(n->_idx) != ii_current) {
-        ii_current = _clone_map.gen(n->_idx);
-        _ii_order.push(ii_current);
-      }
-    }
   }//for
 
   // Ensure extra info is allocated.
   initialize_bb();
 
 #ifndef PRODUCT
-  if (_vector_loop_debug && _ii_order.length() > 0) {
-    tty->print("SuperWord::construct_bb: List of generations: ");
-    for (int jj = 0; jj < _ii_order.length(); ++jj) {
-      tty->print("  %d:%d", jj, _ii_order.at(jj));
-    }
-    tty->print_cr(" ");
-  }
   if (TraceSuperWord) {
     print_bb();
     tty->print_cr("\ndata entry nodes: %s", _data_entry.length() > 0 ? "" : "NONE");
@@ -3966,6 +3674,22 @@ void SuperWord::compute_vector_element_type() {
       }
     }
   }
+  for (int i = 0; i < _block.length(); i++) {
+    Node* n = _block.at(i);
+    Node* nn = n;
+    if (nn->is_Bool() && nn->in(0) == nullptr) {
+      nn = nn->in(1);
+      assert(nn->is_Cmp(), "always have Cmp above Bool");
+    }
+    if (nn->is_Cmp() && nn->in(0) == nullptr) {
+      assert(in_bb(nn->in(1)) || in_bb(nn->in(2)), "one of the inputs must be in the loop too");
+      if (in_bb(nn->in(1))) {
+        set_velt_type(n, velt_type(nn->in(1)));
+      } else {
+        set_velt_type(n, velt_type(nn->in(2)));
+      }
+    }
+  }
 #ifndef PRODUCT
   if (TraceSuperWord && Verbose) {
     for (int i = 0; i < _block.length(); i++) {
@@ -4003,7 +3727,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
 #ifndef PRODUCT
   if ((TraceSuperWord && Verbose) || is_trace_alignment()) {
-    tty->print_cr("SWPointer::memory_alignment: off_rem = %d, off_mod = %d", off_rem, off_mod);
+    tty->print_cr("SWPointer::memory_alignment: off_rem = %d, off_mod = %d (offset = %d)", off_rem, off_mod, offset);
   }
 #endif
   return off_mod;
@@ -4211,7 +3935,10 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
     }
-    e = new URShiftINode(invar, log2_elt);
+    Node* aref = new URShiftINode(invar, log2_elt);
+    _igvn.register_new_node_with_optimizer(aref);
+    _phase->set_ctrl(aref, pre_ctrl);
+    e =  new AddINode(e, aref);
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
@@ -4303,27 +4030,12 @@ void SuperWord::init() {
   _data_entry.clear();
   _mem_slice_head.clear();
   _mem_slice_tail.clear();
-  _iteration_first.clear();
-  _iteration_last.clear();
   _node_info.clear();
   _align_to_ref = nullptr;
   _race_possible = 0;
   _early_return = false;
   _num_work_vecs = 0;
   _num_reductions = 0;
-}
-
-//------------------------------restart---------------------------
-void SuperWord::restart() {
-  _dg.init();
-  _packset.clear();
-  _disjoint_ptrs.clear();
-  _block.clear();
-  _post_block.clear();
-  _data_entry.clear();
-  _mem_slice_head.clear();
-  _mem_slice_tail.clear();
-  _node_info.clear();
 }
 
 //------------------------------print_packset---------------------------
@@ -5219,397 +4931,3 @@ bool SuperWord::same_generation(Node* a, Node* b) const {
   return a != nullptr && b != nullptr && _clone_map.same_gen(a->_idx, b->_idx);
 }
 
-Node*  SuperWord::find_phi_for_mem_dep(LoadNode* ld) {
-  assert(in_bb(ld), "must be in block");
-  if (_clone_map.gen(ld->_idx) == _ii_first) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep _clone_map.gen(ld->_idx)=%d",
-        _clone_map.gen(ld->_idx));
-    }
-#endif
-    return nullptr; //we think that any ld in the first gen being vectorizable
-  }
-
-  Node* mem = ld->in(MemNode::Memory);
-  if (mem->outcnt() <= 1) {
-    // we don't want to remove the only edge from mem node to load
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep input node %d to load %d has no other outputs and edge mem->load cannot be removed",
-        mem->_idx, ld->_idx);
-      ld->dump();
-      mem->dump();
-    }
-#endif
-    return nullptr;
-  }
-  if (!in_bb(mem) || same_generation(mem, ld)) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep _clone_map.gen(mem->_idx)=%d",
-        _clone_map.gen(mem->_idx));
-    }
-#endif
-    return nullptr; // does not depend on loop volatile node or depends on the same generation
-  }
-
-  //otherwise first node should depend on mem-phi
-  Node* first = first_node(ld);
-  assert(first->is_Load(), "must be Load");
-  Node* phi = first->as_Load()->in(MemNode::Memory);
-  if (!phi->is_Phi() || phi->bottom_type() != Type::MEMORY) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep load is not vectorizable node, since it's `first` does not take input from mem phi");
-      ld->dump();
-      first->dump();
-    }
-#endif
-    return nullptr;
-  }
-
-  Node* tail = 0;
-  for (int m = 0; m < _mem_slice_head.length(); m++) {
-    if (_mem_slice_head.at(m) == phi) {
-      tail = _mem_slice_tail.at(m);
-    }
-  }
-  if (tail == 0) { //test that found phi is in the list  _mem_slice_head
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::find_phi_for_mem_dep load %d is not vectorizable node, its phi %d is not _mem_slice_head",
-        ld->_idx, phi->_idx);
-      ld->dump();
-      phi->dump();
-    }
-#endif
-    return nullptr;
-  }
-
-  // now all conditions are met
-  return phi;
-}
-
-Node* SuperWord::first_node(Node* nd) {
-  for (int ii = 0; ii < _iteration_first.length(); ii++) {
-    Node* nnn = _iteration_first.at(ii);
-    if (same_origin_idx(nnn, nd)) {
-#ifndef PRODUCT
-      if (_vector_loop_debug) {
-        tty->print_cr("SuperWord::first_node: %d is the first iteration node for %d (_clone_map.idx(nnn->_idx) = %d)",
-          nnn->_idx, nd->_idx, _clone_map.idx(nnn->_idx));
-      }
-#endif
-      return nnn;
-    }
-  }
-
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::first_node: did not find first iteration node for %d (_clone_map.idx(nd->_idx)=%d)",
-      nd->_idx, _clone_map.idx(nd->_idx));
-  }
-#endif
-  return 0;
-}
-
-Node* SuperWord::last_node(Node* nd) {
-  for (int ii = 0; ii < _iteration_last.length(); ii++) {
-    Node* nnn = _iteration_last.at(ii);
-    if (same_origin_idx(nnn, nd)) {
-#ifndef PRODUCT
-      if (_vector_loop_debug) {
-        tty->print_cr("SuperWord::last_node _clone_map.idx(nnn->_idx)=%d, _clone_map.idx(nd->_idx)=%d",
-          _clone_map.idx(nnn->_idx), _clone_map.idx(nd->_idx));
-      }
-#endif
-      return nnn;
-    }
-  }
-  return 0;
-}
-
-int SuperWord::mark_generations() {
-  Node *ii_err = nullptr, *tail_err = nullptr;
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* phi  = _mem_slice_head.at(i);
-    assert(phi->is_Phi(), "must be phi");
-
-    Node* tail = _mem_slice_tail.at(i);
-    if (_ii_last == -1) {
-      tail_err = tail;
-      _ii_last = _clone_map.gen(tail->_idx);
-    }
-    else if (_ii_last != _clone_map.gen(tail->_idx)) {
-#ifndef PRODUCT
-      if (TraceSuperWord && Verbose) {
-        tty->print_cr("SuperWord::mark_generations _ii_last error - found different generations in two tail nodes ");
-        tail->dump();
-        tail_err->dump();
-      }
-#endif
-      return -1;
-    }
-
-    // find first iteration in the loop
-    for (DUIterator_Fast imax, i = phi->fast_outs(imax); i < imax; i++) {
-      Node* ii = phi->fast_out(i);
-      if (in_bb(ii) && ii->is_Store()) { // we speculate that normally Stores of one and one only generation have deps from mem phi
-        if (_ii_first == -1) {
-          ii_err = ii;
-          _ii_first = _clone_map.gen(ii->_idx);
-        } else if (_ii_first != _clone_map.gen(ii->_idx)) {
-#ifndef PRODUCT
-          if (TraceSuperWord && Verbose) {
-            tty->print_cr("SuperWord::mark_generations: _ii_first was found before and not equal to one in this node (%d)", _ii_first);
-            ii->dump();
-            if (ii_err!= 0) {
-              ii_err->dump();
-            }
-          }
-#endif
-          return -1; // this phi has Stores from different generations of unroll and cannot be simd/vectorized
-        }
-      }
-    }//for (DUIterator_Fast imax,
-  }//for (int i...
-
-  if (_ii_first == -1 || _ii_last == -1) {
-    if (TraceSuperWord && Verbose) {
-      tty->print_cr("SuperWord::mark_generations unknown error, something vent wrong");
-    }
-    return -1; // something vent wrong
-  }
-  // collect nodes in the first and last generations
-  assert(_iteration_first.length() == 0, "_iteration_first must be empty");
-  assert(_iteration_last.length() == 0, "_iteration_last must be empty");
-  for (int j = 0; j < _block.length(); j++) {
-    Node* n = _block.at(j);
-    node_idx_t gen = _clone_map.gen(n->_idx);
-    if ((signed)gen == _ii_first) {
-      _iteration_first.push(n);
-    } else if ((signed)gen == _ii_last) {
-      _iteration_last.push(n);
-    }
-  }
-
-  // building order of iterations
-  if (_ii_order.length() == 0 && ii_err != 0) {
-    assert(in_bb(ii_err) && ii_err->is_Store(), "should be Store in bb");
-    Node* nd = ii_err;
-    while(_clone_map.gen(nd->_idx) != _ii_last) {
-      _ii_order.push(_clone_map.gen(nd->_idx));
-      bool found = false;
-      for (DUIterator_Fast imax, i = nd->fast_outs(imax); i < imax; i++) {
-        Node* use = nd->fast_out(i);
-        if (same_origin_idx(use, nd) && use->as_Store()->in(MemNode::Memory) == nd) {
-          found = true;
-          nd = use;
-          break;
-        }
-      }//for
-
-      if (found == false) {
-        if (TraceSuperWord && Verbose) {
-          tty->print_cr("SuperWord::mark_generations: Cannot build order of iterations - no dependent Store for %d", nd->_idx);
-        }
-        _ii_order.clear();
-        return -1;
-      }
-    } //while
-    _ii_order.push(_clone_map.gen(nd->_idx));
-  }
-
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::mark_generations");
-    tty->print_cr("First generation (%d) nodes:", _ii_first);
-    for (int ii = 0; ii < _iteration_first.length(); ii++)  _iteration_first.at(ii)->dump();
-    tty->print_cr("Last generation (%d) nodes:", _ii_last);
-    for (int ii = 0; ii < _iteration_last.length(); ii++)  _iteration_last.at(ii)->dump();
-    tty->print_cr(" ");
-
-    tty->print("SuperWord::List of generations: ");
-    for (int jj = 0; jj < _ii_order.length(); ++jj) {
-      tty->print("%d:%d ", jj, _ii_order.at(jj));
-    }
-    tty->print_cr(" ");
-  }
-#endif
-
-  return _ii_first;
-}
-
-bool SuperWord::fix_commutative_inputs(Node* gold, Node* fix) {
-  assert(gold->is_Add() && fix->is_Add() || gold->is_Mul() && fix->is_Mul(), "should be only Add or Mul nodes");
-  assert(same_origin_idx(gold, fix), "should be clones of the same node");
-  Node* gin1 = gold->in(1);
-  Node* gin2 = gold->in(2);
-  Node* fin1 = fix->in(1);
-  Node* fin2 = fix->in(2);
-  bool swapped = false;
-
-  if (in_bb(gin1) && in_bb(gin2) && in_bb(fin1) && in_bb(fin2)) {
-    if (same_origin_idx(gin1, fin1) &&
-        same_origin_idx(gin2, fin2)) {
-      return true; // nothing to fix
-    }
-    if (same_origin_idx(gin1, fin2) &&
-        same_origin_idx(gin2, fin1)) {
-      fix->swap_edges(1, 2);
-      swapped = true;
-    }
-  }
-  // at least one input comes from outside of bb
-  if (gin1->_idx == fin1->_idx)  {
-    return true; // nothing to fix
-  }
-  if (!swapped && (gin1->_idx == fin2->_idx || gin2->_idx == fin1->_idx))  { //swapping is expensive, check condition first
-    fix->swap_edges(1, 2);
-    swapped = true;
-  }
-
-  if (swapped) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::fix_commutative_inputs: fixed node %d", fix->_idx);
-    }
-#endif
-    return true;
-  }
-
-  if (TraceSuperWord && Verbose) {
-    tty->print_cr("SuperWord::fix_commutative_inputs: cannot fix node %d", fix->_idx);
-  }
-
-  return false;
-}
-
-bool SuperWord::pack_parallel() {
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::pack_parallel: START");
-  }
-#endif
-
-  _packset.clear();
-
-  if (_ii_order.is_empty()) {
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::pack_parallel: EMPTY");
-    }
-#endif
-    return false;
-  }
-
-  for (int ii = 0; ii < _iteration_first.length(); ii++) {
-    Node* nd = _iteration_first.at(ii);
-    if (in_bb(nd) && (nd->is_Load() || nd->is_Store() || nd->is_Add() || nd->is_Mul())) {
-      Node_List* pk = new Node_List();
-      pk->push(nd);
-      for (int gen = 1; gen < _ii_order.length(); ++gen) {
-        for (int kk = 0; kk < _block.length(); kk++) {
-          Node* clone = _block.at(kk);
-          if (same_origin_idx(clone, nd) &&
-              _clone_map.gen(clone->_idx) == _ii_order.at(gen)) {
-            if (nd->is_Add() || nd->is_Mul()) {
-              fix_commutative_inputs(nd, clone);
-            }
-            pk->push(clone);
-            if (pk->size() == 4) {
-              _packset.append(pk);
-#ifndef PRODUCT
-              if (_vector_loop_debug) {
-                tty->print_cr("SuperWord::pack_parallel: added pack ");
-                pk->dump();
-              }
-#endif
-              if (_clone_map.gen(clone->_idx) != _ii_last) {
-                pk = new Node_List();
-              }
-            }
-            break;
-          }
-        }
-      }//for
-    }//if
-  }//for
-
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::pack_parallel: END");
-  }
-#endif
-
-  return true;
-}
-
-bool SuperWord::hoist_loads_in_graph() {
-  GrowableArray<Node*> loads;
-
-#ifndef PRODUCT
-  if (_vector_loop_debug) {
-    tty->print_cr("SuperWord::hoist_loads_in_graph: total number _mem_slice_head.length() = %d", _mem_slice_head.length());
-  }
-#endif
-
-  for (int i = 0; i < _mem_slice_head.length(); i++) {
-    Node* n = _mem_slice_head.at(i);
-    if ( !in_bb(n) || !n->is_Phi() || n->bottom_type() != Type::MEMORY) {
-      if (TraceSuperWord && Verbose) {
-        tty->print_cr("SuperWord::hoist_loads_in_graph: skipping unexpected node n=%d", n->_idx);
-      }
-      continue;
-    }
-
-#ifndef PRODUCT
-    if (_vector_loop_debug) {
-      tty->print_cr("SuperWord::hoist_loads_in_graph: processing phi %d  = _mem_slice_head.at(%d);", n->_idx, i);
-    }
-#endif
-
-    for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
-      Node* ld = n->fast_out(i);
-      if (ld->is_Load() && ld->as_Load()->in(MemNode::Memory) == n && in_bb(ld)) {
-        for (int i = 0; i < _block.length(); i++) {
-          Node* ld2 = _block.at(i);
-          if (ld2->is_Load() && same_origin_idx(ld, ld2) &&
-              !same_generation(ld, ld2)) { // <= do not collect the first generation ld
-#ifndef PRODUCT
-            if (_vector_loop_debug) {
-              tty->print_cr("SuperWord::hoist_loads_in_graph: will try to hoist load ld2->_idx=%d, cloned from %d (ld->_idx=%d)",
-                ld2->_idx, _clone_map.idx(ld->_idx), ld->_idx);
-            }
-#endif
-            // could not do on-the-fly, since iterator is immutable
-            loads.push(ld2);
-          }
-        }// for
-      }//if
-    }//for (DUIterator_Fast imax,
-  }//for (int i = 0; i
-
-  for (int i = 0; i < loads.length(); i++) {
-    LoadNode* ld = loads.at(i)->as_Load();
-    Node* phi = find_phi_for_mem_dep(ld);
-    if (phi != nullptr) {
-#ifndef PRODUCT
-      if (_vector_loop_debug) {
-        tty->print_cr("SuperWord::hoist_loads_in_graph replacing MemNode::Memory(%d) edge in %d with one from %d",
-          MemNode::Memory, ld->_idx, phi->_idx);
-      }
-#endif
-      _igvn.replace_input_of(ld, MemNode::Memory, phi);
-    }
-  }//for
-
-  restart(); // invalidate all basic structures, since we rebuilt the graph
-
-  if (TraceSuperWord && Verbose) {
-    tty->print_cr("\nSuperWord::hoist_loads_in_graph() the graph was rebuilt, all structures invalidated and need rebuild");
-  }
-
-  return true;
-}

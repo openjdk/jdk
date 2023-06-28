@@ -33,8 +33,8 @@
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/tlab_globals.hpp"
 #if INCLUDE_ZGC
-#include "gc/z/zBarrierSetRuntime.hpp"
-#include "gc/z/zThreadLocalData.hpp"
+#include "gc/x/xBarrierSetRuntime.hpp"
+#include "gc/x/xThreadLocalData.hpp"
 #endif
 #include "jvmci/jvmciCompilerToVM.hpp"
 #include "jvmci/jvmciEnv.hpp"
@@ -149,15 +149,15 @@ void CompilerToVM::Data::initialize(JVMCI_TRAPS) {
 
 #if INCLUDE_ZGC
   if (UseZGC) {
-    thread_address_bad_mask_offset = in_bytes(ZThreadLocalData::address_bad_mask_offset());
-    ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded =                     ZBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded =                ZBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded =             ZBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded =                ZBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded =           ZBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded =        ZBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr();
-    ZBarrierSetRuntime_load_barrier_on_oop_array =                               ZBarrierSetRuntime::load_barrier_on_oop_array_addr();
-    ZBarrierSetRuntime_clone =                                                   ZBarrierSetRuntime::clone_addr();
+    thread_address_bad_mask_offset = in_bytes(XThreadLocalData::address_bad_mask_offset());
+    ZBarrierSetRuntime_load_barrier_on_oop_field_preloaded =                     XBarrierSetRuntime::load_barrier_on_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_load_barrier_on_weak_oop_field_preloaded =                XBarrierSetRuntime::load_barrier_on_weak_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_load_barrier_on_phantom_oop_field_preloaded =             XBarrierSetRuntime::load_barrier_on_phantom_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_weak_load_barrier_on_oop_field_preloaded =                XBarrierSetRuntime::weak_load_barrier_on_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_weak_load_barrier_on_weak_oop_field_preloaded =           XBarrierSetRuntime::weak_load_barrier_on_weak_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_weak_load_barrier_on_phantom_oop_field_preloaded =        XBarrierSetRuntime::weak_load_barrier_on_phantom_oop_field_preloaded_addr();
+    ZBarrierSetRuntime_load_barrier_on_oop_array =                               XBarrierSetRuntime::load_barrier_on_oop_array_addr();
+    ZBarrierSetRuntime_clone =                                                   XBarrierSetRuntime::clone_addr();
   }
 #endif
 

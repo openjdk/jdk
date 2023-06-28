@@ -92,8 +92,8 @@ protected:
     debug_only(_adr_type=at; adr_type();)
   }
 
-  virtual Node* find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
-  ArrayCopyNode* find_array_copy_clone(PhaseTransform* phase, Node* ld_alloc, Node* mem) const;
+  virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
+  ArrayCopyNode* find_array_copy_clone(PhaseValues* phase, Node* ld_alloc, Node* mem) const;
   static bool check_if_adr_maybe_raw(Node* adr);
 
 public:
@@ -146,11 +146,11 @@ public:
   // Search through memory states which precede this node (load or store).
   // Look for an exact match for the address, with no intervening
   // aliased stores.
-  Node* find_previous_store(PhaseTransform* phase);
+  Node* find_previous_store(PhaseValues* phase);
 
   // Can this node (load or store) accurately see a stored value in
   // the given memory state?  (The state may or may not be in(Memory).)
-  Node* can_see_stored_value(Node* st, PhaseTransform* phase) const;
+  Node* can_see_stored_value(Node* st, PhaseValues* phase) const;
 
   void set_unaligned_access() { _unaligned_access = true; }
   bool is_unaligned_access() const { return _unaligned_access; }
@@ -208,7 +208,7 @@ protected:
   virtual bool can_remove_control() const;
   const Type* const _type;      // What kind of value is loaded?
 
-  virtual Node* find_previous_arraycopy(PhaseTransform* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
+  virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const;
 public:
 
   LoadNode(Node *c, Node *mem, Node *adr, const TypePtr* at, const Type *rt, MemOrd mo, ControlDependency control_dependency)
@@ -633,7 +633,7 @@ public:
   virtual int store_Opcode() const { return Opcode(); }
 
   // have all possible loads of the value stored been optimized away?
-  bool value_never_loaded(PhaseTransform *phase) const;
+  bool value_never_loaded(PhaseValues* phase) const;
 
   bool  has_reinterpret_variant(const Type* vt);
   Node* convert_to_reinterpret_store(PhaseGVN& gvn, Node* val, const Type* vt);
@@ -1117,7 +1117,7 @@ public:
                             PhaseGVN* phase);
   // Return allocation input memory edge if it is different instance
   // or itself if it is the one we are looking for.
-  static bool step_through(Node** np, uint instance_id, PhaseTransform* phase);
+  static bool step_through(Node** np, uint instance_id, PhaseValues* phase);
 };
 
 //------------------------------MemBar-----------------------------------------
@@ -1354,7 +1354,7 @@ public:
 
 #ifdef ASSERT
   // ensure all non-degenerate stores are ordered and non-overlapping
-  bool stores_are_sane(PhaseTransform* phase);
+  bool stores_are_sane(PhaseValues* phase);
 #endif //ASSERT
 
   // See if this store can be captured; return offset where it initializes.
@@ -1368,7 +1368,7 @@ public:
   // Find captured store which corresponds to the range [start..start+size).
   // Return my own memory projection (meaning the initial zero bits)
   // if there is no such store.  Return null if there is a problem.
-  Node* find_captured_store(intptr_t start, int size_in_bytes, PhaseTransform* phase);
+  Node* find_captured_store(intptr_t start, int size_in_bytes, PhaseValues* phase);
 
   // Called when the associated AllocateNode is expanded into CFG.
   Node* complete_stores(Node* rawctl, Node* rawmem, Node* rawptr,
@@ -1380,11 +1380,11 @@ public:
 
   // Find out where a captured store should be placed (or already is placed).
   int captured_store_insertion_point(intptr_t start, int size_in_bytes,
-                                     PhaseTransform* phase);
+                                     PhaseValues* phase);
 
-  static intptr_t get_store_offset(Node* st, PhaseTransform* phase);
+  static intptr_t get_store_offset(Node* st, PhaseValues* phase);
 
-  Node* make_raw_address(intptr_t offset, PhaseTransform* phase);
+  Node* make_raw_address(intptr_t offset, PhaseGVN* phase);
 
   bool detect_init_independence(Node* value, PhaseGVN* phase);
 

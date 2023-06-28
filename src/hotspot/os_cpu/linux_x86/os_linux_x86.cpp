@@ -575,49 +575,51 @@ void os::print_tos_pc(outputStream *st, const void *context) {
   st->cr();
 }
 
-void os::print_register_info(outputStream *st, const void *context) {
-  if (context == nullptr) return;
+void os::print_register_info(outputStream *st, const void *context, int& continuation) {
+  const int register_count = AMD64_ONLY(16) NOT_AMD64(8);
+  int n = continuation;
+  assert(n >= 0 && n <= register_count, "Invalid continuation value");
+  if (context == nullptr || n == register_count) {
+    return;
+  }
 
   const ucontext_t *uc = (const ucontext_t*)context;
-
-  st->print_cr("Register to memory mapping:");
-  st->cr();
-
-  // this is horrendously verbose but the layout of the registers in the
-  // context does not match how we defined our abstract Register set, so
-  // we can't just iterate through the gregs area
-
-  // this is only for the "general purpose" registers
-
+  while (n < register_count) {
+    // Update continuation with next index before printing location
+    continuation = n + 1;
+# define CASE_PRINT_REG(n, str, id) case n: st->print(str); print_location(st, uc->uc_mcontext.gregs[REG_##id]);
+    switch (n) {
 #ifdef AMD64
-  st->print("RAX="); print_location(st, uc->uc_mcontext.gregs[REG_RAX]);
-  st->print("RBX="); print_location(st, uc->uc_mcontext.gregs[REG_RBX]);
-  st->print("RCX="); print_location(st, uc->uc_mcontext.gregs[REG_RCX]);
-  st->print("RDX="); print_location(st, uc->uc_mcontext.gregs[REG_RDX]);
-  st->print("RSP="); print_location(st, uc->uc_mcontext.gregs[REG_RSP]);
-  st->print("RBP="); print_location(st, uc->uc_mcontext.gregs[REG_RBP]);
-  st->print("RSI="); print_location(st, uc->uc_mcontext.gregs[REG_RSI]);
-  st->print("RDI="); print_location(st, uc->uc_mcontext.gregs[REG_RDI]);
-  st->print("R8 ="); print_location(st, uc->uc_mcontext.gregs[REG_R8]);
-  st->print("R9 ="); print_location(st, uc->uc_mcontext.gregs[REG_R9]);
-  st->print("R10="); print_location(st, uc->uc_mcontext.gregs[REG_R10]);
-  st->print("R11="); print_location(st, uc->uc_mcontext.gregs[REG_R11]);
-  st->print("R12="); print_location(st, uc->uc_mcontext.gregs[REG_R12]);
-  st->print("R13="); print_location(st, uc->uc_mcontext.gregs[REG_R13]);
-  st->print("R14="); print_location(st, uc->uc_mcontext.gregs[REG_R14]);
-  st->print("R15="); print_location(st, uc->uc_mcontext.gregs[REG_R15]);
+    CASE_PRINT_REG( 0, "RAX=", RAX); break;
+    CASE_PRINT_REG( 1, "RBX=", RBX); break;
+    CASE_PRINT_REG( 2, "RCX=", RCX); break;
+    CASE_PRINT_REG( 3, "RDX=", RDX); break;
+    CASE_PRINT_REG( 4, "RSP=", RSP); break;
+    CASE_PRINT_REG( 5, "RBP=", RBP); break;
+    CASE_PRINT_REG( 6, "RSI=", RSI); break;
+    CASE_PRINT_REG( 7, "RDI=", RDI); break;
+    CASE_PRINT_REG( 8, "R8 =", R8); break;
+    CASE_PRINT_REG( 9, "R9 =", R9); break;
+    CASE_PRINT_REG(10, "R10=", R10); break;
+    CASE_PRINT_REG(11, "R11=", R11); break;
+    CASE_PRINT_REG(12, "R12=", R12); break;
+    CASE_PRINT_REG(13, "R13=", R13); break;
+    CASE_PRINT_REG(14, "R14=", R14); break;
+    CASE_PRINT_REG(15, "R15=", R15); break;
 #else
-  st->print("EAX="); print_location(st, uc->uc_mcontext.gregs[REG_EAX]);
-  st->print("EBX="); print_location(st, uc->uc_mcontext.gregs[REG_EBX]);
-  st->print("ECX="); print_location(st, uc->uc_mcontext.gregs[REG_ECX]);
-  st->print("EDX="); print_location(st, uc->uc_mcontext.gregs[REG_EDX]);
-  st->print("ESP="); print_location(st, uc->uc_mcontext.gregs[REG_ESP]);
-  st->print("EBP="); print_location(st, uc->uc_mcontext.gregs[REG_EBP]);
-  st->print("ESI="); print_location(st, uc->uc_mcontext.gregs[REG_ESI]);
-  st->print("EDI="); print_location(st, uc->uc_mcontext.gregs[REG_EDI]);
+    CASE_PRINT_REG(0, "EAX=", EAX); break;
+    CASE_PRINT_REG(1, "EBX=", EBX); break;
+    CASE_PRINT_REG(2, "ECX=", ECX); break;
+    CASE_PRINT_REG(3, "EDX=", EDX); break;
+    CASE_PRINT_REG(4, "ESP=", ESP); break;
+    CASE_PRINT_REG(5, "EBP=", EBP); break;
+    CASE_PRINT_REG(6, "ESI=", ESI); break;
+    CASE_PRINT_REG(7, "EDI=", EDI); break;
 #endif // AMD64
-
-  st->cr();
+    }
+# undef CASE_PRINT_REG
+    ++n;
+  }
 }
 
 void os::setup_fpu() {

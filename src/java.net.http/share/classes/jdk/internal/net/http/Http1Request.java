@@ -350,11 +350,18 @@ class Http1Request {
                 http1Exchange.appendToOutgoing(t);
             } else {
                 int chunklen = item.remaining();
-                ArrayList<ByteBuffer> l = new ArrayList<>(3);
-                l.add(getHeader(chunklen));
-                l.add(item);
-                l.add(ByteBuffer.wrap(CRLF));
-                http1Exchange.appendToOutgoing(l);
+                if (chunklen > 0) {
+                    ArrayList<ByteBuffer> l = new ArrayList<>(3);
+                    l.add(getHeader(chunklen));
+                    l.add(item);
+                    l.add(ByteBuffer.wrap(CRLF));
+                    http1Exchange.appendToOutgoing(l);
+                } else {
+                    if (debug.on()) {
+                        debug.log("dropping empty buffer, request one more");
+                    }
+                    request(1);
+                }
             }
         }
 

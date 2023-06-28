@@ -178,7 +178,7 @@ private:
 
       bool marked_as_dirty = Atomic::cmpxchg(&_contains[region], false, true) == false;
       if (marked_as_dirty) {
-        uint allocated = Atomic::fetch_and_add(&_cur_idx, 1u);
+        uint allocated = Atomic::fetch_then_add(&_cur_idx, 1u);
         _buffer[allocated] = region;
       }
     }
@@ -243,7 +243,7 @@ private:
       const uint num_regions_per_worker = num_cards_per_worker / (uint)HeapRegion::CardsPerRegion;
 
       while (_cur_dirty_regions < _regions->size()) {
-        uint next = Atomic::fetch_and_add(&_cur_dirty_regions, num_regions_per_worker);
+        uint next = Atomic::fetch_then_add(&_cur_dirty_regions, num_regions_per_worker);
         uint max = MIN2(next + num_regions_per_worker, _regions->size());
 
         for (uint i = next; i < max; i++) {
@@ -420,7 +420,7 @@ public:
 
   uint claim_cards_to_scan(uint region, uint increment) {
     assert(region < _max_reserved_regions, "Tried to access invalid region %u", region);
-    return Atomic::fetch_and_add(&_card_table_scan_state[region], increment, memory_order_relaxed);
+    return Atomic::fetch_then_add(&_card_table_scan_state[region], increment, memory_order_relaxed);
   }
 
   void add_dirty_region(uint const region) {
@@ -1262,9 +1262,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   void apply_closure_to_dirty_card_buffers(G1MergeLogBufferCardsClosure* cl, uint worker_id) {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    size_t buffer_size = dcqs.buffer_size();
+    size_t buffer_capacity = dcqs.buffer_capacity();
     while (BufferNode* node = _dirty_card_buffers.pop()) {
-      cl->apply_to_buffer(node, buffer_size, worker_id);
+      cl->apply_to_buffer(node, buffer_capacity, worker_id);
       dcqs.deallocate_buffer(node);
     }
   }
@@ -1567,7 +1567,7 @@ void G1RemSet::enqueue_for_reprocessing(CardValue* card_ptr) {
   *card_ptr = G1CardTable::dirty_card_val();
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   void** buffer = dcqs.allocate_buffer();
-  size_t index = dcqs.buffer_size() - 1;
+  size_t index = dcqs.buffer_capacity() - 1;
   buffer[index] = card_ptr;
   dcqs.enqueue_completed_buffer(BufferNode::make_node_from_buffer(buffer, index));
 }

@@ -48,7 +48,6 @@ import static org.testng.Assert.*;
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
- *          java.base/jdk.internal.classfile.java.lang.constant
  *          java.base/jdk.internal.module
  * @library /test/lib
  * @build jdk.test.lib.util.ModuleInfoWriter

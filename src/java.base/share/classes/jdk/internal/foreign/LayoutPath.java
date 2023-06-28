@@ -58,6 +58,8 @@ public class LayoutPath {
 
     private static final MethodHandle MH_ADD_SCALED_OFFSET;
     private static final MethodHandle MH_SLICE;
+    private static final MethodHandle MH_SLICE_LAYOUT;
+    private static final MethodHandle MH_CHECK_ALIGN;
     private static final MethodHandle MH_SEGMENT_RESIZE;
 
     static {
@@ -67,6 +69,10 @@ public class LayoutPath {
                     MethodType.methodType(long.class, long.class, long.class, long.class, long.class));
             MH_SLICE = lookup.findVirtual(MemorySegment.class, "asSlice",
                     MethodType.methodType(MemorySegment.class, long.class, long.class));
+            MH_SLICE_LAYOUT = lookup.findVirtual(MemorySegment.class, "asSlice",
+                    MethodType.methodType(MemorySegment.class, long.class, MemoryLayout.class));
+            MH_CHECK_ALIGN = lookup.findStatic(LayoutPath.class, "checkAlign",
+                    MethodType.methodType(MemorySegment.class, MemorySegment.class, MemoryLayout.class));
             MH_SEGMENT_RESIZE = lookup.findStatic(LayoutPath.class, "resizeSegment",
                     MethodType.methodType(MemorySegment.class, MemorySegment.class, MemoryLayout.class));
         } catch (Throwable ex) {
@@ -97,7 +103,7 @@ public class LayoutPath {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
         SequenceLayout seq = (SequenceLayout)layout;
         MemoryLayout elem = seq.elementLayout();
-        return LayoutPath.nestedPath(elem, offset, addStride(elem.bitSize()), addBound(seq.elementCount()), derefAdapters, this);
+        return LayoutPath.nestedPath(elem, offset, addStride(elem.byteSize()), addBound(seq.elementCount()), derefAdapters, this);
     }
 
     public LayoutPath sequenceElement(long start, long step) {
@@ -105,7 +111,7 @@ public class LayoutPath {
         SequenceLayout seq = (SequenceLayout)layout;
         checkSequenceBounds(seq, start);
         MemoryLayout elem = seq.elementLayout();
-        long elemSize = elem.bitSize();
+        long elemSize = elem.byteSize();
         long nelems = step > 0 ?
                 seq.elementCount() - start :
                 start + 1;
@@ -118,7 +124,7 @@ public class LayoutPath {
         check(SequenceLayout.class, "attempting to select a sequence element from a non-sequence layout");
         SequenceLayout seq = (SequenceLayout)layout;
         checkSequenceBounds(seq, index);
-        long elemSize = seq.elementLayout().bitSize();
+        long elemSize = seq.elementLayout().byteSize();
         long elemOffset = elemSize * index;
         return LayoutPath.nestedPath(seq.elementLayout(), offset + elemOffset, strides, bounds, derefAdapters,this);
     }
@@ -135,7 +141,7 @@ public class LayoutPath {
                 elem = l;
                 break;
             } else if (g instanceof StructLayout) {
-                offset += l.bitSize();
+                offset += l.byteSize();
             }
         }
         if (elem == null) {
@@ -156,7 +162,7 @@ public class LayoutPath {
             }
             elem = g.memberLayouts().get(i);
             if (g instanceof StructLayout && i < index) {
-                offset += elem.bitSize();
+                offset += elem.byteSize();
             }
         }
         return LayoutPath.nestedPath(elem, this.offset + offset, strides, bounds, derefAdapters, this);
@@ -193,17 +199,19 @@ public class LayoutPath {
             throw new IllegalArgumentException("Path does not select a value layout");
         }
 
-        VarHandle handle = Utils.makeSegmentViewVarHandle(valueLayout);
-        for (int i = strides.length - 1; i >= 0; i--) {
-            MethodHandle collector = MethodHandles.insertArguments(MH_ADD_SCALED_OFFSET, 2,
-                    Utils.bitsToBytes(strides[i]),
-                    bounds[i]);
-            // (J, ...) -> J to (J, J, ...) -> J
-            // i.e. new coord is prefixed. Last coord will correspond to innermost layout
-            handle = MethodHandles.collectCoordinates(handle, 1, collector);
+        // If we have an enclosing layout, drop the alignment check for the accessed element,
+        // we check the root layout instead
+        ValueLayout accessedLayout = enclosing != null ? valueLayout.withByteAlignment(1) : valueLayout;
+        VarHandle handle = Utils.makeSegmentViewVarHandle(accessedLayout);
+        handle = MethodHandles.collectCoordinates(handle, 1, offsetHandle());
+
+        // we only have to check the alignment of the root layout for the first dereference we do,
+        // as each dereference checks the alignment of the target address when constructing its segment
+        // (see Utils::longToAddress)
+        if (derefAdapters.length == 0 && enclosing != null) {
+            MethodHandle checkHandle = MethodHandles.insertArguments(MH_CHECK_ALIGN, 1, rootLayout());
+            handle = MethodHandles.filterCoordinates(handle, 0, checkHandle);
         }
-        handle = MethodHandles.insertCoordinates(handle, 1,
-                Utils.bitsToBytes(offset));
 
         if (adapt) {
             for (int i = derefAdapters.length; i > 0; i--) {
@@ -231,15 +239,35 @@ public class LayoutPath {
         return mh;
     }
 
-    public MethodHandle sliceHandle() {
-        MethodHandle offsetHandle = offsetHandle(); // bit offset
-        offsetHandle = MethodHandles.filterReturnValue(offsetHandle, Utils.BITS_TO_BYTES); // byte offset
+    private MemoryLayout rootLayout() {
+        return enclosing != null ? enclosing.rootLayout() : this.layout;
+    }
 
-        MethodHandle sliceHandle = MH_SLICE; // (MS, long, long) -> MS
-        sliceHandle = MethodHandles.insertArguments(sliceHandle, 2, layout.byteSize()); // (MS, long) -> MS
-        sliceHandle = MethodHandles.collectArguments(sliceHandle, 1, offsetHandle); // (MS, ...) -> MS
+    public MethodHandle sliceHandle() {
+        MethodHandle sliceHandle;
+        if (enclosing != null) {
+            // drop the alignment check for the accessed element, we check the root layout instead
+            sliceHandle = MH_SLICE; // (MS, long, long) -> MS
+            sliceHandle = MethodHandles.insertArguments(sliceHandle, 2, layout.byteSize()); // (MS, long) -> MS
+        } else {
+            sliceHandle = MH_SLICE_LAYOUT; // (MS, long, MemoryLayout) -> MS
+            sliceHandle = MethodHandles.insertArguments(sliceHandle, 2, layout); // (MS, long) -> MS
+        }
+        sliceHandle = MethodHandles.collectArguments(sliceHandle, 1, offsetHandle()); // (MS, ...) -> MS
+
+        if (enclosing != null) {
+            MethodHandle checkHandle = MethodHandles.insertArguments(MH_CHECK_ALIGN, 1, rootLayout());
+            sliceHandle = MethodHandles.filterArguments(sliceHandle, 0, checkHandle);
+        }
 
         return sliceHandle;
+    }
+
+    private static MemorySegment checkAlign(MemorySegment segment, MemoryLayout constraint) {
+        if (!((AbstractMemorySegmentImpl) segment).isAlignedForElement(0, constraint)) {
+            throw new IllegalArgumentException("Target offset incompatible with alignment constraints: " + constraint.byteAlignment());
+        }
+        return segment;
     }
 
     public MemoryLayout layout() {

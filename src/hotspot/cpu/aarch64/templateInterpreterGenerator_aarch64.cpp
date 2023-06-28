@@ -40,6 +40,7 @@
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -812,7 +813,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ str(rscratch1, Address(rfp, frame::interpreter_frame_extended_sp_offset * wordSize));
   __ str(esp, monitor_block_top);  // set new monitor block top
   // store object
-  __ str(r0, Address(esp, BasicObjectLock::obj_offset_in_bytes()));
+  __ str(r0, Address(esp, BasicObjectLock::obj_offset()));
   __ mov(c_rarg1, esp); // object address
   __ lock_object(c_rarg1);
 }
@@ -858,7 +859,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   __ ldr(rcpool, Address(rmethod, Method::const_offset()));
   __ ldr(rcpool, Address(rcpool, ConstMethod::constants_offset()));
-  __ ldr(rcpool, Address(rcpool, ConstantPool::cache_offset_in_bytes()));
+  __ ldr(rcpool, Address(rcpool, ConstantPool::cache_offset()));
   __ sub(rscratch1, rlocals, rfp);
   __ lsr(rscratch1, rscratch1, Interpreter::logStackElementSize);   // rscratch1 = rlocals - fp();
   // Store relativized rlocals, see frame::interpreter_frame_locals().
@@ -1434,7 +1435,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ ldr(t, Address(rthread, JavaThread::active_handles_offset()));
-  __ str(zr, Address(t, JNIHandleBlock::top_offset_in_bytes()));
+  __ str(zr, Address(t, JNIHandleBlock::top_offset()));
 
   // If result is an oop unbox and store it in frame where gc will see it
   // and result handler will pick it up
@@ -1512,7 +1513,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                                (intptr_t)(frame::interpreter_frame_initial_sp_offset *
                                           wordSize - sizeof(BasicObjectLock))));
 
-      __ ldr(t, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+      __ ldr(t, Address(c_rarg1, BasicObjectLock::obj_offset()));
       __ cbnz(t, unlock);
 
       // Entry already unlocked, need to throw exception

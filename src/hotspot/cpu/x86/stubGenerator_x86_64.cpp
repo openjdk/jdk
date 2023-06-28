@@ -44,9 +44,6 @@
 #if INCLUDE_JVMCI
 #include "jvmci/jvmci_globals.hpp"
 #endif
-#if INCLUDE_ZGC
-#include "gc/z/zThreadLocalData.hpp"
-#endif
 #if INCLUDE_JFR
 #include "jfr/support/jfrIntrinsics.hpp"
 #endif
@@ -3940,6 +3937,10 @@ void StubGenerator::generate_initial_stubs() {
   }
 
   generate_libm_stubs();
+
+  if ((UseAVX >= 1) && (VM_Version::supports_avx512vlbwdq() || VM_Version::supports_fma())) {
+    StubRoutines::_fmod = generate_libmFmod(); // from stubGenerator_x86_64_fmod.cpp
+  }
 }
 
 void StubGenerator::generate_continuation_stubs() {

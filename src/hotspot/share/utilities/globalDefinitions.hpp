@@ -243,8 +243,6 @@ const int BitsPerLong        = 1 << LogBitsPerLong;
 const int WordAlignmentMask  = (1 << LogBytesPerWord) - 1;
 const int LongAlignmentMask  = (1 << LogBytesPerLong) - 1;
 
-const int WordsPerLong       = 2;       // Number of stack entries for longs
-
 const int oopSize            = sizeof(char*); // Full-width oop
 extern int heapOopSize;                       // Oop within a java object
 const int wordSize           = sizeof(char*);
@@ -439,7 +437,6 @@ const uintx max_uintx = (uintx)-1;
 
 typedef unsigned int uint;   NEEDS_CLEANUP
 
-
 //----------------------------------------------------------------------------------------------------
 // Java type definitions
 
@@ -517,7 +514,7 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // everything: it isn't intended to make sure that pointer types are
 // compatible, for example.
 template <typename T2, typename T1>
-T2 checked_cast(T1 thing) {
+constexpr T2 checked_cast(T1 thing) {
   T2 result = static_cast<T2>(thing);
   assert(static_cast<T1>(result) == thing, "must be");
   return result;
@@ -715,7 +712,7 @@ void basic_types_init(); // cannot define here; uses assert
 
 
 // NOTE: replicated in SA in vm/agent/sun/jvm/hotspot/runtime/BasicType.java
-enum BasicType {
+enum BasicType : u1 {
 // The values T_BOOLEAN..T_LONG (4..11) are derived from the JVMS.
   T_BOOLEAN     = JVM_T_BOOLEAN,
   T_CHAR        = JVM_T_CHAR,
@@ -1076,7 +1073,7 @@ const int      badCodeHeapFreeVal = 0xDD;                   // value used to zap
 #define       badHeapWord       (::badHeapWordVal)
 
 // Default TaskQueue size is 16K (32-bit) or 128K (64-bit)
-#define TASKQUEUE_SIZE (NOT_LP64(1<<14) LP64_ONLY(1<<17))
+const size_t TASKQUEUE_SIZE = (NOT_LP64(1<<14) LP64_ONLY(1<<17));
 
 //----------------------------------------------------------------------------------------------------
 // Utility functions for bitfield manipulations
@@ -1176,15 +1173,15 @@ inline intx byte_size(void* from, void* to) {
 
 // Pack and extract shorts to/from ints:
 
-inline int extract_low_short_from_int(jint x) {
-  return x & 0xffff;
+inline u2 extract_low_short_from_int(u4 x) {
+  return u2(x & 0xffff);
 }
 
-inline int extract_high_short_from_int(jint x) {
-  return (x >> 16) & 0xffff;
+inline u2 extract_high_short_from_int(u4 x) {
+  return u2((x >> 16) & 0xffff);
 }
 
-inline int build_int_from_shorts( jushort low, jushort high ) {
+inline int build_int_from_shorts( u2 low, u2 high ) {
   return ((int)((unsigned int)high << 16) | (unsigned int)low);
 }
 
@@ -1224,6 +1221,9 @@ JAVA_INTEGER_OP(*, java_multiply, jint, juint)
 JAVA_INTEGER_OP(+, java_add, jlong, julong)
 JAVA_INTEGER_OP(-, java_subtract, jlong, julong)
 JAVA_INTEGER_OP(*, java_multiply, jlong, julong)
+
+inline jint  java_negate(jint  v) { return java_subtract((jint) 0, v); }
+inline jlong java_negate(jlong v) { return java_subtract((jlong)0, v); }
 
 #undef JAVA_INTEGER_OP
 
@@ -1314,7 +1314,7 @@ inline int64_t multiply_high_signed(const int64_t x, const int64_t y) {
   const jlong y1 = java_shift_right((jlong)y, 32);
   const jlong y2 = y & 0xFFFFFFFF;
 
-  const uint64_t z2 = x2 * y2;
+  const uint64_t z2 = (uint64_t)x2 * y2;
   const int64_t t = x1 * y2 + (z2 >> 32u); // Unsigned shift
   int64_t z1 = t & 0xFFFFFFFF;
   const int64_t z0 = java_shift_right((jlong)t, 32);

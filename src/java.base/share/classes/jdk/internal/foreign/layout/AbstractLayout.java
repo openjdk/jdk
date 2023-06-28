@@ -43,30 +43,26 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     private final long byteAlignment;
     private final Optional<String> name;
 
-    AbstractLayout(long bitSize, long bitAlignment, Optional<String> name) {
-        this.byteSize = MemoryLayoutUtil.requireBitSizeValid(bitSize, true) / 8;
-        this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToEight(bitAlignment) / 8;
+    AbstractLayout(long byteSize, long byteAlignment, Optional<String> name) {
+        this.byteSize = MemoryLayoutUtil.requireByteSizeValid(byteSize, true);
+        this.byteAlignment = requirePowerOfTwoAndGreaterOrEqualToOne(byteAlignment);
         this.name = Objects.requireNonNull(name);
     }
 
     public final L withName(String name) {
-        return dup(bitAlignment(), Optional.of(name));
+        return dup(byteAlignment(), Optional.of(name));
     }
 
     public final L withoutName() {
-        return dup(bitAlignment(), Optional.empty());
+        return dup(byteAlignment(), Optional.empty());
     }
 
     public final Optional<String> name() {
         return name;
     }
 
-    public L withBitAlignment(long bitAlignment) {
-        return dup(bitAlignment, name);
-    }
-
-    public final long bitAlignment() {
-        return byteAlignment * 8;
+    public L withByteAlignment(long byteAlignment) {
+        return dup(byteAlignment, name);
     }
 
     public final long byteAlignment() {
@@ -75,10 +71,6 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
 
     public final long byteSize() {
         return byteSize;
-    }
-
-    public final long bitSize() {
-        return byteSize * 8;
     }
 
     public boolean hasNaturalAlignment() {
@@ -127,21 +119,21 @@ public abstract sealed class AbstractLayout<L extends AbstractLayout<L> & Memory
     @Override
     public abstract String toString();
 
-    abstract L dup(long bitAlignment, Optional<String> name);
+    abstract L dup(long byteAlignment, Optional<String> name);
 
     String decorateLayoutString(String s) {
         if (name().isPresent()) {
             s = String.format("%s(%s)", s, name().get());
         }
         if (!hasNaturalAlignment()) {
-            s = bitAlignment() + "%" + s;
+            s = byteAlignment() + "%" + s;
         }
         return s;
     }
 
-    private static long requirePowerOfTwoAndGreaterOrEqualToEight(long value) {
+    private static long requirePowerOfTwoAndGreaterOrEqualToOne(long value) {
         if (!Utils.isPowerOfTwo(value) || // value must be a power of two
-                value < 8) { // value must be greater or equal to 8
+                value < 1) { // value must be greater or equal to 1
             throw new IllegalArgumentException("Invalid alignment: " + value);
         }
         return value;

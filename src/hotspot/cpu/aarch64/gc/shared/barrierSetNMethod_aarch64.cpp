@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,20 +129,14 @@ public:
   }
 };
 
-// Store the instruction bitmask, bits and name for checking the barrier.
-struct CheckInsn {
-  uint32_t mask;
-  uint32_t bits;
-  const char *name;
-};
-
 // The first instruction of the nmethod entry barrier is an ldr (literal)
 // instruction. Verify that it's really there, so the offsets are not skewed.
 bool NativeNMethodBarrier::check_barrier(err_msg& msg) const {
   uint32_t* addr = (uint32_t*) instruction_address();
   uint32_t inst = *addr;
   if ((inst & 0xff000000) != 0x18000000) {
-    msg.print("Addr: " INTPTR_FORMAT " Code: 0x%x not an ldr", p2i(addr), inst);
+    msg.print("Nmethod entry barrier did not start with ldr (literal) as expected. "
+              "Addr: " PTR_FORMAT " Code: " UINT32_FORMAT, p2i(addr), inst);
     return false;
   }
   return true;

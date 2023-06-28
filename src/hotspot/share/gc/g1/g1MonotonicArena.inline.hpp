@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2021, 2022, Huawei Technologies Co., Ltd. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -34,7 +34,7 @@ inline void* G1MonotonicArena::Segment::allocate_slot() {
   if (_next_allocate >= _num_slots) {
     return nullptr;
   }
-  uint result = Atomic::fetch_and_add(&_next_allocate, 1u, memory_order_relaxed);
+  uint result = Atomic::fetch_then_add(&_next_allocate, 1u, memory_order_relaxed);
   if (result >= _num_slots) {
     return nullptr;
   }

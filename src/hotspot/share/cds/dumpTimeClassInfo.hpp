@@ -145,7 +145,6 @@ public:
     _loader_constraints = nullptr;
     _enum_klass_static_fields = nullptr;
   }
-  DumpTimeClassInfo(const DumpTimeClassInfo& src);
   DumpTimeClassInfo& operator=(const DumpTimeClassInfo&) = delete;
   ~DumpTimeClassInfo();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 // to init_foo in init.cpp.
 
 jint init_globals();     // call constructors at startup (main Java thread)
+jint init_globals2();    // construction of early Java objects (main Java thread)
 void vm_init_globals();  // call constructors at startup (VM thread)
 void exit_globals();     // call destructors before exit
 

@@ -61,7 +61,6 @@ class MemAllocator::Allocation: StackObj {
   void notify_allocation_low_memory_detector();
   void notify_allocation_jfr_sampler();
   void notify_allocation_dtrace_sampler(JavaThread* thread);
-  void check_for_bad_heap_word_value() const;
 #ifdef ASSERT
   void check_for_valid_allocation_state() const;
 #endif
@@ -83,7 +82,6 @@ public:
 
   ~Allocation() {
     if (!check_out_of_memory()) {
-      verify_after();
       notify_allocation(_thread);
     }
   }
@@ -148,22 +146,6 @@ void MemAllocator::Allocation::verify_before() {
   assert(!HAS_PENDING_EXCEPTION, "Should not allocate with exception pending");
   debug_only(check_for_valid_allocation_state());
   assert(!Universe::heap()->is_gc_active(), "Allocation during gc not allowed");
-}
-
-void MemAllocator::Allocation::verify_after() {
-  NOT_PRODUCT(check_for_bad_heap_word_value();)
-}
-
-void MemAllocator::Allocation::check_for_bad_heap_word_value() const {
-  MemRegion obj_range = _allocator.obj_memory_range(obj());
-  HeapWord* addr = obj_range.start();
-  size_t size = obj_range.word_size();
-  if (CheckMemoryInitialization && ZapUnusedHeapArea) {
-    for (size_t slot = 0; slot < size; slot += 1) {
-      assert((*(intptr_t*) (addr + slot)) != ((intptr_t) badHeapWordVal),
-             "Found badHeapWordValue in post-allocation check");
-    }
-  }
 }
 
 #ifdef ASSERT
@@ -260,7 +242,6 @@ HeapWord* MemAllocator::mem_allocate_outside_tlab(Allocation& allocation) const 
     return mem;
   }
 
-  NOT_PRODUCT(Universe::heap()->check_for_non_bad_heap_word_value(mem, _word_size));
   size_t size_in_bytes = _word_size * HeapWordSize;
   _thread->incr_allocated_bytes(size_in_bytes);
 

@@ -134,6 +134,22 @@ public class TestSlices {
         }
     }
 
+    @Test
+    public void testSliceAlignmentPowerOfTwo() {
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment segment = arena.allocate(100, 4096);
+            for (int i = 8 ; i < 4096 ; i++) {
+                boolean badAlign = Long.bitCount(i) != 1; // not a power of two
+                try {
+                    segment.asSlice(0, 100, i);
+                    assertFalse(badAlign);
+                } catch (IllegalArgumentException iae) {
+                    assertTrue(badAlign);
+                }
+            }
+        }
+    }
+
     @DataProvider(name = "slices")
     static Object[][] slices() {
         return new Object[][] {

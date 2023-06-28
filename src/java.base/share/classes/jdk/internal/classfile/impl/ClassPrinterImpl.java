@@ -851,6 +851,10 @@ public final class ClassPrinterImpl {
                                 "targets", "target", Stream.concat(Stream.of(si.defaultTarget())
                                         .map(com::labelToBci), si.cases().stream()
                                                 .map(sc -> com.labelToBci(sc.target())))));
+                        case DiscontinuedInstruction.JsrInstruction jsr -> in.with(leaf(
+                                "target", com.labelToBci(jsr.target())));
+                        case DiscontinuedInstruction.RetInstruction ret ->  in.with(leaf(
+                                "slot", ret.slot()));
                         default -> {}
                     }
                     bci += ins.sizeInBytes();
@@ -944,14 +948,14 @@ public final class ClassPrinterImpl {
                                                     .map(Utf8Entry::stringValue).orElse(null))))),
                                   new ListNodeImpl(BLOCK, "exports", ma.exports().stream().map(exp ->
                                     new MapNodeImpl(FLOW, "exp").with(
-                                            leaf("package", exp.exportedPackage().asSymbol().packageName()),
+                                            leaf("package", exp.exportedPackage().asSymbol().name()),
                                             list("flags", "flag", exp.exportsFlags().stream()
                                                     .map(AccessFlag::name)),
                                             list("to", "module", exp.exportsTo().stream()
                                                     .map(me -> me.name().stringValue()))))),
                                   new ListNodeImpl(BLOCK, "opens", ma.opens().stream().map(opn ->
                                     new MapNodeImpl(FLOW, "opn").with(
-                                            leaf("package", opn.openedPackage().asSymbol().packageName()),
+                                            leaf("package", opn.openedPackage().asSymbol().name()),
                                             list("flags", "flag", opn.opensFlags().stream()
                                                     .map(AccessFlag::name)),
                                             list("to", "module", opn.opensTo().stream()
@@ -963,7 +967,7 @@ public final class ClassPrinterImpl {
                                                           .map(ce -> ce.name().stringValue())))))));
                 case ModulePackagesAttribute mopa ->
                     nodes.add(list("module packages", "subclass", mopa.packages().stream()
-                            .map(mp -> mp.asSymbol().packageName())));
+                            .map(mp -> mp.asSymbol().name())));
                 case ModuleMainClassAttribute mmca ->
                     nodes.add(leaf("module main class", mmca.mainClass().name().stringValue()));
                 case RecordAttribute ra ->

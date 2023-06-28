@@ -448,8 +448,8 @@ ParallelCompactData::create_vspace(size_t count, size_t element_size)
   const size_t rs_align = page_sz == os::vm_page_size() ? 0 :
     MAX2(page_sz, granularity);
   ReservedSpace rs(_reserved_byte_size, rs_align, page_sz);
-  os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, page_sz, rs.base(),
-                       rs.size());
+  os::trace_page_sizes("Parallel Compact Data", raw_bytes, raw_bytes, rs.base(),
+                       rs.size(), page_sz);
 
   MemTracker::record_virtual_memory_type((address)rs.base(), mtGC);
 
@@ -2069,7 +2069,7 @@ void PSParallelCompact::marking_phase(ParallelOldTracer *gc_tracer) {
 
   {
     GCTraceTime(Debug, gc, phases) tm("Report Object Count", &_gc_timer);
-    _gc_tracer.report_object_count_after_gc(is_alive_closure());
+    _gc_tracer.report_object_count_after_gc(is_alive_closure(), &ParallelScavengeHeap::heap()->workers());
   }
 #if TASKQUEUE_STATS
   ParCompactionManager::oop_task_queues()->print_and_reset_taskqueue_stats("Oop Queue");
@@ -2238,7 +2238,7 @@ public:
   }
 
   bool try_claim(PSParallelCompact::UpdateDensePrefixTask& reference) {
-    uint claimed = Atomic::fetch_and_add(&_counter, 1u);
+    uint claimed = Atomic::fetch_then_add(&_counter, 1u);
     if (claimed < _insert_index) {
       reference = _backing_array[claimed];
       return true;

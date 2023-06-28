@@ -138,6 +138,7 @@ class outputStream;
   LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(owner) \
+  LOG_TAG(page) \
   LOG_TAG(pagesize) \
   LOG_TAG(parser) \
   LOG_TAG(patch) \
@@ -196,6 +197,7 @@ class outputStream;
   LOG_TAG(tlab) \
   LOG_TAG(tracking) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
+  LOG_TAG(unmap) \
   LOG_TAG(unshareable) \
   NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \

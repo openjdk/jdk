@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -420,12 +420,6 @@ class JdepsTask {
             }
         },
 
-        new Option(false, "-P", "-profile") {
-            void process(JdepsTask task, String opt, String arg) throws BadArgs {
-                task.options.showProfile = true;
-            }
-        },
-
         new Option(false, "-R", "-recursive", "--recursive") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.recursive = Options.RECURSIVE;
@@ -514,9 +508,6 @@ class JdepsTask {
             }
             if (options.version || options.fullVersion) {
                 showVersion(options.fullVersion);
-            }
-            if (options.showProfile && !options.nowarning) {
-                warning("warn.deprecated.option", "-profile");
             }
             if (options.help || options.version || options.fullVersion) {
                 return EXIT_OK;
@@ -753,7 +744,6 @@ class JdepsTask {
             // default to package-level verbose
             JdepsWriter writer = new SimpleWriter(log,
                                                   type,
-                                                  options.showProfile,
                                                   options.showModule);
 
             return run(config, writer, type);
@@ -1079,7 +1069,6 @@ class JdepsTask {
             Type type = getAnalyzerType();
             JdepsWriter writer = new DotFileWriter(dotOutputDir,
                                                    type,
-                                                   options.showProfile,
                                                    options.showModule,
                                                    options.showLabel);
             return run(config, writer, type);
@@ -1225,7 +1214,6 @@ class JdepsTask {
         boolean help;
         boolean version;
         boolean fullVersion;
-        boolean showProfile;
         boolean showModule = true;
         boolean showSummary;
         boolean apiOnly;

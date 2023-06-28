@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2022 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -237,10 +237,12 @@ class Assembler : public AbstractAssembler {
 
   enum opcdxos_masks {
     XL_FORM_OPCODE_MASK = (63u << OPCODE_SHIFT) | (1023u << 1),
+    ANDI_OPCODE_MASK    = (63u << OPCODE_SHIFT),
     ADDI_OPCODE_MASK    = (63u << OPCODE_SHIFT),
     ADDIS_OPCODE_MASK   = (63u << OPCODE_SHIFT),
     BXX_OPCODE_MASK     = (63u << OPCODE_SHIFT),
     BCXX_OPCODE_MASK    = (63u << OPCODE_SHIFT),
+    CMPLI_OPCODE_MASK   = (63u << OPCODE_SHIFT),
     // trap instructions
     TDI_OPCODE_MASK     = (63u << OPCODE_SHIFT),
     TWI_OPCODE_MASK     = (63u << OPCODE_SHIFT),
@@ -335,15 +337,6 @@ class Assembler : public AbstractAssembler {
     MFCTR_OPCODE  = (MFSPR_OPCODE | 9 << SPR_0_4_SHIFT),
 
     // Attention: Higher and lower half are inserted in reversed order.
-    MTTFHAR_OPCODE   = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
-    MFTFHAR_OPCODE   = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
-    MTTFIAR_OPCODE   = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 1 << SPR_0_4_SHIFT),
-    MFTFIAR_OPCODE   = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 1 << SPR_0_4_SHIFT),
-    MTTEXASR_OPCODE  = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 2 << SPR_0_4_SHIFT),
-    MFTEXASR_OPCODE  = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 2 << SPR_0_4_SHIFT),
-    MTTEXASRU_OPCODE = (MTSPR_OPCODE | 4 << SPR_5_9_SHIFT | 3 << SPR_0_4_SHIFT),
-    MFTEXASRU_OPCODE = (MFSPR_OPCODE | 4 << SPR_5_9_SHIFT | 3 << SPR_0_4_SHIFT),
-
     MTVRSAVE_OPCODE  = (MTSPR_OPCODE | 8 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
     MFVRSAVE_OPCODE  = (MFSPR_OPCODE | 8 << SPR_5_9_SHIFT | 0 << SPR_0_4_SHIFT),
 
@@ -764,17 +757,6 @@ class Assembler : public AbstractAssembler {
     // Vector Permute and Xor (introduced with Power 8)
     VPERMXOR_OPCODE     = (4u  << OPCODE_SHIFT |   45u),
 
-    // Transactional Memory instructions (introduced with Power 8)
-    TBEGIN_OPCODE    = (31u << OPCODE_SHIFT |  654u << 1),
-    TEND_OPCODE      = (31u << OPCODE_SHIFT |  686u << 1),
-    TABORT_OPCODE    = (31u << OPCODE_SHIFT |  910u << 1),
-    TABORTWC_OPCODE  = (31u << OPCODE_SHIFT |  782u << 1),
-    TABORTWCI_OPCODE = (31u << OPCODE_SHIFT |  846u << 1),
-    TABORTDC_OPCODE  = (31u << OPCODE_SHIFT |  814u << 1),
-    TABORTDCI_OPCODE = (31u << OPCODE_SHIFT |  878u << 1),
-    TSR_OPCODE       = (31u << OPCODE_SHIFT |  750u << 1),
-    TCHECK_OPCODE    = (31u << OPCODE_SHIFT |  718u << 1),
-
     // Icache and dcache related instructions
     DCBA_OPCODE    = (31u << OPCODE_SHIFT |  758u << 1),
     DCBZ_OPCODE    = (31u << OPCODE_SHIFT | 1014u << 1),
@@ -1011,15 +993,15 @@ class Assembler : public AbstractAssembler {
   // Test if x is within signed immediate range for nbits.
   static bool is_simm(int x, unsigned int nbits) {
     assert(0 < nbits && nbits < 32, "out of bounds");
-    const int   min      = -(((int)1) << nbits-1);
-    const int   maxplus1 =  (((int)1) << nbits-1);
+    const int   min      = -(((int)1) << (nbits-1));
+    const int   maxplus1 =  (((int)1) << (nbits-1));
     return min <= x && x < maxplus1;
   }
 
   static bool is_simm(jlong x, unsigned int nbits) {
     assert(0 < nbits && nbits < 64, "out of bounds");
-    const jlong min      = -(((jlong)1) << nbits-1);
-    const jlong maxplus1 =  (((jlong)1) << nbits-1);
+    const jlong min      = -(((jlong)1) << (nbits-1));
+    const jlong maxplus1 =  (((jlong)1) << (nbits-1));
     return min <= x && x < maxplus1;
   }
 
@@ -1042,7 +1024,7 @@ class Assembler : public AbstractAssembler {
   // X is supposed to fit in a field "nbits" wide
   // and be sign-extended. Check the range.
   static void assert_signed_range(intptr_t x, int nbits) {
-    assert(nbits == 32 || (-(1 << nbits-1) <= x && x < (1 << nbits-1)),
+    assert(nbits == 32 || (-(1 << (nbits-1)) <= x && x < (1 << (nbits-1))),
            "value out of range");
   }
 
@@ -1084,7 +1066,7 @@ class Assembler : public AbstractAssembler {
   // Same as u_field for signed values
   static int s_field(int x, int hi_bit, int lo_bit) {
     int nbits = hi_bit - lo_bit + 1;
-    assert(nbits == 32 || (-(1 << nbits-1) <= x && x < (1 << nbits-1)),
+    assert(nbits == 32 || (-(1 << (nbits-1)) <= x && x < (1 << (nbits-1))),
       "value out of range");
     x &= fmask(hi_bit, lo_bit);
     int r = x << lo_bit;
@@ -1478,6 +1460,9 @@ class Assembler : public AbstractAssembler {
   static bool is_addis(int x) {
      return ADDIS_OPCODE == (x & ADDIS_OPCODE_MASK);
   }
+  static bool is_andi(int x) {
+     return ANDI_OPCODE == (x & ANDI_OPCODE_MASK);
+  }
   static bool is_bxx(int x) {
      return BXX_OPCODE == (x & BXX_OPCODE_MASK);
   }
@@ -1501,6 +1486,9 @@ class Assembler : public AbstractAssembler {
   }
   static bool is_bclr(int x) {
      return BCLR_OPCODE == (x & XL_FORM_OPCODE_MASK);
+  }
+  static bool is_cmpli(int x) {
+     return CMPLI_OPCODE == (x & CMPLI_OPCODE_MASK);
   }
   static bool is_li(int x) {
      return is_addi(x) && inv_ra_field(x)==0;
@@ -1740,6 +1728,7 @@ class Assembler : public AbstractAssembler {
   // 8 bytes
   inline void ldx(  Register d, Register s1, Register s2);
   inline void ld(   Register d, int si16,    Register s1);
+  inline void ld(   Register d, ByteSize si16, Register s1);
   inline void ldu(  Register d, int si16,    Register s1);
 
   // 8 bytes reversed
@@ -1805,33 +1794,6 @@ class Assembler : public AbstractAssembler {
   // Data Stream Control Register
   inline void mtdscr(Register s1);
   inline void mfdscr(Register d );
-  // Transactional Memory Registers
-  inline void mftfhar(Register d);
-  inline void mftfiar(Register d);
-  inline void mftexasr(Register d);
-  inline void mftexasru(Register d);
-
-  // TEXASR bit description
-  enum transaction_failure_reason {
-    // Upper half (TEXASRU):
-    tm_failure_code       =  0, // The Failure Code is copied from tabort or treclaim operand.
-    tm_failure_persistent =  7, // The failure is likely to recur on each execution.
-    tm_disallowed         =  8, // The instruction is not permitted.
-    tm_nesting_of         =  9, // The maximum transaction level was exceeded.
-    tm_footprint_of       = 10, // The tracking limit for transactional storage accesses was exceeded.
-    tm_self_induced_cf    = 11, // A self-induced conflict occurred in Suspended state.
-    tm_non_trans_cf       = 12, // A conflict occurred with a non-transactional access by another processor.
-    tm_trans_cf           = 13, // A conflict occurred with another transaction.
-    tm_translation_cf     = 14, // A conflict occurred with a TLB invalidation.
-    tm_inst_fetch_cf      = 16, // An instruction fetch was performed from a block that was previously written transactionally.
-    tm_tabort             = 31, // Termination was caused by the execution of an abort instruction.
-    // Lower half:
-    tm_suspended          = 32, // Failure was recorded in Suspended state.
-    tm_failure_summary    = 36, // Failure has been detected and recorded.
-    tm_tfiar_exact        = 37, // Value in the TFIAR is exact.
-    tm_rot                = 38, // Rollback-only transaction.
-    tm_transaction_level  = 52, // Transaction level (nesting depth + 1).
-  };
 
   // PPC 1, section 2.4.1 Branch Instructions
   inline void b(  address a, relocInfo::relocType rt = relocInfo::none);
@@ -2443,25 +2405,6 @@ class Assembler : public AbstractAssembler {
   // Vector Permute and Xor (introduced with Power 8)
   inline void vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
 
-  // Transactional Memory instructions (introduced with Power 8)
-  inline void tbegin_();    // R=0
-  inline void tbeginrot_(); // R=1 Rollback-Only Transaction
-  inline void tend_();    // A=0
-  inline void tendall_(); // A=1
-  inline void tabort_();
-  inline void tabort_(Register a);
-  inline void tabortwc_(int t, Register a, Register b);
-  inline void tabortwci_(int t, Register a, int si);
-  inline void tabortdc_(int t, Register a, Register b);
-  inline void tabortdci_(int t, Register a, int si);
-  inline void tsuspend_(); // tsr with L=0
-  inline void tresume_();  // tsr with L=1
-  inline void tcheck(int f);
-
-  static bool is_tbegin(int x) {
-    return TBEGIN_OPCODE == (x & (0x3f << OPCODE_SHIFT | 0x3ff << 1));
-  }
-
   // The following encoders use r0 as second operand. These instructions
   // read r0 as '0'.
   inline void lwzx( Register d, Register s2);
@@ -2478,6 +2421,7 @@ class Assembler : public AbstractAssembler {
   inline void lbz(  Register d, int si16);
   inline void ldx(  Register d, Register s2);
   inline void ld(   Register d, int si16);
+  inline void ld(   Register d, ByteSize si16);
   inline void ldbrx(Register d, Register s2);
   inline void stwx( Register d, Register s2);
   inline void stw(  Register d, int si16);

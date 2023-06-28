@@ -142,18 +142,17 @@ class Method : public Metadata {
 
   // name
   Symbol* name() const                           { return constants()->symbol_at(name_index()); }
-  int name_index() const                         { return constMethod()->name_index();         }
+  u2 name_index() const                          { return constMethod()->name_index();         }
   void set_name_index(int index)                 { constMethod()->set_name_index(index);       }
 
   // signature
   Symbol* signature() const                      { return constants()->symbol_at(signature_index()); }
-  int signature_index() const                    { return constMethod()->signature_index();         }
+  u2 signature_index() const                     { return constMethod()->signature_index();         }
   void set_signature_index(int index)            { constMethod()->set_signature_index(index);       }
 
   // generics support
   Symbol* generic_signature() const              { int idx = generic_signature_index(); return ((idx != 0) ? constants()->symbol_at(idx) : nullptr); }
-  int generic_signature_index() const            { return constMethod()->generic_signature_index(); }
-  void set_generic_signature_index(int index)    { constMethod()->set_generic_signature_index(index); }
+  u2 generic_signature_index() const             { return constMethod()->generic_signature_index(); }
 
   // annotations support
   AnnotationArray* annotations() const           {
@@ -298,12 +297,7 @@ class Method : public Metadata {
     }
   }
 
-  // Derive stuff from the signature at load time.
-  void compute_from_signature(Symbol* sig);
-
-  // size of parameters (receiver if any + arguments)
-  int  size_of_parameters() const                { return constMethod()->size_of_parameters(); }
-  void set_size_of_parameters(int size)          { constMethod()->set_size_of_parameters(size); }
+  u2 size_of_parameters() const { return constMethod()->size_of_parameters(); }
 
   bool has_stackmap_table() const {
     return constMethod()->has_stackmap_table();
@@ -320,7 +314,7 @@ class Method : public Metadata {
   // exception handler table
   bool has_exception_handler() const
                              { return constMethod()->has_exception_table(); }
-  int exception_table_length() const
+  u2 exception_table_length() const
                              { return constMethod()->exception_table_length(); }
   ExceptionTableElement* exception_table_start() const
                              { return constMethod()->exception_table_start(); }
@@ -447,6 +441,7 @@ public:
   void link_method(const methodHandle& method, TRAPS);
   // clear entry points. Used by sharing code during dump time
   void unlink_method() NOT_CDS_RETURN;
+  void remove_unshareable_flags() NOT_CDS_RETURN;
 
   // the number of argument reg slots that the compiled method uses on the stack.
   int num_stack_arg_slots() const { return constMethod()->num_stack_arg_slots(); }
@@ -665,9 +660,7 @@ public:
   static ByteSize access_flags_offset()          { return byte_offset_of(Method, _access_flags      ); }
   static ByteSize from_compiled_offset()         { return byte_offset_of(Method, _from_compiled_entry); }
   static ByteSize code_offset()                  { return byte_offset_of(Method, _code); }
-  static ByteSize method_data_offset()           {
-    return byte_offset_of(Method, _method_data);
-  }
+
   static ByteSize method_counters_offset()       {
     return byte_offset_of(Method, _method_counters);
   }
@@ -681,8 +674,8 @@ public:
   static ByteSize itable_index_offset()          { return byte_offset_of(Method, _vtable_index ); }
 
   // for code generation
-  static int method_data_offset_in_bytes()       { return offset_of(Method, _method_data); }
-  static int intrinsic_id_offset_in_bytes()      { return offset_of(Method, _intrinsic_id); }
+  static ByteSize method_data_offset()  { return byte_offset_of(Method, _method_data); }
+  static ByteSize intrinsic_id_offset() { return byte_offset_of(Method, _intrinsic_id); }
   static int intrinsic_id_size_in_bytes()        { return sizeof(u2); }
 
   // Static methods that are used to implement member methods where an exposed this pointer
@@ -842,7 +835,7 @@ public:
 
   // Find if klass for method is loaded
   bool is_klass_loaded_by_klass_index(int klass_index) const;
-  bool is_klass_loaded(int refinfo_index, bool must_be_resolved = false) const;
+  bool is_klass_loaded(int refinfo_index, Bytecodes::Code bc, bool must_be_resolved = false) const;
 
   // Indicates whether compilation failed earlier for this method, or
   // whether it is not compilable for another reason like having a
@@ -934,8 +927,6 @@ public:
   // Inlined elements
   address* native_function_addr() const          { assert(is_native(), "must be native"); return (address*) (this+1); }
   address* signature_handler_addr() const        { return native_function_addr() + 1; }
-
-  void set_num_stack_arg_slots(int n) { constMethod()->set_num_stack_arg_slots(n); }
 };
 
 

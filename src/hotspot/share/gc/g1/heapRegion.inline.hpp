@@ -109,11 +109,11 @@ inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) c
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
-inline bool HeapRegion::obj_in_unparsable_area(oop obj, HeapWord* const pb) {
-  return !HeapRegion::obj_in_parsable_area(cast_from_oop<HeapWord*>(obj), pb);
+inline bool HeapRegion::is_in_parsable_area(const void* const addr) const {
+  return is_in_parsable_area(addr, parsable_bottom());
 }
 
-inline bool HeapRegion::obj_in_parsable_area(const HeapWord* addr, HeapWord* const pb) {
+inline bool HeapRegion::is_in_parsable_area(const void* const addr, const void* const pb) {
   return addr >= pb;
 }
 
@@ -125,7 +125,7 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   assert(p >= bottom() && p < top(), "precondition");
   assert(!is_continues_humongous(), "p must point to block-start");
 
-  if (obj_in_parsable_area(p, pb)) {
+  if (is_in_parsable_area(p, pb)) {
     return true;
   }
 
@@ -140,19 +140,6 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   return is_marked_in_bitmap(cast_to_oop(p));
 }
 
-inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
-  assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
-
-  // From Remark until a region has been concurrently scrubbed, parts of the
-  // region is not guaranteed to be parsable. Use the bitmap for liveness.
-  if (obj_in_unparsable_area(obj, pb)) {
-    return !is_marked_in_bitmap(obj);
-  }
-
-  // This object is in the parsable part of the heap, live unless scrubbed.
-  return G1CollectedHeap::is_obj_filler(obj);
-}
-
 inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, const HeapWord* p, HeapWord* const limit) const {
   return bitmap->get_next_marked_addr(p, limit);
 }
@@ -160,6 +147,10 @@ inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, c
 inline HeapWord* HeapRegion::next_live_in_unparsable(const HeapWord* p, HeapWord* const limit) const {
   G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
   return next_live_in_unparsable(bitmap, p, limit);
+}
+
+inline bool HeapRegion::is_collection_set_candidate() const {
+ return G1CollectedHeap::heap()->is_collection_set_candidate(this);
 }
 
 inline size_t HeapRegion::block_size(const HeapWord* p) const {
@@ -290,14 +281,18 @@ inline void HeapRegion::reset_parsable_bottom() {
 }
 
 inline void HeapRegion::note_start_of_marking() {
-  set_top_at_mark_start(top());
-  _gc_efficiency = -1.0;
+  assert(top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
+  if (is_old_or_humongous()) {
+    set_top_at_mark_start(top());
+  }
 }
 
 inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
   assert_at_safepoint();
 
-  _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  if (top_at_mark_start() != bottom()) {
+    _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  }
 
   if (needs_scrubbing()) {
     _parsable_bottom = top_at_mark_start();
@@ -323,6 +318,10 @@ inline void HeapRegion::reset_top_at_mark_start() {
   // - otherwise we reclaim regions only during GC and we do not read tams and the
   // bitmap concurrently.
   set_top_at_mark_start(bottom());
+}
+
+inline bool HeapRegion::needs_scrubbing() const {
+  return is_old();
 }
 
 inline bool HeapRegion::in_collection_set() const {
@@ -438,7 +437,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
   //   safepoints.
   //
   HeapWord* cur = block_start(start, pb);
-  if (!obj_in_parsable_area(start, pb)) {
+  if (!is_in_parsable_area(start, pb)) {
     // Limit the MemRegion to the part of the area to scan to the unparsable one as using the bitmap
     // is slower than blindly iterating the objects.
     MemRegion mr_in_unparsable(mr.start(), MIN2(mr.end(), pb));

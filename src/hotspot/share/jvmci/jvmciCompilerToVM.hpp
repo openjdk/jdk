@@ -133,7 +133,7 @@ class CompilerToVM {
   }
 
   static unsigned cstring_hash(const char* const& s) {
-    int h = 0;
+    unsigned h = 0;
     const char* p = s;
     while (*p != '\0') {
       h = 31 * h + *p;
