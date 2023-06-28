@@ -49,4 +49,3 @@ public class LogProducerFinder  extends LoggerFinder {
         }
     }
 }
-

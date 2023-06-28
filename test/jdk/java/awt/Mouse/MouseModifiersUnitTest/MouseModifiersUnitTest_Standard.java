@@ -619,4 +619,3 @@ class CheckingModifierAdapter extends MouseAdapter{
         }
     }
 }
-

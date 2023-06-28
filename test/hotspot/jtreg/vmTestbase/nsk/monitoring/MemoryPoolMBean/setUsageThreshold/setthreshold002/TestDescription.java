@@ -49,4 +49,3 @@
  *      nsk.monitoring.MemoryPoolMBean.setUsageThreshold.setthreshold001
  *      -testMode=server
  */
-

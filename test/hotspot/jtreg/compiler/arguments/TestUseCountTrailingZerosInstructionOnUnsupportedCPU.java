@@ -85,4 +85,3 @@ public class TestUseCountTrailingZerosInstructionOnUnsupportedCPU
         new TestUseCountTrailingZerosInstructionOnUnsupportedCPU().test();
     }
 }
-

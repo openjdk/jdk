@@ -46,5 +46,3 @@ public class SetExtendedState {
         frame.dispose();
     }
 }
-
-

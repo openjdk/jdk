@@ -50,4 +50,3 @@ public abstract class NTLMAuthenticationCallback {
      */
     public abstract boolean isTrustedSite(URL url);
 }
-

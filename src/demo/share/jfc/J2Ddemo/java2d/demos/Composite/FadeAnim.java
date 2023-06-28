@@ -483,4 +483,3 @@ public final class FadeAnim extends AnimatingControlsSurface {
         }
     } // End DemoControls
 } // End FadeAnim
-

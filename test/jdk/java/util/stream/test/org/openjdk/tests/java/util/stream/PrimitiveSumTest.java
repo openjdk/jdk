@@ -62,4 +62,3 @@ public class PrimitiveSumTest extends OpTestCase {
                 exercise();
     }
 }
-

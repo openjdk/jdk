@@ -46,4 +46,3 @@
  *
  * @run main/othervm/native -agentlib:localtab003 nsk.jvmti.GetLocalVariableTable.localtab003
  */
-

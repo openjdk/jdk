@@ -92,4 +92,3 @@ public class TestFloatsOnStackDeopt {
         System.err.println((errn > 0) ? "FAILED" : "PASSED");
     }
 }
-

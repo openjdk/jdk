@@ -58,4 +58,3 @@ module java.security.jgss {
     provides java.security.Provider with
         sun.security.jgss.SunProvider;
 }
-

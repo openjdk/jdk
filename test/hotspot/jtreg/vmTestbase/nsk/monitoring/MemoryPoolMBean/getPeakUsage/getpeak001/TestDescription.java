@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.MemoryPoolMBean.getPeakUsage.getpeak001
  */
-

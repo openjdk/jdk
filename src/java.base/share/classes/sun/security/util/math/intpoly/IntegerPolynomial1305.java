@@ -214,4 +214,3 @@ public final class IntegerPolynomial1305 extends IntegerPolynomial {
     }
 
 }
-

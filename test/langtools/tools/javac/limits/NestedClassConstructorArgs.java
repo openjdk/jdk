@@ -44,4 +44,3 @@ public class NestedClassConstructorArgs extends NumArgsTest {
         new NestedClassConstructorArgs().runTest();
     }
 }
-

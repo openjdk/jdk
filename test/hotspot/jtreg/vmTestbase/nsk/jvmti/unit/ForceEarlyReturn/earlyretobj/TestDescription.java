@@ -52,4 +52,3 @@
  *
  * @run main/othervm/native -agentlib:earlyretobj nsk.jvmti.unit.ForceEarlyReturn.earlyretobj
  */
-

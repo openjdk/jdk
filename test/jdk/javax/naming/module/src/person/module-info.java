@@ -25,4 +25,3 @@ module person {
     requires java.naming;
     exports org.example.person;
 }
-

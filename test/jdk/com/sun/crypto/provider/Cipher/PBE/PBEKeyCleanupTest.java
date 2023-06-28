@@ -98,6 +98,3 @@ public class PBEKeyCleanupTest {
         Reference.reachabilityFence(array); // Keep array alive
     }
 }
-
-
-

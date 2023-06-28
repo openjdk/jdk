@@ -532,4 +532,3 @@ public abstract class InfoWindow extends Window {
         }
     }
 }
-

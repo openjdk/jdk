@@ -74,4 +74,3 @@ public class TestFactory implements ObjectFactory {
 
     private static volatile int timesGetInstanceCalled;
 }
-

@@ -99,4 +99,3 @@ public class ShowHeadings extends HtmlChecker {
         }
     }
 }
-

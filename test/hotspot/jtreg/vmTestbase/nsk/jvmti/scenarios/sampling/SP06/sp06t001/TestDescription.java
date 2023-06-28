@@ -68,4 +68,3 @@
  *      -agentlib:sp06t001=-waittime=5
  *      nsk.jvmti.scenarios.sampling.SP06.sp06t001
  */
-

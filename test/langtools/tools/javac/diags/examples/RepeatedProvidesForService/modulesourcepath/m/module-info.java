@@ -3,4 +3,3 @@ module m {
     provides p.I with p.A;
     provides p.I with p.B;
 }
-

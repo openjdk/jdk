@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getfldnm005=-waittime=5 nsk.jvmti.GetFieldName.getfldnm005
  */
-

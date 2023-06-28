@@ -229,4 +229,3 @@ public class DragLinkFromBrowser implements ActionListener {
         }
     }
 }
-

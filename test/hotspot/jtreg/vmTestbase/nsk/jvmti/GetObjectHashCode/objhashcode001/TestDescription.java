@@ -41,4 +41,3 @@
  *      -agentlib:objhashcode001=-waittime=5
  *      nsk.jvmti.GetObjectHashCode.objhashcode001
  */
-

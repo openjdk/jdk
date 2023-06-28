@@ -47,4 +47,3 @@ public class TestJcmdStopWithoutFilename {
         output.shouldContain("written to").shouldContain(filename);
     }
 }
-

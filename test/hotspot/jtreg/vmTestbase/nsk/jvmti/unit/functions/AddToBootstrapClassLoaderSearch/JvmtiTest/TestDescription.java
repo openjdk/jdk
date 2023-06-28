@@ -48,4 +48,3 @@
  *      -agentlib:AddToBootstrapClassLoaderSearch=./bin
  *      nsk.jvmti.unit.functions.AddToBootstrapClassLoaderSearch.JvmtiTest
  */
-

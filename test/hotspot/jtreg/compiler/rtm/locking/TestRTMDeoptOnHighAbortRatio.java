@@ -113,4 +113,3 @@ public class TestRTMDeoptOnHighAbortRatio {
         new TestRTMDeoptOnHighAbortRatio().runTestCases();
     }
 }
-

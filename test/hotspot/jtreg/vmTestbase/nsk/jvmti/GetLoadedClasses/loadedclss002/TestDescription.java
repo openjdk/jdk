@@ -42,4 +42,3 @@
  *      -agentlib:loadedclss002=-waittime=5
  *      nsk.jvmti.GetLoadedClasses.loadedclss002
  */
-

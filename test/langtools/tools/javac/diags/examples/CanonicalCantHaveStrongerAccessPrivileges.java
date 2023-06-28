@@ -28,4 +28,3 @@
 public record CanonicalCantHaveStrongerAccessPrivileges() {
     private CanonicalCantHaveStrongerAccessPrivileges {}
 }
-

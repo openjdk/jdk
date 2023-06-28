@@ -32,4 +32,3 @@ public @interface TestAnnotation
 {
     public TestEnum value() default TestEnum.TWO;
 }
-

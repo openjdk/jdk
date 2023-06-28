@@ -55,4 +55,3 @@ public class BooleanTest {
         VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getBooleanVMFlag);
     }
 }
-

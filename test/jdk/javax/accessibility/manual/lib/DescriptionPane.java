@@ -51,4 +51,3 @@ class DescriptionPane extends JPanel {
         add(esp);
     }
 }
-

@@ -44,4 +44,3 @@ public class NestedClassMethodArgs extends NumArgsTest {
         new NestedClassMethodArgs().runTest();
     }
 }
-

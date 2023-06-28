@@ -32,4 +32,3 @@ public class MethodSupplier {
         System.out.println("good");
     }
 }
-

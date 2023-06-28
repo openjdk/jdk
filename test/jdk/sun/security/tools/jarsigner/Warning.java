@@ -259,4 +259,3 @@ public class Warning {
         return out;
     }
 }
-

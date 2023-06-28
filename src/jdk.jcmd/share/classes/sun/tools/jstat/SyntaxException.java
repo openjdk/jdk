@@ -82,4 +82,3 @@ public class SyntaxException extends ParserException {
         return message;
     }
 }
-

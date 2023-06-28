@@ -343,4 +343,3 @@ class GoDaddySfig2 {
                 ValidatePathWithParams.Status.REVOKED, null, System.out);
     }
 }
-

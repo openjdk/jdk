@@ -178,4 +178,3 @@ public class ReadAbortTest implements IIOReadProgressListener {
     public void thumbnailComplete(ImageReader reader) {
     }
 }
-

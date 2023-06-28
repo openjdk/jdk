@@ -195,4 +195,3 @@ interface TestInterface1 {
 @interface ExpectedString {
     String value();
 }
-

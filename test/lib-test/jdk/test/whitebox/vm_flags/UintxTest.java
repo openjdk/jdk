@@ -52,4 +52,3 @@ public class UintxTest {
         VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getUintxVMFlag);
     }
 }
-

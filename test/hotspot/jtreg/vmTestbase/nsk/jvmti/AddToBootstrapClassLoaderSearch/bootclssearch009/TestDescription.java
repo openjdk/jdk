@@ -76,4 +76,3 @@
  *      -agentlib:bootclssearch_agent=-waittime=5,phasetocheck=live,segment1=./bootclssearch001.jar
  *      nsk.jvmti.AddToBootstrapClassLoaderSearch.bootclssearch001
  */
-

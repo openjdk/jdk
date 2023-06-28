@@ -99,4 +99,3 @@ public class TypeAnnotationPropagationTest extends ClassfileTestHelper {
         @interface A {}
     }
 }
-

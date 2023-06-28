@@ -46,4 +46,3 @@
  *      -agentlib:HotSwap=-waittime=5,package=java/lang,samples=10,mode=mixed
  *      nsk.jvmti.scenarios.hotswap.HS102.hs102t002
  */
-

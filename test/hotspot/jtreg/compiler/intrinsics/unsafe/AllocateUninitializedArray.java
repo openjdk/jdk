@@ -231,4 +231,3 @@ public class AllocateUninitializedArray {
         static Object testNeg()     { return UNSAFE.allocateUninitializedArray(classInt,     sampleLenNeg); }
     }
 }
-

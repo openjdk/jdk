@@ -356,4 +356,3 @@ public class Balls extends AnimatingControlsSurface {
         }
     } // End DemoControls
 } // End Balls
-

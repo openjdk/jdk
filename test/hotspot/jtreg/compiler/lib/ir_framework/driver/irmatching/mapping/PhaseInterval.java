@@ -74,4 +74,3 @@ public class PhaseInterval {
         return "[" + start + ", " + end + "]";
     }
 }
-

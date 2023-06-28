@@ -206,4 +206,3 @@ public class DragTestWithHIDPI extends TransferHandler {
         robot.delay(DEFAULT_DELAY);
     }
 }
-

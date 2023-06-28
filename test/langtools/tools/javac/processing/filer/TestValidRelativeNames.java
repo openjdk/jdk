@@ -135,4 +135,3 @@ public class TestValidRelativeNames extends JavacTestingAbstractProcessor {
         return relativeBase.replace("foo", "foo" + suffix);
     }
 }
-

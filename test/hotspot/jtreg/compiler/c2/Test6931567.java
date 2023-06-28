@@ -60,4 +60,3 @@ public class Test6931567 {
         }
     }
 }
-

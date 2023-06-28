@@ -44,4 +44,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.ThreadMXBean.isCurrentThreadCpuTimeSupported.curthcputime001
  */
-

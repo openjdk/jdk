@@ -54,4 +54,3 @@ public interface XECPrivateKey extends XECKey, PrivateKey {
      */
     Optional<byte[]> getScalar();
 }
-

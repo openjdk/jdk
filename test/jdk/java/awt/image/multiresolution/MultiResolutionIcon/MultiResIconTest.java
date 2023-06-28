@@ -204,4 +204,3 @@ public class MultiResIconTest {
         new MultiResIconTest();
     }
 }
-

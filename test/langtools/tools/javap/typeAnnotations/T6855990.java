@@ -49,4 +49,3 @@ public class T6855990 {
 }
 
 @interface Simple { }
-

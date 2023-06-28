@@ -918,4 +918,3 @@ final class ByteMaxVector extends ByteVector {
     // ================================================
 
 }
-

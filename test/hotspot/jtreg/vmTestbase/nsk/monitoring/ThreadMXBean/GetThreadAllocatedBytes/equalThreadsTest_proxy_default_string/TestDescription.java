@@ -45,4 +45,3 @@
  *      -MBeanServer=default
  *      -gp interned(simpleString)
  */
-

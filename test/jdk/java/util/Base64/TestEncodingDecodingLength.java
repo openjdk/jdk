@@ -72,4 +72,3 @@ public class TestEncodingDecodingLength {
         } catch (IllegalArgumentException iae) {}
     }
 }
-

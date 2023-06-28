@@ -74,4 +74,3 @@ public class DocFileElement implements DocletElement {
         return Kind.DOCFILE;
     }
 }
-

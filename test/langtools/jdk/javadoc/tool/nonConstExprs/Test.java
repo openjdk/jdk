@@ -60,4 +60,3 @@ public class Test {
     public static final int post_inc = value++;
     public static final int post_dec = value--;
 }
-

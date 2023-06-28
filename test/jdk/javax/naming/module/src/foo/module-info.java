@@ -25,4 +25,3 @@ module foo {
     requires java.naming;
     exports org.example.foo;
 }
-

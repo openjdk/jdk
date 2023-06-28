@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getfldmdf004 nsk.jvmti.GetFieldModifiers.getfldmdf004
  */
-

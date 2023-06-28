@@ -38,4 +38,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:MethodBind=-waittime=5 nsk.jvmti.unit.MethodBind.JvmtiTest
  */
-

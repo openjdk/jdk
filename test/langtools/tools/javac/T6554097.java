@@ -26,4 +26,3 @@ class T6554097 {
               ArrayList[] v8 = { new ArrayList() {} };
     }
 }
-

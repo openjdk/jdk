@@ -55,4 +55,3 @@
  *      -agentlib:relcaps002=-waittime=5
  *      nsk.jvmti.RelinquishCapabilities.relcaps002
  */
-

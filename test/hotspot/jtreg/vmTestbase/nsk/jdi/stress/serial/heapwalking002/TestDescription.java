@@ -70,4 +70,3 @@
  *      -configFile ${test.src}/heapwalking002.tests
  *      -testWorkDir .
  */
-

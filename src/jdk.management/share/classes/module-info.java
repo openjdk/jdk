@@ -37,4 +37,3 @@ module jdk.management {
     provides sun.management.spi.PlatformMBeanProvider with
         com.sun.management.internal.PlatformMBeanProviderImpl;
 }
-

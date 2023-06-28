@@ -184,4 +184,3 @@ public class OptionTest extends Object {
         System.out.println("Test passed: status = 0");
     }
 }
-

@@ -40,4 +40,3 @@
  *      -agentlib:nosuspendStackTrace=-waittime=5
  *      nsk.jvmti.unit.functions.nosuspendStackTrace.JvmtiTest
  */
-

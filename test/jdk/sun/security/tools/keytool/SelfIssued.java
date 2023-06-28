@@ -65,4 +65,3 @@ public class SelfIssued {
                 + "-keystore ks -keyalg rsa " + s);
     }
 }
-

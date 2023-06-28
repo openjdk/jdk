@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:drrawmon003 nsk.jvmti.DestroyRawMonitor.drrawmon003
  */
-

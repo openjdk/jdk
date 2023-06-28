@@ -47,5 +47,3 @@ public class TestVectorCastNeon {
                 "-XX:UseSVE=0");
     }
 }
-
-

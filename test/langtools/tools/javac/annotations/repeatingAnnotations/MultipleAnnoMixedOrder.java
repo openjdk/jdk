@@ -54,4 +54,3 @@ import java.lang.annotation.Repeatable;
 @Foo(getNumbers=2)
 @Baz(getStr="world")
 public class MultipleAnnoMixedOrder  {}
-

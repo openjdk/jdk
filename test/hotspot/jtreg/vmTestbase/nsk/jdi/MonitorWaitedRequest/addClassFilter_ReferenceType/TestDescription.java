@@ -72,4 +72,3 @@
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee
  *      -classPatterns nsk.share.jdi.MonitorWaitExecutor_1Subclass:nsk.share.jdi.MonitorWaitExecutor_2Subclass
  */
-

@@ -45,4 +45,3 @@ public class TestGCCauseWithG1ConcurrentMark {
         GCGarbageCollectionUtil.test(testID, vmFlags, gcNames, gcCauses);
     }
 }
-

@@ -48,4 +48,3 @@
  *      nsk.sysdict.share.ChainTest
  *      -jarpath leans.jar${path.separator}fats.jar
  */
-

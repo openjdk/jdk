@@ -34,4 +34,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:exceptionjni001 nsk.share.ExceptionCheckingJniEnv.exceptionjni001
  */
-

@@ -48,4 +48,3 @@ module java.compiler {
     uses javax.tools.DocumentationTool;
     uses javax.tools.JavaCompiler;
 }
-

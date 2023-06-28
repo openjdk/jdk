@@ -29,4 +29,3 @@ package test;
 public interface A {
     public D_ambgs[] gen();
 }
-

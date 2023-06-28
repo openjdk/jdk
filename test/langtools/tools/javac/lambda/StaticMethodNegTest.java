@@ -23,4 +23,3 @@ interface AB extends A, B {
    return A.super.m();
  }
 }
-

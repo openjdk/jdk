@@ -26,4 +26,3 @@ public class C extends D {
   static { System.out.println("C called"); }
   public C() { System.out.println("C.<init> called"); }
 }
-

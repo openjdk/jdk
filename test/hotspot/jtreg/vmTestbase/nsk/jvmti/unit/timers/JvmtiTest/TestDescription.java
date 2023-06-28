@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:timers=waittime=5 nsk.jvmti.unit.timers.JvmtiTest
  */
-

@@ -68,4 +68,3 @@
  *      -configFile ${test.src}/monitorEvents002.tests
  *      -testWorkDir .
  */
-

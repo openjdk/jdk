@@ -113,4 +113,3 @@ public class PressedButtonRightClickTest {
         myFrame.setVisible(true);
     }
 }
-

@@ -38,4 +38,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getphase002=-waittime=5 nsk.jvmti.GetPhase.getphase002
  */
-

@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:rawmonexit003 nsk.jvmti.RawMonitorExit.rawmonexit003
  */
-

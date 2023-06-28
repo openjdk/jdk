@@ -563,4 +563,3 @@ public class TestModulePackages extends JavadocTester {
     }
 
 }
-

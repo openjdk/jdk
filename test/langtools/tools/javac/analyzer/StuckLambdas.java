@@ -31,4 +31,3 @@ abstract class X {
         });
     }
 }
-

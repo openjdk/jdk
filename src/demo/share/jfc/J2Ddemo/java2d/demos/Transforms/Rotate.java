@@ -167,4 +167,3 @@ public class Rotate extends ControlsSurface {
         }
     } // End DemoControls class
 } // End Rotate class
-

@@ -127,4 +127,3 @@ public class TestProperty extends JavadocTester {
         );
     }
 }
-

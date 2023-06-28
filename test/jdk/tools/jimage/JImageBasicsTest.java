@@ -86,4 +86,3 @@ public class JImageBasicsTest extends JImageCliTest {
         new JImageBasicsTest().runTests();
     }
 }
-

@@ -25,4 +25,3 @@
 // options: --add-exports Bad!Name/p=java.base
 
 class BadNameForOption { }
-

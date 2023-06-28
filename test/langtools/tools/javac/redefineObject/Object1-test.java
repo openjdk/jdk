@@ -29,4 +29,3 @@
  *
  * @compile/module=java.base/fail/ref=Object1.out -XDrawDiagnostics java/lang/Object1.java
  */
-

@@ -239,4 +239,3 @@ public class AnnotationRemapper extends AnnotationVisitor {
         return remapper.mapAnnotationAttributeName(descriptor, name);
     }
 }
-

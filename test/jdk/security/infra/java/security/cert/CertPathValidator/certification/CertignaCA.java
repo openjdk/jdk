@@ -224,4 +224,3 @@ public class CertignaCA {
                 "Mon Mar 14 03:00:16 PDT 2022", System.out);
     }
 }
-

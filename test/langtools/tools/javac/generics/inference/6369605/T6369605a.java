@@ -47,4 +47,3 @@ class T6369605a {
     List<?> l2 = m2();
     List<?> l3 = m3();
 }
-

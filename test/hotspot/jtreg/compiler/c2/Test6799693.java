@@ -48,4 +48,3 @@ public class Test6799693 {
         System.out.println("Test.var_bad = " + var_bad + " (expected 2)\n");
     }
 }
-

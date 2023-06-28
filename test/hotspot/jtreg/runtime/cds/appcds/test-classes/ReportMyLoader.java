@@ -28,4 +28,3 @@ public class ReportMyLoader {
         System.out.println("TestClassLoader.called = " + TestClassLoader.called);
     }
 }
-

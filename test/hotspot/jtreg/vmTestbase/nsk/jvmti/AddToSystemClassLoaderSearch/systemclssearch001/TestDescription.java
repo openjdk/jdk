@@ -68,4 +68,3 @@
  *      -agentlib:systemclssearch_agent=-waittime=5,phasetocheck=onload,segment1=./bin/newclass
  *      nsk.jvmti.AddToSystemClassLoaderSearch.systemclssearch001
  */
-

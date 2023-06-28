@@ -53,4 +53,3 @@ public final class LambdaTest
         return Integer.toString(localVariable);
     };
 }
-

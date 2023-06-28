@@ -36,4 +36,3 @@ public @interface ExpectedBase {
     String[] getAnnosArgs() default{};
     String[] getDeclAnnosArgs() default {};
 }
-

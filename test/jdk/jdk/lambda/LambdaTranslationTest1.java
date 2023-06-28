@@ -229,4 +229,3 @@ interface LT1IA {
 interface LT1IIA {
     void doit(Integer i);
 }
-

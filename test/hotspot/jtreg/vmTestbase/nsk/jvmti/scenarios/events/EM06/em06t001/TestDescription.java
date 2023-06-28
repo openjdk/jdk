@@ -55,4 +55,3 @@
  *      nsk.jvmti.scenarios.events.EM06.em06t001
  *      ./bin/loadclass
  */
-

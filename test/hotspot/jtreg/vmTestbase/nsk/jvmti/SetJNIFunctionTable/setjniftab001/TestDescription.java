@@ -51,4 +51,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:setjniftab001 nsk.jvmti.SetJNIFunctionTable.setjniftab001
  */
-

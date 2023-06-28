@@ -46,4 +46,3 @@ public interface MatchResultVisitor {
     void visitFailOnConstraint(FailOnConstraintFailure failOnConstraintFailure);
     void visitCountsConstraint(CountsConstraintFailure countsConstraintFailure);
 }
-

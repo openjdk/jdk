@@ -45,4 +45,3 @@
  *      -agentlib:ma01t001a=opt2=opt2,-waittime=5
  *      nsk.jvmti.scenarios.multienv.MA01.ma01t001
  */
-

@@ -52,4 +52,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:nframepop001 nsk.jvmti.NotifyFramePop.nframepop001
  */
-

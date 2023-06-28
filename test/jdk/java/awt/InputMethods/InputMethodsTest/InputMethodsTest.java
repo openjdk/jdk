@@ -87,4 +87,3 @@ public class InputMethodsTest extends Applet {
         btnIM.setText(s +  " Input Methods");
     }
 }
-

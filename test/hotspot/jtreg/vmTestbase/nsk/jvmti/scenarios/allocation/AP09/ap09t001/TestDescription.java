@@ -54,4 +54,3 @@
  *      -agentlib:ap09t001=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.allocation.AP09.ap09t001
  */
-

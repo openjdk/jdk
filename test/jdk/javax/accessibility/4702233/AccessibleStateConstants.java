@@ -59,4 +59,3 @@ public interface AccessibleStateConstants {
             // CR 4981070 INCONSISTENT was replaced by INDETERMINATE.
         "INCONSISTENT" };
 }
-

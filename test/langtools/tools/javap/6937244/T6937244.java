@@ -55,4 +55,3 @@ public class T6937244 {
         throw new Exception("declaration of CASE_INSENSITIVE_ORDER not found");
     }
 }
-

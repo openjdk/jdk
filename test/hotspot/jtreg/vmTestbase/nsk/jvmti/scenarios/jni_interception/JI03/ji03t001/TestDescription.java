@@ -44,4 +44,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:ji03t001 nsk.jvmti.scenarios.jni_interception.JI03.ji03t001
  */
-

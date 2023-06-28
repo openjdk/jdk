@@ -152,4 +152,3 @@ public class StreamsTest extends TestRunner {
         }
     }
 }
-

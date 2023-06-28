@@ -42,4 +42,3 @@ public class TestDefaultLogOutput {
         output.shouldHaveExitValue(1);
     }
 }
-

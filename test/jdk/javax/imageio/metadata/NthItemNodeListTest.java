@@ -74,4 +74,3 @@ public class NthItemNodeListTest {
         Node n = (nodeList.item(nodeList.getLength()));
     }
 }
-

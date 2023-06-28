@@ -39,4 +39,3 @@ public class TestJNI {
         TestJNI.doSomething(intArg);
     }
 }
-

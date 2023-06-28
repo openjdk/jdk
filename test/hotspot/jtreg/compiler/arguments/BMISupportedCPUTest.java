@@ -101,4 +101,3 @@ public class BMISupportedCPUTest extends BMICommandLineOptionTestBase {
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 }
-

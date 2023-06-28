@@ -41,4 +41,3 @@ public class DeprecatedTag {
     public void deprecatedMethodWithDesc() {
     }
 }
-

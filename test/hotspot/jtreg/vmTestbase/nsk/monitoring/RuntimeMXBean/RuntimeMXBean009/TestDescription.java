@@ -41,4 +41,3 @@
  *      -testMode=proxy
  *      -MBeanServer=default
  */
-

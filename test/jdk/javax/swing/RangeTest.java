@@ -63,4 +63,3 @@ public class RangeTest implements ChangeListener {
                            + ", max=" + model.getMaximum());
     }
 }
-

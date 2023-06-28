@@ -46,4 +46,3 @@ public class StringTest {
         VmFlagTest.runTest(FLAG_DEBUG_NAME, VmFlagTest.WHITE_BOX::getBooleanVMFlag);
     }
 }
-

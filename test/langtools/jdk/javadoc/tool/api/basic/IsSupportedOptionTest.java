@@ -68,4 +68,3 @@ public class IsSupportedOptionTest extends APITest {
             error("unexpected result for option: " + option + ": " + n);
     }
 }
-

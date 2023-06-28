@@ -46,4 +46,3 @@
  *      -agentlib:forcegc002=-waittime=5,objects=100
  *      nsk.jvmti.ForceGarbageCollection.forcegc002
  */
-

@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getintrf006 nsk.jvmti.GetImplementedInterfaces.getintrf006
  */
-

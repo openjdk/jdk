@@ -1624,4 +1624,3 @@ final class SessionKeyRef extends PhantomReference<P11Key> {
         this.clear();
     }
 }
-

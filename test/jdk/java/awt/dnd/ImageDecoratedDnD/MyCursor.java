@@ -81,4 +81,3 @@ public interface MyCursor {
             "My Copy Cursor"
     );
 }
-

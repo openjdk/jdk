@@ -328,4 +328,3 @@ public class DekkerTest extends MlvmTest {
         MlvmTest.launch(args);
     }
 }
-

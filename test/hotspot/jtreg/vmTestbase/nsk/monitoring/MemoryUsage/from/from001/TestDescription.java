@@ -47,4 +47,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.MemoryUsage.from.from001 -testMode=server
  */
-

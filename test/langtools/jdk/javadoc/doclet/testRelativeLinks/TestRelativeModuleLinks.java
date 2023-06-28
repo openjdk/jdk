@@ -112,4 +112,3 @@ public class TestRelativeModuleLinks extends JavadocTester {
                  <a href="../ma/module-summary.html#module-fragment">fragment module link</a>.</div>""");
     }
 }
-

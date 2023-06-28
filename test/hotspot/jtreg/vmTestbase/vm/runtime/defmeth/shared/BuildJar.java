@@ -92,4 +92,3 @@ public class BuildJar {
         throw new Error("can't find " + file + " in " + Utils.TEST_CLASS_PATH);
     }
 }
-

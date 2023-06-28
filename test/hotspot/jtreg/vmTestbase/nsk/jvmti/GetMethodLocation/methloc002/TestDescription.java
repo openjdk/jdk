@@ -44,4 +44,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:methloc002 nsk.jvmti.GetMethodLocation.methloc002
  */
-

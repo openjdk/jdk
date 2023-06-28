@@ -307,4 +307,3 @@ public class SourcePathTest extends ModuleTestBase {
         return files;
     }
 }
-

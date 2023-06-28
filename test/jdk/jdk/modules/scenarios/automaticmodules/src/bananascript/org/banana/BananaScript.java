@@ -100,4 +100,3 @@ public class BananaScript implements ScriptEngine {
         throw new RuntimeException();
     }
 }
-

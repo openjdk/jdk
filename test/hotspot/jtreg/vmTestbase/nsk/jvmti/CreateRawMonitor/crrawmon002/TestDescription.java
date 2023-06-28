@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:crrawmon002 nsk.jvmti.CreateRawMonitor.crrawmon002
  */
-

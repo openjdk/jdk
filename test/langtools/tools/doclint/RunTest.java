@@ -98,5 +98,3 @@ public class RunTest {
         d.run(pw, args);
     }
 }
-
-

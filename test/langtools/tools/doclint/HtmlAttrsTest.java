@@ -31,4 +31,3 @@ public class HtmlAttrsTest {
      */
     public void multiline_mailto() { }
 }
-

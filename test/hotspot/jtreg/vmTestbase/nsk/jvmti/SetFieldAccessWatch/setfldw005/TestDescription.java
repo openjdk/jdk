@@ -52,4 +52,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:setfldw005 nsk.jvmti.SetFieldAccessWatch.setfldw005
  */
-

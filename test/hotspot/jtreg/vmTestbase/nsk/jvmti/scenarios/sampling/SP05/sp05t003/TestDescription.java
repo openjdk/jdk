@@ -53,4 +53,3 @@
  *      -agentlib:sp05t003=-waittime=5
  *      nsk.jvmti.scenarios.sampling.SP05.sp05t003
  */
-

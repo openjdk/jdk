@@ -28,4 +28,3 @@
 package layertest;
 
 public class Test { }
-

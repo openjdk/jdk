@@ -181,4 +181,3 @@ public class IdentifierTest {
 interface _ {
     void mI();
 }
-

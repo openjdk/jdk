@@ -69,4 +69,3 @@ public class TestSinhalaChar {
         frame.setVisible(true);
     }
 }
-

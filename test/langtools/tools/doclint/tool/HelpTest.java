@@ -35,5 +35,3 @@
  * @run main DocLintTester -ref HelpTest.out -usage
  * @run main DocLintTester -ref HelpTest.out -?
  */
-
-

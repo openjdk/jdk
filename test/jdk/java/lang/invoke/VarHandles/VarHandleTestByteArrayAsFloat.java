@@ -1435,4 +1435,3 @@ public class VarHandleTestByteArrayAsFloat extends VarHandleBaseByteArrayTest {
     }
 
 }
-

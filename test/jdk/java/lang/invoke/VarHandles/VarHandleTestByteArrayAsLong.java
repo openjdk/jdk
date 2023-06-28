@@ -1839,4 +1839,3 @@ public class VarHandleTestByteArrayAsLong extends VarHandleBaseByteArrayTest {
     }
 
 }
-

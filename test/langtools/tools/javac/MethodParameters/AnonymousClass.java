@@ -100,6 +100,3 @@ class AnonymousClass {
         }.m(a, ba);
     }
 }
-
-
-

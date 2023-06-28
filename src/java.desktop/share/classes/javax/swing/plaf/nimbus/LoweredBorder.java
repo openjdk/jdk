@@ -199,4 +199,3 @@ class LoweredBorder extends AbstractRegionPainter implements Border {
                          Math.min((int)(c.getBlue()/factor), 255));
     }
 }
-

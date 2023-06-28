@@ -29,4 +29,3 @@
 
 /** {@code */
 class UnterminatedInlineTag { }
-

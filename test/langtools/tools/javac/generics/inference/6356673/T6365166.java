@@ -37,4 +37,3 @@ public class T6365166 {
         l.addAll(la); //doesn't compile - but it should
     }
 }
-

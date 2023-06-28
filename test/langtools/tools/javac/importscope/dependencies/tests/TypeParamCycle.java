@@ -32,4 +32,3 @@ class A {
     @TriggersComplete(of=A.Outer.Inner.class, at=Phase.HEADER)
     static class Outer<X extends Inner> { static class Inner {} }
 }
-

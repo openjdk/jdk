@@ -50,4 +50,3 @@ public class ModuleWarnProcessor extends AbstractProcessor {
         return false;
     }
 }
-

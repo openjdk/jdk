@@ -86,4 +86,3 @@ public final class NewGraphTabAction extends CookieAction {
         return false;
     }
 }
-

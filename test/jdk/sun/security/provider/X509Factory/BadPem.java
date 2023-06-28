@@ -81,4 +81,3 @@ public class BadPem {
         cf.generateCertificate(new ByteArrayInputStream(bout.toByteArray()));
     }
 }
-

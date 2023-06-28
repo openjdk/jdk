@@ -51,4 +51,3 @@
  *      -agentlib:gf01t001=-waittime=5
  *      nsk.jvmti.scenarios.general_functions.GF01.gf01t001
  */
-

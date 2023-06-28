@@ -196,4 +196,3 @@ public class Poly1305KAT {
         return sb.toString();
     }
 }
-

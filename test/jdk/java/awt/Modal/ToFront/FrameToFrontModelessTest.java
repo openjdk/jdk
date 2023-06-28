@@ -95,4 +95,3 @@ public class FrameToFrontModelessTest {
         if (rightFrame != null) { rightFrame.dispose(); }
     }
 }
-

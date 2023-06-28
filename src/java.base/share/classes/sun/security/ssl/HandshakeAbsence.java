@@ -39,4 +39,3 @@ interface HandshakeAbsence {
     void absent(ConnectionContext context,
             HandshakeMessage message) throws IOException;
 }
-

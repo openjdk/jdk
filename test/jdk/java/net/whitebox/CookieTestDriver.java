@@ -26,4 +26,3 @@
  * @modules java.base/java.net
  * @run main/othervm java.base/java.net.CookieManagerTest
  */
-

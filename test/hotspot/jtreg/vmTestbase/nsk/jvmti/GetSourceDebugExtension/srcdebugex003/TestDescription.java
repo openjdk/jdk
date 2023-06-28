@@ -46,4 +46,3 @@
  * @compile srcdebugex003.jcod
  * @run main/othervm/native -agentlib:srcdebugex003 nsk.jvmti.GetSourceDebugExtension.srcdebugex003
  */
-

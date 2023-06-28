@@ -242,4 +242,3 @@ public class TestSocketChannels extends AbstractChannelsTest {
         return total;
     }
 }
-

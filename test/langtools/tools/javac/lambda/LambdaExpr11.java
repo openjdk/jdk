@@ -86,4 +86,3 @@ public class LambdaExpr11 {
         assertTrue(assertionCount == 12);
     }
 }
-

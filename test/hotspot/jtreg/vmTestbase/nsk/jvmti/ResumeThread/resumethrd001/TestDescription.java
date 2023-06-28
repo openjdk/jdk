@@ -42,4 +42,3 @@
  *      -agentlib:resumethrd001=-waittime=5
  *      nsk.jvmti.ResumeThread.resumethrd001
  */
-

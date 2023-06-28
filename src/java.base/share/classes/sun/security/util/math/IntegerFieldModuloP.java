@@ -112,4 +112,3 @@ public interface IntegerFieldModuloP {
     ImmutableIntegerModuloP getElement(byte[] v, int offset, int length,
                                        byte highByte);
 }
-

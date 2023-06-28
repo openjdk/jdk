@@ -37,4 +37,3 @@ public class ModulePathAndCP_JFR {
         ModulePathAndCP.run("-XX:StartFlightRecording:dumponexit=true", "-Xlog:cds+jvmti=debug,jfr+startup=off");
     }
 }
-

@@ -62,4 +62,3 @@ public final class ChainedFieldBuilder implements FieldBuilder {
     }
 
 }
-

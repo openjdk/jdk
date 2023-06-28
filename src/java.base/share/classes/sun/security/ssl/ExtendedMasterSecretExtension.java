@@ -378,4 +378,3 @@ final class ExtendedMasterSecretExtension {
         }
     }
 }
-

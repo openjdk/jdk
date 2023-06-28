@@ -505,4 +505,3 @@ public abstract class AbstractWindowsTerminal extends AbstractTerminal {
     protected abstract boolean processConsoleInput() throws IOException;
 
 }
-

@@ -156,7 +156,3 @@ class MyComponent extends JComponent {
         }
     }
 }
-
-
-
-

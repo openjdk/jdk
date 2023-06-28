@@ -35,4 +35,3 @@ class ErroneousAnnotations {
     interface PrimitiveImpl extends Primitive {
     }
 }
-

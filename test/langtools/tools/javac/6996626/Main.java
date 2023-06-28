@@ -42,4 +42,3 @@ public class Main {
         throw new CompletionFailure();
     }
 }
-

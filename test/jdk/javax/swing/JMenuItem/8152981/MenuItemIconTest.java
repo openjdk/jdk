@@ -113,4 +113,3 @@ public class MenuItemIconTest {
                 point.y + IMAGE_WIDTH_AND_HEIGHT / 2);
     }
 }
-

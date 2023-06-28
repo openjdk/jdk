@@ -56,5 +56,3 @@ static class C implements I {
      c.doSomeInvokedynamic();
   }
 };
-
-

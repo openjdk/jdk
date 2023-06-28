@@ -268,4 +268,3 @@ public class TestDocTreeDiags extends JavadocTester {
         }
     }
 }
-

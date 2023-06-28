@@ -44,4 +44,3 @@
  *      nsk.monitoring.ThreadMXBean.isThreadCpuTimeSupported.thcputime001
  *      -testMode=server
  */
-

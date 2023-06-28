@@ -41,4 +41,3 @@ public class TestTypeProfileArgsLimit {
         System.out.println("Passed");
     }
 }
-

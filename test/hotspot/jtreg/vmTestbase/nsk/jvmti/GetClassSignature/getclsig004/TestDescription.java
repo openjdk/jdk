@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getclsig004 nsk.jvmti.GetClassSignature.getclsig004
  */
-

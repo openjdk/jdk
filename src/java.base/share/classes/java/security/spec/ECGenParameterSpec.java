@@ -56,4 +56,3 @@ public class ECGenParameterSpec extends NamedParameterSpec {
         super(stdName);
     }
 }
-

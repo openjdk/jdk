@@ -29,4 +29,3 @@
 
 /** @inheritDoc */
 class BadInlineTag { }
-

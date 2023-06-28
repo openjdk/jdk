@@ -44,4 +44,3 @@ public class DoubleTest {
             VmFlagTest.WHITE_BOX::getDoubleVMFlag);
     }
 }
-

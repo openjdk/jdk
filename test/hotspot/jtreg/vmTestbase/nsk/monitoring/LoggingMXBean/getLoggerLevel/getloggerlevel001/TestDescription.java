@@ -48,4 +48,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.LoggingMXBean.getLoggerLevel.getloggerlevel001
  */
-

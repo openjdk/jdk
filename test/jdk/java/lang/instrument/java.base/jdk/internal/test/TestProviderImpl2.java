@@ -28,4 +28,3 @@ import java.lang.TestProvider;
 public class TestProviderImpl2 implements TestProvider {
     public TestProviderImpl2() { }
 }
-

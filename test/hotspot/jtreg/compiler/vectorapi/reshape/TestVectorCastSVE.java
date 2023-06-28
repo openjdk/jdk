@@ -47,5 +47,3 @@ public class TestVectorCastSVE {
                 "-XX:UseSVE=1");
     }
 }
-
-

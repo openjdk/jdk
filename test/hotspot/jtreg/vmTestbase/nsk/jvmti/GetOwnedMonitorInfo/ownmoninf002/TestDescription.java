@@ -44,4 +44,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:ownmoninf002 nsk.jvmti.GetOwnedMonitorInfo.ownmoninf002
  */
-

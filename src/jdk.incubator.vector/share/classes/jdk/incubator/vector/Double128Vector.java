@@ -902,4 +902,3 @@ final class Double128Vector extends DoubleVector {
     // ================================================
 
 }
-

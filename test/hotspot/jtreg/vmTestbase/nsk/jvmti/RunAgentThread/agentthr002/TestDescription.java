@@ -38,4 +38,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:agentthr002 nsk.jvmti.RunAgentThread.agentthr002
  */
-

@@ -1345,4 +1345,3 @@ public class VarHandleTestAccessDouble extends VarHandleBaseTest {
     }
 
 }
-

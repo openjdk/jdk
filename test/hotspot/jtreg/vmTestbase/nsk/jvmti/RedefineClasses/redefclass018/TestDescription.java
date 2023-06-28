@@ -50,4 +50,3 @@
  *
  * @run main/othervm/native -agentlib:redefclass018 nsk.jvmti.RedefineClasses.redefclass018 ./bin
  */
-

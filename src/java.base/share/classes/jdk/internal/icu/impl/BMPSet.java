@@ -524,4 +524,3 @@ public final class BMPSet {
         return (0 != (findCodePoint(c, lo, hi) & 1));
     }
 }
-

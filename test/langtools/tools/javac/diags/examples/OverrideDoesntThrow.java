@@ -31,4 +31,3 @@ class Base {
 class OverrideDoesntThrow extends Base {
     void m() throws Exception { }
 }
-

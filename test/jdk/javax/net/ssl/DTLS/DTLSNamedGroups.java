@@ -140,4 +140,3 @@ public class DTLSNamedGroups extends DTLSOverDatagram {
         }
     }
 }
-

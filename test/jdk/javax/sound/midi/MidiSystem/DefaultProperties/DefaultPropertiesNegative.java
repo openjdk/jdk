@@ -76,4 +76,3 @@ public class DefaultPropertiesNegative {
         System.out.println(message);
     }
 }
-

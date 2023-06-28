@@ -71,4 +71,3 @@
  *      -agentlib:bi04t002=pathToNewByteCode=./bin,-waittime=5
  *      nsk.jvmti.scenarios.bcinstr.BI04.bi04t002
  */
-

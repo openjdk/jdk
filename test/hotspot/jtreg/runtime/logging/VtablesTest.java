@@ -61,4 +61,3 @@ public class VtablesTest {
         output.shouldHaveExitValue(0);
     }
 }
-

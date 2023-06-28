@@ -65,4 +65,3 @@ public class Bug8066652Run {
         }
     }
 }
-

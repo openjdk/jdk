@@ -40,4 +40,3 @@
  *      -agentlib:suspendthrdlst002=-waittime=5,threads=10
  *      nsk.jvmti.SuspendThreadList.suspendthrdlst002
  */
-

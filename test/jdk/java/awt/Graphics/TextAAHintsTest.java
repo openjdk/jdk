@@ -234,4 +234,3 @@ public class TextAAHintsTest extends Component {
         }
     }
 }
-

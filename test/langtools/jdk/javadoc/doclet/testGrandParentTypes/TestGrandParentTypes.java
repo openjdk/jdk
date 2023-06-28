@@ -87,5 +87,3 @@ public class TestGrandParentTypes extends JavadocTester {
                 "java.util.RandomAccess");
     }
 }
-
-

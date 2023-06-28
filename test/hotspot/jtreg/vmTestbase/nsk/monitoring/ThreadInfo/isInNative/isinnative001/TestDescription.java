@@ -45,4 +45,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.ThreadInfo.isInNative.isinnative001
  */
-

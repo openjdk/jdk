@@ -60,4 +60,3 @@ public class DataFlavorEqualsNullTest {
             throw new RuntimeException("Test FAILED");
     }
 }
-

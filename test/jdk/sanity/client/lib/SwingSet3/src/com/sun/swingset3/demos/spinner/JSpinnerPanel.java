@@ -63,4 +63,3 @@ public class JSpinnerPanel extends JPanel {
     }
 }
 //</snip>
-

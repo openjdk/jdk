@@ -73,4 +73,3 @@
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee
  *      -classPatterns nsk.share.jdi.MonitorEnterExecutor_'*':'*'Subclass:nsk.share.jdi.MonitorEnterExecutor_1Subclass
  */
-

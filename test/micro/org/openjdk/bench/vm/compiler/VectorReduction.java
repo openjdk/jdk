@@ -190,4 +190,3 @@ public abstract class VectorReduction {
     }
 
 }
-

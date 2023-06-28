@@ -93,4 +93,3 @@ public class TestClassConstantPatching {
         System.out.println("TEST PASSED");
     }
 }
-

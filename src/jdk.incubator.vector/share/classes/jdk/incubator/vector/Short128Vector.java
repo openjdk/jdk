@@ -932,4 +932,3 @@ final class Short128Vector extends ShortVector {
     // ================================================
 
 }
-

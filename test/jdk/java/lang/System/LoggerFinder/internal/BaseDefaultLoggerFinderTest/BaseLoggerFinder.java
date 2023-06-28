@@ -65,4 +65,3 @@ public class BaseLoggerFinder extends DefaultLoggerFinder
     }
 
 }
-

@@ -151,4 +151,3 @@ public class ChoiceMouseWheelTest extends Frame {
         }
     }
 }
-

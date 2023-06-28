@@ -47,5 +47,3 @@ public class SyntheticTest {
         E3
     }
 }
-
-

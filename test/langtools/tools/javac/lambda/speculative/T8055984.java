@@ -57,4 +57,3 @@ class T8055984 {
         C<String> c10 = m(new C<>(m(new C<>(m(new C<>(m(new C<>(m(new C<>(m(new C<>(m(new C<>(m(new C<>(m(new C<>(m(new C<>())))))))))))))))))));
     }
 }
-

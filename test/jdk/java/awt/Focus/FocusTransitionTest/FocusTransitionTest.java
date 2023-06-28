@@ -134,4 +134,3 @@ class UpdateThread extends Thread {
         }
     }
 }
-

@@ -902,4 +902,3 @@ final class Float64Vector extends FloatVector {
     // ================================================
 
 }
-

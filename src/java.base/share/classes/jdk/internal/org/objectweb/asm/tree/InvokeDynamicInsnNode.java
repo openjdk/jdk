@@ -122,4 +122,3 @@ public class InvokeDynamicInsnNode extends AbstractInsnNode {
         return new InvokeDynamicInsnNode(name, desc, bsm, bsmArgs).cloneAnnotations(this);
     }
 }
-

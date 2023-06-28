@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:maxloc002 nsk.jvmti.GetMaxLocals.maxloc002
  */
-

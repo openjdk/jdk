@@ -472,4 +472,3 @@ public final class CWarningWindow extends CPlatformWindow
         }
     }
 }
-

@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:dealloc001 nsk.jvmti.Deallocate.dealloc001
  */
-

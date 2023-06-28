@@ -49,4 +49,3 @@ public class TimedWindowEvent extends WindowEvent {
         this.time = time;
     }
 }
-

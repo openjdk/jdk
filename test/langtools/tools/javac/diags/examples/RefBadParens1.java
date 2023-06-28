@@ -29,4 +29,3 @@
 
 /** @see #m(int)x */
 class RefBadParens1 { }
-

@@ -41,4 +41,3 @@
  * @compile getclsldr003a.jasm
  * @run main/othervm/native -agentlib:getclsldr003 nsk.jvmti.GetClassLoader.getclsldr003
  */
-

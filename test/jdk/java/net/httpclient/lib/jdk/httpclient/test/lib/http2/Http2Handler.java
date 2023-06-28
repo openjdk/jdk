@@ -39,4 +39,3 @@ public interface Http2Handler {
      */
     void handle (Http2TestExchange exchange) throws IOException;
 }
-

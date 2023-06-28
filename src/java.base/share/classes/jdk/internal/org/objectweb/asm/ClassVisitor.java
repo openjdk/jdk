@@ -405,4 +405,3 @@ public abstract class ClassVisitor {
         }
     }
 }
-

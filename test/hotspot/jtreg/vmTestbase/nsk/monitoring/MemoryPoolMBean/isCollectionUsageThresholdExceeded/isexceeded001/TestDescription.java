@@ -52,4 +52,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.MemoryPoolMBean.isCollectionUsageThresholdExceeded.isexceeded001
  */
-

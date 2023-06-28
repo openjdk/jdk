@@ -85,4 +85,3 @@ public class TestVHInvokerCaching {
         return testHandles.stream().map(vh -> new Object[]{ vh }).toArray(Object[][]::new);
     }
 }
-

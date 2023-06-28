@@ -152,4 +152,3 @@ public class ExtraAttributes implements Plugin {
         return 1;
     }
 }
-

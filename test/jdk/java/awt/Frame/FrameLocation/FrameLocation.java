@@ -66,4 +66,3 @@ public class FrameLocation {
         f.dispose();
     }
 }
-

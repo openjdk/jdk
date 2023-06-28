@@ -73,4 +73,3 @@ public class Pos12 {
     // Test class
     static class Ac extends A {}
 }
-

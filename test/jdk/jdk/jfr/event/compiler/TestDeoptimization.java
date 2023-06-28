@@ -146,4 +146,3 @@ public class TestDeoptimization {
         Events.assertField(event, "reason").notEmpty().containsAny("unstable_if", "null_assert_or_unreached0");
     }
 }
-

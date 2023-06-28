@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:rawmnwait005 nsk.jvmti.RawMonitorWait.rawmnwait005
  */
-

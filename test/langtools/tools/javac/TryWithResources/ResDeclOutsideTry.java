@@ -20,4 +20,3 @@ public class ResDeclOutsideTry implements AutoCloseable {
     public void close() throws Exception {
     }
 }
-

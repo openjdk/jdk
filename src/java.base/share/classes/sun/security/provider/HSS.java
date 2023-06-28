@@ -845,4 +845,3 @@ public final class HSS extends SignatureSpi {
         }
     }
 }
-

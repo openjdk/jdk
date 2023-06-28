@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getclstat007 nsk.jvmti.GetClassStatus.getclstat007
  */
-

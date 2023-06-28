@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getclmthd005 nsk.jvmti.GetClassMethods.getclmthd005
  */
-

@@ -52,4 +52,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getcaps002=-waittime=5 nsk.jvmti.GetCapabilities.getcaps002
  */
-

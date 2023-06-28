@@ -37,4 +37,3 @@ public enum ExitCode {
         this.value = value;
     }
 }
-

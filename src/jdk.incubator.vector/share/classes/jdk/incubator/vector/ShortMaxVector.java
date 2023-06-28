@@ -918,4 +918,3 @@ final class ShortMaxVector extends ShortVector {
     // ================================================
 
 }
-

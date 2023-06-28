@@ -49,4 +49,3 @@ public class Test7125879 {
         new Test7125879().var_1 = ((Test7125879)(new Object[-1])[0]).var_1;
     }
 }
-

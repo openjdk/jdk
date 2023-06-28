@@ -114,4 +114,3 @@ public class TestJProgressBarAccessibility {
         ManualTestFrame.handleResult(testResult,"TestJProgressBarAccessibility");
     }
 }
-

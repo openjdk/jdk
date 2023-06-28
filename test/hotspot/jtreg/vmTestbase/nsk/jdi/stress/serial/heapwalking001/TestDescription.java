@@ -67,4 +67,3 @@
  *      -testClassPath ${test.class.path}
  *      -configFile ${test.src}/heapwalking001.tests
  */
-

@@ -157,4 +157,3 @@ public class ReadResolveTest {
         return deserialize(serialize(obj));
     }
 }
-

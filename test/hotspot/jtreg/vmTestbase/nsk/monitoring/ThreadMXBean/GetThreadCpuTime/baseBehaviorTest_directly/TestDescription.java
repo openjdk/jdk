@@ -42,4 +42,3 @@
  *      nsk.monitoring.ThreadMXBean.GetThreadCpuTime.BaseBehaviorTest
  *      -testMode=directly
  */
-

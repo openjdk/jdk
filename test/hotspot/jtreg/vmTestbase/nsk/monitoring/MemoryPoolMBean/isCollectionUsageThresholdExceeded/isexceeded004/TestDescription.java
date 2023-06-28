@@ -52,4 +52,3 @@
  *      nsk.monitoring.MemoryPoolMBean.isCollectionUsageThresholdExceeded.isexceeded001
  *      -testMode=proxy
  */
-

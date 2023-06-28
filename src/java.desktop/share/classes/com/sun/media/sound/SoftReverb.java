@@ -514,4 +514,3 @@ public final class SoftReverb implements SoftAudioProcessor {
         this.light = light;
     }
 }
-

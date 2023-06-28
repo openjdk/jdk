@@ -234,4 +234,3 @@ module jdk.dynalink {
 
     uses jdk.dynalink.linker.GuardingDynamicLinkerExporter;
 }
-

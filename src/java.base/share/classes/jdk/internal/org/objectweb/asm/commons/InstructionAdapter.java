@@ -1329,4 +1329,3 @@ public class InstructionAdapter extends MethodVisitor {
         mv.visitLabel(label);
     }
 }
-

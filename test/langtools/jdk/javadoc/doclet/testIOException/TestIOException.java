@@ -258,4 +258,3 @@ public class TestIOException extends JavadocTester {
         return System.getProperty("os.name").toLowerCase(Locale.US).startsWith("windows");
     }
 }
-

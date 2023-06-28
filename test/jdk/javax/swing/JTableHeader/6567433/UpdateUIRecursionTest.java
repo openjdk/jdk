@@ -112,5 +112,3 @@ public class UpdateUIRecursionTest extends JFrame implements TableCellRenderer {
         return new JLabel(String.valueOf(value));
     }
 }
-
-

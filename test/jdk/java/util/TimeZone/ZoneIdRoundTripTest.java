@@ -67,4 +67,3 @@ public class ZoneIdRoundTripTest {
         assertEquals(tz.toZoneId().normalized(), zid.normalized());
     }
 }
-

@@ -247,4 +247,3 @@ public class IndexColorModelEqualsTest {
         testSameIndexColorModel();
     }
 }
-

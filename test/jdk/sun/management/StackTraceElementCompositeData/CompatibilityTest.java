@@ -166,4 +166,3 @@ public class CompatibilityTest {
         assertEquals(ste, ste1);
     }
 }
-

@@ -36,4 +36,3 @@ public class CheckUserPrefFirst {
         prefs.flush();
     }
 }
-

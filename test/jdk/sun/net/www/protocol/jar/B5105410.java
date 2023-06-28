@@ -61,4 +61,3 @@ public class B5105410 {
                    Paths.get(".", "foo2.jar"), REPLACE_EXISTING);
     }
 }
-

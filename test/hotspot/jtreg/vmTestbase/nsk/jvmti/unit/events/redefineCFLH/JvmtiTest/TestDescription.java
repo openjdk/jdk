@@ -46,4 +46,3 @@
  *      nsk.jvmti.unit.events.redefineCFLH.JvmtiTest
  *      ./bin
  */
-

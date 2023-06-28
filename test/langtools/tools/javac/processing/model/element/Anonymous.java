@@ -37,6 +37,3 @@ private static void printMessage() {
     } else
         System.out.print("A horse's name is " + horseName);
 }
-
-
-

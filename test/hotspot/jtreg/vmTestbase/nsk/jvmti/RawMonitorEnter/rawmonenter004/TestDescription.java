@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:rawmonenter004 nsk.jvmti.RawMonitorEnter.rawmonenter004 5
  */
-

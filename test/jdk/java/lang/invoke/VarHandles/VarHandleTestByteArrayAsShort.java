@@ -941,4 +941,3 @@ public class VarHandleTestByteArrayAsShort extends VarHandleBaseByteArrayTest {
     }
 
 }
-

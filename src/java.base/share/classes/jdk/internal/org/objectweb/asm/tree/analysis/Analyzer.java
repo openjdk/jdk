@@ -702,4 +702,3 @@ public class Analyzer<V extends Value> implements Opcodes {
         }
     }
 }
-

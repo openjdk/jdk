@@ -53,4 +53,3 @@ public interface XECPublicKey extends XECKey, PublicKey {
     BigInteger getU();
 
 }
-

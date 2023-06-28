@@ -196,4 +196,3 @@ public class TestGCMKeyAndIvCheck extends PKCS11Test {
         test("GCM", p);
     }
 }
-

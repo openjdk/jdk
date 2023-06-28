@@ -97,4 +97,3 @@ public class KeyCharTest extends Frame implements KeyListener {
         }
     }
 }
-

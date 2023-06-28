@@ -29,4 +29,3 @@
 
 /** @see String#isEmpty% */
 class UnexpectedInput { }
-

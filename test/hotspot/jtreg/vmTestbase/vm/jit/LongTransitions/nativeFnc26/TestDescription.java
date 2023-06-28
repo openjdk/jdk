@@ -33,4 +33,3 @@
  *          /test/lib
  * @run main/native/othervm vm.jit.LongTransitions.LTTest nativeFnc26
  */
-

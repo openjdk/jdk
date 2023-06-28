@@ -46,4 +46,3 @@
  *      -agentlib:getallstktr001=-waittime=5
  *      nsk.jvmti.unit.GetAllStackTraces.getallstktr001
  */
-

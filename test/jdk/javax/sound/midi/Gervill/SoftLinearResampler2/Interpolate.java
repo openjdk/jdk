@@ -111,4 +111,3 @@ public class Interpolate {
             fail("Interpolation failed, error="+max);
     }
 }
-

@@ -30,4 +30,3 @@ class E extends S<C> {{
 class X {
   public static void main(String[] args) { new E(); }
 }
-

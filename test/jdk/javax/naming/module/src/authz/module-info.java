@@ -25,4 +25,3 @@ module authz {
     requires java.naming;
     exports org.example.authz;
 }
-

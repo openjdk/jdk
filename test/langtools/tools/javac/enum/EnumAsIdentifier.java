@@ -11,4 +11,3 @@ public class EnumAsIdentifier {
     int enum = 0;
 
 }
-

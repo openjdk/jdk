@@ -47,4 +47,3 @@ public class T6500343a {
         T6500343a.crash(new A1(), new A1(), new A2(), true, true);
     }
 }
-

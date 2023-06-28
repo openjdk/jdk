@@ -44,4 +44,3 @@
  *      -XX:-UseGCOverheadLimit
  *      nsk.jvmti.scenarios.allocation.AP12.ap12t001
  */
-

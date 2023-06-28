@@ -367,4 +367,3 @@ final class CertificateStatus {
         }
     }
 }
-

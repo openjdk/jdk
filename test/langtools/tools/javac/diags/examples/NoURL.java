@@ -29,4 +29,3 @@
 
 /** @spec */
 class NoURL { }
-

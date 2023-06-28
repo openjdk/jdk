@@ -680,4 +680,3 @@ final class NewSessionTicket {
         }
     }
 }
-

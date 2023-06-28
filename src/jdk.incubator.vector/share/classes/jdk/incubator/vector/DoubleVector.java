@@ -4014,4 +4014,3 @@ public abstract class DoubleVector extends AbstractVector<Double> {
     public static final VectorSpecies<Double> SPECIES_PREFERRED
         = (DoubleSpecies) VectorSpecies.ofPreferred(double.class);
 }
-

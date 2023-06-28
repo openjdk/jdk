@@ -57,4 +57,3 @@ public final class java_awt_Component extends AbstractTest<Component> {
     public static final class MyComponent extends Component {
     }
 }
-

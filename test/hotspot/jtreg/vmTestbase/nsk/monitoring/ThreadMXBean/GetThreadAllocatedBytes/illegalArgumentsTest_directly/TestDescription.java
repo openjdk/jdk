@@ -42,4 +42,3 @@
  *      nsk.monitoring.ThreadMXBean.GetThreadAllocatedBytes.IllegalArgumentsTest
  *      -testMode=directly
  */
-

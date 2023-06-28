@@ -235,4 +235,3 @@ public class LevelTransitionTest extends TieredLevelsTest {
     }
 
 }
-

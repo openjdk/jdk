@@ -27,4 +27,3 @@ module jdk.scripting.dummyRhino {
         provides javax.script.ScriptEngineFactory with
             jdk.dummyRhino.api.scripting.DummyRhinoJSEngineFactory;
 }
-

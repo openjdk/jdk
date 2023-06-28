@@ -32,4 +32,3 @@ module test {
     requires authz;
     requires ldapv4;
 }
-

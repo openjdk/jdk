@@ -52,4 +52,3 @@
  *
  * @run main/othervm/native -agentlib:earlyretlong nsk.jvmti.unit.ForceEarlyReturn.earlyretlong
  */
-

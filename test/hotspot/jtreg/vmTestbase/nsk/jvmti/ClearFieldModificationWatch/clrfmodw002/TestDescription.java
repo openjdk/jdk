@@ -43,4 +43,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:clrfmodw002 nsk.jvmti.ClearFieldModificationWatch.clrfmodw002
  */
-

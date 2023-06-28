@@ -28,4 +28,3 @@ public class C3 {
   public class Inner2 { }
   public class Inner3 { }
 }
-

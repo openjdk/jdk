@@ -67,4 +67,3 @@ public class ImageConsumerUnregisterTest extends javax.swing.JFrame {
         }
     }
 }
-

@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:methmod001 nsk.jvmti.GetMethodModifiers.methmod001
  */
-

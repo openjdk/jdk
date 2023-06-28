@@ -148,4 +148,3 @@ public class BMIUnsupportedCPUTest extends BMICommandLineOptionTestBase {
                 CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 }
-

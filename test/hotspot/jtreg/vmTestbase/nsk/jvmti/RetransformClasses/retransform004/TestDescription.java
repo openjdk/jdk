@@ -37,4 +37,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:retransform004 nsk.jvmti.RetransformClasses.retransform004
  */
-

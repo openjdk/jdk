@@ -18,4 +18,3 @@ public class SyntaxTest {
     /** . */
     private SyntaxTest() { }
 }
-

@@ -359,4 +359,3 @@ public final class AlgorithmChecker extends PKIXCertPathChecker {
             new CertPathConstraintsParameters(key, variant, anchor, null), true);
     }
 }
-

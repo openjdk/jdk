@@ -50,4 +50,3 @@ public final class Monitor extends StatLong {
         start = INVALID;
     }
 }
-

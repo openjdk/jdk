@@ -66,4 +66,3 @@
  *      -javaOpts="-XX:+UsePerfData ${test.vm.opts} ${test.java.opts}"
  *      -na attach002aAgent00=-pathToNewByteCode=./bin/newclass00
  */
-

@@ -30,4 +30,3 @@ package p;
 public class Provider implements Service {
     Provider() { }
 }
-

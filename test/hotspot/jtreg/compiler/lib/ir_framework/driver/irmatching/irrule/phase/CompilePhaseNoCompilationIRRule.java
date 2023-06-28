@@ -40,4 +40,3 @@ public record CompilePhaseNoCompilationIRRule(CompilePhase compilePhase) impleme
         return new CompilePhaseNoCompilationIRRuleMatchResult(compilePhase);
     }
 }
-

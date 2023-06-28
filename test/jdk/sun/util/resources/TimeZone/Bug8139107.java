@@ -56,4 +56,3 @@ public class Bug8139107 {
     // Pattern with time zone field
     static final String pattern = "dd-MM-yyyy HH:mm:ss z";
 }
-

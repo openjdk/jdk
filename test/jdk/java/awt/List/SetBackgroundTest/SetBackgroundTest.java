@@ -143,4 +143,3 @@ public class SetBackgroundTest
         test();
     }
 }
-

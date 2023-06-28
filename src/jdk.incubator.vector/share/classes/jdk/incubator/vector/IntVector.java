@@ -4120,4 +4120,3 @@ public abstract class IntVector extends AbstractVector<Integer> {
     public static final VectorSpecies<Integer> SPECIES_PREFERRED
         = (IntSpecies) VectorSpecies.ofPreferred(int.class);
 }
-

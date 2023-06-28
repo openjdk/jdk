@@ -332,4 +332,3 @@ public class OptionProcessingFailureTest extends JavadocTester {
         }
     }
 }
-

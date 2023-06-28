@@ -48,4 +48,3 @@
  *      nsk.monitoring.MemoryPoolMBean.getCollectionUsageThreshold.getthreshold001
  *      -testMode=proxy
  */
-

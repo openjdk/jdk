@@ -101,4 +101,3 @@ public class Level2RecompilationTest extends CompLevelsTest {
         super.checkLevel(expected, actual);
     }
 }
-

@@ -234,4 +234,3 @@ public class ITXtTest {
         return image;
     }
 }
-

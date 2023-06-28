@@ -45,4 +45,3 @@
  *
  * @run main/othervm/native -agentlib:linetab003 nsk.jvmti.GetLineNumberTable.linetab003
  */
-

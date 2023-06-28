@@ -52,4 +52,3 @@
  *      -agentlib:getavailproc001=-waittime=5
  *      nsk.jvmti.GetAvailableProcessors.getavailproc001
  */
-

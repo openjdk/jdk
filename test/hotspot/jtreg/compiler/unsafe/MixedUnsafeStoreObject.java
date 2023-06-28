@@ -70,4 +70,3 @@ public class MixedUnsafeStoreObject {
         testFieldInstanceT(new T());
     }
 }
-

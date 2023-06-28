@@ -43,4 +43,3 @@ public class EmptyPassword {
         c.status();
     }
 }
-

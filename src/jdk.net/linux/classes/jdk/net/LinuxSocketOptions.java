@@ -153,4 +153,3 @@ class LinuxSocketOptions extends PlatformSocketOptions {
         }
     }
 }
-

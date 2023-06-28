@@ -270,4 +270,3 @@ public class SignatureWriter extends SignatureVisitor {
         argumentStack /= 2;
     }
 }
-

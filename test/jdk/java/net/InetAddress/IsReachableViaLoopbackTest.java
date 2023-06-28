@@ -61,4 +61,3 @@ public class IsReachableViaLoopbackTest {
         System.out.println("IsReachableViaLoopbackTest EXIT");
     }
 }
-

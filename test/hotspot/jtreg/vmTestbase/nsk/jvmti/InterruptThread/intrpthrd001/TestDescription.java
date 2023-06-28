@@ -46,4 +46,3 @@
  *      -agentlib:intrpthrd001=-waittime=5
  *      nsk.jvmti.InterruptThread.intrpthrd001
  */
-

@@ -1345,4 +1345,3 @@ public class VarHandleTestAccessFloat extends VarHandleBaseTest {
     }
 
 }
-

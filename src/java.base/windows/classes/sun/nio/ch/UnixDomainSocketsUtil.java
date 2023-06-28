@@ -66,4 +66,3 @@ class UnixDomainSocketsUtil {
         return AccessController.doPrivileged(action);
     }
 }
-

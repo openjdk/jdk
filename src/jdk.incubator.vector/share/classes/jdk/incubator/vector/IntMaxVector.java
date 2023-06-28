@@ -922,4 +922,3 @@ final class IntMaxVector extends IntVector {
     // ================================================
 
 }
-

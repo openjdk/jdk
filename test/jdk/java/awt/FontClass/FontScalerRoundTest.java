@@ -66,4 +66,3 @@ public class FontScalerRoundTest {
         return m.getHeight();
     }
 }
-

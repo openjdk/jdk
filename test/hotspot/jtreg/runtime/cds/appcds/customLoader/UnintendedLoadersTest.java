@@ -68,4 +68,3 @@ public class UnintendedLoadersTest {
         TestCommon.checkExec(output);
     }
 }
-

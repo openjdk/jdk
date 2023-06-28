@@ -30,4 +30,3 @@ sealed class C {
         final class D extends C { }
     }
 }
-

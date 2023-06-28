@@ -4411,4 +4411,3 @@ public abstract class ByteVector extends AbstractVector<Byte> {
     public static final VectorSpecies<Byte> SPECIES_PREFERRED
         = (ByteSpecies) VectorSpecies.ofPreferred(byte.class);
 }
-

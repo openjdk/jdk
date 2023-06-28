@@ -373,4 +373,3 @@ public class TestNewCastArray {
 @Retention(RUNTIME) @Target({FIELD}) @interface FC { F[] value(); }
 
 }
-

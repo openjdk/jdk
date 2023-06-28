@@ -31,4 +31,3 @@ class IdentifierExpected2 {
     /** @param 123 */
     void m() { }
 }
-

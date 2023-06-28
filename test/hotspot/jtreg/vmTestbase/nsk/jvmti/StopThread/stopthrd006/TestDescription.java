@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:stopthrd006 nsk.jvmti.StopThread.stopthrd006
  */
-

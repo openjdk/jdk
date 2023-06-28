@@ -24,4 +24,3 @@
 module misc {
     exports jdk.internal.misc;
 }
-

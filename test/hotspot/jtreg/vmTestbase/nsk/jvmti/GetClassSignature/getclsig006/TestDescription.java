@@ -42,4 +42,3 @@
  *      -agentlib:getclsig006=-waittime=5
  *      nsk.jvmti.GetClassSignature.getclsig006
  */
-

@@ -45,4 +45,3 @@
  *      -agentlib:setextevent001=-waittime=5
  *      nsk.jvmti.SetExtensionEventCallback.setextevent001
  */
-

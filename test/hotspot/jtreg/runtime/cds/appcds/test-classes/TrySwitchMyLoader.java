@@ -33,4 +33,3 @@ public class TrySwitchMyLoader {
         ReportMyLoader.main(args);
     }
 }
-

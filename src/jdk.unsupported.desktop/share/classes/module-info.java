@@ -38,4 +38,3 @@ module jdk.unsupported.desktop {
         with jdk.swing.interop.internal.InteropProviderImpl;
 
 }
-

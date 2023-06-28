@@ -74,4 +74,3 @@ public class StringEquals {
         return test5.equals(test4);
     }
 }
-

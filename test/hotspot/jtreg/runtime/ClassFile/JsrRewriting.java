@@ -109,4 +109,3 @@ public class JsrRewriting {
             throw new RuntimeException(msg.toString());
     }
 }
-

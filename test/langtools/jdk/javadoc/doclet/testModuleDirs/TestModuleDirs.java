@@ -120,4 +120,3 @@ public class TestModuleDirs extends JavadocTester {
                     <li><a href="../../index-all.html">Index</a></li>""");
     }
 }
-

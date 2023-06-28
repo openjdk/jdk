@@ -75,4 +75,3 @@ public class AccessCheckWorks {
         p1_c1_class.newInstance();
     }
 }
-

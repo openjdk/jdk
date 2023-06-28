@@ -149,4 +149,3 @@ public class Annotations extends JavacTestingAbstractProcessor {
     @Target(ElementType.TYPE_USE)
     @interface TA {}
 }
-

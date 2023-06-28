@@ -492,4 +492,3 @@ public class ChaCha20KAT {
         return sb.toString();
     }
 }
-

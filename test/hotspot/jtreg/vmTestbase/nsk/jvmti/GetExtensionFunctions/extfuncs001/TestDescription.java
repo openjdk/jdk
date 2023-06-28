@@ -42,4 +42,3 @@
  *      -agentlib:extfuncs001=-waittime=5
  *      nsk.jvmti.GetExtensionFunctions.extfuncs001
  */
-

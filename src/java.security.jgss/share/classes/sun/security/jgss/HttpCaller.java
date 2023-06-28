@@ -43,4 +43,3 @@ public final class HttpCaller extends GSSCaller {
         return hci;
     }
 }
-

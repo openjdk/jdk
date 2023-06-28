@@ -225,4 +225,3 @@ public class RedTest_int {
         }
     }
 }
-

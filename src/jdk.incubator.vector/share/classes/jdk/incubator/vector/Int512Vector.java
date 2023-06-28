@@ -941,4 +941,3 @@ final class Int512Vector extends IntVector {
     // ================================================
 
 }
-

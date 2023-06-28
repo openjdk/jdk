@@ -41,4 +41,3 @@ public class StringTableVerifyTest {
         output.shouldHaveExitValue(0);
     }
 }
-

@@ -32,4 +32,3 @@
  *          /test/lib
  * @run main/othervm -XX:+CompactStrings vm.compiler.optimizations.stringconcat.explicit.Explicit01
  */
-

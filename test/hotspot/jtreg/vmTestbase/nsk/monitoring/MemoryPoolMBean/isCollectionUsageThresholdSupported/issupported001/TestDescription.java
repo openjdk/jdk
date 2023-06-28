@@ -46,4 +46,3 @@
  * @run main/othervm
  *      nsk.monitoring.MemoryPoolMBean.isCollectionUsageThresholdSupported.issupported001
  */
-

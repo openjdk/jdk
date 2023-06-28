@@ -29,4 +29,3 @@
 
 /** <![CDATA[ */
 class InvalidHtml { }
-

@@ -51,4 +51,3 @@ public class Test6850611 {
         }
     }
 }
-

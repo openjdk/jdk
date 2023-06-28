@@ -178,4 +178,3 @@ public class AutostartPlugins extends TestRunner {
         tb.checkEqual(stdout, List.of("C.init [-args]"));
     }
 }
-

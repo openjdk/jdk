@@ -386,4 +386,3 @@ public class TestLeadingZeroes {
         (byte)0x00, (byte)0x23, (byte)0x5F
     };
 }
-

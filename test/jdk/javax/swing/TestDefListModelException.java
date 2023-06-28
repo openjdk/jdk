@@ -62,4 +62,3 @@ public class TestDefListModelException {
         selectionModel.insertIndexInterval(Integer.MAX_VALUE - 1, Integer.MAX_VALUE, true);
     }
 }
-

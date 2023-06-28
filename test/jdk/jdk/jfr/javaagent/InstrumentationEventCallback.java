@@ -39,4 +39,3 @@ public class InstrumentationEventCallback {
         return wasCalled.get();
     }
 }
-

@@ -606,5 +606,3 @@ public class RunExamples {
         static final String OUTPUT = "output";
     }
 }
-
-

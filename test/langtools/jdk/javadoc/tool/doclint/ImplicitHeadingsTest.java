@@ -47,4 +47,3 @@ public class ImplicitHeadingsTest {
             throw new Error("unexpected exit: rc=" + rc);
     }
 }
-

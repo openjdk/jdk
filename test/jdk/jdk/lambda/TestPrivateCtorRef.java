@@ -57,4 +57,3 @@ public class TestPrivateCtorRef {
     private class PI {
     }
 }
-

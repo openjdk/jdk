@@ -158,4 +158,3 @@ public class GetReaderWriterInfoNullTest {
                 deregisterServiceProvider(suffixNullReadSpi);
     }
 }
-

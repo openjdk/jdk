@@ -235,7 +235,3 @@ public class TestMethodSelection {
         doInvoke(new C_B_A(),    "C_B_A::m");
     }
 }
-
-
-
-

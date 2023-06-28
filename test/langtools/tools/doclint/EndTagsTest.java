@@ -37,4 +37,3 @@ public class EndTagsTest {
     /** </invalid> */
     public void unknown_end() { }
 }
-

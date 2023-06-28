@@ -109,4 +109,3 @@ public abstract class KeyAgreementBench extends CryptoBase {
     }
 
 }
-

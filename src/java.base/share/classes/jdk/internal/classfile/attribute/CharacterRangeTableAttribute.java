@@ -73,4 +73,3 @@ public sealed interface CharacterRangeTableAttribute
         return new UnboundAttribute.UnboundCharacterRangeTableAttribute(ranges);
     }
 }
-

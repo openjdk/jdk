@@ -529,4 +529,3 @@ public class TargetAnnoCombo {
         errors++;
     }
 }
-

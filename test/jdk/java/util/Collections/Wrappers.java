@@ -165,4 +165,3 @@ public class Wrappers {
         assertTrue(notOverridden.isEmpty(), cls.getName() + " does not override " + notOverridden);
     }
 }
-

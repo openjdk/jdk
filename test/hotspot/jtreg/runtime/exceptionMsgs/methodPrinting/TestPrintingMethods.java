@@ -148,4 +148,3 @@ class TeMe3_C extends TeMe3_B {
         return new java.lang.Object();
     }
 }
-

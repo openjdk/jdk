@@ -25,4 +25,3 @@ module fruit {
     requires java.naming;
     exports org.example.fruit;
 }
-

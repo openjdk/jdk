@@ -29,4 +29,3 @@
 @interface Test {
     int value();
 }
-

@@ -170,4 +170,3 @@ public final class AccessibleJTableSelectionTest {
         System.out.println("Test Passed.");
     }
 }
-

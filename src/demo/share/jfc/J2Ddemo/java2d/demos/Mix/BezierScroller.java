@@ -384,4 +384,3 @@ public class BezierScroller extends AnimatingControlsSurface {
         }
     } // End DemoControls
 } // End BezierScroller
-

@@ -94,4 +94,3 @@ public class SetMinimumSizeTest2 {
         doTest();
     }
 }
-

@@ -369,5 +369,3 @@ public class IREncodingPrinter {
         TestFrameworkSocket.write(output.toString(), "IR rule application encoding");
     }
 }
-
-

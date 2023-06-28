@@ -54,4 +54,3 @@ public class TestStressCodeBuffers {
 
     public static void bar(int x, long y) {}
 }
-

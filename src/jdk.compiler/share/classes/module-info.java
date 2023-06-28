@@ -280,4 +280,3 @@ module jdk.compiler {
     provides javax.tools.Tool with
         com.sun.tools.javac.api.JavacTool;
 }
-

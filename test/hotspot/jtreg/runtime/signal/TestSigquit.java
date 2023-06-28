@@ -32,4 +32,3 @@
  * @library /test/lib
  * @run main/native SigTestDriver SIGQUIT   -vmopt -XX:+PrintCommandLineFlags -vmopt -Xrs
  */
-

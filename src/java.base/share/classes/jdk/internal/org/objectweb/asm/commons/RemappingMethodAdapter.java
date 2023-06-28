@@ -307,4 +307,3 @@ public class RemappingMethodAdapter extends LocalVariablesSorter {
                 : new RemappingAnnotationAdapter(annotationVisitor, remapper);
     }
 }
-

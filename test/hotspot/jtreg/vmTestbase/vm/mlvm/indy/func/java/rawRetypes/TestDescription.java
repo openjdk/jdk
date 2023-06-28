@@ -44,4 +44,3 @@
  *
  * @run main/othervm vm.mlvm.indy.func.java.rawRetypes.INDIFY_Test6998541
  */
-

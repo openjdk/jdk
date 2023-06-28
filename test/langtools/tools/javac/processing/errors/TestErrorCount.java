@@ -45,4 +45,3 @@ public class TestErrorCount extends JavacTestingAbstractProcessor {
         return true;
     }
 }
-

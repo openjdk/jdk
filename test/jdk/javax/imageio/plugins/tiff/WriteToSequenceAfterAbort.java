@@ -373,4 +373,3 @@ public final class WriteToSequenceAfterAbort implements IIOWriteProgressListener
         }
     }
 }
-

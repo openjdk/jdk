@@ -40,4 +40,3 @@ public abstract class MyHttpHandlerB implements HttpHandler {
         handler.handle(null);
     }
 }
-

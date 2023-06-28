@@ -64,4 +64,3 @@ sealed abstract class BaseVirtualThread extends Thread
      */
     abstract void unpark();
 }
-

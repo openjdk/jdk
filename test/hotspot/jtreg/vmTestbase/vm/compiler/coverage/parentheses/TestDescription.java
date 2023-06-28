@@ -48,4 +48,3 @@
  *          /test/lib
  * @run main/othervm vm.compiler.coverage.parentheses.Parentheses
  */
-

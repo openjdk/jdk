@@ -41,4 +41,3 @@ public class BadUnderscoreLiterals {
     float xf5 = 0x0p_1;         // leading underscore after exponent
     float xf6 = 0x0p1_;         // trailing underscore
 }
-

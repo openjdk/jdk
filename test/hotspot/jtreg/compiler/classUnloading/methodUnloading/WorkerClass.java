@@ -37,4 +37,3 @@ public class WorkerClass {
         return 42;
     }
 }
-

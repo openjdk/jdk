@@ -43,4 +43,3 @@ public class TestBasicLogOutput {
         output.shouldHaveExitValue(0);
     }
 }
-

@@ -151,4 +151,3 @@ public interface MutableIntegerModuloP extends IntegerModuloP {
      */
     MutableIntegerModuloP setAdditiveInverse();
 }
-

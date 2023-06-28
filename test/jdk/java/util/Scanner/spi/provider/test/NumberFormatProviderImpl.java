@@ -56,4 +56,3 @@ public class NumberFormatProviderImpl extends NumberFormatProvider {
         return locales;
     }
 }
-

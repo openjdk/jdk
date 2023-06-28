@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getfldecl001 nsk.jvmti.GetFieldDeclaringClass.getfldecl001
  */
-

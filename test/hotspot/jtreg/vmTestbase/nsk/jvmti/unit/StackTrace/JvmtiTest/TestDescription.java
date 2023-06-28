@@ -37,4 +37,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:StackTrace=-waittime=5 nsk.jvmti.unit.StackTrace.JvmtiTest
  */
-

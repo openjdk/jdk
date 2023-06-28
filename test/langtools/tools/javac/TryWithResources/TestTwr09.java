@@ -126,4 +126,3 @@ class ResCloseable implements AutoCloseable {
         return msg;
     }
 }
-

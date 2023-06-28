@@ -64,4 +64,3 @@
  *      nsk.jvmti.scenarios.hotswap.HS201.hs201t003
  *      ./bin
  */
-

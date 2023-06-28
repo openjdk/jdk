@@ -238,4 +238,3 @@ public abstract class SignatureVisitor {
     /** Ends the visit of a signature corresponding to a class or interface type. */
     public void visitEnd() {}
 }
-

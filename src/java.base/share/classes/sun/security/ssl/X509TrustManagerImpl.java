@@ -467,4 +467,3 @@ final class X509TrustManagerImpl extends X509ExtendedTrustManager
         }
     }
 }
-

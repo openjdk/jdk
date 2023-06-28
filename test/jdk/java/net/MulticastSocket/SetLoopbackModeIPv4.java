@@ -42,5 +42,3 @@ public class SetLoopbackModeIPv4 {
         SetLoopbackMode.main(args);
     }
 }
-
-

@@ -277,5 +277,3 @@ class ReferenceTestExtras {
     void methodSearchPrimitive2(long i, int j) {}
     void methodSearchPrimitive2(int i, int j) {}
 }
-
-

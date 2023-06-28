@@ -334,4 +334,3 @@ public class TestKATForGCM extends PKCS11Test {
         }
     }
 }
-

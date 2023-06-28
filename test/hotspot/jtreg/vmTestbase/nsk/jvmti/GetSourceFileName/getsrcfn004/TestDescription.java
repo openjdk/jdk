@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getsrcfn004 nsk.jvmti.GetSourceFileName.getsrcfn004
  */
-

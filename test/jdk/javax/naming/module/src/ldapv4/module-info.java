@@ -25,4 +25,3 @@ module ldapv4 {
     requires java.naming;
     exports org.example.ldapv4;
 }
-

@@ -166,4 +166,3 @@ public class AbstractChannelsTest {
         @Override public Arena get() { return supplier.get(); }
     }
 }
-

@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:gettag001=-waittime=5 nsk.jvmti.GetTag.gettag001
  */
-

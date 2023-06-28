@@ -96,4 +96,3 @@ public final class Histogram extends StatLong {
         return sb.append(" }").toString();
     }
 }
-

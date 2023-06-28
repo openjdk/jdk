@@ -74,4 +74,3 @@
  *      -agentlib:bootclssearch_agent=-waittime=5,phasetocheck=onload,segment1=./bin/newclass01,segment2=./bin/newclass02
  *      nsk.jvmti.AddToBootstrapClassLoaderSearch.bootclssearch004
  */
-

@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getclfld005 nsk.jvmti.GetClassFields.getclfld005
  */
-

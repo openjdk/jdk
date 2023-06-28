@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.MemoryNotificationInfo.getUsage.getusage001
  */
-

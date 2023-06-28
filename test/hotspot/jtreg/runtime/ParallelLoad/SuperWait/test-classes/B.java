@@ -26,4 +26,3 @@ public class B {
   static { System.out.println("B called"); }
   public B() { System.out.println("B.<init> called"); }
 }
-

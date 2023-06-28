@@ -55,4 +55,3 @@
  *      vm.mlvm.share.ClassfileGeneratorTest
  *      -generator vm.mlvm.cp.share.GenManyIndyIncorrectBootstrap
  */
-

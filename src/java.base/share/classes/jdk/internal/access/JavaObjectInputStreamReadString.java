@@ -35,4 +35,3 @@ import java.io.ObjectInputStream;
 public interface JavaObjectInputStreamReadString {
     String readString(ObjectInputStream ois) throws IOException;
 }
-

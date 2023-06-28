@@ -123,4 +123,3 @@ public final class ThrottleSetting extends JDKSettingControl {
         throw new NumberFormatException("'" + s + "' is not valid. Should be a non-negative numeric value followed by a delimiter. i.e. '/', and then followed by a unit e.g. 100/s.");
     }
 }
-

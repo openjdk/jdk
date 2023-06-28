@@ -54,4 +54,3 @@
  *      -agentlib:ap03t001=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.allocation.AP03.ap03t001
  */
-

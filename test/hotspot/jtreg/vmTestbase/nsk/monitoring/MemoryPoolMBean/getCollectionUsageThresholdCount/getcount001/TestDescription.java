@@ -43,4 +43,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.MemoryPoolMBean.getCollectionUsageThresholdCount.getcount001
  */
-

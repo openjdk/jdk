@@ -60,4 +60,3 @@ public class DiacriticsTest extends Applet {
         setVisible(true);
     }
 }
-

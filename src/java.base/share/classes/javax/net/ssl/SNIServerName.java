@@ -194,4 +194,3 @@ public abstract class SNIServerName {
         return HexFormat.ofDelimiter(":").withUpperCase().formatHex(bytes);
     }
 }
-

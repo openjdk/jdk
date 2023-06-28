@@ -73,4 +73,3 @@
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee
  *      -eventsNumber 100
  */
-

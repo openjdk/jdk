@@ -46,4 +46,3 @@
  *      -XX:-UseCompressedOops
  *      metaspace.gc.HighWaterMarkTest
  */
-

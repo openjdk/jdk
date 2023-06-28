@@ -78,4 +78,3 @@ public class PrintCompilation {
         static void notcalled() {}
     }
 }
-

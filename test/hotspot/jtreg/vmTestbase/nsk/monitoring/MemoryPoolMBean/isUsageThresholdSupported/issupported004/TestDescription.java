@@ -47,4 +47,3 @@
  *      nsk.monitoring.MemoryPoolMBean.isUsageThresholdSupported.issupported001
  *      -testMode=proxy
  */
-

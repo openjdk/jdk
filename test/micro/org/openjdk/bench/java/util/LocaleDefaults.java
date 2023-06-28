@@ -61,4 +61,3 @@ public class LocaleDefaults {
         return Locale.getDefault(Locale.Category.FORMAT);
     }
 }
-

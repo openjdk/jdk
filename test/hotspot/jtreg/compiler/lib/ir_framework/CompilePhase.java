@@ -139,4 +139,3 @@ public enum CompilePhase {
         return actionOnRepeat == ActionOnRepeat.KEEP_LAST;
     }
 }
-

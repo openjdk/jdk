@@ -81,4 +81,3 @@ public class TestUnsafeLoadWithZeroAddress {
         test4();
     }
 }
-

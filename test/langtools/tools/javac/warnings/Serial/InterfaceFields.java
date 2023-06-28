@@ -11,4 +11,3 @@ interface InterfaceFields extends Serializable {
 
     public static final ObjectStreamField[] serialPersistentFields = {};
 }
-

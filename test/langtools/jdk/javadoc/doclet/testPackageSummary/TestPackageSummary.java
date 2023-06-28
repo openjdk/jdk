@@ -107,4 +107,3 @@ public class TestPackageSummary extends JavadocTester {
         );
     }
 }
-

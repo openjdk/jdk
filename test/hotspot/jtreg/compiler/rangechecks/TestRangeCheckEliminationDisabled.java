@@ -38,4 +38,3 @@ public class TestRangeCheckEliminationDisabled {
       System.out.println("Passed");
     }
 }
-

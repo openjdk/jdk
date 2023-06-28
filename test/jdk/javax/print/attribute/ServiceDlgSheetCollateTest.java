@@ -158,4 +158,3 @@ public class ServiceDlgSheetCollateTest {
         dialog.setVisible(true);
     }
 }
-

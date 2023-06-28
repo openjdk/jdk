@@ -19,4 +19,3 @@ import java.lang.annotation.Inherited;
 
 @Foo @Foo
 public class InheritedContainerAnno {}
-

@@ -179,4 +179,3 @@ public class DialogLocationTest extends Panel {
         }
     }
 }
-

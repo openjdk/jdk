@@ -59,4 +59,3 @@
  *      vm.mlvm.indy.func.jvmti.share.IndyRedefineTest
  *      -dummyClassName=vm.mlvm.indy.func.jvmti.mergeCP_indy2manySame_a.INDIFY_Dummy0
  */
-

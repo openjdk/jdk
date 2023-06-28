@@ -65,4 +65,3 @@ public class PredicateNotTest {
         assertEquals(test.stream().filter(not(not(not(new IsEmptyPredicate())))).collect(joining("\n")), expected);
     }
 }
-

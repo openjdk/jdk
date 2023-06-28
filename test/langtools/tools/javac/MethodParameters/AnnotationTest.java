@@ -50,6 +50,3 @@ class AnnotationTest {
     public AnnotationTest(@Anno @Anno I i, @Anno int ji) { }
     public @Anno String foo(@Anno @Anno I i, int ji) { return null; }
 }
-
-
-

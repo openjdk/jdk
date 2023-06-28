@@ -35,4 +35,3 @@ module java.smartcardio {
     provides java.security.Provider with
         sun.security.smartcardio.SunPCSC;
 }
-

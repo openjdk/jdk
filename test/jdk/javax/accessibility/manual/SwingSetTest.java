@@ -53,4 +53,3 @@ public class SwingSetTest {
         ManualTestFrame.handleResult(result, args[0]);
     }
 }
-

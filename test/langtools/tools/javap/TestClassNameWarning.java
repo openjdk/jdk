@@ -238,4 +238,3 @@ public class TestClassNameWarning extends TestRunner {
         }
     }
 }
-

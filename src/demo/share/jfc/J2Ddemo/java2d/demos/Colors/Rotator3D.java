@@ -394,4 +394,3 @@ public class Rotator3D extends AnimatingSurface {
         } // End Matrix3D
     } // End Objects3D
 } // End Rotator3D
-

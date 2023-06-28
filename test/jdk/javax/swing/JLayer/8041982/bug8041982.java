@@ -95,4 +95,3 @@ public class bug8041982 extends JFrame {
         }
     }
 }
-

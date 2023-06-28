@@ -34,4 +34,3 @@ public @interface Stratum {
     String stratumName() default "";
     String stratumSourceFileName() default "";
 }
-

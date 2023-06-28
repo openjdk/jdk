@@ -62,4 +62,3 @@ public class EqualityTest {
     // Trigger creation of synthetic method to initialize r.
     public static final Runnable r = () -> {};
 }
-

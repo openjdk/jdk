@@ -47,4 +47,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.ThreadInfo.from_c.from_c001 -testMode=server -MBeanServer=custom
  */
-

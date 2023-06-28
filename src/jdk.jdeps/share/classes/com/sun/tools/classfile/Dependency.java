@@ -99,4 +99,3 @@ public interface Dependency {
      */
     Location getTarget();
 }
-

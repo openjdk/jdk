@@ -71,4 +71,3 @@ public class JImageInfoTest extends JImageCliTest {
         new JImageInfoTest().runTests();
     }
 }
-

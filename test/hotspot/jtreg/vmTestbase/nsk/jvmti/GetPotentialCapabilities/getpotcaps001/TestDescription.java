@@ -54,4 +54,3 @@
  *      -agentlib:getpotcaps001=-waittime=5
  *      nsk.jvmti.GetPotentialCapabilities.getpotcaps001
  */
-

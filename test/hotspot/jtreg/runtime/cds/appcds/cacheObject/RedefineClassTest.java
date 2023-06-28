@@ -97,4 +97,3 @@ public class RedefineClassTest {
         TestCommon.checkExec(out, opts);
     }
 }
-

@@ -37,4 +37,3 @@ public final class EvilProvider extends Provider {
                     "com.evilprovider.EvilHmacSHA1", null, null));
     }
 }
-

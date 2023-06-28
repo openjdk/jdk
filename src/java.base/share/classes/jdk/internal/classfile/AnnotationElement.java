@@ -190,4 +190,3 @@ public sealed interface AnnotationElement
         return of(name, AnnotationValue.ofArray(values));
     }
 }
-

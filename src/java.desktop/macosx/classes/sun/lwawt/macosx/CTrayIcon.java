@@ -383,4 +383,3 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
         }
     }
 }
-

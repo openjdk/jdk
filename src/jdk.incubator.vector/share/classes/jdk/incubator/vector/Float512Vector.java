@@ -930,4 +930,3 @@ final class Float512Vector extends FloatVector {
     // ================================================
 
 }
-

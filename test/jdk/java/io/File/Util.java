@@ -42,4 +42,3 @@ class Util {
         return (new File("/etc/passwd")).canWrite();
     }
 }
-

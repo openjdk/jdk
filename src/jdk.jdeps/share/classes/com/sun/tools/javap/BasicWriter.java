@@ -202,4 +202,3 @@ public class BasicWriter {
         private int pendingSpaces;
     }
 }
-

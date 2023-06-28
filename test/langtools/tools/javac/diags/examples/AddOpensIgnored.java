@@ -25,4 +25,3 @@
 // options: --add-opens anything
 
 class Dummy { }
-

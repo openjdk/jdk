@@ -74,5 +74,3 @@ public class DESKeyCleanupTest {
         Reference.reachabilityFence(array); // Keep array alive
     }
 }
-
-

@@ -72,4 +72,3 @@ class VerifierTestB extends    VerifierTestA {}
 class VerifierTestC implements UnverifiableIntf {}
 class VerifierTestD extends    VerifierTestC {}
 class VerifierTestE implements UnverifiableIntfSub {}
-

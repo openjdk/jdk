@@ -112,4 +112,3 @@ public class Equals {
         out.printf("%n");
      }
 }
-

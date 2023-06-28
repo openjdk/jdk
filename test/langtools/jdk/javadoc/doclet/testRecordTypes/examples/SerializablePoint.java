@@ -34,4 +34,3 @@ import java.io.Serializable;
  * @param y the y coordinate
  */
 public record SerializablePoint(int x, int y) implements Serializable { }
-

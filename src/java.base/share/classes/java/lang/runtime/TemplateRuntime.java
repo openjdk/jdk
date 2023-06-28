@@ -266,4 +266,3 @@ public final class TemplateRuntime {
         return mh.asCollector(Object[].class, type.parameterCount()).asType(type);
     }
 }
-

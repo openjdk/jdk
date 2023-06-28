@@ -202,4 +202,3 @@ class MyFrame extends JFrame {
        component.paint(bi.getGraphics());
     }
 } //MyFrame
-

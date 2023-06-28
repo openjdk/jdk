@@ -86,4 +86,3 @@ public class GetTask_DiagListenerTest extends APITest {
     }
 
 }
-

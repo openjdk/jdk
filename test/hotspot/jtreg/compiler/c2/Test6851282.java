@@ -124,4 +124,3 @@ public class Test6851282 {
     }
   }
 }
-

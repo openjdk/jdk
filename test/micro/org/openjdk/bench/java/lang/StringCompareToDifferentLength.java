@@ -146,4 +146,3 @@ public class StringCompareToDifferentLength {
         blackhole.consume(res);
     }
 }
-

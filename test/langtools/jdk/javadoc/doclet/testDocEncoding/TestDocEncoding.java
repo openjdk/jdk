@@ -70,4 +70,3 @@ public class TestDocEncoding extends JavadocTester {
                         background-color:var(--page-bg-color);""");
     }
 }
-

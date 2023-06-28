@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getclmdf005 nsk.jvmti.GetClassModifiers.getclmdf005
  */
-

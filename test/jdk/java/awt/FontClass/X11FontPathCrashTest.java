@@ -38,4 +38,3 @@ public class X11FontPathCrashTest {
         new Font("nonexistentfont", Font.PLAIN, 12).getFamily();
     }
 }
-

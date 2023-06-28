@@ -336,4 +336,3 @@ public class BezierAnim extends AnimatingControlsSurface {
         } // End PaintedIcon class
     } // End DemoControls class
 } // End BezierAnim class
-

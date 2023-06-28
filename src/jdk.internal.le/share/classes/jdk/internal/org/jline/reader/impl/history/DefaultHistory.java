@@ -671,4 +671,3 @@ public class DefaultHistory implements History {
     }
 
 }
-

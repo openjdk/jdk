@@ -70,4 +70,3 @@ public class Test6963870 implements Runnable {
         SwingUtilities.invokeAndWait(new Test6963870());
     }
 }
-

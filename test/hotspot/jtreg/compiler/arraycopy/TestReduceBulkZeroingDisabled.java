@@ -38,4 +38,3 @@ public class TestReduceBulkZeroingDisabled {
         System.out.println("Passed");
     }
 }
-

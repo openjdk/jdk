@@ -56,4 +56,3 @@ public class Test6897150 {
         verify(max, a);
     }
 }
-

@@ -447,4 +447,3 @@ public final class TextureAnim extends AnimatingControlsSurface {
         } // End TexturedIcon class
     } // End DemoControls class
 } // End TextureAnim class
-

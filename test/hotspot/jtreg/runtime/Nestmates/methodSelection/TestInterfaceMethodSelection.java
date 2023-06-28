@@ -282,7 +282,3 @@ public class TestInterfaceMethodSelection {
         doInvoke(new B_A_I(),    "B_A_I::m");
     }
 }
-
-
-
-

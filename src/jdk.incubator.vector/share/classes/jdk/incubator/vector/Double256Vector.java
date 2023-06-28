@@ -906,4 +906,3 @@ final class Double256Vector extends DoubleVector {
     // ================================================
 
 }
-

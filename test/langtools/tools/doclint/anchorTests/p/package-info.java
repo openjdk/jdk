@@ -15,4 +15,3 @@
  * <a name=name>obsolete anchor again</a>
  */
 package p;
-

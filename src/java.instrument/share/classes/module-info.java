@@ -36,4 +36,3 @@ module java.instrument {
     // allow java launcher to load agents in executable JAR files
     exports sun.instrument to java.base;
 }
-

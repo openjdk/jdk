@@ -37,4 +37,3 @@ package good;
 
 /** */
 class Test { }
-

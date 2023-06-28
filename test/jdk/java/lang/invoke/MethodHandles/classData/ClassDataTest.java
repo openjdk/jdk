@@ -506,5 +506,3 @@ public class ClassDataTest {
         assertEquals(value, v);
     }
 }
-
-

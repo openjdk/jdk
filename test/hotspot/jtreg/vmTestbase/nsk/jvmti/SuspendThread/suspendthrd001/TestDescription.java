@@ -42,4 +42,3 @@
  *      -agentlib:suspendthrd001=-waittime=5
  *      nsk.jvmti.SuspendThread.suspendthrd001
  */
-

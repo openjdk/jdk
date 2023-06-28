@@ -112,4 +112,3 @@ public class AccessibleJTreePCESourceTest {
             + "PropertyChangeEventSource is the Node");
     }
 }
-

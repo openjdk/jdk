@@ -64,6 +64,3 @@ public class Test extends JavacTestingAbstractProcessor {
         }
     }
 }
-
-
-

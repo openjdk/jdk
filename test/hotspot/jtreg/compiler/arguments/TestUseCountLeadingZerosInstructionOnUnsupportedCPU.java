@@ -51,4 +51,3 @@ public class TestUseCountLeadingZerosInstructionOnUnsupportedCPU
         new TestUseCountLeadingZerosInstructionOnUnsupportedCPU().test();
     }
 }
-

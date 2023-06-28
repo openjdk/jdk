@@ -135,4 +135,3 @@ public class DoubleClickTitleBarTest {
         frame.setVisible(true);
     }
 }
-

@@ -29,4 +29,3 @@
 
 /** &lt */
 class MissingSemicolon { }
-

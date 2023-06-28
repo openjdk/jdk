@@ -198,4 +198,3 @@ public class InternalAPI extends TestRunner {
         tb.checkEqual(stdout, List.of("C.init []", "ANALYZE HelloWorld TYP", "GENERATE HelloWorld TYP"));
     }
 }
-

@@ -25,4 +25,3 @@ module hello {
     requires java.rmi;
     exports org.example.hello;
 }
-

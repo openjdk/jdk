@@ -18,4 +18,3 @@ class T6199153 {
         public void m() throws IOException {}
     }
 }
-

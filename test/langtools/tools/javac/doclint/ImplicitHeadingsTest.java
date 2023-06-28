@@ -37,4 +37,3 @@ public class ImplicitHeadingsTest {
      */
     public void m() { }
 }
-

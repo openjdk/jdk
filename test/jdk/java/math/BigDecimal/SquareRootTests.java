@@ -741,4 +741,3 @@ public class SquareRootTests {
         }
     }
 }
-

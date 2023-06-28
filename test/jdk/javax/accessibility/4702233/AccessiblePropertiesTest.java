@@ -93,4 +93,3 @@ public class AccessiblePropertiesTest {
             AccessibleContextConstants.OLD_FIELDS);
     }
 }
-

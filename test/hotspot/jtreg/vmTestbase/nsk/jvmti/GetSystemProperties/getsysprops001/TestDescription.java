@@ -41,4 +41,3 @@
  *      -agentlib:getsysprops001=-waittime=5
  *      nsk.jvmti.GetSystemProperties.getsysprops001
  */
-

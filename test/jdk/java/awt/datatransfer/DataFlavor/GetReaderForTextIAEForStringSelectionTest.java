@@ -68,4 +68,3 @@ class FakeTransferable implements Transferable {
         return null;
     }
 }
-

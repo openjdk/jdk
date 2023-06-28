@@ -24,4 +24,3 @@
 module m1 {
     exports p;
 }
-

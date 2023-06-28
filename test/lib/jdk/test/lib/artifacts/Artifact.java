@@ -36,4 +36,3 @@ public @interface Artifact {
     String classifier() default "";
     boolean unpack() default true;
 }
-

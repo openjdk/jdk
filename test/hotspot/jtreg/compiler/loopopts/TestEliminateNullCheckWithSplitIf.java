@@ -96,7 +96,3 @@ public class TestEliminateNullCheckWithSplitIf {
 class MyClass {
     int iFld;
 }
-
-
-
-

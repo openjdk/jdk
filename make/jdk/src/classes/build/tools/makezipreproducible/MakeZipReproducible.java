@@ -238,4 +238,3 @@ public class MakeZipReproducible {
         System.exit(z.run(args) ? 0 : 1);
     }
 }
-

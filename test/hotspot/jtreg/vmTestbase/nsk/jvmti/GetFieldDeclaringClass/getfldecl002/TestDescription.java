@@ -42,4 +42,3 @@
  * @compile getfldecl002a.jasm
  * @run main/othervm/native -agentlib:getfldecl002 nsk.jvmti.GetFieldDeclaringClass.getfldecl002
  */
-

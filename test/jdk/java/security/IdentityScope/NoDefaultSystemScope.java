@@ -39,4 +39,3 @@ public class NoDefaultSystemScope {
         System.out.println("TEST PASSED");
     }
 }
-

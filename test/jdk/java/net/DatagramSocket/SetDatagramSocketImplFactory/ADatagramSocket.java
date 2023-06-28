@@ -116,4 +116,3 @@ class QuoteServerThread extends Thread {
       socket.close();
     }
 }
-

@@ -34,4 +34,3 @@ package examples;
  * @param right the right node
  */
 public record AnnotatedBinaryNode(@NonNull Node left, @NonNull Node right) { }
-

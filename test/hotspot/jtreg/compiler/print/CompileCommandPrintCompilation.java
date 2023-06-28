@@ -82,4 +82,3 @@ public class CompileCommandPrintCompilation {
         static void method2() {}
     }
 }
-

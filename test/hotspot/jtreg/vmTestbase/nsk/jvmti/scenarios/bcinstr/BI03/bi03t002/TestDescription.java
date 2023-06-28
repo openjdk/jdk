@@ -51,4 +51,3 @@
  *      nsk.jvmti.scenarios.bcinstr.BI03.bi03t002
  *      ./bin
  */
-

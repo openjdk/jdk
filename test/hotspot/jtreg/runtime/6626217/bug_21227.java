@@ -103,4 +103,3 @@ abstract public class bug_21227 {
     // foreign loader.
     public abstract many_loader[] make(IFace iface); // abstract factory
 }
-

@@ -96,4 +96,3 @@ public class UpdateUIRecursionTest extends JFrame implements ListCellRenderer {
                                                      isSelected, cellHasFocus);
     }
 }
-

@@ -34,4 +34,3 @@
  *      nsk.monitoring.ThreadMXBean.ThreadInfo.RunningThread.RunningThread001.RunningThread001
  *      -scenarioType=finished
  */
-

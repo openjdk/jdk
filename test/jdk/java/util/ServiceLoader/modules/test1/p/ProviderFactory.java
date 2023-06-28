@@ -35,4 +35,3 @@ public class ProviderFactory {
         return INSTANCE;
     }
 }
-

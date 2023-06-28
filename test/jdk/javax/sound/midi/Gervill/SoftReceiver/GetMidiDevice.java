@@ -46,4 +46,3 @@ public class GetMidiDevice {
         synth.close();
     }
 }
-

@@ -46,4 +46,3 @@
  *      -agentlib:ap07t001=-waittime=5
  *      nsk.jvmti.scenarios.allocation.AP07.ap07t001
  */
-

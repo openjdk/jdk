@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:isintrf004 nsk.jvmti.IsInterface.isintrf004
  */
-

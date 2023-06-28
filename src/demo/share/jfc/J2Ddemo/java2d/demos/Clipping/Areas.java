@@ -218,4 +218,3 @@ public class Areas extends ControlsSurface {
         }
     } // End DemoControls
 } // End Areas
-

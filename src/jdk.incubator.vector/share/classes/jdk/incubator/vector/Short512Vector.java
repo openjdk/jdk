@@ -980,4 +980,3 @@ final class Short512Vector extends ShortVector {
     // ================================================
 
 }
-

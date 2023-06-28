@@ -3964,4 +3964,3 @@ public abstract class FloatVector extends AbstractVector<Float> {
     public static final VectorSpecies<Float> SPECIES_PREFERRED
         = (FloatSpecies) VectorSpecies.ofPreferred(float.class);
 }
-

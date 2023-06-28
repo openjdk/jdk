@@ -53,4 +53,3 @@ public class JniInvocationTest {
         outputf.shouldHaveExitValue(0);
     }
 }
-

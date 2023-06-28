@@ -128,4 +128,3 @@ public class TestValueNumberingNullObject {
         return f1[5] + f2[5] + t2[5].zh() + t1[5].zh();
     }
 }
-

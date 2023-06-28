@@ -64,4 +64,3 @@ public class DefUdpLimit {
         System.setProperty("java.security.krb5.conf", file);
     }
 }
-

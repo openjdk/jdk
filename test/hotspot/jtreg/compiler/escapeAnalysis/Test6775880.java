@@ -66,5 +66,3 @@ public class Test6775880 {
         System.out.println("After s=" + t.s);
     }
 }
-
-

@@ -44,4 +44,3 @@ module java.xml.crypto {
     provides java.security.Provider with
         org.jcp.xml.dsig.internal.dom.XMLDSigRI;
 }
-

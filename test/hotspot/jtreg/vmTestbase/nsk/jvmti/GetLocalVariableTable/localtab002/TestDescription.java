@@ -52,4 +52,3 @@
  *      -agentlib:localtab002
  *      nsk.jvmti.GetLocalVariableTable.localtab002
  */
-

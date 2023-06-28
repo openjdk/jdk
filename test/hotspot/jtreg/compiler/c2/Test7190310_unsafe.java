@@ -151,4 +151,3 @@ public class Test7190310_unsafe {
         return unsafe.getReference(ref, referent_offset);
     }
 }
-

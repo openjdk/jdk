@@ -46,4 +46,3 @@
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -na simpleAgent00,simpleAgent00,simpleAgent00
  */
-

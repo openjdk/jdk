@@ -90,4 +90,3 @@ public class DeadSSLSocketFactory extends SocketFactory {
         return factory.createSocket(address, port, localAddress, localPort);
     }
 }
-

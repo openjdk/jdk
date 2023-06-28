@@ -120,4 +120,3 @@ public class GraphemeTest {
             "L", "V", "T", "LV", "LVT",
             "Extended_Pictographic"};
 }
-

@@ -42,4 +42,3 @@
  *      -agentlib:extevents001=-waittime=5
  *      nsk.jvmti.GetExtensionEvents.extevents001
  */
-

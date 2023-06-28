@@ -75,4 +75,3 @@ public interface JavaTemplateAccess {
     StringTemplate combine(StringTemplate... sts);
 
 }
-

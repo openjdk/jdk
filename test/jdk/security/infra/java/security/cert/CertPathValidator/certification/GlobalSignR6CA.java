@@ -209,4 +209,3 @@ public class GlobalSignR6CA {
                 "Thu Aug 27 00:38:11 PDT 2020", System.out);
     }
 }
-

@@ -81,4 +81,3 @@ class SubClass extends PeelingAndLoopStripMining {
         return 2.0 + Math.sqrt(i);
     }
 }
-

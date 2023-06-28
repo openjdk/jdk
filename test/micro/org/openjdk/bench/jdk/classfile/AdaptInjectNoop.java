@@ -44,4 +44,3 @@ public class AdaptInjectNoop extends AbstractCorpusBenchmark {
             bh.consume(transform.transform.apply(aClass));
     }
 }
-

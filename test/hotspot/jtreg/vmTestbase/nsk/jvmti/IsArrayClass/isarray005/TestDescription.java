@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:isarray005 nsk.jvmti.IsArrayClass.isarray005
  */
-

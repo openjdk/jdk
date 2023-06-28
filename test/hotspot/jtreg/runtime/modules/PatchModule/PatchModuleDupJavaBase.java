@@ -46,4 +46,3 @@ public class PatchModuleDupJavaBase {
     output.shouldHaveExitValue(1);
   }
 }
-

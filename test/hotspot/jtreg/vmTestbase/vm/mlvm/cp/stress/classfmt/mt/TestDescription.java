@@ -52,4 +52,3 @@
  * @run main/othervm/timeout=300 vm.mlvm.share.ClassfileGeneratorTest -generator vm.mlvm.cp.share.GenCPFullOfMT
  * @ignore 8194951
  */
-

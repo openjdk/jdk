@@ -4405,4 +4405,3 @@ public abstract class ShortVector extends AbstractVector<Short> {
     public static final VectorSpecies<Short> SPECIES_PREFERRED
         = (ShortSpecies) VectorSpecies.ofPreferred(short.class);
 }
-

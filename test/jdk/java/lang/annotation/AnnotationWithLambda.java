@@ -74,4 +74,3 @@ public class AnnotationWithLambda {
 @interface LambdaWithoutParameter {
     Runnable r = () -> System.out.println("lambda without parameter");
 }
-

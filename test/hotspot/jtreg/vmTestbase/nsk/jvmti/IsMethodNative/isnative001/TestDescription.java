@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:isnative001 nsk.jvmti.IsMethodNative.isnative001
  */
-

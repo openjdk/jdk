@@ -77,4 +77,3 @@
  *      -testClassPath ${test.class.path}
  *      -configFile ${test.src}/mixed001.tests
  */
-

@@ -26,4 +26,3 @@ package pkg;
 public class C0 {
   // no inner classes
 }
-

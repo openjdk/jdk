@@ -57,4 +57,3 @@ public class OverviewElement implements DocletElement {
         return Kind.OVERVIEW;
     }
 }
-

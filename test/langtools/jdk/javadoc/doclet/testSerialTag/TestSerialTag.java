@@ -150,4 +150,3 @@ public class TestSerialTag extends JavadocTester {
             "C2");
     }
 }
-

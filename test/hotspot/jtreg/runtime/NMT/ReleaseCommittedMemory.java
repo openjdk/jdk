@@ -46,4 +46,3 @@ public class ReleaseCommittedMemory {
     wb.NMTReleaseMemory(addr, reserveSize);
   }
 }
-

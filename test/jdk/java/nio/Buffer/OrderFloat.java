@@ -79,4 +79,3 @@ public class OrderFloat extends Order {
 
     }
 }
-

@@ -119,4 +119,3 @@ public class TestOpaqueZeroTripGuardPostLoopRemoval {
         return y;
     }
 }
-

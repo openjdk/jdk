@@ -147,4 +147,3 @@ class TestNestedLocksEliminationSub extends TestNestedLocksElimination {
         return true;
     }
 }
-

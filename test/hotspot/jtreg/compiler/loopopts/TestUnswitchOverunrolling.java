@@ -152,4 +152,3 @@ public class TestUnswitchOverunrolling {
 class A {
     int iFld = 6;
 }
-

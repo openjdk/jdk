@@ -85,4 +85,3 @@ public class SurrogatesFallbackTest {
         return true;
     }
 }
-

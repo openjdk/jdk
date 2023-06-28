@@ -28,4 +28,3 @@
  * @library /test/lib /
  * @run driver/timeout=21600 applications.jcstress.JcstressRunner -v -t org.openjdk.jcstress.tests.future\.
  */
-

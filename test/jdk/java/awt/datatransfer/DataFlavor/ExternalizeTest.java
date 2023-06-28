@@ -78,4 +78,3 @@ public class ExternalizeTest {
        return df;
    }
 }
-

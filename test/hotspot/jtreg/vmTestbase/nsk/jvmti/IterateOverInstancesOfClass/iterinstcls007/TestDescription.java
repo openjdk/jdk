@@ -55,4 +55,3 @@
  *      -agentlib:iterinstcls007=-waittime=5,-verbose
  *      nsk.jvmti.IterateOverInstancesOfClass.iterinstcls007
  */
-

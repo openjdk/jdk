@@ -45,4 +45,3 @@ public interface WrapperInstance {
      */
     public Class<?> getWrapperInstanceType();
 }
-

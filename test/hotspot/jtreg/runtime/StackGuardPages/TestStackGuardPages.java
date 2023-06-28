@@ -50,4 +50,3 @@ public class TestStackGuardPages {
         output.shouldHaveExitValue(0);
     }
 }
-

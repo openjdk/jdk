@@ -76,4 +76,3 @@ public class OomWhileParsingRepeatedJsr {
         output.shouldContain("Cannot reserve enough memory");
     }
 }
-

@@ -49,4 +49,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:popframe009 nsk.jvmti.PopFrame.popframe009
  */
-

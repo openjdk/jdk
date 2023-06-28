@@ -72,5 +72,3 @@ public class A<T, E extends Exception> {
     class Inner {}
 
 }
-
-

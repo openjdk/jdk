@@ -42,4 +42,3 @@
  * @compile isfldsin003a.jcod
  * @run main/othervm/native -agentlib:isfldsin003 nsk.jvmti.IsFieldSynthetic.isfldsin003
  */
-

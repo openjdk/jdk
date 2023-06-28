@@ -73,4 +73,3 @@ public class SetCurrentAccessibleValueTest {
         System.out.println("Test Passed");
     }
 }
-

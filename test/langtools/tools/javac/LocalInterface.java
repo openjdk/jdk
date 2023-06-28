@@ -10,4 +10,3 @@ class LocalInterface {
         interface I {}
     }
 }
-

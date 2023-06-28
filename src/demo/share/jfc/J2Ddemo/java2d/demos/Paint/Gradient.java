@@ -212,4 +212,3 @@ public class Gradient extends ControlsSurface {
         } // End ColoredSquare class
     } // End DemoControls
 } // End Gradient class
-

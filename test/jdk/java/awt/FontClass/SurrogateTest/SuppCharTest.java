@@ -125,4 +125,3 @@ class SuppCharComp extends Component {
   }
 
 }
-

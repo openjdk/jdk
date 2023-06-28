@@ -243,4 +243,3 @@ public class Text extends ControlsSurface {
         }
     } // End DemoControls
 } // End Text
-

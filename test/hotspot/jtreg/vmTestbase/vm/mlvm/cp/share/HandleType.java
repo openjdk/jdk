@@ -41,6 +41,3 @@ public enum HandleType {
         this.asmTag = asmTag;
     }
 }
-
-
-

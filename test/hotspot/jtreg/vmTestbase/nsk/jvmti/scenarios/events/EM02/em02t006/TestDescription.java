@@ -65,4 +65,3 @@
  *      -XX:-UseGCOverheadLimit
  *      nsk.jvmti.scenarios.events.EM02.em02t006
  */
-

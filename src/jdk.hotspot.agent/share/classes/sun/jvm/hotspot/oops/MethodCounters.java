@@ -85,4 +85,3 @@ public class MethodCounters extends Metadata {
   public void printValueOn(PrintStream tty) {
   }
 }
-

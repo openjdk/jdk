@@ -198,4 +198,3 @@ public class RetentionAnnoCombo extends Helper {
         if (exitMode) throw new Exception();
     }
 }
-

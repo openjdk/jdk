@@ -26,4 +26,3 @@ package pkg2;
 public class Abstract implements Spliterator.OfDouble {
     static class AbstractV1<Double> implements Spliterator.OfDouble {}
 }
-

@@ -131,4 +131,3 @@ public final class XDHPublicKeyImpl extends X509Key implements XECPublicKey {
         }
     }
 }
-

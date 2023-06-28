@@ -168,4 +168,3 @@ public class Resources_fr extends java.util.ListResourceBundle {
         return contents;
     }
 }
-

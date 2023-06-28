@@ -34,4 +34,3 @@ class Private08_01 {
         private int doo() { return 0; } // private cannot override public.
     }; // should not complain about poo() not being implemented.
 }
-

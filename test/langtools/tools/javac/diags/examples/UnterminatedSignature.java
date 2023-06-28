@@ -29,4 +29,3 @@
 
 /** @see String#equals( */
 class UnterminatedSignature { }
-

@@ -67,4 +67,3 @@
  *      -eventType MONITOR_WAIT
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee
  */
-

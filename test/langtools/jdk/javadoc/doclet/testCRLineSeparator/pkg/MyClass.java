@@ -28,4 +28,3 @@ package pkg;
  * Line 2
  */
 public class MyClass {}
-

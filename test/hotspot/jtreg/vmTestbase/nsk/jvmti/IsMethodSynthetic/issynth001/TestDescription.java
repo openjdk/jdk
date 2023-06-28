@@ -44,4 +44,3 @@
  *      -agentlib:IsMethodSyntheticIssynth001
  *      nsk.jvmti.IsMethodSynthetic.issynth001
  */
-

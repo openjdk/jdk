@@ -66,4 +66,3 @@
  *      -testClassPath ${test.class.path}
  *      -configFile ${test.src}/ownedMonitorsAndFrames001.tests
  */
-

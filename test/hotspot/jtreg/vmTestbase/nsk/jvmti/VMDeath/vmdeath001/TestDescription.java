@@ -38,4 +38,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:vmdeath001=-waittime=5 nsk.jvmti.VMDeath.vmdeath001
  */
-

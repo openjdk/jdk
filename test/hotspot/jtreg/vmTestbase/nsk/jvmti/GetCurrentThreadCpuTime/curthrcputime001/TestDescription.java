@@ -78,4 +78,3 @@
  *      -agentlib:curthrcputime001=-waittime=5,iterations=1000
  *      nsk.jvmti.GetCurrentThreadCpuTime.curthrcputime001
  */
-

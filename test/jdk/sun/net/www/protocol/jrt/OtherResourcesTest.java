@@ -47,4 +47,3 @@ public class OtherResourcesTest {
                       .shouldHaveExitValue(0);
     }
 }
-

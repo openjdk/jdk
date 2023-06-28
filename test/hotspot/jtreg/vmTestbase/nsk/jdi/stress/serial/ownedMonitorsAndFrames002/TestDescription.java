@@ -71,4 +71,3 @@
  *      -configFile ${test.src}/ownedMonitorsAndFrames002.tests
  *      -testWorkDir .
  */
-

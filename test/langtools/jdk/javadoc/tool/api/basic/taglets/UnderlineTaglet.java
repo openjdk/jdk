@@ -111,4 +111,3 @@ public class UnderlineTaglet implements Taglet {
         }.visit(dt, null);
     }
 }
-

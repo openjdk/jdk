@@ -76,4 +76,3 @@ public class EnvironmentVariables {
         System.err.println("-----> Passed!");
     }
 }
-

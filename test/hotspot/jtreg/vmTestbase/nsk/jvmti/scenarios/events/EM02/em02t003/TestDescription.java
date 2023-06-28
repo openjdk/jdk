@@ -80,4 +80,3 @@
  *      nsk.jvmti.scenarios.events.EM02.em02t003
  *      ./bin/loadclass
  */
-

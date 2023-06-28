@@ -55,4 +55,3 @@
  *      -agentlib:localtab005=-waittime=5
  *      nsk.jvmti.GetLocalVariableTable.localtab005
  */
-

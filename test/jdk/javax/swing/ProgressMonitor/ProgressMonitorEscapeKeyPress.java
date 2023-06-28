@@ -123,4 +123,3 @@ class TestThread extends Thread {
         }
     }
 }
-

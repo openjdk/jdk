@@ -234,4 +234,3 @@ public final class WriteAfterAbort implements IIOWriteProgressListener {
         }
     }
 }
-

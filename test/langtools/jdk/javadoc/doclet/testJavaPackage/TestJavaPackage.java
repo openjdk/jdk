@@ -82,5 +82,3 @@ public class TestJavaPackage extends JavadocTester {
             "com.example.java/com/example/java/C.html");
     }
 }
-
-

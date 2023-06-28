@@ -98,4 +98,3 @@ public class TestInvalidRelativeNames extends JavacTestingAbstractProcessor {
         messager.printError("relative path: " + relative + ", kind: " + kind + ", no exception thrown");
     }
 }
-

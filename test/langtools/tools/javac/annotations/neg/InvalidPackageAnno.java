@@ -8,4 +8,3 @@
  */
 
 package bar;
-

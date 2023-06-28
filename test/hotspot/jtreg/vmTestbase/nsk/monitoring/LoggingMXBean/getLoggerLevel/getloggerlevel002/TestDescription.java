@@ -51,4 +51,3 @@
  *      -testMode=server
  *      -MBeanServer=default
  */
-

@@ -42,4 +42,3 @@
  *      -agentlib:setthrdstor001=-waittime=5
  *      nsk.jvmti.SetThreadLocalStorage.setthrdstor001
  */
-

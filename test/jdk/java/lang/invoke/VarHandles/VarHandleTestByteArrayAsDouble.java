@@ -1435,4 +1435,3 @@ public class VarHandleTestByteArrayAsDouble extends VarHandleBaseByteArrayTest {
     }
 
 }
-

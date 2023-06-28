@@ -38,4 +38,3 @@ public class TestUseCompiler {
         System.out.println("Passed");
     }
 }
-

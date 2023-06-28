@@ -94,4 +94,3 @@ public class StringJoinerOomUtf16Test {
         }
     }
 }
-

@@ -33,4 +33,3 @@
 module jdk.crypto.mscapi {
     provides java.security.Provider with sun.security.mscapi.SunMSCAPI;
 }
-

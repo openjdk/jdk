@@ -521,4 +521,3 @@ public class ChaCha20Poly1305ParamTest {
         return sb.toString();
     }
 }
-

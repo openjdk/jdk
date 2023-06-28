@@ -154,4 +154,3 @@ public class SerializationDeadlock {
         }
     }
 }
-

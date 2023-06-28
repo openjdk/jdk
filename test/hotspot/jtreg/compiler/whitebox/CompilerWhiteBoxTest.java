@@ -447,4 +447,3 @@ public abstract class CompilerWhiteBoxTest {
         return false;
     }
 }
-

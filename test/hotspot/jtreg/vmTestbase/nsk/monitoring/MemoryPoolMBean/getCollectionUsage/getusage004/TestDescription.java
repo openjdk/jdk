@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.MemoryPoolMBean.getCollectionUsage.getusage001 -testMode=proxy
  */
-

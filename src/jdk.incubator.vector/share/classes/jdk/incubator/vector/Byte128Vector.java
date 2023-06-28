@@ -948,4 +948,3 @@ final class Byte128Vector extends ByteVector {
     // ================================================
 
 }
-

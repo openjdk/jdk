@@ -152,4 +152,3 @@ public interface ClassSpecializerHelper {
     static final SpecTest SPEC_TEST = new SpecTest();
 
 }
-

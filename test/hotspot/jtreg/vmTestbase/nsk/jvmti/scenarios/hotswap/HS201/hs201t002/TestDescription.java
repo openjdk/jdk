@@ -74,4 +74,3 @@
  *      -agentlib:hs201t002=pathToNewByteCode=./bin,-waittime=5,-verbose
  *      nsk.jvmti.scenarios.hotswap.HS201.hs201t002 -verbose
  */
-

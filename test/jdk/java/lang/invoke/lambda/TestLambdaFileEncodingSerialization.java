@@ -82,4 +82,3 @@ public class TestLambdaFileEncodingSerialization {
         reserialize(foo).call();
     }
 }
-

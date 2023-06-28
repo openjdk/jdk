@@ -41,4 +41,3 @@
  *      -XX:-UseCompressedOops
  *      metaspace.gc.FirstGCTest
  */
-

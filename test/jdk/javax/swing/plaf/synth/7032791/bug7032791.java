@@ -45,4 +45,3 @@ public class bug7032791 {
         System.out.println("OK");
     }
 }
-

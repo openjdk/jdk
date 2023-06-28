@@ -327,4 +327,3 @@ public class ColorChooserDemoTest {
         colorChooserDialog.waitClosed();
     }
 }
-

@@ -55,4 +55,3 @@ public class KeyPermissions extends SecurityManager {
         s.startAsServer(GSSUtil.GSS_KRB5_MECH_OID);
     }
 }
-

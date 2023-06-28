@@ -91,4 +91,3 @@ public class TestInterpreterMethodEntries {
         CDSTestUtils.runWithArchiveAndCheck(opts);
     }
 }
-

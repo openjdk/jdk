@@ -33,4 +33,3 @@ package examples;
  * @param y the y coordinate
  */
 public record Point(int x, int y) { }
-

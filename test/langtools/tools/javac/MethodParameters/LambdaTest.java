@@ -47,6 +47,3 @@ class LambdaTest {
         foo((int x1) -> { return foo((int x2) -> { return x1 + x2; }); });
     }
 }
-
-
-

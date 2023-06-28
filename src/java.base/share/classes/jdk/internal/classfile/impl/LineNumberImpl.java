@@ -63,4 +63,3 @@ public final class LineNumberImpl
         return String.format("LineNumber[line=%d]", line);
     }
 }
-

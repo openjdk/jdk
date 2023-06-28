@@ -16,4 +16,3 @@ package bad;
 class Test {
     /** . */ Test() { }
 }
-

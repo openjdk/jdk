@@ -45,4 +45,3 @@
  *      -agentlib:tc05t001=verbose,waittime=5
  *      nsk.jvmti.scenarios.contention.TC05.tc05t001
  */
-

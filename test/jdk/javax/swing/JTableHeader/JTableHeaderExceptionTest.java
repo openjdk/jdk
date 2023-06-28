@@ -148,5 +148,3 @@ class DragTestTable extends JTable {
 
     }
 }
-
-

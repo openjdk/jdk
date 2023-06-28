@@ -493,4 +493,3 @@ public final class Tools extends JPanel implements ActionListener,
         }
     }
 } // End Tools class
-

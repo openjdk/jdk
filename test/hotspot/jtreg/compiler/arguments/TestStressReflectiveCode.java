@@ -56,4 +56,3 @@ public class TestStressReflectiveCode {
     private static final int[]   VALUES = new int[]{3, 4, 5};
     private static final Payload VALUES2 = new Payload();
 }
-

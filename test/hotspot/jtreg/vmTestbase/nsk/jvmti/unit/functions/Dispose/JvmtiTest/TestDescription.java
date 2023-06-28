@@ -40,4 +40,3 @@
  *      -agentlib:Dispose=-waittime=5
  *      nsk.jvmti.unit.functions.Dispose.JvmtiTest
  */
-

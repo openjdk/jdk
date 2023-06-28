@@ -48,4 +48,3 @@ public class ParserStackOverflow {
         System.out.println("Succeeded! (no StackOverflowError)");
     }
 }
-

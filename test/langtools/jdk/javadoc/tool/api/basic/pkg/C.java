@@ -27,4 +27,3 @@ public class C {
     @Deprecated
     public static final int ZERO = 0;
 }
-

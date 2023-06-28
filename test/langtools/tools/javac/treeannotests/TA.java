@@ -33,4 +33,3 @@ import static java.lang.annotation.ElementType.*;
 @interface TA {
     String value();
 }
-

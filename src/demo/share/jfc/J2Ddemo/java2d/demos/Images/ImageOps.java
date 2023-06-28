@@ -274,4 +274,3 @@ public class ImageOps extends ControlsSurface implements ChangeListener {
         }
     } // End DemoControls
 } // End ImageOps
-

@@ -63,4 +63,3 @@ public class bug8048506 {
         popup2.show();
     }
 }
-

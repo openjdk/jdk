@@ -30,4 +30,3 @@ import java.lang.annotation.*;
 public @interface ArtifactContainer {
     Artifact[] value();
 }
-

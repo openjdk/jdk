@@ -40,4 +40,3 @@
  * @run main/othervm
  *      nsk.monitoring.ThreadMXBean.findMonitorDeadlockedThreads.find006
  */
-

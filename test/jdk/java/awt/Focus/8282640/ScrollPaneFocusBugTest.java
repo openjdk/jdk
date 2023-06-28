@@ -128,4 +128,3 @@ public class ScrollPaneFocusBugTest {
         frame.setVisible(true);
     }
 }
-

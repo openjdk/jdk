@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:declcls002 nsk.jvmti.GetMethodDeclaringClass.declcls002
  */
-

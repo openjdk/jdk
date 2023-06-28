@@ -32,4 +32,3 @@
  * @library /test/lib
  * @run main/native SigTestDriver SIGTERM   -vmopt -XX:+PrintCommandLineFlags -vmopt -Xrs
  */
-

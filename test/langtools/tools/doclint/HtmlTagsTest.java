@@ -77,4 +77,3 @@ public class HtmlTagsTest {
      */
     public void escape_not_allowed() { }
 }
-

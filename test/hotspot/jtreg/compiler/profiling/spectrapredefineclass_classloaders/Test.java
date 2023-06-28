@@ -50,4 +50,3 @@ public class Test {
     static public A a = new A();
     static public B b = new B();
 }
-

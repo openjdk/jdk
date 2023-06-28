@@ -52,4 +52,3 @@ public class TestInitException {
         oa.shouldHaveExitValue(1);
     }
 }
-

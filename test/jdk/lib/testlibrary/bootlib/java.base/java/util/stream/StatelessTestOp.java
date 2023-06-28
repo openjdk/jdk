@@ -70,4 +70,3 @@ interface StatelessTestOp<E_IN, E_OUT> extends IntermediateTestOp<E_IN, E_OUT> {
 
     Sink<E_IN> opWrapSink(int flags, boolean parallel, Sink<E_OUT> sink);
 }
-

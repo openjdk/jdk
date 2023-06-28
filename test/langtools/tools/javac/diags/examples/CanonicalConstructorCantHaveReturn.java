@@ -30,4 +30,3 @@ record R() {
         return;
     }
 }
-

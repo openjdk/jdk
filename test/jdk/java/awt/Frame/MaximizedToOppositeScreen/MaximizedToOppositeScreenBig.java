@@ -93,4 +93,3 @@ public final class MaximizedToOppositeScreenBig {
         }
     }
 }
-

@@ -80,4 +80,3 @@ public class TestScalarReplacement {
         test2(obj);
     }
 }
-

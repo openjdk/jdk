@@ -299,4 +299,3 @@ public class ClipAnim extends AnimatingControlsSurface {
         }
     } // End DemoControls
 } // End ClipAnim
-

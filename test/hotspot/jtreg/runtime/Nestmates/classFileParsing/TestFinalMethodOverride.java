@@ -57,4 +57,3 @@ public class TestFinalMethodOverride {
     Inner i = new Inner();
   }
 }
-

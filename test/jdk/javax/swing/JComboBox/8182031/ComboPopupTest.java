@@ -88,4 +88,3 @@ public class ComboPopupTest {
         frame.setVisible(true);
     }
 }
-

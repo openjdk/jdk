@@ -296,4 +296,3 @@ public class BlockingWindowsTest {
         }
     }
 }
-

@@ -25,4 +25,3 @@
 // options: -Xplugin:MissingPlugin
 
 class PluginNotFound { }
-

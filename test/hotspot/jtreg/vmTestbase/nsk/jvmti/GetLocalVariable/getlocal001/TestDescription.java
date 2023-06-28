@@ -53,4 +53,3 @@
  *
  * @run main/othervm/native -agentlib:getlocal001 nsk.jvmti.GetLocalVariable.getlocal001
  */
-

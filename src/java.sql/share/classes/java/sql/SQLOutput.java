@@ -472,4 +472,3 @@ package java.sql;
   }
 
 }
-

@@ -44,4 +44,3 @@ public class StaticNestedClassConstructorArgs extends NumArgsTest {
         new StaticNestedClassConstructorArgs().runTest();
     }
 }
-

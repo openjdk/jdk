@@ -125,4 +125,3 @@ public class DocletPathTest extends APITest {
             }
             """;
 }
-

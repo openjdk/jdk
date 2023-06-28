@@ -45,4 +45,3 @@
  *      -agentlib:ap02t001=-waittime=5,-verbose
  *      nsk.jvmti.scenarios.allocation.AP02.ap02t001
  */
-

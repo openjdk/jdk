@@ -1025,4 +1025,3 @@ public class VarHandleTestMethodHandleAccessBoolean extends VarHandleBaseTest {
         }
     }
 }
-

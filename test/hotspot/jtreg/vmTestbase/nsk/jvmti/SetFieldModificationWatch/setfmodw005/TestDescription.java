@@ -52,4 +52,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:setfmodw005 nsk.jvmti.SetFieldModificationWatch.setfmodw005
  */
-

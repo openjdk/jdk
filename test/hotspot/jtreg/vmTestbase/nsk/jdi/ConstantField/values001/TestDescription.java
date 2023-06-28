@@ -70,4 +70,3 @@
  *          /test/lib
  * @run main/othervm nsk.jdi.ConstantField.values001
  */
-

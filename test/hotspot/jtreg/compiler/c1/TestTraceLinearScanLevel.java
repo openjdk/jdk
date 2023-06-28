@@ -35,4 +35,3 @@ public class TestTraceLinearScanLevel {
     public static void main(String[] strArr) {
     }
 }
-

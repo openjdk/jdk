@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:setbrk003 nsk.jvmti.SetBreakpoint.setbrk003
  */
-

@@ -77,4 +77,3 @@ public class TestElfDirectRead {
     output.shouldContain("MallocSiteTable::new_entry");
   }
 }
-

@@ -899,4 +899,3 @@ final class FloatMaxVector extends FloatVector {
     // ================================================
 
 }
-

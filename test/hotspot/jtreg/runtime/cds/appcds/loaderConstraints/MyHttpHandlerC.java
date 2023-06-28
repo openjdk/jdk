@@ -40,4 +40,3 @@ public class MyHttpHandlerC implements HttpHandler {
         handler.handle(null);
     }
 }
-

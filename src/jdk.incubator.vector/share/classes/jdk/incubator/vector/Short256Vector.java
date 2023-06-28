@@ -948,4 +948,3 @@ final class Short256Vector extends ShortVector {
     // ================================================
 
 }
-

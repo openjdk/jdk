@@ -29,4 +29,3 @@
  * @run main/othervm -Djavax.net.debug=ssl:respmgr java.base/sun.security.ssl.StatusResponseManagerTests
  * @summary OCSP Stapling for TLS
  */
-

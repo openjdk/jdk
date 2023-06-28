@@ -84,4 +84,3 @@ class InvalidSource {
     @ExpectInterfaces("intf (pkg java.util).List<!:empty clss X!>")
     abstract class TestClassListMissingX implements List<X> { }
 }
-

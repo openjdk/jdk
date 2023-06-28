@@ -78,4 +78,3 @@
  *      -agentlib:thrcputime001=-waittime=5,iterations=1000
  *      nsk.jvmti.GetThreadCpuTime.thrcputime001
  */
-

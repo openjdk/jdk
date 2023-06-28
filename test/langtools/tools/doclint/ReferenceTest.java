@@ -88,4 +88,3 @@ public class ReferenceTest {
     /** . */
     private ReferenceTest() { }
 }
-

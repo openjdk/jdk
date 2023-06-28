@@ -129,4 +129,3 @@ public class Pos11 {
     static class E extends C {}
 
 }
-

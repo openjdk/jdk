@@ -34,4 +34,3 @@ public class Handler extends URLStreamHandler {
         return null;
     }
 }
-

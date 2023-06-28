@@ -35,4 +35,3 @@ class OverrideIncompatibleReturn extends Base {
         return null;
     }
 }
-

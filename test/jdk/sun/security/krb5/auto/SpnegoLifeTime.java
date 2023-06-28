@@ -57,4 +57,3 @@ public class SpnegoLifeTime {
         cred.getUsage(oid);
     }
 }
-

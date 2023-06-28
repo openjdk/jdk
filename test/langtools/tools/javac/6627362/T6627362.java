@@ -119,4 +119,3 @@ public class T6627362 {
 
     int errors;
 }
-

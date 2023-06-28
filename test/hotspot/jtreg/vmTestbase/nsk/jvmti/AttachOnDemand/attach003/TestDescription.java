@@ -59,4 +59,3 @@
  *      -target nsk.share.aod.TargetApplicationWaitingAgents
  *      -ja SimpleAgent00.jar,SimpleAgent00.jar
  */
-

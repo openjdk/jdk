@@ -160,4 +160,3 @@ public class LazyCompositeDataTest {
         System.out.println("=== PASSED");
     }
 }
-

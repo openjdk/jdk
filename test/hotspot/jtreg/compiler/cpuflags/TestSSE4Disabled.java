@@ -37,4 +37,3 @@ public class TestSSE4Disabled {
         System.out.println("Passed");
     }
 }
-

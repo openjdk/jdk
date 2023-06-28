@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getcaps001 nsk.jvmti.GetCapabilities.getcaps001
  */
-

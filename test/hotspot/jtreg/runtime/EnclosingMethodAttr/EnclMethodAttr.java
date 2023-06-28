@@ -48,4 +48,3 @@ public class EnclMethodAttr {
         output.shouldContain("java.lang.ClassFormatError: Wrong EnclosingMethod");
     }
 }
-

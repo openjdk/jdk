@@ -29,4 +29,3 @@
 import undefPackage.Any;
 
 class Test {}
-

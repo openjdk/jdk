@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:clrbrk005 nsk.jvmti.ClearBreakpoint.clrbrk005
  */
-

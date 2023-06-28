@@ -52,4 +52,3 @@ module jdk.internal.le {
     provides jdk.internal.io.JdkConsoleProvider with
             jdk.internal.org.jline.JdkConsoleProviderImpl;
 }
-

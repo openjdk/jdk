@@ -29,4 +29,3 @@ module test2 {
     exports p;
     provides p.Service with p.Provider;
 }
-

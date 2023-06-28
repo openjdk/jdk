@@ -50,4 +50,3 @@
  *      -agentlib:em07t001=-waittime=5
  *      nsk.jvmti.scenarios.events.EM07.em07t001
  */
-

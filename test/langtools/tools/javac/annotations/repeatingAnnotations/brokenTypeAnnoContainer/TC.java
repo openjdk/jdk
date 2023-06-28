@@ -27,4 +27,3 @@ import java.lang.annotation.*;
 @interface TC {
     T[] value();
 }
-

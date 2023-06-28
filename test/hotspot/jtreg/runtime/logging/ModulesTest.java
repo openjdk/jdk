@@ -79,4 +79,3 @@ public class ModulesTest {
         return new OutputAnalyzer(pb.start());
     }
 }
-

@@ -121,4 +121,3 @@ public class BytecodeTracerTest {
         return f;
     }
 }
-

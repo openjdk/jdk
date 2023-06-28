@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:intrpthrd002 nsk.jvmti.InterruptThread.intrpthrd002
  */
-

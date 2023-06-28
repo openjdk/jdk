@@ -42,4 +42,3 @@
  *      -agentlib:getthrdstor001=-waittime=5
  *      nsk.jvmti.GetThreadLocalStorage.getthrdstor001
  */
-

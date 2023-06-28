@@ -172,4 +172,3 @@ public class NetworkInterfaceStreamTest extends OpTestCase {
     }
 
 }
-

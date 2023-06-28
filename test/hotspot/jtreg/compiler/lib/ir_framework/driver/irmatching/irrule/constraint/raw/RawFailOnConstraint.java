@@ -54,4 +54,3 @@ public class RawFailOnConstraint implements RawConstraint {
         return Constraint.createFailOn(rawIRNode.regex(compilePhase), constraintIndex, compilationOutput);
     }
 }
-

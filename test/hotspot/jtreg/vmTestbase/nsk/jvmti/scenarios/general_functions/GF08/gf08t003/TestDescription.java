@@ -60,4 +60,3 @@
  *      jni
  *      Registering JNI native method
  */
-

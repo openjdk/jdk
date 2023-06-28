@@ -39,4 +39,3 @@ public class AnnoProcessor extends JavacTestingAbstractProcessor {
         return true;
     }
 }
-

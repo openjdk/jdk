@@ -106,4 +106,3 @@ public class DeoptimizeWalk extends JdbTest {
                 .shouldNotContain("Internal exception:");
     }
 }
-

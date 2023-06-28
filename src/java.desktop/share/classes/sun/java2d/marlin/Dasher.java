@@ -1157,4 +1157,3 @@ final class Dasher implements StartFlagPathConsumer2D, MarlinConst {
         throw new InternalError("Dasher does not use a native consumer");
     }
 }
-

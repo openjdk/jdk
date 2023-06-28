@@ -914,4 +914,3 @@ final class Double512Vector extends DoubleVector {
     // ================================================
 
 }
-

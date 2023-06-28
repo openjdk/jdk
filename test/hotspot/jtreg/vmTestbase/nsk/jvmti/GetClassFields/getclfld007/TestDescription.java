@@ -47,4 +47,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getclfld007 nsk.jvmti.GetClassFields.getclfld007
  */
-

@@ -49,4 +49,3 @@ final class UNCFileURLConnection extends FileURLConnection {
         return perm;
     }
 }
-

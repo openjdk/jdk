@@ -76,4 +76,3 @@ class B {
         this.a = a;
     }
 }
-

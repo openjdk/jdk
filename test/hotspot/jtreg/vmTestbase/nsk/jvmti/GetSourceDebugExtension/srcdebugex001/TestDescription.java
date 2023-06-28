@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:srcdebugex001 nsk.jvmti.GetSourceDebugExtension.srcdebugex001
  */
-

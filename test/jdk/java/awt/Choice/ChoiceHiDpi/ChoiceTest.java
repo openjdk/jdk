@@ -60,4 +60,3 @@ public class ChoiceTest {
         ChoiceTest.UI();
     }
 }
-

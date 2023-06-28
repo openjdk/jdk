@@ -866,4 +866,3 @@ public abstract sealed class IntegerPolynomial implements IntegerFieldModuloP
         }
     }
 }
-

@@ -360,4 +360,3 @@ public class ResumptionUpdateBoundValues extends SSLContextTemplate {
         }
     }
 }
-

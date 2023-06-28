@@ -44,4 +44,3 @@ public class bug8154816 extends JApplet {
         });
     }
 }
-

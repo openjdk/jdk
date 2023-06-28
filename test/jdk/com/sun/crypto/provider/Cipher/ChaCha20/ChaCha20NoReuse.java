@@ -611,4 +611,3 @@ public class ChaCha20NoReuse {
         }
     }
 }
-

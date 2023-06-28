@@ -45,4 +45,3 @@ public sealed class GSSCaller permits HttpCaller {
         return "GSSCaller{" + name + '}';
     }
 }
-

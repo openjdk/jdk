@@ -49,4 +49,3 @@ public interface BMPConstants {
     static final int BI_JPEG = 4;
     static final int BI_PNG = 5;
 }
-

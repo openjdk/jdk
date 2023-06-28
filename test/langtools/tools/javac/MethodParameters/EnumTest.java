@@ -41,6 +41,3 @@ enum EnumTest {
 
     int valueOf(EnumTest A, EnumTest BA) { return 0; }
 }
-
-
-

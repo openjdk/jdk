@@ -38,4 +38,3 @@ public class MissingCodePointLayoutTest {
         layout.getCaretShapes(0);
     }
 }
-

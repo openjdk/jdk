@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.MemoryNotificationInfo.getCount.getcount001
  */
-

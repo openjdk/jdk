@@ -80,4 +80,3 @@ public final class SelectBytecodesAction extends CookieAction {
         return false;
     }
 }
-

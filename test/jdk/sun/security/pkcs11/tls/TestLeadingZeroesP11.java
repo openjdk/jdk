@@ -387,4 +387,3 @@ public class TestLeadingZeroesP11 extends PKCS11Test {
         (byte)0x00, (byte)0x23, (byte)0x5F
     };
 }
-

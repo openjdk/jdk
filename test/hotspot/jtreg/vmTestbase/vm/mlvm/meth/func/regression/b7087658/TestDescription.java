@@ -42,4 +42,3 @@
  *
  * @run main/othervm vm.mlvm.mixed.func.regression.b7087658.Test
  */
-

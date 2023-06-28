@@ -32,4 +32,3 @@ public class DummyProcessor extends JavacTestingAbstractProcessor {
        return true;
    }
 }
-

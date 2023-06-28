@@ -48,4 +48,3 @@ public class TryCatchBlock extends IRNode {
                 .collect(Collectors.summingLong(IRNode::complexity));
     }
 }
-

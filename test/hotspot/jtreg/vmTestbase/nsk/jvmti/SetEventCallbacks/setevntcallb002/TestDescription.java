@@ -52,4 +52,3 @@
  *      -agentlib:setevntcallb002=-waittime=5
  *      nsk.jvmti.SetEventCallbacks.setevntcallb002
  */
-

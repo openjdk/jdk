@@ -58,4 +58,3 @@
  *      -agentlib:curthrtimerinfo001=-waittime=5
  *      nsk.jvmti.GetCurrentThreadCpuTimerInfo.curthrtimerinfo001
  */
-

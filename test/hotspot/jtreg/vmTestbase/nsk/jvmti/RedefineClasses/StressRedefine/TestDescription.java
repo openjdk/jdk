@@ -37,4 +37,3 @@
  *      nsk.jvmti.RedefineClasses.StressRedefine
  *      ./bin
  */
-

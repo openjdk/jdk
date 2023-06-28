@@ -73,4 +73,3 @@
  *      nsk.jvmti.scenarios.events.EM02.em02t005
  *      ./bin/loadclass
  */
-

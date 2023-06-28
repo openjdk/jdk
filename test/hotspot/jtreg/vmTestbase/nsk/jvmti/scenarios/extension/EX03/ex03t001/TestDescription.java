@@ -64,4 +64,3 @@
  *      nsk.jvmti.scenarios.extension.EX03.ex03t001
  *      ./bin/loadclass
  */
-

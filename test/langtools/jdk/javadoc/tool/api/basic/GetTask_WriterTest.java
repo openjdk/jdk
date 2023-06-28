@@ -79,4 +79,3 @@ public class GetTask_WriterTest extends APITest {
         }
     }
 }
-

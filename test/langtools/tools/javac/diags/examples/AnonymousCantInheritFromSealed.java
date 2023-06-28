@@ -32,4 +32,3 @@ class Main {
 }
 
 sealed interface Shape {}
-

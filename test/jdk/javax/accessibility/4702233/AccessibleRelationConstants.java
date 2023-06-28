@@ -62,4 +62,3 @@ public interface AccessibleRelationConstants {
      */
     String[] OLD_FIELDS = new String[] {};
 }
-

@@ -925,4 +925,3 @@ final class Int256Vector extends IntVector {
     // ================================================
 
 }
-

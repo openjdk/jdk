@@ -214,4 +214,3 @@ public class MultiReleaseJarAwareSJFM {
         }
     }
 }
-

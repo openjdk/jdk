@@ -101,4 +101,3 @@ public class PeerAddrChange extends PeerAddressChangeNotification
                 ", Event: " + event + "]";
     }
 }
-

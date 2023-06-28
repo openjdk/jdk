@@ -405,4 +405,3 @@ public class TestCreateNewIfForPredicateCloning {
         }
     }
 }
-

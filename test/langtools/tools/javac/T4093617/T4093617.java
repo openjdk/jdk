@@ -28,4 +28,3 @@
  * @author  Peter von der Ah\u00e9
  * @compile/module=java.base/fail/ref=T4093617.out -XDrawDiagnostics java/lang/Object.java
  */
-

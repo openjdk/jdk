@@ -44,4 +44,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getclsldr002 nsk.jvmti.GetClassLoader.getclsldr002
  */
-

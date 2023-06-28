@@ -49,4 +49,3 @@ public class Test7017746 {
         }
     }
 }
-

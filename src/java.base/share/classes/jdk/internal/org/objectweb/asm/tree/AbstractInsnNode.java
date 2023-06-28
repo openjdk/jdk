@@ -295,4 +295,3 @@ public abstract class AbstractInsnNode {
         return this;
     }
 }
-

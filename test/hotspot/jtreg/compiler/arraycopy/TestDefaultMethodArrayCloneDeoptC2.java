@@ -114,4 +114,3 @@ interface TDMACDC2InterfaceTypeTest {
 
 class TDMACDC2ClassTypeTest {
 }
-

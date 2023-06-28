@@ -37,4 +37,3 @@ public class TestVerifyRegisterAllocator {
         System.out.println("Hello world!");
     }
 }
-

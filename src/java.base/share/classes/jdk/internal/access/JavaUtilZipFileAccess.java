@@ -45,4 +45,3 @@ public interface JavaUtilZipFileAccess {
     public void setExtraAttributes(ZipEntry ze, int extraAttrs);
     public int getExtraAttributes(ZipEntry ze);
 }
-

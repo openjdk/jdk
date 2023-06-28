@@ -203,5 +203,3 @@ public class TestDocLintOption extends JavadocTester {
                     }""");
     }
 }
-
-

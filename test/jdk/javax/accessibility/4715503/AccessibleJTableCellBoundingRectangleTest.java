@@ -88,4 +88,3 @@ public class AccessibleJTableCellBoundingRectangleTest {
         System.out.println("Test Passed");
     }
 }
-

@@ -40,4 +40,3 @@
  *      -agentlib:getjlocfmt002=-waittime=5
  *      nsk.jvmti.GetJLocationFormat.getjlocfmt002
  */
-

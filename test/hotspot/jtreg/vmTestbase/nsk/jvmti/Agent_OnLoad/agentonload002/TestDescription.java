@@ -44,4 +44,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:agentonload002= nsk.jvmti.Agent_OnLoad.agentonload002
  */
-

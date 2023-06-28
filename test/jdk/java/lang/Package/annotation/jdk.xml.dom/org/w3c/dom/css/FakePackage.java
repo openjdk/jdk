@@ -33,4 +33,3 @@ import static java.lang.annotation.ElementType.*;
 @Target(value={PACKAGE})
 public @interface FakePackage {
 }
-

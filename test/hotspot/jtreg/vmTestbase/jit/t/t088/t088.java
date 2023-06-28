@@ -96,4 +96,3 @@ class t088 {
         t088.goldChecker.check();
     }
 }
-

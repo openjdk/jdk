@@ -282,4 +282,3 @@ public enum SimpleTestCase implements CompilerWhiteBoxTest.TestCase {
             return x;
         }
     }
-

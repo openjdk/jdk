@@ -27,4 +27,3 @@ module jdk.scripting.dummyNashorn {
         provides javax.script.ScriptEngineFactory with
             jdk.dummyNashorn.api.scripting.DummyNashornJSEngineFactory;
 }
-

@@ -26,4 +26,3 @@ interface InterprocessMessages {
     final static int DATA_IS_CORRUPTED = 212;
     final static int NO_DROP_HAPPENED = 112;
 }
-

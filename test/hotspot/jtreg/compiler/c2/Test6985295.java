@@ -51,4 +51,3 @@ public class Test6985295 {
         System.exit(97);
     }
 }
-

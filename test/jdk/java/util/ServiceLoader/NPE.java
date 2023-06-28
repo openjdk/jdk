@@ -64,4 +64,3 @@ public final class NPE {
         }
     }
 }
-

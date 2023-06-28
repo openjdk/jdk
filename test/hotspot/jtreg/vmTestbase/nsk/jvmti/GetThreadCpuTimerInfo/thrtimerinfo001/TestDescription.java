@@ -56,4 +56,3 @@
  *      -agentlib:thrtimerinfo001=-waittime=5
  *      nsk.jvmti.GetThreadCpuTimerInfo.thrtimerinfo001
  */
-

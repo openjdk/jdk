@@ -38,4 +38,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:extmech=-waittime=5 nsk.jvmti.unit.extmech
  */
-

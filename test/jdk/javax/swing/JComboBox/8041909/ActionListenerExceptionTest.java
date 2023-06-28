@@ -182,4 +182,3 @@ class EventQueueProxy extends EventQueue {
         }
     }
 }
-

@@ -95,4 +95,3 @@ public class HeapDumpTest {
         run(new PidJcmdExecutor(), true);
     }
 }
-

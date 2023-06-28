@@ -48,4 +48,3 @@
  *      -agentlib:getthrdgrpchld001=-waittime=5,threads=10
  *      nsk.jvmti.GetThreadGroupChildren.getthrdgrpchld001
  */
-

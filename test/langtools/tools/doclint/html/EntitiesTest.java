@@ -327,4 +327,3 @@ class EntitiesTest {
      */
     void sparse_negative() { }
 }
-

@@ -248,4 +248,3 @@ public class EndingDotHostname {
         sslIS.read();
     }
 }
-

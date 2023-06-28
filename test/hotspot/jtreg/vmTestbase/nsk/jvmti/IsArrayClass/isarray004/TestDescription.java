@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:isarray004 nsk.jvmti.IsArrayClass.isarray004
  */
-

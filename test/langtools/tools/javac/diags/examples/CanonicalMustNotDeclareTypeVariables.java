@@ -30,4 +30,3 @@ record R(int i) {
         this.i = i;
     }
 }
-

@@ -39,4 +39,3 @@ class A {
 class B {
     static class Inner {}
 }
-

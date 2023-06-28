@@ -79,4 +79,3 @@ class ModuleLibrary implements ModuleFinder {
         return new HashSet<>(namesToReference.values());
     }
 }
-

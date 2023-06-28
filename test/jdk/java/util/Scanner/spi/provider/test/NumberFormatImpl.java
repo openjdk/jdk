@@ -45,4 +45,3 @@ public class NumberFormatImpl extends NumberFormat {
         return null;
     }
 }
-

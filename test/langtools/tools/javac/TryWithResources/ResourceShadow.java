@@ -116,4 +116,3 @@ class SilentCloseable implements AutoCloseable {
         return msg;
     }
 }
-

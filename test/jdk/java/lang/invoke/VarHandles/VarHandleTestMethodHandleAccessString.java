@@ -786,4 +786,3 @@ public class VarHandleTestMethodHandleAccessString extends VarHandleBaseTest {
         }
     }
 }
-

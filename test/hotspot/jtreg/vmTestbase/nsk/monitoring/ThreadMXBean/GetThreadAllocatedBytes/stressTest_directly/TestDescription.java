@@ -43,4 +43,3 @@
  *      nsk.monitoring.ThreadMXBean.GetThreadAllocatedBytes.StressTest
  *      -testMode=directly
  */
-

@@ -1417,4 +1417,3 @@ public class VarHandleTestAccessBoolean extends VarHandleBaseTest {
     }
 
 }
-

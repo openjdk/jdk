@@ -101,4 +101,3 @@ DocComment[DOC_COMMENT, pos:1
 ]
 */
 }
-

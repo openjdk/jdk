@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:issynth002 nsk.jvmti.IsMethodSynthetic.issynth002
  */
-

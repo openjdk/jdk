@@ -74,4 +74,3 @@ public class bug8028616 {
         }
     }
 }
-

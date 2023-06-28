@@ -34,4 +34,3 @@ class ProviderFactory {
         throw new RuntimeException("Should not be called");
     }
 }
-

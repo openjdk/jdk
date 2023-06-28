@@ -56,4 +56,3 @@
  *      -debugee.vmkeys="-Xmx128M ${test.vm.opts} ${test.java.opts}"
  *      -testClassNames nsk.share.jdi.TestClass1:boolean[]:float[]
  */
-

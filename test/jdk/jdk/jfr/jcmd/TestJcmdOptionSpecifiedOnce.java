@@ -43,4 +43,3 @@ public class TestJcmdOptionSpecifiedOnce {
         output.shouldContain("name can only be specified once");
     }
 }
-

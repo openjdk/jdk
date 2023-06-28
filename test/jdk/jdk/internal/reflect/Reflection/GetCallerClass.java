@@ -88,4 +88,3 @@ public class GetCallerClass {
             .collect(Collectors.joining("\n  ", "  ", "\n"));
     }
 }
-

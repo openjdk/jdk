@@ -105,4 +105,3 @@ public class Generator extends JavacTestingAbstractProcessor {
         return sb.toString();
     }
 }
-

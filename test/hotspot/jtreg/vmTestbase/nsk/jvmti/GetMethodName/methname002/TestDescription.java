@@ -43,4 +43,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:methname002 nsk.jvmti.GetMethodName.methname002
  */
-

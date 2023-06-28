@@ -47,4 +47,3 @@ module jdk.internal.jvmstat {
         sun.jvmstat.perfdata.monitor.protocol.file.MonitoredHostFileService,
         sun.jvmstat.perfdata.monitor.protocol.local.MonitoredHostLocalService;
 }
-

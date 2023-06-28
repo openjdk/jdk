@@ -124,4 +124,3 @@ public class InheritedAnnoCombo extends Helper {
         }
     }
 }
-

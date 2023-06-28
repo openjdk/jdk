@@ -34,4 +34,3 @@ module jdk.accessibility {
 
     exports com.sun.java.accessibility.util;
 }
-

@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getvern001 nsk.jvmti.GetVersionNumber.getvern001
  */
-

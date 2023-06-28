@@ -234,4 +234,3 @@ public class JImageExtractTest extends JImageCliTest {
         new JImageExtractTest().runTests();
     }
 }
-

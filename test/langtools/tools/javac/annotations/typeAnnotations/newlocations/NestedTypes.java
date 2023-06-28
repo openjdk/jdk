@@ -210,4 +210,3 @@ class MyList<K> { }
 @interface Ev { String value(); }
 @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})
 @interface Fv { String value(); }
-

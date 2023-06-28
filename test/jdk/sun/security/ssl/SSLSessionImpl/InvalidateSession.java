@@ -159,4 +159,3 @@ public class InvalidateSession extends SSLContextTemplate {
         }
     }
 }
-

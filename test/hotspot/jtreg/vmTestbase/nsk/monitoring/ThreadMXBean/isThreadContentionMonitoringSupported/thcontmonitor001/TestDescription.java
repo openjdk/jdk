@@ -45,4 +45,3 @@
  * @run main/othervm
  *      nsk.monitoring.ThreadMXBean.isThreadContentionMonitoringSupported.thcontmonitor001
  */
-

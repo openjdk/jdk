@@ -41,4 +41,3 @@
  *      -agentlib:rawmonitor=-waittime=5
  *      nsk.jvmti.unit.functions.rawmonitor
  */
-

@@ -99,4 +99,3 @@ public class SSLSocketBruteForceClose extends SSLSocketTemplate {
         System.err.println("client socket closed");
     }
 }
-

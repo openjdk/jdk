@@ -55,4 +55,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:addcaps001=-waittime=5 nsk.jvmti.AddCapabilities.addcaps001
  */
-

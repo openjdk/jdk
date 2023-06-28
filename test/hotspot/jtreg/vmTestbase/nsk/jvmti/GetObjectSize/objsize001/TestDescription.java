@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:objsize001=-waittime=5 nsk.jvmti.GetObjectSize.objsize001
  */
-

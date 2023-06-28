@@ -97,4 +97,3 @@ public class TestToolBarConstraint {
         frame.setVisible(true);
     }
 }
-

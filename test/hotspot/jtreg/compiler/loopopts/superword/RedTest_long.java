@@ -228,4 +228,3 @@ public class RedTest_long {
         }
     }
 }
-

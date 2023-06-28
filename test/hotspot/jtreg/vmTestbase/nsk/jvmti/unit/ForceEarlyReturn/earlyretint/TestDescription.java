@@ -53,4 +53,3 @@
  *
  * @run main/othervm/native -agentlib:earlyretint nsk.jvmti.unit.ForceEarlyReturn.earlyretint
  */
-

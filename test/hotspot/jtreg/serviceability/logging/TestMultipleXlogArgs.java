@@ -55,4 +55,3 @@ public class TestMultipleXlogArgs {
         output.shouldHaveExitValue(0);
     }
 }
-

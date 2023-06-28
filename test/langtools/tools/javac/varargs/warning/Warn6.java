@@ -40,4 +40,3 @@ public class Warn6<T> {
         Warn6<Iterable<String>> foo3 = new Warn6<Iterable<String>>(i, i);
     }
 }
-

@@ -394,4 +394,3 @@ public class SetLocationForModule extends TestRunner {
         return list;
     }
 }
-

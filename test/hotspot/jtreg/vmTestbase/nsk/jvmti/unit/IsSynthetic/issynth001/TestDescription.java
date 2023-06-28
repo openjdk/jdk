@@ -44,4 +44,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:IsSyntheticIssynth001 nsk.jvmti.unit.IsSynthetic.issynth001
  */
-

@@ -199,4 +199,3 @@ public class PerformanceMonitor extends JPanel {
         }
     } // End Surface
 } // End PeformanceMonitor
-

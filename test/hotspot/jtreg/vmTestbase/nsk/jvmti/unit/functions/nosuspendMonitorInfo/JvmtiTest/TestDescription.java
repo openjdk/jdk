@@ -40,4 +40,3 @@
  *      -agentlib:nosuspendMonitorInfo=-waittime=5
  *      nsk.jvmti.unit.functions.nosuspendMonitorInfo.JvmtiTest
  */
-

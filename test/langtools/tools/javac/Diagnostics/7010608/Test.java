@@ -90,5 +90,3 @@ public class Test {
         final String text;
     }
 }
-
-

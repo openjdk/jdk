@@ -43,4 +43,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.GarbageCollectorMXBean.getCollectionCount.getcollectioncount001
  */
-

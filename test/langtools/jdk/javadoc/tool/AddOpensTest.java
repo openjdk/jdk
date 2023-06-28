@@ -73,4 +73,3 @@ public class AddOpensTest extends TestRunner {
                 .writeAll();
     }
 }
-

@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:vminit001 nsk.jvmti.VMInit.vminit001
  */
-

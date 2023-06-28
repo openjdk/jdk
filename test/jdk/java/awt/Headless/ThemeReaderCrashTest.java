@@ -59,4 +59,3 @@ public class ThemeReaderCrashTest {
         panel.add(pane);
     }
 }
-

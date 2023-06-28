@@ -325,4 +325,3 @@ public class Stars3D extends ControlsSurface {
         }
     } // End DemoControls
 } // End Stars3D
-

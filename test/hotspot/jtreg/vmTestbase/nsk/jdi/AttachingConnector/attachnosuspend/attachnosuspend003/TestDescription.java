@@ -40,4 +40,3 @@
  *      nsk.jdi.AttachingConnector.attach.attach004.TestDriver
  *      ${os.family}-${os.simpleArch} dt_shmem n
  */
-

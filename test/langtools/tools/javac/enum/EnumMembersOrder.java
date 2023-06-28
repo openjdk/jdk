@@ -17,4 +17,3 @@ enum Days {
     private String day;
 
 }
-

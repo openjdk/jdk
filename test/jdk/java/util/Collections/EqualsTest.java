@@ -64,4 +64,3 @@ public class EqualsTest {
             throw new RuntimeException("assertion failed");
     }
 }
-

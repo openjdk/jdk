@@ -35,4 +35,3 @@ import java.util.ListIterator;
 public interface ConstraintAction<R> {
     R apply(ListIterator<String> iterator, RawIRNode rawIRNode, int constraintId);
 }
-

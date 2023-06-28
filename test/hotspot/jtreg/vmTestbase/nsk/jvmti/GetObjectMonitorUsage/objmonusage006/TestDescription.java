@@ -44,4 +44,3 @@
  *      -agentlib:objmonusage006
  *      nsk.jvmti.GetObjectMonitorUsage.objmonusage006
  */
-

@@ -68,4 +68,3 @@ public class MaximumAccessibleValueTest {
         System.out.println("Test Passed");
     }
 }
-

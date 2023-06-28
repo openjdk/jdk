@@ -45,4 +45,3 @@ public class Uint64Test {
             VmFlagTest.WHITE_BOX::getUint64VMFlag);
     }
 }
-

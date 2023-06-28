@@ -180,4 +180,3 @@ public class ConstrainedPrintingTest {
         ManualTestFrame.handleResult(testResult,"ConstrainedPrintingTest");
     }
 }
-

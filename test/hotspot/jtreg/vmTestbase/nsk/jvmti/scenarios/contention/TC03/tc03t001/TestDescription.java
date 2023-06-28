@@ -41,4 +41,3 @@
  *      -agentlib:tc03t001=-waittime=5
  *      nsk.jvmti.scenarios.contention.TC03.tc03t001
  */
-

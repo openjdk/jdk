@@ -101,4 +101,3 @@ public final class ClassTooLargeException extends IndexOutOfBoundsException {
         return constantPoolCount;
     }
 }
-

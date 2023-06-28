@@ -160,4 +160,3 @@ public final class DrawRotatedStringUsingRotatedFont {
         bg.dispose();
     }
 }
-

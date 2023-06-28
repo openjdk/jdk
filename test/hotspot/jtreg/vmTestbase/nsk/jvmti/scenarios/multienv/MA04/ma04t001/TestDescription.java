@@ -42,4 +42,3 @@
  *      -agentlib:ma04t001a=-waittime=5
  *      nsk.jvmti.scenarios.multienv.MA04.ma04t001
  */
-

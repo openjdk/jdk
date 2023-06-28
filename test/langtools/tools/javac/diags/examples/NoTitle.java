@@ -29,4 +29,3 @@
 
 /** @spec http://example.com */
 class NoTitle { }
-

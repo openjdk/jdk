@@ -46,4 +46,3 @@
  * @build nsk.jvmti.RedefineClasses.redefclass006r
  * @run main/othervm/native -agentlib:redefclass006 nsk.jvmti.RedefineClasses.redefclass006
  */
-

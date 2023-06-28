@@ -67,4 +67,3 @@ public abstract class SSLCapabilities {
      */
     public abstract List<SNIServerName> getServerNames();
 }
-

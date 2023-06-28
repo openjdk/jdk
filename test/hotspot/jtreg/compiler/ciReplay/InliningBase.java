@@ -171,4 +171,3 @@ public abstract class InliningBase extends DumpReplayBase {
         Asserts.assertEQ(expectedSize, inlineesNormal.size(), "unexpected number of inlinees found");
     }
 }
-

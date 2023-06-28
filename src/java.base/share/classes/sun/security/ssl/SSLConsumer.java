@@ -32,4 +32,3 @@ interface SSLConsumer {
     void consume(ConnectionContext context,
             ByteBuffer message) throws IOException;
 }
-

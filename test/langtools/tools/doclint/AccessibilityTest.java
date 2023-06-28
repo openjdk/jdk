@@ -63,4 +63,3 @@ public class AccessibilityTest {
     public void table_presentation() { }
 
 }
-

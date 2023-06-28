@@ -79,4 +79,3 @@ public class OrderDouble extends Order {
 
     }
 }
-

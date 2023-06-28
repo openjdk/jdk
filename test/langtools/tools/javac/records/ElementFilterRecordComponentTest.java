@@ -62,4 +62,3 @@ public class ElementFilterRecordComponentTest {
         Assert.check(recordSet.containsAll(recordList));
     }
 }
-

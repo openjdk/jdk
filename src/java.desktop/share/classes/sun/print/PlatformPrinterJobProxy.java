@@ -33,5 +33,3 @@ public class PlatformPrinterJobProxy {
        return new sun.print.PSPrinterJob();
    }
 }
-
-

@@ -44,4 +44,3 @@
  *      nsk.monitoring.ThreadMXBean.isCurrentThreadCpuTimeSupported.curthcputime001
  *      -testMode=proxy
  */
-

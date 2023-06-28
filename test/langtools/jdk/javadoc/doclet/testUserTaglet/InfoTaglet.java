@@ -78,4 +78,3 @@ public class InfoTaglet implements Taglet {
                 + "</dd>";
     }
 }
-

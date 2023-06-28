@@ -32,4 +32,3 @@ class TestNoBridgeInSiblingSuper {
         String m();
     }
 }
-

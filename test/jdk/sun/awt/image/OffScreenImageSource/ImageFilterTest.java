@@ -132,5 +132,3 @@ class MyImageFilter extends ImageFilter {
         }
     }
 }
-
-

@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:thrgrpinfo002 nsk.jvmti.GetThreadGroupInfo.thrgrpinfo002
  */
-

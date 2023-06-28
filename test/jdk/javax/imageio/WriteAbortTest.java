@@ -166,4 +166,3 @@ public class WriteAbortTest implements IIOWriteProgressListener {
     public void thumbnailComplete(ImageWriter source) {
     }
 }
-

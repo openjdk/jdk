@@ -87,4 +87,3 @@ public class TestModuleUnnamedPackage extends JavacTestingAbstractProcessor {
         return true;
     }
 }
-

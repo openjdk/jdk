@@ -495,4 +495,3 @@ class ImageSelection implements Transferable {
         }
     }
 }
-

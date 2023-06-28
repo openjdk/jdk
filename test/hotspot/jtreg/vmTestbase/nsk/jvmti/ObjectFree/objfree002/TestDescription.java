@@ -50,4 +50,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:objfree002=-waittime=5 nsk.jvmti.ObjectFree.objfree002 5
  */
-

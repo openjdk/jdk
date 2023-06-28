@@ -51,4 +51,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.ThreadInfo.getLockName.getlockname001
  */
-

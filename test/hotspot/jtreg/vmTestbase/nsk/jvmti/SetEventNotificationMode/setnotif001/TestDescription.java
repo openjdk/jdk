@@ -55,4 +55,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:setnotif001 nsk.jvmti.SetEventNotificationMode.setnotif001
  */
-

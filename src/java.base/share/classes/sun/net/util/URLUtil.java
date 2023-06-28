@@ -110,4 +110,3 @@ public class URLUtil {
         return new URLPermission(urlString);
     }
 }
-

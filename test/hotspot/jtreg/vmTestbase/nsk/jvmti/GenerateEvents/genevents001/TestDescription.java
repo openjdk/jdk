@@ -52,4 +52,3 @@
  *      -agentlib:genevents001=-waittime=5
  *      nsk.jvmti.GenerateEvents.genevents001
  */
-

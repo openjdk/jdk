@@ -26,4 +26,3 @@ class Target2 {
         System.loadLibrary("awt");
     }
 }
-

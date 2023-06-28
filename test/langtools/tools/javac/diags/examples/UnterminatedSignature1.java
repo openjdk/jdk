@@ -29,4 +29,3 @@
 
 /** @see java.util.Set<String */
 class UnterminatedSignature1 { }
-

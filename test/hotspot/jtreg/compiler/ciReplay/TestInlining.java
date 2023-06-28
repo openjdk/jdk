@@ -76,4 +76,3 @@ public class TestInlining extends CiReplayBase {
         }
     }
 }
-

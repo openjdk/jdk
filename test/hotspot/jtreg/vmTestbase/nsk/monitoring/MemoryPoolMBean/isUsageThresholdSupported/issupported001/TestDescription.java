@@ -50,4 +50,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.MemoryPoolMBean.isUsageThresholdSupported.issupported001
  */
-

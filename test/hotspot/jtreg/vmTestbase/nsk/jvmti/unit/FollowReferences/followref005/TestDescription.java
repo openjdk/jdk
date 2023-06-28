@@ -42,4 +42,3 @@
  *      -agentlib:followref005=-waittime=5,-verbose
  *      nsk.jvmti.unit.FollowReferences.followref005
  */
-

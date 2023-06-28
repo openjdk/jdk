@@ -149,4 +149,3 @@ public class TestBimodalTaglets extends JavadocTester implements Taglet {
                 .collect(Collectors.joining());
     }
 }
-

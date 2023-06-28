@@ -39,4 +39,3 @@
  *      -agentlib:NonConcreteKlassFilter=-waittime=5
  *      nsk.jvmti.IterateThroughHeap.non_concrete_klass_filter.NonConcreteKlassFilter
  */
-

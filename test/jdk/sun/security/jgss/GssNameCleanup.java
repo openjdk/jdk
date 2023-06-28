@@ -66,4 +66,3 @@ public final class GssNameCleanup {
         }
     }
 }
-

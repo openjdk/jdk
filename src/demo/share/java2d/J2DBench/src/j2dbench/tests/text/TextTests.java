@@ -716,4 +716,3 @@ public abstract class TextTests extends Test {
         }
     }
 }
-

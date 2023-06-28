@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:loadedclss001 nsk.jvmti.GetLoadedClasses.loadedclss001
  */
-

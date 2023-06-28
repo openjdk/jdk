@@ -932,4 +932,3 @@ final class Byte64Vector extends ByteVector {
     // ================================================
 
 }
-

@@ -52,5 +52,3 @@ public class LambdaCapture06 {
         assertTrue(assertionCount == 1);
     }
 }
-
-

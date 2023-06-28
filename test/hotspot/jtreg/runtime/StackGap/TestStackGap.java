@@ -50,4 +50,3 @@ public class TestStackGap {
             .shouldHaveExitValue(0);
     }
 }
-

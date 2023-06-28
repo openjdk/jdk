@@ -70,4 +70,3 @@ public class TestHtmlOptionalClosingTag {
         passFailJFrame.awaitAndCheck();
     }
 }
-

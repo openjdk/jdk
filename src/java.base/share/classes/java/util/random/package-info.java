@@ -636,4 +636,3 @@
  * @since   17
  */
 package java.util.random;
-

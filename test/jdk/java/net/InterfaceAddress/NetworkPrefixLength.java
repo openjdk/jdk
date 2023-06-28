@@ -89,4 +89,3 @@ public class NetworkPrefixLength {
         out.println("NIC " + nicName + " has an address with an invalid prefix length:\n" + iaddr);
     }
 }
-

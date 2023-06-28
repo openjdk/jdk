@@ -61,4 +61,3 @@ public class Test {
         System.out.println("EATester.var_check = " + Test.var_check + " (expected 1)\n");
     }
 }
-

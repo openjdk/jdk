@@ -47,4 +47,3 @@ public class TestVectorCastAVX512 {
                 "-XX:UseAVX=3");
     }
 }
-

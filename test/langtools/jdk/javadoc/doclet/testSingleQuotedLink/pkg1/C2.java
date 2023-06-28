@@ -28,4 +28,3 @@ package pkg1;
  * This is a single quoted link.
  */
 public class C2 extends C1 {}
-

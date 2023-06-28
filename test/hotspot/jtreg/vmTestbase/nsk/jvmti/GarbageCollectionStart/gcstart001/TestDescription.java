@@ -45,4 +45,3 @@
  *      -agentlib:gcstart001=-waittime=5
  *      nsk.jvmti.GarbageCollectionStart.gcstart001
  */
-

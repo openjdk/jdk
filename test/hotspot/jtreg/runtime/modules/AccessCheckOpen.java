@@ -76,4 +76,3 @@ public class AccessCheckOpen {
         p1_c1_class.newInstance();
     }
 }
-

@@ -45,4 +45,3 @@ public class TestProcessor extends JavacTestingAbstractProcessor {
         return false;
    }
 }
-

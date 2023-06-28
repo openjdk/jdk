@@ -33,4 +33,3 @@ public class ResourceNameConflict implements AutoCloseable {
     public void close() {
     }
 }
-

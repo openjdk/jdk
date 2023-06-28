@@ -90,4 +90,3 @@ public class ResourcesTest {
         assertTrue(exitValue == 0);
     }
 }
-

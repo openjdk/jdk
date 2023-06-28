@@ -36,4 +36,3 @@ class T7073477A {
   @SuppressWarnings("")
   static final String S = "";
 }
-

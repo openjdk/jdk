@@ -57,4 +57,3 @@ public class NoOperandsTest extends OptionModesTester {
                 .checkIllegalStateException();
     }
 }
-

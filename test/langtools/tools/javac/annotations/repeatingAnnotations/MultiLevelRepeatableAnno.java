@@ -45,4 +45,3 @@ import java.lang.annotation.Repeatable;
 
 @Foo @Foo
 public class MultiLevelRepeatableAnno  {}
-

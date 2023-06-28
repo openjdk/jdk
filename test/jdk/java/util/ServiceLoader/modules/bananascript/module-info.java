@@ -27,4 +27,3 @@ module bananascript {
     provides javax.script.ScriptEngineFactory
         with org.banana.BananaScriptEngineFactory;
 }
-

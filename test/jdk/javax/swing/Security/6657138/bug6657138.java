@@ -105,4 +105,3 @@ public class bug6657138 implements Runnable {
         thread.join();
     }
 }
-

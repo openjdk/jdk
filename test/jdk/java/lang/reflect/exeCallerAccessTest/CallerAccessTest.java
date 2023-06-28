@@ -64,4 +64,3 @@ public class CallerAccessTest {
                 .shouldHaveExitValue(0);
     }
 }
-

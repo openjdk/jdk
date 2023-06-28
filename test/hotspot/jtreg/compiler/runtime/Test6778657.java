@@ -79,4 +79,3 @@ public class Test6778657 {
         check_d2l(Long.MIN_VALUE);
     }
 }
-

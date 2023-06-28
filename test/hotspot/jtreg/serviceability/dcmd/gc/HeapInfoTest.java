@@ -52,4 +52,3 @@ public class HeapInfoTest {
         run(new PidJcmdExecutor());
     }
 }
-

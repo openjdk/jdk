@@ -80,4 +80,3 @@ class ServerHandshakeContext extends HandshakeContext {
         kickstartMessageDelivered = true;
     }
 }
-

@@ -26,4 +26,3 @@
 @summary manual test for accessibility button demo
 @run main/manual SwingSetTest OptionPaneDemo
 */
-

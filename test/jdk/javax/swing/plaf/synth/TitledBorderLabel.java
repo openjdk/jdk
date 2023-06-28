@@ -206,4 +206,3 @@ public class TitledBorderLabel {
     }
 
 }
-

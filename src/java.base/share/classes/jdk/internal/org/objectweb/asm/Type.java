@@ -925,4 +925,3 @@ public final class Type {
         return getDescriptor();
     }
 }
-

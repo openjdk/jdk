@@ -113,4 +113,3 @@ public class MetaspaceTestManyArenasManyThreads extends MetaspaceTestWithThreads
     }
 
 }
-

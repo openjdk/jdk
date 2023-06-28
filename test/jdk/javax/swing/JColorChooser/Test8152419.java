@@ -167,4 +167,3 @@ class JColorChooserTest implements Runnable {
 
     }
 }
-

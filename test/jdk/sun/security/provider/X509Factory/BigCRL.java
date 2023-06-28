@@ -83,4 +83,3 @@ public class BigCRL {
         cf.generateCRL(new ByteArrayInputStream(data));
     }
 }
-

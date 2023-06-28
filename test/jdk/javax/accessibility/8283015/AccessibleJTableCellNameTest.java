@@ -87,4 +87,3 @@ public class AccessibleJTableCellNameTest {
         System.out.println("Test Passed");
     }
 }
-

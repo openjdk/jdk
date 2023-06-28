@@ -57,4 +57,3 @@ public class IntxTest {
         TESTS[2] = max_percentage_limit;
     }
 }
-

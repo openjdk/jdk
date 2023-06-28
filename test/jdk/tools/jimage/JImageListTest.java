@@ -228,4 +228,3 @@ public class JImageListTest extends JImageCliTest {
         System.gc();
     }
 }
-

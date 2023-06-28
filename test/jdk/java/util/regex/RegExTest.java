@@ -4668,4 +4668,3 @@ public class RegExTest {
         assertTrue(pattern2.matcher(line).find());
     }
 }
-

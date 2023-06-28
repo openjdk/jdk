@@ -60,4 +60,3 @@
  *      nsk.jvmti.RedefineClasses.redefclass028
  *      1000 ./bin
  */
-

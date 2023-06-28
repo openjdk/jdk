@@ -44,4 +44,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getfldnm003 nsk.jvmti.GetFieldName.getfldnm003
  */
-

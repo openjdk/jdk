@@ -111,4 +111,3 @@ public class CheckForIndexOutOfBoundsException {
                 "contain the string 'IndexOutOfBoundsException'");
     }
 }
-

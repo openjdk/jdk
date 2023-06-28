@@ -218,4 +218,3 @@ public final class Handle {
         return owner + '.' + name + descriptor + " (" + tag + (isInterface ? " itf" : "") + ')';
     }
 }
-

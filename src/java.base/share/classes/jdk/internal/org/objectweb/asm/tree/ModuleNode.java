@@ -265,4 +265,3 @@ public class ModuleNode extends ModuleVisitor {
         }
     }
 }
-

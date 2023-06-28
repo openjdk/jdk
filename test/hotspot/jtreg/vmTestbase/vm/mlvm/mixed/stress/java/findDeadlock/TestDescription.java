@@ -53,4 +53,3 @@
  *                   -Xlog:gc,safepoint
  *                   vm.mlvm.mixed.stress.java.findDeadlock.INDIFY_Test
  */
-

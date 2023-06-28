@@ -75,4 +75,3 @@ public class WhiteTextColorTest extends Frame {
         });
     }
 }
-

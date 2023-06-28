@@ -43,4 +43,3 @@
  *      -agentlib:sp07t002=-waittime=5
  *      nsk.jvmti.scenarios.sampling.SP07.sp07t002
  */
-

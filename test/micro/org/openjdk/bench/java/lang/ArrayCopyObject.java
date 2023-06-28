@@ -124,4 +124,3 @@ public class ArrayCopyObject {
         System.out.println(r1.getPrimaryResult().getScore() + r2.getPrimaryResult().getScore());
     }
 }
-

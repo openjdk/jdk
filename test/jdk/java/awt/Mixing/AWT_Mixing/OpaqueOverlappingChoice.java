@@ -51,4 +51,3 @@ public class OpaqueOverlappingChoice extends OpaqueOverlapping  {
         OverlappingTestBase.doMain(args);
     }
 }
-

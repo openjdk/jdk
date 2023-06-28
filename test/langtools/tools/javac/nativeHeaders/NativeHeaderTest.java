@@ -302,4 +302,3 @@ public class NativeHeaderTest {
     int testCount;
     int errorCount;
 }
-

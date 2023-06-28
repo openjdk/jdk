@@ -56,4 +56,3 @@ public class NotCompiledIRMethodMatchResult implements MatchResult {
         visitor.visitMethodNotCompiled(method, failedIRRules);
     }
 }
-

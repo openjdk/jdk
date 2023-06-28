@@ -102,4 +102,3 @@ public class TestRTMAbortThreshold {
          new TestRTMAbortThreshold().runTestCases();
     }
 }
-

@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:rawmnntfy003 nsk.jvmti.RawMonitorNotify.rawmnntfy003
  */
-

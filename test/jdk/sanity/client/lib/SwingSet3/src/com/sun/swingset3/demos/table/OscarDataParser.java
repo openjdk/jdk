@@ -164,4 +164,3 @@ public abstract class OscarDataParser extends DefaultHandler {
 
     protected abstract void addCandidate(OscarCandidate candidate);
 }
-

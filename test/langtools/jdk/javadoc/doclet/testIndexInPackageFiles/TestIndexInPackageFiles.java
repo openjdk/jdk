@@ -123,4 +123,3 @@ public class TestIndexInPackageFiles extends JavadocTester {
                 <a href="p/q/doc-files/extra.html#test.property.2" class="search-tag-link">test.property.2</a>""");
     }
 }
-

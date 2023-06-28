@@ -113,4 +113,3 @@ public class DblClickActionEventTest extends Applet {
         }
     }
 }
-

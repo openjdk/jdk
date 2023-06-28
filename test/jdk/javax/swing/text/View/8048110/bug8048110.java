@@ -119,4 +119,3 @@ public class bug8048110 {
         return null;
     }
 }
-

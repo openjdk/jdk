@@ -279,4 +279,3 @@ public class TestUnstableIfTrap {
         mv.visitEnd();
     }
 }
-

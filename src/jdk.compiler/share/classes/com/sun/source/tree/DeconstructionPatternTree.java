@@ -47,4 +47,3 @@ public interface DeconstructionPatternTree extends PatternTree {
     List<? extends PatternTree> getNestedPatterns();
 
 }
-

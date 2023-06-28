@@ -99,4 +99,3 @@ public class DocLintFormatTest {
 
     private int errors = 0;
 }
-

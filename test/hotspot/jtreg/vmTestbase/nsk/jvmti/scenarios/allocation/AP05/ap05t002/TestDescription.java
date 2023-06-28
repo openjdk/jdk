@@ -56,4 +56,3 @@
  *      -agentlib:ap05t002=-waittime=5
  *      nsk.jvmti.scenarios.allocation.AP05.ap05t002
  */
-

@@ -49,4 +49,3 @@
  *          /test/lib
  * @run main/othervm nsk.monitoring.MemoryPoolMBean.setUsageThreshold.setthreshold001
  */
-

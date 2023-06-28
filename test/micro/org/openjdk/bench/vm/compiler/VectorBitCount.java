@@ -86,4 +86,3 @@ public abstract class VectorBitCount {
     }
 
 }
-

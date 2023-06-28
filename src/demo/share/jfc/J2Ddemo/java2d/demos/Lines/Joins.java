@@ -244,4 +244,3 @@ public class Joins extends ControlsSurface {
         } // End JoinIcon class
     } // End DemoControls class
 } // End Joins class
-

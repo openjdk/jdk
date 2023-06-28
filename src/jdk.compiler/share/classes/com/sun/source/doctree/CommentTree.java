@@ -41,4 +41,3 @@ public interface CommentTree extends DocTree {
      */
     String getBody();
 }
-

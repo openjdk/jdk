@@ -56,4 +56,3 @@ public class Test7020614 {
         System.out.println("doNotOptimizeOut value: " + doNotOptimizeOut);
     }
 }
-

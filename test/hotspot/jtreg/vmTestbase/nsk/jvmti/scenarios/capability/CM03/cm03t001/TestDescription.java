@@ -67,4 +67,3 @@
  *      -agentlib:cm03t001=-waittime=5
  *      nsk.jvmti.scenarios.capability.CM03.cm03t001
  */
-

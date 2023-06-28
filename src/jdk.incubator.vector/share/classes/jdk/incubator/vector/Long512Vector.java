@@ -915,4 +915,3 @@ final class Long512Vector extends LongVector {
     // ================================================
 
 }
-

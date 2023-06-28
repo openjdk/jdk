@@ -64,4 +64,3 @@ public class DuplAttributesTest {
         runTest("MethVisParamAnnotsDup", "RuntimeVisibleParameterAnnotations");
     }
 }
-

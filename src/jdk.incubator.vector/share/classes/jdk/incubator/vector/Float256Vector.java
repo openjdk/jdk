@@ -914,4 +914,3 @@ final class Float256Vector extends FloatVector {
     // ================================================
 
 }
-

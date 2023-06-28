@@ -312,4 +312,3 @@ public class TestScriptInComment {
 
     int errors = 0;
 }
-

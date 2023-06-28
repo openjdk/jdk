@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:topthrgrp002 nsk.jvmti.GetTopThreadGroups.topthrgrp002
  */
-

@@ -217,4 +217,3 @@ class TestUI {
         mainFrame.dispose();
     }
 }
-

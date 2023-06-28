@@ -73,4 +73,3 @@ public class StringFormat {
         return "%3s %10d %4S %04X %4S %04X %4S %04X".formatted(s, i, s, i, s, i, s, i);
     }
 }
-

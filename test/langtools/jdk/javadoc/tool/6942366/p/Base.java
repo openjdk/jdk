@@ -27,4 +27,3 @@ public class Base {
     /** javadoc-for-Base.m. */
     public void m() { }
 }
-

@@ -38,4 +38,3 @@ public class TestSplitIfBlocksDisabled {
       System.out.println("Passed");
     }
 }
-

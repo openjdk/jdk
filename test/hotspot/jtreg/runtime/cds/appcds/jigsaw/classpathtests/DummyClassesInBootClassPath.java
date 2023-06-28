@@ -90,4 +90,3 @@ public class DummyClassesInBootClassPath {
           .assertNormalExit(output -> checkOutput(output, classNames));
     }
 }
-

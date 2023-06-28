@@ -44,4 +44,3 @@ public interface XECKey {
      */
     AlgorithmParameterSpec getParams();
 }
-

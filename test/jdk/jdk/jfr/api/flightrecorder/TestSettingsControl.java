@@ -86,7 +86,3 @@ public class TestSettingsControl {
         assertTrue(MySettingsControl.setWasCalled, "SettingControl.setValue was not called");
     }
 }
-
-
-
-

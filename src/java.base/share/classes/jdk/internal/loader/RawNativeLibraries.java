@@ -191,4 +191,3 @@ public final class RawNativeLibraries {
     private static native boolean load0(RawNativeLibraryImpl impl, String name);
     private static native void unload0(String name, long handle);
 }
-

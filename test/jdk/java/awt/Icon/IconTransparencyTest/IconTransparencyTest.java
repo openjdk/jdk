@@ -248,4 +248,3 @@ public class IconTransparencyTest {
                 red, green, blue, transparentColorIndex);
     }
 }
-

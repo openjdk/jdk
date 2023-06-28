@@ -35,4 +35,3 @@ public class TestCls {
     public static Lookup getLookupForPrivateSIC() { return lookup(); }
 
 }
-

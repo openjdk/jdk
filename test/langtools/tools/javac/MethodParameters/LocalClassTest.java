@@ -56,6 +56,3 @@ class LocalClassTest {
         new CapturingLocal(i) { };
     }
 }
-
-
-

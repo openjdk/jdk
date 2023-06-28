@@ -130,4 +130,3 @@ public final class DisplayChangesException {
         }
     }
 }
-

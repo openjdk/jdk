@@ -42,4 +42,3 @@
  *      ${os.family}-${os.simpleArch} dt_socket y
  *      -waitVMStartEvent
  */
-

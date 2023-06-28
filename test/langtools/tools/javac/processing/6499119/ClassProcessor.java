@@ -103,4 +103,3 @@ public class ClassProcessor extends JavacTestingAbstractProcessor {
         messager.printError(msg);
     }
 }
-

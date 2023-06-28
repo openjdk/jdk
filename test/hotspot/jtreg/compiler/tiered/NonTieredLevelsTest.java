@@ -98,4 +98,3 @@ public class NonTieredLevelsTest extends CompLevelsTest {
         }
     }
 }
-

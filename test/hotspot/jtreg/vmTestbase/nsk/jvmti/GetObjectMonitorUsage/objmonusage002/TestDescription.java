@@ -41,4 +41,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:objmonusage002 nsk.jvmti.GetObjectMonitorUsage.objmonusage002
  */
-

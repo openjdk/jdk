@@ -44,4 +44,3 @@
  *      nsk.monitoring.ThreadMXBean.isThreadContentionMonitoringSupported.thcontmonitor001
  *      -testMode=server
  */
-

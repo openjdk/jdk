@@ -42,6 +42,3 @@ public class InstanceMethods {
     final protected boolean prot(int C, Object DC, final Object EDC, final String... FEDC) { return true; }
     final private boolean priv(int D, Object ED, final Object FED, final String... GFED) { return true; }
 }
-
-
-

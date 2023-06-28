@@ -161,4 +161,3 @@ public class GetResourceTest extends KullaTesting {
     }
 
 }
-

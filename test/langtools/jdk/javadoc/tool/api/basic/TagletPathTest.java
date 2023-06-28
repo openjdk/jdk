@@ -107,4 +107,3 @@ public class TagletPathTest extends APITest {
             "/** {@underline " + TEST_STRING + "} */\n" +
             "public class C { }";
 }
-

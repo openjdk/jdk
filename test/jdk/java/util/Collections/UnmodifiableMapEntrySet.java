@@ -161,4 +161,3 @@ public class UnmodifiableMapEntrySet {
         testWithEntryConsumer(ec -> ms.get().entrySet().parallelStream().forEach(ec));
     }
 }
-

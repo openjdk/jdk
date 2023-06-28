@@ -209,4 +209,3 @@ public class TestRTMAfterNonRTMDeopt {
         new TestRTMAfterNonRTMDeopt().runTestCases();
     }
 }
-

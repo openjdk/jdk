@@ -68,4 +68,3 @@ public interface AccessibleContextConstants {
          */
         String[] OLD_FIELDS = new String[] {};
 }
-

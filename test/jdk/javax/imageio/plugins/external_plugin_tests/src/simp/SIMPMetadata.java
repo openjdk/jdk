@@ -91,4 +91,3 @@ public class SIMPMetadata extends IIOMetadata {
         }
     }
 }
-

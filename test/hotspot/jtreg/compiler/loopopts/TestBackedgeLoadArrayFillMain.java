@@ -228,4 +228,3 @@ public class TestBackedgeLoadArrayFillMain {
         Asserts.assertEQ(intSum(),   12);
     }
 }
-

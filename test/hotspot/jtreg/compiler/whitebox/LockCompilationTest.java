@@ -95,4 +95,3 @@ public class LockCompilationTest extends CompilerWhiteBoxTest {
                 method + " must not be in queue");
     }
 }
-

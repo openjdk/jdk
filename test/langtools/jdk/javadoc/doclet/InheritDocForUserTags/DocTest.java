@@ -136,4 +136,3 @@ class FullInheritDocPlusDocTest extends DocTest {
     public void testMethod() {
     }
 }
-

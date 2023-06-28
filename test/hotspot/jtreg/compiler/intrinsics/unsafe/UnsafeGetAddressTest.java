@@ -69,4 +69,3 @@ public class UnsafeGetAddressTest {
     }
     static volatile long result;
 }
-

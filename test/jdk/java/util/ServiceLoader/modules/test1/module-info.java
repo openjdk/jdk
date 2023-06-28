@@ -30,4 +30,3 @@ module test1 {
     exports p;
     provides p.Service with p.ProviderFactory;
 }
-

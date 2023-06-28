@@ -115,4 +115,3 @@ public final class XDHPrivateKeyImpl extends PKCS8Key implements XECPrivateKey {
         }
     }
 }
-

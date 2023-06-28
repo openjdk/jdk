@@ -49,4 +49,3 @@
  *      nsk.monitoring.MemoryPoolMBean.isUsageThresholdExceeded.isexceeded001
  *      -testMode=server
  */
-

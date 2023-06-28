@@ -79,4 +79,3 @@ public class OrderChar extends Order {
 
     }
 }
-

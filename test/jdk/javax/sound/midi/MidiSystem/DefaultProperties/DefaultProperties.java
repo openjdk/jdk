@@ -164,4 +164,3 @@ public class DefaultProperties {
         System.out.println(message);
     }
 }
-

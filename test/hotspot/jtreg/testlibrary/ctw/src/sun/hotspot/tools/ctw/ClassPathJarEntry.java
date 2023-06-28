@@ -82,4 +82,3 @@ public class ClassPathJarEntry extends PathHandler.PathEntry {
         }
     }
 }
-

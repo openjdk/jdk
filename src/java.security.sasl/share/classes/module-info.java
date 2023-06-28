@@ -44,4 +44,3 @@ module java.security.sasl {
     provides java.security.Provider with
         com.sun.security.sasl.Provider;
 }
-

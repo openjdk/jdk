@@ -34,4 +34,3 @@ class Constructor2 {
 
 @Target(ElementType.TYPE_PARAMETER)
 @interface B { }
-

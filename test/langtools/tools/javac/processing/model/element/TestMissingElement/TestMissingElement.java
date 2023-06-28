@@ -201,6 +201,3 @@ public class TestMissingElement extends JavacTestingAbstractProcessor {
         }
     }
 }
-
-
-

@@ -101,5 +101,3 @@ public class ControlCharTest {
         static String f() { return s + s1 + s2 + s3; }
     }
 }
-
-

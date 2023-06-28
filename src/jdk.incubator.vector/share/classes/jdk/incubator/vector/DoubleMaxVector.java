@@ -899,4 +899,3 @@ final class DoubleMaxVector extends DoubleVector {
     // ================================================
 
 }
-

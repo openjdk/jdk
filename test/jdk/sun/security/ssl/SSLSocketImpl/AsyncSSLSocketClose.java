@@ -136,4 +136,3 @@ public class AsyncSSLSocketClose implements Runnable {
         }
     }
 }
-

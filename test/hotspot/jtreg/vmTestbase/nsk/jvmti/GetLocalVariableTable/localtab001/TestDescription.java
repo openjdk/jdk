@@ -46,4 +46,3 @@
  * @compile localtab001.jcod
  * @run main/othervm/native -agentlib:localtab001 nsk.jvmti.GetLocalVariableTable.localtab001
  */
-

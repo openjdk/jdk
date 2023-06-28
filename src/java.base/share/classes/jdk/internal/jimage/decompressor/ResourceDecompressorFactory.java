@@ -62,4 +62,3 @@ public abstract class ResourceDecompressorFactory {
             throws IOException;
 
 }
-

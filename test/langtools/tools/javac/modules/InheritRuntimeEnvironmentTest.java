@@ -423,4 +423,3 @@ public class InheritRuntimeEnvironmentTest extends ModuleTestBase {
     }
 
 }
-

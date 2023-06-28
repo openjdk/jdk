@@ -145,4 +145,3 @@ public class Verifier {
                 (shouldBeFired ? "" : "not "), firedTrapRE));
     }
 }
-

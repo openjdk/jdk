@@ -59,4 +59,3 @@ public class PreferLocaleFonts extends GraphicsEnvironment {
         return null;
     }
 }
-

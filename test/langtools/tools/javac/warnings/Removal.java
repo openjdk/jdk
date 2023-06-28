@@ -541,4 +541,3 @@ public class Removal extends TestRunner {
         }
     }
 }
-

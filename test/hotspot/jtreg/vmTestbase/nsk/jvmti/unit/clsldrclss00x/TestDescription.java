@@ -35,4 +35,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:clsldrclss00x=-waittime=5 nsk.jvmti.unit.clsldrclss00x
  */
-

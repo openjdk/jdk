@@ -52,4 +52,3 @@ public class JarSignerException extends RuntimeException {
         super(message, cause);
     }
 }
-

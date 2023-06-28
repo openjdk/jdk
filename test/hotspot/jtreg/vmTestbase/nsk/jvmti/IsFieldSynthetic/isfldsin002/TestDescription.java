@@ -42,4 +42,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:isfldsin002 nsk.jvmti.IsFieldSynthetic.isfldsin002
  */
-

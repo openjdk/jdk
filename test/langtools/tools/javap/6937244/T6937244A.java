@@ -88,4 +88,3 @@ abstract class Test implements List<String> {
     public List<String> field;
     public List<String> method(List<String> arg) throws Exception { return null; }
 }
-

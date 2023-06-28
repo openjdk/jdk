@@ -72,4 +72,3 @@ public class Test6935022 {
         return rows < 12;
     }
 }
-

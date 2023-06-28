@@ -382,4 +382,3 @@ public class TestIntegerModuloP {
         }
     }
 }
-

@@ -148,4 +148,3 @@ public class TestInferBinaryName {
 }
 
 class A { }
-

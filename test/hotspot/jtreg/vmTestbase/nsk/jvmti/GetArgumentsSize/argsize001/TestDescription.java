@@ -40,4 +40,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:argsize001 nsk.jvmti.GetArgumentsSize.argsize001
  */
-

@@ -45,4 +45,3 @@
  *      nsk.monitoring.MemoryPoolMBean.isCollectionUsageThresholdSupported.issupported001
  *      -testMode=server
  */
-

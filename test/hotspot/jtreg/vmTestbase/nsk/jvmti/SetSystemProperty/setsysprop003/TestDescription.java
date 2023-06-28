@@ -53,4 +53,3 @@
  *      -Dnsk.jvmti.test.property.empty.new=initial_value_of_nsk.jvmti.test.property.empty.new
  *      nsk.jvmti.SetSystemProperty.setsysprop003
  */
-

@@ -89,4 +89,3 @@ public class AnonVmClassesDuringDump {
                 output -> output.shouldNotMatch(pattern));
     }
 }
-

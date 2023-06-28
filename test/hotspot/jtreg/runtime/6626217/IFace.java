@@ -27,4 +27,3 @@
 public interface IFace {
   public many_loader[] gen();
 }
-

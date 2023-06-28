@@ -40,6 +40,3 @@ public enum GCWhen {
     return value;
   }
 }
-
-
-

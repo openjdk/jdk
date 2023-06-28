@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:redefclass011 nsk.jvmti.RedefineClasses.redefclass011
  */
-

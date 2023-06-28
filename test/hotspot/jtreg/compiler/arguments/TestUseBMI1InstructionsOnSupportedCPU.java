@@ -51,4 +51,3 @@ public class TestUseBMI1InstructionsOnSupportedCPU
         new TestUseBMI1InstructionsOnSupportedCPU().test();
     }
 }
-

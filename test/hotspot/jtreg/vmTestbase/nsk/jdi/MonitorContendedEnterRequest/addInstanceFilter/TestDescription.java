@@ -72,4 +72,3 @@
  *      -eventType MONITOR_CONTENTED_ENTER
  *      -debuggeeClassName nsk.share.jdi.MonitorEventsDebuggee
  */
-

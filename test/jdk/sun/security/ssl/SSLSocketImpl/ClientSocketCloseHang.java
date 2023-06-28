@@ -131,4 +131,3 @@ public class ClientSocketCloseHang extends SSLContextTemplate {
         }
     }
 }
-

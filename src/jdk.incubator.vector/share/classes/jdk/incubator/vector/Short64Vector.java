@@ -924,4 +924,3 @@ final class Short64Vector extends ShortVector {
     // ================================================
 
 }
-

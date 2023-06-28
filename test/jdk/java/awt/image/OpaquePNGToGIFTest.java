@@ -419,4 +419,3 @@ public final class OpaquePNGToGIFTest extends Frame {
         }
     }
 }
-

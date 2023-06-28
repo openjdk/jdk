@@ -35,4 +35,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:Heap=-waittime=5 nsk.jvmti.unit.heap.BasicTagTests
  */
-

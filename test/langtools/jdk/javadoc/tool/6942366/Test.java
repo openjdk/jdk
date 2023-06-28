@@ -25,4 +25,3 @@ public class Test extends p.Base {
     // overrides Base.m
     public void m() { }
 }
-

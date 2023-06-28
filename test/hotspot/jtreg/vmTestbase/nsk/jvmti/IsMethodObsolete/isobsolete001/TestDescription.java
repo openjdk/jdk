@@ -53,4 +53,3 @@
  *      nsk.jvmti.IsMethodObsolete.isobsolete001
  *      ./bin
  */
-

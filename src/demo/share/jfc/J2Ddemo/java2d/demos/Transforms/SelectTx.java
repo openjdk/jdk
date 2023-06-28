@@ -313,4 +313,3 @@ public class SelectTx extends AnimatingControlsSurface {
         }
     } // End DemoControls class
 } // End SelectTx class
-

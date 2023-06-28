@@ -92,4 +92,3 @@ public class UnloadInterfaceTest {
         System.out.println("We still have Interface referenced" + ic);
     }
 }
-

@@ -46,4 +46,3 @@ public class ReadBITMAPV3INFOHEADERTest {
         ImageIO.read(new File(dir + sep + "DIB_size-56_XRGB_32bits.bmp"));
     }
 }
-

@@ -73,6 +73,3 @@ public class T6634138 extends JavacTestingAbstractProcessor {
         return true;
     }
 }
-
-
-

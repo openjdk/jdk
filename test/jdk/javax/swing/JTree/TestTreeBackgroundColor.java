@@ -108,4 +108,3 @@ public class TestTreeBackgroundColor {
         frame.setVisible(true);
     }
 }
-

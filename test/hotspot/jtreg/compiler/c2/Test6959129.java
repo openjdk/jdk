@@ -88,4 +88,3 @@ public class Test6959129 {
     return maxmoves;
   }
 }
-

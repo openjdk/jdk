@@ -75,4 +75,3 @@ public abstract class BMICommandLineOptionTestBase
     }
 
 }
-

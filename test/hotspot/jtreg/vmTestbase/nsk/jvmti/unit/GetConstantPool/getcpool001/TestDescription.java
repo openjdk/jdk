@@ -39,4 +39,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:getcpool001 nsk.jvmti.unit.GetConstantPool.getcpool001
  */
-

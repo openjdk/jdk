@@ -81,4 +81,3 @@ public final class OSVersion implements Comparable<OSVersion> {
                      .collect(Collectors.joining("."));
     }
 }
-

@@ -95,5 +95,3 @@ public class PrintARGBImage implements Printable {
         return PAGE_EXISTS;
     }
 }
-
-

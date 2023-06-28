@@ -9,4 +9,3 @@
 class ClassUsingAnotherAuxiliary {
     AnAuxiliaryClass ahem;
 }
-

@@ -234,4 +234,3 @@ class DummyFieldHolder {
     public DummyFieldHolder(byte unused1, Long... unused2) {
     }
 }
-

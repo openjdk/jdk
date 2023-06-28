@@ -163,4 +163,3 @@ public class PrintGlyphVectorTest extends Component implements Printable {
         passFailJFrame.awaitAndCheck();
     }
 }
-

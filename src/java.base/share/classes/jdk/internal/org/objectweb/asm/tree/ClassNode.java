@@ -485,4 +485,3 @@ public class ClassNode extends ClassVisitor {
         classVisitor.visitEnd();
     }
 }
-

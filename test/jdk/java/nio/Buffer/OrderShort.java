@@ -79,4 +79,3 @@ public class OrderShort extends Order {
 
     }
 }
-

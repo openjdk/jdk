@@ -63,4 +63,3 @@ class AccessTest2 { /** Constructor comment. */ AccessTest2() { }
      */
     private void private_syntax_error() { }
 }
-

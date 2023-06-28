@@ -70,4 +70,3 @@ public class Test6186134 {
         System.out.println("Passed");
     }
 }
-

@@ -34,4 +34,3 @@ enum CipherType {
     BLOCK_CIPHER,          // block cipher in CBC mode
     AEAD_CIPHER            // AEAD cipher
 }
-

@@ -33,4 +33,3 @@
  * @summary Basic test to ensure that a JMX agent or a tool agent can be loaded/started in
   *         a modular application.
  */
-

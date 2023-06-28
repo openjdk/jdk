@@ -53,4 +53,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:timerinfo001=-waittime=5 nsk.jvmti.GetTimerInfo.timerinfo001
  */
-

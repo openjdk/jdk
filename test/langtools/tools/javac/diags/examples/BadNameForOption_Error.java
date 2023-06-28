@@ -25,4 +25,3 @@
 // options: --add-modules Bad!Name
 
 class BadNameForOption { }
-

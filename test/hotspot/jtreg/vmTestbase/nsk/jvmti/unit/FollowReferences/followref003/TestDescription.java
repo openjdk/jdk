@@ -61,4 +61,3 @@
  *      -agentlib:followref003=-waittime=5,-verbose,objects=3
  *      nsk.jvmti.unit.FollowReferences.followref003
  */
-

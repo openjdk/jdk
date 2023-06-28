@@ -87,4 +87,3 @@ public final class DiffGraphAction extends CookieAction {
         return false;
     }
 }
-

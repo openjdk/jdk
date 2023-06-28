@@ -39,4 +39,3 @@ public class AnnotationErrors {
     @Target(ElementType.TYPE_USE)
     @interface TA {}
 }
-

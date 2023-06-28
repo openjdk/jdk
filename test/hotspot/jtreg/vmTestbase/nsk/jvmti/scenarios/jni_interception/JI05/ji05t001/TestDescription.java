@@ -53,4 +53,3 @@
  *      -agentlib:ji05t001=-waittime=5
  *      nsk.jvmti.scenarios.jni_interception.JI05.ji05t001
  */
-

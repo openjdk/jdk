@@ -131,4 +131,3 @@ public class DragOffNoSelectTest implements WindowListener, Runnable {
     public void windowDeiconified(WindowEvent e) {}
 
 }
-

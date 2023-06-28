@@ -178,4 +178,3 @@ public class TaskZoomJFrameChangeState extends Task<GUIZoomFrame> {
             throw new RuntimeException("Frame is not restored to normal after Zoomed");
     }
 }
-

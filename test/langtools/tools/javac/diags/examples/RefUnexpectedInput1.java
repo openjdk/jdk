@@ -29,4 +29,3 @@
 
 /** @see RefUnexpectedInput1<Object>> */
 class RefUnexpectedInput1<T> { }
-

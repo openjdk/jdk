@@ -148,4 +148,3 @@ public class TwoIterators {
         assertFalse(iterator2.hasNext());
     }
 }
-

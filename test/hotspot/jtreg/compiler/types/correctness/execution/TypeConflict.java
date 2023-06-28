@@ -71,4 +71,3 @@ public class TypeConflict<T extends TypeHierarchy.I, R> implements Execution<T, 
         return scenario.run(t);
     }
 }
-

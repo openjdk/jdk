@@ -42,6 +42,3 @@ public class StaticMethods {
     static final protected boolean prot(int aa, Object baa, final Object cbaa, final String... dcbaa) { return true; }
     static final private boolean priv(int abc, Object babc, final Object cbabc, final String... dcbabc) { return true; }
 }
-
-
-

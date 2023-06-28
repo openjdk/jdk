@@ -118,4 +118,3 @@ public class TestIndependentPacksWithCyclicDependency2 {
         verify("test", dataL, goldL);
     }
 }
-

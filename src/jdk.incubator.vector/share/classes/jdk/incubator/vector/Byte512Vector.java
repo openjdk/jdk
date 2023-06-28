@@ -1044,4 +1044,3 @@ final class Byte512Vector extends ByteVector {
     // ================================================
 
 }
-

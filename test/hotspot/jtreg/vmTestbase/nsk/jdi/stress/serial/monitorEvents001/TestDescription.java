@@ -65,4 +65,3 @@
  *      -testClassPath ${test.class.path}
  *      -configFile ${test.src}/monitorEvents001.tests
  */
-

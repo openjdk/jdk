@@ -25,4 +25,3 @@ package p.q;
 
 /** This is class p.q.C2. */
 public class C2 { }
-

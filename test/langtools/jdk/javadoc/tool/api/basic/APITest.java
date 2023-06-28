@@ -237,4 +237,3 @@ class APITest {
                          && !s.equals("system-properties.html"))
             .collect(Collectors.toSet());
 }
-

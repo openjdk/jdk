@@ -63,4 +63,3 @@
  *      -agentlib:sp03t001=-waittime=5,threads=10
  *      nsk.jvmti.scenarios.sampling.SP03.sp03t001
  */
-

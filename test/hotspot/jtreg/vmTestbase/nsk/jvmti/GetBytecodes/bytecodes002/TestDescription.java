@@ -44,4 +44,3 @@
  *          /test/lib
  * @run main/othervm/native -agentlib:bytecodes002 nsk.jvmti.GetBytecodes.bytecodes002
  */
-

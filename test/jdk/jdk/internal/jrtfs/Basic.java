@@ -790,4 +790,3 @@ public class Basic {
         PathMatcher pm = fs.getPathMatcher(syntaxAndPattern);
     }
 }
-

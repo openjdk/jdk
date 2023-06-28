@@ -41,4 +41,3 @@ public interface AccessibleActionConstants {
          */
         String[] OLD_FIELDS = new String[] {};
 }
-

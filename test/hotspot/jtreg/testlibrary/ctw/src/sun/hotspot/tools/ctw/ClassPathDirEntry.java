@@ -90,4 +90,3 @@ public class ClassPathDirEntry extends PathHandler.PathEntry {
         return Utils.fileNameToClassName(fileString);
     }
 }
-

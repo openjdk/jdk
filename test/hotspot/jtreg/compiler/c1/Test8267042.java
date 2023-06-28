@@ -167,4 +167,3 @@ public class Test8267042 {
         l16 = 0;
     }
 }
-

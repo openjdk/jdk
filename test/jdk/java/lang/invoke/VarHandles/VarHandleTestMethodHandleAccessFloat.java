@@ -857,4 +857,3 @@ public class VarHandleTestMethodHandleAccessFloat extends VarHandleBaseTest {
         }
     }
 }
-

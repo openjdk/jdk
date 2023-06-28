@@ -46,4 +46,3 @@
  *      -Dnsk.jvmti.test.property.empty=
  *      nsk.jvmti.GetSystemProperties.getsysprops002
  */
-

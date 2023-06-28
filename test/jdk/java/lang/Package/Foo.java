@@ -31,4 +31,3 @@ public class Foo {
         return Package.getPackages();
     }
 }
-

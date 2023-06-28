@@ -87,4 +87,3 @@
  *      nsk.jvmti.ClassFileLoadHook.classfloadhk006
  *      ./bin
  */
-
