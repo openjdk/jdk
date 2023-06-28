@@ -529,6 +529,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private static final MethodTypeDesc MTD_Map = MethodTypeDesc.of(CD_Map);
         private static final MethodTypeDesc MTD_MapEntry_Object_Object = MethodTypeDesc.of(CD_Map_Entry, CD_Object, CD_Object);
         private static final MethodTypeDesc MTD_Map_MapEntryArray = MethodTypeDesc.of(CD_Map, CD_Map_Entry.arrayType());
+        private static final MethodTypeDesc MTD_Set_ObjectArray = MethodTypeDesc.of(CD_Set, CD_Object.arrayType());
 
         private static final int MAX_LOCAL_VARS = 256;
 
@@ -905,9 +906,36 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate code to generate an immutable set.
          */
         private void genImmutableSet(CodeBuilder cob, Set<String> set) {
-            new SetBuilder<>(set, 0, () -> {
-                throw new IllegalStateException();
-            }).generateSetOf(cob);
+            int size = set.size();
+
+            // use Set.of(Object[]) when there are more than 2 elements
+            // use Set.of(Object) or Set.of(Object, Object) when fewer
+            if (size > 2) {
+                cob.constantInstruction(size)
+                   .anewarray(CD_String);
+                int i = 0;
+                for (String element : sorted(set)) {
+                    cob.dup()
+                       .constantInstruction(i)
+                       .constantInstruction(element)
+                       .aastore();
+                    i++;
+                }
+                cob.invokestatic(CD_Set,
+                                 "of",
+                                 MTD_Set_ObjectArray,
+                                 true);
+            } else {
+                for (String element : sorted(set)) {
+                    cob.constantInstruction(element);
+                }
+                var mtdArgs = new ClassDesc[size];
+                Arrays.fill(mtdArgs, CD_Object);
+                cob.invokestatic(CD_Set,
+                                 "of",
+                                 MethodTypeDesc.of(CD_Set, mtdArgs),
+                                 true);
+            }
         }
 
         class ModuleDescriptorBuilder {
@@ -1539,16 +1567,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         static class SetBuilder<T extends Comparable<T>> {
             private static final MethodTypeDesc MTD_Set_ObjectArray = MethodTypeDesc.of(
                     CD_Set, CD_Object.arrayType());
-            private static final MethodTypeDesc[] SET_OF_MTDS = new MethodTypeDesc[11];
-
-            private static MethodTypeDesc setOfType(int count) {
-                var ret = SET_OF_MTDS[count];
-                if (ret != null)
-                    return ret;
-                var mtdArgs = new ClassDesc[count];
-                Arrays.fill(mtdArgs, CD_Object);
-                return SET_OF_MTDS[count] = MethodTypeDesc.of(CD_Set, mtdArgs);
-            }
 
             private final Set<T> elements;
             private final int defaultVarIndex;
@@ -1600,27 +1618,26 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         index = defaultVarIndex;
                     }
 
-                    generateSetOf(cob);
-                    cob.astore(index);
+                    generateSetOf(cob, index);
                 }
                 return index;
             }
 
-            void generateSetOf(CodeBuilder cob) {
-                int count = elements.size();
-                if (count <= 10) {
+            private void generateSetOf(CodeBuilder cob, int index) {
+                if (elements.size() <= 10) {
                     // call Set.of(e1, e2, ...)
                     for (T t : sorted(elements)) {
                         visitElement(t, cob);
                     }
-
+                    var mtdArgs = new ClassDesc[elements.size()];
+                    Arrays.fill(mtdArgs, CD_Object);
                     cob.invokestatic(CD_Set,
                                      "of",
-                                     setOfType(count),
+                                     MethodTypeDesc.of(CD_Set, mtdArgs),
                                      true);
                 } else {
                     // call Set.of(E... elements)
-                    cob.constantInstruction(count)
+                    cob.constantInstruction(elements.size())
                        .anewarray(CD_String);
                     int arrayIndex = 0;
                     for (T t : sorted(elements)) {
@@ -1635,6 +1652,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                      MTD_Set_ObjectArray,
                                      true);
                 }
+                cob.astore(index);
             }
         }
 
