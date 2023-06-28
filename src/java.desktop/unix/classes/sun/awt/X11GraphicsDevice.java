@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.awt.DisplayMode;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
+import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Window;
 import java.security.AccessController;
@@ -37,6 +38,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Objects;
 
 import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.SunGraphicsEnvironment;
@@ -66,12 +68,15 @@ public final class X11GraphicsDevice extends GraphicsDevice
     private static Boolean xrandrExtSupported;
     private SunDisplayChanger topLevels = new SunDisplayChanger();
     private DisplayMode origDisplayMode;
+    private volatile Rectangle bounds;
+    private volatile Insets insets;
     private boolean shutdownHookRegistered;
     private int scale;
 
     public X11GraphicsDevice(int screennum) {
         this.screen = screennum;
         this.scale = initScaleFactor();
+        this.bounds = getBoundsImpl();
     }
 
     /**
@@ -118,7 +123,7 @@ public final class X11GraphicsDevice extends GraphicsDevice
         return Region.clipRound(x / (double)getScaleFactor());
     }
 
-    public Rectangle getBounds() {
+    private Rectangle getBoundsImpl() {
         Rectangle rect = pGetBounds(getScreen());
         if (getScaleFactor() != 1) {
             rect.x = scaleDown(rect.x);
@@ -127,6 +132,23 @@ public final class X11GraphicsDevice extends GraphicsDevice
             rect.height = scaleDown(rect.height);
         }
         return rect;
+    }
+
+    public Rectangle getBounds() {
+        return bounds.getBounds();
+    }
+
+    public Insets getInsets() {
+        return insets;
+    }
+
+    public void setInsets(Insets newInsets) {
+        Objects.requireNonNull(newInsets);
+        insets = newInsets;
+    }
+
+    public void resetInsets() {
+        insets = null;
     }
 
     /**
@@ -516,6 +538,8 @@ public final class X11GraphicsDevice extends GraphicsDevice
     @Override
     public synchronized void displayChanged() {
         scale = initScaleFactor();
+        bounds = getBoundsImpl();
+        insets = null;
         // On X11 the visuals do not change, and therefore we don't need
         // to reset the defaultConfig, config, doubleBufferVisuals,
         // neither do we need to reset the native data.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@ public class Figure extends Properties.Entity implements Vertex {
     public static final int TOP_CFG_HEIGHT = 7;
     public static final int BOTTOM_CFG_HEIGHT = 6;
     public static final int WARNING_WIDTH = 16;
+    public static final double BOLD_LINE_FACTOR = 1.06;
     protected List<InputSlot> inputSlots;
     protected List<OutputSlot> outputSlots;
     private final InputNode inputNode;
@@ -69,6 +70,9 @@ public class Figure extends Properties.Entity implements Vertex {
         String nodeText = diagram.getNodeText();
         int lines = nodeText.split("\n").length;
         if (hasInputList() && lines > 1) {
+            lines++;
+        }
+        if (getProperties().get("extra_label") != null) {
             lines++;
         }
         heightCash = lines * metrics.getHeight() + INSET;
@@ -120,7 +124,7 @@ public class Figure extends Properties.Entity implements Vertex {
                     max = cur;
                 }
             }
-            widthCash = max + INSET;
+            widthCash = (int)(max * BOLD_LINE_FACTOR) + INSET;
             if (getWarning() != null) {
                 widthCash += WARNING_WIDTH;
             }
@@ -164,7 +168,7 @@ public class Figure extends Properties.Entity implements Vertex {
     }
 
     public boolean hasInputList() {
-        return diagram.isCFG() && !getPredecessors().isEmpty();
+        return diagram.isCFG() && !getInputSlots().isEmpty();
     }
 
     public void setBlock(Block block) {
@@ -320,8 +324,31 @@ public class Figure extends Properties.Entity implements Vertex {
         if (hasInputList()) {
             String inputList = " ← ";
             List<String> inputs = new ArrayList<>(getPredecessors().size());
-            for (Figure p : getPredecessors()) {
-                inputs.add(p.getProperties().resolveString(diagram.getTinyNodeText()));
+            for (InputSlot is : getInputSlots()) {
+                String inputLabel = null;
+                if (is.getConnections().isEmpty()) {
+                    if (is.hasSourceNodes() && is.shouldShowName()) {
+                        inputLabel = "[" + is.getShortName() + "]";
+                    } else {
+                        inputLabel = "_";
+                    }
+                } else {
+                    OutputSlot os = is.getConnections().get(0).getOutputSlot();
+                    Figure f = os.getFigure();
+                    String nodeTinyLabel = f.getProperties().resolveString(diagram.getTinyNodeText());
+                    if (os.hasSourceNodes() && os.shouldShowName()) {
+                        nodeTinyLabel += ":" + os.getShortName();
+                    }
+                    inputLabel = nodeTinyLabel;
+                }
+                assert(inputLabel != null);
+                int gapSize = is.gapSize();
+                if (gapSize == 1) {
+                    inputs.add("_");
+                } else if (gapSize > 1) {
+                    inputs.add("…");
+                }
+                inputs.add(inputLabel);
             }
             inputList += String.join("  ", inputs);
             if (result.size() == 1) {
@@ -331,6 +358,11 @@ public class Figure extends Properties.Entity implements Vertex {
                 // Multi-line node, add yet another line for input list.
                 result.add(inputList);
             }
+        }
+
+        String extraLabel = getProperties().get("extra_label");
+        if (extraLabel != null) {
+            result.add(extraLabel);
         }
 
         lines = result.toArray(new String[0]);

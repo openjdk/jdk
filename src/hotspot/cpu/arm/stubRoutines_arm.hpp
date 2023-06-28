@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,8 +30,11 @@
 // extend it.
 
 enum platform_dependent_constants {
-  code_size1 =  9000,           // simply increase if too small (assembler will crash if too small)
-  code_size2 = 22000            // simply increase if too small (assembler will crash if too small)
+  // simply increase sizes if too small (assembler will crash if too small)
+  _initial_stubs_code_size      =  9000,
+  _continuation_stubs_code_size =  2000,
+  _compiler_stubs_code_size     = 22000,
+  _final_stubs_code_size        = 22000
 };
 
 class Arm {

@@ -37,19 +37,6 @@
 #include "jfr/support/jfrTraceIdExtension.hpp"
 #endif
 
-// Klass Kinds for all subclasses of Klass
-enum KlassKind {
-  InstanceKlassKind,
-  InstanceRefKlassKind,
-  InstanceMirrorKlassKind,
-  InstanceClassLoaderKlassKind,
-  InstanceStackChunkKlassKind,
-  TypeArrayKlassKind,
-  ObjArrayKlassKind
-};
-
-const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
-
 //
 // A Klass provides:
 //  1: language level class object (method dictionary etc.)
@@ -79,7 +66,22 @@ class vtableEntry;
 class Klass : public Metadata {
   friend class VMStructs;
   friend class JVMCIVMStructs;
+ public:
+  // Klass Kinds for all subclasses of Klass
+  enum KlassKind {
+    InstanceKlassKind,
+    InstanceRefKlassKind,
+    InstanceMirrorKlassKind,
+    InstanceClassLoaderKlassKind,
+    InstanceStackChunkKlassKind,
+    TypeArrayKlassKind,
+    ObjArrayKlassKind,
+    UnknownKlassKind
+  };
+
+  static const uint KLASS_KIND_COUNT = ObjArrayKlassKind + 1;
  protected:
+
   // If you add a new field that points to any metaspace object, you
   // must add this field to Klass::metaspace_pointers_do().
 
@@ -170,12 +172,13 @@ private:
   // associate this class with the JAR file where it's loaded from during
   // dump time. If a class is not loaded from the shared archive, this field is
   // -1.
-  jshort _shared_class_path_index;
+  s2 _shared_class_path_index;
 
 #if INCLUDE_CDS
   // Various attributes for shared classes. Should be zero for a non-shared class.
   u2     _shared_class_flags;
   enum CDSSharedClassFlags {
+    _is_shared_class                       = 1 << 0,  // shadows MetaspaceObj::is_shared
     _archived_lambda_proxy_is_available    = 1 << 1,
     _has_value_based_class_annotation      = 1 << 2,
     _verified_at_dump_time                 = 1 << 3,
@@ -192,7 +195,7 @@ protected:
 
   // Constructor
   Klass(KlassKind kind);
-  Klass() : _kind(KlassKind(-1)) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  Klass() : _kind(UnknownKlassKind) { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
 
   void* operator new(size_t size, ClassLoaderData* loader_data, size_t word_size, TRAPS) throw();
 
@@ -302,11 +305,11 @@ protected:
   ClassLoaderData* class_loader_data() const               { return _class_loader_data; }
   void set_class_loader_data(ClassLoaderData* loader_data) {  _class_loader_data = loader_data; }
 
-  int shared_classpath_index() const   {
+  s2 shared_classpath_index() const   {
     return _shared_class_path_index;
   };
 
-  void set_shared_classpath_index(int index) {
+  void set_shared_classpath_index(s2 index) {
     _shared_class_path_index = index;
   };
 
@@ -321,7 +324,7 @@ protected:
     CDS_ONLY(_shared_class_flags |= _archived_lambda_proxy_is_available;)
   }
   void clear_lambda_proxy_is_available() {
-    CDS_ONLY(_shared_class_flags &= ~_archived_lambda_proxy_is_available;)
+    CDS_ONLY(_shared_class_flags &= (u2)(~_archived_lambda_proxy_is_available);)
   }
   bool lambda_proxy_is_available() const {
     CDS_ONLY(return (_shared_class_flags & _archived_lambda_proxy_is_available) != 0;)
@@ -332,7 +335,7 @@ protected:
     CDS_ONLY(_shared_class_flags |= _has_value_based_class_annotation;)
   }
   void clear_has_value_based_class_annotation() {
-    CDS_ONLY(_shared_class_flags &= ~_has_value_based_class_annotation;)
+    CDS_ONLY(_shared_class_flags &= (u2)(~_has_value_based_class_annotation);)
   }
   bool has_value_based_class_annotation() const {
     CDS_ONLY(return (_shared_class_flags & _has_value_based_class_annotation) != 0;)
@@ -363,6 +366,15 @@ protected:
     NOT_CDS(return false;)
   }
 
+  bool is_shared() const                { // shadows MetaspaceObj::is_shared)()
+    CDS_ONLY(return (_shared_class_flags & _is_shared_class) != 0;)
+    NOT_CDS(return false;)
+  }
+
+  void set_is_shared() {
+    CDS_ONLY(_shared_class_flags |= _is_shared_class;)
+  }
+
   // Obtain the module or package for this class
   virtual ModuleEntry* module() const = 0;
   virtual PackageEntry* package() const = 0;
@@ -374,16 +386,20 @@ protected:
  public:
 
   // Compiler support
-  static ByteSize super_offset()                 { return in_ByteSize(offset_of(Klass, _super)); }
-  static ByteSize super_check_offset_offset()    { return in_ByteSize(offset_of(Klass, _super_check_offset)); }
-  static ByteSize primary_supers_offset()        { return in_ByteSize(offset_of(Klass, _primary_supers)); }
-  static ByteSize secondary_super_cache_offset() { return in_ByteSize(offset_of(Klass, _secondary_super_cache)); }
-  static ByteSize secondary_supers_offset()      { return in_ByteSize(offset_of(Klass, _secondary_supers)); }
-  static ByteSize java_mirror_offset()           { return in_ByteSize(offset_of(Klass, _java_mirror)); }
-  static ByteSize class_loader_data_offset()     { return in_ByteSize(offset_of(Klass, _class_loader_data)); }
-  static ByteSize modifier_flags_offset()        { return in_ByteSize(offset_of(Klass, _modifier_flags)); }
-  static ByteSize layout_helper_offset()         { return in_ByteSize(offset_of(Klass, _layout_helper)); }
-  static ByteSize access_flags_offset()          { return in_ByteSize(offset_of(Klass, _access_flags)); }
+  static ByteSize super_offset()                 { return byte_offset_of(Klass, _super); }
+  static ByteSize super_check_offset_offset()    { return byte_offset_of(Klass, _super_check_offset); }
+  static ByteSize primary_supers_offset()        { return byte_offset_of(Klass, _primary_supers); }
+  static ByteSize secondary_super_cache_offset() { return byte_offset_of(Klass, _secondary_super_cache); }
+  static ByteSize secondary_supers_offset()      { return byte_offset_of(Klass, _secondary_supers); }
+  static ByteSize java_mirror_offset()           { return byte_offset_of(Klass, _java_mirror); }
+  static ByteSize class_loader_data_offset()     { return byte_offset_of(Klass, _class_loader_data); }
+  static ByteSize modifier_flags_offset()        { return byte_offset_of(Klass, _modifier_flags); }
+  static ByteSize layout_helper_offset()         { return byte_offset_of(Klass, _layout_helper); }
+  static ByteSize access_flags_offset()          { return byte_offset_of(Klass, _access_flags); }
+#if INCLUDE_JVMCI
+  static ByteSize subklass_offset()              { return byte_offset_of(Klass, _subklass); }
+  static ByteSize next_sibling_offset()          { return byte_offset_of(Klass, _next_sibling); }
+#endif
 
   // Unpacking layout_helper:
   static const int _lh_neutral_value           = 0;  // neutral non-array non-instance value
@@ -649,15 +665,7 @@ protected:
   bool is_synthetic() const             { return _access_flags.is_synthetic(); }
   void set_is_synthetic()               { _access_flags.set_is_synthetic(); }
   bool has_finalizer() const            { return _access_flags.has_finalizer(); }
-  bool has_final_method() const         { return _access_flags.has_final_method(); }
   void set_has_finalizer()              { _access_flags.set_has_finalizer(); }
-  void set_has_final_method()           { _access_flags.set_has_final_method(); }
-  bool has_vanilla_constructor() const  { return _access_flags.has_vanilla_constructor(); }
-  void set_has_vanilla_constructor()    { _access_flags.set_has_vanilla_constructor(); }
-  bool has_miranda_methods () const     { return access_flags().has_miranda_methods(); }
-  void set_has_miranda_methods()        { _access_flags.set_has_miranda_methods(); }
-  bool is_shared() const                { return access_flags().is_shared_class(); } // shadows MetaspaceObj::is_shared)()
-  void set_is_shared()                  { _access_flags.set_is_shared_class(); }
   bool is_hidden() const                { return access_flags().is_hidden_class(); }
   void set_is_hidden()                  { _access_flags.set_is_hidden_class(); }
   bool is_value_based()                 { return _access_flags.is_value_based_class(); }

@@ -173,6 +173,12 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
 
   int frames_decoded = 0;
   for (; !stream.at_end(); stream.next()) {
+    if (stream.continuation() != nullptr && stream.continuation() != stream.reg_map()->cont()) {
+      // The code in StackStreamFactory.java has failed to set the continuation because frameBuffer.isAtBottom()
+      // returns false if the end of a continuation falls precisely at the end of the batch.
+      // By breaking here, we're signalling the Java code to set the continuation to the parent.
+      break;
+    }
     assert(stream.continuation() == nullptr || stream.continuation() == stream.reg_map()->cont(), "");
     Method* method = stream.method();
 
@@ -190,6 +196,8 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
           method->print_short_name(&ls);
           ls.cr();
         }
+        // We end a batch on continuation bottom to let the Java side skip top frames of the next one
+        if (stream.continuation() != nullptr && method->intrinsic_id() == vmIntrinsics::_Continuation_enter) break;
         continue;
       }
     }
@@ -576,7 +584,7 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
     if (!stream.at_end()) {
       int n = fill_in_frames(mode, stream, frame_count, start_index,
                              frames_array, end_index, CHECK_0);
-      if (n < 1) {
+      if (n < 1 && !skip_hidden_frames(mode)) {
         THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: later decode failed", 0L);
       }
       return end_index;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8176841 8202537 8244245 8265315 8284840
+ * @bug 8176841 8202537 8244245 8265315 8284840 8296248
  * @summary Tests java.time classes deals with Unicode extensions
  *      correctly.
  * @modules jdk.localedata
@@ -610,6 +610,7 @@ public class TestUnicodeExtension {
             {"mwblz", "Africa/Blantyre"},
             {"mxchi", "America/Chihuahua"},
             {"mxcun", "America/Cancun"},
+            {"mxcjs", "America/Ciudad_Juarez"},
             {"mxhmo", "America/Hermosillo"},
             {"mxmam", "America/Matamoros"},
             {"mxmex", "America/Mexico_City"},

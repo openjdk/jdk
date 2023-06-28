@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,7 @@ import sun.security.util.SecurityConstants;
  * object corresponds to a member in an exported or open package
  * (see {@link #setAccessible(boolean)}). </p>
  *
+ * @spec jni/index.html Java Native Interface Specification
  * @jls 6.6 Access Control
  * @since 1.2
  * @revised 9
@@ -202,6 +203,8 @@ public class AccessibleObject implements AnnotatedElement {
      * @param flag the new value for the {@code accessible} flag
      * @throws InaccessibleObjectException if access cannot be enabled
      * @throws SecurityException if the request is denied by the security manager
+     *
+     * @spec jni/index.html Java Native Interface Specification
      * @see #trySetAccessible
      * @see java.lang.invoke.MethodHandles#privateLookupIn
      * @revised 9
@@ -268,6 +271,7 @@ public class AccessibleObject implements AnnotatedElement {
      *         {@code false} if access cannot be enabled.
      * @throws SecurityException if the request is denied by the security manager
      *
+     * @spec jni/index.html Java Native Interface Specification
      * @since 9
      * @see java.lang.invoke.MethodHandles#privateLookupIn
      */
@@ -461,6 +465,7 @@ public class AccessibleObject implements AnnotatedElement {
      *              declaring class} of the member.</li>
      *         </ul>
      *
+     * @spec jni/index.html Java Native Interface Specification
      * @since 9
      * @jls 6.6 Access Control
      * @see #trySetAccessible
@@ -680,8 +685,8 @@ public class AccessibleObject implements AnnotatedElement {
      */
     private boolean isAccessChecked(Class<?> caller, Class<?> targetClass) {
         Object cache = accessCheckCache;  // read volatile
-        if (cache instanceof Cache) {
-            return ((Cache) cache).isCacheFor(caller, targetClass);
+        if (cache instanceof Cache c) {
+            return c.isCacheFor(caller, targetClass);
         }
         return false;
     }

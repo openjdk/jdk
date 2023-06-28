@@ -478,7 +478,7 @@ bool LogConfiguration::parse_log_arguments(const char* outputstr,
                                            const char* decoratorstr,
                                            const char* output_options,
                                            outputStream* errstream) {
-  assert(errstream != nullptr, "errstream can not be nullptr");
+  assert(errstream != nullptr, "errstream can not be null");
   if (outputstr == nullptr || strlen(outputstr) == 0) {
     outputstr = "stdout";
   }

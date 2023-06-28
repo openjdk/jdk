@@ -26,7 +26,6 @@
  * @bug 8284161
  * @summary Test JNI IsVirtualThread
  * @library /test/lib
- * @enablePreview
  * @run main/native/othervm IsVirtualThread
  */
 
@@ -34,7 +33,6 @@
  * @test id=no-vmcontinuations
  * @requires vm.continuations
  * @library /test/lib
- * @enablePreview
  * @run main/native/othervm -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations IsVirtualThread
  */
 

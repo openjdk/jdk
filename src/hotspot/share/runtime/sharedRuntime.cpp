@@ -46,6 +46,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "metaprogramming/primitiveConversions.hpp"
 #include "oops/compiledICHolder.inline.hpp"
 #include "oops/klass.hpp"
 #include "oops/method.inline.hpp"
@@ -63,7 +64,7 @@
 #include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
-#include "runtime/jniHandles.hpp"
+#include "runtime/jniHandles.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -230,21 +231,23 @@ JRT_LEAF(jlong, SharedRuntime::lrem(jlong y, jlong x))
 JRT_END
 
 
+#ifdef _WIN64
 const juint  float_sign_mask  = 0x7FFFFFFF;
 const juint  float_infinity   = 0x7F800000;
 const julong double_sign_mask = CONST64(0x7FFFFFFFFFFFFFFF);
 const julong double_infinity  = CONST64(0x7FF0000000000000);
+#endif
 
-JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
+#if !defined(X86) || !defined(TARGET_COMPILER_gcc) || defined(_WIN64)
+JRT_LEAF(jfloat, SharedRuntime::frem(jfloat x, jfloat y))
 #ifdef _WIN64
   // 64-bit Windows on amd64 returns the wrong values for
   // infinity operands.
-  union { jfloat f; juint i; } xbits, ybits;
-  xbits.f = x;
-  ybits.f = y;
+  juint xbits = PrimitiveConversions::cast<juint>(x);
+  juint ybits = PrimitiveConversions::cast<juint>(y);
   // x Mod Infinity == x unless x is infinity
-  if (((xbits.i & float_sign_mask) != float_infinity) &&
-       ((ybits.i & float_sign_mask) == float_infinity) ) {
+  if (((xbits & float_sign_mask) != float_infinity) &&
+       ((ybits & float_sign_mask) == float_infinity) ) {
     return x;
   }
   return ((jfloat)fmod_winx64((double)x, (double)y));
@@ -253,15 +256,13 @@ JRT_LEAF(jfloat, SharedRuntime::frem(jfloat  x, jfloat  y))
 #endif
 JRT_END
 
-
 JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
 #ifdef _WIN64
-  union { jdouble d; julong l; } xbits, ybits;
-  xbits.d = x;
-  ybits.d = y;
+  julong xbits = PrimitiveConversions::cast<julong>(x);
+  julong ybits = PrimitiveConversions::cast<julong>(y);
   // x Mod Infinity == x unless x is infinity
-  if (((xbits.l & double_sign_mask) != double_infinity) &&
-       ((ybits.l & double_sign_mask) == double_infinity) ) {
+  if (((xbits & double_sign_mask) != double_infinity) &&
+       ((ybits & double_sign_mask) == double_infinity) ) {
     return x;
   }
   return ((jdouble)fmod_winx64((double)x, (double)y));
@@ -269,6 +270,7 @@ JRT_LEAF(jdouble, SharedRuntime::drem(jdouble x, jdouble y))
   return ((jdouble)fmod((double)x,(double)y));
 #endif
 JRT_END
+#endif // !X86 || !TARGET_COMPILER_gcc || _WIN64
 
 JRT_LEAF(jfloat, SharedRuntime::i2f(jint x))
   return (jfloat)x;
@@ -477,6 +479,9 @@ address SharedRuntime::raw_exception_handler_for_return_address(JavaThread* curr
     return StubRoutines::cont_returnBarrierExc();
   }
 
+  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  MACOS_AARCH64_ONLY(ThreadWXEnable wx(WXWrite, current));
+
   // The fastest case first
   CodeBlob* blob = CodeCache::find_blob(return_address);
   CompiledMethod* nm = (blob != nullptr) ? blob->as_compiled_method_or_null() : nullptr;
@@ -626,24 +631,30 @@ void SharedRuntime::throw_and_post_jvmti_exception(JavaThread* current, Symbol* 
 }
 
 #if INCLUDE_JVMTI
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_mount(oopDesc* vt, jboolean hide, jboolean first_mount, JavaThread* current))
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_start(oopDesc* vt, jboolean hide, JavaThread* current))
+  assert(hide == JNI_FALSE, "must be VTMS transition finish");
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
-
-  if (hide) {
-    JvmtiVTMSTransitionDisabler::VTMS_mount_begin(vthread, first_mount);
-  } else {
-    JvmtiVTMSTransitionDisabler::VTMS_mount_end(vthread, first_mount);
-  }
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_start(vthread);
+  JNIHandles::destroy_local(vthread);
 JRT_END
 
-JRT_ENTRY(void, SharedRuntime::notify_jvmti_unmount(oopDesc* vt, jboolean hide, jboolean last_unmount, JavaThread* current))
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_end(oopDesc* vt, jboolean hide, JavaThread* current))
+  assert(hide == JNI_TRUE, "must be VTMS transition start");
   jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_end(vthread);
+  JNIHandles::destroy_local(vthread);
+JRT_END
 
-  if (hide) {
-    JvmtiVTMSTransitionDisabler::VTMS_unmount_begin(vthread, last_unmount);
-  } else {
-    JvmtiVTMSTransitionDisabler::VTMS_unmount_end(vthread, last_unmount);
-  }
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_mount(oopDesc* vt, jboolean hide, JavaThread* current))
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_mount(vthread, hide);
+  JNIHandles::destroy_local(vthread);
+JRT_END
+
+JRT_ENTRY(void, SharedRuntime::notify_jvmti_vthread_unmount(oopDesc* vt, jboolean hide, JavaThread* current))
+  jobject vthread = JNIHandles::make_local(const_cast<oopDesc*>(vt));
+  JvmtiVTMSTransitionDisabler::VTMS_vthread_unmount(vthread, hide);
+  JNIHandles::destroy_local(vthread);
 JRT_END
 #endif // INCLUDE_JVMTI
 
@@ -1214,7 +1225,7 @@ Handle SharedRuntime::find_callee_info_helper(vframeStream& vfst, Bytecodes::Cod
     } else {
       // Klass is already loaded.
       constantPoolHandle constants(current, caller->constants());
-      rk = constants->klass_ref_at(bytecode_index, CHECK_NH);
+      rk = constants->klass_ref_at(bytecode_index, bc, CHECK_NH);
     }
     Klass* static_receiver_klass = rk;
     assert(receiver_klass->is_subtype_of(static_receiver_klass),
@@ -1984,7 +1995,7 @@ void SharedRuntime::check_member_name_argument_is_last_argument(const methodHand
   for (int i = 0; i < member_arg_pos; i++) {
     VMReg a =    regs_with_member_name[i].first();
     VMReg b = regs_without_member_name[i].first();
-    assert(a->value() == b->value(), "register allocation mismatch: a=" INTX_FORMAT ", b=" INTX_FORMAT, a->value(), b->value());
+    assert(a->value() == b->value(), "register allocation mismatch: a= %d, b= %d", a->value(), b->value());
   }
   assert(regs_with_member_name[member_arg_pos].first()->is_valid(), "bad member arg");
 }
@@ -2049,6 +2060,9 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   if (callee == nullptr) {
     return;
   }
+
+  // write lock needed because we might update the pc desc cache via PcDescCache::add_pc_desc
+  MACOS_AARCH64_ONLY(ThreadWXEnable __wx(WXWrite, JavaThread::current()));
 
   CodeBlob* cb = CodeCache::find_blob(caller_pc);
   if (cb == nullptr || !cb->is_compiled() || callee->is_unloading()) {
@@ -2880,11 +2894,11 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
                                                            BasicType* sig_bt,
                                                            bool allocate_code_blob) {
 
-  // StubRoutines::code2() is initialized after this function can be called. As a result,
-  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated
-  // prior to StubRoutines::code2() being set. Checks refer to checks generated in an I2C
-  // stub that ensure that an I2C stub is called from an interpreter frame.
-  bool contains_all_checks = StubRoutines::code2() != nullptr;
+  // StubRoutines::_final_stubs_code is initialized after this function can be called. As a result,
+  // VerifyAdapterCalls and VerifyAdapterSharing can fail if we re-use code that generated prior
+  // to all StubRoutines::_final_stubs_code being set. Checks refer to runtime range checks generated
+  // in an I2C stub that ensure that an I2C stub is called from an interpreter frame or stubs.
+  bool contains_all_checks = StubRoutines::final_stubs_code() != nullptr;
 
   VMRegPair stack_regs[16];
   VMRegPair* regs = (total_args_passed <= 16) ? stack_regs : NEW_RESOURCE_ARRAY(VMRegPair, total_args_passed);

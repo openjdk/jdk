@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2021, Red Hat, Inc. All rights reserved.
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
  * @summary -Xcheck:jni should catch wrong parameter passed to GetPrimitiveArrayCritical
  * @comment Tests reporting with regular thread and virtual thread.
  * @library /test/lib
- * @enablePreview
  * @run main/native TestPrimitiveArrayCriticalWithBadParam
  */
 import java.util.List;

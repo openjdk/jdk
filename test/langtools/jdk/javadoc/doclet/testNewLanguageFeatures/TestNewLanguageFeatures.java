@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -272,7 +272,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     ></span></div>""",
                 """
                     <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="class\
-                     in pkg2">ParamTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&g\
+                     in pkg2">ParamTest</a><wbr>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&g\
                     t;</code></div>"""
         );
 
@@ -283,7 +283,7 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     pan></div>""",
                 """
                     <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="class\
-                     in pkg2">ParamTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&\
+                     in pkg2">ParamTest</a><wbr>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&\
                     gt;</code></div>"""
         );
 
@@ -331,9 +331,9 @@ public class TestNewLanguageFeatures extends JavadocTester {
                      declared as <a href="../ParamTest.html" title="class in pkg2">ParamTest</a></s\
                     pan></div>""",
                 """
-                    <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="class\
-                     in pkg2">ParamTest</a>&lt;<a href="../Foo.html" title="class in pkg2">Foo</a>&\
-                    gt;</code></div>""",
+                    <div class="col-first even-row-color"><code><a href="../ParamTest.html" title="\
+                    class in pkg2">ParamTest</a><wbr>&lt;<a href="../Foo.html" title="class in pkg2\
+                    ">Foo</a>&gt;</code></div>""",
                 """
                     <div class="caption"><span>Methods in <a href="../package-summary.html">pkg2</a\
                     > with type parameters of type <a href="../ParamTest.html" title="class in pkg2\
@@ -342,8 +342,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest.html\
                     " title="class in pkg2">ParamTest</a>&lt;<a href="../Foo3.html" title="class in\
                      pkg2">Foo3</a>&gt;&gt;<br><a href="../ParamTest.html" title="class in pkg2">Pa\
-                    ramTest</a>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</code>\
-                    </div>"""
+                    ramTest</a><wbr>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</\
+                    code></div>"""
         );
 
         checkOutput("pkg2/class-use/Foo3.html", true,
@@ -372,8 +372,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest.html\
                     " title="class in pkg2">ParamTest</a>&lt;<a href="../Foo3.html" title="class in\
                      pkg2">Foo3</a>&gt;&gt;<br><a href="../ParamTest.html" title="class in pkg2">Pa\
-                    ramTest</a>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</code>\
-                    </div>"""
+                    ramTest</a><wbr>&lt;<a href="../Foo3.html" title="class in pkg2">Foo3</a>&gt;</\
+                    code></div>"""
         );
 
         // ClassUseTest3: <T extends ParamTest2<List<? extends Foo4>>>
@@ -400,8 +400,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2.htm\
                     l" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a href=\
                     "../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../ParamT\
-                    est2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends\
-                     <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
+                    est2.html" title="class in pkg2">ParamTest2</a><wbr>&lt;java.util.List&lt;? ext\
+                    ends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
         );
 
         checkOutput("pkg2/class-use/Foo4.html", true,
@@ -431,8 +431,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <div class="col-first even-row-color"><code>&lt;T extends <a href="../ParamTest2\
                     .html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends <a hr\
                     ef="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;&gt;<br><a href="../Para\
-                    mTest2.html" title="class in pkg2">ParamTest2</a>&lt;java.util.List&lt;? extends\
-                     <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
+                    mTest2.html" title="class in pkg2">ParamTest2</a><wbr>&lt;java.util.List&lt;? ex\
+                    tends <a href="../Foo4.html" title="class in pkg2">Foo4</a>&gt;&gt;</code></div>"""
         );
 
         // Type parameters in constructor and method args

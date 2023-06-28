@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,7 @@ import javax.lang.model.SourceVersion;
  * @see ElementKindVisitor9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_21)
+@SupportedSourceVersion(RELEASE_22)
 public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
@@ -82,12 +82,12 @@ public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e the element to visit
-     * @param p a visitor-specified parameter
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
      * @return  the result of {@code defaultAction}
      */
     @Override
@@ -96,12 +96,12 @@ public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementKindVisitor6}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *.
-     * @param e the element to visit
-     * @param p a visitor-specified parameter
+     * @param e {@inheritDoc ElementKindVisitor6}
+     * @param p {@inheritDoc ElementKindVisitor6}
      * @return  the result of {@code defaultAction}
      */
     @Override
@@ -110,12 +110,12 @@ public class ElementKindVisitor14<R, P> extends ElementKindVisitor9<R, P> {
     }
 
     /**
-     * Visits a {@code BINDING_VARIABLE} variable element.
+     * {@inheritDoc ElementKindVisitor6}
      *
      * @implSpec This implementation calls {@code defaultAction}.
      *
-     * @param e {@inheritDoc}
-     * @param p {@inheritDoc}
+     * @param e {@inheritDoc ElementKindVisitor6}
+     * @param p {@inheritDoc ElementKindVisitor6}
      * @return  the result of {@code defaultAction}
      *
      * @since 14

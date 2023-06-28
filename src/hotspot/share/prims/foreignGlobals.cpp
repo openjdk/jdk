@@ -176,7 +176,7 @@ int JavaCallingConvention::calling_convention(const BasicType* sig_bt, VMStorage
     // note, we ignore second here. Signature should consist of register-size values. So there should be
     // no need for multi-register pairs.
     //assert(!pair.first()->is_valid() || pair.is_single_reg(), "must be: %s");
-    regs[i] = as_VMStorage(pair.first());
+    regs[i] = as_VMStorage(pair.first(), sig_bt[i]);
   }
   return slots << LogBytesPerInt;
 }

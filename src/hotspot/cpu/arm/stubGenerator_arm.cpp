@@ -3077,7 +3077,7 @@ class StubGenerator: public StubCodeGenerator {
   //---------------------------------------------------------------------------
   // Initialization
 
-  void generate_initial() {
+  void generate_initial_stubs() {
     // Generates all stubs and initializes the entry points
 
     //------------------------------------------------------------------------------------------------------------------------
@@ -3094,6 +3094,10 @@ class StubGenerator: public StubCodeGenerator {
     // stub for throwing stack overflow error used both by interpreter and compiler
     StubRoutines::_throw_StackOverflowError_entry  = generate_throw_exception("StackOverflowError throw_exception", CAST_FROM_FN_PTR(address, SharedRuntime::throw_StackOverflowError));
 
+    if (UnsafeCopyMemory::_table == nullptr) {
+      UnsafeCopyMemory::create_table(32);
+    }
+
     // integer division used both by interpreter and compiler
     StubRoutines::Arm::_idiv_irem_entry = generate_idiv_irem();
 
@@ -3106,7 +3110,7 @@ class StubGenerator: public StubCodeGenerator {
 
   }
 
-  void generate_phase1() {
+  void generate_continuation_stubs() {
     // Continuation stubs:
     StubRoutines::_cont_thaw          = generate_cont_thaw();
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
@@ -3116,14 +3120,9 @@ class StubGenerator: public StubCodeGenerator {
     JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
   }
 
-  void generate_all() {
+  void generate_final_stubs() {
     // Generates all stubs and initializes the entry points
 
-#ifdef COMPILER2
-    // Generate partial_subtype_check first here since its code depends on
-    // UseZeroBaseCompressedOops which is defined after heap initialization.
-    StubRoutines::Arm::_partial_subtype_check                = generate_partial_subtype_check();
-#endif
     // These entry points require SharedInfo::stack0 to be set up in non-core builds
     // and need to be relocatable, so they each fabricate a RuntimeStub internally.
     StubRoutines::_throw_AbstractMethodError_entry         = generate_throw_exception("AbstractMethodError throw_exception",          CAST_FROM_FN_PTR(address, SharedRuntime::throw_AbstractMethodError));
@@ -3144,6 +3143,14 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::Arm::_method_entry_barrier = generate_method_entry_barrier();
     }
 
+  }
+
+  void generate_compiler_stubs() {
+#ifdef COMPILER2
+    // Generate partial_subtype_check first here since its code depends on
+    // UseZeroBaseCompressedOops which is defined after heap initialization.
+    StubRoutines::Arm::_partial_subtype_check                = generate_partial_subtype_check();
+
 #ifdef COMPILE_CRYPTO
     // generate AES intrinsics code
     if (UseAESIntrinsics) {
@@ -3154,25 +3161,31 @@ class StubGenerator: public StubCodeGenerator {
       StubRoutines::_cipherBlockChaining_decryptAESCrypt = generate_cipherBlockChaining_decryptAESCrypt();
     }
 #endif // COMPILE_CRYPTO
+#endif // COMPILER2
   }
 
-
  public:
-  StubGenerator(CodeBuffer* code, int phase) : StubCodeGenerator(code) {
-    if (phase == 0) {
-      generate_initial();
-    } else if (phase == 1) {
-      generate_phase1();
-    } else {
-      generate_all();
-    }
+  StubGenerator(CodeBuffer* code, StubsKind kind) : StubCodeGenerator(code) {
+    switch(kind) {
+    case Initial_stubs:
+      generate_initial_stubs();
+      break;
+     case Continuation_stubs:
+      generate_continuation_stubs();
+      break;
+    case Compiler_stubs:
+      generate_compiler_stubs();
+      break;
+    case Final_stubs:
+      generate_final_stubs();
+      break;
+    default:
+      fatal("unexpected stubs kind: %d", kind);
+      break;
+    };
   }
 }; // end class declaration
 
-#define UCM_TABLE_MAX_ENTRIES 32
-void StubGenerator_generate(CodeBuffer* code, int phase) {
-  if (UnsafeCopyMemory::_table == nullptr) {
-    UnsafeCopyMemory::create_table(UCM_TABLE_MAX_ENTRIES);
-  }
-  StubGenerator g(code, phase);
+void StubGenerator_generate(CodeBuffer* code, StubCodeGenerator::StubsKind kind) {
+  StubGenerator g(code, kind);
 }

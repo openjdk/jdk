@@ -1141,7 +1141,7 @@ class PSParallelCompact : AllStatic {
 
   PSParallelCompact();
 
-  static void invoke(bool maximum_heap_compaction);
+  static bool invoke(bool maximum_heap_compaction);
   static bool invoke_no_policy(bool maximum_heap_compaction);
 
   static void post_initialize();

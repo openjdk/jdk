@@ -56,8 +56,8 @@ public:
   void init_archived_entries(ClassLoaderData* loader_data);
 
   void serialize(SerializeClosure* f) {
-    f->do_ptr((void**)&_packages);
-    f->do_ptr((void**)&_modules);
+    f->do_ptr(&_packages);
+    f->do_ptr(&_modules);
   }
 
   void restore(ClassLoaderData* loader_data, bool do_entries, bool do_oops);
@@ -169,7 +169,7 @@ void ClassLoaderDataShared::serialize(SerializeClosure* f) {
   _archived_boot_loader_data.serialize(f);
   _archived_platform_loader_data.serialize(f);
   _archived_system_loader_data.serialize(f);
-  f->do_ptr((void**)&_archived_javabase_moduleEntry);
+  f->do_ptr(&_archived_javabase_moduleEntry);
 
   if (f->reading() && MetaspaceShared::use_full_module_graph()) {
     // Must be done before ClassLoader::create_javabase()

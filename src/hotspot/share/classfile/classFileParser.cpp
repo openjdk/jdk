@@ -145,6 +145,8 @@
 
 #define JAVA_21_VERSION                   65
 
+#define JAVA_22_VERSION                   66
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -452,8 +454,8 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
         // fall through
       case JVM_CONSTANT_InterfaceMethodref: {
         if (!_need_verify) break;
-        const int klass_ref_index = cp->klass_ref_index_at(index);
-        const int name_and_type_ref_index = cp->name_and_type_ref_index_at(index);
+        const int klass_ref_index = cp->uncached_klass_ref_index_at(index);
+        const int name_and_type_ref_index = cp->uncached_name_and_type_ref_index_at(index);
         check_property(valid_klass_reference_at(klass_ref_index),
                        "Invalid constant pool index %u in class file %s",
                        klass_ref_index, CHECK);
@@ -655,7 +657,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       }
       case JVM_CONSTANT_Dynamic: {
         const int name_and_type_ref_index =
-          cp->name_and_type_ref_index_at(index);
+          cp->uncached_name_and_type_ref_index_at(index);
         // already verified to be utf8
         const int name_ref_index =
           cp->name_ref_index_at(name_and_type_ref_index);
@@ -678,7 +680,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
       case JVM_CONSTANT_Methodref:
       case JVM_CONSTANT_InterfaceMethodref: {
         const int name_and_type_ref_index =
-          cp->name_and_type_ref_index_at(index);
+          cp->uncached_name_and_type_ref_index_at(index);
         // already verified to be utf8
         const int name_ref_index =
           cp->name_ref_index_at(name_and_type_ref_index);
@@ -729,7 +731,7 @@ void ClassFileParser::parse_constant_pool(const ClassFileStream* const stream,
           case JVM_REF_invokeSpecial:
           case JVM_REF_newInvokeSpecial: {
             const int name_and_type_ref_index =
-              cp->name_and_type_ref_index_at(ref_index);
+              cp->uncached_name_and_type_ref_index_at(ref_index);
             const int name_ref_index =
               cp->name_ref_index_at(name_and_type_ref_index);
             const Symbol* const name = cp->symbol_at(name_ref_index);
@@ -771,52 +773,27 @@ class NameSigHash: public ResourceObj {
  public:
   const Symbol*       _name;       // name
   const Symbol*       _sig;        // signature
-  NameSigHash*  _next;             // Next entry in hash table
-};
 
-static const int HASH_ROW_SIZE = 256;
+  static const int HASH_ROW_SIZE = 256;
 
-static unsigned int hash(const Symbol* name, const Symbol* sig) {
-  unsigned int raw_hash = 0;
-  raw_hash += ((unsigned int)(uintptr_t)name) >> (LogHeapWordSize + 2);
-  raw_hash += ((unsigned int)(uintptr_t)sig) >> LogHeapWordSize;
+  NameSigHash(Symbol* name, Symbol* sig) :
+    _name(name),
+    _sig(sig) {}
 
-  return (raw_hash + (unsigned int)(uintptr_t)name) % HASH_ROW_SIZE;
-}
-
-
-static void initialize_hashtable(NameSigHash** table) {
-  memset((void*)table, 0, sizeof(NameSigHash*) * HASH_ROW_SIZE);
-}
-// Return false if the name/sig combination is found in table.
-// Return true if no duplicate is found. And name/sig is added as a new entry in table.
-// The old format checker uses heap sort to find duplicates.
-// NOTE: caller should guarantee that GC doesn't happen during the life cycle
-// of table since we don't expect Symbol*'s to move.
-static bool put_after_lookup(const Symbol* name, const Symbol* sig, NameSigHash** table) {
-  assert(name != nullptr, "name in constant pool is null");
-
-  // First lookup for duplicates
-  int index = hash(name, sig);
-  NameSigHash* entry = table[index];
-  while (entry != nullptr) {
-    if (entry->_name == name && entry->_sig == sig) {
-      return false;
-    }
-    entry = entry->_next;
+  static unsigned int hash(NameSigHash const& namesig) {
+    return namesig._name->identity_hash() ^ namesig._sig->identity_hash();
   }
 
-  // No duplicate is found, allocate a new entry and fill it.
-  entry = new NameSigHash();
-  entry->_name = name;
-  entry->_sig = sig;
+  static bool equals(NameSigHash const& e0, NameSigHash const& e1) {
+    return (e0._name == e1._name) &&
+          (e0._sig  == e1._sig);
+  }
+};
 
-  // Insert into hash table
-  entry->_next = table[index];
-  table[index] = entry;
-
-  return true;
-}
+using NameSigHashtable = ResourceHashtable<NameSigHash, int,
+                                           NameSigHash::HASH_ROW_SIZE,
+                                           AnyObj::RESOURCE_AREA, mtInternal,
+                                           &NameSigHash::hash, &NameSigHash::equals>;
 
 // Side-effects: populates the _local_interfaces field
 void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
@@ -882,27 +859,17 @@ void ClassFileParser::parse_interfaces(const ClassFileStream* const stream,
 
     // Check if there's any duplicates in interfaces
     ResourceMark rm(THREAD);
-    NameSigHash** interface_names = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD,
-                                                                 NameSigHash*,
-                                                                 HASH_ROW_SIZE);
-    initialize_hashtable(interface_names);
-    bool dup = false;
-    const Symbol* name = nullptr;
-    {
-      debug_only(NoSafepointVerifier nsv;)
-      for (index = 0; index < itfs_len; index++) {
-        const InstanceKlass* const k = _local_interfaces->at(index);
-        name = k->name();
-        // If no duplicates, add (name, nullptr) in hashtable interface_names.
-        if (!put_after_lookup(name, nullptr, interface_names)) {
-          dup = true;
-          break;
-        }
+    // Set containing interface names
+    ResourceHashtable<Symbol*, int>* interface_names = new ResourceHashtable<Symbol*, int>();
+    for (index = 0; index < itfs_len; index++) {
+      const InstanceKlass* const k = _local_interfaces->at(index);
+      Symbol* interface_name = k->name();
+      // If no duplicates, add (name, nullptr) in hashtable interface_names.
+      if (!interface_names->put(interface_name, 0)) {
+        classfile_parse_error("Duplicate interface name \"%s\" in class file %s",
+                               interface_name->as_C_string(), THREAD);
+        return;
       }
-    }
-    if (dup) {
-      classfile_parse_error("Duplicate interface name \"%s\" in class file %s",
-                             name->as_C_string(), THREAD);
     }
   }
 }
@@ -1621,27 +1588,17 @@ void ClassFileParser::parse_fields(const ClassFileStream* const cfs,
   if (_need_verify && length > 1) {
     // Check duplicated fields
     ResourceMark rm(THREAD);
-    NameSigHash** names_and_sigs = NEW_RESOURCE_ARRAY_IN_THREAD(
-      THREAD, NameSigHash*, HASH_ROW_SIZE);
-    initialize_hashtable(names_and_sigs);
-    bool dup = false;
-    const Symbol* name = nullptr;
-    const Symbol* sig = nullptr;
-    {
-      debug_only(NoSafepointVerifier nsv;)
-      for (int i = 0; i < _temp_field_info->length(); i++) {
-        name = _temp_field_info->adr_at(i)->name(_cp);
-        sig = _temp_field_info->adr_at(i)->signature(_cp);
-        // If no duplicates, add name/signature in hashtable names_and_sigs.
-        if (!put_after_lookup(name, sig, names_and_sigs)) {
-          dup = true;
-          break;
-        }
+    // Set containing name-signature pairs
+    NameSigHashtable* names_and_sigs = new NameSigHashtable();
+    for (int i = 0; i < _temp_field_info->length(); i++) {
+      NameSigHash name_and_sig(_temp_field_info->adr_at(i)->name(_cp),
+                               _temp_field_info->adr_at(i)->signature(_cp));
+      // If no duplicates, add name/signature in hashtable names_and_sigs.
+      if(!names_and_sigs->put(name_and_sig, 0)) {
+        classfile_parse_error("Duplicate field name \"%s\" with signature \"%s\" in class file %s",
+                               name_and_sig._name->as_C_string(), name_and_sig._sig->as_klass_external_name(), THREAD);
+        return;
       }
-    }
-    if (dup) {
-      classfile_parse_error("Duplicate field name \"%s\" with signature \"%s\" in class file %s",
-                             name->as_C_string(), sig->as_klass_external_name(), THREAD);
     }
   }
 }
@@ -2023,27 +1980,27 @@ ClassFileParser::FieldAnnotationCollector::~FieldAnnotationCollector() {
 
 void MethodAnnotationCollector::apply_to(const methodHandle& m) {
   if (has_annotation(_method_CallerSensitive))
-    m->set_caller_sensitive(true);
+    m->set_caller_sensitive();
   if (has_annotation(_method_ForceInline))
-    m->set_force_inline(true);
+    m->set_force_inline();
   if (has_annotation(_method_DontInline))
-    m->set_dont_inline(true);
+    m->set_dont_inline();
   if (has_annotation(_method_ChangesCurrentThread))
-    m->set_changes_current_thread(true);
+    m->set_changes_current_thread();
   if (has_annotation(_method_JvmtiMountTransition))
-    m->set_jvmti_mount_transition(true);
+    m->set_jvmti_mount_transition();
   if (has_annotation(_method_InjectedProfile))
-    m->set_has_injected_profile(true);
+    m->set_has_injected_profile();
   if (has_annotation(_method_LambdaForm_Compiled) && m->intrinsic_id() == vmIntrinsics::_none)
     m->set_intrinsic_id(vmIntrinsics::_compiledLambdaForm);
   if (has_annotation(_method_Hidden))
-    m->set_hidden(true);
+    m->set_is_hidden();
   if (has_annotation(_method_Scoped))
-    m->set_scoped(true);
+    m->set_scoped();
   if (has_annotation(_method_IntrinsicCandidate) && !m->is_synthetic())
-    m->set_intrinsic_candidate(true);
+    m->set_intrinsic_candidate();
   if (has_annotation(_jdk_internal_vm_annotation_ReservedStackAccess))
-    m->set_has_reserved_stack_access(true);
+    m->set_has_reserved_stack_access();
 }
 
 void ClassFileParser::ClassAnnotationCollector::apply_to(InstanceKlass* ik) {
@@ -2717,7 +2674,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   m->set_constants(_cp);
   m->set_name_index(name_index);
   m->set_signature_index(signature_index);
-  m->compute_from_signature(cp->symbol_at(signature_index));
+  m->constMethod()->compute_from_signature(cp->symbol_at(signature_index), access_flags.is_static());
   assert(args_size < 0 || args_size == m->size_of_parameters(), "");
 
   // Fill in code attribute information
@@ -2784,7 +2741,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
     parsed_annotations.apply_to(methodHandle(THREAD, m));
 
   if (is_hidden()) { // Mark methods in hidden classes as 'hidden'.
-    m->set_hidden(true);
+    m->set_is_hidden();
   }
 
   // Copy annotations
@@ -2871,28 +2828,17 @@ void ClassFileParser::parse_methods(const ClassFileStream* const cfs,
     if (_need_verify && length > 1) {
       // Check duplicated methods
       ResourceMark rm(THREAD);
-      NameSigHash** names_and_sigs = NEW_RESOURCE_ARRAY_IN_THREAD(
-        THREAD, NameSigHash*, HASH_ROW_SIZE);
-      initialize_hashtable(names_and_sigs);
-      bool dup = false;
-      const Symbol* name = nullptr;
-      const Symbol* sig = nullptr;
-      {
-        debug_only(NoSafepointVerifier nsv;)
-        for (int i = 0; i < length; i++) {
-          const Method* const m = _methods->at(i);
-          name = m->name();
-          sig = m->signature();
-          // If no duplicates, add name/signature in hashtable names_and_sigs.
-          if (!put_after_lookup(name, sig, names_and_sigs)) {
-            dup = true;
-            break;
-          }
+      // Set containing name-signature pairs
+      NameSigHashtable* names_and_sigs = new NameSigHashtable();
+      for (int i = 0; i < length; i++) {
+        const Method* const m = _methods->at(i);
+        NameSigHash name_and_sig(m->name(), m->signature());
+        // If no duplicates, add name/signature in hashtable names_and_sigs.
+        if(!names_and_sigs->put(name_and_sig, 0)) {
+          classfile_parse_error("Duplicate method name \"%s\" with signature \"%s\" in class file %s",
+                                 name_and_sig._name->as_C_string(), name_and_sig._sig->as_klass_external_name(), THREAD);
+          return;
         }
-      }
-      if (dup) {
-        classfile_parse_error("Duplicate method name \"%s\" with signature \"%s\" in class file %s",
-                               name->as_C_string(), sig->as_klass_external_name(), THREAD);
       }
     }
   }
@@ -4126,7 +4072,7 @@ void OopMapBlocksBuilder::print_value_on(outputStream* st) const {
 void ClassFileParser::set_precomputed_flags(InstanceKlass* ik) {
   assert(ik != nullptr, "invariant");
 
-  const Klass* const super = ik->super();
+  const InstanceKlass* const super = ik->java_super();
 
   // Check if this klass has an empty finalize method (i.e. one with return bytecode only),
   // in which case we don't have to register objects as finalizable
@@ -4405,7 +4351,7 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
 
       const Symbol* const name = m->name();
       const Symbol* const signature = m->signature();
-      const Klass* k = this_klass->super();
+      const InstanceKlass* k = this_klass->java_super();
       const Method* super_m = nullptr;
       while (k != nullptr) {
         // skip supers that don't have final methods.
@@ -4437,11 +4383,11 @@ static void check_final_method_override(const InstanceKlass* this_klass, TRAPS) 
           }
 
           // continue to look from super_m's holder's super.
-          k = super_m->method_holder()->super();
+          k = super_m->method_holder()->java_super();
           continue;
         }
 
-        k = k->super();
+        k = k->java_super();
       }
     }
   }

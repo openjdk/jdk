@@ -1,5 +1,5 @@
 //
-// Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+// Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
 // DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 //
 // This code is free software; you can redistribute it and/or modify it
@@ -1072,6 +1072,10 @@ const int Matcher::max_vector_size(const BasicType bt) {
 const int Matcher::min_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   return 8/type2aelembytes(bt);
+}
+
+const int Matcher::superword_max_vector_size(const BasicType bt) {
+  return Matcher::max_vector_size(bt);
 }
 
 // Is this branch offset short enough that a short branch can be used?
@@ -7032,39 +7036,6 @@ instruct xorL_reg_immRot(iRegL dst, iRegL src1, immLlowRot con) %{
     __ eor($dst$$Register->successor(), $src1$$Register->successor(), 0);
   %}
   ins_pipe(ialu_reg_imm);
-%}
-
-//----------Convert to Boolean-------------------------------------------------
-instruct convI2B( iRegI dst, iRegI src, flagsReg ccr ) %{
-  match(Set dst (Conv2B src));
-  effect(KILL ccr);
-  size(12);
-  ins_cost(DEFAULT_COST*2);
-  format %{ "TST    $src,$src \n\t"
-            "MOV    $dst, 0   \n\t"
-            "MOV.ne $dst, 1" %}
-  ins_encode %{ // FIXME: can do better?
-    __ tst($src$$Register, $src$$Register);
-    __ mov($dst$$Register, 0);
-    __ mov($dst$$Register, 1, ne);
-  %}
-  ins_pipe(ialu_reg_ialu);
-%}
-
-instruct convP2B( iRegI dst, iRegP src, flagsReg ccr ) %{
-  match(Set dst (Conv2B src));
-  effect(KILL ccr);
-  size(12);
-  ins_cost(DEFAULT_COST*2);
-  format %{ "TST    $src,$src \n\t"
-            "MOV    $dst, 0   \n\t"
-            "MOV.ne $dst, 1" %}
-  ins_encode %{
-    __ tst($src$$Register, $src$$Register);
-    __ mov($dst$$Register, 0);
-    __ mov($dst$$Register, 1, ne);
-  %}
-  ins_pipe(ialu_reg_ialu);
 %}
 
 instruct cmpLTMask_reg_reg( iRegI dst, iRegI p, iRegI q, flagsReg ccr ) %{

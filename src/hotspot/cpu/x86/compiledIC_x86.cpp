@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
   // movq rbx, 0
   // jmp -5 # to self
 
-  if (mark == NULL) {
+  if (mark == nullptr) {
     mark = cbuf.insts_mark();  // Get mark within main instrs section.
   }
 
@@ -50,8 +50,8 @@ address CompiledStaticCall::emit_to_interp_stub(CodeBuffer &cbuf, address mark) 
   MacroAssembler _masm(&cbuf);
 
   address base = __ start_a_stub(to_interp_stub_size());
-  if (base == NULL) {
-    return NULL;  // CodeBuffer::expand failed.
+  if (base == nullptr) {
+    return nullptr;  // CodeBuffer::expand failed.
   }
   // Static stub relocation stores the instruction address of the call.
   __ relocate(static_stub_Relocation::spec(mark), Assembler::imm_operand);
@@ -82,7 +82,7 @@ int CompiledStaticCall::reloc_to_interp_stub() {
 
 void CompiledDirectStaticCall::set_to_interpreted(const methodHandle& callee, address entry) {
   address stub = find_stub();
-  guarantee(stub != NULL, "stub not found");
+  guarantee(stub != nullptr, "stub not found");
 
   if (TraceICs) {
     ResourceMark rm;
@@ -108,7 +108,7 @@ void CompiledDirectStaticCall::set_stub_to_clean(static_stub_Relocation* static_
   assert(CompiledICLocker::is_safe(static_stub->addr()), "mt unsafe call");
   // Reset stub.
   address stub = static_stub->addr();
-  assert(stub != NULL, "stub not found");
+  assert(stub != nullptr, "stub not found");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
   method_holder->set_data(0);
@@ -128,12 +128,12 @@ void CompiledDirectStaticCall::verify() {
 
 #ifdef ASSERT
   CodeBlob *cb = CodeCache::find_blob((address) _call);
-  assert(cb != NULL, "sanity");
+  assert(cb != nullptr, "sanity");
 #endif
 
   // Verify stub.
   address stub = find_stub();
-  assert(stub != NULL, "no stub found for static call");
+  assert(stub != nullptr, "no stub found for static call");
   // Creation also verifies the object.
   NativeMovConstReg* method_holder = nativeMovConstReg_at(stub);
   NativeJump*        jump          = nativeJump_at(method_holder->next_instruction_address());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2016 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -99,7 +99,7 @@ address Relocation::pd_call_destination(address orig_addr) {
       return (address)(-1);
     }
     NativeFarCall* call;
-    if (orig_addr == NULL) {
+    if (orig_addr == nullptr) {
       call = nativeFarCall_at(inst_addr);
     } else {
       // must access location (in CP) where destination is stored in unmoved code, because load from CP is pc-relative

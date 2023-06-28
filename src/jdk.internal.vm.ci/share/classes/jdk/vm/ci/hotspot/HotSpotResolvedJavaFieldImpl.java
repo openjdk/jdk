@@ -23,14 +23,17 @@
 package jdk.vm.ci.hotspot;
 
 import static jdk.internal.misc.Unsafe.ADDRESS_SIZE;
+import static jdk.vm.ci.hotspot.CompilerToVM.compilerToVM;
 import static jdk.vm.ci.hotspot.HotSpotJVMCIRuntime.runtime;
 import static jdk.vm.ci.hotspot.HotSpotVMConfig.config;
 import static jdk.vm.ci.hotspot.UnsafeAccess.UNSAFE;
 
 import java.lang.annotation.Annotation;
+import java.util.Collections;
+import java.util.List;
 
-import jdk.internal.vm.annotation.Stable;
-
+import jdk.internal.vm.VMSupport;
+import jdk.vm.ci.meta.AnnotationData;
 import jdk.vm.ci.meta.JavaConstant;
 import jdk.vm.ci.meta.JavaType;
 import jdk.vm.ci.meta.ResolvedJavaType;
@@ -226,5 +229,26 @@ class HotSpotResolvedJavaFieldImpl implements HotSpotResolvedJavaField {
     @Override
     public JavaConstant getConstantValue() {
         return holder.getFieldInfo(index).getConstantValue(holder);
+    }
+
+    @Override
+    public AnnotationData getAnnotationData(ResolvedJavaType annotationType) {
+        if (!hasAnnotations()) {
+            return null;
+        }
+        return getAnnotationData0(annotationType).get(0);
+    }
+
+    @Override
+    public List<AnnotationData> getAnnotationData(ResolvedJavaType type1, ResolvedJavaType type2, ResolvedJavaType... types) {
+        if (!hasAnnotations()) {
+            return Collections.emptyList();
+        }
+        return getAnnotationData0(AnnotationDataDecoder.asArray(type1, type2, types));
+    }
+
+    private List<AnnotationData> getAnnotationData0(ResolvedJavaType... filter) {
+        byte[] encoded = compilerToVM().getEncodedFieldAnnotationData(holder, index, filter);
+        return VMSupport.decodeAnnotations(encoded, AnnotationDataDecoder.INSTANCE);
     }
 }

@@ -24,6 +24,8 @@
 package org.openjdk.foreigntest;
 
 import java.lang.foreign.*;
+import java.lang.foreign.Linker.Option;
+import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
@@ -36,31 +38,25 @@ public class PanamaMainUnnamedModule {
 
     public static void main(String[] args) throws Throwable {
         testReflection();
-        testSetAccessible();
         testInvoke();
         testDirectAccess();
         testJNIAccess();
     }
 
    public static void testReflection() throws Throwable {
-       Method method = Linker.class.getDeclaredMethod("nativeLinker");
-       method.invoke(null);
-   }
-
-   public static void testSetAccessible() throws Throwable {
-       Method method = Linker.class.getDeclaredMethod("nativeLinker");
-       method.setAccessible(true);
-       method.invoke(null);
+       Linker linker = Linker.nativeLinker();
+       Method method = Linker.class.getDeclaredMethod("downcallHandle", FunctionDescriptor.class, Option[].class);
+       method.invoke(linker, FunctionDescriptor.ofVoid(), new Linker.Option[0]);
    }
 
    public static void testInvoke() throws Throwable {
-       var mh = MethodHandles.lookup().findStatic(Linker.class, "nativeLinker",
-           MethodType.methodType(Linker.class));
-       var linker = (Linker)mh.invokeExact();
+       var mh = MethodHandles.lookup().findVirtual(Linker.class, "downcallHandle",
+           MethodType.methodType(MethodHandle.class, FunctionDescriptor.class, Linker.Option[].class));
+       var downcall = (MethodHandle)mh.invokeExact(Linker.nativeLinker(), FunctionDescriptor.ofVoid(), new Linker.Option[0]);
    }
 
    public static void testDirectAccess() {
-       Linker.nativeLinker();
+       Linker.nativeLinker().downcallHandle(FunctionDescriptor.ofVoid());
    }
 
    public static void testJNIAccess() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,6 +117,8 @@ public class Check {
     private final Preview preview;
     private final boolean warnOnAnyAccessToMembers;
 
+    public boolean disablePreviewCheck;
+
     // The set of lint options currently in effect. It is initialized
     // from the context, and then is set/reset as needed by Attr as it
     // visits all the various parts of the trees during attribution.
@@ -154,6 +156,8 @@ public class Check {
         source = Source.instance(context);
         target = Target.instance(context);
         warnOnAnyAccessToMembers = options.isSet("warnOnAccessToMembers");
+
+        disablePreviewCheck = false;
 
         Target target = Target.instance(context);
         syntheticNameChar = target.syntheticNameChar();
@@ -2246,6 +2250,36 @@ public class Check {
         }
     }
 
+    public void checkHasMain(DiagnosticPosition pos, ClassSymbol c) {
+        boolean found = false;
+
+        for (Symbol sym : c.members().getSymbolsByName(names.main)) {
+            if (sym.kind == MTH && (sym.flags() & PRIVATE) == 0) {
+                MethodSymbol meth = (MethodSymbol)sym;
+                if (!types.isSameType(meth.getReturnType(), syms.voidType)) {
+                    continue;
+                }
+                if (meth.params.isEmpty()) {
+                    found = true;
+                    break;
+                }
+                if (meth.params.size() != 1) {
+                    continue;
+                }
+                if (!types.isSameType(meth.params.head.type, types.makeArrayType(syms.stringType))) {
+                    continue;
+                }
+
+                found = true;
+                break;
+            }
+        }
+
+        if (!found) {
+            log.error(pos, Errors.UnnamedClassDoesNotHaveMainMethod);
+        }
+    }
+
     public void checkModuleName (JCModuleDecl tree) {
         Name moduleName = tree.sym.name;
         Assert.checkNonNull(moduleName);
@@ -3513,7 +3547,7 @@ public class Check {
     protected boolean isTypeAnnotation(JCAnnotation a, boolean isTypeParameter) {
         List<Attribute> targets = typeAnnotations.annotationTargets(a.annotationType.type.tsym);
         return (targets == null) ?
-                false :
+                (Feature.NO_TARGET_ANNOTATION_APPLICABILITY.allowedInSource(source) && isTypeParameter) :
                 targets.stream()
                         .anyMatch(attr -> isTypeAnnotation(attr, isTypeParameter));
     }
@@ -3793,7 +3827,7 @@ public class Check {
     }
 
     void checkPreview(DiagnosticPosition pos, Symbol other, Symbol s) {
-        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(syms, other, s)) {
+        if ((s.flags() & PREVIEW_API) != 0 && !preview.participatesInPreview(syms, other, s) && !disablePreviewCheck) {
             if ((s.flags() & PREVIEW_REFLECTIVE) == 0) {
                 if (!preview.isEnabled()) {
                     log.error(pos, Errors.IsPreview(s));
@@ -4311,6 +4345,27 @@ public class Check {
         }
     }
 
+    public Type checkProcessorType(JCExpression processor, Type resultType, Env<AttrContext> env) {
+        Type processorType = processor.type;
+        Type interfaceType = types.asSuper(processorType, syms.processorType.tsym);
+
+        if (interfaceType != null) {
+            List<Type> typeArguments = interfaceType.getTypeArguments();
+
+            if (typeArguments.size() == 2) {
+                resultType = typeArguments.head;
+            } else {
+                log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
+                        Errors.ProcessorTypeCannotBeARawType(processorType.tsym));
+            }
+        } else {
+            log.error(DiagnosticFlag.RESOLVE_ERROR, processor.pos,
+                    Errors.NotAProcessorType(processorType.tsym));
+        }
+
+        return resultType;
+    }
+
     public void checkLeaksNotAccessible(Env<AttrContext> env, JCClassDecl check) {
         JCCompilationUnit toplevel = env.toplevel;
 
@@ -4547,8 +4602,11 @@ public class Check {
                         }
                     }
                 }
-            } else {
-                if (c.labels.tail.nonEmpty()) {
+            } else if (c.labels.tail.nonEmpty()) {
+                var patterCaseLabels = c.labels.stream().filter(ll -> ll instanceof JCPatternCaseLabel).map(cl -> (JCPatternCaseLabel)cl);
+                var allUnderscore = patterCaseLabels.allMatch(pcl -> !hasBindings(pcl.getPattern()));
+
+                if (!allUnderscore) {
                     log.error(c.labels.tail.head.pos(), Errors.FlowsThroughFromPattern);
                 }
             }
@@ -4583,7 +4641,7 @@ public class Check {
         new TreeScanner() {
             @Override
             public void visitBindingPattern(JCBindingPattern tree) {
-                bindings[0] = true;
+                bindings[0] = !tree.var.sym.isUnnamedVariable();
                 super.visitBindingPattern(tree);
             }
         }.scan(p);
@@ -4601,7 +4659,7 @@ public class Check {
         return false;
     }
     void checkSwitchCaseLabelDominated(List<JCCase> cases) {
-        List<JCCaseLabel> caseLabels = List.nil();
+        List<Pair<JCCase, JCCaseLabel>> caseLabels = List.nil();
         boolean seenDefault = false;
         boolean seenDefaultLabel = false;
         boolean warnDominatedByDefault = false;
@@ -4628,17 +4686,20 @@ public class Check {
                     }
                 }
                 Type currentType = labelType(label);
-                for (JCCaseLabel testCaseLabel : caseLabels) {
+                for (Pair<JCCase, JCCaseLabel> caseAndLabel : caseLabels) {
+                    JCCase testCase = caseAndLabel.fst;
+                    JCCaseLabel testCaseLabel = caseAndLabel.snd;
                     Type testType = labelType(testCaseLabel);
                     if (types.isSubtype(currentType, testType) &&
                         !currentType.hasTag(ERROR) && !testType.hasTag(ERROR)) {
                         //the current label is potentially dominated by the existing (test) label, check:
                         boolean dominated = false;
                         if (label instanceof JCConstantCaseLabel) {
-                            dominated |= !(testCaseLabel instanceof JCConstantCaseLabel);
+                            dominated |= !(testCaseLabel instanceof JCConstantCaseLabel) &&
+                                         TreeInfo.unguardedCase(testCase);
                         } else if (label instanceof JCPatternCaseLabel patternCL &&
                                    testCaseLabel instanceof JCPatternCaseLabel testPatternCaseLabel &&
-                                   TreeInfo.unguardedCaseLabel(testCaseLabel)) {
+                                   TreeInfo.unguardedCase(testCase)) {
                             dominated = patternDominated(testPatternCaseLabel.pat,
                                                          patternCL.pat);
                         }
@@ -4647,7 +4708,7 @@ public class Check {
                         }
                     }
                 }
-                caseLabels = caseLabels.prepend(label);
+                caseLabels = caseLabels.prepend(Pair.of(c, label));
             }
         }
     }
@@ -4671,12 +4732,6 @@ public class Check {
                 if (!types.isSubtype(currentPatternType, existingPatternType)) {
                     return false;
                 }
-            }
-            while (existingPattern instanceof JCParenthesizedPattern parenthesized) {
-                existingPattern = parenthesized.pattern;
-            }
-            while (currentPattern instanceof JCParenthesizedPattern parenthesized) {
-                currentPattern = parenthesized.pattern;
             }
             if (currentPattern instanceof JCBindingPattern) {
                 return existingPattern instanceof JCBindingPattern;
@@ -4993,16 +5048,19 @@ public class Check {
              if ((spf.flags() & (PRIVATE | STATIC | FINAL)) !=
                  (PRIVATE | STATIC | FINAL)) {
                  log.warning(LintCategory.SERIAL,
-                             TreeInfo.diagnosticPositionFor(spf, tree), Warnings.ImproperSPF);
+                             TreeInfo.diagnosticPositionFor(spf, tree),
+                             Warnings.ImproperSPF);
              }
 
              if (!types.isSameType(spf.type, OSF_TYPE)) {
                  log.warning(LintCategory.SERIAL,
-                             TreeInfo.diagnosticPositionFor(spf, tree), Warnings.OSFArraySPF);
+                             TreeInfo.diagnosticPositionFor(spf, tree),
+                             Warnings.OSFArraySPF);
              }
 
             if (isExternalizable((Type)(e.asType()))) {
-                log.warning(LintCategory.SERIAL, tree.pos(),
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(spf, tree),
                             Warnings.IneffectualSerialFieldExternalizable);
             }
 
@@ -5110,15 +5168,19 @@ public class Check {
                     String name = enclosed.getSimpleName().toString();
                     switch(enclosed.getKind()) {
                     case FIELD -> {
+                        var field = (VarSymbol)enclosed;
                         if (serialFieldNames.contains(name)) {
-                            log.warning(LintCategory.SERIAL, tree.pos(),
+                            log.warning(LintCategory.SERIAL,
+                                        TreeInfo.diagnosticPositionFor(field, tree),
                                         Warnings.IneffectualSerialFieldEnum(name));
                         }
                     }
 
                     case METHOD -> {
+                        var method = (MethodSymbol)enclosed;
                         if (serialMethodNames.contains(name)) {
-                            log.warning(LintCategory.SERIAL, tree.pos(),
+                            log.warning(LintCategory.SERIAL,
+                                        TreeInfo.diagnosticPositionFor(method, tree),
                                         Warnings.IneffectualSerialMethodEnum(name));
                         }
                     }
@@ -5238,9 +5300,11 @@ public class Check {
                     String name = enclosed.getSimpleName().toString();
                     switch(enclosed.getKind()) {
                     case FIELD -> {
+                        var field = (VarSymbol)enclosed;
                         switch(name) {
                         case "serialPersistentFields" -> {
-                            log.warning(LintCategory.SERIAL, tree.pos(),
+                            log.warning(LintCategory.SERIAL,
+                                        TreeInfo.diagnosticPositionFor(field, tree),
                                         Warnings.IneffectualSerialFieldRecord);
                         }
 
@@ -5248,7 +5312,7 @@ public class Check {
                             // Could generate additional warning that
                             // svuid value is not checked to match for
                             // records.
-                            checkSerialVersionUID(tree, e, (VarSymbol)enclosed);
+                            checkSerialVersionUID(tree, e, field);
                         }
 
                         }
@@ -5259,9 +5323,11 @@ public class Check {
                         switch(name) {
                         case "writeReplace" -> checkWriteReplace(tree, e, method);
                         case "readResolve"  -> checkReadResolve(tree, e, method);
+
                         default -> {
                             if (serialMethodNames.contains(name)) {
-                                log.warning(LintCategory.SERIAL, tree.pos(),
+                                log.warning(LintCategory.SERIAL,
+                                            TreeInfo.diagnosticPositionFor(method, tree),
                                             Warnings.IneffectualSerialMethodRecord(name));
                             }
                         }
@@ -5339,7 +5405,8 @@ public class Check {
         private void checkExternalizable(JCClassDecl tree, Element enclosing, MethodSymbol method) {
             // If the enclosing class is externalizable, warn for the method
             if (isExternalizable((Type)enclosing.asType())) {
-                log.warning(LintCategory.SERIAL, tree.pos(),
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
                             Warnings.IneffectualSerialMethodExternalizable(method.getSimpleName()));
             }
             return;

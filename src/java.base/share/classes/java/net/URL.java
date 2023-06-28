@@ -209,6 +209,12 @@ import sun.security.action.GetPropertyAction;
  * is implementation dependent, and callers should not rely on such
  * checks for full URL validation.
  *
+ * @spec https://www.rfc-editor.org/info/rfc2396
+ *      RFC 2396: Uniform Resource Identifiers (URI): Generic Syntax
+ * @spec https://www.rfc-editor.org/info/rfc2732
+ *      RFC 2732: Format for Literal IPv6 Addresses in URL's
+ * @spec https://www.rfc-editor.org/info/rfc3986
+ *      RFC 3986: Uniform Resource Identifier (URI): Generic Syntax
  * @author  James Gosling
  * @since 1.0
  */
@@ -393,6 +399,8 @@ public final class URL implements java.io.Serializable {
      *                  is a negative number other than -1, or if the
      *                  underlying stream handler implementation rejects,
      *                  or is known to reject, the {@code URL}
+     * @spec https://www.rfc-editor.org/info/rfc2373 RFC 2373: IP Version 6 Addressing Architecture
+     * @spec https://www.rfc-editor.org/info/rfc2732 RFC 2732: Format for Literal IPv6 Addresses in URL's
      * @see        java.lang.System#getProperty(java.lang.String)
      * @see        java.net.URL#setURLStreamHandlerFactory(
      *                  java.net.URLStreamHandlerFactory)

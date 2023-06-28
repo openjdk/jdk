@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,8 @@ void RangeCheckElimination::eliminate(IR *ir) {
 
 // Constructor
 RangeCheckEliminator::RangeCheckEliminator(IR *ir) :
-  _bounds(Instruction::number_of_instructions(), Instruction::number_of_instructions(), NULL),
-  _access_indexed_info(Instruction::number_of_instructions(), Instruction::number_of_instructions(), NULL)
+  _bounds(Instruction::number_of_instructions(), Instruction::number_of_instructions(), nullptr),
+  _access_indexed_info(Instruction::number_of_instructions(), Instruction::number_of_instructions(), nullptr)
 {
   _visitor.set_range_check_eliminator(this);
   _ir = ir;
@@ -92,7 +92,7 @@ RangeCheckEliminator::RangeCheckEliminator(IR *ir) :
   TRACE_RANGE_CHECK_ELIMINATION(
     tty->print_cr("Starting pass over dominator tree . . .")
   );
-  calc_bounds(ir->start(), NULL);
+  calc_bounds(ir->start(), nullptr);
 
   TRACE_RANGE_CHECK_ELIMINATION(
     tty->print_cr("Finished!")
@@ -103,9 +103,9 @@ RangeCheckEliminator::RangeCheckEliminator(IR *ir) :
 // Constant
 void RangeCheckEliminator::Visitor::do_Constant(Constant *c) {
   IntConstant *ic = c->type()->as_IntConstant();
-  if (ic != NULL) {
+  if (ic != nullptr) {
     int value = ic->value();
-    _bound = new Bound(value, NULL, value, NULL);
+    _bound = new Bound(value, nullptr, value, nullptr);
   }
 }
 
@@ -114,13 +114,13 @@ void RangeCheckEliminator::Visitor::do_LogicOp(LogicOp *lo) {
   if (lo->type()->as_IntType() && lo->op() == Bytecodes::_iand && (lo->x()->as_Constant() || lo->y()->as_Constant())) {
     int constant = 0;
     Constant *c = lo->x()->as_Constant();
-    if (c != NULL) {
+    if (c != nullptr) {
       constant = c->type()->as_IntConstant()->value();
     } else {
       constant = lo->y()->as_Constant()->type()->as_IntConstant()->value();
     }
     if (constant >= 0) {
-      _bound = new Bound(0, NULL, constant, NULL);
+      _bound = new Bound(0, nullptr, constant, nullptr);
     }
   }
 }
@@ -134,7 +134,7 @@ void RangeCheckEliminator::Visitor::do_Phi(Phi *phi) {
   bool has_upper = true;
   bool has_lower = true;
   assert(phi, "Phi must not be null");
-  Bound *bound = NULL;
+  Bound* bound = nullptr;
 
   // TODO: support more difficult phis
   for (int i=0; i<op_count; i++) {
@@ -144,7 +144,7 @@ void RangeCheckEliminator::Visitor::do_Phi(Phi *phi) {
 
     // Check if instruction is connected with phi itself
     Op2 *op2 = v->as_Op2();
-    if (op2 != NULL) {
+    if (op2 != nullptr) {
       Value x = op2->x();
       Value y = op2->y();
       if ((x == phi || y == phi)) {
@@ -153,11 +153,11 @@ void RangeCheckEliminator::Visitor::do_Phi(Phi *phi) {
           other = y;
         }
         ArithmeticOp *ao = v->as_ArithmeticOp();
-        if (ao != NULL && ao->op() == Bytecodes::_iadd) {
+        if (ao != nullptr && ao->op() == Bytecodes::_iadd) {
           assert(ao->op() == Bytecodes::_iadd, "Has to be add!");
           if (ao->type()->as_IntType()) {
             Constant *c = other->as_Constant();
-            if (c != NULL) {
+            if (c != nullptr) {
               assert(c->type()->as_IntConstant(), "Constant has to be of type integer");
               int value = c->type()->as_IntConstant()->value();
               if (value == 1) {
@@ -184,7 +184,7 @@ void RangeCheckEliminator::Visitor::do_Phi(Phi *phi) {
 
     if (v->type()->as_IntConstant()) {
       cur_constant = v->type()->as_IntConstant()->value();
-      cur_value = NULL;
+      cur_value = nullptr;
     }
     if (!v_bound->has_upper() || !v_bound->has_lower()) {
       cur_bound = new Bound(cur_constant, cur_value, cur_constant, cur_value);
@@ -199,7 +199,7 @@ void RangeCheckEliminator::Visitor::do_Phi(Phi *phi) {
       }
     } else {
       // No bound!
-      bound = NULL;
+      bound = nullptr;
       break;
     }
   }
@@ -226,8 +226,8 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
   if (ao->op() == Bytecodes::_irem) {
     Bound* x_bound = _rce->get_bound(x);
     Bound* y_bound = _rce->get_bound(y);
-    if (x_bound->lower() >= 0 && x_bound->lower_instr() == NULL && y->as_ArrayLength() != NULL) {
-      _bound = new Bound(0, NULL, -1, y);
+    if (x_bound->lower() >= 0 && x_bound->lower_instr() == nullptr && y->as_ArrayLength() != nullptr) {
+      _bound = new Bound(0, nullptr, -1, y);
     } else if (y->type()->as_IntConstant() && y->type()->as_IntConstant()->value() != 0) {
       // The binary % operator is said to yield the remainder of its operands from an implied division; the
       // left-hand operand is the dividend and the right-hand operand is the divisor.
@@ -242,7 +242,7 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
       // -x % y  ==> [-y + 1, 0]
       // -x % -y ==> [-y + 1, 0]
       if (x_bound->has_lower() && x_bound->lower() >= 0) {
-        _bound = new Bound(0, NULL, y->type()->as_IntConstant()->value() - 1, NULL);
+        _bound = new Bound(0, nullptr, y->type()->as_IntConstant()->value() - 1, nullptr);
       } else {
         _bound = new Bound();
       }
@@ -270,10 +270,11 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
 
         Bound * bound = _rce->get_bound(y);
         if (bound->has_upper() && bound->has_lower()) {
-          int new_lower = bound->lower() + const_value;
+          // TODO: consider using __builtin_add_overflow
           jlong new_lowerl = ((jlong)bound->lower()) + const_value;
-          int new_upper = bound->upper() + const_value;
+          jint new_lower = low(new_lowerl);
           jlong new_upperl = ((jlong)bound->upper()) + const_value;
+          jint new_upper = low(new_upperl);
 
           if (((jlong)new_lower) == new_lowerl && ((jlong)new_upper == new_upperl)) {
             Bound *newBound = new Bound(new_lower, bound->lower_instr(), new_upper, bound->upper_instr());
@@ -292,7 +293,7 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
       Bound *bound = _rce->get_bound(x);
       if (ao->op() == Bytecodes::_isub) {
         if (bound->lower_instr() == y) {
-          _bound = new Bound(Instruction::geq, NULL, bound->lower());
+          _bound = new Bound(Instruction::geq, nullptr, bound->lower());
         } else {
           _bound = new Bound();
         }
@@ -315,14 +316,14 @@ void RangeCheckEliminator::Visitor::do_IfOp(IfOp *ifOp)
       min = max;
       max = tmp;
     }
-    _bound = new Bound(min, NULL, max, NULL);
+    _bound = new Bound(min, nullptr, max, nullptr);
   }
 }
 
 // Get bound. Returns the current bound on Value v. Normally this is the topmost element on the bound stack.
 RangeCheckEliminator::Bound *RangeCheckEliminator::get_bound(Value v) {
-  // Wrong type or NULL -> No bound
-  if (!v || (!v->type()->as_IntType() && !v->type()->as_ObjectType())) return NULL;
+  // Wrong type or null -> No bound
+  if (!v || (!v->type()->as_IntType() && !v->type()->as_ObjectType())) return nullptr;
 
   if (!_bounds.at(v->id())) {
     // First (default) bound is calculated
@@ -365,7 +366,7 @@ void RangeCheckEliminator::update_bound(IntegerStack &pushed, Value v, Instructi
 bool RangeCheckEliminator::loop_invariant(BlockBegin *loop_header, Instruction *instruction) {
   assert(loop_header, "Loop header must not be null!");
   if (!instruction) return true;
-  for (BlockBegin *d = loop_header->dominator(); d != NULL; d = d->dominator()) {
+  for (BlockBegin* d = loop_header->dominator(); d != nullptr; d = d->dominator()) {
     if (d == instruction->block()) {
       return true;
     }
@@ -383,7 +384,7 @@ void RangeCheckEliminator::update_bound(IntegerStack &pushed, Value v, Bound *bo
     get_bound(v);
     assert(_bounds.at(v->id()), "Now Stack must exist");
   }
-  Bound *top = NULL;
+  Bound* top = nullptr;
   if (_bounds.at(v->id())->length() > 0) {
     top = _bounds.at(v->id())->top();
   }
@@ -398,7 +399,7 @@ void RangeCheckEliminator::update_bound(IntegerStack &pushed, Value v, Bound *bo
 void RangeCheckEliminator::add_access_indexed_info(InstructionList &indices, int idx, Value instruction, AccessIndexed *ai) {
   int id = instruction->id();
   AccessIndexedInfo *aii = _access_indexed_info.at(id);
-  if (aii == NULL) {
+  if (aii == nullptr) {
     aii = new AccessIndexedInfo();
     _access_indexed_info.at_put(id, aii);
     indices.append(instruction);
@@ -438,7 +439,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
 
       Value index = ai->index();
       Constant *c = index->as_Constant();
-      if (c != NULL) {
+      if (c != nullptr) {
         int constant_value = c->type()->as_IntConstant()->value();
         if (constant_value >= 0) {
           if (constant_value <= max_constant) {
@@ -455,7 +456,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
         int base = 0;
         ArithmeticOp *ao = index->as_ArithmeticOp();
 
-        while (ao != NULL && (ao->x()->as_Constant() || ao->y()->as_Constant()) && (ao->op() == Bytecodes::_iadd || ao->op() == Bytecodes::_isub)) {
+        while (ao != nullptr && (ao->x()->as_Constant() || ao->y()->as_Constant()) && (ao->op() == Bytecodes::_iadd || ao->op() == Bytecodes::_isub)) {
           c = ao->y()->as_Constant();
           Instruction *other = ao->x();
           if (!c && ao->op() == Bytecodes::_iadd) {
@@ -488,7 +489,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
       for (int i = 0; i < indices.length(); i++) {
         Instruction *index_instruction = indices.at(i);
         AccessIndexedInfo *info = _access_indexed_info.at(index_instruction->id());
-        assert(info != NULL, "Info must not be null");
+        assert(info != nullptr, "Info must not be null");
 
         // if idx < 0, max > 0, max + idx may fall between 0 and
         // length-1 and if min < 0, min + idx may overflow and be >=
@@ -507,7 +508,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
           ValueStack *state = first->state_before();
 
           // Load min Constant
-          Constant *min_constant = NULL;
+          Constant *min_constant = nullptr;
           if (info->_min != 0) {
             min_constant = new Constant(new IntConstant(info->_min));
             NOT_PRODUCT(min_constant->set_printable_bci(first->printable_bci()));
@@ -515,7 +516,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
           }
 
           // Load max Constant
-          Constant *max_constant = NULL;
+          Constant *max_constant = nullptr;
           if (info->_max != 0) {
             max_constant = new Constant(new IntConstant(info->_max));
             NOT_PRODUCT(max_constant->set_printable_bci(first->printable_bci()));
@@ -535,7 +536,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
           // Calculate lower bound
           Instruction *lower_compare = index_instruction;
           if (min_constant) {
-            ArithmeticOp *ao = new ArithmeticOp(Bytecodes::_iadd, min_constant, lower_compare, NULL);
+            ArithmeticOp *ao = new ArithmeticOp(Bytecodes::_iadd, min_constant, lower_compare, nullptr);
             insert_position = insert_position->insert_after_same_bci(ao);
             lower_compare = ao;
           }
@@ -543,7 +544,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
           // Calculate upper bound
           Instruction *upper_compare = index_instruction;
           if (max_constant) {
-            ArithmeticOp *ao = new ArithmeticOp(Bytecodes::_iadd, max_constant, upper_compare, NULL);
+            ArithmeticOp *ao = new ArithmeticOp(Bytecodes::_iadd, max_constant, upper_compare, nullptr);
             insert_position = insert_position->insert_after_same_bci(ao);
             upper_compare = ao;
           }
@@ -588,7 +589,7 @@ void RangeCheckEliminator::in_block_motion(BlockBegin *block, AccessIndexedList 
     // Clear data structures for next array
     for (int i = 0; i < indices.length(); i++) {
       Instruction *index_instruction = indices.at(i);
-      _access_indexed_info.at_put(index_instruction->id(), NULL);
+      _access_indexed_info.at_put(index_instruction->id(), nullptr);
     }
     indices.clear();
   }
@@ -599,7 +600,7 @@ bool RangeCheckEliminator::set_process_block_flags(BlockBegin *block) {
   bool process = false;
 
   while (cur) {
-    process |= (cur->as_AccessIndexed() != NULL);
+    process |= (cur->as_AccessIndexed() != nullptr);
     cur = cur->next();
   }
 
@@ -665,7 +666,7 @@ Instruction* RangeCheckEliminator::predicate_cmp_with_const(Instruction* instr, 
 Instruction* RangeCheckEliminator::predicate_add(Instruction* left, int left_const, Instruction::Condition cond, Instruction* right, ValueStack* state, Instruction *insert_position, int bci) {
   Constant *constant = new Constant(new IntConstant(left_const));
   insert_position = insert_after(insert_position, constant, bci);
-  ArithmeticOp *ao = new ArithmeticOp(Bytecodes::_iadd, constant, left, NULL);
+  ArithmeticOp *ao = new ArithmeticOp(Bytecodes::_iadd, constant, left, nullptr);
   insert_position = insert_position->insert_after_same_bci(ao);
   return predicate(ao, cond, right, state, insert_position);
 }
@@ -754,19 +755,19 @@ void RangeCheckEliminator::add_if_condition(IntegerStack &pushed, Value x, Value
   Constant *c = x->as_Constant();
   ArithmeticOp *ao = x->as_ArithmeticOp();
 
-  if (c != NULL) {
+  if (c != nullptr) {
     const_value = c->type()->as_IntConstant()->value();
-    instr_value = NULL;
-  } else if (ao != NULL &&  (!ao->x()->as_Constant() || !ao->y()->as_Constant()) && ((ao->op() == Bytecodes::_isub && ao->y()->as_Constant()) || ao->op() == Bytecodes::_iadd)) {
+    instr_value = nullptr;
+  } else if (ao != nullptr &&  (!ao->x()->as_Constant() || !ao->y()->as_Constant()) && ((ao->op() == Bytecodes::_isub && ao->y()->as_Constant()) || ao->op() == Bytecodes::_iadd)) {
     assert(!ao->x()->as_Constant() || !ao->y()->as_Constant(), "At least one operator must be non-constant!");
     assert(ao->op() == Bytecodes::_isub || ao->op() == Bytecodes::_iadd, "Operation has to be add or sub!");
     c = ao->x()->as_Constant();
-    if (c != NULL) {
+    if (c != nullptr) {
       const_value = c->type()->as_IntConstant()->value();
       instr_value = ao->y();
     } else {
       c = ao->y()->as_Constant();
-      if (c != NULL) {
+      if (c != nullptr) {
         const_value = c->type()->as_IntConstant()->value();
         instr_value = ao->x();
       }
@@ -808,7 +809,7 @@ void RangeCheckEliminator::process_access_indexed(BlockBegin *loop_header, Block
     tty->fill_to(block->dominator_depth()*2)
   );
   TRACE_RANGE_CHECK_ELIMINATION(
-    tty->print_cr("Access indexed: index=%d length=%d", ai->index()->id(), (ai->length() != NULL ? ai->length()->id() :-1 ))
+    tty->print_cr("Access indexed: index=%d length=%d", ai->index()->id(), (ai->length() != nullptr ? ai->length()->id() :-1 ))
   );
 
   if (ai->check_flag(Instruction::NeedsRangeCheckFlag)) {
@@ -891,7 +892,7 @@ void RangeCheckEliminator::process_access_indexed(BlockBegin *loop_header, Block
       Value length_instr = ai->length();
       if (!loop_invariant(loop_header, length_instr)) {
         // Generate length instruction yourself!
-        length_instr = NULL;
+        length_instr = nullptr;
       }
 
       TRACE_RANGE_CHECK_ELIMINATION(
@@ -900,11 +901,11 @@ void RangeCheckEliminator::process_access_indexed(BlockBegin *loop_header, Block
       );
 
       BlockBegin *pred_block = loop_header->dominator();
-      assert(pred_block != NULL, "Every loop header has a dominator!");
+      assert(pred_block != nullptr, "Every loop header has a dominator!");
       BlockEnd *pred_block_end = pred_block->end();
       Instruction *insert_position = pred_block_end->prev();
       ValueStack *state = pred_block_end->state_before();
-      if (pred_block_end->as_Goto() && state == NULL) state = pred_block_end->state();
+      if (pred_block_end->as_Goto() && state == nullptr) state = pred_block_end->state();
       assert(state, "State must not be null");
 
       // Add deoptimization to dominator of loop header
@@ -949,9 +950,9 @@ void RangeCheckEliminator::remove_range_check(AccessIndexed *ai) {
     Value cur_value = array_length;
     if (cur_value->type()->as_IntConstant()) {
       cur_constant += cur_value->type()->as_IntConstant()->value();
-      cur_value = NULL;
+      cur_value = nullptr;
     }
-    Bound *new_index_bound = new Bound(0, NULL, cur_constant, cur_value);
+    Bound* new_index_bound = new Bound(0, nullptr, cur_constant, cur_value);
     add_assertions(new_index_bound, ai->index(), ai);
   );
 }
@@ -971,9 +972,9 @@ void RangeCheckEliminator::calc_bounds(BlockBegin *block, BlockBegin *loop_heade
   IntegerStack pushed;
   // Process If
   BlockBegin *parent = block->dominator();
-  if (parent != NULL) {
+  if (parent != nullptr) {
     If *cond = parent->end()->as_If();
-    if (cond != NULL) {
+    if (cond != nullptr) {
       process_if(pushed, block, cond);
     }
   }
@@ -988,7 +989,7 @@ void RangeCheckEliminator::calc_bounds(BlockBegin *block, BlockBegin *loop_heade
     if (cur->id() < this->_bounds.length()) {
       // Process only if it is an access indexed instruction
       AccessIndexed *ai = cur->as_AccessIndexed();
-      if (ai != NULL) {
+      if (ai != nullptr) {
         process_access_indexed(loop_header, block, ai);
         accessIndexed.append(ai);
         if (!arrays.contains(ai->array())) {
@@ -997,16 +998,16 @@ void RangeCheckEliminator::calc_bounds(BlockBegin *block, BlockBegin *loop_heade
         Bound *b = get_bound(ai->index());
         if (!b->lower_instr()) {
           // Lower bound is constant
-          update_bound(pushed, ai->index(), Instruction::geq, NULL, 0);
+          update_bound(pushed, ai->index(), Instruction::geq, nullptr, 0);
         }
         if (!b->has_upper()) {
           if (ai->length() && ai->length()->type()->as_IntConstant()) {
             int value = ai->length()->type()->as_IntConstant()->value();
-            update_bound(pushed, ai->index(), Instruction::lss, NULL, value);
+            update_bound(pushed, ai->index(), Instruction::lss, nullptr, value);
           } else {
             // Has no upper bound
             Instruction *instr = ai->length();
-            if (instr == NULL) instr = ai->array();
+            if (instr == nullptr) instr = ai->array();
             update_bound(pushed, ai->index(), Instruction::lss, instr, 0);
           }
         }
@@ -1098,11 +1099,11 @@ void RangeCheckEliminator::Verification::block_do(BlockBegin *block) {
   // Watch out: tsux and fsux can be the same!
   if (block->number_of_sux() > 1) {
     for (int i=0; i<block->number_of_sux(); i++) {
-      BlockBegin *sux = block->sux_at(i);
-      BlockBegin *pred = NULL;
+      BlockBegin* sux = block->sux_at(i);
+      BlockBegin* pred = nullptr;
       for (int j=0; j<sux->number_of_preds(); j++) {
         BlockBegin *cur = sux->pred_at(j);
-        assert(cur != NULL, "Predecessor must not be null");
+        assert(cur != nullptr, "Predecessor must not be null");
         if (!pred) {
           pred = cur;
         }
@@ -1221,7 +1222,7 @@ bool RangeCheckEliminator::Verification::dominates(BlockBegin *dominator, BlockB
 }
 
 // Try to reach Block end beginning in Block start and not using Block dont_use
-bool RangeCheckEliminator::Verification::can_reach(BlockBegin *start, BlockBegin *end, BlockBegin *dont_use /* = NULL */) {
+bool RangeCheckEliminator::Verification::can_reach(BlockBegin* start, BlockBegin* end, BlockBegin* dont_use /* = nullptr */) {
   if (start == end) return start != dont_use;
   // Simple BSF from start to end
   //  BlockBeginList _current;
@@ -1260,7 +1261,7 @@ bool RangeCheckEliminator::Verification::can_reach(BlockBegin *start, BlockBegin
     }
     for (int i=0; i<_successors.length(); i++) {
       BlockBegin *sux = _successors.at(i);
-      assert(sux != NULL, "Successor must not be NULL!");
+      assert(sux != nullptr, "Successor must not be null!");
       if (sux == end) {
         return true;
       }
@@ -1284,8 +1285,8 @@ RangeCheckEliminator::Bound::~Bound() {
 RangeCheckEliminator::Bound::Bound() {
   this->_lower = min_jint;
   this->_upper = max_jint;
-  this->_lower_instr = NULL;
-  this->_upper_instr = NULL;
+  this->_lower_instr = nullptr;
+  this->_upper_instr = nullptr;
 }
 
 // Bound constructor
@@ -1311,9 +1312,9 @@ RangeCheckEliminator::Bound::Bound(Instruction::Condition cond, Value v, int con
   } else if (cond == Instruction::neq) {
     _lower = min_jint;
     _upper = max_jint;
-    _lower_instr = NULL;
-    _upper_instr = NULL;
-    if (v == NULL) {
+    _lower_instr = nullptr;
+    _upper_instr = nullptr;
+    if (v == nullptr) {
       if (constant == min_jint) {
         _lower++;
       }
@@ -1325,10 +1326,10 @@ RangeCheckEliminator::Bound::Bound(Instruction::Condition cond, Value v, int con
     _lower = constant;
     _lower_instr = v;
     _upper = max_jint;
-    _upper_instr = NULL;
+    _upper_instr = nullptr;
   } else if (cond == Instruction::leq) {
     _lower = min_jint;
-    _lower_instr = NULL;
+    _lower_instr = nullptr;
     _upper = constant;
     _upper_instr = v;
   } else {
@@ -1336,39 +1337,19 @@ RangeCheckEliminator::Bound::Bound(Instruction::Condition cond, Value v, int con
   }
 }
 
-// Set lower
-void RangeCheckEliminator::Bound::set_lower(int value, Value v) {
-  assert(!v || !v->as_Constant() || !v->type()->as_IntConstant(), "Must not be constant!");
-  this->_lower = value;
-  this->_lower_instr = v;
-}
-
-// Set upper
-void RangeCheckEliminator::Bound::set_upper(int value, Value v) {
-  assert(!v || !v->as_Constant() || !v->type()->as_IntConstant(), "Must not be constant!");
-  this->_upper = value;
-  this->_upper_instr = v;
-}
-
-// Add constant -> no overflow may occur
-void RangeCheckEliminator::Bound::add_constant(int value) {
-  this->_lower += value;
-  this->_upper += value;
-}
-
 // or
 void RangeCheckEliminator::Bound::or_op(Bound *b) {
   // Watch out, bound is not guaranteed not to overflow!
   // Update lower bound
   if (_lower_instr != b->_lower_instr || (_lower_instr && _lower != b->_lower)) {
-    _lower_instr = NULL;
+    _lower_instr = nullptr;
     _lower = min_jint;
   } else {
     _lower = MIN2(_lower, b->_lower);
   }
   // Update upper bound
   if (_upper_instr != b->_upper_instr || (_upper_instr && _upper != b->_upper)) {
-    _upper_instr = NULL;
+    _upper_instr = nullptr;
     _upper = max_jint;
   } else {
     _upper = MAX2(_upper, b->_upper);
@@ -1383,7 +1364,7 @@ void RangeCheckEliminator::Bound::and_op(Bound *b) {
   }
   if (b->has_lower()) {
     bool set = true;
-    if (_lower_instr != NULL && b->_lower_instr != NULL) {
+    if (_lower_instr != nullptr && b->_lower_instr != nullptr) {
       set = (_lower_instr->dominator_depth() > b->_lower_instr->dominator_depth());
     }
     if (set) {
@@ -1397,7 +1378,7 @@ void RangeCheckEliminator::Bound::and_op(Bound *b) {
   }
   if (b->has_upper()) {
     bool set = true;
-    if (_upper_instr != NULL && b->_upper_instr != NULL) {
+    if (_upper_instr != nullptr && b->_upper_instr != nullptr) {
       set = (_upper_instr->dominator_depth() > b->_upper_instr->dominator_depth());
     }
     if (set) {
@@ -1409,7 +1390,7 @@ void RangeCheckEliminator::Bound::and_op(Bound *b) {
 
 // has_upper
 bool RangeCheckEliminator::Bound::has_upper() {
-  return _upper_instr != NULL || _upper < max_jint;
+  return _upper_instr != nullptr || _upper < max_jint;
 }
 
 // is_smaller
@@ -1422,17 +1403,17 @@ bool RangeCheckEliminator::Bound::is_smaller(Bound *b) {
 
 // has_lower
 bool RangeCheckEliminator::Bound::has_lower() {
-  return _lower_instr != NULL || _lower > min_jint;
+  return _lower_instr != nullptr || _lower > min_jint;
 }
 
 // in_array_bound
 bool RangeCheckEliminator::in_array_bound(Bound *bound, Value array){
   if (!bound) return false;
-  assert(array != NULL, "Must not be null!");
-  assert(bound != NULL, "Must not be null!");
-  if (bound->lower() >=0 && bound->lower_instr() == NULL && bound->upper() < 0 && bound->upper_instr() != NULL) {
+  assert(array != nullptr, "Must not be null!");
+  assert(bound != nullptr, "Must not be null!");
+  if (bound->lower() >=0 && bound->lower_instr() == nullptr && bound->upper() < 0 && bound->upper_instr() != nullptr) {
     ArrayLength *len = bound->upper_instr()->as_ArrayLength();
-    if (bound->upper_instr() == array || (len != NULL && len->array() == array)) {
+    if (bound->upper_instr() == array || (len != nullptr && len->array() == array)) {
       return true;
     }
   }
@@ -1442,13 +1423,13 @@ bool RangeCheckEliminator::in_array_bound(Bound *bound, Value array){
 // remove_lower
 void RangeCheckEliminator::Bound::remove_lower() {
   _lower = min_jint;
-  _lower_instr = NULL;
+  _lower_instr = nullptr;
 }
 
 // remove_upper
 void RangeCheckEliminator::Bound::remove_upper() {
   _upper = max_jint;
-  _upper_instr = NULL;
+  _upper_instr = nullptr;
 }
 
 // upper
@@ -1518,19 +1499,19 @@ RangeCheckEliminator::Bound *RangeCheckEliminator::Bound::copy() {
 #ifdef ASSERT
 // Add assertion
 void RangeCheckEliminator::Bound::add_assertion(Instruction *instruction, Instruction *position, int i, Value instr, Instruction::Condition cond) {
-  Instruction *result = position;
-  Instruction *compare_with = NULL;
-  ValueStack *state = position->state_before();
+  Instruction* result = position;
+  Instruction* compare_with = nullptr;
+  ValueStack* state = position->state_before();
   if (position->as_BlockEnd() && !position->as_Goto()) {
     state = position->as_BlockEnd()->state_before();
   }
-  Instruction *instruction_before = position->prev();
+  Instruction* instruction_before = position->prev();
   if (position->as_Return() && Compilation::current()->method()->is_synchronized() && instruction_before->as_MonitorExit()) {
     instruction_before = instruction_before->prev();
   }
   result = instruction_before;
   // Load constant only if needed
-  Constant *constant = NULL;
+  Constant* constant = nullptr;
   if (i != 0 || !instr) {
     constant = new Constant(new IntConstant(i));
     NOT_PRODUCT(constant->set_printable_bci(position->printable_bci()));
@@ -1554,15 +1535,15 @@ void RangeCheckEliminator::Bound::add_assertion(Instruction *instruction, Instru
     }
     // Add operation only if necessary
     if (constant) {
-      ArithmeticOp *ao = new ArithmeticOp(Bytecodes::_iadd, constant, op, NULL);
+      ArithmeticOp* ao = new ArithmeticOp(Bytecodes::_iadd, constant, op, nullptr);
       NOT_PRODUCT(ao->set_printable_bci(position->printable_bci()));
       result = result->insert_after(ao);
       compare_with = ao;
       // TODO: Check that add operation does not overflow!
     }
   }
-  assert(compare_with != NULL, "You have to compare with something!");
-  assert(instruction != NULL, "Instruction must not be null!");
+  assert(compare_with != nullptr, "You have to compare with something!");
+  assert(instruction != nullptr, "Instruction must not be null!");
 
   if (instruction->type()->as_ObjectType()) {
     // Load array length if necessary

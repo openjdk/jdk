@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1073,7 +1073,7 @@ public class HtmlTree extends Content {
             out.write(key.toString());
             if (!value.isEmpty()) {
                 out.write("=\"");
-                out.write(value);
+                out.write(value.replace("\"", "&quot;"));
                 out.write("\"");
             }
         }

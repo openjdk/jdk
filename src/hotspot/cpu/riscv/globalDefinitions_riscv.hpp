@@ -47,8 +47,6 @@ const bool CCallingConventionRequiresIntsAsLongs = false;
 
 #define SUPPORT_RESERVED_STACK_AREA
 
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
-
 #define USE_POINTERS_TO_REGISTER_IMPL_ARRAY
 
 #define DEFAULT_CACHE_LINE_SIZE 64

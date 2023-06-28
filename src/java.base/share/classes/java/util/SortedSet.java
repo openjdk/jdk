@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -105,7 +105,7 @@ package java.util;
  * @since 1.2
  */
 
-public interface SortedSet<E> extends Set<E> {
+public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
     /**
      * Returns the comparator used to order the elements in this set,
      * or {@code null} if this set uses the {@linkplain Comparable
@@ -260,5 +260,113 @@ public interface SortedSet<E> extends Set<E> {
                 return SortedSet.this.comparator();
             }
         };
+    }
+
+    // ========== SequencedCollection ==========
+
+    /**
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * set's comparison method determines the position of elements, so explicit positioning
+     * is not supported.
+     *
+     * @implSpec
+     * The implementation in this interface always throws {@code UnsupportedOperationException}.
+     *
+     * @throws UnsupportedOperationException always
+     * @since 21
+     */
+    default void addFirst(E e) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * Throws {@code UnsupportedOperationException}. The encounter order induced by this
+     * set's comparison method determines the position of elements, so explicit positioning
+     * is not supported.
+     *
+     * @implSpec
+     * The implementation in this interface always throws {@code UnsupportedOperationException}.
+     *
+     * @throws UnsupportedOperationException always
+     * @since 21
+     */
+    default void addLast(E e) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this interface returns the result of calling the {@code first} method.
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
+     */
+    default E getFirst() {
+        return this.first();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this interface returns the result of calling the {@code last} method.
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @since 21
+     */
+    default E getLast() {
+        return this.last();
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this interface calls the {@code first} method to obtain the first
+     * element, then it calls {@code remove(element)} to remove the element, and then it returns
+     * the element.
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @since 21
+     */
+    default E removeFirst() {
+        E e = this.first();
+        this.remove(e);
+        return e;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this interface calls the {@code last} method to obtain the last
+     * element, then it calls {@code remove(element)} to remove the element, and then it returns
+     * the element.
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @since 21
+     */
+    default E removeLast() {
+        E e = this.last();
+        this.remove(e);
+        return e;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * The implementation in this interface returns an instance of a reverse-ordered
+     * SortedSet that delegates its operations to this SortedSet.
+     *
+     * @return a reverse-ordered view of this collection, as a {@code SortedSet}
+     * @since 21
+     */
+    default SortedSet<E> reversed() {
+        return ReverseOrderSortedSetView.of(this);
     }
 }

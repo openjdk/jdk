@@ -42,7 +42,7 @@ class VMError : public AllStatic {
   static const char* _message;
   static char        _detail_msg[1024];
 
-  static Thread*     _thread;           // nullptr if it's native thread
+  static Thread*     _thread;           // null if it's native thread
 
   // additional info for crashes
   static address     _pc;               // faulting PC
@@ -66,6 +66,9 @@ class VMError : public AllStatic {
   static int         _current_step;
   static const char* _current_step_info;
 
+  // used for reattempt step logic
+  static const size_t _reattempt_required_stack_headroom;
+
   // Thread id of the first error. We must be able to handle native thread,
   // so use thread id instead of Thread* to identify thread.
   static volatile intptr_t _first_error_tid;
@@ -88,6 +91,8 @@ class VMError : public AllStatic {
   static volatile jlong _step_start_time;
   // Whether or not the last error reporting step did timeout.
   static volatile bool _step_did_timeout;
+  // Whether or not the last error reporting step did succeed.
+  static volatile bool _step_did_succeed;
 
   // Install secondary signal handler to handle secondary faults during error reporting
   // (see VMError::crash_handler)
@@ -117,6 +122,9 @@ class VMError : public AllStatic {
     return should_report_bug(id) && (id != OOM_JAVA_HEAP_FATAL);
   }
 
+  DEBUG_ONLY(static void reattempt_test_hit_stack_limit(outputStream* st));
+  static bool can_reattempt_step(const char* &stop_reason);
+
   // Write a hint to the stream in case siginfo relates to a segv/bus error
   // and the offending address points into CDS store.
   static void check_failing_cds_access(outputStream* st, const void* siginfo);
@@ -136,7 +144,7 @@ class VMError : public AllStatic {
   static jlong get_step_start_time();
   static void clear_step_start_time();
 
-  WINDOWS_ONLY([[noreturn]] static void raise_fail_fast(void* exrecord, void* context);)
+  WINDOWS_ONLY(ATTRIBUTE_NORETURN static void raise_fail_fast(void* exrecord, void* context);)
 
 public:
 
@@ -156,27 +164,27 @@ public:
   static void print_vm_info(outputStream* st);
 
   // main error reporting function
-  [[noreturn]]
+  ATTRIBUTE_NORETURN
   ATTRIBUTE_PRINTF(6, 7)
   static void report_and_die(Thread* thread, unsigned int sig, address pc, void* siginfo,
                              void* context, const char* detail_fmt, ...);
 
-  [[noreturn]]
+  ATTRIBUTE_NORETURN
   ATTRIBUTE_PRINTF(3, 0)
   static void report_and_die(int id, const char* message, const char* detail_fmt, va_list detail_args,
                              Thread* thread, address pc, void* siginfo, void* context,
                              const char* filename, int lineno, size_t size);
 
-  [[noreturn]]
+  ATTRIBUTE_NORETURN
   static void report_and_die(Thread* thread, unsigned int sig, address pc,
                              void* siginfo, void* context);
 
-  [[noreturn]]
+  ATTRIBUTE_NORETURN
   ATTRIBUTE_PRINTF(6, 0)
   static void report_and_die(Thread* thread, void* context, const char* filename, int lineno, const char* message,
                              const char* detail_fmt, va_list detail_args);
 
-  [[noreturn]]
+  ATTRIBUTE_NORETURN
   ATTRIBUTE_PRINTF(6, 0)
   static void report_and_die(Thread* thread, const char* filename, int lineno, size_t size,
                              VMErrorType vm_err_type, const char* detail_fmt,
@@ -213,4 +221,27 @@ public:
   static int prepare_log_file(const char* pattern, const char* default_pattern, bool overwrite_existing, char* buf, size_t buflen);
 
 };
+
+class VMErrorCallback {
+  friend class VMError;
+  friend class VMErrorCallbackMark;
+
+  // Link through all callbacks active on a thread
+  VMErrorCallback* _next;
+
+  // Called by VMError reporting
+  virtual void call(outputStream* st) = 0;
+
+public:
+  VMErrorCallback() : _next(nullptr) {}
+};
+
+class VMErrorCallbackMark : public StackObj {
+  Thread* _thread;
+
+public:
+  VMErrorCallbackMark(VMErrorCallback* callback);
+  ~VMErrorCallbackMark();
+};
+
 #endif // SHARE_UTILITIES_VMERROR_HPP

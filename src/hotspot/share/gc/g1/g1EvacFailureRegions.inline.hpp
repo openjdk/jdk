@@ -32,7 +32,7 @@ bool G1EvacFailureRegions::record(uint region_idx) {
   bool success = _regions_failed_evacuation.par_set_bit(region_idx,
                                                         memory_order_relaxed);
   if (success) {
-    size_t offset = Atomic::fetch_and_add(&_evac_failure_regions_cur_length, 1u);
+    size_t offset = Atomic::fetch_then_add(&_evac_failure_regions_cur_length, 1u);
     _evac_failure_regions[offset] = region_idx;
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();

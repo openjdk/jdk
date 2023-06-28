@@ -50,7 +50,5 @@ public sealed interface MethodTypeEntry
     /**
      * {@return a symbolic descriptor for the method type}
      */
-    default MethodTypeDesc asSymbol() {
-        return MethodTypeDesc.ofDescriptor(descriptor().stringValue());
-    }
+    MethodTypeDesc asSymbol();
 }

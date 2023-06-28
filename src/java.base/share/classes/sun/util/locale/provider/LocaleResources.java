@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class LocaleResources {
     // cache key prefixes
     private static final String BREAK_ITERATOR_INFO = "BII.";
     private static final String CALENDAR_DATA = "CALD.";
-    private static final String COLLATION_DATA_CACHEKEY = "COLD";
+    private static final String COLLATION_DATA = "COLD.";
     private static final String DECIMAL_FORMAT_SYMBOLS_DATA_CACHEKEY = "DFSD";
     private static final String CURRENCY_NAMES = "CN.";
     private static final String LOCALE_NAMES = "LN.";
@@ -186,17 +186,25 @@ public class LocaleResources {
 
     public String getCollationData() {
         String key = "Rule";
+        String cacheKey = COLLATION_DATA;
         String coldata = "";
 
+        try {
+            var type = locale.getUnicodeLocaleType("co");
+            if (type != null && !type.isEmpty() && !type.equalsIgnoreCase("standard")) {
+                key += "." + type;
+                cacheKey += type;
+            }
+        } catch (IllegalArgumentException ignore) {}
+
         removeEmptyReferences();
-        ResourceReference data = cache.get(COLLATION_DATA_CACHEKEY);
+        ResourceReference data = cache.get(cacheKey);
         if (data == null || ((coldata = (String) data.get()) == null)) {
             ResourceBundle rb = localeData.getCollationData(locale);
             if (rb.containsKey(key)) {
                 coldata = rb.getString(key);
             }
-            cache.put(COLLATION_DATA_CACHEKEY,
-                      new ResourceReference(COLLATION_DATA_CACHEKEY, coldata, referenceQueue));
+            cache.put(cacheKey, new ResourceReference(cacheKey, coldata, referenceQueue));
         }
 
         return coldata;

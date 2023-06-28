@@ -30,14 +30,23 @@
 #include "logging/log.hpp"
 #include "oops/access.inline.hpp"
 #include "runtime/atomic.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/synchronizer.hpp"
 
-inline intptr_t ObjectMonitor::is_entered(JavaThread* current) const {
-  void* owner = owner_raw();
-  if (current == owner || current->is_lock_owned((address)owner)) {
-    return 1;
+inline bool ObjectMonitor::is_entered(JavaThread* current) const {
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    if (is_owner_anonymous()) {
+      return current->lock_stack().contains(object());
+    } else {
+      return current == owner_raw();
+    }
+  } else {
+    void* owner = owner_raw();
+    if (current == owner || current->is_lock_owned((address)owner)) {
+      return true;
+    }
   }
-  return 0;
+  return false;
 }
 
 inline markWord ObjectMonitor::header() const {

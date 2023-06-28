@@ -34,6 +34,11 @@ struct SimpleGlyph
   unsigned int length (unsigned int instruction_len) const
   { return instruction_len_offset () + 2 + instruction_len; }
 
+  bool has_instructions_length () const
+  {
+    return instruction_len_offset () + 2 <= bytes.length;
+  }
+
   unsigned int instructions_length () const
   {
     unsigned int instruction_length_offset = instruction_len_offset ();
@@ -94,6 +99,7 @@ struct SimpleGlyph
   /* zero instruction length */
   void drop_hints ()
   {
+    if (!has_instructions_length ()) return;
     GlyphHeader &glyph_header = const_cast<GlyphHeader &> (header);
     (HBUINT16 &) StructAtOffset<HBUINT16> (&glyph_header, instruction_len_offset ()) = 0;
   }

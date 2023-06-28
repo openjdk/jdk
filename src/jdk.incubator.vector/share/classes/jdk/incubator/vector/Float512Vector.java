@@ -668,14 +668,6 @@ final class Float512Vector extends FloatVector {
 
         @Override
         @ForceInline
-        public Float512Mask eq(VectorMask<Float> mask) {
-            Objects.requireNonNull(mask);
-            Float512Mask m = (Float512Mask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         Float512Mask indexPartiallyInUpperRange(long offset, long limit) {
             return (Float512Mask) VectorSupport.indexPartiallyInUpperRange(
@@ -722,9 +714,9 @@ final class Float512Vector extends FloatVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        Float512Mask xor(VectorMask<Float> mask) {
+        public Float512Mask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             Float512Mask m = (Float512Mask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, Float512Mask.class, null, int.class, VLENGTH,

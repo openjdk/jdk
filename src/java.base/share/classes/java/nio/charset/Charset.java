@@ -262,6 +262,13 @@ import java.util.TreeMap;
  * of chars) and sequences of bytes. </p>
  *
  *
+ * @spec http://www.iana.org/assignments/character-sets Character Sets
+ * @spec https://www.rfc-editor.org/info/rfc2278
+ *      RFC 2278: IANA Charset Registration Procedures
+ * @spec https://www.rfc-editor.org/info/rfc2279
+ *      RFC 2279: UTF-8, a transformation format of ISO 10646
+ * @spec https://www.rfc-editor.org/info/rfc2781
+ *      RFC 2781: UTF-16, an encoding of ISO 10646
  * @author Mark Reinhold
  * @author JSR-51 Expert Group
  * @since 1.4
@@ -741,6 +748,7 @@ public abstract class Charset
      *
      * @return  {@code true} if, and only if, this charset is known by its
      *          implementor to be registered with the IANA
+     * @spec http://www.iana.org/assignments/character-sets Character Sets
      */
     public final boolean isRegistered() {
         return !name.startsWith("X-") && !name.startsWith("x-");
@@ -832,11 +840,12 @@ public abstract class Charset
      * <p> An invocation of this method upon a charset {@code cs} returns the
      * same result as the expression
      *
-     * <pre>
+     * {@snippet lang=java :
      *     cs.newDecoder()
      *       .onMalformedInput(CodingErrorAction.REPLACE)
      *       .onUnmappableCharacter(CodingErrorAction.REPLACE)
-     *       .decode(bb); </pre>
+     *       .decode(bb);
+     * }
      *
      * except that it is potentially more efficient because it can cache
      * decoders between successive invocations.
@@ -868,11 +877,12 @@ public abstract class Charset
      * <p> An invocation of this method upon a charset {@code cs} returns the
      * same result as the expression
      *
-     * <pre>
+     * {@snippet lang=java :
      *     cs.newEncoder()
      *       .onMalformedInput(CodingErrorAction.REPLACE)
      *       .onUnmappableCharacter(CodingErrorAction.REPLACE)
-     *       .encode(bb); </pre>
+     *       .encode(bb);
+     * }
      *
      * except that it is potentially more efficient because it can cache
      * encoders between successive invocations.
@@ -903,8 +913,9 @@ public abstract class Charset
      * <p> An invocation of this method upon a charset {@code cs} returns the
      * same result as the expression
      *
-     * <pre>
-     *     cs.encode(CharBuffer.wrap(s)); </pre>
+     * {@snippet lang=java :
+     *     cs.encode(CharBuffer.wrap(s));
+     * }
      *
      * @param  str  The string to be encoded
      *

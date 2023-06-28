@@ -103,7 +103,7 @@
   void sve_vmaskcast_extend(PRegister dst, PRegister src,
                             uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
 
-  void sve_vmaskcast_narrow(PRegister dst, PRegister src,
+  void sve_vmaskcast_narrow(PRegister dst, PRegister src, PRegister ptmp,
                             uint dst_element_length_in_bytes, uint src_element_lenght_in_bytes);
 
   // Vector reduction

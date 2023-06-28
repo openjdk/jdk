@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -101,17 +101,17 @@ inline void Atomic::PlatformStore<8>::operator()(T volatile* dest,
 template<size_t byte_size>
 struct Atomic::PlatformAdd {
   template<typename D, typename I>
-  D add_and_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
+  D add_then_fetch(D volatile* dest, I add_value, atomic_memory_order order) const;
 
   template<typename D, typename I>
-  D fetch_and_add(D volatile* dest, I add_value, atomic_memory_order order) const {
-    return add_and_fetch(dest, add_value, order) - add_value;
+  D fetch_then_add(D volatile* dest, I add_value, atomic_memory_order order) const {
+    return add_then_fetch(dest, add_value, order) - add_value;
   }
 };
 
 template<>
 template<typename D, typename I>
-inline D Atomic::PlatformAdd<4>::add_and_fetch(D volatile* dest, I add_value,
+inline D Atomic::PlatformAdd<4>::add_then_fetch(D volatile* dest, I add_value,
                                                atomic_memory_order order) const {
   STATIC_ASSERT(4 == sizeof(I));
   STATIC_ASSERT(4 == sizeof(D));

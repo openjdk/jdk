@@ -28,6 +28,7 @@ package java.net.http;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.InetAddress;
+import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.channels.Selector;
 import java.net.Authenticator;
 import java.net.CookieHandler;
@@ -38,6 +39,7 @@ import java.net.URLPermission;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.time.Duration;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
@@ -45,6 +47,8 @@ import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLParameters;
 import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.PushPromiseHandler;
+import java.util.concurrent.Flow.Subscription;
+
 import jdk.internal.net.http.HttpClientBuilderImpl;
 
 /**
@@ -61,7 +65,11 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * and can be used to send multiple requests.
  *
  * <p> An {@code HttpClient} provides configuration information, and resource
- * sharing, for all requests sent through it.
+ * sharing, for all requests sent through it. An {@code HttpClient} instance
+ * typically manages its own pools of connections, which it may then reuse
+ * as and when necessary. Connection pools are  typically not shared between
+ * {@code HttpClient} instances. Creating a new client for each operation,
+ * though possible, will usually prevent reusing such connections.
  *
  * <p> A {@link BodyHandler BodyHandler} must be supplied for each {@link
  * HttpRequest} sent. The {@code BodyHandler} determines how to handle the
@@ -119,7 +127,29 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  * proxying) and a {@code URL} string of the form {@code "socket://host:port"}
  * where host and port specify the proxy's address.
  *
- * @implNote If an explicit {@linkplain HttpClient.Builder#executor(Executor)
+ * @apiNote
+ * Resources allocated by the {@code HttpClient} may be
+ * reclaimed early by {@linkplain #close() closing} the client.
+ *
+ * @implNote
+ *  <p id="closing">
+ *  The JDK built-in implementation of the {@code HttpClient} overrides
+ * {@link #close()}, {@link #shutdown()}, {@link #shutdownNow()},
+ * {@link #awaitTermination(Duration)}, and {@link #isTerminated()} to
+ * provide a best effort implementation. Failing to close, cancel, or
+ * read returned streams to exhaustion, such as streams provided when using
+ * {@link BodyHandlers#ofInputStream()}, {@link BodyHandlers#ofLines()}, or
+ * {@link BodyHandlers#ofPublisher()}, may prevent requests submitted
+ * before an {@linkplain #shutdown() orderly shutdown}
+ * to run to completion. Likewise, failing to
+ * {@linkplain Subscription#request(long) request data} or {@linkplain
+ * Subscription#cancel() cancel subscriptions} from a custom {@linkplain
+ * java.net.http.HttpResponse.BodySubscriber BodySubscriber} may stop
+ * delivery of data and {@linkplain #awaitTermination(Duration) stall an
+ * orderly shutdown}.
+ *
+ * <p>
+ * If an explicit {@linkplain HttpClient.Builder#executor(Executor)
  * executor} has not been set for an {@code HttpClient}, and a security manager
  * has been installed, then the default executor will execute asynchronous and
  * dependent tasks in a context that is granted no permissions. Custom
@@ -132,7 +162,7 @@ import jdk.internal.net.http.HttpClientBuilderImpl;
  *
  * @since 11
  */
-public abstract class HttpClient {
+public abstract class HttpClient implements AutoCloseable {
 
     /**
      * Creates an HttpClient.
@@ -599,7 +629,8 @@ public abstract class HttpClient {
      * @param request the request
      * @param responseBodyHandler the response body handler
      * @return the response
-     * @throws IOException if an I/O error occurs when sending or receiving
+     * @throws IOException if an I/O error occurs when sending or receiving, or
+     *         the client has {@linkplain ##closing shut down}
      * @throws InterruptedException if the operation is interrupted
      * @throws IllegalArgumentException if the {@code request} argument is not
      *         a request that could have been validly built as specified by {@link
@@ -646,7 +677,8 @@ public abstract class HttpClient {
      *
      * <p> The returned completable future completes exceptionally with:
      * <ul>
-     * <li>{@link IOException} - if an I/O error occurs when sending or receiving</li>
+     * <li>{@link IOException} - if an I/O error occurs when sending or receiving,
+     *      or the client has {@linkplain ##closing shut down}.</li>
      * <li>{@link SecurityException} - If a security manager has been installed
      *          and it denies {@link java.net.URLPermission access} to the
      *          URL in the given request, or proxy if one is configured.
@@ -730,4 +762,154 @@ public abstract class HttpClient {
     public WebSocket.Builder newWebSocketBuilder() {
         throw new UnsupportedOperationException();
     }
+
+    /**
+     * Initiates an orderly shutdown in which  requests previously
+     * submitted with {@code send} or {@code sendAsync}
+     * are run to completion, but no new request will be accepted.
+     * Running a request to completion may involve running several
+     * operations in the background, including {@linkplain ##closing
+     * waiting for responses to be delivered}, which will all have to
+     * run to completion until the request is considered completed.
+     *
+     * Invocation has no additional effect if already shut down.
+     *
+     * <p>This method does not wait for previously submitted request
+     * to complete execution.  Use {@link #awaitTermination(Duration)
+     * awaitTermination} or {@link #close() close} to do that.
+     *
+     * @implSpec
+     * The default implementation of this method does nothing. Subclasses should
+     * override this method to implement the appropriate behavior.
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    public void shutdown() { }
+
+    /**
+     * Blocks until all operations have completed execution after a shutdown
+     * request, or the {@code duration} elapses, or the current thread is
+     * {@linkplain Thread#interrupt() interrupted}, whichever happens first.
+     * Operations are any tasks required to run a request previously
+     * submitted with {@code send} or {@code sendAsync} to completion.
+     *
+     * <p> This method does not wait if the duration to wait is less than or
+     * equal to zero. In this case, the method just tests if the thread has
+     * terminated.
+     *
+     * @implSpec
+     * The default implementation of this method checks for null arguments, but
+     * otherwise does nothing and returns true.
+     * Subclasses should override this method to implement the proper behavior.
+     *
+     * @param duration the maximum time to wait
+     * @return {@code true} if this client terminated and
+     *         {@code false} if the timeout elapsed before termination
+     * @throws InterruptedException if interrupted while waiting
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    public boolean awaitTermination(Duration duration) throws InterruptedException {
+        Objects.requireNonNull(duration);
+        return true;
+    }
+
+    /**
+     * Returns {@code true} if all operations have completed following
+     * a shutdown.
+     * Operations are any tasks required to run a request previously
+     * submitted with {@code send} or {@code sendAsync} to completion.
+     * <p> Note that {@code isTerminated} is never {@code true} unless
+     * either {@code shutdown} or {@code shutdownNow} was called first.
+     *
+     * @implSpec
+     * The default implementation of this method does nothing and returns false.
+     * Subclasses should override this method to implement the proper behavior.
+     *
+     * @return {@code true} if all tasks have completed following a shutdown
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    public boolean isTerminated() {
+        return false;
+    }
+
+    /**
+     * This method attempts to initiate an immediate shutdown.
+     * An implementation of this method may attempt to
+     * interrupt operations that are actively running.
+     * Operations are any tasks required to run a request previously
+     * submitted with {@code send} or {@code sendAsync} to completion.
+     * The behavior of actively running operations when interrupted
+     * is undefined. In particular, there is no guarantee that
+     * interrupted operations will terminate, or that code waiting
+     * on these operations will ever be notified.
+     *
+     * @implSpec
+     * The default implementation of this method simply calls {@link #shutdown()}.
+     * Subclasses should override this method to implement the appropriate
+     * behavior.
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    public void shutdownNow() {
+        shutdown();
+    }
+
+    /**
+     * Initiates an orderly shutdown in which  requests previously
+     * submitted to {@code send} or {@code sendAsync}
+     * are run to completion, but no new request will be accepted.
+     * Running a request to completion may involve running several
+     * operations in the background, including {@linkplain ##closing
+     * waiting for responses to be delivered}.
+     * This method waits until all operations have completed execution
+     * and the client has terminated.
+     *
+     * <p> If interrupted while waiting, this method may attempt to stop all
+     * operations by calling {@link #shutdownNow()}. It then continues to wait
+     * until all actively executing operations have completed.
+     * The interrupt status will be re-asserted before this method returns.
+     *
+     * <p> If already terminated, invoking this method has no effect.
+     *
+     * @implSpec
+     * The default implementation invokes {@code shutdown()} and waits for tasks
+     * to complete execution with {@code awaitTermination}.
+     *
+     * @see ##closing Implementation Note on closing the HttpClient
+     *
+     * @since 21
+     */
+    @Override
+    public void close() {
+        boolean terminated = isTerminated();
+        if (!terminated) {
+            shutdown();
+            boolean interrupted = false;
+            while (!terminated) {
+                try {
+                    terminated = awaitTermination(Duration.ofDays(1L));
+                } catch (InterruptedException e) {
+                    if (!interrupted) {
+                        interrupted = true;
+                        shutdownNow();
+                        if (isTerminated()) break;
+                    }
+                }
+            }
+            if (interrupted) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
+
 }

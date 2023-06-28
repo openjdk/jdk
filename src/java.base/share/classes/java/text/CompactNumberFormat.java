@@ -205,6 +205,8 @@ import java.util.stream.Collectors;
  * {@link java.math.RoundingMode} for formatting.  By default, it uses
  * {@link java.math.RoundingMode#HALF_EVEN RoundingMode.HALF_EVEN}.
  *
+ * @spec https://www.unicode.org/reports/tr35
+ *      Unicode Locale Data Markup Language (LDML)
  * @see NumberFormat.Style
  * @see NumberFormat
  * @see DecimalFormat
@@ -423,6 +425,9 @@ public final class CompactNumberFormat extends NumberFormat {
      *        the {@code compactPatterns} array contains an invalid pattern,
      *        a {@code null} appears in the array of compact patterns,
      *        or if the given {@code pluralRules} contains an invalid syntax
+     *
+     * @spec https://www.unicode.org/reports/tr35
+     *      Unicode Locale Data Markup Language (LDML)
      * @see DecimalFormat#DecimalFormat(java.lang.String, DecimalFormatSymbols)
      * @see DecimalFormatSymbols
      * @since 14

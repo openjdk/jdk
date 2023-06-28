@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -112,7 +112,7 @@ import jdk.xml.internal.JdkXmlUtils;
  * @author Elena Litani IBM
  * @author Andy Clark IBM
  * @author Neeraj Bajaj, Sun Microsystems, inc.
- * @LastModified: May 2021
+ * @LastModified: Apr 2023
  */
 public class XMLSchemaValidator
     implements XMLComponent, XMLDocumentFilter, FieldActivator, RevalidationHandler, XSElementDeclHelper {
@@ -3217,10 +3217,6 @@ public class XMLSchemaValidator
             // {required} is true matches one of the attribute information items in the element
             // information item's [attributes] as per clause 3.1 above.
             if (currUse.fUse == SchemaSymbols.USE_REQUIRED) {
-                if (!isSpecified)
-                    reportSchemaError(
-                        "cvc-complex-type.4",
-                        new Object[] { element.rawname, currDecl.fName });
                 if (!isSpecified) {
                     if (currDecl.fTargetNamespace != null) {
                        reportSchemaError(

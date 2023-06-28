@@ -35,11 +35,28 @@
 #include "utilities/macros.hpp"
 #include "utilities/resourceHash.hpp"
 
-#if INCLUDE_CDS_JAVA_HEAP
-
-struct ArchiveHeapBitmapInfo;
 class MemRegion;
 
+class ArchiveHeapInfo {
+  MemRegion _memregion;
+  CHeapBitMap _oopmap;
+  CHeapBitMap _ptrmap;
+
+public:
+  ArchiveHeapInfo() : _memregion(), _oopmap(128, mtClassShared), _ptrmap(128, mtClassShared) {}
+  bool is_used() { return !_memregion.is_empty(); }
+
+  MemRegion memregion() { return _memregion; }
+  void set_memregion(MemRegion r) { _memregion = r; }
+
+  char* start() { return (char*)_memregion.start(); }
+  size_t byte_size() { return _memregion.byte_size();    }
+
+  CHeapBitMap* oopmap() { return &_oopmap; }
+  CHeapBitMap* ptrmap() { return &_ptrmap; }
+};
+
+#if INCLUDE_CDS_JAVA_HEAP
 class ArchiveHeapWriter : AllStatic {
   class EmbeddedOopRelocator;
   struct NativePointerInfo {
@@ -72,31 +89,16 @@ class ArchiveHeapWriter : AllStatic {
 
   static GrowableArrayCHeap<u1, mtClassShared>* _buffer;
 
-  // The exclusive top of the last object that has been copied into this->_buffer.
-  static size_t _buffer_top;
-
-  // The bounds of the open region inside this->_buffer.
-  static size_t _open_bottom;  // inclusive
-  static size_t _open_top;     // exclusive
-
-  // The bounds of the closed region inside this->_buffer.
-  static size_t _closed_bottom;  // inclusive
-  static size_t _closed_top;     // exclusive
+  // The number of bytes that have written into _buffer (may be smaller than _buffer->length()).
+  static size_t _buffer_used;
 
   // The bottom of the copy of Heap::roots() inside this->_buffer.
-  static size_t _heap_roots_bottom;
+  static size_t _heap_roots_bottom_offset;
   static size_t _heap_roots_word_size;
 
-  static address _requested_open_region_bottom;
-  static address _requested_open_region_top;
-  static address _requested_closed_region_bottom;
-  static address _requested_closed_region_top;
-
-  static ResourceBitMap* _closed_oopmap;
-  static ResourceBitMap* _open_oopmap;
-
-  static ArchiveHeapBitmapInfo _closed_oopmap_info;
-  static ArchiveHeapBitmapInfo _open_oopmap_info;
+  // The address range of the requested location of the archived heap objects.
+  static address _requested_bottom;
+  static address _requested_top;
 
   static GrowableArrayCHeap<NativePointerInfo, mtClassShared>* _native_pointers;
   static GrowableArrayCHeap<oop, mtClassShared>* _source_objs;
@@ -127,8 +129,9 @@ class ArchiveHeapWriter : AllStatic {
     return offset_to_buffered_address<address>(0);
   }
 
+  // The exclusive end of the last object that was copied into the buffer.
   static address buffer_top() {
-    return buffer_bottom() + _buffer_top;
+    return buffer_bottom() + _buffer_used;
   }
 
   static bool in_buffer(address buffered_addr) {
@@ -142,7 +145,6 @@ class ArchiveHeapWriter : AllStatic {
 
   static void copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
   static void copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots);
-  static void copy_source_objs_to_buffer_by_region(bool copy_open_region);
   static size_t copy_one_source_obj_to_buffer(oop src_obj);
 
   static void maybe_fill_gc_region_gap(size_t required_byte_size);
@@ -150,14 +152,10 @@ class ArchiveHeapWriter : AllStatic {
   static int filler_array_length(size_t fill_bytes);
   static void init_filler_array_at_buffer_top(int array_length, size_t fill_bytes);
 
-  static void set_requested_address_for_regions(GrowableArray<MemRegion>* closed_regions,
-                                                GrowableArray<MemRegion>* open_regions);
-  static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots,
-                                     GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
-                                     GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps);
-  static ArchiveHeapBitmapInfo compute_ptrmap(bool is_open);
-  static ArchiveHeapBitmapInfo make_bitmap_info(ResourceBitMap* bitmap, bool is_open,  bool is_oopmap);
-  static bool is_in_requested_regions(oop o);
+  static void set_requested_address(ArchiveHeapInfo* info);
+  static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, ArchiveHeapInfo* info);
+  static void compute_ptrmap(ArchiveHeapInfo *info);
+  static bool is_in_requested_range(oop o);
   static oop requested_obj_from_buffer_offset(size_t offset);
 
   static oop load_oop_from_buffer(oop* buffered_addr);
@@ -169,9 +167,9 @@ class ArchiveHeapWriter : AllStatic {
   template <typename T> static void store_requested_oop_in_buffer(T* buffered_addr, oop request_oop);
 
   template <typename T> static T* requested_addr_to_buffered_addr(T* p);
-  template <typename T> static void relocate_field_in_buffer(T* field_addr_in_buffer);
-  template <typename T> static void mark_oop_pointer(T* buffered_addr);
-  template <typename T> static void relocate_root_at(oop requested_roots, int index);
+  template <typename T> static void relocate_field_in_buffer(T* field_addr_in_buffer, CHeapBitMap* oopmap);
+  template <typename T> static void mark_oop_pointer(T* buffered_addr, CHeapBitMap* oopmap);
+  template <typename T> static void relocate_root_at(oop requested_roots, int index, CHeapBitMap* oopmap);
 
   static void update_header_for_requested_obj(oop requested_obj, oop src_obj, Klass* src_klass);
 public:
@@ -180,14 +178,11 @@ public:
   static bool is_too_large_to_archive(size_t size);
   static bool is_too_large_to_archive(oop obj);
   static bool is_string_too_large_to_archive(oop string);
-  static void write(GrowableArrayCHeap<oop, mtClassShared>*,
-                    GrowableArray<MemRegion>* closed_regions, GrowableArray<MemRegion>* open_regions,
-                    GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
-                    GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps);
-  static address heap_region_requested_bottom(int heap_region_idx);
-  static oop heap_roots_requested_address();
+  static void write(GrowableArrayCHeap<oop, mtClassShared>*, ArchiveHeapInfo* heap_info);
+  static address requested_address();  // requested address of the lowest achived heap object
+  static oop heap_roots_requested_address(); // requested address of HeapShared::roots()
   static address buffered_heap_roots_addr() {
-    return offset_to_buffered_address<address>(_heap_roots_bottom);
+    return offset_to_buffered_address<address>(_heap_roots_bottom_offset);
   }
   static size_t heap_roots_word_size() {
     return _heap_roots_word_size;

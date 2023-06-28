@@ -2068,8 +2068,12 @@ void PhaseOutput::ScheduleAndBundle() {
 
 #ifndef PRODUCT
   if (C->trace_opto_output()) {
-    tty->print("\n---- After ScheduleAndBundle ----\n");
-    print_scheduling();
+    // Buffer and print all at once
+    ResourceMark rm;
+    stringStream ss;
+    ss.print("\n---- After ScheduleAndBundle ----\n");
+    print_scheduling(&ss);
+    tty->print("%s", ss.as_string());
   }
 #endif
 }
@@ -2077,14 +2081,18 @@ void PhaseOutput::ScheduleAndBundle() {
 #ifndef PRODUCT
 // Separated out so that it can be called directly from debugger
 void PhaseOutput::print_scheduling() {
+  print_scheduling(tty);
+}
+
+void PhaseOutput::print_scheduling(outputStream* output_stream) {
   for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
-    tty->print("\nBB#%03d:\n", i);
+    output_stream->print("\nBB#%03d:\n", i);
     Block* block = C->cfg()->get_block(i);
     for (uint j = 0; j < block->number_of_nodes(); j++) {
       Node* n = block->get_node(j);
       OptoReg::Name reg = C->regalloc()->get_reg_first(n);
-      tty->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
-      n->dump();
+      output_stream->print(" %-6s ", reg >= 0 && reg < REG_COUNT ? Matcher::regName[reg] : "");
+      n->dump("\n", false, output_stream);
     }
   }
 }
@@ -2849,6 +2857,8 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
       pinch = new Node(1); // Pinch point to-be
     }
     if (pinch->_idx >= _regalloc->node_regs_max_index()) {
+      DEBUG_ONLY( pinch->dump(); );
+      assert(false, "too many D-U pinch points: %d >= %d", pinch->_idx, _regalloc->node_regs_max_index());
       _cfg->C->record_method_not_compilable("too many D-U pinch points");
       return;
     }
@@ -3070,7 +3080,7 @@ void Scheduling::garbage_collect_pinch_nodes() {
   if (_cfg->C->trace_opto_output()) tty->print("Reclaimed pinch nodes:");
 #endif
   int trace_cnt = 0;
-  for (uint k = 0; k < _reg_node.Size(); k++) {
+  for (uint k = 0; k < _reg_node.max(); k++) {
     Node* pinch = _reg_node[k];
     if ((pinch != nullptr) && pinch->Opcode() == Op_Node &&
         // no predecence input edges

@@ -48,11 +48,9 @@ class JvmtiTagMapKey : public CHeapObj<mtServiceability> {
   JvmtiTagMapKey(const JvmtiTagMapKey& src);
   JvmtiTagMapKey& operator=(const JvmtiTagMapKey&) = delete;
 
-  ~JvmtiTagMapKey();
-
-  void resolve();
   oop object() const;
   oop object_no_keepalive() const;
+  void release_weak_handle() const;
 
   static unsigned get_hash(const JvmtiTagMapKey& entry) {
     assert(entry._obj != nullptr, "must lookup obj to hash");
@@ -73,12 +71,7 @@ ResizeableResourceHashtable <JvmtiTagMapKey, jlong,
                               JvmtiTagMapKey::equals> ResizableResourceHT;
 
 class JvmtiTagMapTable : public CHeapObj<mtServiceability> {
- enum Constants {
-  _table_size  = 1007
- };
-
  private:
-  void resize_if_needed();
   ResizableResourceHT _table;
 
  public:
@@ -87,7 +80,6 @@ class JvmtiTagMapTable : public CHeapObj<mtServiceability> {
 
   jlong find(oop obj);
   void add(oop obj, jlong tag);
-  void update(oop obj, jlong tag);
 
   void remove(oop obj);
 

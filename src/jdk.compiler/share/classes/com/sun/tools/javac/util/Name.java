@@ -38,7 +38,7 @@ import com.sun.tools.javac.util.DefinedBy.Api;
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public abstract class Name implements javax.lang.model.element.Name, PoolConstant {
+public abstract class Name implements javax.lang.model.element.Name, PoolConstant, Comparable<Name> {
 
     public final Table table;
 
@@ -87,7 +87,11 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         byte[] bs = new byte[len + n.getByteLength()];
         getBytes(bs, 0);
         n.getBytes(bs, len);
-        return table.fromUtf(bs, 0, bs.length);
+        try {
+            return table.fromUtf(bs, 0, bs.length, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /** Return the concatenation of this name, the given ASCII
@@ -99,13 +103,48 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         getBytes(bs, 0);
         bs[len] = (byte) c;
         n.getBytes(bs, len+1);
-        return table.fromUtf(bs, 0, bs.length);
+        try {
+            return table.fromUtf(bs, 0, bs.length, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 
-    /** An arbitrary but consistent complete order among all Names.
+    /** Order names lexicographically.
+     *
+     *  <p>
+     *  The ordering defined by this method must match the ordering
+     *  defined by the corresponding {@link #toString()} values.
+     *  @see String#compareTo
      */
-    public int compareTo(Name other) {
-        return other.getIndex() - this.getIndex();
+    @Override
+    public int compareTo(Name name) {
+        byte[] buf1 = getByteArray();
+        byte[] buf2 = name.getByteArray();
+        int off1 = getByteOffset();
+        int off2 = name.getByteOffset();
+        int len1 = getByteLength();
+        int len2 = name.getByteLength();
+        while (len1 > 0 && len2 > 0) {
+            int val1 = buf1[off1++] & 0xff;
+            int val2 = buf2[off2++] & 0xff;
+            if (val1 == 0xc0 && (buf1[off1] & 0x3f) == 0) {
+                val1 = 0;       // char 0x0000 encoded in two bytes
+                off1++;
+                len1--;
+            }
+            if (val2 == 0xc0 && (buf2[off2] & 0x3f) == 0) {
+                val2 = 0;       // char 0x0000 encoded in two bytes
+                off2++;
+                len2--;
+            }
+            int diff = val1 - val2;
+            if (diff != 0)
+                return diff;
+            len1--;
+            len2--;
+        }
+        return len1 > 0 ? 1 : len2 > 0 ? -1 : 0;
     }
 
     /** Return true if this is the empty name.
@@ -149,14 +188,22 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
      */
     public Name subName(int start, int end) {
         if (end < start) end = start;
-        return table.fromUtf(getByteArray(), getByteOffset() + start, end - start);
+        try {
+            return table.fromUtf(getByteArray(), getByteOffset() + start, end - start, Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /** Return the string representation of this name.
      */
     @Override
     public String toString() {
-        return Convert.utf2string(getByteArray(), getByteOffset(), getByteLength());
+        try {
+            return Convert.utf2string(getByteArray(), getByteOffset(), getByteLength(), Convert.Validation.NONE);
+        } catch (InvalidUtfException e) {
+            throw new AssertionError(e);
+        }
     }
 
     /** Return the Utf8 representation of this name.
@@ -226,16 +273,18 @@ public abstract class Name implements javax.lang.model.element.Name, PoolConstan
         }
 
         /** Get the name for the bytes in array cs.
-         *  Assume that bytes are in utf8 format.
+         *  Assume that bytes are in strictly valid "Modified UTF-8" format.
          */
-        public Name fromUtf(byte[] cs) {
-            return fromUtf(cs, 0, cs.length);
+        public Name fromUtf(byte[] cs) throws InvalidUtfException {
+            return fromUtf(cs, 0, cs.length, Convert.Validation.STRICT);
         }
 
         /** get the name for the bytes in cs[start..start+len-1].
          *  Assume that bytes are in utf8 format.
+         *  @throws InvalidUtfException if invalid Modified UTF-8 is encountered
          */
-        public abstract Name fromUtf(byte[] cs, int start, int len);
+        public abstract Name fromUtf(byte[] cs, int start, int len, Convert.Validation validation)
+            throws InvalidUtfException;
 
         /** Release any resources used by this table.
          */

@@ -231,6 +231,67 @@ public class BindingsTest1 {
             throw new AssertionError();
         }
 
+        {
+            L: {
+                while (!(o1 instanceof String s)) {
+                    break L;
+                }
+
+                s.length();
+            }
+        }
+
+        {
+            L: {
+                for (; !(o1 instanceof String s); ) {
+                    break L;
+                }
+
+                s.length();
+            }
+        }
+
+        {
+            int j = 0;
+            L: while (j++ < 2)
+                   if (!(o1 instanceof String s)) {
+                       break L;
+                   }
+        }
+
+        {
+            int j = 0;
+            L: for (; j++ < 2; )
+                   if (!(o1 instanceof String s)) {
+                       break L;
+                   }
+        }
+
+        {
+            //"s" in the outter scope does not flow out of the if, but
+            //variables inside a lambda or anonymous or local class may:
+            L: if (!(o1 instanceof String s)) {
+                Runnable r = () -> {
+                    NESTED: {
+                        if (!(o1 instanceof String n)) {
+                            break NESTED;
+                        }
+
+                        n.length();
+                    }
+                };
+                break L;
+            }
+        }
+
+        switch (0) {
+            case 0:
+                if (!(o1 instanceof String s)) {
+                    break;
+                }
+                s.length();
+        }
+
         //binding in an anonymous class:
         if (!(invokeOnce("") instanceof String s)) {
             throw new AssertionError();

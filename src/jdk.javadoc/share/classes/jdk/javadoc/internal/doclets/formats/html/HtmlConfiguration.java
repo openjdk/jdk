@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -154,9 +154,14 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     /**
      * A set of values indicating which conditional pages should be generated.
+     *
      * The set is computed lazily, although values must (obviously) be set before
-     * they are required, such as when deciding whether or not to generate links
-     * to these files in the navigation par, on each page, the help file, and so on.
+     * they are required, such as when deciding whether to generate links
+     * to these files in the navigation bar, on each page, the help file, and so on.
+     *
+     * The value for any page may depend on both command-line options to enable or
+     * disable a page, and on content being found for the page, such as deprecated
+     * items to appear in the summary page of deprecated items.
      */
     public final Set<ConditionalPage> conditionalPages;
 

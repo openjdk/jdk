@@ -63,7 +63,7 @@ public:
 
     bool claim(size_t* start, size_t* stop) {
       if (Atomic::load(&_next) < _limit) {
-        size_t claimed = Atomic::fetch_and_add(&_next, _size);
+        size_t claimed = Atomic::fetch_then_add(&_next, _size);
         if (claimed < _limit) {
           *start = claimed;
           *stop  = MIN2(claimed + _size, _limit);

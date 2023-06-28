@@ -59,6 +59,8 @@ public:
 };
 
 void StackWatermarkFramesIterator::set_watermark(uintptr_t sp) {
+  assert(sp != 0, "Sanity check");
+
   if (!has_next()) {
     return;
   }
@@ -275,6 +277,10 @@ uintptr_t StackWatermark::last_processed() {
     // Already processed all; no last processed
     return 0;
   }
+  return _iterator->caller();
+}
+
+uintptr_t StackWatermark::last_processed_raw() {
   return _iterator->caller();
 }
 
