@@ -31,7 +31,6 @@ import java.lang.invoke.MethodHandles.Lookup;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormatSymbols;
-import java.util.Digits.*;
 import java.util.Formatter.FormatSpecifier;
 
 import jdk.internal.access.JavaLangAccess;

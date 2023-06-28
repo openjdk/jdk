@@ -392,10 +392,8 @@ class TestStringDeduplicationTools {
 
             forceDeduplication(ageThreshold, FullGC);
 
-            if (!waitForDeduplication(dupString3, baseString)) {
-                if (getValue(dupString3) != getValue(internedString)) {
-                    throw new RuntimeException("String 3 doesn't match either");
-                }
+            if (!waitForDeduplication(dupString3, internedString)) {
+                throw new RuntimeException("Deduplication has not occurred for string 3");
             }
 
             if (afterInternedValue != getValue(dupString2)) {

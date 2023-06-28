@@ -43,6 +43,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvm.h"
@@ -2511,7 +2512,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   if (itable_length() > 0) {
     itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();
     int method_table_offset_in_words = ioe->offset()/wordSize;
-    int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words())
+    int itable_offset_in_words = (int)(start_of_itable() - (intptr_t*)this);
+
+    int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words)
                          / itableOffsetEntry::size();
 
     for (int i = 0; i < nof_interfaces; i ++, ioe ++) {

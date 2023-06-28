@@ -35,6 +35,7 @@ import java.util.function.Function;
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
 import jdk.internal.classfile.constantpool.ClassEntry;
+import jdk.internal.classfile.constantpool.ConstantPoolException;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
@@ -91,7 +92,7 @@ public final class ClassReaderImpl
         this.options = new Options(options);
         this.attributeMapper = this.options.attributeMapper;
         if (classfileLength < 4 || readInt(0) != 0xCAFEBABE) {
-            throw new IllegalStateException("Bad magic number");
+            throw new IllegalArgumentException("Bad magic number");
         }
         int constantPoolCount = readU2(8);
         int[] cpOffset = new int[constantPoolCount];
@@ -118,7 +119,7 @@ public final class ClassReaderImpl
                     ++i;
                 }
                 case TAG_UTF8 -> p += 2 + readU2(p);
-                default -> throw new IllegalStateException(
+                default -> throw new ConstantPoolException(
                         "Bad tag (" + tag + ") at index (" + i + ") position (" + p + ")");
             }
         }
@@ -306,7 +307,7 @@ public final class ClassReaderImpl
     @Override
     public PoolEntry entryByIndex(int index) {
         if (index <= 0 || index >= constantPoolCount) {
-            throw new IndexOutOfBoundsException("Bad CP index: " + index);
+            throw new ConstantPoolException("Bad CP index: " + index);
         }
         PoolEntry info = cp[index];
         if (info == null) {
@@ -336,7 +337,7 @@ public final class ClassReaderImpl
                 case TAG_INVOKEDYNAMIC -> new AbstractPoolEntry.InvokeDynamicEntryImpl(this, index, readU2(q), (AbstractPoolEntry.NameAndTypeEntryImpl) readNameAndTypeEntry(q + 2));
                 case TAG_MODULE -> new AbstractPoolEntry.ModuleEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
                 case TAG_PACKAGE -> new AbstractPoolEntry.PackageEntryImpl(this, index, (AbstractPoolEntry.Utf8EntryImpl) readUtf8Entry(q));
-                default -> throw new IllegalStateException(
+                default -> throw new ConstantPoolException(
                         "Bad tag (" + tag + ") at index (" + index + ") position (" + offset + ")");
             };
             cp[index] = info;
@@ -347,14 +348,14 @@ public final class ClassReaderImpl
     @Override
     public AbstractPoolEntry.Utf8EntryImpl utf8EntryByIndex(int index) {
         if (index <= 0 || index >= constantPoolCount) {
-            throw new IndexOutOfBoundsException("Bad CP UTF8 index: " + index);
+            throw new ConstantPoolException("Bad CP UTF8 index: " + index);
         }
         PoolEntry info = cp[index];
         if (info == null) {
             int offset = cpOffset[index];
             int tag = readU1(offset);
             final int q = offset + 1;
-            if (tag != TAG_UTF8) throw new IllegalArgumentException("Not a UTF8 - index: " + index);
+            if (tag != TAG_UTF8) throw new ConstantPoolException("Not a UTF8 - index: " + index);
             AbstractPoolEntry.Utf8EntryImpl uinfo
                     = new AbstractPoolEntry.Utf8EntryImpl(this, index, buffer, q + 2, readU2(q));
             cp[index] = uinfo;
@@ -370,7 +371,11 @@ public final class ClassReaderImpl
         p += 2;
         for (int i = 0; i < cnt; ++i) {
             int len = readInt(p + 2);
-            p += 6 + len;
+            p += 6;
+            if (len < 0 || len > classfileLength - p) {
+                throw new IllegalArgumentException("attribute " + readUtf8Entry(p - 6).stringValue() + " too big to handle");
+            }
+            p += len;
         }
         return p;
     }
@@ -407,31 +412,31 @@ public final class ClassReaderImpl
     @Override
     public ModuleEntry readModuleEntry(int pos) {
         if (readEntry(pos) instanceof ModuleEntry me) return me;
-        throw new IllegalArgumentException("Not a module entry at pos: " + pos);
+        throw new ConstantPoolException("Not a module entry at pos: " + pos);
     }
 
     @Override
     public PackageEntry readPackageEntry(int pos) {
         if (readEntry(pos) instanceof PackageEntry pe) return pe;
-        throw new IllegalArgumentException("Not a package entry at pos: " + pos);
+        throw new ConstantPoolException("Not a package entry at pos: " + pos);
     }
 
     @Override
     public ClassEntry readClassEntry(int pos) {
         if (readEntry(pos) instanceof ClassEntry ce) return ce;
-        throw new IllegalArgumentException("Not a class entry at pos: " + pos);
+        throw new ConstantPoolException("Not a class entry at pos: " + pos);
     }
 
     @Override
     public NameAndTypeEntry readNameAndTypeEntry(int pos) {
         if (readEntry(pos) instanceof NameAndTypeEntry nate) return nate;
-        throw new IllegalArgumentException("Not a name and type entry at pos: " + pos);
+        throw new ConstantPoolException("Not a name and type entry at pos: " + pos);
     }
 
     @Override
     public MethodHandleEntry readMethodHandleEntry(int pos) {
         if (readEntry(pos) instanceof MethodHandleEntry mhe) return mhe;
-        throw new IllegalArgumentException("Not a method handle entry at pos: " + pos);
+        throw new ConstantPoolException("Not a method handle entry at pos: " + pos);
     }
 
     @Override

@@ -7042,39 +7042,6 @@ instruct xorL_reg_immRot(iRegL dst, iRegL src1, immLlowRot con) %{
   ins_pipe(ialu_reg_imm);
 %}
 
-//----------Convert to Boolean-------------------------------------------------
-instruct convI2B( iRegI dst, iRegI src, flagsReg ccr ) %{
-  match(Set dst (Conv2B src));
-  effect(KILL ccr);
-  size(12);
-  ins_cost(DEFAULT_COST*2);
-  format %{ "TST    $src,$src \n\t"
-            "MOV    $dst, 0   \n\t"
-            "MOV.ne $dst, 1" %}
-  ins_encode %{ // FIXME: can do better?
-    __ tst($src$$Register, $src$$Register);
-    __ mov($dst$$Register, 0);
-    __ mov($dst$$Register, 1, ne);
-  %}
-  ins_pipe(ialu_reg_ialu);
-%}
-
-instruct convP2B( iRegI dst, iRegP src, flagsReg ccr ) %{
-  match(Set dst (Conv2B src));
-  effect(KILL ccr);
-  size(12);
-  ins_cost(DEFAULT_COST*2);
-  format %{ "TST    $src,$src \n\t"
-            "MOV    $dst, 0   \n\t"
-            "MOV.ne $dst, 1" %}
-  ins_encode %{
-    __ tst($src$$Register, $src$$Register);
-    __ mov($dst$$Register, 0);
-    __ mov($dst$$Register, 1, ne);
-  %}
-  ins_pipe(ialu_reg_ialu);
-%}
-
 instruct cmpLTMask_reg_reg( iRegI dst, iRegI p, iRegI q, flagsReg ccr ) %{
   match(Set dst (CmpLTMask p q));
   effect( KILL ccr );

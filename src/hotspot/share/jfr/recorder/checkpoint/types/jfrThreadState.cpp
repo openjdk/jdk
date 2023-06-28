@@ -122,7 +122,7 @@ const char* get_java_thread_name(const JavaThread* jt, int& length, oop vthread)
       name_str = java_lang_String::as_utf8_string(name, length);
     }
   }
-  assert(name_str != nullptr, "unexpected nullptr thread name");
+  assert(name_str != nullptr, "unexpected null thread name");
   return name_str;
 }
 

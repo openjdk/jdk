@@ -130,6 +130,11 @@ public class TestDereferencePath {
         A.byteOffset(PathElement.groupElement("b"), PathElement.dereferenceElement());
     }
 
+    @Test(expectedExceptions = IllegalArgumentException.class)
+    void testBadDerefInSlice() {
+        A.sliceHandle(PathElement.groupElement("b"), PathElement.dereferenceElement());
+    }
+
     static final MemoryLayout A_MULTI_NO_TARGET = MemoryLayout.structLayout(
             ValueLayout.ADDRESS.withName("bs")
     );

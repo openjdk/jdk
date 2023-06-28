@@ -1346,6 +1346,7 @@ public class TreeInfo {
         return switch (pat.getTag()) {
             case BINDINGPATTERN -> pat.type;
             case RECORDPATTERN -> ((JCRecordPattern) pat).type;
+            case ANYPATTERN -> ((JCAnyPattern) pat).type;
             default -> throw new AssertionError();
         };
     }

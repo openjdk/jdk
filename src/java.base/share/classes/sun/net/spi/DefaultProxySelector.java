@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.List;
 import java.io.IOException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Locale;
 import java.util.StringJoiner;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -205,7 +206,7 @@ public class DefaultProxySelector extends ProxySelector {
          */
         final String proto = protocol;
         final NonProxyInfo nprop = pinfo;
-        final String urlhost = host.toLowerCase();
+        final String urlhost = host.toLowerCase(Locale.ROOT);
 
         /**
          * This is one big doPrivileged call, but we're trying to optimize

@@ -556,6 +556,11 @@ public class TransTypes extends TreeTranslator {
         result = tree;
     }
 
+    @Override
+    public void visitAnyPattern(JCAnyPattern tree) {
+        result = tree;
+    }
+
     public void visitBindingPattern(JCBindingPattern tree) {
         tree.var = translate(tree.var, null);
         result = tree;

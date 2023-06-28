@@ -32,7 +32,7 @@ import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
-import static jdk.internal.classfile.ClassHierarchyResolver.DEFAULT_CLASS_HIERARCHY_RESOLVER;
+import static jdk.internal.classfile.ClassHierarchyResolver.defaultResolver;
 
 public class Options {
 
@@ -52,7 +52,7 @@ public class Options {
     public Boolean fixJumps = true;
     public Boolean patchCode = true;
     public Boolean filterDeadLabels = false;
-    public ClassHierarchyResolver classHierarchyResolver = DEFAULT_CLASS_HIERARCHY_RESOLVER;
+    public ClassHierarchyResolver classHierarchyResolver = defaultResolver();
     public Function<Utf8Entry, AttributeMapper<?>> attributeMapper = new Function<>() {
         @Override
         public AttributeMapper<?> apply(Utf8Entry k) {

@@ -129,10 +129,14 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         int size = reader.readU2(pos);
         var filled = new Object[size];
         int p = pos + 2;
+        int cfLen = reader.classfileLength();
         for (int i = 0; i < size; ++i) {
             Utf8Entry name = reader.readUtf8Entry(p);
             int len = reader.readInt(p + 2);
             p += 6;
+            if (len < 0 || len > cfLen - p) {
+                throw new IllegalArgumentException("attribute " + name.stringValue() + " too big to handle");
+            }
 
             var mapper = Attributes.standardAttribute(name);
             if (mapper == null) {

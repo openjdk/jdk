@@ -477,22 +477,7 @@ public final class Utils {
         return !token.isEmpty();
     }
 
-    public static class ServerName {
-        ServerName(String name, boolean isLiteral) {
-            this.name = name;
-            this.isLiteral = isLiteral;
-        }
-
-        final String name;
-        final boolean isLiteral;
-
-        public String getName() {
-            return name;
-        }
-
-        public boolean isLiteral() {
-            return isLiteral;
-        }
+    public record ServerName (String name, boolean isLiteral) {
     }
 
     /**

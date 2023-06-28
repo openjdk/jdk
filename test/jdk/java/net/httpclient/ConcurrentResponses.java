@@ -29,6 +29,7 @@
  * @library /test/lib /test/jdk/java/net/httpclient/lib
  * @build jdk.httpclient.test.lib.http2.Http2TestServer jdk.test.lib.net.SimpleSSLContext
  * @run testng/othervm
+ *      -Djdk.tracePinnedThreads=full
  *      -Djdk.httpclient.HttpClient.log=headers,errors,channel
  *      ConcurrentResponses
  */
@@ -45,7 +46,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Flow;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
 import javax.net.ssl.SSLContext;
 import com.sun.net.httpserver.HttpExchange;
@@ -60,7 +64,6 @@ import java.net.http.HttpResponse.BodyHandler;
 import java.net.http.HttpResponse.BodyHandlers;
 import java.net.http.HttpResponse.BodySubscriber;
 import java.net.http.HttpResponse.BodySubscribers;
-import jdk.httpclient.test.lib.common.HttpServerAdapters;
 import jdk.httpclient.test.lib.http2.Http2TestServer;
 import jdk.httpclient.test.lib.http2.Http2TestExchange;
 import jdk.httpclient.test.lib.http2.Http2Handler;
@@ -86,6 +89,7 @@ public class ConcurrentResponses {
     String http2FixedURI, https2FixedURI, http2VariableURI, https2VariableURI;
 
     static final int CONCURRENT_REQUESTS = 13;
+    static final AtomicInteger IDS = new AtomicInteger();
 
     static final String ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     static final int ALPHABET_LENGTH = ALPHABET.length();
@@ -149,51 +153,71 @@ public class ConcurrentResponses {
     // into the byte buffers it is given.
     @Test(dataProvider = "uris")
     void testAsString(String uri) throws Exception {
-        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
+        int id = IDS.getAndIncrement();
+        ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+                .name("HttpClient-" + id + "-Worker", 0).factory());
+        HttpClient client = HttpClient.newBuilder()
+                .sslContext(sslContext)
+                .executor(virtualExecutor)
+                .build();
+        try {
+            Map<HttpRequest, String> requests = new HashMap<>();
+            for (int i = 0; i < CONCURRENT_REQUESTS; i++) {
+                HttpRequest request = HttpRequest.newBuilder(URI.create(uri + "?" + i))
+                        .build();
+                requests.put(request, BODIES[i]);
+            }
 
-        Map<HttpRequest, String> requests = new HashMap<>();
-        for (int i=0;i<CONCURRENT_REQUESTS; i++) {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(uri + "?" + i))
-                                             .build();
-            requests.put(request, BODIES[i]);
+            // initial connection to seed the cache so next parallel connections reuse it
+            client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discarding()).join();
+
+            // will reuse connection cached from the previous request ( when HTTP/2 )
+            CompletableFuture.allOf(requests.keySet().parallelStream()
+                            .map(request -> client.sendAsync(request, BodyHandlers.ofString()))
+                            .map(cf -> cf.thenCompose(ConcurrentResponses::assert200ResponseCode))
+                            .map(cf -> cf.thenCompose(response -> assertbody(response, requests.get(response.request()))))
+                            .toArray(CompletableFuture<?>[]::new))
+                    .join();
+        } finally {
+            client.close();
+            virtualExecutor.close();
         }
-
-        // initial connection to seed the cache so next parallel connections reuse it
-        client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discarding()).join();
-
-        // will reuse connection cached from the previous request ( when HTTP/2 )
-        CompletableFuture.allOf(requests.keySet().parallelStream()
-                .map(request -> client.sendAsync(request, BodyHandlers.ofString()))
-                .map(cf -> cf.thenCompose(ConcurrentResponses::assert200ResponseCode))
-                .map(cf -> cf.thenCompose(response -> assertbody(response, requests.get(response.request()))))
-                .toArray(CompletableFuture<?>[]::new))
-                .join();
     }
 
     // The custom subscriber aggressively attacks any area, between the limit
     // and the capacity, in the byte buffers it is given, by writing 'X' into it.
     @Test(dataProvider = "uris")
     void testWithCustomSubscriber(String uri) throws Exception {
-        HttpClient client = HttpClient.newBuilder().sslContext(sslContext).build();
+        int id = IDS.getAndIncrement();
+        ExecutorService virtualExecutor = Executors.newThreadPerTaskExecutor(Thread.ofVirtual()
+                .name("HttpClient-" + id + "-Worker", 0).factory());
+        HttpClient client = HttpClient.newBuilder()
+                .executor(virtualExecutor)
+                .sslContext(sslContext).build();
+        try {
+            Map<HttpRequest, String> requests = new HashMap<>();
+            for (int i = 0; i < CONCURRENT_REQUESTS; i++) {
+                HttpRequest request = HttpRequest.newBuilder(URI.create(uri + "?" + i))
+                        .build();
+                requests.put(request, BODIES[i]);
+            }
 
-        Map<HttpRequest, String> requests = new HashMap<>();
-        for (int i=0;i<CONCURRENT_REQUESTS; i++) {
-            HttpRequest request = HttpRequest.newBuilder(URI.create(uri + "?" + i))
-                    .build();
-            requests.put(request, BODIES[i]);
+            // initial connection to seed the cache so next parallel connections reuse it
+            client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discarding()).join();
+
+            // will reuse connection cached from the previous request ( when HTTP/2 )
+            CompletableFuture.allOf(requests.keySet().parallelStream()
+                            .map(request -> client.sendAsync(request, CustomSubscriber.handler))
+                            .map(cf -> cf.thenCompose(ConcurrentResponses::assert200ResponseCode))
+                            .map(cf -> cf.thenCompose(response -> assertbody(response, requests.get(response.request()))))
+                            .toArray(CompletableFuture<?>[]::new))
+                    .join();
+        } finally {
+            client.close();
+            virtualExecutor.close();
         }
-
-        // initial connection to seed the cache so next parallel connections reuse it
-        client.sendAsync(HttpRequest.newBuilder(URI.create(uri)).build(), discarding()).join();
-
-        // will reuse connection cached from the previous request ( when HTTP/2 )
-        CompletableFuture.allOf(requests.keySet().parallelStream()
-                .map(request -> client.sendAsync(request, CustomSubscriber.handler))
-                .map(cf -> cf.thenCompose(ConcurrentResponses::assert200ResponseCode))
-                .map(cf -> cf.thenCompose(response -> assertbody(response, requests.get(response.request()))))
-                .toArray(CompletableFuture<?>[]::new))
-                .join();
     }
+
 
     /**
      * A subscriber that wraps ofString, but mucks with any data between limit

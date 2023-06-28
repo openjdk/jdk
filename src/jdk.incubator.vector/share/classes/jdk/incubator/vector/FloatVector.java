@@ -57,7 +57,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
 
     static final int FORBID_OPCODE_KIND = VO_NOFP;
 
-    static final ValueLayout.OfFloat ELEMENT_LAYOUT = ValueLayout.JAVA_FLOAT.withBitAlignment(8);
+    static final ValueLayout.OfFloat ELEMENT_LAYOUT = ValueLayout.JAVA_FLOAT.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -2991,7 +2991,7 @@ public abstract class FloatVector extends AbstractVector<Float> {
      * float[] ar = new float[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_FLOAT.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_FLOAT.withByteAlignment(1), n);
      *     }
      * }
      * FloatVector r = FloatVector.fromArray(species, ar, 0);

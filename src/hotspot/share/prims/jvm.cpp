@@ -722,7 +722,7 @@ JVM_ENTRY(jclass, JVM_GetCallerClass(JNIEnv* env))
   //
   // The call stack at this point looks something like this:
   //
-  // [0] [ @CallerSensitive public sun.reflect.Reflection.getCallerClass ]
+  // [0] [ @CallerSensitive public jdk.internal.reflect.Reflection.getCallerClass ]
   // [1] [ @CallerSensitive API.method                                   ]
   // [.] [ (skipped intermediate frames)                                 ]
   // [n] [ caller                                                        ]
@@ -1362,7 +1362,7 @@ class ScopedValueBindingsResolver {
 public:
   InstanceKlass* Carrier_klass;
   ScopedValueBindingsResolver(JavaThread* THREAD) {
-    Klass *k = SystemDictionary::resolve_or_fail(vmSymbols::jdk_incubator_concurrent_ScopedValue_Carrier(), true, THREAD);
+    Klass *k = SystemDictionary::resolve_or_fail(vmSymbols::java_lang_ScopedValue_Carrier(), true, THREAD);
     Carrier_klass = InstanceKlass::cast(k);
   }
 };
@@ -1385,9 +1385,8 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
 
     InstanceKlass* holder = method->method_holder();
     if (name == vmSymbols::runWith_method_name()) {
-      if ((holder == resolver.Carrier_klass
-           || holder == vmClasses::VirtualThread_klass()
-           || holder == vmClasses::Thread_klass())) {
+      if (holder == vmClasses::Thread_klass()
+          || holder == resolver.Carrier_klass) {
         loc = 1;
       }
     }
@@ -1395,7 +1394,7 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
     if (loc != -1) {
       javaVFrame *frame = vfst.asJavaVFrame();
       StackValueCollection* locals = frame->locals();
-      StackValue* head_sv = locals->at(loc); // jdk/incubator/concurrent/ScopedValue$Snapshot
+      StackValue* head_sv = locals->at(loc); // java/lang/ScopedValue$Snapshot
       Handle result = head_sv->get_obj();
       assert(!head_sv->obj_is_scalar_replaced(), "found scalar-replaced object");
       if (result() != nullptr) {
@@ -2897,7 +2896,7 @@ void jio_print(const char* s, size_t len) {
     jio_fprintf(defaultStream::output_stream(), "%.*s", (int)len, s);
   } else {
     // Make an unused local variable to avoid warning from gcc compiler.
-    ssize_t count = os::write(defaultStream::output_fd(), s, (int)len);
+    bool dummy = os::write(defaultStream::output_fd(), s, len);
   }
 }
 
@@ -3044,7 +3043,7 @@ JVM_LEAF(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   os::naked_yield();
 JVM_END
 
-JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong nanos))
+JVM_ENTRY(void, JVM_SleepNanos(JNIEnv* env, jclass threadClass, jlong nanos))
   if (nanos < 0) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nanosecond timeout value out of range");
   }
@@ -3294,8 +3293,7 @@ JVM_ENTRY(jobject, JVM_LatestUserDefinedLoader(JNIEnv *env))
     oop loader = ik->class_loader();
     if (loader != nullptr && !SystemDictionary::is_platform_class_loader(loader)) {
       // Skip reflection related frames
-      if (!ik->is_subclass_of(vmClasses::reflect_MethodAccessorImpl_klass()) &&
-          !ik->is_subclass_of(vmClasses::reflect_ConstructorAccessorImpl_klass())) {
+      if (!ik->is_subclass_of(vmClasses::reflect_SerializationConstructorAccessorImpl_klass())) {
         return JNIHandles::make_local(THREAD, loader);
       }
     }
@@ -4023,4 +4021,11 @@ JVM_END
  */
 JVM_ENTRY(void, JVM_EnsureMaterializedForStackWalk_func(JNIEnv* env, jobject vthread, jobject value))
   JVM_EnsureMaterializedForStackWalk(env, value);
+JVM_END
+
+/*
+ * Return JNI_TRUE if warnings are printed when agents are dynamically loaded.
+ */
+JVM_LEAF(jboolean, JVM_PrintWarningAtDynamicAgentLoad(void))
+  return (EnableDynamicAgentLoading && !FLAG_IS_CMDLINE(EnableDynamicAgentLoading)) ? JNI_TRUE : JNI_FALSE;
 JVM_END

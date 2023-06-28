@@ -1780,9 +1780,9 @@ JvmtiEnv::GetAllStackTraces(jint max_frame_count, jvmtiStackInfo** stack_info_pt
 jvmtiError
 JvmtiEnv::GetThreadListStackTraces(jint thread_count, const jthread* thread_list, jint max_frame_count, jvmtiStackInfo** stack_info_ptr) {
   jvmtiError err = JVMTI_ERROR_NONE;
+  JvmtiVTMSTransitionDisabler disabler;
 
   if (thread_count == 1) {
-    JvmtiVTMSTransitionDisabler disabler;
 
     // Use direct handshake if we need to get only one stack trace.
     JavaThread *current_thread = JavaThread::current();
@@ -1886,22 +1886,11 @@ JvmtiEnv::PopFrame(jthread thread) {
   if (err != JVMTI_ERROR_NONE) {
     return err;
   }
-  bool is_virtual = thread_obj != nullptr && thread_obj->is_a(vmClasses::BaseVirtualThread_klass());
+  bool self = java_thread == current_thread;
 
-  if (is_virtual) {
-    if (!is_JavaThread_current(java_thread, thread_obj)) {
-      if (!is_vthread_suspended(thread_obj, java_thread)) {
-        return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-      }
-      if (java_thread == nullptr) { // unmounted virtual thread
-        return JVMTI_ERROR_OPAQUE_FRAME;
-      }
-    }
-  } else { // platform thread
-    if (java_thread != current_thread && !java_thread->is_suspended() &&
-        !java_thread->is_carrier_thread_suspended()) {
-      return JVMTI_ERROR_THREAD_NOT_SUSPENDED;
-    }
+  err = check_non_suspended_or_opaque_frame(java_thread, thread_obj, self);
+  if (err != JVMTI_ERROR_NONE) {
+    return err;
   }
 
   // retrieve or create the state
@@ -1919,8 +1908,8 @@ JvmtiEnv::PopFrame(jthread thread) {
 
   MutexLocker mu(JvmtiThreadState_lock);
   UpdateForPopTopFrameClosure op(state);
-  if (java_thread == current_thread) {
-    op.doit(java_thread, true /* self */);
+  if (self) {
+    op.doit(java_thread, self);
   } else {
     Handshake::execute(&op, java_thread);
   }

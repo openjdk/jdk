@@ -86,7 +86,7 @@ import sun.security.action.GetPropertyAction;
  * char[] passwd;
  * if ((cons = System.console()) != null &&
  *     (passwd = cons.readPassword("[%s]", "Password:")) != null) {
- *     ...
+ *     code: // @replace substring="code:" replacement="..."
  *     java.util.Arrays.fill(passwd, ' ');
  * }
  * }
@@ -117,13 +117,13 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * This method is intended to be used by sophisticated applications, for
      * example, a {@link java.util.Scanner} object which utilizes the rich
      * parsing/scanning functionality provided by the {@code Scanner}:
-     * <blockquote><pre>
-     * Console con = System.console();
-     * if (con != null) {
-     *     Scanner sc = new Scanner(con.reader());
-     *     ...
+     * {@snippet lang=java :
+     *     Console con = System.console();
+     *     if (con != null) {
+     *         Scanner sc = new Scanner(con.reader());
+     *         code: // @replace substring="code:" replacement="..."
+     *     }
      * }
-     * </pre></blockquote>
      * <p>
      * For simple applications requiring only line-oriented reading, use
      * {@link #readLine}.
@@ -186,7 +186,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * <p> An invocation of this method of the form
      * {@code con.printf(format, args)} behaves in exactly the same way
      * as the invocation of
-     * <pre>con.format(format, args)</pre>.
+     * {@snippet lang=java :
+     *     con.format(format, args)
+     * }
      *
      * @param  format
      *         A format string as described in <a

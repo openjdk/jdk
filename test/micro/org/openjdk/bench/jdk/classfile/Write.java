@@ -66,7 +66,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.V12;
 @Warmup(iterations = 3)
 @Measurement(iterations = 5)
 @Fork(value = 1, jvmArgsAppend = {
-        "--enable-preview",
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",

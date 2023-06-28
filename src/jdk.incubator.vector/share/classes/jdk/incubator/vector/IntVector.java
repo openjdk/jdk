@@ -57,7 +57,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
 
     static final int FORBID_OPCODE_KIND = VO_ONLYFP;
 
-    static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withBitAlignment(8);
+    static final ValueLayout.OfInt ELEMENT_LAYOUT = ValueLayout.JAVA_INT.withByteAlignment(1);
 
     @ForceInline
     static int opCode(Operator op) {
@@ -3147,7 +3147,7 @@ public abstract class IntVector extends AbstractVector<Integer> {
      * int[] ar = new int[species.length()];
      * for (int n = 0; n < ar.length; n++) {
      *     if (m.laneIsSet(n)) {
-     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_INT.withBitAlignment(8), n);
+     *         ar[n] = slice.getAtIndex(ValuaLayout.JAVA_INT.withByteAlignment(1), n);
      *     }
      * }
      * IntVector r = IntVector.fromArray(species, ar, 0);

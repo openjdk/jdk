@@ -88,6 +88,9 @@ private:
   // Private arena of State objects
   ResourceArea _states_arena;
 
+  // Map old nodes to new nodes
+  Node_List   _new_nodes;
+
   VectorSet   _visited;         // Visit bits
 
   // Used to control the Label pass
@@ -147,20 +150,19 @@ private:
   VectorSet _reused;          // Ideal IGV identifiers reused by machine nodes
 #endif // !PRODUCT
 
-  // Accessors for the inherited field PhaseTransform::_nodes:
   void   grow_new_node_array(uint idx_limit) {
-    _nodes.map(idx_limit-1, nullptr);
+    _new_nodes.map(idx_limit-1, nullptr);
   }
   bool    has_new_node(const Node* n) const {
-    return _nodes.at(n->_idx) != nullptr;
+    return _new_nodes.at(n->_idx) != nullptr;
   }
   Node*       new_node(const Node* n) const {
     assert(has_new_node(n), "set before get");
-    return _nodes.at(n->_idx);
+    return _new_nodes.at(n->_idx);
   }
   void    set_new_node(const Node* n, Node *nn) {
     assert(!has_new_node(n), "set only once");
-    _nodes.map(n->_idx, nn);
+    _new_nodes.map(n->_idx, nn);
   }
 
 #ifdef ASSERT

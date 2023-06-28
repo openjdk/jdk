@@ -42,7 +42,7 @@ class VMError : public AllStatic {
   static const char* _message;
   static char        _detail_msg[1024];
 
-  static Thread*     _thread;           // nullptr if it's native thread
+  static Thread*     _thread;           // null if it's native thread
 
   // additional info for crashes
   static address     _pc;               // faulting PC

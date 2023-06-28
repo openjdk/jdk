@@ -56,7 +56,6 @@ import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.ByteOrder;
-import java.nio.file.Path;
 import java.security.ProtectionDomain;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -2252,7 +2251,7 @@ public class MethodHandles {
         }
 
         private static final ClassFileDumper DEFAULT_DUMPER = ClassFileDumper.getInstance(
-                "jdk.invoke.MethodHandle.dumpClassFiles", Path.of("DUMP_CLASS_FILES"));
+                "jdk.invoke.MethodHandle.dumpClassFiles", "DUMP_CLASS_FILES");
 
         static class ClassFile {
             final String name;  // internal name
@@ -3929,6 +3928,14 @@ return mh1;
             throw m.makeAccessException(message, this);
         }
 
+        private boolean isArrayClone(byte refKind, Class<?> refc, MemberName m) {
+            return Modifier.isProtected(m.getModifiers()) &&
+                    refKind == REF_invokeVirtual &&
+                    m.getDeclaringClass() == Object.class &&
+                    m.getName().equals("clone") &&
+                    refc.isArray();
+        }
+
         /** Check public/protected/private bits on the symbolic reference class and its member. */
         void checkAccess(byte refKind, Class<?> refc, MemberName m) throws IllegalAccessException {
             assert(m.referenceKindIsConsistentWith(refKind) &&
@@ -3937,11 +3944,7 @@ return mh1;
             int allowedModes = this.allowedModes;
             if (allowedModes == TRUSTED)  return;
             int mods = m.getModifiers();
-            if (Modifier.isProtected(mods) &&
-                    refKind == REF_invokeVirtual &&
-                    m.getDeclaringClass() == Object.class &&
-                    m.getName().equals("clone") &&
-                    refc.isArray()) {
+            if (isArrayClone(refKind, refc, m)) {
                 // The JVM does this hack also.
                 // (See ClassVerifier::verify_invoke_instructions
                 // and LinkResolver::check_method_accessability.)
@@ -4068,7 +4071,7 @@ return mh1;
 
             if (refKind == REF_invokeSpecial &&
                 refc != lookupClass() &&
-                !refc.isInterface() &&
+                !refc.isInterface() && !lookupClass().isInterface() &&
                 refc != lookupClass().getSuperclass() &&
                 refc.isAssignableFrom(lookupClass())) {
                 assert(!method.getName().equals(ConstantDescs.INIT_NAME));  // not this code path
@@ -4101,7 +4104,12 @@ return mh1;
             MethodHandle mh = dmh;
             // Optionally narrow the receiver argument to lookupClass using restrictReceiver.
             if ((doRestrict && refKind == REF_invokeSpecial) ||
-                    (MethodHandleNatives.refKindHasReceiver(refKind) && restrictProtectedReceiver(method))) {
+                    (MethodHandleNatives.refKindHasReceiver(refKind) &&
+                            restrictProtectedReceiver(method) &&
+                            // All arrays simply inherit the protected Object.clone method.
+                            // The leading argument is already restricted to the requested
+                            // array type (not the lookup class).
+                            !isArrayClone(refKind, refc, method))) {
                 mh = restrictReceiver(method, dmh, lookupClass());
             }
             mh = maybeBindCaller(method, mh, boundCaller);
@@ -7948,23 +7956,23 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
 
     /**
      * Creates a var handle object, which can be used to dereference a {@linkplain java.lang.foreign.MemorySegment memory segment}
-     * by viewing its contents as a sequence of the provided value layout.
+     * at a given byte offset, using the provided value layout.
      *
      * <p>The provided layout specifies the {@linkplain ValueLayout#carrier() carrier type},
      * the {@linkplain ValueLayout#byteSize() byte size},
      * the {@linkplain ValueLayout#byteAlignment() byte alignment} and the {@linkplain ValueLayout#order() byte order}
      * associated with the returned var handle.
      *
-     * <p>The returned var handle's type is {@code carrier} and the list of coordinate types is
-     * {@code (MemorySegment, long)}, where the {@code long} coordinate type corresponds to byte offset into
-     * a given memory segment. The returned var handle accesses bytes at an offset in a given
-     * memory segment, composing bytes to or from a value of the type {@code carrier} according to the given endianness;
-     * the alignment constraint (in bytes) for the resulting var handle is given by {@code alignmentBytes}.
+     * <p>The list of coordinate types associated with the returned var handle is {@code (MemorySegment, long)},
+     * where the {@code long} coordinate type corresponds to byte offset into the given memory segment coordinate.
+     * Thus, the returned var handle accesses bytes at an offset in a given memory segment, composing bytes to or from
+     * a value of the var handle type. Moreover, the access operation will honor the endianness and the
+     * alignment constraints expressed in the provided layout.
      *
      * <p>As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
      * {@snippet lang="java" :
      *     GroupLayout seq = java.lang.foreign.MemoryLayout.structLayout(
-     *             MemoryLayout.paddingLayout(32),
+     *             MemoryLayout.paddingLayout(4),
      *             ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
      *     );
      * }
@@ -8015,7 +8023,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *
      * @param layout the value layout for which a memory access handle is to be obtained.
      * @return the new memory segment view var handle.
-     * @throws IllegalArgumentException if an illegal carrier type is used, or if {@code alignmentBytes} is not a power of two.
      * @throws NullPointerException if {@code layout} is {@code null}.
      * @see MemoryLayout#varHandle(MemoryLayout.PathElement...)
      * @since 19

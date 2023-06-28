@@ -40,7 +40,7 @@
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/klass.inline.hpp"
@@ -48,6 +48,7 @@
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "oops/symbolHandle.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -228,14 +229,14 @@ void CallInfo::print() {
 //------------------------------------------------------------------------------------------------------------------------
 // Implementation of LinkInfo
 
-LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, TRAPS) {
+LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle& current_method, Bytecodes::Code code, TRAPS) {
    // resolve klass
-  _resolved_klass = pool->klass_ref_at(index, CHECK);
+  _resolved_klass = pool->klass_ref_at(index, code, CHECK);
 
   // Get name, signature, and static klass
-  _name          = pool->name_ref_at(index);
-  _signature     = pool->signature_ref_at(index);
-  _tag           = pool->tag_ref_at(index);
+  _name          = pool->name_ref_at(index, code);
+  _signature     = pool->signature_ref_at(index, code);
+  _tag           = pool->tag_ref_at(index, code);
   _current_klass = pool->pool_holder();
   _current_method = current_method;
 
@@ -244,14 +245,14 @@ LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, const methodHandle
   _check_loader_constraints = true;
 }
 
-LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, TRAPS) {
+LinkInfo::LinkInfo(const constantPoolHandle& pool, int index, Bytecodes::Code code, TRAPS) {
    // resolve klass
-  _resolved_klass = pool->klass_ref_at(index, CHECK);
+  _resolved_klass = pool->klass_ref_at(index, code, CHECK);
 
   // Get name, signature, and static klass
-  _name          = pool->name_ref_at(index);
-  _signature     = pool->signature_ref_at(index);
-  _tag           = pool->tag_ref_at(index);
+  _name          = pool->name_ref_at(index, code);
+  _signature     = pool->signature_ref_at(index, code);
+  _tag           = pool->tag_ref_at(index, code);
   _current_klass = pool->pool_holder();
   _current_method = methodHandle();
 
@@ -618,13 +619,13 @@ Method* LinkResolver::resolve_method_statically(Bytecodes::Code code,
   if (code == Bytecodes::_invokedynamic) {
     Klass* resolved_klass = vmClasses::MethodHandle_klass();
     Symbol* method_name = vmSymbols::invoke_name();
-    Symbol* method_signature = pool->signature_ref_at(index);
+    Symbol* method_signature = pool->signature_ref_at(index, code);
     Klass*  current_klass = pool->pool_holder();
     LinkInfo link_info(resolved_klass, method_name, method_signature, current_klass);
     return resolve_method(link_info, code, THREAD);
   }
 
-  LinkInfo link_info(pool, index, methodHandle(), CHECK_NULL);
+  LinkInfo link_info(pool, index, methodHandle(), code, CHECK_NULL);
   Klass* resolved_klass = link_info.resolved_klass();
 
   if (pool->has_preresolution()
@@ -813,7 +814,7 @@ static void trace_method_resolution(const char* prefix,
   }
   st->print("%s%s, compile-time-class:%s, method:%s, method_holder:%s, access_flags: ",
             prefix,
-            (klass == nullptr ? "<nullptr>" : klass->internal_name()),
+            (klass == nullptr ? "<null>" : klass->internal_name()),
             resolved_klass->internal_name(),
             Method::name_and_sig_as_C_string(resolved_klass,
                                              method->name(),
@@ -950,7 +951,7 @@ void LinkResolver::check_field_accessability(Klass* ref_klass,
 }
 
 void LinkResolver::resolve_field_access(fieldDescriptor& fd, const constantPoolHandle& pool, int index, const methodHandle& method, Bytecodes::Code byte, TRAPS) {
-  LinkInfo link_info(pool, index, method, CHECK);
+  LinkInfo link_info(pool, index, method, byte, CHECK);
   resolve_field(fd, link_info, byte, true, CHECK);
 }
 
@@ -1169,9 +1170,10 @@ Method* LinkResolver::linktime_resolve_special_method(const LinkInfo& link_info,
   Klass* current_klass = link_info.current_klass();
   if (current_klass != nullptr && resolved_klass->is_interface()) {
     InstanceKlass* klass_to_check = InstanceKlass::cast(current_klass);
-    // Disable verification for the dynamically-generated reflection bytecodes.
+    // Disable verification for the dynamically-generated reflection bytecodes
+    // for serialization constructor accessor.
     bool is_reflect = klass_to_check->is_subclass_of(
-                        vmClasses::reflect_MagicAccessorImpl_klass());
+                        vmClasses::reflect_SerializationConstructorAccessorImpl_klass());
 
     if (!is_reflect &&
         !klass_to_check->is_same_or_direct_interface(resolved_klass)) {
@@ -1668,14 +1670,14 @@ void LinkResolver::resolve_invoke(CallInfo& result, Handle& recv,
 }
 
 void LinkResolver::resolve_invokestatic(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
-  LinkInfo link_info(pool, index, CHECK);
+  LinkInfo link_info(pool, index, Bytecodes::_invokestatic, CHECK);
   resolve_static_call(result, link_info, /*initialize_class*/true, CHECK);
 }
 
 
 void LinkResolver::resolve_invokespecial(CallInfo& result, Handle recv,
                                          const constantPoolHandle& pool, int index, TRAPS) {
-  LinkInfo link_info(pool, index, CHECK);
+  LinkInfo link_info(pool, index, Bytecodes::_invokespecial, CHECK);
   resolve_special_call(result, recv, link_info, CHECK);
 }
 
@@ -1684,14 +1686,14 @@ void LinkResolver::resolve_invokevirtual(CallInfo& result, Handle recv,
                                           const constantPoolHandle& pool, int index,
                                           TRAPS) {
 
-  LinkInfo link_info(pool, index, CHECK);
+  LinkInfo link_info(pool, index, Bytecodes::_invokevirtual, CHECK);
   Klass* recvrKlass = recv.is_null() ? (Klass*)nullptr : recv->klass();
   resolve_virtual_call(result, recv, recvrKlass, link_info, /*check_null_or_abstract*/true, CHECK);
 }
 
 
 void LinkResolver::resolve_invokeinterface(CallInfo& result, Handle recv, const constantPoolHandle& pool, int index, TRAPS) {
-  LinkInfo link_info(pool, index, CHECK);
+  LinkInfo link_info(pool, index, Bytecodes::_invokeinterface, CHECK);
   Klass* recvrKlass = recv.is_null() ? (Klass*)nullptr : recv->klass();
   resolve_interface_call(result, recv, recvrKlass, link_info, true, CHECK);
 }
@@ -1712,7 +1714,7 @@ bool LinkResolver::resolve_previously_linked_invokehandle(CallInfo& result, cons
 }
 
 void LinkResolver::resolve_invokehandle(CallInfo& result, const constantPoolHandle& pool, int index, TRAPS) {
-  LinkInfo link_info(pool, index, CHECK);
+  LinkInfo link_info(pool, index, Bytecodes::_invokehandle, CHECK);
   if (log_is_enabled(Info, methodhandles)) {
     ResourceMark rm(THREAD);
     log_info(methodhandles)("resolve_invokehandle %s %s", link_info.name()->as_C_string(),

@@ -97,7 +97,7 @@ Node* ShenandoahBarrierSetC2::shenandoah_iu_barrier(GraphKit* kit, Node* obj) co
 
 #define __ kit->
 
-bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseTransform* phase, Node* adr,
+bool ShenandoahBarrierSetC2::satb_can_remove_pre_barrier(GraphKit* kit, PhaseValues* phase, Node* adr,
                                                          BasicType bt, uint adr_idx) const {
   intptr_t offset = 0;
   Node* base = AddPNode::Ideal_base_and_offset(adr, phase, offset);
@@ -309,7 +309,7 @@ bool ShenandoahBarrierSetC2::is_shenandoah_lrb_call(Node* call) {
          (entry_point == CAST_FROM_FN_PTR(address, ShenandoahRuntime::load_reference_barrier_phantom));
 }
 
-bool ShenandoahBarrierSetC2::is_shenandoah_marking_if(PhaseTransform *phase, Node* n) {
+bool ShenandoahBarrierSetC2::is_shenandoah_marking_if(PhaseValues* phase, Node* n) {
   if (n->Opcode() != Op_If) {
     return false;
   }

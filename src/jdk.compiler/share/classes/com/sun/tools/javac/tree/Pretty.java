@@ -715,7 +715,11 @@ public class Pretty extends JCTree.Visitor {
                 } else {
                     printExpr(tree.vartype);
                     print(' ');
-                    print(tree.name);
+                    if (tree.name.isEmpty()) {
+                        print('_');
+                    } else {
+                        print(tree.name);
+                    }
                 }
                 if (tree.init != null) {
                     print(" = ");
@@ -936,6 +940,14 @@ public class Pretty extends JCTree.Visitor {
     public void visitBindingPattern(JCBindingPattern patt) {
         try {
             printExpr(patt.var);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    public void visitAnyPattern(JCAnyPattern patt) {
+        try {
+            print('_');
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

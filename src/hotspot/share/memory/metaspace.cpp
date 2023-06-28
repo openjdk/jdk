@@ -875,7 +875,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   assert(word_size <= Metaspace::max_allocation_word_size(),
          "allocation size too large (" SIZE_FORMAT ")", word_size);
 
-  assert(loader_data != nullptr, "Should never pass around a nullptr loader_data. "
+  assert(loader_data != nullptr, "Should never pass around a null loader_data. "
         "ClassLoaderData::the_null_class_loader_data() should have been used.");
 
   // Deal with concurrent unloading failed allocation starvation

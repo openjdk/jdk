@@ -944,7 +944,6 @@ public:
 
   inline intptr_t* start_of_itable() const;
   inline intptr_t* end_of_itable() const;
-  inline int itable_offset_in_words() const;
   inline oop static_field_base_raw();
 
   inline OopMapBlock* start_of_nonstatic_oop_maps() const;

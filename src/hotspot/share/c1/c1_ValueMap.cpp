@@ -46,7 +46,7 @@
 
 ValueMap::ValueMap()
   : _nesting(0)
-  , _entries(ValueMapInitialSize, ValueMapInitialSize, NULL)
+  , _entries(ValueMapInitialSize, ValueMapInitialSize, nullptr)
   , _killed_values()
   , _entry_count(0)
 {
@@ -56,7 +56,7 @@ ValueMap::ValueMap()
 
 ValueMap::ValueMap(ValueMap* old)
   : _nesting(old->_nesting + 1)
-  , _entries(old->_entries.length(), old->_entries.length(), NULL)
+  , _entries(old->_entries.length(), old->_entries.length(), nullptr)
   , _killed_values()
   , _entry_count(old->_entry_count)
 {
@@ -72,14 +72,14 @@ void ValueMap::increase_table_size() {
   int new_size = old_size * 2 + 1;
 
   ValueMapEntryList worklist(8);
-  ValueMapEntryArray new_entries(new_size, new_size, NULL);
+  ValueMapEntryArray new_entries(new_size, new_size, nullptr);
   int new_entry_count = 0;
 
   TRACE_VALUE_NUMBERING(tty->print_cr("increasing table size from %d to %d", old_size, new_size));
 
   for (int i = old_size - 1; i >= 0; i--) {
     ValueMapEntry* entry;
-    for (entry = entry_at(i); entry != NULL; entry = entry->next()) {
+    for (entry = entry_at(i); entry != nullptr; entry = entry->next()) {
       if (!is_killed(entry->value())) {
         worklist.push(entry);
       }
@@ -93,7 +93,7 @@ void ValueMap::increase_table_size() {
         // changing entries with a lower nesting than the current nesting of the table
         // is not allowed because then the same entry is contained in multiple value maps.
         // clone entry when next-pointer must be changed
-        entry = new ValueMapEntry(entry->hash(), entry->value(), entry->nesting(), NULL);
+        entry = new ValueMapEntry(entry->hash(), entry->value(), entry->nesting(), nullptr);
       }
       entry->set_next(new_entries.at(new_index));
       new_entries.at_put(new_index, entry);
@@ -112,7 +112,7 @@ Value ValueMap::find_insert(Value x) {
     // 0 hash means: exclude from value numbering
     NOT_PRODUCT(_number_of_finds++);
 
-    for (ValueMapEntry* entry = entry_at(entry_index(hash, size())); entry != NULL; entry = entry->next()) {
+    for (ValueMapEntry* entry = entry_at(entry_index(hash, size())); entry != nullptr; entry = entry->next()) {
       if (entry->hash() == hash) {
         Value f = entry->value();
 
@@ -120,7 +120,7 @@ Value ValueMap::find_insert(Value x) {
           NOT_PRODUCT(_number_of_hits++);
           TRACE_VALUE_NUMBERING(tty->print_cr("Value Numbering: %s %c%d equal to %c%d  (size %d, entries %d, nesting-diff %d)", x->name(), x->type()->tchar(), x->id(), f->type()->tchar(), f->id(), size(), entry_count(), nesting() - entry->nesting()));
 
-          if (entry->nesting() != nesting() && f->as_Constant() == NULL) {
+          if (entry->nesting() != nesting() && f->as_Constant() == nullptr) {
             // non-constant values of of another block must be pinned,
             // otherwise it is possible that they are not evaluated
             f->pin(Instruction::PinGlobalValueNumbering);
@@ -152,8 +152,8 @@ Value ValueMap::find_insert(Value x) {
   NOT_PRODUCT(_number_of_kills++);                                                       \
                                                                                          \
   for (int i = size() - 1; i >= 0; i--) {                                                \
-    ValueMapEntry* prev_entry = NULL;                                                    \
-    for (ValueMapEntry* entry = entry_at(i); entry != NULL; entry = entry->next()) {     \
+    ValueMapEntry* prev_entry = nullptr;                                                 \
+    for (ValueMapEntry* entry = entry_at(i); entry != nullptr; entry = entry->next()) {  \
       Value value = entry->value();                                                      \
                                                                                          \
       must_kill_implementation(must_kill, entry, value)                                  \
@@ -161,7 +161,7 @@ Value ValueMap::find_insert(Value x) {
       if (must_kill) {                                                                   \
         kill_value(value);                                                               \
                                                                                          \
-        if (prev_entry == NULL) {                                                        \
+        if (prev_entry == nullptr) {                                                     \
           _entries.at_put(i, entry->next());                                             \
           _entry_count--;                                                                \
         } else if (prev_entry->nesting() == nesting()) {                                 \
@@ -179,16 +179,16 @@ Value ValueMap::find_insert(Value x) {
   }                                                                                      \
 
 #define MUST_KILL_MEMORY(must_kill, entry, value)                                        \
-  bool must_kill = value->as_LoadField() != NULL || value->as_LoadIndexed() != NULL;
+  bool must_kill = value->as_LoadField() != nullptr || value->as_LoadIndexed() != nullptr;
 
 #define MUST_KILL_ARRAY(must_kill, entry, value)                                         \
-  bool must_kill = value->as_LoadIndexed() != NULL                                       \
+  bool must_kill = value->as_LoadIndexed() != nullptr                                    \
                    && value->type()->tag() == type->tag();
 
 #define MUST_KILL_FIELD(must_kill, entry, value)                                         \
   /* ciField's are not unique; must compare their contents */                            \
   LoadField* lf = value->as_LoadField();                                                 \
-  bool must_kill = lf != NULL                                                            \
+  bool must_kill = lf != nullptr                                                         \
                    && lf->field()->holder() == field->holder()                           \
                    && (all_offsets || lf->field()->offset_in_bytes() == field->offset_in_bytes());
 
@@ -213,7 +213,7 @@ void ValueMap::kill_map(ValueMap* map) {
 void ValueMap::kill_all() {
   assert(is_local_value_numbering(), "only for local value numbering");
   for (int i = size() - 1; i >= 0; i--) {
-    _entries.at_put(i, NULL);
+    _entries.at_put(i, nullptr);
   }
   _entry_count = 0;
 }
@@ -226,14 +226,14 @@ void ValueMap::print() {
 
   int entries = 0;
   for (int i = 0; i < size(); i++) {
-    if (entry_at(i) != NULL) {
+    if (entry_at(i) != nullptr) {
       tty->print("  %2d: ", i);
-      for (ValueMapEntry* entry = entry_at(i); entry != NULL; entry = entry->next()) {
+      for (ValueMapEntry* entry = entry_at(i); entry != nullptr; entry = entry->next()) {
         Value value = entry->value();
         tty->print("%s %c%d (%s%d) -> ", value->name(), value->type()->tchar(), value->id(), is_killed(value) ? "x" : "", entry->nesting());
         entries++;
       }
-      tty->print_cr("NULL");
+      tty->print_cr("null");
     }
   }
 
@@ -327,7 +327,7 @@ class LoopInvariantCodeMotion : public StackObj  {
 };
 
 LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, GlobalValueNumbering* gvn, BlockBegin* loop_header, BlockList* loop_blocks)
-  : _gvn(gvn), _short_loop_optimizer(slo), _insertion_point(NULL), _state(NULL), _insert_is_pred(false) {
+  : _gvn(gvn), _short_loop_optimizer(slo), _insertion_point(nullptr), _state(nullptr), _insert_is_pred(false) {
 
   TRACE_VALUE_NUMBERING(tty->print_cr("using loop invariant code motion loop_header = %d", loop_header->block_id()));
   TRACE_VALUE_NUMBERING(tty->print_cr("** loop invariant code motion for short loop B%d", loop_header->block_id()));
@@ -337,7 +337,7 @@ LoopInvariantCodeMotion::LoopInvariantCodeMotion(ShortLoopOptimizer *slo, Global
     return;  // only the entry block does not have a predecessor
   }
 
-  assert(insertion_block->end()->as_Base() == NULL, "cannot insert into entry block");
+  assert(insertion_block->end()->as_Base() == nullptr, "cannot insert into entry block");
   _insertion_point = insertion_block->end()->prev();
   _insert_is_pred = loop_header->is_predecessor(insertion_block);
 
@@ -365,31 +365,31 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
   Instruction* prev = block;
   Instruction* cur = block->next();
 
-  while (cur != NULL) {
+  while (cur != nullptr) {
     // determine if cur instruction is loop invariant
     // only selected instruction types are processed here
     bool cur_invariant = false;
 
-    if (cur->as_Constant() != NULL) {
+    if (cur->as_Constant() != nullptr) {
       cur_invariant = !cur->can_trap();
-    } else if (cur->as_ArithmeticOp() != NULL || cur->as_LogicOp() != NULL || cur->as_ShiftOp() != NULL) {
-      assert(cur->as_Op2() != NULL, "must be Op2");
+    } else if (cur->as_ArithmeticOp() != nullptr || cur->as_LogicOp() != nullptr || cur->as_ShiftOp() != nullptr) {
+      assert(cur->as_Op2() != nullptr, "must be Op2");
       Op2* op2 = (Op2*)cur;
       cur_invariant = !op2->can_trap() && is_invariant(op2->x()) && is_invariant(op2->y());
-    } else if (cur->as_LoadField() != NULL) {
+    } else if (cur->as_LoadField() != nullptr) {
       LoadField* lf = (LoadField*)cur;
       // deoptimizes on NullPointerException
       cur_invariant = !lf->needs_patching() && !lf->field()->is_volatile() && !_short_loop_optimizer->has_field_store(lf->field()->type()->basic_type()) && is_invariant(lf->obj()) && _insert_is_pred;
-    } else if (cur->as_ArrayLength() != NULL) {
+    } else if (cur->as_ArrayLength() != nullptr) {
       ArrayLength *length = cur->as_ArrayLength();
       cur_invariant = is_invariant(length->array());
-    } else if (cur->as_LoadIndexed() != NULL) {
+    } else if (cur->as_LoadIndexed() != nullptr) {
       LoadIndexed *li = (LoadIndexed *)cur->as_LoadIndexed();
       cur_invariant = !_short_loop_optimizer->has_indexed_store(as_BasicType(cur->type())) && is_invariant(li->array()) && is_invariant(li->index()) && _insert_is_pred;
-    } else if (cur->as_NegateOp() != NULL) {
+    } else if (cur->as_NegateOp() != nullptr) {
       NegateOp* neg = (NegateOp*)cur->as_NegateOp();
       cur_invariant = is_invariant(neg->x());
-    } else if (cur->as_Convert() != NULL) {
+    } else if (cur->as_Convert() != nullptr) {
       Convert* cvt = (Convert*)cur->as_Convert();
       cur_invariant = is_invariant(cvt->value());
     }
@@ -398,7 +398,7 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       // perform value numbering and mark instruction as loop-invariant
       _gvn->substitute(cur);
 
-      if (cur->as_Constant() == NULL) {
+      if (cur->as_Constant() == nullptr) {
         // ensure that code for non-constant instructions is always generated
         cur->pin();
       }
@@ -413,15 +413,15 @@ void LoopInvariantCodeMotion::process_block(BlockBegin* block) {
       cur->set_flag(Instruction::DeoptimizeOnException, true);
 
       //  Clear exception handlers
-      cur->set_exception_handlers(NULL);
+      cur->set_exception_handlers(nullptr);
 
       TRACE_VALUE_NUMBERING(tty->print_cr("Instruction %c%d is loop invariant", cur->type()->tchar(), cur->id()));
       TRACE_VALUE_NUMBERING(cur->print_line());
 
-      if (cur->state_before() != NULL) {
+      if (cur->state_before() != nullptr) {
         cur->set_state_before(_state->copy());
       }
-      if (cur->exception_state() != NULL) {
+      if (cur->exception_state() != nullptr) {
         cur->set_exception_state(_state->copy());
       }
 
@@ -458,7 +458,7 @@ bool ShortLoopOptimizer::process(BlockBegin* loop_header) {
       }
 
       ValueMap* pred_map = value_map_of(pred);
-      if (pred_map != NULL) {
+      if (pred_map != nullptr) {
         current_map()->kill_map(pred_map);
       } else if (!_loop_blocks.contains(pred)) {
         if (_loop_blocks.length() >= ValueMapMaxLoopSize) {
@@ -469,7 +469,7 @@ bool ShortLoopOptimizer::process(BlockBegin* loop_header) {
     }
 
     // use the instruction visitor for killing values
-    for (Value instr = block->next(); instr != NULL; instr = instr->next()) {
+    for (Value instr = block->next(); instr != nullptr; instr = instr->next()) {
       instr->visit(this);
       if (_too_complicated_loop) {
         return false;
@@ -490,8 +490,8 @@ bool ShortLoopOptimizer::process(BlockBegin* loop_header) {
 
 GlobalValueNumbering::GlobalValueNumbering(IR* ir)
   : _compilation(ir->compilation())
-  , _current_map(NULL)
-  , _value_maps(ir->linear_scan_order()->length(), ir->linear_scan_order()->length(), NULL)
+  , _current_map(nullptr)
+  , _value_maps(ir->linear_scan_order()->length(), ir->linear_scan_order()->length(), nullptr)
   , _has_substitutions(false)
 {
   TRACE_VALUE_NUMBERING(tty->print_cr("****** start of global value numbering"));
@@ -502,12 +502,12 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
   int num_blocks = blocks->length();
 
   BlockBegin* start_block = blocks->at(0);
-  assert(start_block == ir->start() && start_block->number_of_preds() == 0 && start_block->dominator() == NULL, "must be start block");
-  assert(start_block->next()->as_Base() != NULL && start_block->next()->next() == NULL, "start block must not have instructions");
+  assert(start_block == ir->start() && start_block->number_of_preds() == 0 && start_block->dominator() == nullptr, "must be start block");
+  assert(start_block->next()->as_Base() != nullptr && start_block->next()->next() == nullptr, "start block must not have instructions");
 
   // method parameters are not linked in instructions list, so process them separately
   for_each_state_value(start_block->state(), value,
-     assert(value->as_Local() != NULL, "only method parameters allowed");
+     assert(value->as_Local() != nullptr, "only method parameters allowed");
      set_processed(value);
   );
 
@@ -522,8 +522,8 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
     assert(num_preds > 0, "block must have predecessors");
 
     BlockBegin* dominator = block->dominator();
-    assert(dominator != NULL, "dominator must exist");
-    assert(value_map_of(dominator) != NULL, "value map of dominator must exist");
+    assert(dominator != nullptr, "dominator must exist");
+    assert(value_map_of(dominator) != nullptr, "value map of dominator must exist");
 
     // create new value map with increased nesting
     _current_map = new ValueMap(value_map_of(dominator));
@@ -546,7 +546,7 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
         BlockBegin* pred = block->pred_at(j);
         ValueMap* pred_map = value_map_of(pred);
 
-        if (pred_map != NULL) {
+        if (pred_map != nullptr) {
           // propagate killed values of the predecessor to this block
           current_map()->kill_map(value_map_of(pred));
         } else {
@@ -565,7 +565,7 @@ GlobalValueNumbering::GlobalValueNumbering(IR* ir)
     TRACE_VALUE_NUMBERING(tty->print("value map before processing block: "); current_map()->print());
 
     // visit all instructions of this block
-    for (Value instr = block->next(); instr != NULL; instr = instr->next()) {
+    for (Value instr = block->next(); instr != nullptr; instr = instr->next()) {
       // check if instruction kills any values
       instr->visit(this);
       // perform actual value numbering

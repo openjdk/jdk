@@ -115,13 +115,13 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFailFwdJumpsDirectGen(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () -> generateFwd(sample, true, Classfile.Option.fixShortJumps(false)));
+        assertThrows(IllegalArgumentException.class, () -> generateFwd(sample, true, Classfile.Option.fixShortJumps(false)));
     }
 
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFailBackJumpsDirectGen(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () -> generateBack(sample, true, Classfile.Option.fixShortJumps(false)));
+        assertThrows(IllegalArgumentException.class, () -> generateBack(sample, true, Classfile.Option.fixShortJumps(false)));
     }
 
     @ParameterizedTest
@@ -145,7 +145,7 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFailFwdJumpsTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
         Classfile.parse(
                 generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(false))
@@ -155,7 +155,7 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFailBackJumpsTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
         Classfile.parse(
                 generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(false))
@@ -183,7 +183,7 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideFwd")
     void testFailFwdJumpsChainedTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
         Classfile.parse(
                 generateFwd(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(false))
@@ -193,7 +193,7 @@ class ShortJumpsFixTest {
     @ParameterizedTest
     @MethodSource("provideBack")
     void testFailBackJumpsChainedTransform(Sample sample) throws Exception {
-        assertThrows(IllegalStateException.class, () ->
+        assertThrows(IllegalArgumentException.class, () ->
         Classfile.parse(
                 generateBack(sample, false, Classfile.Option.generateStackmap(false), Classfile.Option.patchDeadCode(false)),
                 Classfile.Option.fixShortJumps(false))

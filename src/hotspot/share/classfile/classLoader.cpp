@@ -1345,8 +1345,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   const char* const file_name = file_name_for_class_name(class_name,
                                                          ik->name()->utf8_length());
   assert(file_name != nullptr, "invariant");
-
-  ClassLoaderExt::record_result(classpath_index, ik, redefined);
+  ClassLoaderExt::record_result(checked_cast<s2>(classpath_index), ik, redefined);
 }
 #endif // INCLUDE_CDS
 

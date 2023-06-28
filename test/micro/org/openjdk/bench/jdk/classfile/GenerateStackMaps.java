@@ -56,7 +56,6 @@ import org.openjdk.jmh.annotations.Warmup;
 @BenchmarkMode(Mode.Throughput)
 @State(Scope.Benchmark)
 @Fork(value = 1, jvmArgsAppend = {
-        "--enable-preview",
         "--add-exports", "java.base/jdk.internal.classfile=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.attribute=ALL-UNNAMED",
         "--add-exports", "java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED",

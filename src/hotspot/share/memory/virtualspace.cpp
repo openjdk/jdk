@@ -551,7 +551,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     const size_t class_space = align_up(CompressedClassSpaceSize, alignment);
     // For small heaps, save some space for compressed class pointer
     // space so it can be decoded with no base.
-    if (UseCompressedClassPointers && !UseSharedSpaces &&
+    if (UseCompressedClassPointers && !UseSharedSpaces && !DumpSharedSpaces &&
         OopEncodingHeapMax <= KlassEncodingMetaspaceMax &&
         (uint64_t)(aligned_heap_base_min_address + size + class_space) <= KlassEncodingMetaspaceMax) {
       zerobased_max = (char *)OopEncodingHeapMax - class_space;
@@ -595,7 +595,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
 
     // Last, desperate try without any placement.
     if (_base == nullptr) {
-      log_trace(gc, heap, coops)("Trying to allocate at address nullptr heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
+      log_trace(gc, heap, coops)("Trying to allocate at address null heap of size " SIZE_FORMAT_X, size + noaccess_prefix);
       initialize(size + noaccess_prefix, alignment, page_size, nullptr, false);
     }
   }

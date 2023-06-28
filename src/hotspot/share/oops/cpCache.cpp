@@ -46,6 +46,7 @@
 #include "oops/cpCache.inline.hpp"
 #include "oops/objArrayOop.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/atomic.hpp"
@@ -64,11 +65,11 @@ void ConstantPoolCacheEntry::initialize_entry(int index) {
   assert(constant_pool_index() == index, "");
 }
 
-int ConstantPoolCacheEntry::make_flags(TosState state,
+intx ConstantPoolCacheEntry::make_flags(TosState state,
                                        int option_bits,
                                        int field_index_or_method_params) {
   assert(state < number_of_states, "Invalid state in make_flags");
-  int f = ((int)state << tos_state_shift) | option_bits | field_index_or_method_params;
+  intx f = ((int)state << tos_state_shift) | option_bits | field_index_or_method_params;
   // Preserve existing flag bit values
   // The low bits are a field offset, or else the method parameter size.
 #ifdef ASSERT
@@ -885,7 +886,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   const Handle appendix      = call_info.resolved_appendix();
   const bool has_appendix    = appendix.not_null();
 
-  LogStream* log_stream = NULL;
+  LogStream* log_stream = nullptr;
   LogStreamHandle(Debug, methodhandles, indy) lsh_indy;
   if (lsh_indy.is_enabled()) {
     ResourceMark rm;
@@ -903,7 +904,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
     const int appendix_index = resolved_indy_entry_at(index)->resolved_references_index();
     objArrayOop resolved_references = constant_pool()->resolved_references();
     assert(appendix_index >= 0 && appendix_index < resolved_references->length(), "oob");
-    assert(resolved_references->obj_at(appendix_index) == NULL, "init just once");
+    assert(resolved_references->obj_at(appendix_index) == nullptr, "init just once");
     resolved_references->obj_at_put(appendix_index, appendix());
   }
 
@@ -911,7 +912,7 @@ oop ConstantPoolCache::set_dynamic_call(const CallInfo &call_info, int index) {
   assert(resolved_indy_entries() != nullptr, "Invokedynamic array is empty, cannot fill with resolved information");
   resolved_indy_entry_at(index)->fill_in(adapter, adapter->size_of_parameters(), as_TosState(adapter->result_type()), has_appendix);
 
-  if (log_stream != NULL) {
+  if (log_stream != nullptr) {
     resolved_indy_entry_at(index)->print_on(log_stream);
   }
   return appendix();
@@ -940,6 +941,12 @@ void ConstantPoolCache::print_value_on(outputStream* st) const {
   constant_pool()->print_value_on(st);
 }
 
+
+void ConstantPoolCache::print_resolved_indy_entries(outputStream* st)   const {
+  for (int i = 0; i < _resolved_indy_entries->length(); i++) {
+    _resolved_indy_entries->at(i).print_on(st);
+  }
+}
 
 // Verification
 

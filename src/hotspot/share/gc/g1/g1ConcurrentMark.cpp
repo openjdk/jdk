@@ -1218,11 +1218,10 @@ public:
 class G1ObjectCountIsAliveClosure: public BoolObjectClosure {
   G1CollectedHeap* _g1h;
 public:
-  G1ObjectCountIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) { }
+  G1ObjectCountIsAliveClosure(G1CollectedHeap* g1h) : _g1h(g1h) {}
 
   bool do_object_b(oop obj) {
-    return obj != nullptr &&
-           (!_g1h->is_in_reserved(obj) || !_g1h->is_obj_dead(obj));
+    return !_g1h->is_obj_dead(obj);
   }
 };
 
@@ -1295,6 +1294,11 @@ void G1ConcurrentMark::remark() {
       GCTraceTime(Debug, gc, phases) debug("Purge Metaspace", _gc_timer_cm);
       ClassLoaderDataGraph::purge(/*at_safepoint*/true);
     }
+
+    // Potentially, some empty-regions have been reclaimed; make this a
+    // "collection" so that pending allocation can retry before attempting a
+    // GC pause.
+    _g1h->increment_total_collections();
 
     _g1h->resize_heap_if_necessary();
     _g1h->uncommit_regions_if_necessary();
@@ -1462,10 +1466,6 @@ void G1ConcurrentMark::cleanup() {
   }
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyLocation::CleanupAfter);
-
-  // We need to make this be a "collection" so any collection pause that
-  // races with it goes around and waits for Cleanup to finish.
-  _g1h->increment_total_collections();
 
   // Local statistics
   double recent_cleanup_time = (os::elapsedTime() - start);

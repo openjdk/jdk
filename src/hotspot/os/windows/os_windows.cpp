@@ -78,6 +78,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
 #include "windbghelp.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 #ifdef _DEBUG
 #include <crtdbg.h>
@@ -4775,8 +4778,19 @@ FILE* os::fdopen(int fd, const char* mode) {
   return ::_fdopen(fd, mode);
 }
 
-ssize_t os::write(int fd, const void *buf, unsigned int nBytes) {
-  return ::write(fd, buf, nBytes);
+ssize_t os::pd_write(int fd, const void *buf, size_t nBytes) {
+  ssize_t original_len = (ssize_t)nBytes;
+  while (nBytes > 0) {
+    unsigned int len = nBytes > INT_MAX ? INT_MAX : (unsigned int)nBytes;
+    // On Windows, ::write takes 'unsigned int' no of bytes, so nBytes should be split if larger.
+    ssize_t written_bytes = ::write(fd, buf, len);
+    if (written_bytes < 0) {
+      return OS_ERR;
+    }
+    nBytes -= written_bytes;
+    buf = (char *)buf + written_bytes;
+  }
+  return original_len;
 }
 
 void os::exit(int num) {
@@ -6010,6 +6024,33 @@ void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {
     }
   }
 }
+
+#if INCLUDE_JFR
+
+void os::jfr_report_memory_info() {
+  PROCESS_MEMORY_COUNTERS_EX pmex;
+  ZeroMemory(&pmex, sizeof(PROCESS_MEMORY_COUNTERS_EX));
+  pmex.cb = sizeof(pmex);
+
+  BOOL ret = GetProcessMemoryInfo(GetCurrentProcess(), (PROCESS_MEMORY_COUNTERS*) &pmex, sizeof(pmex));
+  if (ret != 0) {
+    // Send the RSS JFR event
+    EventResidentSetSize event;
+    event.set_size(pmex.WorkingSetSize);
+    event.set_peak(pmex.PeakWorkingSetSize);
+    event.commit();
+  } else {
+    // Log a warning
+    static bool first_warning = true;
+    if (first_warning) {
+      log_warning(jfr)("Error fetching RSS values: GetProcessMemoryInfo failed");
+      first_warning = false;
+    }
+  }
+}
+
+#endif // INCLUDE_JFR
+
 
 // File conventions
 const char* os::file_separator() { return "\\"; }

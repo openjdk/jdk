@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @enablePreview
  * @summary Test behavior of Pretty
  * @modules jdk.compiler
  */
@@ -48,38 +49,46 @@ public class PrettyTest {
         String code = "class Test {\n" +
                       "    boolean t(Object o) {\n" +
                       "         boolean b;\n" +
+                      "         boolean _ = true;\n" +
                       "         b = o instanceof String s;\n" +
                       "         b = o instanceof R(String s);\n" +
                       "         b = o instanceof R(var s);\n" +
                       "         b = o instanceof R2(R(var s), String t);\n" +
                       "         b = o instanceof R2(R(var s), var t);\n" +
+                      "         b = o instanceof R(String _);\n" +
+                      "         b = o instanceof R2(R(var _), var _);\n" +
+                      "         b = o instanceof R2(R(_), var t);\n" +
                       "    }\n" +
                       "    record R(String s) {}\n" +
                       "    record R2(R r, String s) {}\n" +
                       "}\n";
         String pretty = parse(code).toString().replaceAll("\\R", "\n");
         String expected = """
-                          \n\
-                          class Test {
-                              \n\
-                              boolean t(Object o) {
-                                  boolean b;
-                                  b = o instanceof String s;
-                                  b = o instanceof R(String s);
-                                  b = o instanceof R(/*missing*/ s);
-                                  b = o instanceof R2(R(/*missing*/ s), String t);
-                                  b = o instanceof R2(R(/*missing*/ s), /*missing*/ t);
-                              }
-                              \n\
-                              class R {
-                                  private final String s;
-                              }
-                              \n\
-                              class R2 {
-                                  private final R r;
-                                  private final String s;
-                              }
-                          }""";
+                \n\
+                class Test {
+                    \n\
+                    boolean t(Object o) {
+                        boolean b;
+                        boolean _ = true;
+                        b = o instanceof String s;
+                        b = o instanceof R(String s);
+                        b = o instanceof R(/*missing*/ s);
+                        b = o instanceof R2(R(/*missing*/ s), String t);
+                        b = o instanceof R2(R(/*missing*/ s), /*missing*/ t);
+                        b = o instanceof R(String _);
+                        b = o instanceof R2(R(/*missing*/ _), /*missing*/ _);
+                        b = o instanceof R2(R(_), /*missing*/ t);
+                    }
+                    \n\
+                    class R {
+                        private final String s;
+                    }
+                    \n\
+                    class R2 {
+                        private final R r;
+                        private final String s;
+                    }
+                }""";
         if (!expected.equals(pretty)) {
             throw new AssertionError("Actual prettified source: " + pretty);
         }

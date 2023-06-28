@@ -86,8 +86,8 @@ inline void ZHeap::handle_alloc_stalling_for_young() {
   _page_allocator.handle_alloc_stalling_for_young();
 }
 
-inline void ZHeap::handle_alloc_stalling_for_old() {
-  _page_allocator.handle_alloc_stalling_for_old();
+inline void ZHeap::handle_alloc_stalling_for_old(bool cleared_soft_refs) {
+  _page_allocator.handle_alloc_stalling_for_old(cleared_soft_refs);
 }
 
 inline bool ZHeap::is_oop(uintptr_t addr) const {

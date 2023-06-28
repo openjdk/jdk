@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.net.Authenticator.RequestorType;
 import java.util.Base64;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.concurrent.locks.ReentrantLock;
 
 import sun.net.www.HeaderParser;
@@ -110,7 +111,7 @@ class NegotiateAuthentication extends AuthenticationInfo {
                 supported = new HashMap<>();
             }
             String hostname = hci.host;
-            hostname = hostname.toLowerCase();
+            hostname = hostname.toLowerCase(Locale.ROOT);
             if (supported.containsKey(hostname)) {
                 return supported.get(hostname);
             }

@@ -75,7 +75,7 @@ class FilterDeadLabelsTest {
     @ParameterizedTest
     @MethodSource("deadLabelFragments")
     void testThrowOnDeadLabels(Consumer<CodeBuilder> fragment) {
-        assertThrows(IllegalStateException.class, () -> Classfile.build(ClassDesc.of("cls"), clb ->
+        assertThrows(IllegalArgumentException.class, () -> Classfile.build(ClassDesc.of("cls"), clb ->
                 clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     cob.return_();
                     fragment.accept(cob);

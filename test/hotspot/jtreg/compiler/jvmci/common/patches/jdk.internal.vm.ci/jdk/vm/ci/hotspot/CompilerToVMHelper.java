@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -106,20 +106,20 @@ public class CompilerToVMHelper {
         return obj.object;
     }
 
-    public static int lookupNameAndTypeRefIndexInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupNameAndTypeRefIndexInPool((HotSpotConstantPool) constantPool, cpi);
+    public static int lookupNameAndTypeRefIndexInPool(ConstantPool constantPool, int rawIndex, int opcode) {
+        return CTVM.lookupNameAndTypeRefIndexInPool((HotSpotConstantPool) constantPool, rawIndex, opcode);
     }
 
-    public static String lookupNameInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupNameInPool((HotSpotConstantPool) constantPool, cpi);
+    public static String lookupNameInPool(ConstantPool constantPool, int rawIndex, int opcode) {
+        return CTVM.lookupNameInPool((HotSpotConstantPool) constantPool, rawIndex, opcode);
     }
 
-    public static String lookupSignatureInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupSignatureInPool((HotSpotConstantPool) constantPool, cpi);
+    public static String lookupSignatureInPool(ConstantPool constantPool, int rawIndex, int opcode) {
+        return CTVM.lookupSignatureInPool((HotSpotConstantPool) constantPool, rawIndex, opcode);
     }
 
-    public static int lookupKlassRefIndexInPool(ConstantPool constantPool, int cpi) {
-        return CTVM.lookupKlassRefIndexInPool((HotSpotConstantPool) constantPool, cpi);
+    public static int lookupKlassRefIndexInPool(ConstantPool constantPool, int rawIndex, int opcode) {
+        return CTVM.lookupKlassRefIndexInPool((HotSpotConstantPool) constantPool, rawIndex, opcode);
     }
 
     public static Object lookupKlassInPool(ConstantPool constantPool, int cpi) {
@@ -275,11 +275,6 @@ public class CompilerToVMHelper {
             int initialSkip,
             InspectedFrameVisitor<T> visitor) {
         return CTVM.iterateFrames(initialMethods, matchingMethods, initialSkip, visitor);
-    }
-
-    public static void materializeVirtualObjects(
-            HotSpotStackFrameReference stackFrame, boolean invalidate) {
-        CTVM.materializeVirtualObjects(stackFrame, invalidate);
     }
 
     public static int getVtableIndexForInterfaceMethod(HotSpotResolvedObjectType type,

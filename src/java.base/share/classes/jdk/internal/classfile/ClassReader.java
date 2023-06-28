@@ -26,6 +26,7 @@ package jdk.internal.classfile;
 
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPool;
+import jdk.internal.classfile.constantpool.ConstantPoolException;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
@@ -96,7 +97,7 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the constant pool entry whose index is given at the specified
      * offset within the classfile}
      * @param offset the offset of the index within the classfile
-     * @throws IndexOutOfBoundsException if the index is out of range of the
+     * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size, or zero
      */
     PoolEntry readEntry(int offset);
@@ -106,7 +107,7 @@ public sealed interface ClassReader extends ConstantPool
      * offset within the classfile, or null if the index at the specified
      * offset is zero}
      * @param offset the offset of the index within the classfile
-     * @throws IndexOutOfBoundsException if the index is out of range of the
+     * @throws ConstantPoolException if the index is out of range of the
      *         constant pool size
      */
     PoolEntry readEntryOrNull(int offset);
@@ -115,9 +116,8 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the UTF8 entry whose index is given at the specified
      * offset within the classfile}
      * @param offset the offset of the index within the classfile
-     * @throws IndexOutOfBoundsException if the index is out of range of the
-     *         constant pool size, or zero
-     * @throws IllegalArgumentException if the index does not correspond to
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool size, or zero, or the index does not correspond to
      *         a UTF8 entry
      */
     Utf8Entry readUtf8Entry(int offset);
@@ -127,9 +127,8 @@ public sealed interface ClassReader extends ConstantPool
      * offset within the classfile, or null if the index at the specified
      * offset is zero}
      * @param offset the offset of the index within the classfile
-     * @throws IndexOutOfBoundsException if the index is out of range of the
-     *         constant pool size
-     * @throws IllegalArgumentException if the index does not correspond to
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool size, or the index does not correspond to
      *         a UTF8 entry
      */
     Utf8Entry readUtf8EntryOrNull(int offset);
@@ -138,9 +137,8 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the module entry whose index is given at the specified
      * offset within the classfile}
      * @param offset the offset of the index within the classfile
-     * @throws IndexOutOfBoundsException if the index is out of range of the
-     *         constant pool size, or zero
-     * @throws IllegalArgumentException if the index does not correspond to
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool size, or zero, or the index does not correspond to
      *         a module entry
      */
     ModuleEntry readModuleEntry(int offset);
@@ -149,9 +147,8 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the package entry whose index is given at the specified
      * offset within the classfile}
      * @param offset the offset of the index within the classfile
-     * @throws IndexOutOfBoundsException if the index is out of range of the
-     *         constant pool size, or zero
-     * @throws IllegalArgumentException if the index does not correspond to
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool size, or zero, or the index does not correspond to
      *         a package entry
      */
     PackageEntry readPackageEntry(int offset);
@@ -160,9 +157,8 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the class entry whose index is given at the specified
      * offset within the classfile}
      * @param offset the offset of the index within the classfile
-     * @throws IndexOutOfBoundsException if the index is out of range of the
-     *         constant pool size, or zero
-     * @throws IllegalArgumentException if the index does not correspond to
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool size, or zero, or the index does not correspond to
      *         a class entry
      */
     ClassEntry readClassEntry(int offset);
@@ -171,9 +167,8 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the name-and-type entry whose index is given at the specified
      * offset within the classfile}
      * @param offset the offset of the index within the classfile
-     * @throws IndexOutOfBoundsException if the index is out of range of the
-     *         constant pool size, or zero
-     * @throws IllegalArgumentException if the index does not correspond to
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool size, or zero, or the index does not correspond to
      *         a name-and-type entry
      */
     NameAndTypeEntry readNameAndTypeEntry(int offset);
@@ -182,9 +177,8 @@ public sealed interface ClassReader extends ConstantPool
      * {@return the method handle entry whose index is given at the specified
      * offset within the classfile}
      * @param offset the offset of the index within the classfile
-     * @throws IndexOutOfBoundsException if the index is out of range of the
-     *         constant pool size, or zero
-     * @throws IllegalArgumentException if the index does not correspond to
+     * @throws ConstantPoolException if the index is out of range of the
+     *         constant pool size, or zero, or the index does not correspond to
      *         a method handle entry
      */
     MethodHandleEntry readMethodHandleEntry(int offset);

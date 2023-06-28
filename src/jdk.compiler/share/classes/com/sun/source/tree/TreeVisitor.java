@@ -269,6 +269,16 @@ public interface TreeVisitor<R,P> {
     R visitStringTemplate(StringTemplateTree node, P p);
 
     /**
+     * Visits a {@code AnyPatternTree} node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     * @since 21
+     */
+    @PreviewFeature(feature=PreviewFeature.Feature.UNNAMED)
+    R visitAnyPattern(AnyPatternTree node, P p);
+
+    /**
      * Visits a {@code BindingPatternTree} node.
      * @param node the node being visited
      * @param p a parameter value

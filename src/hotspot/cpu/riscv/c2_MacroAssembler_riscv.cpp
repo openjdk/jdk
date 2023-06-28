@@ -491,7 +491,9 @@ void C2_MacroAssembler::string_indexof(Register haystack, Register needle,
   }
   bne(tmp3, skipch, BMSKIP); // if not equal, skipch is bad char
   add(result, haystack, isLL ? nlen_tmp : ch2);
-  ld(ch2, Address(result)); // load 8 bytes from source string
+  // load 8 bytes from source string
+  // if isLL is false then read granularity can be 2
+  load_long_misaligned(ch2, Address(result), ch1, isLL ? 1 : 2); // can use ch1 as temp register here as it will be trashed by next mv anyway
   mv(ch1, tmp6);
   if (isLL) {
     j(BMLOOPSTR1_AFTER_LOAD);
@@ -679,10 +681,30 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     slli(tmp3, result_tmp, haystack_chr_shift); // result as tmp
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
+    if (AvoidUnalignedAccesses) {
+      // preload first value, then we will read by 1 character per loop, instead of four
+      // just shifting previous ch2 right by size of character in bits
+      add(tmp3, haystack, hlen_neg);
+      (this->*load_4chr)(ch2, Address(tmp3), noreg);
+      if (isLL) {
+        // need to erase 1 most significant byte in 32-bit value of ch2
+        slli(ch2, ch2, 40);
+        srli(ch2, ch2, 32);
+      } else {
+        slli(ch2, ch2, 16); // 2 most significant bytes will be erased by this operation
+      }
+    }
 
     bind(CH1_LOOP);
-    add(ch2, haystack, hlen_neg);
-    (this->*load_4chr)(ch2, Address(ch2), noreg);
+    add(tmp3, haystack, hlen_neg);
+    if (AvoidUnalignedAccesses) {
+      srli(ch2, ch2, isLL ? 8 : 16);
+      (this->*haystack_load_1chr)(tmp3, Address(tmp3, isLL ? 3 : 6), noreg);
+      slli(tmp3, tmp3, isLL ? 24 : 48);
+      add(ch2, ch2, tmp3);
+    } else {
+      (this->*load_4chr)(ch2, Address(tmp3), noreg);
+    }
     beq(ch1, ch2, MATCH);
     add(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, CH1_LOOP);
@@ -700,10 +722,23 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
-
+    if (AvoidUnalignedAccesses) {
+      // preload first value, then we will read by 1 character per loop, instead of two
+      // just shifting previous ch2 right by size of character in bits
+      add(tmp3, haystack, hlen_neg);
+      (this->*haystack_load_1chr)(ch2, Address(tmp3), noreg);
+      slli(ch2, ch2, isLL ? 8 : 16);
+    }
     bind(CH1_LOOP);
     add(tmp3, haystack, hlen_neg);
-    (this->*load_2chr)(ch2, Address(tmp3), noreg);
+    if (AvoidUnalignedAccesses) {
+      srli(ch2, ch2, isLL ? 8 : 16);
+      (this->*haystack_load_1chr)(tmp3, Address(tmp3, isLL ? 1 : 2), noreg);
+      slli(tmp3, tmp3, isLL ? 8 : 16);
+      add(ch2, ch2, tmp3);
+    } else {
+      (this->*load_2chr)(ch2, Address(tmp3), noreg);
+    }
     beq(ch1, ch2, MATCH);
     add(hlen_neg, hlen_neg, haystack_chr_size);
     blez(hlen_neg, CH1_LOOP);
@@ -727,7 +762,14 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
 
     bind(FIRST_LOOP);
     add(ch2, haystack, hlen_neg);
-    (this->*load_2chr)(ch2, Address(ch2), noreg);
+    if (AvoidUnalignedAccesses) {
+      (this->*haystack_load_1chr)(tmp2, Address(ch2, isLL ? 1 : 2), noreg); // we need a temp register, we can safely use hlen_tmp here, which is a synonym for tmp2
+      (this->*haystack_load_1chr)(ch2, Address(ch2), noreg);
+      slli(tmp2, tmp2, isLL ? 8 : 16);
+      add(ch2, ch2, tmp2);
+    } else {
+      (this->*load_2chr)(ch2, Address(ch2), noreg);
+    }
     beq(first, ch2, STR1_LOOP);
 
     bind(STR2_NEXT);
@@ -751,10 +793,7 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
     bind(DO1);
     (this->*needle_load_1chr)(ch1, Address(needle), noreg);
     sub(result_tmp, haystack_len, 1);
-    mv(tmp3, result_tmp);
-    if (haystack_chr_shift) {
-      slli(tmp3, result_tmp, haystack_chr_shift);
-    }
+    slli(tmp3, result_tmp, haystack_chr_shift);
     add(haystack, haystack, tmp3);
     neg(hlen_neg, tmp3);
 
@@ -1377,7 +1416,7 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
     srli(cnt, cnt, 1);
   }
 
-  element_compare(a1, a2, result, cnt, tmp1, tmp2, v0, v2, v0, elem_size == 1, DONE);
+  element_compare(a1, a2, result, cnt, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE);
 
   bind(DONE);
   BLOCK_COMMENT("} string_equals_v");
@@ -1387,17 +1426,17 @@ void C2_MacroAssembler::string_equals_v(Register a1, Register a2, Register resul
 // base: Address of a buffer to be zeroed
 // cnt: Count in HeapWords
 //
-// base, cnt, v0, v1 and t0 are clobbered.
+// base, cnt, v4, v5, v6, v7 and t0 are clobbered.
 void C2_MacroAssembler::clear_array_v(Register base, Register cnt) {
   Label loop;
 
   // making zero words
   vsetvli(t0, cnt, Assembler::e64, Assembler::m4);
-  vxor_vv(v0, v0, v0);
+  vxor_vv(v4, v4, v4);
 
   bind(loop);
   vsetvli(t0, cnt, Assembler::e64, Assembler::m4);
-  vse64_v(v0, base);
+  vse64_v(v4, base);
   sub(cnt, cnt, t0);
   shadd(base, t0, base, t0, 3);
   bnez(cnt, loop);
@@ -1430,7 +1469,7 @@ void C2_MacroAssembler::arrays_equals_v(Register a1, Register a2, Register resul
   la(a1, Address(a1, base_offset));
   la(a2, Address(a2, base_offset));
 
-  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v0, v2, v0, elem_size == 1, DONE);
+  element_compare(a1, a2, result, cnt1, tmp1, tmp2, v2, v4, v2, elem_size == 1, DONE);
 
   bind(DONE);
 
@@ -1466,13 +1505,13 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
   bind(L);
 
   if (str1_isL == str2_isL) { // LL or UU
-    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v1, encLL, DIFFERENCE);
+    element_compare(str1, str2, zr, cnt2, tmp1, tmp2, v2, v4, v2, encLL, DIFFERENCE);
     j(DONE);
   } else { // LU or UL
     Register strL = encLU ? str1 : str2;
     Register strU = encLU ? str2 : str1;
-    VectorRegister vstr1 = encLU ? v4 : v0;
-    VectorRegister vstr2 = encLU ? v0 : v4;
+    VectorRegister vstr1 = encLU ? v8 : v4;
+    VectorRegister vstr2 = encLU ? v4 : v8;
 
     bind(loop);
     vsetvli(tmp1, cnt2, Assembler::e8, Assembler::m2);
@@ -1480,8 +1519,8 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
     vsetvli(tmp1, cnt2, Assembler::e16, Assembler::m4);
     vzext_vf2(vstr2, vstr1);
     vle16_v(vstr1, strU);
-    vmsne_vv(v0, vstr2, vstr1);
-    vfirst_m(tmp2, v0);
+    vmsne_vv(v4, vstr2, vstr1);
+    vfirst_m(tmp2, v4);
     bgez(tmp2, DIFFERENCE);
     sub(cnt2, cnt2, tmp1);
     add(strL, strL, tmp1);
@@ -1489,6 +1528,7 @@ void C2_MacroAssembler::string_compare_v(Register str1, Register str2, Register 
     bnez(cnt2, loop);
     j(DONE);
   }
+
   bind(DIFFERENCE);
   slli(tmp1, tmp2, 1);
   add(str1, str1, str1_isL ? tmp2 : tmp1);
@@ -1507,10 +1547,10 @@ void C2_MacroAssembler::byte_array_inflate_v(Register src, Register dst, Registe
   BLOCK_COMMENT("byte_array_inflate_v {");
   bind(loop);
   vsetvli(tmp, len, Assembler::e8, Assembler::m2);
-  vle8_v(v2, src);
+  vle8_v(v6, src);
   vsetvli(t0, len, Assembler::e16, Assembler::m4);
-  vzext_vf2(v0, v2);
-  vse16_v(v0, dst);
+  vzext_vf2(v4, v6);
+  vse16_v(v4, dst);
   sub(len, len, tmp);
   add(src, src, tmp);
   shadd(dst, tmp, dst, tmp, 1);
@@ -1520,26 +1560,39 @@ void C2_MacroAssembler::byte_array_inflate_v(Register src, Register dst, Registe
 
 // Compress char[] array to byte[].
 // result: the array length if every element in array can be encoded; 0, otherwise.
-void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Register len, Register result, Register tmp) {
+void C2_MacroAssembler::char_array_compress_v(Register src, Register dst, Register len,
+                                              Register result, Register tmp) {
   Label done;
-  encode_iso_array_v(src, dst, len, result, tmp);
+  encode_iso_array_v(src, dst, len, result, tmp, false);
   beqz(len, done);
   mv(result, zr);
   bind(done);
 }
 
-// result: the number of elements had been encoded.
-void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register len, Register result, Register tmp) {
-  Label loop, DIFFERENCE, DONE;
+// Intrinsic for
+//
+// - sun/nio/cs/ISO_8859_1$Encoder.implEncodeISOArray
+//     return the number of characters copied.
+// - java/lang/StringUTF16.compress
+//     return zero (0) if copy fails, otherwise 'len'.
+//
+// This version always returns the number of characters copied. A successful
+// copy will complete with the post-condition: 'res' == 'len', while an
+// unsuccessful copy will exit with the post-condition: 0 <= 'res' < 'len'.
+//
+// Clobbers: src, dst, len, result, t0
+void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register len,
+                                           Register result, Register tmp, bool ascii) {
+  Label loop, fail, done;
 
   BLOCK_COMMENT("encode_iso_array_v {");
   mv(result, 0);
 
   bind(loop);
-  mv(tmp, 0xff);
+  mv(tmp, ascii ? 0x7f : 0xff);
   vsetvli(t0, len, Assembler::e16, Assembler::m2);
   vle16_v(v2, src);
-  // if element > 0xff, stop
+
   vmsgtu_vx(v1, v2, tmp);
   vfirst_m(tmp, v1);
   vmsbf_m(v0, v1);
@@ -1548,18 +1601,19 @@ void C2_MacroAssembler::encode_iso_array_v(Register src, Register dst, Register 
   vncvt_x_x_w(v1, v2, Assembler::v0_t);
   vse8_v(v1, dst, Assembler::v0_t);
 
-  bgez(tmp, DIFFERENCE);
+  // fail if char > 0x7f/0xff
+  bgez(tmp, fail);
   add(result, result, t0);
   add(dst, dst, t0);
   sub(len, len, t0);
   shadd(src, t0, src, t0, 1);
   bnez(len, loop);
-  j(DONE);
+  j(done);
 
-  bind(DIFFERENCE);
+  bind(fail);
   add(result, result, tmp);
 
-  bind(DONE);
+  bind(done);
   BLOCK_COMMENT("} encode_iso_array_v");
 }
 
@@ -1573,9 +1627,9 @@ void C2_MacroAssembler::count_positives_v(Register ary, Register len, Register r
 
   bind(LOOP);
   vsetvli(t0, len, Assembler::e8, Assembler::m4);
-  vle8_v(v0, ary);
-  vmslt_vx(v0, v0, zr);
-  vfirst_m(tmp, v0);
+  vle8_v(v4, ary);
+  vmslt_vx(v4, v4, zr);
+  vfirst_m(tmp, v4);
   bgez(tmp, SET_RESULT);
   // if tmp == -1, all bytes are positive
   add(result, result, t0);
@@ -1603,9 +1657,9 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
   Assembler::SEW sew = isL ? Assembler::e8 : Assembler::e16;
   bind(loop);
   vsetvli(tmp1, cnt1, sew, Assembler::m4);
-  vlex_v(v0, str1, sew);
-  vmseq_vx(v0, v0, ch);
-  vfirst_m(tmp2, v0);
+  vlex_v(v4, str1, sew);
+  vmseq_vx(v4, v4, ch);
+  vfirst_m(tmp2, v4);
   bgez(tmp2, MATCH); // if equal, return index
 
   add(result, result, tmp1);
