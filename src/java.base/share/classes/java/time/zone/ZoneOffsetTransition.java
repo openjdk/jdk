@@ -400,8 +400,8 @@ public final class ZoneOffsetTransition
      * The offsets are ignored, making this order inconsistent with equals.
      *
      * @param transition  the transition to compare to, not null
-     * @return the comparator value is less than zero if the {@code transition} is before,
-     *          zero if they are equal, greater than zero if the {@code transition} is after
+     * @return the comparator value is less than zero if the {@code transition} instant is before,
+     *          zero if they are equal, greater than zero if the {@code transition} instant is after
      */
     @Override
     public int compareTo(ZoneOffsetTransition transition) {

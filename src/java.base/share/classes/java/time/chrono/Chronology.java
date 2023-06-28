@@ -811,7 +811,7 @@ public interface Chronology extends Comparable<Chronology> {
      *          is lexicographically before this ID string, greater than zero
      *          if {@code other}'s ID string is lexicographically greater than this ID string;
      *          otherwise, if the ID strings are equal, the value is zero unless
-     *          the implementation distinguishes instances using additional information
+     *          the chronology distinguishes instances using additional information
      */
     @Override
     int compareTo(Chronology other);

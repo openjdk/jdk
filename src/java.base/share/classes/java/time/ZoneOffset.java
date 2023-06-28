@@ -714,9 +714,9 @@ public final class ZoneOffset
      * The comparison is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param other  the other date to compare to, not null
-     * @return the comparator value is less than zero if the {@code other} is before,
-     *          zero if they are equal, greater than zero if the {@code other} is after
-
+     * @return the comparator value is less than zero if the {@code other} totalSeconds
+     *          is less than this totalSeconds, zero if they are equal,
+     *          greater than zero if the {@code other} totalSeconds is greater than this totalSeconds
      * @throws NullPointerException if {@code other} is null
      */
     @Override
