@@ -521,13 +521,12 @@ constexpr T2 checked_cast(T1 thing) {
   return result;
 }
 
-// delta_as_int is called to do pointer subtraction for nearby pointers that
+// pointer_delta_as_int is called to do pointer subtraction for nearby pointers that
 // returns an int, usually used as a size of a code buffer range.
-// This allows the left side to be less than the right side, unlike pointer_delta,
-// and scales to sizeof(T)
+// This scales to sizeof(T)
 template <typename T>
-inline int delta_as_int(const volatile T* left, const volatile T* right) {
-  return checked_cast<int>(left - right);
+inline int pointer_delta_as_int(const volatile T* left, const volatile T* right) {
+  return checked_cast<int>(pointer_delta(left, right, sizeof(T)));
 }
 
 // Need the correct linkage to call qsort without warnings

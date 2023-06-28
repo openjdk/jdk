@@ -64,7 +64,7 @@ class ClassFileStream: public ResourceObj {
 
   // Buffer access
   const u1* buffer() const { return _buffer_start; }
-  int length() const { return delta_as_int(_buffer_end, _buffer_start); }
+  int length() const { return pointer_delta_as_int(_buffer_end, _buffer_start); }
   const u1* current() const { return _current; }
   void set_current(const u1* pos) const {
     assert(pos >= _buffer_start && pos <= _buffer_end, "invariant");
