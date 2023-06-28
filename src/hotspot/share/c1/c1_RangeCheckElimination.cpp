@@ -277,8 +277,21 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
           jint new_upper = low(new_upperl);
 
           if (((jlong)new_lower) == new_lowerl && ((jlong)new_upper == new_upperl)) {
-            Bound *newBound = new Bound(new_lower, bound->lower_instr(), new_upper, bound->upper_instr());
-            _bound = newBound;
+            // The following deduction is wrong, because (lower - const + const) and
+            // (upper -  const + const) may overflow/underflow:
+            //
+            //   lower - const <= x <= upper - const
+            //   lower <= x + const <= upper
+            // e.g.
+            //    -3 <= x     <= min_jint - 3
+            //    0  <= x + 3 <= min_jint    (wrong)
+            if (bound->upper_instr() != nullptr || bound->lower_instr() != nullptr) {
+              // may overflow
+              _bound = new Bound();
+            } else {
+              Bound *newBound = new Bound(new_lower, bound->lower_instr(), new_upper, bound->upper_instr());
+              _bound = newBound;
+            }
           } else {
             // overflow
             _bound = new Bound();
