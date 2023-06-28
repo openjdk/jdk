@@ -65,4 +65,3 @@ public:
 };
 
 #endif // CPU_X86_INTELJCCERRATUM_X86_HPP
-

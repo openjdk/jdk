@@ -49,4 +49,3 @@ public:
 #endif // __APPLE__ && AARCH64
 
 #endif // SHARE_RUNTIME_THREADWXSETTERS_INLINE_HPP
-

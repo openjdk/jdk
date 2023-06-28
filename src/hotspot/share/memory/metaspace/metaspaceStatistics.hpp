@@ -166,4 +166,3 @@ struct ClmsStats {
 } // namespace metaspace
 
 #endif // SHARE_MEMORY_METASPACE_METASPACESTATISTICS_HPP
-

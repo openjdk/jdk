@@ -43,4 +43,3 @@ class AIXDecoder: public AbstractDecoder {
   }
 
 };
-

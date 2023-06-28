@@ -33,4 +33,3 @@
 #ifdef vmassert
 #define assert(p, ...) vmassert(p, __VA_ARGS__)
 #endif
-

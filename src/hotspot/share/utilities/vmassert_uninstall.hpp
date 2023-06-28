@@ -42,4 +42,3 @@
 #ifdef vmassert
 #undef assert
 #endif // vmassert
-

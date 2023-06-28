@@ -66,4 +66,3 @@ class JfrConcurrentQueue : public AllocPolicy {
 };
 
 #endif // SHARE_JFR_UTILITIES_JFRCONCURRENTQUEUE_HPP
-

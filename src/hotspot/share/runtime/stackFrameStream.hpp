@@ -68,5 +68,3 @@ class StackFrameStream : public StackObj {
 };
 
 #endif // SHARE_RUNTIME_STACKFRAMESTREAM_HPP
-
-

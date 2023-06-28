@@ -26,4 +26,3 @@
   void set_card(LIR_Opr value, LIR_Address* card_addr);
 
   void make_div_by_zero_check(LIR_Opr right_arg, BasicType type, CodeEmitInfo* info);
-

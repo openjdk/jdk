@@ -158,4 +158,3 @@ void OopMapDo<OopFnT, DerivedOopFnT, ValueFilterT>::oops_do(const frame *fr, con
 }
 
 #endif // SHARE_VM_COMPILER_OOPMAP_INLINE_HPP
-

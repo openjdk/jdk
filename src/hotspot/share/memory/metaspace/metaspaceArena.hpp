@@ -201,4 +201,3 @@ public:
 } // namespace metaspace
 
 #endif // SHARE_MEMORY_METASPACE_METASPACEARENA_HPP
-

@@ -375,4 +375,3 @@ public:
 };
 
 #endif // SHARE_SERVICES_NMT_PREINIT_HPP
-

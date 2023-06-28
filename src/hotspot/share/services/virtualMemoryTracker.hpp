@@ -402,4 +402,3 @@ class VirtualMemoryTracker : AllStatic {
 };
 
 #endif // SHARE_SERVICES_VIRTUALMEMORYTRACKER_HPP
-

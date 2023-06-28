@@ -170,4 +170,3 @@ inline void Devirtualizer::do_derived_oop(DerivedOopClosureType* closure, derive
 }
 
 #endif // SHARE_UTILITIES_DEVIRTUALIZER_INLINE_HPP
-

@@ -389,4 +389,3 @@ class LibraryCallKit : public GraphKit {
 
   bool inline_blackhole();
 };
-

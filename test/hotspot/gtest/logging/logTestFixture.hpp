@@ -51,4 +51,3 @@ class LogTestFixture : public testing::Test {
   void restore_config();
   void clear_snapshot();
 };
-

@@ -207,4 +207,3 @@ void emitErrorMessageAndExit(const std::string& msg) {
 }
 
 #endif // __CallHelper_hpp__
-

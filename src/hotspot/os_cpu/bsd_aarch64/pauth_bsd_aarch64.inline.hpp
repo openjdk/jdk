@@ -44,4 +44,3 @@ inline address pauth_authenticate_return_address(address ret_addr, address sp) {
 }
 
 #endif // OS_CPU_BSD_AARCH64_PAUTH_BSD_AARCH64_INLINE_HPP
-
