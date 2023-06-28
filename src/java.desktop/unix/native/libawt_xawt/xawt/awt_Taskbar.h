@@ -59,4 +59,3 @@ static DbusmenuMenuitem* (*fp_unity_launcher_entry_get_quicklist) (UnityLauncher
 
 
 #endif /* AWT_TASKBAR_H */
-

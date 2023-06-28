@@ -1194,4 +1194,3 @@ CK_PKCS11_FUNCTION_INFO(C_MessageVerifyFinal)
 #endif
 
 #endif /* CK_PKCS11_2_0_ONLY */
-

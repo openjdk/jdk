@@ -31,4 +31,3 @@
 bool ChangeIcon(HANDLE update, const std::wstring& iconTarget);
 
 #endif // ICONSWAP_H
-

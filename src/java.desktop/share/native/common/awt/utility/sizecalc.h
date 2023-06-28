@@ -116,4 +116,3 @@
 
 
 #endif /* SIZECALC_H */
-

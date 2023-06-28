@@ -27,4 +27,3 @@
 #include <winsock2.h>
 
 #define uint32_t UINT32
-

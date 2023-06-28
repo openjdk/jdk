@@ -110,4 +110,3 @@ OSStatus GetAudioObjectProperty(AudioObjectID object, AudioObjectPropertyScope s
 
 // wrapper for AudioObjectSetPropertyData (kAudioObjectPropertyElementMaster)
 OSStatus SetAudioObjectProperty(AudioObjectID object, AudioObjectPropertyScope scope, AudioObjectPropertySelector prop, UInt32 size, void *data);
-

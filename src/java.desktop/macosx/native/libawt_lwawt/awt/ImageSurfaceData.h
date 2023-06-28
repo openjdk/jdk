@@ -111,4 +111,3 @@ struct _ImageSDOps
     pthread_mutex_t            lock;
     jint                    nrOfPixelsOwners;
 };
-

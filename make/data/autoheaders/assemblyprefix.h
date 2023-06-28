@@ -28,4 +28,3 @@
 // reproducible object file through a predictable value of the STT_FILE
 // symbol, and subsequently a reproducible .debuginfo.
 .file ASSEMBLY_SRC_FILE
-

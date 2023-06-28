@@ -182,4 +182,3 @@ private:
     D3DAdapterInitializer *pAdapterIniters;
 
 };
-

@@ -52,4 +52,3 @@ JNIEXPORT @interface NSApplicationAWT : NSApplication {
 @end
 
 JNIEXPORT void OSXAPP_SetApplicationDelegate(id <NSApplicationDelegate> delegate);
-

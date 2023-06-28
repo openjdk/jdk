@@ -94,4 +94,3 @@ class DwmAPI : public DllUtil {
 };
 
 #endif // DLLUTIL_H
-

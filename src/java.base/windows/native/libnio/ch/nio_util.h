@@ -70,4 +70,3 @@ jbyteArray sockaddrToUnixAddressBytes(JNIEnv *env, struct sockaddr_un *sa, sockl
 
 jint unixSocketAddressToSockaddr(JNIEnv *env, jbyteArray uaddr,
                                 struct sockaddr_un *sa, int *len);
-

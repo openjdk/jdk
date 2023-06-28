@@ -31,4 +31,3 @@
 double getNativeScaleFactor();
 
 #endif
-

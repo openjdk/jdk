@@ -80,4 +80,3 @@ jint unixSocketAddressToSockaddr(JNIEnv *env,
                                 jbyteArray uaddr,
                                 struct sockaddr_un *sa,
                                 int *len);
-

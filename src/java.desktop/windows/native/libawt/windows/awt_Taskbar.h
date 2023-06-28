@@ -105,4 +105,3 @@ ITaskbarList3 * m_Taskbar;
 
 
 #endif /* AWT_TASKBAR_H */
-
