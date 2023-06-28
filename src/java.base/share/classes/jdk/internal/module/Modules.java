@@ -135,6 +135,13 @@ public class Modules {
     }
 
     /**
+     * Adds native access to all unnamed modules.
+     */
+    public static void addEnableNativeAccessToAllUnnamed() {
+        JLA.addEnableNativeAccessToAllUnnamed();
+    }
+
+    /**
      * Updates module m to use a service.
      * Same as m2.addUses(service) but without a caller check.
      */

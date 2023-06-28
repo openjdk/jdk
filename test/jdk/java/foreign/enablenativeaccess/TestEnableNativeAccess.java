@@ -28,12 +28,11 @@
  * @library /test/lib
  * @build TestEnableNativeAccess
  *        panama_module/*
- *        org.openjdk.foreigntest.PanamaMainUnnamedModule
+ *        org.openjdk.foreigntest.unnamed.PanamaMainUnnamedModule
  * @run testng/othervm/timeout=180 TestEnableNativeAccess
  * @summary Basic test for java --enable-native-access
  */
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -55,75 +54,7 @@ import static org.testng.Assert.*;
 */
 
 @Test
-public class TestEnableNativeAccess {
-
-    static final String MODULE_PATH = System.getProperty("jdk.module.path");
-
-    static final String PANAMA_MAIN = "panama_module/org.openjdk.foreigntest.PanamaMainDirect";
-    static final String PANAMA_REFLECTION = "panama_module/org.openjdk.foreigntest.PanamaMainReflection";
-    static final String PANAMA_INVOKE = "panama_module/org.openjdk.foreigntest.PanamaMainInvoke";
-    static final String PANAMA_JNI = "panama_module/org.openjdk.foreigntest.PanamaMainJNI";
-    static final String UNNAMED = "org.openjdk.foreigntest.PanamaMainUnnamedModule";
-
-    /**
-     * Represents the expected result of a test.
-     */
-    static final class Result {
-        private final boolean success;
-        private final List<String> expectedOutput = new ArrayList<>();
-        private final List<String> notExpectedOutput = new ArrayList<>();
-
-        Result(boolean success) {
-            this.success = success;
-        }
-
-        Result expect(String msg) {
-            expectedOutput.add(msg);
-            return this;
-        }
-
-        Result doNotExpect(String msg) {
-            notExpectedOutput.add(msg);
-            return this;
-        }
-
-        boolean shouldSucceed() {
-            return success;
-        }
-
-        Stream<String> expectedOutput() {
-            return expectedOutput.stream();
-        }
-
-        Stream<String> notExpectedOutput() {
-            return notExpectedOutput.stream();
-        }
-
-        @Override
-        public String toString() {
-            String s = (success) ? "success" : "failure";
-            for (String msg : expectedOutput) {
-                s += "/" + msg;
-            }
-            return s;
-        }
-    }
-
-    static Result success() {
-        return new Result(true);
-    }
-
-    static Result successNoWarning() {
-        return success().doNotExpect("WARNING");
-    }
-
-    static Result successWithWarning(String moduleName) {
-        return success().expect("WARNING").expect("--enable-native-access=" + moduleName);
-    }
-
-    static Result failWithWarning(String expectedOutput) {
-        return new Result(false).expect(expectedOutput).expect("WARNING");
-    }
+public class TestEnableNativeAccess extends TestEnableNativeAccessBase {
 
     @DataProvider(name = "succeedCases")
     public Object[][] succeedCases() {
@@ -146,21 +77,6 @@ public class TestEnableNativeAccess {
                 { "panama_no_unnamed_module_native_access", UNNAMED, successWithWarning("ALL-UNNAMED"), new String[]{} },
                 { "panama_all_unnamed_module_native_access", UNNAMED, successNoWarning(), new String[]{"--enable-native-access=ALL-UNNAMED"} },
         };
-    }
-
-    /**
-     * Checks an expected result with the output captured by the given
-     * OutputAnalyzer.
-     */
-    void checkResult(Result expectedResult, OutputAnalyzer outputAnalyzer) {
-        expectedResult.expectedOutput().forEach(outputAnalyzer::shouldContain);
-        expectedResult.notExpectedOutput().forEach(outputAnalyzer::shouldNotContain);
-        int exitValue = outputAnalyzer.getExitValue();
-        if (expectedResult.shouldSucceed()) {
-            assertTrue(exitValue == 0);
-        } else {
-            assertTrue(exitValue != 0);
-        }
     }
 
     /**

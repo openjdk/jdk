@@ -29,6 +29,7 @@ typedef struct {
    jobject linker;
    jobject desc;
    jobject opts;
+   jthrowable exception;
 } Context;
 
 void call(void* arg) {
@@ -39,6 +40,8 @@ void call(void* arg) {
     jmethodID nativeLinkerMethod = env->GetMethodID(linkerClass, "downcallHandle",
             "(Ljava/lang/foreign/FunctionDescriptor;[Ljava/lang/foreign/Linker$Option;)Ljava/lang/invoke/MethodHandle;");
     env->CallVoidMethod(context->linker, nativeLinkerMethod, context->desc, context->opts);
+    context->exception = (jthrowable) env->NewGlobalRef(env->ExceptionOccurred());
+    env->ExceptionClear();
     context->jvm->DetachCurrentThread();
 }
 
@@ -51,8 +54,12 @@ extern "C" {
         context.desc = env->NewGlobalRef(desc);
         context.opts = env->NewGlobalRef(opts);
         run_in_new_thread_and_join(call, &context);
+        if (context.exception != nullptr) {
+            env->Throw(context.exception); // transfer exception to this thread
+        }
         env->DeleteGlobalRef(context.linker);
         env->DeleteGlobalRef(context.desc);
         env->DeleteGlobalRef(context.opts);
+        env->DeleteGlobalRef(context.exception);
     }
 }

@@ -35,80 +35,15 @@
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Stream;
 
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
-import static org.testng.Assert.*;
 
 @Test
-public class TestEnableNativeAccessDynamic {
-
-    static final String MODULE_PATH = System.getProperty("jdk.module.path");
-
-    static final String PANAMA_MAIN = "panama_module/org.openjdk.foreigntest.PanamaMainDirect";
-    static final String PANAMA_REFLECTION = "panama_module/org.openjdk.foreigntest.PanamaMainReflection";
-    static final String PANAMA_INVOKE = "panama_module/org.openjdk.foreigntest.PanamaMainInvoke";
-    static final String PANAMA_JNI = "panama_module/org.openjdk.foreigntest.PanamaMainJNI";
-
-    /**
-     * Represents the expected result of a test.
-     */
-    static final class Result {
-        private final boolean success;
-        private final List<String> expectedOutput = new ArrayList<>();
-        private final List<String> notExpectedOutput = new ArrayList<>();
-
-        Result(boolean success) {
-            this.success = success;
-        }
-
-        Result expect(String msg) {
-            expectedOutput.add(msg);
-            return this;
-        }
-
-        Result doNotExpect(String msg) {
-            notExpectedOutput.add(msg);
-            return this;
-        }
-
-        boolean shouldSucceed() {
-            return success;
-        }
-
-        Stream<String> expectedOutput() {
-            return expectedOutput.stream();
-        }
-
-        Stream<String> notExpectedOutput() {
-            return notExpectedOutput.stream();
-        }
-
-        @Override
-        public String toString() {
-            String s = (success) ? "success" : "failure";
-            for (String msg : expectedOutput) {
-                s += "/" + msg;
-            }
-            return s;
-        }
-    }
-
-    static Result success() {
-        return new Result(true);
-    }
-
-    static Result successNoWarning() {
-        return success().doNotExpect("WARNING");
-    }
-
-    static Result failWithError(String expectedOutput) {
-        return new Result(false).expect(expectedOutput);
-    }
+public class TestEnableNativeAccessDynamic extends TestEnableNativeAccessBase {
 
     @DataProvider(name = "succeedCases")
     public Object[][] succeedCases() {
@@ -127,21 +62,6 @@ public class TestEnableNativeAccessDynamic {
                 { "panama_enable_native_access_fail_reflection", PANAMA_REFLECTION, failWithError(errMsg) },
                 { "panama_enable_native_access_fail_invoke", PANAMA_INVOKE, failWithError(errMsg) },
         };
-    }
-
-    /**
-     * Checks an expected result with the output captured by the given
-     * OutputAnalyzer.
-     */
-    void checkResult(Result expectedResult, OutputAnalyzer outputAnalyzer) {
-        expectedResult.expectedOutput().forEach(outputAnalyzer::shouldContain);
-        expectedResult.notExpectedOutput().forEach(outputAnalyzer::shouldNotContain);
-        int exitValue = outputAnalyzer.getExitValue();
-        if (expectedResult.shouldSucceed()) {
-            assertTrue(exitValue == 0);
-        } else {
-            assertTrue(exitValue != 0);
-        }
     }
 
     /**
