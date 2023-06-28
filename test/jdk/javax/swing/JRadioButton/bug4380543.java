@@ -68,8 +68,8 @@ public class bug4380543 {
                     passFailJFrame = new PassFailJFrame(instructions);
                     testObj = new TestFrame();
                     //Adding the Test Frame to handle dispose
-                    PassFailJFrame.addTestFrame(testObj);
-                    PassFailJFrame.positionTestFrame(testObj, PassFailJFrame.Position.HORIZONTAL);
+                    PassFailJFrame.addTestWindow(testObj);
+                    PassFailJFrame.positionTestWindow(testObj, PassFailJFrame.Position.HORIZONTAL);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }

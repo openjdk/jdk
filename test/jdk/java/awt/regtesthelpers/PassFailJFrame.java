@@ -23,8 +23,8 @@
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.Frame;
 import java.awt.Toolkit;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
@@ -51,7 +51,7 @@ public class PassFailJFrame {
     private static final int ROWS = 10;
     private static final int COLUMNS = 40;
 
-    private static final List<Frame> frameList = new ArrayList<>();
+    private static final List<Window> windowList = new ArrayList<>();
     private static final Timer timer = new Timer(0, null);
     private static final CountDownLatch latch = new CountDownLatch(1);
 
@@ -172,7 +172,7 @@ public class PassFailJFrame {
         frame.pack();
         frame.setLocationRelativeTo(null);
         frame.setVisible(true);
-        frameList.add(frame);
+        windowList.add(frame);
     }
 
     private static String convertMillisToTimeStr(long millis) {
@@ -201,7 +201,7 @@ public class PassFailJFrame {
             throw new IllegalStateException("awaitAndCheck() should not be called on EDT");
         }
         latch.await();
-        invokeAndWait(PassFailJFrame::disposeFrames);
+        invokeAndWait(PassFailJFrame::disposeWindows);
 
         if (timeout) {
             throw new RuntimeException(testFailedReason);
@@ -215,12 +215,12 @@ public class PassFailJFrame {
     }
 
     /**
-     * Dispose all the frame(s) i,e both the test instruction frame as
-     * well as the frame that is added via addTestFrame(Frame frame)
+     * Dispose all the window(s) i,e both the test instruction frame and
+     * the window(s) that is added via addTestWindow(Window testWindow)
      */
-    private static synchronized void disposeFrames() {
-        for (Frame f : frameList) {
-            f.dispose();
+    private static synchronized void disposeWindows() {
+        for (Window win : windowList) {
+            win.dispose();
         }
     }
 
@@ -257,42 +257,42 @@ public class PassFailJFrame {
     }
 
     /**
-     * Position the instruction frame with testFrame ( testcase created
-     * frame) by the specified position
+     * Position the instruction frame with testWindow (testcase created
+     * window) by the specified position.
      * Note: This method should be invoked from the method that creates
-     * testFrame
+     * testWindow.
      *
-     * @param testFrame test frame that the test is created
+     * @param testWindow test window that the test is created
      * @param position  position can be either HORIZONTAL (both test
-     *                  instruction frame and test frame as arranged side by
-     *                  side or VERTICAL ( both test instruction frame and
-     *                  test frame as arranged up and down)
+     *                  instruction frame and test window as arranged
+     *                  side by side) or VERTICAL (both test instruction
+     *                  frame and test window as arranged up and down)
      */
-    public static void positionTestFrame(Frame testFrame, Position position) {
+    public static void positionTestWindow(Window testWindow, Position position) {
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         if (position.equals(Position.HORIZONTAL)) {
             int newX = ((screenSize.width / 2) - frame.getWidth());
             frame.setLocation(newX, frame.getY());
 
-            testFrame.setLocation((frame.getLocation().x + frame.getWidth() + 5), frame.getY());
+            testWindow.setLocation((frame.getLocation().x + frame.getWidth() + 5), frame.getY());
         } else if (position.equals(Position.VERTICAL)) {
             int newY = ((screenSize.height / 2) - frame.getHeight());
             frame.setLocation(frame.getX(), newY);
 
-            testFrame.setLocation(frame.getX(),
+            testWindow.setLocation(frame.getX(),
                     (frame.getLocation().y + frame.getHeight() + 5));
         }
     }
 
     /**
-     * Add the testFrame to the frameList so that test instruction frame
-     * and testFrame and any other frame used in this test is disposed
-     * via disposeFrames()
+     * Add the testWindow to the windowList so that test instruction frame
+     * and testWindow and any other windows used in this test is disposed
+     * via disposeWindows().
      *
-     * @param testFrame testFrame that needs to be disposed
+     * @param testWindow testWindow that needs to be disposed
      */
-    public static synchronized void addTestFrame(Frame testFrame) {
-        frameList.add(testFrame);
+    public static synchronized void addTestWindow(Window testWindow) {
+        windowList.add(testWindow);
     }
 
     /**
@@ -315,7 +315,8 @@ public class PassFailJFrame {
      */
     public static void forceFail() {
         failed = true;
+        testFailedReason = "Failure Reason:\n" +
+                           "forceFail called";
         latch.countDown();
     }
 }
-
