@@ -31,8 +31,8 @@
 // Parallel Subconstraints
 #define PARALLEL_GC_CONSTRAINTS(f)                          \
   f(uint, ParallelGCThreadsConstraintFuncParallel)          \
-  f(uintx, InitialTenuringThresholdConstraintFuncParallel)  \
-  f(uintx, MaxTenuringThresholdConstraintFuncParallel)
+  f(uint, InitialTenuringThresholdConstraintFuncParallel)   \
+  f(uint, MaxTenuringThresholdConstraintFuncParallel)
 
 PARALLEL_GC_CONSTRAINTS(DECLARE_CONSTRAINT)
 
