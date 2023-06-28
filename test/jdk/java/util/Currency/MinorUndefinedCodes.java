@@ -23,13 +23,12 @@
 
 /*
  * @test
- * @bug 4512215 4818420 4819436
- * @summary Updated currency data.
- * @run junit Bug4512215
+ * @bug 4512215 4818420 4819436 8310923
+ * @summary Test some minor undefined currencies.
+ * @run junit MinorUndefinedCodes
  */
 
 import java.util.Currency;
-import java.util.Locale;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.ParameterizedTest;
@@ -38,48 +37,22 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class Bug4512215 {
+public class MinorUndefinedCodes {
 
     /**
-     * Tests that the given country has the expected currency code from
-     * calling getCurrencyCode().
+     * Spot check some minor undefined codes and ensure their default fraction
+     * digits are not 2.
      */
     @ParameterizedTest
-    @MethodSource("twoDigitDecimals")
-    public void currencyCountryTest(String currencyCode, int digits, String country) {
-        // digits parameter is not used, exists so that data provider can
-        // be shared among multiple tests
-        Currency currency = Currency.getInstance(Locale.of("", country));
-        assertEquals(currency.getCurrencyCode(), currencyCode, String.format(
-                "[%s] expected %s; got: %s", country, currencyCode, currency.getCurrencyCode()));
-    }
-
-    /**
-     * Tests that the given currencyCode has the expected number of
-     * decimal digits from calling getDefaultFractionDigits().
-     */
-    @ParameterizedTest
-    @MethodSource({"twoDigitDecimals", "nonTwoDigitDecimals"})
-    public void currencyDefinedTest(String currencyCode, int digits) {
+    @MethodSource("minorUndefined")
+    public void checkFractionDigits(String currencyCode, int digits) {
         Currency currency = Currency.getInstance(currencyCode);
+        assertEquals(currency.getCurrencyCode(), currencyCode);
         assertEquals(currency.getDefaultFractionDigits(), digits, String.format(
                 "[%s] expected: %s; got: %s", currencyCode, digits, currency.getDefaultFractionDigits()));
     }
 
-    private static Stream<Arguments> twoDigitDecimals() {
-        return Stream.of(
-                Arguments.of("TJS", 2, "TJ"),
-                Arguments.of("DKK", 2, "FO"),
-                Arguments.of("FKP", 2, "FK"),
-                Arguments.of("AFN", 2, "AF"), // changed from "AFA"
-                // Newsletter V-5 on ISO 3166-1 (2002-05-20)
-                Arguments.of("USD", 2, "TL"), // successor to TP/TPE
-                // Newsletter V-8 on ISO 3166-1 (2003-07-23)
-                Arguments.of("CSD", 2, "CS") // successor to YU/YUM
-        );
-    }
-
-    private static Stream<Arguments> nonTwoDigitDecimals() {
+    private static Stream<Arguments> minorUndefined() {
         return Stream.of(
                 Arguments.of("XBD", -1),
                 Arguments.of("XAG", -1),
