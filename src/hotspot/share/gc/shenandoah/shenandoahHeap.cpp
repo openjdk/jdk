@@ -320,29 +320,27 @@ jint ShenandoahHeap::initialize() {
 
     uintptr_t min = round_up_power_of_2(cset_align);
     uintptr_t max = (1u << 30u);
-    const ReservedSpace* rs = nullptr;
+    ReservedSpace cset_rs;
 
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      ReservedSpace cset_rs(cset_size, cset_align, cset_page_size, req_addr);
+      cset_rs = ReservedSpace(cset_size, cset_align, cset_page_size, req_addr);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
-        rs = &cset_rs;
         break;
       }
     }
 
     if (_collection_set == nullptr) {
-      ReservedSpace cset_rs(cset_size, cset_align, os::vm_page_size());
+      cset_rs = ReservedSpace(cset_size, cset_align, os::vm_page_size());
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
-      rs = &cset_rs;
     }
     os::trace_page_sizes_for_requested_size("Collection Set",
                                             cset_size, cset_page_size,
-                                            rs->base(),
-                                            rs->size(), rs->page_size());
+                                            cset_rs.base(),
+                                            cset_rs.size(), cset_rs.page_size());
   }
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);
