@@ -456,7 +456,7 @@ public final class Integer extends Number
     public static String toString(int i) {
         if (!COMPACT_STRINGS) {
             int size = stringSize(i);
-            byte[] buf = new byte[size << 1];
+            byte[] buf = new byte[size * 2];
             StringUTF16.getChars(i, size, buf);
             return new String(buf, UTF16);
         }
@@ -521,7 +521,7 @@ public final class Integer extends Number
                     int v = digits[q2];
                     final int start = v >> 24;
 
-                    buf = new byte[3 - start + (negative ? 7 : 6)];
+                    buf = new byte[(negative ? 10 : 9) - start];
                     if (negative) {
                         buf[0] = '-';
                         off = 1;
