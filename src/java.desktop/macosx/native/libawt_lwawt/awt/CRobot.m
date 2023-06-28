@@ -63,6 +63,7 @@ static NSTimeInterval gsLastClickTime;
 static int gsEventNumber;
 static int* gsButtonEventNumber;
 static NSTimeInterval gNextKeyEventTime;
+static CGEventFlags initFlags;
 
 static inline CGKeyCode GetCGKeyCode(jint javaKeyCode);
 
@@ -121,6 +122,13 @@ Java_sun_lwawt_macosx_CRobot_initRobot
             jboolean copy = JNI_FALSE;
 
             setupDone = 1;
+            // initialize CGEventFlags here - which is used in keyEvent
+            initFlags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
+
+            // Toggle the Function flag bits if they are set
+            if ((initFlags & kCGEventFlagMaskSecondaryFn) != 0) {
+                initFlags ^= kCGEventFlagMaskSecondaryFn;
+            }
             // Don't block local events after posting ours
             CGSetLocalEventsSuppressionInterval(0.0);
 
@@ -288,21 +296,45 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
 {
     autoDelay(NO);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
-        CGKeyCode keyCode = GetCGKeyCode(javaKeyCode);
-        CGEventRef event = CGEventCreateKeyboardEvent(source, keyCode, keyPressed);
+       CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
+       CGKeyCode keyCode = GetCGKeyCode(javaKeyCode);
+       CGEventRef event = CGEventCreateKeyboardEvent(source, keyCode, keyPressed);
+
+       NSLog(@"JAVA KEYCODE: %d", javaKeyCode);
+       NSLog(@"CG KEYCODE: %hu", keyCode);
+
         if (event != NULL) {
-            CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
-            if ((flags & kCGEventFlagMaskSecondaryFn) != 0) {
-                flags ^= kCGEventFlagMaskSecondaryFn;
-                CGEventSetFlags(event, flags);
+            NSLog(@"BEFORE Contents of Flag: %llu", initFlags);
+            switch (keyCode) {
+                case OSX_Shift:
+                    initFlags = keyPressed ? (initFlags | kCGEventFlagMaskShift) : (initFlags & ~kCGEventFlagMaskShift);
+                    break;
+                case OSX_CapsLock:
+                    initFlags ^= kCGEventFlagMaskAlphaShift;
+                    break;
+                case OSX_Control:
+                    initFlags = keyPressed ? (initFlags | kCGEventFlagMaskControl) : (initFlags & ~kCGEventFlagMaskControl);
+                    break;
+                case OSX_Option:
+                    initFlags = keyPressed ? (initFlags | kCGEventFlagMaskAlternate) : (initFlags & ~kCGEventFlagMaskAlternate);
+                    break;
+                case OSX_Command:
+                    initFlags = keyPressed ? (initFlags | kCGEventFlagMaskCommand) : (initFlags & ~kCGEventFlagMaskCommand);
+                    break;
             }
+
+            CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
+            flags |= initFlags;
+            CGEventSetFlags(event, flags);
+
             CGEventPost(kCGHIDEventTap, event);
             CFRelease(event);
         }
         if (source != NULL) {
             CFRelease(source);
         }
+        NSLog(@"AFTER EVENT & SOURCE RELEASE - Contents of Flag: %llu", initFlags);
+        NSLog(@"----------------------------------------");
     }];
 }
 
