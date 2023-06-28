@@ -625,12 +625,20 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
 
   bool step_multiply = !step_val->is_con() || !is_power_of_2(step_val->get_con());
 
-  if (!arch_supports_vector(Op_AddVB, num_elem, elem_bt, VecMaskNotUsed)) {
+  if (!arch_supports_vector(Op_AddVB, num_elem, elem_bt, VecMaskNotUsed)           ||
+      !arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)            ||
+      !arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed) ||
+      !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
   }
-  if (!arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)) {
+
+  if (do_wrap &&
+      !arch_supports_vector(Op_SubVB, num_elem, elem_bt, VecMaskNotUsed)        ||
+      !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskNotUsed)  ||
+      !arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
   }
+
   if(step_multiply) {
     if (!arch_supports_vector(Op_MulVB, num_elem, elem_bt, VecMaskNotUsed)) {
       return false;
@@ -639,18 +647,6 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     if (!arch_supports_vector(Op_LShiftVB, num_elem, elem_bt, VecMaskNotUsed)) {
       return false;
     }
-  }
-  if (!arch_supports_vector(Op_SubVB, num_elem, elem_bt, VecMaskNotUsed)) {
-    return false;
-  }
-  if (!arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskNotUsed)) {
-    return false;
-  }
-  if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed)) {
-    return false;
-  }
-  if (!arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed)) {
-    return false;
   }
 
   const Type * type_bt = Type::get_const_basic_type(elem_bt);
