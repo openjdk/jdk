@@ -41,7 +41,6 @@ import javax.swing.SwingUtilities;
  * @build JRobot
  * }</pre>
  */
-
 public class JRobot extends java.awt.Robot {
     private static final int DEFAULT_DELAY = 550;
     private static final int INTERNAL_DELAY = 250;
