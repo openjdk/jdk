@@ -470,12 +470,9 @@ public final class Integer extends Number
             i = -i;
         }
         final int[] digits = DecimalDigits.DIGITS;
-
         int off = 0;
-        final int q1 = i / 1000;
-
         byte[] buf;
-        if (q1 == 0) {
+        if (i < 1000) {
             int v = digits[i];
             final int start = v >> 24;
             buf = new byte[(negative ? 4 : 3) - start];
@@ -493,10 +490,10 @@ public final class Integer extends Number
                 buf[off] = (byte) v;
             }
         } else {
+            final int q1 = i / 1000;
             final int r1 = i - q1 * 1000;
-            final int q2 = q1 / 1000;
             final int v1 = digits[r1];
-            if (q2 == 0) {
+            if (i < 1000000) {
                 final int v2 = digits[q1];
                 int start = v2 >> 24;
 
@@ -514,6 +511,7 @@ public final class Integer extends Number
                 }
                 ByteArray.setInt(buf, off, v2 << 24 | (v1 & 0xffffff));
             } else {
+                final int q2 = q1 / 1000;
                 final int r2 = q1 - q2 * 1000;
                 final int q3 = q2 / 1000;
                 final int v2 = digits[r2];
