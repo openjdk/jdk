@@ -351,12 +351,29 @@ RangeCheckEliminator::Bound *RangeCheckEliminator::get_bound(Value v) {
 
 // Update bound
 void RangeCheckEliminator::update_bound(IntegerStack &pushed, Value v, Instruction::Condition cond, Value value, int constant) {
+  assert(sizeof(constant) == sizeof(jint), "wrong size");
   if (cond == Instruction::gtr) {
     cond = Instruction::geq;
-    constant++;
+    if (constant == INT_MAX) {
+      if (value == nullptr) {
+        // Cannot represent c > INT_MAX, do not update bounds
+        return;
+      }
+      constant = java_add((jint)constant, 1); // Java wrap semantics
+    } else {
+      constant++;
+    }
   } else if (cond == Instruction::lss) {
     cond = Instruction::leq;
-    constant--;
+    if (constant == INT_MIN) {
+      if (value == nullptr) {
+        // Cannot represent c < INT_MIN, do not update bounds
+        return;
+      }
+      constant = java_subtract((jint)constant, 1); // Java wrap semantics
+    } else {
+      constant--;
+    }
   }
   Bound *bound = new Bound(cond, value, constant);
   update_bound(pushed, v, bound);
@@ -694,8 +711,7 @@ void RangeCheckEliminator::insert_deoptimization(ValueStack *state, Instruction 
     } else {
       assert(lower < 0, "");
       // Add 1
-      lower++;
-      lower = -lower;
+      lower = java_subtract(-1, (jint)lower); // lower++; lower = -lower;
       // Compare for smaller or equal 0
       insert_position = predicate_cmp_with_const(lower_instr, Instruction::leq, lower, state, insert_position, bci);
     }
@@ -739,7 +755,7 @@ void RangeCheckEliminator::insert_deoptimization(ValueStack *state, Instruction 
       insert_position = predicate_add(upper_instr, upper, Instruction::geq, length_instr, state, insert_position, bci);
     } else {
       assert(upper > 0, "");
-      upper = -upper;
+      upper = java_negate((jint)upper); // upper = -upper;
       // Compare for geq array.length
       insert_position = predicate_add(length_instr, upper, Instruction::leq, upper_instr, state, insert_position, bci);
     }
