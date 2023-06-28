@@ -84,6 +84,12 @@ public class CodeCacheStress {
     ArrayList<Map<String, Integer>> argumentMaps = new ArrayList<>();
     Map<Class, Object[]> instancesOfClassMap = new HashMap<>();
 
+    static final String k = "key";
+    static final Integer v = 1000;
+
+    static final String methodNames[] = {
+            "get"
+    };
 
     static String B(int count) {
         return "import java.util.*; "
@@ -183,7 +189,7 @@ public class CodeCacheStress {
                 + "    int instD = 0;"
                 + " "
                 + " "
-                + "   public Integer get(Map m, String k, Integer depth) { "
+                + "   public Integer get(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         instA += ((depth % 2) + staticA);"
                 + "         return (Integer) m.get(k) + get2(m, k, --depth);"
@@ -193,7 +199,7 @@ public class CodeCacheStress {
                 + "       }"
                 + "   }"
                 + " "
-                + "   public Integer get2( Map m, String k, Integer depth) { "
+                + "   public Integer get2(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         instB += ((depth % 2) + staticB);"
                 + "         return (Integer) m.get(k) + get3(m, k, --depth);"
@@ -203,7 +209,7 @@ public class CodeCacheStress {
                 + "       }"
                 + "   }"
                 + " "
-                + "   public Integer get3( Map m, String k, Integer depth) { "
+                + "   public Integer get3(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         instC += ((depth % 2) + staticC);"
                 + "         return (Integer) m.get(k) + get4(m, k, --depth);"
@@ -214,7 +220,7 @@ public class CodeCacheStress {
                 + "   }"
                 + " "
                 + " "
-                + "   public Integer get4( Map m, String k, Integer depth) { "
+                + "   public Integer get4(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         instD += ((depth % 2) + staticD);"
                 + "         return (Integer) m.get(k) + get5(m, k, --depth);"
@@ -225,7 +231,7 @@ public class CodeCacheStress {
                 + "   }"
                 + " "
                 + " "
-                + "   public Integer get5( Map m, String k, Integer depth) { "
+                + "   public Integer get5(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         return (Integer) m.get(k) + get6(m, k, --depth);"
                 + "       } else {"
@@ -233,7 +239,7 @@ public class CodeCacheStress {
                 + "       }"
                 + "   }"
                 + " "
-                + "   public Integer get6( Map m, String k, Integer depth) { "
+                + "   public Integer get6(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         return (Integer) m.get(k) + get7(m, k, --depth);"
                 + "       } else {"
@@ -241,7 +247,7 @@ public class CodeCacheStress {
                 + "       }"
                 + "   }"
                 + " "
-                + "   public Integer get7( Map m, String k, Integer depth) { "
+                + "   public Integer get7(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         return (Integer) m.get(k) + get8(m, k, --depth);"
                 + "       } else {"
@@ -249,7 +255,7 @@ public class CodeCacheStress {
                 + "       }"
                 + "   }"
                 + " "
-                + "   public Integer get8( Map m, String k, Integer depth) { "
+                + "   public Integer get8(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         return (Integer) m.get(k) + get9(m, k, --depth);"
                 + "       } else {"
@@ -257,7 +263,7 @@ public class CodeCacheStress {
                 + "       }"
                 + "   }"
                 + " "
-                + "   public Integer get9( Map m, String k, Integer depth) { "
+                + "   public Integer get9(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         return (Integer) m.get(k) + get10(m, k, --depth);"
                 + "       } else {"
@@ -265,7 +271,7 @@ public class CodeCacheStress {
                 + "       }"
                 + "   }"
                 + " "
-                + "   public Integer get10( Map m, String k, Integer depth) { "
+                + "   public Integer get10(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         return (Integer) m.get(k) + get11(m, k, --depth);"
                 + "       } else {"
@@ -273,7 +279,7 @@ public class CodeCacheStress {
                 + "       }"
                 + "   }"
                 + " "
-                + "   public Integer get11( Map m, String k, Integer depth) { "
+                + "   public Integer get11(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         return (Integer) m.get(k) + get12(m, k, --depth);"
                 + "       } else {"
@@ -281,7 +287,7 @@ public class CodeCacheStress {
                 + "       }"
                 + "   }"
                 + " "
-                + "   public Integer get12( Map m, String k, Integer depth) { "
+                + "   public Integer get12(Map m, String k, Integer depth) {"
                 + "       if (depth > 0) {"
                 + "         return (Integer) m.get(k) + get(m, k, --depth);"
                 + "       } else {"
@@ -316,13 +322,6 @@ public class CodeCacheStress {
     }
 
     CodeCacheStress.BenchLoader loader1 = new CodeCacheStress.BenchLoader();
-
-    final String k = "key";
-    final Integer v = 1000;
-
-    final String methodNames[] = {
-            "get"
-    };
 
     @Setup(Level.Trial)
     public void setupClasses() throws Exception {
