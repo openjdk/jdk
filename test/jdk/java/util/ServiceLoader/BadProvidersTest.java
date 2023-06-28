@@ -214,7 +214,7 @@ public class BadProvidersTest {
     public void testWithTwoFactoryMethods() throws Exception {
         Path mods = compileTest(TEST1_MODULE);
 
-        var bytes = Classfile.build(ClassDesc.of("p", "ProviderFactory"), clb -> {
+        var bytes = Classfile.of().build(ClassDesc.of("p", "ProviderFactory"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
 

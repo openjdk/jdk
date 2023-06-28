@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 8022718
  * @summary Runtime accessibility checking: protected class, if extended, should be accessible from another package

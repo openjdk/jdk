@@ -242,7 +242,8 @@ public class ProhibitedMethods {
 
     static byte[] addMethod(byte[] classBytes,
                             String name, MethodTypeDesc desc) {
-        return Classfile.parse(classBytes).transform(ClassTransform.endHandler(clb -> {
+        var cf = Classfile.of();
+        return cf.transform(cf.parse(classBytes), ClassTransform.endHandler(clb -> {
             clb.withMethodBody(name, desc, ACC_PRIVATE, cob -> {
                 cob.constantInstruction(name + " should not be invoked");
                 cob.invokestatic(Assert.class.describeConstable().orElseThrow(), "fail",

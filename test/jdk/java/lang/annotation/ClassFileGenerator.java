@@ -89,7 +89,7 @@ public class ClassFileGenerator {
 
     private static class AnnotationWithVoidReturnDump {
         public static byte[] dump() {
-            return Classfile.build(ClassDesc.of("AnnotationWithVoidReturn"), clb -> {
+            return Classfile.of().build(ClassDesc.of("AnnotationWithVoidReturn"), clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
@@ -114,7 +114,7 @@ public class ClassFileGenerator {
 
     private static class AnnotationWithParameterDump {
         public static byte[] dump() {
-            return Classfile.build(ClassDesc.of("AnnotationWithParameter"), clb -> {
+            return Classfile.of().build(ClassDesc.of("AnnotationWithParameter"), clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
@@ -139,7 +139,7 @@ public class ClassFileGenerator {
 
     private static class AnnotationWithExtraInterfaceDump {
         public static byte[] dump() {
-            return Classfile.build(ClassDesc.of("AnnotationWithExtraInterface"), clb -> {
+            return Classfile.of().build(ClassDesc.of("AnnotationWithExtraInterface"), clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withInterfaceSymbols(CD_Annotation, Serializable.class.describeConstable().orElseThrow());
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
@@ -164,7 +164,7 @@ public class ClassFileGenerator {
 
     private static class AnnotationWithExceptionDump {
         public static byte[] dump() {
-            return Classfile.build(ClassDesc.of("AnnotationWithException"), clb -> {
+            return Classfile.of().build(ClassDesc.of("AnnotationWithException"), clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
@@ -191,7 +191,7 @@ public class ClassFileGenerator {
 
     private static class AnnotationWithHashCodeDump {
         public static byte[] dump() {
-            return Classfile.build(ClassDesc.of("AnnotationWithHashCode"), clb -> {
+            return Classfile.of().build(ClassDesc.of("AnnotationWithHashCode"), clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
@@ -217,7 +217,7 @@ public class ClassFileGenerator {
 
     private static class AnnotationWithDefaultMemberDump {
         public static byte[] dump() throws Exception {
-            return Classfile.build(ClassDesc.of("AnnotationWithDefaultMember"), clb -> {
+            return Classfile.of().build(ClassDesc.of("AnnotationWithDefaultMember"), clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, AccessFlag.ANNOTATION, ABSTRACT, AccessFlag.INTERFACE);
@@ -249,7 +249,7 @@ public class ClassFileGenerator {
 
     private static class AnnotationWithoutAnnotationAccessModifierDump {
         public static byte[] dump() {
-            return Classfile.build(ClassDesc.of("AnnotationWithoutAnnotationAccessModifier"), clb -> {
+            return Classfile.of().build(ClassDesc.of("AnnotationWithoutAnnotationAccessModifier"), clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withInterfaceSymbols(CD_Annotation);
                 clb.withFlags(PUBLIC, /*AccessFlag.ANNOTATION,*/ ABSTRACT, AccessFlag.INTERFACE);
@@ -275,7 +275,7 @@ public class ClassFileGenerator {
 
     private static class HolderXDump {
         public static byte[] dump() {
-            return Classfile.build(ClassDesc.of("HolderX"), clb -> {
+            return Classfile.of().build(ClassDesc.of("HolderX"), clb -> {
                 clb.withSuperclass(CD_Object);
                 clb.withFlags(PUBLIC, ABSTRACT, INTERFACE);
                 clb.with(RuntimeVisibleAnnotationsAttribute.of(

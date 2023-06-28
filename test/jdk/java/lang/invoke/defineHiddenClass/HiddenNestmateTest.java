@@ -172,7 +172,7 @@ public class HiddenNestmateTest {
     }
 
     private static byte[] classBytes(String classname) {
-        return Classfile.build(ClassDesc.ofInternalName(classname), clb -> {
+        return Classfile.of().build(ClassDesc.ofInternalName(classname), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(AccessFlag.FINAL);
             clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {

@@ -123,7 +123,8 @@ public class BogoLoader extends ClassLoader {
                     if (verbose) {
                         System.err.println("Replacing class " + name);
                     }
-                    classData = Classfile.parse(classData).transform(replaced.get(name));
+                    var cf = Classfile.of();
+                    classData = cf.transform(cf.parse(classData), replaced.get(name));
                 }
                 clazz = defineClass(name, classData, 0, classData.length);
             } catch (java.io.EOFException ioe) {

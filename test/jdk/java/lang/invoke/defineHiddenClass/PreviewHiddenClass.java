@@ -62,7 +62,7 @@ public class PreviewHiddenClass {
         }
 
         byte[] bytes = Files.readAllBytes(CLASSES_DIR.resolve("HiddenInterface.class"));
-        assertEquals(Classfile.parse(bytes).minorVersion(), 65535);
+        assertEquals(Classfile.of().parse(bytes).minorVersion(), Classfile.PREVIEW_MINOR_VERSION);
         MethodHandles.lookup().defineHiddenClass(bytes, false);
     }
 }

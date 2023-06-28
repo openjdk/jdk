@@ -64,7 +64,7 @@ public class TestPrivateInterfaceMethodReflect {
 
         private byte[] loadClassData(String name) {
             return switch (name) {
-                case INTERFACE_NAME -> Classfile.build(ClassDesc.ofInternalName(INTERFACE_NAME), clb -> {
+                case INTERFACE_NAME -> Classfile.of().build(ClassDesc.ofInternalName(INTERFACE_NAME), clb -> {
                     clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE, AccessFlag.PUBLIC);
                     clb.withSuperclass(CD_Object);
                     clb.withMethodBody("privInstance", MethodTypeDesc.of(CD_int), ACC_PRIVATE, cob -> {
@@ -72,7 +72,7 @@ public class TestPrivateInterfaceMethodReflect {
                         cob.ireturn();
                     });
                 });
-                case CLASS_NAME -> Classfile.build(ClassDesc.of(CLASS_NAME), clb -> {
+                case CLASS_NAME -> Classfile.of().build(ClassDesc.of(CLASS_NAME), clb -> {
                     clb.withFlags(AccessFlag.PUBLIC);
                     clb.withSuperclass(CD_Object);
                     clb.withInterfaceSymbols(ClassDesc.ofInternalName(INTERFACE_NAME));

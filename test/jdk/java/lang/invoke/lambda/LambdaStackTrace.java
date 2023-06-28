@@ -136,7 +136,7 @@ public class LambdaStackTrace {
         // interface Maker {
         //   Object make();
         // }
-        return Classfile.build(CD_Maker, clb -> {
+        return Classfile.of().build(CD_Maker, clb -> {
             clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE);
             clb.withSuperclass(CD_Object);
             clb.withMethod("make", MethodTypeDesc.of(CD_Object),
@@ -148,7 +148,7 @@ public class LambdaStackTrace {
         // interface StringMaker extends Maker {
         //   String make();
         // }
-        return Classfile.build(ClassDesc.of("StringMaker"), clb -> {
+        return Classfile.of().build(ClassDesc.of("StringMaker"), clb -> {
             clb.withFlags(AccessFlag.ABSTRACT, AccessFlag.INTERFACE);
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(CD_Maker);

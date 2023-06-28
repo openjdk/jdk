@@ -61,7 +61,7 @@ public class Instrumentor {
     private final AtomicBoolean dirty = new AtomicBoolean(false);
 
     private Instrumentor(byte[] classData) {
-        model = Classfile.parse(classData);
+        model = Classfile.of().parse(classData);
     }
 
     public synchronized Instrumentor addMethodEntryInjection(String methodName, Consumer<CodeBuilder> injector) {
@@ -149,7 +149,7 @@ public class Instrumentor {
     }
 
     public synchronized byte[] apply() {
-        var bytes = model.transform(transform);
+        var bytes = Classfile.of().transform(model, transform);
 
         return dirty.get() ? bytes : null;
     }

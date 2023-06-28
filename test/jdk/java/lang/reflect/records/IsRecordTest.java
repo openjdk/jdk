@@ -166,7 +166,7 @@ public class IsRecordTest {
                               boolean isAbstract,
                               String superName,
                               List<RecordComponentInfo> components) {
-        return Classfile.build(ClassDesc.ofInternalName(className), clb -> {
+        return Classfile.of().build(ClassDesc.ofInternalName(className), clb -> {
             int access = 0;
             if (isFinal)
                 access = access | ACC_FINAL;

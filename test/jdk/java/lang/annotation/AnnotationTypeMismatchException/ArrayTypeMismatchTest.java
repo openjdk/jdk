@@ -88,7 +88,7 @@ public class ArrayTypeMismatchTest {
     }
 
     private static byte[] carrierType() {
-        return Classfile.build(ClassDesc.of("sample", "Carrier"), clb -> {
+        return Classfile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
             clb.withSuperclass(CD_Object);
             var badAnnotationArray = AnnotationValue.ofArray(AnnotationValue.ofAnnotation(
                     jdk.internal.classfile.Annotation.of(
@@ -103,7 +103,7 @@ public class ArrayTypeMismatchTest {
     }
 
     private static byte[] annotationType() {
-        return Classfile.build(ClassDesc.of("sample", "Host"), clb -> {
+        return Classfile.of().build(ClassDesc.of("sample", "Host"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(Annotation.class.describeConstable().orElseThrow());
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.ABSTRACT, AccessFlag.INTERFACE,

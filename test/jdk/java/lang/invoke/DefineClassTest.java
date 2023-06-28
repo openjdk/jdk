@@ -261,7 +261,7 @@ public class DefineClassTest {
      * Generates a class file with the given class name
      */
     byte[] generateClass(String className) {
-        return Classfile.build(ClassDesc.of(className), clb -> {
+        return Classfile.of().build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_Object);
             clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
@@ -280,7 +280,7 @@ public class DefineClassTest {
                           String targetClass,
                           String targetMethod) throws Exception {
 
-        return Classfile.build(ClassDesc.of(className), clb -> {
+        return Classfile.of().build(ClassDesc.of(className), clb -> {
             clb.withSuperclass(CD_Object);
             clb.withInterfaceSymbols(CD_Runnable);
             clb.withMethodBody(INIT_NAME, MTD_void, PUBLIC, cob -> {
@@ -303,7 +303,7 @@ public class DefineClassTest {
                                         String targetClass,
                                         String targetMethod) throws Exception {
 
-        return Classfile.build(ClassDesc.of(className), clb -> {
+        return Classfile.of().build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_Object);
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
@@ -322,7 +322,7 @@ public class DefineClassTest {
      * Generates a non-linkable class file with the given class name
      */
     byte[] generateNonLinkableClass(String className) {
-        return Classfile.build(ClassDesc.of(className), clb -> {
+        return Classfile.of().build(ClassDesc.of(className), clb -> {
             clb.withFlags(AccessFlag.PUBLIC, AccessFlag.SUPER);
             clb.withSuperclass(CD_MissingSuperClass);
             clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
@@ -337,7 +337,7 @@ public class DefineClassTest {
      * Generates a class file with the given class name
      */
     byte[] generateModuleInfo() {
-        return Classfile.build(ClassDesc.of("module-info"), cb -> cb.withFlags(AccessFlag.MODULE));
+        return Classfile.of().build(ClassDesc.of("module-info"), cb -> cb.withFlags(AccessFlag.MODULE));
     }
 
     private int nextNumber() {

@@ -230,8 +230,9 @@ public class SerialPersistentFieldsTest {
 
     static byte[] addSerialPersistentFields(byte[] classBytes,
                                             ObjectStreamField[] spf) {
-        var model = Classfile.parse(classBytes);
-        return model.transform(new SerialPersistentFieldsVisitor(model.thisClass().asSymbol(), spf));
+        var cf = Classfile.of();
+        var model = cf.parse(classBytes);
+        return cf.transform(model, new SerialPersistentFieldsVisitor(model.thisClass().asSymbol(), spf));
     }
 
     /** A visitor that adds a serialPersistentFields field, and assigns it in clinit. */

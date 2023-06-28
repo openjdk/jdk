@@ -144,15 +144,14 @@ public class AnnotationsTest {
      * Adds the Deprecated annotation to the given module-info class file.
      */
     static byte[] addDeprecated(byte[] bytes, boolean forRemoval, String since) {
-        return Classfile.parse(bytes).transform(ClassTransform.endHandler(cb -> {
+        var cf = Classfile.of();
+        return cf.transform(cf.parse(bytes), ClassTransform.endHandler(cb ->
             cb.with(RuntimeVisibleAnnotationsAttribute.of(
                     jdk.internal.classfile.Annotation.of(
                             Deprecated.class.describeConstable().orElseThrow(),
                             AnnotationElement.of("forRemoval", AnnotationValue.ofBoolean(forRemoval)),
                             AnnotationElement.of("since", AnnotationValue.ofString(since))
-                    )
-            ));
-        }));
+                    )))));
     }
 
     /**

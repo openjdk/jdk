@@ -498,7 +498,7 @@ public class BasicTest {
     }
 
     private static byte[] classBytes(String classname, ClassDesc supertType, Set<AccessFlag> accessFlags) {
-        return Classfile.build(ClassDesc.ofInternalName(classname), cb -> {
+        return Classfile.of().build(ClassDesc.ofInternalName(classname), cb -> {
             cb.withSuperclass(supertType);
             var allFlags = EnumSet.copyOf(accessFlags);
             allFlags.add(AccessFlag.PUBLIC);

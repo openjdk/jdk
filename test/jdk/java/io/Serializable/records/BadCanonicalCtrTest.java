@@ -207,7 +207,8 @@ public class BadCanonicalCtrTest {
      * Assumes just a single, canonical, constructor.
      */
     static byte[] removeConstructor(byte[] classBytes) {
-        return Classfile.parse(classBytes).transform(ClassTransform.dropping(ce ->
+        var cf = Classfile.of();
+        return cf.transform(cf.parse(classBytes), ClassTransform.dropping(ce ->
                 ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME)));
     }
 
@@ -216,7 +217,8 @@ public class BadCanonicalCtrTest {
      * Assumes just a single, canonical, constructor.
      */
     static byte[] modifyConstructor(byte[] classBytes) {
-        return Classfile.parse(classBytes).transform(ClassTransform.dropping(ce ->
+        var cf = Classfile.of();
+        return cf.transform(cf.parse(classBytes), ClassTransform.dropping(ce ->
                         ce instanceof MethodModel mm && mm.methodName().equalsString(INIT_NAME))
                 .andThen(ClassTransform.endHandler(clb -> clb.withMethodBody(INIT_NAME,
                         MethodTypeDesc.of(CD_void, CD_Object), ACC_PUBLIC, cob -> {

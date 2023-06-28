@@ -52,7 +52,7 @@ public class EnumTypeMismatchTest {
          * class Carrier { }
          */
         ClassDesc anAnnotationDesc = AnAnnotation.class.describeConstable().orElseThrow();
-        byte[] b = Classfile.build(ClassDesc.of("sample", "Carrier"), clb -> {
+        byte[] b = Classfile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.with(RuntimeVisibleAnnotationsAttribute.of(
                     Annotation.of(anAnnotationDesc, AnnotationElement.of("value",

@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6263319
  * @requires ((vm.opt.StartFlightRecording == null) | (vm.opt.StartFlightRecording == false)) & ((vm.opt.FlightRecorder == null) | (vm.opt.FlightRecorder == false))
@@ -44,6 +44,8 @@ import java.lang.instrument.*;
 import java.security.ProtectionDomain;
 import java.io.*;
 
+import static java.lang.constant.ConstantDescs.*;
+
 class NativeMethodPrefixAgent {
 
     static ClassFileTransformer t0, t1, t2;
@@ -57,6 +59,8 @@ class NativeMethodPrefixAgent {
     }
 
     static class Tr implements ClassFileTransformer {
+        private static final ClassDesc CD_StringIdCallbackReporter = ClassDesc.ofInternalName("bootreporter/StringIdCallbackReporter");
+        private static final MethodTypeDesc MTD_void_String_int = MethodTypeDesc.of(CD_void, CD_String, CD_int);
         final String trname;
         final int transformId;
 
@@ -83,9 +87,9 @@ class NativeMethodPrefixAgent {
                                             h.constantInstruction(name);
                                             h.constantInstruction(transformId);
                                             h.invokestatic(
-                                                    ClassDesc.ofInternalName("bootreporter/StringIdCallbackReporter"),
+                                                    CD_StringIdCallbackReporter,
                                                     "tracker",
-                                                    MethodTypeDesc.ofDescriptor("(Ljava/lang/String;I)V"));
+                                                    MTD_void_String_int);
                                         })
                                    .apply();
                     /*** debugging ...

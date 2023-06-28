@@ -51,7 +51,7 @@ public class AnnotationTypeMismatchTest {
          * @AnAnnotation(value = AnEnum.VALUE) // would now be: value = @Value
          * class Carrier { }
          */
-        byte[] b = Classfile.build(ClassDesc.of("sample", "Carrier"), clb -> {
+        byte[] b = Classfile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.with(RuntimeVisibleAnnotationsAttribute.of(
                     Annotation.of(

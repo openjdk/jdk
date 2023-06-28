@@ -59,7 +59,7 @@ public class ArityTypeMismatchTest {
          *
          * where @AnAnnotation expects a singular value.
          */
-        byte[] b = Classfile.build(ClassDesc.of("sample", "Carrier"), clb -> {
+        byte[] b = Classfile.of().build(ClassDesc.of("sample", "Carrier"), clb -> {
             clb.withSuperclass(CD_Object);
             clb.with(RuntimeVisibleAnnotationsAttribute.of(
                     Annotation.of(

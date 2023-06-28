@@ -21,7 +21,7 @@
  * questions.
  */
 
-/**
+/*
  * @test
  * @bug 6274264 6274241 5070281
  * @summary test retransformClasses
@@ -34,6 +34,7 @@
  * @run main/othervm -javaagent:RetransformAgent.jar RetransformApp
  */
 
+import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.instrument.*;
 import java.security.ProtectionDomain;
@@ -53,6 +54,8 @@ class RetransformAgent {
                                11, 40, 20, 11, 40, 20, 11, 40, 20, 11, 40, 20};
 
     static class Tr implements ClassFileTransformer {
+        private static final ClassDesc CD_RetransformAgent = RetransformAgent.class.describeConstable().orElseThrow();
+        private static final MethodTypeDesc MTD_void_int = MethodTypeDesc.of(CD_void, CD_int);
         final String trname;
         final boolean onLoad;
         final int loadIndex;
@@ -91,8 +94,8 @@ class RetransformAgent {
                                         cb -> {
                                            cb.constantInstruction(fixedIndex);
                                            cb.invokestatic(
-                                                   RetransformAgent.class.describeConstable().orElseThrow(),
-                                                   "callTracker", MethodTypeDesc.of(CD_void, CD_int));
+                                                   CD_RetransformAgent,
+                                                   "callTracker", MTD_void_int);
                                         })
                                    .apply();
                     /*** debugging ...

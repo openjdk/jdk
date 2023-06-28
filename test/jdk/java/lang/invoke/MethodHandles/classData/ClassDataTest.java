@@ -379,7 +379,7 @@ public class ClassDataTest {
         }
 
         byte[] build() {
-            byte[] bytes = Classfile.build(classname, cw);
+            byte[] bytes = Classfile.of().build(classname, cw);
             Path p = Paths.get(classname + ".class");
                 try (OutputStream os = Files.newOutputStream(p)) {
                 os.write(bytes);
