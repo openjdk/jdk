@@ -549,10 +549,10 @@ public class FileChannelImpl
     //
     private static volatile boolean transferToDirectNotSupported;
 
-    // Assume that the underlying kernel sendfile/equivalent will work if the target
-    // fd is a file; set this to true if we find out later that it doesn't
+    // Assume at first that the underlying kernel supports copy_file_range/equivalent;
+    // set this to true if we find out later that it doesn't
     //
-    private static volatile boolean transferToFileDirectNotSupported;
+    private static volatile boolean transferFromDirectNotSupported;
 
     /**
      * Marks the beginning of a transfer to or from this channel.
@@ -641,9 +641,6 @@ public class FileChannelImpl
     private long transferToFileChannel(long position, int count, FileChannelImpl target)
         throws IOException
     {
-        if (transferToFileDirectNotSupported)
-            return IOStatus.UNSUPPORTED_CASE;
-
         final FileChannelImpl source = this;
         boolean completed = false;
         try {
@@ -653,14 +650,6 @@ public class FileChannelImpl
                 int targetIndex = target.beforeTransfer();
                 try {
                     long n = transferToFileDescriptor(position, count, target.fd);
-                    if (n == IOStatus.UNSUPPORTED_CASE) {
-                        transferToFileDirectNotSupported = true;
-                        return IOStatus.UNSUPPORTED_CASE;
-                    }
-                    if (n == IOStatus.UNSUPPORTED) {
-                        transferToDirectNotSupported = true;
-                        return IOStatus.UNSUPPORTED;
-                    }
                     completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {
@@ -689,13 +678,6 @@ public class FileChannelImpl
                 target.beforeTransferTo();
                 try {
                     long n = transferToFileDescriptor(position, count, target.getFD());
-                    if (n == IOStatus.UNSUPPORTED_CASE) {
-                        return IOStatus.UNSUPPORTED_CASE;
-                    }
-                    if (n == IOStatus.UNSUPPORTED) {
-                        transferToDirectNotSupported = true;
-                        return IOStatus.UNSUPPORTED;
-                    }
                     completed = (n >= 0);
                     return IOStatus.normalize(n);
                 } finally {
@@ -738,11 +720,12 @@ public class FileChannelImpl
         if (target instanceof SelectableChannel sc && !nd.canTransferToDirectly(sc))
             return IOStatus.UNSUPPORTED_CASE;
 
+        long n;
         if (nd.transferToDirectlyNeedsPositionLock()) {
             synchronized (positionLock) {
                 long pos = position();
                 try {
-                    return transferToDirectInternal(position, count, target);
+                    n = transferToDirectInternal(position, count, target);
                 } finally {
                     try {
                         position(pos);
@@ -752,8 +735,12 @@ public class FileChannelImpl
                 }
             }
         } else {
-            return transferToDirectInternal(position, count, target);
+            n = transferToDirectInternal(position, count, target);
         }
+        if (n == IOStatus.UNSUPPORTED) {
+            transferToDirectNotSupported = true;
+        }
+        return n;
     }
 
     // Size threshold above which to use a mapped buffer;
@@ -902,12 +889,6 @@ public class FileChannelImpl
             throw transferFailed(e, target);
         }
     }
-
-
-    // Assume at first that the underlying kernel supports copy_file_range();
-    // set this to true if we find out later that it doesn't
-    //
-    private static volatile boolean transferFromDirectNotSupported;
 
     /**
      * Transfers bytes into this channel's file from the resource that the given file
