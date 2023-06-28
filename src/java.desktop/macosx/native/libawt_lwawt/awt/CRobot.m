@@ -296,12 +296,12 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
 {
     autoDelay(NO);
     [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-       CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
-       CGKeyCode keyCode = GetCGKeyCode(javaKeyCode);
-       CGEventRef event = CGEventCreateKeyboardEvent(source, keyCode, keyPressed);
+        CGEventSourceRef source = CGEventSourceCreate(kCGEventSourceStateHIDSystemState);
+        CGKeyCode keyCode = GetCGKeyCode(javaKeyCode);
+        CGEventRef event = CGEventCreateKeyboardEvent(source, keyCode, keyPressed);
 
-       NSLog(@"JAVA KEYCODE: %d", javaKeyCode);
-       NSLog(@"CG KEYCODE: %hu", keyCode);
+        NSLog(@"JAVA KEYCODE: %d", javaKeyCode);
+        NSLog(@"CG KEYCODE: %hu", keyCode);
 
         if (event != NULL) {
             NSLog(@"BEFORE Contents of Flag: %llu", initFlags);
