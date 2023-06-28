@@ -147,6 +147,10 @@
  * access to restricted methods is enabled for all modules, but access to restricted methods will result in runtime warnings.
  *
  * @spec jni/index.html Java Native Interface Specification
+ *
+ * @since 19
  */
+@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 package java.lang.foreign;
 
+import jdk.internal.javac.PreviewFeature;

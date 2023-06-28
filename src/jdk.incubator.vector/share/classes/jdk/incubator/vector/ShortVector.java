@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1071,7 +1071,7 @@ public abstract class ShortVector extends AbstractVector<Short> {
     // and broadcast, but it would be more surprising not to continue
     // the obvious pattern started by unary and binary.
 
-    /**
+   /**
      * {@inheritDoc} <!--workaround-->
      * @see #lanewise(VectorOperators.Ternary,short,short,VectorMask)
      * @see #lanewise(VectorOperators.Ternary,Vector,short,VectorMask)
@@ -2481,14 +2481,26 @@ public abstract class ShortVector extends AbstractVector<Short> {
     }
 
     @ForceInline
-    final <F>
-    VectorShuffle<F> toShuffle0(AbstractSpecies<F> dsp) {
+    private final
+    VectorShuffle<Short> toShuffle0(ShortSpecies dsp) {
         short[] a = toArray();
         int[] sa = new int[a.length];
         for (int i = 0; i < a.length; i++) {
             sa[i] = (int) a[i];
         }
         return VectorShuffle.fromArray(dsp, sa, 0);
+    }
+
+    /*package-private*/
+    @ForceInline
+    final
+    VectorShuffle<Short> toShuffleTemplate(Class<?> shuffleType) {
+        ShortSpecies vsp = vspecies();
+        return VectorSupport.convert(VectorSupport.VECTOR_OP_CAST,
+                                     getClass(), short.class, length(),
+                                     shuffleType, byte.class, length(),
+                                     this, vsp,
+                                     ShortVector::toShuffle0);
     }
 
     /**
@@ -4078,10 +4090,9 @@ public abstract class ShortVector extends AbstractVector<Short> {
         private ShortSpecies(VectorShape shape,
                 Class<? extends ShortVector> vectorType,
                 Class<? extends AbstractMask<Short>> maskType,
-                Class<? extends AbstractShuffle<Short>> shuffleType,
                 Function<Object, ShortVector> vectorFactory) {
             super(shape, LaneType.of(short.class),
-                  vectorType, maskType, shuffleType,
+                  vectorType, maskType,
                   vectorFactory);
             assert(this.elementSize() == Short.SIZE);
         }
@@ -4357,7 +4368,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_64_BIT,
                             Short64Vector.class,
                             Short64Vector.Short64Mask.class,
-                            Short64Vector.Short64Shuffle.class,
                             Short64Vector::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_128_BIT VectorShape.S_128_BIT}. */
@@ -4365,7 +4375,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_128_BIT,
                             Short128Vector.class,
                             Short128Vector.Short128Mask.class,
-                            Short128Vector.Short128Shuffle.class,
                             Short128Vector::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_256_BIT VectorShape.S_256_BIT}. */
@@ -4373,7 +4382,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_256_BIT,
                             Short256Vector.class,
                             Short256Vector.Short256Mask.class,
-                            Short256Vector.Short256Shuffle.class,
                             Short256Vector::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_512_BIT VectorShape.S_512_BIT}. */
@@ -4381,7 +4389,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_512_BIT,
                             Short512Vector.class,
                             Short512Vector.Short512Mask.class,
-                            Short512Vector.Short512Shuffle.class,
                             Short512Vector::new);
 
     /** Species representing {@link ShortVector}s of {@link VectorShape#S_Max_BIT VectorShape.S_Max_BIT}. */
@@ -4389,7 +4396,6 @@ public abstract class ShortVector extends AbstractVector<Short> {
         = new ShortSpecies(VectorShape.S_Max_BIT,
                             ShortMaxVector.class,
                             ShortMaxVector.ShortMaxMask.class,
-                            ShortMaxVector.ShortMaxShuffle.class,
                             ShortMaxVector::new);
 
     /**

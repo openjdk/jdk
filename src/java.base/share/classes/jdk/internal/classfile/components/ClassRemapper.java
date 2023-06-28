@@ -96,11 +96,11 @@ public sealed interface ClassRemapper extends ClassTransform permits ClassRemapp
 
     /**
      * Remaps the whole ClassModel into a new class file, including the class name.
+     * @param context Classfile context
      * @param clm class model to re-map
      * @return re-mapped class file bytes
      */
-    default byte[] remapClass(ClassModel clm) {
-        return Classfile.build(map(clm.thisClass().asSymbol()),
-                clb -> clm.forEachElement(resolve(clb).consumer()));
+    default byte[] remapClass(Classfile context, ClassModel clm) {
+        return context.transform(clm, map(clm.thisClass().asSymbol()), this);
     }
 }
