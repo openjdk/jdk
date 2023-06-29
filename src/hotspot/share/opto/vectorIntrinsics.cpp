@@ -592,9 +592,9 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   const TypeInt*     step_val      = gvn().type(argument(5))->isa_int();
   const TypeInt*     wrap          = gvn().type(argument(6))->isa_int();
 
-  if (shuffle_klass == NULL || shuffle_klass->const_oop() == NULL ||
-      vlen == NULL || !vlen->is_con() || start_val == NULL || step_val == NULL ||
-      wrap == NULL || !wrap->is_con()) {
+  if (shuffle_klass == nullptr || shuffle_klass->const_oop() == nullptr     ||
+      vlen == nullptr || !vlen->is_con() || start_val == nullptr || step_val == nullptr ||
+      wrap == nullptr || !wrap->is_con()) {
     return false; // not enough info for intrinsification
   }
 
@@ -613,7 +613,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   if (start_val->is_con() && step_val->is_con()) {
     int effective_min_index = start_val->get_con();
     int effective_max_index = start_val->get_con() + step_val->get_con() * (num_elem - 1);
-    effective_indices_in_range = effective_min_index >= -128 && effective_max_index <= 127;
+    effective_indices_in_range = effective_max_index > effective_min_index && effective_min_index >= -128 && effective_max_index <= 127;
   }
 
   if (!do_wrap && !effective_indices_in_range) {
