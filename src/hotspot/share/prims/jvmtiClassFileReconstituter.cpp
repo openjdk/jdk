@@ -394,9 +394,9 @@ void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
   int num_bootstrap_methods = ConstantPool::operand_array_length(operands);
 
   // calculate length of attribute
-  int length = sizeof(u2); // num_bootstrap_methods
+  u4 length = sizeof(u2); // num_bootstrap_methods
   for (int n = 0; n < num_bootstrap_methods; n++) {
-    int num_bootstrap_arguments = cpool()->operand_argument_count_at(n);
+    u2 num_bootstrap_arguments = cpool()->operand_argument_count_at(n);
     length += sizeof(u2); // bootstrap_method_ref
     length += sizeof(u2); // num_bootstrap_arguments
     length += (int)sizeof(u2) * num_bootstrap_arguments; // bootstrap_arguments[num_bootstrap_arguments]
@@ -488,7 +488,7 @@ void JvmtiClassFileReconstituter::write_record_attribute() {
   int number_of_components = components->length();
 
   // Each component has a u2 for name, descr, attribute count
-  int length = checked_cast<int>(sizeof(u2) + (sizeof(u2) * 3 * number_of_components));
+  u4 length = checked_cast<u4>(sizeof(u2) + (sizeof(u2) * 3 * number_of_components));
   for (int x = 0; x < number_of_components; x++) {
     RecordComponent* component = components->at(x);
     if (component->generic_signature_index() != 0) {
