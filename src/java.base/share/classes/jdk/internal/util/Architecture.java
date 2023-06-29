@@ -39,8 +39,11 @@ public enum Architecture {
     AARCH64,
     ARM,
     RISCV64,
+    LOONGARCH64,
     S390,
     PPC64,
+    MIPSEL,
+    MIPS64EL
     ;
 
     private static Architecture CURRENT_ARCH = initArch(PlatformProps.CURRENT_ARCH_STRING);
@@ -67,6 +70,14 @@ public enum Architecture {
     @ForceInline
     public static boolean isRISCV64() {
         return PlatformProps.TARGET_ARCH_IS_RISCV64;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is LOONGARCH64}
+     */
+    @ForceInline
+    public static boolean isLOONGARCH64() {
+        return PlatformProps.TARGET_ARCH_IS_LOONGARCH64;
     }
 
     /**
@@ -100,6 +111,22 @@ public enum Architecture {
     @ForceInline
     public static boolean isAARCH64() {
         return PlatformProps.TARGET_ARCH_IS_AARCH64;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is MIPSEL}
+     */
+    @ForceInline
+    public static boolean isMIPSEL() {
+        return PlatformProps.TARGET_ARCH_IS_MIPSEL;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is MIPS64EL}
+     */
+    @ForceInline
+    public static boolean isMIPS64EL() {
+        return PlatformProps.TARGET_ARCH_IS_MIPS64EL;
     }
 
     /**

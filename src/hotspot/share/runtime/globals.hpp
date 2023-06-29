@@ -67,21 +67,22 @@
 //    option, you must first specify +UnlockDiagnosticVMOptions.
 //    (This master switch also affects the behavior of -Xprintflags.)
 //
-// EXPERIMENTAL flags are in support of features that are not
-//    part of the officially supported product, but are available
+// EXPERIMENTAL flags are in support of features that may not be
+//    an officially supported part of a product, but may be available
 //    for experimenting with. They could, for example, be performance
 //    features that may not have undergone full or rigorous QA, but which may
 //    help performance in some cases and released for experimentation
 //    by the community of users and developers. This flag also allows one to
 //    be able to build a fully supported product that nonetheless also
 //    ships with some unsupported, lightly tested, experimental features.
+//    Refer to the documentation of any products using this code for details
+//    on support and fitness for production.
 //    Like the UnlockDiagnosticVMOptions flag above, there is a corresponding
 //    UnlockExperimentalVMOptions flag, which allows the control and
 //    modification of the experimental flags.
 //
 // Nota bene: neither diagnostic nor experimental options should be used casually,
-//    and they are not supported on production loads, except under explicit
-//    direction from support engineers.
+//    Refer to the documentation of any products using this code for details.
 //
 // MANAGEABLE flags are writeable external product flags.
 //    They are dynamically writeable through the JDK management interface
@@ -1109,11 +1110,11 @@ const int ObjectAlignmentInBytes = 8;
           "X, Y and Z in 0=off ; 1=jsr292 only; 2=all methods")             \
           constraint(TypeProfileLevelConstraintFunc, AfterErgo)             \
                                                                             \
-  product(intx, TypeProfileArgsLimit,     2,                                \
+  product(int, TypeProfileArgsLimit,     2,                                 \
           "max number of call arguments to consider for type profiling")    \
           range(0, 16)                                                      \
                                                                             \
-  product(intx, TypeProfileParmsLimit,    2,                                \
+  product(int, TypeProfileParmsLimit,    2,                                 \
           "max number of incoming parameters to consider for type profiling"\
           ", -1 for all")                                                   \
           range(-1, 64)                                                     \
@@ -1376,7 +1377,7 @@ const int ObjectAlignmentInBytes = 8;
           "Limit on traps (of one kind) at a particular BCI")               \
           range(0, max_jint)                                                \
                                                                             \
-  product(intx, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                \
+  product(int, SpecTrapLimitExtraEntries,  3, EXPERIMENTAL,                 \
           "Extra method data trap entries for speculation")                 \
                                                                             \
   product(double, InlineFrequencyRatio, 0.25, DIAGNOSTIC,                   \

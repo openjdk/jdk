@@ -148,6 +148,9 @@ public abstract class Test {
             = "algorithm is considered a security risk. "
             + "This algorithm will be disabled in a future update.";
 
+    static final String WEAK_KEY_WARNING
+            = "This key size will be disabled in a future update.";
+
     static final String JAR_SIGNED = "jar signed.";
 
     static final String JAR_VERIFIED = "jar verified.";

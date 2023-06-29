@@ -30,7 +30,6 @@
 #include "code/codeCache.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/oopMapCache.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "pauth_aarch64.hpp"
 

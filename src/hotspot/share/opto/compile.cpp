@@ -769,12 +769,10 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
 
     JVMState* jvms = build_start_state(start(), tf());
     if ((jvms = cg->generate(jvms)) == nullptr) {
-      if (!failure_reason_is(C2Compiler::retry_class_loading_during_parsing())) {
-        assert(failure_reason() != nullptr, "expect reason for parse failure");
-        stringStream ss;
-        ss.print("method parse failed: %s", failure_reason());
-        record_method_not_compilable(ss.as_string());
-      }
+      assert(failure_reason() != nullptr, "expect reason for parse failure");
+      stringStream ss;
+      ss.print("method parse failed: %s", failure_reason());
+      record_method_not_compilable(ss.as_string());
       return;
     }
     GraphKit kit(jvms);
