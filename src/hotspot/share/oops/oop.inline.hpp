@@ -250,14 +250,34 @@ size_t oopDesc::size_given_klass(Klass* klass)  {
   return s;
 }
 
+#ifdef _LP64
+Klass* oopDesc::forward_safe_klass_impl(markWord m) const {
+  assert(UseCompactObjectHeaders, "Only get here with compact headers");
+  if (m.is_marked()) {
+    oop fwd = forwardee(m);
+    markWord m2 = fwd->mark();
+    assert(!m2.is_marked() || m2.self_forwarded(), "no double forwarding: this: " PTR_FORMAT " (" INTPTR_FORMAT "), fwd: " PTR_FORMAT " (" INTPTR_FORMAT ")", p2i(this), m.value(), p2i(fwd), m2.value());
+    m = m2;
+  }
+  return m.actual_mark().klass();
+}
+#endif
+
+Klass* oopDesc::forward_safe_klass(markWord m) const {
+#ifdef _LP64
+  if (UseCompactObjectHeaders) {
+    return forward_safe_klass_impl(m);
+  } else
+#endif
+  {
+    return klass();
+  }
+}
+
 Klass* oopDesc::forward_safe_klass() const {
 #ifdef _LP64
   if (UseCompactObjectHeaders) {
-    markWord m = mark();
-    if (m.is_marked()) {
-      m = forwardee(m)->mark();
-    }
-    return m.actual_mark().klass();
+    return forward_safe_klass_impl(mark());
   } else
 #endif
   {

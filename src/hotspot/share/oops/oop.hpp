@@ -126,7 +126,11 @@ class oopDesc {
   // the header as a plain pointer (or self-forwarded). In particular,
   // those methods can not deal with the sliding-forwarding that is used
   // in Serial, G1 and Shenandoah full-GCs.
+private:
+  inline Klass*   forward_safe_klass_impl(markWord m) const;
+public:
   inline Klass*   forward_safe_klass() const;
+  inline Klass*   forward_safe_klass(markWord m) const;
   inline size_t   forward_safe_size();
   inline void     forward_safe_init_mark();
 

@@ -161,7 +161,7 @@ private:
   void start_partial_objarray(G1HeapRegionAttr dest_dir, oop from, oop to);
 
   HeapWord* allocate_copy_slow(G1HeapRegionAttr* dest_attr,
-                               oop old,
+                               Klass* klass,
                                size_t word_sz,
                                uint age,
                                uint node_index);
@@ -196,7 +196,7 @@ private:
   inline G1HeapRegionAttr next_region_attr(G1HeapRegionAttr const region_attr, markWord const m, uint& age);
 
   void report_promotion_event(G1HeapRegionAttr const dest_attr,
-                              oop const old, size_t word_sz, uint age,
+                              Klass* klass, size_t word_sz, uint age,
                               HeapWord * const obj_ptr, uint node_index) const;
 
   void trim_queue_to_threshold(uint threshold);

@@ -378,22 +378,22 @@ G1HeapRegionAttr G1ParScanThreadState::next_region_attr(G1HeapRegionAttr const r
 }
 
 void G1ParScanThreadState::report_promotion_event(G1HeapRegionAttr const dest_attr,
-                                                  oop const old, size_t word_sz, uint age,
+                                                  Klass* klass, size_t word_sz, uint age,
                                                   HeapWord * const obj_ptr, uint node_index) const {
   PLAB* alloc_buf = _plab_allocator->alloc_buffer(dest_attr, node_index);
   if (alloc_buf->contains(obj_ptr)) {
-    _g1h->gc_tracer_stw()->report_promotion_in_new_plab_event(old->forward_safe_klass(), word_sz * HeapWordSize, age,
+    _g1h->gc_tracer_stw()->report_promotion_in_new_plab_event(klass, word_sz * HeapWordSize, age,
                                                               dest_attr.type() == G1HeapRegionAttr::Old,
                                                               alloc_buf->word_sz() * HeapWordSize);
   } else {
-    _g1h->gc_tracer_stw()->report_promotion_outside_plab_event(old->forward_safe_klass(), word_sz * HeapWordSize, age,
+    _g1h->gc_tracer_stw()->report_promotion_outside_plab_event(klass, word_sz * HeapWordSize, age,
                                                                dest_attr.type() == G1HeapRegionAttr::Old);
   }
 }
 
 NOINLINE
 HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
-                                                   oop old,
+                                                   Klass* klass,
                                                    size_t word_sz,
                                                    uint age,
                                                    uint node_index) {
@@ -416,7 +416,7 @@ HeapWord* G1ParScanThreadState::allocate_copy_slow(G1HeapRegionAttr* dest_attr,
     update_numa_stats(node_index);
     if (_g1h->gc_tracer_stw()->should_report_promotion_events()) {
       // The events are checked individually as part of the actual commit
-      report_promotion_event(*dest_attr, old, word_sz, age, obj_ptr, node_index);
+      report_promotion_event(*dest_attr, klass, word_sz, age, obj_ptr, node_index);
     }
   }
   return obj_ptr;
@@ -453,7 +453,13 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
 
   // Get the klass once.  We'll need it again later, and this avoids
   // re-decoding when it's compressed.
-  Klass* klass = old->forward_safe_klass();
+  // NOTE: With compact headers, it is not safe to load the Klass* from o, because
+  // that would access the mark-word, and the mark-word might change at any time by
+  // concurrent promotion. The promoted mark-word would point to the forwardee, which
+  // may not yet have completed copying. Therefore we must load the Klass* from
+  // the mark-word that we have already loaded. This is safe, because we have checked
+  // that this is not yet forwarded in the caller.
+  Klass* klass = old->forward_safe_klass(old_mark);
   const size_t word_sz = old->size_given_klass(klass);
 
   uint age = 0;
@@ -466,7 +472,7 @@ oop G1ParScanThreadState::do_copy_to_survivor_space(G1HeapRegionAttr const regio
   // PLAB allocations should succeed most of the time, so we'll
   // normally check against null once and that's it.
   if (obj_ptr == nullptr) {
-    obj_ptr = allocate_copy_slow(&dest_attr, old, word_sz, age, node_index);
+    obj_ptr = allocate_copy_slow(&dest_attr, klass, word_sz, age, node_index);
     if (obj_ptr == nullptr) {
       // This will either forward-to-self, or detect that someone else has
       // installed a forwarding pointer.
