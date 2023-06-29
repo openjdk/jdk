@@ -2264,8 +2264,7 @@ public class IRNode {
      */
     public static String parseVectorNodeSizeTag(String sizeTagString, String typeString, VMInfo vmInfo) {
         // Parse out "min(a,b,c,...)"
-        if (sizeTagString.startsWith("min(")) {
-            TestFormat.checkNoReport(sizeTagString.endsWith(")"), "Vector node size \"min(...)\" must end with \")\" \"" + sizeTagString + "\"");
+        if (sizeTagString.startsWith("min(") && sizeTagString.endsWith(")")) {
             String[] tags = sizeTagString.substring(4,sizeTagString.length() - 1).split(",");
             TestFormat.checkNoReport(tags.length > 1, "Vector node size \"min(...)\" must have at least 2 comma separated arguments, got \"" + sizeTagString + "\"");
             int min_val = 1024;
@@ -2334,7 +2333,7 @@ public class IRNode {
         }
 
         long maxVectorSize = vmInfo.getLong("MaxVectorSize", 0);
-        TestFramework.check(maxVectorSize > 0, "VMInfo: MaxVectorSize is not larger than zero");
+        TestFormat.checkNoReport(maxVectorSize > 0, "VMInfo: MaxVectorSize is not larger than zero");
         maxBytes = Math.min(maxBytes, maxVectorSize);
 
         // compute elements per vector: vector bytes divided by bytes per element
@@ -2454,7 +2453,7 @@ public class IRNode {
     public static String getVectorNodeType(String irNode) {
         String typeString = VECTOR_NODE_TYPE.get(irNode);
         String failMsg = "\"" + irNode + "\" is not a Vector IR node defined in class IRNode";
-        TestFormat.checkNoReport(typeString != null, failMsg);
+        TestFormat.check(typeString != null, failMsg);
         return typeString;
     }
 }
