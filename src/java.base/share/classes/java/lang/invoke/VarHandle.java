@@ -2083,7 +2083,7 @@ public abstract sealed class VarHandle implements Constable
      * A direct VarHandle's VarForm has implementation MemberNames that can
      * be linked directly. If a VarHandle is indirect, it must override
      * {@link #isAccessModeSupported} and {@link #getMethodHandleUncached}
-     * which access MemberNames..
+     * which access MemberNames.
      *
      * @return true if this is a direct VarHandle, false if it's an indirect
      *         VarHandle.

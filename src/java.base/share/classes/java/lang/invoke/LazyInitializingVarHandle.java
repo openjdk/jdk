@@ -126,7 +126,7 @@ final class LazyInitializingVarHandle extends VarHandle {
             return mh;
 
         try {
-            return MH_ensureInitialized = IMPL_LOOKUP.findVirtual(LazyInitializingVarHandle.class,
+            return MH_ensureInitialized = MethodHandles.lookup().findVirtual(LazyInitializingVarHandle.class,
                     "ensureInitialized",
                     MethodType.methodType(void.class));
         } catch (Throwable ex) {
