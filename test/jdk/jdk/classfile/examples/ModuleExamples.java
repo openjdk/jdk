@@ -61,7 +61,7 @@ public class ModuleExamples {
         System.out.println("Exports: " + ma.exports());
 
         ModuleMainClassAttribute mmca = cm.findAttribute(Attributes.MODULE_MAIN_CLASS).orElse(null);
-        System.out.println("Does the module have a MainClassAttribte?: " + (mmca != null));
+        System.out.println("Does the module have a MainClassAttribute?: " + (mmca != null));
 
         ModulePackagesAttribute mmp = cm.findAttribute(Attributes.MODULE_PACKAGES).orElseThrow();
         System.out.println("Packages?: " + mmp.packages());
