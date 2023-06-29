@@ -45,8 +45,6 @@ public class IREncodingPrinter {
     public static final String START = "##### IRMatchRulesEncoding - used by TestFramework #####";
     public static final String END = "----- END -----";
     public static final int NO_RULE_APPLIED = -1;
-    public static final String START_VMINFO = "##### IRMatchingVMInfo - used by TestFramework #####";
-    public static final String END_VMINFO = "----- END VMInfo -----";
 
     private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
     private static final List<Function<String, Object>> LONG_GETTERS = Arrays.asList(
@@ -369,18 +367,6 @@ public class IREncodingPrinter {
     public void emit() {
         output.append(END);
         TestFrameworkSocket.write(output.toString(), "IR rule application encoding");
-
-        StringBuilder vmInfo = new StringBuilder();
-        vmInfo.append(START_VMINFO).append(System.lineSeparator());
-        vmInfo.append("<key>:<value>").append(System.lineSeparator());
-        String cpuFeatures = WHITE_BOX.getCPUFeatures();
-        vmInfo.append("cpuFeatures:" + cpuFeatures).append(System.lineSeparator());
-        long maxVectorSize = WHITE_BOX.getIntxVMFlag("MaxVectorSize");
-        vmInfo.append("MaxVectorSize:" + maxVectorSize).append(System.lineSeparator());
-        long loopMaxUnroll = WHITE_BOX.getIntxVMFlag("LoopMaxUnroll");
-        vmInfo.append("LoopMaxUnroll:" + loopMaxUnroll).append(System.lineSeparator());
-        vmInfo.append(END_VMINFO);
-        TestFrameworkSocket.write(vmInfo.toString(), "VMInfo");
     }
 }
 

@@ -46,8 +46,6 @@ public class IREncodingParser {
     private static final boolean PRINT_IR_ENCODING = Boolean.parseBoolean(System.getProperty("PrintIREncoding", "false"));
     private static final Pattern IR_ENCODING_PATTERN =
             Pattern.compile("(?<=" + IREncodingPrinter.START + "\r?\n).*\\R([\\s\\S]*)(?=" + IREncodingPrinter.END + ")");
-    private static final Pattern VM_INFO_PATTERN =
-            Pattern.compile("(?<=" + IREncodingPrinter.START_VMINFO + "\r?\n).*\\R([\\s\\S]*)(?=" + IREncodingPrinter.END_VMINFO + ")");
 
     private final Map<String, TestMethod> testMethods;
     private final Class<?> testClass;

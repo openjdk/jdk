@@ -28,7 +28,7 @@ import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.parser.hotspot.HotSpotPidFileParser;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
-import compiler.lib.ir_framework.test.IREncodingPrinter;
+import compiler.lib.ir_framework.test.VMInfoPrinter;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -44,7 +44,7 @@ import java.util.regex.Pattern;
 public class VMInfoParser {
 
     private static final Pattern VM_INFO_PATTERN =
-            Pattern.compile("(?<=" + IREncodingPrinter.START_VMINFO + "\r?\n).*\\R([\\s\\S]*)(?=" + IREncodingPrinter.END_VMINFO + ")");
+            Pattern.compile("(?<=" + VMInfoPrinter.START_VM_INFO + "\r?\n).*\\R([\\s\\S]*)(?=" + VMInfoPrinter.END_VM_INFO + ")");
 
     /**
      * Extract VMInfo from the irEncoding.
