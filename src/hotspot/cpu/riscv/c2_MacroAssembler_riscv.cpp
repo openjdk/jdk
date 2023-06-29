@@ -947,108 +947,19 @@ void C2_MacroAssembler::string_compare(Register str1, Register str2,
     bne(tmp1, tmp2, DIFFERENCE);
     bltz(cnt2, NEXT_WORD);
     bind(TAIL);
-
-    if (AvoidUnalignedAccesses) {
-      if (str1_isL == str2_isL) { // LL or UU
-        Label TAIL02, TAIL01, TAIL08;
-        beqz(cnt2, TAIL08); // if cnt2 is zero then we need to copy one more aligned long
-        // add to str1/str2 what we have already read
-        add(str1, str1, cnt2);
-        add(str2, str2, cnt2);
-        sub(cnt2, zr, cnt2);
-        addi(cnt2, cnt2, 8); // now str1/2 is aligned, cnt2 has amounts of bytes left to read
-        // read 4 if needed, then read 2 if needed, then read 1 if needed and if isLL,
-        // str1 is 8 bytes aligned now,
-        test_bit(tmp1, cnt2, 2);
-        beqz(tmp1, TAIL02);
-        {
-          lwu(tmp1, Address(str1));
-          add(str1, str1, 4);
-          lwu(tmp2, Address(str2));
-          add(str2, str2, 4);
-          bne(tmp1, tmp2, DIFFERENCE);
-        }
-        bind(TAIL02);
-        // load two bytes if (address & 2) is not 0
-        test_bit(tmp1, cnt2, 1);
-        beqz(tmp1, isLL ? TAIL01 : DONE);
-        {
-          lhu(tmp1, Address(str1));
-          add(str1, str1, 2);
-          lhu(tmp2, Address(str2));
-          add(str2, str2, 2);
-          bne(tmp1, tmp2, DIFFERENCE);
-        }
-        if (isLL) {
-          bind(TAIL01);
-          // only if isLL, load one byte if address is odd
-          test_bit(tmp1, cnt2, 0);
-          beqz(tmp1, DONE);
-          {
-            lbu(tmp1, Address(str1));
-            lbu(tmp2, Address(str2));
-            bne(tmp1, tmp2, DIFFERENCE);
-          }
-        }
-        j(DONE);
-        bind(TAIL08);
-        ld(tmp1, Address(str1));
-        ld(tmp2, Address(str2));
-        bne(tmp1, tmp2, DIFFERENCE);
-        j(DONE);
-      } else {
-        //  LU and UL
-        Label TAIL08;
-
-        beqz(cnt2, TAIL08); // if cnt2 is zero then we need to copy one more aligned long/word
-
-        add(str1, str1, cnt1);
-        add(str2, str2, cnt2);
-
-        sub(cnt1, zr, cnt1);
-        sub(cnt2, zr, cnt2);
-
-        addi(cnt1, cnt1, isLU ? 4 : 8);
-        addi(cnt2, cnt2, isLU ? 8 : 4);
-        // SHORT_STRING operates on characters, not bytes, set cnt2 to min(cnt1, cnt2)
-        // but we already know cnt1=2*cnt2 for isLU or cnt2=2*cnt1 for isUL
-        if(isLU) {
-          mv(cnt2, cnt1);
-        }
-        j(SHORT_STRING);
-
-        bind(TAIL08);
-        if(isLU) {
-          lwu(tmp1, Address(str1));
-          ld(tmp2, Address(str2));
-          inflate_lo32(tmp3, tmp1);
-          mv(tmp1, tmp3);
-          bne(tmp1, tmp2, DIFFERENCE);
-          j(DONE);
-        } else {
-          ld(tmp1, Address(str1));
-          lwu(tmp2, Address(str2));
-          inflate_lo32(tmp3, tmp2);
-          mv(tmp2, tmp3);
-          bne(tmp1, tmp2, DIFFERENCE);
-          j(DONE);
-        }
-      }
-    } else {
-      if (str1_isL == str2_isL) { // LL or UU
-        ld(tmp1, Address(str1));
-        ld(tmp2, Address(str2));
-      } else if (isLU) { // LU case
-        lwu(tmp1, Address(str1));
-        ld(tmp2, Address(str2));
-        inflate_lo32(tmp3, tmp1);
-        mv(tmp1, tmp3);
-      } else { // UL case
-        lwu(tmp2, Address(str2));
-        ld(tmp1, Address(str1));
-        inflate_lo32(tmp3, tmp2);
-        mv(tmp2, tmp3);
-      }
+    if (str1_isL == str2_isL) { // LL or UU
+      load_long_misaligned(tmp1, Address(str1), tmp3, isLL ? 1 : 2);
+      load_long_misaligned(tmp2, Address(str2), tmp3, isLL ? 1 : 2);
+    } else if (isLU) { // LU case
+      load_int_misaligned(tmp1, Address(str1), tmp3, false);
+      load_long_misaligned(tmp2, Address(str2), tmp3, 2);
+      inflate_lo32(tmp3, tmp1);
+      mv(tmp1, tmp3);
+    } else { // UL case
+      load_int_misaligned(tmp2, Address(str2), tmp3, false);
+      load_long_misaligned(tmp1, Address(str1), tmp3, 2);
+      inflate_lo32(tmp3, tmp2);
+      mv(tmp2, tmp3);
     }
     bind(TAIL_CHECK);
     beq(tmp1, tmp2, DONE);
