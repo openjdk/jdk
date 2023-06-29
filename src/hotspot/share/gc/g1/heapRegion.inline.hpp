@@ -109,11 +109,11 @@ inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) c
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
-inline bool HeapRegion::obj_in_unparsable_area(oop obj, HeapWord* const pb) {
-  return !HeapRegion::obj_in_parsable_area(cast_from_oop<HeapWord*>(obj), pb);
+inline bool HeapRegion::is_in_parsable_area(const void* const addr) const {
+  return is_in_parsable_area(addr, parsable_bottom());
 }
 
-inline bool HeapRegion::obj_in_parsable_area(const HeapWord* addr, HeapWord* const pb) {
+inline bool HeapRegion::is_in_parsable_area(const void* const addr, const void* const pb) {
   return addr >= pb;
 }
 
@@ -125,7 +125,7 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   assert(p >= bottom() && p < top(), "precondition");
   assert(!is_continues_humongous(), "p must point to block-start");
 
-  if (obj_in_parsable_area(p, pb)) {
+  if (is_in_parsable_area(p, pb)) {
     return true;
   }
 
@@ -138,19 +138,6 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   // From Remark until the region has been completely scrubbed obj_is_parsable will return false
   // and we have to use the bitmap to know if a block is a valid object.
   return is_marked_in_bitmap(cast_to_oop(p));
-}
-
-inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
-  assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
-
-  // From Remark until a region has been concurrently scrubbed, parts of the
-  // region is not guaranteed to be parsable. Use the bitmap for liveness.
-  if (obj_in_unparsable_area(obj, pb)) {
-    return !is_marked_in_bitmap(obj);
-  }
-
-  // This object is in the parsable part of the heap, live unless scrubbed.
-  return G1CollectedHeap::is_obj_filler(obj);
 }
 
 inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, const HeapWord* p, HeapWord* const limit) const {
@@ -450,7 +437,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
   //   safepoints.
   //
   HeapWord* cur = block_start(start, pb);
-  if (!obj_in_parsable_area(start, pb)) {
+  if (!is_in_parsable_area(start, pb)) {
     // Limit the MemRegion to the part of the area to scan to the unparsable one as using the bitmap
     // is slower than blindly iterating the objects.
     MemRegion mr_in_unparsable(mr.start(), MIN2(mr.end(), pb));

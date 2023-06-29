@@ -3002,3 +3002,9 @@ bool os::supports_map_sync() {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+
+#if INCLUDE_JFR
+
+void os::jfr_report_memory_info() {}
+
+#endif // INCLUDE_JFR

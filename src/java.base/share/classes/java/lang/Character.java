@@ -27,6 +27,7 @@ package java.lang;
 
 import jdk.internal.misc.CDS;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import java.lang.constant.Constable;
 import java.lang.constant.DynamicConstantDesc;
@@ -8956,9 +8957,10 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
         this.value = value;
     }
 
-    private static class CharacterCache {
+    private static final class CharacterCache {
         private CharacterCache(){}
 
+        @Stable
         static final Character[] cache;
         static Character[] archivedCache;
 

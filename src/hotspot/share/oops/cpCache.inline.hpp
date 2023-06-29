@@ -28,6 +28,7 @@
 #include "oops/cpCache.hpp"
 
 #include "oops/oopHandle.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "runtime/atomic.hpp"
 
 inline intx ConstantPoolCacheEntry::indices_ord() const { return Atomic::load_acquire(&_indices); }
@@ -106,4 +107,11 @@ inline objArrayOop ConstantPoolCache::resolved_references() {
   return (objArrayOop)obj;
 }
 
+inline ResolvedIndyEntry* ConstantPoolCache::resolved_indy_entry_at(int index) const {
+  return _resolved_indy_entries->adr_at(index);
+}
+
+inline int ConstantPoolCache::resolved_indy_entries_length() const {
+  return _resolved_indy_entries->length();
+}
 #endif // SHARE_OOPS_CPCACHE_INLINE_HPP

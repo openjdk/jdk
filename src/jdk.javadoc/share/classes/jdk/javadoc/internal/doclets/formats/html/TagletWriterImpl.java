@@ -494,7 +494,7 @@ public class TagletWriterImpl extends TagletWriter {
             if (labelContent.isEmpty()) {
                 // A non-empty label is required for fragment links as the
                 // reference target does not provide a useful default label.
-                reportWarning.accept("doclet.link.see.no_label", null);
+                htmlWriter.messages.error(ch.getDocTreePath(refTree), "doclet.link.see.no_label");
                 return invalidTagOutput(resources.getText("doclet.link.see.no_label"),
                         Optional.of(refSignature));
             }

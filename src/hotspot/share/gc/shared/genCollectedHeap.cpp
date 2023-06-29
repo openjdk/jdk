@@ -95,8 +95,7 @@ GenCollectedHeap::GenCollectedHeap(Generation::Name young,
                                    MaxOldSize,
                                    GenAlignment)),
   _rem_set(nullptr),
-  _soft_ref_gen_policy(),
-  _size_policy(nullptr),
+  _soft_ref_policy(),
   _gc_policy_counters(new GCPolicyCounters(policy_counters_name, 2, 2)),
   _incremental_collection_failed(false),
   _full_collections_completed(0),
@@ -139,17 +138,6 @@ CardTableRS* GenCollectedHeap::create_rem_set(const MemRegion& reserved_region) 
   return new CardTableRS(reserved_region);
 }
 
-void GenCollectedHeap::initialize_size_policy(size_t init_eden_size,
-                                              size_t init_promo_size,
-                                              size_t init_survivor_size) {
-  const double max_gc_pause_sec = ((double) MaxGCPauseMillis) / 1000.0;
-  _size_policy = new AdaptiveSizePolicy(init_eden_size,
-                                        init_promo_size,
-                                        init_survivor_size,
-                                        max_gc_pause_sec,
-                                        GCTimeRatio);
-}
-
 ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
   // Now figure out the total size.
   const size_t pageSize = UseLargePages ? os::large_page_size() : os::vm_page_size();
@@ -171,9 +159,9 @@ ReservedHeapSpace GenCollectedHeap::allocate(size_t alignment) {
   os::trace_page_sizes("Heap",
                        MinHeapSize,
                        total_reserved,
-                       used_page_size,
                        heap_rs.base(),
-                       heap_rs.size());
+                       heap_rs.size(),
+                       used_page_size);
 
   return heap_rs;
 }
@@ -193,10 +181,6 @@ void GenCollectedHeap::post_initialize() {
   DefNewGeneration* def_new_gen = (DefNewGeneration*)_young_gen;
 
   def_new_gen->ref_processor_init();
-
-  initialize_size_policy(def_new_gen->eden()->capacity(),
-                         _old_gen->capacity(),
-                         def_new_gen->from()->capacity());
 
   MarkSweep::initialize();
 

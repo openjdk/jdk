@@ -2378,7 +2378,7 @@ const Type* LoadNode::klass_value_common(PhaseGVN* phase) const {
 
       // The array's TypeKlassPtr was declared 'precise' or 'not precise'
       // according to the element type's subclassing.
-      return tkls->is_aryklassptr()->elem();
+      return tkls->is_aryklassptr()->elem()->isa_klassptr()->cast_to_exactness(tkls->klass_is_exact());
     }
     if (tkls->isa_instklassptr() != nullptr && tkls->klass_is_exact() &&
         tkls->offset() == in_bytes(Klass::super_offset())) {
@@ -3013,10 +3013,22 @@ uint LoadStoreNode::ideal_reg() const {
   return _type->ideal_reg();
 }
 
+// This method conservatively checks if the result of a LoadStoreNode is
+// used, that is, if it returns true, then it is definitely the case that
+// the result of the node is not needed.
+// For example, GetAndAdd can be matched into a lock_add instead of a
+// lock_xadd if the result of LoadStoreNode::result_not_used() is true
 bool LoadStoreNode::result_not_used() const {
-  for( DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++ ) {
+  for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     Node *x = fast_out(i);
-    if (x->Opcode() == Op_SCMemProj) continue;
+    if (x->Opcode() == Op_SCMemProj) {
+      continue;
+    }
+    if (x->bottom_type() == TypeTuple::MEMBAR &&
+        !x->is_Call() &&
+        x->Opcode() != Op_Blackhole) {
+      continue;
+    }
     return false;
   }
   return true;

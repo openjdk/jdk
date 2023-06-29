@@ -4071,7 +4071,7 @@ return mh1;
 
             if (refKind == REF_invokeSpecial &&
                 refc != lookupClass() &&
-                !refc.isInterface() &&
+                !refc.isInterface() && !lookupClass().isInterface() &&
                 refc != lookupClass().getSuperclass() &&
                 refc.isAssignableFrom(lookupClass())) {
                 assert(!method.getName().equals(ConstantDescs.INIT_NAME));  // not this code path
@@ -4254,14 +4254,14 @@ return mh1;
             }
             MemberName resolved = resolveOrFail(refKind, member);
             mh = getDirectMethodForConstant(refKind, defc, resolved);
-            if (mh instanceof DirectMethodHandle
+            if (mh instanceof DirectMethodHandle dmh
                     && canBeCached(refKind, defc, resolved)) {
                 MemberName key = mh.internalMemberName();
                 if (key != null) {
                     key = key.asNormalOriginal();
                 }
                 if (member.equals(key)) {  // better safe than sorry
-                    LOOKASIDE_TABLE.put(key, (DirectMethodHandle) mh);
+                    LOOKASIDE_TABLE.put(key, dmh);
                 }
             }
             return mh;
@@ -7956,18 +7956,18 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
 
     /**
      * Creates a var handle object, which can be used to dereference a {@linkplain java.lang.foreign.MemorySegment memory segment}
-     * by viewing its contents as a sequence of the provided value layout.
+     * at a given byte offset, using the provided value layout.
      *
      * <p>The provided layout specifies the {@linkplain ValueLayout#carrier() carrier type},
      * the {@linkplain ValueLayout#byteSize() byte size},
      * the {@linkplain ValueLayout#byteAlignment() byte alignment} and the {@linkplain ValueLayout#order() byte order}
      * associated with the returned var handle.
      *
-     * <p>The returned var handle's type is {@code carrier} and the list of coordinate types is
-     * {@code (MemorySegment, long)}, where the {@code long} coordinate type corresponds to byte offset into
-     * a given memory segment. The returned var handle accesses bytes at an offset in a given
-     * memory segment, composing bytes to or from a value of the type {@code carrier} according to the given endianness;
-     * the alignment constraint (in bytes) for the resulting var handle is given by {@code alignmentBytes}.
+     * <p>The list of coordinate types associated with the returned var handle is {@code (MemorySegment, long)},
+     * where the {@code long} coordinate type corresponds to byte offset into the given memory segment coordinate.
+     * Thus, the returned var handle accesses bytes at an offset in a given memory segment, composing bytes to or from
+     * a value of the var handle type. Moreover, the access operation will honor the endianness and the
+     * alignment constraints expressed in the provided layout.
      *
      * <p>As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
      * {@snippet lang="java" :
@@ -8023,7 +8023,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *
      * @param layout the value layout for which a memory access handle is to be obtained.
      * @return the new memory segment view var handle.
-     * @throws IllegalArgumentException if an illegal carrier type is used, or if {@code alignmentBytes} is not a power of two.
      * @throws NullPointerException if {@code layout} is {@code null}.
      * @see MemoryLayout#varHandle(MemoryLayout.PathElement...)
      * @since 19
