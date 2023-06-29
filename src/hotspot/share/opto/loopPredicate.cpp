@@ -51,10 +51,10 @@
  *
  * There are different kinds of predicates throughout the code. We differentiate between the following predicates:
  *
- * - Regular Predicate: This term is used to refer to a Parse Predicate or a Runtime Predicate and can be used to
- *                      distinguish from any Assertion Predicate.
+ * - Regular Predicate: This term is used to refer to a Runtime Predicate or an Assertion Predicate and can be used to
+ *                      distinguish from any Parse Predicate which is not a real predicate but rather a placeholder.
  * - Parse Predicate: Added during parsing to capture the current JVM state. This predicate represents a "placeholder"
- *                    above which more Runtime Predicates can be created later after parsing.
+ *                    above which Regular Predicates can be created later after parsing.
  *
  *                    There are initially three Parse Predicates for each loop:
  *                    - Loop Parse Predicate:             The Parse Predicate added for Loop Predicates.
@@ -64,25 +64,28 @@
  *                      Predicate) or a Loop Limit Check Predicate. These predicates will be checked at runtime while the
  *                      Parse and Assertion Predicates are always removed before code generation (except for Initialized
  *                      Assertion Predicates which are kept in debug builds while being removed in product builds).
- *     - Hoisted Predicate: Either a Loop Predicate or a Profiled Loop Predicate that was created during Loop Predication
- *                          to hoist a check out of a loop. Each Hoisted Predicate is accompanied by additional
- *                          Assertion Predicates.
- *         - Loop Predicate:     A predicate that can either hoist a loop-invariant check out of a loop or a range check
- *                               of the form "a[i*scale + offset]", where scale and offset are loop-invariant, out of a
- *                               counted loop. A check must be executed in each loop iteration to hoist it. Otherwise, no
- *                               Loop Predicate can be created. This predicate is created during Loop Predication and is
- *                               inserted above the Loop Parse Predicate.
- *         - Profiled Loop:      This predicate is very similar to a Loop Predicate but the hoisted check does not need
- *           Predicate           to be executed in each loop iteration. By using profiling information, only checks with
- *                               a high execution frequency are chosen to be replaced by a Profiled Loop Predicate. This
- *                               predicate is created during Loop Predication and is inserted above the Profiled Loop
- *                               Parse Predicate.
+ *     - Hoisted Predicate: Either a Loop Predicate or a Profiled Loop Predicate that is created during Loop Predication
+ *                          to hoist a check out of a loop.
+ *         - Hoisted Invariant Check Predicate: A Hoisted Predicate to hoist a loop-invariant check out of a loop.
+ *         - Hoisted Range Check Predicate:     A Hoisted Predicate to hoist a range check of the form
+ *                                              "a[i*scale + offset]", where scale and offset are loop-invariant, out of
+ *                                              a counted loop. Each Hoisted Range Check Predicate is accompanied by
+ *                                              additional Assertion Predicates.
+ *         - Loop Predicate:     This Hoisted Predicate is created to hoist a loop-invariant check a range check of the
+ *                               form "a[i*scale + offset]", where scale and offset are loop-invariant, out of a
+ *                               counted loop. The hoisted check must be executed in each loop iteration. This predicate
+ *                               is created during Loop Predication and is inserted above the Loop Parse Predicate.
+ *         - Profiled Loop:      This predicate is very similar to a Loop Predicate but the check to be hoisted does not
+ *           Predicate           need to be executed in each loop iteration. By using profiling information, only checks
+ *                               with a high execution frequency are chosen to be replaced by a Profiled Loop Predicate.
+ *                               This predicate is created during Loop Predication and is inserted above the Profiled
+ *                               Loop Parse Predicate.
  *     - Loop Limit Check:   This predicate is created when transforming a loop to a counted loop to protect against
  *       Predicate           the case when adding the stride to the induction variable would cause an overflow which
  *                           will not satisfy the loop limit exit condition. This overflow is unexpected for further
  *                           counted loop optimizations and could lead to wrong results. Therefore, when this predicate
  *                           fails at runtime, we must trap and recompile the method without turning the loop into a
- *                           a counted loop to avoid these overflow problems.
+ *                           counted loop to avoid these overflow problems.
  *                           The predicate does not replace an actual check inside the loop. This predicate can only
  *                           be added once above the Loop Limit Check Parse Predicate for a loop.
  * - Assertion Predicate: An always true predicate which will never fail (its range is already covered by an earlier
@@ -156,39 +159,38 @@
  *                                                   before the loop to create Hoisted Predicates with).
  *
  *
- * In order to group predicates and refer to them throughout the code, we introduce the following additional terms:
- * - Regular Predicate Block: A Regular Predicate Block groups all Runtime Predicates in a Runtime Predicate Block
- *                            together with their dedicated Parse Predicate from which they were created (all predicates
- *                            share the same uncommon trap). The Runtime Predicate Block could be empty (i.e. no
- *                            Runtime Predicates created) and the Parse Predicate could be missing (after removing Parse
- *                            Predicates). There are three such Regular Predicate Blocks:
- *                            - Loop Predicate Block
- *                            - Profiled Loop Predicate Block
- *                            - Loop Limit Check Predicate Block
- * - Runtime Predicate Block: A block containing all Runtime Predicates that share the same uncommon trap (i.e. belonging
- *                            to a single Parse Predicate which is not included in this block). This block could be empty
- *                            if there were no Runtime Predicates created with the Parse Predicate below this block.
- *                            For the time being: We also count Assertion Predicates to this block but that will be
- *                            changed with the redesign of Assertion Predicates where we remove them from this block
- *                            (JDK-8288981).
+ * In order to group predicates and refer to them throughout the code, we introduce the following additional term:
+ * - Predicate Block: A block containing all Runtime Predicates, including the Assertion Predicates for Hoisted
+ *                    Range Check Predicates, and the associated Parse Predicate which all share the same uncommon trap.
+ *                    This block could be empty if there were no Runtime Predicates created and the Parse Predicate was
+ *                    already removed.
+ *                    There are three different Predicate Blocks:
+ *                    - Loop Predicate Block: Groups the Loop Predicates (if any), including the Assertion Predicates,
+ *                                            and the Loop Parse Predicate (if not removed, yet) together.
+ *                    - Profiled Loop         Groups the Profiled Loop Predicates (if any), including the Assertion
+ *                      Predicate Block:      Predicates, and the Profiled Loop Parse Predicate (if not removed, yet)
+ *                                            together.
+ *                    - Loop Limit Check      Groups the Loop Limit Check Predicate (if created) and the Loop Limit
+ *                      Predicate Block:      Check Parse Predicate (if not removed, yet) together.
+ *
  *
  * Initially, before applying any loop-splitting optimizations, we find the following structure after Loop Predication
  * (predicates inside square brackets [] do not need to exist if there are no checks to hoist):
  *
- *   [Loop Hoisted Predicate 1 + two Template Assertion Predicates]                 \ Runtime       \
- *   [Loop Hoisted Predicate 2 + two Template Assertion Predicates]                 | Predicate     |
- *   ...                                                                            | Block         | Loop Predicate Block
- *   [Loop Hoisted Predicate n + two Template Assertion Predicates]                 /               |
- * Loop Parse Predicate                                                                             /
+ *   [Loop Hoisted Predicate 1 + two Template Assertion Predicates]            \
+ *   [Loop Hoisted Predicate 2 + two Template Assertion Predicates]            |
+ *   ...                                                                       | Loop Predicate Block
+ *   [Loop Hoisted Predicate n + two Template Assertion Predicates]            |
+ * Loop Parse Predicate                                                        /
  *
- *   [Profiled Loop Hoisted Predicate 1 + two Template Assertion Predicates]       \ Runtime       \
- *   [Profiled Loop Hoisted Predicate 2 + two Template Assertion Predicates]       | Predicate     | Profiled Loop
- *   ...                                                                           | Block         | Predicate Block
- *   [Profiled Loop Hoisted Predicate m + two Template Assertion Predicates]       /               |
- * Profiled Loop Parse Predicate                                                                   /
- *                                                                                 \ Runtime
- *   [Loop Limit Check Predicate] (at most one)                                    / Predicate     \ Loop Limit Check
- * Loop Limit Check Parse Predicate                                                  Block         / Predicate Block
+ *   [Profiled Loop Hoisted Predicate 1 + two Template Assertion Predicates]   \
+ *   [Profiled Loop Hoisted Predicate 2 + two Template Assertion Predicates]   | Profiled Loop
+ *   ...                                                                       | Predicate Block
+ *   [Profiled Loop Hoisted Predicate m + two Template Assertion Predicates]   |
+ * Profiled Loop Parse Predicate                                               /
+ *
+ *   [Loop Limit Check Predicate] (at most one)                                \ Loop Limit Check
+ * Loop Limit Check Parse Predicate                                            / Predicate Block
  * Loop Head
  *
  * As an example, let's look at how the predicate structure looks for the main-loop after creating pre/main/post loops
