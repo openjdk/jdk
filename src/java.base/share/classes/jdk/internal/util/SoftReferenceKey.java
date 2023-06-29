@@ -35,9 +35,6 @@ import java.util.Objects;
  * @param <T> key type
  *
  * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
  */
 final class SoftReferenceKey<T> extends SoftReference<T> implements ReferenceKey<T> {
     /**
