@@ -180,9 +180,6 @@ class LibraryCallKit : public GraphKit {
   CallJavaNode* generate_method_call_static(vmIntrinsicID method_id, bool res_not_null) {
     return generate_method_call(method_id, false, true, res_not_null);
   }
-  CallJavaNode* generate_method_call_virtual(vmIntrinsics::ID method_id) {
-    return generate_method_call(method_id, true, false, false);
-  }
   Node* load_field_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, DecoratorSet decorators = IN_HEAP, bool is_static = false, ciInstanceKlass* fromKls = nullptr);
   Node* field_address_from_object(Node* fromObj, const char* fieldName, const char* fieldTypeString, bool is_exact = true, bool is_static = false, ciInstanceKlass* fromKls = nullptr);
 
