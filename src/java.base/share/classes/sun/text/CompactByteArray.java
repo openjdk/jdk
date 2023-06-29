@@ -293,7 +293,7 @@ public final class CompactByteArray implements Cloneable {
             if (elementAt((char)i) != other.elementAt((char)i))
                 return false;
         }
-        return true; // we made it through the guantlet.
+        return true; // we made it through the gauntlet.
     }
 
     /**
