@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,9 +31,7 @@
 /*
    SipHash reference C implementation
 
-   Copyright (c) 2012-2021 Jean-Philippe Aumasson
-   <jeanphilippe.aumasson@gmail.com>
-   Copyright (c) 2012-2014 Daniel J. Bernstein <djb@cr.yp.to>
+   Copyright (c) 2016 Jean-Philippe Aumasson <jeanphilippe.aumasson@gmail.com>
 
    To the extent possible under law, the author(s) have dedicated all copyright
    and related and neighboring rights to this software to the public domain
