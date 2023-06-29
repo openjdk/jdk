@@ -80,6 +80,8 @@ import com.sun.management.internal.GarbageCollectionNotifInfoCompositeData;
  *             the notification are provided in the {@linkplain #getGcAction action} String
  *       </li>
  * </ul>
+ *
+ * @since 1.7
  **/
 
 public class GarbageCollectionNotificationInfo implements  CompositeDataView {
