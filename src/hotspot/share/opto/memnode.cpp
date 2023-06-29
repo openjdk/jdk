@@ -629,7 +629,7 @@ ArrayCopyNode* MemNode::find_array_copy_clone(PhaseValues* phase, Node* ld_alloc
       }
 
       if (ac != nullptr && ac->is_clonebasic()) {
-        AllocateNode* alloc = AllocateNode::Ideal_allocation(ac->in(ArrayCopyNode::Dest), phase);
+        AllocateNode* alloc = AllocateNode::Ideal_allocation(ac->in(ArrayCopyNode::Dest));
         if (alloc != nullptr && alloc == ld_alloc) {
           return ac;
         }
@@ -657,7 +657,7 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
   Node*         adr    = in(MemNode::Address);
   intptr_t      offset = 0;
   Node*         base   = AddPNode::Ideal_base_and_offset(adr, phase, offset);
-  AllocateNode* alloc  = AllocateNode::Ideal_allocation(base, phase);
+  AllocateNode* alloc  = AllocateNode::Ideal_allocation(base);
 
   if (offset == Type::OffsetBot)
     return nullptr;            // cannot unalias unless there are precise offsets
@@ -705,7 +705,7 @@ Node* MemNode::find_previous_store(PhaseValues* phase) {
       if (st_base != base &&
           detect_ptr_independence(base, alloc,
                                   st_base,
-                                  AllocateNode::Ideal_allocation(st_base, phase),
+                                  AllocateNode::Ideal_allocation(st_base),
                                   phase)) {
         // Success:  The bases are provably independent.
         mem = mem->in(MemNode::Memory);
@@ -1058,7 +1058,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
   Node* ld_adr = in(MemNode::Address);
   intptr_t ld_off = 0;
   Node* ld_base = AddPNode::Ideal_base_and_offset(ld_adr, phase, ld_off);
-  Node* ld_alloc = AllocateNode::Ideal_allocation(ld_base, phase);
+  Node* ld_alloc = AllocateNode::Ideal_allocation(ld_base);
   const TypeInstPtr* tp = phase->type(ld_adr)->isa_instptr();
   Compile::AliasType* atp = (tp != nullptr) ? phase->C->alias_type(tp) : nullptr;
   // This is more general than load from boxing objects.
@@ -1716,7 +1716,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase) {
 AllocateNode* LoadNode::is_new_object_mark_load(PhaseGVN *phase) const {
   if (Opcode() == Op_LoadX) {
     Node* address = in(MemNode::Address);
-    AllocateNode* alloc = AllocateNode::Ideal_allocation(address, phase);
+    AllocateNode* alloc = AllocateNode::Ideal_allocation(address);
     Node* mem = in(MemNode::Memory);
     if (alloc != nullptr && mem->is_Proj() &&
         mem->in(0) != nullptr &&
@@ -2517,7 +2517,7 @@ Node *LoadRangeNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // We can fetch the length directly through an AllocateArrayNode.
   // This works even if the length is not constant (clone or newArray).
   if (offset == arrayOopDesc::length_offset_in_bytes()) {
-    AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base, phase);
+    AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base);
     if (alloc != nullptr) {
       Node* allocated_length = alloc->Ideal_length();
       Node* len = alloc->make_ideal_length(tary, phase);
@@ -2549,7 +2549,7 @@ Node* LoadRangeNode::Identity(PhaseGVN* phase) {
   // We can fetch the length directly through an AllocateArrayNode.
   // This works even if the length is not constant (clone or newArray).
   if (offset == arrayOopDesc::length_offset_in_bytes()) {
-    AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base, phase);
+    AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(base);
     if (alloc != nullptr) {
       Node* allocated_length = alloc->Ideal_length();
       // Do not allow make_ideal_length to allocate a CastII node.
@@ -3360,7 +3360,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
     } else if (opc == Op_MemBarRelease) {
       // Final field stores.
-      Node* alloc = AllocateNode::Ideal_allocation(in(MemBarNode::Precedent), phase);
+      Node* alloc = AllocateNode::Ideal_allocation(in(MemBarNode::Precedent));
       if ((alloc != nullptr) && alloc->is_Allocate() &&
           alloc->as_Allocate()->does_not_escape_thread()) {
         // The allocated object does not escape.
