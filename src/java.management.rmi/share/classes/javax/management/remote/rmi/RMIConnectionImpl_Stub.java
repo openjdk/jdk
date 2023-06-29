@@ -29,6 +29,8 @@ package javax.management.remote.rmi;
 
 /**
  * RMIConnectionImpl remote stub.
+ *
+ * @since 1.5
  */
 @SuppressWarnings({"deprecation", "rawtypes", "unchecked"})
 public final class RMIConnectionImpl_Stub
