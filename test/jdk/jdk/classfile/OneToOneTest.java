@@ -63,8 +63,8 @@ class OneToOneTest {
 
     @Test
     void testClassWriteRead() {
-
-        byte[] bytes = Classfile.build(ClassDesc.of("MyClass"), cb -> {
+        var cc = Classfile.of();
+        byte[] bytes = cc.build(ClassDesc.of("MyClass"), cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
             cb.withVersion(52, 0);
             cb.with(SourceFileAttribute.of(cb.constantPool().utf8Entry(("MyClass.java"))))
@@ -107,7 +107,7 @@ class OneToOneTest {
                                        }
         );
 
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = cc.parse(bytes);
         List<MethodModel> ms = cm.methods();
         assertEquals(ms.size(), 2);
         boolean found = false;

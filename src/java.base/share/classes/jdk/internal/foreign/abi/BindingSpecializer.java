@@ -186,7 +186,7 @@ public class BindingSpecializer {
     private static byte[] specializeHelper(MethodType leafType, MethodType callerMethodType,
                                            CallingSequence callingSequence, ABIDescriptor abi) {
         String className = callingSequence.forDowncall() ? CLASS_NAME_DOWNCALL : CLASS_NAME_UPCALL;
-        byte[] bytes = Classfile.build(ClassDesc.ofInternalName(className), clb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.ofInternalName(className), clb -> {
             clb.withFlags(ACC_PUBLIC + ACC_FINAL + ACC_SUPER);
             clb.withSuperclass(CD_Object);
             clb.withVersion(CLASSFILE_VERSION, 0);
@@ -207,7 +207,7 @@ public class BindingSpecializer {
         }
 
         if (PERFORM_VERIFICATION) {
-            List<VerifyError> errors = Classfile.parse(bytes).verify(null);
+            List<VerifyError> errors = Classfile.of().parse(bytes).verify(null);
             if (!errors.isEmpty()) {
                 errors.forEach(System.err::println);
                 throw new IllegalStateException("Verification error(s)");
