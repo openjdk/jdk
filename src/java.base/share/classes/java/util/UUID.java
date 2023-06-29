@@ -492,7 +492,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         ByteArray.setLong(
                 buf,
                 24,
-                HexDigits.digit(((int) (lsb >> 40)), (int) (lsb >> 32), ((int) lsb) >> 24,((int) lsb) >> 16));
+                HexDigits.digit(((int) (lsb >> 40)), (int) (lsb >> 32), ((int) lsb) >> 24, ((int) lsb) >> 16));
         ByteArray.setInt(
                 buf,
                 32,
