@@ -59,7 +59,7 @@ public:
 #ifndef PRODUCT
   void dump_spec(outputStream* st) const;
 #endif
-  
+
 private:
   ciMethod* _method;
   int _bci;
