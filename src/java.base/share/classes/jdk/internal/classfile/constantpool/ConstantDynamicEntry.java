@@ -26,6 +26,8 @@ package jdk.internal.classfile.constantpool;
 
 import jdk.internal.classfile.TypeKind;
 import jdk.internal.classfile.impl.Util;
+
+import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicConstantDesc;
 
@@ -38,6 +40,13 @@ import jdk.internal.classfile.impl.AbstractPoolEntry;
 public sealed interface ConstantDynamicEntry
         extends DynamicConstantPoolEntry, LoadableConstantEntry
         permits AbstractPoolEntry.ConstantDynamicEntryImpl {
+
+    /**
+     * {@return a symbolic descriptor for the dynamic constant's type}
+     */
+    default ClassDesc typeSymbol() {
+        return Util.fieldTypeSymbol(nameAndType());
+    }
 
     @Override
     default ConstantDesc constantValue() {

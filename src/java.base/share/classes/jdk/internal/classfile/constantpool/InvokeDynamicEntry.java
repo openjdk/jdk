@@ -26,6 +26,7 @@ package jdk.internal.classfile.constantpool;
 
 import java.lang.constant.ConstantDesc;
 import java.lang.constant.DynamicCallSiteDesc;
+import java.lang.constant.MethodTypeDesc;
 
 import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.Util;
@@ -36,6 +37,13 @@ import jdk.internal.classfile.impl.Util;
 public sealed interface InvokeDynamicEntry
         extends DynamicConstantPoolEntry
         permits AbstractPoolEntry.InvokeDynamicEntryImpl {
+
+    /**
+     * {@return a symbolic descriptor for the call site's invocation type}
+     */
+    default MethodTypeDesc typeSymbol() {
+        return Util.methodTypeSymbol(nameAndType());
+    }
 
     /**
      * {@return a symbolic descriptor for the dynamic call site}
