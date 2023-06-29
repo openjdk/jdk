@@ -103,14 +103,14 @@ final class HexDigits implements Digits {
     }
 
     /**
-     * Combine two hex shorts into a int based on BigEndian
+     * Combine two hex shorts into one int based on big endian
      */
     static int digit(int b0, int b1) {
         return (DIGITS[b0 & 0xff] << 16) | DIGITS[b1 & 0xff];
     }
 
     /**
-     * Combine four hex shorts into a long based on BigEndian
+     * Combine four hex shorts into one long based on big endian
      */
     static long digit(int b0, int b1, int b2, int b3) {
         return (((long) DIGITS[b0 & 0xff]) << 48)
