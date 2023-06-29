@@ -45,6 +45,7 @@ import java.util.function.Consumer;
 public final class BufferedCodeBuilder
         implements TerminalCodeBuilder, LabelContext {
     private final SplitConstantPool constantPool;
+    private final ClassfileImpl context;
     private final List<CodeElement> elements = new ArrayList<>();
     private final LabelImpl startLabel, endLabel;
     private final CodeModel original;
@@ -54,8 +55,10 @@ public final class BufferedCodeBuilder
 
     public BufferedCodeBuilder(MethodInfo methodInfo,
                                SplitConstantPool constantPool,
+                               ClassfileImpl context,
                                CodeModel original) {
         this.constantPool = constantPool;
+        this.context = context;
         this.startLabel = new LabelImpl(this, -1);
         this.endLabel = new LabelImpl(this, -1);
         this.original = original;
@@ -204,7 +207,7 @@ public final class BufferedCodeBuilder
         }
 
         public void writeTo(BufWriter buf) {
-            DirectCodeBuilder.build(methodInfo, cb -> elements.forEach(cb), constantPool, null).writeTo(buf);
+            DirectCodeBuilder.build(methodInfo, cb -> elements.forEach(cb), constantPool, context, null).writeTo(buf);
         }
 
         @Override

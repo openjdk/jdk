@@ -448,7 +448,7 @@ bool ConstantPool::maybe_archive_resolved_klass_at(int cp_index) {
 
 int ConstantPool::cp_to_object_index(int cp_index) {
   // this is harder don't do this so much.
-  int i = reference_map()->find(cp_index);
+  int i = reference_map()->find(checked_cast<u2>(cp_index));
   // We might not find the index for jsr292 call.
   return (i < 0) ? _no_index_sentinel : i;
 }
@@ -699,9 +699,9 @@ int ConstantPool::to_cp_index(int index, Bytecodes::Code code) {
   }
 }
 
-int ConstantPool::uncached_name_and_type_ref_index_at(int cp_index)  {
+u2 ConstantPool::uncached_name_and_type_ref_index_at(int cp_index)  {
   if (tag_at(cp_index).has_bootstrap()) {
-    int pool_index = bootstrap_name_and_type_ref_index_at(cp_index);
+    u2 pool_index = bootstrap_name_and_type_ref_index_at(cp_index);
     assert(tag_at(pool_index).is_name_and_type(), "");
     return pool_index;
   }
@@ -711,7 +711,7 @@ int ConstantPool::uncached_name_and_type_ref_index_at(int cp_index)  {
   return extract_high_short_from_int(ref_index);
 }
 
-int ConstantPool::name_and_type_ref_index_at(int index, Bytecodes::Code code) {
+u2 ConstantPool::name_and_type_ref_index_at(int index, Bytecodes::Code code) {
   return uncached_name_and_type_ref_index_at(to_cp_index(index, code));
 }
 
@@ -723,13 +723,13 @@ constantTag ConstantPool::tag_ref_at(int which, Bytecodes::Code code) {
   return tag_at(pool_index);
 }
 
-int ConstantPool::uncached_klass_ref_index_at(int cp_index) {
+u2 ConstantPool::uncached_klass_ref_index_at(int cp_index) {
   assert(tag_at(cp_index).is_field_or_method(), "Corrupted constant pool");
   jint ref_index = *int_at_addr(cp_index);
   return extract_low_short_from_int(ref_index);
 }
 
-int ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
+u2 ConstantPool::klass_ref_index_at(int index, Bytecodes::Code code) {
   guarantee(!ConstantPool::is_invokedynamic_index(index),
             "an invokedynamic instruction does not have a klass");
   assert(code != Bytecodes::_invokedynamic,
@@ -756,13 +756,13 @@ void ConstantPool::verify_constant_pool_resolve(const constantPoolHandle& this_c
 }
 
 
-int ConstantPool::name_ref_index_at(int which_nt) {
+u2 ConstantPool::name_ref_index_at(int which_nt) {
   jint ref_index = name_and_type_at(which_nt);
   return extract_low_short_from_int(ref_index);
 }
 
 
-int ConstantPool::signature_ref_index_at(int which_nt) {
+u2 ConstantPool::signature_ref_index_at(int which_nt) {
   jint ref_index = name_and_type_at(which_nt);
   return extract_high_short_from_int(ref_index);
 }
@@ -2182,14 +2182,14 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       }
       case JVM_CONSTANT_ClassIndex: {
         *bytes = JVM_CONSTANT_Class;
-        idx1 = klass_index_at(idx);
+        idx1 = checked_cast<u2>(klass_index_at(idx));
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         DBG(printf("JVM_CONSTANT_ClassIndex: %hd", idx1));
         break;
       }
       case JVM_CONSTANT_StringIndex: {
         *bytes = JVM_CONSTANT_String;
-        idx1 = string_index_at(idx);
+        idx1 = checked_cast<u2>(string_index_at(idx));
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         DBG(printf("JVM_CONSTANT_StringIndex: %hd", idx1));
         break;
@@ -2198,7 +2198,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_MethodHandleInError: {
         *bytes = JVM_CONSTANT_MethodHandle;
         int kind = method_handle_ref_kind_at(idx);
-        idx1 = method_handle_index_at(idx);
+        idx1 = checked_cast<u2>(method_handle_index_at(idx));
         *(bytes+1) = (unsigned char) kind;
         Bytes::put_Java_u2((address) (bytes+2), idx1);
         DBG(printf("JVM_CONSTANT_MethodHandle: %d %hd", kind, idx1));
@@ -2207,7 +2207,7 @@ int ConstantPool::copy_cpool_bytes(int cpool_size,
       case JVM_CONSTANT_MethodType:
       case JVM_CONSTANT_MethodTypeInError: {
         *bytes = JVM_CONSTANT_MethodType;
-        idx1 = method_type_index_at(idx);
+        idx1 = checked_cast<u2>(method_type_index_at(idx));
         Bytes::put_Java_u2((address) (bytes+1), idx1);
         DBG(printf("JVM_CONSTANT_MethodType: %hd", idx1));
         break;
@@ -2284,7 +2284,7 @@ void ConstantPool::set_on_stack(const bool value) {
   } else {
     // Clearing is done single-threadedly.
     if (!is_shared()) {
-      _flags &= ~_on_stack;
+      _flags &= (u2)(~_on_stack);
     }
   }
 }

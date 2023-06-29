@@ -581,7 +581,7 @@ class CallNode : public SafePointNode {
   friend class VMStructs;
 
 protected:
-  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseTransform* phase);
+  bool may_modify_arraycopy_helper(const TypeOopPtr* dest_t, const TypeOopPtr* t_oop, PhaseValues* phase);
 
 public:
   const TypeFunc* _tf;          // Function type
@@ -629,7 +629,7 @@ public:
   virtual bool needs_deep_clone_jvms(Compile* C) { return C->needs_deep_clone_jvms(); }
 
   // Returns true if the call may modify n
-  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseTransform* phase);
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase);
   // Does this node have a use of n other than in debug information?
   bool                has_non_debug_use(Node* n);
   // Returns the unique CheckCastPP of a call
@@ -913,7 +913,7 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 
   // allocations do not modify their arguments
-  virtual bool        may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase) { return false;}
+  virtual bool        may_modify(const TypeOopPtr* t_oop, PhaseValues* phase) { return false;}
 
   // Pattern-match a possible usage of AllocateNode.
   // Return null if no allocation is recognized.
@@ -922,16 +922,16 @@ public:
   // (Note:  This function is defined in file graphKit.cpp, near
   // GraphKit::new_instance/new_array, whose output it recognizes.)
   // The 'ptr' may not have an offset unless the 'offset' argument is given.
-  static AllocateNode* Ideal_allocation(Node* ptr, PhaseTransform* phase);
+  static AllocateNode* Ideal_allocation(Node* ptr, PhaseValues* phase);
 
   // Fancy version which uses AddPNode::Ideal_base_and_offset to strip
   // an offset, which is reported back to the caller.
   // (Note:  AllocateNode::Ideal_allocation is defined in graphKit.cpp.)
-  static AllocateNode* Ideal_allocation(Node* ptr, PhaseTransform* phase,
+  static AllocateNode* Ideal_allocation(Node* ptr, PhaseValues* phase,
                                         intptr_t& offset);
 
   // Dig the klass operand out of a (possible) allocation site.
-  static Node* Ideal_klass(Node* ptr, PhaseTransform* phase) {
+  static Node* Ideal_klass(Node* ptr, PhaseValues* phase) {
     AllocateNode* allo = Ideal_allocation(ptr, phase);
     return (allo == nullptr) ? nullptr : allo->in(KlassNode);
   }
@@ -997,11 +997,11 @@ public:
 
   // Dig the length operand out of a array allocation site and narrow the
   // type with a CastII, if necesssary
-  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseTransform *phase, bool can_create = true);
+  Node* make_ideal_length(const TypeOopPtr* ary_type, PhaseValues* phase, bool can_create = true);
 
   // Pattern-match a possible usage of AllocateArrayNode.
   // Return null if no allocation is recognized.
-  static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseTransform* phase) {
+  static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseValues* phase) {
     AllocateNode* allo = Ideal_allocation(ptr, phase);
     return (allo == nullptr || !allo->is_AllocateArray())
            ? nullptr : allo->as_AllocateArray();
@@ -1071,7 +1071,7 @@ public:
   void set_nested()      { _kind = Nested; set_eliminated_lock_counter(); }
 
   // locking does not modify its arguments
-  virtual bool may_modify(const TypeOopPtr *t_oop, PhaseTransform *phase){ return false;}
+  virtual bool may_modify(const TypeOopPtr* t_oop, PhaseValues* phase){ return false; }
 
 #ifndef PRODUCT
   void create_lock_counter(JVMState* s);

@@ -701,8 +701,8 @@ C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, job
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   oop obj = cp->resolve_possibly_cached_constant_at(index, CHECK_NULL);
   constantTag tag = cp->tag_at(index);
-  if (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) {
-    if (obj == Universe::the_null_sentinel()) {
+  if (tag.is_dynamic_constant()) {
+    if (obj == nullptr) {
       return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
     }
     BasicType bt = Signature::basic_type(cp->uncached_signature_ref_at(index));
@@ -2408,7 +2408,7 @@ C2V_VMENTRY_NULL(jlongArray, registerNativeMethods, (JNIEnv* env, jobject, jclas
     HandleMark hm(THREAD);
     runtime = JVMCI::compiler_runtime(thread);
     if (peerEnv->has_pending_exception()) {
-      peerEnv->describe_pending_exception(true);
+      peerEnv->describe_pending_exception(tty);
     }
     sl_handle = JVMCI::get_shared_library(sl_path, false);
     if (sl_handle == nullptr) {
@@ -2577,7 +2577,7 @@ C2V_VMENTRY_PREFIX(jboolean, attachCurrentThread, (JNIEnv* env, jobject c2vm, jb
       HandleMark hm(thread);
       JVMCIObject receiver = runtime->get_HotSpotJVMCIRuntime(peerJVMCIEnv);
       if (peerJVMCIEnv->has_pending_exception()) {
-        peerJVMCIEnv->describe_pending_exception(true);
+        peerJVMCIEnv->describe_pending_exception(tty);
       }
       char* sl_path;
       if (JVMCI::get_shared_library(sl_path, false) == nullptr) {

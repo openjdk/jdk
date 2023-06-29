@@ -43,6 +43,7 @@
 #include "compiler/compilationPolicy.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc/shared/collectedHeap.inline.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "interpreter/rewriter.hpp"
 #include "jvm.h"
@@ -977,33 +978,48 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>
-      _initialization_error_table;
+using InitializationErrorTable = ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
+static InitializationErrorTable* _initialization_error_table;
 
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {
   // Create the same exception with a message indicating the thread name,
   // and the StackTraceElements.
-  // If the initialization error is OOM, this might not work, but if GC kicks in
-  // this would be still be helpful.
-  JavaThread* THREAD = current;
   Handle init_error = java_lang_Throwable::create_initialization_error(current, exception);
-  ResourceMark rm(THREAD);
+  ResourceMark rm(current);
   if (init_error.is_null()) {
-    log_trace(class, init)("Initialization error is null for class %s", external_name());
-    return;
+    log_trace(class, init)("Unable to create the desired initialization error for class %s", external_name());
+
+    // We failed to create the new exception, most likely due to either out-of-memory or
+    // a stackoverflow error. If the original exception was either of those then we save
+    // the shared, pre-allocated, stackless, instance of that exception.
+    if (exception->klass() == vmClasses::StackOverflowError_klass()) {
+      log_debug(class, init)("Using shared StackOverflowError as initialization error for class %s", external_name());
+      init_error = Handle(current, Universe::class_init_stack_overflow_error());
+    } else if (exception->klass() == vmClasses::OutOfMemoryError_klass()) {
+      log_debug(class, init)("Using shared OutOfMemoryError as initialization error for class %s", external_name());
+      init_error = Handle(current, Universe::class_init_out_of_memory_error());
+    } else {
+      return;
+    }
   }
 
-  MutexLocker ml(THREAD, ClassInitError_lock);
+  MutexLocker ml(current, ClassInitError_lock);
   OopHandle elem = OopHandle(Universe::vm_global(), init_error());
   bool created;
-  _initialization_error_table.put_if_absent(this, elem, &created);
+  if (_initialization_error_table == nullptr) {
+    _initialization_error_table = new (mtClass) InitializationErrorTable();
+  }
+  _initialization_error_table->put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
   log_trace(class, init)("Initialization error added for class %s", external_name());
 }
 
 oop InstanceKlass::get_initialization_error(JavaThread* current) {
   MutexLocker ml(current, ClassInitError_lock);
-  OopHandle* h = _initialization_error_table.get(this);
+  if (_initialization_error_table == nullptr) {
+    return nullptr;
+  }
+  OopHandle* h = _initialization_error_table->get(this);
   return (h != nullptr) ? h->resolve() : nullptr;
 }
 
@@ -1022,7 +1038,9 @@ void InstanceKlass::clean_initialization_error_table() {
 
   assert_locked_or_safepoint(ClassInitError_lock);
   InitErrorTableCleaner cleaner;
-  _initialization_error_table.unlink(&cleaner);
+  if (_initialization_error_table != nullptr) {
+    _initialization_error_table->unlink(&cleaner);
+  }
 }
 
 void InstanceKlass::initialize_impl(TRAPS) {
@@ -2511,7 +2529,9 @@ void InstanceKlass::metaspace_pointers_do(MetaspaceClosure* it) {
   if (itable_length() > 0) {
     itableOffsetEntry* ioe = (itableOffsetEntry*)start_of_itable();
     int method_table_offset_in_words = ioe->offset()/wordSize;
-    int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words())
+    int itable_offset_in_words = (int)(start_of_itable() - (intptr_t*)this);
+
+    int nof_interfaces = (method_table_offset_in_words - itable_offset_in_words)
                          / itableOffsetEntry::size();
 
     for (int i = 0; i < nof_interfaces; i ++, ioe ++) {
@@ -2834,6 +2854,31 @@ void InstanceKlass::release_C_heap_structures(bool release_sub_metadata) {
   }
 }
 
+// The constant pool is on stack if any of the methods are executing or
+// referenced by handles.
+bool InstanceKlass::on_stack() const {
+  return _constants->on_stack();
+}
+
+Symbol* InstanceKlass::source_file_name() const               { return _constants->source_file_name(); }
+u2 InstanceKlass::source_file_name_index() const              { return _constants->source_file_name_index(); }
+void InstanceKlass::set_source_file_name_index(u2 sourcefile_index) { _constants->set_source_file_name_index(sourcefile_index); }
+
+// minor and major version numbers of class file
+u2 InstanceKlass::minor_version() const                 { return _constants->minor_version(); }
+void InstanceKlass::set_minor_version(u2 minor_version) { _constants->set_minor_version(minor_version); }
+u2 InstanceKlass::major_version() const                 { return _constants->major_version(); }
+void InstanceKlass::set_major_version(u2 major_version) { _constants->set_major_version(major_version); }
+
+InstanceKlass* InstanceKlass::get_klass_version(int version) {
+  for (InstanceKlass* ik = this; ik != nullptr; ik = ik->previous_versions()) {
+    if (ik->constants()->version() == version) {
+      return ik;
+    }
+  }
+  return nullptr;
+}
+
 void InstanceKlass::set_source_debug_extension(const char* array, int length) {
   if (array == nullptr) {
     _source_debug_extension = nullptr;
@@ -2851,6 +2896,10 @@ void InstanceKlass::set_source_debug_extension(const char* array, int length) {
     _source_debug_extension = sde;
   }
 }
+
+Symbol* InstanceKlass::generic_signature() const                   { return _constants->generic_signature(); }
+u2 InstanceKlass::generic_signature_index() const                  { return _constants->generic_signature_index(); }
+void InstanceKlass::set_generic_signature_index(u2 sig_index)      { _constants->set_generic_signature_index(sig_index); }
 
 const char* InstanceKlass::signature_name() const {
 
@@ -4311,3 +4360,4 @@ void ClassHierarchyIterator::next() {
   _current = _current->next_sibling();
   return; // visit next sibling subclass
 }
+

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ *  Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  *  This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@
 package java.lang.invoke;
 
 import jdk.internal.vm.annotation.ForceInline;
-import jdk.internal.vm.annotation.Stable;
 
-import java.util.List;
 import java.util.function.BiFunction;
 
 /**
@@ -44,8 +42,6 @@ import java.util.function.BiFunction;
  */
 /* package */ final class IndirectVarHandle extends VarHandle {
 
-    @Stable
-    private final MethodHandle[] handleMap = new MethodHandle[AccessMode.COUNT];
     private final VarHandle directTarget; // cache, for performance reasons
     private final VarHandle target;
     private final BiFunction<AccessMode, MethodHandle, MethodHandle> handleFactory;
@@ -67,16 +63,6 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    public Class<?> varType() {
-        return value;
-    }
-
-    @Override
-    public List<Class<?>> coordinateTypes() {
-        return List.of(coordinates);
-    }
-
-    @Override
     MethodType accessModeTypeUncached(AccessType at) {
         return at.accessModeType(null, value, coordinates);
     }
@@ -86,15 +72,18 @@ import java.util.function.BiFunction;
         return directTarget;
     }
 
-    VarHandle target() {
-        return target;
-    }
-
     @Override
     public VarHandle withInvokeExactBehavior() {
         return hasInvokeExactBehavior()
             ? this
             : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, true);
+    }
+
+    @Override
+    public VarHandle withInvokeBehavior() {
+        return !hasInvokeExactBehavior()
+                ? this
+                : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, false);
     }
 
     @ForceInline
@@ -105,21 +94,14 @@ import java.util.function.BiFunction;
     }
 
     @Override
-    public VarHandle withInvokeBehavior() {
-        return !hasInvokeExactBehavior()
-            ? this
-            : new IndirectVarHandle(target, value, coordinates, handleFactory, vform, false);
+    public boolean isAccessModeSupported(AccessMode accessMode) {
+        return directTarget.isAccessModeSupported(accessMode);
     }
 
     @Override
-    @ForceInline
-    MethodHandle getMethodHandle(int mode) {
-        MethodHandle handle = handleMap[mode];
-        if (handle == null) {
-            MethodHandle targetHandle = target.getMethodHandle(mode); // might throw UOE of access mode is not supported, which is ok
-            handle = handleMap[mode] = handleFactory.apply(AccessMode.values()[mode], targetHandle);
-        }
-        return handle;
+    MethodHandle getMethodHandleUncached(int mode) {
+        MethodHandle targetHandle = target.getMethodHandle(mode); // might throw UOE of access mode is not supported, which is ok
+        return handleFactory.apply(AccessMode.values()[mode], targetHandle);
     }
 
     @Override

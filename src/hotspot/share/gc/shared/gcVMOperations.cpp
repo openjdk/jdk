@@ -68,6 +68,10 @@ VM_GC_Operation::~VM_GC_Operation() {
   ch->soft_ref_policy()->set_all_soft_refs_clear(false);
 }
 
+const char* VM_GC_Operation::cause() const {
+  return GCCause::to_string(_gc_cause);
+}
+
 // The same dtrace probe can't be inserted in two different files, so we
 // have to call it here, so it's only in one file.  Can't create new probes
 // for the other file anymore.   The dtrace probes have to remain stable.

@@ -119,7 +119,6 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
-java/awt/Frame/MaximizedToIconified/MaximizedToIconified.java 8296972 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
@@ -459,6 +458,7 @@ java/awt/GraphicsDevice/CheckDisplayModes.java 8266242 macosx-aarch64
 java/awt/GraphicsDevice/DisplayModes/UnknownRefrshRateTest.java 8286436 macosx-aarch64
 java/awt/image/multiresolution/MultiresolutionIconTest.java 8291979 linux-x64,windows-all
 java/awt/event/SequencedEvent/MultipleContextsFunctionalTest.java 8305061 macosx-x64
+sun/java2d/DirectX/OnScreenRenderingResizeTest/OnScreenRenderingResizeTest.java 8301177 linux-x64
 
 ############################################################################
 
@@ -468,13 +468,6 @@ java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
 
 java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
-
-############################################################################
-
-# jdk_foreign
-
-java/foreign/callarranger/TestAarch64CallArranger.java generic-x86
-java/foreign/TestLargeSegmentCopy.java generic-x86
 
 ############################################################################
 
@@ -624,6 +617,7 @@ javax/sound/sampled/Mixers/DisabledAssertionCrash.java 7067310 generic-all
 
 javax/sound/midi/Sequencer/Recording.java 8167580,8265485 linux-all,macosx-aarch64
 javax/sound/midi/Sequencer/Looping.java 8136897 generic-all
+javax/sound/sampled/Clip/ClipIsRunningAfterStop.java 8307574 linux-x64
 
 ############################################################################
 
@@ -663,7 +657,6 @@ javax/swing/JFrame/8175301/ScaledFrameBackgroundTest.java 8274106 macosx-aarch64
 java/awt/Mouse/EnterExitEvents/DragWindowTest.java 8298823 macosx-all
 java/awt/Focus/NonFocusableWindowTest/NonfocusableOwnerTest.java 8280392 windows-x64
 java/awt/Mixing/AWT_Mixing/OpaqueOverlapping.java 8294264 windows-x64
-java/awt/Mixing/AWT_Mixing/ViewportOverlapping.java 8253184,8295813 windows-x64
 
 javax/swing/JColorChooser/Test6827032.java 8224968 windows-x64
 java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 windows-x64
@@ -671,6 +664,13 @@ java/awt/dnd/MissingDragExitEventTest/MissingDragExitEventTest.java 8288839 wind
 sanity/client/SwingSet/src/ToolTipDemoTest.java 8293001 linux-all
 sanity/client/SwingSet/src/ButtonDemoScreenshotTest.java 8265770 macosx-all
 sanity/client/SwingSet/src/EditorPaneDemoTest.java 8212240 linux-x64
+
+# jdk_swing Ubuntu 23.04 specific
+
+javax/swing/JTree/8003400/Test8003400.java 8309734 linux-all
+javax/swing/JTable/7124218/SelectEditTableCell.java 8309734 linux-all
+javax/swing/JFileChooser/JFileChooserSetLocationTest.java 8309734 linux-all
+javax/swing/JComboBox/TestComboBoxComponentRendering.java 8309734 linux-all
 
 ############################################################################
 
@@ -696,8 +696,6 @@ sanity/client/SwingSet/src/EditorPaneDemoTest.java 8212240 linux-x64
 com/sun/jdi/RepStep.java                                        8043571 generic-all
 
 com/sun/jdi/InvokeHangTest.java                                 8218463 linux-all
-
-com/sun/jdi/AfterThreadDeathTest.java                           8232839 linux-all
 
 ############################################################################
 
@@ -736,9 +734,6 @@ sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aa
 # jdk_other
 
 javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
-
-
-jdk/incubator/concurrent/ScopedValue/StressStackOverflow.java   8303498 linux-s390x
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64

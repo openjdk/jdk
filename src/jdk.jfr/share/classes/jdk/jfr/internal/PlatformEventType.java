@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Objects;
 
 import jdk.jfr.SettingDescriptor;
 import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.util.Utils;
 /**
  * Implementation of event type.
  *
@@ -148,7 +149,7 @@ public final class PlatformEventType extends Type {
 
     public void setCutoff(long cutoffNanos) {
         if (isJVM) {
-            long cutoffTicks = Utils.nanosToTicks(cutoffNanos);
+            long cutoffTicks = JVMSupport.nanosToTicks(cutoffNanos);
             JVM.getJVM().setCutoff(getId(), cutoffTicks);
         }
     }
@@ -238,7 +239,7 @@ public final class PlatformEventType extends Type {
     }
 
     public void setThreshold(long thresholdNanos) {
-        this.thresholdTicks = Utils.nanosToTicks(thresholdNanos);
+        this.thresholdTicks = JVMSupport.nanosToTicks(thresholdNanos);
         if (isJVM) {
             JVM.getJVM().setThreshold(getId(), thresholdTicks);
         }

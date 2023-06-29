@@ -412,7 +412,7 @@ void ShenandoahHeapRegion::print_on(outputStream* st) const {
       st->print("|CS ");
       break;
     case _trash:
-      st->print("|T  ");
+      st->print("|TR ");
       break;
     case _pinned:
       st->print("|P  ");

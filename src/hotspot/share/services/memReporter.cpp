@@ -492,8 +492,9 @@ void MemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t curr
   const char* scale = current_scale();
   outputStream* out = output();
   out->print("arena=" SIZE_FORMAT "%s", amount_in_current_scale(current_amount), scale);
-  if (diff_in_current_scale(current_amount, early_amount) != 0) {
-    out->print(" " INT64_PLUS_FORMAT "d", diff_in_current_scale(current_amount, early_amount));
+  int64_t amount_diff = diff_in_current_scale(current_amount, early_amount);
+  if (amount_diff != 0) {
+    out->print(" " INT64_PLUS_FORMAT "%s", amount_diff, scale);
   }
 
   out->print(" #" SIZE_FORMAT "", current_count);
@@ -780,6 +781,13 @@ void MemDetailDiffReporter::diff_virtual_memory_sites() const {
       } else if (compVal > 0) {
         old_virtual_memory_site(early_site);
         early_site = early_itr.next();
+      } else if (early_site->flag() != current_site->flag()) {
+        // This site was originally allocated with one flag, then released,
+        // then re-allocated at the same site (as far as we can tell) with a different flag.
+        old_virtual_memory_site(early_site);
+        early_site = early_itr.next();
+        new_virtual_memory_site(current_site);
+        current_site = current_itr.next();
       } else {
         diff_virtual_memory_site(early_site, current_site);
         early_site   = early_itr.next();
@@ -842,8 +850,6 @@ void MemDetailDiffReporter::old_virtual_memory_site(const VirtualMemoryAllocatio
 
 void MemDetailDiffReporter::diff_virtual_memory_site(const VirtualMemoryAllocationSite* early,
   const VirtualMemoryAllocationSite* current) const {
-  assert(early->flag() == current->flag() || early->flag() == mtNone,
-    "Expect the same flag, but %s != %s", NMTUtil::flag_to_name(early->flag()),NMTUtil::flag_to_name(current->flag()));
   diff_virtual_memory_site(current->call_stack(), current->reserved(), current->committed(),
     early->reserved(), early->committed(), current->flag());
 }

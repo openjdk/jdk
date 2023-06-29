@@ -259,9 +259,7 @@ class ConstantPool : public Metadata {
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
   // From there, uncached_name/signature_ref_at will get the name/type.
-  int invokedynamic_bootstrap_ref_index_at(int indy_index) const {
-    return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
-  }
+  inline u2 invokedynamic_bootstrap_ref_index_at(int indy_index) const;
 
   // Assembly code support
   static ByteSize tags_offset()         { return byte_offset_of(ConstantPool, _tags); }
@@ -507,7 +505,7 @@ class ConstantPool : public Metadata {
     int member = method_handle_index_at(which);
     return uncached_signature_ref_at(member);
   }
-  int method_handle_klass_index_at(int which) {
+  u2 method_handle_klass_index_at(int which) {
     int member = method_handle_index_at(which);
     return uncached_klass_ref_index_at(member);
   }
@@ -516,11 +514,11 @@ class ConstantPool : public Metadata {
     return symbol_at(sym);
   }
 
-  int bootstrap_name_and_type_ref_index_at(int which) {
+  u2 bootstrap_name_and_type_ref_index_at(int which) {
     assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     return extract_high_short_from_int(*int_at_addr(which));
   }
-  int bootstrap_methods_attribute_index(int which) {
+  u2 bootstrap_methods_attribute_index(int which) {
     assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     return extract_low_short_from_int(*int_at_addr(which));
   }
@@ -668,8 +666,8 @@ class ConstantPool : public Metadata {
     return symbol_at(signature_index);
   }
 
-  int klass_ref_index_at(int which, Bytecodes::Code code);
-  int name_and_type_ref_index_at(int which, Bytecodes::Code code);
+  u2 klass_ref_index_at(int which, Bytecodes::Code code);
+  u2 name_and_type_ref_index_at(int which, Bytecodes::Code code);
 
   int remap_instruction_operand_from_cache(int operand);  // operand must be biased by CPCACHE_INDEX_TAG
 
@@ -678,8 +676,8 @@ class ConstantPool : public Metadata {
   int to_cp_index(int which, Bytecodes::Code code);
 
   // Lookup for entries consisting of (name_index, signature_index)
-  int name_ref_index_at(int which_nt);            // ==  low-order jshort of name_and_type_at(which_nt)
-  int signature_ref_index_at(int which_nt);       // == high-order jshort of name_and_type_at(which_nt)
+  u2 name_ref_index_at(int which_nt);            // ==  low-order jshort of name_and_type_at(which_nt)
+  u2 signature_ref_index_at(int which_nt);       // == high-order jshort of name_and_type_at(which_nt)
 
   BasicType basic_type_for_signature_at(int which) const;
 
@@ -786,8 +784,8 @@ class ConstantPool : public Metadata {
     int signature_index = signature_ref_index_at(uncached_name_and_type_ref_index_at(cp_index));
     return symbol_at(signature_index);
   }
-  int       uncached_klass_ref_index_at(int cp_index);
-  int       uncached_name_and_type_ref_index_at(int cp_index);
+  u2 uncached_klass_ref_index_at(int cp_index);
+  u2 uncached_name_and_type_ref_index_at(int cp_index);
 
   // Sharing
   int pre_resolve_shared_klasses(TRAPS);
@@ -922,15 +920,9 @@ class ConstantPool : public Metadata {
   const char* internal_name() const { return "{constant pool}"; }
 
   // ResolvedIndyEntry getters
-  ResolvedIndyEntry* resolved_indy_entry_at(int index) {
-    return cache()->resolved_indy_entry_at(index);
-  }
-  int resolved_indy_entries_length() {
-    return cache()->resolved_indy_entries_length();
-  }
-  oop resolved_reference_from_indy(int index) {
-    return resolved_references()->obj_at(cache()->resolved_indy_entry_at(index)->resolved_references_index());
-  }
+  inline ResolvedIndyEntry* resolved_indy_entry_at(int index);
+  inline int resolved_indy_entries_length() const;
+  inline oop resolved_reference_from_indy(int index) const;
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

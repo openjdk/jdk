@@ -31,6 +31,10 @@
  */
 
 import java.util.Objects;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 public class Unnamed {
     public static void main(String[] args) throws Throwable {
@@ -75,6 +79,8 @@ public class Unnamed {
         assertEquals(2, testMixVarWithExplicit(new Box<>(new R2())));
         assertEquals("binding", unnamedGuardAddsBindings("match1", "binding"));
         assertEquals("any", unnamedGuardAddsBindings(42, 42));
+        assertEquals(true, testUnnamedPrimitiveAndExhaustiveness(new Prim1(4)));
+        assertEquals(false, testUnnamedPrimitiveAndExhaustiveness(new Prim2(5)));
 
         unnamedTest();
     }
@@ -89,6 +95,9 @@ public class Unnamed {
                 } catch (Exception _) {}
             }
         }
+        try (final Lock _ = null) { }
+        try (@Foo Lock _ = null) { }
+
         String[] strs = new String[] { "str1", "str2" };
         for (var _ : strs) {
             for (var _ : strs) {
@@ -263,6 +272,29 @@ public class Unnamed {
         };
     }
 
+    boolean testUnnamedPrimitiveAndExhaustiveness(RecordWithPrimitive a) {
+        boolean r1 = switch (a) {
+            case Prim1(var _) -> true;
+            case Prim2(_) -> false;
+        };
+
+        boolean r2 = switch (a) {
+            case Prim1(var _) -> true;
+            case Prim2(var _) -> false;
+        };
+
+        boolean r3 = switch (a) {
+            case Prim1(_) -> true;
+            case Prim2(_) -> false;
+        };
+
+        return r1 && r2 && r3;
+    }
+
+    sealed interface RecordWithPrimitive permits Prim1, Prim2 {};
+    record Prim1(int n1) implements RecordWithPrimitive {};
+    record Prim2(int n2) implements RecordWithPrimitive {};
+
     // JEP 443 examples
     record Point(int x, int y) { }
     enum Color { RED, GREEN, BLUE }
@@ -290,6 +322,9 @@ public class Unnamed {
         public int run(int a, int b);
     }
     record R(Object o) {}
+    @Target(ElementType.LOCAL_VARIABLE)
+    @Retention(RetentionPolicy.RUNTIME)
+    public @interface Foo { }
 
     sealed abstract class Base permits R1, R2, R3, R4 { }
     final  class R1  extends Base { }

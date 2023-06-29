@@ -25,6 +25,7 @@
  * @test
  * @enablePreview
  * @requires jdk.foreign.linker != "UNSUPPORTED"
+ * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *

@@ -199,6 +199,61 @@ public final class PlatformLayouts {
 
     }
 
+    /**
+     * This class defines layout constants modelling standard primitive types supported by the PPC64 ABI.
+     */
+    public static final class PPC64 {
+
+        private PPC64() {
+            //just the one
+        }
+
+        /**
+         * The {@code bool} native type.
+         */
+        public static final ValueLayout.OfBoolean C_BOOL = ValueLayout.JAVA_BOOLEAN;
+
+        /**
+         * The {@code char} native type.
+         */
+        public static final ValueLayout.OfByte C_CHAR = ValueLayout.JAVA_BYTE;
+
+        /**
+         * The {@code short} native type.
+         */
+        public static final ValueLayout.OfShort C_SHORT = ValueLayout.JAVA_SHORT;
+
+        /**
+         * The {@code int} native type.
+         */
+        public static final ValueLayout.OfInt C_INT = ValueLayout.JAVA_INT;
+
+        /**
+         * The {@code long} native type.
+         */
+        public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;
+
+        /**
+         * The {@code long long} native type.
+         */
+        public static final ValueLayout.OfLong C_LONG_LONG = ValueLayout.JAVA_LONG;
+
+        /**
+         * The {@code float} native type.
+         */
+        public static final ValueLayout.OfFloat C_FLOAT = ValueLayout.JAVA_FLOAT;
+
+        /**
+         * The {@code double} native type.
+         */
+        public static final ValueLayout.OfDouble C_DOUBLE = ValueLayout.JAVA_DOUBLE;
+
+        /**
+         * The {@code T*} native type.
+         */
+        public static final AddressLayout C_POINTER = SharedUtils.C_POINTER;
+    }
+
     public static final class RISCV64 {
 
         // Suppresses default constructor, ensuring non-instantiability.

@@ -114,6 +114,8 @@ public abstract sealed class AbstractMemorySegmentImpl
     @Override
     public MemorySegment asSlice(long offset, long newSize, long byteAlignment) {
         checkBounds(offset, newSize);
+        Utils.checkAlign(byteAlignment);
+
         if (!isAlignedForElement(offset, byteAlignment)) {
             throw new IllegalArgumentException("Target offset incompatible with alignment constraints");
         }
@@ -125,7 +127,7 @@ public abstract sealed class AbstractMemorySegmentImpl
     public final MemorySegment reinterpret(long newSize, Arena arena, Consumer<MemorySegment> cleanup) {
         Objects.requireNonNull(arena);
         return reinterpretInternal(Reflection.getCallerClass(), newSize,
-                MemorySessionImpl.toMemorySession(arena), null);
+                MemorySessionImpl.toMemorySession(arena), cleanup);
     }
 
     @Override

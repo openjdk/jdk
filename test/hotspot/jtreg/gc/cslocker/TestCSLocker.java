@@ -32,6 +32,13 @@ import static gc.testlibrary.Allocation.blackHole;
  * @summary This short test check RFE 6186200 changes. One thread locked
  * @summary completely in JNI CS, while other is trying to allocate memory
  * @summary provoking GC. OOM means FAIL, deadlock means PASS.
+ *
+ * @comment This test assumes that no allocation happens during the sleep loop,   \
+ *          which is something that we can't guarantee. With Generational ZGC we  \
+ *          see test timeouts because the main thread allocates and waits for the \
+ *          GC, which waits for the CSLocker, which waits for the main thread.    \
+ * @requires !vm.opt.final.ZGenerational
+ *
  * @run main/native/othervm -Xmx256m gc.cslocker.TestCSLocker
  */
 

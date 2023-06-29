@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -141,9 +141,7 @@ abstract class P11Key implements Key, Length {
         this.tokenObject = tokenObject;
         this.sensitive = sensitive;
         this.extractable = extractable;
-        char[] tokenLabel = this.token.tokenInfo.label;
-        isNSS = (tokenLabel[0] == 'N' && tokenLabel[1] == 'S'
-                && tokenLabel[2] == 'S');
+        isNSS = P11Util.isNSS(this.token);
         boolean extractKeyInfo = (!DISABLE_NATIVE_KEYS_EXTRACTION && isNSS &&
                 extractable && !tokenObject);
         this.keyIDHolder = new NativeKeyHolder(this, keyID, session,
@@ -354,6 +352,18 @@ abstract class P11Key implements Key, Length {
         return new P11SecretKey(session, keyID, algorithm, keyLength, attrs);
     }
 
+    static SecretKey pbeKey(Session session, long keyID, String algorithm,
+            int keyLength, CK_ATTRIBUTE[] attrs, char[] password, byte[] salt,
+            int iterationCount) {
+        attrs = getAttributes(session, keyID, attrs, new CK_ATTRIBUTE[] {
+            new CK_ATTRIBUTE(CKA_TOKEN),
+            new CK_ATTRIBUTE(CKA_SENSITIVE),
+            new CK_ATTRIBUTE(CKA_EXTRACTABLE),
+        });
+        return new P11PBEKey(session, keyID, algorithm, keyLength,
+                attrs, password, salt, iterationCount);
+    }
+
     static SecretKey masterSecretKey(Session session, long keyID,
             String algorithm, int keyLength, CK_ATTRIBUTE[] attrs,
             int major, int minor) {
@@ -484,6 +494,45 @@ abstract class P11Key implements Key, Length {
         P11PublicKey(Session session, long keyID, String algorithm,
                 int keyLength, CK_ATTRIBUTE[] attrs) {
             super(PUBLIC, session, keyID, algorithm, keyLength, attrs);
+        }
+    }
+
+    static final class P11PBEKey extends P11SecretKey
+            implements PBEKey {
+        private static final long serialVersionUID = 6847576994253634876L;
+        private char[] password;
+        private final byte[] salt;
+        private final int iterationCount;
+        P11PBEKey(Session session, long keyID, String algorithm,
+                int keyLength, CK_ATTRIBUTE[] attributes,
+                char[] password, byte[] salt, int iterationCount) {
+            super(session, keyID, algorithm, keyLength, attributes);
+            this.password = password.clone();
+            this.salt = salt.clone();
+            this.iterationCount = iterationCount;
+        }
+
+        @Override
+        public char[] getPassword() {
+            if (password == null) {
+                throw new IllegalStateException("password has been cleared");
+            }
+            return password.clone();
+        }
+
+        @Override
+        public byte[] getSalt() {
+            return salt.clone();
+        }
+
+        @Override
+        public int getIterationCount() {
+            return iterationCount;
+        }
+
+        void clearPassword() {
+            Arrays.fill(password, '\0');
+            password = null;
         }
     }
 

@@ -82,9 +82,11 @@ int VectorNode::opcode(int sopc, BasicType bt) {
   case Op_FmaF:
     return (bt == T_FLOAT ? Op_FmaVF : 0);
   case Op_CMoveF:
-    return (bt == T_FLOAT ? Op_CMoveVF : 0);
+    return (bt == T_FLOAT ? Op_VectorBlend : 0);
   case Op_CMoveD:
-    return (bt == T_DOUBLE ? Op_CMoveVD : 0);
+    return (bt == T_DOUBLE ? Op_VectorBlend : 0);
+  case Op_Bool:
+    return Op_VectorMaskCmp;
   case Op_DivF:
     return (bt == T_FLOAT ? Op_DivVF : 0);
   case Op_DivD:
@@ -682,10 +684,6 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
   case Op_MulAddS2I:
     *start = 1;
     *end   = 3; // 2 vector operands
-    break;
-  case Op_CMoveI:  case Op_CMoveL:  case Op_CMoveF:  case Op_CMoveD:
-    *start = 2;
-    *end   = n->req();
     break;
   case Op_FmaD:
   case Op_FmaF:
@@ -1755,13 +1753,19 @@ Node* VectorUnboxNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       if (in_vt->length() == out_vt->length()) {
         Node* value = vbox->in(VectorBoxNode::Value);
 
-        bool is_vector_mask = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+        bool is_vector_mask    = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorMask_klass());
+        bool is_vector_shuffle = vbox_klass->is_subclass_of(ciEnv::current()->vector_VectorShuffle_klass());
         if (is_vector_mask) {
           // VectorUnbox (VectorBox vmask) ==> VectorMaskCast vmask
           const TypeVect* vmask_type = TypeVect::makemask(out_vt->element_basic_type(), out_vt->length());
           return new VectorMaskCastNode(value, vmask_type);
+        } else if (is_vector_shuffle) {
+          if (!is_shuffle_to_vector()) {
+            // VectorUnbox (VectorBox vshuffle) ==> VectorLoadShuffle vshuffle
+            return new VectorLoadShuffleNode(value, out_vt);
+          }
         } else {
-          // Vector type mismatch is only supported for masks, but sometimes it happens in pathological cases.
+          // Vector type mismatch is only supported for masks and shuffles, but sometimes it happens in pathological cases.
         }
       } else {
         // Vector length mismatch.
