@@ -100,7 +100,7 @@ public final class PlatformRecorder {
             jvm.exclude(t);
             t.start();
             t.join();
-            return result.get(0);
+            return result.getFirst();
         } catch (InterruptedException e) {
             throw new IllegalStateException("Not able to create timer task. " + e.getMessage(), e);
         }

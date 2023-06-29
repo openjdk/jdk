@@ -60,7 +60,8 @@ class FilterDeadLabelsTest {
 
     @Test
     void testFilterDeadLabels() {
-        var code = Classfile.parse(Classfile.build(ClassDesc.of("cls"), List.of(Classfile.Option.filterDeadLabels(true)), clb ->
+        var cc = Classfile.of(Classfile.DeadLabelsOption.DROP_DEAD_LABELS);
+        var code = cc.parse(cc.build(ClassDesc.of("cls"), clb ->
                 clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     cob.return_();
                     deadLabelFragments().forEach(f -> f.accept(cob));
@@ -75,7 +76,7 @@ class FilterDeadLabelsTest {
     @ParameterizedTest
     @MethodSource("deadLabelFragments")
     void testThrowOnDeadLabels(Consumer<CodeBuilder> fragment) {
-        assertThrows(IllegalArgumentException.class, () -> Classfile.build(ClassDesc.of("cls"), clb ->
+        assertThrows(IllegalArgumentException.class, () -> Classfile.of().build(ClassDesc.of("cls"), clb ->
                 clb.withMethodBody("m", MethodTypeDesc.of(ConstantDescs.CD_void), 0, cob -> {
                     cob.return_();
                     fragment.accept(cob);

@@ -31,7 +31,6 @@
 #include "code/codeCache.inline.hpp"
 #include "code/vmreg.inline.hpp"
 #include "interpreter/interpreter.hpp"
-#include "interpreter/oopMapCache.hpp"
 #include "runtime/sharedRuntime.hpp"
 
 // Inline functions for RISCV frames:

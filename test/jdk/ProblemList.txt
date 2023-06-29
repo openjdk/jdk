@@ -119,7 +119,6 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
-java/awt/Frame/MaximizedToIconified/MaximizedToIconified.java 8296972 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
@@ -469,13 +468,6 @@ java/beans/Introspector/8132566/OverridePropertyInfoTest.java   8132565 generic-
 java/beans/Introspector/8132566/OverrideUserDefPropertyInfoTest.java 8132565 generic-all
 
 java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
-
-############################################################################
-
-# jdk_foreign
-
-java/foreign/callarranger/TestAarch64CallArranger.java generic-x86
-java/foreign/TestLargeSegmentCopy.java generic-x86
 
 ############################################################################
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,9 +110,7 @@ public class TestJcmdDumpLimited {
             recs.add(new TestRecording(i, 100));
         }
         int last = 0;
-        List<TestRecording> reversed = new ArrayList<>(recs);
-        Collections.reverse(reversed);
-        for (TestRecording r : reversed) {
+        for (TestRecording r : recs.reversed()) {
             r.total = r.size + last;
             last += r.size;
         }
