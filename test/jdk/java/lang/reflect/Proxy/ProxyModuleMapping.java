@@ -28,6 +28,7 @@ import java.lang.reflect.Proxy;
 /*
  * @test
  * @summary Basic test of proxy module mapping and the access to Proxy class
+ * @modules java.base/jdk.internal.misc
  */
 
 public class ProxyModuleMapping {
@@ -35,6 +36,9 @@ public class ProxyModuleMapping {
         ClassLoader ld = ProxyModuleMapping.class.getClassLoader();
         Module unnamed = ld.getUnnamedModule();
         new ProxyModuleMapping(Runnable.class).test();
+
+        // unnamed module gets access to jdk.internal.misc package (e.g. via --add-exports)
+        new ProxyModuleMapping(jdk.internal.misc.VM.BufferPool.class).test();
 
         Class<?> modulePrivateIntf = Class.forName("sun.net.PlatformSocketImpl");
         new ProxyModuleMapping(modulePrivateIntf).test();

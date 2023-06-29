@@ -37,6 +37,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -242,7 +243,7 @@ public class MethodHandleProxies {
     private static final ClassFileDumper DUMPER = ClassFileDumper.getInstance(
             "jdk.invoke.MethodHandleProxies.dumpClassFiles", "DUMP_MH_PROXY_CLASSFILES");
 
-    private static final WeakHashMap<Class<?>, Boolean> WRAPPER_TYPES = new WeakHashMap<>();
+    private static final Set<Class<?>> WRAPPER_TYPES = Collections.newSetFromMap(new WeakHashMap<>());
     private static final ClassValue<SoftReference<Lookup>> PROXY_LOOKUPS = new ClassValue<>() {
         @Override
         protected SoftReference<Lookup> computeValue(Class<?> intfc) {
@@ -299,7 +300,7 @@ public class MethodHandleProxies {
             String pn = targetModule.getName();
             String n = intfc.getName();
             int i = n.lastIndexOf('.');
-            String cn = i > 0 ? pn + "." + n.substring(i+1) : pn + "." + n;
+            String cn = i > 0 ? pn + "." + n.substring(i + 1) : pn + "." + n;
             ClassDesc proxyDesc = ClassDesc.of(cn);
             byte[] template = createTemplate(loader, proxyDesc, desc(intfc), uniqueName, methods);
             var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
@@ -314,7 +315,7 @@ public class MethodHandleProxies {
             } else {
                 lookup = definer.defineClassAsLookup(true);
             }
-            WRAPPER_TYPES.put(lookup.lookupClass(), Boolean.TRUE);
+            WRAPPER_TYPES.add(lookup.lookupClass());
             return new SoftReference<>(lookup);
         }
     };
@@ -474,8 +475,7 @@ public class MethodHandleProxies {
     }
 
     private static boolean isWrapperClass(Class<?> cls) {
-        Boolean value = WRAPPER_TYPES.get(cls);
-        return value != null ? value : false;
+        return WRAPPER_TYPES.contains(cls);
     }
 
     /**
