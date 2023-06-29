@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,29 +22,28 @@
  *
  */
 
-#ifndef SHARE_CDS_LAMBDAFORMINVOKERS_HPP
-#define SHARE_CDS_LAMBDAFORMINVOKERS_HPP
+#ifndef SHARE_CDS_REGENERATEDCLASSES_HPP
+#define SHARE_CDS_REGENERATEDCLASSES_HPP
+
 #include "memory/allStatic.hpp"
-#include "oops/oopHandle.hpp"
-#include "runtime/handles.hpp"
-#include "utilities/growableArray.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ClassFileStream;
-template <class T>
-class Array;
+class InstanceKlass;
 
-class LambdaFormInvokers : public AllStatic {
- private:
-  static GrowableArrayCHeap<char*, mtClassShared>* _lambdaform_lines;
-  // For storing LF form lines (LF_RESOLVE only) in read only table.
-  static Array<Array<char>*>* _static_archive_invokers;
-  static void regenerate_class(char* name, ClassFileStream& st, TRAPS);
+// CDS regenerates some of the classes that are loaded normally during the dumping
+// process. For example, LambdaFormInvokers creates new versions of the four
+// java.lang.invoke.xxx$Holder classes that have additional methods.
+//
+// RegeneratedClasses records the relocation between the "original" and
+// "regenerated" versions of these classes. When writing the CDS archive, all
+// references to the "original" versions are redirected to the "regenerated"
+// versions.
+class RegeneratedClasses : public AllStatic {
  public:
-  static void append(char* line);
-  static void dump_static_archive_invokers();
-  static void read_static_archive_invokers();
-  static void regenerate_holder_classes(TRAPS);
-  static void serialize(SerializeClosure* soc);
-  static void cleanup_regenerated_classes();
+  static void add_class(InstanceKlass* orig_klass, InstanceKlass* regen_klass);
+  static void cleanup();
+  static bool has_been_regenerated(address orig_obj);
+  static void record_regenerated_objects();
 };
-#endif // SHARE_CDS_LAMBDAFORMINVOKERS_HPP
+
+#endif // SHARE_CDS_REGENERATEDCLASSES_HPP
