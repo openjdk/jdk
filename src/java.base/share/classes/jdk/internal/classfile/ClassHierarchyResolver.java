@@ -59,6 +59,7 @@ public interface ClassHierarchyResolver {
      * {@return the {@link ClassHierarchyInfo} for a given class name, or null
      * if the name is unknown to the resolver}
      * @param classDesc descriptor of the class
+     * @throws IllegalArgumentException if a class shouldn't be queried for hierarchy
      */
     ClassHierarchyInfo getClassInfo(ClassDesc classDesc);
 
