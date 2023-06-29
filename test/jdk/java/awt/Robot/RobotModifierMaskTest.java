@@ -26,7 +26,6 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
-import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -37,6 +36,7 @@ import java.awt.event.KeyEvent;
  * @test
  * @bug 8302618
  * @key headful
+ * @requires (os.family == "mac")
  * @summary To test if modifier keys work properly,
  *          when manual mouse move and Robot's Key Event occur simultaneously.
  */
@@ -50,7 +50,7 @@ public class RobotModifierMaskTest {
     private static final String EXPECTED_RESULT_SHIFT = "AAAAA";
     private static final String EXPECTED_RESULT_CAPS = "AaAaAa";
     private static final String EXPECTED_RESULT_META = "AAA";
-    private static final String EXPECTED_RESULT_ALT = "ååå";
+    private static final String EXPECTED_RESULT_ALT = "\u00e5\u00e5\u00e5";
     private static final int EXPECTED_CARET_POS_CTRL = 0;
 
     public static void main(String[] arguments)
@@ -182,7 +182,7 @@ public class RobotModifierMaskTest {
         }
     }
 
-    private static void testAltKey() throws AWTException {
+    private static void testAltKey() {
         // clear contents of JTextArea
         jTextArea.setText("");
 
@@ -210,7 +210,7 @@ public class RobotModifierMaskTest {
         robot.delay(1000);
 
         if (!jTextArea.getText().equals(EXPECTED_RESULT_ALT)) {
-            errorLog.append("For Shift key, Actual and Expected results differ \n"+
+            errorLog.append("For Alt key, Actual and Expected results differ \n"+
                     "Expected Text : " + EXPECTED_RESULT_ALT + " Actual Text : " + jTextArea.getText() + "\n");
         }
     }

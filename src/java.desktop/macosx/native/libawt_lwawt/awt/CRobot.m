@@ -64,6 +64,9 @@ static int gsEventNumber;
 static int* gsButtonEventNumber;
 static NSTimeInterval gNextKeyEventTime;
 static CGEventFlags initFlags;
+static int allModifiersMask = kCGEventFlagMaskShift | kCGEventFlagMaskControl
+                              | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand
+                              | kCGEventFlagMaskAlphaShift;
 
 static inline CGKeyCode GetCGKeyCode(jint javaKeyCode);
 static inline int GetCGKeyMask(int cgKeyCode);
@@ -322,10 +325,6 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
             }
 
             CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
-            int allModifiersMask = kCGEventFlagMaskShift | kCGEventFlagMaskControl
-                                  | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand
-                                  | kCGEventFlagMaskAlphaShift;
-
             flags  = (initFlags & allModifiersMask) | (flags & (!allModifiersMask));
             CGEventSetFlags(event, flags);
 
