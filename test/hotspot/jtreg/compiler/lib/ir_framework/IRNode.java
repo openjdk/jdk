@@ -1188,6 +1188,11 @@ public class IRNode {
         beforeMatchingNameRegex(SUB_V, "SubV(B|S|I|L|F|D)");
     }
 
+    public static final String SUBTYPE_CHECK = PREFIX + "SUBTYPE_CHECK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SUBTYPE_CHECK, "SubTypeCheck");
+    }
+
     public static final String TRAP = PREFIX + "TRAP" + POSTFIX;
     static {
         trapNodes(TRAP,"reason");
