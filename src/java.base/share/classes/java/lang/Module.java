@@ -1590,8 +1590,8 @@ public final class Module implements AnnotatedElement {
      */
     private Class<?> loadModuleInfoClass(InputStream in) throws IOException {
         final String MODULE_INFO = "module-info";
-        byte[] bytes = Classfile.parse(in.readAllBytes(),
-                Classfile.Option.constantPoolSharing(false)).transform((clb, cle) -> {
+        var cc = Classfile.of(Classfile.ConstantPoolSharingOption.NEW_POOL);
+        byte[] bytes = cc.transform(cc.parse(in.readAllBytes()), (clb, cle) -> {
             switch (cle) {
                 case AccessFlags af -> clb.withFlags(AccessFlag.INTERFACE,
                         AccessFlag.ABSTRACT, AccessFlag.SYNTHETIC);

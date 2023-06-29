@@ -45,13 +45,6 @@ const bool CCallingConventionRequiresIntsAsLongs = true;
 // The expected size in bytes of a cache line, used to pad data structures.
 #define DEFAULT_CACHE_LINE_SIZE 128
 
-#if defined(COMPILER2) && (defined(AIX) || defined(LINUX))
-// Include Transactional Memory lock eliding optimization
-#define INCLUDE_RTM_OPT 1
-#else
-#define INCLUDE_RTM_OPT 0
-#endif
-
 #define SUPPORT_RESERVED_STACK_AREA
 
 // If UseSIGTRAP is active, we only use the poll bit and no polling page.

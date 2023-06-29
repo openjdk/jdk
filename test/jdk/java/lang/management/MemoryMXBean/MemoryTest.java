@@ -34,27 +34,27 @@
  */
 
 /*
- * @test
+ * @test id=ZSinglegen
  * @bug     4530538
  * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
  *          MemoryMXBean.getMemoryManager().
- * @requires vm.gc == "Z" & !vm.opt.final.ZGenerational
+ * @requires vm.gc.ZSinglegen
  * @author  Mandy Chung
  *
  * @modules jdk.management
- * @run main MemoryTest 2 1
+ * @run main/othervm -XX:+UseZGC -XX:-ZGenerational MemoryTest 2 1
  */
 
 /*
- * @test
+ * @test id=ZGenerational
  * @bug     4530538
  * @summary Basic unit test of MemoryMXBean.getMemoryPools() and
  *          MemoryMXBean.getMemoryManager().
- * @requires vm.gc == "Z" & vm.opt.final.ZGenerational
+ * @requires vm.gc.ZGenerational
  * @author  Mandy Chung
  *
  * @modules jdk.management
- * @run main MemoryTest 4 2
+ * @run main/othervm -XX:+UseZGC -XX:+ZGenerational MemoryTest 4 2
  */
 
 /*

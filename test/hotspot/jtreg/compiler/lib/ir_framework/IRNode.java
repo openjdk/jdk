@@ -809,6 +809,11 @@ public class IRNode {
         beforeMatchingNameRegex(NEG_V, "NegV(F|D)");
     }
 
+    public static final String NOP = PREFIX + "NOP" + POSTFIX;
+    static {
+        machOnlyNameRegex(NOP, "Nop");
+    }
+
     public static final String NULL_ASSERT_TRAP = PREFIX + "NULL_ASSERT_TRAP" + POSTFIX;
     static {
         trapNodes(NULL_ASSERT_TRAP,"null_assert");
@@ -1544,6 +1549,66 @@ public class IRNode {
     static {
         String regex = START + "(zXChgP)|(zGetAndSetP\\S*)" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
         machOnly(Z_GET_AND_SET_P_WITH_BARRIER_FLAG, regex);
+    }
+
+    public static final String X86_LOCK_ADDB_REG = PREFIX + "X86_LOCK_ADDB_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDB_REG, "xaddB_reg_no_res");
+    }
+
+    public static final String X86_LOCK_ADDB_IMM = PREFIX + "X86_LOCK_ADDB_IMM" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDB_IMM, "xaddB_imm_no_res");
+    }
+
+    public static final String X86_LOCK_XADDB = PREFIX + "X86_LOCK_XADDB" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_XADDB, "xaddB");
+    }
+
+    public static final String X86_LOCK_ADDS_REG = PREFIX + "X86_LOCK_ADDS_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDS_REG, "xaddS_reg_no_res");
+    }
+
+    public static final String X86_LOCK_ADDS_IMM = PREFIX + "X86_LOCK_ADDS_IMM" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDS_IMM, "xaddS_imm_no_res");
+    }
+
+    public static final String X86_LOCK_XADDS = PREFIX + "X86_LOCK_XADDS" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_XADDS, "xaddS");
+    }
+
+    public static final String X86_LOCK_ADDI_REG = PREFIX + "X86_LOCK_ADDI_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDI_REG, "xaddI_reg_no_res");
+    }
+
+    public static final String X86_LOCK_ADDI_IMM = PREFIX + "X86_LOCK_ADDI_IMM" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDI_IMM, "xaddI_imm_no_res");
+    }
+
+    public static final String X86_LOCK_XADDI = PREFIX + "X86_LOCK_XADDI" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_XADDI, "xaddI");
+    }
+
+    public static final String X86_LOCK_ADDL_REG = PREFIX + "X86_LOCK_ADDL_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDL_REG, "xaddL_reg_no_res");
+    }
+
+    public static final String X86_LOCK_ADDL_IMM = PREFIX + "X86_LOCK_ADDL_IMM" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDL_IMM, "xaddL_imm_no_res");
+    }
+
+    public static final String X86_LOCK_XADDL = PREFIX + "X86_LOCK_XADDL" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_XADDL, "xaddL");
     }
 
     /*

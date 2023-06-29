@@ -50,6 +50,9 @@ method name isEmojiModifierBase descriptor (I)Z flags 9
 method name isEmojiComponent descriptor (I)Z flags 9
 method name isExtendedPictographic descriptor (I)Z flags 9
 
+class name java/lang/Class
+method name isUnnamedClass descriptor ()Z flags 1 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;UNNAMED_CLASSES;,reflective=Ztrue)
+
 -class name java/lang/Compiler
 
 class name java/lang/Deprecated
@@ -80,6 +83,29 @@ innerclass innerClass java/lang/ProcessBuilder$Redirect$Type outerClass java/lan
 innerclass innerClass java/lang/System$Logger outerClass java/lang/System innerClassName Logger flags 609
 innerclass innerClass java/lang/System$Logger$Level outerClass java/lang/System$Logger innerClassName Level flags 4019
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+
+class name java/lang/ScopedValue
+header extends java/lang/Object nestMembers java/lang/ScopedValue$Carrier flags 31 signature <T:Ljava/lang/Object;>Ljava/lang/Object; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SCOPED_VALUES;)
+innerclass innerClass java/lang/ScopedValue$Carrier outerClass java/lang/ScopedValue innerClassName Carrier flags 19
+method name hashCode descriptor ()I flags 1
+method name where descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;)Ljava/lang/ScopedValue$Carrier; flags 9 signature <T:Ljava/lang/Object;>(Ljava/lang/ScopedValue<TT;>;TT;)Ljava/lang/ScopedValue$Carrier;
+method name callWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/util/concurrent/Callable;)Ljava/lang/Object; thrownTypes java/lang/Exception flags 9 signature <T:Ljava/lang/Object;R:Ljava/lang/Object;>(Ljava/lang/ScopedValue<TT;>;TT;Ljava/util/concurrent/Callable<+TR;>;)TR;
+method name getWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/util/function/Supplier;)Ljava/lang/Object; flags 9 signature <T:Ljava/lang/Object;R:Ljava/lang/Object;>(Ljava/lang/ScopedValue<TT;>;TT;Ljava/util/function/Supplier<+TR;>;)TR;
+method name runWhere descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;Ljava/lang/Runnable;)V flags 9 signature <T:Ljava/lang/Object;>(Ljava/lang/ScopedValue<TT;>;TT;Ljava/lang/Runnable;)V
+method name newInstance descriptor ()Ljava/lang/ScopedValue; flags 9 signature <T:Ljava/lang/Object;>()Ljava/lang/ScopedValue<TT;>;
+method name get descriptor ()Ljava/lang/Object; flags 1 signature ()TT; runtimeAnnotations @Ljdk/internal/vm/annotation/ForceInline;
+method name isBound descriptor ()Z flags 1
+method name orElse descriptor (Ljava/lang/Object;)Ljava/lang/Object; flags 1 signature (TT;)TT;
+method name orElseThrow descriptor (Ljava/util/function/Supplier;)Ljava/lang/Object; thrownTypes java/lang/Throwable flags 1 signature <X:Ljava/lang/Throwable;>(Ljava/util/function/Supplier<+TX;>;)TT;^TX;
+
+class name java/lang/ScopedValue$Carrier
+header extends java/lang/Object nestHost java/lang/ScopedValue flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;SCOPED_VALUES;)
+innerclass innerClass java/lang/ScopedValue$Carrier outerClass java/lang/ScopedValue innerClassName Carrier flags 19
+method name where descriptor (Ljava/lang/ScopedValue;Ljava/lang/Object;)Ljava/lang/ScopedValue$Carrier; flags 1 signature <T:Ljava/lang/Object;>(Ljava/lang/ScopedValue<TT;>;TT;)Ljava/lang/ScopedValue$Carrier;
+method name get descriptor (Ljava/lang/ScopedValue;)Ljava/lang/Object; flags 1 signature <T:Ljava/lang/Object;>(Ljava/lang/ScopedValue<TT;>;)TT;
+method name call descriptor (Ljava/util/concurrent/Callable;)Ljava/lang/Object; thrownTypes java/lang/Exception flags 1 signature <R:Ljava/lang/Object;>(Ljava/util/concurrent/Callable<+TR;>;)TR;
+method name get descriptor (Ljava/util/function/Supplier;)Ljava/lang/Object; flags 1 signature <R:Ljava/lang/Object;>(Ljava/util/function/Supplier<+TR;>;)TR;
+method name run descriptor (Ljava/lang/Runnable;)V flags 1
 
 class name java/lang/StrictMath
 -method name sin descriptor (D)D
@@ -254,10 +280,12 @@ header extends java/lang/Object implements java/lang/constant/ConstantDesc,java/
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfMethod outerClass java/lang/invoke/TypeDescriptor innerClassName OfMethod flags 609
 innerclass innerClass java/lang/invoke/TypeDescriptor$OfField outerClass java/lang/invoke/TypeDescriptor innerClassName OfField flags 609
+-method name descriptorString descriptor ()Ljava/lang/String;
 method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/invoke/MethodType; thrownTypes java/lang/ReflectiveOperationException flags 401
 method name resolveConstantDesc descriptor (Ljava/lang/invoke/MethodHandles$Lookup;)Ljava/lang/Object; thrownTypes java/lang/ReflectiveOperationException flags 1041 methodParameters 3e8:null
 method name of descriptor (Ljava/lang/constant/ClassDesc;)Ljava/lang/constant/MethodTypeDesc; flags 9
 method name of descriptor (Ljava/lang/constant/ClassDesc;Ljava/util/List;)Ljava/lang/constant/MethodTypeDesc; flags 9 signature (Ljava/lang/constant/ClassDesc;Ljava/util/List<Ljava/lang/constant/ClassDesc;>;)Ljava/lang/constant/MethodTypeDesc;
+method name descriptorString descriptor ()Ljava/lang/String; flags 401
 
 class name java/lang/constant/ModuleDesc
 header extends java/lang/Object sealed true flags 601
@@ -640,6 +668,8 @@ class name java/lang/invoke/VarHandle
 header extends java/lang/Object implements java/lang/constant/Constable nestMembers java/lang/invoke/VarHandle$VarHandleDesc,java/lang/invoke/VarHandle$AccessMode sealed true flags 421
 innerclass innerClass java/lang/invoke/VarHandle$AccessMode outerClass java/lang/invoke/VarHandle innerClassName AccessMode flags 4019
 innerclass innerClass java/lang/invoke/VarHandle$VarHandleDesc outerClass java/lang/invoke/VarHandle innerClassName VarHandleDesc flags 19
+-method name isAccessModeSupported descriptor (Ljava/lang/invoke/VarHandle$AccessMode;)Z
+method name isAccessModeSupported descriptor (Ljava/lang/invoke/VarHandle$AccessMode;)Z flags 1
 
 class name java/lang/module/Configuration
 header extends java/lang/Object flags 31
@@ -687,8 +717,8 @@ header extends java/lang/RuntimeException flags 21
 
 class name java/lang/runtime/SwitchBootstraps
 header extends java/lang/Object flags 21
-innerclass innerClass java/lang/Enum$EnumDesc outerClass java/lang/Enum innerClassName EnumDesc flags 19
 innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+innerclass innerClass java/lang/Enum$EnumDesc outerClass java/lang/Enum innerClassName EnumDesc flags 19
 
 class name java/lang/runtime/TemplateRuntime
 header extends java/lang/Object flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRING_TEMPLATES;)
@@ -1094,6 +1124,88 @@ class name java/util/concurrent/Executors
 -method name newVirtualThreadPerTaskExecutor descriptor ()Ljava/util/concurrent/ExecutorService;
 method name newThreadPerTaskExecutor descriptor (Ljava/util/concurrent/ThreadFactory;)Ljava/util/concurrent/ExecutorService; flags 9
 method name newVirtualThreadPerTaskExecutor descriptor ()Ljava/util/concurrent/ExecutorService; flags 9
+
+class name java/util/concurrent/StructureViolationException
+header extends java/lang/RuntimeException flags 31 classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRUCTURED_CONCURRENCY;)
+method name <init> descriptor ()V flags 1
+method name <init> descriptor (Ljava/lang/String;)V flags 1
+
+class name java/util/concurrent/StructuredTaskScope
+header extends java/lang/Object implements java/lang/AutoCloseable nestMembers java/util/concurrent/StructuredTaskScope$ShutdownOnFailure,java/util/concurrent/StructuredTaskScope$ShutdownOnSuccess,java/util/concurrent/StructuredTaskScope$Subtask,java/util/concurrent/StructuredTaskScope$Subtask$State flags 21 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/lang/AutoCloseable; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRUCTURED_CONCURRENCY;)
+innerclass innerClass java/lang/Thread$Builder outerClass java/lang/Thread innerClassName Builder flags 609
+innerclass innerClass java/lang/Thread$Builder$OfVirtual outerClass java/lang/Thread$Builder innerClassName OfVirtual flags 609
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask outerClass java/util/concurrent/StructuredTaskScope innerClassName Subtask flags 609
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask$State outerClass java/util/concurrent/StructuredTaskScope$Subtask innerClassName State flags 4019
+innerclass innerClass java/util/concurrent/StructuredTaskScope$ShutdownOnFailure outerClass java/util/concurrent/StructuredTaskScope innerClassName ShutdownOnFailure flags 19
+innerclass innerClass java/util/concurrent/StructuredTaskScope$ShutdownOnSuccess outerClass java/util/concurrent/StructuredTaskScope innerClassName ShutdownOnSuccess flags 19
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name <init> descriptor (Ljava/lang/String;Ljava/util/concurrent/ThreadFactory;)V flags 1
+method name <init> descriptor ()V flags 1
+method name ensureOwnerAndJoined descriptor ()V flags 14
+method name handleComplete descriptor (Ljava/util/concurrent/StructuredTaskScope$Subtask;)V flags 4 signature (Ljava/util/concurrent/StructuredTaskScope$Subtask<+TT;>;)V
+method name fork descriptor (Ljava/util/concurrent/Callable;)Ljava/util/concurrent/StructuredTaskScope$Subtask; flags 1 signature <U:TT;>(Ljava/util/concurrent/Callable<+TU;>;)Ljava/util/concurrent/StructuredTaskScope$Subtask<TU;>;
+method name join descriptor ()Ljava/util/concurrent/StructuredTaskScope; thrownTypes java/lang/InterruptedException flags 1 signature ()Ljava/util/concurrent/StructuredTaskScope<TT;>;
+method name joinUntil descriptor (Ljava/time/Instant;)Ljava/util/concurrent/StructuredTaskScope; thrownTypes java/lang/InterruptedException,java/util/concurrent/TimeoutException flags 1 signature (Ljava/time/Instant;)Ljava/util/concurrent/StructuredTaskScope<TT;>;
+method name shutdown descriptor ()V flags 1
+method name isShutdown descriptor ()Z flags 11
+method name close descriptor ()V flags 1
+method name toString descriptor ()Ljava/lang/String; flags 1
+
+class name java/util/concurrent/StructuredTaskScope$ShutdownOnFailure
+header extends java/util/concurrent/StructuredTaskScope nestHost java/util/concurrent/StructuredTaskScope flags 31 signature Ljava/util/concurrent/StructuredTaskScope<Ljava/lang/Object;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRUCTURED_CONCURRENCY;)
+innerclass innerClass java/lang/Thread$Builder outerClass java/lang/Thread innerClassName Builder flags 609
+innerclass innerClass java/lang/Thread$Builder$OfVirtual outerClass java/lang/Thread$Builder innerClassName OfVirtual flags 609
+innerclass innerClass java/util/concurrent/StructuredTaskScope$ShutdownOnFailure outerClass java/util/concurrent/StructuredTaskScope innerClassName ShutdownOnFailure flags 19
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask outerClass java/util/concurrent/StructuredTaskScope innerClassName Subtask flags 609
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask$State outerClass java/util/concurrent/StructuredTaskScope$Subtask innerClassName State flags 4019
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name <init> descriptor (Ljava/lang/String;Ljava/util/concurrent/ThreadFactory;)V flags 1
+method name <init> descriptor ()V flags 1
+method name handleComplete descriptor (Ljava/util/concurrent/StructuredTaskScope$Subtask;)V flags 4 signature (Ljava/util/concurrent/StructuredTaskScope$Subtask<*>;)V
+method name join descriptor ()Ljava/util/concurrent/StructuredTaskScope$ShutdownOnFailure; thrownTypes java/lang/InterruptedException flags 1
+method name joinUntil descriptor (Ljava/time/Instant;)Ljava/util/concurrent/StructuredTaskScope$ShutdownOnFailure; thrownTypes java/lang/InterruptedException,java/util/concurrent/TimeoutException flags 1
+method name exception descriptor ()Ljava/util/Optional; flags 1 signature ()Ljava/util/Optional<Ljava/lang/Throwable;>;
+method name throwIfFailed descriptor ()V thrownTypes java/util/concurrent/ExecutionException flags 1
+method name throwIfFailed descriptor (Ljava/util/function/Function;)V thrownTypes java/lang/Throwable flags 1 signature <X:Ljava/lang/Throwable;>(Ljava/util/function/Function<Ljava/lang/Throwable;+TX;>;)V^TX;
+method name joinUntil descriptor (Ljava/time/Instant;)Ljava/util/concurrent/StructuredTaskScope; thrownTypes java/lang/InterruptedException,java/util/concurrent/TimeoutException flags 1041 methodParameters 1000:null
+method name join descriptor ()Ljava/util/concurrent/StructuredTaskScope; thrownTypes java/lang/InterruptedException flags 1041
+
+class name java/util/concurrent/StructuredTaskScope$ShutdownOnSuccess
+header extends java/util/concurrent/StructuredTaskScope nestHost java/util/concurrent/StructuredTaskScope flags 31 signature <T:Ljava/lang/Object;>Ljava/util/concurrent/StructuredTaskScope<TT;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRUCTURED_CONCURRENCY;)
+innerclass innerClass java/lang/Thread$Builder outerClass java/lang/Thread innerClassName Builder flags 609
+innerclass innerClass java/lang/Thread$Builder$OfVirtual outerClass java/lang/Thread$Builder innerClassName OfVirtual flags 609
+innerclass innerClass java/util/concurrent/StructuredTaskScope$ShutdownOnSuccess outerClass java/util/concurrent/StructuredTaskScope innerClassName ShutdownOnSuccess flags 19
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask outerClass java/util/concurrent/StructuredTaskScope innerClassName Subtask flags 609
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask$State outerClass java/util/concurrent/StructuredTaskScope$Subtask innerClassName State flags 4019
+innerclass innerClass java/lang/invoke/MethodHandles$Lookup outerClass java/lang/invoke/MethodHandles innerClassName Lookup flags 19
+method name <init> descriptor (Ljava/lang/String;Ljava/util/concurrent/ThreadFactory;)V flags 1
+method name <init> descriptor ()V flags 1
+method name handleComplete descriptor (Ljava/util/concurrent/StructuredTaskScope$Subtask;)V flags 4 signature (Ljava/util/concurrent/StructuredTaskScope$Subtask<+TT;>;)V
+method name join descriptor ()Ljava/util/concurrent/StructuredTaskScope$ShutdownOnSuccess; thrownTypes java/lang/InterruptedException flags 1 signature ()Ljava/util/concurrent/StructuredTaskScope$ShutdownOnSuccess<TT;>;
+method name joinUntil descriptor (Ljava/time/Instant;)Ljava/util/concurrent/StructuredTaskScope$ShutdownOnSuccess; thrownTypes java/lang/InterruptedException,java/util/concurrent/TimeoutException flags 1 signature (Ljava/time/Instant;)Ljava/util/concurrent/StructuredTaskScope$ShutdownOnSuccess<TT;>;
+method name result descriptor ()Ljava/lang/Object; thrownTypes java/util/concurrent/ExecutionException flags 1 signature ()TT;
+method name result descriptor (Ljava/util/function/Function;)Ljava/lang/Object; thrownTypes java/lang/Throwable flags 1 signature <X:Ljava/lang/Throwable;>(Ljava/util/function/Function<Ljava/lang/Throwable;+TX;>;)TT;^TX;
+method name joinUntil descriptor (Ljava/time/Instant;)Ljava/util/concurrent/StructuredTaskScope; thrownTypes java/lang/InterruptedException,java/util/concurrent/TimeoutException flags 1041 methodParameters 1000:null
+method name join descriptor ()Ljava/util/concurrent/StructuredTaskScope; thrownTypes java/lang/InterruptedException flags 1041
+
+class name java/util/concurrent/StructuredTaskScope$Subtask
+header extends java/lang/Object implements java/util/function/Supplier nestHost java/util/concurrent/StructuredTaskScope sealed true flags 601 signature <T:Ljava/lang/Object;>Ljava/lang/Object;Ljava/util/function/Supplier<TT;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRUCTURED_CONCURRENCY;)
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask outerClass java/util/concurrent/StructuredTaskScope innerClassName Subtask flags 609
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask$State outerClass java/util/concurrent/StructuredTaskScope$Subtask innerClassName State flags 4019
+method name task descriptor ()Ljava/util/concurrent/Callable; flags 401 signature ()Ljava/util/concurrent/Callable<+TT;>;
+method name state descriptor ()Ljava/util/concurrent/StructuredTaskScope$Subtask$State; flags 401
+method name get descriptor ()Ljava/lang/Object; flags 401 signature ()TT;
+method name exception descriptor ()Ljava/lang/Throwable; flags 401
+
+class name java/util/concurrent/StructuredTaskScope$Subtask$State
+header extends java/lang/Enum nestHost java/util/concurrent/StructuredTaskScope flags 4031 signature Ljava/lang/Enum<Ljava/util/concurrent/StructuredTaskScope$Subtask$State;>; classAnnotations @Ljdk/internal/javac/PreviewFeature;(feature=eLjdk/internal/javac/PreviewFeature$Feature;STRUCTURED_CONCURRENCY;)
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask outerClass java/util/concurrent/StructuredTaskScope innerClassName Subtask flags 609
+innerclass innerClass java/util/concurrent/StructuredTaskScope$Subtask$State outerClass java/util/concurrent/StructuredTaskScope$Subtask innerClassName State flags 4019
+field name UNAVAILABLE descriptor Ljava/util/concurrent/StructuredTaskScope$Subtask$State; flags 4019
+field name SUCCESS descriptor Ljava/util/concurrent/StructuredTaskScope$Subtask$State; flags 4019
+field name FAILED descriptor Ljava/util/concurrent/StructuredTaskScope$Subtask$State; flags 4019
+method name values descriptor ()[Ljava/util/concurrent/StructuredTaskScope$Subtask$State; flags 9
+method name valueOf descriptor (Ljava/lang/String;)Ljava/util/concurrent/StructuredTaskScope$Subtask$State; flags 9 methodParameters 8000:null
 
 class name java/util/concurrent/atomic/AtomicBoolean
 header extends java/lang/Object implements java/io/Serializable flags 21

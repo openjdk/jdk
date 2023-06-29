@@ -525,6 +525,7 @@ void AwtScrollPane::_SetSpans(void *param)
             parentWidth, parentHeight, childWidth, childHeight);
         s->RecalcSizes(parentWidth, parentHeight, childWidth, childHeight);
         s->VerifyState();
+        s->SetInsets(env);
     }
 ret:
    env->DeleteGlobalRef(self);
@@ -718,7 +719,7 @@ Java_sun_awt_windows_WScrollPanePeer_setInsets(JNIEnv *env, jobject self)
 {
     TRY
 
-    AwtToolkit::GetInstance().SyncCall(AwtScrollPane::_SetInsets,
+    AwtToolkit::GetInstance().InvokeFunction(AwtScrollPane::_SetInsets,
         env->NewGlobalRef(self));
     // global ref is deleted in _SetInsets()
 

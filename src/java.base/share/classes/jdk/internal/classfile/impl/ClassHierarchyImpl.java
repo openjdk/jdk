@@ -32,14 +32,13 @@ import java.lang.constant.ClassDesc;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import jdk.internal.classfile.ClassHierarchyResolver;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static jdk.internal.classfile.Classfile.*;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Class hierarchy resolution framework is answering questions about classes assignability, common classes ancestor and whether the class represents an interface.
@@ -52,15 +51,8 @@ public final class ClassHierarchyImpl {
         static final ClassHierarchyResolver.ClassHierarchyInfo OBJECT_INFO = new ClassHierarchyInfoImpl(null, false);
     }
 
-    public static final ClassHierarchyResolver DEFAULT_RESOLVER = ClassHierarchyResolver
-            .ofResourceParsing(ResourceParsingClassHierarchyResolver.SYSTEM_STREAM_PROVIDER)
-            .orElse(new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER))
-            .cached(new Supplier<>() {
-                @Override
-                public Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> get() {
-                    return new ConcurrentHashMap<>();
-                }
-            });
+    public static final ClassHierarchyResolver DEFAULT_RESOLVER =
+            new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER);
 
     private final ClassHierarchyResolver resolver;
 
@@ -69,7 +61,10 @@ public final class ClassHierarchyImpl {
      * @param classHierarchyResolver <code>ClassHierarchyInfoResolver</code> instance
      */
     public ClassHierarchyImpl(ClassHierarchyResolver classHierarchyResolver) {
-        this.resolver = classHierarchyResolver;
+        requireNonNull(classHierarchyResolver);
+        this.resolver = classHierarchyResolver instanceof CachedClassHierarchyResolver
+                ? classHierarchyResolver
+                : classHierarchyResolver.cached();
     }
 
     private ClassHierarchyInfoImpl resolve(ClassDesc classDesc) {
@@ -120,7 +115,8 @@ public final class ClassHierarchyImpl {
     }
 
     public static final class CachedClassHierarchyResolver implements ClassHierarchyResolver {
-        //this instance should leak out, appears only in cache in order to utilize Map.computeIfAbsent
+        // this instance should not leak out, appears only in cache in order to utilize Map.computeIfAbsent
+        // is already an invalid combination, so it can be compared with equals or as value class safely
         private static final ClassHierarchyResolver.ClassHierarchyInfo NOPE =
                 new ClassHierarchyInfoImpl(null, true);
 
@@ -221,7 +217,7 @@ public final class ClassHierarchyImpl {
             @Override
             public Class<?> apply(ClassDesc cd) {
                 try {
-                    return Class.forName(Util.toBinaryName(cd.descriptorString()), false, ClassLoader.getSystemClassLoader());
+                    return Class.forName(Util.toBinaryName(cd), false, ClassLoader.getSystemClassLoader());
                 } catch (ClassNotFoundException ex) {
                     return null;
                 }

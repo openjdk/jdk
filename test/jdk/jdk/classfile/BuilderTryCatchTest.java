@@ -171,7 +171,7 @@ class BuilderTryCatchTest {
     void testTryEmptyCatch() {
         byte[] bytes = generateTryCatchMethod(catchBuilder -> {});
 
-        boolean anyGotos = Classfile.parse(bytes).methods().stream()
+        boolean anyGotos = Classfile.of().parse(bytes).methods().stream()
                 .flatMap(mm -> mm.code().stream())
                 .flatMap(CompoundElement::elementStream)
                 .anyMatch(codeElement ->
@@ -182,7 +182,7 @@ class BuilderTryCatchTest {
 
     @Test
     void testEmptyTry() {
-        byte[] bytes = Classfile.build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
                         mb.withCode(xb -> {
@@ -213,7 +213,7 @@ class BuilderTryCatchTest {
 
     @Test
     void testLocalAllocation() throws Throwable {
-        byte[] bytes = Classfile.build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
                         mb.withCode(xb -> {
@@ -276,7 +276,7 @@ class BuilderTryCatchTest {
     }
 
     static byte[] generateTryCatchMethod(Consumer<CodeBuilder.CatchBuilder> c) {
-        byte[] bytes = Classfile.build(ClassDesc.of("C"), cb -> {
+        byte[] bytes = Classfile.of().build(ClassDesc.of("C"), cb -> {
             cb.withMethod("main", MethodTypeDesc.of(CD_String, CD_String.arrayType()),
                     AccessFlags.ofMethod(AccessFlag.PUBLIC, AccessFlag.STATIC).flagsMask(), mb -> {
                         mb.withCode(xb -> {
