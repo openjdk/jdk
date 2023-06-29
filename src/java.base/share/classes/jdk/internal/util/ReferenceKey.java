@@ -36,9 +36,6 @@ import java.lang.ref.Reference;
  * @param <T> key type
  *
  * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
  */
 public sealed interface ReferenceKey<T> permits StrongReferenceKey, WeakReferenceKey, SoftReferenceKey {
     /**
