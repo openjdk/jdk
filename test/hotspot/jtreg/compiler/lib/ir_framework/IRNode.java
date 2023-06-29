@@ -119,6 +119,14 @@ public class IRNode {
     public static final String VECTOR_SIZE_32  = VECTOR_SIZE + "32";
     public static final String VECTOR_SIZE_64  = VECTOR_SIZE + "64";
 
+    private static final String TYPE_BYTE   = "byte";
+    private static final String TYPE_CHAR   = "char";
+    private static final String TYPE_SHORT  = "short";
+    private static final String TYPE_INT    = "int";
+    private static final String TYPE_LONG   = "long";
+    private static final String TYPE_FLOAT  = "float";
+    private static final String TYPE_DOUBLE = "double";
+
     /**
      * IR placeholder string to regex-for-compile-phase map.
      */
@@ -166,34 +174,34 @@ public class IRNode {
 
     public static final String ABS_VB = VECTOR_PREFIX + "ABS_VB" + POSTFIX;
     static {
-        vectorNode(ABS_VB, "AbsVB", "byte");
+        vectorNode(ABS_VB, "AbsVB", TYPE_BYTE);
     }
 
     // ABS_VC / AbsVC does not exist (char is 2 byte unsigned)
 
     public static final String ABS_VS = VECTOR_PREFIX + "ABS_VS" + POSTFIX;
     static {
-        vectorNode(ABS_VS, "AbsVS", "short");
+        vectorNode(ABS_VS, "AbsVS", TYPE_SHORT);
     }
 
     public static final String ABS_VI = VECTOR_PREFIX + "ABS_VI" + POSTFIX;
     static {
-        vectorNode(ABS_VI, "AbsVI", "int");
+        vectorNode(ABS_VI, "AbsVI", TYPE_INT);
     }
 
     public static final String ABS_VL = VECTOR_PREFIX + "ABS_VL" + POSTFIX;
     static {
-        vectorNode(ABS_VL, "AbsVL", "long");
+        vectorNode(ABS_VL, "AbsVL", TYPE_LONG);
     }
 
     public static final String ABS_VF = VECTOR_PREFIX + "ABS_VF" + POSTFIX;
     static {
-        vectorNode(ABS_VF, "AbsVF", "float");
+        vectorNode(ABS_VF, "AbsVF", TYPE_FLOAT);
     }
 
     public static final String ABS_VD = VECTOR_PREFIX + "ABS_VD" + POSTFIX;
     static {
-        vectorNode(ABS_VD, "AbsVD", "double");
+        vectorNode(ABS_VD, "AbsVD", TYPE_DOUBLE);
     }
 
     public static final String ADD = PREFIX + "ADD" + POSTFIX;
@@ -213,32 +221,32 @@ public class IRNode {
 
     public static final String ADD_VD = VECTOR_PREFIX + "ADD_VD" + POSTFIX;
     static {
-        vectorNode(ADD_VD, "AddVD", "double");
+        vectorNode(ADD_VD, "AddVD", TYPE_DOUBLE);
     }
 
     public static final String ADD_VI = VECTOR_PREFIX + "ADD_VI" + POSTFIX;
     static {
-        vectorNode(ADD_VI, "AddVI", "int");
+        vectorNode(ADD_VI, "AddVI", TYPE_INT);
     }
 
     public static final String ADD_VF = VECTOR_PREFIX + "ADD_VF" + POSTFIX;
     static {
-        vectorNode(ADD_VF, "AddVF", "float");
+        vectorNode(ADD_VF, "AddVF", TYPE_FLOAT);
     }
 
     public static final String ADD_VB = VECTOR_PREFIX + "ADD_VB" + POSTFIX;
     static {
-        vectorNode(ADD_VB, "AddVB", "byte");
+        vectorNode(ADD_VB, "AddVB", TYPE_BYTE);
     }
 
     public static final String ADD_VS = VECTOR_PREFIX + "ADD_VS" + POSTFIX;
     static {
-        vectorNode(ADD_VS, "AddVS", "short");
+        vectorNode(ADD_VS, "AddVS", TYPE_SHORT);
     }
 
     public static final String ADD_VL = VECTOR_PREFIX + "ADD_VL" + POSTFIX;
     static {
-        vectorNode(ADD_VL, "AddVL", "long");
+        vectorNode(ADD_VL, "AddVL", TYPE_LONG);
     }
 
     public static final String ADD_REDUCTION_V = PREFIX + "ADD_REDUCTION_V" + POSTFIX;
@@ -307,27 +315,27 @@ public class IRNode {
 
     public static final String AND_VB = VECTOR_PREFIX + "AND_VB" + POSTFIX;
     static {
-        vectorNode(AND_VB, "AndV", "byte");
+        vectorNode(AND_VB, "AndV", TYPE_BYTE);
     }
 
     public static final String AND_VC = VECTOR_PREFIX + "AND_VC" + POSTFIX;
     static {
-        vectorNode(AND_VC, "AndV", "char");
+        vectorNode(AND_VC, "AndV", TYPE_CHAR);
     }
 
     public static final String AND_VS = VECTOR_PREFIX + "AND_VS" + POSTFIX;
     static {
-        vectorNode(AND_VS, "AndV", "short");
+        vectorNode(AND_VS, "AndV", TYPE_SHORT);
     }
 
     public static final String AND_VI = VECTOR_PREFIX + "AND_VI" + POSTFIX;
     static {
-        vectorNode(AND_VI, "AndV", "int");
+        vectorNode(AND_VI, "AndV", TYPE_INT);
     }
 
     public static final String AND_VL = VECTOR_PREFIX + "AND_VL" + POSTFIX;
     static {
-        vectorNode(AND_VL, "AndV", "long");
+        vectorNode(AND_VL, "AndV", TYPE_LONG);
     }
 
     public static final String AND_V_MASK = PREFIX + "AND_V_MASK" + POSTFIX;
@@ -478,12 +486,12 @@ public class IRNode {
 
     public static final String DIV_VF = VECTOR_PREFIX + "DIV_VF" + POSTFIX;
     static {
-        vectorNode(DIV_VF, "DivVF", "float");
+        vectorNode(DIV_VF, "DivVF", TYPE_FLOAT);
     }
 
     public static final String DIV_VD = VECTOR_PREFIX + "DIV_VD" + POSTFIX;
     static {
-        vectorNode(DIV_VD, "DivVD", "double");
+        vectorNode(DIV_VD, "DivVD", TYPE_DOUBLE);
     }
 
     public static final String DYNAMIC_CALL_OF_METHOD = COMPOSITE_PREFIX + "DYNAMIC_CALL_OF_METHOD" + POSTFIX;
@@ -515,12 +523,12 @@ public class IRNode {
 
     public static final String FMA_VF = VECTOR_PREFIX + "FMA_VF" + POSTFIX;
     static {
-        vectorNode(FMA_VF, "FmaVF", "float");
+        vectorNode(FMA_VF, "FmaVF", TYPE_FLOAT);
     }
 
     public static final String FMA_VD = VECTOR_PREFIX + "FMA_VD" + POSTFIX;
     static {
-        vectorNode(FMA_VD, "FmaVD", "double");
+        vectorNode(FMA_VD, "FmaVD", TYPE_DOUBLE);
     }
 
     public static final String IF = PREFIX + "IF" + POSTFIX;
@@ -684,37 +692,37 @@ public class IRNode {
 
     public static final String LOAD_VB = VECTOR_PREFIX + "LOAD_VB" + POSTFIX;
     static {
-        vectorNode(LOAD_VB, "LoadVector", "byte");
+        vectorNode(LOAD_VB, "LoadVector", TYPE_BYTE);
     }
 
     public static final String LOAD_VC = VECTOR_PREFIX + "LOAD_VC" + POSTFIX;
     static {
-        vectorNode(LOAD_VC, "LoadVector", "char");
+        vectorNode(LOAD_VC, "LoadVector", TYPE_CHAR);
     }
 
     public static final String LOAD_VS = VECTOR_PREFIX + "LOAD_VS" + POSTFIX;
     static {
-        vectorNode(LOAD_VS, "LoadVector", "short");
+        vectorNode(LOAD_VS, "LoadVector", TYPE_SHORT);
     }
 
     public static final String LOAD_VI = VECTOR_PREFIX + "LOAD_VI" + POSTFIX;
     static {
-        vectorNode(LOAD_VI, "LoadVector", "int");
+        vectorNode(LOAD_VI, "LoadVector", TYPE_INT);
     }
 
     public static final String LOAD_VL = VECTOR_PREFIX + "LOAD_VL" + POSTFIX;
     static {
-        vectorNode(LOAD_VL, "LoadVector", "long");
+        vectorNode(LOAD_VL, "LoadVector", TYPE_LONG);
     }
 
     public static final String LOAD_VF = VECTOR_PREFIX + "LOAD_VF" + POSTFIX;
     static {
-        vectorNode(LOAD_VF, "LoadVector", "float");
+        vectorNode(LOAD_VF, "LoadVector", TYPE_FLOAT);
     }
 
     public static final String LOAD_VD = VECTOR_PREFIX + "LOAD_VD" + POSTFIX;
     static {
-        vectorNode(LOAD_VD, "LoadVector", "double");
+        vectorNode(LOAD_VD, "LoadVector", TYPE_DOUBLE);
     }
 
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
@@ -756,27 +764,27 @@ public class IRNode {
 
     public static final String LSHIFT_VB = VECTOR_PREFIX + "LSHIFT_VB" + POSTFIX;
     static {
-        vectorNode(LSHIFT_VB, "LShiftVB", "byte");
+        vectorNode(LSHIFT_VB, "LShiftVB", TYPE_BYTE);
     }
 
     public static final String LSHIFT_VS = VECTOR_PREFIX + "LSHIFT_VS" + POSTFIX;
     static {
-        vectorNode(LSHIFT_VS, "LShiftVS", "short");
+        vectorNode(LSHIFT_VS, "LShiftVS", TYPE_SHORT);
     }
 
     public static final String LSHIFT_VC = VECTOR_PREFIX + "LSHIFT_VC" + POSTFIX;
     static {
-        vectorNode(LSHIFT_VC, "LShiftVS", "char"); // using short op with char type
+        vectorNode(LSHIFT_VC, "LShiftVS", TYPE_CHAR); // using short op with char type
     }
 
     public static final String LSHIFT_VI = VECTOR_PREFIX + "LSHIFT_VI" + POSTFIX;
     static {
-        vectorNode(LSHIFT_VI, "LShiftVI", "int");
+        vectorNode(LSHIFT_VI, "LShiftVI", TYPE_INT);
     }
 
     public static final String LSHIFT_VL = VECTOR_PREFIX + "LSHIFT_VL" + POSTFIX;
     static {
-        vectorNode(LSHIFT_VL, "LShiftVL", "long");
+        vectorNode(LSHIFT_VL, "LShiftVL", TYPE_LONG);
     }
 
     public static final String MACRO_LOGIC_V = PREFIX + "MACRO_LOGIC_V" + POSTFIX;
@@ -821,17 +829,17 @@ public class IRNode {
 
     public static final String MAX_VI = VECTOR_PREFIX + "MAX_VI" + POSTFIX;
     static {
-        vectorNode(MAX_VI, "MaxV", "int");
+        vectorNode(MAX_VI, "MaxV", TYPE_INT);
     }
 
     public static final String MAX_VF = VECTOR_PREFIX + "MAX_VF" + POSTFIX;
     static {
-        vectorNode(MAX_VF, "MaxV", "float");
+        vectorNode(MAX_VF, "MaxV", TYPE_FLOAT);
     }
 
     public static final String MAX_VD = VECTOR_PREFIX + "MAX_VD" + POSTFIX;
     static {
-        vectorNode(MAX_VD, "MaxV", "double");
+        vectorNode(MAX_VD, "MaxV", TYPE_DOUBLE);
     }
 
     public static final String MEMBAR = PREFIX + "MEMBAR" + POSTFIX;
@@ -881,17 +889,17 @@ public class IRNode {
 
     public static final String MIN_VI = VECTOR_PREFIX + "MIN_VI" + POSTFIX;
     static {
-        vectorNode(MIN_VI, "MinV", "int");
+        vectorNode(MIN_VI, "MinV", TYPE_INT);
     }
 
     public static final String MIN_VF = VECTOR_PREFIX + "MIN_VF" + POSTFIX;
     static {
-        vectorNode(MIN_VF, "MinV", "float");
+        vectorNode(MIN_VF, "MinV", TYPE_FLOAT);
     }
 
     public static final String MIN_VD = VECTOR_PREFIX + "MIN_VD" + POSTFIX;
     static {
-        vectorNode(MIN_VD, "MinV", "double");
+        vectorNode(MIN_VD, "MinV", TYPE_DOUBLE);
     }
 
     public static final String MUL = PREFIX + "MUL" + POSTFIX;
@@ -921,32 +929,32 @@ public class IRNode {
 
     public static final String MUL_VL = VECTOR_PREFIX + "MUL_VL" + POSTFIX;
     static {
-        vectorNode(MUL_VL, "MulVL", "long");
+        vectorNode(MUL_VL, "MulVL", TYPE_LONG);
     }
 
     public static final String MUL_VI = VECTOR_PREFIX + "MUL_VI" + POSTFIX;
     static {
-        vectorNode(MUL_VI, "MulVI", "int");
+        vectorNode(MUL_VI, "MulVI", TYPE_INT);
     }
 
     public static final String MUL_VF = VECTOR_PREFIX + "MUL_VF" + POSTFIX;
     static {
-        vectorNode(MUL_VF, "MulVF", "float");
+        vectorNode(MUL_VF, "MulVF", TYPE_FLOAT);
     }
 
     public static final String MUL_VD = VECTOR_PREFIX + "MUL_VD" + POSTFIX;
     static {
-        vectorNode(MUL_VD, "MulVD", "double");
+        vectorNode(MUL_VD, "MulVD", TYPE_DOUBLE);
     }
 
     public static final String MUL_VB = VECTOR_PREFIX + "MUL_VB" + POSTFIX;
     static {
-        vectorNode(MUL_VB, "MulVB", "byte");
+        vectorNode(MUL_VB, "MulVB", TYPE_BYTE);
     }
 
     public static final String MUL_VS = VECTOR_PREFIX + "MUL_VS" + POSTFIX;
     static {
-        vectorNode(MUL_VS, "MulVS", "short");
+        vectorNode(MUL_VS, "MulVS", TYPE_SHORT);
     }
 
     public static final String MUL_REDUCTION_VD = PREFIX + "MUL_REDUCTION_VD" + POSTFIX;
@@ -981,12 +989,12 @@ public class IRNode {
 
     public static final String NEG_VF = VECTOR_PREFIX + "NEG_VF" + POSTFIX;
     static {
-        vectorNode(NEG_VF, "NegVF", "float");
+        vectorNode(NEG_VF, "NegVF", TYPE_FLOAT);
     }
 
     public static final String NEG_VD = VECTOR_PREFIX + "NEG_VD" + POSTFIX;
     static {
-        vectorNode(NEG_VD, "NegVD", "double");
+        vectorNode(NEG_VD, "NegVD", TYPE_DOUBLE);
     }
 
     public static final String NOP = PREFIX + "NOP" + POSTFIX;
@@ -1006,22 +1014,22 @@ public class IRNode {
 
     public static final String OR_VB = VECTOR_PREFIX + "OR_VB" + POSTFIX;
     static {
-        vectorNode(OR_VB, "OrV", "byte");
+        vectorNode(OR_VB, "OrV", TYPE_BYTE);
     }
 
     public static final String OR_VS = VECTOR_PREFIX + "OR_VS" + POSTFIX;
     static {
-        vectorNode(OR_VS, "OrV", "short");
+        vectorNode(OR_VS, "OrV", TYPE_SHORT);
     }
 
     public static final String OR_VI = VECTOR_PREFIX + "OR_VI" + POSTFIX;
     static {
-        vectorNode(OR_VI, "OrV", "int");
+        vectorNode(OR_VI, "OrV", TYPE_INT);
     }
 
     public static final String OR_VL = VECTOR_PREFIX + "OR_VL" + POSTFIX;
     static {
-        vectorNode(OR_VL, "OrV", "long");
+        vectorNode(OR_VL, "OrV", TYPE_LONG);
     }
 
     public static final String OR_V_MASK = PREFIX + "OR_V_MASK" + POSTFIX;
@@ -1052,22 +1060,22 @@ public class IRNode {
 
     public static final String POPCOUNT_VI = VECTOR_PREFIX + "POPCOUNT_VI" + POSTFIX;
     static {
-        vectorNode(POPCOUNT_VI, "PopCountVI", "int");
+        vectorNode(POPCOUNT_VI, "PopCountVI", TYPE_INT);
     }
 
     public static final String POPCOUNT_VL = VECTOR_PREFIX + "POPCOUNT_VL" + POSTFIX;
     static {
-        vectorNode(POPCOUNT_VL, "PopCountVL", "long");
+        vectorNode(POPCOUNT_VL, "PopCountVL", TYPE_LONG);
     }
 
     public static final String COUNTTRAILINGZEROS_VL = VECTOR_PREFIX + "COUNTTRAILINGZEROS_VL" + POSTFIX;
     static {
-        vectorNode(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV", "long");
+        vectorNode(COUNTTRAILINGZEROS_VL, "CountTrailingZerosV", TYPE_LONG);
     }
 
     public static final String COUNTLEADINGZEROS_VL = VECTOR_PREFIX + "COUNTLEADINGZEROS_VL" + POSTFIX;
     static {
-        vectorNode(COUNTLEADINGZEROS_VL, "CountLeadingZerosV", "long");
+        vectorNode(COUNTLEADINGZEROS_VL, "CountLeadingZerosV", TYPE_LONG);
     }
 
     public static final String POPULATE_INDEX = PREFIX + "POPULATE_INDEX" + POSTFIX;
@@ -1138,22 +1146,22 @@ public class IRNode {
 
     public static final String REVERSE_BYTES_VB = VECTOR_PREFIX + "REVERSE_BYTES_VB" + POSTFIX;
     static {
-        vectorNode(REVERSE_BYTES_VB, "ReverseBytesV", "byte");
+        vectorNode(REVERSE_BYTES_VB, "ReverseBytesV", TYPE_BYTE);
     }
 
     public static final String REVERSE_BYTES_VS = VECTOR_PREFIX + "REVERSE_BYTES_VS" + POSTFIX;
     static {
-        vectorNode(REVERSE_BYTES_VS, "ReverseBytesV", "short");
+        vectorNode(REVERSE_BYTES_VS, "ReverseBytesV", TYPE_SHORT);
     }
 
     public static final String REVERSE_BYTES_VI = VECTOR_PREFIX + "REVERSE_BYTES_VI" + POSTFIX;
     static {
-        vectorNode(REVERSE_BYTES_VI, "ReverseBytesV", "int");
+        vectorNode(REVERSE_BYTES_VI, "ReverseBytesV", TYPE_INT);
     }
 
     public static final String REVERSE_BYTES_VL = VECTOR_PREFIX + "REVERSE_BYTES_VL" + POSTFIX;
     static {
-        vectorNode(REVERSE_BYTES_VL, "ReverseBytesV", "long");
+        vectorNode(REVERSE_BYTES_VL, "ReverseBytesV", TYPE_LONG);
     }
 
     public static final String REVERSE_I = PREFIX + "REVERSE_I" + POSTFIX;
@@ -1168,22 +1176,22 @@ public class IRNode {
 
     public static final String REVERSE_VI = VECTOR_PREFIX + "REVERSE_VI" + POSTFIX;
     static {
-        vectorNode(REVERSE_VI, "ReverseV", "int");
+        vectorNode(REVERSE_VI, "ReverseV", TYPE_INT);
     }
 
     public static final String REVERSE_VL = VECTOR_PREFIX + "REVERSE_VL" + POSTFIX;
     static {
-        vectorNode(REVERSE_VL, "ReverseV", "long");
+        vectorNode(REVERSE_VL, "ReverseV", TYPE_LONG);
     }
 
     public static final String ROUND_VD = VECTOR_PREFIX + "ROUND_VD" + POSTFIX;
     static {
-        vectorNode(ROUND_VD, "RoundVD", "long");
+        vectorNode(ROUND_VD, "RoundVD", TYPE_LONG);
     }
 
     public static final String ROUND_VF = VECTOR_PREFIX + "ROUND_VF" + POSTFIX;
     static {
-        vectorNode(ROUND_VF, "RoundVF", "int");
+        vectorNode(ROUND_VF, "RoundVF", TYPE_INT);
     }
 
     public static final String ROTATE_LEFT = PREFIX + "ROTATE_LEFT" + POSTFIX;
@@ -1208,7 +1216,7 @@ public class IRNode {
 
     public static final String ROUND_DOUBLE_MODE_V = VECTOR_PREFIX + "ROUND_DOUBLE_MODE_V" + POSTFIX;
     static {
-        vectorNode(ROUND_DOUBLE_MODE_V, "RoundDoubleModeV", "double");
+        vectorNode(ROUND_DOUBLE_MODE_V, "RoundDoubleModeV", TYPE_DOUBLE);
     }
 
     public static final String RSHIFT = PREFIX + "RSHIFT" + POSTFIX;
@@ -1228,27 +1236,27 @@ public class IRNode {
 
     public static final String RSHIFT_VB = VECTOR_PREFIX + "RSHIFT_VB" + POSTFIX;
     static {
-        vectorNode(RSHIFT_VB, "RShiftVB", "byte");
+        vectorNode(RSHIFT_VB, "RShiftVB", TYPE_BYTE);
     }
 
     public static final String RSHIFT_VS = VECTOR_PREFIX + "RSHIFT_VS" + POSTFIX;
     static {
-        vectorNode(RSHIFT_VS, "RShiftVS", "short");
+        vectorNode(RSHIFT_VS, "RShiftVS", TYPE_SHORT);
     }
 
     public static final String RSHIFT_VC = VECTOR_PREFIX + "RSHIFT_VC" + POSTFIX;
     static {
-        vectorNode(RSHIFT_VC, "RShiftVS", "char"); // short computation with char type
+        vectorNode(RSHIFT_VC, "RShiftVS", TYPE_CHAR); // short computation with char type
     }
 
     public static final String RSHIFT_VI = VECTOR_PREFIX + "RSHIFT_VI" + POSTFIX;
     static {
-        vectorNode(RSHIFT_VI, "RShiftVI", "int");
+        vectorNode(RSHIFT_VI, "RShiftVI", TYPE_INT);
     }
 
     public static final String RSHIFT_VL = VECTOR_PREFIX + "RSHIFT_VL" + POSTFIX;
     static {
-        vectorNode(RSHIFT_VL, "RShiftVL", "long");
+        vectorNode(RSHIFT_VL, "RShiftVL", TYPE_LONG);
     }
 
     public static final String SAFEPOINT = PREFIX + "SAFEPOINT" + POSTFIX;
@@ -1264,22 +1272,22 @@ public class IRNode {
 
     public static final String SIGNUM_VD = VECTOR_PREFIX + "SIGNUM_VD" + POSTFIX;
     static {
-        vectorNode(SIGNUM_VD, "SignumVD", "double");
+        vectorNode(SIGNUM_VD, "SignumVD", TYPE_DOUBLE);
     }
 
     public static final String SIGNUM_VF = VECTOR_PREFIX + "SIGNUM_VF" + POSTFIX;
     static {
-        vectorNode(SIGNUM_VF, "SignumVF", "float");
+        vectorNode(SIGNUM_VF, "SignumVF", TYPE_FLOAT);
     }
 
     public static final String SQRT_VF = VECTOR_PREFIX + "SQRT_VF" + POSTFIX;
     static {
-        vectorNode(SQRT_VF, "SqrtVF", "float");
+        vectorNode(SQRT_VF, "SqrtVF", TYPE_FLOAT);
     }
 
     public static final String SQRT_VD = VECTOR_PREFIX + "SQRT_VD" + POSTFIX;
     static {
-        vectorNode(SQRT_VD, "SqrtVD", "double");
+        vectorNode(SQRT_VD, "SqrtVD", TYPE_DOUBLE);
     }
 
     public static final String STORE = PREFIX + "STORE" + POSTFIX;
@@ -1420,32 +1428,32 @@ public class IRNode {
 
     public static final String SUB_VB = VECTOR_PREFIX + "SUB_VB" + POSTFIX;
     static {
-        vectorNode(SUB_VB, "SubVB", "byte");
+        vectorNode(SUB_VB, "SubVB", TYPE_BYTE);
     }
 
     public static final String SUB_VS = VECTOR_PREFIX + "SUB_VS" + POSTFIX;
     static {
-        vectorNode(SUB_VS, "SubVS", "short");
+        vectorNode(SUB_VS, "SubVS", TYPE_SHORT);
     }
 
     public static final String SUB_VI = VECTOR_PREFIX + "SUB_VI" + POSTFIX;
     static {
-        vectorNode(SUB_VI, "SubVI", "int");
+        vectorNode(SUB_VI, "SubVI", TYPE_INT);
     }
 
     public static final String SUB_VL = VECTOR_PREFIX + "SUB_VL" + POSTFIX;
     static {
-        vectorNode(SUB_VL, "SubVL", "long");
+        vectorNode(SUB_VL, "SubVL", TYPE_LONG);
     }
 
     public static final String SUB_VF = VECTOR_PREFIX + "SUB_VF" + POSTFIX;
     static {
-        vectorNode(SUB_VF, "SubVF", "float");
+        vectorNode(SUB_VF, "SubVF", TYPE_FLOAT);
     }
 
     public static final String SUB_VD = VECTOR_PREFIX + "SUB_VD" + POSTFIX;
     static {
-        vectorNode(SUB_VD, "SubVD", "double");
+        vectorNode(SUB_VD, "SubVD", TYPE_DOUBLE);
     }
 
     public static final String TRAP = PREFIX + "TRAP" + POSTFIX;
@@ -1520,27 +1528,27 @@ public class IRNode {
 
     public static final String URSHIFT_VB = VECTOR_PREFIX + "URSHIFT_VB" + POSTFIX;
     static {
-        vectorNode(URSHIFT_VB, "URShiftVB", "byte");
+        vectorNode(URSHIFT_VB, "URShiftVB", TYPE_BYTE);
     }
 
     public static final String URSHIFT_VS = VECTOR_PREFIX + "URSHIFT_VS" + POSTFIX;
     static {
-        vectorNode(URSHIFT_VS, "URShiftVS", "short");
+        vectorNode(URSHIFT_VS, "URShiftVS", TYPE_SHORT);
     }
 
     public static final String URSHIFT_VC = VECTOR_PREFIX + "URSHIFT_VC" + POSTFIX;
     static {
-        vectorNode(URSHIFT_VC, "URShiftVS", "char"); // short computation with char type
+        vectorNode(URSHIFT_VC, "URShiftVS", TYPE_CHAR); // short computation with char type
     }
 
     public static final String URSHIFT_VI = VECTOR_PREFIX + "URSHIFT_VI" + POSTFIX;
     static {
-        vectorNode(URSHIFT_VI, "URShiftVI", "int");
+        vectorNode(URSHIFT_VI, "URShiftVI", TYPE_INT);
     }
 
     public static final String URSHIFT_VL = VECTOR_PREFIX + "URSHIFT_VL" + POSTFIX;
     static {
-        vectorNode(URSHIFT_VL, "URShiftVL", "long");
+        vectorNode(URSHIFT_VL, "URShiftVL", TYPE_LONG);
     }
 
     public static final String VAND_NOT_I = PREFIX + "VAND_NOT_I" + POSTFIX;
@@ -1555,197 +1563,197 @@ public class IRNode {
 
     public static final String BLEND_VB = VECTOR_PREFIX + "BLEND_VB" + POSTFIX;
     static {
-        vectorNode(BLEND_VB, "VectorBlend", "byte");
+        vectorNode(BLEND_VB, "VectorBlend", TYPE_BYTE);
     }
 
     public static final String BLEND_VF = VECTOR_PREFIX + "BLEND_VF" + POSTFIX;
     static {
-        vectorNode(BLEND_VF, "VectorBlend", "float");
+        vectorNode(BLEND_VF, "VectorBlend", TYPE_FLOAT);
     }
 
     public static final String BLEND_VD = VECTOR_PREFIX + "BLEND_VD" + POSTFIX;
     static {
-        vectorNode(BLEND_VD, "VectorBlend", "double");
+        vectorNode(BLEND_VD, "VectorBlend", TYPE_DOUBLE);
     }
 
     public static final String MASK_CMP_VI = VECTOR_PREFIX + "MASK_CMP_VI" + POSTFIX;
     static {
-        vectorNode(MASK_CMP_VI, "VectorMaskCmp", "int");
+        vectorNode(MASK_CMP_VI, "VectorMaskCmp", TYPE_INT);
     }
 
     public static final String MASK_CMP_VL = VECTOR_PREFIX + "MASK_CMP_VL" + POSTFIX;
     static {
-        vectorNode(MASK_CMP_VL, "VectorMaskCmp", "long");
+        vectorNode(MASK_CMP_VL, "VectorMaskCmp", TYPE_LONG);
     }
 
     public static final String MASK_CMP_VF = VECTOR_PREFIX + "MASK_CMP_VF" + POSTFIX;
     static {
-        vectorNode(MASK_CMP_VF, "VectorMaskCmp", "float");
+        vectorNode(MASK_CMP_VF, "VectorMaskCmp", TYPE_FLOAT);
     }
 
     public static final String MASK_CMP_VD = VECTOR_PREFIX + "MASK_CMP_VD" + POSTFIX;
     static {
-        vectorNode(MASK_CMP_VD, "VectorMaskCmp", "double");
+        vectorNode(MASK_CMP_VD, "VectorMaskCmp", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_CAST_B2S = VECTOR_PREFIX + "VECTOR_CAST_B2S" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2S, "VectorCastB2", "short");
+        vectorNode(VECTOR_CAST_B2S, "VectorCastB2", TYPE_SHORT);
     }
 
     public static final String VECTOR_CAST_B2I = VECTOR_PREFIX + "VECTOR_CAST_B2I" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2I, "VectorCastB2", "int");
+        vectorNode(VECTOR_CAST_B2I, "VectorCastB2", TYPE_INT);
     }
 
     public static final String VECTOR_CAST_B2L = VECTOR_PREFIX + "VECTOR_CAST_B2L" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2L, "VectorCastB2", "long");
+        vectorNode(VECTOR_CAST_B2L, "VectorCastB2", TYPE_LONG);
     }
 
     public static final String VECTOR_CAST_B2F = VECTOR_PREFIX + "VECTOR_CAST_B2F" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2F, "VectorCastB2", "float");
+        vectorNode(VECTOR_CAST_B2F, "VectorCastB2", TYPE_FLOAT);
     }
 
     public static final String VECTOR_CAST_B2D = VECTOR_PREFIX + "VECTOR_CAST_B2D" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2D, "VectorCastB2", "double");
+        vectorNode(VECTOR_CAST_B2D, "VectorCastB2", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_CAST_D2B = VECTOR_PREFIX + "VECTOR_CAST_D2B" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_D2B, "VectorCastD2X", "byte");
+        vectorNode(VECTOR_CAST_D2B, "VectorCastD2X", TYPE_BYTE);
     }
 
     public static final String VECTOR_CAST_D2S = VECTOR_PREFIX + "VECTOR_CAST_D2S" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_D2S, "VectorCastD2X", "short");
+        vectorNode(VECTOR_CAST_D2S, "VectorCastD2X", TYPE_SHORT);
     }
 
     public static final String VECTOR_CAST_D2I = VECTOR_PREFIX + "VECTOR_CAST_D2I" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_D2I, "VectorCastD2X", "int");
+        vectorNode(VECTOR_CAST_D2I, "VectorCastD2X", TYPE_INT);
     }
 
     public static final String VECTOR_CAST_D2L = VECTOR_PREFIX + "VECTOR_CAST_D2L" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_D2L, "VectorCastD2X", "long");
+        vectorNode(VECTOR_CAST_D2L, "VectorCastD2X", TYPE_LONG);
     }
 
     public static final String VECTOR_CAST_D2F = VECTOR_PREFIX + "VECTOR_CAST_D2F" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_D2F, "VectorCastD2X", "float");
+        vectorNode(VECTOR_CAST_D2F, "VectorCastD2X", TYPE_FLOAT);
     }
 
     public static final String VECTOR_CAST_F2B = VECTOR_PREFIX + "VECTOR_CAST_F2B" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_F2B, "VectorCastF2X", "byte");
+        vectorNode(VECTOR_CAST_F2B, "VectorCastF2X", TYPE_BYTE);
     }
 
     public static final String VECTOR_CAST_F2S = VECTOR_PREFIX + "VECTOR_CAST_F2S" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_F2S, "VectorCastF2X", "short");
+        vectorNode(VECTOR_CAST_F2S, "VectorCastF2X", TYPE_SHORT);
     }
 
     public static final String VECTOR_CAST_F2I = VECTOR_PREFIX + "VECTOR_CAST_F2I" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_F2I, "VectorCastF2X", "int");
+        vectorNode(VECTOR_CAST_F2I, "VectorCastF2X", TYPE_INT);
     }
 
     public static final String VECTOR_CAST_F2L = VECTOR_PREFIX + "VECTOR_CAST_F2L" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_F2L, "VectorCastF2X", "long");
+        vectorNode(VECTOR_CAST_F2L, "VectorCastF2X", TYPE_LONG);
     }
 
     public static final String VECTOR_CAST_F2D = VECTOR_PREFIX + "VECTOR_CAST_F2D" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_F2D, "VectorCastF2X", "double");
+        vectorNode(VECTOR_CAST_F2D, "VectorCastF2X", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_CAST_I2B = VECTOR_PREFIX + "VECTOR_CAST_I2B" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_I2B, "VectorCastI2X", "byte");
+        vectorNode(VECTOR_CAST_I2B, "VectorCastI2X", TYPE_BYTE);
     }
 
     public static final String VECTOR_CAST_I2S = VECTOR_PREFIX + "VECTOR_CAST_I2S" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_I2S, "VectorCastI2X", "short");
+        vectorNode(VECTOR_CAST_I2S, "VectorCastI2X", TYPE_SHORT);
     }
 
     public static final String VECTOR_CAST_I2L = VECTOR_PREFIX + "VECTOR_CAST_I2L" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_I2L, "VectorCastI2X", "long");
+        vectorNode(VECTOR_CAST_I2L, "VectorCastI2X", TYPE_LONG);
     }
 
     public static final String VECTOR_CAST_I2F = VECTOR_PREFIX + "VECTOR_CAST_I2F" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_I2F, "VectorCastI2X", "float");
+        vectorNode(VECTOR_CAST_I2F, "VectorCastI2X", TYPE_FLOAT);
     }
 
     public static final String VECTOR_CAST_I2D = VECTOR_PREFIX + "VECTOR_CAST_I2D" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_I2D, "VectorCastI2X", "double");
+        vectorNode(VECTOR_CAST_I2D, "VectorCastI2X", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_CAST_L2B = VECTOR_PREFIX + "VECTOR_CAST_L2B" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_L2B, "VectorCastL2X", "byte");
+        vectorNode(VECTOR_CAST_L2B, "VectorCastL2X", TYPE_BYTE);
     }
 
     public static final String VECTOR_CAST_L2S = VECTOR_PREFIX + "VECTOR_CAST_L2S" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_L2S, "VectorCastL2X", "short");
+        vectorNode(VECTOR_CAST_L2S, "VectorCastL2X", TYPE_SHORT);
     }
 
     public static final String VECTOR_CAST_L2I = VECTOR_PREFIX + "VECTOR_CAST_L2I" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_L2I, "VectorCastL2X", "int");
+        vectorNode(VECTOR_CAST_L2I, "VectorCastL2X", TYPE_INT);
     }
 
     public static final String VECTOR_CAST_L2F = VECTOR_PREFIX + "VECTOR_CAST_L2F" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_L2F, "VectorCastL2X", "float");
+        vectorNode(VECTOR_CAST_L2F, "VectorCastL2X", TYPE_FLOAT);
     }
 
     public static final String VECTOR_CAST_L2D = VECTOR_PREFIX + "VECTOR_CAST_L2D" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_L2D, "VectorCastL2X", "double");
+        vectorNode(VECTOR_CAST_L2D, "VectorCastL2X", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_CAST_S2B = VECTOR_PREFIX + "VECTOR_CAST_S2B" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_S2B, "VectorCastS2X", "byte");
+        vectorNode(VECTOR_CAST_S2B, "VectorCastS2X", TYPE_BYTE);
     }
 
     public static final String VECTOR_CAST_S2I = VECTOR_PREFIX + "VECTOR_CAST_S2I" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_S2I, "VectorCastS2X", "int");
+        vectorNode(VECTOR_CAST_S2I, "VectorCastS2X", TYPE_INT);
     }
 
     public static final String VECTOR_CAST_S2L = VECTOR_PREFIX + "VECTOR_CAST_S2L" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_S2L, "VectorCastS2X", "long");
+        vectorNode(VECTOR_CAST_S2L, "VectorCastS2X", TYPE_LONG);
     }
 
     public static final String VECTOR_CAST_S2F = VECTOR_PREFIX + "VECTOR_CAST_S2F" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_S2F, "VectorCastS2X", "float");
+        vectorNode(VECTOR_CAST_S2F, "VectorCastS2X", TYPE_FLOAT);
     }
 
     public static final String VECTOR_CAST_S2D = VECTOR_PREFIX + "VECTOR_CAST_S2D" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_S2D, "VectorCastS2X", "double");
+        vectorNode(VECTOR_CAST_S2D, "VectorCastS2X", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_CAST_F2HF = VECTOR_PREFIX + "VECTOR_CAST_F2HF" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_F2HF, "VectorCastF2HF", "short");
+        vectorNode(VECTOR_CAST_F2HF, "VectorCastF2HF", TYPE_SHORT);
     }
 
     public static final String VECTOR_CAST_HF2F = VECTOR_PREFIX + "VECTOR_CAST_HF2F" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_HF2F, "VectorCastHF2F", "float");
+        vectorNode(VECTOR_CAST_HF2F, "VectorCastHF2F", TYPE_FLOAT);
     }
 
     public static final String VECTOR_MASK_CAST = PREFIX + "VECTOR_MASK_CAST" + POSTFIX;
@@ -1760,32 +1768,32 @@ public class IRNode {
 
     public static final String VECTOR_UCAST_B2S = VECTOR_PREFIX + "VECTOR_UCAST_B2S" + POSTFIX;
     static {
-        vectorNode(VECTOR_UCAST_B2S, "VectorUCastB2X", "short");
+        vectorNode(VECTOR_UCAST_B2S, "VectorUCastB2X", TYPE_SHORT);
     }
 
     public static final String VECTOR_UCAST_B2I = VECTOR_PREFIX + "VECTOR_UCAST_B2I" + POSTFIX;
     static {
-        vectorNode(VECTOR_UCAST_B2I, "VectorUCastB2X", "int");
+        vectorNode(VECTOR_UCAST_B2I, "VectorUCastB2X", TYPE_INT);
     }
 
     public static final String VECTOR_UCAST_B2L = VECTOR_PREFIX + "VECTOR_UCAST_B2L" + POSTFIX;
     static {
-        vectorNode(VECTOR_UCAST_B2L, "VectorUCastB2X", "long");
+        vectorNode(VECTOR_UCAST_B2L, "VectorUCastB2X", TYPE_LONG);
     }
 
     public static final String VECTOR_UCAST_I2L = VECTOR_PREFIX + "VECTOR_UCAST_I2L" + POSTFIX;
     static {
-        vectorNode(VECTOR_UCAST_I2L, "VectorUCastI2X", "long");
+        vectorNode(VECTOR_UCAST_I2L, "VectorUCastI2X", TYPE_LONG);
     }
 
     public static final String VECTOR_UCAST_S2I = VECTOR_PREFIX + "VECTOR_UCAST_S2I" + POSTFIX;
     static {
-        vectorNode(VECTOR_UCAST_S2I, "VectorUCastS2X", "int");
+        vectorNode(VECTOR_UCAST_S2I, "VectorUCastS2X", TYPE_INT);
     }
 
     public static final String VECTOR_UCAST_S2L = VECTOR_PREFIX + "VECTOR_UCAST_S2L" + POSTFIX;
     static {
-        vectorNode(VECTOR_UCAST_S2L, "VectorUCastS2X", "long");
+        vectorNode(VECTOR_UCAST_S2L, "VectorUCastS2X", TYPE_LONG);
     }
 
     public static final String VECTOR_TEST = PREFIX + "VECTOR_TEST" + POSTFIX;
@@ -1935,22 +1943,22 @@ public class IRNode {
 
     public static final String XOR_VB = VECTOR_PREFIX + "XOR_VB" + POSTFIX;
     static {
-        vectorNode(XOR_VB, "XorV", "byte");
+        vectorNode(XOR_VB, "XorV", TYPE_BYTE);
     }
 
     public static final String XOR_VS = VECTOR_PREFIX + "XOR_VS" + POSTFIX;
     static {
-        vectorNode(XOR_VS, "XorV", "short");
+        vectorNode(XOR_VS, "XorV", TYPE_SHORT);
     }
 
     public static final String XOR_VI = VECTOR_PREFIX + "XOR_VI" + POSTFIX;
     static {
-        vectorNode(XOR_VI, "XorV", "int");
+        vectorNode(XOR_VI, "XorV", TYPE_INT);
     }
 
     public static final String XOR_VL = VECTOR_PREFIX + "XOR_VL" + POSTFIX;
     static {
-        vectorNode(XOR_VL, "XorV", "long");
+        vectorNode(XOR_VL, "XorV", TYPE_LONG);
     }
 
     public static final String XOR_V_MASK = PREFIX + "XOR_V_MASK" + POSTFIX;
@@ -1975,22 +1983,22 @@ public class IRNode {
 
     public static final String COMPRESS_BITSVI = VECTOR_PREFIX + "COMPRESS_BITSVI" + POSTFIX;
     static {
-        vectorNode(COMPRESS_BITSVI, "CompressBitsV", "int");
+        vectorNode(COMPRESS_BITSVI, "CompressBitsV", TYPE_INT);
     }
 
     public static final String COMPRESS_BITSVL = VECTOR_PREFIX + "COMPRESS_BITSVL" + POSTFIX;
     static {
-        vectorNode(COMPRESS_BITSVL, "CompressBitsV", "long");
+        vectorNode(COMPRESS_BITSVL, "CompressBitsV", TYPE_LONG);
     }
 
     public static final String EXPAND_BITSVI = VECTOR_PREFIX + "EXPAND_BITSVI" + POSTFIX;
     static {
-        vectorNode(EXPAND_BITSVI, "ExpandBitsV", "int");
+        vectorNode(EXPAND_BITSVI, "ExpandBitsV", TYPE_INT);
     }
 
     public static final String EXPAND_BITSVL = VECTOR_PREFIX + "EXPAND_BITSVL" + POSTFIX;
     static {
-        vectorNode(EXPAND_BITSVL, "ExpandBitsV", "long");
+        vectorNode(EXPAND_BITSVL, "ExpandBitsV", TYPE_LONG);
     }
 
     public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
@@ -2287,13 +2295,13 @@ public class IRNode {
         // Parse individual tags
         return switch (sizeTagString) {
             case VECTOR_SIZE_TAG_MAX -> String.valueOf(getMaxElementsForType(typeString, vmInfo));
-            case "max_byte"          -> String.valueOf(getMaxElementsForType("byte", vmInfo));
-            case "max_char"          -> String.valueOf(getMaxElementsForType("char", vmInfo));
-            case "max_short"         -> String.valueOf(getMaxElementsForType("short", vmInfo));
-            case "max_int"           -> String.valueOf(getMaxElementsForType("int", vmInfo));
-            case "max_long"          -> String.valueOf(getMaxElementsForType("long", vmInfo));
-            case "max_float"         -> String.valueOf(getMaxElementsForType("float", vmInfo));
-            case "max_double"        -> String.valueOf(getMaxElementsForType("double", vmInfo));
+            case "max_byte"          -> String.valueOf(getMaxElementsForType(TYPE_BYTE, vmInfo));
+            case "max_char"          -> String.valueOf(getMaxElementsForType(TYPE_CHAR, vmInfo));
+            case "max_short"         -> String.valueOf(getMaxElementsForType(TYPE_SHORT, vmInfo));
+            case "max_int"           -> String.valueOf(getMaxElementsForType(TYPE_INT, vmInfo));
+            case "max_long"          -> String.valueOf(getMaxElementsForType(TYPE_LONG, vmInfo));
+            case "max_float"         -> String.valueOf(getMaxElementsForType(TYPE_FLOAT, vmInfo));
+            case "max_double"        -> String.valueOf(getMaxElementsForType(TYPE_DOUBLE, vmInfo));
             case "LoopMaxUnroll"     -> String.valueOf(vmInfo.getLongValue("LoopMaxUnroll"));
             default                  -> sizeTagString;
         };
@@ -2318,10 +2326,10 @@ public class IRNode {
         } else if (avx1) {
             maxBytes = 16;
         }
-        if (avx1 && (typeString.equals("float") || typeString.equals("double"))) {
+        if (avx1 && (typeString.equals(TYPE_FLOAT) || typeString.equals(TYPE_DOUBLE))) {
             maxBytes = avx512 ? 64 : 32;
         }
-        if (avx512 && (typeString.equals("byte") || typeString.equals("short") || typeString.equals("char"))) {
+        if (avx512 && (typeString.equals(TYPE_BYTE) || typeString.equals(TYPE_SHORT) || typeString.equals(TYPE_CHAR))) {
             maxBytes = avx512bw ? 64 : 32;
         }
 
@@ -2339,11 +2347,11 @@ public class IRNode {
      */
     public static int getTypeSizeInBytes(String typeString) {
         return switch (typeString) {
-            case "byte"           -> 1;
-            case "char", "short"  -> 2;
-            case "int", "float"   -> 4;
-            case "long", "double" -> 8;
-            default               -> 0;
+            case TYPE_BYTE              -> 1;
+            case TYPE_CHAR, TYPE_SHORT  -> 2;
+            case TYPE_INT, TYPE_FLOAT   -> 4;
+            case TYPE_LONG, TYPE_DOUBLE -> 8;
+            default                     -> 0;
         };
     }
 
