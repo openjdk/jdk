@@ -691,7 +691,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             List<List<ModuleInfo>> splitModuleInfos = new ArrayList<>();
             List<ModuleInfo> currentModuleInfos = null;
             for (int index = 0; index < moduleInfos.size(); index++) {
-                if (index % 50 == 0) {
+                if (index % 75 == 0) {
                     currentModuleInfos = new ArrayList<>();
                     splitModuleInfos.add(currentModuleInfos);
                 }
