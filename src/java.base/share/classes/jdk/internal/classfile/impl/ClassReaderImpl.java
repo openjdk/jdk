@@ -189,7 +189,11 @@ public final class ClassReaderImpl
 
     @Override
     public BootstrapMethodEntryImpl bootstrapMethodEntry(int index) {
-        return bsmEntries().get(index);
+        var bsme = bsmEntries();
+        if (index < 0 || index >= bsme.size()) {
+            throw new ConstantPoolException("Bad BSM index: " + index);
+        }
+        return bsme.get(index);
     }
 
     @Override
