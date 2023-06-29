@@ -72,16 +72,9 @@ final class HexDigits implements Digits {
      *     chars[0] = (char) (byte) (i >> 8); // 'f'
      *     chars[1] = (char) (byte) i;        // 'e'
      * </pre>
-     * In the byte[] encoded in LATIN1, it can be used combined with jdk.internal.util.ByteArray, such as:
-     * <pre>
-     *     int v = 254;
-     *
-     *     byte[] bytes = new byte[2];
-     *     ByteArray.setShort(bytes, 0, DIGITS[v]);
-     * </pre>
      */
     @Stable
-    static final short[] DIGITS;
+    private static final short[] DIGITS;
 
     /**
      * Singleton instance of HexDigits.
@@ -107,6 +100,23 @@ final class HexDigits implements Digits {
      * Constructor.
      */
     private HexDigits() {
+    }
+
+    /**
+     * Combine two hex shorts into one int
+     */
+    static int digit(int b0, int b1) {
+        return (DIGITS[b0 & 0xff] << 16) | DIGITS[b1 & 0xff];
+    }
+
+    /**
+     * Combine four hex shorts into one long
+     */
+    static long digit(int b0, int b1, int b2, int b3) {
+        return (((long) DIGITS[b0 & 0xff]) << 48)
+                |(((long) DIGITS[b1 & 0xff]) << 32)
+                | (DIGITS[b2 & 0xff] << 16)
+                | DIGITS[b3 & 0xff];
     }
 
     @Override

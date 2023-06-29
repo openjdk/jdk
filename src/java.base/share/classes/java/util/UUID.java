@@ -468,46 +468,35 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
     public String toString() {
         long lsb = leastSigBits;
         long msb = mostSigBits;
-        short[] digits = HexDigits.DIGITS;
         byte[] buf = new byte[36];
         ByteArray.setLong(
                 buf,
                 0,
-                ((long) digits[((int) (msb >> 56)) & 0xff] << 48)
-                        | ((long) digits[((int) (msb >> 48)) & 0xff] << 32)
-                        | (digits[((int) (msb >> 40)) & 0xff] << 16)
-                        | digits[((int) (msb >> 32)) & 0xff]);
+                HexDigits.digit((int) (msb >> 56), (int) (msb >> 48), (int) (msb >> 40), (int) (msb >> 32)));
         buf[8] = '-';
         ByteArray.setInt(
                 buf,
                 9,
-                (digits[(((int) msb) >> 24) & 0xff] << 16)
-                        | digits[(((int) msb) >> 16) & 0xff]);
+                HexDigits.digit(((int) msb) >> 24, ((int) msb) >> 16));
         buf[13] = '-';
         ByteArray.setInt(
                 buf,
                 14,
-                (digits[(((int) msb) >> 8) & 0xff] << 16)
-                        | digits[((int) msb) & 0xff]);
+                HexDigits.digit(((int) msb) >> 8, (int) msb));
         buf[18] = '-';
         ByteArray.setInt(
                 buf,
                 19,
-                (digits[(((int) (lsb >> 56))) & 0xff] << 16)
-                        | digits[(((int) (lsb >> 48))) & 0xff]);
+                HexDigits.digit((int) (lsb >> 56), (int) (lsb >> 48)));
         buf[23] = '-';
         ByteArray.setLong(
                 buf,
                 24,
-                ((long) digits[(((int) (lsb >> 40))) & 0xff] << 48)
-                        | ((long) digits[((int) (lsb >> 32)) & 0xff] << 32)
-                        | ((long) digits[(((int) lsb) >> 24) & 0xff] << 16)
-                        | digits[(((int) lsb) >> 16) & 0xff]);
+                HexDigits.digit(((int) (lsb >> 40)), (int) (lsb >> 32), ((int) lsb) >> 24,((int) lsb) >> 16));
         ByteArray.setInt(
                 buf,
                 32,
-                (digits[(((int) lsb) >> 8) & 0xff] << 16)
-                        | digits[((int) lsb) & 0xff]);
+                HexDigits.digit(((int) lsb) >> 8, (int) lsb));
 
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
