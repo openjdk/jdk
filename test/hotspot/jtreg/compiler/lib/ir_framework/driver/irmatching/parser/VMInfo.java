@@ -24,6 +24,7 @@
 package compiler.lib.ir_framework.driver.irmatching.parser;
 
 import compiler.lib.ir_framework.TestFramework;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.util.Map;
 
@@ -40,27 +41,27 @@ public class VMInfo {
 
     public VMInfo(Map<String, String> map) {
         this.keyValueMap = map;
+
+        TestFramework.check(isKey("cpuFeatures"),   "VMInfo does not contain cpuFeatures");
+        TestFramework.check(isKey("MaxVectorSize"), "VMInfo does not contain MaxVectorSize");
+        TestFramework.check(isKey("LoopMaxUnroll"), "VMInfo does not contain LoopMaxUnroll");
     }
 
-    public String getString(String key, String otherwise) {
-        if (isKey(key)) {
-            return keyValueMap.get(key);
-        }
-        return otherwise;
+    public String getStringValue(String key) {
+        TestFramework.check(isKey(key), "VMInfo does not contain \"" + key + "\"");
+        return keyValueMap.get(key);
     }
 
-    public long getLong(String key, long otherwise) {
-        if (isKey(key)) {
-            try {
-                return Long.parseLong(keyValueMap.get(key));
-            } catch (NumberFormatException e) {}
+    public long getLongValue(String key) {
+        try {
+            return Long.parseLong(getStringValue(key));
+        } catch (NumberFormatException e) {
+            throw new TestFrameworkException("VMInfo value for \"" + key + "\" is not long, got \"" + getStringValue(key) + "\"");
         }
-        return otherwise;
     }
 
     public boolean hasCPUFeature(String feature) {
-        TestFramework.check(isKey("cpuFeatures"), "VMInfo does not contain cpuFeatures");
-        String features = getString("cpuFeatures", null) + ",";
+        String features = getStringValue("cpuFeatures") + ",";
         return features.contains(" " + feature + ",");
     }
 

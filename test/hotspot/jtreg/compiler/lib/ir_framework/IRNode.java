@@ -2294,7 +2294,7 @@ public class IRNode {
             case "max_long"          -> String.valueOf(getMaxElementsForType("long", vmInfo));
             case "max_float"         -> String.valueOf(getMaxElementsForType("float", vmInfo));
             case "max_double"        -> String.valueOf(getMaxElementsForType("double", vmInfo));
-            case "LoopMaxUnroll"     -> String.valueOf(vmInfo.getLong("LoopMaxUnroll", -1));
+            case "LoopMaxUnroll"     -> String.valueOf(vmInfo.getLongValue("LoopMaxUnroll"));
             default                  -> sizeTagString;
         };
     }
@@ -2325,7 +2325,7 @@ public class IRNode {
             maxBytes = avx512bw ? 64 : 32;
         }
 
-        long maxVectorSize = vmInfo.getLong("MaxVectorSize", 0);
+        long maxVectorSize = vmInfo.getLongValue("MaxVectorSize");
         TestFormat.checkNoReport(maxVectorSize > 0, "VMInfo: MaxVectorSize is not larger than zero");
         maxBytes = Math.min(maxBytes, maxVectorSize);
 
