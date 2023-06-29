@@ -115,7 +115,7 @@ inline int StackChunkFrameStream<frame_kind>::interpreter_frame_num_oops() const
   return mask.num_oops()
         + 1 // for the mirror oop
         + pointer_delta_as_int((intptr_t*)f.interpreter_frame_monitor_begin(),
-              (intptr_t*)f.interpreter_frame_monitor_end())/BasicObjectLock::size();
+              (intptr_t*)f.interpreter_frame_monitor_end()) / BasicObjectLock::size();
 }
 
 template<>
