@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,14 +40,18 @@ public interface Readable {
      * Attempts to read characters into the specified character buffer.
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
-     * rewinding of the buffer is performed.
+     * rewinding of the buffer is performed. If the {@linkplain
+     * java.nio.CharBuffer#length length} of the specified character
+     * buffer is zero, then no characters will be read and zero will be
+     * returned.
      *
      * @param cb the buffer to read characters into
      * @return The number of {@code char} values added to the buffer,
-     *                 or -1 if this source of characters is at its end
+     *         possibly zero, or -1 if this source of characters is at its end
      * @throws IOException if an I/O error occurs
      * @throws NullPointerException if cb is null
-     * @throws java.nio.ReadOnlyBufferException if cb is a read only buffer
+     * @throws java.nio.ReadOnlyBufferException if cb is a read only buffer,
+     *         even if its length is zero
      */
     public int read(java.nio.CharBuffer cb) throws IOException;
 }

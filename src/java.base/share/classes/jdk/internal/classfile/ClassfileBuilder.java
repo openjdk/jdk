@@ -40,9 +40,8 @@ import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
  *
  * @see ClassfileTransform
  */
-public
-interface ClassfileBuilder<E extends ClassfileElement, B extends ClassfileBuilder<E, B>>
-        extends Consumer<E> {
+public sealed interface ClassfileBuilder<E extends ClassfileElement, B extends ClassfileBuilder<E, B>>
+        extends Consumer<E> permits ClassBuilder, FieldBuilder, MethodBuilder, CodeBuilder {
 
     /**
      * Integrate the {@link ClassfileElement} into the entity being built.

@@ -69,8 +69,6 @@ compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
 
-compiler/c2/irTests/TestVectorConditionalMove.java 8306922 generic-all
-
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 
 #############################################################################
@@ -121,13 +119,13 @@ serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 w
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
-serviceability/sa/ClhsdbCDSCore.java 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbPmap.java#core 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbPstack.java#core 8294316,8267433 macosx-x64
-serviceability/sa/TestJmapCore.java 8294316,8267433 macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
+serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core 8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433 macosx-x64
+serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
+serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
+serviceability/sa/TestJmapCore.java 8267433 macosx-x64
+serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 

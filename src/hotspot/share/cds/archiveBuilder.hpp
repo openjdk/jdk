@@ -143,6 +143,15 @@ private:
       }
     }
 
+    // This constructor is only used for regenerated objects (created by LambdaFormInvokers, etc).
+    //   src = address of a Method or InstanceKlass that has been regenerated.
+    //   renegerated_obj_info = info for the regenerated version of src.
+    SourceObjInfo(address src, SourceObjInfo* renegerated_obj_info) :
+      _ptrmap_start(0), _ptrmap_end(0), _read_only(false),
+      _follow_mode(renegerated_obj_info->_follow_mode),
+      _size_in_bytes(0), _msotype(renegerated_obj_info->_msotype),
+      _source_addr(src),  _buffered_addr(renegerated_obj_info->_buffered_addr) {}
+
     bool should_copy() const { return _follow_mode == make_a_copy; }
     void set_buffered_addr(address addr)  {
       assert(should_copy(), "must be");
@@ -368,6 +377,7 @@ public:
   void dump_rw_metadata();
   void dump_ro_metadata();
   void relocate_metaspaceobj_embedded_pointers();
+  void record_regenerated_object(address orig_src_obj, address regen_src_obj);
   void make_klasses_shareable();
   void relocate_to_requested();
   void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);
