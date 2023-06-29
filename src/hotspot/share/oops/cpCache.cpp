@@ -644,7 +644,7 @@ void ConstantPoolCacheEntry::verify(outputStream* st) const {
 template <class T>
 static Array<T>* initialize_resolved_entries_array(ClassLoaderData* loader_data, GrowableArray<T> entries, TRAPS) {
   Array<T>* resolved_entries;
-  if (entries.length()) {
+  if (entries.length() != 0) {
     resolved_entries = MetadataFactory::new_array<T>(loader_data, entries.length(), CHECK_NULL);
     for (int i = 0; i < entries.length(); i++) {
       resolved_entries->at_put(i, entries.at(i));

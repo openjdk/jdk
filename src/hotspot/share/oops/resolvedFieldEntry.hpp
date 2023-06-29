@@ -25,7 +25,6 @@
 #ifndef SHARE_OOPS_RESOLVEDFIELDENTRY_HPP
 #define SHARE_OOPS_RESOLVEDFIELDENTRY_HPP
 
-#include "code/compressedStream.hpp"
 #include "interpreter/bytecodes.hpp"
 #include "oops/instanceKlass.hpp"
 #include "runtime/atomic.hpp"

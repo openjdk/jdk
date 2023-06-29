@@ -39,8 +39,8 @@ void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr(" - TOS: %s", type2name(as_BasicType((TosState)tos())));
   st->print_cr(" - Is Final: %d", is_final());
   st->print_cr(" - Is Volatile: %d", is_volatile());
-  st->print_cr(" - Bytecode 1: %s", Bytecodes::name((Bytecodes::Code)get_code()));
-  st->print_cr(" - Bytecode 2: %s", Bytecodes::name((Bytecodes::Code)put_code()));
+  st->print_cr(" - Get Bytecode: %s", Bytecodes::name((Bytecodes::Code)get_code()));
+  st->print_cr(" - Put Bytecode: %s", Bytecodes::name((Bytecodes::Code)put_code()));
 }
 
 void ResolvedFieldEntry::remove_unshareable_info() {

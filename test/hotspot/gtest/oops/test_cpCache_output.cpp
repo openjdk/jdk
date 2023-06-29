@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,6 @@ TEST_VM(ConstantPoolCache, print_on) {
   ASSERT_TRUE(strstr(output, "TOS:") != NULL) << "must have type";
   ASSERT_TRUE(strstr(output, "Is Final:") != NULL) << "must have final flag";
   ASSERT_TRUE(strstr(output, "Is Volatile:") != NULL) << "must have volatile flag";
-  ASSERT_TRUE(strstr(output, "Bytecode 1:") != NULL) << "must have \"bytecode 1\"";
-  ASSERT_TRUE(strstr(output, "Bytecode 2:") != NULL) << "must have \"bytecode 2\"";
+  ASSERT_TRUE(strstr(output, "Put Bytecode:") != NULL) << "must have \"put code\"";
+  ASSERT_TRUE(strstr(output, "Get Bytecode:") != NULL) << "must have \"get code\"";
 }

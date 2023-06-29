@@ -1876,7 +1876,7 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   get_cache_index_at_bcp(index, 1, sizeof(u4));
   // Get address of invokedynamic array
   ldr(cache, Address(rcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
-  // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+  // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   lsl(index, index, log2i_exact(sizeof(ResolvedIndyEntry)));
   add(cache, cache, Array<ResolvedIndyEntry>::base_offset_in_bytes());
   lea(cache, Address(cache, index));
@@ -1890,7 +1890,7 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
     lsl(index, index, log2i_exact(sizeof(ResolvedFieldEntry))); // Scale index by power of 2
   } else {
     mov(cache, sizeof(ResolvedFieldEntry));
-    mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+    mul(index, index, cache); // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
   }
   // Get address of field entries array
   ldr(cache, Address(rcpool, ConstantPoolCache::field_entries_offset()));

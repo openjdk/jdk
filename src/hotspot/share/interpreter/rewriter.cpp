@@ -188,14 +188,10 @@ void Rewriter::rewrite_field_reference(address bcp, int offset, bool reverse) {
     int cp_index = Bytes::get_Java_u2(p);
     int field_entry_index = _cp_map.at(cp_index);
     Bytes::put_native_u2(p, field_entry_index);
-    if (!_method_handle_invokers.is_empty())
-      maybe_rewrite_invokehandle(p - 1, cp_index, -1, reverse);
   } else {
     int field_entry_index = Bytes::get_native_u2(p);
     int pool_index = _initialized_field_entries.at(field_entry_index).constant_pool_index();
     Bytes::put_Java_u2(p, pool_index);
-    if (!_method_handle_invokers.is_empty())
-      maybe_rewrite_invokehandle(p - 1, pool_index, -1, reverse);
   }
 }
 

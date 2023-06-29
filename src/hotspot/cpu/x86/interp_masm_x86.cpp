@@ -2114,7 +2114,7 @@ void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Registe
   if (is_power_of_2(sizeof(ResolvedIndyEntry))) {
     shll(index, log2i_exact(sizeof(ResolvedIndyEntry))); // Scale index by power of 2
   } else {
-    imull(index, index, sizeof(ResolvedIndyEntry)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+    imull(index, index, sizeof(ResolvedIndyEntry)); // Scale the index to be the entry index * sizeof(ResolvedIndyEntry)
   }
   lea(cache, Address(cache, index, Address::times_1, Array<ResolvedIndyEntry>::base_offset_in_bytes()));
 }
@@ -2129,7 +2129,7 @@ void InterpreterMacroAssembler::load_field_entry(Register cache, Register index,
   if (is_power_of_2(sizeof(ResolvedFieldEntry))) {
     shll(index, log2i_exact(sizeof(ResolvedFieldEntry))); // Scale index by power of 2
   } else {
-    imull(index, index, sizeof(ResolvedFieldEntry)); // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)
+    imull(index, index, sizeof(ResolvedFieldEntry)); // Scale the index to be the entry index * sizeof(ResolvedFieldEntry)
   }
   lea(cache, Address(cache, index, Address::times_1, Array<ResolvedFieldEntry>::base_offset_in_bytes()));
 }
