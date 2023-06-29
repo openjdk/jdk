@@ -33,13 +33,13 @@
 package sun.util.locale;
 
 import jdk.internal.misc.CDS;
+import jdk.internal.util.ReferencedKeyMap;
 import jdk.internal.util.StaticProperty;
 import jdk.internal.vm.annotation.Stable;
 
 import java.util.Map;
 import java.util.StringJoiner;
-import java.util.WeakHashMap;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class BaseLocale {
 
@@ -93,9 +93,7 @@ public final class BaseLocale {
     }
 
     // Non-normalized to normalized BaseLocale cache for saving costly normalizations
-    // WeakHashMap is not thread safe, thus accessed with the lock held
-    private static final Map<BaseLocale, BaseLocale> CACHE = new WeakHashMap<>();
-    private static final ReentrantLock LOCK = new ReentrantLock();
+    private static final Map<BaseLocale, BaseLocale> CACHE = ReferencedKeyMap.create(true, ConcurrentHashMap::new);
 
     public static final String SEP = "_";
 
@@ -166,17 +164,12 @@ public final class BaseLocale {
         // BaseLocale as the key. The returned "normalized" instance
         // can subsequently be used by the Locale instance which
         // guarantees the locale components are properly cased/interned.
-        LOCK.lock();
-        try {
-            return CACHE.computeIfAbsent(new BaseLocale(language, script, region, variant),
-                    (b) -> new BaseLocale(
-                            LocaleUtils.toLowerString(b.getLanguage()).intern(),
-                            LocaleUtils.toTitleString(b.getScript()).intern(),
-                            LocaleUtils.toUpperString(b.getRegion()).intern(),
-                            b.getVariant().intern()));
-        } finally {
-            LOCK.unlock();
-        }
+        return CACHE.computeIfAbsent(new BaseLocale(language, script, region, variant),
+                (b) -> new BaseLocale(
+                        LocaleUtils.toLowerString(b.getLanguage()).intern(),
+                        LocaleUtils.toTitleString(b.getScript()).intern(),
+                        LocaleUtils.toUpperString(b.getRegion()).intern(),
+                        b.getVariant().intern()));
     }
 
     public static String convertOldISOCodes(String language) {
