@@ -163,6 +163,7 @@ public class CheckSegmentedCodeCache {
                                                    "-XX:ReservedCodeCacheSize=" + minSize,
                                                    "-XX:InitialCodeCacheSize=100K",
                                                    "-version");
-        failsWith(pb, "Not enough space in non-nmethod code heap to run VM");
+        //failsWith(pb, "Not enough space in non-nmethod code heap to run VM");
+        failsWith(pb, "Invalid code heap sizes");
     }
 }

@@ -196,139 +196,124 @@ void CodeCache::check_heap_sizes(size_t non_nmethod_size, size_t profiled_size, 
   }
 }
 
-void CodeCache::initialize_heaps() {
-  bool non_nmethod_set      = FLAG_IS_CMDLINE(NonNMethodCodeHeapSize);
-  bool profiled_set         = FLAG_IS_CMDLINE(ProfiledCodeHeapSize);
-  bool non_profiled_set     = FLAG_IS_CMDLINE(NonProfiledCodeHeapSize);
-  size_t min_size           = os::vm_page_size();
-  size_t cache_size         = ReservedCodeCacheSize;
-  size_t non_nmethod_size   = NonNMethodCodeHeapSize;
-  size_t profiled_size      = ProfiledCodeHeapSize;
-  size_t non_profiled_size  = NonProfiledCodeHeapSize;
-  // Check if total size set via command line flags exceeds the reserved size
-  check_heap_sizes((non_nmethod_set  ? non_nmethod_size  : min_size),
-                   (profiled_set     ? profiled_size     : min_size),
-                   (non_profiled_set ? non_profiled_size : min_size),
-                   cache_size,
-                   non_nmethod_set && profiled_set && non_profiled_set);
-
-  // Determine size of compiler buffers
-  size_t code_buffers_size = 0;
+// Increase default NonNMethod segment size by the size of C1 and C2 buffers
+static void correct_segment_size_flag_values(size_t alignment) {
+  if (!CodeCache::heap_available(CodeBlobType::MethodProfiled) && ProfiledCodeHeapSize != 0) {
+    // We do not need the profiled CodeHeap, use all space for the non-profiled CodeHeap
+    FLAG_SET_ERGO(NonProfiledCodeHeapSize, ProfiledCodeHeapSize + NonProfiledCodeHeapSize);
+    FLAG_SET_ERGO(ProfiledCodeHeapSize, 0);
+  }
+  if (!CodeCache::heap_available(CodeBlobType::MethodNonProfiled) && NonProfiledCodeHeapSize != 0) {
+    // We do not need the non-profiled CodeHeap, use all space for the non-nmethod CodeHeap
+    FLAG_SET_ERGO(ProfiledCodeHeapSize, ProfiledCodeHeapSize + NonProfiledCodeHeapSize);
+    FLAG_SET_ERGO(NonProfiledCodeHeapSize, 0);
+  }
+  if (!FLAG_IS_CMDLINE(NonNMethodCodeHeapSize)) {
+    // Determine size of compiler buffers
+    size_t code_buffers_size = 0;
 #ifdef COMPILER1
-  // C1 temporary code buffers (see Compiler::init_buffer_blob())
-  const int c1_count = CompilationPolicy::c1_count();
-  code_buffers_size += c1_count * Compiler::code_buffer_size();
+    // C1 temporary code buffers (see Compiler::init_buffer_blob())
+    const int c1_count = CompilationPolicy::c1_count();
+    code_buffers_size += c1_count * Compiler::code_buffer_size();
 #endif
 #ifdef COMPILER2
-  // C2 scratch buffers (see Compile::init_scratch_buffer_blob())
-  const int c2_count = CompilationPolicy::c2_count();
-  // Initial size of constant table (this may be increased if a compiled method needs more space)
-  code_buffers_size += c2_count * C2Compiler::initial_code_buffer_size();
+    // C2 scratch buffers (see Compile::init_scratch_buffer_blob())
+    const int c2_count = CompilationPolicy::c2_count();
+    // Initial size of constant table (this may be increased if a compiled method needs more space)
+    code_buffers_size += c2_count * C2Compiler::initial_code_buffer_size();
 #endif
-
-  // Increase default non_nmethod_size to account for compiler buffers
-  if (!non_nmethod_set) {
-    non_nmethod_size += code_buffers_size;
+    FLAG_SET_ERGO(NonNMethodCodeHeapSize, align_up(NonNMethodCodeHeapSize + code_buffers_size, alignment));
   }
-  // Calculate default CodeHeap sizes if not set by user
-  if (!non_nmethod_set && !profiled_set && !non_profiled_set) {
-    // Check if we have enough space for the non-nmethod code heap
-    if (cache_size > non_nmethod_size) {
-      // Use the default value for non_nmethod_size and one half of the
-      // remaining size for non-profiled and one half for profiled methods
-      size_t remaining_size = cache_size - non_nmethod_size;
-      profiled_size = remaining_size / 2;
-      non_profiled_size = remaining_size - profiled_size;
-    } else {
-      // Use all space for the non-nmethod heap and set other heaps to minimal size
-      non_nmethod_size = cache_size - 2 * min_size;
-      profiled_size = min_size;
-      non_profiled_size = min_size;
+}
+
+// Balance the sizes for each code segment:
+//   (1) to fit the individual range (min_size, max_size), and
+//   (2) adding up to the total cache size
+// Command line defined values should be specified with value==min_size==max_size, so they are not changed;
+// other values are corrected proportionally to the gap between the actual value and range limit.
+//
+// Input segments_val_min_max array contains segment size data arrays:
+//   {
+//     {actual_size1, min_size1, max_size1}, // non-profiled nmethod segment
+//     {actual_size2, min_size2, max_size2}, // profiled nmethod segment
+//     {actual_size2, min_size3, max_size3}, // non-nmethod segment
+//   }
+// Result: actual_size for each segment is corrected
+static void balance_code_segments(intx segments_val_min_max[][3], int segments_number, intx total, size_t alignment) {
+  intx sum_min = 0;
+  intx sum_max = 0;
+  intx sum_val = 0;
+  for (int i = 0; i < segments_number; i++) {
+    sum_val += segments_val_min_max[i][0];
+    sum_min += segments_val_min_max[i][1];
+    sum_max += segments_val_min_max[i][2];
+  }
+  if (sum_val == total) {
+    return; // total segments size fits to the given value
+  }
+  if (sum_min > total || sum_max < total) {
+    // segment size ranges do not allow fitting to a given total
+    const char* error = "Invalid code heap sizes";
+    vm_exit_during_initialization(error);
+  }
+
+  intx delta = total - sum_val;
+  float delta_ratio = ((float)delta) / ((delta > 0 ? sum_max : sum_min) - sum_val);
+  // distribute the delta between the segments in proportion to the gap to the upper/low segment bounds
+  for (int i = 0; i < segments_number; i++) {
+    intx val = segments_val_min_max[i][0];
+    intx min = segments_val_min_max[i][1];
+    intx max = segments_val_min_max[i][2];
+    intx diff = align_up(size_t(((delta > 0 ? max : min) - val) * delta_ratio), alignment);
+    segments_val_min_max[i][0] += diff;
+  }
+
+  sum_val = 0;
+  for (int i = 0; i < segments_number; i++) {
+    sum_val += segments_val_min_max[i][0];
+  }
+  delta = total - sum_val;
+  // due to alignment issue, there may be some difference between sum and expected total
+  if (delta != 0) {
+    for (int i = 0; i < segments_number && delta != 0; i++) {
+      intx val = segments_val_min_max[i][0];
+      intx min = segments_val_min_max[i][1];
+      intx max = segments_val_min_max[i][2];
+      if (val < max && delta > 0) { segments_val_min_max[i][0] += alignment; delta -= alignment; }
+      if (val > min && delta < 0) { segments_val_min_max[i][0] -= alignment; delta += alignment; }
     }
-  } else if (!non_nmethod_set || !profiled_set || !non_profiled_set) {
-    // The user explicitly set some code heap sizes. Increase or decrease the (default)
-    // sizes of the other code heaps accordingly. First adapt non-profiled and profiled
-    // code heap sizes and then only change non-nmethod code heap size if still necessary.
-    intx diff_size = cache_size - (non_nmethod_size + profiled_size + non_profiled_size);
-    if (non_profiled_set) {
-      if (!profiled_set) {
-        // Adapt size of profiled code heap
-        if (diff_size < 0 && ((intx)profiled_size + diff_size) <= 0) {
-          // Not enough space available, set to minimum size
-          diff_size += profiled_size - min_size;
-          profiled_size = min_size;
-        } else {
-          profiled_size += diff_size;
-          diff_size = 0;
-        }
-      }
-    } else if (profiled_set) {
-      // Adapt size of non-profiled code heap
-      if (diff_size < 0 && ((intx)non_profiled_size + diff_size) <= 0) {
-        // Not enough space available, set to minimum size
-        diff_size += non_profiled_size - min_size;
-        non_profiled_size = min_size;
-      } else {
-        non_profiled_size += diff_size;
-        diff_size = 0;
-      }
-    } else if (non_nmethod_set) {
-      // Distribute remaining size between profiled and non-profiled code heaps
-      diff_size = cache_size - non_nmethod_size;
-      profiled_size = diff_size / 2;
-      non_profiled_size = diff_size - profiled_size;
-      diff_size = 0;
-    }
-    if (diff_size != 0) {
-      // Use non-nmethod code heap for remaining space requirements
-      assert(!non_nmethod_set && ((intx)non_nmethod_size + diff_size) > 0, "sanity");
-      non_nmethod_size += diff_size;
-    }
   }
+}
 
-  // We do not need the profiled CodeHeap, use all space for the non-profiled CodeHeap
-  if (!heap_available(CodeBlobType::MethodProfiled)) {
-    non_profiled_size += profiled_size;
-    profiled_size = 0;
-  }
-  // We do not need the non-profiled CodeHeap, use all space for the non-nmethod CodeHeap
-  if (!heap_available(CodeBlobType::MethodNonProfiled)) {
-    non_nmethod_size += non_profiled_size;
-    non_profiled_size = 0;
-  }
-  // Make sure we have enough space for VM internal code
-  uint min_code_cache_size = CodeCacheMinimumUseSpace DEBUG_ONLY(* 3);
-  if (non_nmethod_size < min_code_cache_size) {
-    vm_exit_during_initialization(err_msg(
-        "Not enough space in non-nmethod code heap to run VM: " SIZE_FORMAT "K < " SIZE_FORMAT "K",
-        non_nmethod_size/K, min_code_cache_size/K));
-  }
-
-  // Verify sizes and update flag values
-  assert(non_profiled_size + profiled_size + non_nmethod_size == cache_size, "Invalid code heap sizes");
-  FLAG_SET_ERGO(NonNMethodCodeHeapSize, non_nmethod_size);
-  FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
-  FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
-
-  // If large page support is enabled, align code heaps according to large
-  // page size to make sure that code cache is covered by large pages.
+void CodeCache::initialize_heaps() {
   const size_t alignment = MAX2(page_size(false, 8), os::vm_allocation_granularity());
-  non_nmethod_size = align_up(non_nmethod_size, alignment);
-  profiled_size    = align_down(profiled_size, alignment);
-  non_profiled_size = align_down(non_profiled_size, alignment);
+  correct_segment_size_flag_values(alignment);
 
-  // Reserve one continuous chunk of memory for CodeHeaps and split it into
-  // parts for the individual heaps. The memory layout looks like this:
-  // ---------- high -----------
-  //    Non-profiled nmethods
-  //         Non-nmethods
-  //      Profiled nmethods
-  // ---------- low ------------
+  intx vm_page_size = os::vm_page_size();
+  intx cache_size = ReservedCodeCacheSize;
+  const int segments_number = 3;
+  #define VAL_MIN_MAX(FLAG, MIN, MAX) { intx(align_up(size_t(FLAG), alignment)), \
+    intx(FLAG_IS_CMDLINE(FLAG) ? FLAG : MIN), intx(FLAG_IS_CMDLINE(FLAG) ? FLAG : MAX) }
+  intx segments_val_min_max[][segments_number] = {
+    VAL_MIN_MAX(NonProfiledCodeHeapSize, 0, cache_size),
+    VAL_MIN_MAX(ProfiledCodeHeapSize,    0, cache_size),
+    VAL_MIN_MAX(NonNMethodCodeHeapSize,  2*M, 10*M)
+  };
+  balance_code_segments(segments_val_min_max, segments_number, cache_size, alignment);
+
+  FLAG_SET_ERGO(NonProfiledCodeHeapSize, segments_val_min_max[(int)CodeBlobType::MethodNonProfiled][0]);
+  FLAG_SET_ERGO(   ProfiledCodeHeapSize, segments_val_min_max[(int)CodeBlobType::MethodProfiled][0]);
+  FLAG_SET_ERGO(NonNMethodCodeHeapSize,  segments_val_min_max[(int)CodeBlobType::NonNMethod][0]);
+
+  assert(NonProfiledCodeHeapSize + ProfiledCodeHeapSize + NonNMethodCodeHeapSize == ReservedCodeCacheSize,
+        "Invalid code heap sizes: %lu + %lu + %lu != %lu",
+        (uintx)NonProfiledCodeHeapSize, (uintx)ProfiledCodeHeapSize, (uintx)NonNMethodCodeHeapSize, (uintx)ReservedCodeCacheSize);
+
   ReservedCodeSpace rs = reserve_heap_memory(cache_size);
-  ReservedSpace profiled_space      = rs.first_part(profiled_size);
-  ReservedSpace rest                = rs.last_part(profiled_size);
-  ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
-  ReservedSpace non_profiled_space  = rest.last_part(non_nmethod_size);
+  ReservedSpace profiled_space      = rs.first_part(ProfiledCodeHeapSize);
+  ReservedSpace rest                = rs.last_part(ProfiledCodeHeapSize);
+  ReservedSpace non_method_space    = rest.first_part(NonNMethodCodeHeapSize);
+  ReservedSpace non_profiled_space  = rest.last_part(NonNMethodCodeHeapSize);
 
   // Register CodeHeaps with LSan as we sometimes embed pointers to malloc memory.
   LSAN_REGISTER_ROOT_REGION(rs.base(), rs.size());
