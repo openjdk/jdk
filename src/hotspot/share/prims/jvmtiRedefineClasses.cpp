@@ -2207,6 +2207,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
             // unless we are trying to stress ldc -> ldc_w rewriting
             log_trace(redefine, class, constantpool)
               ("%s@" INTPTR_FORMAT " old=%d, new=%d", Bytecodes::name(c), p2i(bcp), cp_index, new_index);
+            // We checked that new_index fits in a u1 so this cast is safe
             *(bcp + 1) = (u1)new_index;
           } else {
             log_trace(redefine, class, constantpool)
