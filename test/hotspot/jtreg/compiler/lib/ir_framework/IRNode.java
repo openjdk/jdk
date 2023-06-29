@@ -2283,28 +2283,18 @@ public class IRNode {
         }
 
         // Parse individual tags
-        switch (sizeTagString) {
-        case "max_for_type":
-            return String.valueOf(getMaxElementsForType(typeString, vmInfo));
-        case "max_byte":
-            return parseVectorNodeSizeTag("max_for_type", "byte", vmInfo);
-        case "max_char":
-            return parseVectorNodeSizeTag("max_for_type", "char", vmInfo);
-        case "max_short":
-            return parseVectorNodeSizeTag("max_for_type", "short", vmInfo);
-        case "max_int":
-            return parseVectorNodeSizeTag("max_for_type", "int", vmInfo);
-        case "max_long":
-            return parseVectorNodeSizeTag("max_for_type", "long", vmInfo);
-        case "max_float":
-            return parseVectorNodeSizeTag("max_for_type", "float", vmInfo);
-        case "max_double":
-            return parseVectorNodeSizeTag("max_for_type", "double", vmInfo);
-        case "LoopMaxUnroll":
-            return String.valueOf(vmInfo.getLong("LoopMaxUnroll", -1));
-        default:
-            return sizeTagString;
-        }
+        return switch (sizeTagString) {
+            case "max_for_type"  -> String.valueOf(getMaxElementsForType(typeString, vmInfo));
+            case "max_byte"      -> String.valueOf(getMaxElementsForType("byte", vmInfo));
+            case "max_char"      -> String.valueOf(getMaxElementsForType("char", vmInfo));
+            case "max_short"     -> String.valueOf(getMaxElementsForType("short", vmInfo));
+            case "max_int"       -> String.valueOf(getMaxElementsForType("int", vmInfo));
+            case "max_long"      -> String.valueOf(getMaxElementsForType("long", vmInfo));
+            case "max_float"     -> String.valueOf(getMaxElementsForType("float", vmInfo));
+            case "max_double"    -> String.valueOf(getMaxElementsForType("double", vmInfo));
+            case "LoopMaxUnroll" -> String.valueOf(vmInfo.getLong("LoopMaxUnroll", -1));
+            default              -> sizeTagString;
+        };
     }
 
     /**
@@ -2346,21 +2336,13 @@ public class IRNode {
      * Return size in bytes of type named by {@code typeString}, return 0 if it does not name a type.
      */
     public static int getTypeSizeInBytes(String typeString) {
-        switch (typeString) {
-        case "byte":
-            return 1;
-        case "char":
-        case "short":
-            return 2;
-        case "int":
-        case "float":
-            return 4;
-        case "long":
-        case "double":
-            return 8;
-        default:
-            return 0;
-        }
+        return switch (typeString) {
+            case "byte"           -> 1;
+            case "char", "short"  -> 2;
+            case "int", "float"   -> 4;
+            case "long", "double" -> 8;
+            default               -> 0;
+        };
     }
 
     /**

@@ -58,24 +58,29 @@ public class RawIRNode {
         if (IRNode.isIRNode(node)) {
             nodeRegex = IRNode.getRegexForCompilePhase(node, compilePhase);
             if (IRNode.isVectorIRNode(node)) {
-                String type = IRNode.getVectorNodeType(node);
-                TestFormat.checkNoReport(IRNode.getTypeSizeInBytes(type) > 0, "Vector node's type must have valid type, got \"" + type + "\" for \"" + node + "\"");
-                String size;
-                if (userPostfix.isValid()) {
-                    String value = userPostfix.value();
-                    TestFormat.checkNoReport(value.startsWith(IRNode.VECTOR_SIZE), "Vector node's vector size must start with IRNode.VECTOR_SIZE, got: \"" + value + "\"");
-                    size = value.substring(2);
-                } else {
-                    size = vectorSizeDefault;
-                }
-                String size_regex = IRNode.parseVectorNodeSize(size, type, vmInfo);
-                nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, "vector[A-Za-z]\\\\[" + size_regex + "\\\\]:\\\\{" + type + "\\\\}");
-            } else {
-                if (userPostfix.isValid()) {
-                    nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, userPostfix.value());
-                }
+                nodeRegex = regexForVectorIRNode(nodeRegex, vmInfo, vectorSizeDefault);
+            } else if (userPostfix.isValid()) {
+                nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, userPostfix.value());
             }
         }
         return nodeRegex;
+    }
+
+    private String regexForVectorIRNode(String nodeRegex, VMInfo vmInfo, String vectorSizeDefault) {
+        String type = IRNode.getVectorNodeType(node);
+        TestFormat.checkNoReport(IRNode.getTypeSizeInBytes(type) > 0,
+                                 "Vector node's type must have valid type, got \"" + type + "\" for \"" + node + "\"");
+        String size;
+        if (userPostfix.isValid()) {
+            String value = userPostfix.value();
+            TestFormat.checkNoReport(value.startsWith(IRNode.VECTOR_SIZE),
+                                     "Vector node's vector size must start with IRNode.VECTOR_SIZE, got: \"" + value + "\"");
+            size = value.substring(2);
+        } else {
+            size = vectorSizeDefault;
+        }
+        String size_regex = IRNode.parseVectorNodeSize(size, type, vmInfo);
+        return nodeRegex.replaceAll(IRNode.IS_REPLACED,
+                                    "vector[A-Za-z]\\\\[" + size_regex + "\\\\]:\\\\{" + type + "\\\\}");
     }
 }
