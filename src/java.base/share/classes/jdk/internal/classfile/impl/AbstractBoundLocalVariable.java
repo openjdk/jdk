@@ -24,7 +24,6 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.Label;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 
@@ -78,27 +77,5 @@ public class AbstractBoundLocalVariable
 
     public int slot() {
         return code.classReader.readU2(offset + 8);
-    }
-
-    public boolean writeTo(BufWriter b) {
-        var lc = ((BufWriterImpl)b).labelContext();
-        int startBci = lc.labelToBci(startScope());
-        int endBci = lc.labelToBci(endScope());
-        if (startBci == -1 || endBci == -1) {
-            return false;
-        }
-        int length = endBci - startBci;
-        b.writeU2(startBci);
-        b.writeU2(length);
-        if (b.canWriteDirect(code.constantPool())) {
-            b.writeU2(nameIndex());
-            b.writeU2(secondaryIndex());
-        }
-        else {
-            b.writeIndex(name());
-            b.writeIndex(secondaryEntry());
-        }
-        b.writeU2(slot());
-        return true;
     }
 }
