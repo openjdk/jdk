@@ -64,7 +64,7 @@ public class WhiteBox {
 
     public WhiteBox() throws ReflectiveOperationException {
         Class<?> qClass = LinkedTransferQueue.class;
-        Class<?> nodeClass = Class.forName(qClass.getName() + "$Node");
+        Class<?> nodeClass = Class.forName(qClass.getName() + "$TransferNode");
         MethodHandles.Lookup lookup
             = MethodHandles.privateLookupIn(qClass, MethodHandles.lookup());
         HEAD = lookup.findVarHandle(qClass, "head", nodeClass);
@@ -96,6 +96,16 @@ public class WhiteBox {
         return i;
     }
 
+    /*
+     * Modified for jdk22: Accommodate lazy initialization, so counts
+     * may vary by 1, and some nodes become headers vs unlinked,
+     * compared to previous versions.
+     */
+
+    static void checkNodeCount(int c, int n) {
+        assertTrue(c == n || c == n - 1); // May or may not include header node
+    }
+
     Object findNode(LinkedTransferQueue q, Object e) {
         for (Object p = head(q); p != null; ) {
             if (item(p) != null && e.equals(item(p)))
@@ -124,13 +134,15 @@ public class WhiteBox {
     public void addRemove() {
         LinkedTransferQueue q = new LinkedTransferQueue();
         assertInvariants(q);
-        assertNull(next(head(q)));
-        assertNull(item(head(q)));
+        if (head(q) != null) {
+            assertNull(next(head(q)));
+            assertNull(item(head(q)));
+        }
         q.add(1);
-        assertEquals(nodeCount(q), 2);
+        checkNodeCount(nodeCount(q), 2);
         assertInvariants(q);
         q.remove(1);
-        assertEquals(nodeCount(q), 1);
+        checkNodeCount(nodeCount(q), 1);
         assertInvariants(q);
     }
 
@@ -158,12 +170,11 @@ public class WhiteBox {
         Object oldHead;
         int n = 1 + rnd.nextInt(5);
         for (int i = 0; i < n; i++) q.add(i);
-        assertEquals(nodeCount(q), n + 1);
+        checkNodeCount(nodeCount(q), n + 1);
         oldHead = head(q);
         traversalAction.accept(q);
         assertInvariants(q);
-        assertEquals(nodeCount(q), n);
-        assertIsSelfLinked(oldHead);
+        checkNodeCount(nodeCount(q), n);
     }
 
     @Test(dataProvider = "traversalActions")
@@ -238,7 +249,8 @@ public class WhiteBox {
             }
         traversalAction.accept(q);
         int c = nodeCount(q);
-        assertEquals(q.size(), c - (q.contains(n - 1) ? 0 : 1));
+        if (n > 0)
+            assertEquals(q.size(), c - (q.contains(n - 1) ? 0 : 1));
         for (int i = 0; i < n; i++)
             assertTrue(nulledOut.contains(i) ^ q.contains(i));
     }
@@ -263,7 +275,7 @@ public class WhiteBox {
         int n = 1 + rnd.nextInt(5);
         for (int i = 0; i < n; i++) q.add(i);
         bulkRemovalAction.accept(q);
-        assertEquals(nodeCount(q), 1);
+        checkNodeCount(nodeCount(q), 1);
         assertInvariants(q);
     }
 
@@ -289,7 +301,7 @@ public class WhiteBox {
         LinkedTransferQueue q = new LinkedTransferQueue();
         int n = 1 + rnd.nextInt(5);
         for (int i = 0; i < n; i++) q.add(i);
-        assertEquals(nodeCount(q), n + 1);
+        checkNodeCount(nodeCount(q), n + 1);
         for (int i = 0; i < n; i++) {
             int c = nodeCount(q);
             boolean slack = item(head(q)) == null;
@@ -318,11 +330,12 @@ public class WhiteBox {
         LinkedTransferQueue q = new LinkedTransferQueue();
         int n = 1 + rnd.nextInt(9);
         for (int i = 0; i < n; i++) {
-            boolean slack = next(tail(q)) != null;
+            boolean empty = (tail(q) == null);
+            boolean slack = !empty && (next(tail(q)) != null);
             addAction.accept(q);
             if (slack)
                 assertNull(next(tail(q)));
-            else {
+            else if (!empty) {
                 assertNotNull(next(tail(q)));
                 assertNull(next(next(tail(q))));
             }
@@ -365,10 +378,8 @@ public class WhiteBox {
 
     /** Checks conditions which should always be true. */
     void assertInvariants(LinkedTransferQueue q) {
-        assertNotNull(head(q));
-        assertNotNull(tail(q));
         // head is never self-linked (but tail may!)
-        for (Object h; next(h = head(q)) == h; )
+        for (Object h; (h = head(q)) != null && next(h) == h; )
             assertNotSame(h, head(q)); // must be update race
     }
 }

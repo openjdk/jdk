@@ -47,6 +47,7 @@ import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.locks.LockSupport;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -107,7 +108,11 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * http://www.cs.rochester.edu/u/scott/papers/2009_Scherer_CACM_SSQ.pdf)
      * additionally arrange that threads enqueuing unmatched data also
      * block.  Dual Transfer Queues support all of these modes, as
-     * dictated by callers.
+     * dictated by callers. All enqueue/dequeue operations can be
+     * handled by a single method (here, "xfer") with parameters
+     * indicating whether to act as some form of offer, put, poll,
+     * take, or transfer (each possibly with timeout), as described
+     * bwlow.
      *
      * A FIFO dual queue may be implemented using a variation of the
      * Michael & Scott (M&S) lock-free queue algorithm
@@ -126,44 +131,33 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * The M&S queue algorithm is known to be prone to scalability and
      * overhead limitations when maintaining (via CAS) these head and
-     * tail pointers. This has led to the development of
-     * contention-reducing variants such as elimination arrays (see
-     * Moir et al http://portal.acm.org/citation.cfm?id=1074013) and
-     * optimistic back pointers (see Ladan-Mozes & Shavit
-     * http://people.csail.mit.edu/edya/publications/OptimisticFIFOQueue-journal.pdf).
-     * However, the nature of dual queues enables a simpler tactic for
-     * improving M&S-style implementations when dual-ness is needed.
+     * tail pointers. To address these, dual queues with slack differ
+     * from plain M&S dual queues by virtue of only sometimes updating
+     * head or tail pointers when matching, appending, or even
+     * traversing nodes.
      *
      * In a dual queue, each node must atomically maintain its match
-     * status. While there are other possible variants, we implement
-     * this here as: for a data-mode node, matching entails CASing an
-     * "item" field from a non-null data value to null upon match, and
-     * vice-versa for request nodes, CASing from null to a data
-     * value. (Note that the linearization properties of this style of
-     * queue are easy to verify -- elements are made available by
-     * linking, and unavailable by matching.) Compared to plain M&S
-     * queues, this property of dual queues requires one additional
-     * successful atomic operation per enq/deq pair. But it also
-     * enables lower cost variants of queue maintenance mechanics. (A
-     * variation of this idea applies even for non-dual queues that
-     * support deletion of interior elements, such as
-     * j.u.c.ConcurrentLinkedQueue.)
+     * status. Matching entails CASing an "item" field from a non-null
+     * data value to null upon match, and vice-versa for request
+     * nodes, CASing from null to a data value.  (To reduce the need
+     * for re-reads, we use the compareAndExchange forms of CAS for
+     * pointer updates, that provide the current value to comtinue
+     * with on failure.)  Note that the linearization properties of
+     * this style of queue are easy to verify -- elements are made
+     * available by linking, and unavailable by matching. Compared to
+     * plain M&S queues, this property of dual queues requires one
+     * additional successful atomic operation per enq/deq pair. But it
+     * also enables lower cost variants of queue maintenance
+     * mechanics.
      *
      * Once a node is matched, its match status can never again
      * change.  We may thus arrange that the linked list of them
      * contain a prefix of zero or more matched nodes, followed by a
-     * suffix of zero or more unmatched nodes. (Note that we allow
-     * both the prefix and suffix to be zero length, which in turn
-     * means that we do not use a dummy header.)  If we were not
-     * concerned with either time or space efficiency, we could
-     * correctly perform enqueue and dequeue operations by traversing
-     * from a pointer to the initial node; CASing the item of the
-     * first unmatched node on match and CASing the next field of the
-     * trailing node on appends.  While this would be a terrible idea
-     * in itself, it does have the benefit of not requiring ANY atomic
-     * updates on head/tail fields.
+     * suffix of zero or more unmatched nodes. Note that we allow both
+     * the prefix and suffix to be zero length, which in turn means
+     * that we do not require a dummy header.
      *
-     * We introduce here an approach that lies between the extremes of
+     * We use here an approach that lies between the extremes of
      * never versus always updating queue (head and tail) pointers.
      * This offers a tradeoff between sometimes requiring extra
      * traversal steps to locate the first and/or last unmatched
@@ -178,155 +172,45 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * The best value for this "slack" (the targeted maximum distance
      * between the value of "head" and the first unmatched node, and
-     * similarly for "tail") is an empirical matter. We have found
-     * that using very small constants in the range of 1-3 work best
-     * over a range of platforms. Larger values introduce increasing
-     * costs of cache misses and risks of long traversal chains, while
-     * smaller values increase CAS contention and overhead.
-     *
-     * Dual queues with slack differ from plain M&S dual queues by
-     * virtue of only sometimes updating head or tail pointers when
-     * matching, appending, or even traversing nodes; in order to
-     * maintain a targeted slack.  The idea of "sometimes" may be
-     * operationalized in several ways. The simplest is to use a
-     * per-operation counter incremented on each traversal step, and
-     * to try (via CAS) to update the associated queue pointer
-     * whenever the count exceeds a threshold. Another, that requires
-     * more overhead, is to use random number generators to update
-     * with a given probability per traversal step.
-     *
-     * In any strategy along these lines, because CASes updating
-     * fields may fail, the actual slack may exceed targeted slack.
-     * However, they may be retried at any time to maintain targets.
-     * Even when using very small slack values, this approach works
-     * well for dual queues because it allows all operations up to the
-     * point of matching or appending an item (hence potentially
-     * allowing progress by another thread) to be read-only, thus not
-     * introducing any further contention.  As described below, we
-     * implement this by performing slack maintenance retries only
-     * after these points.
-     *
-     * As an accompaniment to such techniques, traversal overhead can
-     * be further reduced without increasing contention of head
-     * pointer updates: Threads may sometimes shortcut the "next" link
-     * path from the current "head" node to be closer to the currently
-     * known first unmatched node, and similarly for tail. Again, this
-     * may be triggered with using thresholds or randomization.
+     * similarly for "tail") is an empirical matter. Larger values
+     * introduce increasing costs of cache misses and risks of long
+     * traversal chains, while smaller values increase CAS contention
+     * and overhead. Using the smallest non-zero value of one is both
+     * simple and empirically a good choice in most applicatkions.
+     * The slack value is hard-wired: a path greater than one is
+     * usually implemented by checking equality of traversal pointers.
+     * Because CASes updating fields may fail and threads attempting
+     * to do so may stall, the actual slack may exceed targeted
+     * slack. To reduce the consequent staleness impact, threads may
+     * help update (method unslacken) when traversal lengths exceed an
+     * imposed limit of MAX_SLACK.
      *
      * These ideas must be further extended to avoid unbounded amounts
      * of costly-to-reclaim garbage caused by the sequential "next"
      * links of nodes starting at old forgotten head nodes: As first
      * described in detail by Boehm
-     * (http://portal.acm.org/citation.cfm?doid=503272.503282), if a GC
-     * delays noticing that any arbitrarily old node has become
+     * (http://portal.acm.org/citation.cfm?doid=503272.503282), if a
+     * GC delays noticing that any arbitrarily old node has become
      * garbage, all newer dead nodes will also be unreclaimed.
      * (Similar issues arise in non-GC environments.)  To cope with
-     * this in our implementation, upon CASing to advance the head
-     * pointer, we set the "next" link of the previous head to point
-     * only to itself; thus limiting the length of chains of dead nodes.
-     * (We also take similar care to wipe out possibly garbage
-     * retaining values held in other Node fields.)  However, doing so
-     * adds some further complexity to traversal: If any "next"
-     * pointer links to itself, it indicates that the current thread
-     * has lagged behind a head-update, and so the traversal must
-     * continue from the "head".  Traversals trying to find the
-     * current tail starting from "tail" may also encounter
-     * self-links, in which case they also continue at "head".
+     * this in our implementation, upon advancing the head pointer, we
+     * set the "next" link of the previous head to point only to
+     * itself; thus limiting the length of chains of dead nodes.  (We
+     * also take similar care to wipe out possibly garbage retaining
+     * values held in other node fields.)  However, doing so adds some
+     * further complexity to traversal: If any "next" pointer links to
+     * itself, it indicates that the current thread has lagged behind
+     * a head-update, and so the traversal must continue from the
+     * "head".  Traversals trying to find the current tail starting
+     * from "tail" may also encounter self-links, in which case they
+     * also continue at "head".
      *
-     * It is tempting in slack-based scheme to not even use CAS for
-     * updates (similarly to Ladan-Mozes & Shavit). However, this
-     * cannot be done for head updates under the above link-forgetting
-     * mechanics because an update may leave head at a detached node.
-     * And while direct writes are possible for tail updates, they
-     * increase the risk of long retraversals, and hence long garbage
-     * chains, which can be much more costly than is worthwhile
-     * considering that the cost difference of performing a CAS vs
-     * write is smaller when they are not triggered on each operation
-     * (especially considering that writes and CASes equally require
-     * additional GC bookkeeping ("write barriers") that are sometimes
-     * more costly than the writes themselves because of contention).
+     * *** Blocking ***
      *
-     * *** Overview of implementation ***
-     *
-     * We use a threshold-based approach to updates, with a slack
-     * threshold of two -- that is, we update head/tail when the
-     * current pointer appears to be two or more steps away from the
-     * first/last node. The slack value is hard-wired: a path greater
-     * than one is naturally implemented by checking equality of
-     * traversal pointers except when the list has only one element,
-     * in which case we keep slack threshold at one. Avoiding tracking
-     * explicit counts across method calls slightly simplifies an
-     * already-messy implementation. Using randomization would
-     * probably work better if there were a low-quality dirt-cheap
-     * per-thread one available, but even ThreadLocalRandom is too
-     * heavy for these purposes.
-     *
-     * With such a small slack threshold value, it is not worthwhile
-     * to augment this with path short-circuiting (i.e., unsplicing
-     * interior nodes) except in the case of cancellation/removal (see
-     * below).
-     *
-     * All enqueue/dequeue operations are handled by the single method
-     * "xfer" with parameters indicating whether to act as some form
-     * of offer, put, poll, take, or transfer (each possibly with
-     * timeout). The relative complexity of using one monolithic
-     * method outweighs the code bulk and maintenance problems of
-     * using separate methods for each case.
-     *
-     * Operation consists of up to two phases. The first is implemented
-     * in method xfer, the second in method awaitMatch.
-     *
-     * 1. Traverse until matching or appending (method xfer)
-     *
-     *    Conceptually, we simply traverse all nodes starting from head.
-     *    If we encounter an unmatched node of opposite mode, we match
-     *    it and return, also updating head (by at least 2 hops) to
-     *    one past the matched node (or the node itself if it's the
-     *    pinned trailing node).  Traversals also check for the
-     *    possibility of falling off-list, in which case they restart.
-     *
-     *    If the trailing node of the list is reached, a match is not
-     *    possible.  If this call was untimed poll or tryTransfer
-     *    (argument "how" is NOW), return empty-handed immediately.
-     *    Else a new node is CAS-appended.  On successful append, if
-     *    this call was ASYNC (e.g. offer), an element was
-     *    successfully added to the end of the queue and we return.
-     *
-     *    Of course, this naive traversal is O(n) when no match is
-     *    possible.  We optimize the traversal by maintaining a tail
-     *    pointer, which is expected to be "near" the end of the list.
-     *    It is only safe to fast-forward to tail (in the presence of
-     *    arbitrary concurrent changes) if it is pointing to a node of
-     *    the same mode, even if it is dead (in this case no preceding
-     *    node could still be matchable by this traversal).  If we
-     *    need to restart due to falling off-list, we can again
-     *    fast-forward to tail, but only if it has changed since the
-     *    last traversal (else we might loop forever).  If tail cannot
-     *    be used, traversal starts at head (but in this case we
-     *    expect to be able to match near head).  As with head, we
-     *    CAS-advance the tail pointer by at least two hops.
-     *
-     * 2. Await match or cancellation (method awaitMatch)
-     *
-     *    Wait for another thread to match node; instead cancelling if
-     *    the current thread was interrupted or the wait timed out.
-     *    If the caller is a VirtualThread, the most likely next step
-     *    is for another to take the item, so an immediate (virtual)
-     *    park/unpark is used.  Otherwise (for non-Virtual threads),
-     *    we use front-of-queue spinning: If a node appears to be the
-     *    first unmatched node in the queue, it spins a bit before
-     *    blocking. In either case, before blocking it tries to
-     *    unsplice any nodes between the current "head" and the first
-     *    unmatched node.
-     *
-     *    Front-of-queue spinning vastly improves performance of
-     *    heavily contended queues. And so long as it is relatively
-     *    brief and "quiet", spinning does not much impact performance
-     *    of less-contended queues. We also use smaller (1/2) spins
-     *    for nodes that are not known to be front but whose
-     *    predecessors have not blocked -- these "chained" spins avoid
-     *    artifacts of front-of-queue rules which otherwise lead to
-     *    alternating nodes spinning vs blocking.
+     * The TransferNode class is shared with class SynchronousQueue
+     * (which adds Lifo-based matching methods). It houses method
+     * await, which is used for all blocking control, as described
+     * below in TransferNode internal documentation.
      *
      * ** Unlinking removed interior nodes **
      *
@@ -347,10 +231,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * cancelled): the predecessor may already be unspliced, in which
      * case some previous reachable node may still point to s.
      * (For further explanation see Herlihy & Shavit "The Art of
-     * Multiprocessor Programming" chapter 9).  Although, in both
-     * cases, we can rule out the need for further action if either s
-     * or its predecessor are (or can be made to be) at, or fall off
-     * from, the head of list.
+     * Multiprocessor Programming" chapter 9).
      *
      * Without taking these into account, it would be possible for an
      * unbounded number of supposedly removed nodes to remain reachable.
@@ -379,11 +260,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * nodes become unlinked "naturally" as they fall off the head of
      * the queue, and because we allow votes to accumulate even while
      * sweeps are in progress, there are typically significantly fewer
-     * such nodes than estimated.  Choice of a threshold value
-     * balances the likelihood of wasted effort and contention, versus
-     * providing a worst-case bound on retention of interior nodes in
-     * quiescent queues. The value defined below was chosen
-     * empirically to balance these under various timeout scenarios.
+     * such nodes than estimated.
      *
      * Note that we cannot self-link unlinked interior nodes during
      * sweeps. However, the associated garbage chains terminate when
@@ -392,184 +269,415 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      */
 
     /**
-     * The number of nanoseconds for which it is faster to spin
-     * rather than to use timed park. A rough estimate suffices.
-     * Using a power of two minus one simplifies some comparisons.
+     * Queue nodes. Uses type Object, not E, for items to allow
+     * cancellation and forgetting after use. Note that this class is
+     * statically imported by class SynchronousQueue.
      */
-    static final long SPIN_FOR_TIMEOUT_THRESHOLD = 1023L;
-
-    /**
-     * The number of times to spin for a non-virtual thread before
-     * blocking when a node is apparently the first waiter in the
-     * queue.  See above for explanation. Must be a power of two. The
-     * value is empirically derived -- it works pretty well across a
-     * variety of processors, numbers of CPUs, and OSes.
-     */
-    private static final int FRONT_SPINS   = 1 << 7;
-
-    /**
-     * The maximum number of estimated removal failures (sweepVotes)
-     * to tolerate before sweeping through the queue unlinking
-     * cancelled nodes that were not unlinked upon initial
-     * removal. See above for explanation. The value must be at least
-     * two to avoid useless sweeps when removing trailing nodes.
-     */
-    static final int SWEEP_THRESHOLD = 32;
-
-    /**
-     * Queue nodes. Uses Object, not E, for items to allow forgetting
-     * them after use.  Writes that are intrinsically ordered wrt
-     * other accesses or CASes use simple relaxed forms.
-     */
-    static final class Node implements ForkJoinPool.ManagedBlocker {
-        final boolean isData;   // false if this is a request node
+    static final class TransferNode implements ForkJoinPool.ManagedBlocker {
         volatile Object item;   // initially non-null if isData; CASed to match
-        volatile Node next;
-        volatile Thread waiter; // null when not waiting for a match
+        volatile TransferNode next;
+        volatile Thread waiter; // null when not parked waiting for a match
+        final boolean isData;   // false if this is a request node
 
-        /**
-         * Constructs a data node holding item if item is non-null,
-         * else a request node.  Uses relaxed write because item can
-         * only be seen after piggy-backing publication via CAS.
-         */
-        Node(Object item) {
-            ITEM.set(this, item);
-            isData = (item != null);
+        TransferNode(Object item, boolean isData) {
+            ITEM.set(this, item); // relaxed write before publication
+            this.isData = isData;
         }
 
-        /** Constructs a (matched data) dummy node. */
-        Node() {
-            isData = true;
+        // Atomic updates
+        final Object cmpExItem(Object cmp, Object val) { // try to match
+            return ITEM.compareAndExchange(this, cmp, val);
         }
-
-        final boolean casNext(Node cmp, Node val) {
-            // assert val != null;
-            return NEXT.compareAndSet(this, cmp, val);
-        }
-
-        final boolean casItem(Object cmp, Object val) {
-            // assert isData == (cmp != null);
-            // assert isData == (val == null);
-            // assert !(cmp instanceof Node);
-            return ITEM.compareAndSet(this, cmp, val);
+        final TransferNode cmpExNext(TransferNode cmp, TransferNode val) {
+            return (TransferNode)NEXT.compareAndExchange(this, cmp, val);
         }
 
         /**
-         * Links node to itself to avoid garbage retention.  Called
-         * only after CASing head field, so uses relaxed write.
+         * Returns true if this node has not been matched
          */
-        final void selfLink() {
-            // assert isMatched();
-            NEXT.setRelease(this, this);
-        }
-
-        final void appendRelaxed(Node next) {
-            // assert next != null;
-            // assert this.next == null;
-            NEXT.setOpaque(this, next);
+        final boolean isLive() {
+            return isData == (item != null);
         }
 
         /**
-         * Returns true if this node has been matched, including the
-         * case of artificial matches due to cancellation.
+         * Tries to cancel by matching with self if initially null else null
+         * @param e the initial item value
+         * @return e if successful, else current item
          */
-        final boolean isMatched() {
-            return isData == (item == null);
+        final Object tryCancel(Object e) {
+            return cmpExItem(e, (e == null) ? this : null);
         }
 
-        /** Tries to CAS-match this node; if successful, wakes waiter. */
-        final boolean tryMatch(Object cmp, Object val) {
-            if (casItem(cmp, val)) {
-                LockSupport.unpark(waiter);
-                return true;
-            }
-            return false;
-        }
+        // Relaxed writes when volatile is unnecessarily strong
+        final void clearWaiter()   { WAITER.setOpaque(this, null); }
+        final void forgetItem()    { ITEM.set(this, this); }
+        final void forgetNext()    { NEXT.set(this, this); }
+        final void setNext(TransferNode n) { NEXT.set(this, n);  }
 
-        /**
-         * Returns true if a node with the given mode cannot be
-         * appended to this node because this node is unmatched and
-         * has opposite data mode.
-         */
-        final boolean cannotPrecede(boolean haveData) {
-            boolean d = isData;
-            return d != haveData && d != (item == null);
-        }
-
+        // ManagedBlocker support
         public final boolean isReleasable() {
-            return (isData == (item == null)) ||
-                Thread.currentThread().isInterrupted();
+            return (!isLive() || Thread.currentThread().isInterrupted());
         }
-
         public final boolean block() {
             while (!isReleasable()) LockSupport.park();
             return true;
         }
 
-        private static final long serialVersionUID = -3375979862319811754L;
+        /**
+         * Possibly blocks until matched or caller gives up.
+         *
+         * Control of blocking (and thread scheduling in general) for
+         * possibly-synchronous queues (and channels etc constructed
+         * from them) must straddle two extremes: If there are too few
+         * underlying cores for a fulfilling party to continue, then
+         * the caller must park to cause a context switch. On the
+         * other hand, if the queue is busy with approximately the
+         * same number of independent producers and consumers, then
+         * that context switch causes a huge slowdown (often more than
+         * 20X). Many cases are somewhere in-between, in which case
+         * threads should try spinning and then give up and block. We
+         * deal with this as follows:
+         *
+         * 1. Callers to method await indicate eligibility for
+         * spinning when the node is either the only waiting node, or
+         * the next eligible node is still spinning.  Otherwise, the
+         * caller normally blocks (almost) immediately.
+         *
+         * 2. Even if eligible to spin, a caller blocks anyway in two
+         * cases where it is normally best: If the thread is Virtual,
+         * or the system is a uniprocessor. Because uniprocessor
+         * status can vary over time (due to virtualization at other
+         * system levels), we update it whenever an otherwise-eligible
+         * spin elapses. (Updates to static field isUniprocessor are
+         * allowed to be racy -- if status is dynamically varying,
+         * tracking is at best approximate.)
+         *
+         * 3. When enabled, spins should be long enough to cover
+         * bookeeping overhead of almost-immediate fulfillments, but
+         * much less than the expected time of a (non-virtual)
+         * park/unpark context switch.  The optimal value is
+         * unknowable, in part because the relative costs of
+         * Thread.onSpinWait versus park/unpark vary across platforms.
+         * The current value is an empirical compromise across tested
+         * platforms.
+         *
+         * 4. When using timed waits, callers spin instead of invoking
+         * timed park if the remaining time is less than the likely
+         * cost of park/unpark. This also avoids re-parks when timed
+         * park returns just barely too soon.
+         *
+         * 5. To make the above work, callers must precheck that
+         * timeouts are not already elapsed, and that interruptible
+         * operations were not already interrupted on call to the
+         * corresponding queue operation.  Cancellation on timeout or
+         * interrupt otherwise proceeds by trying to fulfill with an
+         * impossible value (which is one reason that we use Object
+         * types here rather than tyoed results).
+         *
+         * @param e the comparison value for checking match
+         * @param nanos timeout, or Long.MAX_VALUE if untimed
+         * @param blocker the LockSupport.setCurrentBlocker argument
+         * @param spin true if eligible for spinning if enabled
+         * @return matched item, or e if unmatched on interrupt or timeout
+         */
+        final Object await(Object e, long nanos, Object blocker, boolean spin) {
+            boolean timed = (nanos != Long.MAX_VALUE);
+            long deadline = (timed) ? System.nanoTime() + nanos : 0L;
+            Thread w = Thread.currentThread();
+            boolean canSpin = (!w.isVirtual() && spin);
+            int spins = (canSpin && !isUniprocessor) ? SPINS : 0;
+            Object match;
+            while ((match = item) == e && --spins >= 0)
+                Thread.onSpinWait();
+            if (match == e) {
+                boolean u;
+                if (canSpin &&     // recheck for next time
+                    (u = (Runtime.getRuntime().
+                          availableProcessors() <= 1)) != isUniprocessor)
+                    isUniprocessor = u;
+                LockSupport.setCurrentBlocker(blocker);
+                waiter = w;
+                while ((match = item) == e) {
+                    long ns;
+                    if (w.isInterrupted()) {
+                        match = tryCancel(e);
+                        break;
+                    }
+                    if (timed) {
+                        if ((ns = deadline - System.nanoTime()) <= 0L) {
+                            match = tryCancel(e);
+                            break;
+                        }
+                        if (ns < SPIN_FOR_TIMEOUT_THRESHOLD)
+                            Thread.onSpinWait();
+                        else
+                            LockSupport.parkNanos(ns);
+                    } else if (w instanceof ForkJoinWorkerThread) {
+                        try {
+                            ForkJoinPool.managedBlock(this);
+                        } catch (InterruptedException cannotHappen) { }
+                    } else
+                        LockSupport.park(this);
+                }
+                clearWaiter();
+                LockSupport.setCurrentBlocker(null);
+            }
+            if (e == null)
+                forgetItem();
+            return match;
+        }
+
+        /**
+         * The number of times to spin when eligible.
+         */
+        private static final int SPINS = 1 << 7;
+
+        /**
+         * The number of nanoseconds for which it is faster to spin
+         * rather than to use timed park. A rough estimate suffices.
+         */
+        private static final long SPIN_FOR_TIMEOUT_THRESHOLD = 1L << 10;
+
+        /**
+         * True if system is a uniprocessor. Initially assumed false.
+         */
+        private static boolean isUniprocessor;
+
+        // VarHandle mechanics
+        static final VarHandle ITEM;
+        static final VarHandle NEXT;
+        static final VarHandle WAITER;
+        static {
+            try {
+                Class<?> tn = TransferNode.class;
+                MethodHandles.Lookup l = MethodHandles.lookup();
+                ITEM = l.findVarHandle(tn, "item", Object.class);
+                NEXT = l.findVarHandle(tn, "next", tn);
+                WAITER = l.findVarHandle(tn, "waiter", Thread.class);
+            } catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
     }
 
     /**
-     * A node from which the first live (non-matched) node (if any)
-     * can be reached in O(1) time.
-     * Invariants:
-     * - all live nodes are reachable from head via .next
-     * - head != null
-     * - (tmp = head).next != tmp || tmp != head
-     * Non-invariants:
-     * - head may or may not be live
-     * - it is permitted for tail to lag behind head, that is, for tail
-     *   to not be reachable from head!
+     * The maximum number of dead nodes traversed before unslackening
+     * to reduce retries due to stalls in updating head and tail.  Must
+     * be at least 4.
      */
-    transient volatile Node head;
+    private static final int MAX_SLACK = 1 << 6;
 
     /**
-     * A node from which the last node on list (that is, the unique
-     * node with node.next == null) can be reached in O(1) time.
+     * The maximum number of estimated removal failures (sweepVotes)
+     * to tolerate before sweeping through the queue unlinking
+     * cancelled nodes that were initially pinned.  Must be a power of
+     * two, at least 2 and at most MAX_SLACK.
+     */
+    private static final int SWEEP_THRESHOLD = 1 << 5;
+
+    /**
+     * Unless empty (in which case possibly null), a node from which
+     * all live nodes are reachable.
      * Invariants:
-     * - the last node is always reachable from tail via .next
-     * - tail != null
+     * - head is never self-linked
+     * Non-invariants:
+     * - head may or may not be live
+     */
+    transient volatile TransferNode head;
+
+    /**
+     * Unless empty, a node from which the last node on list (that is, the unique
+     * node with node.next == null), if one exists, can be reached
      * Non-invariants:
      * - tail may or may not be live
-     * - it is permitted for tail to lag behind head, that is, for tail
-     *   to not be reachable from head!
+     * - tail may be the same as head
+     * - tail may lag behind head, so need not be reachable from head
      * - tail.next may or may not be self-linked.
      */
-    private transient volatile Node tail;
+    transient volatile TransferNode tail;
 
     /** The number of apparent failures to unsplice cancelled nodes */
     private transient volatile int sweepVotes;
 
-    private boolean casTail(Node cmp, Node val) {
-        // assert cmp != null;
-        // assert val != null;
-        return TAIL.compareAndSet(this, cmp, val);
+    /** increment sweepVotes and return true on trigger */
+    private boolean sweepNow() {
+        return (((int) SWEEPVOTES.getAndAdd(this, 1) + 1) &
+                (SWEEP_THRESHOLD - 1)) == 0;
     }
 
-    private boolean casHead(Node cmp, Node val) {
-        return HEAD.compareAndSet(this, cmp, val);
+    // Atomic updates
+
+    final TransferNode cmpExTail(TransferNode cmp, TransferNode val) {
+        return (TransferNode)TAIL.compareAndExchange(this, cmp, val);
+    }
+    final TransferNode cmpExHead(TransferNode cmp, TransferNode val) {
+        return (TransferNode)HEAD.compareAndExchange(this, cmp, val);
     }
 
-    /** Atomic version of ++sweepVotes. */
-    private int incSweepVotes() {
-        return (int) SWEEPVOTES.getAndAdd(this, 1) + 1;
+    /**
+     * Tries to update to new head, forgetting links from previous
+     * head (if it exists) on success.
+     */
+    final TransferNode tryAdvanceHead(TransferNode h, TransferNode p) {
+        TransferNode u;
+        if ((u = cmpExHead(h, p)) == h && h != null)
+            h.forgetNext();
+        return u;
+    }
+
+    /**
+     * Implements all queuing methods. Loops, trying:
+     *
+     * * If head not initialized, try to add new node and exit (unless immediate)
+     * * If tail initialized and has same mode, and this is not a retry,
+     *   start traversing at tail (for an append), else start at head
+     *   (for a likely match, but if no live nodes, an append)
+     * * Traverse over dead or wrong-mode nodes until finding a spot
+     *   to match/append, or falling off the list because of self-links,
+     *   taking or too many steps, in which case help unslacken and restart.
+     * * On success, update head or tail if slacked, and return or wait,
+     *   depending on nanos argument
+     *
+     * @param e the item or null for take
+     * @param nanos timeout, or negative for async, 0 for immediate,
+     *        Long.MAX_VALUE for untimed
+     * @return an item if matched, else e
+     */
+    final Object xfer(Object e, long nanos) {
+        boolean haveData = (e != null);
+        TransferNode p;                     // current traversal node
+        TransferNode s = null;              // the enqueued npde, if needed
+        TransferNode prevTail = null;       // to avoid unbounded retries
+        restart: for (;;) {
+            TransferNode h, t;
+            if ((p = h = head) == null) {   // lazily initialize
+                if (nanos == 0L)            // no possible match
+                    break restart;
+                if ((h = cmpExHead(null,    // try to install as head
+                                   s = new TransferNode(e, haveData))) == null) {
+                    cmpExTail(null, s);
+                    break restart;
+                }
+                p = h;                      // lost initialization race
+            }
+            if ((t = tail) != null && haveData == t.isData && t != prevTail)
+                p = prevTail = t;           // start at tail
+            for (int slack = 0; slack < MAX_SLACK; ++slack) { // bound steps
+                TransferNode q, n; Object item;
+                if (haveData != p.isData && // try to match waiting node
+                    haveData != ((item = p.item) != null) &&
+                    p.cmpExItem(item, e) == item) {
+                    if (p != h)
+                        tryAdvanceHead(h, (n = p.next) == null ? p : n);
+                    LockSupport.unpark(p.waiter);
+                    return item;
+                }
+                if ((q = p.next) == null) { // no matches
+                    if (nanos == 0L)
+                        break restart;
+                    if (s == null) {        // try to append node
+                        s = new TransferNode(e, haveData);
+                        q = p.next;         // recheck after allocation
+                    }
+                    if (q == null && (q = p.cmpExNext(null, s)) == null) {
+                        if (nanos > 0L || p != t)
+                            cmpExTail(tail, s);
+                        break restart;
+                    }
+                }
+                if (p == (p = q))            // stale; restart
+                    break;
+            }
+            unslacken();                     // collapse before retrying
+        }
+        Object match;
+        if (s == null || nanos <= 0L)
+            match = e;
+        else if ((match = s.await(e, nanos, this, // spin if near head
+                                  (p == null || p.waiter == null))) == e)
+            unsplice(p, s);                 // cancelled
+        return match;
+    }
+
+    /**
+     * Collapses dead nodes from head and tail. Called before
+     * retraversals and during unsplices to reduce retries due to
+     * stalled head and tail updates.
+     */
+    private void unslacken() {
+        TransferNode h, t, p;
+        if ((h = head) != null && !h.isLive() &&
+            (p = h.next) != null && p != h) {  // collapse head
+            for (TransferNode n; (n = p.next) != p; p = n) {
+                if (n == null || p.isLive()) {
+                    if (cmpExHead(h, p) == h) {
+                        if (n == null)         // absorb tail
+                            cmpExTail(tail, p);
+                        h.forgetNext();
+                    }
+                    break;
+                }
+            }
+        }
+        if ((t = tail) != null) {              // help collapse tail
+            for (TransferNode q = t, n; (n = q.next) != q; q = n) {
+                if (n == null) {
+                    if (q != t)
+                        cmpExTail(t, q);
+                    break;
+                }
+            }
+        }
+    }
+
+    /* --------------  Interior removals -------------- */
+    /**
+     * Unsplices (now or later) the given deleted/cancelled node with
+     * the given predecessor.
+     *
+     * @param pred if nonnull, a node that was at one time known to be the
+     * predecessor of s
+     * @param s the node to be unspliced
+     */
+    final void unsplice(TransferNode pred, TransferNode s) {
+        TransferNode n;
+        if (pred != null && s != null && pred.next == s && (n = s.next) != s &&
+            (n == null || pred.cmpExNext(s, n) != s) &&
+            sweepNow())    // occasionally sweep initially pinned nodes
+            sweep();
+        unslacken();       // help clean endpoints
+    }
+
+    /**
+     * Unlinks dead nodes encountered in a traversal from head.
+     */
+    private void sweep() {
+        for (TransferNode p = head, s; p != null && (s = p.next) != null; ) {
+            TransferNode n, u, h;
+            if (s.isLive())
+                p = s;
+            else if ((n = s.next) == null) {
+                if ((h = head) != null && s == h.next)
+                    cmpExTail(s, h);       // absorb tail as head
+                break;
+            }
+            else if (s == n)               // stale
+                p = head;
+            else                           // unlink
+                p = ((u = p.cmpExNext(s, n)) == s) ? n : u;
+        }
     }
 
     /**
      * Tries to CAS pred.next (or head, if pred is null) from c to p.
      * Caller must ensure that we're not unlinking the trailing node.
      */
-    private boolean tryCasSuccessor(Node pred, Node c, Node p) {
-        // assert p != null;
-        // assert c.isData != (c.item != null);
-        // assert c != p;
-        if (pred != null)
-            return pred.casNext(c, p);
-        if (casHead(c, p)) {
-            c.selfLink();
-            return true;
-        }
-        return false;
+    final boolean tryCasSuccessor(TransferNode pred, TransferNode c,
+                                  TransferNode p) {
+        // assert p != null && !c.isLive() && c != p;
+        return ((pred != null ?
+                 pred.cmpExNext(c, p) :
+                 tryAdvanceHead(c, p))) == c;
     }
 
     /**
@@ -580,147 +688,29 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @param q p.next: the next live node, or null if at end
      * @return pred if pred still alive and CAS succeeded; else p
      */
-    private Node skipDeadNodes(Node pred, Node c, Node p, Node q) {
-        // assert pred != c;
-        // assert p != q;
-        // assert c.isMatched();
-        // assert p.isMatched();
-        if (q == null) {
-            // Never unlink trailing node.
-            if (c == p) return pred;
+    final TransferNode skipDeadNodes(TransferNode pred, TransferNode c,
+                                     TransferNode p, TransferNode q) {
+        // assert pred != c && p != q; && !c.isLive() && !p.isLive();
+        if (q == null) { // Never unlink trailing node.
+            if (c == p)
+                return pred;
             q = p;
         }
-        return (tryCasSuccessor(pred, c, q)
-                && (pred == null || !pred.isMatched()))
+        return (tryCasSuccessor(pred, c, q) && (pred == null || pred.isLive()))
             ? pred : p;
     }
 
     /**
-     * Collapses dead (matched) nodes from h (which was once head) to p.
-     * Caller ensures all nodes from h up to and including p are dead.
+     * Tries to match the given object only if nonnull and p
+     * is a data node. Signals waiter on success.
      */
-    private void skipDeadNodesNearHead(Node h, Node p) {
-        // assert h != null;
-        // assert h != p;
-        // assert p.isMatched();
-        for (;;) {
-            final Node q;
-            if ((q = p.next) == null) break;
-            else if (!q.isMatched()) { p = q; break; }
-            else if (p == (p = q)) return;
+    final boolean tryMatchData(TransferNode p, Object x) {
+        if (p != null && p.isData &&
+            x != null && p.cmpExItem(x, null) == x) {
+            LockSupport.unpark(p.waiter);
+            return true;
         }
-        if (casHead(h, p))
-            h.selfLink();
-    }
-
-    /* Possible values for "how" argument in xfer method. */
-
-    private static final int NOW   = 0; // for untimed poll, tryTransfer
-    private static final int ASYNC = 1; // for offer, put, add
-    private static final int SYNC  = 2; // for transfer, take
-    private static final int TIMED = 3; // for timed poll, tryTransfer
-
-    /**
-     * Implements all queuing methods. See above for explanation.
-     *
-     * @param e the item or null for take
-     * @param haveData true if this is a put, else a take
-     * @param how NOW, ASYNC, SYNC, or TIMED
-     * @param nanos timeout in nanosecs, used only if mode is TIMED
-     * @return an item if matched, else e
-     * @throws NullPointerException if haveData mode but e is null
-     */
-    @SuppressWarnings("unchecked")
-    private E xfer(E e, boolean haveData, int how, long nanos) {
-        if (haveData && (e == null))
-            throw new NullPointerException();
-
-        restart: for (Node s = null, t = null, h = null;;) {
-            for (Node p = (t != (t = tail) && t.isData == haveData) ? t
-                     : (h = head);; ) {
-                final Node q; final Object item;
-                if (p.isData != haveData
-                    && haveData == ((item = p.item) == null)) {
-                    if (h == null) h = head;
-                    if (p.tryMatch(item, e)) {
-                        if (h != p) skipDeadNodesNearHead(h, p);
-                        return (E) item;
-                    }
-                }
-                if ((q = p.next) == null) {
-                    if (how == NOW) return e;
-                    if (s == null) s = new Node(e);
-                    if (!p.casNext(null, s)) continue;
-                    if (p != t) casTail(t, s);
-                    if (how == ASYNC) return e;
-                    return awaitMatch(s, p, e, (how == TIMED), nanos);
-                }
-                if (p == (p = q)) continue restart;
-            }
-        }
-    }
-
-    /**
-     * Possibly blocks until node s is matched or caller gives up.
-     *
-     * @param s the waiting node
-     * @param pred the predecessor of s, or null if unknown (the null
-     * case does not occur in any current calls but may in possible
-     * future extensions)
-     * @param e the comparison value for checking match
-     * @param timed if true, wait only until timeout elapses
-     * @param nanos timeout in nanosecs, used only if timed is true
-     * @return matched item, or e if unmatched on interrupt or timeout
-     */
-    private E awaitMatch(Node s, Node pred, E e, boolean timed, long nanos) {
-        boolean isData = s.isData, parking = false;
-        int spins = -1;                         // establish after initial checks
-        long deadline = timed ? System.nanoTime() + nanos : 0L;
-        Thread w = Thread.currentThread();
-        for (;;) {
-            Object item;
-            if ((item = s.item) != e) {         // matched
-                if (!isData)
-                    ITEM.set(s, s);             // self-link to avoid garbage
-                if (parking)
-                    WAITER.set(s, null);
-                @SuppressWarnings("unchecked") E itemE = (E) item;
-                return itemE;
-            } else if (spins > 0) {
-                --spins;
-                Thread.onSpinWait();
-            } else if (w.isInterrupted() || (timed && nanos <= 0L)) {
-                if (s.casItem(e, s.isData ? null : s)) {
-                    unsplice(pred, s);          // cancel and unlink
-                    return e;
-                }                               // else retry
-            } else if (spins < 0) {             // initialize spins
-                if (w.isVirtual() || pred == null)
-                    spins = 0;                  // don't spin
-                else if (pred.isData != isData || pred.isMatched())
-                    spins =  FRONT_SPINS;
-                else if (pred.waiter == null)   // pred spinning
-                    spins = FRONT_SPINS >>> 1;
-                else                            // pred already parked
-                    spins = 0;
-            } else if (!parking) {              // request unpark then recheck
-                parking = true;
-                s.waiter = w;
-            } else if (timed) {
-                if ((nanos = deadline - System.nanoTime()) > 0L) {
-                    if (nanos <= SPIN_FOR_TIMEOUT_THRESHOLD)
-                        spins = FRONT_SPINS;
-                    else
-                        LockSupport.parkNanos(this, nanos);
-                }
-            } else {
-                LockSupport.setCurrentBlocker(this);
-                try {
-                    ForkJoinPool.managedBlock(s);
-                } catch (InterruptedException cannotHappen) { }
-                LockSupport.setCurrentBlocker(null);
-            }
-        }
+        return false;
     }
 
     /* -------------- Traversal methods -------------- */
@@ -730,40 +720,35 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * Callers must recheck if the returned node is unmatched
      * before using.
      */
-    final Node firstDataNode() {
-        Node first = null;
-        restartFromHead: for (;;) {
-            Node h = head, p = h;
-            while (p != null) {
-                if (p.item != null) {
-                    if (p.isData) {
-                        first = p;
-                        break;
-                    }
-                }
-                else if (!p.isData)
-                    break;
-                final Node q;
-                if ((q = p.next) == null)
-                    break;
-                if (p == (p = q))
-                    continue restartFromHead;
-            }
-            if (p != h && casHead(h, p))
-                h.selfLink();
-            return first;
+    final TransferNode firstDataNode() {
+        for (TransferNode h = head, p = h, q, u; p != null;) {
+            boolean isData = p.isData;
+            Object item = p.item;
+            if (isData && item != null)       // is live data
+                return p;
+            else if (!isData && item == null) // is live request
+                break;
+            else if ((q = p.next) == null)    // end of list
+                break;
+            else if (p == q)                  // self-link; restart
+                p = h = head;
+            else if (p != h)                  // collapse
+                p = h = ((u = tryAdvanceHead(h, q)) == h) ? q : u;
+            else                              // traverse past header
+                p = q;
         }
+        return null;
     }
 
     /**
      * Traverses and counts unmatched nodes of the given mode.
      * Used by methods size and getWaitingConsumerCount.
      */
-    private int countOfMode(boolean data) {
+    final int countOfMode(boolean data) {
         restartFromHead: for (;;) {
             int count = 0;
-            for (Node p = head; p != null;) {
-                if (!p.isMatched()) {
+            for (TransferNode p = head; p != null;) {
+                if (p.isLive()) {
                     if (p.isData != data)
                         return 0;
                     if (++count == Integer.MAX_VALUE)
@@ -781,7 +766,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         restartFromHead: for (;;) {
             int charLength = 0;
             int size = 0;
-            for (Node p = head; p != null;) {
+            for (TransferNode p = head; p != null;) {
                 Object item = p.item;
                 if (p.isData) {
                     if (item != null) {
@@ -810,7 +795,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         Object[] x = a;
         restartFromHead: for (;;) {
             int size = 0;
-            for (Node p = head; p != null;) {
+            for (TransferNode p = head; p != null;) {
                 Object item = p.item;
                 if (p.isData) {
                     if (item != null) {
@@ -903,17 +888,17 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * but O(n) in the worst case, when lastRet is concurrently deleted.
      */
     final class Itr implements Iterator<E> {
-        private Node nextNode;   // next node to return item for
+        private TransferNode nextNode;   // next node to return item for
         private E nextItem;      // the corresponding item
-        private Node lastRet;    // last returned node, to support remove
-        private Node ancestor;   // Helps unlink lastRet on remove()
+        private TransferNode lastRet;    // last returned node, to support remove
+        private TransferNode ancestor;   // Helps unlink lastRet on remove()
 
         /**
          * Moves to next node after pred, or first node if pred null.
          */
         @SuppressWarnings("unchecked")
-        private void advance(Node pred) {
-            for (Node p = (pred == null) ? head : pred.next, c = p;
+        private void advance(TransferNode pred) {
+            for (TransferNode p = (pred == null) ? head : pred.next, c = p;
                  p != null; ) {
                 final Object item;
                 if ((item = p.item) != null && p.isData) {
@@ -947,7 +932,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         }
 
         public final E next() {
-            final Node p;
+            final TransferNode p;
             if ((p = nextNode) == null) throw new NoSuchElementException();
             E e = nextItem;
             advance(lastRet = p);
@@ -956,28 +941,26 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
         public void forEachRemaining(Consumer<? super E> action) {
             Objects.requireNonNull(action);
-            Node q = null;
-            for (Node p; (p = nextNode) != null; advance(q = p))
+            TransferNode q = null;
+            for (TransferNode p; (p = nextNode) != null; advance(q = p))
                 action.accept(nextItem);
             if (q != null)
                 lastRet = q;
         }
 
         public final void remove() {
-            final Node lastRet = this.lastRet;
+            final TransferNode lastRet = this.lastRet;
             if (lastRet == null)
                 throw new IllegalStateException();
             this.lastRet = null;
             if (lastRet.item == null)   // already deleted?
                 return;
             // Advance ancestor, collapsing intervening dead nodes
-            Node pred = ancestor;
-            for (Node p = (pred == null) ? head : pred.next, c = p, q;
+            TransferNode pred = ancestor;
+            for (TransferNode p = (pred == null) ? head : pred.next, c = p, q;
                  p != null; ) {
                 if (p == lastRet) {
-                    final Object item;
-                    if ((item = p.item) != null)
-                        p.tryMatch(item, null);
+                    tryMatchData(p, p.item);
                     if ((q = p.next) == null) q = p;
                     if (c != q) tryCasSuccessor(pred, c, q);
                     ancestor = pred;
@@ -1002,20 +985,20 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             // leave ancestor at original location to avoid overshoot;
             // better luck next time!
 
-            // assert lastRet.isMatched();
+            // assert !lastRet.isLive();
         }
     }
 
     /** A customized variant of Spliterators.IteratorSpliterator */
     final class LTQSpliterator implements Spliterator<E> {
         static final int MAX_BATCH = 1 << 25;  // max batch array size;
-        Node current;       // current node; null until initialized
+        TransferNode current;       // current node; null until initialized
         int batch;          // batch size for splits
         boolean exhausted;  // true when no more nodes
         LTQSpliterator() {}
 
         public Spliterator<E> trySplit() {
-            Node p, q;
+            TransferNode p, q;
             if ((p = current()) == null || (q = p.next) == null)
                 return null;
             int i = 0, n = batch = Math.min(batch + 1, MAX_BATCH);
@@ -1044,7 +1027,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
         public void forEachRemaining(Consumer<? super E> action) {
             Objects.requireNonNull(action);
-            final Node p;
+            final TransferNode p;
             if ((p = current()) != null) {
                 current = null;
                 exhausted = true;
@@ -1055,12 +1038,12 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         @SuppressWarnings("unchecked")
         public boolean tryAdvance(Consumer<? super E> action) {
             Objects.requireNonNull(action);
-            Node p;
+            TransferNode p;
             if ((p = current()) != null) {
                 E e = null;
                 do {
-                    final Object item = p.item;
                     final boolean isData = p.isData;
+                    final Object item = p.item;
                     if (p == (p = p.next))
                         p = head;
                     if (isData) {
@@ -1081,13 +1064,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             return false;
         }
 
-        private void setCurrent(Node p) {
+        private void setCurrent(TransferNode p) {
             if ((current = p) == null)
                 exhausted = true;
         }
 
-        private Node current() {
-            Node p;
+        private TransferNode current() {
+            TransferNode p;
             if ((p = current) == null && !exhausted)
                 setCurrent(p = firstDataNode());
             return p;
@@ -1122,78 +1105,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         return new LTQSpliterator();
     }
 
-    /* -------------- Removal methods -------------- */
-
-    /**
-     * Unsplices (now or later) the given deleted/cancelled node with
-     * the given predecessor.
-     *
-     * @param pred a node that was at one time known to be the
-     * predecessor of s
-     * @param s the node to be unspliced
-     */
-    final void unsplice(Node pred, Node s) {
-        // assert pred != null;
-        // assert pred != s;
-        // assert s != null;
-        // assert s.isMatched();
-        // assert (SWEEP_THRESHOLD & (SWEEP_THRESHOLD - 1)) == 0;
-        s.waiter = null; // disable signals
-        /*
-         * See above for rationale. Briefly: if pred still points to
-         * s, try to unlink s.  If s cannot be unlinked, because it is
-         * trailing node or pred might be unlinked, and neither pred
-         * nor s are head or offlist, add to sweepVotes, and if enough
-         * votes have accumulated, sweep.
-         */
-        if (pred != null && pred.next == s) {
-            Node n = s.next;
-            if (n == null ||
-                (n != s && pred.casNext(s, n) && pred.isMatched())) {
-                for (;;) {               // check if at, or could be, head
-                    Node h = head;
-                    if (h == pred || h == s)
-                        return;          // at head or list empty
-                    if (!h.isMatched())
-                        break;
-                    Node hn = h.next;
-                    if (hn == null)
-                        return;          // now empty
-                    if (hn != h && casHead(h, hn))
-                        h.selfLink();  // advance head
-                }
-                // sweep every SWEEP_THRESHOLD votes
-                if (pred.next != pred && s.next != s // recheck if offlist
-                    && (incSweepVotes() & (SWEEP_THRESHOLD - 1)) == 0)
-                    sweep();
-            }
-        }
-    }
-
-    /**
-     * Unlinks matched (typically cancelled) nodes encountered in a
-     * traversal from head.
-     */
-    private void sweep() {
-        for (Node p = head, s, n; p != null && (s = p.next) != null; ) {
-            if (!s.isMatched())
-                // Unmatched nodes are never self-linked
-                p = s;
-            else if ((n = s.next) == null) // trailing node is pinned
-                break;
-            else if (s == n)    // stale
-                // No need to also check for p == s, since that implies s == n
-                p = head;
-            else
-                p.casNext(s, n);
-        }
-    }
-
     /**
      * Creates an initially empty {@code LinkedTransferQueue}.
      */
     public LinkedTransferQueue() {
-        head = tail = new Node();
     }
 
     /**
@@ -1206,16 +1121,14 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *         of its elements are null
      */
     public LinkedTransferQueue(Collection<? extends E> c) {
-        Node h = null, t = null;
+        TransferNode h = null, t = null;
         for (E e : c) {
-            Node newNode = new Node(Objects.requireNonNull(e));
-            if (h == null)
-                h = t = newNode;
+            TransferNode newNode = new TransferNode(Objects.requireNonNull(e), true);
+            if (t == null)
+                t = h = newNode;
             else
-                t.appendRelaxed(t = newNode);
+                t.setNext(t = newNode);
         }
-        if (h == null)
-            h = t = new Node();
         head = h;
         tail = t;
     }
@@ -1227,7 +1140,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public void put(E e) {
-        xfer(e, true, ASYNC, 0L);
+        offer(e);
     }
 
     /**
@@ -1240,8 +1153,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e, long timeout, TimeUnit unit) {
-        xfer(e, true, ASYNC, 0L);
-        return true;
+        return offer(e);
     }
 
     /**
@@ -1252,7 +1164,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean offer(E e) {
-        xfer(e, true, ASYNC, 0L);
+        Objects.requireNonNull(e);
+        xfer(e, -1L);
         return true;
     }
 
@@ -1265,8 +1178,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean add(E e) {
-        xfer(e, true, ASYNC, 0L);
-        return true;
+        return offer(e);
     }
 
     /**
@@ -1280,7 +1192,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public boolean tryTransfer(E e) {
-        return xfer(e, true, NOW, 0L) == null;
+        Objects.requireNonNull(e);
+        return xfer(e, 0L) == null;
     }
 
     /**
@@ -1295,10 +1208,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @throws NullPointerException if the specified element is null
      */
     public void transfer(E e) throws InterruptedException {
-        if (xfer(e, true, SYNC, 0L) != null) {
+        Objects.requireNonNull(e);
+        if (!Thread.interrupted()) {
+            if (xfer(e, Long.MAX_VALUE) == null)
+                return;
             Thread.interrupted(); // failure possible only due to interrupt
-            throw new InterruptedException();
         }
+        throw new InterruptedException();
     }
 
     /**
@@ -1317,30 +1233,38 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      */
     public boolean tryTransfer(E e, long timeout, TimeUnit unit)
         throws InterruptedException {
-        if (xfer(e, true, TIMED, unit.toNanos(timeout)) == null)
+        Objects.requireNonNull(e);
+        long nanos = Math.max(unit.toNanos(timeout), 0L);
+        if (xfer(e, nanos) == null)
             return true;
         if (!Thread.interrupted())
             return false;
         throw new InterruptedException();
     }
 
+    @SuppressWarnings("unchecked")
     public E take() throws InterruptedException {
-        E e = xfer(null, false, SYNC, 0L);
-        if (e != null)
-            return e;
-        Thread.interrupted();
+        Object e;
+        if (!Thread.interrupted()) {
+            if ((e = xfer(null, Long.MAX_VALUE)) != null)
+                return (E) e;
+            Thread.interrupted();
+        }
         throw new InterruptedException();
     }
 
+    @SuppressWarnings("unchecked")
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
-        E e = xfer(null, false, TIMED, unit.toNanos(timeout));
-        if (e != null || !Thread.interrupted())
-            return e;
+        Object e;
+        long nanos = Math.max(unit.toNanos(timeout), 0L);
+        if ((e = xfer(null, nanos)) != null || !Thread.interrupted())
+            return (E) e;
         throw new InterruptedException();
     }
 
+    @SuppressWarnings("unchecked")
     public E poll() {
-        return xfer(null, false, NOW, 0L);
+        return (E) xfer(null, 0L);
     }
 
     /**
@@ -1386,7 +1310,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
     public E peek() {
         restartFromHead: for (;;) {
-            for (Node p = head; p != null;) {
+            for (TransferNode p = head; p != null;) {
                 Object item = p.item;
                 if (p.isData) {
                     if (item != null) {
@@ -1414,7 +1338,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
     public boolean hasWaitingConsumer() {
         restartFromHead: for (;;) {
-            for (Node p = head; p != null;) {
+            for (TransferNode p = head; p != null;) {
                 Object item = p.item;
                 if (p.isData) {
                     if (item != null)
@@ -1463,12 +1387,12 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     public boolean remove(Object o) {
         if (o == null) return false;
         restartFromHead: for (;;) {
-            for (Node p = head, pred = null; p != null; ) {
-                Node q = p.next;
+            for (TransferNode p = head, pred = null; p != null; ) {
+                TransferNode q = p.next;
                 final Object item;
                 if ((item = p.item) != null) {
                     if (p.isData) {
-                        if (o.equals(item) && p.tryMatch(item, null)) {
+                        if (o.equals(item) && tryMatchData(p, item)) {
                             skipDeadNodes(pred, p, p, q);
                             return true;
                         }
@@ -1477,8 +1401,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 }
                 else if (!p.isData)
                     break;
-                for (Node c = p;; q = p.next) {
-                    if (q == null || !q.isMatched()) {
+                for (TransferNode c = p;; q = p.next) {
+                    if (q == null || q.isLive()) {
                         pred = skipDeadNodes(pred, c, p, q); p = q; break;
                     }
                     if (p == (p = q)) continue restartFromHead;
@@ -1499,8 +1423,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     public boolean contains(Object o) {
         if (o == null) return false;
         restartFromHead: for (;;) {
-            for (Node p = head, pred = null; p != null; ) {
-                Node q = p.next;
+            for (TransferNode p = head, pred = null; p != null; ) {
+                TransferNode q = p.next;
                 final Object item;
                 if ((item = p.item) != null) {
                     if (p.isData) {
@@ -1511,8 +1435,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 }
                 else if (!p.isData)
                     break;
-                for (Node c = p;; q = p.next) {
-                    if (q == null || !q.isMatched()) {
+                for (TransferNode c = p;; q = p.next) {
+                    if (q == null || q.isLive()) {
                         pred = skipDeadNodes(pred, c, p, q); p = q; break;
                     }
                     if (p == (p = q)) continue restartFromHead;
@@ -1561,16 +1485,14 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         throws java.io.IOException, ClassNotFoundException {
 
         // Read in elements until trailing null sentinel found
-        Node h = null, t = null;
+        TransferNode h = null, t = null;
         for (Object item; (item = s.readObject()) != null; ) {
-            Node newNode = new Node(item);
-            if (h == null)
-                h = t = newNode;
+            TransferNode newNode = new TransferNode(item, true);
+            if (t == null)
+                t = h = newNode;
             else
-                t.appendRelaxed(t = newNode);
+                t.setNext(t = newNode);
         }
-        if (h == null)
-            h = t = new Node();
         head = h;
         tail = t;
     }
@@ -1617,12 +1539,12 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             int hops = MAX_HOPS;
             // c will be CASed to collapse intervening dead nodes between
             // pred (or head if null) and p.
-            for (Node p = head, c = p, pred = null, q; p != null; p = q) {
+            for (TransferNode p = head, c = p, pred = null, q; p != null; p = q) {
                 q = p.next;
                 final Object item; boolean pAlive;
                 if (pAlive = ((item = p.item) != null && p.isData)) {
                     if (filter.test((E) item)) {
-                        if (p.tryMatch(item, null))
+                        if (tryMatchData(p, item))
                             removed = true;
                         pAlive = false;
                     }
@@ -1652,9 +1574,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * If p is null, the action is not run.
      */
     @SuppressWarnings("unchecked")
-    void forEachFrom(Consumer<? super E> action, Node p) {
-        for (Node pred = null; p != null; ) {
-            Node q = p.next;
+    void forEachFrom(Consumer<? super E> action, TransferNode p) {
+        for (TransferNode pred = null; p != null; ) {
+            TransferNode q = p.next;
             final Object item;
             if ((item = p.item) != null) {
                 if (p.isData) {
@@ -1664,8 +1586,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             }
             else if (!p.isData)
                 break;
-            for (Node c = p;; q = p.next) {
-                if (q == null || !q.isMatched()) {
+            for (TransferNode c = p;; q = p.next) {
+                if (q == null || q.isLive()) {
                     pred = skipDeadNodes(pred, c, p, q); p = q; break;
                 }
                 if (p == (p = q)) { pred = null; p = head; break; }
@@ -1682,24 +1604,16 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     }
 
     // VarHandle mechanics
-    private static final VarHandle HEAD;
-    private static final VarHandle TAIL;
-    private static final VarHandle SWEEPVOTES;
-    static final VarHandle ITEM;
-    static final VarHandle NEXT;
-    static final VarHandle WAITER;
+    static final VarHandle HEAD;
+    static final VarHandle TAIL;
+    static final VarHandle SWEEPVOTES;
     static {
         try {
+            Class<?> ltq = LinkedTransferQueue.class, tn = TransferNode.class;
             MethodHandles.Lookup l = MethodHandles.lookup();
-            HEAD = l.findVarHandle(LinkedTransferQueue.class, "head",
-                                   Node.class);
-            TAIL = l.findVarHandle(LinkedTransferQueue.class, "tail",
-                                   Node.class);
-            SWEEPVOTES = l.findVarHandle(LinkedTransferQueue.class, "sweepVotes",
-                                         int.class);
-            ITEM = l.findVarHandle(Node.class, "item", Object.class);
-            NEXT = l.findVarHandle(Node.class, "next", Node.class);
-            WAITER = l.findVarHandle(Node.class, "waiter", Thread.class);
+            HEAD = l.findVarHandle(ltq, "head", tn);
+            TAIL = l.findVarHandle(ltq, "tail", tn);
+            SWEEPVOTES = l.findVarHandle(ltq, "sweepVotes", int.class);
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
