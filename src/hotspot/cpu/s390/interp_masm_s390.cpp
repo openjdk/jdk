@@ -953,7 +953,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     Label no_reserved_zone_enabling;
 
     // check if already enabled - if so no re-enabling needed
-    guarantee(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
     z_ly(Z_R0, Address(Z_thread, JavaThread::stack_guard_state_offset()));
     compare32_and_branch(Z_R0, StackOverflow::stack_guard_enabled, bcondEqual, no_reserved_zone_enabling);
 
