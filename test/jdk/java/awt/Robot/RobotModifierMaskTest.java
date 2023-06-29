@@ -53,9 +53,7 @@ public class RobotModifierMaskTest {
     private static final String EXPECTED_RESULT_ALT = "\u00e5\u00e5\u00e5";
     private static final int EXPECTED_CARET_POS_CTRL = 0;
 
-    public static void main(String[] arguments)
-            throws Exception {
-
+    public static void main(String[] args) throws Exception {
         try {
             robot = new Robot();
             robot.setAutoWaitForIdle(true);
@@ -63,14 +61,16 @@ public class RobotModifierMaskTest {
 
             SwingUtilities.invokeAndWait(() -> createTestUI());
             robot.waitForIdle();
-            robot.delay(2000);
+            robot.delay(1000);
 
             testShiftKey();
-            robot.delay(200);
+            robot.delay(100);
             testCapsKey();
-            robot.delay(200);
+            robot.delay(100);
             testCmdKey();
+            robot.delay(100);
             testCtrlKey();
+            robot.delay(100);
             testAltKey();
 
             if (!errorLog.isEmpty()) {
@@ -87,31 +87,21 @@ public class RobotModifierMaskTest {
     }
 
     private static void testShiftKey() {
-        // clear contents of JTextArea
+        jTextArea.setText("Testing Shift Key...\n"
+                + "EXPECTED STRING: "+ EXPECTED_RESULT_SHIFT);
+        robot.delay(1000);
         jTextArea.setText("");
+        robot.delay(200);
 
         for (int i = 0; i < 5; ++i) {
-            // Press shift-a.
-            System.out.println("VK_SHIFT - KEY PRESS");
             robot.keyPress(KeyEvent.VK_SHIFT);
-            System.out.println("\n");
-
-            System.out.println("VK_A - KEY PRESS");
             robot.keyPress(KeyEvent.VK_A);
-            System.out.println("\n");
-
-            System.out.println("VK_A - KEY RELEASE");
             robot.keyRelease(KeyEvent.VK_A);
-            System.out.println("\n");
-
-            System.out.println("VK_SHIFT - KEY RELEASE");
             robot.keyRelease(KeyEvent.VK_SHIFT);
-            System.out.println("\n");
-
-            robot.delay(200);
+            robot.delay(100);
         }
 
-        robot.delay(1000);
+        robot.delay(500);
 
         if (!jTextArea.getText().equals(EXPECTED_RESULT_SHIFT)) {
             errorLog.append("For Shift key, Actual and Expected results differ \n"+
@@ -121,29 +111,23 @@ public class RobotModifierMaskTest {
 
     private static void testCapsKey() {
         // clear contents of JTextArea
+        jTextArea.setText("Testing CapsLock Key...\n"
+                + "EXPECTED STRING: "+ EXPECTED_RESULT_CAPS);
+        robot.delay(1000);
         jTextArea.setText("");
+        robot.delay(200);
 
         for (int i = 0; i < 6; ++i) {
-            System.out.println("VK_CAPS_LOCK");
             robot.keyPress(KeyEvent.VK_CAPS_LOCK);
-            System.out.println("\n");
-
-            System.out.println("VK_CAPS_LOCK");
             robot.keyRelease(KeyEvent.VK_CAPS_LOCK);
-            System.out.println("\n");
 
-            System.out.println("VK_A - KEY PRESS");
             robot.keyPress(KeyEvent.VK_A);
-            System.out.println("\n");
-
-            System.out.println("VK_A - KEY RELEASE");
             robot.keyRelease(KeyEvent.VK_A);
-            System.out.println("\n");
 
-            robot.delay(200);
+            robot.delay(100);
         }
 
-        robot.delay(1000);
+        robot.delay(500);
 
         if (!jTextArea.getText().equals(EXPECTED_RESULT_CAPS)) {
             errorLog.append("For Caps key, Actual and Expected results differ. \n"+
@@ -153,28 +137,22 @@ public class RobotModifierMaskTest {
 
     private static void testCmdKey() {
         // clear contents of JTextArea
+        jTextArea.setText("Testing CapsLock Key...\n"
+                + " EXPECTED STRING: "+ EXPECTED_RESULT_META);
+        robot.delay(1000);
         jTextArea.setText("");
+        robot.delay(200);
 
         StringSelection stringSelection = new StringSelection("AAA");
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
         clipboard.setContents(stringSelection, stringSelection);
-        System.out.println("VK_META - KEY PRESS");
+
         robot.keyPress(KeyEvent.VK_META);
-        System.out.println("\n");
-
-        System.out.println("VK_V - KEY PRESS");
         robot.keyPress(KeyEvent.VK_V);
-        System.out.println("\n");
-
-        System.out.println("VK_V - KEY RELEASE");
         robot.keyRelease(KeyEvent.VK_V);
-        System.out.println("\n");
-
-        System.out.println("VK_META - KEY RELEASE");
         robot.keyRelease(KeyEvent.VK_META);
-        System.out.println("\n");
 
-        robot.delay(1000);
+        robot.delay(500);
 
         if (!jTextArea.getText().equals(EXPECTED_RESULT_META)) {
             errorLog.append("For Command key, Actual and Expected results differ \n"+
@@ -183,31 +161,22 @@ public class RobotModifierMaskTest {
     }
 
     private static void testAltKey() {
-        // clear contents of JTextArea
+        jTextArea.setText("Testing Alt Key...\n"
+                + " EXPECTED STRING: "+ EXPECTED_RESULT_ALT);
+        robot.delay(1000);
         jTextArea.setText("");
+        robot.delay(200);
 
         for (int i = 0; i < 3; ++i) {
-            // Press shift-a.
-            System.out.println("VK_ALT - KEY PRESS");
             robot.keyPress(KeyEvent.VK_ALT);
-            System.out.println("\n");
-
-            System.out.println("VK_A - KEY PRESS");
             robot.keyPress(KeyEvent.VK_A);
-            System.out.println("\n");
-
-            System.out.println("VK_A - KEY RELEASE");
             robot.keyRelease(KeyEvent.VK_A);
-            System.out.println("\n");
-
-            System.out.println("VK_ALT - KEY RELEASE");
             robot.keyRelease(KeyEvent.VK_ALT);
-            System.out.println("\n");
 
-            robot.delay(200);
+            robot.delay(100);
         }
 
-        robot.delay(1000);
+        robot.delay(500);
 
         if (!jTextArea.getText().equals(EXPECTED_RESULT_ALT)) {
             errorLog.append("For Alt key, Actual and Expected results differ \n"+
@@ -216,51 +185,31 @@ public class RobotModifierMaskTest {
     }
 
     private static void testCtrlKey() {
-        // clear contents of JTextArea
+        jTextArea.setText("Testing Alt Key...\n"
+                + "EXPECTED CARET POSITION: "+ EXPECTED_CARET_POS_CTRL);
+        robot.delay(1000);
         jTextArea.setText("");
+        robot.delay(200);
+
         for (int i = 0; i < 5; ++i) {
-            // Press shift-a.
-            System.out.println("VK_SHIFT - KEY PRESS");
             robot.keyPress(KeyEvent.VK_SHIFT);
-            System.out.println("\n");
-
-            System.out.println("VK_A - KEY PRESS");
             robot.keyPress(KeyEvent.VK_A);
-            System.out.println("\n");
-
-            System.out.println("VK_A - KEY RELEASE");
             robot.keyRelease(KeyEvent.VK_A);
-            System.out.println("\n");
-
-            System.out.println("VK_SHIFT - KEY RELEASE");
             robot.keyRelease(KeyEvent.VK_SHIFT);
-            System.out.println("\n");
 
-            robot.delay(200);
+            robot.delay(100);
         }
 
-        robot.delay(500);
-        System.out.println("VK_CONTROL - KEY RELEASE");
+        robot.delay(200);
         robot.keyPress(KeyEvent.VK_CONTROL);
-        System.out.println("\n");
-
-        System.out.println("VK_V - KEY RELEASE");
         robot.keyPress(KeyEvent.VK_A);
-        System.out.println("\n");
-
-        System.out.println("VK_V - KEY RELEASE");
         robot.keyRelease(KeyEvent.VK_A);
-        System.out.println("\n");
-
-        System.out.println("VK_CONTROL - KEY RELEASE");
         robot.keyRelease(KeyEvent.VK_CONTROL);
-        System.out.println("\n");
 
-        robot.delay(1000);
-
+        robot.delay(500);
 
         if (jTextArea.getCaretPosition() != EXPECTED_CARET_POS_CTRL) {
-            errorLog.append("For Control key, Actual and Expected caret position differ \n"+
+            errorLog.append("For Control key, Actual and Expected caret position differ \n" +
                     "Expected Position : " + EXPECTED_CARET_POS_CTRL + " Actual Position : " + jTextArea.getCaretPosition() + "\n");
         }
     }
@@ -270,7 +219,7 @@ public class RobotModifierMaskTest {
         jTextArea = new JTextArea("");
         JScrollPane pane = new JScrollPane(jTextArea);
         jFrame.getContentPane().add(pane);
-        jFrame.setSize(200,200);
+        jFrame.setSize(300,200);
         jFrame.setLocation(200, 200);
         jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         jFrame.setVisible(true);

@@ -304,17 +304,11 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
         CGKeyCode keyCode = GetCGKeyCode(javaKeyCode);
         CGEventRef event = CGEventCreateKeyboardEvent(source, keyCode, keyPressed);
 
-        NSLog(@"JAVA KEYCODE: %d", javaKeyCode);
-        NSLog(@"CG KEYCODE: %hu", keyCode);
-
         if (event != NULL) {
-            NSLog(@"BEFORE INIT FLAG: %llu", initFlags);
             int flagMaskValue = GetCGKeyMask(keyCode);
             if (OSX_Undefined != flagMaskValue) {
-                NSLog(@"KeyCode %d and Mask Value: %d", keyCode, flagMaskValue);
                 if (keyCode == OSX_CapsLock) {
                     if (keyPressed) {
-                     NSLog(@"IF CapsLock");
                      initFlags ^= flagMaskValue;
                     }
                 } else {
@@ -334,8 +328,6 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
         if (source != NULL) {
             CFRelease(source);
         }
-        NSLog(@"AFTER INIT FLAG - Contents of Flag: %llu", initFlags);
-        NSLog(@"----------------------------------------");
     }];
 }
 
