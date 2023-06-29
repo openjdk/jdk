@@ -647,11 +647,17 @@ public abstract class ClassLoader {
 
     /**
      * Returns the lock object for class loading operations.
-     * For backward compatibility, the default implementation of this method
-     * behaves as follows. If this ClassLoader object is registered as
-     * parallel capable, the method returns a dedicated object associated
-     * with the specified class name. Otherwise, the method returns this
-     * ClassLoader object.
+     * If this {@code ClassLoader} object is registered as parallel capable,
+     * this method returns a dedicated object associated with the specified
+     * class name. Otherwise, this method returns this {@code ClassLoader} object.
+     *
+     * @apiNote
+     * This method allows parallel capable class loaders to implement
+     * finer-grained locking scheme such that multiple threads may load classes
+     * concurrently without deadlocks.  For non-parallel-capable class loaders,
+     * the {@code ClassLoader} object is held during the class loading operations.
+     * Class loaders with non-hierarchical delegation should be {@linkplain
+     * #registerAsParallelCapable() registered as parallel capable} to prevent deadlocks.
      *
      * @param  className
      *         The name of the to-be-loaded class
@@ -659,7 +665,7 @@ public abstract class ClassLoader {
      * @return the lock for class loading operations
      *
      * @throws NullPointerException
-     *         If registered as parallel capable and {@code className} is null
+     *         If registered as parallel capable and {@code className} is {@code null}
      *
      * @see #loadClass(String, boolean)
      *
