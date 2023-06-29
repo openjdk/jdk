@@ -33,12 +33,11 @@ import java.util.Optional;
 
 import static java.lang.invoke.MethodHandleStatics.UNSAFE;
 import static java.lang.invoke.MethodHandleStatics.uncaughtException;
-import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 /**
  * A lazy initializing var handle. It lazily initializes the referenced class before
  * any invocation of the target var handle to prevent reading uninitialized static
- * final field values.
+ * field values.
  */
 final class LazyInitializingVarHandle extends VarHandle {
 
@@ -126,7 +125,8 @@ final class LazyInitializingVarHandle extends VarHandle {
             return mh;
 
         try {
-            return MH_ensureInitialized = MethodHandles.lookup().findVirtual(LazyInitializingVarHandle.class,
+            return MH_ensureInitialized = MethodHandles.lookup().findVirtual(
+                    LazyInitializingVarHandle.class,
                     "ensureInitialized",
                     MethodType.methodType(void.class));
         } catch (Throwable ex) {

@@ -66,7 +66,7 @@ public class LazyStaticColdStart {
 
     /**
      * Ensures non-initialized targetClass is used and initializes the lazy/non-lazy handles
-     * to prevent further creation costs.
+     * to prevent further creation costs. (see static initializer block comments)
      */
     @Setup(Level.Iteration)
     public void setup() throws Throwable {
@@ -77,7 +77,7 @@ public class LazyStaticColdStart {
             static final MethodTypeDesc MTD_void_long = MethodTypeDesc.of(CD_void, CD_long);
             static final MethodTypeDesc MTD_ThreadLocalRandom = MethodTypeDesc.of(CD_ThreadLocalRandom);
             static final MethodTypeDesc MTD_long = MethodTypeDesc.of(CD_long);
-            static final byte[] classBytes = Classfile.build(describedClass, clb -> {
+            static final byte[] classBytes = Classfile.of().build(describedClass, clb -> {
                 clb.withField("v", CD_long, ACC_STATIC);
                 clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
                     cob.constantInstruction(100L);
@@ -89,16 +89,21 @@ public class LazyStaticColdStart {
                 });
             });
 
+            /*
+             * This static initializer eliminates overheads with initializing VarHandle/
+             * MethodHandle infrastructure that's not done in startup, so
+             * we are only measuring new Class initialization costs.
+             */
             static {
                 class AnotherLazy {
                     static long f;
                 }
                 try {
-                    LOOKUP.findStaticVarHandle(AnotherLazy.class, "f", long.class);
-                    LOOKUP.findStaticGetter(AnotherLazy.class, "f", long.class);
+                    LOOKUP.findStaticVarHandle(AnotherLazy.class, "f", long.class); // lazy static VH
+                    LOOKUP.findStaticGetter(AnotherLazy.class, "f", long.class); // lazy static MH
                     AnotherLazy.f = 5L; // initialize class
-                    LOOKUP.findStaticVarHandle(AnotherLazy.class, "f", long.class);
-                    LOOKUP.findStaticGetter(AnotherLazy.class, "f", long.class);
+                    LOOKUP.findStaticVarHandle(AnotherLazy.class, "f", long.class); // static VH
+                    LOOKUP.findStaticGetter(AnotherLazy.class, "f", long.class); // static MH
                 } catch (RuntimeException | Error e) {
                     throw e;
                 } catch (Throwable ex) {

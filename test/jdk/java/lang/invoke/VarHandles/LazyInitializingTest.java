@@ -28,6 +28,9 @@
  *          initialization mechanism..
  * @run junit LazyInitializingTest
  * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true LazyInitializingTest
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false LazyInitializingTest
+ * @run junit/othervm -Djava.lang.invoke.VarHandle.VAR_HANDLE_IDENTITY_ADAPT=true
+ *                    -Djava.lang.invoke.VarHandle.VAR_HANDLE_GUARDS=false LazyInitializingTest
  */
 
 import org.junit.jupiter.api.Test;
