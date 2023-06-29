@@ -50,6 +50,31 @@ Agent_OnLoad(JavaVM *vm, char *options, void *reserved) {
 }
 
 
+extern "C" JNIEXPORT jboolean JNICALL
+Java_GetThreadStateMountedTest_trySuspendInWaitingState(JNIEnv* jni, jclass clazz, jthread vthread) {
+  const int max_retries = 10;
+  for (int i = 0; i < max_retries; i++) {
+    // wait a bit
+    sleep_ms(100);
+
+    // suspend the thread
+    LOG("suspend vthread (%d)\n", i);
+    suspend_thread(jvmti, jni, vthread);
+
+    jint state = get_thread_state(jvmti, jni, vthread);
+    if ((state & JVMTI_THREAD_STATE_WAITING) != 0) {
+      LOG("suspended in WAITING state\n");
+      return JNI_TRUE;
+    }
+    LOG("suspended vthread is not waiting: state = %x (%s)\n", state, TranslateState(state));
+    LOG("resume vthread\n");
+    resume_thread(jvmti, jni, vthread);
+  }
+  LOG("ERROR: failed to suspend in WAITING state in %d tries\n", max_retries);
+  return JNI_FALSE;
+
+}
+
 static void verify_thread_state(const char *name, JNIEnv* jni,
   jthread thread, jint expected_strong, jint expected_weak)
 {
@@ -62,7 +87,7 @@ static void verify_thread_state(const char *name, JNIEnv* jni,
     failed = true;
     jint missed = expected_strong - actual_strong;
     LOG("  ERROR: some mandatory bits are not set (%x): %s\n",
-       missed, TranslateState(missed));
+        missed, TranslateState(missed));
   }
   // check 2: no bits other than (expected_strong | expected_weak) are set
   jint actual_full = state & (expected_strong | expected_weak);
@@ -70,7 +95,7 @@ static void verify_thread_state(const char *name, JNIEnv* jni,
     failed = true;
     jint unexpected = state - actual_full;
     LOG("  ERROR: some unexpected bits are set (%x): %s\n",
-       unexpected, TranslateState(unexpected));
+        unexpected, TranslateState(unexpected));
   }
   // check 3: expected_weak checks
   if (expected_weak != 0) {
@@ -95,7 +120,8 @@ static void verify_thread_state(const char *name, JNIEnv* jni,
 
 extern "C" JNIEXPORT void JNICALL
 Java_GetThreadStateMountedTest_testThread(
-  JNIEnv* jni, jclass clazz, jthread vthread, jboolean test_interrupt,
+  JNIEnv* jni, jclass clazz, jthread vthread, jboolean is_vthread_suspended,
+  jboolean test_interrupt,
   jint expected_strong, jint expected_weak)
 {
   jint exp_ct_state = JVMTI_THREAD_STATE_ALIVE
@@ -109,7 +135,8 @@ Java_GetThreadStateMountedTest_testThread(
   verify_thread_state("cthread", jni, cthread,
                       exp_ct_state, 0);
   verify_thread_state("vthread", jni, vthread,
-                      exp_vt_state, expected_weak);
+                      exp_vt_state | (is_vthread_suspended ? JVMTI_THREAD_STATE_SUSPENDED : 0),
+                      expected_weak);
 
   // suspend ctread and verify
   LOG("suspend cthread\n");
@@ -117,15 +144,18 @@ Java_GetThreadStateMountedTest_testThread(
   verify_thread_state("cthread", jni, cthread,
                       exp_ct_state | JVMTI_THREAD_STATE_SUSPENDED, 0);
   verify_thread_state("vthread", jni, vthread,
-                      exp_vt_state, expected_weak);
+                      exp_vt_state | (is_vthread_suspended ? JVMTI_THREAD_STATE_SUSPENDED : 0),
+                      expected_weak);
 
-  // suspend vtread and verify
-  LOG("suspend vthread\n");
-  suspend_thread(jvmti, jni, vthread);
-  verify_thread_state("cthread", jni, cthread,
-                      exp_ct_state | JVMTI_THREAD_STATE_SUSPENDED, 0);
-  verify_thread_state("vthread", jni, vthread,
-                      exp_vt_state | JVMTI_THREAD_STATE_SUSPENDED, expected_weak);
+  // suspend vthread and verify
+  if (!is_vthread_suspended) {
+    LOG("suspend vthread\n");
+    suspend_thread(jvmti, jni, vthread);
+    verify_thread_state("cthread", jni, cthread,
+                        exp_ct_state | JVMTI_THREAD_STATE_SUSPENDED, 0);
+    verify_thread_state("vthread", jni, vthread,
+                        exp_vt_state | JVMTI_THREAD_STATE_SUSPENDED, expected_weak);
+  }
 
   // resume cthread and verify
   LOG("resume cthread\n");
@@ -146,7 +176,7 @@ Java_GetThreadStateMountedTest_testThread(
                         expected_weak);
   }
 
-  // resume vthread;
+  // resume vthread
   LOG("resume vthread\n");
   resume_thread(jvmti, jni, vthread);
 
