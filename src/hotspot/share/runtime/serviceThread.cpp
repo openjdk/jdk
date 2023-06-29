@@ -51,7 +51,7 @@
 #include "services/lowMemoryDetector.hpp"
 #include "services/threadIdTable.hpp"
 
-ServiceThread* ServiceThread::_instance = NULL;
+DEBUG_ONLY(JavaThread* ServiceThread::_instance = NULL;)
 JvmtiDeferredEvent* ServiceThread::_jvmti_event = NULL;
 // The service thread has it's own static deferred event queue.
 // Events can be posted before JVMTI vm_start, so it's too early to call JvmtiThreadState::state_for
@@ -103,28 +103,11 @@ void ServiceThread::initialize() {
                           string,
                           CHECK);
 
-  {
-    MutexLocker mu(THREAD, Threads_lock);
-    ServiceThread* thread =  new ServiceThread(&service_thread_entry);
+  ServiceThread* thread = new ServiceThread(&service_thread_entry);
+  JavaThread::vm_exit_on_osthread_failure(thread);
 
-    // At this point it may be possible that no osthread was created for the
-    // JavaThread due to lack of memory. We would have to throw an exception
-    // in that case. However, since this must work and we do not allow
-    // exceptions anyway, check and abort if this fails.
-    if (thread == NULL || thread->osthread() == NULL) {
-      vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    os::native_thread_creation_failed_msg());
-    }
-
-    java_lang_Thread::set_thread(thread_oop(), thread);
-    java_lang_Thread::set_priority(thread_oop(), NearMaxPriority);
-    java_lang_Thread::set_daemon(thread_oop());
-    thread->set_threadObj(thread_oop());
-    _instance = thread;
-
-    Threads::add(thread);
-    Thread::start(thread);
-  }
+  JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NearMaxPriority);
+  DEBUG_ONLY(_instance = thread;)
 }
 
 static void cleanup_oopstorages() {

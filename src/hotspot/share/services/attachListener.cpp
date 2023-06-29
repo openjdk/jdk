@@ -489,22 +489,10 @@ void AttachListener::init() {
     return;
   }
 
-  { MutexLocker mu(THREAD, Threads_lock);
-    JavaThread* listener_thread = new JavaThread(&attach_listener_thread_entry);
+  JavaThread* thread = new JavaThread(&attach_listener_thread_entry);
+  JavaThread::vm_exit_on_osthread_failure(thread);
 
-    // Check that thread and osthread were created
-    if (listener_thread == NULL || listener_thread->osthread() == NULL) {
-      vm_exit_during_initialization("java.lang.OutOfMemoryError",
-                                    os::native_thread_creation_failed_msg());
-    }
-
-    java_lang_Thread::set_thread(thread_oop(), listener_thread);
-    java_lang_Thread::set_daemon(thread_oop());
-
-    listener_thread->set_threadObj(thread_oop());
-    Threads::add(listener_thread);
-    Thread::start(listener_thread);
-  }
+  JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);
 }
 
 // Performs clean-up tasks on platforms where we can detect that the last
