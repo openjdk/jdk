@@ -2251,6 +2251,7 @@ public class IRNode {
             } catch (NumberFormatException e) {
                 TestFormat.checkNoReport(false, "Vector node has invalid size \"" + sizes[i] + "\", in \"" + sizeString + "\"");
             }
+            TestFormat.checkNoReport(s > 1, "Vector node size must be 2 or larger, but got \"" + sizes[i] + "\", in \"" + sizeString + "\"");
             regex += ((i > 0) ? "|" : "") + s;
         }
         if (sizes.length > 1) {

@@ -1054,7 +1054,7 @@ class BadIRAnnotationsAfterTestVM {
     public void wrongCountString() {}
 
     @Test
-    @FailCount(2)
+    @FailCount(8)
     @IR(counts = {IRNode.LOAD_VI, "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE_MAX, "> 0"}, // valid
@@ -1064,6 +1064,18 @@ class BadIRAnnotationsAfterTestVM {
     @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "xxx", "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "min()", "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "min(max_for_type)", "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,max_int", "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,-3", "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "min(max_for_type, xxx)", "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "min(max_for_type, min(max_for_type, max_for_type))", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     public int[] badVectorNodeSize() {
         int[] a = new int[1024*8];
