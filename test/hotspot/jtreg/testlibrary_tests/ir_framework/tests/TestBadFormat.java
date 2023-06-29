@@ -981,26 +981,6 @@ class BadIRAnnotations {
     @IR(failOn = IRNode.CALL, applyIf = {"ErrorFile", "48"}) // valid
     @IR(failOn = IRNode.CALL, applyIf = {"ErrorFile", "48.5"}) // valid
     public void anyValueForStringFlags() {}
-
-    @Test
-    @FailCount(2)
-    @IR(counts = {IRNode.LOAD_VI, "> 0"},
-        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE_MAX, "> 0"}, // valid
-        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE_ANY, "> 0"}, // valid
-        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "", "> 0"},
-        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "xxx", "> 0"},
-        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    public int[] badVectorNodeSize() {
-        int[] a = new int[1024*8];
-        for (int i = 0; i < a.length; i++) {
-            a[i]++;
-        }
-        return a;
-    }
 }
 
 class BadIRAnnotationsAfterTestVM {
@@ -1072,6 +1052,26 @@ class BadIRAnnotationsAfterTestVM {
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > a3"})
     @IR(counts = {IRNode.STORE_OF_CLASS, "Foo", " > 0x1"})
     public void wrongCountString() {}
+
+    @Test
+    @FailCount(2)
+    @IR(counts = {IRNode.LOAD_VI, "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE_MAX, "> 0"}, // valid
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE_ANY, "> 0"}, // valid
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "", "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "xxx", "> 0"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    public int[] badVectorNodeSize() {
+        int[] a = new int[1024*8];
+        for (int i = 0; i < a.length; i++) {
+            a[i]++;
+        }
+        return a;
+    }
 }
 
 class BadIRNodeForPhase {
