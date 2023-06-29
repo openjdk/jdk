@@ -65,10 +65,6 @@ inline PlatformMutex::PlatformMutex() {
   InitializeCriticalSection(&_mutex);
 }
 
-inline PlatformMutex::~PlatformMutex() {
-  DeleteCriticalSection(&_mutex);
-}
-
 inline PlatformMonitor::PlatformMonitor() {
   InitializeConditionVariable(&_cond);
 }
