@@ -305,12 +305,15 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
         NSLog(@"CG KEYCODE: %hu", keyCode);
 
         if (event != NULL) {
-            NSLog(@"BEFORE Contents of Flag: %llu", initFlags);
+            NSLog(@"BEFORE INIT FLAG: %llu", initFlags);
             int flagMaskValue = GetCGKeyMask(keyCode);
             if (OSX_Undefined != flagMaskValue) {
                 NSLog(@"KeyCode %d and Mask Value: %d", keyCode, flagMaskValue);
                 if (keyCode == OSX_CapsLock) {
-                    initFlags ^= flagMaskValue;
+                    if (keyPressed) {
+                     NSLog(@"IF CapsLock");
+                     initFlags ^= flagMaskValue;
+                    }
                 } else {
                     initFlags = keyPressed
                                 ? (initFlags | flagMaskValue)    // add flag bits if modifier key pressed
@@ -319,7 +322,11 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
             }
 
             CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
-            flags |= initFlags;
+            int allModifiersMask = kCGEventFlagMaskShift | kCGEventFlagMaskControl
+                                  | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand
+                                  | kCGEventFlagMaskAlphaShift;
+
+            flags  = (initFlags & allModifiersMask) | (flags & (!allModifiersMask));
             CGEventSetFlags(event, flags);
 
             CGEventPost(kCGHIDEventTap, event);
@@ -328,7 +335,7 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
         if (source != NULL) {
             CFRelease(source);
         }
-        NSLog(@"AFTER EVENT & SOURCE RELEASE - Contents of Flag: %llu", initFlags);
+        NSLog(@"AFTER INIT FLAG - Contents of Flag: %llu", initFlags);
         NSLog(@"----------------------------------------");
     }];
 }
