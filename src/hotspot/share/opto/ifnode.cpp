@@ -1598,8 +1598,7 @@ bool IfNode::same_condition(const Node* dom, PhaseIterGVN* igvn) const {
   Node* this_cmp = this_bool->in(1);
 
   if (dom_cmp == nullptr || !dom_cmp->is_SubTypeCheck() ||
-      this_cmp == nullptr || !this_cmp->is_SubTypeCheck() ||
-      (dom_cmp->req() == 3 && this_cmp->req() == 3)) {
+      this_cmp == nullptr || !this_cmp->is_SubTypeCheck()) {
     return false;
   }
 

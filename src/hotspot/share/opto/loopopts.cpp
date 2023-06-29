@@ -138,6 +138,9 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
         x = y;
       } else {
         y = _igvn.hash_find(x);
+        if (y == nullptr) {
+          y = similar_subtype_check(x, region->in(i));
+        }
         if (y) {
           wins++;
           x = y;
@@ -213,6 +216,30 @@ Node* PhaseIdealLoop::split_thru_phi(Node* n, Node* region, int policy) {
   }
 
   return phi;
+}
+
+// Subtype checks that carry profile data don't common so look for a replacement by following edges
+Node* PhaseIdealLoop::similar_subtype_check(const Node* x, Node* r_in) {
+  if (x->is_SubTypeCheck()) {
+    Node* in1 = x->in(1);
+    for (DUIterator_Fast imax, i = in1->fast_outs(imax); i < imax; i++) {
+      Node* u = in1->fast_out(i);
+      if (u != x && u->is_SubTypeCheck() && u->in(1) == x->in(1) && u->in(2) == x->in(2)) {
+        for (DUIterator_Fast jmax, j = u->fast_outs(jmax); j < jmax; j++) {
+          Node* bol = u->fast_out(j);
+          for (DUIterator_Fast kmax, k = bol->fast_outs(kmax); k < kmax; k++) {
+            Node* iff = bol->fast_out(k);
+            // Only dominating subtype checks are interesting: otherwise we risk replacing a subtype check by another with
+            // unrelated profile
+            if (iff->is_If() && is_dominator(iff, r_in)) {
+              return u;
+            }
+          }
+        }
+      }
+    }
+  }
+  return nullptr;
 }
 
 // Return true if 'n' is a Div or Mod node (without zero check If node which was removed earlier) with a loop phi divisor
@@ -1481,7 +1508,9 @@ bool PhaseIdealLoop::try_merge_identical_ifs(Node* n) {
     Node *n_ctrl = n->in(0);
     IfNode* dom_if = idom(n_ctrl)->as_If();
     if (n->in(1) != dom_if->in(1)) {
-      assert(n->in(1)->in(1)->is_SubTypeCheck() && (n->in(1)->in(1)->req() > 3 || dom_if->in(1)->in(1)->req() > 3), "only for subtype checks with profile data attached");
+      assert(n->in(1)->in(1)->is_SubTypeCheck() &&
+             (n->in(1)->in(1)->as_SubTypeCheck()->method() != nullptr ||
+              dom_if->in(1)->in(1)->as_SubTypeCheck()->method() != nullptr), "only for subtype checks with profile data attached");
       _igvn.replace_input_of(n, 1, dom_if->in(1));
     }
     ProjNode* dom_proj_true = dom_if->proj_out(1);

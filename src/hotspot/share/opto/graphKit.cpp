@@ -2678,7 +2678,7 @@ static IfNode* gen_subtype_check_compare(Node* ctrl, Node* in1, Node* in2, BoolT
 // Object; if you wish to check an Object you need to load the Object's class
 // prior to coming here.
 Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, Node* mem, PhaseGVN& gvn,
-                               Node_List* profile_entries) {
+                               ciMethod* method, int bci) {
   Compile* C = gvn.C;
   if ((*ctrl)->is_top()) {
     return C->top();
@@ -2777,28 +2777,31 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
 
   // If we might perform an expensive check, first try to take advantage of profile data that was attached to the
   // SubTypeCheck node
-  if (might_be_cache && profile_entries != nullptr) {
-    assert(profile_entries->size() % 2 == 0, "");
+  if (might_be_cache && method != nullptr) {
+    ciCallProfile profile = method->call_profile_at_bci(bci);
     float total_prob = 0;
-    for (uint i = 0; i < profile_entries->size(); i += 2) {
-      Node* prob = profile_entries->at(i + 1);
-      float p = prob->bottom_type()->getf();
-      total_prob += p;
+    for (int i = 0; ; ++i) {
+      if (!profile.has_receiver(i)) {
+        break;
+      }
+      float prob = profile.receiver_prob(i);
+      total_prob += prob;
     }
-
     if (total_prob * 100. >= TypeProfileSubTypeCheckCommonThreshold) {
       const TypeKlassPtr* superk = gvn.type(superklass)->is_klassptr();
-      for (uint i = 0; i < profile_entries->size(); i += 2) {
-        Node* klass = profile_entries->at(i);
-        const TypeKlassPtr* klass_t = gvn.type(klass)->is_klassptr();
-        Node* prob = profile_entries->at(i + 1);
-
+      for (int i = 0; ; ++i) {
+        if (!profile.has_receiver(i)) {
+          break;
+        }
+        ciKlass* klass = profile.receiver(i);
+        const TypeKlassPtr* klass_t = TypeKlassPtr::make(klass);
         Compile::SubTypeCheckResult result = C->static_subtype_check(superk, klass_t);
         if (result != Compile::SSC_always_true && result != Compile::SSC_always_false) {
           continue;
         }
-        float p = prob->bottom_type()->getf();
-        IfNode* iff = gen_subtype_check_compare(*ctrl, subklass, klass, BoolTest::eq, p, gvn, T_ADDRESS);
+        float prob = profile.receiver_prob(i);
+        ConNode* klass_node = gvn.makecon(klass_t);
+        IfNode* iff = gen_subtype_check_compare(*ctrl, subklass, klass_node, BoolTest::eq, prob, gvn, T_ADDRESS);
         Node* iftrue = gvn.transform(new IfTrueNode(iff));
 
         if (result == Compile::SSC_always_true) {
@@ -2897,28 +2900,12 @@ Node* GraphKit::gen_subtype_check(Node* obj_or_subklass, Node* superklass) {
       subklass = load_object_klass(obj_or_subklass);
     }
 
-    Node* n = Phase::gen_subtype_check(subklass, superklass, &ctrl, mem, _gvn, nullptr);
+    Node* n = Phase::gen_subtype_check(subklass, superklass, &ctrl, mem, _gvn, method(), bci());
     set_control(ctrl);
     return n;
   }
 
-  SubTypeCheckNode* subtypecheck = new SubTypeCheckNode(C, obj_or_subklass, superklass);
-  const TypeKlassPtr* superklass_t = _gvn.type(superklass)->is_klassptr();
-  // attach profile data to the SubTypeCheckNode
-  ciCallProfile profile = method()->call_profile_at_bci(bci());
-  for (int i = 0; ; ++i) {
-    if (!profile.has_receiver(i)) {
-      break;
-    }
-    ciKlass* klass = profile.receiver(i);
-    const TypeKlassPtr* klass_t = TypeKlassPtr::make(klass);
-    ConNode* klass_node = _gvn.makecon(klass_t);
-    subtypecheck->add_req(klass_node);
-    float prob = profile.receiver_prob(i);
-    ConNode* prob_node = _gvn.makecon(TypeF::make(prob));
-    subtypecheck->add_req(prob_node);
-  }
-  Node* check = _gvn.transform(subtypecheck);
+  Node* check = _gvn.transform(new SubTypeCheckNode(C, obj_or_subklass, superklass, method(), bci()));
   Node* bol = _gvn.transform(new BoolNode(check, BoolTest::eq));
   IfNode* iff = create_and_xform_if(control(), bol, PROB_STATIC_FREQUENT, COUNT_UNKNOWN);
   set_control(_gvn.transform(new IfTrueNode(iff)));

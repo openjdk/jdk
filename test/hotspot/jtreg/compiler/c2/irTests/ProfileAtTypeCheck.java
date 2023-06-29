@@ -25,6 +25,7 @@ package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Platform;
+import java.util.ArrayList;
 
 /*
  * @test
@@ -37,11 +38,14 @@ import jdk.test.lib.Platform;
 
 public class ProfileAtTypeCheck {
     public static void main(String[] args) {
-        if (Platform.is32bit()) {
-            TestFramework.runWithFlags("-XX:TypeProfileSubTypeCheckCommonThreshold=90");
-        } else {
-            TestFramework.runWithFlags("-XX:-UseCompressedClassPointers", "-XX:TypeProfileSubTypeCheckCommonThreshold=90");
+        ArrayList<String> flags = new ArrayList<>();
+        flags.add("-XX:TypeProfileSubTypeCheckCommonThreshold=90");
+        if (!Platform.is32bit()) {
+            flags.add("-XX:-UseCompressedClassPointers");
         }
+        flags.add("-XX:+IgnoreUnrecognizedVMOptions");
+        flags.add("-XX:+UseParallelGC");
+        TestFramework.runWithFlags(flags.toArray(new String[0]));
     }
 
     @DontInline
@@ -316,6 +320,69 @@ public class ProfileAtTypeCheck {
         test12Helper(true);
         fieldTest12 = e;
         test12();
+    }
+
+    // Test that subtype checks with different profile don't common
+    @Test
+    @IR(phase = { CompilePhase.ITER_GVN1 }, counts = { IRNode.SUBTYPE_CHECK, "2" })
+    public static void test13(boolean flag, Object o) {
+        if (o == null) {
+            throw new RuntimeException();
+        }
+        if (flag) {
+            dummyI((I)o);
+        } else {
+            dummyI((I)o);
+        }
+    }
+
+    @Run(test = "test13")
+    @Warmup(10_000)
+    private void test13Runner() {
+        test13(true, a);
+        test13(true, b);
+        test13(false, c);
+        test13(false, d);
+    }
+
+    static Object fieldTest14_1;
+    static Object fieldTest14_2;
+    // test that split if triggers
+    @Test
+    @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "2" })
+    @IR(applyIf = { "UseParallelGC", "true" }, phase = { CompilePhase.PHASEIDEALLOOP1 }, counts = { IRNode.SUBTYPE_CHECK, "3" })
+    public static void test14(boolean flag1, boolean flag2, Object o1, Object o2, Object o3) {
+        if (o1 == null) {
+            throw new RuntimeException();
+        }
+        if (o2 == null) {
+            throw new RuntimeException();
+        }
+        if (o3 == null) {
+            throw new RuntimeException();
+        }
+        Object o;
+        if (flag1) {
+            fieldTest14_1 = o3;
+            fieldTest14_2 = (I)o3;
+            o = fieldTest14_1;
+        } else {
+            if (flag2) {
+                o = o1;
+            } else {
+                o = o2;
+            }
+        }
+        dummyI((I)o);
+    }
+
+    @Run(test = "test14")
+    @Warmup(10_000)
+    private void test14Runner() {
+        test14(true, true, a, a, a);
+        test14(true, true, b, b, b);
+        test14(false, true, c, c, c);
+        test14(false, false, d, d, d);
     }
 
     interface I {
