@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -118,6 +118,7 @@ public class KeytoolReaderP12Test {
             throws IOException {
         convertToPFX(name);
         final String[] command = new String[]{"-debug", "-list", "-v",
+            "-J-Duser.language=en", "-J-Duser.country=US",
             "-keystore", WORKING_DIRECTORY + File.separator + name,
             "-storetype", "pkcs12", "-storepass", password};
         runAndValidate(command, expectedValues);
@@ -128,6 +129,7 @@ public class KeytoolReaderP12Test {
             throws IOException {
         convertToPFX(name);
         final String[] command = new String[]{"-debug", "-export", "-alias",
+            "-J-Duser.language=en", "-J-Duser.country=US",
             alias, "-keystore", WORKING_DIRECTORY + File.separator + name,
             "-storepass", password, "-storetype", "pkcs12", "-rfc"};
         runAndValidate(command, expectedValues);
