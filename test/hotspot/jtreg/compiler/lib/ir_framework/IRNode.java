@@ -108,8 +108,10 @@ public class IRNode {
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
 
     public static final String VECTOR_SIZE = "_@";
-    public static final String VECTOR_SIZE_ANY = VECTOR_SIZE + "any"; // default for count "=0" and failOn
-    public static final String VECTOR_SIZE_MAX = VECTOR_SIZE + "max_for_type"; // default in count
+    public static final String VECTOR_SIZE_TAG_ANY = "any";
+    public static final String VECTOR_SIZE_TAG_MAX = "max_for_type";
+    public static final String VECTOR_SIZE_ANY = VECTOR_SIZE + VECTOR_SIZE_TAG_ANY; // default for count "=0" and failOn
+    public static final String VECTOR_SIZE_MAX = VECTOR_SIZE + VECTOR_SIZE_TAG_MAX; // default in count
     public static final String VECTOR_SIZE_2   = VECTOR_SIZE + "2";
     public static final String VECTOR_SIZE_4   = VECTOR_SIZE + "4";
     public static final String VECTOR_SIZE_8   = VECTOR_SIZE + "8";
@@ -2236,7 +2238,7 @@ public class IRNode {
      * Parse {@code sizeString} and generate a regex pattern to match for the size in the IR dump.
      */
     public static String parseVectorNodeSize(String sizeString, String typeString, VMInfo vmInfo) {
-        if (sizeString.equals("any")) {
+        if (sizeString.equals(VECTOR_SIZE_TAG_ANY)) {
             return "\\\\d+"; // match with any number
         }
         // Try to parse any tags, convert to comma separated list of ints
@@ -2284,16 +2286,16 @@ public class IRNode {
 
         // Parse individual tags
         return switch (sizeTagString) {
-            case "max_for_type"  -> String.valueOf(getMaxElementsForType(typeString, vmInfo));
-            case "max_byte"      -> String.valueOf(getMaxElementsForType("byte", vmInfo));
-            case "max_char"      -> String.valueOf(getMaxElementsForType("char", vmInfo));
-            case "max_short"     -> String.valueOf(getMaxElementsForType("short", vmInfo));
-            case "max_int"       -> String.valueOf(getMaxElementsForType("int", vmInfo));
-            case "max_long"      -> String.valueOf(getMaxElementsForType("long", vmInfo));
-            case "max_float"     -> String.valueOf(getMaxElementsForType("float", vmInfo));
-            case "max_double"    -> String.valueOf(getMaxElementsForType("double", vmInfo));
-            case "LoopMaxUnroll" -> String.valueOf(vmInfo.getLong("LoopMaxUnroll", -1));
-            default              -> sizeTagString;
+            case VECTOR_SIZE_TAG_MAX -> String.valueOf(getMaxElementsForType(typeString, vmInfo));
+            case "max_byte"          -> String.valueOf(getMaxElementsForType("byte", vmInfo));
+            case "max_char"          -> String.valueOf(getMaxElementsForType("char", vmInfo));
+            case "max_short"         -> String.valueOf(getMaxElementsForType("short", vmInfo));
+            case "max_int"           -> String.valueOf(getMaxElementsForType("int", vmInfo));
+            case "max_long"          -> String.valueOf(getMaxElementsForType("long", vmInfo));
+            case "max_float"         -> String.valueOf(getMaxElementsForType("float", vmInfo));
+            case "max_double"        -> String.valueOf(getMaxElementsForType("double", vmInfo));
+            case "LoopMaxUnroll"     -> String.valueOf(vmInfo.getLong("LoopMaxUnroll", -1));
+            default                  -> sizeTagString;
         };
     }
 

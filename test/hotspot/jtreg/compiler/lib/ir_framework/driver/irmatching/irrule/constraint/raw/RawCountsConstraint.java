@@ -26,6 +26,7 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.constraint.raw;
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IR;
+import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
@@ -89,7 +90,7 @@ public class RawCountsConstraint implements RawConstraint {
     @Override
     public Constraint parse(CompilePhase compilePhase, String compilationOutput, VMInfo vmInfo) {
         TestFramework.check(compilePhase != CompilePhase.DEFAULT, "must not be default");
-        String vectorSizeTag = expectMaxSizeForVectorNode() ? "max_for_type" : "any";
+        String vectorSizeTag = expectMaxSizeForVectorNode() ? IRNode.VECTOR_SIZE_TAG_MAX : IRNode.VECTOR_SIZE_TAG_ANY;
         return Constraint.createCounts(rawIRNode.regex(compilePhase, vmInfo, vectorSizeTag), constraintIndex, comparison, compilationOutput);
     }
 }

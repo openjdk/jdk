@@ -54,7 +54,7 @@ public class TestClassParser {
     public Matchable parse(String hotspotPidFileName, String irEncoding) {
         IREncodingParser irEncodingParser = new IREncodingParser(testClass);
         TestMethods testMethods = irEncodingParser.parse(irEncoding);
-        VMInfo vmInfo = irEncodingParser.parseVMInfo(irEncoding);
+        VMInfo vmInfo = VMInfoParser.parseVMInfo(irEncoding);
         if (testMethods.hasTestMethods()) {
             HotSpotPidFileParser hotSpotPidFileParser = new HotSpotPidFileParser(testClass.getName(), testMethods);
             LoggedMethods loggedMethods = hotSpotPidFileParser.parse(hotspotPidFileName);

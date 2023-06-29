@@ -46,7 +46,7 @@ public class IREncodingParser {
     private static final boolean PRINT_IR_ENCODING = Boolean.parseBoolean(System.getProperty("PrintIREncoding", "false"));
     private static final Pattern IR_ENCODING_PATTERN =
             Pattern.compile("(?<=" + IREncodingPrinter.START + "\r?\n).*\\R([\\s\\S]*)(?=" + IREncodingPrinter.END + ")");
-    private static final Pattern VMINFO_PATTERN =
+    private static final Pattern VM_INFO_PATTERN =
             Pattern.compile("(?<=" + IREncodingPrinter.START_VMINFO + "\r?\n).*\\R([\\s\\S]*)(?=" + IREncodingPrinter.END_VMINFO + ")");
 
     private final Map<String, TestMethod> testMethods;
@@ -106,39 +106,6 @@ public class IREncodingParser {
     private String[] getIREncodingLines(String irEncoding) {
         Matcher matcher = IR_ENCODING_PATTERN.matcher(irEncoding);
         TestFramework.check(matcher.find(), "Did not find IR encoding in:" + System.lineSeparator() + irEncoding);
-        String lines = matcher.group(1).trim();
-        if (lines.isEmpty()) {
-            // Nothing to IR match.
-            return new String[0];
-        }
-        return lines.split("\\R");
-    }
-
-    /**
-     * Extract VMInfo from the irEncoding.
-     */
-    public VMInfo parseVMInfo(String irEncoding) {
-        Map<String, String> map = new HashMap<>();
-        String[] lines = getVMInfoLines(irEncoding);
-        for (String s : lines) {
-            String line = s.trim();
-            String[] splitLine = line.split(":", 2);
-            if (splitLine.length != 2) {
-                throw new TestFrameworkException("Invalid VMInfo key:value encoding. Found: " + splitLine[0]);
-            }
-            String key = splitLine[0];
-            String value = splitLine[1];
-            map.put(key, value);
-        }
-        return new VMInfo(map);
-    }
-
-    /**
-     * Extract the VMInfo from the irEncoding string, strip away the header and return the individual key-value lines.
-     */
-    private String[] getVMInfoLines(String irEncoding) {
-        Matcher matcher = VMINFO_PATTERN.matcher(irEncoding);
-        TestFramework.check(matcher.find(), "Did not find VMInfo in:" + System.lineSeparator() + irEncoding);
         String lines = matcher.group(1).trim();
         if (lines.isEmpty()) {
             // Nothing to IR match.
