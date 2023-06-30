@@ -56,7 +56,7 @@ public class TestVectorizeTypeConversion {
 
     @Test
     // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
-    @IR(counts = {IRNode.LOAD_VI,         IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
                   IRNode.VECTOR_CAST_I2D, IRNode.VECTOR_SIZE + "min(max_int, max_double)", ">0",
                   IRNode.STORE_VECTOR, ">0"},
         // The vectorization of some conversions may fail when `+AlignVector`.
@@ -70,8 +70,8 @@ public class TestVectorizeTypeConversion {
 
     @Test
     // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
-    @IR(counts = {IRNode.LOAD_VL,         IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
-                  IRNode.LOAD_VI,         IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
+    @IR(counts = {IRNode.LOAD_VECTOR_L,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
+                  IRNode.LOAD_VECTOR_I,   IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
                   IRNode.VECTOR_CAST_I2L, IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
                   IRNode.VECTOR_CAST_L2I, IRNode.VECTOR_SIZE + "min(max_int, max_long)", ">0",
                   IRNode.STORE_VECTOR, ">0"})
@@ -84,8 +84,8 @@ public class TestVectorizeTypeConversion {
 
     @Test
     // Mixing types of different sizes has the effect that some vectors are shorter than the type allows.
-    @IR(counts = {IRNode.LOAD_VF,         IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
-                  IRNode.LOAD_VD,         IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
+    @IR(counts = {IRNode.LOAD_VECTOR_F,   IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
+                  IRNode.LOAD_VECTOR_D,   IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
                   IRNode.VECTOR_CAST_D2F, IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
                   IRNode.VECTOR_CAST_F2D, IRNode.VECTOR_SIZE + "min(max_float, max_double)", ">0",
                   IRNode.STORE_VECTOR, ">0"})

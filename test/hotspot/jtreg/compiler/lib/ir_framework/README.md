@@ -72,10 +72,10 @@ public void test() {
 ```
 
 #### Vector IR Nodes
-For vector nodes, we not only check for the presence of the node, but also its type and size (number of elements in the vector). Every node has an associated type, for example `IRNode.LOAD_VI` has type `int` and `IRNode.LOAD_VF` has type `float`. The size can be explicitly specified as an additional argument. For example:
+For vector nodes, we not only check for the presence of the node, but also its type and size (number of elements in the vector). Every node has an associated type, for example `IRNode.LOAD_VECTOR_I` has type `int` and `IRNode.LOAD_VECTOR_F` has type `float`. The size can be explicitly specified as an additional argument. For example:
 
 ```
-@IR(counts = {IRNode.LOAD_VF, IRNode.VECTOR_SIZE_16, "> 0"},
+@IR(counts = {IRNode.LOAD_VECTOR_F, IRNode.VECTOR_SIZE_16, "> 0"},
     applyIf = {"MaxVectorSize", "=64"},
     applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
 static float[] test() {
@@ -89,7 +89,7 @@ static float[] test() {
 
 However, the size does not have to be specified. In most cases, one either wants to have vectorization at the maximal possible vector width, or no vectorization at all. Hence, the default size is `IRNode.VECTOR_SIZE_MAX`, except when using `failOn` or `counts` with comparisons `<`, `<=` or `=0`, where we have a default of `IRNode.VECTOR_SIZE_ANY`.
 
-More examples can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java). You can also find many examples in the Vector API and SuperWord tests, when searching for `IRNode.VECTOR_SIZE` or `IRNode.LOAD_V`.
+More examples can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java). You can also find many examples in the Vector API and SuperWord tests, when searching for `IRNode.VECTOR_SIZE` or `IRNode.LOAD_VECTOR`.
 
 #### User-defined Regexes
 

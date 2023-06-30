@@ -85,7 +85,7 @@ public class VectorReverseBytesTest {
 
     @Test
     @IR(failOn = IRNode.REVERSE_BYTES_VB)
-    @IR(failOn = IRNode.BLEND_VB)
+    @IR(failOn = IRNode.VECTOR_BLEND_B)
     public static void testReverseBytesVMasked() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
         for (int i = 0; i < LENGTH; i += B_SPECIES.length()) {

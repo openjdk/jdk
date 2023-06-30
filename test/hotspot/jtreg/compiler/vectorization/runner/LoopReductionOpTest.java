@@ -79,7 +79,7 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"asimd", "true", "sse3", "true"},
-        counts = {IRNode.LOAD_VI, ">0",
+        counts = {IRNode.LOAD_VECTOR_I, ">0",
                   IRNode.ADD_REDUCTION_V, ">0"})
     public int reductionAddSumOfArray() {
         int res = 0;
@@ -120,7 +120,7 @@ public class LoopReductionOpTest extends VectorizationTestRunner {
 
     @Test
     @IR(applyIfCPUFeatureOr = {"sve", "true", "avx2", "true"},
-        counts = {IRNode.LOAD_VI, ">0",
+        counts = {IRNode.LOAD_VECTOR_I, ">0",
                   IRNode.ADD_REDUCTION_V, ">0"})
     public int reductionAddSumOfMultiple() {
         int res = 0;

@@ -240,7 +240,7 @@ public class TestCyclicDependency {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VI, "> 0", IRNode.ADD_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0", IRNode.ADD_VI, "> 0", IRNode.STORE_VECTOR, "> 0"},
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
     static void test0(int[] dataI, float[] dataF) {
         for (int i = 0; i < RANGE; i++) {

@@ -690,39 +690,39 @@ public class IRNode {
         loadOfNodes(LOAD_US_OF_CLASS, "LoadUS");
     }
 
-    public static final String LOAD_VB = VECTOR_PREFIX + "LOAD_VB" + POSTFIX;
+    public static final String LOAD_VECTOR_B = VECTOR_PREFIX + "LOAD_VECTOR_B" + POSTFIX;
     static {
-        vectorNode(LOAD_VB, "LoadVector", TYPE_BYTE);
+        vectorNode(LOAD_VECTOR_B, "LoadVector", TYPE_BYTE);
     }
 
-    public static final String LOAD_VC = VECTOR_PREFIX + "LOAD_VC" + POSTFIX;
+    public static final String LOAD_VECTOR_C = VECTOR_PREFIX + "LOAD_VECTOR_C" + POSTFIX;
     static {
-        vectorNode(LOAD_VC, "LoadVector", TYPE_CHAR);
+        vectorNode(LOAD_VECTOR_C, "LoadVector", TYPE_CHAR);
     }
 
-    public static final String LOAD_VS = VECTOR_PREFIX + "LOAD_VS" + POSTFIX;
+    public static final String LOAD_VECTOR_S = VECTOR_PREFIX + "LOAD_VECTOR_S" + POSTFIX;
     static {
-        vectorNode(LOAD_VS, "LoadVector", TYPE_SHORT);
+        vectorNode(LOAD_VECTOR_S, "LoadVector", TYPE_SHORT);
     }
 
-    public static final String LOAD_VI = VECTOR_PREFIX + "LOAD_VI" + POSTFIX;
+    public static final String LOAD_VECTOR_I = VECTOR_PREFIX + "LOAD_VECTOR_I" + POSTFIX;
     static {
-        vectorNode(LOAD_VI, "LoadVector", TYPE_INT);
+        vectorNode(LOAD_VECTOR_I, "LoadVector", TYPE_INT);
     }
 
-    public static final String LOAD_VL = VECTOR_PREFIX + "LOAD_VL" + POSTFIX;
+    public static final String LOAD_VECTOR_L = VECTOR_PREFIX + "LOAD_VECTOR_L" + POSTFIX;
     static {
-        vectorNode(LOAD_VL, "LoadVector", TYPE_LONG);
+        vectorNode(LOAD_VECTOR_L, "LoadVector", TYPE_LONG);
     }
 
-    public static final String LOAD_VF = VECTOR_PREFIX + "LOAD_VF" + POSTFIX;
+    public static final String LOAD_VECTOR_F = VECTOR_PREFIX + "LOAD_VECTOR_F" + POSTFIX;
     static {
-        vectorNode(LOAD_VF, "LoadVector", TYPE_FLOAT);
+        vectorNode(LOAD_VECTOR_F, "LoadVector", TYPE_FLOAT);
     }
 
-    public static final String LOAD_VD = VECTOR_PREFIX + "LOAD_VD" + POSTFIX;
+    public static final String LOAD_VECTOR_D = VECTOR_PREFIX + "LOAD_VECTOR_D" + POSTFIX;
     static {
-        vectorNode(LOAD_VD, "LoadVector", TYPE_DOUBLE);
+        vectorNode(LOAD_VECTOR_D, "LoadVector", TYPE_DOUBLE);
     }
 
     public static final String LOAD_VECTOR_GATHER = PREFIX + "LOAD_VECTOR_GATHER" + POSTFIX;
@@ -1561,64 +1561,64 @@ public class IRNode {
         machOnlyNameRegex(VAND_NOT_L, "vand_notL");
     }
 
-    public static final String BLEND_VB = VECTOR_PREFIX + "BLEND_VB" + POSTFIX;
+    public static final String VECTOR_BLEND_B = VECTOR_PREFIX + "VECTOR_BLEND_B" + POSTFIX;
     static {
-        vectorNode(BLEND_VB, "VectorBlend", TYPE_BYTE);
+        vectorNode(VECTOR_BLEND_B, "VectorBlend", TYPE_BYTE);
     }
 
-    public static final String BLEND_VF = VECTOR_PREFIX + "BLEND_VF" + POSTFIX;
+    public static final String VECTOR_BLEND_F = VECTOR_PREFIX + "VECTOR_BLEND_F" + POSTFIX;
     static {
-        vectorNode(BLEND_VF, "VectorBlend", TYPE_FLOAT);
+        vectorNode(VECTOR_BLEND_F, "VectorBlend", TYPE_FLOAT);
     }
 
-    public static final String BLEND_VD = VECTOR_PREFIX + "BLEND_VD" + POSTFIX;
+    public static final String VECTOR_BLEND_D = VECTOR_PREFIX + "VECTOR_BLEND_D" + POSTFIX;
     static {
-        vectorNode(BLEND_VD, "VectorBlend", TYPE_DOUBLE);
+        vectorNode(VECTOR_BLEND_D, "VectorBlend", TYPE_DOUBLE);
     }
 
-    public static final String MASK_CMP_VI = VECTOR_PREFIX + "MASK_CMP_VI" + POSTFIX;
+    public static final String VECTOR_MASK_CMP_I = VECTOR_PREFIX + "VECTOR_MASK_CMP_I" + POSTFIX;
     static {
-        vectorNode(MASK_CMP_VI, "VectorMaskCmp", TYPE_INT);
+        vectorNode(VECTOR_MASK_CMP_I, "VectorMaskCmp", TYPE_INT);
     }
 
-    public static final String MASK_CMP_VL = VECTOR_PREFIX + "MASK_CMP_VL" + POSTFIX;
+    public static final String VECTOR_MASK_CMP_L = VECTOR_PREFIX + "VECTOR_MASK_CMP_L" + POSTFIX;
     static {
-        vectorNode(MASK_CMP_VL, "VectorMaskCmp", TYPE_LONG);
+        vectorNode(VECTOR_MASK_CMP_L, "VectorMaskCmp", TYPE_LONG);
     }
 
-    public static final String MASK_CMP_VF = VECTOR_PREFIX + "MASK_CMP_VF" + POSTFIX;
+    public static final String VECTOR_MASK_CMP_F = VECTOR_PREFIX + "VECTOR_MASK_CMP_F" + POSTFIX;
     static {
-        vectorNode(MASK_CMP_VF, "VectorMaskCmp", TYPE_FLOAT);
+        vectorNode(VECTOR_MASK_CMP_F, "VectorMaskCmp", TYPE_FLOAT);
     }
 
-    public static final String MASK_CMP_VD = VECTOR_PREFIX + "MASK_CMP_VD" + POSTFIX;
+    public static final String VECTOR_MASK_CMP_D = VECTOR_PREFIX + "VECTOR_MASK_CMP_D" + POSTFIX;
     static {
-        vectorNode(MASK_CMP_VD, "VectorMaskCmp", TYPE_DOUBLE);
+        vectorNode(VECTOR_MASK_CMP_D, "VectorMaskCmp", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_CAST_B2S = VECTOR_PREFIX + "VECTOR_CAST_B2S" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2S, "VectorCastB2", TYPE_SHORT);
+        vectorNode(VECTOR_CAST_B2S, "VectorCastB2X", TYPE_SHORT);
     }
 
     public static final String VECTOR_CAST_B2I = VECTOR_PREFIX + "VECTOR_CAST_B2I" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2I, "VectorCastB2", TYPE_INT);
+        vectorNode(VECTOR_CAST_B2I, "VectorCastB2X", TYPE_INT);
     }
 
     public static final String VECTOR_CAST_B2L = VECTOR_PREFIX + "VECTOR_CAST_B2L" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2L, "VectorCastB2", TYPE_LONG);
+        vectorNode(VECTOR_CAST_B2L, "VectorCastB2X", TYPE_LONG);
     }
 
     public static final String VECTOR_CAST_B2F = VECTOR_PREFIX + "VECTOR_CAST_B2F" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2F, "VectorCastB2", TYPE_FLOAT);
+        vectorNode(VECTOR_CAST_B2F, "VectorCastB2X", TYPE_FLOAT);
     }
 
     public static final String VECTOR_CAST_B2D = VECTOR_PREFIX + "VECTOR_CAST_B2D" + POSTFIX;
     static {
-        vectorNode(VECTOR_CAST_B2D, "VectorCastB2", TYPE_DOUBLE);
+        vectorNode(VECTOR_CAST_B2D, "VectorCastB2X", TYPE_DOUBLE);
     }
 
     public static final String VECTOR_CAST_D2B = VECTOR_PREFIX + "VECTOR_CAST_D2B" + POSTFIX;
@@ -1981,24 +1981,24 @@ public class IRNode {
         machOnlyNameRegex(XOR3_SVE, "veor3_sve");
     }
 
-    public static final String COMPRESS_BITSVI = VECTOR_PREFIX + "COMPRESS_BITSVI" + POSTFIX;
+    public static final String COMPRESS_BITS_VI = VECTOR_PREFIX + "COMPRESS_BITS_VI" + POSTFIX;
     static {
-        vectorNode(COMPRESS_BITSVI, "CompressBitsV", TYPE_INT);
+        vectorNode(COMPRESS_BITS_VI, "CompressBitsV", TYPE_INT);
     }
 
-    public static final String COMPRESS_BITSVL = VECTOR_PREFIX + "COMPRESS_BITSVL" + POSTFIX;
+    public static final String COMPRESS_BITS_VL = VECTOR_PREFIX + "COMPRESS_BITS_VL" + POSTFIX;
     static {
-        vectorNode(COMPRESS_BITSVL, "CompressBitsV", TYPE_LONG);
+        vectorNode(COMPRESS_BITS_VL, "CompressBitsV", TYPE_LONG);
     }
 
-    public static final String EXPAND_BITSVI = VECTOR_PREFIX + "EXPAND_BITSVI" + POSTFIX;
+    public static final String EXPAND_BITS_VI = VECTOR_PREFIX + "EXPAND_BITS_VI" + POSTFIX;
     static {
-        vectorNode(EXPAND_BITSVI, "ExpandBitsV", TYPE_INT);
+        vectorNode(EXPAND_BITS_VI, "ExpandBitsV", TYPE_INT);
     }
 
-    public static final String EXPAND_BITSVL = VECTOR_PREFIX + "EXPAND_BITSVL" + POSTFIX;
+    public static final String EXPAND_BITS_VL = VECTOR_PREFIX + "EXPAND_BITS_VL" + POSTFIX;
     static {
-        vectorNode(EXPAND_BITSVL, "ExpandBitsV", TYPE_LONG);
+        vectorNode(EXPAND_BITS_VL, "ExpandBitsV", TYPE_LONG);
     }
 
     public static final String Z_LOAD_P_WITH_BARRIER_FLAG = COMPOSITE_PREFIX + "Z_LOAD_P_WITH_BARRIER_FLAG" + POSTFIX;
@@ -2106,7 +2106,8 @@ public class IRNode {
      * type {@code typeString} and the vector size (number of elements), {@see VECTOR_SIZE}.
      */
     private static void vectorNode(String irNodePlaceholder, String irNodeRegex, String typeString) {
-        TestFramework.check(isVectorIRNode(irNodePlaceholder), "vectorNode: failed prefix check for irNodePlaceholder " + irNodePlaceholder + " -> did you use VECTOR_PREFIX?");
+        TestFramework.check(isVectorIRNode(irNodePlaceholder), "vectorNode: failed prefix check for irNodePlaceholder "
+                                                               + irNodePlaceholder + " -> did you use VECTOR_PREFIX?");
         // IS_REPLACED is later replaced with the specific type and size of the vector.
         String regex = START + irNodeRegex + MID  + IS_REPLACED + END;
         IR_NODE_MAPPINGS.put(irNodePlaceholder, new RegexTypeEntry(RegexType.IDEAL_INDEPENDENT, regex));
@@ -2255,14 +2256,14 @@ public class IRNode {
         String[] sizes = sizeString.split(",");
         String regex = "";
         for (int i = 0; i < sizes.length; i++) {
-            int s = 0;
+            int size = 0;
             try {
-                s = Integer.parseInt(sizes[i]);
+                size = Integer.parseInt(sizes[i]);
             } catch (NumberFormatException e) {
                 TestFormat.checkNoReport(false, "Vector node has invalid size \"" + sizes[i] + "\", in \"" + sizeString + "\"");
             }
-            TestFormat.checkNoReport(s > 1, "Vector node size must be 2 or larger, but got \"" + sizes[i] + "\", in \"" + sizeString + "\"");
-            regex += ((i > 0) ? "|" : "") + s;
+            TestFormat.checkNoReport(size > 1, "Vector node size must be 2 or larger, but got \"" + sizes[i] + "\", in \"" + sizeString + "\"");
+            regex += ((i > 0) ? "|" : "") + size;
         }
         if (sizes.length > 1) {
            regex = "(" + regex + ")";
@@ -2276,20 +2277,7 @@ public class IRNode {
     public static String parseVectorNodeSizeTag(String sizeTagString, String typeString, VMInfo vmInfo) {
         // Parse out "min(a,b,c,...)"
         if (sizeTagString.startsWith("min(") && sizeTagString.endsWith(")")) {
-            String[] tags = sizeTagString.substring(4,sizeTagString.length() - 1).split(",");
-            TestFormat.checkNoReport(tags.length > 1, "Vector node size \"min(...)\" must have at least 2 comma separated arguments, got \"" + sizeTagString + "\"");
-            int min_val = 1024;
-            for (int i = 0; i < tags.length; i++) {
-                String tag = parseVectorNodeSizeTag(tags[i].trim(), typeString, vmInfo);
-                int tag_val = 0;
-                try {
-                    tag_val = Integer.parseInt(tag);
-                } catch (NumberFormatException e) {
-                    TestFormat.checkNoReport(false, "Vector node has invalid size in \"min(...)\", argument " + i + ", \"" + tag + "\", in \"" + sizeTagString + "\"");
-                }
-                min_val = Math.min(min_val, tag_val);
-            }
-            return String.valueOf(min_val);
+            return parseVectorNodeSizeTagMin(sizeTagString, typeString, vmInfo);
         }
 
         // Parse individual tags
@@ -2308,9 +2296,48 @@ public class IRNode {
     }
 
     /**
+     * Parse {@code sizeTagString}, which must be a min-clause.
+     */
+    public static String parseVectorNodeSizeTagMin(String sizeTagString, String typeString, VMInfo vmInfo) {
+        String[] tags = sizeTagString.substring(4, sizeTagString.length() - 1).split(",");
+        TestFormat.checkNoReport(tags.length > 1, "Vector node size \"min(...)\" must have at least 2 comma separated arguments, got \"" + sizeTagString + "\"");
+        int minVal = 1024;
+        for (int i = 0; i < tags.length; i++) {
+            String tag = parseVectorNodeSizeTag(tags[i].trim(), typeString, vmInfo);
+            int tag_val = 0;
+            try {
+                tag_val = Integer.parseInt(tag);
+            } catch (NumberFormatException e) {
+                TestFormat.checkNoReport(false, "Vector node has invalid size in \"min(...)\", argument " + i + ", \"" + tag + "\", in \"" + sizeTagString + "\"");
+            }
+            minVal = Math.min(minVal, tag_val);
+        }
+        return String.valueOf(minVal);
+    }
+
+    /**
      * Return maximal number of elements that can fit in a vector of the specified type.
      */
     public static long getMaxElementsForType(String typeString, VMInfo vmInfo) {
+        long maxBytes = 64;
+
+        if (Platform.isX64() || Platform.isX86()) {
+            maxBytes = getMaxElementsForTypeOnX86(typeString, vmInfo);
+        }
+
+	long maxVectorSize = vmInfo.getLongValue("MaxVectorSize");
+        TestFormat.checkNoReport(maxVectorSize > 0, "VMInfo: MaxVectorSize is not larger than zero");
+        maxBytes = Math.min(maxBytes, maxVectorSize);
+
+        // compute elements per vector: vector bytes divided by bytes per element
+        int bytes = getTypeSizeInBytes(typeString);
+        return maxBytes / bytes;
+    }
+
+    /**
+     * Return maximal number of elements that can fit in a vector of the specified type, on x86 / x64.
+     */
+    public static long getMaxElementsForTypeOnX86(String typeString, VMInfo vmInfo) {
         long maxBytes = 64;
 
         // restrict maxBytes for specific features, see Matcher::vector_width_in_bytes:
@@ -2333,13 +2360,7 @@ public class IRNode {
             maxBytes = avx512bw ? 64 : 32;
         }
 
-        long maxVectorSize = vmInfo.getLongValue("MaxVectorSize");
-        TestFormat.checkNoReport(maxVectorSize > 0, "VMInfo: MaxVectorSize is not larger than zero");
-        maxBytes = Math.min(maxBytes, maxVectorSize);
-
-        // compute elements per vector: vector bytes divided by bytes per element
-        int bytes = getTypeSizeInBytes(typeString);
-        return maxBytes / bytes;
+	return maxBytes;
     }
 
     /**

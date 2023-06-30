@@ -79,8 +79,8 @@ public class RawIRNode {
         } else {
             size = vectorSizeDefault;
         }
-        String size_regex = IRNode.parseVectorNodeSize(size, type, vmInfo);
+        String sizeRegex = IRNode.parseVectorNodeSize(size, type, vmInfo);
         return nodeRegex.replaceAll(IRNode.IS_REPLACED,
-                                    "vector[A-Za-z]\\\\[" + size_regex + "\\\\]:\\\\{" + type + "\\\\}");
+                                    "vector[A-Za-z]\\\\[" + sizeRegex + "\\\\]:\\\\{" + type + "\\\\}");
     }
 }

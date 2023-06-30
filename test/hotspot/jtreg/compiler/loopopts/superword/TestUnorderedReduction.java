@@ -67,7 +67,7 @@ public class TestUnorderedReduction {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VI, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI, "= 0",
                   IRNode.ADD_REDUCTION_VI, "> 0"}, // count can be high
         applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
@@ -106,7 +106,7 @@ public class TestUnorderedReduction {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VI, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.ADD_VI, "> 0",
                   IRNode.ADD_REDUCTION_VI, "> 0",
                   IRNode.ADD_REDUCTION_VI, "<= 2"}, // count must be low

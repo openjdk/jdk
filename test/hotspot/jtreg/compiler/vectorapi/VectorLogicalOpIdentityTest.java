@@ -104,7 +104,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.AND_VB, counts = {IRNode.LOAD_VB, ">=1"})
+    @IR(failOn = IRNode.AND_VB, counts = {IRNode.LOAD_VECTOR_B, ">=1"})
     public static void testAndMinusOne() {
         ByteVector av = ByteVector.fromArray(B_SPECIES, ba, 0);
         av.and((byte) -1).intoArray(br, 0);
@@ -130,7 +130,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.AND_VI, counts = {IRNode.LOAD_VI, ">=1"})
+    @IR(failOn = IRNode.AND_VI, counts = {IRNode.LOAD_VECTOR_I, ">=1"})
     public static void testAndSame() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         av.and(av).intoArray(ir, 0);
@@ -143,7 +143,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.AND_VL, counts = {IRNode.LOAD_VL, ">=1"})
+    @IR(failOn = IRNode.AND_VL, counts = {IRNode.LOAD_VECTOR_L, ">=1"})
     public static void testMaskedAndMinusOne1() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
@@ -163,7 +163,7 @@ public class VectorLogicalOpIdentityTest {
     // Masked AndV in this test should not be optimized out on SVE.
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.LOAD_VB, ">=1"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, ">=1"})
     @IR(failOn = IRNode.AND_VB, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedAndMinusOne2() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
@@ -223,7 +223,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.AND_VL, counts = {IRNode.LOAD_VL, ">=1"})
+    @IR(failOn = IRNode.AND_VL, counts = {IRNode.LOAD_VECTOR_L, ">=1"})
     public static void testMaskedAndSame() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
@@ -381,7 +381,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_VS, counts = {IRNode.LOAD_VS, ">=1"})
+    @IR(failOn = IRNode.OR_VS, counts = {IRNode.LOAD_VECTOR_S, ">=1"})
     public static void testOrZero() {
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
         av.or((short) 0).intoArray(sr, 0);
@@ -394,7 +394,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_VI, counts = {IRNode.LOAD_VI, ">=1"})
+    @IR(failOn = IRNode.OR_VI, counts = {IRNode.LOAD_VECTOR_I, ">=1"})
     public static void testOrSame() {
         IntVector av = IntVector.fromArray(I_SPECIES, ia, 0);
         av.or(av).intoArray(ir, 0);
@@ -447,7 +447,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_VS, counts = {IRNode.LOAD_VS, ">=1"})
+    @IR(failOn = IRNode.OR_VS, counts = {IRNode.LOAD_VECTOR_S, ">=1"})
     public static void testMaskedOrZero1() {
         VectorMask<Short> mask = VectorMask.fromArray(S_SPECIES, m, 0);
         ShortVector av = ShortVector.fromArray(S_SPECIES, sa, 0);
@@ -467,7 +467,7 @@ public class VectorLogicalOpIdentityTest {
     // Masked OrV in this test should not be optimized out on SVE.
     @Test
     @Warmup(10000)
-    @IR(counts = {IRNode.LOAD_VB, ">=1"})
+    @IR(counts = {IRNode.LOAD_VECTOR_B, ">=1"})
     @IR(failOn = IRNode.OR_VB, applyIfCPUFeatureAnd = {"asimd", "true", "sve", "false"})
     public static void testMaskedOrZero2() {
         VectorMask<Byte> mask = VectorMask.fromArray(B_SPECIES, m, 0);
@@ -487,7 +487,7 @@ public class VectorLogicalOpIdentityTest {
 
     @Test
     @Warmup(10000)
-    @IR(failOn = IRNode.OR_VL, counts = {IRNode.LOAD_VL, ">=1"})
+    @IR(failOn = IRNode.OR_VL, counts = {IRNode.LOAD_VECTOR_L, ">=1"})
     public static void testMaskedOrSame() {
         VectorMask<Long> mask = VectorMask.fromArray(L_SPECIES, m, 0);
         LongVector av = LongVector.fromArray(L_SPECIES, la, 0);
