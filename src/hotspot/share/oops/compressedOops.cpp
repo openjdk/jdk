@@ -223,7 +223,7 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   int shift;
   size_t range;
 
-  // Otherwise we attempt to use a zero base if the range fits in lower 32G.
+  // Attempt to run with encoding base == zero
   if (end <= (address)KlassEncodingMetaspaceMax) {
     base = 0;
   } else {
