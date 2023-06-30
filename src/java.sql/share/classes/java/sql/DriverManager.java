@@ -36,10 +36,10 @@ import java.security.PrivilegedAction;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
 
+import jdk.internal.misc.VM;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
-
 
 /**
  * The basic service for managing a set of JDBC drivers.
@@ -652,10 +652,9 @@ public class DriverManager {
     private static Connection getConnection(
         String url, java.util.Properties info, Class<?> caller) throws SQLException {
         /*
-         * When callerCl is null, we should check the application's
-         * (which is invoking this class indirectly)
-         * classloader, so that the JDBC driver class outside the image
-         * can be loaded from here.
+         * If the caller is defined to the bootstrap or platform class loader then use
+         * the Thread CCL as the initiating class loader so that a JDBC on the class path,
+         * or bundled with an application, is found.
          */
         ClassLoader callerCL = caller != null ? caller.getClassLoader() : null;
         if (callerCL == null || callerCL == ClassLoader.getPlatformClassLoader()) {
