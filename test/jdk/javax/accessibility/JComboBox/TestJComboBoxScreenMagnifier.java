@@ -27,7 +27,7 @@
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @requires (os.family == "mac")
- * @summary Verifies if JComboBox selected itemmagnifies using
+ * @summary Verifies if JComboBox selected item magnifies using
  * screen magnifier a11y tool.
  * @run main/manual TestJComboBoxScreenMagnifier
  */
@@ -45,7 +45,7 @@ import javax.swing.SwingUtilities;
 public class TestJComboBoxScreenMagnifier {
     private static JFrame frame;
     private static final String INSTRUCTIONS =
-            "1) Enable Screen magnifier on theMac \n\n" +
+            "1) Enable Screen magnifier on the Mac \n\n" +
                 "System Preference -> Accessibility -> Zoom -> " +
                 "Select ( Enable Hover Text) \n\n" +
             "2) Move the mouse over the combobox selected item by pressing  " +
@@ -56,17 +56,9 @@ public class TestJComboBoxScreenMagnifier {
              InvocationTargetException {
         PassFailJFrame passFailJFrame = new PassFailJFrame(
                 "JMenu Screen Magnifier Test Instructions", INSTRUCTIONS, 5, 12, 40);
-        try {
-            SwingUtilities.invokeAndWait(
-                    TestJComboBoxScreenMagnifier::createAndShowUI);
-            passFailJFrame.awaitAndCheck();
-        } finally {
-            SwingUtilities.invokeAndWait(() -> {
-                if (frame != null) {
-                    frame.dispose();
-                }
-            });
-        }
+
+        SwingUtilities.invokeAndWait(TestJComboBoxScreenMagnifier::createAndShowUI);
+        passFailJFrame.awaitAndCheck();
     }
     private static void createAndShowUI() {
         frame = new JFrame("JComboBox A11Y Screen Magnifier Test");
@@ -74,7 +66,7 @@ public class TestJComboBoxScreenMagnifier {
         String[] fruits = new String[] {"Apple", "Orange",
                 "Mango", "Pine Apple", "Banana"};
         JComboBox<String> comboBox = new JComboBox<String>(fruits);
-        JPanel fruitPanel = new JPanel(new GridLayout(1,2));
+        JPanel fruitPanel = new JPanel(new GridLayout(1, 2));
         JLabel fruitLabel = new JLabel("Fruits : ", JLabel.CENTER);
         fruitLabel.getAccessibleContext().setAccessibleName("Fruits Label");
         fruitPanel.add(fruitLabel);
