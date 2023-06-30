@@ -30,13 +30,13 @@
 import helpers.ClassRecord;
 import helpers.ClassRecord.CompatibilityFilter;
 import helpers.Transforms;
+import jdk.internal.classfile.impl.AttributeHelpers;
 import jdk.internal.classfile.impl.BufWriterImpl;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 
-import java.io.ByteArrayInputStream;
 import java.util.*;
 
 import static helpers.ClassRecord.assertEqualsDeep;
@@ -58,7 +58,6 @@ import jdk.internal.classfile.BufWriter;
 import jdk.internal.classfile.Classfile;
 import jdk.internal.classfile.ClassTransform;
 import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.DirectCodeBuilder;
@@ -95,30 +94,30 @@ class CorpusTest {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
-                        var lc = ((BufWriterImpl) b).labelContext();
-                        int startBci = lc.labelToBci(lv.startScope());
-                        int endBci = lc.labelToBci(lv.endScope());
-                        int length = endBci - startBci;
-                        b.writeU2(startBci);
-                        b.writeU2(length);
-                        b.writeIndex(lv.name());
-                        b.writeIndex(lv.type());
-                        b.writeU2(lv.slot());
+                        AttributeHelpers.writeLocalVariable(
+                                ((BufWriterImpl) b).labelContext(),
+                                b,
+                                lv.startScope(),
+                                lv.endScope(),
+                                lv.name(),
+                                lv.type(),
+                                lv.slot()
+                        );
                     }
                 });
                 case LocalVariableType lvt -> dcob.writeAttribute(new UnboundAttribute.AdHocAttribute<>(Attributes.LOCAL_VARIABLE_TYPE_TABLE) {
                     @Override
                     public void writeBody(BufWriter b) {
                         b.writeU2(1);
-                        var lc = ((BufWriterImpl) b).labelContext();
-                        int startBci = lc.labelToBci(lvt.startScope());
-                        int endBci = lc.labelToBci(lvt.endScope());
-                        int length = endBci - startBci;
-                        b.writeU2(startBci);
-                        b.writeU2(length);
-                        b.writeIndex(lvt.name());
-                        b.writeIndex(lvt.signature());
-                        b.writeU2(lvt.slot());
+                        AttributeHelpers.writeLocalVariable(
+                                ((BufWriterImpl) b).labelContext(),
+                                b,
+                                lvt.startScope(),
+                                lvt.endScope(),
+                                lvt.name(),
+                                lvt.signature(),
+                                lvt.slot()
+                        );
                     }
                 });
                 default -> cob.with(coe);
