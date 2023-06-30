@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -893,14 +893,12 @@ class MethodType
         if (this == x) {
             return true;
         }
-        if (x instanceof MethodType) {
-            return equals((MethodType)x);
+        if (x instanceof MethodType mt) {
+            return equals(mt);
         }
-        if (x instanceof ConcurrentWeakInternSet.WeakEntry) {
-            Object o = ((ConcurrentWeakInternSet.WeakEntry)x).get();
-            if (o instanceof MethodType) {
-                return equals((MethodType)o);
-            }
+        if (x instanceof ConcurrentWeakInternSet.WeakEntry<?> e
+                && e.get() instanceof MethodType mt) {
+            return equals(mt);
         }
         return false;
     }
@@ -1483,8 +1481,8 @@ s.writeObject(this.parameterArray());
             @Override
             public boolean equals(Object obj) {
                 Object mine = get();
-                if (obj instanceof WeakEntry) {
-                    Object that = ((WeakEntry) obj).get();
+                if (obj instanceof WeakEntry<?> we) {
+                    Object that = we.get();
                     return (that == null || mine == null) ? (this == obj) : mine.equals(that);
                 }
                 return (mine == null) ? (obj == null) : mine.equals(obj);
