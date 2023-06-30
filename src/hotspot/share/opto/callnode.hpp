@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -249,7 +249,7 @@ public:
   int                      bci() const { return _bci; }
   bool        should_reexecute() const { return _reexecute==Reexecute_True; }
   bool  is_reexecute_undefined() const { return _reexecute==Reexecute_Undefined; }
-  bool              has_method() const { return _method != NULL; }
+  bool              has_method() const { return _method != nullptr; }
   ciMethod*             method() const { assert(has_method(), ""); return _method; }
   JVMState*             caller() const { return _caller; }
   SafePointNode*           map() const { return _map; }
@@ -337,13 +337,13 @@ protected:
   bool            _has_ea_local_in_scope; // NoEscape or ArgEscape objects in JVM States
 
   void set_jvms(JVMState* s) {
-  assert(s != nullptr, "assign NULL value to _jvms");
+  assert(s != nullptr, "assign null value to _jvms");
     *(JVMState**)&_jvms = s;  // override const attribute in the accessor
   }
 public:
   SafePointNode(uint edges, JVMState* jvms,
-                // A plain safepoint advertises no memory effects (NULL):
-                const TypePtr* adr_type = NULL)
+                // A plain safepoint advertises no memory effects (null):
+                const TypePtr* adr_type = nullptr)
     : MultiNode( edges ),
       _jvms(jvms),
       _adr_type(adr_type),
@@ -355,7 +355,7 @@ public:
   JVMState* jvms() const { return _jvms; }
   virtual bool needs_deep_clone_jvms(Compile* C) { return false; }
   void clone_jvms(Compile* C) {
-    if (jvms() != NULL) {
+    if (jvms() != nullptr) {
       if (needs_deep_clone_jvms(C)) {
         set_jvms(jvms()->clone_deep(C));
         jvms()->set_map_deep(this);
@@ -434,7 +434,7 @@ public:
   }
 
   // The parser marks useless maps as dead when it's done with them:
-  bool is_killed() { return in(TypeFunc::Control) == NULL; }
+  bool is_killed() { return in(TypeFunc::Control) == nullptr; }
 
   // Exception states bubbling out of subgraphs such as inlined calls
   // are recorded here.  (There might be more than one, hence the "next".)
@@ -442,7 +442,7 @@ public:
   // for JVM states during parsing, intrinsic expansion, etc.
   SafePointNode*         next_exception() const;
   void               set_next_exception(SafePointNode* n);
-  bool                   has_exceptions() const { return next_exception() != NULL; }
+  bool                   has_exceptions() const { return next_exception() != nullptr; }
 
   // Helper methods to operate on replaced nodes
   ReplacedNodes replaced_nodes() const {
@@ -533,7 +533,7 @@ public:
   virtual uint           match_edge(uint idx) const;
 
   uint first_index(JVMState* jvms) const {
-    assert(jvms != NULL, "missed JVMS");
+    assert(jvms != nullptr, "missed JVMS");
     return jvms->scloff() + _first_index;
   }
   uint n_fields()    const { return _n_fields; }
@@ -591,15 +591,15 @@ public:
   address         _entry_point; // Address of method being called
   float           _cnt;         // Estimate of number of times called
   CallGenerator*  _generator;   // corresponding CallGenerator for some late inline calls
-  const char*     _name;        // Printable name, if _method is NULL
+  const char*     _name;        // Printable name, if _method is null
 
   CallNode(const TypeFunc* tf, address addr, const TypePtr* adr_type, JVMState* jvms = nullptr)
     : SafePointNode(tf->domain()->cnt(), jvms, adr_type),
       _tf(tf),
       _entry_point(addr),
       _cnt(COUNT_UNKNOWN),
-      _generator(NULL),
-      _name(NULL)
+      _generator(nullptr),
+      _name(nullptr)
   {
     init_class_id(Class_Call);
   }
@@ -637,7 +637,7 @@ public:
   bool                has_non_debug_use(Node* n);
   // Returns the unique CheckCastPP of a call
   // or result projection is there are several CheckCastPP
-  // or returns NULL if there is no one.
+  // or returns null if there is no one.
   Node* result_cast();
   // Does this node returns pointer?
   bool returns_pointer() const {
@@ -723,13 +723,13 @@ public:
   CallStaticJavaNode(Compile* C, const TypeFunc* tf, address addr, ciMethod* method)
     : CallJavaNode(tf, addr, method) {
     init_class_id(Class_CallStaticJava);
-    if (C->eliminate_boxing() && (method != NULL) && method->is_boxing_method()) {
+    if (C->eliminate_boxing() && (method != nullptr) && method->is_boxing_method()) {
       init_flags(Flag_is_macro);
       C->add_macro_node(this);
     }
   }
   CallStaticJavaNode(const TypeFunc* tf, address addr, const char* name, const TypePtr* adr_type)
-    : CallJavaNode(tf, addr, NULL) {
+    : CallJavaNode(tf, addr, nullptr) {
     init_class_id(Class_CallStaticJava);
     // This node calls a runtime stub, which often has narrow memory effects.
     _adr_type = adr_type;
@@ -741,7 +741,7 @@ public:
   static int extract_uncommon_trap_request(const Node* call);
 
   bool is_boxing_method() const {
-    return is_macro() && (method() != NULL) && method()->is_boxing_method();
+    return is_macro() && (method() != nullptr) && method()->is_boxing_method();
   }
   // Late inlining modifies the JVMState, so we need to deep clone it
   // when the call node is cloned (because it is macro node).
@@ -972,7 +972,7 @@ public:
   // Dig the klass operand out of a (possible) allocation site.
   static Node* Ideal_klass(Node* ptr, PhaseTransform* phase) {
     AllocateNode* allo = Ideal_allocation(ptr, phase);
-    return (allo == NULL) ? NULL : allo->in(KlassNode);
+    return (allo == nullptr) ? nullptr : allo->in(KlassNode);
   }
 
   // Conservatively small estimate of offset of first non-header byte.
@@ -993,13 +993,13 @@ public:
   // Return true if allocation doesn't escape thread, its escape state
   // needs be noEscape or ArgEscape. InitializeNode._does_not_escape
   // is true when its allocation's escape state is noEscape or
-  // ArgEscape. In case allocation's InitializeNode is NULL, check
+  // ArgEscape. In case allocation's InitializeNode is null, check
   // AlllocateNode._is_non_escaping flag.
   // AlllocateNode._is_non_escaping is true when its escape state is
   // noEscape.
   bool does_not_escape_thread() {
-    InitializeNode* init = NULL;
-    return _is_non_escaping || (((init = initialization()) != NULL) && init->does_not_escape());
+    InitializeNode* init = nullptr;
+    return _is_non_escaping || (((init = initialization()) != nullptr) && init->does_not_escape());
   }
 
   // If object doesn't escape in <.init> method and there is memory barrier
@@ -1042,8 +1042,8 @@ public:
   // Return null if no allocation is recognized.
   static AllocateArrayNode* Ideal_array_allocation(Node* ptr, PhaseTransform* phase) {
     AllocateNode* allo = Ideal_allocation(ptr, phase);
-    return (allo == NULL || !allo->is_AllocateArray())
-           ? NULL : allo->as_AllocateArray();
+    return (allo == nullptr || !allo->is_AllocateArray())
+           ? nullptr : allo->as_AllocateArray();
   }
 };
 
@@ -1080,11 +1080,11 @@ protected:
 
 public:
   AbstractLockNode(const TypeFunc *tf)
-    : CallNode(tf, NULL, TypeRawPtr::BOTTOM),
+    : CallNode(tf, nullptr, TypeRawPtr::BOTTOM),
       _kind(Regular)
   {
 #ifndef PRODUCT
-    _counter = NULL;
+    _counter = nullptr;
 #endif
   }
   virtual int Opcode() const = 0;
@@ -1103,7 +1103,7 @@ public:
   bool is_nested()      const { return (_kind == Nested); }
 
   const char * kind_as_string() const;
-  void log_lock_optimization(Compile* c, const char * tag, Node* bad_lock = NULL) const;
+  void log_lock_optimization(Compile* c, const char * tag, Node* bad_lock = nullptr) const;
 
   void set_non_esc_obj() { _kind = NonEscObj; set_eliminated_lock_counter(); }
   void set_coarsened()   { _kind = Coarsened; set_eliminated_lock_counter(); }
@@ -1178,7 +1178,7 @@ public:
   virtual uint size_of() const; // Size is bigger
   UnlockNode(Compile* C, const TypeFunc *tf) : AbstractLockNode( tf )
 #ifdef ASSERT
-    , _dbg_jvms(NULL)
+    , _dbg_jvms(nullptr)
 #endif
   {
     init_class_id(Class_Unlock);
@@ -1194,7 +1194,7 @@ public:
   }
   JVMState* dbg_jvms() const { return _dbg_jvms; }
 #else
-  JVMState* dbg_jvms() const { return NULL; }
+  JVMState* dbg_jvms() const { return nullptr; }
 #endif
 };
 #endif // SHARE_OPTO_CALLNODE_HPP

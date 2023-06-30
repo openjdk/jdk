@@ -180,14 +180,14 @@ class Parse : public GraphKit {
     void set_start_map(SafePointNode* m)   { assert(!is_merged(), ""); _start_map = m; }
 
     // True after any predecessor flows control into this block
-    bool is_merged() const                 { return _start_map != NULL; }
+    bool is_merged() const                 { return _start_map != nullptr; }
 
 #ifdef ASSERT
     // True after backedge predecessor flows control into this block
     bool has_merged_backedge() const       { return _has_merged_backedge; }
     void mark_merged_backedge(Block* pred) {
       assert(is_SEL_head(), "should be loop head");
-      if (pred != NULL && is_SEL_backedge(pred)) {
+      if (pred != nullptr && is_SEL_backedge(pred)) {
         assert(is_parsed(), "block should be parsed before merging backedges");
         _has_merged_backedge = true;
       }
@@ -254,7 +254,7 @@ class Parse : public GraphKit {
     // path number ("pnum").
     int add_new_path();
 
-    // Initialize me by recording the parser's map.  My own map must be NULL.
+    // Initialize me by recording the parser's map.  My own map must be null.
     void record_state(Parse* outer);
   };
 
@@ -374,7 +374,7 @@ class Parse : public GraphKit {
   void     set_wrote_fields(bool z)   { _wrote_fields = z; }
   Node*    alloc_with_final() const   { return _alloc_with_final; }
   void set_alloc_with_final(Node* n)  {
-    assert((_alloc_with_final == NULL) || (_alloc_with_final == n), "different init objects?");
+    assert((_alloc_with_final == nullptr) || (_alloc_with_final == n), "different init objects?");
     _alloc_with_final = n;
   }
 
@@ -401,7 +401,7 @@ class Parse : public GraphKit {
   Block* start_block() {
     return rpo_at(flow()->start_block()->rpo());
   }
-  // Can return NULL if the flow pass did not complete a block.
+  // Can return null if the flow pass did not complete a block.
   Block* successor_for_bci(int bci) {
     return block()->successor_for_bci(bci);
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ bool PhaseChaitin::may_be_copy_of_callee( Node *def ) const {
       def = def->in(1);
     else
       break;
-    guarantee(def != NULL, "must not resurrect dead copy");
+    guarantee(def != nullptr, "must not resurrect dead copy");
   }
   // If we reached the end and didn't find a callee save proj
   // then this may be a callee save proj so we return true
@@ -87,10 +87,10 @@ int PhaseChaitin::yank(Node *old, Block *current_block, Node_List *value, Node_L
   }
   _cfg.unmap_node_from_block(old);
   OptoReg::Name old_reg = lrgs(_lrg_map.live_range_id(old)).reg();
-  assert(value != NULL || regnd == NULL, "sanity");
-  if (value != NULL && regnd != NULL && regnd->at(old_reg) == old) { // Instruction is currently available?
-    value->map(old_reg, NULL); // Yank from value/regnd maps
-    regnd->map(old_reg, NULL); // This register's value is now unknown
+  assert(value != nullptr || regnd == nullptr, "sanity");
+  if (value != nullptr && regnd != nullptr && regnd->at(old_reg) == old) { // Instruction is currently available?
+    value->map(old_reg, nullptr); // Yank from value/regnd maps
+    regnd->map(old_reg, nullptr); // This register's value is now unknown
   }
   return blk_adjust;
 }
@@ -147,8 +147,8 @@ int PhaseChaitin::yank_if_dead_recurse(Node *old, Node *orig_old, Block *current
 
     for (uint i = 1; i < old->req(); i++) {
       Node* n = old->in(i);
-      if (n != NULL) {
-        old->set_req(i, NULL);
+      if (n != nullptr) {
+        old->set_req(i, nullptr);
         blk_adjust += yank_if_dead_recurse(n, orig_old, current_block, value, regnd);
       }
     }
@@ -218,7 +218,7 @@ Node *PhaseChaitin::skip_copies( Node *c ) {
   int idx = c->is_Copy();
   uint is_oop = lrgs(_lrg_map.live_range_id(c))._is_oop;
   while (idx != 0) {
-    guarantee(c->in(idx) != NULL, "must not resurrect dead copy");
+    guarantee(c->in(idx) != nullptr, "must not resurrect dead copy");
     if (lrgs(_lrg_map.live_range_id(c->in(idx)))._is_oop != is_oop) {
       break;  // casting copy, not the same value
     }
@@ -241,7 +241,7 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
   int idx;
   while( (idx=x->is_Copy()) != 0 ) {
     Node *copy = x->in(idx);
-    guarantee(copy != NULL, "must not resurrect dead copy");
+    guarantee(copy != nullptr, "must not resurrect dead copy");
     if(lrgs(_lrg_map.live_range_id(copy)).reg() != nk_reg) {
       break;
     }
@@ -258,8 +258,8 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
     return blk_adjust;          // Only check stupid copies!
   }
   // Loop backedges won't have a value-mapping yet
-  assert(regnd != NULL || value == NULL, "sanity");
-  if (value == NULL || regnd == NULL) {
+  assert(regnd != nullptr || value == nullptr, "sanity");
+  if (value == nullptr || regnd == nullptr) {
     return blk_adjust;
   }
 
@@ -291,7 +291,7 @@ int PhaseChaitin::elide_copy( Node *n, int k, Block *current_block, Node_List *v
   // register.
 
   // Also handle duplicate copies here.
-  const Type *t = val->is_Con() ? val->bottom_type() : NULL;
+  const Type *t = val->is_Con() ? val->bottom_type() : nullptr;
 
   // Scan all registers to see if this value is around already
   for( uint reg = 0; reg < (uint)_max_reg; reg++ ) {
@@ -361,7 +361,7 @@ bool PhaseChaitin::eliminate_copy_of_constant(Node* val, Node* n,
                                               Node_List& value, Node_List& regnd,
                                               OptoReg::Name nreg, OptoReg::Name nreg2) {
   if (value[nreg] != val && val->is_Con() &&
-      value[nreg] != NULL && value[nreg]->is_Con() &&
+      value[nreg] != nullptr && value[nreg]->is_Con() &&
       (nreg2 == OptoReg::Bad || value[nreg] == value[nreg2]) &&
       value[nreg]->bottom_type() == val->bottom_type() &&
       value[nreg]->as_Mach()->rule() == val->as_Mach()->rule()) {
@@ -441,7 +441,7 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
     OptoReg::Name reg = lrgs(lrg).reg();
 
     Node* def = reg2defuse.at(reg).def();
-    if (def != NULL && lrg == _lrg_map.live_range_id(def) && def != n->in(k)) {
+    if (def != nullptr && lrg == _lrg_map.live_range_id(def) && def != n->in(k)) {
       // Same lrg but different node, we have to merge.
       MachMergeNode* merge;
       if (def->is_MachMerge()) { // is it already a merge?
@@ -465,7 +465,7 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
           if (use == n) {
             break;
           }
-          use->replace_edge(def, merge, NULL);
+          use->replace_edge(def, merge, nullptr);
         }
       }
       if (merge->find_edge(n->in(k)) == -1) {
@@ -485,10 +485,10 @@ int PhaseChaitin::possibly_merge_multidef(Node *n, uint k, Block *block, RegToDe
 //------------------------------post_allocate_copy_removal---------------------
 // Post-Allocation peephole copy removal.  We do this in 1 pass over the
 // basic blocks.  We maintain a mapping of registers to Nodes (an  array of
-// Nodes indexed by machine register or stack slot number).  NULL means that a
+// Nodes indexed by machine register or stack slot number).  null means that a
 // register is not mapped to any Node.  We can (want to have!) have several
 // registers map to the same Node.  We walk forward over the instructions
-// updating the mapping as we go.  At merge points we force a NULL if we have
+// updating the mapping as we go.  At merge points we force a null if we have
 // to merge 2 different Nodes into the same register.  Phi functions will give
 // us a new Node if there is a proper value merging.  Since the blocks are
 // arranged in some RPO, we will visit all parent blocks before visiting any
@@ -536,7 +536,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
     // of registers at the start.  Check for this, while updating copies
     // along Phi input edges
     bool missing_some_inputs = false;
-    Block *freed = NULL;
+    Block *freed = nullptr;
     for (j = 1; j < block->num_preds(); j++) {
       Block* pb = _cfg.get_block_for_node(block->pred(j));
       // Remove copies along phi edges
@@ -586,7 +586,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
         value.copy(*blk2value[freed->_pre_order]);
         regnd.copy(*blk2regnd[freed->_pre_order]);
       }
-      // Merge all inputs together, setting to NULL any conflicts.
+      // Merge all inputs together, setting to null any conflicts.
       for (j = 1; j < block->num_preds(); j++) {
         Block* pb = _cfg.get_block_for_node(block->pred(j));
         if (pb == freed) {
@@ -595,8 +595,8 @@ void PhaseChaitin::post_allocate_copy_removal() {
         Node_List &p_regnd = *blk2regnd[pb->_pre_order];
         for (uint k = 0; k < (uint)_max_reg; k++) {
           if (regnd[k] != p_regnd[k]) { // Conflict on reaching defs?
-            value.map(k, NULL); // Then no value handy
-            regnd.map(k, NULL);
+            value.map(k, nullptr); // Then no value handy
+            regnd.map(k, nullptr);
           }
         }
       }
@@ -610,7 +610,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
       OptoReg::Name preg = lrgs(pidx).reg();
 
       // Remove copies remaining on edges.  Check for junk phi.
-      Node *u = NULL;
+      Node *u = nullptr;
       for (k = 1; k < phi->req(); k++) {
         Node *x = phi->in(k);
         if( phi != x && u != x ) // Found a different input
@@ -663,7 +663,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
       uint k;
       for (k = 1; k < n->req(); k++) {
         Node *def = n->in(k);   // n->in(k) is a USE; def is the DEF for this USE
-        guarantee(def != NULL, "no disconnected nodes at this point");
+        guarantee(def != nullptr, "no disconnected nodes at this point");
         uint useidx = _lrg_map.live_range_id(def); // useidx is the live range index for this USE
 
         if( useidx ) {
@@ -671,7 +671,7 @@ void PhaseChaitin::post_allocate_copy_removal() {
           if( !value[ureg] ) {
             int idx;            // Skip occasional useless copy
             while( (idx=def->is_Copy()) != 0 &&
-                   def->in(idx) != NULL &&  // NULL should not happen
+                   def->in(idx) != nullptr &&  // null should not happen
                    ureg == lrgs(_lrg_map.live_range_id(def->in(idx))).reg())
               def = def->in(idx);
             Node *valdef = skip_copies(def); // tighten up val through non-useless copies
@@ -717,9 +717,9 @@ void PhaseChaitin::post_allocate_copy_removal() {
       // definition could in fact be a kill projection with a count of
       // 0 which is safe but since those are uninteresting for copy
       // elimination just delete them as well.
-      if (regnd[nreg] != NULL && regnd[nreg]->outcnt() == 0) {
-        regnd.map(nreg, NULL);
-        value.map(nreg, NULL);
+      if (regnd[nreg] != nullptr && regnd[nreg]->outcnt() == 0) {
+        regnd.map(nreg, nullptr);
+        value.map(nreg, nullptr);
       }
 
       uint n_ideal_reg = n->ideal_reg();

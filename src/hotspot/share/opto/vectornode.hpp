@@ -1063,7 +1063,7 @@ class VectorLoadConstNode : public VectorNode {
 // Extract a scalar from a vector at position "pos"
 class ExtractNode : public Node {
  public:
-  ExtractNode(Node* src, ConINode* pos) : Node(NULL, src, (Node*)pos) {
+  ExtractNode(Node* src, ConINode* pos) : Node(nullptr, src, (Node*)pos) {
     assert(in(2)->get_int() >= 0, "positive constants");
   }
   virtual int Opcode() const;
@@ -1412,13 +1412,13 @@ class VectorBoxNode : public Node {
   };
   VectorBoxNode(Compile* C, Node* box, Node* val,
                 const TypeInstPtr* box_type, const TypeVect* vt)
-    : Node(NULL, box, val), _box_type(box_type), _vec_type(vt) {
+    : Node(nullptr, box, val), _box_type(box_type), _vec_type(vt) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
-  const  TypeInstPtr* box_type() const { assert(_box_type != NULL, ""); return _box_type; };
-  const  TypeVect*    vec_type() const { assert(_vec_type != NULL, ""); return _vec_type; };
+  const  TypeInstPtr* box_type() const { assert(_box_type != nullptr, ""); return _box_type; };
+  const  TypeVect*    vec_type() const { assert(_vec_type != nullptr, ""); return _vec_type; };
 
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return _box_type; }
@@ -1431,7 +1431,7 @@ class VectorBoxNode : public Node {
 class VectorBoxAllocateNode : public CallStaticJavaNode {
  public:
   VectorBoxAllocateNode(Compile* C, const TypeInstPtr* vbox_type)
-    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), NULL, NULL) {
+    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), nullptr, nullptr) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }

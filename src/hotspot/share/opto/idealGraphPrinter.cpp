@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,10 +77,10 @@ int IdealGraphPrinter::_file_count = 0;
 
 IdealGraphPrinter *IdealGraphPrinter::printer() {
   JavaThread *thread = JavaThread::current();
-  if (!thread->is_Compiler_thread()) return NULL;
+  if (!thread->is_Compiler_thread()) return nullptr;
 
   CompilerThread *compiler_thread = (CompilerThread *)thread;
-  if (compiler_thread->ideal_graph_printer() == NULL) {
+  if (compiler_thread->ideal_graph_printer() == nullptr) {
     IdealGraphPrinter *printer = new IdealGraphPrinter();
     compiler_thread->set_ideal_graph_printer(printer);
   }
@@ -96,15 +96,15 @@ void IdealGraphPrinter::clean_up() {
       if (printer) {
         delete printer;
       }
-      c->set_ideal_graph_printer(NULL);
+      c->set_ideal_graph_printer(nullptr);
     }
   }
   IdealGraphPrinter* debug_file_printer = Compile::debug_file_printer();
-  if (debug_file_printer != NULL) {
+  if (debug_file_printer != nullptr) {
     delete debug_file_printer;
   }
   IdealGraphPrinter* debug_network_printer = Compile::debug_network_printer();
-  if (debug_network_printer != NULL) {
+  if (debug_network_printer != nullptr) {
     delete debug_network_printer;
   }
 }
@@ -114,11 +114,11 @@ IdealGraphPrinter::IdealGraphPrinter() {
   init(PrintIdealGraphFile, true, false);
 }
 
-// Either print methods to the specified file 'file_name' or if NULL over the network to the IGV. If 'append'
+// Either print methods to the specified file 'file_name' or if null over the network to the IGV. If 'append'
 // is set, the next phase is directly appended to the specified file 'file_name'. This is useful when doing
 // replay compilation with a tool like rr that cannot alter the current program state but only the file.
 IdealGraphPrinter::IdealGraphPrinter(Compile* compile, const char* file_name, bool append) {
-  assert(!append || (append && file_name != NULL), "can only use append flag when printing to file");
+  assert(!append || (append && file_name != nullptr), "can only use append flag when printing to file");
   init(file_name, false, append);
   C = compile;
   if (append) {
@@ -136,13 +136,13 @@ void IdealGraphPrinter::init(const char* file_name, bool use_multiple_files, boo
   // appear in the dump.
   _traverse_outs = true;
   _should_send_method = true;
-  _output = NULL;
+  _output = nullptr;
   buffer[0] = 0;
   _depth = 0;
-  _current_method = NULL;
-  _network_stream = NULL;
+  _current_method = nullptr;
+  _network_stream = nullptr;
 
-  if (file_name != NULL) {
+  if (file_name != nullptr) {
     init_file_stream(file_name, use_multiple_files, append);
   } else {
     init_network_stream();
@@ -163,20 +163,20 @@ IdealGraphPrinter::~IdealGraphPrinter() {
 
   if(_xml) {
     delete _xml;
-    _xml = NULL;
+    _xml = nullptr;
   }
 
   if (_network_stream) {
     delete _network_stream;
     if (_network_stream == _output) {
-      _output = NULL;
+      _output = nullptr;
     }
-    _network_stream = NULL;
+    _network_stream = nullptr;
   }
 
   if (_output) {
     delete _output;
-    _output = NULL;
+    _output = nullptr;
   }
 }
 
@@ -255,7 +255,7 @@ void IdealGraphPrinter::print_method(ciMethod *method, int bci, InlineTree *tree
   _xml->print_cr("]]>");
   tail(BYTECODES_ELEMENT);
 
-  if (tree != NULL && tree->subtrees().length() > 0) {
+  if (tree != nullptr && tree->subtrees().length() > 0) {
     head(INLINE_ELEMENT);
     GrowableArray<InlineTree *> subtrees = tree->subtrees();
     for (int i = 0; i < subtrees.length(); i++) {
@@ -269,7 +269,7 @@ void IdealGraphPrinter::print_method(ciMethod *method, int bci, InlineTree *tree
 }
 
 void IdealGraphPrinter::print_inline_tree(InlineTree *tree) {
-  if (tree != NULL) {
+  if (tree != nullptr) {
     print_method(tree->method(), tree->caller_bci(), tree);
   }
 }
@@ -279,7 +279,7 @@ void IdealGraphPrinter::print_inlining() {
   // Print inline tree
   if (_should_send_method) {
     InlineTree *inlineTree = C->ilt();
-    if (inlineTree != NULL) {
+    if (inlineTree != nullptr) {
       print_inline_tree(inlineTree);
     } else {
       // print this method only
@@ -324,7 +324,7 @@ void IdealGraphPrinter::begin_method() {
 // Has to be called whenever a method has finished compilation
 void IdealGraphPrinter::end_method() {
   tail(GROUP_ELEMENT);
-  _current_method = NULL;
+  _current_method = nullptr;
   _xml->flush();
 }
 
@@ -371,14 +371,14 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     print_prop("debug_idx", node->_debug_idx);
 #endif
 
-    if (C->cfg() != NULL) {
+    if (C->cfg() != nullptr) {
       Block* block = C->cfg()->get_block_for_node(node);
-      if (block == NULL) {
+      if (block == nullptr) {
         print_prop("block", C->cfg()->get_block(0)->_pre_order);
       } else {
         print_prop("block", block->_pre_order);
         if (node == block->head()) {
-          if (block->_idom != NULL) {
+          if (block->_idom != nullptr) {
             print_prop("idom", block->_idom->_pre_order);
           }
           print_prop("dom_depth", block->_dom_depth);
@@ -445,7 +445,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       print_prop("has_call", "true");
     }
 
-    if (C->matcher() != NULL) {
+    if (C->matcher() != nullptr) {
       if (C->matcher()->is_shared(node)) {
         print_prop("is_shared", "true");
       } else {
@@ -457,7 +457,7 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         print_prop("is_dontcare", "false");
       }
       Node* old = C->matcher()->find_old_node(node);
-      if (old != NULL) {
+      if (old != nullptr) {
         print_prop("old_node_idx", old->_idx);
       }
     }
@@ -474,10 +474,10 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
     stringStream s2(buffer, sizeof(buffer) - 1);
 
     node->dump_spec(&s2);
-    if (t != NULL && (t->isa_instptr() || t->isa_klassptr())) {
+    if (t != nullptr && (t->isa_instptr() || t->isa_klassptr())) {
       const TypeInstPtr  *toop = t->isa_instptr();
       const TypeKlassPtr *tkls = t->isa_klassptr();
-      ciKlass*           klass = toop ? toop->klass() : (tkls ? tkls->klass() : NULL );
+      ciKlass*           klass = toop ? toop->klass() : (tkls ? tkls->klass() : nullptr );
       if( klass && klass->is_loaded() && klass->is_interface() ) {
         s2.print("  Interface:");
       } else if( toop ) {
@@ -563,19 +563,19 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
       }
     }
 
-    JVMState* caller = NULL;
+    JVMState* caller = nullptr;
     if (node->is_SafePoint()) {
       caller = node->as_SafePoint()->jvms();
     } else {
       Node_Notes* notes = C->node_notes_at(node->_idx);
-      if (notes != NULL) {
+      if (notes != nullptr) {
         caller = notes->jvms();
       }
     }
 
-    if (caller != NULL) {
+    if (caller != nullptr) {
       stringStream bciStream;
-      ciMethod* last = NULL;
+      ciMethod* last = nullptr;
       int last_bci;
       while(caller) {
         if (caller->has_method()) {
@@ -586,13 +586,13 @@ void IdealGraphPrinter::visit_node(Node *n, bool edges, VectorSet* temp_set) {
         caller = caller->caller();
       }
       print_prop("bci", bciStream.as_string());
-      if (last != NULL && last->has_linenumber_table() && last_bci >= 0) {
+      if (last != nullptr && last->has_linenumber_table() && last_bci >= 0) {
         print_prop("line", last->line_number_from_bci(last_bci));
       }
     }
 
 #ifdef ASSERT
-    if (node->debug_orig() != NULL) {
+    if (node->debug_orig() != nullptr) {
       stringStream dorigStream;
       node->dump_orig(&dorigStream, false);
       print_prop("debug_orig", dorigStream.as_string());
@@ -622,10 +622,10 @@ void IdealGraphPrinter::walk_nodes(Node *start, bool edges, VectorSet* temp_set)
 
 
   VectorSet visited;
-  GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, NULL);
+  GrowableArray<Node *> nodeStack(Thread::current()->resource_area(), 0, 0, nullptr);
   nodeStack.push(start);
   visited.test_set(start->_idx);
-  if (C->cfg() != NULL) {
+  if (C->cfg() != nullptr) {
     // once we have a CFG there are some nodes that aren't really
     // reachable but are in the CFG so add them here.
     for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
@@ -669,7 +669,7 @@ void IdealGraphPrinter::print_method(const char *name, int level) {
 // Print current ideal graph
 void IdealGraphPrinter::print(const char *name, Node *node) {
 
-  if (!_current_method || !_should_send_method || node == NULL) return;
+  if (!_current_method || !_should_send_method || node == nullptr) return;
 
   // Warning, unsafe cast?
   _chaitin = (PhaseChaitin *)C->regalloc();
@@ -681,7 +681,7 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   VectorSet temp_set;
 
   head(NODES_ELEMENT);
-  if (C->cfg() != NULL) {
+  if (C->cfg() != nullptr) {
     // Compute the maximum estimated frequency in the current graph.
     _max_freq = 1.0e-6;
     for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
@@ -697,7 +697,7 @@ void IdealGraphPrinter::print(const char *name, Node *node) {
   head(EDGES_ELEMENT);
   walk_nodes(node, true, &temp_set);
   tail(EDGES_ELEMENT);
-  if (C->cfg() != NULL) {
+  if (C->cfg() != nullptr) {
     head(CONTROL_FLOW_ELEMENT);
     for (uint i = 0; i < C->cfg()->number_of_blocks(); i++) {
       Block* block = C->cfg()->get_block(i);
@@ -762,7 +762,7 @@ void IdealGraphPrinter::init_network_stream() {
       tty->print_cr("Client available, but does not want to receive data!");
       _network_stream->close();
       delete _network_stream;
-      _network_stream = NULL;
+      _network_stream = nullptr;
       return;
     }
     _output = _network_stream;
@@ -775,11 +775,11 @@ void IdealGraphPrinter::init_network_stream() {
 }
 
 void IdealGraphPrinter::update_compiled_method(ciMethod* current_method) {
-  assert(C != NULL, "must already be set");
+  assert(C != nullptr, "must already be set");
   if (current_method != _current_method) {
     // If a different method, end the old and begin with the new one.
     end_method();
-    _current_method = NULL;
+    _current_method = nullptr;
     begin_method();
   }
 }

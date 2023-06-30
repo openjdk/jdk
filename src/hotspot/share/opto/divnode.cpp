@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ static bool magic_int_divide_constants(jint d, jint &M, jint &s) {
 
 //--------------------------transform_int_divide-------------------------------
 // Convert a division by constant divisor into an alternate Ideal graph.
-// Return NULL if no transformation occurs.
+// Return null if no transformation occurs.
 static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor ) {
 
   // Check for invalid divisors
@@ -101,7 +101,7 @@ static Node *transform_int_divide( PhaseGVN *phase, Node *dividend, jint divisor
   const int N = 32;
 
   // Result
-  Node *q = NULL;
+  Node *q = nullptr;
 
   if (d == 1) {
     // division by +/- 1
@@ -334,7 +334,7 @@ static Node* long_by_long_mulhi(PhaseGVN* phase, Node* dividend, jlong magic_con
 
 //--------------------------transform_long_divide------------------------------
 // Convert a division by constant divisor into an alternate Ideal graph.
-// Return NULL if no transformation occurs.
+// Return null if no transformation occurs.
 static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divisor ) {
   // Check for invalid divisors
   assert( divisor != 0L && divisor != min_jlong,
@@ -345,7 +345,7 @@ static Node *transform_long_divide( PhaseGVN *phase, Node *dividend, jlong divis
   const int N = 64;
 
   // Result
-  Node *q = NULL;
+  Node *q = nullptr;
 
   if (d == 1) {
     // division by +/- 1
@@ -460,29 +460,29 @@ Node* DivINode::Identity(PhaseGVN* phase) {
 Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return NULL;
+  if( in(0) && in(0)->is_top() )  return nullptr;
 
   const Type *t = phase->type( in(2) );
-  if( t == TypeInt::ONE )       // Identity?
-    return NULL;                // Skip it
+  if( t == TypeInt::ONE )      // Identity?
+    return nullptr;            // Skip it
 
   const TypeInt *ti = t->isa_int();
-  if( !ti ) return NULL;
+  if( !ti ) return nullptr;
 
   // Check for useless control input
   // Check for excluding div-zero case
   if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
-    set_req(0, NULL);           // Yank control input
+    set_req(0, nullptr);           // Yank control input
     return this;
   }
 
-  if( !ti->is_con() ) return NULL;
+  if( !ti->is_con() ) return nullptr;
   jint i = ti->get_con();       // Get divisor
 
-  if (i == 0) return NULL;      // Dividing by zero constant does not idealize
+  if (i == 0) return nullptr;   // Dividing by zero constant does not idealize
 
   // Dividing by MININT does not optimize as a power-of-2 shift.
-  if( i == min_jint ) return NULL;
+  if( i == min_jint ) return nullptr;
 
   return transform_int_divide( phase, in(1), i );
 }
@@ -566,29 +566,29 @@ Node* DivLNode::Identity(PhaseGVN* phase) {
 Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return NULL;
+  if( in(0) && in(0)->is_top() )  return nullptr;
 
   const Type *t = phase->type( in(2) );
   if( t == TypeLong::ONE )      // Identity?
-    return NULL;                // Skip it
+    return nullptr;             // Skip it
 
   const TypeLong *tl = t->isa_long();
-  if( !tl ) return NULL;
+  if( !tl ) return nullptr;
 
   // Check for useless control input
   // Check for excluding div-zero case
   if (in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
-    set_req(0, NULL);           // Yank control input
+    set_req(0, nullptr);         // Yank control input
     return this;
   }
 
-  if( !tl->is_con() ) return NULL;
+  if( !tl->is_con() ) return nullptr;
   jlong l = tl->get_con();      // Get divisor
 
-  if (l == 0) return NULL;      // Dividing by zero constant does not idealize
+  if (l == 0) return nullptr;   // Dividing by zero constant does not idealize
 
   // Dividing by MINLONG does not optimize as a power-of-2 shift.
-  if( l == min_jlong ) return NULL;
+  if( l == min_jlong ) return nullptr;
 
   return transform_long_divide( phase, in(1), l );
 }
@@ -717,28 +717,28 @@ Node* DivFNode::Identity(PhaseGVN* phase) {
 Node *DivFNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return NULL;
+  if( in(0) && in(0)->is_top() )  return nullptr;
 
   const Type *t2 = phase->type( in(2) );
   if( t2 == TypeF::ONE )         // Identity?
-    return NULL;                // Skip it
+    return nullptr;              // Skip it
 
   const TypeF *tf = t2->isa_float_constant();
-  if( !tf ) return NULL;
-  if( tf->base() != Type::FloatCon ) return NULL;
+  if( !tf ) return nullptr;
+  if( tf->base() != Type::FloatCon ) return nullptr;
 
   // Check for out of range values
-  if( tf->is_nan() || !tf->is_finite() ) return NULL;
+  if( tf->is_nan() || !tf->is_finite() ) return nullptr;
 
   // Get the value
   float f = tf->getf();
   int exp;
 
   // Only for special case of dividing by a power of 2
-  if( frexp((double)f, &exp) != 0.5 ) return NULL;
+  if( frexp((double)f, &exp) != 0.5 ) return nullptr;
 
   // Limit the range of acceptable exponents
-  if( exp < -126 || exp > 126 ) return NULL;
+  if( exp < -126 || exp > 126 ) return nullptr;
 
   // Compute the reciprocal
   float reciprocal = ((float)1.0) / f;
@@ -809,28 +809,28 @@ Node* DivDNode::Identity(PhaseGVN* phase) {
 Node *DivDNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if (in(0) && remove_dead_region(phase, can_reshape))  return this;
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return NULL;
+  if( in(0) && in(0)->is_top() )  return nullptr;
 
   const Type *t2 = phase->type( in(2) );
   if( t2 == TypeD::ONE )         // Identity?
-    return NULL;                // Skip it
+    return nullptr;              // Skip it
 
   const TypeD *td = t2->isa_double_constant();
-  if( !td ) return NULL;
-  if( td->base() != Type::DoubleCon ) return NULL;
+  if( !td ) return nullptr;
+  if( td->base() != Type::DoubleCon ) return nullptr;
 
   // Check for out of range values
-  if( td->is_nan() || !td->is_finite() ) return NULL;
+  if( td->is_nan() || !td->is_finite() ) return nullptr;
 
   // Get the value
   double d = td->getd();
   int exp;
 
   // Only for special case of dividing by a power of 2
-  if( frexp(d, &exp) != 0.5 ) return NULL;
+  if( frexp(d, &exp) != 0.5 ) return nullptr;
 
   // Limit the range of acceptable exponents
-  if( exp < -1021 || exp > 1022 ) return NULL;
+  if( exp < -1021 || exp > 1022 ) return nullptr;
 
   // Compute the reciprocal
   double reciprocal = 1.0 / d;
@@ -847,22 +847,22 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
   if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return NULL;
+  if( in(0) && in(0)->is_top() )  return nullptr;
 
   // Get the modulus
   const Type *t = phase->type( in(2) );
-  if( t == Type::TOP ) return NULL;
+  if( t == Type::TOP ) return nullptr;
   const TypeInt *ti = t->is_int();
 
   // Check for useless control input
   // Check for excluding mod-zero case
   if (in(0) && (ti->_hi < 0 || ti->_lo > 0)) {
-    set_req(0, NULL);        // Yank control input
+    set_req(0, nullptr);        // Yank control input
     return this;
   }
 
   // See if we are MOD'ing by 2^k or 2^k-1.
-  if( !ti->is_con() ) return NULL;
+  if( !ti->is_con() ) return nullptr;
   jint con = ti->get_con();
 
   Node *hook = new Node(1);
@@ -915,7 +915,7 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // into a long multiply/int multiply/subtract case
 
   // Cannot handle mod 0, and min_jint isn't handled by the transform
-  if( con == 0 || con == min_jint ) return NULL;
+  if( con == 0 || con == min_jint ) return nullptr;
 
   // Get the absolute value of the constant; at this point, we can use this
   jint pos_con = (con >= 0) ? con : -con;
@@ -942,11 +942,11 @@ Node *ModINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Divide using the transform from DivI to MulL
   Node *result = transform_int_divide( phase, in(1), pos_con );
-  if (result != NULL) {
+  if (result != nullptr) {
     Node *divide = phase->transform(result);
 
     // Re-multiply, using a shift if this is a power of two
-    Node *mult = NULL;
+    Node *mult = nullptr;
 
     if( log2_con >= 0 )
       mult = phase->transform( new LShiftINode( divide, phase->intcon( log2_con ) ) );
@@ -1012,22 +1012,22 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Check for dead control input
   if( in(0) && remove_dead_region(phase, can_reshape) )  return this;
   // Don't bother trying to transform a dead node
-  if( in(0) && in(0)->is_top() )  return NULL;
+  if( in(0) && in(0)->is_top() )  return nullptr;
 
   // Get the modulus
   const Type *t = phase->type( in(2) );
-  if( t == Type::TOP ) return NULL;
+  if( t == Type::TOP ) return nullptr;
   const TypeLong *tl = t->is_long();
 
   // Check for useless control input
   // Check for excluding mod-zero case
   if (in(0) && (tl->_hi < 0 || tl->_lo > 0)) {
-    set_req(0, NULL);        // Yank control input
+    set_req(0, nullptr);        // Yank control input
     return this;
   }
 
   // See if we are MOD'ing by 2^k or 2^k-1.
-  if( !tl->is_con() ) return NULL;
+  if( !tl->is_con() ) return nullptr;
   jlong con = tl->get_con();
 
   Node *hook = new Node(1);
@@ -1082,7 +1082,7 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // into a long multiply/int multiply/subtract case
 
   // Cannot handle mod 0, and min_jlong isn't handled by the transform
-  if( con == 0 || con == min_jlong ) return NULL;
+  if( con == 0 || con == min_jlong ) return nullptr;
 
   // Get the absolute value of the constant; at this point, we can use this
   jlong pos_con = (con >= 0) ? con : -con;
@@ -1109,11 +1109,11 @@ Node *ModLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   // Divide using the transform from DivL to MulL
   Node *result = transform_long_divide( phase, in(1), pos_con );
-  if (result != NULL) {
+  if (result != nullptr) {
     Node *divide = phase->transform(result);
 
     // Re-multiply, using a shift if this is a power of two
-    Node *mult = NULL;
+    Node *mult = nullptr;
 
     if( log2_con >= 0 )
       mult = phase->transform( new LShiftLNode( divide, phase->intcon( log2_con ) ) );

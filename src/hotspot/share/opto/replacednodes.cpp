@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@
 #include "opto/replacednodes.hpp"
 
 void ReplacedNodes::allocate_if_necessary() {
-  if (_replaced_nodes == NULL) {
+  if (_replaced_nodes == nullptr) {
     _replaced_nodes = new GrowableArray<ReplacedNode>();
   }
 }
 
 bool ReplacedNodes::is_empty() const {
-  return _replaced_nodes == NULL || _replaced_nodes->length() == 0;
+  return _replaced_nodes == nullptr || _replaced_nodes->length() == 0;
 }
 
 bool ReplacedNodes::has_node(const ReplacedNode& r) const {
@@ -78,7 +78,7 @@ void ReplacedNodes::transfer_from(const ReplacedNodes& other, uint idx) {
 }
 
 void ReplacedNodes::clone() {
-  if (_replaced_nodes != NULL) {
+  if (_replaced_nodes != nullptr) {
     GrowableArray<ReplacedNode>* replaced_nodes_clone = new GrowableArray<ReplacedNode>();
     replaced_nodes_clone->appendAll(_replaced_nodes);
     _replaced_nodes = replaced_nodes_clone;
@@ -86,7 +86,7 @@ void ReplacedNodes::clone() {
 }
 
 void ReplacedNodes::reset() {
-  if (_replaced_nodes != NULL) {
+  if (_replaced_nodes != nullptr) {
     _replaced_nodes->clear();
   }
 }
@@ -130,7 +130,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
     ReplacedNode replaced = _replaced_nodes->at(i);
     Node* initial = replaced.initial();
     Node* improved = replaced.improved();
-    assert (ctl != NULL && !ctl->is_top(), "replaced node should have actual control");
+    assert (ctl != nullptr && !ctl->is_top(), "replaced node should have actual control");
 
     ResourceMark rm;
     Unique_Node_List work;
@@ -150,7 +150,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
         if (use->outcnt() == 0) {
           continue;
         }
-        if (n->is_CFG() || (n->in(0) != NULL && !n->in(0)->is_top())) {
+        if (n->is_CFG() || (n->in(0) != nullptr && !n->in(0)->is_top())) {
           // Skip projections, since some of the multi nodes aren't CFG (e.g., LoadStore and SCMemProj).
           if (n->is_Proj()) {
             n = n->in(0);
@@ -164,7 +164,7 @@ void ReplacedNodes::apply(Compile* C, Node* ctl) {
             n = IfNode::up_one_dom(n);
             depth++;
             // limit search depth
-            if (depth >= 100 || n == NULL) {
+            if (depth >= 100 || n == nullptr) {
               replace = false;
               break;
             }

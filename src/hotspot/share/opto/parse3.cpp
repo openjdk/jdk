@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ void Parse::do_field_access(bool is_get, bool is_field) {
       !(method()->holder() == field_holder && method()->is_object_initializer())) {
     uncommon_trap(Deoptimization::Reason_unhandled,
                   Deoptimization::Action_reinterpret,
-                  NULL, "put to call site target field");
+                  nullptr, "put to call site target field");
     return;
   }
 
@@ -118,7 +118,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
       (bt != T_OBJECT || field->type()->is_loaded())) {
     // final or stable field
     Node* con = make_constant_from_field(field, obj);
-    if (con != NULL) {
+    if (con != nullptr) {
       push_node(field->layout_type(), con);
       return;
     }
@@ -156,7 +156,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
       } else {
         type = TypeOopPtr::make_from_constant(con)->isa_oopptr();
       }
-      assert(type != NULL, "field singleton type must be consistent");
+      assert(type != nullptr, "field singleton type must be consistent");
     } else {
       type = TypeOopPtr::make_from_klass(field_klass->as_klass());
     }
@@ -186,7 +186,7 @@ void Parse::do_get_xxx(Node* obj, ciField* field, bool is_field) {
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name(); tty->print_cr(" asserting nullness of field at bci: %d", bci());
     }
-    if (C->log() != NULL) {
+    if (C->log() != nullptr) {
       C->log()->elem("assert_null reason='field' klass='%d'",
                      C->log()->identify(field->type()));
     }
@@ -242,7 +242,7 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
     // Any method can write a @Stable field; insert memory barriers after those also.
     if (field->is_final()) {
       set_wrote_final(true);
-      if (AllocateNode::Ideal_allocation(obj, &_gvn) != NULL) {
+      if (AllocateNode::Ideal_allocation(obj, &_gvn) != nullptr) {
         // Preserve allocation ptr to create precedent edge to it in membar
         // generated on exit from constructor.
         // Can't bind stable with its allocation, only record allocation for final field.
@@ -298,7 +298,7 @@ void Parse::do_newarray(BasicType elem_type) {
 // Also handle the degenerate 1-dimensional case of anewarray.
 Node* Parse::expand_multianewarray(ciArrayKlass* array_klass, Node* *lengths, int ndimensions, int nargs) {
   Node* length = lengths[0];
-  assert(length != NULL, "");
+  assert(length != nullptr, "");
   Node* array = new_array(makecon(TypeKlassPtr::make(array_klass)), length, nargs);
   if (ndimensions > 1) {
     jint length_con = find_int_con(length, -1);
@@ -331,7 +331,7 @@ void Parse::do_multianewarray() {
 
   // get the lengths from the stack (first dimension is on top)
   Node** length = NEW_RESOURCE_ARRAY(Node*, ndimensions + 1);
-  length[ndimensions] = NULL;  // terminating null for make_runtime_call
+  length[ndimensions] = nullptr;  // terminating null for make_runtime_call
   int j;
   for (j = ndimensions-1; j >= 0 ; j--) length[j] = pop();
 
@@ -356,7 +356,7 @@ void Parse::do_multianewarray() {
   // Can use multianewarray instead of [a]newarray if only one dimension,
   // or if all non-final dimensions are small constants.
   if (ndimensions == 1 || (1 <= expand_count && expand_count <= expand_limit)) {
-    Node* obj = NULL;
+    Node* obj = nullptr;
     // Set the original stack and the reexecute bit for the interpreter
     // to reexecute the multianewarray bytecode if deoptimization happens.
     // Do it unconditionally even for one dimension multianewarray.
@@ -371,7 +371,7 @@ void Parse::do_multianewarray() {
     return;
   }
 
-  address fun = NULL;
+  address fun = nullptr;
   switch (ndimensions) {
   case 1: ShouldNotReachHere(); break;
   case 2: fun = OptoRuntime::multianewarray2_Java(); break;
@@ -379,19 +379,19 @@ void Parse::do_multianewarray() {
   case 4: fun = OptoRuntime::multianewarray4_Java(); break;
   case 5: fun = OptoRuntime::multianewarray5_Java(); break;
   };
-  Node* c = NULL;
+  Node* c = nullptr;
 
-  if (fun != NULL) {
+  if (fun != nullptr) {
     c = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
                           OptoRuntime::multianewarray_Type(ndimensions),
-                          fun, NULL, TypeRawPtr::BOTTOM,
+                          fun, nullptr, TypeRawPtr::BOTTOM,
                           makecon(TypeKlassPtr::make(array_klass)),
                           length[0], length[1], length[2],
-                          (ndimensions > 2) ? length[3] : NULL,
-                          (ndimensions > 3) ? length[4] : NULL);
+                          (ndimensions > 2) ? length[3] : nullptr,
+                          (ndimensions > 3) ? length[4] : nullptr);
   } else {
     // Create a java array for dimension sizes
-    Node* dims = NULL;
+    Node* dims = nullptr;
     { PreserveReexecuteState preexecs(this);
       inc_sp(ndimensions);
       Node* dims_array_klass = makecon(TypeKlassPtr::make(ciArrayKlass::make(ciType::make(T_INT))));
@@ -406,7 +406,7 @@ void Parse::do_multianewarray() {
 
     c = make_runtime_call(RC_NO_LEAF | RC_NO_IO,
                           OptoRuntime::multianewarrayN_Type(),
-                          OptoRuntime::multianewarrayN_Java(), NULL, TypeRawPtr::BOTTOM,
+                          OptoRuntime::multianewarrayN_Java(), nullptr, TypeRawPtr::BOTTOM,
                           makecon(TypeKlassPtr::make(array_klass)),
                           dims);
   }
@@ -421,7 +421,7 @@ void Parse::do_multianewarray() {
   type = type->is_aryptr()->cast_to_exactness(true);
 
   const TypeInt* ltype = _gvn.find_int_type(length[0]);
-  if (ltype != NULL)
+  if (ltype != nullptr)
     type = type->is_aryptr()->cast_to_size(ltype);
 
     // We cannot sharpen the nested sub-arrays, since the top level is mutable.

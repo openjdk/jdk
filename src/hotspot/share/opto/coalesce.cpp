@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,7 +260,7 @@ void PhaseAggressiveCoalesce::insert_copies( Matcher &matcher ) {
         Node *def = n->in(cidx);
         if (_phc._lrg_map.find(n) == _phc._lrg_map.find(def)) {
           n->replace_by(def);
-          n->set_req(cidx,NULL);
+          n->set_req(cidx,nullptr);
           b->remove_node(l);
           l--;
           continue;
@@ -503,7 +503,7 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
   lrgs(lr1)._def = (lrgs(lr1).is_multidef() ||
                         lrgs(lr2).is_multidef() )
     ? NodeSentinel : src_def;
-  lrgs(lr2)._def = NULL;    // No def for lrg 2
+  lrgs(lr2)._def = nullptr;    // No def for lrg 2
   lrgs(lr2).Clear();        // Force empty mask for LRG 2
   //lrgs(lr2)._size = 0;      // Live-range 2 goes dead
   lrgs(lr1)._is_oop |= lrgs(lr2)._is_oop;
@@ -520,7 +520,7 @@ void PhaseConservativeCoalesce::union_helper( Node *lr1_node, Node *lr2_node, ui
   // _phc.free_spillcopy(b->_nodes[bindex]);
   assert( b->get_node(bindex) == dst_copy, "" );
   dst_copy->replace_by( dst_copy->in(didx) );
-  dst_copy->set_req( didx, NULL);
+  dst_copy->set_req( didx, nullptr);
   b->remove_node(bindex);
   if( bindex < b->_ihrp_index ) b->_ihrp_index--;
   if( bindex < b->_fhrp_index ) b->_fhrp_index--;

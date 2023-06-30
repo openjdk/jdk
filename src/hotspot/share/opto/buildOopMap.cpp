@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,7 @@
 // an array of structs, but the struct-of-arrays is generally a little more
 // efficient).  The arrays are indexed by register number (including
 // stack-slots as registers) and so is bounded by 200 to 300 elements in
-// practice.  One array will map to a reaching def Node (or NULL for
+// practice.  One array will map to a reaching def Node (or null for
 // conflict/dead).  The other array will map to a callee-saved register or
 // OptoReg::Bad for not-callee-saved.
 
@@ -80,16 +80,16 @@
 struct OopFlow : public ResourceObj {
   short *_callees;              // Array mapping register to callee-saved
   Node **_defs;                 // array mapping register to reaching def
-                                // or NULL if dead/conflict
+                                // or null if dead/conflict
   // OopFlow structs, when not being actively modified, describe the _end_ of
   // this block.
   Block *_b;                    // Block for this struct
   OopFlow *_next;               // Next free OopFlow
-                                // or NULL if dead/conflict
+                                // or null if dead/conflict
   Compile* C;
 
   OopFlow( short *callees, Node **defs, Compile* c ) : _callees(callees), _defs(defs),
-    _b(NULL), _next(NULL), C(c) { }
+    _b(nullptr), _next(nullptr), C(c) { }
 
   // Given reaching-defs for this block start, compute it for this block end
   void compute_reach( PhaseRegAlloc *regalloc, int max_reg, Dict *safehash );
@@ -166,19 +166,19 @@ void OopFlow::compute_reach( PhaseRegAlloc *regalloc, int max_reg, Dict *safehas
 
 // Merge the given flow into the 'this' flow
 void OopFlow::merge( OopFlow *flow, int max_reg ) {
-  assert( _b == NULL, "merging into a happy flow" );
+  assert( _b == nullptr, "merging into a happy flow" );
   assert( flow->_b, "this flow is still alive" );
   assert( flow != this, "no self flow" );
 
   // Do the merge.  If there are any differences, drop to 'bottom' which
-  // is OptoReg::Bad or NULL depending.
+  // is OptoReg::Bad or null depending.
   for( int i=0; i<max_reg; i++ ) {
     // Merge the callee-save's
     if( _callees[i] != flow->_callees[i] )
       _callees[i] = OptoReg::Bad;
     // Merge the reaching defs
     if( _defs[i] != flow->_defs[i] )
-      _defs[i] = NULL;
+      _defs[i] = nullptr;
   }
 
 }
@@ -214,7 +214,7 @@ OopMap *OopFlow::build_oop_map( Node *n, int max_reg, PhaseRegAlloc *regalloc, i
               memset(dup_check,0,OptoReg::stack0()) );
 
   OopMap *omap = new OopMap( framesize,  max_inarg_slot );
-  MachCallNode *mcall = n->is_MachCall() ? n->as_MachCall() : NULL;
+  MachCallNode *mcall = n->is_MachCall() ? n->as_MachCall() : nullptr;
   JVMState* jvms = n->jvms();
 
   // For all registers do...
@@ -456,7 +456,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
         if( OptoReg::is_valid(first) ) clr_live_bit(tmp_live,first);
         if( OptoReg::is_valid(second) ) clr_live_bit(tmp_live,second);
 
-        MachNode *m = n->is_Mach() ? n->as_Mach() : NULL;
+        MachNode *m = n->is_Mach() ? n->as_Mach() : nullptr;
 
         // Check if m is potentially a CISC alternate instruction (i.e, possibly
         // synthesized by RegAlloc from a conventional instruction and a
@@ -479,7 +479,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
           // for this stack location, and set the appropriate bit in the
           // live vector 4987749.
           if (is_cisc_alternate && def == fp) {
-            const TypePtr *adr_type = NULL;
+            const TypePtr *adr_type = nullptr;
             intptr_t offset;
             const Node* base = m->get_base_and_disp(offset, adr_type);
             if (base == NodeSentinel) {
@@ -490,7 +490,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
               assert(!def->bottom_type()->isa_oop_ptr(), "expecting non-oop mem input");
             } else if (base != fp || offset == Type::OffsetBot) {
               // Do nothing: the fp operand is either not from a memory use
-              // (base == NULL) OR the fp is used in a non-memory context
+              // (base == nullptr) OR the fp is used in a non-memory context
               // (base is some other register) OR the offset is not constant,
               // so it is not a stack slot.
             } else {
@@ -546,7 +546,7 @@ static void do_liveness(PhaseRegAlloc* regalloc, PhaseCFG* cfg, Block_List* work
       Block* block = cfg->get_block(i);
       uint j;
       for (j = 1; j < block->number_of_nodes(); j++) {
-        if (block->get_node(j)->jvms() && (*safehash)[block->get_node(j)] == NULL) {
+        if (block->get_node(j)->jvms() && (*safehash)[block->get_node(j)] == nullptr) {
            break;
         }
       }
@@ -581,12 +581,12 @@ void PhaseOutput::BuildOopMaps() {
   Block_List worklist;          // Worklist of pending blocks
 
   int max_reg_ints = align_up(max_reg, BitsPerInt)>>LogBitsPerInt;
-  Dict *safehash = NULL;        // Used for assert only
+  Dict *safehash = nullptr;        // Used for assert only
   // Compute a backwards liveness per register.  Needs a bitarray of
   // #blocks x (#registers, rounded up to ints)
   safehash = new Dict(cmpkey,hashkey,A);
   do_liveness( C->regalloc(), C->cfg(), &worklist, max_reg_ints, A, safehash );
-  OopFlow *free_list = NULL;    // Free, unused
+  OopFlow *free_list = nullptr;    // Free, unused
 
   // Array mapping blocks to completed oopflows
   OopFlow **flows = NEW_ARENA_ARRAY(A, OopFlow*, C->cfg()->number_of_blocks());
@@ -630,7 +630,7 @@ void PhaseOutput::BuildOopMaps() {
     // If this block has a visited predecessor AND that predecessor has this
     // last block as his only undone child, we can move the OopFlow from the
     // pred to this block.  Otherwise we have to grab a new OopFlow.
-    OopFlow *flow = NULL;       // Flag for finding optimized flow
+    OopFlow *flow = nullptr;       // Flag for finding optimized flow
     Block *pred = (Block*)((intptr_t)0xdeadbeef);
     // Scan this block's preds to find a done predecessor
     for (uint j = 1; j < b->num_preds(); j++) {
@@ -664,9 +664,9 @@ void PhaseOutput::BuildOopMaps() {
       if( !free_list )
         free_list = OopFlow::make(A,max_reg,C);
       flow = free_list;
-      assert( flow->_b == NULL, "oopFlow is not free" );
+      assert( flow->_b == nullptr, "oopFlow is not free" );
       free_list = flow->_next;
-      flow->_next = NULL;
+      flow->_next = nullptr;
 
       // Copy/clone over the data
       flow->clone(flows[pred->_pre_order], max_reg);
@@ -676,7 +676,7 @@ void PhaseOutput::BuildOopMaps() {
     // because after the first time they are guarded from entering
     // this code again.
     assert( flow->_b == pred, "have some prior flow" );
-    flow->_b = NULL;
+    flow->_b = nullptr;
 
     // Now push flow forward
     flows[b->_pre_order] = flow;// Mark flow for this block

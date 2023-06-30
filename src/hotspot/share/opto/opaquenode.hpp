@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ class Opaque1Node : public Node {
   virtual uint hash() const ;                  // { return NO_HASH; }
   virtual bool cmp( const Node &n ) const;
   public:
-  Opaque1Node(Compile* C, Node *n) : Node(NULL, n) {
+  Opaque1Node(Compile* C, Node *n) : Node(nullptr, n) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
     init_flags(Flag_is_macro);
     init_class_id(Class_Opaque1);
@@ -43,13 +43,13 @@ class Opaque1Node : public Node {
   }
   // Special version for the pre-loop to hold the original loop limit
   // which is consumed by range check elimination.
-  Opaque1Node(Compile* C, Node *n, Node* orig_limit) : Node(NULL, n, orig_limit) {
+  Opaque1Node(Compile* C, Node *n, Node* orig_limit) : Node(nullptr, n, orig_limit) {
     // Put it on the Macro nodes list to removed during macro nodes expansion.
     init_flags(Flag_is_macro);
     init_class_id(Class_Opaque1);
     C->add_macro_node(this);
   }
-  Node* original_loop_limit() { return req()==3 ? in(2) : NULL; }
+  Node* original_loop_limit() { return req()==3 ? in(2) : nullptr; }
   virtual int Opcode() const;
   virtual const Type *bottom_type() const { return TypeInt::INT; }
   virtual Node* Identity(PhaseGVN* phase);
@@ -114,7 +114,7 @@ class Opaque3Node : public Opaque2Node {
 // GraphKit::must_be_not_null().
 class Opaque4Node : public Node {
   public:
-  Opaque4Node(Compile* C, Node *tst, Node* final_tst) : Node(NULL, tst, final_tst) {
+  Opaque4Node(Compile* C, Node *tst, Node* final_tst) : Node(nullptr, tst, final_tst) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }

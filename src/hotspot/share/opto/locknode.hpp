@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -83,8 +83,8 @@ public:
     init_req(0,ctrl);
     init_class_id(Class_FastLock);
     _counters = NULL;
-    _rtm_counters = NULL;
-    _stack_rtm_counters = NULL;
+    _rtm_counters = nullptr;
+    _stack_rtm_counters = nullptr;
   }
   Node* obj_node() const { return in(1); }
   Node* box_node() const { return in(2); }

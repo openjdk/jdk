@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,12 +129,12 @@ void PhaseCFG::build_dominator_tree() {
     Tarjan *w = &tarjan[i];
     if( w->_dom != &tarjan[w->_semi] )
       w->_dom = w->_dom->_dom;
-    w->_dom_next = w->_dom_child = NULL;  // Initialize for building tree later
+    w->_dom_next = w->_dom_child = nullptr;  // Initialize for building tree later
   }
   // No immediate dominator for the root
   Tarjan *w = &tarjan[get_root_block()->_pre_order];
-  w->_dom = NULL;
-  w->_dom_next = w->_dom_child = NULL;  // Initialize for building tree later
+  w->_dom = nullptr;
+  w->_dom_next = w->_dom_child = nullptr;  // Initialize for building tree later
 
   // Convert the dominator tree array into my kind of graph
   for(uint i = 1; i <= number_of_blocks(); i++){ // For all Tarjan vertices
@@ -145,7 +145,7 @@ void PhaseCFG::build_dominator_tree() {
       t->_dom_next = tdom->_dom_child; // Make me a sibling of parent's child
       tdom->_dom_child = t;     // Make me a child of my parent
     } else
-      t->_block->_idom = NULL;  // Root
+      t->_block->_idom = nullptr;  // Root
   }
   w->setdepth(number_of_blocks() + 1); // Set depth in dominator tree
 
@@ -175,12 +175,12 @@ class Block_Stack {
       t->_block = b;                // Save actual block
       t->_semi = pre_order;         // Block to DFS map
       t->_label = t;                // DFS to vertex map
-      t->_ancestor = NULL;          // Fast LINK & EVAL setup
+      t->_ancestor = nullptr;       // Fast LINK & EVAL setup
       t->_child = &_tarjan[0];      // Sentenial
       t->_size = 1;
-      t->_bucket = NULL;
+      t->_bucket = nullptr;
       if (pre_order == 1)
-        t->_parent = NULL;          // first block doesn't have parent
+        t->_parent = nullptr;       // first block doesn't have parent
       else {
         // Save parent (current top block on stack) in DFS
         t->_parent = &_tarjan[_stack_top->block->_pre_order];
@@ -341,11 +341,11 @@ void Tarjan::setdepth( uint stack_size ) {
         t->_block->_dom_depth = depth; // Set depth in dominator tree
         Tarjan *dom_child = t->_dom_child;
         t = t->_dom_next;    // next tarjan
-        if (dom_child != NULL) {
+        if (dom_child != nullptr) {
           *top = dom_child;  // save child on stack
           ++top;
         }
-      } while (t != NULL);
+      } while (t != nullptr);
     } while (next < last);
   } while (last < top);
 }
@@ -395,7 +395,7 @@ void PhaseIdealLoop::Dominators() {
   // Initialize _control field for fast reference
   int i;
   for( i= C->unique()-1; i>=0; i-- )
-    ntarjan[i]._control = NULL;
+    ntarjan[i]._control = nullptr;
 
   // Store the DFS order for the main loop
   const uint fill_value = max_juint;
@@ -413,12 +413,12 @@ void PhaseIdealLoop::Dominators() {
 
   for( i = dfsnum-1; i>1; i-- ) {        // For all nodes in reverse DFS order
     NTarjan *w = &ntarjan[i];            // Get Node from DFS
-    assert(w->_control != NULL,"bad DFS walk");
+    assert(w->_control != nullptr,"bad DFS walk");
 
     // Step 2:
     Node *whead = w->_control;
     for( uint j=0; j < whead->req(); j++ ) { // For each predecessor
-      if( whead->in(j) == NULL || !whead->in(j)->is_CFG() )
+      if( whead->in(j) == nullptr || !whead->in(j)->is_CFG() )
         continue;                            // Only process control nodes
       uint b = dfsorder[whead->in(j)->_idx];
       if(b == fill_value) continue;
@@ -468,28 +468,28 @@ void PhaseIdealLoop::Dominators() {
   // Step 4:
   for( i=2; i < dfsnum; i++ ) { // DFS order
     NTarjan *w = &ntarjan[i];
-    assert(w->_control != NULL,"Bad DFS walk");
+    assert(w->_control != nullptr,"Bad DFS walk");
     if( w->_dom != &ntarjan[w->_semi] )
       w->_dom = w->_dom->_dom;
-    w->_dom_next = w->_dom_child = NULL;  // Initialize for building tree later
+    w->_dom_next = w->_dom_child = nullptr;  // Initialize for building tree later
   }
   // No immediate dominator for the root
   NTarjan *w = &ntarjan[dfsorder[C->root()->_idx]];
-  w->_dom = NULL;
-  w->_parent = NULL;
-  w->_dom_next = w->_dom_child = NULL;  // Initialize for building tree later
+  w->_dom = nullptr;
+  w->_parent = nullptr;
+  w->_dom_next = w->_dom_child = nullptr;  // Initialize for building tree later
 
   // Convert the dominator tree array into my kind of graph
   for( i=1; i<dfsnum; i++ ) {          // For all Tarjan vertices
     NTarjan *t = &ntarjan[i];          // Handy access
-    assert(t->_control != NULL,"Bad DFS walk");
+    assert(t->_control != nullptr,"Bad DFS walk");
     NTarjan *tdom = t->_dom;           // Handy access to immediate dominator
     if( tdom )  {                      // Root has no immediate dominator
       _idom[t->_control->_idx] = tdom->_control; // Set immediate dominator
       t->_dom_next = tdom->_dom_child; // Make me a sibling of parent's child
       tdom->_dom_child = t;            // Make me a child of my parent
     } else
-      _idom[C->root()->_idx] = NULL; // Root
+      _idom[C->root()->_idx] = nullptr; // Root
   }
   w->setdepth( C->unique()+1, _dom_depth ); // Set depth in dominator tree
   // Pick up the 'top' node as well
@@ -525,10 +525,10 @@ int NTarjan::DFS( NTarjan *ntarjan, VectorSet &visited, PhaseIdealLoop *pil, uin
       dfsorder[b->_idx] = dfsnum;      // Save DFS order info
       w->_semi = dfsnum;               // Node to DFS map
       w->_label = w;                   // DFS to vertex map
-      w->_ancestor = NULL;             // Fast LINK & EVAL setup
+      w->_ancestor = nullptr;             // Fast LINK & EVAL setup
       w->_child = &ntarjan[0];         // Sentinal
       w->_size = 1;
-      w->_bucket = NULL;
+      w->_bucket = nullptr;
 
       // Need DEF-USE info for this pass
       for ( int i = b->outcnt(); i-- > 0; ) { // Put on stack backwards
@@ -604,11 +604,11 @@ void NTarjan::setdepth( uint stack_size, uint *dom_depth ) {
         dom_depth[t->_control->_idx] = depth; // Set depth in dominator tree
         NTarjan *dom_child = t->_dom_child;
         t = t->_dom_next;    // next tarjan
-        if (dom_child != NULL) {
+        if (dom_child != nullptr) {
           *top = dom_child;  // save child on stack
           ++top;
         }
-      } while (t != NULL);
+      } while (t != nullptr);
     } while (next < last);
   } while (last < top);
 }
@@ -628,13 +628,13 @@ void NTarjan::dump(int offset) const {
   for(i = offset; i >0; i--)      // Use indenting for tree structure
     tty->print("  ");
   tty->print("DFS Parent: ");
-  if(_parent != NULL)
+  if(_parent != nullptr)
     _parent->_control->dump();    // Parent in DFS
   tty->print("\n");
   for(i = offset; i >0; i--)      // Use indenting for tree structure
     tty->print("  ");
   tty->print("Dom Parent: ");
-  if(_dom != NULL)
+  if(_dom != nullptr)
     _dom->_control->dump();       // Parent in Dominator Tree
   tty->print("\n");
 

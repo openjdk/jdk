@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -148,10 +148,10 @@ private:
 
   // Accessors for the inherited field PhaseTransform::_nodes:
   void   grow_new_node_array(uint idx_limit) {
-    _nodes.map(idx_limit-1, NULL);
+    _nodes.map(idx_limit-1, nullptr);
   }
   bool    has_new_node(const Node* n) const {
-    return _nodes.at(n->_idx) != NULL;
+    return _nodes.at(n->_idx) != nullptr;
   }
   Node*       new_node(const Node* n) const {
     assert(has_new_node(n), "set before get");
@@ -169,7 +169,7 @@ private:
   Node* _mem_node;   // Ideal memory node consumed by mach node
 #endif
 
-  // Mach node for ConP #NULL
+  // Mach node for ConP #null
   MachNode* _mach_null;
 
   void handle_precedence_edges(Node* n, MachNode *mach);

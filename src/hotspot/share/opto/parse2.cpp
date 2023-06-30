@@ -140,11 +140,11 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
   bool need_range_check = true;
   if (idxtype->_hi < sizetype->_lo && idxtype->_lo >= 0) {
     need_range_check = false;
-    if (C->log() != NULL)   C->log()->elem("observe that='!need_range_check'");
+    if (C->log() != nullptr)   C->log()->elem("observe that='!need_range_check'");
   }
 
   ciKlass * arytype_klass = arytype->klass();
-  if ((arytype_klass != NULL) && (!arytype_klass->is_loaded())) {
+  if ((arytype_klass != nullptr) && (!arytype_klass->is_loaded())) {
     // Only fails for some -Xcomp runs
     // The class is unloaded.  We have to run this bytecode in the interpreter.
     uncommon_trap(Deoptimization::Reason_unloaded,
@@ -189,7 +189,7 @@ Node* Parse::array_addressing(BasicType type, int vals, const Type*& elemtype) {
         // See IfNode::Ideal, is_range_check, adjust_check.
         uncommon_trap(Deoptimization::Reason_range_check,
                       Deoptimization::Action_make_not_entrant,
-                      NULL, "range_check");
+                      nullptr, "range_check");
       } else {
         // If we have already recompiled with the range-check-widening
         // heroic optimization turned off, then we must really be throwing
@@ -233,7 +233,7 @@ void Parse::jump_if_true_fork(IfNode *iff, int dest_bci_if_true, bool unc) {
       repush_if_args();
       uncommon_trap(Deoptimization::Reason_unstable_if,
                     Deoptimization::Action_reinterpret,
-                    NULL,
+                    nullptr,
                     "taken always");
     } else {
       assert(dest_bci_if_true != never_reached, "inconsistent dest");
@@ -255,7 +255,7 @@ void Parse::jump_if_false_fork(IfNode *iff, int dest_bci_if_true, bool unc) {
       repush_if_args();
       uncommon_trap(Deoptimization::Reason_unstable_if,
                     Deoptimization::Action_reinterpret,
-                    NULL,
+                    nullptr,
                     "taken never");
     } else {
       assert(dest_bci_if_true != never_reached, "inconsistent dest");
@@ -274,7 +274,7 @@ void Parse::jump_if_always_fork(int dest_bci, bool unc) {
     repush_if_args();
     uncommon_trap(Deoptimization::Reason_unstable_if,
                   Deoptimization::Action_reinterpret,
-                  NULL,
+                  nullptr,
                   "taken never");
   } else {
     assert(dest_bci != never_reached, "inconsistent dest");
@@ -423,10 +423,10 @@ void Parse::do_tableswitch() {
   }
 
   ciMethodData* methodData = method()->method_data();
-  ciMultiBranchData* profile = NULL;
+  ciMultiBranchData* profile = nullptr;
   if (methodData->is_mature() && UseSwitchProfiling) {
     ciProfileData* data = methodData->bci_to_data(bci());
-    if (data != NULL && data->is_MultiBranchData()) {
+    if (data != nullptr && data->is_MultiBranchData()) {
       profile = (ciMultiBranchData*)data;
     }
   }
@@ -439,7 +439,7 @@ void Parse::do_tableswitch() {
   int rp = -1;
   if (lo_index != min_jint) {
     uint cnt = 1;
-    if (profile != NULL) {
+    if (profile != nullptr) {
       cnt = profile->default_count() / (hi_index != max_jint ? 2 : 1);
     }
     ranges[++rp].setRange(min_jint, lo_index-1, default_dest, cnt);
@@ -449,7 +449,7 @@ void Parse::do_tableswitch() {
     int  dest      = iter().get_dest_table(j+3);
     makes_backward_branch |= (dest <= bci());
     uint cnt = 1;
-    if (profile != NULL) {
+    if (profile != nullptr) {
       cnt = profile->count_at(j);
     }
     if (rp < 0 || !ranges[rp].adjoin(match_int, dest, cnt, trim_ranges)) {
@@ -460,7 +460,7 @@ void Parse::do_tableswitch() {
   assert(ranges[rp].hi() == highest, "");
   if (highest != max_jint) {
     uint cnt = 1;
-    if (profile != NULL) {
+    if (profile != nullptr) {
       cnt = profile->default_count() / (lo_index != min_jint ? 2 : 1);
     }
     if (!ranges[rp].adjoinRange(highest+1, max_jint, default_dest, cnt, trim_ranges)) {
@@ -497,10 +497,10 @@ void Parse::do_lookupswitch() {
   }
 
   ciMethodData* methodData = method()->method_data();
-  ciMultiBranchData* profile = NULL;
+  ciMultiBranchData* profile = nullptr;
   if (methodData->is_mature() && UseSwitchProfiling) {
     ciProfileData* data = methodData->bci_to_data(bci());
-    if (data != NULL && data->is_MultiBranchData()) {
+    if (data != nullptr && data->is_MultiBranchData()) {
       profile = (ciMultiBranchData*)data;
     }
   }
@@ -513,7 +513,7 @@ void Parse::do_lookupswitch() {
       table[3*j+0] = iter().get_int_table(2+2*j);
       table[3*j+1] = iter().get_dest_table(2+2*j+1);
       // Handle overflow when converting from uint to jint
-      table[3*j+2] = (profile == NULL) ? 1 : MIN2<uint>(max_jint, profile->count_at(j));
+      table[3*j+2] = (profile == nullptr) ? 1 : MIN2<uint>(max_jint, profile->count_at(j));
     }
     qsort(table, len, 3*sizeof(table[0]), jint_cmp);
   }
@@ -531,7 +531,7 @@ void Parse::do_lookupswitch() {
     defaults += (float)max_jint - prev + 1;
   }
   float default_cnt = 1;
-  if (profile != NULL) {
+  if (profile != nullptr) {
     default_cnt = profile->default_count()/defaults;
   }
 
@@ -615,12 +615,12 @@ public:
   } _state;
 
   SwitchRanges(SwitchRange *lo, SwitchRange *hi)
-    : _lo(lo), _hi(hi), _mid(NULL),
+    : _lo(lo), _hi(hi), _mid(nullptr),
       _cost(0), _state(Start) {
   }
 
   SwitchRanges()
-    : _lo(NULL), _hi(NULL), _mid(NULL),
+    : _lo(nullptr), _hi(nullptr), _mid(nullptr),
       _cost(0), _state(Start) {}
 };
 
@@ -634,7 +634,7 @@ static float compute_tree_cost(SwitchRange *lo, SwitchRange *hi, float total_cnt
   do {
     SwitchRanges& r = *tree.adr_at(tree.length()-1);
     if (r._hi != r._lo) {
-      if (r._mid == NULL) {
+      if (r._mid == nullptr) {
         float r_cnt = sum_of_cnts(r._lo, r._hi);
 
         if (r_cnt == 0) {
@@ -643,7 +643,7 @@ static float compute_tree_cost(SwitchRange *lo, SwitchRange *hi, float total_cnt
           continue;
         }
 
-        SwitchRange* mid = NULL;
+        SwitchRange* mid = nullptr;
         mid = r._lo;
         for (float cnt = 0; ; ) {
           assert(mid <= r._hi, "out of bounds");
@@ -692,7 +692,7 @@ void Parse::linear_search_switch_ranges(Node* key_val, SwitchRange*& lo, SwitchR
   SwitchRange* array1 = lo;
   SwitchRange* array2 = NEW_RESOURCE_ARRAY(SwitchRange, nr);
 
-  SwitchRange* ranges = NULL;
+  SwitchRange* ranges = nullptr;
 
   while (nr >= 2) {
     assert(lo == array1 || lo == array2, "one the 2 already allocated arrays");
@@ -888,15 +888,15 @@ bool Parse::create_jump_tables(Node* key_val, SwitchRange* lo, SwitchRange* hi) 
   }
 
   ciMethodData* methodData = method()->method_data();
-  ciMultiBranchData* profile = NULL;
+  ciMultiBranchData* profile = nullptr;
   if (methodData->is_mature()) {
     ciProfileData* data = methodData->bci_to_data(bci());
-    if (data != NULL && data->is_MultiBranchData()) {
+    if (data != nullptr && data->is_MultiBranchData()) {
       profile = (ciMultiBranchData*)data;
     }
   }
 
-  Node* jtn = _gvn.transform(new JumpNode(control(), key_val, num_cases, probs, profile == NULL ? COUNT_UNKNOWN : total));
+  Node* jtn = _gvn.transform(new JumpNode(control(), key_val, num_cases, probs, profile == nullptr ? COUNT_UNKNOWN : total));
 
   // These are the switch destinations hanging off the jumpnode
   i = 0;
@@ -950,7 +950,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
     jint min_val = min_jint;
     jint max_val = max_jint;
     const TypeInt* ti = key_val->bottom_type()->isa_int();
-    if (ti != NULL) {
+    if (ti != nullptr) {
       min_val = ti->_lo;
       max_val = ti->_hi;
       assert(min_val <= max_val, "invalid int type");
@@ -987,7 +987,7 @@ void Parse::jump_switch_ranges(Node* key_val, SwitchRange *lo, SwitchRange *hi, 
 
     if (create_jump_tables(key_val, lo, hi)) return;
 
-    SwitchRange* mid = NULL;
+    SwitchRange* mid = nullptr;
     float total_cnt = sum_of_cnts(lo, hi);
 
     int nr = hi - lo + 1;
@@ -1111,7 +1111,7 @@ void Parse::modf() {
   Node *f1 = pop();
   Node* c = make_runtime_call(RC_LEAF, OptoRuntime::modf_Type(),
                               CAST_FROM_FN_PTR(address, SharedRuntime::frem),
-                              "frem", NULL, //no memory effects
+                              "frem", nullptr, //no memory effects
                               f1, f2);
   Node* res = _gvn.transform(new ProjNode(c, TypeFunc::Parms + 0));
 
@@ -1123,7 +1123,7 @@ void Parse::modd() {
   Node *d1 = pop_pair();
   Node* c = make_runtime_call(RC_LEAF, OptoRuntime::Math_DD_D_Type(),
                               CAST_FROM_FN_PTR(address, SharedRuntime::drem),
-                              "drem", NULL, //no memory effects
+                              "drem", nullptr, //no memory effects
                               d1, top(), d2, top());
   Node* res_d   = _gvn.transform(new ProjNode(c, TypeFunc::Parms + 0));
 
@@ -1140,7 +1140,7 @@ void Parse::l2f() {
   Node* f1 = pop();
   Node* c = make_runtime_call(RC_LEAF, OptoRuntime::l2f_Type(),
                               CAST_FROM_FN_PTR(address, SharedRuntime::l2f),
-                              "l2f", NULL, //no memory effects
+                              "l2f", nullptr, //no memory effects
                               f1, f2);
   Node* res = _gvn.transform(new ProjNode(c, TypeFunc::Parms + 0));
 
@@ -1222,7 +1222,7 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
     ciMethodData* methodData = method()->method_data();
     if (!methodData->is_mature())  return PROB_UNKNOWN;
     ciProfileData* data = methodData->bci_to_data(bci());
-    if (data == NULL) {
+    if (data == nullptr) {
       return PROB_UNKNOWN;
     }
     if (!data->is_JumpData())  return PROB_UNKNOWN;
@@ -1242,7 +1242,7 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   // Give up if too few (or too many, in which case the sum will overflow) counts to be meaningful.
   // We also check that individual counters are positive first, otherwise the sum can become positive.
   if (taken < 0 || not_taken < 0 || taken + not_taken < 40) {
-    if (C->log() != NULL) {
+    if (C->log() != nullptr) {
       C->log()->elem("branch target_bci='%d' taken='%d' not_taken='%d'", iter().get_dest(), taken, not_taken);
     }
     return PROB_UNKNOWN;
@@ -1272,12 +1272,12 @@ float Parse::dynamic_branch_prediction(float &cnt, BoolTest::mask btest, Node* t
   assert((cnt > 0.0f) && (prob > 0.0f),
          "Bad frequency assignment in if");
 
-  if (C->log() != NULL) {
-    const char* prob_str = NULL;
+  if (C->log() != nullptr) {
+    const char* prob_str = nullptr;
     if (prob >= PROB_MAX)  prob_str = (prob == PROB_MAX) ? "max" : "always";
     if (prob <= PROB_MIN)  prob_str = (prob == PROB_MIN) ? "min" : "never";
     char prob_str_buf[30];
-    if (prob_str == NULL) {
+    if (prob_str == nullptr) {
       jio_snprintf(prob_str_buf, sizeof(prob_str_buf), "%20.2f", prob);
       prob_str = prob_str_buf;
     }
@@ -1316,7 +1316,7 @@ float Parse::branch_prediction(float& cnt,
         // of the OSR-ed method, and we want to deopt to gather more stats.
         // If you have ANY counts, then this loop is simply 'cold' relative
         // to the OSR loop.
-        if (data == NULL ||
+        if (data == nullptr ||
             (data->as_BranchData()->taken() +  data->as_BranchData()->not_taken() == 0)) {
           // This is the only way to return PROB_UNKNOWN:
           return PROB_UNKNOWN;
@@ -1366,8 +1366,8 @@ inline int Parse::repush_if_args() {
   int bc_depth = - Bytecodes::depth(iter().cur_bc());
   assert(bc_depth == 1 || bc_depth == 2, "only two kinds of branches");
   DEBUG_ONLY(sync_jvms());   // argument(n) requires a synced jvms
-  assert(argument(0) != NULL, "must exist");
-  assert(bc_depth == 1 || argument(1) != NULL, "two must exist");
+  assert(argument(0) != nullptr, "must exist");
+  assert(bc_depth == 1 || argument(1) != nullptr, "two must exist");
   inc_sp(bc_depth);
   return bc_depth;
 }
@@ -1389,7 +1389,7 @@ void Parse::do_ifnull(BoolTest::mask btest, Node *c) {
     repush_if_args(); // to gather stats on loop
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
-                  NULL, "cold");
+                  nullptr, "cold");
     if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
@@ -1460,7 +1460,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
     repush_if_args(); // to gather stats on loop
     uncommon_trap(Deoptimization::Reason_unreached,
                   Deoptimization::Action_reinterpret,
-                  NULL, "cold");
+                  nullptr, "cold");
     if (C->eliminate_boxing()) {
       // Mark the successor blocks as parsed
       branch_block->next_path_num();
@@ -1490,7 +1490,7 @@ void Parse::do_if(BoolTest::mask btest, Node* c) {
   if (tst->is_Bool()) {
     // Refresh c from the transformed bool node, since it may be
     // simpler than the original c.  Also re-canonicalize btest.
-    // This wins when (Bool ne (Conv2B p) 0) => (Bool ne (CmpP p NULL)).
+    // This wins when (Bool ne (Conv2B p) 0) => (Bool ne (CmpP p null)).
     // That can arise from statements like: if (x instanceof C) ...
     if (tst != tst0) {
       // Canonicalize one more time since transform can change it.
@@ -1595,7 +1595,7 @@ void Parse::adjust_map_after_if(BoolTest::mask btest, Node* c, float prob, Block
     repush_if_args();
     uncommon_trap(Deoptimization::Reason_unstable_if,
                   Deoptimization::Action_reinterpret,
-                  NULL,
+                  nullptr,
                   (is_fallthrough ? "taken always" : "taken never"));
     return;
   }
@@ -1633,25 +1633,25 @@ static Node* extract_obj_from_klass_load(PhaseGVN* gvn, Node* n) {
   Node* ldk;
   if (n->is_DecodeNKlass()) {
     if (n->in(1)->Opcode() != Op_LoadNKlass) {
-      return NULL;
+      return nullptr;
     } else {
       ldk = n->in(1);
     }
   } else if (n->Opcode() != Op_LoadKlass) {
-    return NULL;
+    return nullptr;
   } else {
     ldk = n;
   }
-  assert(ldk != NULL && ldk->is_Load(), "should have found a LoadKlass or LoadNKlass node");
+  assert(ldk != nullptr && ldk->is_Load(), "should have found a LoadKlass or LoadNKlass node");
 
   Node* adr = ldk->in(MemNode::Address);
   intptr_t off = 0;
   Node* obj = AddPNode::Ideal_base_and_offset(adr, gvn, off);
-  if (obj == NULL || off != oopDesc::klass_offset_in_bytes()) // loading oopDesc::_klass?
-    return NULL;
+  if (obj == nullptr || off != oopDesc::klass_offset_in_bytes()) // loading oopDesc::_klass?
+    return nullptr;
   const TypePtr* tp = gvn->type(obj)->is_ptr();
-  if (tp == NULL || !(tp->isa_instptr() || tp->isa_aryptr())) // is obj a Java object ptr?
-    return NULL;
+  if (tp == nullptr || !(tp->isa_instptr() || tp->isa_aryptr())) // is obj a Java object ptr?
+    return nullptr;
 
   return obj;
 }
@@ -1664,13 +1664,13 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
   if (btest == BoolTest::eq && tcon->isa_klassptr()) {
     Node* obj = extract_obj_from_klass_load(&_gvn, val);
     const TypeOopPtr* con_type = tcon->isa_klassptr()->as_instance_type();
-    if (obj != NULL && (con_type->isa_instptr() || con_type->isa_aryptr())) {
+    if (obj != nullptr && (con_type->isa_instptr() || con_type->isa_aryptr())) {
        // Found:
        //   Bool(CmpP(LoadKlass(obj._klass), ConP(Foo.klass)), [eq])
        // or the narrowOop equivalent.
        const Type* obj_type = _gvn.type(obj);
        const TypeOopPtr* tboth = obj_type->join_speculative(con_type)->isa_oopptr();
-       if (tboth != NULL && tboth->klass_is_exact() && tboth != obj_type &&
+       if (tboth != nullptr && tboth->klass_is_exact() && tboth != obj_type &&
            tboth->higher_equal(obj_type)) {
           // obj has to be of the exact type Foo if the CmpP succeeds.
           int obj_in_map = map()->find_edge(obj);
@@ -1703,8 +1703,8 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
   // Check for a comparison to a constant, and "know" that the compared
   // value is constrained on this path.
   assert(tcon->singleton(), "");
-  ConstraintCastNode* ccast = NULL;
-  Node* cast = NULL;
+  ConstraintCastNode* ccast = nullptr;
+  Node* cast = nullptr;
 
   switch (btest) {
   case BoolTest::eq:                    // Constant test?
@@ -1741,7 +1741,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
     break;
   }
 
-  if (ccast != NULL) {
+  if (ccast != nullptr) {
     const Type* tcc = ccast->as_Type()->type();
     assert(tcc != tval && tcc->higher_equal(tval), "must improve");
     // Delay transform() call to allow recovery of pre-cast value
@@ -1752,7 +1752,7 @@ void Parse::sharpen_type_after_if(BoolTest::mask btest,
     cast = ccast;
   }
 
-  if (cast != NULL) {                   // Here's the payoff.
+  if (cast != nullptr) {                   // Here's the payoff.
     replace_in_map(val, cast);
   }
 }
@@ -1772,8 +1772,8 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
   if (c->Opcode() == Op_CmpP &&
       (c->in(1)->Opcode() == Op_LoadKlass || c->in(1)->Opcode() == Op_DecodeNKlass) &&
       c->in(2)->is_Con()) {
-    Node* load_klass = NULL;
-    Node* decode = NULL;
+    Node* load_klass = nullptr;
+    Node* decode = nullptr;
     if (c->in(1)->Opcode() == Op_DecodeNKlass) {
       decode = c->in(1);
       load_klass = c->in(1)->in(1);
@@ -1784,7 +1784,7 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
       Node* addp = load_klass->in(2);
       Node* obj = addp->in(AddPNode::Address);
       const TypeOopPtr* obj_type = _gvn.type(obj)->is_oopptr();
-      if (obj_type->speculative_type_not_null() != NULL) {
+      if (obj_type->speculative_type_not_null() != nullptr) {
         ciKlass* k = obj_type->speculative_type();
         inc_sp(2);
         obj = maybe_cast_profiled_obj(obj, k);
@@ -1794,7 +1794,7 @@ Node* Parse::optimize_cmp_with_klass(Node* c) {
         load_klass = load_klass->clone();
         load_klass->set_req(2, addp);
         load_klass = _gvn.transform(load_klass);
-        if (decode != NULL) {
+        if (decode != nullptr) {
           decode = decode->clone();
           decode->set_req(1, load_klass);
           load_klass = _gvn.transform(decode);
@@ -1882,7 +1882,7 @@ void Parse::do_one_bytecode() {
       assert(constant.basic_type() != T_OBJECT || constant.as_object()->is_instance(),
              "must be java_mirror of klass");
       const Type* con_type = Type::make_from_constant(constant);
-      if (con_type != NULL) {
+      if (con_type != nullptr) {
         push_node(con_type->basic_type(), makecon(con_type));
       }
     } else {
@@ -1890,14 +1890,14 @@ void Parse::do_one_bytecode() {
       if (iter().is_in_error()) {
         uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unhandled,
                                                         Deoptimization::Action_none),
-                      NULL, "constant in error state", true /* must_throw */);
+                      nullptr, "constant in error state", true /* must_throw */);
 
       } else {
         int index = iter().get_constant_pool_index();
         uncommon_trap(Deoptimization::make_trap_request(Deoptimization::Reason_unloaded,
                                                         Deoptimization::Action_reinterpret,
                                                         index),
-                      NULL, "unresolved constant", false /* must_throw */);
+                      nullptr, "unresolved constant", false /* must_throw */);
       }
     }
     break;
@@ -2540,17 +2540,17 @@ void Parse::do_one_bytecode() {
   case Bytecodes::_i2b:
     // Sign extend
     a = pop();
-    a = Compile::narrow_value(T_BYTE, a, NULL, &_gvn, true);
+    a = Compile::narrow_value(T_BYTE, a, nullptr, &_gvn, true);
     push(a);
     break;
   case Bytecodes::_i2s:
     a = pop();
-    a = Compile::narrow_value(T_SHORT, a, NULL, &_gvn, true);
+    a = Compile::narrow_value(T_SHORT, a, nullptr, &_gvn, true);
     push(a);
     break;
   case Bytecodes::_i2c:
     a = pop();
-    a = Compile::narrow_value(T_CHAR, a, NULL, &_gvn, true);
+    a = Compile::narrow_value(T_CHAR, a, nullptr, &_gvn, true);
     push(a);
     break;
 
@@ -2574,7 +2574,7 @@ void Parse::do_one_bytecode() {
 
   // Exit points of synchronized methods must have an unlock node
   case Bytecodes::_return:
-    return_current(NULL);
+    return_current(nullptr);
     break;
 
   case Bytecodes::_ireturn:
@@ -2590,7 +2590,7 @@ void Parse::do_one_bytecode() {
     break;
 
   case Bytecodes::_athrow:
-    // null exception oop throws NULL pointer exception
+    // null exception oop throws null pointer exception
     null_check(peek());
     if (stopped())  return;
     // Hook the thrown exception directly to subsequent handlers.
@@ -2624,7 +2624,7 @@ void Parse::do_one_bytecode() {
     ciMethodData* methodData = method()->method_data();
     if (!methodData->is_mature())  break;
     ciProfileData* data = methodData->bci_to_data(bci());
-    assert(data != NULL && data->is_JumpData(), "need JumpData for taken branch");
+    assert(data != nullptr && data->is_JumpData(), "need JumpData for taken branch");
     int taken = ((ciJumpData*)data)->taken();
     taken = method()->scale_count(taken);
     target_block->set_count(taken);

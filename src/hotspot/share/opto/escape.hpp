@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,7 +294,7 @@ public:
   inline PointsToIterator(const PointsToNode* n, int cnt) : node(n), cnt(cnt), i(0) { }
   inline bool has_next() const { return i < cnt; }
   inline void next() { i++; }
-  PointsToNode* get() const { ShouldNotCallThis(); return NULL; }
+  PointsToNode* get() const { ShouldNotCallThis(); return nullptr; }
 };
 
 class EdgeIterator: public PointsToIterator {
@@ -429,7 +429,7 @@ private:
 
   // Set the escape state of an object and its fields.
   void set_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc) {
-    // Don't change non-escaping state of NULL pointer.
+    // Don't change non-escaping state of null pointer.
     if (ptn != null_obj) {
       if (ptn->escape_state() < esc) {
         ptn->set_escape_state(esc);
@@ -440,7 +440,7 @@ private:
     }
   }
   void set_fields_escape_state(PointsToNode* ptn, PointsToNode::EscapeState esc) {
-    // Don't change non-escaping state of NULL pointer.
+    // Don't change non-escaping state of null pointer.
     if (ptn != null_obj) {
       if (ptn->fields_escape_state() < esc) {
         ptn->set_fields_escape_state(esc);
@@ -465,7 +465,7 @@ private:
   // Optimize objects compare.
   const TypeInt* optimize_ptr_compare(Node* n);
 
-  // Returns unique corresponding java object or NULL.
+  // Returns unique corresponding java object or null.
   JavaObjectNode* unique_java_object(Node *n);
 
   // Add an edge of the specified type pointing to the specified target.
@@ -503,7 +503,7 @@ private:
     if (is_new) {      // New edge?
       assert(!_verify, "graph is incomplete");
       if (to == null_obj) {
-        return is_new; // Don't add fields to NULL pointer.
+        return is_new; // Don't add fields to null pointer.
       }
       if (to->is_JavaObject()) {
         is_new = to->add_edge(from);
@@ -558,7 +558,7 @@ private:
 
   PhiNode* get_map_phi(int idx) {
     Node* phi = _node_map[idx];
-    return (phi == NULL) ? NULL : phi->as_Phi();
+    return (phi == nullptr) ? nullptr : phi->as_Phi();
   }
 
   // Returns true if there is an object in the scope of sfn that does not escape globally.
@@ -598,21 +598,21 @@ public:
   void add_local_var_and_edge(Node* n, PointsToNode::EscapeState es, Node* to,
                               Unique_Node_List *delayed_worklist) {
     PointsToNode* ptn = ptnode_adr(to->_idx);
-    if (delayed_worklist != NULL) { // First iteration of CG construction
+    if (delayed_worklist != nullptr) { // First iteration of CG construction
       add_local_var(n, es);
-      if (ptn == NULL) {
+      if (ptn == nullptr) {
         delayed_worklist->push(n);
         return; // Process it later.
       }
     } else {
-      assert(ptn != NULL, "node should be registered");
+      assert(ptn != nullptr, "node should be registered");
     }
     add_edge(ptnode_adr(n->_idx), ptn);
   }
 
   // Map ideal node to existing PointsTo node (usually phantom_object).
   void map_ideal_node(Node *n, PointsToNode* ptn) {
-    assert(ptn != NULL, "only existing PointsTo node");
+    assert(ptn != nullptr, "only existing PointsTo node");
     _nodes.at_put(n->_idx, ptn);
   }
 
@@ -625,8 +625,8 @@ public:
 };
 
 inline PointsToNode::PointsToNode(ConnectionGraph *CG, Node* n, EscapeState es, NodeType type):
-  _edges(CG->_compile->comp_arena(), 2, 0, NULL),
-  _uses (CG->_compile->comp_arena(), 2, 0, NULL),
+  _edges(CG->_compile->comp_arena(), 2, 0, nullptr),
+  _uses (CG->_compile->comp_arena(), 2, 0, nullptr),
   _type((u1)type),
   _flags(ScalarReplaceable),
   _escape((u1)es),
@@ -634,12 +634,12 @@ inline PointsToNode::PointsToNode(ConnectionGraph *CG, Node* n, EscapeState es, 
   _node(n),
   _idx(n->_idx),
   _pidx(CG->next_pidx()) {
-  assert(n != NULL && es != UnknownEscape, "sanity");
+  assert(n != nullptr && es != UnknownEscape, "sanity");
 }
 
 inline FieldNode::FieldNode(ConnectionGraph *CG, Node* n, EscapeState es, int offs, bool is_oop):
   PointsToNode(CG, n, es, Field),
-  _bases(CG->_compile->comp_arena(), 2, 0, NULL),
+  _bases(CG->_compile->comp_arena(), 2, 0, nullptr),
   _offset(offs), _is_oop(is_oop),
   _has_unknown_base(false) {
 }

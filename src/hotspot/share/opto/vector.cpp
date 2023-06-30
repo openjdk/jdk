@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,7 +201,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
       }
       jvms = kit.sync_jvms();
 
-      Node* new_vbox = NULL;
+      Node* new_vbox = nullptr;
       {
         Node* vect = vec_box->in(VectorBoxNode::Value);
         const TypeInstPtr* vbox_type = vec_box->box_type();
@@ -283,7 +283,7 @@ void PhaseVector::scalarize_vbox_node(VectorBoxNode* vec_box) {
     // to the allocated object with vector value.
     for (uint i = jvms->debug_start(); i < jvms->debug_end(); i++) {
       Node* debug = sfpt->in(i);
-      if (debug != NULL && debug->uncast(/*keep_deps*/false) == vec_box) {
+      if (debug != nullptr && debug->uncast(/*keep_deps*/false) == vec_box) {
         sfpt->set_req(i, sobj);
       }
     }
@@ -390,7 +390,7 @@ Node* PhaseVector::expand_vbox_alloc_node(VectorBoxAllocateNode* vbox_alloc,
   ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
                                                                                      ciSymbols::object_signature(),
                                                                                      false);
-  assert(field != NULL, "");
+  assert(field != nullptr, "");
   Node* vec_field = kit.basic_plus_adr(vec_obj, field->offset_in_bytes());
   const TypePtr* vec_adr_type = vec_field->bottom_type()->is_ptr();
 
@@ -431,7 +431,7 @@ void PhaseVector::expand_vunbox_node(VectorUnboxNode* vec_unbox) {
     ciField* field = ciEnv::current()->vector_VectorPayload_klass()->get_field_by_name(ciSymbols::payload_name(),
                                                                                        ciSymbols::object_signature(),
                                                                                        false);
-    assert(field != NULL, "");
+    assert(field != nullptr, "");
     int offset = field->offset_in_bytes();
     Node* vec_adr = kit.basic_plus_adr(obj, offset);
 

@@ -83,12 +83,12 @@ public:
 
   Node* is_copy() const {
     const Node* r = _in[Region];
-    if (r == NULL)
+    if (r == nullptr)
       return nonnull_req();
-    return NULL;  // not a copy!
+    return nullptr;  // not a copy!
   }
-  PhiNode* has_phi() const;        // returns an arbitrary phi user, or NULL
-  PhiNode* has_unique_phi() const; // returns the unique phi user, or NULL
+  PhiNode* has_phi() const;        // returns an arbitrary phi user, or null
+  PhiNode* has_unique_phi() const; // returns the unique phi user, or null
   // Is this region node unreachable from root?
   bool is_unreachable_region(const PhaseGVN* phase);
 #ifdef ASSERT
@@ -154,7 +154,7 @@ public:
          Input                  // Input values are [1..len)
   };
 
-  PhiNode( Node *r, const Type *t, const TypePtr* at = NULL,
+  PhiNode( Node *r, const Type *t, const TypePtr* at = nullptr,
            const int imid = -1,
            const int iid = TypeOopPtr::InstanceTop,
            const int iidx = Compile::AliasIdxTop,
@@ -173,7 +173,7 @@ public:
   // create a new phi with in edges matching r and set (initially) to x
   static PhiNode* make( Node* r, Node* x );
   // extra type arguments override the new phi's bottom_type and adr_type
-  static PhiNode* make( Node* r, Node* x, const Type *t, const TypePtr* at = NULL );
+  static PhiNode* make( Node* r, Node* x, const Type *t, const TypePtr* at = nullptr );
   // create a new phi with narrowed memory type
   PhiNode* slice_memory(const TypePtr* adr_type) const;
   PhiNode* split_out_instance(const TypePtr* at, PhaseIterGVN *igvn) const;
@@ -186,11 +186,11 @@ public:
   bool is_tripcount(BasicType bt) const;
 
   // Determine a unique non-trivial input, if any.
-  // Ignore casts if it helps.  Return NULL on failure.
+  // Ignore casts if it helps.  Return null on failure.
   Node* unique_input(PhaseTransform *phase, bool uncast);
   Node* unique_input(PhaseTransform *phase) {
     Node* uin = unique_input(phase, false);
-    if (uin == NULL) {
+    if (uin == nullptr) {
       uin = unique_input(phase, true);
     }
     return uin;
@@ -403,7 +403,7 @@ public:
 
   // Takes the type of val and filters it through the test represented
   // by if_proj and returns a more refined type if one is produced.
-  // Returns NULL is it couldn't improve the type.
+  // Returns null is it couldn't improve the type.
   static const TypeInt* filtered_int_type(PhaseGVN* phase, Node* val, Node* if_proj);
 
 #ifndef PRODUCT

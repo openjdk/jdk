@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,9 @@ class CallGenerator : public ResourceObj {
 
   void do_late_inline_helper();
 
-  virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false; }
-  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return NULL;  }
-  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false; }
+  virtual bool           do_late_inline_check(Compile* C, JVMState* jvms) { ShouldNotReachHere(); return false;  }
+  virtual CallGenerator* inline_cg()    const                             { ShouldNotReachHere(); return nullptr;}
+  virtual bool           is_pure_call() const                             { ShouldNotReachHere(); return false;  }
 
  public:
   // Accessors
@@ -81,7 +81,7 @@ class CallGenerator : public ResourceObj {
   // Replace the call with an inline version of the code
   virtual void do_late_inline() { ShouldNotReachHere(); }
 
-  virtual CallNode* call_node() const { return NULL; }
+  virtual CallNode* call_node() const { return nullptr; }
   virtual CallGenerator* with_call_node(CallNode* call)  { return this; }
 
   virtual void set_unique_id(jlong id)          { fatal("unique id only for late inlines"); };
@@ -120,7 +120,7 @@ class CallGenerator : public ResourceObj {
   // If the call traps, the returned map must have a control edge of top.
   // If the call can throw, the returned map must report has_exceptions().
   //
-  // If the result is NULL, it means that this CallGenerator was unable
+  // If the result is null, it means that this CallGenerator was unable
   // to handle the given call, and another CallGenerator should be consulted.
   virtual JVMState* generate(JVMState* jvms) = 0;
 
@@ -170,7 +170,7 @@ class CallGenerator : public ResourceObj {
   static void register_intrinsic(ciMethod* m, CallGenerator* cg);
   static CallGenerator* for_predicated_intrinsic(CallGenerator* intrinsic,
                                                  CallGenerator* cg);
-  virtual Node* generate_predicate(JVMState* jvms, int predicate) { return NULL; };
+  virtual Node* generate_predicate(JVMState* jvms, int predicate) { return nullptr; };
 
   virtual void print_inlining_late(const char* msg) { ShouldNotReachHere(); }
 

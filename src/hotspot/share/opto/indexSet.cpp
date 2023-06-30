@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ IndexSet::BitBlock *IndexSet::alloc_block() {
 #endif
   Compile *compile = Compile::current();
   BitBlock* free_list = (BitBlock*)compile->indexSet_free_block_list();
-  if (free_list == NULL) {
+  if (free_list == nullptr) {
     populate_free_list();
     free_list = (BitBlock*)compile->indexSet_free_block_list();
   }

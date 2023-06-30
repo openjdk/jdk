@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,10 @@ Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, 
            def->_idx, def->Name(), use->_idx, use->Name(), ireg,
            MachSpillCopyNode::spill_type(spill_type));
     C->record_method_not_compilable("attempted to spill a non-spillable item");
-    return NULL;
+    return nullptr;
   }
   if (C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
-    return NULL;
+    return nullptr;
   }
   const RegMask *i_mask = &def->out_RegMask();
   const RegMask *w_mask = C->matcher()->idealreg2spillmask[ireg];
@@ -164,7 +164,7 @@ uint PhaseChaitin::split_DEF( Node *def, Block *b, int loc, uint maxlrg, Node **
   assert( loc >= 0, "must insert past block head" );
 
   // Get a def-side SpillCopy
-  Node *spill = get_spillcopy_wide(MachSpillCopyNode::Definition, def, NULL, 0);
+  Node *spill = get_spillcopy_wide(MachSpillCopyNode::Definition, def, nullptr, 0);
   // Did we fail to split?, then bail
   if (!spill) {
     return 0;
@@ -363,7 +363,7 @@ Node *PhaseChaitin::split_Rematerialize(Node *def, Block *b, uint insidx, uint &
   }
 
   Node *spill = clone_node(def, b, C);
-  if (spill == NULL || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
+  if (spill == nullptr || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
     // Check when generating nodes
     return 0;
   }
@@ -561,7 +561,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
     bool *UPblock     = UP[bidx];
     for( slidx = 0; slidx < spill_cnt; slidx++ ) {
       UPblock[slidx] = true;     // Assume they start in registers
-      Reachblock[slidx] = NULL;  // Assume that no def is present
+      Reachblock[slidx] = nullptr;  // Assume that no def is present
     }
   }
 
@@ -652,8 +652,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         // Move n2/u2 to n1/u1 for next iteration
         n1 = n2;
         u1 = u2;
-        // Preserve a non-NULL predecessor for later type referencing
-        if( (n3 == NULL) && (n2 != NULL) ){
+        // Preserve a non-null predecessor for later type referencing
+        if( (n3 == nullptr) && (n2 != nullptr) ){
           n3 = n2;
           u3 = u2;
         }
@@ -663,8 +663,8 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       for( insidx = 1; insidx <= b->end_idx(); insidx++ ) {
         n1 = b->get_node(insidx);
         // bail if this is not a phi
-        phi = n1->is_Phi() ? n1->as_Phi() : NULL;
-        if( phi == NULL ) {
+        phi = n1->is_Phi() ? n1->as_Phi() : nullptr;
+        if( phi == nullptr ) {
           // Keep track of index of first non-PhiNode instruction in block
           non_phi = insidx;
           // break out of the for loop as we have handled all phi nodes
@@ -687,7 +687,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
         if( needs_phi ) {
           // create a new phi node and insert it into the block
           // type is taken from left over pointer to a predecessor
-          guarantee(n3, "No non-NULL reaching DEF for a Phi");
+          guarantee(n3, "No non-null reaching DEF for a Phi");
           phi = new PhiNode(b->head(), n3->bottom_type());
           // initialize the Reaches entry for this LRG
           Reachblock[slidx] = phi;
@@ -700,7 +700,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           assert(_lrg_map.find_id(phi) == lidx, "Bad update on Union-Find mapping");
         }  // end if not found correct phi
         // Here you have either found or created the Phi, so record it
-        assert(phi != NULL,"Must have a Phi Node here");
+        assert(phi != nullptr,"Must have a Phi Node here");
         phis->push(phi);
         // PhiNodes should either force the LRG UP or DOWN depending
         // on its inputs and the register pressure in the Phi's block.
@@ -753,7 +753,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
 
     // Memoize any DOWN reaching definitions for use as DEBUG info
     for( insidx = 0; insidx < spill_cnt; insidx++ ) {
-      debug_defs[insidx] = (UPblock[insidx]) ? NULL : Reachblock[insidx];
+      debug_defs[insidx] = (UPblock[insidx]) ? nullptr : Reachblock[insidx];
       if( UPblock[insidx] )     // Memoize UP decision at block start
         UP_entry[insidx]->set( b->_pre_order );
     }
@@ -774,13 +774,13 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           // ranges; they are busy getting modifed in this pass.
           if( lrgs(defidx).reg() < LRG::SPILL_REG ) {
             uint i;
-            Node *u = NULL;
+            Node *u = nullptr;
             // Look for the Phi merging 2 unique inputs
             for( i = 1; i < cnt; i++ ) {
               // Ignore repeats and self
               if( n->in(i) != u && n->in(i) != n ) {
                 // Found a unique input
-                if( u != NULL ) // If it's the 2nd, bail out
+                if( u != nullptr ) // If it's the 2nd, bail out
                   break;
                 u = n->in(i);   // Else record it
               }
@@ -816,7 +816,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           // Check for need to split at HRP boundary - split if UP
           n1 = Reachblock[slidx];
           // bail out if no reaching DEF
-          if( n1 == NULL ) continue;
+          if( n1 == nullptr ) continue;
           // bail out if live range is 'isolated' around inner loop
           uint lidx = lidxs.at(slidx);
           // If live range is currently UP
@@ -826,7 +826,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             if( is_high_pressure( b, &lrgs(lidx), insidx ) &&
                 !n1->rematerialize() ) {
               // If there is already a valid stack definition available, use it
-              if( debug_defs[slidx] != NULL ) {
+              if( debug_defs[slidx] != nullptr ) {
                 Reachblock[slidx] = debug_defs[slidx];
               }
               else {
@@ -861,7 +861,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                 if (!maxlrg) {
                   return 0;
                 }
-                // Spill of NULL check mem op goes into the following block.
+                // Spill of null check mem op goes into the following block.
                 if (b->end_idx() > orig_eidx) {
                   insidx++;
                 }
@@ -891,7 +891,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
       // Remove coalesced copy from CFG
       if (copyidx && defidx == _lrg_map.live_range_id(n->in(copyidx))) {
         n->replace_by( n->in(copyidx) );
-        n->set_req( copyidx, NULL );
+        n->set_req( copyidx, nullptr );
         b->remove_node(insidx--);
         b->_ihrp_index--; // Adjust the point where we go hi-pressure
         b->_fhrp_index--;
@@ -925,7 +925,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             // Check for valid reaching DEF
             slidx = lrg2reach[useidx];
             Node *def = Reachblock[slidx];
-            assert( def != NULL, "Using Undefined Value in Split()\n");
+            assert( def != nullptr, "Using Undefined Value in Split()\n");
 
             // (+++) %%%% remove this in favor of pre-pass in matcher.cpp
             // monitor references do not care where they live, so just hook
@@ -934,7 +934,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               // so that the allocator does not see it anymore, and therefore
               // does not attempt to assign it a register.
               def = clone_node(def, b, C);
-              if (def == NULL || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
+              if (def == nullptr || C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {
                 return 0;
               }
               _lrg_map.extend(def->_idx, 0);
@@ -952,7 +952,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               insidx += b->number_of_nodes()-old_size;
             }
 
-            MachNode *mach = n->is_Mach() ? n->as_Mach() : NULL;
+            MachNode *mach = n->is_Mach() ? n->as_Mach() : nullptr;
             // Base pointers and oopmap references do not care where they live.
             if ((inpidx >= oopoff) ||
                 (mach && mach->ideal_Opcode() == Op_AddP && inpidx == AddPNode::Base)) {
@@ -981,7 +981,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                 Node *derived_debug = debug_defs[slidx];
                 if( ((inpidx - oopoff) & 1) == DERIVED && // derived vs base?
                     mach && mach->ideal_Opcode() != Op_Halt &&
-                    derived_debug != NULL &&
+                    derived_debug != nullptr &&
                     derived_debug != def ) { // Actual 2nd value appears
                   // We have already set 'def' as a derived value.
                   // Also set debug_defs[slidx] as a derived value.
@@ -1009,7 +1009,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
             if( jvms && b->_freq > BLOCK_FREQUENCY(0.5) ) {
               uint debug_start = jvms->debug_start();
               // If this is debug info use & there is a reaching DOWN def
-              if ((debug_start <= inpidx) && (debug_defs[slidx] != NULL)) {
+              if ((debug_start <= inpidx) && (debug_defs[slidx] != nullptr)) {
                 assert(inpidx < oopoff, "handle only debug info here");
                 // Just hook it in & move on
                 n->set_req(inpidx, debug_defs[slidx]);
@@ -1230,7 +1230,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           // UP should come from the outRegmask() of the DEF
           UPblock[slidx] = defup;
           // Update debug list of reaching down definitions, kill if DEF is UP
-          debug_defs[slidx] = defup ? NULL : n;
+          debug_defs[slidx] = defup ? nullptr : n;
 #ifndef PRODUCT
           // DEBUG
           if( trace_spilling() ) {
@@ -1294,9 +1294,9 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           }
         }
 #endif
-        Reachblock[slidx] = NULL;
+        Reachblock[slidx] = nullptr;
       } else {
-        assert(Reachblock[slidx] != NULL,"No reaching definition for liveout value");
+        assert(Reachblock[slidx] != nullptr,"No reaching definition for liveout value");
       }
     }
 #ifndef PRODUCT

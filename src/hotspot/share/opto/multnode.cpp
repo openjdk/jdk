@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,24 +59,24 @@ ProjNode* MultiNode::proj_out_or_null(uint which_proj) const {
       continue;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 ProjNode* MultiNode::proj_out_or_null(uint which_proj, bool is_io_use) const {
   for (DUIterator_Fast imax, i = fast_outs(imax); i < imax; i++) {
     ProjNode* proj = fast_out(i)->isa_Proj();
-    if (proj != NULL && (proj->_con == which_proj) && (proj->_is_io_use == is_io_use)) {
+    if (proj != nullptr && (proj->_con == which_proj) && (proj->_is_io_use == is_io_use)) {
       return proj;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 // Get a named projection
 ProjNode* MultiNode::proj_out(uint which_proj) const {
   assert((Opcode() != Op_If && Opcode() != Op_RangeCheck) || outcnt() == 2, "bad if #1");
   ProjNode* p = proj_out_or_null(which_proj);
-  assert(p != NULL, "named projection %u not found", which_proj);
+  assert(p != nullptr, "named projection %u not found", which_proj);
   return p;
 }
 
@@ -113,7 +113,7 @@ const Type* ProjNode::proj_type(const Type* t) const {
 }
 
 const Type *ProjNode::bottom_type() const {
-  if (in(0) == NULL) return Type::TOP;
+  if (in(0) == nullptr) return Type::TOP;
   return proj_type(in(0)->bottom_type());
 }
 
@@ -121,16 +121,16 @@ const TypePtr *ProjNode::adr_type() const {
   if (bottom_type() == Type::MEMORY) {
     // in(0) might be a narrow MemBar; otherwise we will report TypePtr::BOTTOM
     Node* ctrl = in(0);
-    if (ctrl == NULL)  return NULL; // node is dead
+    if (ctrl == nullptr)  return nullptr; // node is dead
     const TypePtr* adr_type = ctrl->adr_type();
     #ifdef ASSERT
     if (!VMError::is_error_reported() && !Node::in_dump())
-      assert(adr_type != NULL, "source must have adr_type");
+      assert(adr_type != nullptr, "source must have adr_type");
     #endif
     return adr_type;
   }
   assert(bottom_type()->base() != Type::Memory, "no other memories?");
-  return NULL;
+  return nullptr;
 }
 
 bool ProjNode::pinned() const { return in(0)->pinned(); }
@@ -142,7 +142,7 @@ void ProjNode::dump_compact_spec(outputStream *st) const {
     Node* o = this->out(i);
     if (not_a_node(o)) {
       st->print("[?]");
-    } else if (o == NULL) {
+    } else if (o == nullptr) {
       st->print("[_]");
     } else {
       st->print("[%d]", o->_idx);
@@ -155,7 +155,7 @@ void ProjNode::dump_compact_spec(outputStream *st) const {
 //----------------------------check_con----------------------------------------
 void ProjNode::check_con() const {
   Node* n = in(0);
-  if (n == NULL)       return;  // should be assert, but NodeHash makes bogons
+  if (n == nullptr)    return;  // should be assert, but NodeHash makes bogons
   if (n->is_Mach())    return;  // mach. projs. are not type-safe
   if (n->is_Start())   return;  // alas, starts can have mach. projs. also
   if (_con == SCMemProjNode::SCMEMPROJCON ) return;
@@ -166,7 +166,7 @@ void ProjNode::check_con() const {
 
 //------------------------------Value------------------------------------------
 const Type* ProjNode::Value(PhaseGVN* phase) const {
-  if (in(0) == NULL) return Type::TOP;
+  if (in(0) == nullptr) return Type::TOP;
   return proj_type(phase->type(in(0)));
 }
 
@@ -183,14 +183,14 @@ uint ProjNode::ideal_reg() const {
 
 //-------------------------------is_uncommon_trap_proj----------------------------
 // Return uncommon trap call node if proj is for "proj->[region->..]call_uct"
-// NULL otherwise
+// null otherwise
 CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason reason) {
   int path_limit = 10;
   Node* out = this;
   for (int ct = 0; ct < path_limit; ct++) {
     out = out->unique_ctrl_out();
-    if (out == NULL)
-      return NULL;
+    if (out == nullptr)
+      return nullptr;
     if (out->is_CallStaticJava()) {
       CallStaticJavaNode* call = out->as_CallStaticJava();
       int req = call->uncommon_trap_request();
@@ -200,12 +200,12 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason 
           return call;
         }
       }
-      return NULL; // don't do further after call
+      return nullptr; // don't do further after call
     }
     if (out->Opcode() != Op_Region)
-      return NULL;
+      return nullptr;
   }
-  return NULL;
+  return nullptr;
 }
 
 //-------------------------------is_uncommon_trap_if_pattern-------------------------
@@ -213,31 +213,31 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_proj(Deoptimization::DeoptReason 
 //                                                 |
 //                                                 V
 //                                             other_proj->[region->..]call_uct"
-// NULL otherwise
+// null otherwise
 // "must_reason_predicate" means the uct reason must be Reason_predicate
 CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptReason reason) {
   Node *in0 = in(0);
-  if (!in0->is_If()) return NULL;
+  if (!in0->is_If()) return nullptr;
   // Variation of a dead If node.
-  if (in0->outcnt() < 2)  return NULL;
+  if (in0->outcnt() < 2)  return nullptr;
   IfNode* iff = in0->as_If();
 
   // we need "If(Conv2B(Opaque1(...)))" pattern for reason_predicate
   if (reason != Deoptimization::Reason_none) {
     if (iff->in(1)->Opcode() != Op_Conv2B ||
        iff->in(1)->in(1)->Opcode() != Op_Opaque1) {
-      return NULL;
+      return nullptr;
     }
   }
 
   ProjNode* other_proj = iff->proj_out(1-_con);
   CallStaticJavaNode* call = other_proj->is_uncommon_trap_proj(reason);
-  if (call != NULL) {
+  if (call != nullptr) {
     assert(reason == Deoptimization::Reason_none ||
            Compile::current()->is_predicate_opaq(iff->in(1)->in(1)), "should be on the list");
     return call;
   }
-  return NULL;
+  return nullptr;
 }
 
 ProjNode* ProjNode::other_if_proj() const {

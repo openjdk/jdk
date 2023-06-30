@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,7 +99,7 @@ class DepMem : public ResourceObj {
   DepEdge* _out_head; // Head of list of out edges, null terminated
 
  public:
-  DepMem(Node* node) : _node(node), _in_head(NULL), _out_head(NULL) {}
+  DepMem(Node* node) : _node(node), _in_head(nullptr), _out_head(nullptr) {}
 
   Node*    node()                { return _node;     }
   DepEdge* in_head()             { return _in_head;  }
@@ -122,9 +122,9 @@ class DepGraph {
   DepMem* _tail;
 
  public:
-  DepGraph(Arena* a) : _arena(a), _map(a, 8,  0, NULL) {
-    _root = new (_arena) DepMem(NULL);
-    _tail = new (_arena) DepMem(NULL);
+  DepGraph(Arena* a) : _arena(a), _map(a, 8,  0, nullptr) {
+    _root = new (_arena) DepMem(nullptr);
+    _tail = new (_arena) DepMem(nullptr);
   }
 
   DepMem* root() { return _root; }
@@ -197,7 +197,7 @@ class SWNodeInfo {
   const Type* _velt_type; // vector element type
   Node_List*  _my_pack;   // pack containing this node
 
-  SWNodeInfo() : _alignment(-1), _depth(0), _velt_type(NULL), _my_pack(NULL) {}
+  SWNodeInfo() : _alignment(-1), _depth(0), _velt_type(nullptr), _my_pack(nullptr) {}
   static const SWNodeInfo initial;
 };
 
@@ -210,11 +210,11 @@ class CMoveKit {
   CMoveKit(Arena* a, SuperWord* sw) : _sw(sw)  {_dict = new Dict(cmpkey, hashkey, a);}
   void*     _2p(Node* key)        const  { return (void*)(intptr_t)key; } // 2 conversion functions to make gcc happy
   Dict*     dict()                const  { return _dict; }
-  void map(Node* key, Node_List* val)    { assert(_dict->operator[](_2p(key)) == NULL, "key existed"); _dict->Insert(_2p(key), (void*)val); }
+  void map(Node* key, Node_List* val)    { assert(_dict->operator[](_2p(key)) == nullptr, "key existed"); _dict->Insert(_2p(key), (void*)val); }
   void unmap(Node* key)                  { _dict->Delete(_2p(key)); }
   Node_List* pack(Node* key)      const  { return (Node_List*)_dict->operator[](_2p(key)); }
   Node* is_Bool_candidate(Node* nd) const; // if it is the right candidate return corresponding CMove* ,
-  Node* is_CmpD_candidate(Node* nd) const; // otherwise return NULL
+  Node* is_CmpD_candidate(Node* nd) const; // otherwise return null
   Node_List* make_cmovevd_pack(Node_List* cmovd_pk);
   bool test_cmpd_pack(Node_List* cmpd_pk, Node_List* cmovd_pk);
 };//class CMoveKit
@@ -227,7 +227,7 @@ class OrderedPair {
   Node* _p1;
   Node* _p2;
  public:
-  OrderedPair() : _p1(NULL), _p2(NULL) {}
+  OrderedPair() : _p1(nullptr), _p2(nullptr) {}
   OrderedPair(Node* p1, Node* p2) {
     if (p1->_idx < p2->_idx) {
       _p1 = p1; _p2 = p2;
@@ -341,7 +341,7 @@ class SuperWord : public ResourceObj {
   int iv_stride() const            { return lp()->stride_con(); }
 
   CountedLoopNode* pre_loop_head() const {
-    assert(_pre_loop_end != NULL && _pre_loop_end->loopnode() != NULL, "should find head from pre loop end");
+    assert(_pre_loop_end != nullptr && _pre_loop_end->loopnode() != nullptr, "should find head from pre loop end");
     return _pre_loop_end->loopnode();
   }
   void set_pre_loop_end(CountedLoopEndNode* pre_loop_end) {
@@ -350,8 +350,8 @@ class SuperWord : public ResourceObj {
   }
   CountedLoopEndNode* pre_loop_end() const {
 #ifdef ASSERT
-    assert(_lp != NULL, "sanity");
-    assert(_pre_loop_end != NULL, "should be set when fetched");
+    assert(_lp != nullptr, "sanity");
+    assert(_pre_loop_end != nullptr, "should be set when fetched");
     Node* found_pre_end = find_pre_loop_end(_lp);
     assert(_pre_loop_end == found_pre_end && _pre_loop_end == pre_loop_head()->loopexit(),
            "should find the pre loop end and must be the same result");
@@ -374,7 +374,7 @@ class SuperWord : public ResourceObj {
   Node* ctrl(Node* n) const { return _phase->has_ctrl(n) ? _phase->get_ctrl(n) : n; }
 
   // block accessors
-  bool in_bb(Node* n)      { return n != NULL && n->outcnt() > 0 && ctrl(n) == _bb; }
+  bool in_bb(Node* n)      { return n != nullptr && n->outcnt() > 0 && ctrl(n) == _bb; }
   int  bb_idx(Node* n)     { assert(in_bb(n), "must be"); return _bb_idx.at(n->_idx); }
   void set_bb_idx(Node* n, int i) { _bb_idx.at_put_grow(n->_idx, i); }
 
@@ -408,7 +408,7 @@ class SuperWord : public ResourceObj {
   bool same_velt_type(Node* n1, Node* n2);
 
   // my_pack
-  Node_List* my_pack(Node* n)                 { return !in_bb(n) ? NULL : _node_info.adr_at(bb_idx(n))->_my_pack; }
+  Node_List* my_pack(Node* n)                 { return !in_bb(n) ? nullptr : _node_info.adr_at(bb_idx(n))->_my_pack; }
   void set_my_pack(Node* n, Node_List* p)     { int i = bb_idx(n); grow_node_info(i); _node_info.adr_at(i)->_my_pack = p; }
   // is pack good for converting into one vector node replacing 12 nodes of Cmp, Bool, CMov
   bool is_cmov_pack(Node_List* p);
@@ -577,12 +577,12 @@ class SWPointer {
   MemNode*   _mem;           // My memory reference node
   SuperWord* _slp;           // SuperWord class
 
-  Node* _base;               // NULL if unsafe nonheap reference
+  Node* _base;               // null if unsafe nonheap reference
   Node* _adr;                // address pointer
   int   _scale;              // multiplier for iv (in bytes), 0 if no loop iv
   int   _offset;             // constant offset (in bytes)
 
-  Node* _invar;              // invariant offset (in bytes), NULL if none
+  Node* _invar;              // invariant offset (in bytes), null if none
   bool  _negate_invar;       // if true then use: (0 - _invar)
   Node* _invar_scale;        // multiplier for invariant
 
@@ -618,7 +618,7 @@ class SWPointer {
   // the pattern match of an address expression.
   SWPointer(SWPointer* p);
 
-  bool valid()  { return _adr != NULL; }
+  bool valid()  { return _adr != nullptr; }
   bool has_iv() { return _scale != 0; }
 
   Node* base()             { return _base; }

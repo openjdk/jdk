@@ -39,7 +39,7 @@ uint StrIntrinsicNode::match_edge(uint idx) const {
 Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
   if (remove_dead_region(phase, can_reshape)) return this;
   // Don't bother trying to transform a dead node
-  if (in(0) && in(0)->is_top())  return NULL;
+  if (in(0) && in(0)->is_top())  return nullptr;
 
   if (can_reshape) {
     Node* mem = phase->transform(in(MemNode::Memory));
@@ -51,7 +51,7 @@ Node* StrIntrinsicNode::Ideal(PhaseGVN* phase, bool can_reshape) {
       return this;
     }
   }
-  return NULL;
+  return nullptr;
 }
 
 //------------------------------Value------------------------------------------
@@ -67,7 +67,7 @@ uint StrIntrinsicNode::size_of() const { return sizeof(*this); }
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //=============================================================================
@@ -75,7 +75,7 @@ Node* StrCompressedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* StrInflatedCopyNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //=============================================================================
@@ -89,7 +89,7 @@ uint EncodeISOArrayNode::match_edge(uint idx) const {
 // Return a node which is more "ideal" than the current node.  Strip out
 // control copies
 Node* EncodeISOArrayNode::Ideal(PhaseGVN* phase, bool can_reshape) {
-  return remove_dead_region(phase, can_reshape) ? this : NULL;
+  return remove_dead_region(phase, can_reshape) ? this : nullptr;
 }
 
 //------------------------------Value------------------------------------------

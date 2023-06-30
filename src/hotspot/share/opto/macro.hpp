@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,10 +68,10 @@ public:
                        const TypeFunc* call_type, address call_addr,
                        const char* call_name,
                        const TypePtr* adr_type,
-                       Node* parm0 = NULL, Node* parm1 = NULL,
-                       Node* parm2 = NULL, Node* parm3 = NULL,
-                       Node* parm4 = NULL, Node* parm5 = NULL,
-                       Node* parm6 = NULL, Node* parm7 = NULL);
+                       Node* parm0 = nullptr, Node* parm1 = nullptr,
+                       Node* parm2 = nullptr, Node* parm3 = nullptr,
+                       Node* parm4 = nullptr, Node* parm5 = nullptr,
+                       Node* parm6 = nullptr, Node* parm7 = nullptr);
 
   address basictype2arraycopy(BasicType t,
                               Node* src_offset,
@@ -112,7 +112,7 @@ private:
   void expand_unlock_node(UnlockNode *unlock);
 
   // More helper methods modeled after GraphKit for array copy
-  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = NULL);
+  void insert_mem_bar(Node** ctrl, Node** mem, int opcode, Node* precedent = nullptr);
   Node* array_element_address(Node* ary, Node* idx, BasicType elembt);
   Node* ConvI2L(Node* offset);
 
@@ -140,7 +140,7 @@ private:
                            Node* copy_length,
                            bool disjoint_bases = false,
                            bool length_never_negative = false,
-                           RegionNode* slow_region = NULL);
+                           RegionNode* slow_region = nullptr);
   void generate_clear_array(Node* ctrl, MergeMemNode* merge_mem,
                             const TypePtr* adr_type,
                             Node* dest,

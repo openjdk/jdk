@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,7 +160,7 @@ public:
 
   // Access the TypeKlassPtr of operands with a base==RegI and disp==RegP
   // Only returns non-null value for x86_32.ad's indOffset32X
-  virtual const TypePtr *disp_as_type() const { return NULL; }
+  virtual const TypePtr *disp_as_type() const { return nullptr; }
 
   // Return the label
   virtual Label *label() const;
@@ -193,7 +193,7 @@ public:
 
   // Check whether o is a valid oper.
   static bool notAnOper(const MachOper *o) {
-    if (o == NULL)                   return true;
+    if (o == nullptr)                   return true;
     if (((intptr_t)o & 1) != 0)      return true;
     if (*(address*)o == badAddress)  return true;  // kill by Node::destruct
     return false;
@@ -206,7 +206,7 @@ public:
 // ADLC inherit from this class.
 class MachNode : public Node {
 public:
-  MachNode() : Node((uint)0), _barrier(0), _num_opnds(0), _opnds(NULL) {
+  MachNode() : Node((uint)0), _barrier(0), _num_opnds(0), _opnds(nullptr) {
     init_class_id(Class_Mach);
   }
   // Required boilerplate
@@ -258,7 +258,7 @@ public:
   virtual const RegMask &in_RegMask(uint) const;
 
   // cisc-spillable instructions redefine for use by in_RegMask
-  virtual const RegMask *cisc_RegMask() const { return NULL; }
+  virtual const RegMask *cisc_RegMask() const { return nullptr; }
 
   // If this instruction is a 2-address instruction, then return the
   // index of the input which must match the output.  Not nessecary
@@ -328,7 +328,7 @@ public:
   }
 
   // If this is a memory op, return the base pointer and fixed offset.
-  // If there are no such, return NULL.  If there are multiple addresses
+  // If there are no such, return null.  If there are multiple addresses
   // or the address is indeterminate (rare cases) then return (Node*)-1,
   // which serves as node bottom.
   // If the offset is not statically determined, set it to Type::OffsetBot.
@@ -340,14 +340,14 @@ public:
   // Helper for get_base_and_disp: find the base and index input nodes.
   // Returns the MachOper as determined by memory_operand(), for use, if
   // needed by the caller. If (MachOper *)-1 is returned, base and index
-  // are set to NodeSentinel. If (MachOper *) NULL is returned, base and
-  // index are set to NULL.
+  // are set to NodeSentinel. If null is returned, base and
+  // index are set to null.
   const MachOper* memory_inputs(Node* &base, Node* &index) const;
 
   // Helper for memory_inputs:  Which operand carries the necessary info?
-  // By default, returns NULL, which means there is no such operand.
+  // By default, returns null, which means there is no such operand.
   // If it returns (MachOper*)-1, this means there are multiple memories.
-  virtual const MachOper* memory_operand() const { return NULL; }
+  virtual const MachOper* memory_operand() const { return nullptr; }
 
   // Call "get_base_and_disp" to decide which category of memory is used here.
   virtual const class TypePtr *adr_type() const;
@@ -392,7 +392,7 @@ public:
   // Define the following defaults for non-matched machine nodes
   virtual uint oper_input_base() const { return 0; }
   virtual uint rule()            const { return 9999999; }
-  virtual const class Type *bottom_type() const { return _opnds == NULL ? Type::CONTROL : MachNode::bottom_type(); }
+  virtual const class Type *bottom_type() const { return _opnds == nullptr ? Type::CONTROL : MachNode::bottom_type(); }
 };
 
 //------------------------------MachTypeNode----------------------------
@@ -592,7 +592,7 @@ public:
     MachIdealNode(), _in(&in), _out(&out), _type(n->bottom_type()), _spill_type(spill_type) {
     init_class_id(Class_MachSpillCopy);
     init_flags(Flag_is_Copy);
-    add_req(NULL);
+    add_req(nullptr);
     add_req(n);
   }
   virtual uint size_of() const { return sizeof(*this); }
@@ -660,7 +660,7 @@ class MachMergeNode : public MachIdealNode {
 public:
   MachMergeNode(Node *n1) {
     init_class_id(Class_MachMerge);
-    add_req(NULL);
+    add_req(nullptr);
     add_req(n1);
   }
   virtual const RegMask &out_RegMask() const { return in(1)->out_RegMask(); }
@@ -686,7 +686,7 @@ public:
   virtual void save_label(Label** label, uint* block_num) = 0;
 
   // Support for short branches
-  virtual MachNode *short_branch_version() { return NULL; }
+  virtual MachNode *short_branch_version() { return nullptr; }
 
   virtual bool pinned() const { return true; };
 };
@@ -832,7 +832,7 @@ public:
   OopMap*         oop_map() const { return _oop_map; }
   void            set_oop_map(OopMap* om) { _oop_map = om; }
 
-  MachSafePointNode() : MachReturnNode(), _oop_map(NULL), _jvms(NULL), _jvmadj(0), _has_ea_local_in_scope(false) {
+  MachSafePointNode() : MachReturnNode(), _oop_map(nullptr), _jvms(nullptr), _jvmadj(0), _has_ea_local_in_scope(false) {
     init_class_id(Class_MachSafePoint);
   }
 
@@ -945,11 +945,11 @@ public:
     if (_override_symbolic_info) {
       // Attach corresponding Method* to the call site, so VM can use it during resolution
       // instead of querying symbolic info from bytecode.
-      assert(_method != NULL, "method should be set");
+      assert(_method != nullptr, "method should be set");
       assert(_method->constant_encoding()->is_method(), "should point to a Method");
       return cbuf.oop_recorder()->find_index(_method->constant_encoding());
     }
-    return 0; // Use symbolic info from bytecode (resolved_method == NULL).
+    return 0; // Use symbolic info from bytecode (resolved_method is null).
   }
 
 #ifndef PRODUCT
@@ -999,7 +999,7 @@ class MachCallRuntimeNode : public MachCallNode {
   virtual bool cmp( const Node &n ) const;
   virtual uint size_of() const; // Size is bigger
 public:
-  const char *_name;            // Printable name, if _method is NULL
+  const char *_name;            // Printable name, if _method is null
   bool _leaf_no_fp;             // Is this CallLeafNoFP?
   MachCallRuntimeNode() : MachCallNode() {
     init_class_id(Class_MachCallRuntime);
@@ -1077,7 +1077,7 @@ public:
     init_class_id(Class_MachTemp);
     _num_opnds = 1;
     _opnds = _opnd_array;
-    add_req(NULL);
+    add_req(nullptr);
     _opnds[0] = oper;
   }
   virtual uint size_of() const { return sizeof(MachTempNode); }
@@ -1109,7 +1109,7 @@ public:
 
   virtual MachOper *clone() const;
 
-  virtual Label *label() const { assert(_label != NULL, "need Label"); return _label; }
+  virtual Label *label() const { assert(_label != nullptr, "need Label"); return _label; }
 
   virtual uint           opcode() const;
 
