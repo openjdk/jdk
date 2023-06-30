@@ -613,7 +613,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   if (start_val->is_con() && step_val->is_con()) {
     int effective_min_index = start_val->get_con();
     int effective_max_index = start_val->get_con() + step_val->get_con() * (num_elem - 1);
-    effective_indices_in_range = effective_max_index > effective_min_index && effective_min_index >= -128 && effective_max_index <= 127;
+    effective_indices_in_range = effective_max_index >= effective_min_index && effective_min_index >= -128 && effective_max_index <= 127;
   }
 
   if (!do_wrap && !effective_indices_in_range) {
@@ -678,11 +678,11 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     // Wrap the indices greater than lane count.
      res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
   } else {
-    ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(BoolTest::gt));
+    ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(BoolTest::ugt));
     Node * lane_cnt  = gvn().makecon(TypeInt::make(num_elem));
     Node * bcast_lane_cnt = gvn().transform(VectorNode::scalar2vector(lane_cnt, num_elem, type_bt));
     const TypeVect* vmask_type = TypeVect::makemask(elem_bt, num_elem);
-    Node* mask = gvn().transform(new VectorMaskCmpNode(BoolTest::gt, bcast_lane_cnt, res, pred_node, vmask_type));
+    Node* mask = gvn().transform(new VectorMaskCmpNode(BoolTest::ugt, bcast_lane_cnt, res, pred_node, vmask_type));
 
     // Make the indices greater than lane count as -ve values to match the java side implementation.
     res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));

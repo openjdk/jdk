@@ -34,7 +34,7 @@ import jdk.incubator.vector.VectorShuffle;
  * @test
  * @bug 8265907
  * @modules jdk.incubator.vector
- * @run main/othervm compiler.vectorapi.TestVectorShuffleIota
+ * @run main/othervm -XX:CompileThresholdScaling=0.3 -XX:-TieredCompilation compiler.vectorapi.TestVectorShuffleIota
  */
 
 public class TestVectorShuffleIota {
@@ -46,55 +46,80 @@ public class TestVectorShuffleIota {
 
     static int[] ai = {87, 65, 78, 71};
 
-    interface compute_kernel {
-        long apply(int start, int step, boolean wrap);
+    static long expected_value(VectorSpecies<?> SPECIES, int start, int step, boolean wrap) {
+        long res = 0;
+        int lanesM1 = SPECIES.length() - 1;
+        if (wrap) {
+            res = (lanesM1 & (start + step * lanesM1));
+        } else {
+            int effective_index = start + step * lanesM1;
+            int wrapped_effective_index = effective_index & lanesM1;
+            res = (effective_index == wrapped_effective_index ?
+                   wrapped_effective_index :
+                   -SPECIES.length() + wrapped_effective_index);
+        }
+        return res;
     }
 
-    static void validateTests(compute_kernel agen, compute_kernel egen, int start, int step, boolean wrap) {
-        long actual   = agen.apply(start, step, wrap);
-        long expected = egen.apply(start, step, wrap);
+    static void validateTests(long actual, VectorSpecies<?> SPECIES, int start, int step, boolean wrap) {
+        long expected = expected_value(SPECIES, start, step, wrap);
         if (actual != expected) {
             throw new AssertionError("Result Mismatch!, actual = " + actual + " expected = " + expected);
         }
     }
 
-    static void testShuffleIota (VectorSpecies<?> SPECIES, int start, int step, boolean wrap) {
-        compute_kernel sobj = new compute_kernel()  {
-            public long apply(int start, int step, boolean wrap) {
-                long res = 0;
-                int lanesM1 = SPECIES.length() - 1;
-                if (wrap) {
-                    for (int i = 0; i < 1024; i++) {
-                        start += i;
-                        res += (lanesM1 & (start + step * lanesM1)) * i;
-                    }
-                } else {
-                    for (int i = 0; i < 1024; i++) {
-                        start += i;
-                        int effective_index = start + step * lanesM1;
-                        int wrapped_effective_index = effective_index & lanesM1;
-                        res += (effective_index == wrapped_effective_index ?
-                                 wrapped_effective_index :
-                                 -SPECIES.length() + wrapped_effective_index) * i;
-                    }
-                }
-                return res;
-            }
-        };
+    static void testShuffleIotaB128(int start, int step, boolean wrap) {
+        long res = SPECIESb.iotaShuffle(start, step, wrap)
+                           .laneSource(SPECIESb.length()-1);
+        validateTests(res, SPECIESb, start, step, wrap);
+    }
 
-        compute_kernel vobj = new compute_kernel()  {
-            public long apply(int start, int step, boolean wrap) {
-                long res = 0;
-                for (int i = 0; i < 1024; i++) {
-                    start += i;
-                    res += SPECIES.iotaShuffle(start, step, wrap)
-                                  .laneSource(SPECIES.length()-1) * i;
-                }
-                return res;
-            }
-        };
+    static void testShuffleIotaS128(int start, int step, boolean wrap) {
+        long res = SPECIESs.iotaShuffle(start, step, wrap)
+                           .laneSource(SPECIESs.length()-1);
+        validateTests(res, SPECIESs, start, step, wrap);
+    }
 
-        validateTests(vobj, sobj, start, step, wrap);
+    static void testShuffleIotaI128(int start, int step, boolean wrap) {
+        long res = SPECIESi.iotaShuffle(start, step, wrap)
+                           .laneSource(SPECIESi.length()-1);
+        validateTests(res, SPECIESi, start, step, wrap);
+    }
+
+    static void testShuffleIotaConst0B128() {
+        long res = SPECIESb.iotaShuffle(-32, 1, false)
+                           .laneSource(SPECIESb.length()-1);
+        validateTests(res, SPECIESb, -32, 1, false);
+    }
+
+    static void testShuffleIotaConst0S128() {
+        long res = SPECIESs.iotaShuffle(-32, 1, false)
+                           .laneSource(SPECIESs.length()-1);
+        validateTests(res, SPECIESs, -32, 1, false);
+    }
+
+    static void testShuffleIotaConst0I128() {
+        long res = SPECIESi.iotaShuffle(-32, 1, false)
+                           .laneSource(SPECIESi.length()-1);
+        validateTests(res, SPECIESi, -32, 1, false);
+    }
+
+    static void testShuffleIotaConst1B128() {
+        long res = SPECIESb.iotaShuffle(-32, 1, true)
+                           .laneSource(SPECIESb.length()-1);
+        validateTests(res, SPECIESb, -32, 1, true);
+    }
+
+    static void testShuffleIotaConst1S128() {
+        long res = SPECIESs.iotaShuffle(-32, 1, true)
+                           .laneSource(SPECIESs.length()-1);
+        validateTests(res, SPECIESs, -32, 1, true);
+    }
+
+    static void testShuffleIotaConst1I128() {
+        long res = SPECIESi.iotaShuffle(-32, 1, true)
+                           .laneSource(SPECIESi.length()-1);
+        validateTests(res, SPECIESi, -32, 1, true);
     }
 
     static void testShuffleI() {
@@ -105,30 +130,37 @@ public class TestVectorShuffleIota {
     public static void main(String[] args) {
         for (int i = 0; i < INVOC_COUNT; i++) {
             testShuffleI();
-
-            testShuffleIota(SPECIESi, 128, 1, true);
-            testShuffleIota(SPECIESi, 128, 1, false);
-            testShuffleIota(SPECIESi, -128, 1, true);
-            testShuffleIota(SPECIESi, -128, 1, false);
-            testShuffleIota(SPECIESi, 1, 1, true);
-            testShuffleIota(SPECIESi, 1, 1, false);
-
-            testShuffleIota(SPECIESs, 128, 1, true);
-            testShuffleIota(SPECIESs, 128, 1, false);
-            testShuffleIota(SPECIESs, -128, 1, true);
-            testShuffleIota(SPECIESs, -128, 1, false);
-            testShuffleIota(SPECIESs, 1, 1, true);
-            testShuffleIota(SPECIESs, 1, 1, false);
-
-            testShuffleIota(SPECIESb, 128, 1, true);
-            testShuffleIota(SPECIESb, 128, 1, false);
-            testShuffleIota(SPECIESb, -128, 1, true);
-            testShuffleIota(SPECIESb, -128, 1, false);
-            testShuffleIota(SPECIESb, 1, 1, true);
-            testShuffleIota(SPECIESb, 1, 1, false);
         }
         for (int i = 0; i < ai.length; i++) {
             System.out.print(ai[i] + ", ");
+        }
+        for (int i = 0; i < INVOC_COUNT; i++) {
+            testShuffleIotaI128(128, 1, true);
+            testShuffleIotaI128(128, 1, false);
+            testShuffleIotaI128(-128, 1, true);
+            testShuffleIotaI128(-128, 1, false);
+            testShuffleIotaI128(1, 1, true);
+            testShuffleIotaI128(1, 1, false);
+
+            testShuffleIotaS128(128, 1, true);
+            testShuffleIotaS128(128, 1, false);
+            testShuffleIotaS128(-128, 1, true);
+            testShuffleIotaS128(-128, 1, false);
+            testShuffleIotaS128(1, 1, true);
+            testShuffleIotaS128(1, 1, false);
+
+            testShuffleIotaB128(128, 1, true);
+            testShuffleIotaB128(128, 1, false);
+            testShuffleIotaB128(-128, 1, true);
+            testShuffleIotaB128(-128, 1, false);
+            testShuffleIotaB128(1, 1, true);
+            testShuffleIotaB128(1, 1, false);
+            testShuffleIotaConst0B128();
+            testShuffleIotaConst0S128();
+            testShuffleIotaConst0I128();
+            testShuffleIotaConst1B128();
+            testShuffleIotaConst1S128();
+            testShuffleIotaConst1I128();
         }
         System.out.println();
     }
