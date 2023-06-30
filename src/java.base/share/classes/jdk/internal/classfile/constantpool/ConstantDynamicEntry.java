@@ -59,7 +59,7 @@ public sealed interface ConstantDynamicEntry
     default DynamicConstantDesc<?> asSymbol() {
         return DynamicConstantDesc.ofNamed(bootstrap().bootstrapMethod().asSymbol(),
                                            name().stringValue(),
-                                           Util.fieldTypeSymbol(nameAndType()),
+                                           typeSymbol(),
                                            bootstrap().arguments().stream()
                                                       .map(LoadableConstantEntry::constantValue)
                                                       .toArray(ConstantDesc[]::new));
