@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,28 +23,26 @@
 
 /*
  * @test
- * @bug 8004240
- * @summary Verify that getAdapterPreference returns an unmodifiable list.
- * @modules java.base/sun.util.locale.provider
- * @compile -XDignore.symbol.file Bug8004240.java
- * @run main Bug8004240
+ * @bug 6277243
+ * @summary Verify that there is Locale.ROOT constant, and it is equal to Locale("", "", "")
+ * @run junit RootLocale
  */
 
-import java.util.List;
-import sun.util.locale.provider.LocaleProviderAdapter;
+import java.util.Locale;
 
-public class Bug8004240 {
+import org.junit.jupiter.api.Test;
 
-    public static void main(String[] args) {
-        List<LocaleProviderAdapter.Type> types = LocaleProviderAdapter.getAdapterPreference();
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-        try {
-            types.set(0, null);
-        } catch (UnsupportedOperationException e) {
-            // success
-            return;
-        }
+public class RootLocale {
 
-        throw new RuntimeException("LocaleProviderAdapter.getAdapterPrefence() returned a modifiable list.");
+    /**
+     * Locale.ROOT should exist and match an empty Locale given as
+     * Locale("", "", "").
+     */
+    @Test
+    public void rootTest() {
+        Locale root = Locale.of("", "", "");
+        assertEquals(Locale.ROOT, root, "Locale.ROOT is not equal to Locale(\"\", \"\", \"\")");
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,19 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
-    @test
-    @summary Locale constructor should allow language-only argument
-    @bug 4316602
-    @author joconner
-*/
 
-import java.util.Locale;
+/*
+ * @test
+ * @bug 8309811
+ * @requires vm.debug
+ * @summary Test the output of -XX:+TraceBytecodes, -XX:TraceBytecodesAt, and -XX:TraceBytecodesStopAt
+ * @run main/othervm -XX:+TraceBytecodes -XX:TraceBytecodesAt=2000 -XX:TraceBytecodesStopAt=3000 TraceBytecodes
+ */
 
-public class Bug4316602 {
-
-    public static void main(String[] args) throws Exception {
-        String language = "ja";
-        Locale aLocale = Locale.of(language);
-        if (aLocale.toString().equals(language)) {
-            System.out.println("passed");
-        } else {
-            System.out.println("Bug4316602 failed");
-            throw new Exception("Bug4316602 failed");
-        }
+// This is just a very simple sanity test. Trace about 1000 bytecodes. See the .jtr file for the output.
+// Consider it OK if the VM doesn't crash. It should test a fair amount of the code in bytecodeTracer.cpp
+public class TraceBytecodes {
+    public static void main(String args[]) {
+        System.out.println("Hello TraceBytecodes");
     }
-
 }

@@ -187,11 +187,11 @@
 
  void minmax_fp_v(VectorRegister dst,
                   VectorRegister src1, VectorRegister src2,
-                  bool is_double, bool is_min, int vector_length);
+                  BasicType bt, bool is_min, int vector_length);
 
  void minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                          VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                         bool is_double, bool is_min, int vector_length);
+                         BasicType bt, bool is_min, int vector_length);
 
  void reduce_minmax_fp_v(FloatRegister dst,
                          FloatRegister src1, VectorRegister src2,

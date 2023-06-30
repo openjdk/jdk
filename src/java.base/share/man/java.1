@@ -530,20 +530,25 @@ The value \[dq]disabled\[dq] disables finalization, so that no
 finalizers are invoked.
 .TP
 \f[V]--module-path\f[R] \f[I]modulepath\f[R]... or \f[V]-p\f[R] \f[I]modulepath\f[R]
-Specifies a list of directories in which each directory is a directory
-of modules.
+Specifies where to find application modules with a list of path elements.
+The elements of a module path can be a file path to a module or a directory
+containing modules. Each module is either a modular JAR or an
+exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate directories in this list;
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
 on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP
 \f[V]--upgrade-module-path\f[R] \f[I]modulepath\f[R]...
-Specifies a list of directories in which each directory is a directory
-of modules that replace upgradeable modules in the runtime image.
+Specifies where to find module replacements of upgradeable modules in the
+runtime image with a list of path elements.
+The elements of a module path can be a file path to a module or a directory
+containing modules. Each module is either a modular JAR or an
+exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate directories in this list;
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
 on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP

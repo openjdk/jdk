@@ -79,7 +79,7 @@ inline address ContinuationHelper::InterpretedFrame::return_pc(const frame& f) {
 }
 
 inline int ContinuationHelper::InterpretedFrame::size(const frame&f) {
-  return InterpretedFrame::frame_bottom(f) - InterpretedFrame::frame_top(f);
+  return pointer_delta_as_int(InterpretedFrame::frame_bottom(f), InterpretedFrame::frame_top(f));
 }
 
 inline int ContinuationHelper::InterpretedFrame::stack_argsize(const frame& f) {
