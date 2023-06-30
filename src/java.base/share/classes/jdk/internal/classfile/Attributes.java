@@ -80,6 +80,7 @@ import jdk.internal.classfile.attribute.StackMapTableAttribute;
 import jdk.internal.classfile.attribute.SyntheticAttribute;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractAttributeMapper;
+import jdk.internal.classfile.impl.AttributeHelpers;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.CodeImpl;
 import jdk.internal.classfile.impl.AbstractPoolEntry;
@@ -447,11 +448,8 @@ public class Attributes {
                     List<LocalVariableInfo> infos = attr.localVariables();
                     buf.writeU2(infos.size());
                     for (LocalVariableInfo info : infos) {
-                        buf.writeU2(info.startPc());
-                        buf.writeU2(info.length());
-                        buf.writeIndex(info.name());
-                        buf.writeIndex(info.type());
-                        buf.writeU2(info.slot());
+                        AttributeHelpers.writeLocalVariableInfo(buf, info.startPc(),
+                                info.length(), info.name(), info.type(), info.slot());
                     }
                 }
 
@@ -474,11 +472,8 @@ public class Attributes {
                     List<LocalVariableTypeInfo> infos = attr.localVariableTypes();
                     buf.writeU2(infos.size());
                     for (LocalVariableTypeInfo info : infos) {
-                        buf.writeU2(info.startPc());
-                        buf.writeU2(info.length());
-                        buf.writeIndex(info.name());
-                        buf.writeIndex(info.signature());
-                        buf.writeU2(info.slot());
+                        AttributeHelpers.writeLocalVariableInfo(buf, info.startPc(),
+                                info.length(), info.name(), info.signature(), info.slot());
                     }
                 }
 

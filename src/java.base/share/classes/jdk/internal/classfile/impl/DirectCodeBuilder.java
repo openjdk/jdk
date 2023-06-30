@@ -260,24 +260,15 @@ public final class DirectCodeBuilder
                         int pos = b.size();
                         int lvSize = localVariables.size();
                         b.writeU2(lvSize);
-                        var lc = ((BufWriterImpl) b).labelContext();
                         for (LocalVariable l : localVariables) {
-                            int startBci = lc.labelToBci(l.startScope());
-                            int endBci = lc.labelToBci(l.endScope());
-                            if (startBci == -1 || endBci == -1) {
+                            if (!AttributeHelpers.writeLocalVariable(DirectCodeBuilder.this, b, l.startScope(),
+                                    l.endScope(), l.name(), l.type(), l.slot())) {
                                 if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     lvSize--;
-                                    continue;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
                                 }
                             }
-                            int length = endBci - startBci;
-                            b.writeU2(startBci);
-                            b.writeU2(length);
-                            b.writeIndex(l.name());
-                            b.writeIndex(l.type());
-                            b.writeU2(l.slot());
                         }
                         if (lvSize < localVariables.size())
                             b.patchInt(pos, 2, lvSize);
@@ -293,24 +284,15 @@ public final class DirectCodeBuilder
                         int pos = b.size();
                         int lvtSize = localVariableTypes.size();
                         b.writeU2(localVariableTypes.size());
-                        var lc = ((BufWriterImpl) b).labelContext();
                         for (LocalVariableType l : localVariableTypes) {
-                            int startBci = lc.labelToBci(l.startScope());
-                            int endBci = lc.labelToBci(l.endScope());
-                            if (startBci == -1 || endBci == -1) {
+                            if (!AttributeHelpers.writeLocalVariable(DirectCodeBuilder.this, b, l.startScope(),
+                                    l.endScope(), l.name(), l.signature(), l.slot())) {
                                 if (context.deadLabelsOption() == Classfile.DeadLabelsOption.DROP_DEAD_LABELS) {
                                     lvtSize--;
-                                    continue;
                                 } else {
                                     throw new IllegalArgumentException("Unbound label in local variable type");
                                 }
                             }
-                            int length = endBci - startBci;
-                            b.writeU2(startBci);
-                            b.writeU2(length);
-                            b.writeIndex(l.name());
-                            b.writeIndex(l.signature());
-                            b.writeU2(l.slot());
                         }
                         if (lvtSize < localVariableTypes.size())
                             b.patchInt(pos, 2, lvtSize);
