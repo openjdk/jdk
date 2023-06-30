@@ -83,6 +83,34 @@ public class ValidateISO4217 {
     private static final List<Arguments> additionalCodes = new ArrayList<Arguments>();
     // Currencies to test (derived from ISO4217Codes and additionalCodes)
     private static final Set<Currency> testCurrencies = new HashSet<>();
+    // Codes that are obsolete, do not have related country, extra currency
+    private static final String otherCodes =
+            "ADP-AFA-ATS-AYM-AZM-BEF-BGL-BOV-BYB-BYR-CHE-CHW-CLF-COU-CUC-CYP-"
+                    + "DEM-EEK-ESP-FIM-FRF-GHC-GRD-GWP-IEP-ITL-LTL-LUF-LVL-MGF-MRO-MTL-MXV-MZM-NLG-"
+                    + "PTE-ROL-RUR-SDD-SIT-SLL-SKK-SRG-STD-TMM-TPE-TRL-VEF-UYI-USN-USS-VEB-VED-"
+                    + "XAG-XAU-XBA-XBB-XBC-XBD-XDR-XFO-XFU-XPD-XPT-XSU-XTS-XUA-XXX-"
+                    + "YUM-ZMK-ZWD-ZWN-ZWR";
+    private static final String[][] extraCodes = {
+            /* Defined in ISO 4217 list, but don't have code and minor unit info. */
+            {"AQ", "", "", "0"},    // Antarctica
+            /*
+             * Defined in ISO 4217 list, but don't have code and minor unit info in
+             * it. On the other hand, both code and minor unit are defined in
+             * .properties file. I don't know why, though.
+             */
+            {"GS", "GBP", "826", "2"},      // South Georgia And The South Sandwich Islands
+            /* Not defined in ISO 4217 list, but defined in .properties file. */
+            {"AX", "EUR", "978", "2"},      // \u00c5LAND ISLANDS
+            {"PS", "ILS", "376", "2"},      // Palestinian Territory, Occupied
+            /* Not defined in ISO 4217 list, but added in ISO 3166 country code list */
+            {"JE", "GBP", "826", "2"},      // Jersey
+            {"GG", "GBP", "826", "2"},      // Guernsey
+            {"IM", "GBP", "826", "2"},      // Isle of Man
+            {"BL", "EUR", "978", "2"},      // Saint Barthelemy
+            {"MF", "EUR", "978", "2"},      // Saint Martin
+            /* Defined neither in ISO 4217 nor ISO 3166 list */
+            {"XK", "EUR", "978", "2"},      // Kosovo
+    };
     private static SimpleDateFormat format = null;
 
     // Sets up the following test data:
@@ -93,7 +121,7 @@ public class ValidateISO4217 {
         // at the same time
         setUpISO4217Codes();
         setUpAdditionalCodes();
-        finishTestCurrencies();
+        setUpOtherCurrencies();
     }
 
     // Parse the ISO4217 file and populate ISO4217Codes and testCurrencies.
@@ -169,27 +197,6 @@ public class ValidateISO4217 {
     // Process 'extraCodes', turning them into JUnit arguments and populate
     // both additionalCodes and testCurrencies.
     private static void setUpAdditionalCodes() {
-        String[][] extraCodes = {
-                /* Defined in ISO 4217 list, but don't have code and minor unit info. */
-                {"AQ", "", "", "0"},    // Antarctica
-                /*
-                 * Defined in ISO 4217 list, but don't have code and minor unit info in
-                 * it. On the other hand, both code and minor unit are defined in
-                 * .properties file. I don't know why, though.
-                 */
-                {"GS", "GBP", "826", "2"},      // South Georgia And The South Sandwich Islands
-                /* Not defined in ISO 4217 list, but defined in .properties file. */
-                {"AX", "EUR", "978", "2"},      // \u00c5LAND ISLANDS
-                {"PS", "ILS", "376", "2"},      // Palestinian Territory, Occupied
-                /* Not defined in ISO 4217 list, but added in ISO 3166 country code list */
-                {"JE", "GBP", "826", "2"},      // Jersey
-                {"GG", "GBP", "826", "2"},      // Guernsey
-                {"IM", "GBP", "826", "2"},      // Isle of Man
-                {"BL", "EUR", "978", "2"},      // Saint Barthelemy
-                {"MF", "EUR", "978", "2"},      // Saint Martin
-                /* Defined neither in ISO 4217 nor ISO 3166 list */
-                {"XK", "EUR", "978", "2"},      // Kosovo
-        };
         for (String[] extraCode : extraCodes) {
             int index = toIndex(extraCode[0]);
             if (extraCode[1].length() != 0) {
@@ -204,14 +211,7 @@ public class ValidateISO4217 {
 
     // The previous set-up method populated most of testCurrencies. This
     // method finishes populating the list with 'otherCodes'.
-    private static void finishTestCurrencies() {
-        // Codes that are obsolete, do not have related country, extra currency
-        final String otherCodes =
-                "ADP-AFA-ATS-AYM-AZM-BEF-BGL-BOV-BYB-BYR-CHE-CHW-CLF-COU-CUC-CYP-"
-                        + "DEM-EEK-ESP-FIM-FRF-GHC-GRD-GWP-IEP-ITL-LTL-LUF-LVL-MGF-MRO-MTL-MXV-MZM-NLG-"
-                        + "PTE-ROL-RUR-SDD-SIT-SLL-SKK-SRG-STD-TMM-TPE-TRL-VEF-UYI-USN-USS-VEB-VED-"
-                        + "XAG-XAU-XBA-XBB-XBC-XBD-XDR-XFO-XFU-XPD-XPT-XSU-XTS-XUA-XXX-"
-                        + "YUM-ZMK-ZWD-ZWN-ZWR";
+    private static void setUpOtherCurrencies() {
         // Add otherCodes
         StringTokenizer st = new StringTokenizer(otherCodes, "-");
         while (st.hasMoreTokens()) {
