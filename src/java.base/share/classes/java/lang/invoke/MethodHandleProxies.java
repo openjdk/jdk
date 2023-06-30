@@ -29,7 +29,7 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.module.ModuleDescriptor;
-import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
@@ -218,8 +218,8 @@ public class MethodHandleProxies {
         }
 
         /*
-         * For each interface I define a new hidden class and pass the original and
-         * caller-sensitive method handles to its constructor.
+         * For each interface I define a new hidden class and pass the given target and
+         * caller-bound method handle to its constructor.
          *
          * The hidden classes defined for I is defined in a dynamic module M
          * which has access to the types referenced by the members of I including
@@ -228,8 +228,9 @@ public class MethodHandleProxies {
         Lookup lookup = getProxyClassLookup(intfc);  // throws IllegalArgumentException
         Object proxy;
         try {
-            MethodHandle constructor = lookup.findConstructor(lookup.lookupClass(), MT_void_Lookup_MethodHandle_MethodHandle)
-                    .asType(MT_Object_Lookup_MethodHandle_MethodHandle);
+            MethodHandle constructor = lookup.findConstructor(lookup.lookupClass(),
+                                                              MT_void_Lookup_MethodHandle_MethodHandle)
+                                             .asType(MT_Object_Lookup_MethodHandle_MethodHandle);
             proxy = constructor.invokeExact(lookup, target, mh);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
@@ -238,16 +239,16 @@ public class MethodHandleProxies {
         return intfc.cast(proxy);
     }
 
-    private record LocalMethodInfo(MethodTypeDesc desc, List<ClassDesc> thrown, String fieldName) {}
+    private record MethodInfo(MethodTypeDesc desc, List<ClassDesc> thrown, String fieldName) {}
 
     private static final ClassFileDumper DUMPER = ClassFileDumper.getInstance(
             "jdk.invoke.MethodHandleProxies.dumpClassFiles", "DUMP_MH_PROXY_CLASSFILES");
 
     private static final Set<Class<?>> WRAPPER_TYPES = Collections.newSetFromMap(new WeakHashMap<>());
-    private static final ClassValue<SoftReference<Lookup>> PROXY_LOOKUPS = new ClassValue<>() {
+    private static final ClassValue<WeakReference<Lookup>> PROXY_LOOKUPS = new ClassValue<>() {
         @Override
-        protected SoftReference<Lookup> computeValue(Class<?> intfc) {
-            List<LocalMethodInfo> methods = new ArrayList<>();
+        protected WeakReference<Lookup> computeValue(Class<?> intfc) {
+            List<MethodInfo> methods = new ArrayList<>();
             Set<Class<?>> referencedTypes = new HashSet<>();
             referencedTypes.add(intfc);
             String uniqueName = null;
@@ -262,6 +263,7 @@ public class MethodHandleProxies {
                 if (!Modifier.isAbstract(m.getModifiers()))
                     continue;
 
+                // ensure it's SAM interface
                 String mname = m.getName();
                 if (uniqueName == null) {
                     uniqueName = mname;
@@ -272,17 +274,14 @@ public class MethodHandleProxies {
 
                 // the field name holding the method handle for this method
                 String fieldName = "m" + count++;
-                MethodType mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
-                MethodTypeDesc mtDesc = desc(mt);
+                var mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
                 var thrown = JLRA.getExecutableSharedExceptionTypes(m);
-                if (thrown.length == 0) {
-                    methods.add(new LocalMethodInfo(mtDesc, DEFAULT_RETHROWS, fieldName));
-                } else {
-                    var exceptionTypeDescs =
-                            Stream.concat(DEFAULT_RETHROWS.stream(),
-                                    Arrays.stream(thrown).map(MethodHandleProxies::desc)).distinct().toList();
-                    methods.add(new LocalMethodInfo(mtDesc, exceptionTypeDescs, fieldName));
-                }
+                var exceptionTypeDescs =
+                     thrown.length == 0 ? DEFAULT_RETHROWS
+                                        : Stream.concat(DEFAULT_RETHROWS.stream(),
+                                                        Arrays.stream(thrown).map(MethodHandleProxies::desc))
+                                                .distinct().toList();
+                methods.add(new MethodInfo(desc(mt), exceptionTypeDescs, fieldName));
 
                 // find the types referenced by this method
                 addElementType(referencedTypes, m.getReturnType());
@@ -293,6 +292,9 @@ public class MethodHandleProxies {
             if (uniqueName == null)
                 throw newIllegalArgumentException("no method in ", intfc.getName());
 
+            // create a dynamic module for each proxy class, which needs access
+            // to the types referenced by the members of the interface including
+            // the parameter types, return type and exception types
             var loader = intfc.getClassLoader();
             Module targetModule = newDynamicModule(loader, referencedTypes);
 
@@ -301,27 +303,28 @@ public class MethodHandleProxies {
             String n = intfc.getName();
             int i = n.lastIndexOf('.');
             String cn = i > 0 ? pn + "." + n.substring(i + 1) : pn + "." + n;
-            ClassDesc proxyDesc = ClassDesc.of(cn);
-            byte[] template = createTemplate(loader, proxyDesc, desc(intfc), uniqueName, methods);
+            byte[] template = createTemplate(loader, ClassDesc.of(cn), desc(intfc), uniqueName, methods);
+            // define the dynamic module to the class loader of the interface
             var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
 
             @SuppressWarnings("removal")
             var sm = System.getSecurityManager();
             Lookup lookup;
             if (sm != null) {
+                PrivilegedAction<Lookup> pa =  () -> definer.defineClassAsLookup(true);
                 @SuppressWarnings("removal")
-                var l = AccessController.doPrivileged((PrivilegedAction<Lookup>) () -> definer.defineClassAsLookup(true));
+                var l = AccessController.doPrivileged(pa);
                 lookup = l;
             } else {
                 lookup = definer.defineClassAsLookup(true);
             }
             WRAPPER_TYPES.add(lookup.lookupClass());
-            return new SoftReference<>(lookup);
+            return new WeakReference<>(lookup);
         }
     };
 
     private static Lookup getProxyClassLookup(Class<?> intfc) {
-        SoftReference<Lookup> r = PROXY_LOOKUPS.get(intfc);
+        WeakReference<Lookup> r = PROXY_LOOKUPS.get(intfc);
         if (r.refersTo(null)) {
             PROXY_LOOKUPS.remove(intfc);
             r = PROXY_LOOKUPS.get(intfc);
@@ -333,18 +336,21 @@ public class MethodHandleProxies {
     private static final ClassDesc CD_UndeclaredThrowableException = desc(UndeclaredThrowableException.class);
     private static final ClassDesc CD_IllegalAccessException = desc(IllegalAccessException.class);
     private static final MethodTypeDesc MTD_void_Throwable = MethodTypeDesc.of(CD_void, CD_Throwable);
-    private static final MethodType MT_void_Lookup_MethodHandle_MethodHandle = methodType(void.class, Lookup.class, MethodHandle.class, MethodHandle.class);
-    private static final MethodType MT_Object_Lookup_MethodHandle_MethodHandle = MT_void_Lookup_MethodHandle_MethodHandle.changeReturnType(Object.class);
+    private static final MethodType MT_void_Lookup_MethodHandle_MethodHandle =
+            methodType(void.class, Lookup.class, MethodHandle.class, MethodHandle.class);
+    private static final MethodType MT_Object_Lookup_MethodHandle_MethodHandle =
+            MT_void_Lookup_MethodHandle_MethodHandle.changeReturnType(Object.class);
     private static final MethodType MT_MethodHandle_Object = methodType(MethodHandle.class, Object.class);
-    private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle = desc(MT_void_Lookup_MethodHandle_MethodHandle);
+    private static final MethodTypeDesc MTD_void_Lookup_MethodHandle_MethodHandle =
+            desc(MT_void_Lookup_MethodHandle_MethodHandle);
     private static final MethodTypeDesc MTD_void_Lookup = MethodTypeDesc.of(CD_void, CD_MethodHandles_Lookup);
     private static final MethodTypeDesc MTD_MethodHandle_MethodType = MethodTypeDesc.of(CD_MethodHandle, CD_MethodType);
     private static final MethodTypeDesc MTD_Class = MethodTypeDesc.of(CD_Class);
     private static final MethodTypeDesc MTD_int = MethodTypeDesc.of(CD_int);
     private static final MethodTypeDesc MTD_String = MethodTypeDesc.of(CD_String);
     private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
-    private static final String ORIGINAL_TARGET_NAME = "originalTarget";
-    private static final String ORIGINAL_TYPE_NAME = "originalType";
+    private static final String TARGET_NAME = "target";
+    private static final String TYPE_NAME = "interfaceType";
     private static final String ENSURE_ORIGINAL_LOOKUP = "ensureOriginalLookup";
 
     /**
@@ -357,16 +363,16 @@ public class MethodHandleProxies {
      * @return the bytes of the implementation classes
      */
     private static byte[] createTemplate(ClassLoader loader, ClassDesc proxyDesc, ClassDesc ifaceDesc,
-                                         String methodName, List<LocalMethodInfo> methods) {
+                                         String methodName, List<MethodInfo> methods) {
         return Classfile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader)))
-                .build(proxyDesc, clb -> {
+                        .build(proxyDesc, clb -> {
             clb.withSuperclass(CD_Object);
             clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
             clb.withInterfaceSymbols(ifaceDesc);
 
-            // individual handle fields
-            clb.withField(ORIGINAL_TYPE_NAME, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
-            clb.withField(ORIGINAL_TARGET_NAME, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
+            // static and instance fields
+            clb.withField(TYPE_NAME, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
+            clb.withField(TARGET_NAME, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
             for (var mi : methods) {
                 clb.withField(mi.fieldName, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
             }
@@ -374,28 +380,27 @@ public class MethodHandleProxies {
             // <clinit>
             clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
                 cob.constantInstruction(ifaceDesc);
-                cob.putstatic(proxyDesc, ORIGINAL_TYPE_NAME, CD_Class);
+                cob.putstatic(proxyDesc, TYPE_NAME, CD_Class);
                 cob.return_();
             });
 
-            // <init>(Lookup, MethodHandle originalHandle, MethodHandle implHandle)
+            // <init>(Lookup, MethodHandle target, MethodHandle callerBoundTarget)
             clb.withMethodBody(INIT_NAME, MTD_void_Lookup_MethodHandle_MethodHandle, 0, cob -> {
                 cob.aload(0);
                 cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
 
-                // WrapperInstance.ensureOriginalLookup
+                // call ensureOriginalLookup to verify the given Lookup has access
                 cob.aload(1);
                 cob.invokestatic(proxyDesc, "ensureOriginalLookup", MTD_void_Lookup);
 
-                // keep original target
-                // this.originalTarget = originalHandle;
+                // this.target = target;
                 cob.aload(0);
                 cob.aload(2);
-                cob.putfield(proxyDesc, ORIGINAL_TARGET_NAME, CD_MethodHandle);
+                cob.putfield(proxyDesc, TARGET_NAME, CD_MethodHandle);
 
-                // convert individual handles
+                // method handles adjusted to the method type of each method
                 for (var mi : methods) {
-                    // this.handleField = implHandle.asType(xxType);
+                    // this.m<i> = callerBoundTarget.asType(xxType);
                     cob.aload(0);
                     cob.aload(3);
                     cob.constantInstruction(mi.desc);
@@ -407,6 +412,9 @@ public class MethodHandleProxies {
                 cob.return_();
             });
 
+            // void ensureOriginalLookup(Lookup) checks if the given Lookup has ORIGINAL
+            // access to this class, i.e. the lookup class is this class; otherwise,
+            // IllegalAccessException is thrown
             clb.withMethodBody(ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup, ACC_PRIVATE | ACC_STATIC, cob -> {
                 var failLabel = cob.newLabel();
                 // check lookupClass
@@ -433,8 +441,8 @@ public class MethodHandleProxies {
             });
 
             // implementation methods
-            for (LocalMethodInfo mi : methods) {
-                // we don't need to generate thrown exception attribute
+            for (MethodInfo mi : methods) {
+                // no need to generate thrown exception attribute
                 clb.withMethodBody(methodName, mi.desc, ACC_PUBLIC, cob -> cob
                         .trying(bcb -> {
                                     // return this.handleField.invokeExact(arguments...);
@@ -493,7 +501,7 @@ public class MethodHandleProxies {
 
         try {
             Class<?> type = x.getClass();
-            MethodHandle getter = new Lookup(type).findGetter(type, ORIGINAL_TARGET_NAME, MethodHandle.class)
+            MethodHandle getter = new Lookup(type).findGetter(type, TARGET_NAME, MethodHandle.class)
                                                   .asType(MT_MethodHandle_Object);
             return (MethodHandle) getter.invokeExact(x);
         } catch (Throwable ex) {
@@ -515,7 +523,7 @@ public class MethodHandleProxies {
 
         try {
             Class<?> type = x.getClass();
-            MethodHandle originalTypeField = new Lookup(type).findStaticGetter(type, ORIGINAL_TYPE_NAME, Class.class);
+            MethodHandle originalTypeField = new Lookup(type).findStaticGetter(type, TYPE_NAME, Class.class);
             return (Class<?>) originalTypeField.invokeExact();
         } catch (Throwable e) {
             throw uncaughtException(e);
