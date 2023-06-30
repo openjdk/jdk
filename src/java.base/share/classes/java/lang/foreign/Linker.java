@@ -416,8 +416,8 @@ import java.util.stream.Stream;
  * The native linker only supports linking the specialized form of a variadic function. A variadic function in its specialized
  * form can be linked using a function descriptor describing the specialized form. Additionally, the
  * {@link Linker.Option#firstVariadicArg(int)} linker option must be provided to indicate the first variadic parameter in
- * the parameter list. The corresponding argument layout, and all following argument layouts in the specialized function
- * descriptor, are called <em>variadic argument layouts</em>. For a prototype-less function, the index passed to
+ * the parameter list. The corresponding argument layout (if any), and all following argument layouts in the specialized
+ * function descriptor, are called <em>variadic argument layouts</em>. For a prototype-less function, the index passed to
  * {@link Linker.Option#firstVariadicArg(int)} should always be {@code 0}.
  * <p>
  * The native linker will reject an attempt to link a specialized function descriptor with any variadic argument layouts
@@ -644,8 +644,23 @@ public sealed interface Linker permits AbstractLinker {
             permits LinkerOptions.LinkerOptionImpl {
 
         /**
-         * {@return a linker option used to denote the index of the first variadic argument layout in the
-         *          function descriptor associated with a downcall linkage request}
+         * {@return a linker option used to denote the index indicating the start of the variadic arguments passed to the
+         *          function described by the function descriptor associated with a downcall linkage request}
+         * <p>
+         * The {@code index} value must conform to {@code 0 <= index <= N}, where {@code N} is the number of argument
+         * layouts of the function descriptor used in conjunction with this linker option. When the {@code index} is:
+         * <ul>
+         * <li>{@code 0}, all arguments passed to the function are passed as variadic arguments</li>
+         * <li>{@code N}, none of the arguments passed to the function are passed as variadic arguments</li>
+         * <li>{@code n}, where {@code 0 < m < N}, the arguments {@code m..N} are passed as variadic arguments</li>
+         * </ul>
+         * It is important to always use this linker option when linking a <a href=Linker.html#variadic-funcs>variadic
+         * function</a>, even if no variadic argument is passed (the second case in the list
+         * above), as this might still affect the calling convention on certain platforms.
+         *
+         * @implNote The index value is validated when making a linkage request, which is when the function descriptor
+         *           against which the index is validated is available.
+         *
          * @param index the index of the first variadic argument layout in the function descriptor associated
          *              with a downcall linkage request.
          */

@@ -172,7 +172,7 @@ public:
   uint get_exec_offset(uint i) { assert(i < _len, "oob"); return *adr(i); }
   uint get_cont_offset(uint i) { assert(i < _len, "oob"); return *(adr(i) + 1); }
 
-  int size_in_bytes() const { return len() == 0 ? 0 : ((2 * len() + 1) * sizeof(implicit_null_entry)); }
+  int size_in_bytes() const { return len() == 0 ? 0 : ((2 * len() + 1) * (int)sizeof(implicit_null_entry)); }
 
   void copy_to(nmethod* nm);
   void copy_bytes_to(address addr, int size);
