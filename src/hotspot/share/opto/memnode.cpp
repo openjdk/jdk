@@ -553,7 +553,7 @@ bool MemNode::detect_ptr_independence(Node* p1, AllocateNode* a1,
 // when searching stored value.
 // Otherwise return null.
 Node* LoadNode::find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const {
-  ArrayCopyNode* ac = find_array_copy_clone(phase, ld_alloc, mem);
+  ArrayCopyNode* ac = find_array_copy_clone(ld_alloc, mem);
   if (ac != nullptr) {
     Node* ld_addp = in(MemNode::Address);
     Node* src = ac->in(ArrayCopyNode::Src);
@@ -608,7 +608,7 @@ Node* LoadNode::find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node
   return nullptr;
 }
 
-ArrayCopyNode* MemNode::find_array_copy_clone(PhaseValues* phase, Node* ld_alloc, Node* mem) const {
+ArrayCopyNode* MemNode::find_array_copy_clone(Node* ld_alloc, Node* mem) const {
   if (mem->is_Proj() && mem->in(0) != nullptr && (mem->in(0)->Opcode() == Op_MemBarStoreStore ||
                                                mem->in(0)->Opcode() == Op_MemBarCPUOrder)) {
     if (ld_alloc != nullptr) {
@@ -1160,7 +1160,7 @@ Node* MemNode::can_see_stored_value(Node* st, PhaseValues* phase) const {
       // can create new nodes.  Think of it as lazily manifesting
       // virtually pre-existing constants.)
       if (memory_type() != T_VOID) {
-        if (ReduceBulkZeroing || find_array_copy_clone(phase, ld_alloc, in(MemNode::Memory)) == nullptr) {
+        if (ReduceBulkZeroing || find_array_copy_clone(ld_alloc, in(MemNode::Memory)) == nullptr) {
           // If ReduceBulkZeroing is disabled, we need to check if the allocation does not belong to an
           // ArrayCopyNode clone. If it does, then we cannot assume zero since the initialization is done
           // by the ArrayCopyNode.
@@ -1713,7 +1713,7 @@ Node* LoadNode::split_through_phi(PhaseGVN* phase) {
   return phi;
 }
 
-AllocateNode* LoadNode::is_new_object_mark_load(PhaseGVN *phase) const {
+AllocateNode* LoadNode::is_new_object_mark_load() const {
   if (Opcode() == Op_LoadX) {
     Node* address = in(MemNode::Address);
     AllocateNode* alloc = AllocateNode::Ideal_allocation(address);
@@ -2130,7 +2130,7 @@ const Type* LoadNode::Value(PhaseGVN* phase) const {
     }
   }
 
-  Node* alloc = is_new_object_mark_load(phase);
+  Node* alloc = is_new_object_mark_load();
   if (alloc != nullptr) {
     return TypeX::make(markWord::prototype().value());
   }
