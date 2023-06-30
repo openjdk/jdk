@@ -185,11 +185,6 @@ public sealed interface BufWriter
     int size();
 
     /**
-     * {@return a {@link java.nio.ByteBuffer ByteBuffer} view of the bytes in the buffer}
-     */
-    ByteBuffer asByteBuffer();
-
-    /**
      * Copy the contents of the buffer into a byte array.
      *
      * @param array the byte array

@@ -171,9 +171,8 @@ public final class BufWriterImpl implements BufWriter {
         return offset;
     }
 
-    @Override
     public ByteBuffer asByteBuffer() {
-        return ByteBuffer.wrap(elems, 0, offset);
+        return ByteBuffer.wrap(elems, 0, offset).slice();
     }
 
     @Override
