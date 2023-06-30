@@ -82,7 +82,7 @@ public class ConstantWriter extends BasicWriter {
                         println(() -> "// " + stringValue(info));
                     }
                     case DynamicConstantPoolEntry info -> {
-                        print(() -> "#" + info.bootstrap().bsmIndex() + ":#"
+                        print(() -> "#" + info.bootstrapMethodIndex() + ":#"
                                 + info.nameAndType().index());
                         tab();
                         println(() -> "// " + stringValue(info));
@@ -243,7 +243,7 @@ public class ConstantWriter extends BasicWriter {
                 + '.' + stringValue(info.nameAndType());
             case FloatEntry info -> info.floatValue()+ "f";
             case IntegerEntry info -> String.valueOf(info.intValue());
-            case DynamicConstantPoolEntry info -> "#" + info.bootstrap().bsmIndex()
+            case DynamicConstantPoolEntry info -> "#" + info.bootstrapMethodIndex()
                 + ":" + stringValue(info.nameAndType());
             case LongEntry info -> info.longValue()+ "l";
             case ModuleEntry info -> checkName(info.name().stringValue());
