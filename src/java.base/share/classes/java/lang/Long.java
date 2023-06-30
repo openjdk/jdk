@@ -506,7 +506,6 @@ public final class Long extends Number
      */
     static int getChars(long i, int index, byte[] buf) {
         long q;
-        int r;
         int charPos = index;
 
         boolean negative = (i < 0);
@@ -517,14 +516,13 @@ public final class Long extends Number
         // Get 2 digits/iteration using longs until quotient fits into an int
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
-            r = (int)((q * 100) - i);
-            i = q;
             charPos -= 2;
             Unsafe.getUnsafe().putShortUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    Integer.DigitPacks[r],
+                    Integer.DigitPacks[(int)((q * 100) - i)],
                     false);
+            i = q;
         }
 
         // Get 2 digits/iteration using ints
@@ -532,14 +530,13 @@ public final class Long extends Number
         int i2 = (int)i;
         while (i2 <= -100) {
             q2 = i2 / 100;
-            r  = (q2 * 100) - i2;
-            i2 = q2;
             charPos -= 2;
             Unsafe.getUnsafe().putShortUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    Integer.DigitPacks[r],
+                    Integer.DigitPacks[(q2 * 100) - i2],
                     false);
+            i2 = q2;
         }
 
         // We know there are at most two digits left at this point.
