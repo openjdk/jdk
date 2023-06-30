@@ -629,6 +629,43 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /**
+     * {@return the {@code Class} object associated with the
+     * {@linkplain #isPrimitive() primitive type} of the given name}
+     *
+     * @param primitiveName the name of the primitive type to find
+     *
+     * @throws NullPointerException if the argument is {@code null}
+     * @throws ClassNotFoundException is the argument name is not
+     * the name of a primitive type (or {@code void})
+     *
+     * @jls 4.2 Primitive Types and Values
+     * @jls 15.8.2 Class Literals
+     * @since 22
+     */
+    public static Class<?> forPrimitiveName(String primitiveName)
+        throws ClassNotFoundException {
+        return switch(primitiveName) {
+        // Integral types
+        case "int"     -> int.class;
+        case "long"    -> long.class;
+        case "short"   -> short.class;
+        case "char"    -> char.class;
+        case "byte"    -> byte.class;
+
+        // Floating-point types
+        case "float"   -> float.class;
+        case "double"  -> double.class;
+
+        // Other types
+        case "boolean" -> boolean.class;
+        case "void"    -> void.class;
+
+        default -> throw new ClassNotFoundException(primitiveName +
+                                                    " is not a primitive type");
+        };
+    }
+
+    /**
      * Creates a new instance of the class represented by this {@code Class}
      * object.  The class is instantiated as if by a {@code new}
      * expression with an empty argument list.  The class is initialized if it
