@@ -27,6 +27,7 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
+#include "gc/z/zList.inline.hpp"
 #include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "logging/log.hpp"

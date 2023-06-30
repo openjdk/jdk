@@ -30,6 +30,7 @@
 #include "cds/dumpAllocStats.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -413,6 +414,10 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   if (src_obj == nullptr) {
     return false;
   }
+  if (RegeneratedClasses::has_been_regenerated(src_obj)) {
+    // No need to copy it. We will later relocate it to point to the regenerated klass/method.
+    return false;
+  }
   remember_embedded_pointer_in_enclosing_obj(ref);
 
   FollowMode follow_mode = get_follow_mode(ref);
@@ -424,6 +429,14 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
       log_info(cds, hashtables)("Expanded _src_obj_table table to %d", _src_obj_table.table_size());
     }
   }
+
+#ifdef ASSERT
+  if (ref->msotype() == MetaspaceObj::MethodType) {
+    Method* m = (Method*)ref->obj();
+    assert(!RegeneratedClasses::has_been_regenerated((address)m->method_holder()),
+           "Should not archive methods in a class that has been regenerated");
+  }
+#endif
 
   assert(p->read_only() == src_info.read_only(), "must be");
 
@@ -437,6 +450,17 @@ bool ArchiveBuilder::gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read
   } else {
     return false;
   }
+}
+
+void ArchiveBuilder::record_regenerated_object(address orig_src_obj, address regen_src_obj) {
+  // Record the fact that orig_src_obj has been replaced by regen_src_obj. All calls to get_buffered_addr(orig_src_obj)
+  // should return the same value as get_buffered_addr(regen_src_obj).
+  SourceObjInfo* p = _src_obj_table.get(regen_src_obj);
+  assert(p != nullptr, "regenerated object should always be dumped");
+  SourceObjInfo orig_src_info(orig_src_obj, p);
+  bool created;
+  _src_obj_table.put_if_absent(orig_src_obj, orig_src_info, &created);
+  assert(created, "We shouldn't have archived the original copy of a regenerated object");
 }
 
 // Remember that we have a pointer inside ref->enclosing_obj() that points to ref->obj()
@@ -583,6 +607,8 @@ void ArchiveBuilder::dump_ro_metadata() {
     alloc_stats()->record_modules(ro_region()->top() - start, /*read_only*/true);
   }
 #endif
+
+  RegeneratedClasses::record_regenerated_objects();
 }
 
 void ArchiveBuilder::make_shallow_copies(DumpRegion *dump_region,
@@ -637,7 +663,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
   _alloc_stats.record(src_info->msotype(), int(newtop - oldtop), src_info->read_only());
 }
 
-// This is used by code that hand-assemble data structures, such as the LambdaProxyClassKey, that are
+// This is used by code that hand-assembles data structures, such as the LambdaProxyClassKey, that are
 // not handled by MetaspaceClosure.
 void ArchiveBuilder::write_pointer_in_buffer(address* ptr_location, address src_addr) {
   assert(is_in_buffer_space(ptr_location), "must be");
@@ -652,7 +678,8 @@ void ArchiveBuilder::write_pointer_in_buffer(address* ptr_location, address src_
 
 address ArchiveBuilder::get_buffered_addr(address src_addr) const {
   SourceObjInfo* p = _src_obj_table.get(src_addr);
-  assert(p != nullptr, "must be");
+  assert(p != nullptr, "src_addr " INTPTR_FORMAT " is used but has not been archived",
+         p2i(src_addr));
 
   return p->buffered_addr();
 }
