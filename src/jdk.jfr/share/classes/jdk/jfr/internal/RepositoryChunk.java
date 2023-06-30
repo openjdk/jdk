@@ -34,8 +34,6 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.Optional;
 
-import jdk.jfr.events.ErrorThrownEvent;
-import jdk.jfr.internal.MissingChunkFileError;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 public final class RepositoryChunk {
