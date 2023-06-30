@@ -1535,7 +1535,7 @@ final class StringUTF16 {
         };
         if (isBigEndian()) {
             for (int i = 0; i < digits.length; i++) {
-                digits[i] = digits[i] << 8;
+                digits[i] <<= 8;
             }
         }
         DigitPacksUTF16 = digits;
