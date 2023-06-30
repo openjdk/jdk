@@ -147,54 +147,56 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * Extension of LinkedTransferQueue to support Lifo (stack) mode.
      * Methods use tha "tail" field as top of stack (versus tail of
      * queue). Note that popped nodes are not self-linked because thay
-     * are not prone to unbounded garbage chains.
+     * are not prone to unbounded garbage chains. Also note that
+     * "async" mode is never used and not supported for synchronous
+     * transfers.
      */
     @SuppressWarnings("serial") // never serialized
     static final class Transferer<E> extends LinkedTransferQueue<E> {
 
         /**
          * Puts or takes an item with lifo ordering. Loops trying:
-         * * If top is already matched, pop and continue
+         *
+         * * If top exists and is already matched, pop and continue
          * * If top has complementary type, try to fulfill by CASing item,
          *    and pop (which will succeed unless already helped).
-         * * Else push a node and wait (unless immediate mode), unsplicing
-         *   the node if cancelled.
+         * * If no possible match, unless immediate mode, push a
+         *    node and wait, later unsplicing if cancelled.
          *
          * @param e the item or null for take
          * @param nanos timeout: 0 for immediate, Long.MAX_VALUE for untimed
          * @return an item if matched, else e
          */
         final Object xferLifo(Object e, long nanos) {
-            boolean haveData = (e != null), isData = false;
-            Object match, item = null;
+            boolean haveData = (e != null);
             for (TransferNode top = tail, s = null;;) {
-                if (top != null &&                // collapse dead nodes
-                    (isData = top.isData) != ((item = top.item) != null)) {
-                    TransferNode f = top.next, u = cmpExTail(top, f);
-                    top = (top == u) ? f : u;
-                } else if (top != null && isData != haveData) {
-                    if (top.cmpExItem(item, e) == item) {
-                        match = item;            // fulfill waiting node
+                boolean isData; Object match;
+                if (top != null) {
+                    if ((isData = top.isData) != ((match = top.item) != null)) {
+                        TransferNode n = top.next, u = cmpExTail(top, n);
+                        top = (top == u) ? n : u;     // collapse dead node
+                        continue;                     // retry with next top
+                    }
+                    if (isData != haveData) {         // try to fulfill
+                        if (top.cmpExItem(match, e) != match)
+                            continue;                 // lost race
                         cmpExTail(top, top.next);
                         LockSupport.unpark(top.waiter);
-                        break;
-                    }
-                } else if (nanos == 0L) {       // no fulfillers, no wait
-                    match = e;
-                    break;
-                } else {                        // push new node and wait
-                    if (s == null)
-                        s = new TransferNode(e, haveData);
-                    s.setNext(top);
-                    if (top == (top = cmpExTail(top, s))) {
-                        boolean spin = (top == null || top.waiter == null);
-                        if ((match = s.await(e, nanos, this, spin)) == e)
-                            unspliceLifo(s);    // cancelled
-                        break;
+                        return match;
                     }
                 }
+                if (nanos == 0L)                     // no fulfillers, no wait
+                    return e;
+                if (s == null)                       // push new node and wait
+                    s = new TransferNode(e, haveData);
+                s.setNext(top);
+                if (top == (top = cmpExTail(top, s))) {
+                    boolean maySpin = (top == null || top.waiter == null);
+                    if ((match = s.await(e, nanos, this, maySpin)) == e)
+                        unspliceLifo(s);             // cancelled
+                    return match;
+                }
             }
-            return match;
         }
 
         /**
@@ -593,11 +595,5 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      */
     private Object readResolve() {
         return new SynchronousQueue<E>(waitingProducers instanceof FifoWaitQueue);
-    }
-
-    static {
-        // Reduce the risk of rare disastrous classloading in first call to
-        // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
-        Class<?> ensureLoaded = LockSupport.class;
     }
 }

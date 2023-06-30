@@ -249,8 +249,7 @@ public class WhiteBox {
             }
         traversalAction.accept(q);
         int c = nodeCount(q);
-        if (n > 0)
-            assertEquals(q.size(), c - (q.contains(n - 1) ? 0 : 1));
+        checkNodeCount(c - (q.contains(n - 1) ? 0 : 1), q.size());
         for (int i = 0; i < n; i++)
             assertTrue(nulledOut.contains(i) ^ q.contains(i));
     }

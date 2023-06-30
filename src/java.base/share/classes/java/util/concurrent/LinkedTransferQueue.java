@@ -112,7 +112,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * handled by a single method (here, "xfer") with parameters
      * indicating whether to act as some form of offer, put, poll,
      * take, or transfer (each possibly with timeout), as described
-     * bwlow.
+     * below.
      *
      * A FIFO dual queue may be implemented using a variation of the
      * Michael & Scott (M&S) lock-free queue algorithm
@@ -266,12 +266,29 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * sweeps. However, the associated garbage chains terminate when
      * some successor ultimately falls off the head of the list and is
      * self-linked.
+     *
+     * *** Revision notes ***
+     *
+     * This version differs from previous releases as follows:
+     *
+     * * Class TransferNode replaces Qnode, with fields and methods
+     *   that apply to any match-based dual data structure, and now
+     *   used in other j.u.c classes. in particular, SynchronousQueue.
+     * * Blocking control (in class TransferQueue) accommodates
+     *   VirtualThreads and (perhaps virtualized) uniprocessors.
+     * * All fields of this class (LinkedTransferQueue) are
+     *   default-initializable (to null), allowing further
+     *   extension (in particular, SynchronousQueue.Transferer)
+     * * Head and tail fields are lazily initialized rather than
+     *   set to a dummy node, requiring accommodation in many
+     *   places (as well as adjustments in WhiteBox tests).
+     * * Reduced retries under heavy contention using MAX_SLACK and
+     *   method unslacken.
      */
 
     /**
      * Queue nodes. Uses type Object, not E, for items to allow
-     * cancellation and forgetting after use. Note that this class is
-     * statically imported by class SynchronousQueue.
+     * cancellation and forgetting after use.
      */
     static final class TransferNode implements ForkJoinPool.ManagedBlocker {
         volatile Object item;   // initially non-null if isData; CASed to match
@@ -384,17 +401,15 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             boolean timed = (nanos != Long.MAX_VALUE);
             long deadline = (timed) ? System.nanoTime() + nanos : 0L;
             Thread w = Thread.currentThread();
-            boolean canSpin = (!w.isVirtual() && spin);
+            boolean canSpin = (!w.isVirtual() && spin), u;
             int spins = (canSpin && !isUniprocessor) ? SPINS : 0;
             Object match;
             while ((match = item) == e && --spins >= 0)
                 Thread.onSpinWait();
             if (match == e) {
-                boolean u;
-                if (canSpin &&     // recheck for next time
-                    (u = (Runtime.getRuntime().
-                          availableProcessors() <= 1)) != isUniprocessor)
-                    isUniprocessor = u;
+                if (canSpin && isUniprocessor !=
+                    (u = (Runtime.getRuntime().availableProcessors() <= 1)))
+                    isUniprocessor = u;         // reset for next time
                 LockSupport.setCurrentBlocker(blocker);
                 waiter = w;
                 while ((match = item) == e) {
@@ -422,8 +437,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 clearWaiter();
                 LockSupport.setCurrentBlocker(null);
             }
-            if (e == null)
-                forgetItem();
             return match;
         }
 
@@ -457,6 +470,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
             }
+            // Reduce the risk of rare disastrous classloading in first call to
+            // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
+            Class<?> ensureLoaded = LockSupport.class;
         }
     }
 
@@ -465,7 +481,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * to reduce retries due to stalls in updating head and tail.  Must
      * be at least 4.
      */
-    private static final int MAX_SLACK = 1 << 6;
+    private static final int MAX_SLACK = 1 << 7;
 
     /**
      * The maximum number of estimated removal failures (sweepVotes)
@@ -486,13 +502,18 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     transient volatile TransferNode head;
 
     /**
-     * Unless empty, a node from which the last node on list (that is, the unique
-     * node with node.next == null), if one exists, can be reached
+     * Unless empty, a node from which the last node on list (that is,
+     * the unique node with node.next == null), if one exists, can be
+     * reached.
      * Non-invariants:
      * - tail may or may not be live
      * - tail may be the same as head
      * - tail may lag behind head, so need not be reachable from head
      * - tail.next may or may not be self-linked.
+     *
+     * This field is used by subclass SynchronousQueue.Transferer to
+     * record the top of a Lifo stack, with head always null, but
+     * otherwise maintaining the same properties.
      */
     transient volatile TransferNode tail;
 
@@ -547,18 +568,19 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         boolean haveData = (e != null);
         TransferNode p;                     // current traversal node
         TransferNode s = null;              // the enqueued npde, if needed
-        TransferNode prevTail = null;       // to avoid unbounded retries
+        TransferNode prevTail = null;       // to avoid unbounded tail retries
         restart: for (;;) {
             TransferNode h, t;
             if ((p = h = head) == null) {   // lazily initialize
-                if (nanos == 0L)            // no possible match
-                    break restart;
-                if ((h = cmpExHead(null,    // try to install as head
-                                   s = new TransferNode(e, haveData))) == null) {
-                    cmpExTail(null, s);
-                    break restart;
-                }
-                p = h;                      // lost initialization race
+                if (nanos == 0L)            // unless immediate
+                    return e;
+                if (s == null)
+                    s = new TransferNode(e, haveData);
+                if (cmpExHead(null, s) != null)
+                    continue;               // lost initialization race
+                if (nanos < 0L)
+                    return e;               // async mode
+                break restart;              // wait below
             }
             if ((t = tail) != null && haveData == t.isData && t != prevTail)
                 p = prevTail = t;           // start at tail
@@ -574,14 +596,16 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 }
                 if ((q = p.next) == null) { // no matches
                     if (nanos == 0L)
-                        break restart;
+                        return e;
                     if (s == null) {        // try to append node
                         s = new TransferNode(e, haveData);
                         q = p.next;         // recheck after allocation
                     }
                     if (q == null && (q = p.cmpExNext(null, s)) == null) {
-                        if (nanos > 0L || p != t)
+                        if (p != t)
                             cmpExTail(tail, s);
+                        if (nanos < 0L)
+                            return e;
                         break restart;
                     }
                 }
@@ -590,43 +614,33 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             }
             unslacken();                     // collapse before retrying
         }
-        Object match;
-        if (s == null || nanos <= 0L)
-            match = e;
-        else if ((match = s.await(e, nanos, this, // spin if near head
-                                  (p == null || p.waiter == null))) == e)
-            unsplice(p, s);                 // cancelled
+        Object match;                        // await match
+        boolean maySpin = (p == null || p.waiter == null); // at or near head
+        if ((match = s.await(e, nanos, this, maySpin)) == e)
+            unsplice(p, s);                  // cancelled
+        else if (match != null)
+            s.forgetItem();
         return match;
     }
 
     /**
-     * Collapses dead nodes from head and tail. Called before
+     * Incrementally advances head and tail if possible. Called before
      * retraversals and during unsplices to reduce retries due to
      * stalled head and tail updates.
      */
     private void unslacken() {
-        TransferNode h, t, p;
+        TransferNode h, t, s, n, u;
         if ((h = head) != null && !h.isLive() &&
-            (p = h.next) != null && p != h) {  // collapse head
-            for (TransferNode n; (n = p.next) != p; p = n) {
-                if (n == null || p.isLive()) {
-                    if (cmpExHead(h, p) == h) {
-                        if (n == null)         // absorb tail
-                            cmpExTail(tail, p);
-                        h.forgetNext();
-                    }
-                    break;
-                }
-            }
+            (s = h.next) != null && s != h) { // try to advance by 2
+            if (!s.isLive() && (n = s.next) != null && n != s &&
+                !(s = n).isLive() && (n = s.next) != null && n != s)
+                s = n;
+            tryAdvanceHead(h, s);
         }
-        if ((t = tail) != null) {              // help collapse tail
-            for (TransferNode q = t, n; (n = q.next) != q; q = n) {
-                if (n == null) {
-                    if (q != t)
-                        cmpExTail(t, q);
-                    break;
-                }
-            }
+        if ((t = tail) != null && (s = t.next) != null && s != t) {
+            if (!s.isLive() && (n = s.next) != null)
+                s = (s == (u = t.cmpExNext(s, n))) ? n : u;
+            cmpExTail(t, s); // advance by 2 if can unlink dead node
         }
     }
 
@@ -656,11 +670,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             TransferNode n, u, h;
             if (s.isLive())
                 p = s;
-            else if ((n = s.next) == null) {
-                if ((h = head) != null && s == h.next)
-                    cmpExTail(s, h);       // absorb tail as head
+            else if ((n = s.next) == null)
                 break;
-            }
             else if (s == n)               // stale
                 p = head;
             else                           // unlink
@@ -701,8 +712,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * Tries to match the given object only if nonnull and p
-     * is a data node. Signals waiter on success.
+     * Tries to match the given object only if p is a data
+     * node. Signals waiter on success.
      */
     final boolean tryMatchData(TransferNode p, Object x) {
         if (p != null && p.isData &&
@@ -1617,9 +1628,5 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         } catch (ReflectiveOperationException e) {
             throw new ExceptionInInitializerError(e);
         }
-
-        // Reduce the risk of rare disastrous classloading in first call to
-        // LockSupport.park: https://bugs.openjdk.org/browse/JDK-8074773
-        Class<?> ensureLoaded = LockSupport.class;
     }
 }
