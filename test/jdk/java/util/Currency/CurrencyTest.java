@@ -78,7 +78,7 @@ public class CurrencyTest {
             return Stream.of("USD", "EUR", "GBP", "JPY", "CNY", "CHF");
         }
 
-        // Calling getInstance() with an illegal name should throw an IAE
+        // Calling getInstance() with an invalid currency code should throw an IAE
         @ParameterizedTest
         @MethodSource("invalidCurrencies")
         public void invalidCurrencyTest(String currencyCode) {
@@ -238,8 +238,9 @@ public class CurrencyTest {
                 Arguments.of("BHD", 3), Arguments.of("IQD", 3),
                 Arguments.of("JOD", 3), Arguments.of("KWD", 3),
                 Arguments.of("LYD", 3), Arguments.of("OMR", 3),
-                Arguments.of("TND", 3), Arguments.of("TRL", 0), // Turkish Lira
-                Arguments.of("TRY", 2)
+                // Old and New Turkish Lira
+                Arguments.of("TRL", 0), Arguments.of("TRY", 2),
+                Arguments.of("TND", 3)
         );
     }
 
@@ -318,7 +319,8 @@ public class CurrencyTest {
         Currency currency1 = Currency.getInstance(currencyCode);
         Currency currency2 = Currency.getInstance(currencyCode);
         assertEquals(currency1, currency2, "Didn't get same instance for same currency code");
-        assertEquals(currency1.getCurrencyCode(), currencyCode, "Currency code changed");
+        assertEquals(currency1.getCurrencyCode(), currencyCode, "getCurrencyCode()" +
+                " did not return the expected value");
     }
 
     // Ensures the getDefaultFractionDigits() method returns the expected amount
