@@ -28,15 +28,37 @@ class EscapeInInitializer {
         return 42;
     }
 
+    static class Scope {
+      public int kind;
+      final Scope parent;
+      final Scope compilationUnitScope;
+
+      // https://github.com/testforstephen/eclipse.jdt.core/blob/c74a21fabed6931812aac1d1cc3b5b09690e8c96/org.eclipse.jdt.core/compiler/org/eclipse/jdt/internal/compiler/lookup/Scope.java#L159C86-L159C106
+      public Scope(int kind, Scope parent) {
+        this.kind = kind;
+        this.parent = parent;
+        this.compilationUnitScope = (parent == null ? this : parent.compilationUnitScope());
+      }
+
+      public Scope compilationUnitScope() {
+        return new Scope(0, null);
+      }
+    }
+
     static void test(int i) {
         var kase = new EscapeInInitializer();
         var kase2 = new EscapeInInitializer(i);
         var kase3 = new EscapeInInitializer(0 == (i % 100));
     }
 
+    static void test2(int i) {
+        Scope parent = new Scope(1, null);
+        var kase = new Scope(i, 0 == (i % 100) ? null : parent);
+    }
     public static void main(String[] args) {
         for (int i = 0; i < 30_000; ++i) {
             test(i);
+            test2(i);
         }
     }
 }
