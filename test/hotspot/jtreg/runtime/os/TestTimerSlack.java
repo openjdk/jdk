@@ -30,7 +30,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 /**
  * @test
  * @summary Check that timer slack options work
- * requires os.family == "linux"
+ * @requires os.family == "linux"
  * @requires vm.flagless
  * @library /test/lib
  * @run driver TestTimerSlack
