@@ -514,15 +514,17 @@ public final class Long extends Number
             i = -i;
         }
 
-        Unsafe unsafe = Unsafe.getUnsafe();
-
         // Get 2 digits/iteration using longs until quotient fits into an int
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
             r = (int)((q * 100) - i);
             i = q;
             charPos -= 2;
-            unsafe.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, Integer.DigitPacks[r], false);
+            Unsafe.getUnsafe().putShortUnaligned(
+                    buf,
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
+                    Integer.DigitPacks[r],
+                    false);
         }
 
         // Get 2 digits/iteration using ints
@@ -533,13 +535,21 @@ public final class Long extends Number
             r  = (q2 * 100) - i2;
             i2 = q2;
             charPos -= 2;
-            unsafe.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, Integer.DigitPacks[r], false);
+            Unsafe.getUnsafe().putShortUnaligned(
+                    buf,
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
+                    Integer.DigitPacks[r],
+                    false);
         }
 
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
-            unsafe.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, Integer.DigitPacks[-i2], false);
+            Unsafe.getUnsafe().putShortUnaligned(
+                    buf,
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
+                    Integer.DigitPacks[-i2],
+                    false);
         } else {
             buf[--charPos] = (byte) ('0' - i2);
         }
