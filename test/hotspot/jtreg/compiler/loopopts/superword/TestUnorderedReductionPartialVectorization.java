@@ -59,7 +59,7 @@ public class TestUnorderedReductionPartialVectorization {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.OR_REDUCTION_V, "> 0",},
         applyIfCPUFeatureOr = {"avx2", "true"})
     static long test1(int[] data, long sum) {

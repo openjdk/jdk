@@ -149,7 +149,7 @@ public class TestUnorderedReduction {
     }
 
     @Test
-    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0",
                   IRNode.MUL_VI, "> 0",
                   IRNode.ADD_VI, "= 0", // reduction not moved out of loop
                   IRNode.ADD_REDUCTION_VI, "> 0",},
