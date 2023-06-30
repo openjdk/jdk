@@ -623,8 +623,6 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     return false;
   }
 
-  bool step_multiply = !step_val->is_con() || !is_power_of_2(step_val->get_con());
-
   if (!arch_supports_vector(Op_AddVB, num_elem, elem_bt, VecMaskNotUsed)           ||
       !arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)            ||
       !arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed) ||
@@ -639,6 +637,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     return false;
   }
 
+  bool step_multiply = !step_val->is_con() || !is_power_of_2(step_val->get_con());
   if(step_multiply) {
     if (!arch_supports_vector(Op_MulVB, num_elem, elem_bt, VecMaskNotUsed)) {
       return false;
@@ -652,7 +651,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   const Type * type_bt = Type::get_const_basic_type(elem_bt);
   const TypeVect * vt  = TypeVect::make(type_bt, num_elem);
 
-  Node* res =  gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), vt));
+  Node* res = gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), vt));
 
   Node* start = argument(4);
   Node* step  = argument(5);
