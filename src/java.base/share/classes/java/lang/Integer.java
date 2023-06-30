@@ -415,38 +415,12 @@ public final class Integer extends Number
         } while (charPos > 0);
     }
 
-    static final byte[] DigitTens = {
-        '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
-        '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
-        '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
-        '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
-        '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
-        '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
-        '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
-        '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
-        '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
-        '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
-        } ;
-
-    static final byte[] DigitOnes = {
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-        } ;
-
     /**
      * Each element of the array represents the packaging of two ascii characters based on little endian:<p>
      * <pre>
-     *       0 -> '0' | ('0' << 8) -> 0x3030
-     *       1 -> '1' | ('0' << 8) -> 0x3130
-     *       2 -> '2' | ('0' << 8) -> 0x3230
+     *      00 -> '0' | ('0' << 8) -> 0x3030
+     *      01 -> '1' | ('0' << 8) -> 0x3130
+     *      02 -> '2' | ('0' << 8) -> 0x3230
      *
      *     ...
      *
@@ -543,23 +517,21 @@ public final class Integer extends Number
             i = -i;
         }
 
-        Unsafe unsafe = Unsafe.getUnsafe();
-
         // Generate two digits per iteration
         while (i <= -100) {
             q = i / 100;
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            unsafe.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[r], false);
+            Unsafe.getUnsafe().putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[r], false);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
-            unsafe.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[-i], false);
+            Unsafe.getUnsafe().putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[-i], false);
         } else {
-            buf[--charPos] = DigitOnes[-i];
+            buf[--charPos] = (byte) ('0' - i);
         }
 
         if (negative) {

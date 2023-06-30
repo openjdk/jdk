@@ -32,10 +32,12 @@ import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.misc.Unsafe;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
+import jdk.internal.vm.annotation.Stable;
 
 import static java.lang.String.UTF16;
 import static java.lang.String.LATIN1;
@@ -1513,6 +1515,32 @@ final class StringUTF16 {
         }
     }
 
+    /**
+     * Integer.DigitPacks UTF16 version
+     */
+    @Stable
+    private static final int[] DigitPacksUTF16;
+    static {
+        int[] digits = new int[]{
+                0x300030, 0x310030, 0x320030, 0x330030, 0x340030, 0x350030, 0x360030, 0x370030, 0x380030, 0x390030,
+                0x300031, 0x310031, 0x320031, 0x330031, 0x340031, 0x350031, 0x360031, 0x370031, 0x380031, 0x390031,
+                0x300032, 0x310032, 0x320032, 0x330032, 0x340032, 0x350032, 0x360032, 0x370032, 0x380032, 0x390032,
+                0x300033, 0x310033, 0x320033, 0x330033, 0x340033, 0x350033, 0x360033, 0x370033, 0x380033, 0x390033,
+                0x300034, 0x310034, 0x320034, 0x330034, 0x340034, 0x350034, 0x360034, 0x370034, 0x380034, 0x390034,
+                0x300035, 0x310035, 0x320035, 0x330035, 0x340035, 0x350035, 0x360035, 0x370035, 0x380035, 0x390035,
+                0x300036, 0x310036, 0x320036, 0x330036, 0x340036, 0x350036, 0x360036, 0x370036, 0x380036, 0x390036,
+                0x300037, 0x310037, 0x320037, 0x330037, 0x340037, 0x350037, 0x360037, 0x370037, 0x380037, 0x390037,
+                0x300038, 0x310038, 0x320038, 0x330038, 0x340038, 0x350038, 0x360038, 0x370038, 0x380038, 0x390038,
+                0x300039, 0x310039, 0x320039, 0x330039, 0x340039, 0x350039, 0x360039, 0x370039, 0x380039, 0x390039
+        };
+        if (isBigEndian()) {
+            for (int i = 0; i < digits.length; i++) {
+                digits[i] = digits[i] << 8;
+            }
+        }
+        DigitPacksUTF16 = digits;
+    }
+
     static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
 
     // Used by trusted callers.  Assumes all necessary bounds checks have
@@ -1541,14 +1569,26 @@ final class StringUTF16 {
             q = i / 100;
             r = (q * 100) - i;
             i = q;
-            putChar(buf, --charPos, Integer.DigitOnes[r]);
-            putChar(buf, --charPos, Integer.DigitTens[r]);
+
+            charPos -= 2;
+            Unsafe.getUnsafe().putIntUnaligned(
+                    buf,
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
+                    DigitPacksUTF16[r],
+                    false);
         }
 
         // We know there are at most two digits left at this point.
-        putChar(buf, --charPos, Integer.DigitOnes[-i]);
+
         if (i < -9) {
-            putChar(buf, --charPos, Integer.DigitTens[-i]);
+            charPos -= 2;
+            Unsafe.getUnsafe().putIntUnaligned(
+                    buf,
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
+                    DigitPacksUTF16[-i],
+                    false);
+        } else {
+            putChar(buf, --charPos, '0' - i);
         }
 
         if (negative) {
@@ -1581,8 +1621,12 @@ final class StringUTF16 {
             q = i / 100;
             r = (int)((q * 100) - i);
             i = q;
-            putChar(buf, --charPos, Integer.DigitOnes[r]);
-            putChar(buf, --charPos, Integer.DigitTens[r]);
+            charPos -= 2;
+            Unsafe.getUnsafe().putIntUnaligned(
+                    buf,
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
+                    DigitPacksUTF16[r],
+                    false);
         }
 
         // Get 2 digits/iteration using ints
@@ -1592,14 +1636,25 @@ final class StringUTF16 {
             q2 = i2 / 100;
             r  = (q2 * 100) - i2;
             i2 = q2;
-            putChar(buf, --charPos, Integer.DigitOnes[r]);
-            putChar(buf, --charPos, Integer.DigitTens[r]);
+            charPos -= 2;
+            Unsafe.getUnsafe().putIntUnaligned(
+                    buf,
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
+                    DigitPacksUTF16[r],
+                    false);
         }
 
         // We know there are at most two digits left at this point.
-        putChar(buf, --charPos, Integer.DigitOnes[-i2]);
+
         if (i2 < -9) {
-            putChar(buf, --charPos, Integer.DigitTens[-i2]);
+            charPos -= 2;
+            Unsafe.getUnsafe().putIntUnaligned(
+                    buf,
+                    Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
+                    DigitPacksUTF16[-i2],
+                    false);
+        } else {
+            putChar(buf, --charPos, '0' - i2);
         }
 
         if (negative) {
