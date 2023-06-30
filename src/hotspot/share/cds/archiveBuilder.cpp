@@ -787,7 +787,7 @@ narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
   assert(DumpSharedSpaces, "sanity");
   k = get_buffered_klass(k);
   Klass* requested_k = to_requested(k);
-  address narrow_klass_base = _requested_static_archive_bottom - ArchiveHeapWriter::precomputed_narrow_klass_base_delta;
+  address narrow_klass_base = _requested_static_archive_bottom; // future encoding base == future mapping start
   const int narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
   return CompressedKlassPointers::encode_not_null(requested_k, narrow_klass_base, narrow_klass_shift);
 }

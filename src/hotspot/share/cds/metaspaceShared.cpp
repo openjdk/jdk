@@ -69,6 +69,7 @@
 #include "oops/oopHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.inline.hpp"
@@ -1146,8 +1147,8 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           address cds_base = (address)static_mapinfo->mapped_base();
           address ccs_end = (address)class_space_rs.end();
           assert(ccs_end > cds_base, "Sanity check");
-          address precomputed_narrow_klass_base = cds_base - static_mapinfo->narrow_klass_base_delta();
-          const int precomputed_narrow_klass_shift = static_mapinfo->narrow_klass_shift();
+          address precomputed_narrow_klass_base = cds_base;
+          const int precomputed_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
           CompressedKlassPointers::initialize_for_given_encoding(
             cds_base, ccs_end - cds_base, // Klass range
             precomputed_narrow_klass_base, precomputed_narrow_klass_shift // precomputed encoding, see ArchiveHeapWriter
