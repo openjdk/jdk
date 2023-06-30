@@ -27,7 +27,7 @@
  * @summary check whether the default implementation of
  *    CurrencyNameProvider.getDisplayName(String, Locale) throws appropriate
  *    exceptions when necessary.
- * @run junit CurrencyNameProviderTest
+ * @run junit CNPGetDisplayName
  */
 
 import java.util.Locale;
@@ -40,7 +40,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class CurrencyNameProviderTest {
+public class CNPGetDisplayName {
 
     static final CurrencyNameProvider cnp = new CurrencyNameProviderImpl();
 
