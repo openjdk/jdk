@@ -575,7 +575,7 @@ JvmtiEnv::SetEventNotificationMode(jvmtiEventMode mode, jvmtiEvent event_type, j
   if (event_type == JVMTI_EVENT_CLASS_FILE_LOAD_HOOK && enabled) {
     record_class_file_load_hook_enabled();
   }
-  JvmtiVTMSTransitionDisabler disabler(event_thread);
+  JvmtiVTMSTransitionDisabler disabler;
 
   if (event_thread == nullptr) {
     // Can be called at Agent_OnLoad() time with event_thread == nullptr
