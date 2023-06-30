@@ -2325,7 +2325,7 @@ public class IRNode {
             maxBytes = getMaxElementsForTypeOnX86(typeString, vmInfo);
         }
 
-	long maxVectorSize = vmInfo.getLongValue("MaxVectorSize");
+        long maxVectorSize = vmInfo.getLongValue("MaxVectorSize");
         TestFormat.checkNoReport(maxVectorSize > 0, "VMInfo: MaxVectorSize is not larger than zero");
         maxBytes = Math.min(maxBytes, maxVectorSize);
 
@@ -2360,7 +2360,7 @@ public class IRNode {
             maxBytes = avx512bw ? 64 : 32;
         }
 
-	return maxBytes;
+        return maxBytes;
     }
 
     /**

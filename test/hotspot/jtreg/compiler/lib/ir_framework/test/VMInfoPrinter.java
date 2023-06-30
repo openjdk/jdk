@@ -37,7 +37,7 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Prints some test VM info to the socket. 
+ * Prints some test VM info to the socket.
  */
 public class VMInfoPrinter {
     public static final String START_VM_INFO = "##### IRMatchingVMInfo - used by TestFramework #####";
