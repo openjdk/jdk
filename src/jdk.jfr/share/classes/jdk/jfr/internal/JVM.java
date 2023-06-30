@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -641,4 +641,11 @@ public final class JVM {
      * JVM runs in a container.
      */
     public native long hostTotalMemory();
+
+    /**
+     * Emit a jdk.DataLoss event for the specified amount of bytes.
+     *
+     * @param bytes number of bytes that were lost
+     */
+    public native void emitDataLoss(long bytes);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import static jdk.jfr.internal.LogTag.JFR;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.channels.FileChannel;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.StandardOpenOption;
 import java.security.AccessControlContext;
 import java.security.AccessController;
@@ -180,7 +181,7 @@ public final class PlatformRecording implements AutoCloseable {
                 close(); // remove if copied out
             } catch(IOException e) {
                 Logger.log(LogTag.JFR, LogLevel.ERROR,
-                           "Unable to complete I/O operation when dumping recording \"" + getName() + "\" (" + getId() + ")");
+                           "Unable to complete I/O operation when dumping recording \"" + getName() + "\" (" + getId() + ") " + e.getClass() + " " + e.getMessage());
             }
         } else {
             notifyIfStateChanged(newState, oldState);
@@ -718,19 +719,23 @@ public final class PlatformRecording implements AutoCloseable {
 
     public void dumpStopped(WriteableUserPath userPath) throws IOException {
         synchronized (recorder) {
-                userPath.doPrivilegedIO(() -> {
-                    try {
-                        transferChunks(userPath);
-                    } catch (java.nio.file.NoSuchFileException nsfe) {
-                        Logger.log(LogTag.JFR, LogLevel.ERROR, "Missing chunkfile when writing recording \"" + name + "\" (" + id + ") to " + userPath.getRealPathText() + ".");
-                        // if one chunkfile was missing, its likely more are missing
-                        removeNonExistantPaths();
-                        // and try the transfer again
-                        transferChunks(userPath);
-                    }
-                    return null;
-                });
+            transferChunksWithRetry(userPath);
         }
+    }
+
+    private void transferChunksWithRetry(WriteableUserPath userPath) throws IOException {
+        userPath.doPrivilegedIO(() -> {
+            try {
+                transferChunks(userPath);
+            } catch (NoSuchFileException nsfe) {
+                Logger.log(LogTag.JFR, LogLevel.ERROR, "Missing chunkfile when writing recording \"" + name + "\" (" + id + ") to " + userPath.getRealPathText() + ".");
+                // if one chunkfile was missing, its likely more are missing
+                removeNonExistantPaths();
+                // and try the transfer again
+                transferChunks(userPath);
+            }
+            return null;
+        });
     }
 
     private void transferChunks(WriteableUserPath userPath) throws IOException {
@@ -900,7 +905,15 @@ public final class PlatformRecording implements AutoCloseable {
             while (it.hasNext()) {
                 RepositoryChunk chunk = it.next();
                 if (chunk.isMissingFile()) {
-                    Logger.log(JFR, ERROR, chunk.missingChunkFileErrorMessage());
+                    String msg = "Chunkfile \"" + chunk.getFile() + "\" is missing. " +
+                                 "Data loss might occur from " + chunk.getStartTime();
+                    if (chunk.getEndTime() != null) {
+                        msg += " to " + chunk.getEndTime();
+                    }
+                    Logger.log(JFR, ERROR, msg);
+
+                    JVM.getJVM().emitDataLoss(chunk.getSize());
+
                     it.remove();
                     removed(chunk);
                 }

@@ -60,21 +60,25 @@ public final class RepositoryChunk {
         this.unFinishedRAF = SecuritySupport.createRandomAccessFile(chunkFile);
     }
 
-    void finish(Instant endTime) throws MissingChunkFileError, IOException {
+    boolean finish(Instant endTime) {
         try {
             unFinishedRAF.close();
-            this.size = SecuritySupport.getFileSize(chunkFile);
+            size = SecuritySupport.getFileSize(chunkFile);
             this.endTime = endTime;
             if (Logger.shouldLog(LogTag.JFR_SYSTEM, LogLevel.DEBUG)) {
                 Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "Chunk finished: " + chunkFile);
             }
+            return true;
         } catch (IOException e) {
-            Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + e.getClass() + " "+ e.getMessage());
-            if (this.isMissingFile()) {
-                throw new MissingChunkFileError(missingChunkFileErrorMessage(endTime));
+            final String reason;
+            if (isMissingFile()) {
+                reason = "Chunkfile \""+ getFile() + "\" is missing. " +
+                         "Data loss might occur from " + getStartTime() + " to " + endTime;
             } else {
-                throw e;
+                reason = e.getClass() + " " + e.getMessage();
             }
+            Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + reason);
+            return false;
         }
     }
 
@@ -182,21 +186,9 @@ public final class RepositoryChunk {
 
     boolean isMissingFile() {
         try {
-            if (!SecuritySupport.exists(chunkFile)) {
-                return true;
-            }
+            return !SecuritySupport.exists(chunkFile);
         } catch (IOException ioe) {
-            // ignore
+            return true;
         }
-        return false;
-    }
-
-    String missingChunkFileErrorMessage() {
-        return missingChunkFileErrorMessage(this.endTime);
-    }
-
-    private String missingChunkFileErrorMessage(Instant endTime) {
-        return "Chunkfile \""+ chunkFile.toString() + "\" is missing. " +
-            "Data loss might occur from " + startTime.toString() + (endTime != null ? " to " + endTime.toString() : "");
     }
 }

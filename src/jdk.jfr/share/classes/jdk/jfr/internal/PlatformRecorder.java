@@ -449,22 +449,20 @@ public final class PlatformRecorder {
     }
 
     private void finishChunk(RepositoryChunk chunk, Instant time, PlatformRecording ignoreMe) {
-        try {
-            chunk.finish(time);
+        if (chunk.finish(time)) {
             for (PlatformRecording r : getRecordings()) {
                 if (r != ignoreMe && r.getState() == RecordingState.RUNNING) {
                     r.appendChunk(chunk);
                 }
             }
-        } catch (MissingChunkFileError e) {
-            Logger.log(LogTag.JFR, LogLevel.ERROR, e.getMessage());
-            // With one chunkfile found missing, its likely more could've been removed too. Iterate through all recordings,
-            // and check for missing files. This will emit more error logs that can be seen in subsequent recordings.
-            for (PlatformRecording r : getRecordings()) {
-                r.removeNonExistantPaths();
+        } else {
+            if (chunk.isMissingFile()) {
+                // With one chunkfile found missing, its likely more could've been removed too. Iterate through all recordings,
+                // and check for missing files. This will emit more error logs that can be seen in subsequent recordings.
+                for (PlatformRecording r : getRecordings()) {
+                    r.removeNonExistantPaths();
+                }
             }
-        } catch (IOException e) {
-            Logger.log(LogTag.JFR, LogLevel.ERROR, "Finishing chunk failed: " + e.getClass().getName() + ", " + e.getMessage());
         }
         // Decrease initial reference count
         chunk.release();
