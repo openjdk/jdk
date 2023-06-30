@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -653,11 +653,12 @@ public abstract class ClassLoader {
      *
      * @apiNote
      * This method allows parallel capable class loaders to implement
-     * finer-grained locking scheme such that multiple threads may load classes
+     * finer-grained locking schemes such that multiple threads may load classes
      * concurrently without deadlocks.  For non-parallel-capable class loaders,
-     * the {@code ClassLoader} object is held during the class loading operations.
-     * Class loaders with non-hierarchical delegation should be {@linkplain
-     * #registerAsParallelCapable() registered as parallel capable} to prevent deadlocks.
+     * the {@code ClassLoader} object is synchronized on during the class loading
+     * operations.  Class loaders with non-hierarchical delegation should be
+     * {@linkplain #registerAsParallelCapable() registered as parallel capable}
+     * to prevent deadlocks.
      *
      * @param  className
      *         The name of the to-be-loaded class
