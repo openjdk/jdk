@@ -36,11 +36,10 @@ static int icache_flush(address addr, int lines, int magic) {
   // To make a store to instruction memory visible to all RISC-V harts,
   // the writing hart has to execute a data FENCE before requesting that
   // all remote RISC-V harts execute a FENCE.I.
-  //
-  // No sush assurance is defined at the interface level of the builtin
-  // method, and so we should make sure it works.
 
-  // syscall implicit data fence.
+  // We need to make sure stores happens before the I/D cache synchronization.
+  __asm__ volatile("fence rw, rw" : : : "memory");
+
   RiscvFlushIcache::flush((uintptr_t)addr, ((uintptr_t)lines) << ICache::log2_line_size);
 
   return magic;
