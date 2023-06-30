@@ -24,8 +24,8 @@
 /*
  * @test
  * @bug 4512215 4818420 4819436 8310923
- * @summary Test some minor undefined currencies.
- * @run junit MinorUndefinedCodes
+ * @summary Test currencies without minor units.
+ * @run junit NoMinorUnitCurrenciesTest
  */
 
 import java.util.Currency;
@@ -37,7 +37,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class MinorUndefinedCodes {
+public class NoMinorUnitCurrenciesTest {
 
     /**
      * Spot check some minor undefined codes and ensure their default fraction
