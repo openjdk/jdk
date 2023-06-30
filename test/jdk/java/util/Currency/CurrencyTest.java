@@ -238,9 +238,10 @@ public class CurrencyTest {
                 Arguments.of("BHD", 3), Arguments.of("IQD", 3),
                 Arguments.of("JOD", 3), Arguments.of("KWD", 3),
                 Arguments.of("LYD", 3), Arguments.of("OMR", 3),
+                Arguments.of("TND", 3),
+
                 // Old and New Turkish Lira
-                Arguments.of("TRL", 0), Arguments.of("TRY", 2),
-                Arguments.of("TND", 3)
+                Arguments.of("TRL", 0), Arguments.of("TRY", 2)
         );
     }
 
