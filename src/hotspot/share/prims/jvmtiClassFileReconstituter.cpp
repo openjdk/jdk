@@ -399,7 +399,7 @@ void JvmtiClassFileReconstituter::write_bootstrapmethod_attribute() {
     u2 num_bootstrap_arguments = cpool()->operand_argument_count_at(n);
     length += sizeof(u2); // bootstrap_method_ref
     length += sizeof(u2); // num_bootstrap_arguments
-    length += (int)sizeof(u2) * num_bootstrap_arguments; // bootstrap_arguments[num_bootstrap_arguments]
+    length += (u4)sizeof(u2) * num_bootstrap_arguments; // bootstrap_arguments[num_bootstrap_arguments]
   }
   write_u4(length);
 

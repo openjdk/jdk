@@ -80,7 +80,7 @@ JvmtiRawMonitor::~JvmtiRawMonitor() {
 
 bool
 JvmtiRawMonitor::is_valid() {
-  uint64_t value = 0;
+  jlong value = 0;
 
   // This object might not be a JvmtiRawMonitor so we can't assume
   // the _magic field is properly aligned. Get the value in a safe
