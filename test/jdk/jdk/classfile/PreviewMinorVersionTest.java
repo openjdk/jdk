@@ -33,6 +33,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 /*
  * @test
+ * @bug 8311172
  * @run junit PreviewMinorVersionTest
  * @summary Ensures Classfile.PREVIEW_MINOR_VERSION equals that of classes with
  *          preview minor version from ClassModel::minorVersion
