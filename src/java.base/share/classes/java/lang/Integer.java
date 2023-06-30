@@ -543,19 +543,23 @@ public final class Integer extends Number
             i = -i;
         }
 
+        Unsafe unsafe = Unsafe.getUnsafe();
+
         // Generate two digits per iteration
         while (i <= -100) {
             q = i / 100;
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            Unsafe.getUnsafe().putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[r]);
+            unsafe.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[r], false);
         }
 
         // We know there are at most two digits left at this point.
-        buf[--charPos] = DigitOnes[-i];
         if (i < -9) {
-            buf[--charPos] = DigitTens[-i];
+            charPos -= 2;
+            unsafe.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[-i], false);
+        } else {
+            buf[--charPos] = DigitOnes[-i];
         }
 
         if (negative) {
