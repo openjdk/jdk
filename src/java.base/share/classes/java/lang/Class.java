@@ -170,7 +170,7 @@ import sun.reflect.misc.ReflectUtil;
  * may be hidden interfaces.
  *
  * The {@linkplain #getName() name of a hidden class or interface} is
- * not a <a href="ClassLoader.html#binary-name">binary name</a>,
+ * not a {@linkplain ClassLoader##binary-name binary name},
  * which means the following:
  * <ul>
  * <li>A hidden class or interface cannot be referenced by the constant pools
@@ -542,8 +542,8 @@ public final class Class<T> implements java.io.Serializable,
 
 
     /**
-     * Returns the {@code Class} with the given <a href="ClassLoader.html#binary-name">
-     * binary name</a> in the given module.
+     * Returns the {@code Class} with the given {@linkplain ClassLoader##binary-name
+     * binary name} in the given module.
      *
      * <p> This method attempts to locate and load the class or interface.
      * It does not link the class, and does not run the class initializer.
@@ -566,7 +566,7 @@ public final class Class<T> implements java.io.Serializable,
      * loads a class in another module.
      *
      * @param  module   A module
-     * @param  name     The <a href="ClassLoader.html#binary-name">binary name</a>
+     * @param  name     The {@linkplain ClassLoader##binary-name binary name}
      *                  of the class
      * @return {@code Class} object of the given name defined in the given module;
      *         {@code null} if not found.
@@ -894,11 +894,11 @@ public final class Class<T> implements java.io.Serializable,
      * not an array class, then:
      * <ul>
      * <li> If the class or interface is not {@linkplain #isHidden() hidden},
-     *      then the <a href="ClassLoader.html#binary-name">binary name</a>
+     *      then the {@linkplain ClassLoader##binary-name binary name}
      *      of the class or interface is returned.
      * <li> If the class or interface is hidden, then the result is a string
      *      of the form: {@code N + '/' + <suffix>}
-     *      where {@code N} is the <a href="ClassLoader.html#binary-name">binary name</a>
+     *      where {@code N} is the {@linkplain ClassLoader##binary-name binary name}
      *      indicated by the {@code class} file passed to
      *      {@link java.lang.invoke.MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      *      Lookup::defineHiddenClass}, and {@code <suffix>} is an unqualified name.
@@ -918,7 +918,7 @@ public final class Class<T> implements java.io.Serializable,
      * <tr><th scope="row"> {@code boolean} <td style="text-align:center"> {@code Z}
      * <tr><th scope="row"> {@code byte}    <td style="text-align:center"> {@code B}
      * <tr><th scope="row"> {@code char}    <td style="text-align:center"> {@code C}
-     * <tr><th scope="row"> class or interface with <a href="ClassLoader.html#binary-name">binary name</a> <i>N</i>
+     * <tr><th scope="row"> class or interface with {@linkplain ClassLoader##binary-name binary name} <i>N</i>
      *                                      <td style="text-align:center"> {@code L}<em>N</em>{@code ;}
      * <tr><th scope="row"> {@code double}  <td style="text-align:center"> {@code D}
      * <tr><th scope="row"> {@code float}   <td style="text-align:center"> {@code F}
@@ -945,6 +945,9 @@ public final class Class<T> implements java.io.Serializable,
      * (new int[3][4][5][6][7][8][9]).getClass().getName()
      *     returns "[[[[[[[I"
      * </pre></blockquote>
+     *
+     * @apiNote
+     * Distinct class objects can have the same name but different class loaders.
      *
      * @return  the name of the class, interface, or other entity
      *          represented by this {@code Class} object.
@@ -4534,7 +4537,7 @@ public final class Class<T> implements java.io.Serializable,
      *      <blockquote>
      *      {@code "L" +} <em>N</em> {@code + "." + <suffix> + ";"}
      *      </blockquote>
-     *      where <em>N</em> is the <a href="ClassLoader.html#binary-name">binary name</a>
+     *      where <em>N</em> is the {@linkplain ClassLoader##binary-name binary name}
      *      encoded in internal form indicated by the {@code class} file passed to
      *      {@link MethodHandles.Lookup#defineHiddenClass(byte[], boolean, MethodHandles.Lookup.ClassOption...)
      *      Lookup::defineHiddenClass}, and {@code <suffix>} is an unqualified name.
@@ -4561,11 +4564,6 @@ public final class Class<T> implements java.io.Serializable,
      * {@code void}, then the result is a field descriptor string which
      * is a one-letter code corresponding to a primitive type or {@code void}
      * ({@code "B", "C", "D", "F", "I", "J", "S", "Z", "V"}) (JVMS {@jvms 4.3.2}).
-     *
-     * @apiNote
-     * This is not a strict inverse of {@link #forName};
-     * distinct classes which share a common name but have different class loaders
-     * will have identical descriptor strings.
      *
      * @return the descriptor string for this {@code Class} object
      * @jvms 4.3.2 Field Descriptors
