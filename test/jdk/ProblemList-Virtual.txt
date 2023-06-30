@@ -48,6 +48,8 @@ java/lang/ScopedValue/StressStackOverflow.java#default 8309646 linux-all
 
 javax/management/remote/mandatory/connection/DeadLockTest.java 8309069 windows-x64
 
+javax/management/remote/mandatory/connection/ConnectionTest.java 8308352 windows-x64
+
 ##########
 ## Tests incompatible with virtual test thread factory.
 ## There is no goal to run all test with virtual test thread factory.
