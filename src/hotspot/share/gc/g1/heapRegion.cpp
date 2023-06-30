@@ -271,9 +271,10 @@ void HeapRegion::report_region_type_change(G1HeapRegionTraceType::Type to) {
   _garbage_bytes = 0;
 
   if (during_concurrent_start) {
-    // Self-forwarding marks all objects. Adjust TAMS so that these marks are
-    // below it. We might undo this decision later if we find that we want to
-    // evacuate that region asap.
+    // By default, assume that evacuation failed regions will be part of the
+    // marking, so update the TAMS to prepare for marking through them. We might
+    // undo this decision later if we find that we want to evacuate that region
+    // instead.
     set_top_at_mark_start(top());
   } else {
     // Outside of the concurrent start pause all regions that had an evacuation

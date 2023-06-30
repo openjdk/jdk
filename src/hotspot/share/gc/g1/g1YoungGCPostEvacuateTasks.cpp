@@ -350,11 +350,13 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionData : public 
       // previously set eagerly. The marking information on the bitmap is also only
       // required in a Concurrent Start pause for non-retained regions.
       bool clear_mark_data = !g1h->collector_state()->in_concurrent_start_gc() ||
-                             g1h->policy()->retain_evac_failed_region(r);
+                             g1h->policy()->should_retain_evac_failed_region(r);
 
       if (clear_mark_data) {
         g1h->clear_bitmap_for_region(r);
         r->reset_top_at_mark_start();
+        // Although we only update statistics for evacuation failed regions during
+        // the concurrent start pause, for simplicity always clear.
         cm->clear_statistics(r);
       } else {
         assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->top_at_mark_start()) != r->top_at_mark_start(),
@@ -572,7 +574,7 @@ class FreeCSetClosure : public HeapRegionClosure {
                                       1,
                                       G1GCPhaseTimes::RestoreRetainedRegionsFailedNum);
 
-    bool retain_region = _g1h->policy()->retain_evac_failed_region(r);
+    bool retain_region = _g1h->policy()->should_retain_evac_failed_region(r);
     // Update the region state due to the failed evacuation.
     r->handle_evacuation_failure(retain_region);
     assert(r->is_old(), "must already be relabelled as old");

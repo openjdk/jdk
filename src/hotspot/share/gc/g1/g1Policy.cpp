@@ -644,7 +644,7 @@ void G1Policy::record_concurrent_refinement_stats(size_t pending_cards,
   }
 }
 
-bool G1Policy::retain_evac_failed_region(uint index) const {
+bool G1Policy::should_retain_evac_failed_region(uint index) const {
   size_t live_bytes= _g1h->region_at(index)->live_bytes();
 
   assert(live_bytes != 0,

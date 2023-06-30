@@ -409,10 +409,10 @@ public:
   void record_concurrent_refinement_stats(size_t pending_cards,
                                           size_t thread_buffer_cards);
 
-  bool retain_evac_failed_region(HeapRegion* r) const {
-    return retain_evac_failed_region(r->hrm_index());
+  bool should_retain_evac_failed_region(HeapRegion* r) const {
+    return should_retain_evac_failed_region(r->hrm_index());
   }
-  bool retain_evac_failed_region(uint index) const;
+  bool should_retain_evac_failed_region(uint index) const;
 
 private:
   //
