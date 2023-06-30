@@ -195,6 +195,19 @@ void* Klass::operator new(size_t size, ClassLoaderData* loader_data, size_t word
   return Metaspace::allocate(loader_data, word_size, MetaspaceObj::ClassType, THREAD);
 }
 
+void Klass::deallocate_contents(ClassLoaderData* loader_data) {
+  // Orphan the mirror first, CMS thinks it's still live.
+  if (java_mirror() != nullptr) {
+    java_lang_Class::set_klass(java_mirror(), nullptr);
+  }
+
+  // Also remove mirror from handles
+  loader_data->remove_handle(_java_mirror);
+
+  // Need to take this class off the class loader data list.
+  loader_data->remove_class(this);
+}
+
 // "Normal" instantiation is preceded by a MetaspaceObj allocation
 // which zeros out memory - calloc equivalent.
 // The constructor is also used from CppVtableCloner,

@@ -177,30 +177,27 @@ Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
     if (dim == n)
       return this;
 
-  // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == nullptr) {
-
-    ResourceMark rm;
-    JavaThread *jt = THREAD;
-    {
-      // Atomic create higher dimension and link into list
-      MutexLocker mu(THREAD, MultiArray_lock);
-
-      if (higher_dimension() == nullptr) {
-        Klass* oak = ObjArrayKlass::allocate_objArray_klass(
-              class_loader_data(), dim + 1, this, CHECK_NULL);
-        ObjArrayKlass* h_ak = ObjArrayKlass::cast(oak);
-        h_ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(h_ak);
-        assert(h_ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
+    bool allocated = false;
+    Klass* oak = ObjArrayKlass::allocate_objArray_klass(
+          class_loader_data(), dim + 1, this, &allocated, CHECK_NULL);
+    ObjArrayKlass* new_oak = ObjArrayKlass::cast(oak);
+    new_oak->set_lower_dimension(this);
+    // use 'release' to pair with lock-free load
+    if (!Atomic::replace_if_null(higher_dimension_addr(), new_oak)) {
+      if (allocated) {
+        log_info(class, bot)("type ak oak = " INTPTR_FORMAT " Thread = " INTPTR_FORMAT "\n", p2i(new_oak), p2i(THREAD));
+        assert( higher_dimension_acquire() != new_oak, " ");
+        class_loader_data()->add_to_deallocate_list(new_oak);
+        //MetadataFactory::free_metadata(class_loader_data(), new_oak);
       }
     }
+    assert(new_oak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
   }
 
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass* new_oak = ObjArrayKlass::cast(higher_dimension_acquire());
   THREAD->check_possible_safepoint();
-  return h_ak->array_klass(n, THREAD);
+  return new_oak->array_klass(n, THREAD);
 }
 
 // return existing klass of array holding typeArrays
@@ -215,8 +212,8 @@ Klass* TypeArrayKlass::array_klass_or_null(int n) {
     return nullptr;
   }
 
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
-  return h_ak->array_klass_or_null(n);
+  ObjArrayKlass* ak = ObjArrayKlass::cast(higher_dimension_acquire());
+  return ak->array_klass_or_null(n);
 }
 
 Klass* TypeArrayKlass::array_klass(TRAPS) {

@@ -55,7 +55,7 @@ ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klas
 }
 
 ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_data,
-                                                      int n, Klass* element_klass, TRAPS) {
+                                                      int n, Klass* element_klass, bool* allocated, TRAPS) {
 
   // Eagerly allocate the direct array supertype.
   Klass* super_klass = nullptr;
@@ -79,7 +79,6 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
         // Oops.  Not allocated yet.  Back out, allocate it, and retry.
         Klass* ek = nullptr;
         {
-          MutexUnlocker mu(MultiArray_lock);
           super_klass = element_super->array_klass(CHECK_NULL);
           for( int i = element_supers->length()-1; i >= 0; i-- ) {
             Klass* elem_super = element_supers->at(i);
@@ -120,6 +119,9 @@ ObjArrayKlass* ObjArrayKlass::allocate_objArray_klass(ClassLoaderData* loader_da
   // Initialize instance variables
   ObjArrayKlass* oak = ObjArrayKlass::allocate(loader_data, n, element_klass, name, CHECK_NULL);
 
+  if (allocated != nullptr) {
+    *allocated = true;
+  }
   ModuleEntry* module = oak->module();
   assert(module != nullptr, "No module entry for array");
 
@@ -316,28 +318,26 @@ Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
 
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == nullptr) {
+    bool allocated = false;
+    // Create multi-dim klass object and link them together
+    Klass* k =
+      ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, &allocated, CHECK_NULL);
 
-    ResourceMark rm(THREAD);
-    {
-      // Ensure atomic creation of higher dimensions
-      MutexLocker mu(THREAD, MultiArray_lock);
+    ObjArrayKlass* new_oak = ObjArrayKlass::cast(k);
+    //tty->print_cr("Klass K=" INTPTR_FORMAT " Thread = " INTPTR_FORMAT, p2i(k), p2i(THREAD));
+    new_oak->set_lower_dimension(this);
 
-      // Check if another thread beat us
-      if (higher_dimension() == nullptr) {
-
-        // Create multi-dim klass object and link them together
-        Klass* k =
-          ObjArrayKlass::allocate_objArray_klass(class_loader_data(), dim + 1, this, CHECK_NULL);
-        ObjArrayKlass* ak = ObjArrayKlass::cast(k);
-        ak->set_lower_dimension(this);
-        // use 'release' to pair with lock-free load
-        release_set_higher_dimension(ak);
-        assert(ak->is_objArray_klass(), "incorrect initialization of ObjArrayKlass");
+    if (!Atomic::replace_if_null(higher_dimension_addr(), (Klass*)new_oak)) {
+      if (allocated) {
+        log_info(class, bot)("type ak oak = " INTPTR_FORMAT " Thread = " INTPTR_FORMAT "\n", p2i(new_oak), p2i(THREAD));
+        assert(higher_dimension_acquire() != new_oak, " ");
+        class_loader_data()->add_to_deallocate_list(new_oak);
+        //MetadataFactory::free_metadata(class_loader_data(), new_oak);
       }
     }
   }
 
-  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension_acquire());
   THREAD->check_possible_safepoint();
   return ak->array_klass(n, THREAD);
 }
@@ -349,11 +349,12 @@ Klass* ObjArrayKlass::array_klass_or_null(int n) {
   if (dim == n) return this;
 
   // lock-free read needs acquire semantics
-  if (higher_dimension_acquire() == nullptr) {
+  Klass* k = higher_dimension_acquire();
+  if (k == nullptr) {
     return nullptr;
   }
 
-  ObjArrayKlass *ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass* ak = ObjArrayKlass::cast(k);
   return ak->array_klass_or_null(n);
 }
 

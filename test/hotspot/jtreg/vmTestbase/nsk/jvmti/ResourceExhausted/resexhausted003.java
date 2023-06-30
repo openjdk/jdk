@@ -23,6 +23,7 @@
 package nsk.jvmti.ResourceExhausted;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.FileInputStream;
 import java.io.PrintStream;
 import java.security.ProtectionDomain;
@@ -104,32 +105,44 @@ public class resexhausted003 {
 
         out.println("Loading classes...");
         stress.start(MAX_ITERATIONS);
+        File file = new File("/home/afshin/res_exhausted.txt");
+        int ar_size = 400;
         try {
+            file.createNewFile();
             Node list = null;
+            Node[] oa_nodes;
 
-            while ( stress.iteration() ) {
-                Node n = new Node();
-                n.next = list;
-                list = n;
-                n.loader.loadClass(className, bloatBytes);
-                ++count;
+            while ( stress.iteration() || ar_size < 2_000) {
+                oa_nodes = new Node[ar_size];
+                for (int i = 0; i < ar_size; i++) {
+                    Node n = new Node();
+                    n.next = list;
+                    list = n;
+                    n.loader.loadClass(className, bloatBytes);
+                    oa_nodes[i] = n;
+                    ++count;
+                }
+                ar_size += 100;
             }
 
             System.out.println("Can't reproduce OOME due to a limit on iterations/execution time. Test was useless.");
             throw new SkippedException("Test did not get an OutOfMemory error");
-
+        } catch (IOException ioe) {
+            System.out.println(ioe);
         } catch (OutOfMemoryError e) {
             // that is what we are waiting for
+            System.out.println(e);
         } finally {
             stress.finish();
+            file.delete();
         }
 
+        System.out.println("array size: " + ar_size);
         System.gc();
         if (!Helper.checkResult(Helper.JVMTI_RESOURCE_EXHAUSTED_OOM_ERROR,
                                 "loading " + count + " classes of " + bloatBytes.length + " bytes")) {
             return Consts.TEST_FAILED;
         }
-
         return Consts.TEST_PASSED;
     }
 

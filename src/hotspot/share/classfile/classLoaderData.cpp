@@ -898,7 +898,13 @@ void ClassLoaderData::free_deallocate_list() {
       } else if (m->is_constantPool()) {
         MetadataFactory::free_metadata(this, (ConstantPool*)m);
       } else if (m->is_klass()) {
-        MetadataFactory::free_metadata(this, (InstanceKlass*)m);
+        Klass* k = (Klass *)m;
+        if ( k->is_instance_klass()){
+          MetadataFactory::free_metadata(this, (InstanceKlass*)m);
+        } else {
+          assert( k->is_objArray_klass(), "should be");
+          MetadataFactory::free_metadata(this, (ObjArrayKlass*)m);
+        }
       } else {
         ShouldNotReachHere();
       }
@@ -932,14 +938,18 @@ void ClassLoaderData::free_deallocate_list_C_heap_structures() {
     if (m->is_constantPool()) {
       ((ConstantPool*)m)->release_C_heap_structures();
     } else if (m->is_klass()) {
-      InstanceKlass* ik = (InstanceKlass*)m;
-      // also releases ik->constants() C heap memory
-      ik->release_C_heap_structures();
-      // Remove the class so unloading events aren't triggered for
-      // this class (scratch or error class) in do_unloading().
-      remove_class(ik);
-      // But still have to remove it from the dumptime_table.
-      SystemDictionaryShared::handle_class_unloading(ik);
+      if (((Klass*)m)->is_instance_klass()) {
+        InstanceKlass* ik = (InstanceKlass*)m;
+        // also releases ik->constants() C heap memory
+        ik->release_C_heap_structures();
+        // Remove the class so unloading events aren't triggered for
+        // this class (scratch or error class) in do_unloading().
+        remove_class(ik);
+        // But still have to remove it from the dumptime_table.
+        SystemDictionaryShared::handle_class_unloading(ik);
+      } else {
+        remove_class((Klass*)m);
+      }
     }
   }
 }

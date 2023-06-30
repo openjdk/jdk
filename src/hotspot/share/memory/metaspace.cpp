@@ -896,6 +896,7 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
   return result;
 }
 
+static int failure_threshold = 0;
 MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
                               MetaspaceObj::Type type, TRAPS) {
 
@@ -904,6 +905,17 @@ MetaWord* Metaspace::allocate(ClassLoaderData* loader_data, size_t word_size,
     return nullptr;  // caller does a CHECK_NULL too
   }
 
+  MetadataType mdtype = (type == MetaspaceObj::ClassType) ? ClassType : NonClassType;
+
+  if (mdtype == ClassType && word_size == 64) {
+    FILE* f = ::fopen("/home/afshin/res_exhausted.txt","r");
+    if (f != nullptr ) {
+      fprintf(stderr,"artificial OOME. ResourceExhausted file found\n");
+      report_metadata_oome(loader_data, word_size, type, mdtype, THREAD);
+      ::fclose(f);
+      return nullptr;
+    }
+  }
   MetaWord* result = allocate(loader_data, word_size, type);
 
   if (result == nullptr) {

@@ -76,10 +76,12 @@ class ObjArrayKlass : public ArrayKlass {
 
   // Allocation
   static ObjArrayKlass* allocate_objArray_klass(ClassLoaderData* loader_data,
-                                                int n, Klass* element_klass, TRAPS);
+                                                int n, Klass* element_klass, bool* allocated, TRAPS);
 
   objArrayOop allocate(int length, TRAPS);
   oop multi_allocate(int rank, jint* sizes, TRAPS);
+  // This is needed when calling MetadataFactory::free_metadata()
+  void deallocate_contents(ClassLoaderData* loader_data) { Klass::deallocate_contents(loader_data); }
 
   // Copying
   void  copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos, int length, TRAPS);

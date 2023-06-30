@@ -47,6 +47,7 @@ class ArrayKlass: public Klass {
   // initialization, the other is a dummy
   ArrayKlass(Symbol* name, KlassKind kind);
   ArrayKlass() { assert(DumpSharedSpaces || UseSharedSpaces, "only for cds"); }
+  void deallocate_contents(ClassLoaderData *loader_data) { Klass::deallocate_contents(loader_data); }
 
  public:
   // Testing operation
@@ -57,6 +58,7 @@ class ArrayKlass: public Klass {
   void set_dimension(int dimension)     { _dimension = dimension; }
 
   Klass* higher_dimension() const     { return _higher_dimension; }
+  Klass* volatile* higher_dimension_addr() { return &_higher_dimension; }
   inline Klass* higher_dimension_acquire() const; // load with acquire semantics
   void set_higher_dimension(Klass* k) { _higher_dimension = k; }
   inline void release_set_higher_dimension(Klass* k); // store with release semantics

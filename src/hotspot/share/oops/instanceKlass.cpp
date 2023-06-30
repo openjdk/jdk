@@ -577,17 +577,8 @@ void InstanceKlass::deallocate_record_components(ClassLoaderData* loader_data,
 // This function deallocates the metadata and C heap pointers that the
 // InstanceKlass points to.
 void InstanceKlass::deallocate_contents(ClassLoaderData* loader_data) {
-  // Orphan the mirror first, CMS thinks it's still live.
-  if (java_mirror() != nullptr) {
-    java_lang_Class::set_klass(java_mirror(), nullptr);
-  }
 
-  // Also remove mirror from handles
-  loader_data->remove_handle(_java_mirror);
-
-  // Need to take this class off the class loader data list.
-  loader_data->remove_class(this);
-
+  Klass::deallocate_contents(loader_data);
   // The array_klass for this class is created later, after error handling.
   // For class redefinition, we keep the original class so this scratch class
   // doesn't have an array class.  Either way, assert that there is nothing
@@ -1468,24 +1459,20 @@ void InstanceKlass::check_valid_for_instantiation(bool throwError, TRAPS) {
 }
 
 Klass* InstanceKlass::array_klass(int n, TRAPS) {
-  // Need load-acquire for lock-free read
+  // Check if update has already taken place
   if (array_klasses_acquire() == nullptr) {
-    ResourceMark rm(THREAD);
-    JavaThread *jt = THREAD;
-    {
-      // Atomic creation of array_klasses
-      MutexLocker ma(THREAD, MultiArray_lock);
-
-      // Check if update has already taken place
-      if (array_klasses() == nullptr) {
-        ObjArrayKlass* k = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, CHECK_NULL);
-        // use 'release' to pair with lock-free load
-        release_set_array_klasses(k);
+    bool allocated = false;
+    ObjArrayKlass* new_oak = ObjArrayKlass::allocate_objArray_klass(class_loader_data(), 1, this, &allocated, CHECK_NULL);
+    if (!Atomic::replace_if_null(&_array_klasses, new_oak)) {
+      if (allocated) {
+        assert(array_klasses_acquire() != new_oak, " ");
+        class_loader_data()->add_to_deallocate_list(new_oak);
+        //MetadataFactory::free_metadata(class_loader_data(), new_oak);
       }
     }
   }
   // array_klasses() will always be set at this point
-  ObjArrayKlass* oak = array_klasses();
+  ObjArrayKlass* oak = array_klasses_acquire();
   return oak->array_klass(n, THREAD);
 }
 
