@@ -21,6 +21,8 @@
  * questions.
  */
 
+import sun.awt.OSInfo;
+
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -36,6 +38,7 @@ import java.awt.event.KeyEvent;
  * @test
  * @bug 8302618
  * @key headful
+ * @modules java.desktop/sun.awt
  * @requires (os.family == "mac")
  * @summary To test if modifier keys work properly,
  *          when manual mouse move and Robot's Key Event occur simultaneously.
@@ -53,7 +56,25 @@ public class RobotModifierMaskTest {
     private static final String EXPECTED_RESULT_ALT = "\u00e5\u00e5\u00e5";
     private static final int EXPECTED_CARET_POS_CTRL = 0;
 
+    private static final String INSTRUCTIONS = """
+            This test is a semi-automatic test which checks the effect of typing modifier keys
+            through a Robot.\n
+            It tests the following key modifiers - Shift, Caps, Control, Option and Command.
+            It needs to be checked for following two scenarios \n
+
+            CASE 1 : Run the test as an automated test and let the Robot go through all the test cases.\n
+            CASE 2 : Run the test in semi-automated mode. While the Robot in typing,
+                     manually move the mouse (without clicking/dragging). Check if the test Passes or Fails.\n\n
+            
+            NOTE: User doesn't need to compare the actual vs expected result in Case 2.
+            The test compares it.""";
+
     public static void main(String[] args) throws Exception {
+        if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
+            System.out.println("This test is for MacOS platform only");
+            return;
+        }
+
         try {
             robot = new Robot();
             robot.setAutoWaitForIdle(true);
@@ -62,6 +83,9 @@ public class RobotModifierMaskTest {
             SwingUtilities.invokeAndWait(() -> createTestUI());
             robot.waitForIdle();
             robot.delay(1000);
+
+            jTextArea.setText(INSTRUCTIONS);
+            robot.delay(8000);
 
             testShiftKey();
             robot.delay(100);
@@ -87,11 +111,7 @@ public class RobotModifierMaskTest {
     }
 
     private static void testShiftKey() {
-        jTextArea.setText("Testing Shift Key...\n"
-                + "EXPECTED STRING: "+ EXPECTED_RESULT_SHIFT);
-        robot.delay(1000);
         jTextArea.setText("");
-        robot.delay(200);
 
         for (int i = 0; i < 5; ++i) {
             robot.keyPress(KeyEvent.VK_SHIFT);
@@ -111,11 +131,7 @@ public class RobotModifierMaskTest {
 
     private static void testCapsKey() {
         // clear contents of JTextArea
-        jTextArea.setText("Testing CapsLock Key...\n"
-                + "EXPECTED STRING: "+ EXPECTED_RESULT_CAPS);
-        robot.delay(1000);
         jTextArea.setText("");
-        robot.delay(200);
 
         for (int i = 0; i < 6; ++i) {
             robot.keyPress(KeyEvent.VK_CAPS_LOCK);
@@ -137,11 +153,7 @@ public class RobotModifierMaskTest {
 
     private static void testCmdKey() {
         // clear contents of JTextArea
-        jTextArea.setText("Testing CapsLock Key...\n"
-                + " EXPECTED STRING: "+ EXPECTED_RESULT_META);
-        robot.delay(1000);
         jTextArea.setText("");
-        robot.delay(200);
 
         StringSelection stringSelection = new StringSelection("AAA");
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -161,11 +173,7 @@ public class RobotModifierMaskTest {
     }
 
     private static void testAltKey() {
-        jTextArea.setText("Testing Alt Key...\n"
-                + " EXPECTED STRING: "+ EXPECTED_RESULT_ALT);
-        robot.delay(1000);
         jTextArea.setText("");
-        robot.delay(200);
 
         for (int i = 0; i < 3; ++i) {
             robot.keyPress(KeyEvent.VK_ALT);
@@ -185,11 +193,7 @@ public class RobotModifierMaskTest {
     }
 
     private static void testCtrlKey() {
-        jTextArea.setText("Testing Alt Key...\n"
-                + "EXPECTED CARET POSITION: "+ EXPECTED_CARET_POS_CTRL);
-        robot.delay(1000);
         jTextArea.setText("");
-        robot.delay(200);
 
         for (int i = 0; i < 5; ++i) {
             robot.keyPress(KeyEvent.VK_SHIFT);
@@ -215,11 +219,11 @@ public class RobotModifierMaskTest {
     }
 
     private static void createTestUI() {
-        jFrame = new JFrame();
+        jFrame = new JFrame("RobotModifierMaskTest");
         jTextArea = new JTextArea("");
         JScrollPane pane = new JScrollPane(jTextArea);
         jFrame.getContentPane().add(pane);
-        jFrame.setSize(300,200);
+        jFrame.setSize(600,300);
         jFrame.setLocation(200, 200);
         jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         jFrame.setVisible(true);
