@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class NoMinorUnitCurrenciesTest {
 
     /**
-     * Spot check some minor undefined codes and ensure their default fraction
+     * Spot check some minor undefined currencies and ensure their default fraction
      * digits are not 2.
      */
     @ParameterizedTest
@@ -52,6 +52,8 @@ public class NoMinorUnitCurrenciesTest {
                 "[%s] expected: %s; got: %s", currencyCode, digits, currency.getDefaultFractionDigits()));
     }
 
+    // Currencies from the minorUndefined key of CurrencyData.properties
+    // (These are currencies without minor units)
     private static Stream<Arguments> minorUndefined() {
         return Stream.of(
                 Arguments.of("XBD", -1),
