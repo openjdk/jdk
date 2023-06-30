@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Objects;
 import java.util.Vector;
 import static java.util.Locale.ENGLISH;
 
@@ -616,20 +617,18 @@ final class CryptoPolicyParser {
          * Calculates a hash code value for the object.  Objects
          * which are equal will also have the same hashcode.
          */
+        @Override
         public int hashCode() {
             int retval = cryptoPermission.hashCode();
-            if (alg != null) retval ^= alg.hashCode();
-            if (exemptionMechanism != null) {
-                retval ^= exemptionMechanism.hashCode();
-            }
+            retval ^= Objects.hashCode(alg);
+            retval ^= Objects.hashCode(exemptionMechanism);
             retval ^= maxKeySize;
-            if (checkParam) retval ^= 100;
-            if (algParamSpec != null) {
-                retval ^= algParamSpec.hashCode();
-            }
+            retval ^= (checkParam ? 100 : 0);
+            retval ^= Objects.hashCode(algParamSpec);
             return retval;
         }
 
+        @Override
         public boolean equals(Object obj) {
             if (obj == this)
                 return true;
@@ -637,12 +636,8 @@ final class CryptoPolicyParser {
             if (!(obj instanceof CryptoPermissionEntry that))
                 return false;
 
-            if (this.cryptoPermission == null) {
-                if (that.cryptoPermission != null) return false;
-            } else {
-                if (!this.cryptoPermission.equals(
-                                                 that.cryptoPermission))
-                    return false;
+            if (Objects.equals(this.cryptoPermission, that.cryptoPermission)) {
+                return false;
             }
 
             if (this.alg == null) {
@@ -652,15 +647,11 @@ final class CryptoPolicyParser {
                     return false;
             }
 
-            if (!(this.maxKeySize == that.maxKeySize)) return false;
+            if (this.maxKeySize != that.maxKeySize) return false;
 
             if (this.checkParam != that.checkParam) return false;
 
-            if (this.algParamSpec == null) {
-                return that.algParamSpec == null;
-            } else {
-                return this.algParamSpec.equals(that.algParamSpec);
-            }
+            return Objects.equals(this.algParamSpec, that.algParamSpec);
         }
     }
 

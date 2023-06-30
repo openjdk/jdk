@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -907,10 +907,6 @@ public final class Subject implements java.io.Serializable {
     @Override
     public boolean equals(Object o) {
 
-        if (o == null) {
-            return false;
-        }
-
         if (this == o) {
             return true;
         }
@@ -1003,9 +999,7 @@ public final class Subject implements java.io.Serializable {
     }
 
     /**
-     * Returns a hashcode for this {@code Subject}.
-     *
-     * @return a hashcode for this {@code Subject}.
+     * {@return a hashcode for this {@code Subject}}
      *
      * @throws SecurityException if a security manager is installed and the
      *         caller does not have a {@link PrivateCredentialPermission}
