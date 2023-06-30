@@ -446,7 +446,7 @@ class HotSpotToSharedLibraryExceptionTranslation : public ExceptionTranslation {
         char* char_buffer = (char*) buffer + 4;
         stringStream st(char_buffer, (size_t) buffer_size - 4);
         java_lang_Throwable::print_stack_trace(throwable, &st);
-        size_t len = st.size();
+        u4 len = (u4) st.size();
         *((u4*) buffer) = len;
         JVMCI_event_1("error translating exception: %s", char_buffer);
         decode(THREAD, _encode_fail, buffer);
