@@ -72,15 +72,15 @@ import java.util.Map;
  *                                 Trying to do so will result in a format violation error.</li>
  *     <li><p>Vector IR nodes:  The IR node placeholder string contains an additional {@link #VECTOR_PREFIX}.
  *                              Using this IR node, one can check for the type and size of a vector. The type must
- *                              be directly specified in {@link #vectorNode}. For IR rules that are looking for a
- *                              non-zero count of this node, the size is assumed to be the maximal number of elements
- *                              that can fit in a vector of the specified type. This depends on the VM flag MaxVectorSize
- *                              and CPU features. For IR rules that are looking for zero such nodes, or use failOn,
- *                              there we match for any {@link #VECTOR_SIZE_ANY} size. This should be helpful in most cases
- *                              to either check that there is vectorization at the widest vector-width possible, or no
- *                              vectorization at all. If this is not sufficient, then one can use an additional argument
- *                              to specify the size with {@link #VECTOR_SIZE}, followed by a size tag or comma separated
- *                              list of sizes.
+ *                              be directly specified in {@link #vectorNode}. The size can be specified directly with
+ *                              an additional argument using {@link #VECTOR_SIZE}, followed by a size tag or a comma
+ *                              separated list of sizes. If the size argument is not given, then a default size of
+ *                              {@link #VECTOR_SIZE_MAX} is taken, which is the number of elements that can fit in a
+ *                              vector of the specified type (depends on the VM flag MaxVectorSize and CPU features).
+ *                              However, when using {@link IR#failOn} or {@link IR#counts()} with comparison {@code <},
+ *                              or {@code <=} or {@code =0}, the default size is {@link #VECTOR_SIZE_ANY}, allowing any
+ *                              size. The motivation for these default values is that in most cases one wants to have
+ *                              vectorization with maximal vector width, or no vectorization of any vectro width.
  * </ul>
  */
 public class IRNode {
