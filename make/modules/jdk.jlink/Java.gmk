@@ -24,4 +24,3 @@
 #
 
 DISABLED_WARNINGS_java += this-escape
-COPY += target.properties

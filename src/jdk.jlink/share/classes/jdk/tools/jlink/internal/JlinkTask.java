@@ -790,13 +790,14 @@ public class JlinkTask {
                     boolean verbose,
                     PrintWriter log) throws IOException {
             this.targetPlatform = targetPlatform(cf, modsPaths);
-            this.order = order != null ? order : targetPlatform.endianness();
+            ByteOrder targetPlatformEndianness = targetPlatform.arch().byteOrder();
+            this.order = order != null ? order : targetPlatformEndianness;
             if (this.order == null) {
                 throw new IOException(
                         taskHelper.getMessage("err.unknown.target.endianness", targetPlatform));
             }
 
-            if (this.order != targetPlatform.endianness() && targetPlatform.endianness() != null) {
+            if (this.order != targetPlatformEndianness && targetPlatformEndianness != null) {
                 // explicitly specified endianness doesn't match the determined endianness
                 // of the target platform
                 throw new IOException(
@@ -841,7 +842,12 @@ public class JlinkTask {
                 // find the target platform's arch and thus its endianness from the java.base
                 // module's ModuleTarget attribute
                 String targetPlatformVal = readJavaBaseTargetPlatform(cf);
-                return Platform.parsePlatform(targetPlatformVal);
+                try {
+                    return Platform.parsePlatform(targetPlatformVal);
+                } catch (IllegalArgumentException iae) {
+                    throw new IOException(
+                            taskHelper.getMessage("err.unknown.target.platform", targetPlatformVal));
+                }
             }
         }
 

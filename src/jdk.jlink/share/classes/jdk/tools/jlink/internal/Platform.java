@@ -27,34 +27,15 @@ package jdk.tools.jlink.internal;
 import jdk.internal.util.Architecture;
 import jdk.internal.util.OperatingSystem;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteOrder;
 import java.util.Locale;
-import java.util.Properties;
 
 /**
  * Supported OperatingSystem and Architecture.
  */
-public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianness) {
+public record Platform(OperatingSystem os, Architecture arch) {
 
-    private static final Properties PLATFORM_PROPERTIES;
-    private static final String ENDIANNESS_KEY_SUFFIX = ".endianness";
-
-
-    static {
-        Properties p = null;
-        try (InputStream is = Platform.class.getResourceAsStream("target.properties")) {
-            p = new Properties();
-            p.load(is);
-        } catch (IOException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-        PLATFORM_PROPERTIES = p;
-    }
-
-    /**
-     * @return the {@code Platform} based on the platformString of the form <operating system>-<arch>.
+    /*
+     * Returns the {@code Platform} based on the platformString of the form <operating system>-<arch>.
      * @throws IllegalArgumentException if the delimiter is missing or either OS or
      * architecture is not known
      */
@@ -74,35 +55,14 @@ public record Platform(OperatingSystem os, Architecture arch, ByteOrder endianne
         archName = archName.replace("s390x", "S390");
         Architecture arch = Architecture.valueOf(archName.toUpperCase(Locale.ROOT));
 
-        if (arch == Architecture.OTHER) {
-            // unknown endianness
-            return new Platform(os, arch, null);
-        }
-        // map the endianness from target.properties
-        // until ModuleTarget attribute is extended to include the endianness
-        String key = os.name().toLowerCase(Locale.ROOT)
-                + "-" + arch.name().toLowerCase(Locale.ROOT)
-                + ENDIANNESS_KEY_SUFFIX;
-        String v = PLATFORM_PROPERTIES.getProperty(key);
-        if (v == null) {
-            // unknown endianness
-            return new Platform(os, arch, null);
-        }
-        ByteOrder endian = switch (v.trim().toLowerCase(Locale.ROOT)) {
-            case "little" -> ByteOrder.LITTLE_ENDIAN;
-            case "big" -> ByteOrder.BIG_ENDIAN;
-            default -> throw new InternalError("Unrecognized endian value '" + v + "'");
-        };
-        return new Platform(os, arch, endian);
+        return new Platform(os, arch);
     }
 
     /**
      * {@return the runtime {@code Platform}}
      */
     public static Platform runtime() {
-        return new Platform(OperatingSystem.current(),
-                Architecture.current(),
-                Architecture.isLittleEndian() ? ByteOrder.LITTLE_ENDIAN : ByteOrder.BIG_ENDIAN);
+        return new Platform(OperatingSystem.current(), Architecture.current());
     }
 
     /**
