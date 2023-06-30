@@ -256,22 +256,22 @@ public class IRNode {
 
     public static final String ADD_REDUCTION_VD = PREFIX + "ADD_REDUCTION_VD" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_REDUCTION_VD, "AddReductionVD");
+        superWordNodes(ADD_REDUCTION_VD, "AddReductionVD");
     }
 
     public static final String ADD_REDUCTION_VF = PREFIX + "ADD_REDUCTION_VF" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_REDUCTION_VF, "AddReductionVF");
+        superWordNodes(ADD_REDUCTION_VF, "AddReductionVF");
     }
 
     public static final String ADD_REDUCTION_VI = PREFIX + "ADD_REDUCTION_VI" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_REDUCTION_VI, "AddReductionVI");
+        superWordNodes(ADD_REDUCTION_VI, "AddReductionVI");
     }
 
     public static final String ADD_REDUCTION_VL = PREFIX + "ADD_REDUCTION_VL" + POSTFIX;
     static {
-        beforeMatchingNameRegex(ADD_REDUCTION_VL, "AddReductionVL");
+        superWordNodes(ADD_REDUCTION_VL, "AddReductionVL");
     }
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
