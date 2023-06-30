@@ -305,7 +305,7 @@ public class TransPatterns extends TreeTranslator {
 
         // A record pattern that comes with a matcher is desugared into the following structure (utilizing DynamicVarSymbols)
         // if (o instanceof Matcher $m && Matcher."Matcher$Ljava\\|lang\\|String\\?$I"($m)) instanceof Object unmatched) {
-        //      MethodType methodType = MethodType.methodType(Object.class, String.class, int.class); // represented as a DynamicVarSymbol
+        //      MethodType methodType = MethodType.methodType(Object.class, String.class, int.class); // represented as a Constant_MethodType_info
         //      os = (String) Carriers.component(methodType, 0).invoke(unmatched); // where Carriers.component(methodType, 0) is a DynamicVarSymbol
         //      oi = (int) Carriers.component(methodType, 1).invoke(unmatched); // where Carriers.component(methodType, 1) is a DynamicVarSymbol
         //      ...
@@ -326,7 +326,6 @@ public class TransPatterns extends TreeTranslator {
         int index = -1; // needed for the Carriers.component in the case of a matcher
 
         BindingSymbol    unmatched = null;
-        DynamicVarSymbol methodTypeDynamicVar = null;
         MethodSymbol     carriersComponentCallSym = null;
 
         if (recordPattern.matcher != null) {
@@ -340,24 +339,6 @@ public class TransPatterns extends TreeTranslator {
                     make.BindingPattern(unmatchedVar).setType(unmatched.type)).setType(syms.booleanType);
 
             firstLevelChecks = nullCheck;
-
-            MethodSymbol methodTypeCallSym =
-                    rs.resolveInternalMethod(recordPattern.pos(),
-                            env,
-                            syms.methodTypeType,
-                            names.methodType,
-                            List.of(syms.classType, syms.classType, types.makeArrayType(types.erasure(syms.classType))),
-                            List.nil());
-
-            List<LoadableConstant> params = recordPattern.matcher.params
-                    .map(v -> (LoadableConstant) types.erasure(v.type))
-                    .prepend((LoadableConstant) syms.objectType);
-
-            methodTypeDynamicVar = (DynamicVarSymbol)
-                    invokeMethodWrapper(names.methodType,
-                            recordPattern.pos(),
-                            methodTypeCallSym.asHandle(),
-                            params.toArray(LoadableConstant[]::new));
 
             // Resolve Carriers.component(methodType, index) for subsequent constant dynamic call results
             carriersComponentCallSym =
@@ -378,8 +359,13 @@ public class TransPatterns extends TreeTranslator {
                  *  Generate invoke call for component X
                  *       component$X.invoke(carrier);
                  * */
+                List<Type> params = recordPattern.matcher.params
+                        .map(v -> types.erasure(v.type));
+
+                MethodType methodType = new MethodType(params, syms.objectType, List.nil(), syms.methodClass);
+
                 List<LoadableConstant> carriersComponentParams =
-                        List.of(methodTypeDynamicVar,
+                        List.of(methodType,
                                 LoadableConstant.Int(index));
 
                 DynamicVarSymbol carriersComponentCallDynamicVar = (DynamicVarSymbol)
@@ -463,46 +449,10 @@ public class TransPatterns extends TreeTranslator {
             }
         }
 
-        JCExpression unrolledGuard = guard;
-        if (recordPattern.matcher != null) {
-            VarSymbol methodTypeVar = new VarSymbol(Flags.SYNTHETIC,
-                    names.fromString("index" + target.syntheticNameChar() + variableIndex++),
-                    syms.methodTypeType,
-                    currentMethodSym);
-
-            JCVariableDecl returnTypeVar = make.VarDef(methodTypeVar, make.Ident(methodTypeDynamicVar));
-
-            LetExpr let = (LetExpr) make.LetExpr(returnTypeVar, guard).setType(syms.booleanType);
-            let.needsCond = true;
-            unrolledGuard = let;
-        }
-        return new UnrolledRecordPattern((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), unrolledGuard);
+        return new UnrolledRecordPattern((JCBindingPattern) make.BindingPattern(recordBindingVar).setType(recordBinding.type), guard);
     }
 
     record UnrolledRecordPattern(JCBindingPattern primaryPattern, JCExpression newGuard) {}
-
-    private JCExpression classOfType(Type type, JCDiagnostic.DiagnosticPosition pos) {
-        switch (type.getTag()) {
-        case BYTE: case SHORT: case CHAR: case INT: case LONG: case FLOAT:
-        case DOUBLE: case BOOLEAN: case VOID:
-            // replace with <BoxedClass>.TYPE
-            ClassSymbol c = types.boxedClass(type);
-            Symbol typeSym =
-                rs.accessBase(
-                    rs.findIdentInType(pos, env, c.type, names.TYPE, Kinds.KindSelector.VAR),
-                    pos, c.type, names.TYPE, true);
-            if (typeSym.kind == VAR)
-                ((VarSymbol)typeSym).getConstValue(); // ensure initializer is evaluated
-            return make.QualIdent(typeSym);
-        case CLASS: case ARRAY:
-                VarSymbol sym = new VarSymbol(
-                        STATIC | PUBLIC | FINAL, names._class,
-                        syms.classType, type.tsym);
-                return make.at(pos).Select(make.Type(type), sym);
-        default:
-            throw new AssertionError();
-        }
-    }
 
     @Override
     public void visitSwitch(JCSwitch tree) {
@@ -1171,36 +1121,17 @@ public class TransPatterns extends TreeTranslator {
 
                 if (genCarrier) {
                     // Generate (without the bindings)
-                    //     1. generate call to obtain the methodType for Carriers factory (e.g., MethodType returnType = MethodType.methodType(Object.class, Integer.class, Integer.class);)
+                    //     1. calculate the returnType MethodType as Constant_MethodType_info
                     //     2. generate factory code on carrier for the types we want (e.g., Object carrier = Carriers.factory(returnType);)
-                    //     3. generate invoke call to pass the bindings (e.g, return carrier.invoke(is);)
+                    //     3. generate invoke call to pass the bindings (e.g, return carrier.invoke(x, y);)
 
-                    List<LoadableConstant> params = List.of((LoadableConstant) syms.objectType);
+                    List<Type> params = List.nil();
                     List<JCExpression> invokeMethodParam = List.nil();
 
                     for (int i = 0; i < tree.params.length(); i++) {
-                        params = params.append((LoadableConstant) types.erasure(tree.params.get(i).type));
+                        params = params.append(types.boxedTypeOrType(tree.params.get(i).type));
                         invokeMethodParam = invokeMethodParam.append(make.Ident(tree.params.get(i)));
                     }
-
-                    List<Type> paramsForMethodType;
-                    if (params.isEmpty()) {
-                        paramsForMethodType = List.of(syms.classType); // deconstructor with no bindings
-                    } else {
-                        paramsForMethodType = List.of(syms.classType, syms.classType, types.makeArrayType(types.erasure(syms.classType)));
-                    }
-                    MethodSymbol methodTypeCallSym =
-                            rs.resolveInternalMethod(tree.pos(),
-                                    env,
-                                    syms.methodTypeType,
-                                    names.methodType,
-                                    paramsForMethodType,
-                                    List.nil());
-
-                    LoadableConstant methodTypeDynamicVar =
-                            invokeMethodWrapper(tree.pos(),
-                                    methodTypeCallSym.asHandle(),
-                                    params.toArray(LoadableConstant[]::new));
 
                     MethodSymbol factoryMethodSym =
                             rs.resolveInternalMethod(tree.pos(),
@@ -1213,7 +1144,7 @@ public class TransPatterns extends TreeTranslator {
                     DynamicVarSymbol factoryMethodDynamicVar =
                             (DynamicVarSymbol) invokeMethodWrapper(tree.pos(),
                                     factoryMethodSym.asHandle(),
-                                    methodTypeDynamicVar);
+                                    new MethodType(params, syms.objectType, List.nil(), syms.methodClass));
 
                     JCIdent factoryMethodCall = make.Ident(factoryMethodDynamicVar);
 
