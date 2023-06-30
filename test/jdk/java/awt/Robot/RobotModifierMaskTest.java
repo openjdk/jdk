@@ -65,7 +65,7 @@ public class RobotModifierMaskTest {
             CASE 1 : Run the test as an automated test and let the Robot go through all the test cases.\n
             CASE 2 : Run the test in semi-automated mode. While the Robot in typing,
                      manually move the mouse (without clicking/dragging). Check if the test Passes or Fails.\n\n
-            
+
             NOTE: User doesn't need to compare the actual vs expected result in Case 2.
             The test compares it.""";
 
