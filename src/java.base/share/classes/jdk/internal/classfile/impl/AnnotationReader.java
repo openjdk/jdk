@@ -58,14 +58,14 @@ class AnnotationReader {
         char tag = (char) classReader.readU1(p);
         ++p;
         return switch (tag) {
-            case AEV_BYTE -> new AnnotationImpl.OfByteImpl((IntegerEntry)classReader.readEntry(p));
-            case AEV_CHAR -> new AnnotationImpl.OfCharacterImpl((IntegerEntry)classReader.readEntry(p));
-            case AEV_DOUBLE -> new AnnotationImpl.OfDoubleImpl((DoubleEntry)classReader.readEntry(p));
-            case AEV_FLOAT -> new AnnotationImpl.OfFloatImpl((FloatEntry)classReader.readEntry(p));
-            case AEV_INT -> new AnnotationImpl.OfIntegerImpl((IntegerEntry)classReader.readEntry(p));
-            case AEV_LONG -> new AnnotationImpl.OfLongImpl((LongEntry)classReader.readEntry(p));
-            case AEV_SHORT -> new AnnotationImpl.OfShortImpl((IntegerEntry)classReader.readEntry(p));
-            case AEV_BOOLEAN -> new AnnotationImpl.OfBooleanImpl((IntegerEntry)classReader.readEntry(p));
+            case AEV_BYTE -> new AnnotationImpl.OfByteImpl(classReader.readIntegerEntry(p));
+            case AEV_CHAR -> new AnnotationImpl.OfCharacterImpl(classReader.readIntegerEntry(p));
+            case AEV_DOUBLE -> new AnnotationImpl.OfDoubleImpl(classReader.readDoubleEntry(p));
+            case AEV_FLOAT -> new AnnotationImpl.OfFloatImpl(classReader.readFloatEntry(p));
+            case AEV_INT -> new AnnotationImpl.OfIntegerImpl(classReader.readIntegerEntry(p));
+            case AEV_LONG -> new AnnotationImpl.OfLongImpl(classReader.readLongEntry(p));
+            case AEV_SHORT -> new AnnotationImpl.OfShortImpl(classReader.readIntegerEntry(p));
+            case AEV_BOOLEAN -> new AnnotationImpl.OfBooleanImpl(classReader.readIntegerEntry(p));
             case AEV_STRING -> new AnnotationImpl.OfStringImpl(classReader.readUtf8Entry(p));
             case AEV_ENUM -> new AnnotationImpl.OfEnumImpl(classReader.readUtf8Entry(p), classReader.readUtf8Entry(p + 2));
             case AEV_CLASS -> new AnnotationImpl.OfClassImpl(classReader.readUtf8Entry(p));

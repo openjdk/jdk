@@ -27,7 +27,6 @@ package jdk.internal.classfile.impl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -36,7 +35,16 @@ import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.BootstrapMethodsAttribute;
 import jdk.internal.classfile.constantpool.ClassEntry;
 import jdk.internal.classfile.constantpool.ConstantPoolException;
+import jdk.internal.classfile.constantpool.ConstantValueEntry;
+import jdk.internal.classfile.constantpool.DoubleEntry;
+import jdk.internal.classfile.constantpool.FieldRefEntry;
+import jdk.internal.classfile.constantpool.FloatEntry;
+import jdk.internal.classfile.constantpool.IntegerEntry;
+import jdk.internal.classfile.constantpool.InterfaceMethodRefEntry;
+import jdk.internal.classfile.constantpool.InvokeDynamicEntry;
 import jdk.internal.classfile.constantpool.LoadableConstantEntry;
+import jdk.internal.classfile.constantpool.LongEntry;
+import jdk.internal.classfile.constantpool.MemberRefEntry;
 import jdk.internal.classfile.constantpool.MethodHandleEntry;
 import jdk.internal.classfile.constantpool.ModuleEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
@@ -441,6 +449,60 @@ public final class ClassReaderImpl
     public MethodHandleEntry readMethodHandleEntry(int pos) {
         if (readEntry(pos) instanceof MethodHandleEntry mhe) return mhe;
         throw new ConstantPoolException("Not a method handle entry at pos: " + pos);
+    }
+
+    @Override
+    public ConstantValueEntry readConstantValueEntry(int pos) {
+        if (readEntry(pos) instanceof ConstantValueEntry e) return e;
+        throw new ConstantPoolException("Not a constant value entry at pos: " + pos);
+    }
+
+    @Override
+    public IntegerEntry readIntegerEntry(int pos) {
+        if (readEntry(pos) instanceof IntegerEntry e) return e;
+        throw new ConstantPoolException("Not an integer entry at pos: " + pos);
+    }
+
+    @Override
+    public DoubleEntry readDoubleEntry(int pos) {
+        if (readEntry(pos) instanceof DoubleEntry e) return e;
+        throw new ConstantPoolException("Not a double entry at pos: " + pos);
+    }
+
+    @Override
+    public LongEntry readLongEntry(int pos) {
+        if (readEntry(pos) instanceof LongEntry e) return e;
+        throw new ConstantPoolException("Not a long entry at pos: " + pos);
+    }
+
+    @Override
+    public FloatEntry readFloatEntry(int pos) {
+        if (readEntry(pos) instanceof FloatEntry e) return e;
+        throw new ConstantPoolException("Not a float entry at pos: " + pos);
+    }
+
+    @Override
+    public FieldRefEntry readFieldRefEntry(int pos) {
+        if (readEntry(pos) instanceof FieldRefEntry e) return e;
+        throw new ConstantPoolException("Not a field ref entry at pos: " + pos);
+    }
+
+    @Override
+    public MemberRefEntry readMemberRefEntry(int pos) {
+        if (readEntry(pos) instanceof MemberRefEntry e) return e;
+        throw new ConstantPoolException("Not a member ref entry at pos: " + pos);
+    }
+
+    @Override
+    public InterfaceMethodRefEntry readInterfaceMethodRefEntry(int pos) {
+        if (readEntry(pos) instanceof InterfaceMethodRefEntry e) return e;
+        throw new ConstantPoolException("Not an interface method ref entry at pos: " + pos);
+    }
+
+    @Override
+    public InvokeDynamicEntry readInvokeDynamicEntry(int pos) {
+        if (readEntry(pos) instanceof InvokeDynamicEntry e) return e;
+        throw new ConstantPoolException("Not an invoke dynamic entry at pos: " + pos);
     }
 
     @Override
