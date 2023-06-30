@@ -647,6 +647,8 @@ public abstract class ClassLoader {
 
     /**
      * Returns the lock object for class loading operations.
+     *
+     * @implSpec
      * If this {@code ClassLoader} object is registered as parallel capable,
      * this method returns a dedicated object associated with the specified
      * class name. Otherwise, this method returns this {@code ClassLoader} object.
