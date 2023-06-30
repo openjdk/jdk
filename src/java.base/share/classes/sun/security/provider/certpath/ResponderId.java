@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -226,10 +226,6 @@ public final class ResponderId {
      */
     @Override
     public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-
         if (this == obj) {
             return true;
         }
@@ -242,9 +238,7 @@ public final class ResponderId {
     }
 
     /**
-     * Returns the hash code value for this {@code ResponderId}
-     *
-     * @return the hash code value for this {@code ResponderId}
+     * {@return the hash code value for this {@code ResponderId}}
      */
     @Override
     public int hashCode() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1119,10 +1119,7 @@ public class PolicyParser {
          */
         @Override
         public int hashCode() {
-            int retval = permission.hashCode();
-            if (name != null) retval ^= name.hashCode();
-            if (action != null) retval ^= action.hashCode();
-            return retval;
+            return Objects.hash(permission, name, action);
         }
 
         @Override
@@ -1133,29 +1130,9 @@ public class PolicyParser {
             if (! (obj instanceof PermissionEntry that))
                 return false;
 
-            if (this.permission == null) {
-                if (that.permission != null) return false;
-            } else {
-                if (!this.permission.equals(that.permission)) return false;
-            }
-
-            if (this.name == null) {
-                if (that.name != null) return false;
-            } else {
-                if (!this.name.equals(that.name)) return false;
-            }
-
-            if (this.action == null) {
-                if (that.action != null) return false;
-            } else {
-                if (!this.action.equals(that.action)) return false;
-            }
-
-            if (this.signedBy == null) {
-                return that.signedBy == null;
-            } else {
-                return this.signedBy.equals(that.signedBy);
-            }
+            return Objects.equals(this.permission, that.permission)
+                    && Objects.equals(this.name, that.name)
+                    && Objects.equals(this.signedBy, that.signedBy);
         }
 
         public void write(PrintWriter out) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -170,30 +170,18 @@ public class EDIPartyName implements GeneralNameInterface {
      *
      * @return true if the two names match
      */
+    @Override
     public boolean equals(Object other) {
         if (!(other instanceof EDIPartyName))
             return false;
-        String otherAssigner = ((EDIPartyName)other).assigner;
-        if (this.assigner == null) {
-            if (otherAssigner != null)
-                return false;
-        } else {
-            if (!(this.assigner.equals(otherAssigner)))
-                return false;
-        }
-        String otherParty = ((EDIPartyName)other).party;
-        if (this.party == null) {
-            return otherParty == null;
-        } else {
-            return this.party.equals(otherParty);
-        }
+        return Objects.equals(this.assigner, ((EDIPartyName)other).assigner)
+                && Objects.equals(this.party, ((EDIPartyName)other).party);
     }
 
     /**
-     * Returns the hash code value for this EDIPartyName.
-     *
-     * @return a hash code value.
+     * {@return the hash code value for this EDIPartyName}
      */
+    @Override
     public int hashCode() {
         if (myhash == -1) {
             myhash = 37 + (party == null ? 1 : party.hashCode());
