@@ -1579,7 +1579,6 @@ final class StringUTF16 {
         }
 
         // We know there are at most two digits left at this point.
-
         if (i < -9) {
             charPos -= 2;
             Unsafe.getUnsafe().putIntUnaligned(
@@ -1642,7 +1641,6 @@ final class StringUTF16 {
         }
 
         // We know there are at most two digits left at this point.
-
         if (i2 < -9) {
             charPos -= 2;
             Unsafe.getUnsafe().putIntUnaligned(

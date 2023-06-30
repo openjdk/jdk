@@ -531,7 +531,7 @@ public final class Integer extends Number
             charPos -= 2;
             Unsafe.getUnsafe().putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[-i], false);
         } else {
-            buf[--charPos] = (byte) ('0' - i);
+            buf[--charPos] = (byte)('0' - i);
         }
 
         if (negative) {

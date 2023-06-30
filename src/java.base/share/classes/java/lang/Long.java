@@ -548,7 +548,7 @@ public final class Long extends Number
                     Integer.DigitPacks[-i2],
                     false);
         } else {
-            buf[--charPos] = (byte) ('0' - i2);
+            buf[--charPos] = (byte)('0' - i2);
         }
 
         if (negative) {
