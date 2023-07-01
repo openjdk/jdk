@@ -74,6 +74,8 @@ import static java.lang.String.UTF16;
 @jdk.internal.ValueBased
 public final class Long extends Number
         implements Comparable<Long>, Constable, ConstantDesc {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     /**
      * A constant holding the minimum value a {@code long} can
      * have, -2<sup>63</sup>.
@@ -517,7 +519,7 @@ public final class Long extends Number
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
-            Unsafe.getUnsafe().putShortUnaligned(
+            UNSAFE.putShortUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
                     Integer.DigitPacks[(int)((q * 100) - i)],
@@ -531,7 +533,7 @@ public final class Long extends Number
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
-            Unsafe.getUnsafe().putShortUnaligned(
+            UNSAFE.putShortUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
                     Integer.DigitPacks[(q2 * 100) - i2],
@@ -542,7 +544,7 @@ public final class Long extends Number
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
-            Unsafe.getUnsafe().putShortUnaligned(
+            UNSAFE.putShortUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
                     Integer.DigitPacks[-i2],

@@ -74,6 +74,8 @@ import static java.lang.String.UTF16;
 @jdk.internal.ValueBased
 public final class Integer extends Number
         implements Comparable<Integer>, Constable, ConstantDesc {
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     /**
      * A constant holding the minimum value an {@code int} can
      * have, -2<sup>31</sup>.
@@ -523,13 +525,13 @@ public final class Integer extends Number
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            Unsafe.getUnsafe().putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[r], false);
+            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[r], false);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
-            Unsafe.getUnsafe().putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[-i], false);
+            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[-i], false);
         } else {
             buf[--charPos] = (byte)('0' - i);
         }

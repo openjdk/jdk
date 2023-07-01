@@ -1515,6 +1515,8 @@ final class StringUTF16 {
         }
     }
 
+    private static final Unsafe UNSAFE = Unsafe.getUnsafe();
+
     /**
      * Integer.DigitPacks UTF16 version
      */
@@ -1571,7 +1573,7 @@ final class StringUTF16 {
             i = q;
 
             charPos -= 2;
-            Unsafe.getUnsafe().putIntUnaligned(
+            UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
                     DigitPacksUTF16[r],
@@ -1581,7 +1583,7 @@ final class StringUTF16 {
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
-            Unsafe.getUnsafe().putIntUnaligned(
+            UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
                     DigitPacksUTF16[-i],
@@ -1618,7 +1620,7 @@ final class StringUTF16 {
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
-            Unsafe.getUnsafe().putIntUnaligned(
+            UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
                     DigitPacksUTF16[(int)((q * 100) - i)],
@@ -1632,7 +1634,7 @@ final class StringUTF16 {
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
-            Unsafe.getUnsafe().putIntUnaligned(
+            UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
                     DigitPacksUTF16[(q2 * 100) - i2],
@@ -1643,7 +1645,7 @@ final class StringUTF16 {
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
-            Unsafe.getUnsafe().putIntUnaligned(
+            UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
                     DigitPacksUTF16[-i2],
