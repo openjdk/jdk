@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,7 +64,7 @@ class ClassFileStream: public ResourceObj {
 
   // Buffer access
   const u1* buffer() const { return _buffer_start; }
-  int length() const { return _buffer_end - _buffer_start; }
+  int length() const { return pointer_delta_as_int(_buffer_end, _buffer_start); }
   const u1* current() const { return _current; }
   void set_current(const u1* pos) const {
     assert(pos >= _buffer_start && pos <= _buffer_end, "invariant");
