@@ -29,7 +29,6 @@ import java.util.StringJoiner;
 import java.util.spi.ToolProvider;
 
 import tests.JImageGenerator;
-import tests.JImageGenerator.JLinkTask;
 
 /*
  * @test
@@ -49,8 +48,6 @@ import tests.JImageGenerator.JLinkTask;
 public class JLink100Modules {
     private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
             .orElseThrow(() -> new RuntimeException("javac tool not found"));
-    private static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
-            .orElseThrow(() -> new RuntimeException("jlink tool not found"));
 
     static void report(String command, String[] args) {
         System.out.println(command + " " + String.join(" ", Arrays.asList(args)));
@@ -59,11 +56,6 @@ public class JLink100Modules {
     static void javac(String[] args) {
         report("javac", args);
         JAVAC_TOOL.run(System.out, System.err, args);
-    }
-
-    static void jlink(String[] args) {
-        report("jlink", args);
-        JLINK_TOOL.run(System.out, System.err, args);
     }
 
     public static void main(String[] args) throws Exception {
@@ -108,7 +100,6 @@ public class JLink100Modules {
                 """);
 
         String out = src.resolve("out").toString();
-
         javac(new String[]{
                 "-d", out,
                 "--module-source-path", src.toString(),
@@ -122,21 +113,14 @@ public class JLink100Modules {
                 .call()
                 .assertSuccess();
 
-        Path bin = src.resolve("out-jlink").resolve("bin");
+        Path binDir = src.resolve("out-jlink").resolve("bin").toAbsolutePath();
+        Path bin = binDir.resolve("java");
 
-        // String binName = jdk.internal.util.OperatingSystem.isWindows() ? "java.exe" : "java";
-        String binName = "java.exe";
-        if (!Files.exists(Path.of(binName))) {
-            binName = "java";
-        }
-
-        ProcessBuilder processBuilder = new ProcessBuilder(binName, "-XX:+UnlockDiagnosticVMOptions", "-XX:+BytecodeVerificationLocal", "-m", "bug8240567x/testpackage.JLink100ModulesTest");
+        ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(), "-XX:+UnlockDiagnosticVMOptions", "-XX:+BytecodeVerificationLocal", "-m", "bug8240567x/testpackage.JLink100ModulesTest");
         processBuilder.inheritIO();
-        processBuilder.directory(bin.toFile());
+        processBuilder.directory(binDir.toFile());
         Process process = processBuilder.start();
         int exitCode = process.waitFor();
-
-        System.err.println(exitCode);
         if (exitCode != 0) throw new AssertionError("Exit code is not 0");
     }
 }
