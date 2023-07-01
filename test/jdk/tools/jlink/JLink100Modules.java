@@ -44,7 +44,7 @@ import tests.JImageGenerator.JLinkTask;
  *          jdk.jlink/jdk.tools.jimage
  *          jdk.compiler
  * @build tests.*
- * @run main/othervm -verbose:gc -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink100Modules
+ * @run main/othervm -Xmx1g -Xlog:init=debug -XX:+UnlockDiagnosticVMOptions -XX:+BytecodeVerificationLocal JLink100Modules
  */
 public class JLink100Modules {
     private static final ToolProvider JAVAC_TOOL = ToolProvider.findFirst("javac")
@@ -121,5 +121,22 @@ public class JLink100Modules {
                 .addMods("bug8240567x")
                 .call()
                 .assertSuccess();
+
+        Path bin = src.resolve("out-jlink").resolve("bin");
+
+        // String binName = jdk.internal.util.OperatingSystem.isWindows() ? "java.exe" : "java";
+        String binName = "java.exe";
+        if (!Files.exists(Path.of(binName))) {
+            binName = "java";
+        }
+
+        ProcessBuilder processBuilder = new ProcessBuilder(binName, "-XX:+UnlockDiagnosticVMOptions", "-XX:+BytecodeVerificationLocal", "-m", "bug8240567x/testpackage.JLink100ModulesTest");
+        processBuilder.inheritIO();
+        processBuilder.directory(bin.toFile());
+        Process process = processBuilder.start();
+        int exitCode = process.waitFor();
+
+        System.err.println(exitCode);
+        if (exitCode != 0) throw new AssertionError("Exit code is not 0");
     }
 }
