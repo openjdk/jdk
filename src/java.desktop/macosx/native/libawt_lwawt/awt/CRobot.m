@@ -66,7 +66,7 @@ static NSTimeInterval gNextKeyEventTime;
 static CGEventFlags initFlags;
 static int allModifiersMask = kCGEventFlagMaskShift | kCGEventFlagMaskControl
                               | kCGEventFlagMaskAlternate | kCGEventFlagMaskCommand
-                              | kCGEventFlagMaskAlphaShift;
+                              | kCGEventFlagMaskAlphaShift | kCGEventFlagMaskSecondaryFn;
 
 static inline CGKeyCode GetCGKeyCode(jint javaKeyCode);
 static inline int GetCGKeyMask(int cgKeyCode);
