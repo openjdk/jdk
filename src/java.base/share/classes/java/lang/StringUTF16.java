@@ -1518,10 +1518,10 @@ final class StringUTF16 {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
-     * Integer.DigitPacks UTF16 version
+     * Integer.PACKED_DIGITS UTF16 version
      */
     @Stable
-    private static final int[] DigitPacksUTF16;
+    private static final int[] PACKED_DIGITS_UTF16;
     static {
         int[] digits = new int[]{
                 0x300030, 0x310030, 0x320030, 0x330030, 0x340030, 0x350030, 0x360030, 0x370030, 0x380030, 0x390030,
@@ -1540,7 +1540,7 @@ final class StringUTF16 {
                 digits[i] <<= 8;
             }
         }
-        DigitPacksUTF16 = digits;
+        PACKED_DIGITS_UTF16 = digits;
     }
 
     static final int MAX_LENGTH = Integer.MAX_VALUE >> 1;
@@ -1576,7 +1576,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    DigitPacksUTF16[r],
+                    PACKED_DIGITS_UTF16[r],
                     false);
         }
 
@@ -1586,7 +1586,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    DigitPacksUTF16[-i],
+                    PACKED_DIGITS_UTF16[-i],
                     false);
         } else {
             putChar(buf, --charPos, '0' - i);
@@ -1623,7 +1623,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    DigitPacksUTF16[(int)((q * 100) - i)],
+                    PACKED_DIGITS_UTF16[(int)((q * 100) - i)],
                     false);
             i = q;
         }
@@ -1637,7 +1637,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    DigitPacksUTF16[(q2 * 100) - i2],
+                    PACKED_DIGITS_UTF16[(q2 * 100) - i2],
                     false);
             i2 = q2;
         }
@@ -1648,7 +1648,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    DigitPacksUTF16[-i2],
+                    PACKED_DIGITS_UTF16[-i2],
                     false);
         } else {
             putChar(buf, --charPos, '0' - i2);

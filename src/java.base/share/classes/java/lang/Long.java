@@ -522,7 +522,7 @@ public final class Long extends Number
             UNSAFE.putShortUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    Integer.DigitPacks[(int)((q * 100) - i)],
+                    Integer.PACKED_DIGITS[(int)((q * 100) - i)],
                     false);
             i = q;
         }
@@ -536,7 +536,7 @@ public final class Long extends Number
             UNSAFE.putShortUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    Integer.DigitPacks[(q2 * 100) - i2],
+                    Integer.PACKED_DIGITS[(q2 * 100) - i2],
                     false);
             i2 = q2;
         }
@@ -547,7 +547,7 @@ public final class Long extends Number
             UNSAFE.putShortUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos,
-                    Integer.DigitPacks[-i2],
+                    Integer.PACKED_DIGITS[-i2],
                     false);
         } else {
             buf[--charPos] = (byte)('0' - i2);

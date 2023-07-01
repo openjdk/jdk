@@ -438,7 +438,7 @@ public final class Integer extends Number
      * </pre>
      */
     @Stable
-    static final short[] DigitPacks = new short[] {
+    static final short[] PACKED_DIGITS = new short[] {
             0x3030, 0x3130, 0x3230, 0x3330, 0x3430, 0x3530, 0x3630, 0x3730, 0x3830, 0x3930,
             0x3031, 0x3131, 0x3231, 0x3331, 0x3431, 0x3531, 0x3631, 0x3731, 0x3831, 0x3931,
             0x3032, 0x3132, 0x3232, 0x3332, 0x3432, 0x3532, 0x3632, 0x3732, 0x3832, 0x3932,
@@ -525,13 +525,13 @@ public final class Integer extends Number
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
-            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[r], false);
+            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, PACKED_DIGITS[r], false);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
-            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, DigitPacks[-i], false);
+            UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, PACKED_DIGITS[-i], false);
         } else {
             buf[--charPos] = (byte)('0' - i);
         }
