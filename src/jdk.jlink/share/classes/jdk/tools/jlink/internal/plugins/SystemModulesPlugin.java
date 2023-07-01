@@ -687,9 +687,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             for (int index = 0; index < moduleInfos.size(); index++) {
                                 ModuleInfo minfo = moduleInfos.get(index);
                                 new ModuleDescriptorBuilder(cob,
-                                        minfo.descriptor(),
-                                        minfo.packages(),
-                                        index).build();
+                                                            minfo.descriptor(),
+                                                            minfo.packages(),
+                                                            index).build();
                             }
                             cob.aload(MD_VAR)
                                .areturn();
@@ -757,9 +757,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             for (int j = 0; j < moduleInfosPackage.size(); j++) {
                                 ModuleInfo minfo = moduleInfosPackage.get(j);
                                 new ModuleDescriptorBuilder(cob,
-                                        minfo.descriptor(),
-                                        minfo.packages(),
-                                        globalCount[0]).build();
+                                                            minfo.descriptor(),
+                                                            minfo.packages(),
+                                                            globalCount[0]).build();
                                 globalCount[0]++;
                             }
 
