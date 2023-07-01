@@ -240,13 +240,9 @@ void GenArguments::initialize_size_info() {
   size_t initial_young_size = NewSize;
 
   if (MaxHeapSize == InitialHeapSize) {
-    // The maximum and initial heap sizes are the same, so the generation's
-    // initial size must be the same as its maximum size.
-    if (FLAG_IS_CMDLINE(NewSize) && FLAG_IS_CMDLINE(MaxNewSize) && NewSize != MaxNewSize) {
-      vm_exit_during_initialization(
-          "The MaxNewSize must be the same as NewSize because the MaxHeapSize and InitialHeapSize are the same.");
-    }
-    // Use NewSize as the size if it is set on command line.
+    // The maximum and initial heap sizes are the same so the generation's
+    // initial size must be the same as it maximum size. Use NewSize as the
+    // size if set on command line.
     max_young_size = FLAG_IS_CMDLINE(NewSize) ? NewSize : max_young_size;
     initial_young_size = max_young_size;
 
