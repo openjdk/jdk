@@ -541,6 +541,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private static final int MAX_LOCAL_VARS = 256;
 
         private final int BUILDER_VAR    = MAX_LOCAL_VARS + 1;
+        private final int DEDUP_LIST_VAR = MAX_LOCAL_VARS + 2;
         private final int MD_VAR         = 1;  // variable for ModuleDescriptor
         private final int MT_VAR         = 1;  // variable for ModuleTarget
         private final int MH_VAR         = 1;  // variable for ModuleHashes
@@ -739,13 +740,16 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             }
 
             String helperMethodNamePrefix = "sub";
-            final ClassDesc arrayListClassDesc = ClassDesc.ofInternalName("java/util/ArrayList");
+            ClassDesc arrayListClassDesc = ClassDesc.ofInternalName("java/util/ArrayList");
 
-            final int firstVariableForDedup = nextLocalVar;
+            int firstVar = nextLocalVar;
+            var wrapper = new Object() {
+                int lastCopiedVar = nextLocalVar;
+            };
 
             clb.withMethodBody(
                     "moduleDescriptors",
-                    MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType()),
+                    MTD_ModuleDescriptorArray,
                     ACC_PUBLIC,
                     cob -> {
                         cob.constantInstruction(moduleInfos.size())
@@ -754,7 +758,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                            .astore(MD_VAR);
                         cob.new_(arrayListClassDesc)
                            .dup()
-                           .invokespecial(arrayListClassDesc, "<init>", MethodTypeDesc.of(CD_void))
+                           .sipush(moduleInfos.size())
+                           .invokespecial(arrayListClassDesc, INIT_NAME, MethodTypeDesc.of(CD_int))
                            .astore(nextLocalVar);
                         cob.aload(0)
                            .aload(MD_VAR)
@@ -768,52 +773,50 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     });
 
             for (int n = 0, count = 0; n < splitModuleInfos.size(); count += splitModuleInfos.get(n).size(), n++) {
-                int index = n;          // the index of which ModuleInfo being processed in the current batch
+                int index = n;       // the index of which ModuleInfo being processed in the current batch
                 int start = count;   // the start index to the return ModuleDescriptor array for the current batch
                 clb.withMethodBody(
-                        helperMethodNamePrefix + index[0],
+                        helperMethodNamePrefix + index,
                         MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc),
                         ACC_PUBLIC,
                         cob -> {
-                            List<ModuleInfo> currentBatch = splitModuleInfos.get(index[0]);
+                            cob.aload(2)
+                               .astore(DEDUP_LIST_VAR);
 
-                            if (nextLocalVar > firstVariableForDedup) {
-                                for (int i = nextLocalVar-1; i >= firstVariableForDedup; i--) {
-                                    cob.aload(2)
-                                       .constantInstruction(i-firstVariableForDedup)
+                            if (nextLocalVar > firstVar) {
+                                for (int i = firstVar; i < nextLocalVar; i++) {
+                                    cob.aload(DEDUP_LIST_VAR)
+                                       .constantInstruction(i - firstVar)
                                        .invokevirtual(arrayListClassDesc, "get", MethodTypeDesc.of(CD_Object, CD_int))
                                        .astore(i);
                                 }
                             }
 
-                            for (int j = 0; j < moduleInfosPackage.size(); j++) {
-                                ModuleInfo minfo = moduleInfosPackage.get(j);
+                            List<ModuleInfo> currentBatch = splitModuleInfos.get(index);
+                            for (int j = 0; j < currentBatch.size(); j++) {
+                                ModuleInfo minfo = currentBatch.get(j);
                                 new ModuleDescriptorBuilder(cob,
                                                             minfo.descriptor(),
                                                             minfo.packages(),
-                                                            globalCount[0]).build();
-                                globalCount[0]++;
+                                                            start + j).build();
                             }
 
-                            if (index[0] + 1 < (splitModuleInfos.size())) {
-                                if (nextLocalVar > firstVariableForDedup) {
-                                    cob.new_(arrayListClassDesc)
-                                       .dup()
-                                       .invokespecial(arrayListClassDesc, "<init>", MethodTypeDesc.of(CD_void))
-                                       .astore(nextLocalVar);
-                                    for (int i = firstVariableForDedup; i < nextLocalVar; i++) {
-                                        cob.aload(nextLocalVar)
+                            if (index < splitModuleInfos.size() - 1) {
+                                if (nextLocalVar > wrapper.lastCopiedVar) {
+                                    for (int i = wrapper.lastCopiedVar + 1; i < nextLocalVar; i++) {
+                                        cob.aload(DEDUP_LIST_VAR)
                                            .aload(i)
                                            .invokevirtual(arrayListClassDesc, "add", MethodTypeDesc.of(CD_boolean, CD_Object))
                                            .pop();
                                     }
+                                    wrapper.lastCopiedVar = nextLocalVar;
                                 }
                                 cob.aload(0)
                                    .aload(MD_VAR)
-                                   .aload(nextLocalVar)
+                                   .aload(DEDUP_LIST_VAR)
                                    .invokevirtual(
                                            this.classDesc,
-                                           helperMethodNamePrefix + (index[0] + 1),
+                                           helperMethodNamePrefix + (index+1),
                                            MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc)
                                    );
                             }
