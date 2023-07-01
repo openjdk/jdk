@@ -31,7 +31,7 @@ import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
-import jdk.internal.util.ByteArray;
+import jdk.internal.misc.Unsafe;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -466,37 +466,44 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      */
     @Override
     public String toString() {
+        Unsafe unsafe = Unsafe.getUnsafe();
         long lsb = leastSigBits;
         long msb = mostSigBits;
         byte[] buf = new byte[36];
-        ByteArray.setLong(
+        unsafe.putLongUnaligned(
                 buf,
-                0,
-                HexDigits.digit((int) (msb >> 56), (int) (msb >> 48), (int) (msb >> 40), (int) (msb >> 32)));
+                Unsafe.ARRAY_BYTE_BASE_OFFSET,
+                HexDigits.packDigits((int) (msb >> 56), (int) (msb >> 48), (int) (msb >> 40), (int) (msb >> 32)),
+                false);
         buf[8] = '-';
-        ByteArray.setInt(
+        unsafe.putIntUnaligned(
                 buf,
-                9,
-                HexDigits.digit(((int) msb) >> 24, ((int) msb) >> 16));
+                Unsafe.ARRAY_BYTE_BASE_OFFSET + 9,
+                HexDigits.packDigits(((int) msb) >> 24, ((int) msb) >> 16),
+                false);
         buf[13] = '-';
-        ByteArray.setInt(
+        unsafe.putIntUnaligned(
                 buf,
-                14,
-                HexDigits.digit(((int) msb) >> 8, (int) msb));
+                Unsafe.ARRAY_BYTE_BASE_OFFSET + 14,
+                HexDigits.packDigits(((int) msb) >> 8, (int) msb),
+                false);
         buf[18] = '-';
-        ByteArray.setInt(
+        unsafe.putIntUnaligned(
                 buf,
-                19,
-                HexDigits.digit((int) (lsb >> 56), (int) (lsb >> 48)));
+                Unsafe.ARRAY_BYTE_BASE_OFFSET + 19,
+                HexDigits.packDigits((int) (lsb >> 56), (int) (lsb >> 48)),
+                false);
         buf[23] = '-';
-        ByteArray.setLong(
+        unsafe.putLongUnaligned(
                 buf,
-                24,
-                HexDigits.digit(((int) (lsb >> 40)), (int) (lsb >> 32), ((int) lsb) >> 24, ((int) lsb) >> 16));
-        ByteArray.setInt(
+                Unsafe.ARRAY_BYTE_BASE_OFFSET + 24,
+                HexDigits.packDigits(((int) (lsb >> 40)), (int) (lsb >> 32), ((int) lsb) >> 24, ((int) lsb) >> 16),
+                false);
+        unsafe.putIntUnaligned(
                 buf,
-                32,
-                HexDigits.digit(((int) lsb) >> 8, (int) lsb));
+                Unsafe.ARRAY_BYTE_BASE_OFFSET + 32,
+                HexDigits.packDigits(((int) lsb) >> 8, (int) lsb),
+                false);
 
         try {
             return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
