@@ -46,7 +46,7 @@ static int icache_flush(address addr, int lines, int magic) {
 }
 
 void ICacheStubGenerator::generate_icache_flush(ICache::flush_icache_stub_t* flush_icache_stub) {
-  // Only riscv_flush_icache is supported as I-cache synhronization.
+  // Only riscv_flush_icache is supported as I-cache synchronization.
   // We must make sure the VM can execute such without error.
   if (!RiscvFlushIcache::test()) {
     vm_exit_during_initialization("Unable to synchronize I-cache");

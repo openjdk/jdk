@@ -33,16 +33,6 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s; error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define assert_with_errno(cond, msg)    check_with_errno(assert, cond, msg)
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
-
 #ifndef NR_riscv_flush_icache
 #ifndef NR_arch_specific_syscall
 #define NR_arch_specific_syscall 244
@@ -58,9 +48,10 @@ static long sys_flush_icache(uintptr_t start, uintptr_t end , uintptr_t flags) {
 }
 
 bool RiscvFlushIcache::test() {
-  long ret;
-  intptr_t end = ((intptr_t)&ret) + 64;
-  ret = sys_flush_icache((uintptr_t)&ret, end, SYS_RISCV_FLUSH_ICACHE_ALL);
+  alignas(64) char memory[64];
+  long ret = sys_flush_icache((uintptr_t)&memory[0],
+                              (uintptr_t)&memory[sizeof(memory) - 1],
+                              SYS_RISCV_FLUSH_ICACHE_ALL);
   if (ret == 0) {
     return true;
   }
