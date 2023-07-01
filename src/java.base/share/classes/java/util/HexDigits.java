@@ -103,14 +103,18 @@ final class HexDigits implements Digits {
     }
 
     /**
-     * Return a big-endian packed integer for the 4 ASCII bytes for an input unsigned short value.
+     * Return a big-endian packed integer for the 4 ASCII bytes for an input unsigned 2-byte integer.
+     * {@code b0} is the most significant byte and {@code b1} is the least significant byte.
+     * The integer is passed byte-wise to allow reordering of execution.
      */
     static int packDigits(int b0, int b1) {
         return (DIGITS[b0 & 0xff] << 16) | DIGITS[b1 & 0xff];
     }
 
     /**
-     * Return a big-endian packed long for the 8 ASCII bytes for an input unsigned int value.
+     * Return a big-endian packed long for the 8 ASCII bytes for an input unsigned 4-byte integer.
+     * {@code b0} is the most significant byte and {@code b4} is the least significant byte.
+     * The integer is passed byte-wise to allow reordering of execution.
      */
     static long packDigits(int b0, int b1, int b2, int b3) {
         return (((long) DIGITS[b0 & 0xff]) << 48)
