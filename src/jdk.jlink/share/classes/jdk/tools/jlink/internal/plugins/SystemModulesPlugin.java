@@ -736,7 +736,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 currentModuleInfos.add(moduleInfos.get(index));
             }
 
-            final String helperMethodNamePrefix = "moduleDescriptorsSub";
+            String helperMethodNamePrefix = "sub";
             final ClassDesc arrayListClassDesc = ClassDesc.ofInternalName("java/util/ArrayList");
 
             final int firstVariableForDedup = nextLocalVar;
@@ -765,14 +765,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                            .areturn();
                     });
 
-            final int[] globalCount = {0};
-            for (final int[] index = {0}; index[0] < splitModuleInfos.size(); index[0]++) {
+            for (int n = 0, count = 0; n < splitModuleInfos.size(); count += splitModuleInfos.get(n).size(), n++) {
+                int index = n;          // the index of which ModuleInfo being processed in the current batch
+                int start = count;   // the start index to the return ModuleDescriptor array for the current batch
                 clb.withMethodBody(
                         helperMethodNamePrefix + index[0],
                         MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc),
                         ACC_PUBLIC,
                         cob -> {
-                            List<ModuleInfo> moduleInfosPackage = splitModuleInfos.get(index[0]);
+                            List<ModuleInfo> currentBatch = splitModuleInfos.get(index[0]);
 
                             if (nextLocalVar > firstVariableForDedup) {
                                 for (int i = nextLocalVar-1; i >= firstVariableForDedup; i--) {
