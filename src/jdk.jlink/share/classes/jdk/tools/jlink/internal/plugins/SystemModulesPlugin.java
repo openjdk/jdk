@@ -118,6 +118,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             ClassDesc.ofInternalName("jdk/internal/module/SystemModules");
     private static final ClassDesc CD_SYSTEM_MODULES_MAP =
             ClassDesc.ofInternalName(SYSTEM_MODULES_MAP_CLASSNAME);
+    private static final MethodTypeDesc MTD_StringArray = MethodTypeDesc.of(CD_String.arrayType());
+    private static final MethodTypeDesc MTD_SystemModules = MethodTypeDesc.of(CD_SYSTEM_MODULES);
     private final int moduleDescriptorsPerMethod;
     private boolean enabled;
 
@@ -436,7 +438,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         boolean hasModulePackages() throws IOException {
             try (InputStream in = getInputStream()) {
                 // parse module-info.class
-                return Classfile.parse(in.readAllBytes()).elementStream()
+                return Classfile.of().parse(in.readAllBytes()).elementStream()
                         .anyMatch(e -> e instanceof ModulePackagesAttribute mpa
                                     && !mpa.packages().isEmpty());
             }
@@ -521,6 +523,18 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             ClassDesc.ofInternalName("jdk/internal/module/ModuleHashes");
         private static final ClassDesc CD_MODULE_RESOLUTION =
             ClassDesc.ofInternalName("jdk/internal/module/ModuleResolution");
+        private static final ClassDesc CD_Map_Entry = ClassDesc.ofInternalName("java/util/Map$Entry");
+        private static final MethodTypeDesc MTD_boolean = MethodTypeDesc.of(CD_boolean);
+        private static final MethodTypeDesc MTD_ModuleDescriptorArray = MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType());
+        private static final MethodTypeDesc MTD_ModuleTargetArray = MethodTypeDesc.of(CD_MODULE_TARGET.arrayType());
+        private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
+        private static final MethodTypeDesc MTD_void_int = MethodTypeDesc.of(CD_void, CD_int);
+        private static final MethodTypeDesc MTD_ModuleHashesArray = MethodTypeDesc.of(CD_MODULE_HASHES.arrayType());
+        private static final MethodTypeDesc MTD_ModuleResolutionArray = MethodTypeDesc.of(CD_MODULE_RESOLUTION.arrayType());
+        private static final MethodTypeDesc MTD_Map = MethodTypeDesc.of(CD_Map);
+        private static final MethodTypeDesc MTD_MapEntry_Object_Object = MethodTypeDesc.of(CD_Map_Entry, CD_Object, CD_Object);
+        private static final MethodTypeDesc MTD_Map_MapEntryArray = MethodTypeDesc.of(CD_Map, CD_Map_Entry.arrayType());
+        private static final MethodTypeDesc MTD_Set_ObjectArray = MethodTypeDesc.of(CD_Set, CD_Object.arrayType());
 
         private static final int MAX_LOCAL_VARS = 256;
 
@@ -588,7 +602,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate SystemModules class
          */
         public byte[] genClassBytes(Configuration cf) {
-            return Classfile.build(classDesc,
+            return Classfile.of().build(classDesc,
                     clb -> {
                         clb.withFlags(ACC_FINAL + ACC_SUPER)
                            .withInterfaceSymbols(List.of(CD_SYSTEM_MODULES))
@@ -625,13 +639,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          */
         private void genConstructor(ClassBuilder clb) {
             clb.withMethodBody(
-                    "<init>",
-                    MethodTypeDesc.of(CD_void),
+                    INIT_NAME,
+                    MTD_void,
                     ACC_PUBLIC,
                     cob -> cob.aload(0)
                               .invokespecial(CD_Object,
-                                             "<init>",
-                                             MethodTypeDesc.of(CD_void))
+                                             INIT_NAME,
+                                             MTD_void)
                               .return_());
         }
 
@@ -647,7 +661,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
             clb.withMethodBody(
                     "hasSplitPackages",
-                    MethodTypeDesc.of(CD_boolean),
+                    MTD_boolean,
                     ACC_PUBLIC,
                     cob -> cob.constantInstruction(hasSplitPackages ? 1 : 0)
                               .ireturn());
@@ -665,7 +679,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
             clb.withMethodBody(
                     "hasIncubatorModules",
-                    MethodTypeDesc.of(CD_boolean),
+                    MTD_boolean,
                     ACC_PUBLIC,
                     cob -> cob.constantInstruction(hasIncubatorModules ? 1 : 0)
                               .ireturn());
@@ -678,12 +692,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             if (moduleInfos.size() <= moduleDescriptorsPerMethod) {
                 clb.withMethodBody(
                         "moduleDescriptors",
-                        MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType()),
+                        MTD_ModuleDescriptorArray,
                         ACC_PUBLIC,
                         cob -> {
                             cob.constantInstruction(moduleInfos.size())
                                .anewarray(CD_MODULE_DESCRIPTOR)
                                .astore(MD_VAR);
+
                             for (int index = 0; index < moduleInfos.size(); index++) {
                                 ModuleInfo minfo = moduleInfos.get(index);
                                 new ModuleDescriptorBuilder(cob,
@@ -732,9 +747,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     ACC_PUBLIC,
                     cob -> {
                         cob.constantInstruction(moduleInfos.size())
-                                .anewarray(CD_MODULE_DESCRIPTOR)
-                                .dup()
-                                .astore(MD_VAR);
+                           .anewarray(CD_MODULE_DESCRIPTOR)
+                           .dup()
+                           .astore(MD_VAR);
                         cob.new_(arrayListClassDesc)
                            .dup()
                            .invokespecial(arrayListClassDesc, "<init>", MethodTypeDesc.of(CD_void))
@@ -811,7 +826,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private void genModuleTargetsMethod(ClassBuilder clb) {
             clb.withMethodBody(
                     "moduleTargets",
-                    MethodTypeDesc.of(CD_MODULE_TARGET.arrayType()),
+                    MTD_ModuleTargetArray,
                     ACC_PUBLIC,
                     cob -> {
                         cob.constantInstruction(moduleInfos.size())
@@ -844,8 +859,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                    .dup()
                                    .constantInstruction(minfo.target().targetPlatform())
                                    .invokespecial(CD_MODULE_TARGET,
-                                                  "<init>",
-                                                  MethodTypeDesc.of(CD_void, CD_String));
+                                                  INIT_NAME,
+                                                  MTD_void_String);
 
                                 cob.aastore();
                             }
@@ -862,7 +877,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private void genModuleHashesMethod(ClassBuilder clb) {
             clb.withMethodBody(
                     "moduleHashes",
-                    MethodTypeDesc.of(CD_MODULE_HASHES.arrayType()),
+                    MTD_ModuleHashesArray,
                     ACC_PUBLIC,
                     cob -> {
                         cob.constantInstruction(moduleInfos.size())
@@ -889,7 +904,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         private void genModuleResolutionsMethod(ClassBuilder clb) {
             clb.withMethodBody(
                     "moduleResolutions",
-                    MethodTypeDesc.of(CD_MODULE_RESOLUTION.arrayType()),
+                    MTD_ModuleResolutionArray,
                     ACC_PUBLIC,
                     cob -> {
                         cob.constantInstruction(moduleInfos.size())
@@ -905,8 +920,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                    .dup()
                                    .constantInstruction(minfo.moduleResolution().value())
                                    .invokespecial(CD_MODULE_RESOLUTION,
-                                                  "<init>",
-                                                  MethodTypeDesc.of(CD_void, CD_int))
+                                                  INIT_NAME,
+                                                  MTD_void_int)
                                    .aastore();
                             }
                         }
@@ -940,7 +955,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                               boolean dedup) {
             clb.withMethodBody(
                     methodName,
-                    MethodTypeDesc.of(CD_Map),
+                    MTD_Map,
                     ACC_PUBLIC,
                     cob -> {
 
@@ -970,7 +985,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
                         // new Map$Entry[size]
                         cob.constantInstruction(map.size())
-                           .anewarray(ClassDesc.ofInternalName("java/util/Map$Entry"));
+                           .anewarray(CD_Map_Entry);
 
                         int index = 0;
                         for (var e : new TreeMap<>(map).entrySet()) {
@@ -989,11 +1004,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                 cob.aload(varIndex);
                             }
 
-                            MethodTypeDesc desc = MethodTypeDesc.ofDescriptor(
-                                    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;");
                             cob.invokestatic(CD_Map,
                                              "entry",
-                                             desc,
+                                             MTD_MapEntry_Object_Object,
                                              true)
                                .aastore();
                             index++;
@@ -1002,8 +1015,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         // invoke Map.ofEntries(Map$Entry[])
                         cob.invokestatic(CD_Map,
                                          "ofEntries",
-                                         MethodTypeDesc.ofDescriptor(
-                                                 "([Ljava/util/Map$Entry;)Ljava/util/Map;"),
+                                         MTD_Map_MapEntryArray,
                                          true)
                            .areturn();
                     });
@@ -1030,8 +1042,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
                 cob.invokestatic(CD_Set,
                                  "of",
-                                 MethodTypeDesc.ofDescriptor(
-                                         "([Ljava/lang/Object;)Ljava/util/Set;"),
+                                 MTD_Set_ObjectArray,
                                  true);
             } else {
                 for (String element : sorted(set)) {
@@ -1086,6 +1097,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             static final MethodTypeDesc MTD_SET = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_Set);
             static final MethodTypeDesc MTD_STRING = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_String);
             static final MethodTypeDesc MTD_BOOLEAN = MethodTypeDesc.of(CD_MODULE_BUILDER, CD_boolean);
+            static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(CD_void, CD_String);
+            static final MethodTypeDesc MTD_ModuleDescriptor_int = MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int);
+            static final MethodTypeDesc MTD_List_ObjectArray = MethodTypeDesc.of(CD_List, CD_Object.arrayType());
 
             final CodeBuilder cob;
             final ModuleDescriptor md;
@@ -1138,8 +1152,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                    .dup()
                    .constantInstruction(md.name())
                    .invokespecial(CD_MODULE_BUILDER,
-                                  "<init>",
-                                  MethodTypeDesc.of(CD_void, CD_String))
+                                  INIT_NAME,
+                                  MTD_void_String)
                    .astore(BUILDER_VAR);
 
                 if (md.isOpen()) {
@@ -1175,7 +1189,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                    .constantInstruction(md.hashCode())
                    .invokevirtual(CD_MODULE_BUILDER,
                                   "build",
-                                  MethodTypeDesc.of(CD_MODULE_DESCRIPTOR, CD_int))
+                                  MTD_ModuleDescriptor_int)
                    .aastore();
             }
 
@@ -1401,8 +1415,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 }
                 cob.invokestatic(CD_List,
                                  "of",
-                                 MethodTypeDesc.ofDescriptor(
-                                        "([Ljava/lang/Object;)Ljava/util/List;"),
+                                 MTD_List_ObjectArray,
                                  true)
                    .invokestatic(CD_MODULE_BUILDER,
                                  "newProvides",
@@ -1461,6 +1474,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 ClassDesc.ofInternalName("jdk/internal/module/ModuleHashes$Builder");
             static final MethodTypeDesc STRING_BYTE_ARRAY_SIG =
                 MethodTypeDesc.of(MODULE_HASHES_BUILDER, CD_String, CD_byte.arrayType());
+            static final MethodTypeDesc MTD_void_String_int = MethodTypeDesc.of(CD_void, CD_String, CD_int);
+            static final MethodTypeDesc MTD_ModuleHashes = MethodTypeDesc.of(CD_MODULE_HASHES);
 
             final ModuleHashes recordedHashes;
             final CodeBuilder cob;
@@ -1503,8 +1518,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                    .constantInstruction(recordedHashes.algorithm())
                    .constantInstruction(((4 * recordedHashes.names().size()) / 3) + 1)
                    .invokespecial(MODULE_HASHES_BUILDER,
-                                  "<init>",
-                                  MethodTypeDesc.of(CD_void, CD_String, CD_int))
+                                  INIT_NAME,
+                                  MTD_void_String_int)
                    .astore(BUILDER_VAR)
                    .aload(BUILDER_VAR);
             }
@@ -1520,7 +1535,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                    .aload(BUILDER_VAR)
                    .invokevirtual(MODULE_HASHES_BUILDER,
                                   "build",
-                                  MethodTypeDesc.of(CD_MODULE_HASHES))
+                                  MTD_ModuleHashes)
                    .aastore();
             }
 
@@ -1669,6 +1684,9 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * it will use a new local variable retrieved from the nextLocalVar
          */
         static class SetBuilder<T extends Comparable<T>> {
+            private static final MethodTypeDesc MTD_Set_ObjectArray = MethodTypeDesc.of(
+                    CD_Set, CD_Object.arrayType());
+
             private final Set<T> elements;
             private final int defaultVarIndex;
             private final IntSupplier nextLocalVar;
@@ -1750,8 +1768,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     }
                     cob.invokestatic(CD_Set,
                                      "of",
-                                     MethodTypeDesc.ofDescriptor(
-                                            "([Ljava/lang/Object;)Ljava/util/Set;"),
+                                     MTD_Set_ObjectArray,
                                      true);
                 }
                 cob.astore(index);
@@ -1794,50 +1811,50 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         // write the class file to the pool as a resource
         String rn = "/java.base/" + SYSTEM_MODULES_MAP_CLASSNAME + ".class";
-        ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.build(
+        ResourcePoolEntry e = ResourcePoolEntry.create(rn, Classfile.of().build(
                 CD_SYSTEM_MODULES_MAP,
                 clb -> clb.withFlags(ACC_FINAL + ACC_SUPER)
                           .withVersion(52, 0)
 
                           // <init>
                           .withMethodBody(
-                                  "<init>",
-                                  MethodTypeDesc.of(CD_void),
+                                  INIT_NAME,
+                                  MTD_void,
                                   0,
                                   cob -> cob.aload(0)
                                             .invokespecial(CD_Object,
-                                                           "<init>",
-                                                           MethodTypeDesc.of(CD_void))
+                                                           INIT_NAME,
+                                                           MTD_void)
                                             .return_())
 
                           // allSystemModules()
                           .withMethodBody(
                                   "allSystemModules",
-                                  MethodTypeDesc.of(CD_SYSTEM_MODULES),
+                                  MTD_SystemModules,
                                   ACC_STATIC,
                                   cob -> cob.new_(allSystemModules)
                                             .dup()
                                             .invokespecial(allSystemModules,
-                                                           "<init>",
-                                                           MethodTypeDesc.of(CD_void))
+                                                           INIT_NAME,
+                                                           MTD_void)
                                             .areturn())
 
                           // defaultSystemModules()
                           .withMethodBody(
                                   "defaultSystemModules",
-                                   MethodTypeDesc.of(CD_SYSTEM_MODULES),
+                                   MTD_SystemModules,
                                    ACC_STATIC,
                                    cob -> cob.new_(defaultSystemModules)
                                              .dup()
                                              .invokespecial(defaultSystemModules,
-                                                            "<init>",
-                                                            MethodTypeDesc.of(CD_void))
+                                                            INIT_NAME,
+                                                            MTD_void)
                                              .areturn())
 
                           // moduleNames()
                           .withMethodBody(
                                   "moduleNames",
-                                  MethodTypeDesc.of(CD_String.arrayType()),
+                                  MTD_StringArray,
                                   ACC_STATIC,
                                   cob -> {
                                       cob.constantInstruction(map.size());
@@ -1858,7 +1875,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                           // classNames()
                           .withMethodBody(
                                   "classNames",
-                                  MethodTypeDesc.of(CD_String.arrayType()),
+                                  MTD_StringArray,
                                   ACC_STATIC,
                                   cob -> {
                                       cob.constantInstruction(map.size())

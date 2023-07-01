@@ -275,7 +275,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
   } else {
     // Limit AllocatePrefetchDistance so that it does not exceed the
-    // constraint in AllocatePrefetchDistanceConstraintFunc.
+    // static constraint of 512 defined in runtime/globals.hpp.
     if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
       FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3 * (int)CacheLineSize));
     }

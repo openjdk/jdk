@@ -1011,7 +1011,7 @@ void Parse::do_exits() {
     // and allocation node does not escape the initialize method,
     // then barrier introduced by allocation node can be removed.
     if (DoEscapeAnalysis && alloc_with_final()) {
-      AllocateNode *alloc = AllocateNode::Ideal_allocation(alloc_with_final(), &_gvn);
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(alloc_with_final());
       alloc->compute_MemBar_redundancy(method());
     }
     if (PrintOpto && (Verbose || WizardMode)) {

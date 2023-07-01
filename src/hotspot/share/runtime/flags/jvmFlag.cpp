@@ -579,10 +579,10 @@ JVMFlag* JVMFlag::find_flag(const char* name, size_t length, bool allow_locked, 
 }
 
 JVMFlag* JVMFlag::fuzzy_match(const char* name, size_t length, bool allow_locked) {
-  float VMOptionsFuzzyMatchSimilarity = 0.7f;
+  double VMOptionsFuzzyMatchSimilarity = 0.7;
   JVMFlag* match = nullptr;
-  float score;
-  float max_score = -1;
+  double score;
+  double max_score = -1;
 
   for (JVMFlag* current = &flagTable[0]; current->_name != nullptr; current++) {
     score = StringUtils::similarity(current->_name, strlen(current->_name), name, length);

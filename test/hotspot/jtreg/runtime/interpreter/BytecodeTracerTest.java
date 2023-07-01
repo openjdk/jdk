@@ -26,42 +26,86 @@
  * @bug 8309808 8309811
  * @summary Test the output of the HotSpot BytecodeTracer and ClassPrinter classes.
  * @library /test/lib
- * @build jdk.test.whitebox.WhiteBox
+ * @build jdk.test.whitebox.WhiteBox Linked2 Unlinked2
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI BytecodeTracerTest
  */
 
 import java.io.BufferedWriter;
 import java.io.FileWriter;
-import java.io.Serializable;
+import java.lang.invoke.MethodHandle;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
 
 public class BytecodeTracerTest {
+    private final static String Linked_className = Linked.class.getName();
+    private final static String Linked2_className = Linked2.class.getName();
+
+    // This loads the "Unlinked" and "Unlinked2" classes, but doesn't link them.
+    private final static String Unlinked_className = Unlinked.class.getName();
+    private final static String Unlinked2_className = Unlinked2.class.getName();
+
+    public static void staticMethod()   { }
+    public void virtualMethod() { }
+    int x;
+    static long y;
+
     public static class Linked {
         public static void doit(String args[]) {
             System.out.println("num args = " + args.length);
         }
-    }
+        public String test_ldc() {
+            Class c = Unloaded.class;
+            return "Literal\u5678";
+        }
+        public void test_invoke(BytecodeTracerTest obj) {
+            obj.virtualMethod();
+            staticMethod();
+        }
+        public void test_field(BytecodeTracerTest obj) {
+            y = obj.x;
+        }
+        public void test_invokehandle(MethodHandle mh) throws Throwable {
+            mh.invokeExact(4.0f, "String", this);
+        }
+   }
 
-    public static class Unlinked implements Serializable {
+    public static class Unlinked {
         public String toString() {
             return "Unlinked" + this.hashCode();
         }
+        public String test_ldc() {
+            Class c = Unloaded.class;
+            return "Literal\u1234";
+        }
+        public void test_invoke(BytecodeTracerTest obj) {
+            obj.virtualMethod();
+            staticMethod();
+        }
+        public void test_field(BytecodeTracerTest obj) {
+            y = obj.x;
+        }
+        public void test_invokehandle(MethodHandle mh) throws Throwable {
+            mh.invokeExact(4.0f, "String", this);
+        }
     }
 
-    static String output;
+    // This class is never loaded during the execution of BytecodeTracerTest
+    public static class Unloaded { }
+
     static int testCount = 0;
+    String testNote;
+    String output;
 
-    static String nextCase(String testName) {
+    BytecodeTracerTest(String note) {
         ++ testCount;
-        return "======================================================================\nTest case "
-            + testCount + ": " + testName + "\n    ";
+        testNote = "======================================================================\nTest case "
+            + testCount + ": " + note + "\n    ";
     }
 
-    static void logOutput() throws Exception {
+    void logOutput() throws Exception {
         String logFileName = "log-" + testCount + ".txt";
         System.out.println("Output saved in " + logFileName);
         BufferedWriter writer = new BufferedWriter(new FileWriter(logFileName));
@@ -69,19 +113,37 @@ public class BytecodeTracerTest {
         writer.close();
     }
 
-    static void printClasses(String testName, String classNamePattern, int flags) throws Exception {
-        System.out.println(nextCase(testName) + "printClasses(\"" + classNamePattern + "\", " + flags + ")");
+    BytecodeTracerTest printClasses(String classNamePattern, int flags) throws Exception {
+        System.out.println(testNote + "printClasses(\"" + classNamePattern + "\", " + flags + ")");
         output = WhiteBox.getWhiteBox().printClasses(classNamePattern, flags);
         logOutput();
+        return this;
     }
 
-    static void printMethods(String testName, String classNamePattern, String methodPattern, int flags) throws Exception {
-        System.out.println(nextCase(testName) + "printMethods(\"" + classNamePattern + "\", \"" + methodPattern + "\", " + flags + ")");
+    BytecodeTracerTest printMethods(String classNamePattern, String methodPattern, int flags) throws Exception {
+        System.out.println(testNote + "printMethods(\"" + classNamePattern + "\", \"" + methodPattern + "\", " + flags + ")");
         output = WhiteBox.getWhiteBox().printMethods(classNamePattern, methodPattern, flags);
         logOutput();
+        return this;
     }
 
-    static void mustMatch(String pattern) {
+    BytecodeTracerTest printLinkedMethods(String methodPattern) throws Exception {
+        return printMethods(Linked_className, methodPattern, 0xff);
+    }
+
+    BytecodeTracerTest printLinked2Methods(String methodPattern) throws Exception {
+        return printMethods(Linked2_className, methodPattern, 0xff);
+    }
+
+    BytecodeTracerTest printUnlinkedMethods(String methodPattern) throws Exception {
+        return printMethods(Unlinked_className, methodPattern, 0xff);
+    }
+
+    BytecodeTracerTest printUnlinked2Methods(String methodPattern) throws Exception {
+        return printMethods(Unlinked2_className, methodPattern, 0xff);
+    }
+
+    BytecodeTracerTest mustMatch(String pattern) {
         Pattern p = Pattern.compile(pattern, Pattern.MULTILINE);
         Matcher m = p.matcher(output);
         boolean found = m.find();
@@ -94,31 +156,79 @@ public class BytecodeTracerTest {
                            "Missing pattern: \"" + pattern + "\"");
         System.out.println("Found pattern: " + pattern);
         System.out.println("          ==>: " + m.group());
+        return this;
+    }
+
+    static BytecodeTracerTest test(String note) {
+        return new BytecodeTracerTest(note);
     }
 
     public static void main(String args[]) throws Exception {
-        Linked.doit(args); // Force "Linked" class to be linked (and rewritten);
+        // Force "Linked" and "Linked2" classes to be linked (and rewritten);
+        Linked.doit(args);
+        Asserts.assertTrue(Linked2.test_ldc() == 12345, "must be");
 
-        // ======
-        printClasses("invokedynamic in linked class",
-                     "BytecodeTracerTest$Linked", 0xff);
-        mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>");
-        mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]");
+        test("invokedynamic in linked class")
+            .printClasses("BytecodeTracerTest$Linked", 0xff)
+            .mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>")
+            .mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]")
+            .mustMatch("\"num args = [\\\\]u0001\""); // static param for string concat
 
-        // ======
-        if (false) { // disabled due to JDK-8309811
-        printMethods("invokedynamic in unlinked class",
-                     "BytecodeTracerTest$Unlinked", "toString", 0xff);
-        mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>");
-        mustMatch("BSM: REF_invokeStatic [0-9]+ <java/lang/invoke/StringConcatFactory.makeConcatWithConstants[(]");
-        }
-    }
+        test("invokedynamic in unlinked class")
+            .printUnlinkedMethods("toString")
+            .mustMatch("invokedynamic bsm=[0-9]+ [0-9]+ <makeConcatWithConstants[(]I[)]Ljava/lang/String;>");
 
-    public Serializable cast(Unlinked f) {
-        // Verifying this method causes the "Unlinked" class to be loaded. However
-        // the "Unlinked" class is never used during the execution of
-        // BytecodeTracerTest.main(), so it is not linked by HotSpot.
-        return f;
+        test("ldc in linked class")
+            .printLinkedMethods("test_ldc")
+            .mustMatch("ldc BytecodeTracerTest[$]Unloaded")
+            .mustMatch("fast_aldc \"Literal[\\\\]u5678\""); // ldc of String has been rewritten during linking
+
+        test("ldc in unlinked class")
+            .printUnlinkedMethods("test_ldc")
+            .mustMatch(" ldc BytecodeTracerTest[$]Unloaded")
+            .mustMatch(" ldc \"Literal[\\\\]u1234\""); // ldc of String is not rewritten
+
+        test("More ldc tests in linked class")
+            .printLinked2Methods("test_ldc")
+            .mustMatch("ldc_w 2")
+            .mustMatch("fast_aldc_w \"Hello\"")
+            .mustMatch("BSM: REF_invokeStatic [0-9]+ <Linked2.condyBSM[(]Ljava/lang/invoke/MethodHandles")
+            .mustMatch("fast_aldc <MethodHandle of kind [0-9]+ index at [0-9]+> [0-9]+ <Linked2.test_ldc[(][)]I>");
+
+        test("More ldc tests in unlinked class")
+            .printUnlinked2Methods("test_ldc")
+            .mustMatch("ldc_w 2")
+            .mustMatch("ldc_w \"Hello\"")
+            .mustMatch("BSM: REF_invokeStatic [0-9]+ <Unlinked2.condyBSM[(]Ljava/lang/invoke/MethodHandles")
+            .mustMatch("ldc <MethodHandle of kind [0-9]+ index at [0-9]+> [0-9]+ <Unlinked2.test_ldc[(][)]I>");
+
+        test("plain old invoke in linked class")
+            .printLinkedMethods("test_invoke")
+            .mustMatch("invokevirtual [0-9]+ <BytecodeTracerTest.virtualMethod[(][)]V>")
+            .mustMatch("invokestatic [0-9]+ <BytecodeTracerTest.staticMethod[(][)]V>");
+
+        test("plain old invoke in unlinked class")
+            .printUnlinkedMethods("test_invoke")
+            .mustMatch("invokevirtual [0-9]+ <BytecodeTracerTest.virtualMethod[(][)]V>")
+            .mustMatch("invokestatic [0-9]+ <BytecodeTracerTest.staticMethod[(][)]V>");
+
+        test("invokehandle in linked class")
+            .printLinkedMethods("test_invokehandle")
+            .mustMatch("invokehandle [0-9]+ <java/lang/invoke/MethodHandle.invokeExact[(]FLjava/lang/String;LBytecodeTracerTest[$]Linked;[)]V>");
+
+        test("invokehandle in unlinked class")
+            .printUnlinkedMethods("test_invokehandle")
+            .mustMatch("invokevirtual [0-9]+ <java/lang/invoke/MethodHandle.invokeExact[(]FLjava/lang/String;LBytecodeTracerTest[$]Unlinked;[)]V>");
+
+        test("field in linked class")
+            .printLinkedMethods("test_field")
+            .mustMatch("getfield [0-9]+ <BytecodeTracerTest.x:I>")
+            .mustMatch("putstatic [0-9]+ <BytecodeTracerTest.y:J>");
+
+        test("field in unlinked class")
+            .printUnlinkedMethods("test_field")
+            .mustMatch("getfield [0-9]+ <BytecodeTracerTest.x:I>")
+            .mustMatch("putstatic [0-9]+ <BytecodeTracerTest.y:J>");
     }
 }
 
