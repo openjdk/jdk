@@ -44,7 +44,7 @@ class ICache : public AbstractICache {
   static void ppc64_flush_icache_bytes(address start, int bytes) {
     // Align start address to an icache line boundary and transform
     // nbytes to an icache line count.
-    const uint line_offset = (intptr_t)start & (line_size - 1);
+    const uint line_offset = (uintptr_t)start & (line_size - 1);
     ppc64_flush_icache(start - line_offset, (bytes + line_offset + line_size - 1) >> log2_line_size, 0);
   }
 };
