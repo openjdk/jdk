@@ -697,6 +697,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 return;
             }
 
+            // Instead of adding the module descriptor calls in this method,
+            // helper methods are created in separate helper methods.
+            // Let m1, m2, ..., mn be the calls to the module descriptor builder
+            // Here, n is larger than moduleDescriptorsPerMethod, which will hit the 64kb limit of method length.
+            // thus, we create f1, f2, ... where
+            //   - f1 calls m1, ... m_{moduleDescriptorsPerMethod-1},
+            //   - f2 calls m_{moduleDescriptorsPerMethod}, ... m_{2xmoduleDescriptorsPerMethod-1},
+            //   - etc.
+            //
+            // Inside m, the class SystemModulesClassGenerator.DedupSetBuilder is used.
+            // That class creates sets caching variables. It stores its caches in the local storage.
+            // Since the local storage is destroyed across each method, but the sets are needed across methods,
+            // the local variables are passed on to the next helper method using a list of these variables.
+
             List<List<ModuleInfo>> splitModuleInfos = new ArrayList<>();
             List<ModuleInfo> currentModuleInfos = null;
             for (int index = 0; index < moduleInfos.size(); index++) {
