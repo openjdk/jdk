@@ -473,36 +473,36 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
         unsafe.putLongUnaligned(
                 buf,
                 Unsafe.ARRAY_BYTE_BASE_OFFSET,
-                HexDigits.packDigits32((int) (msb >> 32)),
+                HexDigits.packDigits((int) (msb >> 56), (int) (msb >> 48), (int) (msb >> 40), (int) (msb >> 32)),
                 true);
         buf[8] = '-';
         unsafe.putIntUnaligned(
                 buf,
                 Unsafe.ARRAY_BYTE_BASE_OFFSET + 9,
-                HexDigits.packDigits16(((int) msb) >> 16),
+                HexDigits.packDigits(((int) msb) >> 24, ((int) msb) >> 16),
                 true);
         buf[13] = '-';
         unsafe.putIntUnaligned(
                 buf,
                 Unsafe.ARRAY_BYTE_BASE_OFFSET + 14,
-                HexDigits.packDigits16((int) msb),
+                HexDigits.packDigits(((int) msb) >> 8, (int) msb),
                 true);
         buf[18] = '-';
         unsafe.putIntUnaligned(
                 buf,
                 Unsafe.ARRAY_BYTE_BASE_OFFSET + 19,
-                HexDigits.packDigits16((int) (lsb >> 48)),
+                HexDigits.packDigits((int) (lsb >> 56), (int) (lsb >> 48)),
                 true);
         buf[23] = '-';
         unsafe.putLongUnaligned(
                 buf,
                 Unsafe.ARRAY_BYTE_BASE_OFFSET + 24,
-                HexDigits.packDigits32((int) (lsb >> 16)),
+                HexDigits.packDigits(((int) (lsb >> 40)), (int) (lsb >> 32), ((int) lsb) >> 24, ((int) lsb) >> 16),
                 true);
         unsafe.putIntUnaligned(
                 buf,
                 Unsafe.ARRAY_BYTE_BASE_OFFSET + 32,
-                HexDigits.packDigits16((int) lsb),
+                HexDigits.packDigits(((int) lsb) >> 8, (int) lsb),
                 true);
 
         try {
