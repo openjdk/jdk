@@ -54,9 +54,9 @@ class StaticHugePageSupport {
 
 public:
   StaticHugePageSupport();
-  
+
   void scan_os();
-  
+
   os::PageSizes pagesizes() const;
   size_t default_hugepage_size() const;
   void print_on(outputStream* os);
