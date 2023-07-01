@@ -103,20 +103,20 @@ final class HexDigits implements Digits {
     }
 
     /**
-     * Combine two hex shorts into one int based on big endian
+     * Return a big-endian packed integer for the 4 ASCII bytes for an input unsigned short value.
      */
-    static int packDigits(int b0, int b1) {
-        return (DIGITS[b0 & 0xff] << 16) | DIGITS[b1 & 0xff];
+    static int packDigits16(int b) {
+        return (DIGITS[(b >> 8) & 0xff] << 16) | DIGITS[b & 0xff];
     }
 
     /**
-     * Combine four hex shorts into one long based on big endian
+     * Return a big-endian packed long for the 8 ASCII bytes for an input unsigned int value.
      */
-    static long packDigits(int b0, int b1, int b2, int b3) {
-        return (((long) DIGITS[b0 & 0xff]) << 48)
-                | (((long) DIGITS[b1 & 0xff]) << 32)
-                | (DIGITS[b2 & 0xff] << 16)
-                | DIGITS[b3 & 0xff];
+    static long packDigits32(int b) {
+        return (((long) DIGITS[(b >> 24) & 0xff]) << 48)
+                | (((long) DIGITS[(b >> 16) & 0xff]) << 32)
+                | (DIGITS[(b >> 8) & 0xff] << 16)
+                | DIGITS[b & 0xff];
     }
 
     @Override
