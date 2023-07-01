@@ -118,10 +118,15 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             ClassDesc.ofInternalName("jdk/internal/module/SystemModules");
     private static final ClassDesc CD_SYSTEM_MODULES_MAP =
             ClassDesc.ofInternalName(SYSTEM_MODULES_MAP_CLASSNAME);
+    private final int moduleDescriptorsPerMethod;
     private boolean enabled;
 
     public SystemModulesPlugin() {
+        this(75);
+    }
+    public SystemModulesPlugin(int moduleDescriptorsPerMethod) {
         super("system-modules");
+        this.moduleDescriptorsPerMethod = moduleDescriptorsPerMethod;
         this.enabled = true;
     }
 
@@ -316,7 +321,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                          String className,
                                          ResourcePoolBuilder out) {
         SystemModulesClassGenerator generator
-            = new SystemModulesClassGenerator(className, moduleInfos);
+            = new SystemModulesClassGenerator(className, moduleInfos, moduleDescriptorsPerMethod);
         byte[] bytes = generator.genClassBytes(cf);
         String rn = "/java.base/" + className + ".class";
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, bytes);
@@ -531,6 +536,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
         // list of all ModuleInfos
         private final List<ModuleInfo> moduleInfos;
 
+        private final int moduleDescriptorsPerMethod;
+
         // A builder to create one single Set instance for a given set of
         // names or modifiers to reduce the footprint
         // e.g. target modules of qualified exports
@@ -538,9 +545,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             = new DedupSetBuilder(this::getNextLocalVar);
 
         public SystemModulesClassGenerator(String className,
-                                           List<ModuleInfo> moduleInfos) {
+                                           List<ModuleInfo> moduleInfos,
+                                           int moduleDescriptorsPerMethod) {
             this.classDesc = ClassDesc.ofInternalName(className);
             this.moduleInfos = moduleInfos;
+            this.moduleDescriptorsPerMethod = moduleDescriptorsPerMethod;
             moduleInfos.forEach(mi -> dedups(mi.descriptor()));
         }
 
@@ -666,7 +675,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate bytecode for moduleDescriptors method
          */
         private void genModuleDescriptorsMethod(ClassBuilder clb) {
-            if (moduleInfos.size() <= 75) {
+            if (moduleInfos.size() <= moduleDescriptorsPerMethod) {
                 clb.withMethodBody(
                         "moduleDescriptors",
                         MethodTypeDesc.of(CD_MODULE_DESCRIPTOR.arrayType()),
@@ -691,7 +700,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             List<List<ModuleInfo>> splitModuleInfos = new ArrayList<>();
             List<ModuleInfo> currentModuleInfos = null;
             for (int index = 0; index < moduleInfos.size(); index++) {
-                if (index % 75 == 0) {
+                if (index % moduleDescriptorsPerMethod == 0) {
                     currentModuleInfos = new ArrayList<>();
                     splitModuleInfos.add(currentModuleInfos);
                 }
