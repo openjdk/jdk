@@ -76,6 +76,7 @@ import jdk.internal.misc.Unsafe;
  * @since   1.5
  */
 public final class UUID implements java.io.Serializable, Comparable<UUID> {
+    private static final Unsafe unsafe = Unsafe.getUnsafe();
 
     /**
      * Explicit serialVersionUID for interoperability.
@@ -466,7 +467,6 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      */
     @Override
     public String toString() {
-        Unsafe unsafe = Unsafe.getUnsafe();
         long lsb = leastSigBits;
         long msb = mostSigBits;
         byte[] buf = new byte[36];
