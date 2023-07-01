@@ -744,7 +744,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
             int firstVar = nextLocalVar;
             var wrapper = new Object() {
-                int lastCopiedVar = nextLocalVar;
+                int lastCopiedVar = firstVar - 1;
             };
 
             clb.withMethodBody(
@@ -758,12 +758,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                            .astore(MD_VAR);
                         cob.new_(arrayListClassDesc)
                            .dup()
-                           .sipush(moduleInfos.size())
-                           .invokespecial(arrayListClassDesc, INIT_NAME, MethodTypeDesc.of(CD_int))
-                           .astore(nextLocalVar);
+                           .constantInstruction(moduleInfos.size())
+                           .invokespecial(arrayListClassDesc, INIT_NAME, MethodTypeDesc.of(CD_void, CD_int))
+                           .astore(DEDUP_LIST_VAR);
                         cob.aload(0)
                            .aload(MD_VAR)
-                           .aload(nextLocalVar)
+                           .aload(DEDUP_LIST_VAR)
                            .invokevirtual(
                                    this.classDesc,
                                    helperMethodNamePrefix + "0",
@@ -802,14 +802,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             }
 
                             if (index < splitModuleInfos.size() - 1) {
-                                if (nextLocalVar > wrapper.lastCopiedVar) {
+                                if ((nextLocalVar > firstVar) && (nextLocalVar > wrapper.lastCopiedVar)) {
                                     for (int i = wrapper.lastCopiedVar + 1; i < nextLocalVar; i++) {
                                         cob.aload(DEDUP_LIST_VAR)
                                            .aload(i)
                                            .invokevirtual(arrayListClassDesc, "add", MethodTypeDesc.of(CD_boolean, CD_Object))
                                            .pop();
                                     }
-                                    wrapper.lastCopiedVar = nextLocalVar;
+                                    wrapper.lastCopiedVar = nextLocalVar - 1;
                                 }
                                 cob.aload(0)
                                    .aload(MD_VAR)
