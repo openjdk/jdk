@@ -120,12 +120,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             ClassDesc.ofInternalName(SYSTEM_MODULES_MAP_CLASSNAME);
     private static final MethodTypeDesc MTD_StringArray = MethodTypeDesc.of(CD_String.arrayType());
     private static final MethodTypeDesc MTD_SystemModules = MethodTypeDesc.of(CD_SYSTEM_MODULES);
-    private final int moduleDescriptorsPerMethod;
+
+    private int moduleDescriptorsPerMethod;
     private boolean enabled;
 
     public SystemModulesPlugin() {
         this(75);
     }
+
     public SystemModulesPlugin(int moduleDescriptorsPerMethod) {
         super("system-modules");
         this.moduleDescriptorsPerMethod = moduleDescriptorsPerMethod;
