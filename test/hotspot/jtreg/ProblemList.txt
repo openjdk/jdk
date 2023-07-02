@@ -91,6 +91,7 @@ gc/stress/TestStressG1Humongous.java 8286554 windows-x64
 
 
 runtime/jni/terminatedThread/TestTerminatedThread.java 8219652 aix-ppc64
+runtime/jni/nativeStack/TestNativeStack.java 8311092 linux-arm
 runtime/handshake/HandshakeSuspendExitTest.java 8294313 generic-all
 runtime/os/TestTracePageSizes.java#no-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#explicit-large-page-size 8267460 linux-aarch64
