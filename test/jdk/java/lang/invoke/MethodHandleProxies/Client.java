@@ -24,7 +24,10 @@
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 
-public interface Untrusted {
+/**
+ * A general-purposed client interface for testing.
+ */
+public interface Client {
     /**
      * Leaks a lookup that has full privilege access in Untrusted.class.
      */

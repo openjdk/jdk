@@ -21,17 +21,6 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 6983726
- * @modules java.base/jdk.internal.classfile
- *          java.base/jdk.internal.classfile.attribute
- *          java.base/jdk.internal.classfile.constantpool
- * @summary Basic sanity tests for MethodHandleProxies
- * @build BasicTest Untrusted
- * @run junit BasicTest
- */
-
 import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
 
@@ -43,6 +32,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
+import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
@@ -66,7 +56,16 @@ import static jdk.internal.classfile.Classfile.*;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
-
+/*
+ * @test
+ * @bug 6983726
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ * @summary Basic sanity tests for MethodHandleProxies
+ * @build BasicTest Client
+ * @run junit BasicTest
+ */
 public class BasicTest {
 
     @Test
@@ -92,21 +91,69 @@ public class BasicTest {
 
     @Test
     public void testWrapperInstance() throws Throwable {
-        Comparator<Integer> lambda = Integer::compareTo;
+        Comparator<Integer> hostile = createHostileInstance();
         var mh = MethodHandles.publicLookup()
                 .findVirtual(Integer.class, "compareTo", methodType(int.class, Integer.class));
         @SuppressWarnings("unchecked")
         Comparator<Integer> proxy = (Comparator<Integer>) asInterfaceInstance(Comparator.class, mh);
 
         assertTrue(isWrapperInstance(proxy));
-        assertFalse(isWrapperInstance(lambda));
+        assertFalse(isWrapperInstance(hostile));
         assertSame(mh, wrapperInstanceTarget(proxy));
-        assertThrows(IllegalArgumentException.class, () -> wrapperInstanceTarget(lambda));
+        assertThrows(IllegalArgumentException.class, () -> wrapperInstanceTarget(hostile));
         assertSame(Comparator.class, wrapperInstanceType(proxy));
-        assertThrows(IllegalArgumentException.class, () -> wrapperInstanceType(lambda));
+        assertThrows(IllegalArgumentException.class, () -> wrapperInstanceType(hostile));
     }
 
-    private <T extends Throwable> Closeable throwing(Class<T> clz, T value) {
+    private static final String TYPE = "interfaceType";
+    private static final String TARGET = "target";
+    private static final ClassDesc CD_HostileWrapper = ClassDesc.of("HostileWrapper");
+    private static final ClassDesc CD_Comparator = ClassDesc.of("java.util.Comparator");
+    private static final MethodTypeDesc MTD_int_Object_Object = MethodTypeDesc.of(CD_int, CD_Object, CD_Object);
+    private static final MethodTypeDesc MTD_int_Integer = MethodTypeDesc.of(CD_int, CD_Integer);
+
+    // Update this template when the MHP template is updated
+    @SuppressWarnings("unchecked")
+    private Comparator<Integer> createHostileInstance() throws Throwable {
+        var cf = Classfile.of();
+        var bytes = cf.build(CD_HostileWrapper, clb -> {
+            clb.withSuperclass(CD_Object);
+            clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
+            clb.withInterfaceSymbols(CD_Comparator);
+
+            // static and instance fields
+            clb.withField(TYPE, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
+            clb.withField(TARGET, CD_MethodHandle, ACC_PRIVATE | ACC_FINAL);
+
+            // <clinit>
+            clb.withMethodBody(CLASS_INIT_NAME, MTD_void, ACC_STATIC, cob -> {
+                cob.constantInstruction(CD_Comparator);
+                cob.putstatic(CD_HostileWrapper, TYPE, CD_Class);
+                cob.return_();
+            });
+
+            // <init>
+            clb.withMethodBody(INIT_NAME, MTD_void, ACC_PUBLIC, cob -> {
+                cob.aload(0);
+                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+                cob.return_();
+            });
+
+            // implementation
+            clb.withMethodBody("compare", MTD_int_Object_Object, ACC_PUBLIC, cob -> {
+                cob.aload(1);
+                cob.checkcast(CD_Integer);
+                cob.aload(2);
+                cob.checkcast(CD_Integer);
+                cob.invokestatic(CD_Integer, "compareTo", MTD_int_Integer);
+                cob.ireturn();
+            });
+        });
+        var l = MethodHandles.lookup().defineHiddenClass(bytes, true);
+        return (Comparator<Integer>) l.findConstructor(l.lookupClass(), MethodType.methodType(void.class)).invoke();
+    }
+
+    private static <T extends Throwable> Closeable throwing(Class<T> clz, T value) {
         return asInterfaceInstance(Closeable.class, MethodHandles.throwException(void.class, clz).bindTo(value));
     }
 
@@ -114,6 +161,9 @@ public class BasicTest {
         return (long) i * i;
     }
 
+    /**
+     * Tests primitive type conversions in proxies.
+     */
     @Test
     public void testConversion() throws Throwable {
         var mh = MethodHandles.lookup().findStatic(BasicTest.class, "mul", methodType(long.class, int.class));
@@ -180,20 +230,20 @@ public class BasicTest {
 
     @Test
     public void testNoAccess() {
-        Untrusted untrusted = asInterfaceInstance(Untrusted.class, MethodHandles.zero(void.class));
+        Client untrusted = asInterfaceInstance(Client.class, MethodHandles.zero(void.class));
         var instanceClass = untrusted.getClass();
-        var leakLookup = Untrusted.leakLookup();
+        var leakLookup = Client.leakLookup();
         assertEquals(Lookup.ORIGINAL, leakLookup.lookupModes() & Lookup.ORIGINAL, "Leaked lookup original flag");
-        assertThrows(IllegalAccessException.class, () -> MethodHandles.privateLookupIn(instanceClass, Untrusted.leakLookup()));
+        assertThrows(IllegalAccessException.class, () -> MethodHandles.privateLookupIn(instanceClass, Client.leakLookup()));
     }
 
     @Test
     public void testNoInstantiation() throws ReflectiveOperationException {
         var mh = MethodHandles.zero(void.class);
-        var instanceClass = asInterfaceInstance(Untrusted.class, mh).getClass();
+        var instanceClass = asInterfaceInstance(Client.class, mh).getClass();
         var ctor = instanceClass.getDeclaredConstructor(Lookup.class, MethodHandle.class, MethodHandle.class);
 
-        assertThrows(IllegalAccessException.class, () -> ctor.newInstance(Untrusted.leakLookup(), mh, mh));
+        assertThrows(IllegalAccessException.class, () -> ctor.newInstance(Client.leakLookup(), mh, mh));
         assertThrows(IllegalAccessException.class, () -> ctor.newInstance(MethodHandles.publicLookup(), mh, mh));
     }
 

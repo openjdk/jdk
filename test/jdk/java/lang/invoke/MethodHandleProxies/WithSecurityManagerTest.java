@@ -21,25 +21,46 @@
  * questions.
  */
 
-/* @test
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandleProxies;
+import java.lang.invoke.MethodHandles;
+import java.util.List;
+
+import static jdk.test.lib.Asserts.assertSame;
+
+/*
+ * @test
  * @bug 6983726
- * @build Untrusted WithSecurityManagerTest
+ * @library /test/lib
+ * @build jdk.test.lib.Asserts Client
  * @run main/othervm/policy=jtreg.security.policy WithSecurityManagerTest
  * @summary Checks MethodHandleProxies behavior with security manager present
  */
-
-import java.lang.invoke.MethodHandleProxies;
-import java.lang.invoke.MethodHandles;
-
 public class WithSecurityManagerTest {
+    public interface NestedInterface {
+        void task();
+    }
+
     public static void main(String... args) {
         var originalMh = MethodHandles.zero(void.class);
-        Object o = MethodHandleProxies.asInterfaceInstance(Untrusted.class, originalMh);
-        System.out.println(o);
-        var untrustedTarget = MethodHandleProxies.wrapperInstanceTarget(o);
-        assert originalMh == untrustedTarget : "Got " + untrustedTarget;
 
-        var runnableTarget = MethodHandleProxies.wrapperInstanceTarget(MethodHandleProxies.asInterfaceInstance(Runnable.class, originalMh));
-        assert originalMh == runnableTarget : "Got " + runnableTarget;
-   }
+        // Test system and user interfaces
+        for (Class<?> cl : List.of(Runnable.class, Client.class, NestedInterface.class)) try {
+            Object o = MethodHandleProxies.asInterfaceInstance(cl, originalMh);
+            testWrapperInstanceTarget(o, originalMh);
+            testWrapperInstanceType(o, cl);
+        } catch (Throwable ex) {
+            throw new AssertionError("Test failed for " + cl, ex);
+        }
+    }
+
+    private static void testWrapperInstanceTarget(Object wrapper, MethodHandle originalMh) {
+        var recoveredTarget = MethodHandleProxies.wrapperInstanceTarget(wrapper);
+        assertSame(originalMh, recoveredTarget, "wrapperInstanceTarget recovery");
+    }
+
+    private static void testWrapperInstanceType(Object wrapper, Class<?> type) {
+        var recoveredType = MethodHandleProxies.wrapperInstanceType(wrapper);
+        assertSame(type, recoveredType, "wrapperInstanceType recovery");
+    }
 }

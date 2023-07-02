@@ -21,21 +21,20 @@
  * questions.
  */
 
-/* @test
- * @bug 8206955 8269351
- * @run testng test.java.lang.invoke.MethodHandlesProxiesTest
- */
-
-package test.java.lang.invoke;
-
 import org.testng.annotations.Test;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
+import java.util.Objects;
 
 import static org.testng.Assert.assertEquals;
 
+/* @test
+ * @build Client
+ * @bug 8206955 8269351
+ * @run testng MethodHandlesProxiesTest
+ */
 public class MethodHandlesProxiesTest {
 
     public interface A {
@@ -118,5 +117,17 @@ public class MethodHandlesProxiesTest {
         MethodHandle target = MethodHandles.constant(String.class, "Non-Sealed");
         NonSealedInterface proxy = MethodHandleProxies.asInterfaceInstance(NonSealedInterface.class, target);
         assertEquals(proxy.m(), "Non-Sealed");
+    }
+
+    @Test(expectedExceptions = { IllegalArgumentException.class })
+    public void testHiddenInterface() throws Throwable {
+        byte[] b;
+        try (var s = MethodHandlesProxiesTest.class.getResourceAsStream("Client.class")) {
+            b = Objects.requireNonNull(s).readAllBytes();
+        }
+        var c = MethodHandles.lookup().defineHiddenClass(b, false);
+
+        MethodHandle target = MethodHandles.zero(void.class);
+        Object proxy = MethodHandleProxies.asInterfaceInstance(c.lookupClass(), target);
     }
 }

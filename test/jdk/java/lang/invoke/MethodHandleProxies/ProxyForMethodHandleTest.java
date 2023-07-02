@@ -27,20 +27,18 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 
 import org.junit.jupiter.api.Test;
 
 /*
  * @test
- * @summary test MethodHandleProxies that adds qualified export of sun.invoke
- * from java.base to a dynamic module
+ * @bug 6983726
+ * @summary Ensures MethodHandleProxies creates a dynamic module for each interface instance
  * @run junit ProxyForMethodHandleTest
  */
 public class ProxyForMethodHandleTest {
     /**
-     * MethodHandleProxies will add qualified export of sun.invoke from java.base
-     * to a dynamic module
+     * MethodHandleProxies will create a dynamic module for the proxy
      */
     @Test
     public void testRunnableMethodHandle() throws Exception {

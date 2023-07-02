@@ -217,14 +217,6 @@ public class MethodHandleProxies {
             mh = target;
         }
 
-        /*
-         * For each interface I define a new hidden class and pass the given target and
-         * caller-bound method handle to its constructor.
-         *
-         * The hidden classes defined for I is defined in a dynamic module M
-         * which has access to the types referenced by the members of I including
-         * the parameter types, return type and exception types.
-         */
         Lookup lookup = getProxyClassLookup(intfc);  // throws IllegalArgumentException
         Object proxy;
         try {
