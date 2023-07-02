@@ -889,6 +889,7 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     Label no_reserved_zone_enabling;
 
     // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
     lwz(R0, in_bytes(JavaThread::stack_guard_state_offset()), R16_thread);
     cmpwi(CCR0, R0, StackOverflow::stack_guard_enabled);
     beq_predict_taken(CCR0, no_reserved_zone_enabling);
