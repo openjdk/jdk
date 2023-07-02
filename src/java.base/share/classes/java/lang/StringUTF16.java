@@ -1518,12 +1518,17 @@ final class StringUTF16 {
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
 
     /**
-     * Integer.PACKED_DIGITS UTF16 version
+     * UTF16 version of {@link Integer#PACKED_DIGITS}, but the endianness
+     * of each integer is already adapted to platform.
+     * As a result, the packed values should <strong>NOT</strong> be recombined
+     * with bitwise operations, like {@code p[a] << 32 | p[b]}, and can only be
+     * passed to {@link Unsafe#putIntUnaligned(Object, long, int)} without a
+     * boolean parameter.
      */
     @Stable
     private static final int[] PACKED_DIGITS_UTF16;
     static {
-        int[] digits = new int[]{
+        int[] digits = new int[] {
                 0x300030, 0x310030, 0x320030, 0x330030, 0x340030, 0x350030, 0x360030, 0x370030, 0x380030, 0x390030,
                 0x300031, 0x310031, 0x320031, 0x330031, 0x340031, 0x350031, 0x360031, 0x370031, 0x380031, 0x390031,
                 0x300032, 0x310032, 0x320032, 0x330032, 0x340032, 0x350032, 0x360032, 0x370032, 0x380032, 0x390032,
@@ -1537,7 +1542,7 @@ final class StringUTF16 {
         };
         if (isBigEndian()) {
             for (int i = 0; i < digits.length; i++) {
-                digits[i] <<= 8;
+                digits[i] = Integer.reverseBytes(digits[i] << 8);
             }
         }
         PACKED_DIGITS_UTF16 = digits;
@@ -1576,8 +1581,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[r],
-                    false);
+                    PACKED_DIGITS_UTF16[r]);
         }
 
         // We know there are at most two digits left at this point.
@@ -1586,8 +1590,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[-i],
-                    false);
+                    PACKED_DIGITS_UTF16[-i]);
         } else {
             putChar(buf, --charPos, '0' - i);
         }
@@ -1623,8 +1626,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[(int)((q * 100) - i)],
-                    false);
+                    PACKED_DIGITS_UTF16[(int)((q * 100) - i)]);
             i = q;
         }
 
@@ -1637,8 +1639,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[(q2 * 100) - i2],
-                    false);
+                    PACKED_DIGITS_UTF16[(q2 * 100) - i2]);
             i2 = q2;
         }
 
@@ -1648,8 +1649,7 @@ final class StringUTF16 {
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
-                    PACKED_DIGITS_UTF16[-i2],
-                    false);
+                    PACKED_DIGITS_UTF16[-i2]);
         } else {
             putChar(buf, --charPos, '0' - i2);
         }
