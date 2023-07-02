@@ -61,6 +61,7 @@ public class ClassWriter implements /* imports */ ClassConstants
     protected short  _lineNumberTableIndex;
     protected short  _localVariableTableIndex;
     protected short  _signatureIndex;
+    protected short  _bootstrapMethodsIndex;
 
     protected static int extractHighShortFromInt(int val) {
         // must stay in sync with ConstantPool::name_and_type_at_put, method_at_put, etc.
@@ -142,6 +143,8 @@ public class ClassWriter implements /* imports */ ClassConstants
         _innerClassesIndex = (innerClassesIndex != null)? innerClassesIndex.shortValue() : 0;
         if (DEBUG) debugMessage("InnerClasses index = " + _innerClassesIndex);
 
+        Short bootstrapMethodsIndex = utf8ToIndex.get("BootstrapMethods");
+        _bootstrapMethodsIndex = (bootstrapMethodsIndex != null) ? bootstrapMethodsIndex.shortValue() : 0;
         // field attributes
         Short constantValueIndex = utf8ToIndex.get("ConstantValue");
         _constantValueIndex = (constantValueIndex != null)?
@@ -723,6 +726,11 @@ public class ClassWriter implements /* imports */ ClassConstants
         if (numInnerClasses != 0)
             classAttributeCount++;
 
+        int bsmCount = klass.getConstants().getBootstrapMethodsCount();
+        if (bsmCount != 0) {
+            classAttributeCount++;
+        }
+
         dos.writeShort(classAttributeCount);
         if (DEBUG) debugMessage("class attribute count = " + classAttributeCount);
 
@@ -760,6 +768,28 @@ public class ClassWriter implements /* imports */ ClassConstants
 
             for (int index = 0; index < numInnerClasses * 4; index++) {
                 dos.writeShort(innerClasses.at(index));
+            }
+        }
+
+        // write bootstrap method attribute, if any
+        if (bsmCount != 0) {
+            ConstantPool cpool = klass.getConstants();
+            writeIndex(_bootstrapMethodsIndex);
+            if (DEBUG) debugMessage("bootstrap methods attribute = " + _bootstrapMethodsIndex);
+            int attrLen = 2; // num_bootstrap_methods
+            for (int index = 0; index < bsmCount; index++) {
+                int bsmArgsCount = cpool.getBootstrapMethodArgsCount(index);
+                attrLen += 2 // bootstrap_method_ref
+                           + 2 // num_bootstrap_arguments
+                           + bsmArgsCount * 2;
+            }
+            dos.writeInt(attrLen);
+            dos.writeShort(bsmCount);
+            for (int index = 0; index < bsmCount; index++) {
+                short value[] = cpool.getBootstrapMethodAt(index);
+                for (int i = 0; i < value.length; i++) {
+                    dos.writeShort(value[i]);
+                }
             }
         }
     }
