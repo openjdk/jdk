@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug  8295974
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.arch != "arm"
  * @library /test/lib
  * @summary Generate a JNI Fatal error, or a warning, in a launched VM and check
  *          the native stack is present as expected.
