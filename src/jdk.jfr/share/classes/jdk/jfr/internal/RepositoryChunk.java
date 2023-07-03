@@ -73,7 +73,7 @@ public final class RepositoryChunk {
                 reason = "Chunkfile \""+ getFile() + "\" is missing. " +
                          "Data loss might occur from " + getStartTime() + " to " + endTime;
             } else {
-                reason = e.getClass() + " " + e.getMessage();
+                reason = e.getClass();
             }
             Logger.log(LogTag.JFR, LogLevel.ERROR, "Could not finish chunk. " + reason);
             return false;
