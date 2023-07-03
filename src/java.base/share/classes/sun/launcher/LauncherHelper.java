@@ -1279,7 +1279,7 @@ public final class LauncherHelper {
     }
 
     private static <T> Stream<String> toStringStream(Set<T> s) {
-        return s.stream().map(e -> e.toString().toLowerCase());
+        return s.stream().map(e -> e.toString().toLowerCase(Locale.ROOT));
     }
 
     private static boolean isJrt(ModuleReference mref) {
