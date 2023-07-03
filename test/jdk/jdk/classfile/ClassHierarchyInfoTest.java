@@ -128,8 +128,8 @@ class ClassHierarchyInfoTest {
 
     void transformAndVerifySingle(ClassHierarchyResolver res) throws Exception {
         Path path = FileSystems.getFileSystem(URI.create("jrt:/")).getPath("modules/java.base/java/util/HashMap.class");
-        var classModel = Classfile.parse(path, Classfile.Option.classHierarchyResolver(res));
-        byte[] newBytes = classModel.transform(
+        var classModel = Classfile.of().parse(path);
+        byte[] newBytes = Classfile.of(Classfile.ClassHierarchyResolverOption.of(res)).transform(classModel,
                 (clb, cle) -> {
                     if (cle instanceof MethodModel mm) {
                         clb.transformMethod(mm, (mb, me) -> {
@@ -143,7 +143,7 @@ class ClassHierarchyInfoTest {
                     else
                         clb.with(cle);
                 });
-        var errors = Classfile.parse(newBytes).verify(null);
+        var errors = Classfile.of().parse(newBytes).verify(null);
         if (!errors.isEmpty()) {
             var itr = errors.iterator();
             var thrown = itr.next();

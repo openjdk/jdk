@@ -278,6 +278,7 @@ module java.base {
         java.security.jgss,
         java.smartcardio,
         jdk.charsets,
+        jdk.internal.vm.ci,
         jdk.jlink,
         jdk.jpackage,
         jdk.net;

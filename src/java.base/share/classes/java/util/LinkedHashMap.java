@@ -330,7 +330,7 @@ public class LinkedHashMap<K,V>
     static final int PUT_NORM = 0;
     static final int PUT_FIRST = 1;
     static final int PUT_LAST = 2;
-    int putMode = PUT_NORM;
+    transient int putMode = PUT_NORM;
 
     // Called after update, but not after insertion
     void afterNodeAccess(Node<K,V> e) {

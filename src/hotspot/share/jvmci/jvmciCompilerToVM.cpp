@@ -582,7 +582,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   TempNewSymbol class_name = SymbolTable::new_symbol(str);
 
   if (class_name->utf8_length() <= 1) {
-    JVMCI_THROW_MSG_0(InternalError, err_msg("Primitive type %s should be handled in Java code", class_name->as_C_string()));
+    JVMCI_THROW_MSG_0(InternalError, err_msg("Primitive type %s should be handled in Java code", str));
   }
 
   JVMCIKlassHandle resolved_klass(THREAD);
@@ -701,8 +701,8 @@ C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, job
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   oop obj = cp->resolve_possibly_cached_constant_at(index, CHECK_NULL);
   constantTag tag = cp->tag_at(index);
-  if (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) {
-    if (obj == Universe::the_null_sentinel()) {
+  if (tag.is_dynamic_constant()) {
+    if (obj == nullptr) {
       return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
     }
     BasicType bt = Signature::basic_type(cp->uncached_signature_ref_at(index));

@@ -1828,7 +1828,7 @@ public final class Matcher implements MatchResult {
      *
      * @return {@inheritDoc}
      *
-     * @since {@inheritDoc}
+     * @since 20
      */
     @Override
     public Map<String, Integer> namedGroups() {
@@ -1843,7 +1843,7 @@ public final class Matcher implements MatchResult {
      *
      * @return {@inheritDoc}
      *
-     * @since {@inheritDoc}
+     * @since 20
      */
     @Override
     public boolean hasMatch() {

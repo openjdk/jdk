@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class TestCodeCacheFull {
 
         List<RecordedEvent> events = Events.fromRecording(r);
         Events.hasEvents(events);
-        RecordedEvent event = events.get(0);
+        RecordedEvent event = events.getFirst();
 
         String codeBlobType = Events.assertField(event, "codeBlobType").notNull().getValue();
         BlobType blobType = blobTypeFromName(codeBlobType);

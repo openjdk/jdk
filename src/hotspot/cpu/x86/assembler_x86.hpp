@@ -238,7 +238,7 @@ class Address {
       _index(index.register_or_noreg()),
       _xmmindex(xnoreg),
       _scale(scale),
-      _disp (disp + (index.constant_or_zero() * scale_size(scale))),
+      _disp (disp + checked_cast<int>(index.constant_or_zero() * scale_size(scale))),
       _isxmmindex(false){
     if (!index.is_register())  scale = Address::no_scale;
     assert(!_index->is_valid() == (scale == Address::no_scale),
@@ -276,7 +276,7 @@ class Address {
   }
   Address plus_disp(RegisterOrConstant disp, ScaleFactor scale = times_1) const {
     Address a = (*this);
-    a._disp += disp.constant_or_zero() * scale_size(scale);
+    a._disp += checked_cast<int>(disp.constant_or_zero() * scale_size(scale));
     if (disp.is_register()) {
       assert(!a.index()->is_valid(), "competing indexes");
       a._index = disp.as_register();
@@ -984,8 +984,10 @@ private:
   void adcq(Register dst, Register src);
 
   void addb(Address dst, int imm8);
+  void addb(Address dst, Register src);
   void addw(Register dst, Register src);
   void addw(Address dst, int imm16);
+  void addw(Address dst, Register src);
 
   void addl(Address dst, int32_t imm32);
   void addl(Address dst, Register src);
