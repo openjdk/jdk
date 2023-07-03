@@ -79,6 +79,7 @@ public class TestSafepointWhilePrinting {
                 <key>:<value>
                 cpuFeatures:empty_cpu_info
                 MaxVectorSize:64
+                LoopMaxUnroll:64
                 ----- END VMInfo -----
                 """;
         TestClassParser testClassParser = new TestClassParser(TestSafepointWhilePrinting.class);

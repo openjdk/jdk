@@ -1055,27 +1055,27 @@ class BadIRAnnotationsAfterTestVM {
 
     @Test
     @FailCount(8)
-    @IR(counts = {IRNode.LOAD_VI, "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE_MAX, "> 0"}, // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_MAX, "> 0"}, // valid
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE_ANY, "> 0"}, // valid
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE_ANY, "> 0"}, // valid
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "xxx", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "xxx", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "min()", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min()", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "min(max_for_type)", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_for_type)", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,max_int", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,max_int", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,-3", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "2,4,8,16,32,64,-3", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "min(max_for_type, xxx)", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_for_type, xxx)", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    @IR(counts = {IRNode.LOAD_VI, IRNode.VECTOR_SIZE + "min(max_for_type, min(max_for_type, max_for_type))", "> 0"},
+    @IR(counts = {IRNode.LOAD_VECTOR_I, IRNode.VECTOR_SIZE + "min(max_for_type, min(max_for_type, max_for_type))", "> 0"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     public int[] badVectorNodeSize() {
         int[] a = new int[1024*8];
@@ -1134,16 +1134,16 @@ class BadIRNodeForPhase {
 
     @Test
     @FailCount(6)
-    @IR(failOn = IRNode.LOAD_VI, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
     @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = CompilePhase.BEFORE_REMOVEUSELESS) // works
-    @IR(failOn = IRNode.LOAD_VI, phase = CompilePhase.BEFORE_MATCHING) // works
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = CompilePhase.BEFORE_MATCHING) // works
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.BEFORE_MATCHING) // works
     @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = CompilePhase.BEFORE_MATCHING) // works
-    @IR(failOn = IRNode.LOAD_VI, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
     @IR(failOn = IRNode.STORE_VECTOR, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
     @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = {CompilePhase.MATCHING, CompilePhase.MATCHING})
-    @IR(failOn = IRNode.LOAD_VI, phase = CompilePhase.FINAL_CODE)
+    @IR(failOn = IRNode.LOAD_VECTOR_I, phase = CompilePhase.FINAL_CODE)
     @IR(failOn = IRNode.STORE_VECTOR, phase = CompilePhase.FINAL_CODE)
     @IR(failOn = IRNode.VECTOR_CAST_B2I, phase = CompilePhase.FINAL_CODE)
     public void vector() {}
