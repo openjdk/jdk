@@ -602,8 +602,8 @@ public:
   }
 
   const TypeFunc* tf()         const { return _tf; }
-  const address  entry_point() const { return _entry_point; }
-  const float    cnt()         const { return _cnt; }
+  address  entry_point()       const { return _entry_point; }
+  float    cnt()               const { return _cnt; }
   CallGenerator* generator()   const { return _generator; }
 
   void set_tf(const TypeFunc* tf)       { _tf = tf; }
