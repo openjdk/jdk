@@ -2354,8 +2354,12 @@ public final class CompactNumberFormat extends NumberFormat {
     @Override
     public boolean equals(Object obj) {
 
-        if (!super.equals(obj)) {
+        if (!super.equals(obj)) { // super does null and class checks
             return false;
+        }
+
+        if (obj == this) { // disambiguate super equality from ref equality
+            return true;
         }
 
         CompactNumberFormat other = (CompactNumberFormat) obj;
@@ -2369,9 +2373,7 @@ public final class CompactNumberFormat extends NumberFormat {
     }
 
     /**
-     * Returns the hash code for this {@code CompactNumberFormat} instance.
-     *
-     * @return hash code for this {@code CompactNumberFormat}
+     * {@return the hash code for this {@code CompactNumberFormat} instance}
      */
     @Override
     public int hashCode() {

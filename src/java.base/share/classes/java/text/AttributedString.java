@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -658,12 +658,8 @@ public class AttributedString {
     }
 
     // returns whether the two objects are either both null or equal
-    private static final boolean valuesMatch(Object value1, Object value2) {
-        if (value1 == null) {
-            return value2 == null;
-        } else {
-            return value1.equals(value2);
-        }
+    private static boolean valuesMatch(Object value1, Object value2) {
+        return Objects.equals(value1, value2);
     }
 
     /**
@@ -760,6 +756,7 @@ public class AttributedString {
 
         // Object methods. See documentation in that class.
 
+        @Override
         public boolean equals(Object obj) {
             if (this == obj) {
                 return true;
@@ -775,6 +772,7 @@ public class AttributedString {
             return true;
         }
 
+        @Override
         public int hashCode() {
             return text.hashCode() ^ currentIndex ^ beginIndex ^ endIndex;
         }
@@ -1081,11 +1079,10 @@ class AttributeEntry implements Map.Entry<Attribute,Object> {
         this.value = value;
     }
 
+    @Override
     public boolean equals(Object o) {
-        if (!(o instanceof AttributeEntry other)) {
-            return false;
-        }
-        return other.key.equals(key) && Objects.equals(other.value, value);
+        return o instanceof AttributeEntry other
+                && other.key.equals(key) && Objects.equals(other.value, value);
     }
 
     public Attribute getKey() {
@@ -1100,8 +1097,9 @@ class AttributeEntry implements Map.Entry<Attribute,Object> {
         throw new UnsupportedOperationException();
     }
 
+    @Override
     public int hashCode() {
-        return key.hashCode() ^ (value==null ? 0 : value.hashCode());
+        return key.hashCode() ^ Objects.hashCode(value);
     }
 
     public String toString() {

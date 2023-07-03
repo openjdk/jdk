@@ -2918,10 +2918,13 @@ public class DecimalFormat extends NumberFormat {
     @Override
     public boolean equals(Object obj)
     {
-        if (obj == null)
-            return false;
         if (!super.equals(obj))
-            return false; // super does class check
+            return false; // super does null and class checks
+
+        if (obj == this) { // disambiguate super equality from ref equality
+            return true;
+        }
+
         DecimalFormat other = (DecimalFormat) obj;
         return ((posPrefixPattern == other.posPrefixPattern &&
                  positivePrefix.equals(other.positivePrefix))
