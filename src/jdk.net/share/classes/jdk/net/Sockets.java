@@ -62,6 +62,8 @@ import java.util.Set;
  * socket's class for the equivalent method to set/get a socket option or retrieve available socket options.
  *
  * @see java.nio.channels.NetworkChannel
+ *
+ * @since 1.8
  */
 @Deprecated(since = "16")
 public class Sockets {
