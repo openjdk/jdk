@@ -540,12 +540,12 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         private static final int MAX_LOCAL_VARS = 256;
 
-        private final int BUILDER_VAR    = MAX_LOCAL_VARS + 1;
-        private final int DEDUP_LIST_VAR = MAX_LOCAL_VARS + 2;
         private final int MD_VAR         = 1;  // variable for ModuleDescriptor
         private final int MT_VAR         = 1;  // variable for ModuleTarget
         private final int MH_VAR         = 1;  // variable for ModuleHashes
-        private int nextLocalVar         = 2;  // index to next local variable
+        private final int DEDUP_LIST_VAR = 2;
+        private final int BUILDER_VAR    = 3;
+        private int nextLocalVar         = 4;  // index to next local variable
 
         // name of class to generate
         private final ClassDesc classDesc;
@@ -780,9 +780,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc),
                         ACC_PUBLIC,
                         cob -> {
-                            cob.aload(2)
-                               .astore(DEDUP_LIST_VAR);
-
                             if (nextLocalVar > firstVar) {
                                 for (int i = firstVar; i < nextLocalVar; i++) {
                                     cob.aload(DEDUP_LIST_VAR)
