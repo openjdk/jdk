@@ -78,12 +78,8 @@ public class RawCountsConstraint implements RawConstraint {
                 TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Node count comparison \">=" + comparison.getGivenValue() + "\" is useless, please only use strictly positive numbers with greater-equal.");
                 return true; // max
             }
-            case "!=" -> {
-                throw new TestFormatException("Not-equal comparator not supported for node count: \"" + comparison.getComparator() + "\". Please rewrite the rule.");
-            }
-            default -> {
-                throw new TestFormatException("Comparator not handled: " + comparison.getComparator());
-            }
+            case "!=" -> throw new TestFormatException("Not-equal comparator not supported for node count: \"" + comparison.getComparator() + "\". Please rewrite the rule.");
+            default -> throw new TestFormatException("Comparator not handled: " + comparison.getComparator());
         }
     }
 

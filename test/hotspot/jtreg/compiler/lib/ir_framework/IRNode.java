@@ -80,7 +80,7 @@ import java.util.Map;
  *                              However, when using {@link IR#failOn} or {@link IR#counts()} with comparison {@code <},
  *                              or {@code <=} or {@code =0}, the default size is {@link #VECTOR_SIZE_ANY}, allowing any
  *                              size. The motivation for these default values is that in most cases one wants to have
- *                              vectorization with maximal vector width, or no vectorization of any vectro width.
+ *                              vectorization with maximal vector width, or no vectorization of any vector width.
  * </ul>
  */
 public class IRNode {

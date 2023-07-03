@@ -23,18 +23,8 @@
 
 package compiler.lib.ir_framework.test;
 
-import compiler.lib.ir_framework.IR;
-import compiler.lib.ir_framework.IRNode;
-import compiler.lib.ir_framework.TestFramework;
-import compiler.lib.ir_framework.shared.*;
+import compiler.lib.ir_framework.shared.TestFrameworkSocket;
 import jdk.test.whitebox.WhiteBox;
-
-import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Function;
 
 /**
  * Prints some test VM info to the socket.
@@ -50,11 +40,11 @@ public class VMInfoPrinter {
         vmInfo.append(START_VM_INFO).append(System.lineSeparator());
         vmInfo.append("<key>:<value>").append(System.lineSeparator());
         String cpuFeatures = WHITE_BOX.getCPUFeatures();
-        vmInfo.append("cpuFeatures:" + cpuFeatures).append(System.lineSeparator());
+        vmInfo.append("cpuFeatures:").append(cpuFeatures).append(System.lineSeparator());
         long maxVectorSize = WHITE_BOX.getIntxVMFlag("MaxVectorSize");
-        vmInfo.append("MaxVectorSize:" + maxVectorSize).append(System.lineSeparator());
+        vmInfo.append("MaxVectorSize:").append(maxVectorSize).append(System.lineSeparator());
         long loopMaxUnroll = WHITE_BOX.getIntxVMFlag("LoopMaxUnroll");
-        vmInfo.append("LoopMaxUnroll:" + loopMaxUnroll).append(System.lineSeparator());
+        vmInfo.append("LoopMaxUnroll:").append(loopMaxUnroll).append(System.lineSeparator());
         vmInfo.append(END_VM_INFO);
         TestFrameworkSocket.write(vmInfo.toString(), "VMInfo");
     }
