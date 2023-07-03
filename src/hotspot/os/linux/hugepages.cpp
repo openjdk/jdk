@@ -131,16 +131,11 @@ static os::PageSizes scan_hugepages() {
 
 void StaticHugePageSupport::print_on(outputStream* os) {
   if (_initialized) {
-    os->print("Static hugepage support: ");
-    bool first = true;
+    os->print_cr("Static hugepage support:");
     for (size_t s = _pagesizes.smallest(); s != 0; s = _pagesizes.next_larger(s)) {
-      os->print("%s" EXACTFMT, (first ? "" : ", "), EXACTFMTARGS(s));
-      if (_default_hugepage_size == s) {
-        os->print_cr(" (default)");
-      }
-      first = false;
+      os->print_cr("  hugepage size: " EXACTFMT, EXACTFMTARGS(s));
     }
-    os->print_cr("  default pagesize: " EXACTFMT, EXACTFMTARGS(_default_hugepage_size));
+    os->print_cr("  default hugepage size: " EXACTFMT, EXACTFMTARGS(_default_hugepage_size));
   } else {
     os->print_cr("  unknown.");
   }
@@ -196,10 +191,8 @@ void THPSupport::scan_os() {
 
   // Scan large page size for THP from hpage_pmd_size
   _pagesize = 0;
-  if (_mode != THPMode::never) {
-    read_number_file("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", &_pagesize);
-    assert(_pagesize > 0, "Expected");
-  }
+  read_number_file("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", &_pagesize);
+  assert(_pagesize > 0, "Expected");
   _initialized = true;
 
   LogTarget(Info, pagesize) lt;
@@ -212,11 +205,9 @@ void THPSupport::scan_os() {
 void THPSupport::print_on(outputStream* os) {
   if (_initialized) {
     os->print_cr("Transparent hugepage (THP) support:");
-    os->print_cr("  mode: %s",
+    os->print_cr("  THP mode: %s",
         (_mode == THPMode::always ? "always" : (_mode == THPMode::never ? "never" : "madvise")));
-    if (_mode != THPMode::never) {
-      os->print_cr("  pagesize: " EXACTFMT, EXACTFMTARGS(_pagesize));
-    }
+    os->print_cr("  THP pagesize: " EXACTFMT, EXACTFMTARGS(_pagesize));
   } else {
     os->print_cr("  unknown.");
   }

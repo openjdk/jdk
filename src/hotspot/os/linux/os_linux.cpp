@@ -3705,7 +3705,27 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
   return false;
 }
 
+struct LargePageInitializationLoggerMark {
+  ~LargePageInitializationLoggerMark() {
+    LogTarget(Info, pagesize) lt;
+    if (lt.is_enabled()) {
+      LogStream ls(lt);
+      if (UseLargePages) {
+        ls.print_cr("UseLargePages=1, UseTransparentHugePages=%d, UseHugeTLBFS=%d, UseSHM=%d",
+                    UseTransparentHugePages, UseHugeTLBFS, UseSHM);
+        ls.print("Large page support enabled. Usable page sizes: ");
+        os::page_sizes().print_on(&ls);
+        ls.print_cr(". Default large page size: " EXACTFMT ".", EXACTFMTARGS(os::large_page_size()));
+      } else {
+        ls.print("Large page support disabled.");
+      }
+    }
+  }
+};
+
 void os::large_page_init() {
+  LargePageInitializationLoggerMark logger;
+
   // Query OS information first.
   HugePages::initialize();
 
@@ -3800,16 +3820,6 @@ void os::large_page_init() {
 
   // Now determine the type of large pages to use:
   UseLargePages = os::Linux::setup_large_page_type(_large_page_size);
-
-  if (UseLargePages) {
-    LogTarget(Info, pagesize) lt;
-    if (lt.is_enabled()) {
-      LogStream ls(lt);
-      ls.print("Large page support enabled. Usable page sizes: ");
-      _page_sizes.print_on(&ls);
-      ls.print_cr(" Default: " EXACTFMT, EXACTFMTARGS(os::large_page_size()));
-    }
-  }
 
   set_coredump_filter(LARGEPAGES_BIT);
 }
