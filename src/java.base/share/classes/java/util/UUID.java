@@ -25,8 +25,6 @@
 
 package java.util;
 
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.StandardCharsets;
 import java.security.*;
 
 import jdk.internal.access.JavaLangAccess;
@@ -97,7 +95,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      */
     private final long leastSigBits;
 
-    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
+    private static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
 
     /*
      * The random number generator used by this class to create random
@@ -498,11 +496,7 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
                 32,
                 HexDigits.digit(((int) lsb) >> 8, (int) lsb));
 
-        try {
-            return jla.newStringNoRepl(buf, StandardCharsets.ISO_8859_1);
-        } catch (CharacterCodingException cce) {
-            throw new AssertionError(cce);
-        }
+        return JLA.newStringLatin1NoRepl(buf);
     }
 
     /**
