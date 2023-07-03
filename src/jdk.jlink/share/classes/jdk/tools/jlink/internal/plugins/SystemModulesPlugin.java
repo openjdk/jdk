@@ -121,16 +121,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
     private static final MethodTypeDesc MTD_StringArray = MethodTypeDesc.of(CD_String.arrayType());
     private static final MethodTypeDesc MTD_SystemModules = MethodTypeDesc.of(CD_SYSTEM_MODULES);
 
-    private int moduleDescriptorsPerMethod;
+    private int moduleDescriptorsPerMethod = 75;
     private boolean enabled;
 
     public SystemModulesPlugin() {
-        this(75);
-    }
-
-    public SystemModulesPlugin(int moduleDescriptorsPerMethod) {
         super("system-modules");
-        this.moduleDescriptorsPerMethod = moduleDescriptorsPerMethod;
         this.enabled = true;
     }
 
@@ -149,7 +144,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
     public void configure(Map<String, String> config) {
         String arg = config.get(getName());
         if (arg != null) {
-            throw new IllegalArgumentException(getName() + ": " + arg);
+            String[] split = arg.split("=");
+            if (split.length != 2) {
+                throw new IllegalArgumentException(getName() + ": " + arg);
+            }
+            if (split[0].equals("batch-size")) {
+                throw new IllegalArgumentException(getName() + ": " + arg);
+            }
+            this.moduleDescriptorsPerMethod = Integer.parseInt(split[1]);
         }
     }
 
