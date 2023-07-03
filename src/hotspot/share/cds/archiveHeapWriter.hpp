@@ -115,7 +115,7 @@ class ArchiveHeapWriter : AllStatic {
   // Both Java bytearray and GrowableArraty use int indices and lengths. Do a safe typecast with range check
   static int to_array_index(size_t i) {
     assert(i <= (size_t)max_jint, "must be");
-    return (size_t)i;
+    return (int)i;
   }
   static int to_array_length(size_t n) {
     return to_array_index(n);

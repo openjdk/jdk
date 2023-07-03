@@ -117,10 +117,10 @@ abstract class AbstractDCmd {
 
     public String getPid() {
         // Invoking ProcessHandle.current().pid() would require loading more
-        // classes during startup so instead JVM.getJVM().getPid() is used.
+        // classes during startup so instead JVM.getPid() is used.
         // The pid will not be exposed to running Java application, only when starting
         // JFR from command line (-XX:StartFlightRecording) or jcmd (JFR.start and JFR.check)
-        return JVM.getJVM().getPid();
+        return JVM.getPid();
     }
 
     protected final SafePath resolvePath(Recording recording, String filename) throws InvalidPathException {
@@ -294,7 +294,7 @@ abstract class AbstractDCmd {
                     i++;
                 } else if (nc == 'p') {
                     if (pid == null) {
-                        pid = JVM.getJVM().getPid();
+                        pid = JVM.getPid();
                     }
                     sb.append(pid);
                     i++;
