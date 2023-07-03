@@ -56,19 +56,26 @@ void VectorMaskedLoop::try_vectorize_loop(IdealLoopTree* lpt) {
   assert(lpt->is_counted(), "Loop must be counted");
   assert(lpt->is_innermost(), "Loop must be innermost");
 
-  CountedLoopNode *cl = lpt->_head->as_CountedLoop();
-  // Skip if loop is already vector masked
-  if (cl->is_vector_masked()) return;
-  // Skip non-post loop
-  if (!cl->is_post_loop()) return;
-  // Skip malformed counted loop
-  if (!cl->is_valid_counted_loop(T_INT)) return;
-  // Skip loop if stride is unsupported
-  if (abs(cl->stride_con()) != 1) return;
-  // Skip loop with control flow
-  if (cl->loopexit()->in(0) != cl) return;
-  // Skip if some loop operations are pinned to the backedge
-  if (cl->back_control()->outcnt() != 1) return;
+  CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+  assert(cl->is_post_loop() && !cl->is_vector_masked(),
+         "Current loop should be a post loop and not vector masked");
+
+  if (!cl->is_valid_counted_loop(T_INT)) {
+    trace_msg(nullptr, "Loop is not a valid counted loop");
+    return;
+  }
+  if (abs(cl->stride_con()) != 1) {
+    trace_msg(nullptr, "Loop has unsupported stride value");
+    return;
+  }
+  if (cl->loopexit()->in(0) != cl) {
+    trace_msg(nullptr, "Loop has unsupported control flow");
+    return;
+  }
+  if (cl->back_control()->outcnt() != 1) {
+    trace_msg(nullptr, "Loop has node pinned to the backedge");
+    return;
+  }
 
   // Init data structures and collect loop nodes
   init(lpt);
@@ -113,6 +120,8 @@ void VectorMaskedLoop::init(IdealLoopTree* lpt) {
 // Collect loop nodes into an array with reverse postorder for convenience of
 // future traversal. Do early bail out if unsupported node is found.
 bool VectorMaskedLoop::collect_loop_nodes() {
+  ResourceMark rm;
+
   // Collect 7 (see EMPTY_LOOP_SIZE) core nodes of the loop
   _lpt->collect_loop_core_nodes(_phase, _core_set);
 
@@ -130,9 +139,9 @@ bool VectorMaskedLoop::collect_loop_nodes() {
   }
 
   // Visit all loop nodes from the head to create reverse postorder
-  VectorSet visited(_arena);
-  VectorSet post_visited(_arena);
-  GrowableArray<Node*> stack(_arena, node_cnt, 0, nullptr);
+  VectorSet visited;
+  VectorSet post_visited;
+  GrowableArray<Node*> stack(node_cnt, 0, nullptr);
   stack.push(_cl);
   int idx = node_cnt - 1;
   while (stack.length() > 0) {
@@ -142,7 +151,7 @@ bool VectorMaskedLoop::collect_loop_nodes() {
       visited.set(rpo_idx(n));
     } else if (!post_visited.test(rpo_idx(n))) {
       // Cross or backward arc in graph
-      if (!is_memory_phi(n)) {
+      if (!n->is_memory_phi()) {
         // Push all users in loop for non-mem-phi nodes
         for (DUIterator_Fast imax, i = n->fast_outs(imax); i < imax; i++) {
           Node* use = n->fast_out(i);
@@ -192,7 +201,7 @@ bool VectorMaskedLoop::collect_loop_nodes() {
 
 // Try including a node's input at specified index into current statement
 bool VectorMaskedLoop::collect_statements_helper(
-          Node* node, uint idx, Node_List* stmt, Node_List* worklist) {
+          const Node* node, const uint idx, Node_List* stmt, Node_List* worklist) {
   Node* in = node->in(idx);
   if (stmt->contains(in) || !in_body(in)) {
     // Input is already included in current statement or out of loop
@@ -211,7 +220,8 @@ bool VectorMaskedLoop::collect_statements_helper(
       return false;
     }
   } else if (in->is_Phi()) {
-    // 2) We don't support phi nodes except the iv phi of the loop
+    // 2) We don't support phi nodes except the iv phi of the loop and memory
+    //    phi's cannot be reached
     trace_msg(in, "Found unsupported phi input");
     return false;
   } else if (in->is_Load()) {
@@ -261,13 +271,9 @@ bool VectorMaskedLoop::collect_statements() {
   for (int idx = 0; idx < num_stmts; idx++) {
     Node_List* stmt = _stmts.at(idx);
     assert(stmt->size() == 1, "Each statement should have exactly one node");
-    Node* store = stmt->at(0);
-    // Add value input of the store node into a worklist to include more nodes
-    // into current statement
+    // Create a new worklist and add the initial node of a statement
     Node_List* worklist = new Node_List(_arena);
-    if (!collect_statements_helper(store, MemNode::ValueIn, stmt, worklist)) {
-      return false;
-    }
+    worklist->push(stmt->at(0));
     // Continue adding nodes until the worklist is empty
     while (worklist->size() > 0) {
       Node* node = worklist->pop();
@@ -320,7 +326,7 @@ bool VectorMaskedLoop::find_vector_element_types() {
     BasicType stmt_bottom_type = statement_bottom_type(stmt);
     bool subword_stmt = is_subword_type(stmt_bottom_type);
 
-    // Record vector lane size
+    // Record vector element size
     _size_stats.record_size(type2aelembytes(stmt_bottom_type));
 
     // Set element type for each statement node from bottom to top. Bail out if
@@ -364,7 +370,7 @@ bool VectorMaskedLoop::find_vector_element_types() {
           } else {
             BasicType self_type = node->bottom_type()->array_element_basic_type();
             if (!same_element_size(self_type, stmt_bottom_type)) {
-              trace_msg(node, "Vector element size does not match");
+              trace_msg(node, "Inconsistent vector element size in one statement");
               return false;
             }
             set_elem_bt(node, self_type);
@@ -421,14 +427,19 @@ bool VectorMaskedLoop::vector_nodes_implemented() {
       } else {
         int vopc = 0;
         if (node->is_Mem()) {
+          assert(node->is_Load() || node->is_Store(), "Must be load or store");
           vopc = node->is_Store() ? Op_StoreVectorMasked : Op_LoadVectorMasked;
+          if (!Matcher::match_rule_supported_vector_masked(vopc, vlen, bt)) {
+            trace_msg(node, "Vector masked memory access is not implemented");
+            return false;
+          }
         } else {
           vopc = VectorNode::opcode(opc, bt);
-        }
-        if (vopc == 0 ||
-            !Matcher::match_rule_supported_vector_masked(vopc, vlen, bt)) {
-          trace_msg(node, "Vector replacement node is not implemented");
-          return false;
+          if (vopc == 0 ||
+            !Matcher::match_rule_supported_vector(vopc, vlen, bt)) {
+            trace_msg(node, "Vector replacement node is not implemented");
+            return false;
+          }
         }
       }
     }
@@ -439,7 +450,8 @@ bool VectorMaskedLoop::vector_nodes_implemented() {
 // Find unhandled out-of-loop use of loop body nodes and untracked loop body
 // nodes to bail out for complex loops
 bool VectorMaskedLoop::analyze_loop_body_nodes() {
-  VectorSet tracked(_arena);
+  ResourceMark rm;
+  VectorSet tracked;
   int n_nodes = _body_nodes.length();
   // 1) Track all vectorization candidates and loop iv phi nodes
   for (int idx = 0; idx < n_nodes; idx++) {
@@ -462,7 +474,7 @@ bool VectorMaskedLoop::analyze_loop_body_nodes() {
   // 3) Up to this point, all tracked nodes shouldn't have out-of-loop users
   for (int idx = 0; idx < n_nodes; idx++) {
     Node* node = _body_nodes.at(idx);
-    if ((node->is_Mem() && node->as_Mem()->is_Store())) {
+    if (node->is_Store()) {
       // Only store nodes are exceptions
       continue;
     }
@@ -479,7 +491,7 @@ bool VectorMaskedLoop::analyze_loop_body_nodes() {
   // 4) Bail out if the loop body has extra node
   for (int idx = 0; idx < n_nodes; idx++) {
     Node* node = _body_nodes.at(idx);
-    if (!tracked.test(idx) && !in_core(node) && !is_memory_phi(node)) {
+    if (!tracked.test(idx) && !in_core(node) && !node->is_memory_phi()) {
       trace_msg(node, "Found extra loop node in loop body");
       return false;
     }
@@ -521,12 +533,14 @@ SWPointer* VectorMaskedLoop::mem_access_to_swpointer(MemNode* mem) {
   // Should access memory of a Java primitive value
   BasicType mem_type = mem->memory_type();
   if (!is_java_primitive(mem_type)) {
+    trace_msg(mem, "Only memory accesses of primitive types are supported");
     return nullptr;
   }
   // addp: memory address for loading/storing an array element. It should be an
   // AddP node operating on an array of specific type
   Node* addp = mem->in(MemNode::Address);
   if (!addp->is_AddP() || !operates_on_array_of_type(addp, mem_type)) {
+    trace_msg(mem, "Memory access has inconsistent type");
     return nullptr;
   }
   // Create a Node_Stack for SWPointer's initial stack
@@ -538,6 +552,7 @@ SWPointer* VectorMaskedLoop::mem_access_to_swpointer(MemNode* mem) {
   if (addp2->is_AddP()) {
     if (!operates_on_array_of_type(addp2, mem_type) ||
         addp->in(AddPNode::Base) != addp2->in(AddPNode::Base)) {
+      trace_msg(mem, "Memory access has inconsistent type or base");
       return nullptr;
     }
     nstack->push(addp2, 1);
@@ -550,16 +565,19 @@ SWPointer* VectorMaskedLoop::mem_access_to_swpointer(MemNode* mem) {
   //  4) The loop increment node is on the SWPointer's node stack
   SWPointer* ptr = new (_arena) SWPointer(mem, _phase, _lpt, nstack, true);
   if (!ptr->valid()) {
+    trace_msg(mem, "Memory access has unsupported address pattern");
     return nullptr;
   }
   int scale_in_bytes = ptr->scale_in_bytes();
   int element_size = type2aelembytes(mem_type);
   if (scale_in_bytes * _cl->stride_con() < 0 ||
       abs(scale_in_bytes) != element_size) {
+    trace_msg(mem, "Memory access has unsupported direction or scale");
     return nullptr;
   }
   for (uint i = 0; i < nstack->size(); i++) {
     if (nstack->node_at(i) == _cl->incr()) {
+      trace_msg(mem, "Memory access unexpectedly uses loop increment node");
       return nullptr;
     }
   }
@@ -705,7 +723,8 @@ Node* VectorMaskedLoop::get_vector_input(Node* node, uint idx) {
 }
 
 // Replace scalar nodes in the loop by vector nodes from top to bottom and
-// return the node map of scalar to vector replacement
+// return the node map of scalar to vector replacement. The node map is used
+// for vector duplication for larger types.
 Node_List* VectorMaskedLoop::replace_scalar_ops(Node* mask) {
   // Create a node map of scalar to vector replacement
   int n_nodes = _body_nodes.length();
@@ -787,7 +806,7 @@ void VectorMaskedLoop::duplicate_vector_ops(
                 Node_List* vmask_tree, Node_List* s2v_map, int lane_size) {
   // Compute vector duplication count and the vmask tree level
   int dup_cnt = lane_size / _size_stats.smallest_size();
-  int level = exact_log2(dup_cnt);
+  int vmask_tree_level = exact_log2(dup_cnt);
 
   // Collect and clone all vector nodes with given vector element size
   Node_List* clone_list = new Node_List(_arena);
@@ -811,7 +830,7 @@ void VectorMaskedLoop::duplicate_vector_ops(
         Node* vopd = vnode->in(i);
         if (vopd->Opcode() == Op_PopulateIndex) {
           Node* init_idx = vopd->in(1);
-          if (is_loop_iv(init_idx) || is_loop_iv_plus_stride(init_idx)) {
+          if (is_loop_iv(init_idx) || is_loop_incr_pattern(init_idx)) {
             if (!clone_list->contains(vopd)) {
               clone_list->push(vopd);
             }
@@ -835,12 +854,12 @@ void VectorMaskedLoop::duplicate_vector_ops(
   // the original list to handle operations at max mask offset "dup_cnt - 1".
   // The cloned lists are for small mask offset from "0" to "dup_cnt - 2".
   Node* prev_store = nullptr;
-  for (int mask_off = 0; mask_off < dup_cnt; mask_off++) {
-    Node_List* vnodes = vector_copies.at(mask_off);
+  for (int level_offset = 0; level_offset < dup_cnt; level_offset++) {
+    Node_List* vnodes = vector_copies.at(level_offset);
     for (uint i = 0; i < vnodes->size(); i++) {
       Node* vn = vnodes->at(i);
       // Do general vector node adjustment for the vector nodes
-      adjust_vector_node(vn, vmask_tree, level, mask_off);
+      adjust_vector_node(vn, vmask_tree, vmask_tree_level, level_offset);
       // Do cross-node adjustment for vector store nodes.
       if (vn->is_StoreVector()) {
         // For vector store nodes, we re-connect memory edges to the previous
@@ -856,9 +875,9 @@ void VectorMaskedLoop::duplicate_vector_ops(
 #ifndef PRODUCT
   if (TraceMaskedLoop) {
     tty->print_cr("Duplicated vector nodes with lane size = %d", lane_size);
-    for (int mask_off = 0; mask_off < dup_cnt; mask_off++) {
-      Node_List* vp = vector_copies.at(mask_off);
-      tty->print_cr("Offset = %d", mask_off);
+    for (int level_offset = 0; level_offset < dup_cnt; level_offset++) {
+      Node_List* vp = vector_copies.at(level_offset);
+      tty->print_cr("Offset = %d", level_offset);
       for (uint i = 0; i < vp->size(); i++) {
         vp->at(i)->dump();
       }
@@ -870,28 +889,30 @@ void VectorMaskedLoop::duplicate_vector_ops(
 
 // Helper function for general vector node adjustment after duplication
 void VectorMaskedLoop::adjust_vector_node(Node* vn, Node_List* vmask_tree,
-                                          int level, int mask_off) {
-  Node* vmask = vmask_tree->at((1 << level) + mask_off);
-  int lane_size = type2aelembytes(Matcher::vector_element_basic_type(vmask));
+                                          int vmask_tree_level, int level_offset) {
+  Node* vmask = vmask_tree->at((1 << vmask_tree_level) + level_offset);
+  BasicType elem_bt = Matcher::vector_element_basic_type(vmask);
+  int lane_size = type2aelembytes(elem_bt);
   uint vector_size_in_bytes = Matcher::max_vector_size(T_BYTE);
+  assert(Matcher::vector_width_in_bytes(elem_bt) == (int) vector_size_in_bytes,
+         "should get the same vector width");
   if (vn->is_Mem()) {
     // 1) For mem accesses, update the mask input, and add additional address
     //    offset if mask offset is non-zero
     vn->set_req(vn->req() - 1, vmask);
-    if (mask_off != 0) {
+    if (level_offset != 0) {
       Node* ptr = vn->in(MemNode::Address);
       Node* base = ptr->in(AddPNode::Base);
-      int mem_scale = Matcher::max_vector_size(T_BYTE);
-      Node* off = _igvn->MakeConX(mem_scale * mask_off);
+      Node* off = _igvn->MakeConX(vector_size_in_bytes * level_offset);
       Node* new_ptr = new AddPNode(base, ptr, off);
       _igvn->register_new_node_with_optimizer(new_ptr, ptr);
       vn->set_req(MemNode::Address, new_ptr);
     }
   } else if (vn->Opcode() == Op_PopulateIndex) {
     // 2) For populate index, update start index for non-zero mask offset
-    if (mask_off != 0) {
+    if (level_offset != 0) {
       int v_stride = vector_size_in_bytes / lane_size * _cl->stride_con();
-      Node* idx_off = _igvn->intcon(v_stride * mask_off);
+      Node* idx_off = _igvn->intcon(v_stride * level_offset);
       Node* new_base = new AddINode(vn->in(1), idx_off);
       _igvn->register_new_node_with_optimizer(new_base, vn->in(1));
       vn->set_req(1, new_base);
@@ -900,7 +921,7 @@ void VectorMaskedLoop::adjust_vector_node(Node* vn, Node_List* vmask_tree,
 }
 
 // Helper function for duplicating a subgraph of nodes
-Node_List* VectorMaskedLoop::clone_node_list(Node_List* list) {
+Node_List* VectorMaskedLoop::clone_node_list(const Node_List* list) {
   assert(list != nullptr && list->size() > 0, "Should not be empty");
   uint size = list->size();
   Node_List* new_list = new Node_List(_arena, size);
@@ -932,14 +953,19 @@ Node_List* VectorMaskedLoop::clone_node_list(Node_List* list) {
 
 // Entry function of actual vector mask transformation
 void VectorMaskedLoop::transform_loop(const TypeVectMask* t_vmask) {
-  // Create a tree of vector masks for different vector lane sizes
+  // Create a tree of vector masks for different vector element sizes
   Node_List* vmask_tree = create_vmask_tree(t_vmask);
   Node* root_vmask = vmask_tree->at(1);
 
-  // Replace vectorization candidate nodes to vector nodes
+  // Replace vectorization candidate nodes to vector nodes. For now we only
+  // generate a single vector node per scalar node. And that the duplication
+  // afterwards makes sure that all scalar nodes are "widened" to the same
+  // number of elements. The smalles type using a single vector, larger types
+  // using multiple (duplicated) vectors per scalar node.
   Node_List* s2v_map = replace_scalar_ops(root_vmask);
 
-  // Duplicate and adjust vector nodes with larger vector lane sizes
+  // Duplicate and adjust vector operations with larger vector element sizes
+  // which need multiple vectors to process
   int small = _size_stats.smallest_size();
   int large = _size_stats.largest_size();
   for (int lane_size = small * 2; lane_size <= large; lane_size *= 2) {
@@ -962,14 +988,13 @@ void VectorMaskedLoop::transform_loop(const TypeVectMask* t_vmask) {
 }
 
 // ------------------------------ Debug printing ------------------------------
-void VectorMaskedLoop::trace_msg(Node* n, const char* format, ...) {
+void VectorMaskedLoop::trace_msg(Node* n, const char* msg) {
 #ifndef PRODUCT
   if (TraceMaskedLoop) {
-    va_list ap;
-    va_start(ap, format);
-    tty->vprint_cr(format, ap);
-    va_end(ap);
-    if (n != nullptr) n->dump();
+    tty->print_cr("%s", msg);
+    if (n != nullptr) {
+      n->dump();
+    }
   }
 #endif
 }

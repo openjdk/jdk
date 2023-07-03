@@ -1819,8 +1819,11 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------LoopVectorMaskNode------------------------------
-// Node for generating a loop vector mask from an integer range
+// This is used in vectorized loops to generate a vector mask which indicates
+// active lanes of a vector. The number of active lanes should be equal to the
+// size of the interval represented by 2 inputs "from" and "to" of this node.
+// For large intervals whose size is greater than the vector size, this should
+// output all-true masks.
 class LoopVectorMaskNode : public TypeNode {
  private:
   int _max_trips;
@@ -1843,7 +1846,9 @@ class LoopVectorMaskNode : public TypeNode {
   int max_trips() const { return _max_trips; }
 };
 
-//--------------------------Extract[High|Low]MaskNode--------------------------
+// Below two nodes are used in pair to extract the upper (lower) half of a
+// vector mask to get two vector masks which indicate the lane activity of
+// the upper (lower) half of the original vector, respectively.
 class ExtractHighMaskNode : public TypeNode {
  public:
   ExtractHighMaskNode(Node* in, const Type* ty) : TypeNode(ty, 2) {

@@ -247,6 +247,7 @@ class VectorElementSizeStats {
   }
 
   int count_size(int size) {
+    assert(1 <= size && size <= 8 && is_power_of_2(size), "Illegal size");
     return _stats[exact_log2(size)];
   }
 
@@ -663,10 +664,8 @@ class SWPointer : public ArenaObj {
   PhaseIdealLoop* phase() const { return _phase; }
   IdealLoopTree*  lpt() const   { return _lpt; }
   PhiNode* iv() const {
-    return _slp ? _slp->iv() : _lpt->_head->as_CountedLoop()->phi()->as_Phi();
+    return _lpt->_head->as_CountedLoop()->phi()->as_Phi();
   }
-
-  void init();
 
   bool is_loop_member(Node* n) const;
   bool invariant(Node* n) const;
@@ -694,6 +693,7 @@ class SWPointer : public ArenaObj {
   // Following is used to create a temporary object during
   // the pattern match of an address expression.
   SWPointer(SWPointer* p);
+  void init();
 
   bool valid()  { return _adr != nullptr; }
   bool has_iv() { return _scale != 0; }

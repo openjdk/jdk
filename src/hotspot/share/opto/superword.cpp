@@ -216,7 +216,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       }
     }
 
-    if (n->is_Phi() && (n->bottom_type() == Type::MEMORY)) {
+    if (n->is_memory_phi()) {
       Node* n_tail = n->in(LoopNode::LoopBackControl);
       if (n_tail != n->in(LoopNode::EntryControl)) {
         if (!n_tail->is_Mem()) {
@@ -554,29 +554,29 @@ bool SuperWord::SLP_extract() {
   compute_max_depth();
 
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  if (cl->is_main_loop()) {
-    compute_vector_element_type();
+  assert(cl->is_main_loop(), "SLP should only work on main loops");
 
-    // Attempt vectorization
+  compute_vector_element_type();
 
-    find_adjacent_refs();
+  // Attempt vectorization
 
-    if (align_to_ref() == nullptr) {
-      return false; // Did not find memory reference to align vectors
-    }
+  find_adjacent_refs();
 
-    extend_packlist();
-
-    combine_packs();
-
-    construct_my_pack_map();
-
-    filter_packs();
-
-    DEBUG_ONLY(verify_packs();)
-
-    schedule();
+  if (align_to_ref() == nullptr) {
+    return false; // Did not find memory reference to align vectors
   }
+
+  extend_packlist();
+
+  combine_packs();
+
+  construct_my_pack_map();
+
+  filter_packs();
+
+  DEBUG_ONLY(verify_packs();)
+
+  schedule();
 
   return output();
 }
@@ -1060,7 +1060,7 @@ void SuperWord::dependence_graph() {
   // First, assign a dependence node to each memory node
   for (int i = 0; i < _block.length(); i++ ) {
     Node *n = _block.at(i);
-    if (n->is_Mem() || (n->is_Phi() && n->bottom_type() == Type::MEMORY)) {
+    if (n->is_Mem() || n->is_memory_phi()) {
       _dg.make_node(n);
     }
   }
@@ -1170,7 +1170,7 @@ void SuperWord::mem_slice_preds(Node* start, Node* stop, GrowableArray<Node*> &p
         if (out->is_MergeMem() && !in_bb(out)) {
           // Either unrolling is causing a memory edge not to disappear,
           // or need to run igvn.optimize() again before SLP
-        } else if (out->is_Phi() && out->bottom_type() == Type::MEMORY && !in_bb(out)) {
+        } else if (out->is_memory_phi() && !in_bb(out)) {
           // Ditto.  Not sure what else to check further.
         } else if (out->Opcode() == Op_StoreCM && out->in(MemNode::OopStore) == n) {
           // StoreCM has an input edge used as a precedence edge.
@@ -3175,7 +3175,7 @@ bool SuperWord::construct_bb() {
   // Find memory slices (head and tail)
   for (DUIterator_Fast imax, i = lp()->fast_outs(imax); i < imax; i++) {
     Node *n = lp()->fast_out(i);
-    if (in_bb(n) && (n->is_Phi() && n->bottom_type() == Type::MEMORY)) {
+    if (in_bb(n) && n->is_memory_phi()) {
       Node* n_tail  = n->in(LoopNode::LoopBackControl);
       if (n_tail != n->in(LoopNode::EntryControl)) {
         if (!n_tail->is_Mem()) {
@@ -4697,7 +4697,7 @@ DepSuccs::DepSuccs(Node* n, DepGraph& dg) {
     _next_idx = 0;
     _end_idx  = _n->outcnt();
     _dep_next = dg.dep(_n)->out_head();
-  } else if (_n->is_Mem() || (_n->is_Phi() && _n->bottom_type() == Type::MEMORY)) {
+  } else if (_n->is_Mem() || _n->is_memory_phi()) {
     _next_idx = 0;
     _end_idx  = 0;
     _dep_next = dg.dep(_n)->out_head();

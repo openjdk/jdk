@@ -630,7 +630,7 @@ static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, Merge
   SafePointNode* safepoint = nullptr;
   for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
     Node* u = x->fast_out(i);
-    if (u->is_Phi() && u->bottom_type() == Type::MEMORY) {
+    if (u->is_memory_phi()) {
       Node* m = u->in(LoopNode::LoopBackControl);
       if (u->adr_type() == TypePtr::BOTTOM) {
         if (m->is_MergeMem() && mem->is_MergeMem()) {
@@ -2275,10 +2275,6 @@ void CountedLoopNode::dump_spec(outputStream *st) const {
 
 //=============================================================================
 jlong BaseCountedLoopEndNode::stride_con() const {
-  if (!stride_is_con()) {
-    // Stride could be non-constant if a loop is vector masked
-    return 0;
-  }
   return stride()->bottom_type()->is_integer(bt())->get_con_as_long(bt());
 }
 
@@ -2617,7 +2613,12 @@ Node* CountedLoopNode::skip_predicates() {
 
 int CountedLoopNode::stride_con() const {
   CountedLoopEndNode* cle = loopexit_or_null();
-  return cle != nullptr ? cle->stride_con() : 0;
+  if (cle != nullptr && cle->stride_is_con()) {
+    return cle->stride_con();
+  }
+  assert(is_post_loop() && is_vector_masked(),
+         "Stride could be non-constant only in vector masked post loops");
+  return 0;
 }
 
 BaseCountedLoopNode* BaseCountedLoopNode::make(Node* entry, Node* backedge, BasicType bt) {
@@ -2682,7 +2683,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
 #ifdef ASSERT
         for (DUIterator_Fast jmax, j = inner_cl->fast_outs(jmax); j < jmax; j++) {
           Node* uu = inner_cl->fast_out(j);
-          if (uu->is_Phi() && uu->bottom_type() == Type::MEMORY) {
+          if (uu->is_memory_phi()) {
             if (uu->adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type()))) {
               assert(phi == uu, "what's that phi?");
             } else if (uu->adr_type() == TypePtr::BOTTOM) {
@@ -4679,14 +4680,17 @@ void PhaseIdealLoop::build_and_optimize() {
     }
   }
 
-  // Perform loop vectorization with vector masks
+  // Perform post loop vectorization with vector masks
   if (UseMaskedLoop && Matcher::has_predicated_vectors() &&
       C->has_loops() && !C->major_progress()) {
     VectorMaskedLoop vml(this);
     for (LoopTreeIterator iter(_ltree_root); !iter.done(); iter.next()) {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_counted() && lpt->is_innermost()) {
-        vml.try_vectorize_loop(lpt);
+        CountedLoopNode* cl = lpt->_head->as_CountedLoop();
+        if (cl->is_post_loop() && !cl->is_vector_masked()) {
+          vml.try_vectorize_loop(lpt);
+        }
       }
     }
   }

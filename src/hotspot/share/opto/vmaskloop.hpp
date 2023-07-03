@@ -58,13 +58,13 @@ class VectorMaskedLoop : public ResourceObj {
   int  rpo_idx(Node* n)            { assert(in_body(n), "What?"); return _rpo_idx.at(n->_idx); }
   void set_rpo_idx(Node* n, int i) { assert(in_body(n), "What?"); _rpo_idx.at_put_grow(n->_idx, i); }
 
-  BasicType statement_bottom_type(Node_List* stmt) {
+  BasicType statement_bottom_type(const Node_List* stmt) const {
     assert(stmt != nullptr && stmt->size() > 0, "should not be empty");
     assert(stmt->at(0)->is_Store(), "Must be a store node");
     return stmt->at(0)->as_Store()->memory_type();
   }
 
-  BasicType size_to_basic_type(int size) {
+  BasicType size_to_basic_type(const int size) const {
     BasicType bt = T_ILLEGAL;
     switch (size) {
       case 1: bt = T_BYTE;  break;
@@ -82,11 +82,14 @@ class VectorMaskedLoop : public ResourceObj {
   bool has_valid_elem_bt(Node* n) { return elem_bt(n) != T_ILLEGAL; }
 
   // Some node check utilities
-  bool is_loop_iv(Node* n) { return n == _iv; }
-  bool is_loop_incr(Node* n) { return n == _cl->incr(); }
-  bool is_loop_iv_or_incr(Node* n) { return n == _iv || n == _cl->incr(); }
+  bool is_loop_iv(const Node* n) const { return n == _iv; }
+  bool is_loop_incr(const Node* n) const { return n == _cl->incr(); }
 
-  bool is_loop_iv_plus_stride(Node* n) {
+  bool is_loop_iv_or_incr(const Node* n) const {
+    return n == _iv || n == _cl->incr();
+  }
+
+  bool is_loop_incr_pattern (const Node* n) const {
     if (n != nullptr && n->is_Add() && n->in(1) == _iv && n->in(2)->is_Con()) {
       const Type* t = n->in(2)->bottom_type();
       return t->is_int()->get_con() == _cl->stride_con();
@@ -94,15 +97,12 @@ class VectorMaskedLoop : public ResourceObj {
     return false;
   }
 
-  bool is_memory_phi(Node* n) {
-    return n != nullptr && n->is_Phi() && n->bottom_type() == Type::MEMORY;
-  }
-
   // Methods for loop vectorizable analysis
   void init(IdealLoopTree* lpt);
   bool collect_loop_nodes();
 
-  bool collect_statements_helper(Node* node, uint idx, Node_List* stmt, Node_List* worklist);
+  bool collect_statements_helper(const Node* node, const uint idx,
+                                 Node_List* stmt, Node_List* worklist);
   bool collect_statements();
 
   bool analyze_vectorizability();
@@ -122,11 +122,11 @@ class VectorMaskedLoop : public ResourceObj {
   Node_List* replace_scalar_ops(Node* mask);
   void duplicate_vector_ops(Node_List* vmask_tree, Node_List* s2v_map, int lane_size);
   void adjust_vector_node(Node* vn, Node_List* vmask_tree, int level, int mask_off);
-  Node_List* clone_node_list(Node_List* list);
+  Node_List* clone_node_list(const Node_List* list);
   void transform_loop(const TypeVectMask* t_vmask);
 
   // Debug printing
-  void trace_msg(Node* n, const char* format, ...);
+  void trace_msg(Node* n, const char* msg);
 
  public:
   VectorMaskedLoop(PhaseIdealLoop* phase);
