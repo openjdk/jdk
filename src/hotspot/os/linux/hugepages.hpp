@@ -32,32 +32,33 @@
 
 class outputStream;
 
-// Wraps information about the support of hugepages in the OS
+// Header contains the interface that reads OS information about
+// available hugepage support:
+// - class StaticHugePageSupport - about static (non-THP) hugepages
+// - class THPSupport - about transparent huge pages
+// and:
+// - class HugePages - a static umbrella wrapper
 
-// 1) for static (non-thp) hugepages
+// Information about static (non-thp) hugepages
 class StaticHugePageSupport {
-
   bool _initialized;
 
-  // All supported hugepage sizes (typically just one or two; outlier platforms like
-  // ia64 can have eight)
+  // All supported hugepage sizes (sizes for which entries exist
+  // in /sys/kernel/mm/hugepages/hugepage-xxx)
   os::PageSizes _pagesizes;
 
-  // Contains the default hugepage. On the OS side, the "default hugepage size" is the one that
+  // Contains the default hugepage. The "default hugepage size" is the one that
   // - is marked in /proc/meminfo as "Hugepagesize"
   // - is the size one gets when using mmap(MAP_HUGETLB) when omitting size specifiers like MAP_HUGE_SHIFT)
   size_t _default_hugepage_size;
 
 public:
-
   StaticHugePageSupport();
 
-  // Queries the OS, fills in object
   void scan_os();
 
   os::PageSizes pagesizes() const;
   size_t default_hugepage_size() const;
-
   void print_on(outputStream* os);
 };
 
@@ -65,12 +66,12 @@ enum class THPMode { always, never, madvise };
 
 // 2) for transparent hugepages
 class THPSupport {
-
   bool _initialized;
 
+  // See /sys/kernel/mm/transparent_hugepages/enabled
   THPMode _mode;
 
-  // Contains the THP page size.
+  // Contains the THP page size
   size_t _pagesize;
 
 public:
@@ -82,7 +83,6 @@ public:
 
   THPMode mode() const;
   size_t pagesize() const;
-
   void print_on(outputStream* os);
 };
 
@@ -97,7 +97,6 @@ public:
   static const StaticHugePageSupport& static_info() { return _static_hugepage_support; }
   static const THPSupport& thp_info() { return _thp_support; }
 
-  // some useful shorthands
   static size_t default_static_hugepage_size()  { return _static_hugepage_support.default_hugepage_size(); }
   static bool supports_static_hugepages()       { return default_static_hugepage_size() > 0; }
   static THPMode thp_mode()                     { return _thp_support.mode(); }
