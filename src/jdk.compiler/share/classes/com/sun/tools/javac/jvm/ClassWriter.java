@@ -354,17 +354,20 @@ public class ClassWriter extends ClassFile {
     /** Write member (field or method) attributes;
      *  return number of attributes written.
      */
-    int writeMemberAttrs(Symbol sym, boolean isRecordComponent, boolean isMatcher) {
+    int writeMemberAttrs(Symbol sym, boolean isRecordComponent, boolean fromMatcher) {
         int acount = 0;
         if (!isRecordComponent) {
             acount = writeFlagAttrs(sym.flags());
         }
         long flags = sym.flags();
+        boolean needsSignature = !types.isSameType(sym.type, sym.erasure(types)) ||
+                poolWriter.signatureGen.hasTypeVar(sym.type.getThrownTypes());
         if (((flags & (SYNTHETIC | BRIDGE)) != SYNTHETIC &&
             (flags & ANONCONSTR) == 0 &&
-            (!types.isSameType(sym.type, sym.erasure(types)) ||
-             poolWriter.signatureGen.hasTypeVar(sym.type.getThrownTypes())) &&
-             !sym.isDeconstructor()) || isMatcher) {
+            needsSignature) ||
+                (needsSignature &&
+                    fromMatcher &&
+                    sym.isDeconstructor())) {
             // note that a local class with captured variables
             // will get a signature attribute
             int alenIdx = writeAttr(names.Signature);
@@ -372,7 +375,7 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
-        if (!isMatcher) {
+        if (!fromMatcher) {
             acount += writeJavaAnnotations(sym.getRawAttributes());
             acount += writeTypeAnnotations(sym.getRawTypeAttributes(), false);
         }
@@ -384,7 +387,7 @@ public class ClassWriter extends ClassFile {
      */
     int writeMethodParametersAttr(MethodSymbol m, boolean writeParamNames) {
         MethodType ty = m.externalType(types).asMethodType();
-        final int allparams = ty.argtypes.size();
+        final int allparams = m.isDeconstructor() ? m.params.size() : ty.argtypes.size(); // signature changes and the size needs to refer to the original parameter/binding list
         if (m.params != null && allparams != 0) {
             final int attrIndex = writeAttr(names.MethodParameters);
             databuf.appendByte(allparams);
@@ -1058,7 +1061,7 @@ public class ClassWriter extends ClassFile {
             }
         }
         acount += writeMemberAttrs(m, false, false);
-        if (!m.isLambdaMethod())
+        if (!m.isLambdaMethod() && !m.isDeconstructor())
             acount += writeParameterAttrs(m.params);
 
         if (m.isMatcher()) {
