@@ -717,19 +717,34 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                 return;
             }
 
-            // Instead of adding the module descriptor calls in this method,
-            // helper methods are created in separate helper methods.
-            // Let m1, m2, ..., mn be the calls to the module descriptor builder
-            // Here, n is larger than moduleDescriptorsPerMethod, which will hit the 64kb limit of method length.
-            // thus, we create f1, f2, ... where
-            //   - f1 calls m1, ... m_{moduleDescriptorsPerMethod-1},
-            //   - f2 calls m_{moduleDescriptorsPerMethod}, ... m_{2xmoduleDescriptorsPerMethod-1},
-            //   - etc.
+
+            // Split the module descriptors be created by multiple helper methods.
+            // Each helper method "subi" creates the maximum N number of module descriptors
+            //     mi, m{i+1} ...
+            // to avoid exceeding the 64kb limit of method length.  Then it will call
+            // "sub{i+1}" to creates the next batch of module descriptors m{i+n}, m{i+n+1}...
+            // and so on.  During the construction of the module descriptors, the string sets and
+            // modifier sets are deduplicated (see SystemModulesClassGenerator.DedupSetBuilder)
+            // and cached in the locals. These locals are saved in an array list so
+            // that the helper method can restore the local variables that may be
+            // referenced by the bytecode generated for creating module descriptors.
+            // Pseudo code looks like this:
             //
-            // Inside m, the class SystemModulesClassGenerator.DedupSetBuilder is used.
-            // That class creates sets caching variables. It stores its caches in the local storage.
-            // Since the local storage is destroyed across each method, but the sets are needed across methods,
-            // the local variables are passed on to the next helper method using a list of these variables.
+            // void subi(ModuleDescriptor[] mdescs, ArrayList<Object> localvars) {
+            //      // assign localvars to local variables
+            //      var l3 = localvars.get(0);
+            //      var l4 = localvars.get(1);
+            //        :
+            //      // fill mdescs[i] to mdescs[i+n-1]
+            //      mdescs[i] = ...
+            //      mdescs[i+1] = ...
+            //        :
+            //      // save new local variables added
+            //      localvars.add(lx)
+            //      localvars.add(l{x+1})
+            //        :
+            //      sub{i+i}(mdescs, localvars);
+            // }
 
             List<List<ModuleInfo>> splitModuleInfos = new ArrayList<>();
             List<ModuleInfo> currentModuleInfos = null;
