@@ -3625,7 +3625,7 @@ instruct sqrtD_reg(regD dst) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2HF_reg_reg(rRegI dst, regF src, regF tmp) %{
+instruct convF2HF_reg_reg(rRegI dst, vlRegF src, vlRegF tmp) %{
   effect(TEMP tmp);
   match(Set dst (ConvF2HF src));
   ins_cost(125);
@@ -3669,7 +3669,7 @@ instruct vconvF2HF_mem_reg(memory mem, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct convHF2F_reg_reg(regF dst, rRegI src) %{
+instruct convHF2F_reg_reg(vlRegF dst, rRegI src) %{
   match(Set dst (ConvHF2F src));
   format %{ "vcvtph2ps $dst,$src" %}
   ins_encode %{
