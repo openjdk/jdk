@@ -630,7 +630,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
     return false;
   }
 
-  if (do_wrap &&
+  if (!do_wrap &&
       (!arch_supports_vector(Op_SubVB, num_elem, elem_bt, VecMaskNotUsed)       ||
       !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskNotUsed)  ||
       !arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskNotUsed))) {
