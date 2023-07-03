@@ -2265,7 +2265,7 @@ public class IRNode {
             try {
                 size = Integer.parseInt(sizes[i]);
             } catch (NumberFormatException e) {
-                TestFormat.checkNoReport(false, "Vector node has invalid size \"" + sizes[i] + "\", in \"" + sizeString + "\"");
+                throw new TestFormatException("Vector node has invalid size \"" + sizes[i] + "\", in \"" + sizeString + "\"");
             }
             TestFormat.checkNoReport(size > 1, "Vector node size must be 2 or larger, but got \"" + sizes[i] + "\", in \"" + sizeString + "\"");
             regex += ((i > 0) ? "|" : "") + size;
@@ -2313,7 +2313,7 @@ public class IRNode {
             try {
                 tag_val = Integer.parseInt(tag);
             } catch (NumberFormatException e) {
-                TestFormat.checkNoReport(false, "Vector node has invalid size in \"min(...)\", argument " + i + ", \"" + tag + "\", in \"" + sizeTagString + "\"");
+                throw new TestFormatException("Vector node has invalid size in \"min(...)\", argument " + i + ", \"" + tag + "\", in \"" + sizeTagString + "\"");
             }
             minVal = Math.min(minVal, tag_val);
         }
@@ -2343,19 +2343,17 @@ public class IRNode {
      * Return maximal number of elements that can fit in a vector of the specified type, on x86 / x64.
      */
     public static long getMaxElementsForTypeOnX86(String typeString, VMInfo vmInfo) {
-        long maxBytes = 64;
-
         // restrict maxBytes for specific features, see Matcher::vector_width_in_bytes:
-        //  -> x86:
         boolean avx1 = vmInfo.hasCPUFeature("avx");
         boolean avx2 = vmInfo.hasCPUFeature("avx2");
         boolean avx512 = vmInfo.hasCPUFeature("avx512f");
         boolean avx512bw = vmInfo.hasCPUFeature("avx512bw");
+        long maxBytes;
         if (avx512) {
             maxBytes = 64;
         } else if (avx2) {
             maxBytes = 32;
-        } else if (avx1) {
+        } else {
             maxBytes = 16;
         }
         if (avx1 && (typeString.equals(TYPE_FLOAT) || typeString.equals(TYPE_DOUBLE))) {

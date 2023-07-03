@@ -59,11 +59,13 @@ public class RawCountsConstraint implements RawConstraint {
     private boolean expectMaxSizeForVectorNode() {
         switch (comparison.getComparator()) {
             case "<" -> {
-                TestFormat.checkNoReport(comparison.getGivenValue() > 1, "Node count comparison \"<" + comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
+                TestFormat.checkNoReport(comparison.getGivenValue() > 1, "Node count comparison \"<" +
+                                         comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
                 return false; // any
             }
             case "<=" -> {
-                TestFormat.checkNoReport(comparison.getGivenValue() >= 1, "Node count comparison \"<=" + comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
+                TestFormat.checkNoReport(comparison.getGivenValue() >= 1, "Node count comparison \"<=" +
+                                         comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
                 return false; // any
             }
             case "=" -> {
@@ -71,14 +73,17 @@ public class RawCountsConstraint implements RawConstraint {
                 return comparison.getGivenValue() > 0;
             }
             case ">" -> {
-                TestFormat.checkNoReport(comparison.getGivenValue() >= 0, "Node count comparison \">" + comparison.getGivenValue() + "\" is useless, please only use positive numbers.");
+                TestFormat.checkNoReport(comparison.getGivenValue() >= 0, "Node count comparison \">" +
+                                         comparison.getGivenValue() + "\" is useless, please only use positive numbers.");
                 return true; // max
             }
             case ">=" -> {
-                TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Node count comparison \">=" + comparison.getGivenValue() + "\" is useless, please only use strictly positive numbers with greater-equal.");
+                TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Node count comparison \">=" +
+                                         comparison.getGivenValue() + "\" is useless, please only use strictly positive numbers with greater-equal.");
                 return true; // max
             }
-            case "!=" -> throw new TestFormatException("Not-equal comparator not supported for node count: \"" + comparison.getComparator() + "\". Please rewrite the rule.");
+            case "!=" -> throw new TestFormatException("Not-equal comparator not supported for node count: \"" +
+                                                       comparison.getComparator() + "\". Please rewrite the rule.");
             default -> throw new TestFormatException("Comparator not handled: " + comparison.getComparator());
         }
     }
