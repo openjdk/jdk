@@ -285,12 +285,15 @@ void JfrStorage::register_full(BufferPtr buffer, Thread* thread) {
   assert(buffer->retired(), "invariant");
   if (_full_list->add(buffer)) {
     if (thread->is_Java_thread()) {
-      // Transition java thread to vm so it can issue a notify.
-      ThreadInVMfromNative transition(JavaThread::cast(thread));
-      _post_box.post(MSG_FULLBUFFER);
-    } else {
-      _post_box.post(MSG_FULLBUFFER);
+      JavaThread* jt = JavaThread::cast(thread);
+      if (jt->thread_state() == _thread_in_native) {
+        // Transition java thread to vm so it can issue a notify.
+        ThreadInVMfromNative transition(jt);
+        _post_box.post(MSG_FULLBUFFER);
+        return;
+      }
     }
+    _post_box.post(MSG_FULLBUFFER);
   }
 }
 
