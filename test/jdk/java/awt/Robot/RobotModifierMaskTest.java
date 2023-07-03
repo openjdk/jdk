@@ -21,18 +21,19 @@
  * questions.
  */
 
-import sun.awt.OSInfo;
 
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
+import javax.swing.JFrame;
+import javax.swing.JScrollPane;
+import javax.swing.JTextArea;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
+
+import sun.awt.OSInfo;
 
 /*
  * @test
@@ -40,8 +41,8 @@ import java.awt.event.KeyEvent;
  * @key headful
  * @modules java.desktop/sun.awt
  * @requires (os.family == "mac")
- * @summary To test if modifier keys work properly,
- *          when manual mouse move and Robot's Key Event occur simultaneously.
+ * @summary To test if modifier keys work properly, during Robot's Key Event
+ *          with and without manual mouse move.
  */
 public class RobotModifierMaskTest {
 
@@ -62,9 +63,11 @@ public class RobotModifierMaskTest {
             It tests the following key modifiers - Shift, Caps, Control, Option and Command.
             It needs to be checked for following two scenarios \n
 
-            CASE 1 : Run the test as an automated test and let the Robot go through all the test cases.\n
-            CASE 2 : Run the test in semi-automated mode. While the Robot in typing,
-                     manually move the mouse (without clicking/dragging). Check if the test Passes or Fails.\n\n
+            CASE 1 : \t Run the test as an automated test and let the Robot go through
+                     \t all the test cases.\n
+            CASE 2 : \t Run the test in semi-automated mode. While the Robot in typing,
+                     \t manually move the mouse (without clicking/dragging).
+                     \t Check if the test passes or fails.\n
 
             NOTE: User doesn't need to compare the actual vs expected result in Case 2.
             The test compares it.""";
@@ -98,7 +101,8 @@ public class RobotModifierMaskTest {
             testAltKey();
 
             if (!errorLog.isEmpty()) {
-                throw new RuntimeException("Test failed for following case(s): \n" + errorLog);
+                throw new RuntimeException("Test failed for following case(s): \n"
+                                           + errorLog);
             }
 
         } finally {
@@ -124,8 +128,9 @@ public class RobotModifierMaskTest {
         robot.delay(500);
 
         if (!jTextArea.getText().equals(EXPECTED_RESULT_SHIFT)) {
-            errorLog.append("For Shift key, Actual and Expected results differ \n"+
-                    "Expected Text : " + EXPECTED_RESULT_SHIFT + " Actual Text : " + jTextArea.getText() + "\n");
+            errorLog.append("For Shift key, Actual and Expected results differ\n"
+                            + "Expected Text : " + EXPECTED_RESULT_SHIFT
+                            + " Actual Text : " + jTextArea.getText() + "\n");
         }
     }
 
@@ -146,8 +151,9 @@ public class RobotModifierMaskTest {
         robot.delay(500);
 
         if (!jTextArea.getText().equals(EXPECTED_RESULT_CAPS)) {
-            errorLog.append("For Caps key, Actual and Expected results differ. \n"+
-                    "Expected Text : " + EXPECTED_RESULT_CAPS + " Actual Text : " + jTextArea.getText() + "\n");
+            errorLog.append("For Caps key, Actual and Expected results differ. \n"
+                            + "Expected Text : " + EXPECTED_RESULT_CAPS
+                            + " Actual Text : " + jTextArea.getText() + "\n");
         }
     }
 
@@ -167,8 +173,9 @@ public class RobotModifierMaskTest {
         robot.delay(500);
 
         if (!jTextArea.getText().equals(EXPECTED_RESULT_META)) {
-            errorLog.append("For Command key, Actual and Expected results differ \n"+
-                    "Expected Text : " + EXPECTED_RESULT_META + " Actual Text : " + jTextArea.getText() + "\n");
+            errorLog.append("For Command key, Actual and Expected results differ \n"
+                            + "Expected Text : " + EXPECTED_RESULT_META
+                            + " Actual Text : " + jTextArea.getText() + "\n");
         }
     }
 
@@ -187,8 +194,9 @@ public class RobotModifierMaskTest {
         robot.delay(500);
 
         if (!jTextArea.getText().equals(EXPECTED_RESULT_ALT)) {
-            errorLog.append("For Alt key, Actual and Expected results differ \n"+
-                    "Expected Text : " + EXPECTED_RESULT_ALT + " Actual Text : " + jTextArea.getText() + "\n");
+            errorLog.append("For Alt key, Actual and Expected results differ \n"
+                            + "Expected Text : " + EXPECTED_RESULT_ALT
+                            + " Actual Text : " + jTextArea.getText() + "\n");
         }
     }
 
@@ -213,8 +221,9 @@ public class RobotModifierMaskTest {
         robot.delay(500);
 
         if (jTextArea.getCaretPosition() != EXPECTED_CARET_POS_CTRL) {
-            errorLog.append("For Control key, Actual and Expected caret position differ \n" +
-                    "Expected Position : " + EXPECTED_CARET_POS_CTRL + " Actual Position : " + jTextArea.getCaretPosition() + "\n");
+            errorLog.append("For Control key, Actual and Expected caret position differ\n"
+                            + "Expected Position : " + EXPECTED_CARET_POS_CTRL
+                            + " Actual Position : " + jTextArea.getCaretPosition() + "\n");
         }
     }
 
@@ -223,7 +232,7 @@ public class RobotModifierMaskTest {
         jTextArea = new JTextArea("");
         JScrollPane pane = new JScrollPane(jTextArea);
         jFrame.getContentPane().add(pane);
-        jFrame.setSize(600,300);
+        jFrame.setSize(600,320);
         jFrame.setLocation(200, 200);
         jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         jFrame.setVisible(true);
