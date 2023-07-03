@@ -232,7 +232,7 @@ final class ProviderConfig {
             };
             provider = p;
         }
-        return provider;
+        return p;
     }
 
     /**
