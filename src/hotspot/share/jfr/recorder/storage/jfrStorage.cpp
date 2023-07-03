@@ -40,6 +40,7 @@
 #include "jfr/utilities/jfrTime.hpp"
 #include "jfr/writers/jfrNativeEventWriter.hpp"
 #include "logging/log.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/safepoint.hpp"
@@ -172,15 +173,15 @@ static BufferPtr acquire_lease(size_t size, JfrStorageMspace* mspace, JfrStorage
   }
 }
 
-static BufferPtr acquire_promotion_buffer(size_t size, JfrStorageMspace* mspace, JfrStorage& storage_instance, size_t retry_count, Thread* thread) {
+BufferPtr JfrStorage::acquire_promotion_buffer(size_t size, JfrStorageMspace* mspace, JfrStorage& storage_instance, size_t retry_count, Thread* thread) {
   assert(size <= mspace->min_element_size(), "invariant");
   while (true) {
-    BufferPtr buffer= mspace_acquire_live_with_retry(size, mspace, retry_count, thread);
+    BufferPtr buffer = mspace_acquire_live_with_retry(size, mspace, retry_count, thread);
     if (buffer == nullptr && storage_instance.control().should_discard()) {
       storage_instance.discard_oldest(thread);
       continue;
     }
-    return buffer;
+    return buffer != nullptr ? buffer : JfrStorage::acquire_transient(size, thread);
   }
 }
 
@@ -250,6 +251,10 @@ bool JfrStorage::flush_regular_buffer(BufferPtr buffer, Thread* thread) {
   assert(promotion_buffer->free_size() >= unflushed_size, "invariant");
   buffer->move(promotion_buffer, unflushed_size);
   assert(buffer->empty(), "invariant");
+  if (promotion_buffer->transient()) {
+    promotion_buffer->set_retired();
+    register_full(promotion_buffer, thread);
+  }
   return true;
 }
 
@@ -279,7 +284,13 @@ void JfrStorage::register_full(BufferPtr buffer, Thread* thread) {
   assert(buffer->acquired_by(thread), "invariant");
   assert(buffer->retired(), "invariant");
   if (_full_list->add(buffer)) {
-    _post_box.post(MSG_FULLBUFFER);
+    if (thread->is_Java_thread()) {
+      // Transition java thread to vm so it can issue a notify.
+      ThreadInVMfromNative transition(JavaThread::cast(thread));
+      _post_box.post(MSG_FULLBUFFER);
+    } else {
+      _post_box.post(MSG_FULLBUFFER);
+    }
   }
 }
 
