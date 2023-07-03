@@ -30,7 +30,7 @@
 // overflow. We also need to make sure that this will not overflow a size_t on
 // 32 bit platforms when we convert it to a byte size.
 int32_t arrayOopDesc::max_array_length(BasicType type) {
-  assert(type >= 0 && type < T_CONFLICT, "wrong type");
+  assert(type < T_CONFLICT, "wrong type");
   assert(type2aelembytes(type) != 0, "wrong type");
 
   const int elem_size = type2aelembytes(type);
