@@ -306,8 +306,8 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(NonNMethodCodeHeapSize,  segments_val_min_max[(int)CodeBlobType::NonNMethod][0]);
 
   assert(NonProfiledCodeHeapSize + ProfiledCodeHeapSize + NonNMethodCodeHeapSize == ReservedCodeCacheSize,
-        "Invalid code heap sizes: %lu + %lu + %lu != %lu",
-        (uintx)NonProfiledCodeHeapSize, (uintx)ProfiledCodeHeapSize, (uintx)NonNMethodCodeHeapSize, (uintx)ReservedCodeCacheSize);
+        "Invalid code heap sizes: %d + %d + %d != %d",
+        (int)NonProfiledCodeHeapSize, (int)ProfiledCodeHeapSize, (int)NonNMethodCodeHeapSize, (int)ReservedCodeCacheSize);
 
   ReservedCodeSpace rs = reserve_heap_memory(cache_size);
   ReservedSpace profiled_space      = rs.first_part(ProfiledCodeHeapSize);
