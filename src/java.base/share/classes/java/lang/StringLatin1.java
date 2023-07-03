@@ -436,11 +436,7 @@ final class StringLatin1 {
         System.arraycopy(value, 0, result, 0, first);  // Just copy the first few
                                                        // lowerCase characters.
         for (int i = first; i < len; i++) {
-            int cp = CharacterDataLatin1.instance.toLowerCase(value[i] & 0xff);
-            if (!canEncode(cp)) {                      // not a latin1 character
-                return toLowerCaseEx(str, value, first, locale, false);
-            }
-            result[i] = (byte)cp;
+            result[i] = (byte)CharacterDataLatin1.instance.toLowerCase(value[i] & 0xff);
         }
         return new String(result, LATIN1);
     }
