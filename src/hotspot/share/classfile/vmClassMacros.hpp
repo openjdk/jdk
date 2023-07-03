@@ -31,7 +31,7 @@
 #define VM_CLASS_ID(kname)      vmClassID::_VM_CLASS_ENUM(kname)
 
 // VM_CLASSES_DO iterates the classes that are directly referenced
-// by the VM, suhch as java.lang.Object and java.lang.String. These
+// by the VM, such as java.lang.Object and java.lang.String. These
 // classes are resolved at VM bootstrap, before any Java code is executed,
 // so no class loader is able to provide a different definition.
 //
