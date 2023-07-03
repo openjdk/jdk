@@ -62,7 +62,8 @@ public class TestPreconditions {
     // condition returns false as the VM is run with LoopMaxUnroll=8.
     // Note that precondition `applyIfCPUFeature` will be evaluated first with
     // early return. Hence the IR check should not be applied on non-aarch64
-    // systems, and no exception happens.
+    // systems, and no exception is thrown because we are not checking the value
+    // of the unsupported "UseSVE" flag on non-aarch64 systems.
     @Test
     @IR(applyIfCPUFeature = {"asimd", "true"},
         applyIfAnd = {"UseSVE", "= 0", "LoopMaxUnroll", "= 0"},
@@ -72,8 +73,9 @@ public class TestPreconditions {
     // The IR check should not be applied on x86, because the "applyIfAnd"
     // condition returns false as the VM is run with LoopMaxUnroll=8.
     // Note that precondition `applyIfCPUFeature` will be evaluated first with
-    // early return. Hence the IR check should not be applied on non avx systems,
-    // and no exception happens.
+    // early return. Hence the IR check should not be applied on non-avx systems,
+    // and no exception is thrown because we are not checking the value of the
+    // unsupported "UseAVX" flag on non-avx systems.
     @Test
     @IR(applyIfCPUFeature = {"avx", "true"},
         applyIfAnd = {"UseAVX", "= 2", "LoopMaxUnroll", "= 0"},
