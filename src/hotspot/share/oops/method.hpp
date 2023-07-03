@@ -414,7 +414,7 @@ class Method : public Metadata {
 #endif // not PRODUCT
 
   // nmethod/verified compiler entry
-  address from_compiled_entry(bool is_interp_only_mode) const;
+  address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
   CompiledMethod* volatile code() const;
 
@@ -436,10 +436,10 @@ public:
     _from_compiled_entry =  entry;
   }
 
-  address get_i2c_entry() const;
-  address get_c2i_entry() const;
-  address get_c2i_unverified_entry() const;
-  address get_c2i_no_clinit_check_entry() const;
+  address get_i2c_entry();
+  address get_c2i_entry();
+  address get_c2i_unverified_entry();
+  address get_c2i_no_clinit_check_entry();
   AdapterHandlerEntry* adapter() const {
     return _adapter;
   }

@@ -143,22 +143,22 @@ void Method::release_C_heap_structures() {
   }
 }
 
-address Method::get_i2c_entry() const {
+address Method::get_i2c_entry() {
   assert(adapter() != nullptr, "must have");
   return adapter()->get_i2c_entry();
 }
 
-address Method::get_c2i_entry() const {
+address Method::get_c2i_entry() {
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_entry();
 }
 
-address Method::get_c2i_unverified_entry() const {
+address Method::get_c2i_unverified_entry() {
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_unverified_entry();
 }
 
-address Method::get_c2i_no_clinit_check_entry() const {
+address Method::get_c2i_no_clinit_check_entry() {
   assert(VM_Version::supports_fast_class_init_checks(), "");
   assert(adapter() != nullptr, "must have");
   return adapter()->get_c2i_no_clinit_check_entry();
@@ -1279,24 +1279,17 @@ address Method::make_adapters(const methodHandle& mh, TRAPS) {
   return adapter->get_c2i_entry();
 }
 
-// This must be called when an invoke is resolved on this method.
-// It returns the compiled code entry point, or the c2i entry point if
-// in interpreted only mode. This function is called after potential
-// safepoints so that the nmethod or adapter that it points to is still
-// live and valid, and no switch to interpreted only mode happens after
-// we already returned the compiled entry point.
-// TODO: _linkToNative doesn't have an interpreted version so we always
-// return the compiled code entry point.
-address Method::from_compiled_entry(bool is_interp_only_mode) const {
+// The verified_code_entry() must be called when a invoke is resolved
+// on this method.
+
+// It returns the compiled code entry point, after asserting not null.
+// This function is called after potential safepoints so that nmethod
+// or adapter that it points to is still live and valid.
+// This function must not hit a safepoint!
+address Method::verified_code_entry() {
   debug_only(NoSafepointVerifier nsv;)
-  address target = nullptr;
-  if (!is_interp_only_mode || (intrinsic_id() == vmIntrinsics::_linkToNative)) {
-    target = _from_compiled_entry;
-  } else {
-    target = get_c2i_entry();
-  }
-  assert(target != nullptr, "Jump to zero!");
-  return target;
+  assert(_from_compiled_entry != nullptr, "must be set");
+  return _from_compiled_entry;
 }
 
 // Check that if an nmethod ref exists, it has a backlink to this or no backlink at all
