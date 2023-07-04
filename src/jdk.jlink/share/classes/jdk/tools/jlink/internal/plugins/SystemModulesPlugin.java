@@ -816,8 +816,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             }
 
                             if (index < splitModuleInfos.size() - 1) {
-                                if ((nextLocalVar > firstVar) && (nextLocalVar > wrapper.lastCopiedVar)) {
-                                    for (int i = wrapper.lastCopiedVar + 1; i < nextLocalVar; i++) {
+                                if (nextLocalVar > firstLocalVar && nextLocalVar > curLocalVar) {
+                                    for (int i = curLocalVar; i < nextLocalVar; i++) {
                                         cob.aload(DEDUP_LIST_VAR)
                                            .aload(i)
                                            .invokevirtual(arrayListClassDesc, "add", MethodTypeDesc.of(CD_boolean, CD_Object))
