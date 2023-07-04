@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -940,22 +940,20 @@ public final class AccessControlContext {
 
 
     /**
-     * Returns the hash code value for this context. The hash code
+     * {@return the hash code value for this context} The hash code
      * is computed by exclusive or-ing the hash code of all the protection
      * domains in the context together.
-     *
-     * @return a hash code value for this context.
      */
-
+    @Override
     public int hashCode() {
         int hashCode = 0;
 
         if (context == null)
             return hashCode;
 
-        for (int i =0; i < context.length; i++) {
-            if (context[i] != null)
-                hashCode ^= context[i].hashCode();
+        for (ProtectionDomain protectionDomain : context) {
+            if (protectionDomain != null)
+                hashCode ^= protectionDomain.hashCode();
         }
 
         return hashCode;

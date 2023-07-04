@@ -171,11 +171,13 @@ public class EDIPartyName implements GeneralNameInterface {
      * @return true if the two names match
      */
     @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof EDIPartyName))
-            return false;
-        return Objects.equals(this.assigner, ((EDIPartyName)other).assigner)
-                && Objects.equals(this.party, ((EDIPartyName)other).party);
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+
+        return obj instanceof EDIPartyName other
+                && Objects.equals(this.assigner, other.assigner)
+                && Objects.equals(this.party, other.party);
     }
 
     /**

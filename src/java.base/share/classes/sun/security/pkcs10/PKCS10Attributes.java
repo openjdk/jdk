@@ -182,7 +182,7 @@ public class PKCS10Attributes implements DerEncoder {
     }
 
     /**
-     * {@return a hashcode value for this PKCS10Attributes}
+     * {@return the hashcode value for this PKCS10Attributes}
      */
     @Override
     public int hashCode() {

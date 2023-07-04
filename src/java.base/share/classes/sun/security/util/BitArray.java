@@ -181,9 +181,10 @@ public class BitArray {
     @Override
     public boolean equals(Object obj) {
         if (obj == this) return true;
-        if (!(obj instanceof BitArray other)) return false;
-        if (length != other.length) return false;
-        return Arrays.equals(repn, other.repn);
+
+        return obj instanceof BitArray other
+                && length == other.length
+                && Arrays.equals(repn, other.repn);
     }
 
     /**

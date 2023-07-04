@@ -106,11 +106,7 @@ public final class CodeSigner implements Serializable {
     @Override
     public int hashCode() {
         if (myhash == -1) {
-            if (timestamp == null) {
-                myhash = signerCertPath.hashCode();
-            } else {
-                myhash = signerCertPath.hashCode() + timestamp.hashCode();
-            }
+            myhash = signerCertPath.hashCode() + Objects.hashCode(timestamp);
         }
         return myhash;
     }
@@ -132,13 +128,9 @@ public final class CodeSigner implements Serializable {
             return true;
         }
 
-        if (!(obj instanceof CodeSigner that)) {
-            return false;
-        }
-
-        if (!Objects.equals(timestamp, that.getTimestamp()))
-            return false;
-        return signerCertPath.equals(that.getSignerCertPath());
+        return obj instanceof CodeSigner other
+                && Objects.equals(timestamp, other.getTimestamp())
+                && signerCertPath.equals(other.getSignerCertPath());
     }
 
     /**

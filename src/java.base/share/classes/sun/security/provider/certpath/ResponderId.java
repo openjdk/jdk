@@ -230,11 +230,8 @@ public final class ResponderId {
             return true;
         }
 
-        if (obj instanceof ResponderId respObj) {
-            return Arrays.equals(encodedRid, respObj.getEncoded());
-        }
-
-        return false;
+        return obj instanceof ResponderId respObj
+                && Arrays.equals(encodedRid, respObj.getEncoded());
     }
 
     /**

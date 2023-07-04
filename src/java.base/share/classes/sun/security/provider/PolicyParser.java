@@ -1127,10 +1127,8 @@ public class PolicyParser {
             if (obj == this)
                 return true;
 
-            if (! (obj instanceof PermissionEntry that))
-                return false;
-
-            return Objects.equals(this.permission, that.permission)
+            return obj instanceof PermissionEntry that
+                    && Objects.equals(this.permission, that.permission)
                     && Objects.equals(this.name, that.name)
                     && Objects.equals(this.signedBy, that.signedBy);
         }

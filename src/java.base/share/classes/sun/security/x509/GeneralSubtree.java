@@ -149,18 +149,18 @@ public class GeneralSubtree implements DerEncoder {
     /**
      * Compare this GeneralSubtree with another
      *
-     * @param other GeneralSubtree to compare to this
+     * @param obj GeneralSubtree to compare to this
      * @return true if match
      */
     @Override
-    public boolean equals(Object other) {
-        if (!(other instanceof GeneralSubtree otherGS))
-            return false;
-        if (!Objects.equals(this.name, otherGS.name))
-            return false;
-        if (this.minimum != otherGS.minimum)
-            return false;
-        return this.maximum == otherGS.maximum;
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
+
+        return obj instanceof GeneralSubtree other
+                && Objects.equals(this.name, other.name)
+                && this.minimum == other.minimum
+                && this.maximum == other.maximum;
     }
 
     /**
