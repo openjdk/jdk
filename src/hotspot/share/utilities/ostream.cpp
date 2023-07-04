@@ -186,18 +186,9 @@ void outputStream::put(char ch) {
   write(buf, 1);
 }
 
-#define SP_USE_TABS false
-
 void outputStream::sp(int count) {
   if (count < 0)  return;
-  if (SP_USE_TABS && count >= 8) {
-    int target = position() + count;
-    while (count >= 8) {
-      this->write("\t", 1);
-      count -= 8;
-    }
-    count = target - position();
-  }
+
   while (count > 0) {
     int nw = (count > 8) ? 8 : count;
     this->write("        ", nw);
