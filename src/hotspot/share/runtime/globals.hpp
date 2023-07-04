@@ -933,8 +933,9 @@ const int ObjectAlignmentInBytes = 8;
              "Trace creation and removal of compiler threads")              \
                                                                             \
   product(ccstr, LogClassLoadingCauseFor, nullptr,                          \
-          "Restrict -Xlog:class+load+cause* to a class whose fully"         \
-          "qualified name contains this string.")                           \
+          "Apply -Xlog:class+load+cause* to classes whose fully "           \
+          "qualified name contains this string (\"*\" matches "             \
+          "any class).")                                                    \
                                                                             \
   develop(bool, InjectCompilerCreationFailure, false,                       \
           "Inject thread creation failures for "                            \

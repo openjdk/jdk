@@ -3836,11 +3836,12 @@ void InstanceKlass::print_class_load_cause_logging() const {
   bool log_cause_native = log_is_enabled(Info, class, load, cause, native);
   if (log_cause_native || log_is_enabled(Info, class, load, cause)) {
     JavaThread* current = JavaThread::current();
-    ResourceMark rm;
+    ResourceMark rm(current);
     const char* name = external_name();
 
-    if (LogClassLoadingCauseFor != nullptr &&
-        strstr(name, LogClassLoadingCauseFor) == nullptr) {
+    if (LogClassLoadingCauseFor == nullptr ||
+        (strcmp("*", LogClassLoadingCauseFor) != 0 &&
+         strstr(name, LogClassLoadingCauseFor) == nullptr)) {
         return;
     }
 
