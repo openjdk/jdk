@@ -68,7 +68,7 @@ protected:
 
 template <typename BackingLog>
 class LogStreamImpl : public LogStreamImplBase {
-private:
+protected:
   BackingLog _backing_log;
 
 public:
@@ -138,30 +138,46 @@ public:
 
 class LogMessageHandle {
   const LogLevelType _level;
-  LogMessageImpl& _lm;
+  LogMessageImpl* _lm;
 
 public:
-  LogMessageHandle(const LogLevelType level, LogMessageImpl& lm)
+  LogMessageHandle(const LogLevelType level, LogMessageImpl* lm)
     : _level(level), _lm(lm) {}
 
   bool is_enabled() {
-    return _lm.is_level(_level);
+    return _lm->is_level(_level);
   }
 
   void print(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
     va_list args;
     va_start(args, fmt);
     if (is_enabled()) {
-      _lm.vwrite(_level, fmt, args);
+      _lm->vwrite(_level, fmt, args);
     }
     va_end(args);
   }
+
+  void set_lm(LogMessageImpl* lm) {
+    _lm = lm;
+  }
 };
 
+// Create log stream that doesn't interleave its output lines. This is done by buffering
+// all lines in memory and outputting them at once, so this is more memory intensive than a LogStream.
+// Example:
+// LogTarget(Info, gc) lt;
+// if (lt.is_enabled()) {
+//   NonInterleavingLogStream foo{lt};
+//   print_on(&foo);
+// } // Everything printed here.
 class NonInterleavingLogStream : public LogStreamImpl<LogMessageHandle> {
+  LogMessageImpl _lm;
 public:
-  NonInterleavingLogStream(LogLevelType level, LogMessageImpl& lm)
-    : LogStreamImpl(LogMessageHandle(level, lm)) {}
+  template <LogLevelType level, LogTagType T0, LogTagType T1, LogTagType T2, LogTagType T3, LogTagType T4, LogTagType GuardTag>
+  NonInterleavingLogStream(const LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>& type_carrier)
+    : LogStreamImpl(LogMessageHandle(level, nullptr)), _lm{LogTagSetMapping<T0, T1, T2, T3, T4>::tagset()} {
+    this->_backing_log.set_lm(&_lm);
+  }
 };
 
 #endif // SHARE_LOGGING_LOGSTREAM_HPP

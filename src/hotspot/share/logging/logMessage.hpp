@@ -64,12 +64,11 @@ private:
   LogTagSet& _tagset;
   bool _has_content;
 
-protected:
+public:
   LogMessageImpl(LogTagSet& tagset)
     : _tagset(tagset),
       _has_content(false) {};
 
-public:
   ~LogMessageImpl() {
     if (_has_content) {
       flush();

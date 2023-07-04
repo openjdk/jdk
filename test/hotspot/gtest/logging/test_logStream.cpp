@@ -118,8 +118,8 @@ TEST_VM_F(LogStreamTest, NonInterleavingStream) {
   set_log_config(TestLogFileName, "gc=info");
   const char* message_order[] = {"1", "2" , "3", "I am one line", "but", "I am not", NULL};
   {
-    LogMessage(gc) lm ;
-    NonInterleavingLogStream foo{LogLevelType::Info, lm};
+    LogTarget(Info, gc) lt;
+    NonInterleavingLogStream foo{lt};
     if (foo.is_enabled()) {
       foo.print("I am");
       log_info(gc)("1");
