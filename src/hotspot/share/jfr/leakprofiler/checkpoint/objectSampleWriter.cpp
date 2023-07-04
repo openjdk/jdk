@@ -408,11 +408,11 @@ class RootResolutionSet : public ResourceObj, public RootCallback {
  private:
   GrowableArray<const ObjectSampleRootDescriptionInfo*>* _unresolved_roots;
 
-  const uintptr_t high() const {
+  uintptr_t high() const {
     return _unresolved_roots->last()->_data._root_edge->reference().addr<uintptr_t>();
   }
 
-  const uintptr_t low() const {
+  uintptr_t low() const {
     return _unresolved_roots->first()->_data._root_edge->reference().addr<uintptr_t>();
   }
 
