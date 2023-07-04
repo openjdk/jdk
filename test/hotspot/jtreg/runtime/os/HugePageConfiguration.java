@@ -35,7 +35,7 @@ class HugePageConfiguration {
     Set<Long> _staticHugePageSizes;
     long _staticDefaultHugePageSize;
 
-    enum THPMode {always, never, madvise}
+    enum THPMode {always, never, madvise, unknown}
     THPMode _thpMode;
     long _thpPageSize;
 
@@ -87,20 +87,18 @@ class HugePageConfiguration {
 
     private static long readDefaultHugePageSizeFromOS() {
         Pattern pat = Pattern.compile("Hugepagesize: *(\\d+) +kB");
-        Scanner scanner;
-        try {
-            scanner = new Scanner(new File("/proc/meminfo"));
-        } catch (FileNotFoundException e) {
-            return 0;
-        }
-        while (scanner.hasNextLine()) {
-            Matcher mat = pat.matcher(scanner.nextLine());
-            if (mat.matches()) {
-                scanner.close();
-                return Long.parseLong(mat.group(1)) * 1024;
+        long result = 0;
+        try (Scanner scanner = new Scanner(new File("/proc/meminfo"))) {
+            while (scanner.hasNextLine()) {
+                Matcher mat = pat.matcher(scanner.nextLine());
+                if (mat.matches()) {
+                    scanner.close();
+                    return Long.parseLong(mat.group(1)) * 1024;
+                }
             }
+        } catch (FileNotFoundException e) {
+            System.out.println("Could not open /proc/meminfo");
         }
-        scanner.close();
         return 0;
     }
 
@@ -122,10 +120,10 @@ class HugePageConfiguration {
     }
 
     private static THPMode readTHPModeFromOS() {
-        THPMode mode;
-        try {
-            String file = "/sys/kernel/mm/transparent_hugepage/enabled";
-            BufferedReader reader = new BufferedReader(new FileReader(file));
+        THPMode mode = THPMode.unknown;
+        String file = "/sys/kernel/mm/transparent_hugepage/enabled";
+        try (FileReader fr = new FileReader(file);
+             BufferedReader reader = new BufferedReader(fr)) {
             String s = reader.readLine();
             if (s.contains("[never]")) {
                 mode = THPMode.never;
@@ -137,16 +135,17 @@ class HugePageConfiguration {
                 throw new RuntimeException("Unexpected content of " + file + ": " + s);
             }
         } catch (IOException e) {
-            mode = THPMode.never;
+            System.out.println("Failed to read " + file);
+            mode = THPMode.unknown;
         }
         return mode;
     }
 
     private static long readTHPPageSizeFromOS() {
         long pagesize = 0;
-        try {
-            String file = "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size";
-            BufferedReader reader = new BufferedReader(new FileReader(file));
+        String file = "/sys/kernel/mm/transparent_hugepage/hpage_pmd_size";
+        try (FileReader fr = new FileReader(file);
+             BufferedReader reader = new BufferedReader(fr)) {
             String s = reader.readLine();
             pagesize = Long.parseLong(s);
         } catch (IOException | NumberFormatException e) { /* ignored */ }
