@@ -4697,7 +4697,7 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_call_stub_entry                  = generate_call_stub(StubRoutines::_call_stub_return_address);
     StubRoutines::_catch_exception_entry            = generate_catch_exception();
 
-    if (UnsafeCopyMemory::_table == NULL) {
+    if (UnsafeCopyMemory::_table == nullptr) {
       UnsafeCopyMemory::create_table(8);
     }
 

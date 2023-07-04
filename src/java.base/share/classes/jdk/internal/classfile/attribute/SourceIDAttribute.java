@@ -34,7 +34,7 @@ import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 /**
- * Models the {@code SourceFile} attribute (@@@ reference needed), which can
+ * Models the {@code SourceID} attribute (@@@ reference needed), which can
  * appear on classes. Delivered as a {@link jdk.internal.classfile.ClassElement} when
  * traversing a {@link ClassModel}.
  */

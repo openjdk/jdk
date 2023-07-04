@@ -35,6 +35,7 @@
 #include "oops/constantPool.inline.hpp"
 #include "oops/methodData.hpp"
 #include "oops/method.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/osThread.hpp"
@@ -54,34 +55,31 @@ class BytecodePrinter {
   Bytecodes::Code _code;
   address   _next_pc;                // current decoding position
   int       _flags;
+  bool      _is_linked;
 
+  bool      is_linked() const        { return _is_linked; }
   void      align()                  { _next_pc = align_up(_next_pc, sizeof(jint)); }
   int       get_byte()               { return *(jbyte*) _next_pc++; }  // signed
-  short     get_short()              { short i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
-  int       get_int()                { int i=Bytes::get_Java_u4(_next_pc); _next_pc+=4; return i; }
+  int       get_index_u1()           { return *(address)_next_pc++; }  // returns 0x00 - 0xff as an int
+  short     get_short()              { short i = Bytes::get_Java_u2  (_next_pc); _next_pc += 2; return i; }
+  int       get_int()                { int   i = Bytes::get_Java_u4  (_next_pc); _next_pc += 4; return i; }
+  int       get_native_index_u2()    { int   i = Bytes::get_native_u2(_next_pc); _next_pc += 2; return i; }
+  int       get_native_index_u4()    { int   i = Bytes::get_native_u4(_next_pc); _next_pc += 4; return i; }
+  int       get_Java_index_u2()      { int   i = Bytes::get_Java_u2  (_next_pc); _next_pc += 2; return i; }
+  int       get_Java_index_u4()      { int   i = Bytes::get_Java_u4  (_next_pc); _next_pc += 4; return i; }
+  int       get_index_special()      { return (is_wide()) ? get_Java_index_u2() : get_index_u1(); }
+  Method*   method() const           { return _current_method; }
+  bool      is_wide() const          { return _is_wide; }
+  Bytecodes::Code raw_code() const   { return Bytecodes::Code(_code); }
+  ConstantPool* constants() const    { return method()->constants(); }
+  ConstantPoolCache* cpcache() const { assert(is_linked(), "must be"); return constants()->cache(); }
 
-  int       get_index_u1()           { return *(address)_next_pc++; }
-  int       get_index_u2()           { int i=Bytes::get_Java_u2(_next_pc); _next_pc+=2; return i; }
-  int       get_index_u1_cpcache()   { return get_index_u1() + ConstantPool::CPCACHE_INDEX_TAG; }
-  int       get_index_u2_cpcache()   { int i=Bytes::get_native_u2(_next_pc); _next_pc+=2; return i + ConstantPool::CPCACHE_INDEX_TAG; }
-  int       get_index_u4()           { int i=Bytes::get_native_u4(_next_pc); _next_pc+=4; return i; }
-  int       get_index_special()      { return (is_wide()) ? get_index_u2() : get_index_u1(); }
-  Method* method()                 { return _current_method; }
-  bool      is_wide()                { return _is_wide; }
-  Bytecodes::Code raw_code()         { return Bytecodes::Code(_code); }
-
-
-  bool      check_index(int i, int& cp_index, outputStream* st);
-  bool      check_cp_cache_index(int i, int& cp_index, outputStream* st);
-  bool      check_obj_index(int i, int& cp_index, outputStream* st);
-  bool      check_invokedynamic_index(int i, int& cp_index, outputStream* st);
   void      print_constant(int i, outputStream* st);
-  void      print_constant_nocheck(int i, outputStream* st);
   void      print_cpcache_entry(int cpc_index, outputStream* st);
-  void      print_dynamic(int orig_i, int i, constantTag tag, outputStream* st);
-  void      print_field_or_method(int i, outputStream* st);
-  void      print_field_or_method(int orig_i, int i, outputStream* st);
-  void      print_invoke_handle(int i, outputStream* st);
+  void      print_invokedynamic(int indy_index, int cp_index, outputStream* st);
+  void      print_bsm(int cp_index, outputStream* st);
+  void      print_field_or_method(int cp_index, outputStream* st);
+  void      print_dynamic(int cp_index, outputStream* st);
   void      print_attributes(int bci, outputStream* st);
   void      bytecode_epilog(int bci, outputStream* st);
 
@@ -108,6 +106,8 @@ class BytecodePrinter {
       method->print_name(st);
       st->cr();
       _current_method = method();
+      _is_linked = method->method_holder()->is_linked();
+      assert(_is_linked, "this function must be called on methods that are already executing");
     }
     Bytecodes::Code code;
     if (is_wide()) {
@@ -117,7 +117,7 @@ class BytecodePrinter {
       code = Bytecodes::code_at(method(), bcp);
     }
     _code = code;
-     int bci = bcp - method->code_base();
+     int bci = (int)(bcp - method->code_base());
     st->print("[%ld] ", (long) Thread::current()->osthread()->thread_id());
     if (Verbose) {
       st->print("%8d  %4d  " INTPTR_FORMAT " " INTPTR_FORMAT " %s",
@@ -132,12 +132,19 @@ class BytecodePrinter {
     // the next bytecode.
     _is_wide = (code == Bytecodes::_wide);
     _code = Bytecodes::_illegal;
+
+#ifndef PRODUCT
+    if (TraceBytecodesStopAt != 0 && BytecodeCounter::counter_value() >= TraceBytecodesStopAt) {
+      TraceBytecodes = false;
+    }
+#endif
   }
 
   // Used for Method*::print_codes().  The input bcp comes from
   // BytecodeStream, which will skip wide bytecodes.
   void trace(const methodHandle& method, address bcp, outputStream* st) {
     _current_method = method();
+    _is_linked = method->method_holder()->is_linked();
     ResourceMark rm;
     Bytecodes::Code code = Bytecodes::code_at(method(), bcp);
     // Set is_wide
@@ -146,7 +153,7 @@ class BytecodePrinter {
       code = Bytecodes::code_at(method(), bcp+1);
     }
     _code = code;
-    int bci = bcp - method->code_base();
+    int bci = (int)(bcp - method->code_base());
     // Print bytecode index and name
     if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_BYTECODE_ADDR)) {
       st->print(INTPTR_FORMAT " ", p2i(bcp));
@@ -189,217 +196,109 @@ void BytecodeTracer::print_method_codes(const methodHandle& method, int from, in
   }
 }
 
-void print_symbol(Symbol* sym, outputStream* st) {
-  char buf[40];
-  int len = sym->utf8_length();
-  if (len >= (int)sizeof(buf)) {
-    st->print_cr(" %s...[%d]", sym->as_C_string(buf, sizeof(buf)), len);
-  } else {
-    st->print(" ");
-    sym->print_on(st); st->cr();
-  }
-}
-
-void print_oop(oop value, outputStream* st) {
-  if (value == nullptr) {
-    st->print_cr(" null");
-  } else if (java_lang_String::is_instance(value)) {
-    char buf[40];
-    int len = java_lang_String::utf8_length(value);
-    java_lang_String::as_utf8_string(value, buf, sizeof(buf));
-    if (len >= (int)sizeof(buf)) {
-      st->print_cr(" %s...[%d]", buf, len);
-    } else {
-      st->print_cr(" %s", buf);
-    }
-  } else {
-    st->print_cr(" " INTPTR_FORMAT, p2i((void *)value));
-  }
-}
-
-bool BytecodePrinter::check_index(int i, int& cp_index, outputStream* st) {
+void BytecodePrinter::print_constant(int cp_index, outputStream* st) {
   ConstantPool* constants = method()->constants();
-  int ilimit = constants->length();
-  Bytecodes::Code code = raw_code();
-
-  if (Bytecodes::uses_cp_cache(code)) {
-    bool okay = true;
-    switch (code) {
-    case Bytecodes::_fast_aldc:
-    case Bytecodes::_fast_aldc_w:
-      okay = check_obj_index(i, cp_index, st);
-      break;
-    case Bytecodes::_invokedynamic:
-      okay = check_invokedynamic_index(i, cp_index, st);
-      break;
-    default:
-      okay = check_cp_cache_index(i, cp_index, st);
-      break;
-    }
-    if (!okay) return false;
-  }
-
-
-  // check cp index
-  if (cp_index >= 0 && cp_index < ilimit) {
-    if (WizardMode)  st->print(" cp[%d]", cp_index);
-    return true;
-  }
-
-  st->print_cr(" CP[%d] not in CP", cp_index);
-  return false;
-}
-
-bool BytecodePrinter::check_cp_cache_index(int i, int& cp_index, outputStream* st) {
-  ConstantPool* constants = method()->constants();
-  int climit = 0;
-
-  ConstantPoolCache* cache = constants->cache();
-  // If rewriter hasn't run, the index is the cp_index
-  if (cache == nullptr) {
-    cp_index = i;
-    return true;
-  }
-  //climit = cache->length();  // %%% private!
-  size_t size = cache->size() * wordSize;
-  size -= sizeof(ConstantPoolCache);
-  size /= sizeof(ConstantPoolCacheEntry);
-  climit = (int) size;
-
-#ifdef ASSERT
-  {
-    const int CPCACHE_INDEX_TAG = ConstantPool::CPCACHE_INDEX_TAG;
-    if (i >= CPCACHE_INDEX_TAG && i < climit + CPCACHE_INDEX_TAG) {
-      i -= CPCACHE_INDEX_TAG;
-    } else {
-      st->print_cr(" CP[%d] missing bias?", i);
-      return false;
-    }
-  }
-#endif //ASSERT
-  if (i >= 0 && i < climit) {
-    cp_index = cache->entry_at(i)->constant_pool_index();
-  } else {
-    st->print_cr("%d not in CP[*]?", i);
-      return false;
-    }
-  return true;
-  }
-
-
-bool BytecodePrinter::check_obj_index(int i, int& cp_index, outputStream* st) {
-  ConstantPool* constants = method()->constants();
-  i -= ConstantPool::CPCACHE_INDEX_TAG;
-
-  if (i >= 0 && i < constants->resolved_references()->length()) {
-     cp_index = constants->object_to_cp_index(i);
-     return true;
-  } else {
-    st->print_cr("%d not in OBJ[*]?", i);
-  return false;
-}
-}
-
-
-bool BytecodePrinter::check_invokedynamic_index(int i, int& cp_index, outputStream* st) {
-  assert(ConstantPool::is_invokedynamic_index(i), "not secondary index?");
-  i = ConstantPool::decode_invokedynamic_index(i) + ConstantPool::CPCACHE_INDEX_TAG;
-
-  return check_cp_cache_index(i, cp_index, st);
-}
-
-void BytecodePrinter::print_constant(int i, outputStream* st) {
-  int orig_i = i;
-  if (!check_index(orig_i, i, st))  return;
-
-  print_constant_nocheck(i, st);
-}
-
-void BytecodePrinter::print_constant_nocheck(int i, outputStream* st) {
-  ConstantPool* constants = method()->constants();
-  constantTag tag = constants->tag_at(i);
+  constantTag tag = constants->tag_at(cp_index);
 
   if (tag.is_int()) {
-    st->print_cr(" " INT32_FORMAT, constants->int_at(i));
+    st->print_cr(" " INT32_FORMAT, constants->int_at(cp_index));
   } else if (tag.is_long()) {
-    st->print_cr(" " INT64_FORMAT, (int64_t)(constants->long_at(i)));
+    st->print_cr(" " INT64_FORMAT, (int64_t)(constants->long_at(cp_index)));
   } else if (tag.is_float()) {
-    st->print_cr(" %f", constants->float_at(i));
+    st->print_cr(" %f", constants->float_at(cp_index));
   } else if (tag.is_double()) {
-    st->print_cr(" %f", constants->double_at(i));
+    st->print_cr(" %f", constants->double_at(cp_index));
   } else if (tag.is_string()) {
-    const char* string = constants->string_at_noresolve(i);
-    st->print_cr(" %s", string);
+    const char* string = constants->unresolved_string_at(cp_index)->as_quoted_ascii();
+    st->print_cr(" \"%s\"", string);
   } else if (tag.is_klass()) {
-    st->print_cr(" %s", constants->resolved_klass_at(i)->external_name());
+    st->print_cr(" %s", constants->resolved_klass_at(cp_index)->external_name());
   } else if (tag.is_unresolved_klass()) {
-    st->print_cr(" <unresolved klass at %d>", i);
+    st->print_cr(" %s", constants->klass_at_noresolve(cp_index)->as_quoted_ascii());
   } else if (tag.is_method_type()) {
-    int i2 = constants->method_type_index_at(i);
+    int i2 = constants->method_type_index_at(cp_index);
     st->print(" <MethodType> %d", i2);
-    print_symbol(constants->symbol_at(i2), st);
+    st->print_cr(" %s", constants->symbol_at(i2)->as_quoted_ascii());
   } else if (tag.is_method_handle()) {
-    int kind = constants->method_handle_ref_kind_at(i);
-    int i2 = constants->method_handle_index_at(i);
+    int kind = constants->method_handle_ref_kind_at(cp_index);
+    int i2 = constants->method_handle_index_at(cp_index);
     st->print(" <MethodHandle of kind %d index at %d>", kind, i2);
-    print_field_or_method(-i, i2, st);
+    print_field_or_method(i2, st);
+  } else if (tag.is_dynamic_constant()) {
+    print_dynamic(cp_index, st);
+    if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC)) {
+      print_bsm(cp_index, st);
+    }
   } else {
-    st->print_cr(" bad tag=%d at %d", tag.value(), i);
+    st->print_cr(" bad tag=%d at %d", tag.value(), cp_index);
   }
 }
 
-void BytecodePrinter::print_field_or_method(int i, outputStream* st) {
-  int orig_i = i;
-  if (!check_index(orig_i, i, st))  return;
-  print_field_or_method(orig_i, i, st);
-}
-
-void BytecodePrinter::print_field_or_method(int orig_i, int i, outputStream* st) {
+// Fieldref, Methodref, or InterfaceMethodref
+void BytecodePrinter::print_field_or_method(int cp_index, outputStream* st) {
   ConstantPool* constants = method()->constants();
-  constantTag tag = constants->tag_at(i);
-
-  bool has_klass = true;
+  constantTag tag = constants->tag_at(cp_index);
 
   switch (tag.value()) {
-  case JVM_CONSTANT_InterfaceMethodref:
-  case JVM_CONSTANT_Methodref:
   case JVM_CONSTANT_Fieldref:
-    break;
-  case JVM_CONSTANT_NameAndType:
-  case JVM_CONSTANT_Dynamic:
-  case JVM_CONSTANT_InvokeDynamic:
-    has_klass = false;
+  case JVM_CONSTANT_Methodref:
+  case JVM_CONSTANT_InterfaceMethodref:
     break;
   default:
-    st->print_cr(" bad tag=%d at %d", tag.value(), i);
+    st->print_cr(" bad tag=%d at %d", tag.value(), cp_index);
     return;
   }
 
-  Symbol* name = constants->uncached_name_ref_at(i);
-  Symbol* signature = constants->uncached_signature_ref_at(i);
-  const char* sep = (tag.is_field() ? "/" : "");
-  if (has_klass) {
-    Symbol* klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(i));
-    st->print_cr(" %d <%s.%s%s%s> ", i, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
-  } else {
-    if (tag.is_dynamic_constant() || tag.is_invoke_dynamic()) {
-      int bsm = constants->bootstrap_method_ref_index_at(i);
-      st->print(" bsm=%d", bsm);
-    }
-    st->print_cr(" %d <%s%s%s>", i, name->as_C_string(), sep, signature->as_C_string());
+  Symbol* name = constants->uncached_name_ref_at(cp_index);
+  Symbol* signature = constants->uncached_signature_ref_at(cp_index);
+  Symbol* klass = constants->klass_name_at(constants->uncached_klass_ref_index_at(cp_index));
+  const char* sep = (tag.is_field() ? ":" : "");
+  st->print_cr(" %d <%s.%s%s%s> ", cp_index, klass->as_C_string(), name->as_C_string(), sep, signature->as_C_string());
+}
+
+// JVM_CONSTANT_Dynamic or JVM_CONSTANT_InvokeDynamic
+void BytecodePrinter::print_dynamic(int cp_index, outputStream* st) {
+  ConstantPool* constants = method()->constants();
+  constantTag tag = constants->tag_at(cp_index);
+
+  switch (tag.value()) {
+  case JVM_CONSTANT_Dynamic:
+  case JVM_CONSTANT_InvokeDynamic:
+    break;
+  default:
+    st->print_cr(" bad tag=%d at %d", tag.value(), cp_index);
+    return;
   }
 
-  if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC) &&
-      (tag.is_dynamic_constant() || tag.is_invoke_dynamic())) {
-    print_dynamic(orig_i, i, tag, st);
+  int bsm = constants->bootstrap_method_ref_index_at(cp_index);
+  st->print(" bsm=%d", bsm);
+
+  Symbol* name = constants->uncached_name_ref_at(cp_index);
+  Symbol* signature = constants->uncached_signature_ref_at(cp_index);
+  const char* sep = tag.is_dynamic_constant() ? ":" : "";
+  st->print_cr(" %d <%s%s%s>", cp_index, name->as_C_string(), sep, signature->as_C_string());
+}
+
+void BytecodePrinter::print_invokedynamic(int indy_index, int cp_index, outputStream* st) {
+  print_dynamic(cp_index, st);
+
+  if (ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_DYNAMIC)) {
+    print_bsm(cp_index, st);
+
+    if (is_linked()) {
+      ResolvedIndyEntry* indy_entry = constants()->resolved_indy_entry_at(indy_index);
+      st->print("  ResolvedIndyEntry: ");
+      indy_entry->print_on(st);
+    }
   }
 }
 
-void BytecodePrinter::print_dynamic(int orig_i, int bsm_cpindex, constantTag tag, outputStream* st) {
-  ConstantPool* constants = method()->constants();
-  int bsm = constants->bootstrap_method_ref_index_at(bsm_cpindex);
+// cp_index: must be the cp_index of a JVM_CONSTANT_{Dynamic, DynamicInError, InvokeDynamic}
+void BytecodePrinter::print_bsm(int cp_index, outputStream* st) {
+  assert(constants()->tag_at(cp_index).has_bootstrap(), "must be");
+  int bsm = constants()->bootstrap_method_ref_index_at(cp_index);
   const char* ref_kind = "";
-  switch (constants->method_handle_ref_kind_at(bsm)) {
+  switch (constants()->method_handle_ref_kind_at(bsm)) {
   case JVM_REF_getField         : ref_kind = "REF_getField"; break;
   case JVM_REF_getStatic        : ref_kind = "REF_getStatic"; break;
   case JVM_REF_putField         : ref_kind = "REF_putField"; break;
@@ -412,30 +311,18 @@ void BytecodePrinter::print_dynamic(int orig_i, int bsm_cpindex, constantTag tag
   default                       : ShouldNotReachHere();
   }
   st->print("  BSM: %s", ref_kind);
-  print_field_or_method(-1, constants->method_handle_index_at(bsm), st);
-  int argc = constants->bootstrap_argument_count_at(bsm_cpindex);
+  print_field_or_method(constants()->method_handle_index_at(bsm), st);
+  int argc = constants()->bootstrap_argument_count_at(cp_index);
   st->print("  arguments[%d] = {", argc);
   if (argc > 0) {
     st->cr();
     for (int arg_i = 0; arg_i < argc; arg_i++) {
-      int arg = constants->bootstrap_argument_index_at(bsm_cpindex, arg_i);
+      int arg = constants()->bootstrap_argument_index_at(cp_index, arg_i);
       st->print("    ");
-      print_constant_nocheck(arg, st);
+      print_constant(arg, st);
     }
   }
   st->print_cr("  }");
-  if (tag.is_invoke_dynamic()) {
-    int indy_index = constants->decode_invokedynamic_index(orig_i);
-    ResolvedIndyEntry* indy_entry = constants->resolved_indy_entry_at(indy_index);
-    st->print("  ResolvedIndyEntry: ");
-    indy_entry->print_on(st);
-  } else {
-    // TODO: print info for tag.is_dynamic_constant()
-  }
-}
-
-void BytecodePrinter::print_invoke_handle(int i, outputStream* st) {
-  print_cpcache_entry(ConstantPool::decode_cpcache_index(i), st);
 }
 
 void BytecodePrinter::print_cpcache_entry(int cpc_index, outputStream* st) {
@@ -465,19 +352,31 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       st->print_cr(" " INT32_FORMAT, get_short());
       break;
     case Bytecodes::_ldc:
-      if (Bytecodes::uses_cp_cache(raw_code())) {
-        print_constant(get_index_u1_cpcache(), st);
-      } else {
-        print_constant(get_index_u1(), st);
+      {
+        int cp_index;
+        if (Bytecodes::uses_cp_cache(raw_code())) {
+          assert(is_linked(), "fast ldc bytecode must be in linked classes");
+          int obj_index = get_index_u1();
+          cp_index = constants()->object_to_cp_index(obj_index);
+        } else {
+          cp_index = get_index_u1();
+        }
+        print_constant(cp_index, st);
       }
       break;
 
     case Bytecodes::_ldc_w:
     case Bytecodes::_ldc2_w:
-      if (Bytecodes::uses_cp_cache(raw_code())) {
-        print_constant(get_index_u2_cpcache(), st);
-      } else {
-        print_constant(get_index_u2(), st);
+      {
+        int cp_index;
+        if (Bytecodes::uses_cp_cache(raw_code())) {
+          assert(is_linked(), "fast ldc bytecode must be in linked classes");
+          int obj_index = get_native_index_u2();
+          cp_index = constants()->object_to_cp_index(obj_index);
+        } else {
+          cp_index = get_Java_index_u2();
+        }
+        print_constant(cp_index, st);
       }
       break;
 
@@ -511,14 +410,14 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
       }
       break;
     case Bytecodes::_anewarray: {
-        int klass_index = get_index_u2();
+        int klass_index = get_Java_index_u2();
         ConstantPool* constants = method()->constants();
         Symbol* name = constants->klass_name_at(klass_index);
         st->print_cr(" %s ", name->as_C_string());
       }
       break;
     case Bytecodes::_multianewarray: {
-        int klass_index = get_index_u2();
+        int klass_index = get_Java_index_u2();
         int nof_dims = get_index_u1();
         ConstantPool* constants = method()->constants();
         Symbol* name = constants->klass_name_at(klass_index);
@@ -599,38 +498,78 @@ void BytecodePrinter::print_attributes(int bci, outputStream* st) {
     case Bytecodes::_getstatic:
     case Bytecodes::_putfield:
     case Bytecodes::_getfield:
-      print_field_or_method(get_index_u2_cpcache(), st);
+      {
+        int cp_index;
+        if (is_linked()) {
+          int cpcache_index = get_native_index_u2();
+          cp_index = cpcache()->entry_at(cpcache_index)->constant_pool_index();
+        } else {
+          cp_index = get_Java_index_u2();
+        }
+        print_field_or_method(cp_index, st);
+      }
       break;
 
     case Bytecodes::_invokevirtual:
     case Bytecodes::_invokespecial:
     case Bytecodes::_invokestatic:
       {
-        int i = get_index_u2_cpcache();
-        print_field_or_method(i, st);
+        int cp_index;
+        int cpcache_index;
+        if (is_linked()) {
+          cpcache_index = get_native_index_u2();
+          cp_index = cpcache()->entry_at(cpcache_index)->constant_pool_index();
+        } else {
+          cpcache_index = -1;
+          cp_index = get_Java_index_u2();
+        }
+        print_field_or_method(cp_index, st);
         if (raw_code() == Bytecodes::_invokehandle &&
             ClassPrinter::has_mode(_flags, ClassPrinter::PRINT_METHOD_HANDLE)) {
-          print_invoke_handle(i, st);
+          assert(is_linked(), "invokehandle is only in rewritten methods");
+          assert(cpcache_index >= 0, "must be");
+          print_cpcache_entry(cpcache_index, st);
         }
       }
       break;
 
     case Bytecodes::_invokeinterface:
-      { int i = get_index_u2_cpcache();
-        int n = get_index_u1();
-        get_byte();            // ignore zero byte
-        print_field_or_method(i, st);
+      {
+        int cp_index;
+        if (is_linked()) {
+          int cpcache_index = get_native_index_u2();
+          cp_index = cpcache()->entry_at(cpcache_index)->constant_pool_index();
+        } else {
+          cp_index = get_Java_index_u2();
+        }
+        int count = get_index_u1(); // TODO: this is not printed.
+        get_byte();                 // ignore zero byte
+        print_field_or_method(cp_index, st);
       }
       break;
 
     case Bytecodes::_invokedynamic:
-      print_field_or_method(get_index_u4(), st);
+      {
+        int indy_index;
+        int cp_index;
+        if (is_linked()) {
+          int i = get_native_index_u4();
+          indy_index = ConstantPool::decode_invokedynamic_index(i);
+          cp_index = constants()->resolved_indy_entry_at(indy_index)->constant_pool_index();
+        } else {
+          indy_index = -1;
+          cp_index = get_Java_index_u2();
+          get_byte();            // ignore zero byte
+          get_byte();            // ignore zero byte
+        }
+        print_invokedynamic(indy_index, cp_index, st);
+      }
       break;
 
     case Bytecodes::_new:
     case Bytecodes::_checkcast:
     case Bytecodes::_instanceof:
-      { int i = get_index_u2();
+      { int i = get_Java_index_u2();
         ConstantPool* constants = method()->constants();
         Symbol* name = constants->klass_name_at(i);
         st->print_cr(" %d <%s>", i, name->as_C_string());

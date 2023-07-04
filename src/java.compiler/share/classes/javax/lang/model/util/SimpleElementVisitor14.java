@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2019, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ package javax.lang.model.util;
 
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.ElementVisitor;
 import javax.lang.model.element.RecordComponentElement;
 import static javax.lang.model.SourceVersion.*;
 
@@ -57,7 +58,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleElementVisitor9
  * @since 16
  */
-@SupportedSourceVersion(RELEASE_21)
+@SupportedSourceVersion(RELEASE_22)
 public class SimpleElementVisitor14<R, P> extends SimpleElementVisitor9<R, P> {
     /**
      * Constructor for concrete subclasses; uses {@code null} for the
@@ -78,14 +79,14 @@ public class SimpleElementVisitor14<R, P> extends SimpleElementVisitor9<R, P> {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc ElementVisitor}
      *
      * @implSpec Visits a {@code RecordComponentElement} by calling {@code
      * defaultAction}.
      *
-     * @param e the element to visit
-     * @param p a visitor-specified parameter
-     * @return  {@inheritDoc}
+     * @param e {@inheritDoc ElementVisitor}
+     * @param p {@inheritDoc ElementVisitor}
+     * @return  {@inheritDoc ElementVisitor}
      */
     @Override
     public R visitRecordComponent(RecordComponentElement e, P p) {

@@ -175,10 +175,10 @@ public class LogGeneratedClassesTest extends LUtils {
                                "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles",
                                "com.example.TestLambda");
         assertEquals(tr.testOutput.stream()
-                                  .filter(s -> s.contains("java.nio.file.FileAlreadyExistsException"))
+                                  .filter(s -> s.contains("DUMP_LAMBDA_PROXY_CLASS_FILES is not a directory"))
                                   .count(),
                      1, "only show error once");
-        assertTrue(tr.exitValue !=0);
+        assertTrue(tr.exitValue != 0);
     }
 
     private static boolean isWriteableDirectory(Path p) {
@@ -237,7 +237,7 @@ public class LogGeneratedClassesTest extends LUtils {
                                    "-Djdk.invoke.LambdaMetafactory.dumpProxyClassFiles",
                                    "com.example.TestLambda");
             assertEquals(tr.testOutput.stream()
-                                      .filter(s -> s.contains("is not writable"))
+                                      .filter(s -> s.contains("DUMP_LAMBDA_PROXY_CLASS_FILES is not writable"))
                                       .count(),
                          1, "only show error once");
             assertTrue(tr.exitValue != 0);

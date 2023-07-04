@@ -501,7 +501,7 @@ public:
 
   // Convert a dp (data pointer) to a di (data index).
   int dp_to_di(address dp) {
-    return dp - ((address)_data);
+    return pointer_delta_as_int(dp, ((address)_data));
   }
 
   // Get the data at an arbitrary (sort of) data index.

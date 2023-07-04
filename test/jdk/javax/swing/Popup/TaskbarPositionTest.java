@@ -61,7 +61,7 @@ import jtreg.SkippedException;
  * @key headful
  * @summary Tests the location of the heavy weight popup portion of JComboBox,
  * JMenu and JPopupMenu.
- * The test uses Ctrl+Down Arrow (↓) which is a system shortcut on macOS,
+ * The test uses Ctrl+Down Arrow which is a system shortcut on macOS,
  * disable it in system settings, otherwise the test will fail
  * @library ../regtesthelpers
  * @library /test/lib

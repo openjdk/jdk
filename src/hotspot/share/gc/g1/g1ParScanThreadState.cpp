@@ -716,6 +716,5 @@ G1ParScanThreadStateSet::~G1ParScanThreadStateSet() {
   assert(_flushed, "thread local state from the per thread states should have been flushed");
   FREE_C_HEAP_ARRAY(G1ParScanThreadState*, _states);
   FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_total);
-  _preserved_marks_set.assert_empty();
   _preserved_marks_set.reclaim();
 }

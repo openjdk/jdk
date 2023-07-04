@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -124,7 +124,7 @@ class CompilerOracle : AllStatic {
   static bool has_command_file();
 
   // Reads from file and adds to lists
-  static void parse_from_file();
+  static bool parse_from_file();
 
   // Tells whether we to exclude compilation of method
   static bool should_exclude(const methodHandle& method);
@@ -167,9 +167,9 @@ class CompilerOracle : AllStatic {
   static bool option_matches_type(enum CompileCommand option, T& value);
 
   // Reads from string instead of file
-  static void parse_from_string(const char* option_string, void (*parser)(char*));
-  static void parse_from_line(char* line);
-  static void parse_compile_only(char* line);
+  static bool parse_from_string(const char* option_string, bool (*parser)(char*));
+  static bool parse_from_line(char* line);
+  static bool parse_compile_only(char* line);
 
   // Fast check if there is any option set that compile control needs to know about
   static bool has_any_command_set();

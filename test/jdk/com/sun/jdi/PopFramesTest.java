@@ -58,14 +58,15 @@ import java.util.*;
  * NONATIVE:  there is no native frame (purposefully) present in the stack.
  *
  * In all cases the thread is suspended and errors such as IllegalArgumentException
- * and InvalidStackFrameException should not happen. The popFrames() calls  should
+ * and InvalidStackFrameException should not happen. The popFrames() calls should
  * either pass, or produce OpaqueFrameException or NativeMethodException.
  *
  * Call stacks for each test mode (and expected result):
  *  - Note in all cases the popMethod() frame is the frame passed to popFrames().
  *  - Note that Thread.sleep() usually results in the native Thread.sleep0() frame
- *    being at the top of the stack. However, for a mounted virtual thread
- *    it does not result in any native frames due to how the VM parks virtual threads.
+ *    being at the top of the stack. However, for a mounted virtual thread that is
+ *    not pinned, it does not result in any native frames due to how the VM
+ *    parks non-pinned virtual threads.
  *
  * SLEEP_NATIVE (NativeMethodException):
  *   Thread.sleep() + methods called by Thread.sleep()
@@ -266,7 +267,6 @@ public class PopFramesTest extends TestScaffold {
 
     protected void runTests() throws Exception {
         BreakpointEvent bpe = startTo("PopFramesTestTarg", "loopOrSleep", "()V");
-        ClassType targetClass = (ClassType)bpe.location().declaringType();
         ThreadReference mainThread = bpe.thread();
 
         // Resume main thread until it is in Thread.sleep() or the infinite loop.

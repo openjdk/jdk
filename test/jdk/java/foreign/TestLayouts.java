@@ -218,6 +218,8 @@ public class TestLayouts {
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_SHORT));
         assertThrows(IllegalArgumentException.class, // flip back to positive
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE/3, JAVA_LONG));
+        assertThrows(IllegalArgumentException.class, // flip back to positive
+                () -> MemoryLayout.sequenceLayout(0, JAVA_LONG).withElementCount(Long.MAX_VALUE));
     }
 
     @Test
@@ -330,6 +332,14 @@ public class TestLayouts {
             assertFalse(shouldFail);
         } catch (IllegalArgumentException ex) {
             assertTrue(shouldFail);
+        }
+    }
+
+    @Test(dataProvider="layoutsAndAlignments")
+    public void testArrayElementVarHandleBadAlignment(MemoryLayout layout, long byteAlign) {
+        if (layout instanceof ValueLayout) {
+            assertThrows(UnsupportedOperationException.class, () ->
+                    ((ValueLayout) layout).withByteAlignment(byteAlign * 2).arrayElementVarHandle());
         }
     }
 

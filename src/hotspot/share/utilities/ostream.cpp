@@ -706,7 +706,7 @@ void defaultStream::init_log() {
     _outer_xmlStream = new(mtInternal) xmlStream(file);
     start_log();
   } else {
-    // and leave xtty as nullptr
+    // and leave xtty as null
     LogVMOutput = false;
     DisplayVMOutput = true;
     LogCompilation = false;
@@ -762,13 +762,13 @@ void defaultStream::start_log() {
       // System properties don't generally contain newlines, so don't bother with unparsing.
       outputStream *text = xs->text();
       for (SystemProperty* p = Arguments::system_properties(); p != nullptr; p = p->next()) {
-        assert(p->key() != nullptr, "p->key() is nullptr");
+        assert(p->key() != nullptr, "p->key() is null");
         if (p->readable()) {
           // Print in two stages to avoid problems with long
           // keys/values.
           text->print_raw(p->key());
           text->put('=');
-          assert(p->value() != nullptr, "p->value() is nullptr");
+          assert(p->value() != nullptr, "p->value() is null");
           text->print_raw_cr(p->value());
         }
       }

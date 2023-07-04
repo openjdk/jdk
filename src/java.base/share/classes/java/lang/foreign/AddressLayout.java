@@ -37,7 +37,7 @@ import java.util.Optional;
 
 /**
  * A value layout used to model the address of some region of memory. The carrier associated with an address layout is
- * {@code MemorySegment.class}. The size and alignment of an address layout are platform dependent
+ * {@code MemorySegment.class}. The size and alignment of an address layout are platform-dependent
  * (e.g. on a 64-bit platform, the size and alignment of an address layout are set to 8 bytes).
  * <p>
  * An address layout may optionally feature a {@linkplain #targetLayout() target layout}. An address layout with
@@ -113,9 +113,9 @@ public sealed interface AddressLayout extends ValueLayout permits ValueLayouts.O
 
     /**
      * Returns an address layout with the same carrier, alignment constraint, name and order as this address layout,
-     * but without any specified target layout.
-     * <p>
-     * This can be useful to compare two address layouts that have different target layouts, but are otherwise equal.
+     * but with no target layout.
+     *
+     * @apiNote This can be useful to compare two address layouts that have different target layouts, but are otherwise equal.
      *
      * @return an address layout with same characteristics as this layout, but with no target layout.
      * @see #targetLayout()

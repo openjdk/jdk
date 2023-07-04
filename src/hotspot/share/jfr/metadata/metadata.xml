@@ -73,6 +73,11 @@
     <Field type="string" name="name" label="Name" />
   </Event>
 
+  <Event name="ResidentSetSize" category="Java Virtual Machine, Memory" label="Resident Set Size" description="Resident set size of the process" thread="false" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="size" label="Resident Set Size" description="Resident set size of the process" />
+    <Field type="ulong" contentType="bytes" name="peak" label="Resident Set Size Peak Value" description="Resident set size peak value of the process" />
+  </Event>
+
   <!-- Ordinary and experimental events !-->
 
   <Event name="ThreadStart" category="Java Application" label="Java Thread Start" thread="true" startTime="false" stackTrace="true">

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,11 +212,8 @@ public final class SunEC extends Provider {
         boolean firstCurve = true;
         StringBuilder names = new StringBuilder();
 
-        for (NamedCurve namedCurve :
-            List.of(
-                CurveDB.lookup("secp256r1"),
-                CurveDB.lookup("secp384r1"),
-                CurveDB.lookup("secp521r1"))) {
+        for (NamedCurve namedCurve : List.of(
+                CurveDB.P_256, CurveDB.P_384, CurveDB.P_521)) {
             if (!firstCurve) {
                 names.append("|");
             } else {
