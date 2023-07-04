@@ -1137,7 +1137,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
   if (result == MAP_ARCHIVE_SUCCESS) {
     SharedBaseAddress = (size_t)mapped_base_address;
-    LP64_ONLY({
+#ifdef _LP64
         if (Metaspace::using_class_space()) {
           // Set up ccs in metaspace.
           Metaspace::initialize_class_space(class_space_rs);
@@ -1159,12 +1159,12 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           CompressedKlassPointers::initialize (
             cds_base, ccs_end - cds_base // Klass range
             );
-#endif
+#endif // INCLUDE_CDS_JAVA_HEAP
           // map_or_load_heap_region() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
           static_mapinfo->map_or_load_heap_region();
         }
-      });
+#endif // _LP64
     log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
     log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
   } else {
