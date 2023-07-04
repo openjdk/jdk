@@ -520,9 +520,9 @@ public final class PlatformRecorder {
                 }
                 long minDelta = PeriodicEvents.doPeriodic();
                 wait = Math.min(minDelta, Options.getWaitInterval());
-            } catch(Throwable t) {
+            } catch (Throwable t) {
                 // Catch everything and log, but don't allow it to end the periodic task
-                Logger.log(JFR_SYSTEM, ERROR, "Error in Periodic task: " + t.getClass().getName() + ", " + t.getMessage());
+                Logger.log(JFR_SYSTEM, ERROR, "Error in Periodic task: " + t.getClass().getName());
             } finally {
                 takeNap(wait);
             }

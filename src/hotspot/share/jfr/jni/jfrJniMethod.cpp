@@ -403,5 +403,5 @@ JVM_ENTRY_NO_ENV(jlong, jfr_host_total_memory(JNIEnv* env, jobject jvm))
 JVM_END
 
 JVM_ENTRY_NO_ENV(void, jfr_emit_data_loss(JNIEnv* env, jobject jvm, jlong bytes))
-  EventDataLoss::commit(bytes, 0L);
+  EventDataLoss::commit(bytes, min_jlong);
 JVM_END
