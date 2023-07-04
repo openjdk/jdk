@@ -759,7 +759,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             String helperMethodNamePrefix = "sub";
             ClassDesc arrayListClassDesc = ClassDesc.ofInternalName("java/util/ArrayList");
 
-            int firstVar = nextLocalVar;
+            int dedupVarStart = nextLocalVar;
             var wrapper = new Object() {
                 int lastCopiedVar = firstVar - 1;
             };
