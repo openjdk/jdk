@@ -409,7 +409,7 @@ size_t CollectedHeap::max_tlab_size() const {
 void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint value) {
   int payload_offset = arrayOopDesc::base_offset_in_bytes(T_INT);
   if (!is_aligned(payload_offset, HeapWordSize)) {
-    assert(is_aligned(payload_offset, BytesPerInt), "base offset must be 32-bit-aligned");
+    assert(is_aligned(payload_offset, BytesPerInt), "must be 4-byte aligned");
     *(reinterpret_cast<juint*>(start) + (payload_offset / BytesPerInt)) = value;
     payload_offset += BytesPerInt;
   }
@@ -441,7 +441,7 @@ CollectedHeap::fill_with_array(HeapWord* start, size_t words, bool zap)
   assert(words <= filler_array_max_size(), "too big for a single object");
 
   const size_t payload_size_bytes = words * HeapWordSize - arrayOopDesc::base_offset_in_bytes(T_INT);
-  assert(is_aligned(payload_size_bytes, BytesPerInt), "must be int aligned");
+  assert(is_aligned(payload_size_bytes, BytesPerInt), "must be 4-byte aligned");
   const size_t len = payload_size_bytes / BytesPerInt;
   assert((int)len >= 0, "size too large " SIZE_FORMAT " becomes %d", words, (int)len);
 

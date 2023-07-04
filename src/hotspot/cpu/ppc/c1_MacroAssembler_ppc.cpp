@@ -380,7 +380,7 @@ void C1_MacroAssembler::allocate_array(
 
   // Zero first 4 bytes, if start offset is not word aligned.
   if (!is_aligned(base_offset_in_bytes, BytesPerWord)) {
-    assert(is_aligned(base_offset_in_bytes, BytesPerInt), "weird alignment");
+    assert(is_aligned(base_offset_in_bytes, BytesPerInt), "must be 4-byte aligned");
     li(t1, 0);
     stw(t1, 0, base);
     addi(base, base, BytesPerInt);

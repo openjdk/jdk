@@ -372,10 +372,12 @@ oop MemAllocator::allocate() const {
   return obj;
 }
 
-void MemAllocator::mem_clear(HeapWord* mem, size_t hdr_size_bytes) const {
+void MemAllocator::mem_clear(HeapWord* mem) const {
   assert(mem != nullptr, "cannot initialize null object");
-  assert(_word_size * HeapWordSize >= hdr_size_bytes, "unexpected object size");
-  Copy::fill_to_bytes((char*)mem + hdr_size_bytes, _word_size * HeapWordSize - hdr_size_bytes);
+  const size_t hs = oopDesc::header_size();
+  assert(_word_size >= hs, "unexpected object size");
+  oopDesc::set_klass_gap(mem, 0);
+  Copy::fill_to_aligned_words(mem + hs, _word_size - hs);
 }
 
 oop MemAllocator::finish(HeapWord* mem) const {
@@ -390,8 +392,17 @@ oop MemAllocator::finish(HeapWord* mem) const {
 }
 
 oop ObjAllocator::initialize(HeapWord* mem) const {
-  mem_clear(mem, instanceOopDesc::base_offset_in_bytes());
+  mem_clear(mem);
   return finish(mem);
+}
+
+MemRegion ObjArrayAllocator::obj_memory_range(oop obj) const {
+  if (_do_zero) {
+    return MemAllocator::obj_memory_range(obj);
+  }
+  ArrayKlass* array_klass = ArrayKlass::cast(_klass);
+  const size_t hs = heap_word_size(arrayOopDesc::base_offset_in_bytes(array_klass->element_type()));
+  return MemRegion(cast_from_oop<HeapWord*>(obj) + hs, _word_size - hs);
 }
 
 oop ObjArrayAllocator::initialize(HeapWord* mem) const {
@@ -400,9 +411,7 @@ oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   // concurrent GC.
   assert(_length >= 0, "length should be non-negative");
   if (_do_zero) {
-    ArrayKlass* array_klass = ArrayKlass::cast(_klass);
-    const size_t hs = arrayOopDesc::header_size_in_bytes();
-    mem_clear(mem, hs);
+    mem_clear(mem);
   }
   arrayOopDesc::set_length(mem, _length);
   return finish(mem);
@@ -413,7 +422,7 @@ oop ClassAllocator::initialize(HeapWord* mem) const {
   // non-null _klass field indicates that the object is parsable by
   // concurrent GC.
   assert(_word_size > 0, "oop_size must be positive.");
-  mem_clear(mem, instanceOopDesc::base_offset_in_bytes());
+  mem_clear(mem);
   java_lang_Class::set_oop_size(mem, _word_size);
   return finish(mem);
 }

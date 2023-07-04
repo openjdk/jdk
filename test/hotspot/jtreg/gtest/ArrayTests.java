@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022 Amazon.com Inc. or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,26 +31,26 @@
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop::base_offset -XX:+UseCompressedClassPointers -XX:+UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:+UseCompressedClassPointers -XX:+UseCompressedOops
  */
 /* @test id=with-coops-no-ccp
  * @summary Run object array size tests with compressed oops and compressed class pointers
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop::base_offset -XX:-UseCompressedClassPointers -XX:+UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:-UseCompressedClassPointers -XX:+UseCompressedOops
  */
 /* @test id=no-coops-with-ccp
  * @summary Run object array size tests with compressed oops and compressed class pointers
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop::base_offset -XX:+UseCompressedClassPointers -XX:-UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:+UseCompressedClassPointers -XX:-UseCompressedOops
  */
 /* @test id=no-coops-no-ccp
  * @summary Run object array size tests with compressed oops and compressed class pointers
  * @library /test/lib
  * @modules java.base/jdk.internal.misc
  *          java.xml
- * @run main/native GTestWrapper --gtest_filter=arrayOop::base_offset -XX:-UseCompressedClassPointers -XX:-UseCompressedOops
+ * @run main/native GTestWrapper --gtest_filter=arrayOop -XX:-UseCompressedClassPointers -XX:-UseCompressedOops
  */

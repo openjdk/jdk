@@ -293,7 +293,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // than the largest array of integers; it uses a single object to fill the
   // region and has slightly less overhead.
   static size_t min_fill_size() {
-    return size_t(align_object_size(heap_word_size(instanceOopDesc::base_offset_in_bytes())));
+    return size_t(align_object_size(oopDesc::header_size()));
   }
 
   static void fill_with_objects(HeapWord* start, size_t words, bool zap = true);

@@ -47,7 +47,7 @@
                          bool is_tlab_allocated);
 
   void allocate_object(Register obj, Register tmp1, Register tmp2, Register tmp3,
-                       int header_size_in_bytes, int object_size,
+                       int header_size, int object_size,
                        Register klass, Label& slow_case);
 
   void allocate_array(Register obj, Register len,

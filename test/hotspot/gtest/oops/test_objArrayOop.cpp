@@ -36,10 +36,14 @@ TEST_VM(objArrayOop, osize) {
     { 8,          false,  true,     3 },  // 20 byte header, 4 byte oops
     { 8,          true,   false,    3 },  // 16 byte header, 8 byte oops
     { 8,          true,   true,     3 },  // 16 byte header, 4 byte oops
-    { 256,        false,  false,    32 }, // 20 byte header, 8 byte oops
-    { 256,        false,  true,     32 }, // 20 byte header, 4 byte oops
-    { 256,        true,   false,    32 }, // 16 byte header, 8 byte oops
-    { 256,        true,   true,     32 }, // 16 byte header, 4 byte oops
+    { 16,         false,  false,    4 },  // 20 byte header, 8 byte oops, 16-byte align
+    { 16,         false,  true,     4 },  // 20 byte header, 4 byte oops, 16-byte align
+    { 16,         true,   false,    4 },  // 16 byte header, 8 byte oops, 16-byte align
+    { 16,         true,   true,     4 },  // 16 byte header, 4 byte oops, 16-byte align
+    { 256,        false,  false,    32 }, // 20 byte header, 8 byte oops, 256-byte align
+    { 256,        false,  true,     32 }, // 20 byte header, 4 byte oops, 256-byte align
+    { 256,        true,   false,    32 }, // 16 byte header, 8 byte oops, 256-byte align
+    { 256,        true,   true,     32 }, // 16 byte header, 4 byte oops, 256-byte align
 #else
     { 8,          false,  false,    4 }, // 12 byte header, 4 byte oops, wordsize 4
 #endif
