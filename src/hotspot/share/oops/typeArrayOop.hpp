@@ -131,7 +131,7 @@ private:
   }
 
  public:
-  inline int object_size();
+  inline int object_size(const TypeArrayKlass* tk) const;
 };
 
 #endif // SHARE_OOPS_TYPEARRAYOOP_HPP
