@@ -82,6 +82,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/threads.hpp"
 #include "services/classLoadingService.hpp"
@@ -3859,9 +3860,15 @@ void InstanceKlass::print_class_load_cause_logging() const {
       // Log to string first so that lines can be indented
       stringStream stack_stream;
       char buf[O_BUFLEN];
-      frame f = os::current_frame();
-      VMError::print_native_stack(&stack_stream, f, current, true /*print_source_info */,
-                                  -1 /* max stack_stream */, buf, O_BUFLEN);
+      address lastpc = nullptr;
+      if (os::platform_print_native_stack(&stack_stream, nullptr, buf, O_BUFLEN, lastpc)) {
+        // We have printed the native stack in platform-specific code,
+        // so nothing else to do in this case.
+      } else {
+        frame f = os::current_frame();
+        VMError::print_native_stack(&stack_stream, f, current, true /*print_source_info */,
+                                    -1 /* max stack_stream */, buf, O_BUFLEN);
+      }
 
       LogMessage(class, load, cause, native) msg;
       NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
