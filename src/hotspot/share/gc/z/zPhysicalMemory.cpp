@@ -27,6 +27,7 @@
 #include "gc/z/zArray.inline.hpp"
 #include "gc/z/zGlobals.hpp"
 #include "gc/z/zLargePages.inline.hpp"
+#include "gc/z/zNMT.hpp"
 #include "gc/z/zNUMA.inline.hpp"
 #include "gc/z/zPhysicalMemory.inline.hpp"
 #include "logging/log.hpp"
@@ -34,7 +35,6 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/init.hpp"
 #include "runtime/os.hpp"
-#include "services/memTracker.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -275,26 +275,6 @@ void ZPhysicalMemoryManager::try_enable_uncommit(size_t min_capacity, size_t max
   log_info_p(gc, init)("Uncommit Delay: " UINTX_FORMAT "s", ZUncommitDelay);
 }
 
-void ZPhysicalMemoryManager::nmt_commit(zoffset offset, size_t size) const {
-  // NMT expects a 1-to-1 mapping between virtual and physical memory.
-  // ZGC can temporarily have multiple virtual addresses pointing to
-  // the same physical memory.
-  //
-  // When this function is called we don't know where in the virtual memory
-  // this physical memory will be mapped. So we fake that the virtual memory
-  // address is the heap base + the given offset.
-  const uintptr_t addr = ZAddressHeapBase + untype(offset);
-  MemTracker::record_virtual_memory_commit((void*)addr, size, CALLER_PC);
-}
-
-void ZPhysicalMemoryManager::nmt_uncommit(zoffset offset, size_t size) const {
-  if (MemTracker::enabled()) {
-    const uintptr_t addr = ZAddressHeapBase + untype(offset);
-    Tracker tracker(Tracker::uncommit);
-    tracker.record((address)addr, size);
-  }
-}
-
 void ZPhysicalMemoryManager::alloc(ZPhysicalMemory& pmem, size_t size) {
   assert(is_aligned(size, ZGranuleSize), "Invalid size");
 
@@ -329,7 +309,7 @@ bool ZPhysicalMemoryManager::commit(ZPhysicalMemory& pmem) {
     const size_t committed = _backing.commit(segment.start(), segment.size());
 
     // Register with NMT
-    nmt_commit(segment.start(), committed);
+    ZNMT::commit(segment.start(), committed);
 
     // Register committed segment
     if (!pmem.commit_segment(i, committed)) {
@@ -355,7 +335,7 @@ bool ZPhysicalMemoryManager::uncommit(ZPhysicalMemory& pmem) {
     const size_t uncommitted = _backing.uncommit(segment.start(), segment.size());
 
     // Unregister with NMT
-    nmt_uncommit(segment.start(), uncommitted);
+    ZNMT::uncommit(segment.start(), uncommitted);
 
     // Deregister uncommitted segment
     if (!pmem.uncommit_segment(i, uncommitted)) {
