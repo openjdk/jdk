@@ -26,7 +26,6 @@
 #include "gc/shared/concurrentGCThread.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "gc/shared/trimNative.hpp"
-#include "gc/shared/trimNativeStepDown.hpp"
 #include "logging/log.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/mutex.hpp"
@@ -82,7 +81,7 @@ class NativeTrimmerThread : public ConcurrentGCThread {
       // 2 - Trimming happens outside of lock protection. GC threads can issue new commands
       //     concurrently.
       const bool explicitly_scheduled = (ntt == 0);
-      TrimResult result = execute_trim_and_log(explicitly_scheduled);
+      execute_trim_and_log(explicitly_scheduled);
 
       // 3 - Update _next_trim_time; but give concurrent setters preference.
       {
@@ -110,7 +109,7 @@ class NativeTrimmerThread : public ConcurrentGCThread {
 
   // Execute the native trim, log results.
   // Return true if trim succeeded *and* we have valid size change data.
-  TrimResult execute_trim_and_log(bool explicitly_scheduled) const {
+  void execute_trim_and_log(bool explicitly_scheduled) const {
     assert(os::can_trim_native_heap(), "Unexpected");
     const int64_t tnow = now();
     os::size_change_t sc;
@@ -125,12 +124,10 @@ class NativeTrimmerThread : public ConcurrentGCThread {
                            (explicitly_scheduled ? "explicit" : "periodic"),
                            PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                            trim_time.seconds() * 1000);
-        return TrimResult(tnow, now() - tnow, sc.before, sc.after);
       } else {
         log_info(gc, trim)("Trim native heap (no details)");
       }
     }
-    return TrimResult();
   }
 
 public:
@@ -170,19 +167,6 @@ public:
       ml.notify_all();
     }
     log_debug(gc, trim)("NativeTrimmer unpause");
-  }
-
-  void unpause_and_trim() {
-    {
-      MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-      _next_trim_time = 0;
-      ml.notify_all();
-    }
-    if (_periodic_trim_enabled) {
-      log_debug(gc, trim)("NativeTrimmer unpause + request explicit trim");
-    } else {
-      log_debug(gc, trim)("NativeTrimmer request explicit trim");
-    }
   }
 
 }; // NativeTrimmer
@@ -228,8 +212,3 @@ void TrimNative::unpause_periodic_trim() {
   }
 }
 
-void TrimNative::schedule_trim() {
-  if (g_trimmer_thread != nullptr) {
-    g_trimmer_thread->unpause_and_trim();
-  }
-}

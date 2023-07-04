@@ -48,8 +48,16 @@ public:
   // Pause periodic trimming while in scope; when leaving scope,
   // resume periodic trimming.
   struct PauseMark {
-    PauseMark()   { pause_periodic_trim(); }
-    ~PauseMark()  { unpause_periodic_trim(); }
+    PauseMark()   {
+      if (TrimNativeHeap) {
+        pause_periodic_trim();
+      }
+    }
+    ~PauseMark()  {
+      if (TrimNativeHeap) {
+        unpause_periodic_trim();
+      }
+    }
   };
 
   // Pause periodic trimming while in scope; when leaving scope,

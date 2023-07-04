@@ -1451,7 +1451,7 @@ void G1ConcurrentMark::cleanup() {
     return;
   }
 
-  TrimNative::PauseThenTrimMark trim_native_pause;
+  TrimNative::PauseMark trim_native_pause;
 
   G1Policy* policy = _g1h->policy();
   policy->record_concurrent_mark_cleanup_start();
