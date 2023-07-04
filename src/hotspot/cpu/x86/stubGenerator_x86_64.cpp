@@ -4424,7 +4424,19 @@ class StubGenerator: public StubCodeGenerator {
     return start;
   }
 
- // Vector AES Counter implementation
+  // Vector AES Counter implementation
+
+  address counter_mask_ones_addr() {
+    __ align64();
+    StubCodeMark mark(this, "StubRoutines", "counter_mask_addr");
+    address start = __ pc();
+    for (int i = 0; i < 4; i ++) {
+      __ emit_data64(0x0000000000000000, relocInfo::none);
+      __ emit_data64(0x0000000000000001, relocInfo::none);
+    }
+    return start;
+  }
+
   address generate_counterMode_VectorAESCrypt()  {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", "counterMode_AESCrypt");
@@ -7641,6 +7653,7 @@ address generate_avx_ghash_processBlocks() {
     if (UseAESCTRIntrinsics) {
       if (VM_Version::supports_avx512_vaes() && VM_Version::supports_avx512bw() && VM_Version::supports_avx512vl()) {
         StubRoutines::x86::_counter_mask_addr = counter_mask_addr();
+        StubRoutines::x86::_counter_mask_ones_addr = counter_mask_ones_addr();
         StubRoutines::_counterMode_AESCrypt = generate_counterMode_VectorAESCrypt();
       } else {
         StubRoutines::x86::_counter_shuffle_mask_addr = generate_counter_shuffle_mask();

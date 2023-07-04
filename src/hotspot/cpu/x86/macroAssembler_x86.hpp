@@ -964,6 +964,8 @@ private:
   void roundDec(XMMRegister key, int rnum);
   void lastroundDec(XMMRegister key, int rnum);
   void ev_load_key(XMMRegister xmmdst, Register key, int offset, XMMRegister xmm_shuf_mask);
+  void ev_add128(XMMRegister xmmdst, XMMRegister xmmsrc1, XMMRegister xmmsrc2,
+                 int vector_len, KRegister ktmp, Register rscratch = noreg);
 
 public:
   void aesecb_encrypt(Register source_addr, Register dest_addr, Register key, Register len);

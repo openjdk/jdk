@@ -779,6 +779,19 @@ void MacroAssembler::avx_ghash(Register input_state, Register htbl,
     vpxor(xmm15, xmm15, xmm15, Assembler::AVX_128bit);
 }
 
+// Add 128-bit integers in xmmsrc1 to xmmsrc2, then place the result in xmmdst.
+// Clobber ktmp and rscratch.
+// Used by aesctr_encrypt.
+void MacroAssembler::ev_add128(XMMRegister xmmdst, XMMRegister xmmsrc1, XMMRegister xmmsrc2,
+                            int vector_len, KRegister ktmp, Register rscratch) {
+  vpaddq(xmmdst, xmmsrc1, xmmsrc2, vector_len);
+  evpcmpuq(ktmp, xmmdst, xmmsrc2, lt, vector_len); // set mask[0/1] bit if addq to dst[0/1] wraps
+  kshiftlbl(ktmp, ktmp, 1);                        // mask[1] <- mask[0], mask[0] <- 0, etc
+
+  evpaddq(xmmdst, ktmp, xmmdst, xmm17, /*merge*/true,
+          vector_len);                             // dst[1]++ if mask[1] set
+}
+
 // AES Counter Mode using VAES instructions
 void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Register key, Register counter,
     Register len_reg, Register used, Register used_addr, Register saved_encCounter_start) {
@@ -831,19 +844,23 @@ void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Regis
     //shuffle counter using lbswap_mask
     vpshufb(xmm8, xmm8, xmm16, Assembler::AVX_512bit);
 
+    // Vector value to propagate carries
+    evmovdquq(xmm17, ExternalAddress(StubRoutines::x86::counter_mask_ones_addr()), Assembler::AVX_512bit, r15);
     // pre-increment and propagate counter values to zmm9-zmm15 registers.
     // Linc0 increments the zmm8 by 1 (initial value being 0), Linc4 increments the counters zmm9-zmm15 by 4
     // The counter is incremented after each block i.e. 16 bytes is processed;
     // each zmm register has 4 counter values as its MSB
     // the counters are incremented in parallel
-    vpaddd(xmm8, xmm8, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 64), Assembler::AVX_512bit, r15);//linc0
-    vpaddd(xmm9, xmm8, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 128), Assembler::AVX_512bit, r15);//linc4(rip)
-    vpaddd(xmm10, xmm9, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 128), Assembler::AVX_512bit, r15);//Linc4(rip)
-    vpaddd(xmm11, xmm10, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 128), Assembler::AVX_512bit, r15);//Linc4(rip)
-    vpaddd(xmm12, xmm11, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 128), Assembler::AVX_512bit, r15);//Linc4(rip)
-    vpaddd(xmm13, xmm12, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 128), Assembler::AVX_512bit, r15);//Linc4(rip)
-    vpaddd(xmm14, xmm13, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 128), Assembler::AVX_512bit, r15);//Linc4(rip)
-    vpaddd(xmm15, xmm14, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 128), Assembler::AVX_512bit, r15);//Linc4(rip)
+    evmovdquq(xmm19, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 64), Assembler::AVX_512bit, r15 /*rscratch*/);//linc0
+    ev_add128(xmm8, xmm8,   xmm19, Assembler::AVX_512bit,  /*ktmp*/k1, r15);
+    evmovdquq(xmm19, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 128), Assembler::AVX_512bit, r15 /*rscratch*/);//linc4
+    ev_add128(xmm9,   xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15);
+    ev_add128(xmm10,  xmm9, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15);
+    ev_add128(xmm11, xmm10, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15);
+    ev_add128(xmm12, xmm11, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15);
+    ev_add128(xmm13, xmm12, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15);
+    ev_add128(xmm14, xmm13, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15);
+    ev_add128(xmm15, xmm14, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15);
 
     // load linc32 mask in zmm register.linc32 increments counter by 32
     evmovdquq(xmm19, ExternalAddress(StubRoutines::x86::counter_mask_addr() + 256), Assembler::AVX_512bit, r15);//Linc32
@@ -891,21 +908,21 @@ void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Regis
     // This is followed by incrementing counter values in zmm8-zmm15.
     // Since we will be processing 32 blocks at a time, the counter is incremented by 32.
     roundEnc(xmm21, 7);
-    vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     roundEnc(xmm22, 7);
-    vpaddq(xmm9, xmm9, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm9, xmm9, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     roundEnc(xmm23, 7);
-    vpaddq(xmm10, xmm10, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm10, xmm10, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     roundEnc(xmm24, 7);
-    vpaddq(xmm11, xmm11, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm11, xmm11, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     roundEnc(xmm25, 7);
-    vpaddq(xmm12, xmm12, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm12, xmm12, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     roundEnc(xmm26, 7);
-    vpaddq(xmm13, xmm13, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm13, xmm13, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     roundEnc(xmm27, 7);
-    vpaddq(xmm14, xmm14, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm14, xmm14, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     roundEnc(xmm28, 7);
-    vpaddq(xmm15, xmm15, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm15, xmm15, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     roundEnc(xmm29, 7);
 
     cmpl(rounds, 52);
@@ -983,8 +1000,8 @@ void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Regis
     vpshufb(xmm3, xmm11, xmm16, Assembler::AVX_512bit);
     evpxorq(xmm3, xmm3, xmm20, Assembler::AVX_512bit);
     // Increment counter values by 16
-    vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
-    vpaddq(xmm9, xmm9, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
+    ev_add128/*!!!*/(xmm9, xmm9, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     // AES encode rounds
     roundEnc(xmm21, 3);
     roundEnc(xmm22, 3);
@@ -1051,7 +1068,7 @@ void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Regis
     vpshufb(xmm1, xmm9, xmm16, Assembler::AVX_512bit);
     evpxorq(xmm1, xmm1, xmm20, Assembler::AVX_512bit);
     // increment counter by 8
-    vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     // AES encode
     roundEnc(xmm21, 1);
     roundEnc(xmm22, 1);
@@ -1109,7 +1126,7 @@ void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Regis
     vpshufb(xmm0, xmm8, xmm16, Assembler::AVX_512bit);
     evpxorq(xmm0, xmm0, xmm20, Assembler::AVX_512bit);
     // Increment counter
-    vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_512bit);
+    ev_add128/*!!!*/(xmm8, xmm8, xmm19, Assembler::AVX_512bit, /*ktmp*/k1, r15 /*rscratch*/);
     vaesenc(xmm0, xmm0, xmm21, Assembler::AVX_512bit);
     vaesenc(xmm0, xmm0, xmm22, Assembler::AVX_512bit);
     vaesenc(xmm0, xmm0, xmm23, Assembler::AVX_512bit);
@@ -1159,7 +1176,7 @@ void MacroAssembler::aesctr_encrypt(Register src_addr, Register dest_addr, Regis
     evpxorq(xmm0, xmm0, xmm20, Assembler::AVX_128bit);
     vaesenc(xmm0, xmm0, xmm21, Assembler::AVX_128bit);
     // Increment counter by 1
-    vpaddq(xmm8, xmm8, xmm19, Assembler::AVX_128bit);
+    ev_add128/*!!!*/(xmm8, xmm8, xmm19, Assembler::AVX_128bit, /*ktmp*/k1, r15 /*rscratch*/);
     vaesenc(xmm0, xmm0, xmm22, Assembler::AVX_128bit);
     vaesenc(xmm0, xmm0, xmm23, Assembler::AVX_128bit);
     vaesenc(xmm0, xmm0, xmm24, Assembler::AVX_128bit);
