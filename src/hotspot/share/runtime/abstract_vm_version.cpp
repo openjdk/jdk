@@ -116,13 +116,17 @@ const char* Abstract_VM_Version::vm_name() {
   return VMNAME;
 }
 
+#ifndef VENDOR_PADDING
+# define VENDOR_PADDING 64
+#endif
+#ifndef VENDOR
+# define VENDOR  "Oracle Corporation"
+#endif
+
+static const char vm_vendor_string[sizeof(VENDOR) < VENDOR_PADDING ? VENDOR_PADDING : sizeof(VENDOR)] = VENDOR;
 
 const char* Abstract_VM_Version::vm_vendor() {
-#ifdef VENDOR
-  return VENDOR;
-#else
-  return "Oracle Corporation";
-#endif
+  return vm_vendor_string;
 }
 
 

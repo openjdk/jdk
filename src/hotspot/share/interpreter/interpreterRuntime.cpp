@@ -735,6 +735,7 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
 
 //%note monitor_1
 JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, BasicObjectLock* elem))
+  assert(LockingMode != LM_LIGHTWEIGHT, "Should call monitorenter_obj() when using the new lightweight locking");
 #ifdef ASSERT
   current->last_frame().interpreter_frame_verify_monitor(elem);
 #endif
@@ -749,6 +750,22 @@ JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter(JavaThread* current, B
 #endif
 JRT_END
 
+// NOTE: We provide a separate implementation for the new lightweight locking to workaround a limitation
+// of registers in x86_32. This entry point accepts an oop instead of a BasicObjectLock*.
+// The problem is that we would need to preserve the register that holds the BasicObjectLock,
+// but we are using that register to hold the thread. We don't have enough registers to
+// also keep the BasicObjectLock, but we don't really need it anyway, we only need
+// the object. See also InterpreterMacroAssembler::lock_object().
+// As soon as legacy stack-locking goes away we could remove the other monitorenter() entry
+// point, and only use oop-accepting entries (same for monitorexit() below).
+JRT_ENTRY_NO_ASYNC(void, InterpreterRuntime::monitorenter_obj(JavaThread* current, oopDesc* obj))
+  assert(LockingMode == LM_LIGHTWEIGHT, "Should call monitorenter() when not using the new lightweight locking");
+  Handle h_obj(current, cast_to_oop(obj));
+  assert(Universe::heap()->is_in_or_null(h_obj()),
+         "must be null or an object");
+  ObjectSynchronizer::enter(h_obj, nullptr, current);
+  return;
+JRT_END
 
 JRT_LEAF(void, InterpreterRuntime::monitorexit(BasicObjectLock* elem))
   oop obj = elem->obj();
@@ -947,8 +964,7 @@ void InterpreterRuntime::resolve_invokedynamic(JavaThread* current) {
                                  index, bytecode, CHECK);
   } // end JvmtiHideSingleStepping
 
-  ConstantPoolCacheEntry* cp_cache_entry = pool->invokedynamic_cp_cache_entry_at(index);
-  cp_cache_entry->set_dynamic_call(pool, info);
+  pool->cache()->set_dynamic_call(info, pool->decode_invokedynamic_index(index));
 }
 
 // This function is the interface to the assembly code. It returns the resolved
@@ -1155,7 +1171,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDe
 
   InstanceKlass* ik = InstanceKlass::cast(cp_entry->f1_as_klass());
   int index = cp_entry->field_index();
-  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
+  if (!ik->field_status(index).is_access_watched()) return;
 
   bool is_static = (obj == nullptr);
   HandleMark hm(current);
@@ -1180,7 +1196,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current,
   InstanceKlass* ik = InstanceKlass::cast(k);
   int index = cp_entry->field_index();
   // bail out if field modifications are not watched
-  if ((ik->field_access_flags(index) & JVM_ACC_FIELD_MODIFICATION_WATCHED) == 0) return;
+  if (!ik->field_status(index).is_modification_watched()) return;
 
   char sig_type = '\0';
 
@@ -1489,8 +1505,8 @@ JRT_ENTRY(void, InterpreterRuntime::member_name_arg_or_null(JavaThread* current,
   }
   ConstantPool* cpool = method->constants();
   int cp_index = Bytes::get_native_u2(bcp + 1) + ConstantPool::CPCACHE_INDEX_TAG;
-  Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index));
-  Symbol* mname = cpool->name_ref_at(cp_index);
+  Symbol* cname = cpool->klass_name_at(cpool->klass_ref_index_at(cp_index, code));
+  Symbol* mname = cpool->name_ref_at(cp_index, code);
 
   if (MethodHandles::has_member_arg(cname, mname)) {
     oop member_name_oop = cast_to_oop(member_name);

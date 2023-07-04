@@ -25,6 +25,8 @@
 #define SHARE_OPTO_VECTORNODE_HPP
 
 #include "opto/callnode.hpp"
+#include "opto/cfgnode.hpp"
+#include "opto/loopnode.hpp"
 #include "opto/matcher.hpp"
 #include "opto/memnode.hpp"
 #include "opto/node.hpp"
@@ -90,9 +92,12 @@ class VectorNode : public TypeNode {
 
   static bool is_rotate_opcode(int opc);
 
-  static int  opcode(int opc, BasicType bt);
+  static int opcode(int sopc, BasicType bt);         // scalar_opc -> vector_opc
+  static int scalar_opcode(int vopc, BasicType bt);  // vector_opc -> scalar_opc
   static int replicate_opcode(BasicType bt);
-  static bool vector_size_supported(BasicType bt, uint vlen);
+
+  // Limits on vector size (number of elements) for auto-vectorization.
+  static bool vector_size_supported_superword(const BasicType bt, int size);
   static bool implemented(int opc, uint vlen, BasicType bt);
   static bool is_shift(Node* n);
   static bool is_vshift_cnt(Node* n);
@@ -127,6 +132,15 @@ class VectorNode : public TypeNode {
   }
   static bool is_vector_shift_count(Node* n) {
     return is_vector_shift_count(n->Opcode());
+  }
+
+  static void trace_new_vector(Node* n, const char* context) {
+#ifdef ASSERT
+    if (TraceNewVectors) {
+      tty->print("TraceNewVectors [%s]: ", context);
+      n->dump();
+    }
+#endif
   }
 };
 
@@ -189,12 +203,15 @@ class ReductionNode : public Node {
  public:
   ReductionNode(Node *ctrl, Node* in1, Node* in2) : Node(ctrl, in1, in2),
                _bottom_type(Type::get_const_basic_type(in1->bottom_type()->basic_type())),
-               _vect_type(in2->bottom_type()->is_vect()) {}
+               _vect_type(in2->bottom_type()->is_vect()) {
+    init_class_id(Class_Reduction);
+  }
 
-  static ReductionNode* make(int opc, Node *ctrl, Node* in1, Node* in2, BasicType bt);
+  static ReductionNode* make(int opc, Node* ctrl, Node* in1, Node* in2, BasicType bt);
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
-  static Node* make_reduction_input(PhaseGVN& gvn, int opc, BasicType bt);
+  // Make an identity scalar (zero for add, one for mul, etc) for scalar opc.
+  static Node* make_identity_con_scalar(PhaseGVN& gvn, int sopc, BasicType bt);
 
   virtual const Type* bottom_type() const {
     return _bottom_type;
@@ -214,19 +231,28 @@ class ReductionNode : public Node {
   virtual uint size_of() const { return sizeof(*this); }
 };
 
+//---------------------------UnorderedReductionNode-------------------------------------
+// Order of reduction does not matter. Example int add. Not true for float add.
+class UnorderedReductionNode : public ReductionNode {
+public:
+  UnorderedReductionNode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {
+    init_class_id(Class_UnorderedReduction);
+  }
+};
+
 //------------------------------AddReductionVINode--------------------------------------
 // Vector add byte, short and int as a reduction
-class AddReductionVINode : public ReductionNode {
+class AddReductionVINode : public UnorderedReductionNode {
 public:
-  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AddReductionVINode(Node * ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------AddReductionVLNode--------------------------------------
 // Vector add long as a reduction
-class AddReductionVLNode : public ReductionNode {
+class AddReductionVLNode : public UnorderedReductionNode {
 public:
-  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AddReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -366,35 +392,19 @@ public:
   virtual int Opcode() const;
 };
 
-//------------------------------CMoveVFNode--------------------------------------
-// Vector float conditional move
-class CMoveVFNode : public VectorNode {
-public:
-  CMoveVFNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------CMoveVDNode--------------------------------------
-// Vector double conditional move
-class CMoveVDNode : public VectorNode {
-public:
-  CMoveVDNode(Node* in1, Node* in2, Node* in3, const TypeVect* vt) : VectorNode(in1, in2, in3, vt) {}
-  virtual int Opcode() const;
-};
-
 //------------------------------MulReductionVINode--------------------------------------
 // Vector multiply byte, short and int as a reduction
-class MulReductionVINode : public ReductionNode {
+class MulReductionVINode : public UnorderedReductionNode {
 public:
-  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MulReductionVINode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MulReductionVLNode--------------------------------------
 // Vector multiply int as a reduction
-class MulReductionVLNode : public ReductionNode {
+class MulReductionVLNode : public UnorderedReductionNode {
 public:
-  MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MulReductionVLNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -735,9 +745,9 @@ class AndVNode : public VectorNode {
 
 //------------------------------AndReductionVNode--------------------------------------
 // Vector and byte, short, int, long as a reduction
-class AndReductionVNode : public ReductionNode {
+class AndReductionVNode : public UnorderedReductionNode {
  public:
-  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  AndReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -752,17 +762,9 @@ class OrVNode : public VectorNode {
 
 //------------------------------OrReductionVNode--------------------------------------
 // Vector xor byte, short, int, long as a reduction
-class OrReductionVNode : public ReductionNode {
+class OrReductionVNode : public UnorderedReductionNode {
  public:
-  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
-  virtual int Opcode() const;
-};
-
-//------------------------------XorReductionVNode--------------------------------------
-// Vector and int, long as a reduction
-class XorReductionVNode : public ReductionNode {
- public:
-  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  OrReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -775,19 +777,27 @@ class XorVNode : public VectorNode {
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
 };
 
+//------------------------------XorReductionVNode--------------------------------------
+// Vector and int, long as a reduction
+class XorReductionVNode : public UnorderedReductionNode {
+ public:
+  XorReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
+  virtual int Opcode() const;
+};
+
 //------------------------------MinReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MinReductionVNode : public ReductionNode {
+class MinReductionVNode : public UnorderedReductionNode {
 public:
-  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MinReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
 //------------------------------MaxReductionVNode--------------------------------------
 // Vector min byte, short, int, long, float, double as a reduction
-class MaxReductionVNode : public ReductionNode {
+class MaxReductionVNode : public UnorderedReductionNode {
 public:
-  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : ReductionNode(ctrl, in1, in2) {}
+  MaxReductionVNode(Node *ctrl, Node* in1, Node* in2) : UnorderedReductionNode(ctrl, in1, in2) {}
   virtual int Opcode() const;
 };
 
@@ -1270,7 +1280,7 @@ class VectorLoadConstNode : public VectorNode {
 // Extract a scalar from a vector at position "pos"
 class ExtractNode : public Node {
  public:
-  ExtractNode(Node* src, ConINode* pos) : Node(NULL, src, (Node*)pos) {
+  ExtractNode(Node* src, ConINode* pos) : Node(nullptr, src, (Node*)pos) {
     assert(in(2)->get_int() >= 0, "positive constants");
   }
   virtual int Opcode() const;
@@ -1286,7 +1296,7 @@ class ExtractBNode : public ExtractNode {
  public:
   ExtractBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::BYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1296,7 +1306,7 @@ class ExtractUBNode : public ExtractNode {
  public:
   ExtractUBNode(Node* src, ConINode* pos) : ExtractNode(src, pos) {}
   virtual int Opcode() const;
-  virtual const Type *bottom_type() const { return TypeInt::INT; }
+  virtual const Type* bottom_type() const { return TypeInt::UBYTE; }
   virtual uint ideal_reg() const { return Op_RegI; }
 };
 
@@ -1676,13 +1686,13 @@ class VectorBoxNode : public Node {
   };
   VectorBoxNode(Compile* C, Node* box, Node* val,
                 const TypeInstPtr* box_type, const TypeVect* vt)
-    : Node(NULL, box, val), _box_type(box_type), _vec_type(vt) {
+    : Node(nullptr, box, val), _box_type(box_type), _vec_type(vt) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
 
-  const  TypeInstPtr* box_type() const { assert(_box_type != NULL, ""); return _box_type; };
-  const  TypeVect*    vec_type() const { assert(_vec_type != NULL, ""); return _vec_type; };
+  const  TypeInstPtr* box_type() const { assert(_box_type != nullptr, ""); return _box_type; };
+  const  TypeVect*    vec_type() const { assert(_vec_type != nullptr, ""); return _vec_type; };
 
   virtual int Opcode() const;
   virtual const Type* bottom_type() const { return _box_type; }
@@ -1695,7 +1705,7 @@ class VectorBoxNode : public Node {
 class VectorBoxAllocateNode : public CallStaticJavaNode {
  public:
   VectorBoxAllocateNode(Compile* C, const TypeInstPtr* vbox_type)
-    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), NULL, NULL) {
+    : CallStaticJavaNode(C, VectorBoxNode::vec_box_type(vbox_type), nullptr, nullptr) {
     init_flags(Flag_is_macro);
     C->add_macro_node(this);
   }
@@ -1799,6 +1809,20 @@ public:
   SignumVDNode(Node* in1, Node* zero, Node* one, const TypeVect* vt)
   : VectorNode(in1, zero, one, vt) {}
 
+  virtual int Opcode() const;
+};
+
+class CompressBitsVNode : public VectorNode {
+public:
+  CompressBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
+  virtual int Opcode() const;
+};
+
+class ExpandBitsVNode : public VectorNode {
+public:
+  ExpandBitsVNode(Node* in, Node* mask, const TypeVect* vt)
+  : VectorNode(in, mask, vt) {}
   virtual int Opcode() const;
 };
 

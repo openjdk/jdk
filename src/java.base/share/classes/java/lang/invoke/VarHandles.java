@@ -25,6 +25,7 @@
 
 package java.lang.invoke;
 
+import jdk.internal.foreign.Utils;
 import sun.invoke.util.Wrapper;
 
 import java.lang.reflect.Constructor;
@@ -314,7 +315,7 @@ final class VarHandles {
         if (!carrier.isPrimitive() || carrier == void.class || carrier == boolean.class) {
             throw new IllegalArgumentException("Invalid carrier: " + carrier.getName());
         }
-        long size = Wrapper.forPrimitiveType(carrier).bitWidth() / 8;
+        long size = Utils.byteWidthOfPrimitive(carrier);
         boolean be = byteOrder == ByteOrder.BIG_ENDIAN;
         boolean exact = false;
 
@@ -634,8 +635,8 @@ final class VarHandles {
             } else {
                 throw new AssertionError("Cannot get here");
             }
-        } else if (handle instanceof DelegatingMethodHandle) {
-            return exceptionTypes(((DelegatingMethodHandle)handle).getTarget());
+        } else if (handle instanceof DelegatingMethodHandle delegatingMh) {
+            return exceptionTypes(delegatingMh.getTarget());
         } else if (handle instanceof NativeMethodHandle) {
             return new Class<?>[0];
         }

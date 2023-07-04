@@ -55,7 +55,7 @@ import com.sun.tools.javac.util.StringUtils;
  * deletion without notice.</b>
  */
 @SupportedAnnotationTypes("*")
-@SupportedSourceVersion(SourceVersion.RELEASE_21)
+@SupportedSourceVersion(SourceVersion.RELEASE_22)
 public class PrintingProcessor extends AbstractProcessor {
     PrintWriter writer;
 
@@ -118,6 +118,7 @@ public class PrintingProcessor extends AbstractProcessor {
         }
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @SuppressWarnings("preview") // isUnnamed
         public PrintingElementVisitor visitExecutable(ExecutableElement e, Boolean p) {
             ElementKind kind = e.getKind();
 
@@ -125,18 +126,26 @@ public class PrintingProcessor extends AbstractProcessor {
                 kind != INSTANCE_INIT) {
                 Element enclosing = e.getEnclosingElement();
 
-                // Don't print out the constructor of an anonymous class
+                // Don't print out the constructor of an anonymous or unnamed class
                 if (kind == CONSTRUCTOR &&
                     enclosing != null &&
-                    NestingKind.ANONYMOUS ==
+                    (NestingKind.ANONYMOUS ==
                     // Use an anonymous class to determine anonymity!
                     (new SimpleElementVisitor14<NestingKind, Void>() {
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public NestingKind visitType(TypeElement e, Void p) {
                             return e.getNestingKind();
                         }
-                    }).visit(enclosing))
+                    }).visit(enclosing)
+                    || // Don't print the constructor of an unnamed class
+                    (new SimpleElementVisitor14<Boolean, Void>(false) {
+                        @Override @DefinedBy(Api.LANGUAGE_MODEL)
+                        public Boolean visitType(TypeElement e, Void p) {
+                            return e.isUnnamed();
+                        }
+                    }).visit(enclosing)) ) {
                     return this;
+                }
 
                 defaultAction(e, true);
                 printFormalTypeParameters(e, true);
@@ -169,6 +178,7 @@ public class PrintingProcessor extends AbstractProcessor {
 
 
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
+        @SuppressWarnings("preview") // isUnnamed
         public PrintingElementVisitor visitType(TypeElement e, Boolean p) {
             ElementKind kind = e.getKind();
             NestingKind nestingKind = e.getNestingKind();
@@ -202,6 +212,14 @@ public class PrintingProcessor extends AbstractProcessor {
                         printParameters(constructors.get(0));
                 }
                 writer.print(")");
+            } else if (e.isUnnamed()) {
+                writer.println("// Unnamed class in file whose name starts with " + e.getSimpleName());
+
+                for(Element element : e.getEnclosedElements()) {
+                    this.visit(element);
+                }
+
+                return this;
             } else {
                 if (nestingKind == TOP_LEVEL) {
                     PackageElement pkg = elementUtils.getPackageOf(e);
@@ -297,7 +315,7 @@ public class PrintingProcessor extends AbstractProcessor {
             if (kind == ENUM_CONSTANT)
                 writer.print(e.getSimpleName());
             else {
-                writer.print(e.asType().toString() + " " + e.getSimpleName() );
+                writer.print(e.asType().toString() + " " + (e.getSimpleName().isEmpty() ? "_" : e.getSimpleName()));
                 Object constantValue  = e.getConstantValue();
                 if (constantValue != null) {
                     writer.print(" = ");

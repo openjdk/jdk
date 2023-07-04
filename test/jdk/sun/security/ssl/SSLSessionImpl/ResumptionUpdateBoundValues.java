@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @library /test/lib
+ * @library /test/lib /javax/net/ssl/templates
  * @summary Test that a New Session Ticket will be generated when a
  * SSLSessionBindingListener is set (boundValues)
  * @key intermittent
@@ -48,7 +48,7 @@ import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.Utils;
 
-public class ResumptionUpdateBoundValues {
+public class ResumptionUpdateBoundValues extends SSLContextTemplate {
 
     static boolean separateServerThread = true;
 
@@ -77,8 +77,7 @@ public class ResumptionUpdateBoundValues {
      * to avoid infinite hangs.
      */
     void doServerSide() throws Exception {
-        SSLServerSocketFactory sslssf =
-            (SSLServerSocketFactory) SSLServerSocketFactory.getDefault();
+        SSLServerSocketFactory sslssf = createServerSSLContext().getServerSocketFactory();
         SSLServerSocket sslServerSocket =
             (SSLServerSocket) sslssf.createServerSocket(serverPort);
         serverPort = sslServerSocket.getLocalPort();
@@ -123,8 +122,7 @@ public class ResumptionUpdateBoundValues {
             Thread.sleep(50);
         }
 
-        SSLSocketFactory sslsf =
-            (SSLSocketFactory) SSLSocketFactory.getDefault();
+        SSLSocketFactory sslsf = createClientSSLContext().getSocketFactory();
 
         try {
                 SSLSocket sslSocket = (SSLSocket)
@@ -210,17 +208,6 @@ public class ResumptionUpdateBoundValues {
             return;
         }
 
-        String keyFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + keyStoreFile;
-        String trustFilename =
-            System.getProperty("test.src", "./") + "/" + pathToStores +
-                "/" + trustStoreFile;
-        System.setProperty("javax.net.ssl.keyStore", keyFilename);
-        System.setProperty("javax.net.ssl.keyStorePassword", passwd);
-        System.setProperty("javax.net.ssl.trustStore", trustFilename);
-        System.setProperty("javax.net.ssl.trustStorePassword", passwd);
-
         if (debug)
             System.setProperty("javax.net.debug", "all");
 
@@ -228,19 +215,14 @@ public class ResumptionUpdateBoundValues {
          * Start the tests.
          */
 
-        new ResumptionUpdateBoundValues();
+        new ResumptionUpdateBoundValues().run();
     }
 
     ArrayBlockingQueue<Thread> threads = new ArrayBlockingQueue<Thread>(100);
 
     ArrayBlockingQueue<SBListener> sbListeners = new ArrayBlockingQueue<>(100);
 
-    /*
-     * Primary constructor, used to drive remainder of the test.
-     *
-     * Fork off the other side, then do your work.
-     */
-    ResumptionUpdateBoundValues() throws Exception {
+    private void run() throws Exception {
         final int count = 1;
         if (separateServerThread) {
             startServer(true);

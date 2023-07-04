@@ -378,6 +378,15 @@ Defaults to 4.
 Sets the argument `-timeoutHandlerTimeout` for JTReg. The default value is 0.
 This is only valid if the failure handler is built.
 
+#### JTREG_TEST_THREAD_FACTORY
+
+Sets the `-testThreadFactory` for JTReg. It should be the fully qualified classname
+of a class which implements `java.util.concurrent.ThreadFactory`.
+One such implementation class, named Virtual, is currently part of the JDK build
+in the `test/jtreg_test_thread_factory/` directory. This class gets compiled during
+the test image build. The implementation of the Virtual class creates a new virtual
+thread for executing each test class.
+
 #### TEST_MODE
 
 The test mode (`agentvm` or `othervm`).

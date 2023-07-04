@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "runtime/javaThread.hpp"
 
 template <template <typename> class ElementPolicy>
-JfrEpochQueue<ElementPolicy>::JfrEpochQueue() : _storage(NULL) {}
+JfrEpochQueue<ElementPolicy>::JfrEpochQueue() : _storage(nullptr) {}
 
 template <template <typename> class ElementPolicy>
 JfrEpochQueue<ElementPolicy>::~JfrEpochQueue() {
@@ -40,9 +40,9 @@ JfrEpochQueue<ElementPolicy>::~JfrEpochQueue() {
 
 template <template <typename> class ElementPolicy>
 bool JfrEpochQueue<ElementPolicy>::initialize(size_t min_buffer_size, size_t free_list_cache_count_limit, size_t cache_prealloc_count) {
-  assert(_storage == NULL, "invariant");
+  assert(_storage == nullptr, "invariant");
   _storage = new JfrEpochStorage();
-  return _storage != NULL && _storage->initialize(min_buffer_size, free_list_cache_count_limit, cache_prealloc_count);
+  return _storage != nullptr && _storage->initialize(min_buffer_size, free_list_cache_count_limit, cache_prealloc_count);
 }
 
 template <template <typename> class ElementPolicy>

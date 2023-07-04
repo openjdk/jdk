@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,13 @@ public interface JMXConnector extends Closeable {
      * cannot be created, for instance because the connection to the remote
      * MBean server has not yet been established (with the {@link #connect(Map)
      * connect} method), or it has been closed, or it has broken.
+     *
+     * @deprecated This method supported the legacy Subject Delegation feature,
+     * and is only useful in conjunction with other APIs which are deprecated and
+     * subject to removal in a future release. Consequently, this method is also
+     * deprecated and subject to removal. There is no replacement.
      */
+    @Deprecated(since="21", forRemoval=true)
     public MBeanServerConnection getMBeanServerConnection(
                                                Subject delegationSubject)
             throws IOException;

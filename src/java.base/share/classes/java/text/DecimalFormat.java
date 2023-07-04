@@ -264,6 +264,16 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * formatted using the localized minus sign, <em>not</em> the prefix and suffix
  * from the pattern.  This allows patterns such as {@code "0.###E0 m/s"}.
  *
+ * <li>The <em>maximum integer</em> digits is the sum of '0's and '#'s
+ * prior to the decimal point. The <em>minimum integer</em> digits is the
+ * sum of the '0's prior to the decimal point. The <em>maximum fraction</em>
+ * and <em>minimum fraction</em> digits follow the same rules, but apply to the
+ * digits after the decimal point but before the exponent. For example, the
+ * following pattern: {@code "#00.0####E0"} would have a minimum number of
+ * integer digits = 2("00") and a maximum number of integer digits = 3("#00"). It
+ * would have a minimum number of fraction digits = 1("0") and a maximum number of fraction
+ * digits= 5("0####").
+ *
  * <li>The minimum and maximum number of integer digits are interpreted
  * together:
  *
@@ -282,12 +292,37 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  * {@code "12.3E-4"}.
  * </ul>
  *
- * <li>The number of significant digits in the mantissa is the sum of the
- * <em>minimum integer</em> and <em>maximum fraction</em> digits, and is
- * unaffected by the maximum integer digits.  For example, 12345 formatted with
- * {@code "##0.##E0"} is {@code "12.3E3"}. To show all digits, set
- * the significant digits count to zero.  The number of significant digits
+ * <li>For a given number, the amount of significant digits in
+ * the mantissa can be calculated as such
+ *
+ * <blockquote><pre>
+ * <i>Mantissa Digits:</i>
+ *         min(max(Minimum Pattern Digits, Original Number Digits), Maximum Pattern Digits)
+ * <i>Minimum pattern Digits:</i>
+ *         <i>Minimum Integer Digits</i> + <i>Minimum Fraction Digits</i>
+ * <i>Maximum pattern Digits:</i>
+ *         <i>Maximum Integer Digits</i> + <i>Maximum Fraction Digits</i>
+ * <i>Original Number Digits:</i>
+ *         The amount of significant digits in the number to be formatted
+ * </pre></blockquote>
+ *
+ * This means that generally, a mantissa will have up to the combined maximum integer
+ * and fraction digits, if the original number itself has enough significant digits. However,
+ * if there are more minimum pattern digits than significant digits in the original number,
+ * the mantissa will have significant digits that equals the combined
+ * minimum integer and fraction digits. The number of significant digits
  * does not affect parsing.
+ *
+ * <p>It should be noted, that the integer portion of the mantissa will give
+ * any excess digits to the fraction portion, whether it be for precision or
+ * for satisfying the total amount of combined minimum digits.
+ *
+ * <p>This behavior can be observed in the following example,
+ * {@snippet lang=java :
+ *     DecimalFormat df = new DecimalFormat("#000.000##E0");
+ *     df.format(12); // returns "12.0000E0"
+ *     df.format(123456789) // returns "1.23456789E8"
+ * }
  *
  * <li>Exponential patterns may not contain grouping separators.
  * </ul>
@@ -308,8 +343,8 @@ import sun.util.locale.provider.ResourceBundleBasedAdapter;
  *
  * <h4>Special Values</h4>
  *
- * <p>{@code NaN} is formatted as a string, which typically has a single character
- * {@code U+FFFD}.  This string is determined by the
+ * <p>Not a Number({@code NaN}) is formatted as a string, which typically has a
+ * single character {@code U+FFFD}.  This string is determined by the
  * {@code DecimalFormatSymbols} object.  This is the only value for which
  * the prefixes and suffixes are not used.
  *

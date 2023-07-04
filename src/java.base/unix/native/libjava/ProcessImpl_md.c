@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -487,17 +487,21 @@ static pid_t
 spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) {
     pid_t resultPid;
     int i, offset, rval, bufsize, magic;
-    char *buf, buf1[16];
-    char *hlpargs[2];
+    char *buf, buf1[(3 * 11) + 3]; // "%d:%d:%d\0"
+    char *hlpargs[3];
     SpawnInfo sp;
 
     /* need to tell helper which fd is for receiving the childstuff
      * and which fd to send response back on
      */
-    snprintf(buf1, sizeof(buf1), "%d:%d", c->childenv[0], c->fail[1]);
-    /* put the fd string as argument to the helper cmd */
-    hlpargs[0] = buf1;
-    hlpargs[1] = 0;
+    snprintf(buf1, sizeof(buf1), "%d:%d:%d", c->childenv[0], c->childenv[1], c->fail[1]);
+    /* NULL-terminated argv array.
+     * argv[0] contains path to jspawnhelper, to follow conventions.
+     * argv[1] contains the fd string as argument to jspawnhelper
+     */
+    hlpargs[0] = (char*)helperpath;
+    hlpargs[1] = buf1;
+    hlpargs[2] = NULL;
 
     /* Following items are sent down the pipe to the helper
      * after it is spawned.
@@ -527,7 +531,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         if (c->fds[i] != -1) {
             int flags = fcntl(c->fds[i], F_GETFD);
             if (flags & FD_CLOEXEC) {
-                fcntl(c->fds[i], F_SETFD, flags & (~1));
+                fcntl(c->fds[i], F_SETFD, flags & (~FD_CLOEXEC));
             }
         }
     }
@@ -537,6 +541,10 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     if (rval != 0) {
         return -1;
     }
+
+#ifdef DEBUG
+    jtregSimulateCrash(resultPid, 1);
+#endif
 
     /* now the lengths are known, copy the data */
     buf = NEW(char, bufsize);
@@ -553,11 +561,24 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     magic = magicNumber();
 
     /* write the two structs and the data buffer */
-    write(c->childenv[1], (char *)&magic, sizeof(magic)); // magic number first
-    write(c->childenv[1], (char *)c, sizeof(*c));
-    write(c->childenv[1], (char *)&sp, sizeof(sp));
-    write(c->childenv[1], buf, bufsize);
+    if (writeFully(c->childenv[1], (char *)&magic, sizeof(magic)) != sizeof(magic)) { // magic number first
+        return -1;
+    }
+#ifdef DEBUG
+    jtregSimulateCrash(resultPid, 2);
+#endif
+    if (writeFully(c->childenv[1], (char *)c, sizeof(*c)) != sizeof(*c) ||
+        writeFully(c->childenv[1], (char *)&sp, sizeof(sp)) != sizeof(sp) ||
+        writeFully(c->childenv[1], buf, bufsize) != bufsize) {
+        return -1;
+    }
+    /* We're done. Let jspwanhelper know he can't expect any more data from us. */
+    close(c->childenv[1]);
+    c->childenv[1] = -1;
     free(buf);
+#ifdef DEBUG
+    jtregSimulateCrash(resultPid, 3);
+#endif
 
     /* In this mode an external main() in invoked which calls back into
      * childProcess() in this file, rather than directly
@@ -610,6 +631,8 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
 
     in[0] = in[1] = out[0] = out[1] = err[0] = err[1] = fail[0] = fail[1] = -1;
     childenv[0] = childenv[1] = -1;
+    // Reset errno to protect against bogus error messages
+    errno = 0;
 
     if ((c = NEW(ChildStuff, 1)) == NULL) return -1;
     c->argv = NULL;
@@ -708,11 +731,9 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
                 goto Catch;
             }
         case sizeof(errnum):
-            assert(errnum == CHILD_IS_ALIVE);
             if (errnum != CHILD_IS_ALIVE) {
-                /* Should never happen since the first thing the spawn
-                 * helper should do is to send an alive ping to the parent,
-                 * before doing any subsequent work. */
+                /* This can happen if the spawn helper encounters an error
+                 * before or during the handshake with the parent. */
                 throwIOException(env, 0, "Bad code from spawn helper "
                                          "(Failed to exec spawn helper)");
                 goto Catch;
@@ -748,8 +769,12 @@ Java_java_lang_ProcessImpl_forkAndExec(JNIEnv *env,
     /* Always clean up fail and childEnv descriptors */
     closeSafely(fail[0]);
     closeSafely(fail[1]);
-    closeSafely(childenv[0]);
-    closeSafely(childenv[1]);
+    /* We use 'c->childenv' here rather than 'childenv' because 'spawnChild()' might have
+     * already closed 'c->childenv[1]' and signaled this by setting 'c->childenv[1]' to '-1'.
+     * Otherwise 'c->childenv' and 'childenv' are the same because we just copied 'childenv'
+     * to 'c->childenv' (with 'copyPipe()') before calling 'startChild()'. */
+    closeSafely(c->childenv[0]);
+    closeSafely(c->childenv[1]);
 
     releaseBytes(env, helperpath, phelperpath);
     releaseBytes(env, prog,       pprog);

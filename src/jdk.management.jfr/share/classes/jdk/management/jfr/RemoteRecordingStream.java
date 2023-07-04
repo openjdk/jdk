@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,8 +109,8 @@ public final class RemoteRecordingStream implements EventStream {
 
         @Override
         public void with(String name, String value) {
-            Objects.requireNonNull(name);
-            Objects.requireNonNull(value);
+            Objects.requireNonNull(name, "name");
+            Objects.requireNonNull(value, "value");
             // FlightRecorderMXBean implementation always returns
             // new instance of Map so no need to create new here.
             Map<String, String> newSettings = getEventSettings();
@@ -210,12 +210,12 @@ public final class RemoteRecordingStream implements EventStream {
     }
 
     @SuppressWarnings("removal")
-    private RemoteRecordingStream(MBeanServerConnection connection, Path dir, boolean delete) throws IOException {
-        Objects.requireNonNull(connection);
-        Objects.requireNonNull(dir);
+    private RemoteRecordingStream(MBeanServerConnection connection, Path directory, boolean delete) throws IOException {
+        Objects.requireNonNull(connection, "connection");
+        Objects.requireNonNull(directory, "directory");
         accessControllerContext = AccessController.getContext();
         // Make sure users can't implement malicious version of a Path object.
-        path = Paths.get(dir.toString());
+        path = Paths.get(directory.toString());
         if (!Files.exists(path)) {
             throw new IOException("Download directory doesn't exist");
         }
@@ -334,7 +334,7 @@ public final class RemoteRecordingStream implements EventStream {
      * @see Recording#setSettings(Map)
      */
     public void setSettings(Map<String, String> settings) {
-        Objects.requireNonNull(settings);
+        Objects.requireNonNull(settings, "settings");
         try {
             mbean.setRecordingSettings(recordingId, settings);
         } catch (Exception e) {
@@ -355,7 +355,7 @@ public final class RemoteRecordingStream implements EventStream {
      *
      */
     public EventSettings disable(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         EventSettings s = ManagementSupport.newEventSettings(new RemoteSettings(mbean, recordingId));
         try {
             return s.with(name + "#" + ENABLED, "false");
@@ -379,7 +379,7 @@ public final class RemoteRecordingStream implements EventStream {
      * @see EventType
      */
     public EventSettings enable(String name) {
-        Objects.requireNonNull(name);
+        Objects.requireNonNull(name, "name");
         EventSettings s = ManagementSupport.newEventSettings(new RemoteSettings(mbean, recordingId));
         try {
             return s.with(name + "#" + ENABLED, "true");
@@ -410,7 +410,6 @@ public final class RemoteRecordingStream implements EventStream {
      *                                  state
      */
     public void setMaxAge(Duration maxAge) {
-        Objects.requireNonNull(maxAge);
         synchronized (lock) {
             repository.setMaxAge(maxAge);
             this.maxAge = maxAge;
@@ -657,7 +656,7 @@ public final class RemoteRecordingStream implements EventStream {
      * @since 17
      */
     public void dump(Path destination) throws IOException {
-        Objects.requireNonNull(destination);
+        Objects.requireNonNull(destination, "destination");
         long id = -1;
         try {
             FileDump fileDump;

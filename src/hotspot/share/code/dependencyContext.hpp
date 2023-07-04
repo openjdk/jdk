@@ -32,6 +32,7 @@
 #include "runtime/safepoint.hpp"
 
 class nmethod;
+class DeoptimizationScope;
 class DepChange;
 
 //
@@ -117,10 +118,10 @@ class DependencyContext : public StackObj {
 
   static void init();
 
-  int  mark_dependent_nmethods(DepChange& changes);
+  void mark_dependent_nmethods(DeoptimizationScope* deopt_scope, DepChange& changes);
   void add_dependent_nmethod(nmethod* nm);
   void remove_all_dependents();
-  int  remove_and_mark_for_deoptimization_all_dependents();
+  void remove_and_mark_for_deoptimization_all_dependents(DeoptimizationScope* deopt_scope);
   void clean_unloading_dependents();
   static nmethodBucket* release_and_get_next_not_unloading(nmethodBucket* b);
   static void purge_dependency_contexts();

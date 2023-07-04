@@ -89,8 +89,9 @@ public class SearchWriter extends HtmlDocletWriter {
      */
     protected void addSearchFileContents(Content contentTree) {
 
-        String copyText = resources.getText("doclet.Copy_url_to_clipboard");
-        String copiedText = resources.getText("doclet.Copied_url_to_clipboard");
+        String copyText = resources.getText("doclet.Copy_to_clipboard");
+        String copiedText = resources.getText("doclet.Copied_to_clipboard");
+        String copyUrlText = resources.getText("doclet.Copy_url_to_clipboard");
         Content helpSection = Text.EMPTY;
         // Suppress link to help page if no help page is generated or a custom help page is used.
         HtmlOptions options = configuration.getOptions();
@@ -117,10 +118,11 @@ public class SearchWriter extends HtmlDocletWriter {
                         .add(new HtmlTree(TagName.BUTTON)
                                 .add(new HtmlTree(TagName.IMG)
                                         .put(HtmlAttr.SRC, pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
-                                        .put(HtmlAttr.ALT, copyText))
+                                        .put(HtmlAttr.ALT, copyUrlText))
                                 .add(HtmlTree.SPAN(Text.of(copyText))
                                         .put(HtmlAttr.DATA_COPIED, copiedText))
                                 .addStyle(HtmlStyle.copy)
+                                .put(HtmlAttr.ARIA_LABEL, copyUrlText)
                                 .setId(HtmlId.of("page-search-copy")))
                         .add(HtmlTree.P(HtmlTree.INPUT("checkbox", HtmlId.of("search-redirect")))
                                 .add(HtmlTree.LABEL("search-redirect",

@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2022 Marti Maria Saguer
+//  Copyright (c) 1998-2023 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -1968,13 +1968,15 @@ cmsBool CMSEXPORT cmsIT8SaveToMem(cmsHANDLE hIT8, void *MemPtr, cmsUInt32Number*
     memset(&sd, 0, sizeof(sd));
 
     sd.stream = NULL;
-    sd.Base   = (cmsUInt8Number*)  MemPtr;
+    sd.Base   = (cmsUInt8Number*) MemPtr;
     sd.Ptr    = sd.Base;
 
     sd.Used = 0;
 
-    if (sd.Base)
-        sd.Max  = *BytesNeeded;     // Write to memory?
+    if (sd.Base && (*BytesNeeded > 0)) {
+
+        sd.Max = (*BytesNeeded) - 1;     // Write to memory?
+    }
     else
         sd.Max  = 0;                // Just counting the needed bytes
 

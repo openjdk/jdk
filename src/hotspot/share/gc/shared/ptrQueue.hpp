@@ -165,7 +165,7 @@ public:
 // We use BufferNode::AllocatorConfig to set the allocation options for the
 // FreeListAllocator.
 class BufferNode::AllocatorConfig : public FreeListConfig {
-  const size_t _buffer_size;
+  const size_t _buffer_capacity;
 public:
   explicit AllocatorConfig(size_t size);
 
@@ -175,7 +175,7 @@ public:
 
   void deallocate(void* node) override;
 
-  size_t buffer_size() const { return _buffer_size; }
+  size_t buffer_capacity() const { return _buffer_capacity; }
 };
 
 class BufferNode::Allocator {
@@ -187,10 +187,10 @@ class BufferNode::Allocator {
   NONCOPYABLE(Allocator);
 
 public:
-  Allocator(const char* name, size_t buffer_size);
+  Allocator(const char* name, size_t buffer_capacity);
   ~Allocator() = default;
 
-  size_t buffer_size() const { return _config.buffer_size(); }
+  size_t buffer_capacity() const { return _config.buffer_capacity(); }
   size_t free_count() const;
   BufferNode* allocate();
   void release(BufferNode* node);
@@ -236,11 +236,11 @@ public:
   // Return the associated BufferNode allocator.
   BufferNode::Allocator* allocator() const { return _allocator; }
 
-  // Return the buffer for a BufferNode of size buffer_size().
+  // Return the buffer for a BufferNode of size buffer_capacity().
   void** allocate_buffer();
 
   // Return an empty buffer to the free list.  The node is required
-  // to have been allocated with a size of buffer_size().
+  // to have been allocated with a size of buffer_capacity().
   void deallocate_buffer(BufferNode* node);
 
   // A completed buffer is a buffer the mutator is finished with, and
@@ -249,8 +249,8 @@ public:
   // Adds node to the completed buffer list.
   virtual void enqueue_completed_buffer(BufferNode* node) = 0;
 
-  size_t buffer_size() const {
-    return _allocator->buffer_size();
+  size_t buffer_capacity() const {
+    return _allocator->buffer_capacity();
   }
 };
 

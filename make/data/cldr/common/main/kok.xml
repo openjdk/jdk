@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -243,6 +243,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<language type="li">लिंबर्गिश</language>
 			<language type="lil">लल्युएत</language>
 			<language type="lkt">लाकोटा</language>
+			<language type="lmo">लोमबार्ड</language>
 			<language type="ln">लिंगाला</language>
 			<language type="lo">लाओ</language>
 			<language type="lou">ल्युइसियाना क्रियोल</language>
@@ -808,7 +809,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="TN">ट्यूनीशिया</territory>
 			<territory type="TO">टोंगा</territory>
 			<territory type="TR">तुर्की</territory>
-			<territory type="TR" alt="variant">तुर्कीए</territory>
 			<territory type="TT">ट्रिनीदाद आनी टोबॅगो</territory>
 			<territory type="TV">टुवालू</territory>
 			<territory type="TW">तायवान</territory>
@@ -1355,11 +1355,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						</quarterWidth>
 					</quarterContext>
 					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">Q1</quarter>
+							<quarter type="2">Q2</quarter>
+							<quarter type="3">Q3</quarter>
+							<quarter type="4">Q4</quarter>
+						</quarterWidth>
 						<quarterWidth type="narrow">
 							<quarter type="1">1</quarter>
 							<quarter type="2">2</quarter>
 							<quarter type="3">3</quarter>
 							<quarter type="4">4</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">1लें त्रैमासीक</quarter>
+							<quarter type="2">2रें त्रैमासीक</quarter>
+							<quarter type="3">3रें त्रैमासीक</quarter>
+							<quarter type="4">4थें त्रैमासीक</quarter>
 						</quarterWidth>
 					</quarterContext>
 				</quarters>
@@ -1809,6 +1821,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-short">
 				<displayName>वर्स</displayName>
+				<relative type="-1">फाटलें वर्स</relative>
+				<relative type="0">हें वर्स</relative>
+				<relative type="1">फुडलें वर्स</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} वर्सांनीं</relativeTimePattern>
 				</relativeTime>
@@ -1818,6 +1833,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="year-narrow">
 				<displayName>वर्स</displayName>
+				<relative type="-1">फाटलें वर्स</relative>
+				<relative type="0">हें वर्स</relative>
+				<relative type="1">फुडलें वर्स</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} वर्सांनीं</relativeTimePattern>
 				</relativeTime>
@@ -1869,6 +1887,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-short">
 				<displayName>म्हयनो</displayName>
+				<relative type="-1">फाटलो म्हयनो</relative>
+				<relative type="0">हो म्हयनो</relative>
+				<relative type="1">फुडलो म्हयनो</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} म्हयन्यानीं</relativeTimePattern>
 				</relativeTime>
@@ -1878,6 +1899,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="month-narrow">
 				<displayName>म्हयनो</displayName>
+				<relative type="-1">फाटलो म्हयनो</relative>
+				<relative type="0">हो म्हयनो</relative>
+				<relative type="1">फुडलो म्हयनो</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} म्हयन्यानीं</relativeTimePattern>
 				</relativeTime>
@@ -1900,6 +1924,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-short">
 				<displayName>सप्तक</displayName>
+				<relative type="-1">निमाणो सप्तक</relative>
+				<relative type="0">हो सप्तक</relative>
+				<relative type="1">फुडलो सप्तक</relative>
+				<relativeTime type="future">
+					<relativeTimePattern count="other">{0} सप्तकांनीं</relativeTimePattern>
+				</relativeTime>
 				<relativeTime type="past">
 					<relativeTimePattern count="other">{0} सप्तकां आदीं</relativeTimePattern>
 				</relativeTime>
@@ -1907,6 +1937,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="week-narrow">
 				<displayName>सप्तक</displayName>
+				<relative type="-1">निमाणो सप्तक</relative>
+				<relative type="0">हो सप्तक</relative>
+				<relative type="1">फुडलो सप्तक</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} सप्तकांनीं</relativeTimePattern>
 				</relativeTime>
@@ -1938,6 +1971,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-short">
 				<displayName>दीस</displayName>
+				<relative type="-1">काल</relative>
+				<relative type="0">आयज</relative>
+				<relative type="1">फाल्यां</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} दिसानीं</relativeTimePattern>
 				</relativeTime>
@@ -1947,6 +1983,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</field>
 			<field type="day-narrow">
 				<displayName>दीस</displayName>
+				<relative type="-1">काल</relative>
+				<relative type="0">आयज</relative>
+				<relative type="1">फाल्यां</relative>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} दिसानीं</relativeTimePattern>
 				</relativeTime>
@@ -2297,6 +2336,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				</relativeTime>
 			</field>
 			<field type="second-narrow">
+				<displayName>सेकंद</displayName>
 				<relativeTime type="future">
 					<relativeTimePattern count="other">{0} सेकंदानीं</relativeTimePattern>
 				</relativeTime>
@@ -3112,6 +3152,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</zone>
 			<zone type="America/Hermosillo">
 				<exemplarCity>हर्मोसिलो</exemplarCity>
+			</zone>
+			<zone type="America/Ciudad_Juarez">
+				<exemplarCity>सिउदाद जुआरेज</exemplarCity>
 			</zone>
 			<zone type="America/Mazatlan">
 				<exemplarCity>माझाट्लान</exemplarCity>
@@ -5008,6 +5051,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</currency>
 			<currency type="INR">
 				<displayName>भारतीय रुपया</displayName>
+				<displayName count="other">भारतीय रुपया</displayName>
 				<symbol>₹</symbol>
 				<symbol alt="narrow">₹</symbol>
 			</currency>
@@ -5827,6 +5871,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} वर्सां</unitPattern>
 				<perUnitPattern>दर वर्सा {0}</perUnitPattern>
 			</unit>
+			<unit type="duration-quarter">
+				<displayName>qtr</displayName>
+				<unitPattern count="other">{0} q</unitPattern>
+				<perUnitPattern>{0}/q</perUnitPattern>
+			</unit>
 			<unit type="duration-month">
 				<displayName>म्हयने</displayName>
 				<unitPattern count="other">{0} म्हयने</unitPattern>
@@ -6108,6 +6157,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>मिलिग्राम</displayName>
 				<unitPattern count="other">{0} मिलिग्राम</unitPattern>
 			</unit>
+			<unit type="mass-microgram">
+				<displayName>μg</displayName>
+				<unitPattern count="other">{0} μg</unitPattern>
+			</unit>
 			<unit type="mass-ton">
 				<displayName>टन</displayName>
 				<unitPattern count="other">{0} टन</unitPattern>
@@ -6230,6 +6283,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>नॉट</displayName>
 				<unitPattern count="other">{0} नॉट</unitPattern>
 			</unit>
+			<unit type="temperature-generic">
+				<displayName>°</displayName>
+				<unitPattern count="other">{0}°</unitPattern>
+			</unit>
 			<unit type="temperature-celsius">
 				<displayName>अंश सेल्सियस</displayName>
 				<unitPattern count="other">{0} अंश सेल्सियस</unitPattern>
@@ -6286,6 +6343,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			</unit>
 			<unit type="volume-hectoliter">
 				<displayName>हॅक्टोलीटर</displayName>
+				<unitPattern count="other">{0} hL</unitPattern>
 			</unit>
 			<unit type="volume-liter">
 				<displayName>लिटर</displayName>
@@ -7346,9 +7404,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<compoundUnitPattern>{0}/{1}</compoundUnitPattern>
 			</compoundUnit>
 			<compoundUnit type="power2">
+				<compoundUnitPattern1>{0}²</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}²</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="power3">
+				<compoundUnitPattern1>{0}³</compoundUnitPattern1>
 				<compoundUnitPattern1 count="other">{0}³</compoundUnitPattern1>
 			</compoundUnit>
 			<compoundUnit type="times">
@@ -7535,6 +7595,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>वर्सा</displayName>
 				<unitPattern count="other">{0}व</unitPattern>
 				<perUnitPattern>{0}/वर्सां</perUnitPattern>
+			</unit>
+			<unit type="duration-quarter">
+				<displayName>qtr</displayName>
+				<unitPattern count="other">{0} q</unitPattern>
+				<perUnitPattern>{0}/q</perUnitPattern>
 			</unit>
 			<unit type="duration-month">
 				<displayName>म्हयनो</displayName>
@@ -7784,12 +7849,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}R☉</unitPattern>
 			</unit>
 			<unit type="light-lux">
+				<displayName>लक्स</displayName>
 				<unitPattern count="other">{0}लक्स</unitPattern>
 			</unit>
 			<unit type="light-candela">
+				<displayName>cd</displayName>
 				<unitPattern count="other">{0}cd</unitPattern>
 			</unit>
 			<unit type="light-lumen">
+				<displayName>lm</displayName>
 				<unitPattern count="other">{0}lm</unitPattern>
 			</unit>
 			<unit type="light-solar-luminosity">
@@ -8036,6 +8104,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}bu</unitPattern>
 			</unit>
 			<unit type="volume-gallon">
+				<displayName>गॅ</displayName>
 				<unitPattern count="other">{0}गॅ</unitPattern>
 				<perUnitPattern>{0}/गॅ</perUnitPattern>
 			</unit>
@@ -8357,29 +8426,162 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	<personNames>
 		<nameOrderLocales order="givenFirst">und kok</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
-		<initialPattern type="initial">{0}.</initialPattern>
-		<initialPattern type="initialSequence">{0} {1}</initialPattern>
-		<sampleName item="givenOnly">
-			<nameField type="given">राज</nameField>
+		<personName order="givenFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
+			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
+			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+		</personName>
+		<personName order="sorting" length="long" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="medium" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="formal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<personName order="sorting" length="short" usage="referring" formality="informal">
+			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+		</personName>
+		<sampleName item="nativeG">
+			<nameField type="given">दिशा</nameField>
 		</sampleName>
-		<sampleName item="givenSurnameOnly">
-			<nameField type="given">कुमार</nameField>
-			<nameField type="surname">सिंग</nameField>
+		<sampleName item="nativeGS">
+			<nameField type="given">उमेश</nameField>
+			<nameField type="surname">भंडारकर</nameField>
 		</sampleName>
-		<sampleName item="given12Surname">
-			<nameField type="given">जय</nameField>
-			<nameField type="given2">प्रसाद</nameField>
-			<nameField type="surname">पटेल</nameField>
+		<sampleName item="nativeGGS">
+			<nameField type="given">अतुल</nameField>
+			<nameField type="given2">मनोहर</nameField>
+			<nameField type="surname">प्रभुकोंकार</nameField>
 		</sampleName>
-		<sampleName item="full">
-			<nameField type="prefix">प्रो. डॉ.</nameField>
+		<sampleName item="nativeFull">
+			<nameField type="title">श्री.</nameField>
+			<nameField type="given">उमेश भंडारकर</nameField>
+			<nameField type="given-informal">साक्षी</nameField>
+			<nameField type="given2">अनुसुया कुंकळ्येकार</nameField>
+			<nameField type="surname-prefix">∅∅∅</nameField>
+			<nameField type="surname-core">प्रभु</nameField>
+			<nameField type="surname2">मावजो</nameField>
+			<nameField type="generation">क.</nameField>
+			<nameField type="credentials">एमपी</nameField>
+		</sampleName>
+		<sampleName item="foreignG">
+			<nameField type="given">सिंदबाद</nameField>
+		</sampleName>
+		<sampleName item="foreignGS">
+			<nameField type="given">आरवी</nameField>
+			<nameField type="surname">कामत</nameField>
+		</sampleName>
+		<sampleName item="foreignGGS">
+			<nameField type="given">मनोहर</nameField>
+			<nameField type="given2">माधव</nameField>
+			<nameField type="surname">नायक</nameField>
+		</sampleName>
+		<sampleName item="foreignFull">
+			<nameField type="title">प्रो. डॉ.</nameField>
 			<nameField type="given">विक्रम सिंह</nameField>
 			<nameField type="given-informal">विकी</nameField>
 			<nameField type="given2">रामचरण दास</nameField>
-			<nameField type="surname-prefix">राज पुरोहित</nameField>
+			<nameField type="surname-prefix">शेणवी कुंकळ्येकार</nameField>
 			<nameField type="surname-core">शर्मा</nameField>
-			<nameField type="surname2">सरनाईक पाटिल</nameField>
-			<nameField type="suffix">बी.ए. एल.एल.बी</nameField>
+			<nameField type="surname2">सरदेसाय</nameField>
+			<nameField type="generation">जेआर</nameField>
+			<nameField type="credentials">बी.ए. एल.एल.बी</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

@@ -372,6 +372,8 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _tenuring_threshold = MaxTenuringThreshold;
   _pretenure_size_threshold_words = PretenureSizeThreshold >> LogHeapWordSize;
 
+  _ref_processor = nullptr;
+
   _gc_timer = new STWGCTimer();
 
   _gc_tracer = new DefNewTracer();
@@ -392,8 +394,12 @@ void DefNewGeneration::compute_space_boundaries(uintx minimum_eden_size,
   uintx survivor_size = compute_survivor_size(size, SpaceAlignment);
   uintx eden_size = size - (2*survivor_size);
   if (eden_size > max_eden_size()) {
-    eden_size = max_eden_size();
-    survivor_size = (size - eden_size)/2;
+    // Need to reduce eden_size to satisfy the max constraint. The delta needs
+    // to be 2*SpaceAlignment aligned so that both survivors are properly
+    // aligned.
+    uintx eden_delta = align_up(eden_size - max_eden_size(), 2*SpaceAlignment);
+    eden_size     -= eden_delta;
+    survivor_size += eden_delta/2;
   }
   assert(eden_size > 0 && survivor_size <= eden_size, "just checking");
 
@@ -615,6 +621,12 @@ void DefNewGeneration::compute_new_size() {
       }
 }
 
+void DefNewGeneration::ref_processor_init() {
+  assert(_ref_processor == nullptr, "a reference processor already exists");
+  assert(!_reserved.is_empty(), "empty generation?");
+  _span_based_discoverer.set_span(_reserved);
+  _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
+}
 
 size_t DefNewGeneration::capacity() const {
   return eden()->capacity()
@@ -720,11 +732,6 @@ void DefNewGeneration::collect(bool   full,
 
   SerialHeap* heap = SerialHeap::heap();
 
-  _gc_timer->register_gc_start();
-  _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
-
-  _old_gen = heap->old_gen();
-
   // If the next generation is too full to accommodate promotion
   // from this generation, pass on collection; let the next generation
   // do it.
@@ -734,6 +741,11 @@ void DefNewGeneration::collect(bool   full,
     return;
   }
   assert(to()->is_empty(), "Else not collection_attempt_is_safe");
+  _gc_timer->register_gc_start();
+  _gc_tracer->report_gc_start(heap->gc_cause(), _gc_timer->gc_start());
+  _ref_processor->start_discovery(clear_all_soft_refs);
+
+  _old_gen = heap->old_gen();
 
   init_assuming_no_promotion_failure();
 
@@ -818,10 +830,6 @@ void DefNewGeneration::collect(bool   full,
 
     adjust_desired_tenuring_threshold();
 
-    // A successful scavenge should restart the GC time limit count which is
-    // for full GC's.
-    AdaptiveSizePolicy* size_policy = heap->size_policy();
-    size_policy->reset_gc_overhead_limit_count();
     assert(!heap->incremental_collection_failed(), "Should be clear");
   } else {
     assert(_promo_failure_scan_stack.is_empty(), "post condition");
@@ -1110,7 +1118,7 @@ const char* DefNewGeneration::name() const {
 }
 
 // Moved from inline file as they are not called inline
-CompactibleSpace* DefNewGeneration::first_compaction_space() const {
+ContiguousSpace* DefNewGeneration::first_compaction_space() const {
   return eden();
 }
 

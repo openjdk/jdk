@@ -49,7 +49,7 @@
 // Implementation of AddressLiteral
 
 // A 2-D table for managing compressed displacement(disp8) on EVEX enabled platforms.
-unsigned char tuple_table[Assembler::EVEX_ETUP + 1][Assembler::AVX_512bit + 1] = {
+static const unsigned char tuple_table[Assembler::EVEX_ETUP + 1][Assembler::AVX_512bit + 1] = {
   // -----------------Table 4.5 -------------------- //
   16, 32, 64,  // EVEX_FV(0)
   4,  4,  4,   // EVEX_FV(1) - with Evex.b
@@ -214,9 +214,20 @@ void Assembler::init_attributes(void) {
   _legacy_mode_vl = (VM_Version::supports_avx512vl() == false);
   _legacy_mode_vlbw = (VM_Version::supports_avx512vlbw() == false);
   NOT_LP64(_is_managed = false;)
-  _attributes = NULL;
+  _attributes = nullptr;
 }
 
+void Assembler::set_attributes(InstructionAttr* attributes) {
+  // Record the assembler in the attributes, so the attributes destructor can
+  // clear the assembler's attributes, cleaning up the otherwise dangling
+  // pointer.  gcc13 has a false positive warning, because it doesn't tie that
+  // cleanup to the assignment of _attributes here.
+  attributes->set_current_assembler(this);
+  PRAGMA_DIAG_PUSH
+  PRAGMA_DANGLING_POINTER_IGNORED
+  _attributes = attributes;
+  PRAGMA_DIAG_POP
+}
 
 void Assembler::membar(Membar_mask_bits order_constraint) {
   // We only have to handle StoreLoad
@@ -264,7 +275,7 @@ void Assembler::emit_data(jint data, relocInfo::relocType rtype, int format) {
 
 void Assembler::emit_data(jint data, RelocationHolder const& rspec, int format) {
   assert(imm_operand == 0, "default format must be immediate in this file");
-  assert(inst_mark() != NULL, "must be inside InstructionMark");
+  assert(inst_mark() != nullptr, "must be inside InstructionMark");
   if (rspec.type() !=  relocInfo::none) {
     #ifdef ASSERT
       check_relocation(rspec, format);
@@ -684,7 +695,7 @@ void Assembler::emit_operand_helper(int reg_enc, int base_enc, int index_enc,
       // disp was created by converting the target address minus the pc
       // at the start of the instruction. That needs more correction here.
       // intptr_t disp = target - next_ip;
-      assert(inst_mark() != NULL, "must be inside InstructionMark");
+      assert(inst_mark() != nullptr, "must be inside InstructionMark");
       address next_ip = pc() + sizeof(int32_t) + post_addr_length;
       int64_t adjusted = disp;
       // Do rip-rel adjustment for 64bit
@@ -1234,7 +1245,7 @@ address Assembler::locate_next_instruction(address inst) {
 #ifdef ASSERT
 void Assembler::check_relocation(RelocationHolder const& rspec, int format) {
   address inst = inst_mark();
-  assert(inst != NULL && inst < pc(), "must point to beginning of instruction");
+  assert(inst != nullptr && inst < pc(), "must point to beginning of instruction");
   address opnd;
 
   Relocation* r = rspec.reloc();
@@ -1313,6 +1324,13 @@ void Assembler::addb(Address dst, int imm8) {
   emit_int8(imm8);
 }
 
+void Assembler::addb(Address dst, Register src) {
+  InstructionMark im(this);
+  prefix(dst, src);
+  emit_int8(0x00);
+  emit_operand(src, dst, 0);
+}
+
 void Assembler::addw(Register dst, Register src) {
   emit_int8(0x66);
   (void)prefix_and_encode(dst->encoding(), src->encoding());
@@ -1326,6 +1344,14 @@ void Assembler::addw(Address dst, int imm16) {
   emit_int8((unsigned char)0x81);
   emit_operand(rax, dst, 2);
   emit_int16(imm16);
+}
+
+void Assembler::addw(Address dst, Register src) {
+  InstructionMark im(this);
+  emit_int8(0x66);
+  prefix(dst, src);
+  emit_int8(0x01);
+  emit_operand(src, dst, 0);
 }
 
 void Assembler::addl(Address dst, Register src) {
@@ -1690,8 +1716,8 @@ void Assembler::call_literal(address entry, RelocationHolder const& rspec) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xE8);
   intptr_t disp = entry - (pc() + sizeof(int32_t));
-  // Entry is NULL in case of a scratch emit.
-  assert(entry == NULL || is_simm32(disp), "disp=" INTPTR_FORMAT " must be 32bit offset (call2)", disp);
+  // Entry is null in case of a scratch emit.
+  assert(entry == nullptr || is_simm32(disp), "disp=" INTPTR_FORMAT " must be 32bit offset (call2)", disp);
   // Technically, should use call32_operand, but this format is
   // implied by the fact that we're emitting a call instruction.
 
@@ -1896,7 +1922,7 @@ void Assembler::crc32(Register crc, Address adr, int8_t sizeInBytes) {
   int8_t w = 0x01;
   Prefix p = Prefix_EMPTY;
 
-  emit_int8((int8_t)0xF2);
+  emit_int8((uint8_t)0xF2);
   switch (sizeInBytes) {
   case 1:
     w = 0;
@@ -2404,7 +2430,7 @@ void Assembler::jcc(Condition cc, Label& L, bool maybe_short) {
   assert((0 <= cc) && (cc < 16), "illegal cc");
   if (L.is_bound()) {
     address dst = target(L);
-    assert(dst != NULL, "jcc most probably wrong");
+    assert(dst != nullptr, "jcc most probably wrong");
 
     const int short_size = 2;
     const int long_size = 6;
@@ -2462,7 +2488,7 @@ void Assembler::jmp(Address adr) {
 void Assembler::jmp(Label& L, bool maybe_short) {
   if (L.is_bound()) {
     address entry = target(L);
-    assert(entry != NULL, "jmp most probably wrong");
+    assert(entry != nullptr, "jmp most probably wrong");
     InstructionMark im(this);
     const int short_size = 2;
     const int long_size = 5;
@@ -2493,17 +2519,17 @@ void Assembler::jmp(Register entry) {
 void Assembler::jmp_literal(address dest, RelocationHolder const& rspec) {
   InstructionMark im(this);
   emit_int8((unsigned char)0xE9);
-  assert(dest != NULL, "must have a target");
+  assert(dest != nullptr, "must have a target");
   intptr_t disp = dest - (pc() + sizeof(int32_t));
   assert(is_simm32(disp), "must be 32bit offset (jmp)");
-  emit_data(disp, rspec, call32_operand);
+  emit_data(checked_cast<int32_t>(disp), rspec, call32_operand);
 }
 
 void Assembler::jmpb_0(Label& L, const char* file, int line) {
   if (L.is_bound()) {
     const int short_size = 2;
     address entry = target(L);
-    assert(entry != NULL, "jmp most probably wrong");
+    assert(entry != nullptr, "jmp most probably wrong");
 #ifdef ASSERT
     intptr_t dist = (intptr_t)entry - ((intptr_t)pc() + short_size);
     intptr_t delta = short_branch_delta();
@@ -3544,6 +3570,14 @@ void Assembler::movsd(Address dst, XMMRegister src) {
   emit_operand(src, dst, 0);
 }
 
+void Assembler::vmovsd(XMMRegister dst, XMMRegister src, XMMRegister src2) {
+  assert(UseAVX > 0, "Requires some form of AVX");
+  InstructionMark im(this);
+  InstructionAttr attributes(AVX_128bit, /* rex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(src2->encoding(), src->encoding(), dst->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x11, (0xC0 | encode));
+}
+
 void Assembler::movss(XMMRegister dst, XMMRegister src) {
   NOT_LP64(assert(VM_Version::supports_sse(), ""));
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
@@ -4209,7 +4243,8 @@ void Assembler::vpermw(XMMRegister dst, XMMRegister nds, XMMRegister src, int ve
 }
 
 void Assembler::vpermd(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
-  assert(vector_len <= AVX_256bit ? VM_Version::supports_avx2() : VM_Version::supports_evex(), "");
+  assert((vector_len == AVX_256bit && VM_Version::supports_avx2()) ||
+         (vector_len == AVX_512bit && VM_Version::supports_evex()), "");
   // VEX.NDS.256.66.0F38.W0 36 /r
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
@@ -4217,13 +4252,23 @@ void Assembler::vpermd(XMMRegister dst, XMMRegister nds, XMMRegister src, int ve
 }
 
 void Assembler::vpermd(XMMRegister dst, XMMRegister nds, Address src, int vector_len) {
-  assert(vector_len <= AVX_256bit ? VM_Version::supports_avx2() : VM_Version::supports_evex(), "");
+  assert((vector_len == AVX_256bit && VM_Version::supports_avx2()) ||
+         (vector_len == AVX_512bit && VM_Version::supports_evex()), "");
   // VEX.NDS.256.66.0F38.W0 36 /r
   InstructionMark im(this);
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
   vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int8(0x36);
   emit_operand(dst, src, 0);
+}
+
+void Assembler::vpermps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert((vector_len == AVX_256bit && VM_Version::supports_avx2()) ||
+         (vector_len == AVX_512bit && VM_Version::supports_evex()), "");
+  // VEX.NDS.XXX.66.0F38.W0 16 /r
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x16, (0xC0 | encode));
 }
 
 void Assembler::vperm2i128(XMMRegister dst,  XMMRegister nds, XMMRegister src, int imm8) {
@@ -4245,6 +4290,13 @@ void Assembler::vpermilps(XMMRegister dst, XMMRegister src, int imm8, int vector
   InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
   emit_int24(0x04, (0xC0 | encode), imm8);
+}
+
+void Assembler::vpermilps(XMMRegister dst, XMMRegister nds, XMMRegister src, int vector_len) {
+  assert(vector_len <= AVX_256bit ? VM_Version::supports_avx() : VM_Version::supports_evex(), "");
+  InstructionAttr attributes(vector_len, /* rex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ true);
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16(0x0C, (0xC0 | encode));
 }
 
 void Assembler::vpermilpd(XMMRegister dst, XMMRegister src, int imm8, int vector_len) {
@@ -5859,21 +5911,6 @@ void Assembler::setb(Condition cc, Register dst) {
   emit_int24(0x0F, (unsigned char)0x90 | cc, (0xC0 | encode));
 }
 
-void Assembler::sete(Register dst) {
-  int encode = prefix_and_encode(dst->encoding(), true);
-  emit_int24(0x0F, (unsigned char)0x94, (0xC0 | encode));
-}
-
-void Assembler::setl(Register dst) {
-  int encode = prefix_and_encode(dst->encoding(), true);
-  emit_int24(0x0F, (unsigned char)0x9C, (0xC0 | encode));
-}
-
-void Assembler::setne(Register dst) {
-  int encode = prefix_and_encode(dst->encoding(), true);
-  emit_int24(0x0F, (unsigned char)0x95, (0xC0 | encode));
-}
-
 void Assembler::palignr(XMMRegister dst, XMMRegister src, int imm8) {
   assert(VM_Version::supports_ssse3(), "");
   InstructionAttr attributes(AVX_128bit, /* rex_w */ false, /* legacy_mode */ _legacy_mode_bw, /* no_mask_reg */ true, /* uses_vl */ true);
@@ -6341,7 +6378,7 @@ void Assembler::xbegin(Label& abort, relocInfo::relocType rtype) {
   relocate(rtype);
   if (abort.is_bound()) {
     address entry = target(abort);
-    assert(entry != NULL, "abort entry NULL");
+    assert(entry != nullptr, "abort entry null");
     intptr_t offset = entry - pc();
     emit_int16((unsigned char)0xC7, (unsigned char)0xF8);
     emit_int32(offset - 6); // 2 opcode + 4 address
@@ -6515,6 +6552,29 @@ void Assembler::vfmadd231sd(XMMRegister dst, XMMRegister src1, XMMRegister src2)
   InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
   int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
   emit_int16((unsigned char)0xB9, (0xC0 | encode));
+}
+
+void Assembler::evfnmadd213sd(XMMRegister dst, XMMRegister src1, XMMRegister src2, EvexRoundPrefix rmode) { // Need to add rmode for rounding mode support
+  assert(VM_Version::supports_evex(), "");
+  InstructionAttr attributes(rmode, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  attributes.set_extended_context();
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16((unsigned char)0xAD, (0xC0 | encode));
+}
+
+void Assembler::vfnmadd213sd(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
+  assert(VM_Version::supports_fma(), "");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16((unsigned char)0xAD, (0xC0 | encode));
+}
+
+void Assembler::vfnmadd231sd(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
+  assert(VM_Version::supports_fma(), "");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_38, &attributes);
+  emit_int16((unsigned char)0xBD, (0xC0 | encode));
 }
 
 void Assembler::vfmadd231ss(XMMRegister dst, XMMRegister src1, XMMRegister src2) {
@@ -6876,6 +6936,22 @@ void Assembler::vroundpd(XMMRegister dst, Address src, int32_t rmode,  int vecto
   emit_int8(0x09);
   emit_operand(dst, src, 1);
   emit_int8((rmode));
+}
+
+void Assembler::vroundsd(XMMRegister dst, XMMRegister src, XMMRegister src2, int32_t rmode) {
+  assert(VM_Version::supports_avx(), "");
+  assert(rmode <= 0x0f, "rmode 0x%x", rmode);
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ false, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = vex_prefix_and_encode(dst->encoding(), src->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int24(0x0B, (0xC0 | encode), (rmode));
+}
+
+void Assembler::vrndscalesd(XMMRegister dst,  XMMRegister src1, XMMRegister src2, int32_t rmode) {
+  assert(VM_Version::supports_evex(), "requires EVEX support");
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), src1->encoding(), src2->encoding(), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  emit_int24(0x0B, (0xC0 | encode), (rmode));
 }
 
 void Assembler::vrndscalepd(XMMRegister dst,  XMMRegister src,  int32_t rmode, int vector_len) {
@@ -8843,6 +8919,19 @@ void Assembler::vextractf64x4(Address dst, XMMRegister src, uint8_t imm8) {
   emit_int8(imm8 & 0x01);
 }
 
+void Assembler::extractps(Register dst, XMMRegister src, uint8_t imm8) {
+  assert(VM_Version::supports_sse4_1(), "");
+  assert(imm8 <= 0x03, "imm8: %u", imm8);
+  InstructionAttr attributes(AVX_128bit, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  int encode = simd_prefix_and_encode(src, xnoreg, as_XMMRegister(dst->encoding()), VEX_SIMD_66, VEX_OPCODE_0F_3A, &attributes);
+  // imm8:
+  // 0x00 - extract from bits 31:0
+  // 0x01 - extract from bits 63:32
+  // 0x02 - extract from bits 95:64
+  // 0x03 - extract from bits 127:96
+  emit_int24(0x17, (0xC0 | encode), imm8 & 0x03);
+}
+
 // duplicate 1-byte integer data from src into programmed locations in dest : requires AVX512BW and AVX512VL
 void Assembler::vpbroadcastb(XMMRegister dst, XMMRegister src, int vector_len) {
   assert(VM_Version::supports_avx2(), "");
@@ -9515,6 +9604,15 @@ void Assembler::evdivpd(XMMRegister dst, KRegister mask, XMMRegister nds, Addres
   vex_prefix(src, nds->encoding(), dst->encoding(), VEX_SIMD_66, VEX_OPCODE_0F, &attributes);
   emit_int8(0x5E);
   emit_operand(dst, src, 0);
+}
+
+void Assembler::evdivsd(XMMRegister dst, XMMRegister nds, XMMRegister src, EvexRoundPrefix rmode) {
+  assert(VM_Version::supports_evex(), "");
+  InstructionAttr attributes(rmode, /* vex_w */ true, /* legacy_mode */ false, /* no_mask_reg */ true, /* uses_vl */ false);
+  attributes.set_extended_context();
+  attributes.set_is_evex_instruction();
+  int encode = vex_prefix_and_encode(dst->encoding(), nds->encoding(), src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F, &attributes);
+  emit_int16(0x5E, (0xC0 | encode));
 }
 
 void Assembler::evpabsb(XMMRegister dst, KRegister mask, XMMRegister src, bool merge, int vector_len) {
@@ -11424,7 +11522,6 @@ void Assembler::vex_prefix(Address adr, int nds_enc, int xreg_enc, VexSimdPrefix
     vex_x = adr.index_needs_rex();
   }
   set_attributes(attributes);
-  attributes->set_current_assembler(this);
 
   // For EVEX instruction (which is not marked as pure EVEX instruction) check and see if this instruction
   // is allowed in legacy mode and has resources which will fit in it.
@@ -11471,7 +11568,6 @@ int Assembler::vex_prefix_and_encode(int dst_enc, int nds_enc, int src_enc, VexS
   bool vex_b = (src_enc & 8) == 8;
   bool vex_x = false;
   set_attributes(attributes);
-  attributes->set_current_assembler(this);
 
   // For EVEX instruction (which is not marked as pure EVEX instruction) check and see if this instruction
   // is allowed in legacy mode and has resources which will fit in it.
@@ -12379,18 +12475,9 @@ void Assembler::pusha() { // 32bit
   emit_int8(0x60);
 }
 
-void Assembler::set_byte_if_not_zero(Register dst) {
-  emit_int24(0x0F, (unsigned char)0x95, (0xC0 | dst->encoding()));
-}
-
 #else // LP64
 
 // 64bit only pieces of the assembler
-
-void Assembler::set_byte_if_not_zero(Register dst) {
-  int enc = prefix_and_encode(dst->encoding(), true);
-  emit_int24(0x0F, (unsigned char)0x95, (0xC0 | enc));
-}
 
 // This should only be used by 64bit instructions that can use rip-relative
 // it cannot be used by instructions that want an immediate value.
@@ -12495,7 +12582,7 @@ void Assembler::emit_data64(jlong data,
                             int format) {
   assert(imm_operand == 0, "default format must be immediate in this file");
   assert(imm_operand == format, "must be immediate");
-  assert(inst_mark() != NULL, "must be inside InstructionMark");
+  assert(inst_mark() != nullptr, "must be inside InstructionMark");
   // Do not use AbstractAssembler::relocate, which is not intended for
   // embedded words.  Instead, relocate to the enclosing instruction.
   code_section()->relocate(inst_mark(), rspec, format);
@@ -12529,7 +12616,7 @@ void Assembler::prefix(Register dst, Address adr, Prefix p) {
     if (adr.index_needs_rex()) {
       assert(false, "prefix(Register dst, Address adr, Prefix p) does not support handling of an X");
     } else {
-      prefix(REX_B);
+      p = (Prefix)(p | REX_B);
     }
   } else {
     if (adr.index_needs_rex()) {
@@ -13521,13 +13608,13 @@ void Assembler::popq(Register dst) {
 // and copying it out on subsequent invocations can thus be beneficial
 static bool     precomputed = false;
 
-static u_char* popa_code  = NULL;
+static u_char* popa_code  = nullptr;
 static int     popa_len   = 0;
 
-static u_char* pusha_code = NULL;
+static u_char* pusha_code = nullptr;
 static int     pusha_len  = 0;
 
-static u_char* vzup_code  = NULL;
+static u_char* vzup_code  = nullptr;
 static int     vzup_len   = 0;
 
 void Assembler::precompute_instructions() {
@@ -13574,7 +13661,7 @@ void Assembler::precompute_instructions() {
 }
 
 static void emit_copy(CodeSection* code_section, u_char* src, int src_len) {
-  assert(src != NULL, "code to copy must have been pre-computed");
+  assert(src != nullptr, "code to copy must have been pre-computed");
   assert(code_section->limit() - code_section->end() > src_len, "code buffer not large enough");
   address end = code_section->end();
   memcpy(end, src, src_len);

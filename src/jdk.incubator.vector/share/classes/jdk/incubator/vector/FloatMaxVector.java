@@ -637,14 +637,6 @@ final class FloatMaxVector extends FloatVector {
 
         @Override
         @ForceInline
-        public FloatMaxMask eq(VectorMask<Float> mask) {
-            Objects.requireNonNull(mask);
-            FloatMaxMask m = (FloatMaxMask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         FloatMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (FloatMaxMask) VectorSupport.indexPartiallyInUpperRange(
@@ -691,9 +683,9 @@ final class FloatMaxVector extends FloatVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        FloatMaxMask xor(VectorMask<Float> mask) {
+        public FloatMaxMask xor(VectorMask<Float> mask) {
             Objects.requireNonNull(mask);
             FloatMaxMask m = (FloatMaxMask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, FloatMaxMask.class, null, int.class, VLENGTH,

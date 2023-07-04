@@ -1,4 +1,4 @@
-.\" Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+.\" Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
 .\" DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 .\"
 .\" This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JDEPS" "1" "2023" "JDK 21-ea" "JDK Commands"
+.TH "JDEPS" "1" "2024" "JDK 22-ea" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -246,6 +246,7 @@ the pattern to the dependencies.
 .TP
 \f[V]-P\f[R] or \f[V]-profile\f[R]
 Shows the profile containing a package.
+This option is deprecated and may be removed in a future release.
 .TP
 \f[V]-R\f[R] or \f[V]--recursive\f[R]
 Recursively traverses all run-time dependences.
@@ -275,7 +276,7 @@ classes in that containing archive are analyzed.
 The following example demonstrates analyzing the dependencies of the
 \f[V]Notepad.jar\f[R] file.
 .PP
-\f[B]Linux and OS X:\f[R]
+\f[B]Linux and macOS:\f[R]
 .IP
 .nf
 \f[CB]

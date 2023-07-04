@@ -80,7 +80,7 @@ void MemTracker::initialize() {
     }
   }
 
-  NMTPreInit::pre_to_post();
+  NMTPreInit::pre_to_post(level == NMT_off);
 
   _tracking_level = level;
 
@@ -130,6 +130,14 @@ void MemTracker::final_report(outputStream* output) {
   if (enabled() && Atomic::cmpxchg(&g_final_report_did_run, false, true) == false) {
     report(tracking_level() == NMT_summary, output, 1);
   }
+}
+
+// Given an unknown pointer, check if it points into a known region; print region if found
+// and return true; false if not found.
+bool MemTracker::print_containing_region(const void* p, outputStream* out) {
+  return enabled() &&
+      (MallocTracker::print_pointer_information(p, out) ||
+       VirtualMemoryTracker::print_containing_region(p, out));
 }
 
 void MemTracker::report(bool summary_only, outputStream* output, size_t scale) {

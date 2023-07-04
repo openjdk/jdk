@@ -32,6 +32,7 @@
 #include "utilities/bytes.hpp"
 
 class ciBytecodeStream;
+class ResolvedIndyEntry;
 
 // The base class for different kinds of bytecode abstractions.
 // Provides the primitive operations to manipulate code relative
@@ -188,6 +189,7 @@ class Bytecode_member_ref: public Bytecode {
   ConstantPool* constants() const              { return _method->constants(); }
   ConstantPoolCache* cpcache() const           { return _method->constants()->cache(); }
   ConstantPoolCacheEntry* cpcache_entry() const;
+  ResolvedIndyEntry* resolved_indy_entry() const;
 
  public:
   int          index() const;                    // cache index (loaded from instruction)

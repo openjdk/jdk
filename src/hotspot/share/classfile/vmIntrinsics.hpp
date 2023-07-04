@@ -583,6 +583,13 @@ class methodHandle;
   do_intrinsic(_Continuation_doYield,      jdk_internal_vm_Continuation, doYield_name,      continuationDoYield_signature, F_SN) \
    do_alias(    continuationDoYield_signature,     void_int_signature)                                                  \
                                                                                                                         \
+  /* java/lang/VirtualThread */                                                                                         \
+  do_intrinsic(_notifyJvmtiVThreadStart, java_lang_VirtualThread, notifyJvmtiStart_name, void_method_signature, F_RN)   \
+  do_intrinsic(_notifyJvmtiVThreadEnd, java_lang_VirtualThread, notifyJvmtiEnd_name, void_method_signature, F_RN)       \
+  do_intrinsic(_notifyJvmtiVThreadMount, java_lang_VirtualThread, notifyJvmtiMount_name, bool_void_signature, F_RN)     \
+  do_intrinsic(_notifyJvmtiVThreadUnmount, java_lang_VirtualThread, notifyJvmtiUnmount_name, bool_void_signature, F_RN) \
+  do_intrinsic(_notifyJvmtiVThreadHideFrames, java_lang_VirtualThread, notifyJvmtiHideFrames_name, bool_void_signature, F_RN) \
+                                                                                                                        \
   /* support for UnsafeConstants */                                                                                     \
   do_class(jdk_internal_misc_UnsafeConstants,      "jdk/internal/misc/UnsafeConstants")                                 \
                                                                                                                         \
@@ -1524,10 +1531,7 @@ public:
   // the corresponding coarse-grained control(2) disables it.
   static bool is_disabled_by_flags(vmIntrinsics::ID id);
 
-  static bool is_disabled_by_flags(const methodHandle& method);
-  static bool is_intrinsic_available(vmIntrinsics::ID id) {
-    return !is_disabled_by_flags(id);
-  }
+  static bool is_intrinsic_available(vmIntrinsics::ID id);
 };
 
 #undef VM_INTRINSIC_ENUM

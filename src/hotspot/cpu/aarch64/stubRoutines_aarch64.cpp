@@ -33,30 +33,30 @@
 // Implementation of the platform-specific part of StubRoutines - for
 // a description of how to extend it, see the stubRoutines.hpp file.
 
-address StubRoutines::aarch64::_get_previous_sp_entry = NULL;
+address StubRoutines::aarch64::_get_previous_sp_entry = nullptr;
 
-address StubRoutines::aarch64::_f2i_fixup = NULL;
-address StubRoutines::aarch64::_f2l_fixup = NULL;
-address StubRoutines::aarch64::_d2i_fixup = NULL;
-address StubRoutines::aarch64::_d2l_fixup = NULL;
-address StubRoutines::aarch64::_vector_iota_indices = NULL;
-address StubRoutines::aarch64::_float_sign_mask = NULL;
-address StubRoutines::aarch64::_float_sign_flip = NULL;
-address StubRoutines::aarch64::_double_sign_mask = NULL;
-address StubRoutines::aarch64::_double_sign_flip = NULL;
-address StubRoutines::aarch64::_zero_blocks = NULL;
-address StubRoutines::aarch64::_count_positives = NULL;
-address StubRoutines::aarch64::_count_positives_long = NULL;
-address StubRoutines::aarch64::_large_array_equals = NULL;
-address StubRoutines::aarch64::_compare_long_string_LL = NULL;
-address StubRoutines::aarch64::_compare_long_string_UU = NULL;
-address StubRoutines::aarch64::_compare_long_string_LU = NULL;
-address StubRoutines::aarch64::_compare_long_string_UL = NULL;
-address StubRoutines::aarch64::_string_indexof_linear_ll = NULL;
-address StubRoutines::aarch64::_string_indexof_linear_uu = NULL;
-address StubRoutines::aarch64::_string_indexof_linear_ul = NULL;
-address StubRoutines::aarch64::_large_byte_array_inflate = NULL;
-address StubRoutines::aarch64::_method_entry_barrier = NULL;
+address StubRoutines::aarch64::_f2i_fixup = nullptr;
+address StubRoutines::aarch64::_f2l_fixup = nullptr;
+address StubRoutines::aarch64::_d2i_fixup = nullptr;
+address StubRoutines::aarch64::_d2l_fixup = nullptr;
+address StubRoutines::aarch64::_vector_iota_indices = nullptr;
+address StubRoutines::aarch64::_float_sign_mask = nullptr;
+address StubRoutines::aarch64::_float_sign_flip = nullptr;
+address StubRoutines::aarch64::_double_sign_mask = nullptr;
+address StubRoutines::aarch64::_double_sign_flip = nullptr;
+address StubRoutines::aarch64::_zero_blocks = nullptr;
+address StubRoutines::aarch64::_count_positives = nullptr;
+address StubRoutines::aarch64::_count_positives_long = nullptr;
+address StubRoutines::aarch64::_large_array_equals = nullptr;
+address StubRoutines::aarch64::_compare_long_string_LL = nullptr;
+address StubRoutines::aarch64::_compare_long_string_UU = nullptr;
+address StubRoutines::aarch64::_compare_long_string_LU = nullptr;
+address StubRoutines::aarch64::_compare_long_string_UL = nullptr;
+address StubRoutines::aarch64::_string_indexof_linear_ll = nullptr;
+address StubRoutines::aarch64::_string_indexof_linear_uu = nullptr;
+address StubRoutines::aarch64::_string_indexof_linear_ul = nullptr;
+address StubRoutines::aarch64::_large_byte_array_inflate = nullptr;
+address StubRoutines::aarch64::_method_entry_barrier = nullptr;
 
 static void empty_spin_wait() { }
 address StubRoutines::aarch64::_spin_wait = CAST_FROM_FN_PTR(address, empty_spin_wait);
@@ -302,6 +302,18 @@ ATTRIBUTE_ALIGNED(4096) juint StubRoutines::aarch64::_crc_table[] =
     0x5a546366UL, 0x00000001UL,
     0x751997d0UL, 0x00000001UL,
     0xccaa009eUL, 0x00000000UL,
+
+    // Constants for CRC-32C crypto pmull implementation
+    0x6992cea2UL, 0x00000000UL,
+    0x0d3b6092UL, 0x00000000UL,
+    0x740eef02UL, 0x00000000UL,
+    0x9e4addf8UL, 0x00000000UL,
+    0x1c291d04UL, 0x00000000UL,
+    0xd82c63daUL, 0x00000001UL,
+    0x384aa63aUL, 0x00000001UL,
+    0xba4fc28eUL, 0x00000000UL,
+    0xf20c0dfeUL, 0x00000000UL,
+    0x4cd00bd6UL, 0x00000001UL,
 };
 
 // Accumulation coefficients for adler32 upper 16 bits

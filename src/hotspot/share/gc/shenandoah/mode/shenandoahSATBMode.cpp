@@ -35,7 +35,6 @@
 
 void ShenandoahSATBMode::initialize_flags() const {
   if (ClassUnloading) {
-    FLAG_SET_DEFAULT(ShenandoahSuspendibleWorkers, true);
     FLAG_SET_DEFAULT(VerifyBeforeExit, false);
   }
 

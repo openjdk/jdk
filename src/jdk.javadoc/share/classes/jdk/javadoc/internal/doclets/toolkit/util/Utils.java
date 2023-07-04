@@ -34,7 +34,9 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -46,12 +48,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
@@ -64,6 +68,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
@@ -111,7 +116,6 @@ import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
-import com.sun.tools.javac.model.JavacTypes;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
@@ -119,7 +123,6 @@ import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
-import jdk.javadoc.internal.tool.DocEnvImpl;
 
 import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
@@ -139,12 +142,14 @@ public class Utils {
     public final Comparators comparators;
     private final JavaScriptScanner javaScriptScanner;
     private final DocFinder docFinder = newDocFinder();
+    private final TypeElement JAVA_LANG_OBJECT;
 
     public Utils(BaseConfiguration c) {
         configuration = c;
         options = configuration.getOptions();
         resources = configuration.getDocResources();
         elementUtils = c.docEnv.getElementUtils();
+        JAVA_LANG_OBJECT = elementUtils.getTypeElement("java.lang.Object");
         typeUtils = c.docEnv.getTypeUtils();
         docTrees = c.docEnv.getDocTrees();
         javaScriptScanner = c.isAllowScriptInComments() ? null : new JavaScriptScanner();
@@ -183,63 +188,6 @@ public class Utils {
 
     public TypeMirror getFunctionalInterface() {
         return getSymbol("java.lang.FunctionalInterface");
-    }
-
-    /**
-     * Search for the given method in the given class.
-     *
-     * @param te     Class to search into.
-     * @param method Method to be searched.
-     *
-     * @return Method found, null otherwise.
-     */
-    public ExecutableElement findMethod(TypeElement te, ExecutableElement method) {
-        for (ExecutableElement m : getMethods(te)) {
-            if (executableMembersEqual(method, m)) {
-                return m;
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Test whether a class is a subclass of another class.
-     *
-     * @param t1 the candidate subclass
-     * @param t2 the candidate superclass
-     * @return true if t1 is a superclass of t2
-     */
-    public boolean isSubclassOf(TypeElement t1, TypeElement t2) {
-        return typeUtils.isSubtype(typeUtils.erasure(t1.asType()), typeUtils.erasure(t2.asType()));
-    }
-
-    /**
-     * @param e1 the first method to compare.
-     * @param e2 the second method to compare.
-     * @return true if member1 overrides/hides or is overridden/hidden by member2.
-     */
-    public boolean executableMembersEqual(ExecutableElement e1, ExecutableElement e2) {
-        // TODO: investigate if Elements.hides(..) will work here.
-        if (isStatic(e1) && isStatic(e2)) {
-            List<? extends VariableElement> parameters1 = e1.getParameters();
-            List<? extends VariableElement> parameters2 = e2.getParameters();
-            if (e1.getSimpleName().equals(e2.getSimpleName()) &&
-                    parameters1.size() == parameters2.size()) {
-                for (int j = 0; j < parameters1.size(); j++) {
-                    VariableElement v1 = parameters1.get(j);
-                    VariableElement v2 = parameters2.get(j);
-                    if (!typeUtils.isSameType(v1.asType(), v2.asType())) {
-                        return false;
-                    }
-                }
-                return true;
-            }
-            return false;
-        } else {
-            return elementUtils.overrides(e1, e2, getEnclosingTypeElement(e1)) ||
-                    elementUtils.overrides(e2, e1, getEnclosingTypeElement(e2)) ||
-                    e1.equals(e2);
-        }
     }
 
     /**
@@ -333,8 +281,19 @@ public class Utils {
         return e.getModifiers().contains(Modifier.FINAL);
     }
 
+    /*
+     * A contemporary JLS term for "package private" or "default access" is
+     * "package access". For example: "a member is declared with package
+     * access" or "a member has package access".
+     *
+     * This is to avoid confusion with unrelated _default_ methods which
+     * appeared in JDK 8.
+     */
     public boolean isPackagePrivate(Element e) {
-        return !(isPublic(e) || isPrivate(e) || isProtected(e));
+        var m = e.getModifiers();
+        return !m.contains(Modifier.PUBLIC)
+                && !m.contains(Modifier.PROTECTED)
+                && !m.contains(Modifier.PRIVATE);
     }
 
     public boolean isPrivate(Element e) {
@@ -421,10 +380,6 @@ public class Utils {
         return typeUtils.isSameType(amirror.getAnnotationType(), getFunctionalInterface()) &&
                 configuration.docEnv.getSourceVersion()
                         .compareTo(SourceVersion.RELEASE_8) >= 0;
-    }
-
-    public boolean isNoType(TypeMirror t) {
-        return t.getKind() == NONE;
     }
 
     public boolean isUndocumentedEnclosure(TypeElement enclosingTypeElement) {
@@ -661,6 +616,14 @@ public class Utils {
     }
 
     /*
+     * The record is used to pass the method along with the type where that method is visible.
+     * Passing the type explicitly allows to preserve a complete type information, including
+     * parameterization.
+     */
+    public record OverrideInfo(ExecutableElement overriddenMethod,
+                               DeclaredType overriddenMethodOwner) { }
+
+    /*
      * Returns the closest superclass (not the superinterface) that contains
      * a method that is both:
      *
@@ -673,43 +636,29 @@ public class Utils {
      * superclass is java.lang.Object no matter how many other interfaces
      * that interface extends.
      */
-    public DeclaredType overriddenType(ExecutableElement method) {
-        return configuration.workArounds.overriddenType(method);
-    }
-
-    private  TypeMirror getType(TypeMirror t) {
-        return (isNoType(t)) ? getObjectType() : t;
-    }
-
-    public TypeMirror getSuperType(TypeElement te) {
-        TypeMirror t = te.getSuperclass();
-        return getType(t);
-    }
-
-    public ExecutableElement overriddenMethod(ExecutableElement method) {
-        if (isStatic(method)) {
-            return null;
-        }
-        final TypeElement origin = getEnclosingTypeElement(method);
-        for (TypeMirror t = getSuperType(origin);
-             t.getKind() == DECLARED;
-             t = getSuperType(asTypeElement(t))) {
-            TypeElement te = asTypeElement(t);
-            if (te == null) {
+    public OverrideInfo overriddenMethod(ExecutableElement method) {
+        var t = method.getEnclosingElement().asType();
+        // in this context, consider java.lang.Object to be the superclass of an interface
+        while (true) {
+            var supertypes = typeUtils.directSupertypes(t);
+            if (supertypes.isEmpty()) {
+                // reached the top of the hierarchy
+                assert typeUtils.isSameType(getObjectType(), t);
                 return null;
             }
+            t = supertypes.get(0);
+            // if non-empty, the first element is always the superclass
+            var te = (TypeElement) ((DeclaredType) t).asElement();
+            assert te.getKind().isClass();
             VisibleMemberTable vmt = configuration.getVisibleMemberTable(te);
             for (Element e : vmt.getMembers(VisibleMemberTable.Kind.METHODS)) {
-                ExecutableElement ee = (ExecutableElement)e;
-                if (configuration.workArounds.overrides(method, ee, origin) &&
+                var ee = (ExecutableElement) e;
+                if (elementUtils.overrides(method, ee, (TypeElement) method.getEnclosingElement()) &&
                         !isSimpleOverride(ee)) {
-                    return ee;
+                    return new OverrideInfo(ee, (DeclaredType) t);
                 }
             }
-            if (typeUtils.isSameType(t, getObjectType()))
-                return null;
         }
-        return null;
     }
 
     public SortedSet<TypeElement> getTypeElementsAsSortedSet(Iterable<TypeElement> typeElements) {
@@ -1063,17 +1012,6 @@ public class Utils {
         }.visit(t);
     }
 
-    public TypeElement getSuperClass(TypeElement te) {
-        if (checkType(te)) {
-            return null;
-        }
-        TypeMirror superclass = te.getSuperclass();
-        if (isNoType(superclass) && isClass(te)) {
-            superclass = getObjectType();
-        }
-        return asTypeElement(superclass);
-    }
-
     private boolean checkType(TypeElement te) {
         return isInterface(te) || typeUtils.isSameType(te.asType(), getObjectType());
     }
@@ -1093,27 +1031,24 @@ public class Utils {
      *          be found.
      */
     public TypeMirror getFirstVisibleSuperClass(TypeMirror type) {
-        List<? extends TypeMirror> superTypes = typeUtils.directSupertypes(type);
-        TypeMirror superType = superTypes.isEmpty() ? getObjectType() : superTypes.get(0);
-        TypeElement superClass = asTypeElement(superType);
-        // skip "hidden" classes
-        while ((superClass != null && hasHiddenTag(superClass))
-                || (superClass != null &&  !isPublic(superClass) && !isLinkable(superClass))) {
-            TypeMirror supersuperType = superClass.getSuperclass();
-            TypeElement supersuperClass = asTypeElement(supersuperType);
-            if (supersuperClass == null
-                    || supersuperClass.getQualifiedName().equals(superClass.getQualifiedName())) {
-                break;
+        // TODO: this computation should be eventually delegated to VisibleMemberTable
+        Set<TypeElement> alreadySeen = null;
+        // create a set iff assertions are enabled, to assert that no class
+        // appears more than once in a superclass hierarchy
+        assert (alreadySeen = new HashSet<>()) != null;
+        for (var t = type; ;) {
+            var supertypes = typeUtils.directSupertypes(t);
+            if (supertypes.isEmpty()) { // end of hierarchy
+                return null;
             }
-            superType = supersuperType;
-            superClass = supersuperClass;
+            t = supertypes.get(0); // if non-empty, the first element is always the superclass
+            var te = asTypeElement(t);
+            assert alreadySeen.add(te); // it should be the first time we see `te`
+            if (!hasHiddenTag(te) && (isPublic(te) || isLinkable(te))) {
+                return t;
+            }
         }
-        if (typeUtils.isSameType(type, superType)) {
-            return null;
-        }
-        return superType;
     }
-
 
     /**
      * Given a class, return the closest visible superclass.
@@ -1294,9 +1229,8 @@ public class Utils {
      */
     private Object getAnnotationElement(Element e, TypeMirror annotationType, String annotationElementName) {
         List<? extends AnnotationMirror> annotationList = e.getAnnotationMirrors();
-        JavacTypes jctypes = ((DocEnvImpl) configuration.docEnv).toolEnv.typeutils;
         for (AnnotationMirror anno : annotationList) {
-            if (jctypes.isSameType(anno.getAnnotationType(), annotationType)) {
+            if (typeUtils.isSameType(anno.getAnnotationType(), annotationType)) {
                 Map<? extends ExecutableElement, ? extends AnnotationValue> pairs = anno.getElementValues();
                 if (!pairs.isEmpty()) {
                     for (ExecutableElement element : pairs.keySet()) {
@@ -2250,8 +2184,14 @@ public class Utils {
         if (path != null || elementToTreePath.containsKey(e)) {
             // expedite the path and one that is a null
             return path;
+        } else {
+            var p = docTrees.getPath(e);
+            // if docTrees.getPath itself has put a path for e into elementToTreePath
+            // (see 8304878), we assume that the path already in the map is equivalent
+            // to the path we are about to put: hence, no harm if replaced
+            elementToTreePath.put(e, p);
+            return p;
         }
-        return elementToTreePath.computeIfAbsent(e, docTrees::getPath);
     }
 
     /**
@@ -2456,10 +2396,21 @@ public class Utils {
     }
 
     public ModuleElement containingModule(Element e) {
+        // TODO: remove this short-circuit after JDK-8302545 has been fixed
+        //  or --ignore-source-errors has been removed
+        if (e.getKind() == ElementKind.PACKAGE
+                && e.getEnclosingElement() == null) {
+            return null;
+        }
         return elementUtils.getModuleOf(e);
     }
 
     public PackageElement containingPackage(Element e) {
+        // TODO: remove this short-circuit after JDK-8302545 has been fixed
+        //  or --ignore-source-errors has been removed
+        if (e.getKind() == ElementKind.PACKAGE) {
+            return (PackageElement) e;
+        }
         return elementUtils.getPackageOf(e);
     }
 
@@ -2803,11 +2754,125 @@ public class Utils {
     }
 
     private DocFinder newDocFinder() {
-        return new DocFinder(this::overriddenMethod, this::implementedMethods);
+        return new DocFinder(this::overriddenMethods);
     }
 
-    private Iterable<ExecutableElement> implementedMethods(ExecutableElement originalMethod, ExecutableElement m) {
-        var type = configuration.utils.getEnclosingTypeElement(m);
-        return configuration.getVisibleMemberTable(type).getImplementedMethods(originalMethod);
+    /*
+     * Returns an iterable over all unique methods overridden by the given
+     * method from its enclosing type element. The methods encounter order
+     * is that of described in the "Automatic Supertype Search" section of
+     * the Documentation Comment Specification for the Standard Doclet.
+     */
+    private Iterable<? extends ExecutableElement> overriddenMethods(ExecutableElement method) {
+        return () -> new Overrides(method);
+    }
+
+    private class Overrides implements Iterator<ExecutableElement> {
+
+        // prefer java.util.Deque to java.util.Stack API for stacks
+        final Deque<TypeElement> searchStack = new ArrayDeque<>();
+        final Set<TypeElement> visited = new HashSet<>();
+
+        final ExecutableElement overrider;
+        ExecutableElement next;
+
+        public Overrides(ExecutableElement method) {
+            if (method.getKind() != ElementKind.METHOD) {
+                throw new IllegalArgumentException(diagnosticDescriptionOf(method));
+            }
+            overrider = method;
+            // java.lang.Object is to be searched for overrides last
+            searchStack.push(JAVA_LANG_OBJECT);
+            searchStack.push((TypeElement) method.getEnclosingElement());
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (next != null) {
+                return true;
+            }
+            updateNext();
+            return next != null;
+        }
+
+        @Override
+        public ExecutableElement next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            var n = next;
+            updateNext();
+            return n;
+        }
+
+        private void updateNext() {
+            while (!searchStack.isEmpty()) {
+                // replace the top class or interface with its supertypes
+                var t = searchStack.pop();
+
+                // <TODO refactor once java.util.List.reversed() from
+                //   SequencedCollection is available>
+                var filteredSupertypes = typeUtils.directSupertypes(t.asType()).stream()
+                        .map(t_ -> (TypeElement) ((DeclaredType) t_).asElement())
+                        // filter out java.lang.Object using the fact that at
+                        // most one class type comes first in the stream of
+                        // direct supertypes
+                        .dropWhile(JAVA_LANG_OBJECT::equals)
+                        .filter(visited::add) // idempotent side effect
+                        .collect(Collectors.toCollection(ArrayList::new));
+                // push supertypes in reverse order, so that they are popped
+                // back in the initial order
+                Collections.reverse(filteredSupertypes);
+                filteredSupertypes.forEach(searchStack::push);
+                // </TODO>
+
+                // consider only the declared methods for consistency with
+                // the existing facilities, such as Utils.overriddenMethod
+                // and VisibleMemberTable.getImplementedMethods
+                TypeElement peek = searchStack.peek();
+                if (peek == null) {
+                    next = null; // end-of-hierarchy
+                    break;
+                }
+                if (isPlainInterface(peek) && !isPublic(peek) && !isLinkable(peek)) {
+                    // we don't consider such interfaces directly, but may consider
+                    // their supertypes (subject to this check for each of them)
+                    continue;
+                }
+                List<Element> declaredMethods = configuration.getVisibleMemberTable(peek)
+                        .getMembers(VisibleMemberTable.Kind.METHODS);
+                var overridden = declaredMethods.stream()
+                        .filter(candidate -> elementUtils.overrides(overrider, (ExecutableElement) candidate,
+                                (TypeElement) overrider.getEnclosingElement()))
+                        .findFirst();
+                // assume a method may override at most one method in any
+                // given class or interface; hence findFirst
+                assert declaredMethods.stream()
+                        .filter(candidate -> elementUtils.overrides(overrider, (ExecutableElement) candidate,
+                                (TypeElement) overrider.getEnclosingElement()))
+                        .count() <= 1 : diagnosticDescriptionOf(overrider);
+
+                if (overridden.isPresent()) {
+                    next = (ExecutableElement) overridden.get();
+                    break;
+                }
+
+                // TODO we're currently ignoring simpleOverride
+                //  (it's unavailable in this data structure)
+            }
+
+            // if the stack is empty, there's no unconsumed override:
+            // if that ever fails, an iterator's client will be stuck
+            // in an infinite loop
+            assert !searchStack.isEmpty() || next == null
+                    : diagnosticDescriptionOf(overrider);
+        }
+    }
+
+    public static String diagnosticDescriptionOf(Element e) {
+        if (e == null) // shouldn't NPE if passed null
+            return "null";
+        return e + ", " + (e instanceof QualifiedNameable q ? q.getQualifiedName() : e.getSimpleName())
+                + ", " + e.getKind() + ", " + Objects.toIdentityString(e);
     }
 }

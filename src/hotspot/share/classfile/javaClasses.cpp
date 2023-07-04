@@ -50,6 +50,7 @@
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/fieldInfo.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/instanceKlass.inline.hpp"
 #include "oops/instanceMirrorKlass.hpp"
@@ -764,8 +765,13 @@ void java_lang_String::print(oop java_string, outputStream* st) {
 
   st->print("\"");
   for (int index = 0; index < length; index++) {
-    st->print("%c", (!is_latin1) ?  value->char_at(index) :
-                           ((jchar) value->byte_at(index)) & 0xff );
+    jchar c = (!is_latin1) ?  value->char_at(index) :
+                             ((jchar) value->byte_at(index)) & 0xff;
+    if (c < ' ') {
+      st->print("\\x%02X", c); // print control characters e.g. \x0A
+    } else {
+      st->print("%c", c);
+    }
   }
   st->print("\"");
 }
@@ -811,16 +817,16 @@ static void initialize_static_primitive_field(fieldDescriptor* fd, Handle mirror
   BasicType t = fd->field_type();
   switch (t) {
   case T_BYTE:
-    mirror()->byte_field_put(fd->offset(), fd->int_initial_value());
+    mirror()->byte_field_put(fd->offset(), (jbyte)(fd->int_initial_value()));
     break;
   case T_BOOLEAN:
-    mirror()->bool_field_put(fd->offset(), fd->int_initial_value());
+    mirror()->bool_field_put(fd->offset(), (jboolean)(fd->int_initial_value()));
     break;
   case T_CHAR:
-    mirror()->char_field_put(fd->offset(), fd->int_initial_value());
+    mirror()->char_field_put(fd->offset(), (jchar)(fd->int_initial_value()));
     break;
   case T_SHORT:
-    mirror()->short_field_put(fd->offset(), fd->int_initial_value());
+    mirror()->short_field_put(fd->offset(), (jshort)(fd->int_initial_value()));
     break;
   case T_INT:
     mirror()->int_field_put(fd->offset(), fd->int_initial_value());
@@ -861,17 +867,34 @@ void java_lang_Class::fixup_mirror(Klass* k, TRAPS) {
       // During bootstrap, java.lang.Class wasn't loaded so static field
       // offsets were computed without the size added it.  Go back and
       // update all the static field offsets to included the size.
-      for (JavaFieldStream fs(InstanceKlass::cast(k)); !fs.done(); fs.next()) {
-        if (fs.access_flags().is_static()) {
-          int real_offset = fs.offset() + InstanceMirrorKlass::offset_of_static_fields();
-          fs.set_offset(real_offset);
+
+      // Unfortunately, the FieldInfo stream is encoded with UNSIGNED5 which doesn't allow
+      // content updates. So the FieldInfo stream has to be decompressed into a temporary array,
+      // static fields offsets are updated in this array before reencoding everything into
+      // a new UNSIGNED5 stream, and substitute it to the old FieldInfo stream.
+
+      int java_fields;
+      int injected_fields;
+      InstanceKlass* ik = InstanceKlass::cast(k);
+      GrowableArray<FieldInfo>* fields =
+        FieldInfoStream::create_FieldInfoArray(ik->fieldinfo_stream(),
+                                               &java_fields, &injected_fields);
+      for (int i = 0; i < fields->length(); i++) {
+        FieldInfo* fi = fields->adr_at(i);
+        if (fi->access_flags().is_static()) {
+          fi->set_offset(fi->offset() + InstanceMirrorKlass::offset_of_static_fields());
         }
       }
+      Array<u1>* old_stream = ik->fieldinfo_stream();
+      assert(fields->length() == (java_fields + injected_fields), "Must be");
+      Array<u1>* new_fis = FieldInfoStream::create_FieldInfoStream(fields, java_fields, injected_fields, k->class_loader_data(), CHECK);
+      ik->set_fieldinfo_stream(new_fis);
+      MetadataFactory::free_array<u1>(k->class_loader_data(), old_stream);
     }
   }
 
   if (k->is_shared() && k->has_archived_mirror_index()) {
-    if (ArchiveHeapLoader::are_archived_mirrors_available()) {
+    if (ArchiveHeapLoader::is_in_use()) {
       bool present = restore_archived_mirror(k, Handle(), Handle(), Handle(), CHECK);
       assert(present, "Missing archived mirror for %s", k->external_name());
       return;
@@ -1103,9 +1126,6 @@ bool java_lang_Class::restore_archived_mirror(Klass *k,
 
   // mirror is archived, restore
   log_debug(cds, mirror)("Archived mirror is: " PTR_FORMAT, p2i(m));
-  if (ArchiveHeapLoader::is_mapped()) {
-    assert(Universe::heap()->is_archived_object(m), "must be archived mirror object");
-  }
   assert(as_Klass(m) == k, "must be");
   Handle mirror(THREAD, m);
 
@@ -1344,7 +1364,15 @@ BasicType java_lang_Class::primitive_type(oop java_class) {
   } else {
     assert(java_class == Universe::void_mirror(), "only valid non-array primitive");
   }
-  assert(Universe::java_mirror(type) == java_class, "must be consistent");
+#ifdef ASSERT
+  if (DumpSharedSpaces) {
+    oop mirror = Universe::java_mirror(type);
+    oop scratch_mirror = HeapShared::scratch_java_mirror(type);
+    assert(java_class == mirror || java_class == scratch_mirror, "must be consistent");
+  } else {
+    assert(Universe::java_mirror(type) == java_class, "must be consistent");
+  }
+#endif
   return type;
 }
 
@@ -1465,8 +1493,9 @@ bool java_lang_Thread_FieldHolder::is_daemon(oop holder) {
   return holder->bool_field(_daemon_offset) != 0;
 }
 
-void java_lang_Thread_FieldHolder::set_daemon(oop holder) {
-  holder->bool_field_put(_daemon_offset, true);
+void java_lang_Thread_FieldHolder::set_daemon(oop holder, bool val) {
+  assert(val, "daemon status is never turned off");
+  holder->bool_field_put(_daemon_offset, val);
 }
 
 void java_lang_Thread_FieldHolder::set_thread_status(oop holder, JavaThreadStatus status) {
@@ -1479,11 +1508,9 @@ JavaThreadStatus java_lang_Thread_FieldHolder::get_thread_status(oop holder) {
 
 
 int java_lang_Thread_Constants::_static_VTHREAD_GROUP_offset = 0;
-int java_lang_Thread_Constants::_static_NOT_SUPPORTED_CLASSLOADER_offset = 0;
 
 #define THREAD_CONSTANTS_STATIC_FIELDS_DO(macro) \
-  macro(_static_VTHREAD_GROUP_offset,             k, "VTHREAD_GROUP",             threadgroup_signature, true); \
-  macro(_static_NOT_SUPPORTED_CLASSLOADER_offset, k, "NOT_SUPPORTED_CLASSLOADER", classloader_signature, true);
+  macro(_static_VTHREAD_GROUP_offset,             k, "VTHREAD_GROUP",             threadgroup_signature, true);
 
 void java_lang_Thread_Constants::compute_offsets() {
   assert(_static_VTHREAD_GROUP_offset == 0, "offsets should be initialized only once");
@@ -1504,11 +1531,6 @@ oop java_lang_Thread_Constants::get_VTHREAD_GROUP() {
   return base->obj_field(_static_VTHREAD_GROUP_offset);
 }
 
-oop java_lang_Thread_Constants::get_NOT_SUPPORTED_CLASSLOADER() {
-  InstanceKlass* k = vmClasses::Thread_Constants_klass();
-  oop base = k->static_field_base_raw();
-  return base->obj_field(_static_NOT_SUPPORTED_CLASSLOADER_offset);
-}
 
 int java_lang_Thread::_holder_offset;
 int java_lang_Thread::_name_offset;
@@ -1556,8 +1578,16 @@ JavaThread* java_lang_Thread::thread(oop java_thread) {
   return reinterpret_cast<JavaThread*>(java_thread->address_field(_eetop_offset));
 }
 
+JavaThread* java_lang_Thread::thread_acquire(oop java_thread) {
+  return reinterpret_cast<JavaThread*>(java_thread->address_field_acquire(_eetop_offset));
+}
+
 void java_lang_Thread::set_thread(oop java_thread, JavaThread* thread) {
   java_thread->address_field_put(_eetop_offset, (address)thread);
+}
+
+void java_lang_Thread::release_set_thread(oop java_thread, JavaThread* thread) {
+  java_thread->release_address_field_put(_eetop_offset, (address)thread);
 }
 
 JvmtiThreadState* java_lang_Thread::jvmti_thread_state(oop java_thread) {
@@ -1593,13 +1623,18 @@ void java_lang_Thread::set_is_in_VTMS_transition(oop java_thread, bool val) {
   java_thread->bool_field_put_volatile(_jvmti_is_in_VTMS_transition_offset, val);
 }
 
+int java_lang_Thread::is_in_VTMS_transition_offset() {
+  return _jvmti_is_in_VTMS_transition_offset;
+}
+
 void java_lang_Thread::clear_scopedValueBindings(oop java_thread) {
   assert(java_thread != nullptr, "need a java_lang_Thread pointer here");
   java_thread->obj_field_put(_scopedValueBindings_offset, nullptr);
 }
 
 oop java_lang_Thread::holder(oop java_thread) {
-    return java_thread->obj_field(_holder_offset);
+  // Note: may return null if the thread is still attaching
+  return java_thread->obj_field(_holder_offset);
 }
 
 bool java_lang_Thread::interrupted(oop java_thread) {
@@ -1630,25 +1665,43 @@ void java_lang_Thread::set_name(oop java_thread, oop name) {
   java_thread->obj_field_put(_name_offset, name);
 }
 
+// Convenience macros for setting and getting Thread fields that
+// are actually stored in the FieldHolder object of the thread.
+// The FieldHolder can be null whilst a thread is attaching via
+// JNI, and when the main thread is attaching.
+
+// The default value should be the default/zero initialized value
+// of the field as it would be in java.lang.Thread.FieldHolder.
+#define GET_FIELDHOLDER_FIELD(java_thread, field, default_val)  \
+  {                                                             \
+    oop holder = java_lang_Thread::holder(java_thread);         \
+    if (holder != nullptr)                                      \
+      return java_lang_Thread_FieldHolder::field(holder);       \
+    else                                                        \
+      return default_val;                                       \
+  }
+
+// We should never be trying to set a field of an attaching thread.
+#define SET_FIELDHOLDER_FIELD(java_thread, field, value)        \
+  {                                                             \
+    oop holder = java_lang_Thread::holder(java_thread);         \
+    assert(holder != nullptr, "Thread not fully initialized");  \
+    java_lang_Thread_FieldHolder::set_##field(holder, value);   \
+  }
+
 
 ThreadPriority java_lang_Thread::priority(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::priority(holder);
+  GET_FIELDHOLDER_FIELD(java_thread, priority, (ThreadPriority)0);
 }
 
 
 void java_lang_Thread::set_priority(oop java_thread, ThreadPriority priority) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  java_lang_Thread_FieldHolder::set_priority(holder, priority);
+  SET_FIELDHOLDER_FIELD(java_thread, priority, priority)
 }
 
 
 oop java_lang_Thread::threadGroup(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::threadGroup(holder);
+  GET_FIELDHOLDER_FIELD(java_thread, threadGroup, nullptr);
 }
 
 
@@ -1659,16 +1712,12 @@ bool java_lang_Thread::is_alive(oop java_thread) {
 
 
 bool java_lang_Thread::is_daemon(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::is_daemon(holder);
+  GET_FIELDHOLDER_FIELD(java_thread, is_daemon, false);
 }
 
 
 void java_lang_Thread::set_daemon(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  java_lang_Thread_FieldHolder::set_daemon(holder);
+  SET_FIELDHOLDER_FIELD(java_thread, daemon, true);
 }
 
 oop java_lang_Thread::context_class_loader(oop java_thread) {
@@ -1681,16 +1730,12 @@ oop java_lang_Thread::inherited_access_control_context(oop java_thread) {
 
 
 jlong java_lang_Thread::stackSize(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  return java_lang_Thread_FieldHolder::stackSize(holder);
+  GET_FIELDHOLDER_FIELD(java_thread, stackSize, 0);
 }
 
 // Write the thread status value to threadStatus field in java.lang.Thread java class.
 void java_lang_Thread::set_thread_status(oop java_thread, JavaThreadStatus status) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  java_lang_Thread_FieldHolder::set_thread_status(holder, status);
+  SET_FIELDHOLDER_FIELD(java_thread, thread_status, status);
 }
 
 // Read thread status value from threadStatus field in java.lang.Thread java class.
@@ -1700,12 +1745,7 @@ JavaThreadStatus java_lang_Thread::get_thread_status(oop java_thread) {
   assert(Threads_lock->owned_by_self() || Thread::current()->is_VM_thread() ||
          JavaThread::current()->thread_state() == _thread_in_vm,
          "Java Thread is not running in vm");
-  oop holder = java_lang_Thread::holder(java_thread);
-  if (holder == nullptr) {
-    return JavaThreadStatus::NEW;  // Java Thread not initialized
-  } else {
-    return java_lang_Thread_FieldHolder::get_thread_status(holder);
-  }
+  GET_FIELDHOLDER_FIELD(java_thread, get_thread_status, JavaThreadStatus::NEW /* not initialized */);
 }
 
 ByteSize java_lang_Thread::thread_id_offset() {
@@ -1841,9 +1881,7 @@ oop java_lang_Thread::async_get_stack_trace(oop java_thread, TRAPS) {
 }
 
 const char* java_lang_Thread::thread_status_name(oop java_thread) {
-  oop holder = java_lang_Thread::holder(java_thread);
-  assert(holder != nullptr, "Java Thread not initialized");
-  JavaThreadStatus status = java_lang_Thread_FieldHolder::get_thread_status(holder);
+  JavaThreadStatus status = get_thread_status(java_thread);
   switch (status) {
     case JavaThreadStatus::NEW                      : return "NEW";
     case JavaThreadStatus::RUNNABLE                 : return "RUNNABLE";
@@ -1910,32 +1948,21 @@ void java_lang_ThreadGroup::serialize_offsets(SerializeClosure* f) {
 
 // java_lang_VirtualThread
 
-int java_lang_VirtualThread::static_notify_jvmti_events_offset;
 int java_lang_VirtualThread::static_vthread_scope_offset;
 int java_lang_VirtualThread::_carrierThread_offset;
 int java_lang_VirtualThread::_continuation_offset;
 int java_lang_VirtualThread::_state_offset;
 
 #define VTHREAD_FIELDS_DO(macro) \
-  macro(static_notify_jvmti_events_offset, k, "notifyJvmtiEvents",  bool_signature,              true);  \
   macro(static_vthread_scope_offset,       k, "VTHREAD_SCOPE",      continuationscope_signature, true);  \
   macro(_carrierThread_offset,             k, "carrierThread",      thread_signature,            false); \
   macro(_continuation_offset,              k, "cont",               continuation_signature,      false); \
   macro(_state_offset,                     k, "state",              int_signature,               false)
 
-static bool vthread_notify_jvmti_events = JNI_FALSE;
 
 void java_lang_VirtualThread::compute_offsets() {
   InstanceKlass* k = vmClasses::VirtualThread_klass();
   VTHREAD_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-void java_lang_VirtualThread::init_static_notify_jvmti_events() {
-  if (vthread_notify_jvmti_events) {
-    InstanceKlass* ik = vmClasses::VirtualThread_klass();
-    oop base = ik->static_field_base_raw();
-    base->release_bool_field_put(static_notify_jvmti_events_offset, vthread_notify_jvmti_events);
-  }
 }
 
 bool java_lang_VirtualThread::is_instance(oop obj) {
@@ -1989,15 +2016,6 @@ void java_lang_VirtualThread::serialize_offsets(SerializeClosure* f) {
    VTHREAD_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
 }
 #endif
-
-bool java_lang_VirtualThread::notify_jvmti_events() {
-  return vthread_notify_jvmti_events == JNI_TRUE;
-}
-
-void java_lang_VirtualThread::set_notify_jvmti_events(bool enable) {
-  vthread_notify_jvmti_events = enable;
-}
-
 
 // java_lang_Throwable
 
@@ -2735,49 +2753,57 @@ void java_lang_Throwable::get_stack_trace_elements(int depth, Handle backtrace,
   }
 }
 
-Handle java_lang_Throwable::get_cause_with_stack_trace(Handle throwable, TRAPS) {
-  // Call to JVM to fill in the stack trace and clear declaringClassObject to
-  // not keep classes alive in the stack trace.
-  // call this:  public StackTraceElement[] getStackTrace()
+Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Handle throwable) {
+  // Creates an ExceptionInInitializerError to be recorded as the initialization error when class initialization
+  // failed due to the passed in 'throwable'. We cannot save 'throwable' directly due to issues with keeping alive
+  // all objects referenced via its stacktrace. So instead we save a new EIIE instance, with the same message and
+  // symbolic stacktrace of 'throwable'.
   assert(throwable.not_null(), "shouldn't be");
 
+  // Now create the message from the original exception and thread name.
+  Symbol* message = java_lang_Throwable::detail_message(throwable());
+  ResourceMark rm(current);
+  stringStream st;
+  st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
+             message == nullptr ? "" : ":");
+  if (message == nullptr) {
+    st.print("[in thread \"%s\"]", current->name());
+  } else {
+    st.print("%s [in thread \"%s\"]", message->as_C_string(), current->name());
+  }
+
+  Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
+  Handle init_error = Exceptions::new_exception(current, exception_name, st.as_string());
+  // If new_exception returns a different exception while creating the exception,
+  // abandon the attempt to save the initialization error and return null.
+  if (init_error->klass()->name() != exception_name) {
+    log_info(class, init)("Exception %s thrown while saving initialization exception",
+                        init_error->klass()->external_name());
+    return Handle();
+  }
+
+  // Call to java to fill in the stack trace and clear declaringClassObject to
+  // not keep classes alive in the stack trace.
+  // call this:  public StackTraceElement[] getStackTrace()
   JavaValue result(T_ARRAY);
   JavaCalls::call_virtual(&result, throwable,
                           vmClasses::Throwable_klass(),
                           vmSymbols::getStackTrace_name(),
                           vmSymbols::getStackTrace_signature(),
-                          CHECK_NH);
-  Handle stack_trace(THREAD, result.get_oop());
-  assert(stack_trace->is_objArray(), "Should be an array");
-
-  // Throw ExceptionInInitializerError as the cause with this exception in
-  // the message and stack trace.
-
-  // Now create the message with the original exception and thread name.
-  Symbol* message = java_lang_Throwable::detail_message(throwable());
-  ResourceMark rm(THREAD);
-  stringStream st;
-  st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
-             message == nullptr ? "" : ":");
-  if (message == nullptr) {
-    st.print("[in thread \"%s\"]", THREAD->name());
+                          current);
+  if (!current->has_pending_exception()){
+    Handle stack_trace(current, result.get_oop());
+    assert(stack_trace->is_objArray(), "Should be an array");
+    java_lang_Throwable::set_stacktrace(init_error(), stack_trace());
+    // Clear backtrace because the stacktrace should be used instead.
+    set_backtrace(init_error(), nullptr);
   } else {
-    st.print("%s [in thread \"%s\"]", message->as_C_string(), THREAD->name());
+    log_info(class, init)("Exception thrown while getting stack trace for initialization exception %s",
+                        init_error->klass()->external_name());
+    current->clear_pending_exception();
   }
 
-  Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();
-  Handle h_cause = Exceptions::new_exception(THREAD, exception_name, st.as_string());
-
-  // If new_exception returns a different exception while creating the exception, return null.
-  if (h_cause->klass()->name() != exception_name) {
-    log_info(class, init)("Exception thrown while saving initialization exception %s",
-                          h_cause->klass()->external_name());
-    return Handle();
-  }
-  java_lang_Throwable::set_stacktrace(h_cause(), stack_trace());
-  // Clear backtrace because the stacktrace should be used instead.
-  set_backtrace(h_cause(), nullptr);
-  return h_cause;
+  return init_error;
 }
 
 bool java_lang_Throwable::get_top_method_and_bci(oop throwable, Method** method, int* bci) {
@@ -3596,21 +3622,6 @@ ConstantPool* reflect_ConstantPool::get_cp(oop reflect) {
   return InstanceKlass::cast(k)->constants();
 }
 
-int reflect_UnsafeStaticFieldAccessorImpl::_base_offset;
-
-#define UNSAFESTATICFIELDACCESSORIMPL_FIELDS_DO(macro) \
-  macro(_base_offset, k, "base", object_signature, false)
-
-void reflect_UnsafeStaticFieldAccessorImpl::compute_offsets() {
-  InstanceKlass* k = vmClasses::reflect_UnsafeStaticFieldAccessorImpl_klass();
-  UNSAFESTATICFIELDACCESSORIMPL_FIELDS_DO(FIELD_COMPUTE_OFFSET);
-}
-
-#if INCLUDE_CDS
-void reflect_UnsafeStaticFieldAccessorImpl::serialize_offsets(SerializeClosure* f) {
-  UNSAFESTATICFIELDACCESSORIMPL_FIELDS_DO(FIELD_SERIALIZE_OFFSET);
-}
-#endif
 
 // Support for java_lang_ref_Reference
 
@@ -4607,7 +4618,8 @@ bool java_lang_ClassLoader::is_trusted_loader(oop loader) {
 }
 
 // Return true if this is one of the class loaders associated with
-// the generated bytecodes for reflection.
+// the generated bytecodes for serialization constructor returned
+// by sun.reflect.ReflectionFactory::newConstructorForSerialization
 bool java_lang_ClassLoader::is_reflection_class_loader(oop loader) {
   if (loader != nullptr) {
     Klass* delegating_cl_class = vmClasses::reflect_DelegatingClassLoader_klass();
@@ -5197,7 +5209,6 @@ void java_lang_InternalError::serialize_offsets(SerializeClosure* f) {
   f(java_lang_reflect_Field) \
   f(java_lang_reflect_RecordComponent) \
   f(reflect_ConstantPool) \
-  f(reflect_UnsafeStaticFieldAccessorImpl) \
   f(java_lang_reflect_Parameter) \
   f(java_lang_Module) \
   f(java_lang_StackTraceElement) \
@@ -5332,7 +5343,7 @@ void JavaClasses::check_offsets() {
 int InjectedField::compute_offset() {
   InstanceKlass* ik = InstanceKlass::cast(klass());
   for (AllFieldStream fs(ik); !fs.done(); fs.next()) {
-    if (!may_be_java && !fs.access_flags().is_internal()) {
+    if (!may_be_java && !fs.field_flags().is_injected()) {
       // Only look at injected fields
       continue;
     }
@@ -5356,6 +5367,5 @@ int InjectedField::compute_offset() {
 void javaClasses_init() {
   JavaClasses::compute_offsets();
   JavaClasses::check_offsets();
-  java_lang_VirtualThread::init_static_notify_jvmti_events();
   FilteredFieldsMap::initialize();  // must be done after computing offsets.
 }

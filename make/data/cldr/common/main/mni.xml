@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE ldml SYSTEM "../../common/dtd/ldml.dtd">
-<!-- Copyright © 1991-2022 Unicode, Inc.
+<!-- Copyright © 1991-2023 Unicode, Inc.
 For terms of use, see http://www.unicode.org/copyright.html
 SPDX-License-Identifier: Unicode-DFS-2016
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
@@ -342,6 +342,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 							<quarter type="4">মরীশুবা মসুং</quarter>
 						</quarterWidth>
 					</quarterContext>
+					<quarterContext type="stand-alone">
+						<quarterWidth type="abbreviated">
+							<quarter type="1">অহানবা মসুং</quarter>
+							<quarter type="2">অনীশুবা মসুং</quarter>
+							<quarter type="3">অহুমশুবা মসুং</quarter>
+							<quarter type="4">মরীশুবা মসুং</quarter>
+						</quarterWidth>
+						<quarterWidth type="wide">
+							<quarter type="1">অহানবা মসুং</quarter>
+							<quarter type="2">অনীশুবা মসুং</quarter>
+							<quarter type="3">অহুমশুবা মসুং</quarter>
+							<quarter type="4">মরীশুবা মসুং</quarter>
+						</quarterWidth>
+					</quarterContext>
 				</quarters>
 				<dayPeriods>
 					<dayPeriodContext type="format">
@@ -474,6 +488,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="0">কুমশি</relative>
 				<relative type="1">মথং চহি</relative>
 			</field>
+			<field type="year-short">
+				<displayName>চহী</displayName>
+			</field>
+			<field type="year-narrow">
+				<displayName>চহী</displayName>
+			</field>
 			<field type="quarter">
 				<displayName>মসুং</displayName>
 			</field>
@@ -486,7 +506,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="month">
 				<displayName>থা</displayName>
 			</field>
+			<field type="month-short">
+				<displayName>থা</displayName>
+			</field>
+			<field type="month-narrow">
+				<displayName>থা</displayName>
+			</field>
 			<field type="week">
+				<displayName>চয়োল</displayName>
+			</field>
+			<field type="week-short">
+				<displayName>চয়োল</displayName>
+			</field>
+			<field type="week-narrow">
 				<displayName>চয়োল</displayName>
 			</field>
 			<field type="day">
@@ -496,6 +528,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<relative type="1">হয়েং</relative>
 			</field>
 			<field type="day-short">
+				<displayName>নুমিৎ</displayName>
 				<relative type="-1">ঙরাং</relative>
 				<relative type="0">ঙসি</relative>
 				<relative type="1">হয়েং</relative>
@@ -515,6 +548,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<field type="hour">
 				<displayName>পুং</displayName>
 			</field>
+			<field type="hour-short">
+				<displayName>পুং</displayName>
+			</field>
+			<field type="hour-narrow">
+				<displayName>পুং</displayName>
+			</field>
 			<field type="minute">
 				<displayName>মিনট</displayName>
 			</field>
@@ -525,6 +564,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>মিনট</displayName>
 			</field>
 			<field type="second">
+				<displayName>সেকেণ্ড</displayName>
+			</field>
+			<field type="second-short">
+				<displayName>সেকেণ্ড</displayName>
+			</field>
+			<field type="second-narrow">
 				<displayName>সেকেণ্ড</displayName>
 			</field>
 			<field type="zone">

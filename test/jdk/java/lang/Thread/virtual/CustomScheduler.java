@@ -26,7 +26,6 @@
  * @summary Test virtual threads using a custom scheduler
  * @requires vm.continuations
  * @modules java.base/java.lang:+open
- * @enablePreview
  * @run junit CustomScheduler
  */
 

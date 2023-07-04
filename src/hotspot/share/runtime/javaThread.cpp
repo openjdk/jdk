@@ -70,6 +70,7 @@
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
 #include "runtime/osThread.hpp"
@@ -235,7 +236,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_string_void_signature(),
                             thread_group,
                             name,
-                            THREAD);
+                            CHECK);
   } else {
     // Thread gets assigned name "Thread-nnn" and null target
     // (java.lang.Thread doesn't have a constructor taking only a ThreadGroup argument)
@@ -246,7 +247,7 @@ void JavaThread::allocate_threadObj(Handle thread_group, const char* thread_name
                             vmSymbols::threadgroup_runnable_void_signature(),
                             thread_group,
                             Handle(),
-                            THREAD);
+                            CHECK);
   }
   os::set_priority(this, NormPriority);
 
@@ -376,6 +377,9 @@ void JavaThread::check_possible_safepoint() {
 }
 
 void JavaThread::check_for_valid_safepoint_state() {
+  // Don't complain if running a debugging command.
+  if (DebuggingContext::is_enabled()) return;
+
   // Check NoSafepointVerifier, which is implied by locks taken that can be
   // shared with the VM thread.  This makes sure that no locks with allow_vm_block
   // are held.
@@ -487,8 +491,9 @@ JavaThread::JavaThread() :
 
   _class_to_be_initialized(nullptr),
 
-  _SleepEvent(ParkEvent::Allocate(this))
-{
+  _SleepEvent(ParkEvent::Allocate(this)),
+
+  _lock_stack(this) {
   set_jni_functions(jni_functions());
 
 #if INCLUDE_JVMCI
@@ -690,6 +695,10 @@ void JavaThread::run() {
 
   }
 
+  if (AlwaysPreTouchStacks) {
+    pretouch_stack();
+  }
+
   // We call another function to do the rest so we are sure that the stack addresses used
   // from there will be lower than the stack base just computed.
   thread_main_inner();
@@ -732,8 +741,9 @@ static void ensure_join(JavaThread* thread) {
   // Thread is exiting. So set thread_status field in  java.lang.Thread class to TERMINATED.
   java_lang_Thread::set_thread_status(threadObj(), JavaThreadStatus::TERMINATED);
   // Clear the native thread instance - this makes isAlive return false and allows the join()
-  // to complete once we've done the notify_all below
-  java_lang_Thread::set_thread(threadObj(), nullptr);
+  // to complete once we've done the notify_all below. Needs a release() to obey Java Memory Model
+  // requirements.
+  java_lang_Thread::release_set_thread(threadObj(), nullptr);
   lock.notify_all(thread);
   // Ignore pending exception, since we are exiting anyway
   thread->clear_pending_exception();
@@ -985,6 +995,7 @@ JavaThread* JavaThread::active() {
 }
 
 bool JavaThread::is_lock_owned(address adr) const {
+  assert(LockingMode != LM_LIGHTWEIGHT, "should not be called with new lightweight locking");
   if (Thread::is_lock_owned(adr)) return true;
 
   for (MonitorChunk* chunk = monitor_chunks(); chunk != nullptr; chunk = chunk->next()) {
@@ -1088,9 +1099,12 @@ void JavaThread::install_async_exception(AsyncExceptionHandshake* aeh) {
   // for AbortVMOnException flag
   Exceptions::debug_check_abort(exception->klass()->external_name());
 
-  // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
-  java_lang_Thread::set_interrupted(threadObj(), true);
-  this->interrupt();
+  oop vt_oop = vthread();
+  if (vt_oop == nullptr || !vt_oop->is_a(vmClasses::BaseVirtualThread_klass())) {
+    // Interrupt thread so it will wake up from a potential wait()/sleep()/park()
+    java_lang_Thread::set_interrupted(threadObj(), true);
+    this->interrupt();
+  }
 }
 
 class InstallAsyncExceptionHandshake : public HandshakeClosure {
@@ -1378,6 +1392,10 @@ void JavaThread::oops_do_no_frames(OopClosure* f, CodeBlobClosure* cf) {
     f->do_oop((oop*)entry->chunk_addr());
     entry = entry->parent();
   }
+
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    lock_stack().oops_do(f);
+  }
 }
 
 void JavaThread::oops_do_frames(OopClosure* f, CodeBlobClosure* cf) {
@@ -1506,12 +1524,13 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   st->print("%s \"%s\"", type_name(), get_thread_name_string(buf, buflen));
   Thread* current = Thread::current_or_null_safe();
   assert(current != nullptr, "cannot be called by a detached thread");
+  st->fill_to(60);
   if (!current->is_Java_thread() || JavaThread::cast(current)->is_oop_safe()) {
     // Only access threadObj() if current thread is not a JavaThread
     // or if it is a JavaThread that can safely access oops.
     oop thread_obj = threadObj();
     if (thread_obj != nullptr) {
-      if (java_lang_Thread::is_daemon(thread_obj)) st->print(" daemon");
+      st->print(java_lang_Thread::is_daemon(thread_obj) ? " daemon" : "       ");
     }
   }
   st->print(" [");
@@ -1519,8 +1538,9 @@ void JavaThread::print_on_error(outputStream* st, char *buf, int buflen) const {
   if (osthread()) {
     st->print(", id=%d", osthread()->thread_id());
   }
-  st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ")",
-            p2i(stack_end()), p2i(stack_base()));
+  st->print(", stack(" PTR_FORMAT "," PTR_FORMAT ") (" PROPERFMT ")",
+            p2i(stack_end()), p2i(stack_base()),
+            PROPERFMTARGS(stack_size()));
   st->print("]");
 
   ThreadsSMRSupport::print_info_on(this, st);
@@ -1647,7 +1667,6 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   assert(InstanceKlass::cast(thread_oop->klass())->is_linked(),
          "must be initialized");
   set_threadOopHandles(thread_oop());
-  java_lang_Thread::set_thread(thread_oop(), this);
 
   if (prio == NoPriority) {
     prio = java_lang_Thread::priority(thread_oop());
@@ -1663,6 +1682,11 @@ void JavaThread::prepare(jobject jni_thread, ThreadPriority prio) {
   // added to the Threads list for if a GC happens, then the java_thread oop
   // will not be visited by GC.
   Threads::add(this);
+  // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
+  // on a ThreadsList. We don't want to wait for the release when the
+  // Theads_lock is dropped somewhere in the caller since the JavaThread*
+  // is already visible to JVM/TI via the ThreadsList.
+  java_lang_Thread::release_set_thread(thread_oop(), this);
 }
 
 oop JavaThread::current_park_blocker() {
@@ -1971,11 +1995,24 @@ Klass* JavaThread::security_get_caller_class(int depth) {
   return nullptr;
 }
 
+// Internal convenience function for millisecond resolution sleeps.
+bool JavaThread::sleep(jlong millis) {
+  jlong nanos;
+  if (millis > max_jlong / NANOUNITS_PER_MILLIUNIT) {
+    // Conversion to nanos would overflow, saturate at max
+    nanos = max_jlong;
+  } else {
+    nanos = millis * NANOUNITS_PER_MILLIUNIT;
+  }
+  return sleep_nanos(nanos);
+}
+
 // java.lang.Thread.sleep support
 // Returns true if sleep time elapsed as expected, and false
 // if the thread was interrupted.
-bool JavaThread::sleep(jlong millis) {
+bool JavaThread::sleep_nanos(jlong nanos) {
   assert(this == Thread::current(),  "thread consistency check");
+  assert(nanos >= 0, "nanos are in range");
 
   ParkEvent * const slp = this->_SleepEvent;
   // Because there can be races with thread interruption sending an unpark()
@@ -1989,20 +2026,22 @@ bool JavaThread::sleep(jlong millis) {
 
   jlong prevtime = os::javaTimeNanos();
 
+  jlong nanos_remaining = nanos;
+
   for (;;) {
     // interruption has precedence over timing out
     if (this->is_interrupted(true)) {
       return false;
     }
 
-    if (millis <= 0) {
+    if (nanos_remaining <= 0) {
       return true;
     }
 
     {
       ThreadBlockInVM tbivm(this);
       OSThreadWaitState osts(this->osthread(), false /* not Object.wait() */);
-      slp->park(millis);
+      slp->park_nanos(nanos_remaining);
     }
 
     // Update elapsed time tracking
@@ -2013,7 +2052,7 @@ bool JavaThread::sleep(jlong millis) {
       assert(false,
              "unexpected time moving backwards detected in JavaThread::sleep()");
     } else {
-      millis -= (newtime - prevtime) / NANOSECS_PER_MILLISEC;
+      nanos_remaining -= (newtime - prevtime);
     }
     prevtime = newtime;
   }
@@ -2023,21 +2062,10 @@ bool JavaThread::sleep(jlong millis) {
 void JavaThread::invoke_shutdown_hooks() {
   HandleMark hm(this);
 
-  // We could get here with a pending exception, if so clear it now or
-  // it will cause MetaspaceShared::link_shared_classes to
-  // fail for dynamic dump.
+  // We could get here with a pending exception, if so clear it now.
   if (this->has_pending_exception()) {
     this->clear_pending_exception();
   }
-
-#if INCLUDE_CDS
-  // Link all classes for dynamic CDS dumping before vm exit.
-  // Same operation is being done in JVM_BeforeHalt for handling the
-  // case where the application calls System.exit().
-  if (DynamicArchive::should_dump_at_vm_exit()) {
-    DynamicArchive::prepare_for_dump_at_exit();
-  }
-#endif
 
   EXCEPTION_MARK;
   Klass* shutdown_klass =
@@ -2069,8 +2097,7 @@ void JavaThread::verify_cross_modify_fence_failure(JavaThread *thread) {
 // Helper function to create the java.lang.Thread object for a
 // VM-internal thread. The thread will have the given name, and be
 // a member of the "system" ThreadGroup.
-Handle JavaThread::create_system_thread_object(const char* name,
-                                               bool is_visible, TRAPS) {
+Handle JavaThread::create_system_thread_object(const char* name, TRAPS) {
   Handle string = java_lang_String::create_from_str(name, CHECK_NH);
 
   // Initialize thread_oop to put it into the system threadGroup.
@@ -2097,9 +2124,6 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   MutexLocker mu(current, Threads_lock);
 
   // Initialize the fields of the thread_oop first.
-
-  java_lang_Thread::set_thread(thread_oop(), target); // isAlive == true now
-
   if (prio != NoPriority) {
     java_lang_Thread::set_priority(thread_oop(), prio);
     // Note: we don't call os::set_priority here. Possibly we should,
@@ -2112,6 +2136,11 @@ void JavaThread::start_internal_daemon(JavaThread* current, JavaThread* target,
   target->set_threadOopHandles(thread_oop());
 
   Threads::add(target); // target is now visible for safepoint/handshake
+  // Publish the JavaThread* in java.lang.Thread after the JavaThread* is
+  // on a ThreadsList. We don't want to wait for the release when the
+  // Theads_lock is dropped when the 'mu' destructor is run since the
+  // JavaThread* is already visible to JVM/TI via the ThreadsList.
+  java_lang_Thread::release_set_thread(thread_oop(), target); // isAlive == true now
   Thread::start(target);
 }
 
@@ -2124,6 +2153,25 @@ void JavaThread::vm_exit_on_osthread_failure(JavaThread* thread) {
     // we report.
     vm_exit_during_initialization("java.lang.OutOfMemoryError",
                                   os::native_thread_creation_failed_msg());
+  }
+}
+
+void JavaThread::pretouch_stack() {
+  // Given an established java thread stack with usable area followed by
+  // shadow zone and reserved/yellow/red zone, pretouch the usable area ranging
+  // from the current frame down to the start of the shadow zone.
+  const address end = _stack_overflow_state.shadow_zone_safe_limit();
+  if (is_in_full_stack(end)) {
+    char* p1 = (char*) alloca(1);
+    address here = (address) &p1;
+    if (is_in_full_stack(here) && here > end) {
+      size_t to_alloc = here - end;
+      char* p2 = (char*) alloca(to_alloc);
+      log_trace(os, thread)("Pretouching thread stack from " PTR_FORMAT " to " PTR_FORMAT ".",
+                            p2i(p2), p2i(end));
+      os::pretouch_memory(p2, p2 + to_alloc,
+                          NOT_AIX(os::vm_page_size()) AIX_ONLY(4096));
+    }
   }
 }
 

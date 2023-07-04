@@ -24,7 +24,6 @@
 /**
  * @test
  * @summary Test that virtual threads are GC'ed
- * @enablePreview
  * @run junit Collectable
  */
 

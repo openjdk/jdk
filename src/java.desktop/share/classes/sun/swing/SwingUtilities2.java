@@ -2278,11 +2278,11 @@ public class SwingUtilities2 {
 
     /**
      * Returns the client property for the given key if it is set; otherwise
-     * returns the {@L&F} property.
+     * returns the {@literal L&F} property.
      *
      * @param component the component
      * @param key an {@code String} specifying the key for the desired boolean value
-     * @return the boolean value of the client property if it is set or the {@L&F}
+     * @return the boolean value of the client property if it is set or the {@literal L&F}
      *         property in other case.
      */
     public static boolean getBoolean(JComponent component, String key) {

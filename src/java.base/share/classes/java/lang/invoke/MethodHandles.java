@@ -36,6 +36,7 @@ import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.Reflection;
+import jdk.internal.util.ClassFileDumper;
 import jdk.internal.vm.annotation.ForceInline;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
@@ -712,7 +713,8 @@ public class MethodHandles {
      * (See the Java Virtual Machine Specification, section {@jvms 4.10.1.9}.)
      * <p>
      * The JVM represents constructors and static initializer blocks as internal methods
-     * with special names ({@code "<init>"} and {@code "<clinit>"}).
+     * with special names ({@value ConstantDescs#INIT_NAME} and {@value
+     * ConstantDescs#CLASS_INIT_NAME}).
      * The internal syntax of invocation instructions allows them to refer to such internal
      * methods as if they were normal methods, but the JVM bytecode verifier rejects them.
      * A lookup of such an internal method will produce a {@code NoSuchMethodException}.
@@ -2236,8 +2238,23 @@ public class MethodHandles {
                        .defineClassAsLookup(initialize, classData);
         }
 
+        // A default dumper for writing class files passed to Lookup::defineClass
+        // and Lookup::defineHiddenClass to disk for debugging purposes.  To enable,
+        // set -Djdk.invoke.MethodHandle.dumpHiddenClassFiles or
+        //     -Djdk.invoke.MethodHandle.dumpHiddenClassFiles=true
+        //
+        // This default dumper does not dump hidden classes defined by LambdaMetafactory
+        // and LambdaForms and method handle internals.  They are dumped via
+        // different ClassFileDumpers.
+        private static ClassFileDumper defaultDumper() {
+            return DEFAULT_DUMPER;
+        }
+
+        private static final ClassFileDumper DEFAULT_DUMPER = ClassFileDumper.getInstance(
+                "jdk.invoke.MethodHandle.dumpClassFiles", "DUMP_CLASS_FILES");
+
         static class ClassFile {
-            final String name;
+            final String name;  // internal name
             final int accessFlags;
             final byte[] bytes;
             ClassFile(String name, int accessFlags, byte[] bytes) {
@@ -2259,6 +2276,18 @@ public class MethodHandles {
              * or the class is not in the given package name.
              */
             static ClassFile newInstance(byte[] bytes, String pkgName) {
+                var cf = readClassFile(bytes);
+
+                // check if it's in the named package
+                int index = cf.name.lastIndexOf('/');
+                String pn = (index == -1) ? "" : cf.name.substring(0, index).replace('/', '.');
+                if (!pn.equals(pkgName)) {
+                    throw newIllegalArgumentException(cf.name + " not in same package as lookup class");
+                }
+                return cf;
+            }
+
+            private static ClassFile readClassFile(byte[] bytes) {
                 int magic = readInt(bytes, 0);
                 if (magic != 0xCAFEBABE) {
                     throw new ClassFormatError("Incompatible magic value: " + magic);
@@ -2273,7 +2302,7 @@ public class MethodHandles {
                 int accessFlags;
                 try {
                     ClassReader reader = new ClassReader(bytes);
-                    // ClassReader::getClassName does not check if `this_class` is CONSTANT_Class_info
+                    // ClassReader does not check if `this_class` is CONSTANT_Class_info
                     // workaround to read `this_class` using readConst and validate the value
                     int thisClass = reader.readUnsignedShort(reader.header + 2);
                     Object constant = reader.readConst(thisClass, new char[reader.getMaxStringLength()]);
@@ -2283,7 +2312,7 @@ public class MethodHandles {
                     if (!type.getDescriptor().startsWith("L")) {
                         throw new ClassFormatError("this_class item: #" + thisClass + " not a CONSTANT_Class_info");
                     }
-                    name = type.getClassName();
+                    name = type.getInternalName();
                     accessFlags = reader.readUnsignedShort(reader.header);
                 } catch (RuntimeException e) {
                     // ASM exceptions are poorly specified
@@ -2291,19 +2320,10 @@ public class MethodHandles {
                     cfe.initCause(e);
                     throw cfe;
                 }
-
                 // must be a class or interface
                 if ((accessFlags & Opcodes.ACC_MODULE) != 0) {
                     throw newIllegalArgumentException("Not a class or interface: ACC_MODULE flag is set");
                 }
-
-                // check if it's in the named package
-                int index = name.lastIndexOf('.');
-                String pn = (index == -1) ? "" : name.substring(0, index);
-                if (!pn.equals(pkgName)) {
-                    throw newIllegalArgumentException(name + " not in same package as lookup class");
-                }
-
                 return new ClassFile(name, accessFlags, bytes);
             }
 
@@ -2333,11 +2353,26 @@ public class MethodHandles {
          * before calling this factory method.
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * {@code bytes} denotes a class in a different package than the lookup class
          */
         private ClassDefiner makeClassDefiner(byte[] bytes) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return new ClassDefiner(this, cf, STRONG_LOADER_LINK);
+            return new ClassDefiner(this, cf, STRONG_LOADER_LINK, defaultDumper());
+        }
+
+        /**
+         * Returns a ClassDefiner that creates a {@code Class} object of a normal class
+         * from the given bytes.  No package name check on the given bytes.
+         *
+         * @param name    internal name
+         * @param bytes   class bytes
+         * @param dumper  dumper to write the given bytes to the dumper's output directory
+         * @return ClassDefiner that defines a normal class of the given bytes.
+         */
+        ClassDefiner makeClassDefiner(String name, byte[] bytes, ClassFileDumper dumper) {
+            // skip package name validation
+            ClassFile cf = ClassFile.newInstanceNoCheck(name, bytes);
+            return new ClassDefiner(this, cf, STRONG_LOADER_LINK, dumper);
         }
 
         /**
@@ -2348,14 +2383,15 @@ public class MethodHandles {
          * before calling this factory method.
          *
          * @param bytes   class bytes
+         * @param dumper dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes.
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * {@code bytes} denotes a class in a different package than the lookup class
          */
-        ClassDefiner makeHiddenClassDefiner(byte[] bytes) {
+        ClassDefiner makeHiddenClassDefiner(byte[] bytes, ClassFileDumper dumper) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, Set.of(), false);
+            return makeHiddenClassDefiner(cf, Set.of(), false, dumper);
         }
 
         /**
@@ -2372,27 +2408,29 @@ public class MethodHandles {
          * @return ClassDefiner that defines a hidden class of the given bytes and options
          *
          * @throws IllegalArgumentException if {@code bytes} is not a class or interface or
-         * {@bytes} denotes a class in a different package than the lookup class
+         * {@code bytes} denotes a class in a different package than the lookup class
          */
-        ClassDefiner makeHiddenClassDefiner(byte[] bytes,
-                                            Set<ClassOption> options,
-                                            boolean accessVmAnnotations) {
+        private ClassDefiner makeHiddenClassDefiner(byte[] bytes,
+                                                    Set<ClassOption> options,
+                                                    boolean accessVmAnnotations) {
             ClassFile cf = ClassFile.newInstance(bytes, lookupClass().getPackageName());
-            return makeHiddenClassDefiner(cf, options, accessVmAnnotations);
+            return makeHiddenClassDefiner(cf, options, accessVmAnnotations, defaultDumper());
         }
 
         /**
          * Returns a ClassDefiner that creates a {@code Class} object of a hidden class
-         * from the given bytes and the given options.  No package name check on the given name.
+         * from the given bytes and the given options.  No package name check on the given bytes.
          *
-         * @param name    fully-qualified name that specifies the prefix of the hidden class
+         * @param name    internal name that specifies the prefix of the hidden class
          * @param bytes   class bytes
          * @param options class options
+         * @param dumper  dumper to write the given bytes to the dumper's output directory
          * @return ClassDefiner that defines a hidden class of the given bytes and options.
          */
-        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options) {
+        ClassDefiner makeHiddenClassDefiner(String name, byte[] bytes, Set<ClassOption> options, ClassFileDumper dumper) {
+            Objects.requireNonNull(dumper);
             // skip name and access flags validation
-            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false);
+            return makeHiddenClassDefiner(ClassFile.newInstanceNoCheck(name, bytes), options, false, dumper);
         }
 
         /**
@@ -2402,10 +2440,12 @@ public class MethodHandles {
          * @param cf ClassFile
          * @param options class options
          * @param accessVmAnnotations true to give the hidden class access to VM annotations
+         * @param dumper dumper to write the given bytes to the dumper's output directory
          */
         private ClassDefiner makeHiddenClassDefiner(ClassFile cf,
                                                     Set<ClassOption> options,
-                                                    boolean accessVmAnnotations) {
+                                                    boolean accessVmAnnotations,
+                                                    ClassFileDumper dumper) {
             int flags = HIDDEN_CLASS | ClassOption.optionsToFlag(options);
             if (accessVmAnnotations | VM.isSystemDomainLoader(lookupClass.getClassLoader())) {
                 // jdk.internal.vm.annotations are permitted for classes
@@ -2413,24 +2453,26 @@ public class MethodHandles {
                 flags |= ACCESS_VM_ANNOTATIONS;
             }
 
-            return new ClassDefiner(this, cf, flags);
+            return new ClassDefiner(this, cf, flags, dumper);
         }
 
         static class ClassDefiner {
             private final Lookup lookup;
-            private final String name;
+            private final String name;  // internal name
             private final byte[] bytes;
             private final int classFlags;
+            private final ClassFileDumper dumper;
 
-            private ClassDefiner(Lookup lookup, ClassFile cf, int flags) {
+            private ClassDefiner(Lookup lookup, ClassFile cf, int flags, ClassFileDumper dumper) {
                 assert ((flags & HIDDEN_CLASS) != 0 || (flags & STRONG_LOADER_LINK) == STRONG_LOADER_LINK);
                 this.lookup = lookup;
                 this.bytes = cf.bytes;
                 this.name = cf.name;
                 this.classFlags = flags;
+                this.dumper = dumper;
             }
 
-            String className() {
+            String internalName() {
                 return name;
             }
 
@@ -2457,12 +2499,35 @@ public class MethodHandles {
                 Class<?> lookupClass = lookup.lookupClass();
                 ClassLoader loader = lookupClass.getClassLoader();
                 ProtectionDomain pd = (loader != null) ? lookup.lookupClassProtectionDomain() : null;
-                Class<?> c = SharedSecrets.getJavaLangAccess()
-                        .defineClass(loader, lookupClass, name, bytes, pd, initialize, classFlags, classData);
-                assert !isNestmate() || c.getNestHost() == lookupClass.getNestHost();
-                return c;
+                Class<?> c = null;
+                try {
+                    c = SharedSecrets.getJavaLangAccess()
+                            .defineClass(loader, lookupClass, name, bytes, pd, initialize, classFlags, classData);
+                    assert !isNestmate() || c.getNestHost() == lookupClass.getNestHost();
+                    return c;
+                } finally {
+                    // dump the classfile for debugging
+                    if (dumper.isEnabled()) {
+                        String name = internalName();
+                        if (c != null) {
+                            dumper.dumpClass(name, c, bytes);
+                        } else {
+                            dumper.dumpFailedClass(name, bytes);
+                        }
+                    }
+                }
             }
 
+            /**
+             * Defines the class of the given bytes and the given classData.
+             * If {@code initialize} parameter is true, then the class will be initialized.
+             *
+             * @param initialize true if the class to be initialized
+             * @param classData classData or null
+             * @return a Lookup for the defined class
+             *
+             * @throws LinkageError linkage error
+             */
             Lookup defineClassAsLookup(boolean initialize, Object classData) {
                 Class<?> c = defineClass(initialize, classData);
                 return new Lookup(c, null, FULL_POWER_MODES);
@@ -2768,7 +2833,7 @@ assertEquals("[x, y, z]", pb.command().toString());
             if (refc.isArray()) {
                 throw new NoSuchMethodException("no constructor for array class: " + refc.getName());
             }
-            String name = "<init>";
+            String name = ConstantDescs.INIT_NAME;
             MemberName ctor = resolveOrFail(REF_newInvokeSpecial, refc, name, type);
             return getDirectConstructor(refc, ctor);
         }
@@ -2810,6 +2875,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * This method returns when {@code targetClass} is fully initialized, or
          * when {@code targetClass} is being initialized by the current thread.
          *
+         * @param <T> the type of the class to be initialized
          * @param targetClass the class to be initialized
          * @return {@code targetClass} that has been initialized, or that is being
          *         initialized by the current thread.
@@ -2825,7 +2891,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @since 15
          * @jvms 5.5 Initialization
          */
-        public Class<?> ensureInitialized(Class<?> targetClass) throws IllegalAccessException {
+        public <T> Class<T> ensureInitialized(Class<T> targetClass) throws IllegalAccessException {
             if (targetClass.isPrimitive())
                 throw new IllegalArgumentException(targetClass + " is a primitive class");
             if (targetClass.isArray())
@@ -2925,8 +2991,9 @@ assertEquals("[x, y, z]", pb.command().toString());
          * <p>
          * Otherwise, {@code targetClass} is not accessible.
          *
+         * @param <T> the type of the class to be access-checked
          * @param targetClass the class to be access-checked
-         * @return the class that has been access-checked
+         * @return {@code targetClass} that has been access-checked
          * @throws IllegalAccessException if the class is not accessible from the lookup class
          * and previous lookup class, if present, using the allowed access modes.
          * @throws SecurityException if a security manager is present and it
@@ -2935,7 +3002,7 @@ assertEquals("[x, y, z]", pb.command().toString());
          * @since 9
          * @see <a href="#cross-module-lookup">Cross-module lookups</a>
          */
-        public Class<?> accessClass(Class<?> targetClass) throws IllegalAccessException {
+        public <T> Class<T> accessClass(Class<T> targetClass) throws IllegalAccessException {
             if (!isClassAccessible(targetClass)) {
                 throw makeAccessException(targetClass);
             }
@@ -2964,7 +3031,8 @@ assertEquals("[x, y, z]", pb.command().toString());
          * {@linkplain MethodHandle#asVarargsCollector variable arity} if and only if
          * the method's variable arity modifier bit ({@code 0x0080}) is set.
          * <p style="font-size:smaller;">
-         * <em>(Note:  JVM internal methods named {@code "<init>"} are not visible to this API,
+         * <em>(Note:  JVM internal methods named {@value ConstantDescs#INIT_NAME}
+         * are not visible to this API,
          * even though the {@code invokespecial} instruction can refer to them
          * in special circumstances.  Use {@link #findConstructor findConstructor}
          * to access instance initialization methods in a safe manner.)</em>
@@ -3860,6 +3928,14 @@ return mh1;
             throw m.makeAccessException(message, this);
         }
 
+        private boolean isArrayClone(byte refKind, Class<?> refc, MemberName m) {
+            return Modifier.isProtected(m.getModifiers()) &&
+                    refKind == REF_invokeVirtual &&
+                    m.getDeclaringClass() == Object.class &&
+                    m.getName().equals("clone") &&
+                    refc.isArray();
+        }
+
         /** Check public/protected/private bits on the symbolic reference class and its member. */
         void checkAccess(byte refKind, Class<?> refc, MemberName m) throws IllegalAccessException {
             assert(m.referenceKindIsConsistentWith(refKind) &&
@@ -3868,11 +3944,7 @@ return mh1;
             int allowedModes = this.allowedModes;
             if (allowedModes == TRUSTED)  return;
             int mods = m.getModifiers();
-            if (Modifier.isProtected(mods) &&
-                    refKind == REF_invokeVirtual &&
-                    m.getDeclaringClass() == Object.class &&
-                    m.getName().equals("clone") &&
-                    refc.isArray()) {
+            if (isArrayClone(refKind, refc, m)) {
                 // The JVM does this hack also.
                 // (See ClassVerifier::verify_invoke_instructions
                 // and LinkResolver::check_method_accessability.)
@@ -3999,10 +4071,10 @@ return mh1;
 
             if (refKind == REF_invokeSpecial &&
                 refc != lookupClass() &&
-                !refc.isInterface() &&
+                !refc.isInterface() && !lookupClass().isInterface() &&
                 refc != lookupClass().getSuperclass() &&
                 refc.isAssignableFrom(lookupClass())) {
-                assert(!method.getName().equals("<init>"));  // not this code path
+                assert(!method.getName().equals(ConstantDescs.INIT_NAME));  // not this code path
 
                 // Per JVMS 6.5, desc. of invokespecial instruction:
                 // If the method is in a superclass of the LC,
@@ -4032,7 +4104,12 @@ return mh1;
             MethodHandle mh = dmh;
             // Optionally narrow the receiver argument to lookupClass using restrictReceiver.
             if ((doRestrict && refKind == REF_invokeSpecial) ||
-                    (MethodHandleNatives.refKindHasReceiver(refKind) && restrictProtectedReceiver(method))) {
+                    (MethodHandleNatives.refKindHasReceiver(refKind) &&
+                            restrictProtectedReceiver(method) &&
+                            // All arrays simply inherit the protected Object.clone method.
+                            // The leading argument is already restricted to the requested
+                            // array type (not the lookup class).
+                            !isArrayClone(refKind, refc, method))) {
                 mh = restrictReceiver(method, dmh, lookupClass());
             }
             mh = maybeBindCaller(method, mh, boundCaller);
@@ -4177,14 +4254,14 @@ return mh1;
             }
             MemberName resolved = resolveOrFail(refKind, member);
             mh = getDirectMethodForConstant(refKind, defc, resolved);
-            if (mh instanceof DirectMethodHandle
+            if (mh instanceof DirectMethodHandle dmh
                     && canBeCached(refKind, defc, resolved)) {
                 MemberName key = mh.internalMemberName();
                 if (key != null) {
                     key = key.asNormalOriginal();
                 }
                 if (member.equals(key)) {  // better safe than sorry
-                    LOOKASIDE_TABLE.put(key, (DirectMethodHandle) mh);
+                    LOOKASIDE_TABLE.put(key, dmh);
                 }
             }
             return mh;
@@ -5182,7 +5259,7 @@ assert((int)twice.invokeExact(21) == 42);
      * @return a method handle which inserts an additional argument,
      *         before calling the original method handle
      * @throws NullPointerException if the target or the {@code values} array is null
-     * @throws IllegalArgumentException if (@code pos) is less than {@code 0} or greater than
+     * @throws IllegalArgumentException if {@code pos} is less than {@code 0} or greater than
      *         {@code N - L} where {@code N} is the arity of the target method handle and {@code L}
      *         is the length of the values array.
      * @throws ClassCastException if an argument does not match the corresponding bound parameter
@@ -7879,23 +7956,23 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
 
     /**
      * Creates a var handle object, which can be used to dereference a {@linkplain java.lang.foreign.MemorySegment memory segment}
-     * by viewing its contents as a sequence of the provided value layout.
+     * at a given byte offset, using the provided value layout.
      *
      * <p>The provided layout specifies the {@linkplain ValueLayout#carrier() carrier type},
      * the {@linkplain ValueLayout#byteSize() byte size},
      * the {@linkplain ValueLayout#byteAlignment() byte alignment} and the {@linkplain ValueLayout#order() byte order}
      * associated with the returned var handle.
      *
-     * <p>The returned var handle's type is {@code carrier} and the list of coordinate types is
-     * {@code (MemorySegment, long)}, where the {@code long} coordinate type corresponds to byte offset into
-     * a given memory segment. The returned var handle accesses bytes at an offset in a given
-     * memory segment, composing bytes to or from a value of the type {@code carrier} according to the given endianness;
-     * the alignment constraint (in bytes) for the resulting var handle is given by {@code alignmentBytes}.
+     * <p>The list of coordinate types associated with the returned var handle is {@code (MemorySegment, long)},
+     * where the {@code long} coordinate type corresponds to byte offset into the given memory segment coordinate.
+     * Thus, the returned var handle accesses bytes at an offset in a given memory segment, composing bytes to or from
+     * a value of the var handle type. Moreover, the access operation will honor the endianness and the
+     * alignment constraints expressed in the provided layout.
      *
      * <p>As an example, consider the memory layout expressed by a {@link GroupLayout} instance constructed as follows:
      * {@snippet lang="java" :
      *     GroupLayout seq = java.lang.foreign.MemoryLayout.structLayout(
-     *             MemoryLayout.paddingLayout(32),
+     *             MemoryLayout.paddingLayout(4),
      *             ValueLayout.JAVA_INT.withOrder(ByteOrder.BIG_ENDIAN).withName("value")
      *     );
      * }
@@ -7946,7 +8023,6 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *
      * @param layout the value layout for which a memory access handle is to be obtained.
      * @return the new memory segment view var handle.
-     * @throws IllegalArgumentException if an illegal carrier type is used, or if {@code alignmentBytes} is not a power of two.
      * @throws NullPointerException if {@code layout} is {@code null}.
      * @see MemoryLayout#varHandle(MemoryLayout.PathElement...)
      * @since 19

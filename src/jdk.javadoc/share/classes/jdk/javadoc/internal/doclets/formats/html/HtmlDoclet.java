@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,9 @@ public class HtmlDoclet extends AbstractDoclet {
         }
 
         if (options.createIndex()) {
-            ExternalSpecsWriter.generate(configuration);
+            if (!options.noExternalSpecsPage()){
+                ExternalSpecsWriter.generate(configuration);
+            }
             SystemPropertiesWriter.generate(configuration);
             configuration.mainIndex.addElements();
             IndexBuilder allClassesIndex = new IndexBuilder(configuration, nodeprecated, true);
@@ -297,6 +299,8 @@ public class HtmlDoclet extends AbstractDoclet {
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.JAVASCRIPT), true, true);
         f = DocFile.createFileForOutput(configuration, DocPaths.CLIPBOARD_SVG);
         f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.CLIPBOARD_SVG), true, true);
+        f = DocFile.createFileForOutput(configuration, DocPaths.LINK_SVG);
+        f.copyResource(DocPaths.RESOURCES.resolve(DocPaths.LINK_SVG), true, true);
         if (options.createIndex()) {
             f = DocFile.createFileForOutput(configuration, DocPaths.SEARCH_JS);
             f.copyResource(DOCLET_RESOURCES.resolve(DocPaths.SEARCH_JS_TEMPLATE), configuration.docResources);

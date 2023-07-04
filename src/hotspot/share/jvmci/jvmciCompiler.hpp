@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,8 @@
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/compiler_globals.hpp"
 #include "runtime/atomic.hpp"
+
+class JVMCICompileState;
 
 class JVMCICompiler : public AbstractCompiler {
  public:
@@ -62,9 +64,19 @@ class JVMCICompiler : public AbstractCompiler {
 
   /**
    * Number of methods successfully compiled by a call to
-   * JVMCICompiler::compile_method().
+   * JVMCIRuntime::compile_method().
    */
   volatile int _methods_compiled;
+
+  // Tracks upcalls that should only fail under severe conditions (e.g.
+  // memory pressure) and disables JVMCI compilation if too many fail
+  // with an error. A good example is an OOME thrown
+  // when libgraal calls into the HotSpot heap to get a copy
+  // of the system properties or to translate an exception from
+  // the HotSpot heap to the libgraal heap.
+  volatile int _ok_upcalls;
+  volatile int _err_upcalls;
+  bool _disabled;
 
   // Incremented periodically by JVMCI compiler threads
   // to indicate JVMCI compilation activity.
@@ -125,6 +137,11 @@ public:
   // a call to JVMCICompiler::compile_method().
   int methods_compiled() { return _methods_compiled; }
   void inc_methods_compiled();
+
+  // Called after a JVMCI upcall whose success is a measure of the
+  // JVMCI compiler's health. The value of `error` describes
+  // an error during the upcall, null if no error.
+  void on_upcall(const char* error, JVMCICompileState* compile_state=nullptr);
 
   // Gets a value indicating JVMCI compilation activity on any thread.
   // If successive calls to this method return a different value, then

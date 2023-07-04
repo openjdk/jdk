@@ -761,7 +761,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
 
   if (clazz == nullptr) {
     THROW_MSG_(vmSymbols::java_lang_NullPointerException(),
-               "class is null", JNI_FALSE);
+               "class is null", nullptr);
   }
   oop mirror = JNIHandles::resolve_non_null(clazz);
   if (mirror == nullptr) {
@@ -770,7 +770,7 @@ jobject Modules::get_module(jclass clazz, TRAPS) {
   }
   if (!java_lang_Class::is_instance(mirror)) {
     THROW_MSG_(vmSymbols::java_lang_IllegalArgumentException(),
-               "Invalid class", JNI_FALSE);
+               "Invalid class", nullptr);
   }
 
   oop module = java_lang_Class::module(mirror);

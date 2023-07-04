@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -131,7 +131,7 @@ class PhaseNameIter {
   const char* operator*() const { return _token; }
 
   PhaseNameIter& operator++() {
-    _token = strtok_r(NULL, ",", &_saved_ptr);
+    _token = strtok_r(nullptr, ",", &_saved_ptr);
     return *this;
   }
 
@@ -159,13 +159,13 @@ class PhaseNameValidator {
 
  public:
   PhaseNameValidator(ccstrlist option, uint64_t& mask) : _valid(true), _bad(nullptr) {
-    for (PhaseNameIter iter(option); *iter != NULL && _valid; ++iter) {
+    for (PhaseNameIter iter(option); *iter != nullptr && _valid; ++iter) {
 
       CompilerPhaseType cpt = find_phase(*iter);
       if (PHASE_NONE == cpt) {
         const size_t len = MIN2<size_t>(strlen(*iter), 63) + 1;  // cap len to a value we know is enough for all phase descriptions
         _bad = NEW_C_HEAP_ARRAY(char, len, mtCompiler);
-        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with NULLs.
+        // strncpy always writes len characters. If the source string is shorter, the function fills the remaining bytes with nulls.
         strncpy(_bad, *iter, len);
         _valid = false;
       } else if (PHASE_ALL == cpt) {
@@ -178,7 +178,7 @@ class PhaseNameValidator {
   }
 
   ~PhaseNameValidator() {
-    if (_bad != NULL) {
+    if (_bad != nullptr) {
       FREE_C_HEAP_ARRAY(char, _bad);
     }
   }

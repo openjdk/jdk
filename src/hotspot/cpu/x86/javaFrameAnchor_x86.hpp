@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,10 +39,10 @@ public:
 
   void clear(void) {
     // clearing _last_Java_sp must be first
-    _last_Java_sp = NULL;
+    _last_Java_sp = nullptr;
     // fence?
-    _last_Java_fp = NULL;
-    _last_Java_pc = NULL;
+    _last_Java_fp = nullptr;
+    _last_Java_pc = nullptr;
   }
 
   void copy(JavaFrameAnchor* src) {
@@ -50,11 +50,11 @@ public:
     // We must clear _last_Java_sp before copying the rest of the new data
     //
     // Hack Alert: Temporary bugfix for 4717480/4721647
-    // To act like previous version (pd_cache_state) don't NULL _last_Java_sp
+    // To act like previous version (pd_cache_state) don't null _last_Java_sp
     // unless the value is changing
     //
     if (_last_Java_sp != src->_last_Java_sp)
-      _last_Java_sp = NULL;
+      _last_Java_sp = nullptr;
 
     _last_Java_fp = src->_last_Java_fp;
     _last_Java_pc = src->_last_Java_pc;
@@ -62,7 +62,7 @@ public:
     _last_Java_sp = src->_last_Java_sp;
   }
 
-  bool walkable(void)                            { return _last_Java_sp != NULL && _last_Java_pc != NULL; }
+  bool walkable(void)                            { return _last_Java_sp != nullptr && _last_Java_pc != nullptr; }
   void make_walkable();
 
   intptr_t* last_Java_sp(void) const             { return _last_Java_sp; }

@@ -88,8 +88,7 @@ public class StreamCloseTest {
 
     @BeforeTest
     public void setup() throws Exception {
-        InetSocketAddress sa = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
-        httpTestServer = HttpServerAdapters.HttpTestServer.of(HttpServer.create(sa, 0));
+        httpTestServer = HttpServerAdapters.HttpTestServer.create(Version.HTTP_1_1);
         httpTestServer.addHandler(new HttpServerAdapters.HttpTestEchoHandler(), "/");
         URI uri = URI.create("http://" + httpTestServer.serverAuthority() + "/");
         httpTestServer.start();

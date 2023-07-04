@@ -63,7 +63,7 @@ public class CdsDifferentObjectAlignment {
 
         CDSTestUtils.createArchiveAndCheck(createAlignmentArgument);
 
-        OutputAnalyzer out = CDSTestUtils.runWithArchive(loadAlignmentArgument);
+        OutputAnalyzer out = CDSTestUtils.runWithArchive("-Xlog:cds", loadAlignmentArgument);
         CDSTestUtils.checkExecExpectError(out, 1, expectedErrorMsg);
     }
 }

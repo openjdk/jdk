@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -300,19 +300,4 @@ public final class Jlink {
             pluginsConfig.getLastSorterPluginName());
     }
 
-    /**
-     * Post process the image with a plugin configuration.
-     *
-     * @param image Existing image.
-     * @param plugins Plugins cannot be null
-     */
-    public void postProcess(ExecutableImage image, List<Plugin> plugins) {
-        Objects.requireNonNull(image);
-        Objects.requireNonNull(plugins);
-        try {
-            JlinkTask.postProcessImage(image, plugins);
-        } catch (Exception ex) {
-            throw new PluginException(ex);
-        }
-    }
 }

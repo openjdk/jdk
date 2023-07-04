@@ -241,7 +241,7 @@ public class StyleResolver {
         if (spec.length() == 1) {
 //            log.warning("Invalid style-reference; missing discriminator: " + spec);
         } else {
-            String name = spec.substring(1, spec.length());
+            String name = spec.substring(1);
             String resolvedSpec = source.apply(name);
             if (resolvedSpec != null) {
                 return apply(style, resolvedSpec);

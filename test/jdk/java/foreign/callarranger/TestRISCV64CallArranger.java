@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2023, Institute of Software, Chinese Academy of Sciences.
  * All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -28,6 +28,7 @@
  * @test
  * @enablePreview
  * @requires sun.arch.data.model == "64"
+ * @compile platform/PlatformLayouts.java
  * @modules java.base/jdk.internal.foreign
  *          java.base/jdk.internal.foreign.abi
  *          java.base/jdk.internal.foreign.abi.riscv64
@@ -39,7 +40,6 @@
 import java.lang.foreign.FunctionDescriptor;
 import java.lang.foreign.MemoryLayout;
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.StructLayout;
 import jdk.internal.foreign.abi.Binding;
 import jdk.internal.foreign.abi.CallingSequence;
 import jdk.internal.foreign.abi.LinkerOptions;
@@ -49,14 +49,15 @@ import jdk.internal.foreign.abi.VMStorage;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import java.lang.foreign.ValueLayout;
 import java.lang.invoke.MethodType;
 
 import static java.lang.foreign.Linker.Option.firstVariadicArg;
 import static java.lang.foreign.ValueLayout.ADDRESS;
-import static jdk.internal.foreign.PlatformLayouts.RISCV64.*;
 import static jdk.internal.foreign.abi.Binding.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.*;
 import static jdk.internal.foreign.abi.riscv64.RISCV64Architecture.Regs.*;
+import static platform.PlatformLayouts.RISCV64.*;
 
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertFalse;
@@ -204,34 +205,13 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
                 }
             },
             // struct s { float a; /* padding */ double b };
-            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(32), C_DOUBLE),
+            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(4), C_DOUBLE),
                 new Binding[]{
                     dup(),
                     // s.a
                     bufferLoad(0, float.class), vmStore(f10, float.class),
                     // s.b
                     bufferLoad(8, double.class), vmStore(f11, double.class),
-                }
-            },
-            // struct __attribute__((__packed__)) s { float a; double b; };
-            { MemoryLayout.structLayout(C_FLOAT, C_DOUBLE),
-                new Binding[]{
-                    dup(),
-                    // s.a
-                    bufferLoad(0, float.class), vmStore(f10, float.class),
-                    // s.b
-                    bufferLoad(4, double.class), vmStore(f11, double.class),
-                }
-            },
-            // struct s { float a; float b __attribute__ ((aligned (8))); }
-            { MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(32),
-                C_FLOAT, MemoryLayout.paddingLayout(32)),
-                new Binding[]{
-                    dup(),
-                    // s.a
-                    bufferLoad(0, float.class), vmStore(f10, float.class),
-                    // s.b
-                    bufferLoad(8, float.class), vmStore(f11, float.class),
                 }
             }
         };
@@ -277,7 +257,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
 
     @Test
     public void testStructFA2() {
-        MemoryLayout fa = MemoryLayout.structLayout(C_FLOAT, C_DOUBLE);
+        MemoryLayout fa = MemoryLayout.structLayout(C_FLOAT, MemoryLayout.paddingLayout(4), C_DOUBLE);
 
         MethodType mt = MethodType.methodType(MemorySegment.class, float.class, int.class, MemorySegment.class);
         FunctionDescriptor fd = FunctionDescriptor.of(fa, C_FLOAT, C_INT, fa);
@@ -297,7 +277,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
                 dup(),
                 bufferLoad(0, float.class),
                 vmStore(f11, float.class),
-                bufferLoad(4, double.class),
+                bufferLoad(8, double.class),
                 vmStore(f12, double.class)
             }
         });
@@ -309,7 +289,7 @@ public class TestRISCV64CallArranger extends CallArrangerTestBase {
             bufferStore(0, float.class),
             dup(),
             vmLoad(f11, double.class),
-            bufferStore(4, double.class)
+            bufferStore(8, double.class)
         });
     }
 

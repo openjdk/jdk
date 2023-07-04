@@ -151,6 +151,31 @@ public class WhiteBox {
     return encodeConstantPoolIndyIndex0(index);
   }
 
+  private native int getIndyInfoLength0(Class<?> aClass);
+  public         int getIndyInfoLength(Class<?> aClass) {
+    Objects.requireNonNull(aClass);
+    return getIndyInfoLength0(aClass);
+  }
+
+  private native int getIndyCPIndex0(Class<?> aClass, int index);
+  public         int getIndyCPIndex(Class<?> aClass, int index) {
+    Objects.requireNonNull(aClass);
+    return getIndyCPIndex0(aClass, index);
+  }
+
+  private native String printClasses0(String classNamePattern, int flags);
+  public         String printClasses(String classNamePattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    return printClasses0(classNamePattern, flags);
+  }
+
+  private native String printMethods0(String classNamePattern, String methodPattern, int flags);
+  public         String printMethods(String classNamePattern, String methodPattern, int flags) {
+    Objects.requireNonNull(classNamePattern);
+    Objects.requireNonNull(methodPattern);
+    return printMethods0(classNamePattern, methodPattern, flags);
+  }
+
   // JVMTI
   private native void addToBootstrapClassLoaderSearch0(String segment);
   public         void addToBootstrapClassLoaderSearch(String segment){
@@ -596,6 +621,7 @@ public class WhiteBox {
 
   // VM flags
   public native boolean isConstantVMFlag(String name);
+  public native boolean isDefaultVMFlag(String name);
   public native boolean isLockedVMFlag(String name);
   public native void    setBooleanVMFlag(String name, boolean value);
   public native void    setIntVMFlag(String name, long value);
@@ -676,7 +702,6 @@ public class WhiteBox {
   public native String  getDefaultArchivePath();
   public native boolean cdsMemoryMappingFailed();
   public native boolean isSharingEnabled();
-  public native boolean isShared(Object o);
   public native boolean isSharedClass(Class<?> c);
   public native boolean areSharedStringsMapped();
   public native boolean isSharedInternedString(String s);
@@ -684,7 +709,6 @@ public class WhiteBox {
   public native boolean isJFRIncluded();
   public native boolean isDTraceIncluded();
   public native boolean canWriteJavaHeapArchive();
-  public native Object  getResolvedReferences(Class<?> c);
   public native void    linkClass(Class<?> c);
   public native boolean areOpenArchiveHeapObjectsMapped();
 
@@ -738,4 +762,6 @@ public class WhiteBox {
   public native void lockCritical();
 
   public native void unlockCritical();
+
+  public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
 }

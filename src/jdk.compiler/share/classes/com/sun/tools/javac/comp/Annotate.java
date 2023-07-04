@@ -32,7 +32,7 @@ import com.sun.tools.javac.code.Kinds.KindSelector;
 import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Source.Feature;
 import com.sun.tools.javac.code.Symbol.*;
-import com.sun.tools.javac.code.TypeMetadata.Entry.Kind;
+import com.sun.tools.javac.code.TypeMetadata.Annotations;
 import com.sun.tools.javac.comp.Check.CheckContext;
 import com.sun.tools.javac.resources.CompilerProperties.Errors;
 import com.sun.tools.javac.resources.CompilerProperties.Fragments;
@@ -103,6 +103,7 @@ public class Annotate {
     private final Attribute theUnfinishedDefaultValue;
     private final String sourceName;
 
+    @SuppressWarnings("this-escape")
     protected Annotate(Context context) {
         context.put(annotateKey, this);
 
@@ -1049,7 +1050,11 @@ public class Annotate {
         typeAnnotation(() -> {
             List<Attribute.TypeCompound> compounds = fromAnnotations(annotations);
             Assert.check(annotations.size() == compounds.size());
-            storeAt.getMetadataOfKind(Kind.ANNOTATIONS).combine(new TypeMetadata.Annotations(compounds));
+            // the type already has annotation metadata, but it's empty
+            Annotations metadata = storeAt.getMetadata(Annotations.class);
+            Assert.checkNonNull(metadata);
+            Assert.check(metadata.annotationBuffer().isEmpty());
+            metadata.annotationBuffer().appendList(compounds);
         });
     }
 

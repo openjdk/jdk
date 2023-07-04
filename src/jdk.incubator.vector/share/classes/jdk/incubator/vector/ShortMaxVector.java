@@ -649,14 +649,6 @@ final class ShortMaxVector extends ShortVector {
 
         @Override
         @ForceInline
-        public ShortMaxMask eq(VectorMask<Short> mask) {
-            Objects.requireNonNull(mask);
-            ShortMaxMask m = (ShortMaxMask)mask;
-            return xor(m.not());
-        }
-
-        @Override
-        @ForceInline
         /*package-private*/
         ShortMaxMask indexPartiallyInUpperRange(long offset, long limit) {
             return (ShortMaxMask) VectorSupport.indexPartiallyInUpperRange(
@@ -703,9 +695,9 @@ final class ShortMaxVector extends ShortVector {
                                           (m1, m2, vm) -> m1.bOp(m2, (i, a, b) -> a | b));
         }
 
+        @Override
         @ForceInline
-        /* package-private */
-        ShortMaxMask xor(VectorMask<Short> mask) {
+        public ShortMaxMask xor(VectorMask<Short> mask) {
             Objects.requireNonNull(mask);
             ShortMaxMask m = (ShortMaxMask)mask;
             return VectorSupport.binaryOp(VECTOR_OP_XOR, ShortMaxMask.class, null, short.class, VLENGTH,

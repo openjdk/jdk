@@ -26,6 +26,8 @@
 #define SHARE_GC_SERIAL_MARKSWEEP_HPP
 
 #include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/preservedMarks.inline.hpp"
+#include "gc/shared/referenceProcessor.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/taskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -35,7 +37,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/stack.hpp"
 
-class ReferenceProcessor;
 class DataLayout;
 class SerialOldTracer;
 class STWGCTimer;
@@ -99,12 +100,12 @@ class MarkSweep : AllStatic {
   static Stack<ObjArrayTask, mtGC>             _objarray_stack;
 
   // Space for storing/restoring mark word
-  static Stack<PreservedMark, mtGC>      _preserved_overflow_stack;
+  static PreservedMarksSet               _preserved_overflow_stack_set;
   static size_t                          _preserved_count;
   static size_t                          _preserved_count_max;
   static PreservedMark*                  _preserved_marks;
 
-  // Reference processing (used in ...follow_contents)
+  static AlwaysTrueClosure               _always_true_closure;
   static ReferenceProcessor*             _ref_processor;
 
   static STWGCTimer*                     _gc_timer;
@@ -131,8 +132,7 @@ class MarkSweep : AllStatic {
   static uint total_invocations() { return _total_invocations; }
 
   // Reference Processing
-  static ReferenceProcessor* const ref_processor() { return _ref_processor; }
-  static void set_ref_processor(ReferenceProcessor* rp);
+  static ReferenceProcessor* ref_processor() { return _ref_processor; }
 
   static STWGCTimer* gc_timer() { return _gc_timer; }
   static SerialOldTracer* gc_tracer() { return _gc_tracer; }
@@ -185,17 +185,6 @@ class AdjustPointerClosure: public BasicOopIterateClosure {
   virtual void do_oop(oop* p);
   virtual void do_oop(narrowOop* p);
   virtual ReferenceIterationMode reference_iteration_mode() { return DO_FIELDS; }
-};
-
-class PreservedMark {
-private:
-  oop _obj;
-  markWord _mark;
-
-public:
-  PreservedMark(oop obj, markWord mark) : _obj(obj), _mark(mark) {}
-  void adjust_pointer();
-  void restore();
 };
 
 #endif // SHARE_GC_SERIAL_MARKSWEEP_HPP

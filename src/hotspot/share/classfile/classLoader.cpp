@@ -802,7 +802,6 @@ void ClassLoader::add_to_boot_append_entries(ClassPathEntry *new_entry) {
 // loading app classes. Instead, the app class are loaded by the
 // jdk/internal/loader/ClassLoaders$AppClassLoader instance.
 void ClassLoader::add_to_app_classpath_entries(JavaThread* current,
-                                               const char* path,
                                                ClassPathEntry* entry,
                                                bool check_for_duplicates) {
 #if INCLUDE_CDS
@@ -853,7 +852,7 @@ bool ClassLoader::update_class_path_entry_list(JavaThread* current,
     if (is_boot_append) {
       add_to_boot_append_entries(new_entry);
     } else {
-      add_to_app_classpath_entries(current, path, new_entry, check_for_duplicates);
+      add_to_app_classpath_entries(current, new_entry, check_for_duplicates);
     }
     return true;
   } else {
@@ -1346,8 +1345,7 @@ void ClassLoader::record_result(JavaThread* current, InstanceKlass* ik,
   const char* const file_name = file_name_for_class_name(class_name,
                                                          ik->name()->utf8_length());
   assert(file_name != nullptr, "invariant");
-
-  ClassLoaderExt::record_result(classpath_index, ik, redefined);
+  ClassLoaderExt::record_result(checked_cast<s2>(classpath_index), ik, redefined);
 }
 #endif // INCLUDE_CDS
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -307,10 +307,6 @@ public abstract class BaseCalendar extends AbstractCalendar {
         return isLeapYear(((Date)date).getNormalizedYear()) ? 366 : 365;
     }
 
-    public int getYearLengthInMonths(CalendarDate date) {
-        return 12;
-    }
-
     static final int[] DAYS_IN_MONTH
         //  12   1   2   3   4   5   6   7   8   9  10  11  12
         = { 31, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31};
@@ -527,7 +523,7 @@ public abstract class BaseCalendar extends AbstractCalendar {
     /**
      * @return true if the specified year is a Gregorian leap year, or
      * false otherwise.
-     * @see BaseCalendar#isGregorianLeapYear
+     * @see CalendarUtils#isGregorianLeapYear
      */
     protected boolean isLeapYear(CalendarDate date) {
         return isLeapYear(((Date)date).getNormalizedYear());

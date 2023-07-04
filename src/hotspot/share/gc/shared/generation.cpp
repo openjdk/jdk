@@ -42,8 +42,7 @@
 #include "utilities/events.hpp"
 
 Generation::Generation(ReservedSpace rs, size_t initial_size) :
-  _gc_manager(nullptr),
-  _ref_processor(nullptr) {
+  _gc_manager(nullptr) {
   if (!_virtual_space.initialize(rs, initial_size)) {
     vm_exit_during_initialization("Could not reserve enough space for "
                     "object heap");
@@ -68,15 +67,6 @@ size_t Generation::initial_size() {
 
 size_t Generation::max_capacity() const {
   return reserved().byte_size();
-}
-
-// By default we get a single threaded default reference processor;
-// generations needing multi-threaded refs processing or discovery override this method.
-void Generation::ref_processor_init() {
-  assert(_ref_processor == nullptr, "a reference processor already exists");
-  assert(!_reserved.is_empty(), "empty generation?");
-  _span_based_discoverer.set_span(_reserved);
-  _ref_processor = new ReferenceProcessor(&_span_based_discoverer);    // a vanilla reference processor
 }
 
 void Generation::print() const { print_on(tty); }
@@ -284,7 +274,7 @@ void Generation::object_iterate(ObjectClosure* cl) {
 
 void Generation::prepare_for_compaction(CompactPoint* cp) {
   // Generic implementation, can be specialized
-  CompactibleSpace* space = first_compaction_space();
+  ContiguousSpace* space = first_compaction_space();
   while (space != nullptr) {
     space->prepare_for_compaction(cp);
     space = space->next_compaction_space();
@@ -306,7 +296,7 @@ void Generation::adjust_pointers() {
 }
 
 void Generation::compact() {
-  CompactibleSpace* sp = first_compaction_space();
+  ContiguousSpace* sp = first_compaction_space();
   while (sp != nullptr) {
     sp->compact();
     sp = sp->next_compaction_space();

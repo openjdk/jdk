@@ -308,8 +308,8 @@ class MallocTracker : AllStatic {
   // under category f would hit either the global limit or the limit for category f.
   static inline bool check_exceeds_limit(size_t s, MEMFLAGS f);
 
-  // Given a pointer, if it seems to point to the start of a valid malloced block,
-  // print the block. Note that since there is very low risk of memory looking
+  // Given a pointer, look for the containing malloc block.
+  // Print the block. Note that since there is very low risk of memory looking
   // accidentally like a valid malloc block header (canaries and all) this is not
   // totally failproof. Only use this during debugging or when you can afford
   // signals popping up, e.g. when writing an hs_err file.

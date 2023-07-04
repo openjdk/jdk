@@ -131,7 +131,7 @@ private:
                                    int pool_index, int cache_index,
                                    ciInstanceKlass* accessor);
   ciField*   get_field_by_index(ciInstanceKlass* loading_klass,
-                                int field_index);
+                                int field_index, Bytecodes::Code bc);
   ciMethod*  get_method_by_index(const constantPoolHandle& cpool,
                                  int method_index, Bytecodes::Code bc,
                                  ciInstanceKlass* loading_klass);
@@ -149,7 +149,7 @@ private:
                                         int pool_index, int cache_index,
                                         ciInstanceKlass* loading_klass);
   ciField*   get_field_by_index_impl(ciInstanceKlass* loading_klass,
-                                     int field_index);
+                                     int field_index, Bytecodes::Code bc);
   ciMethod*  get_method_by_index_impl(const constantPoolHandle& cpool,
                                       int method_index, Bytecodes::Code bc,
                                       ciInstanceKlass* loading_klass);
@@ -496,6 +496,7 @@ public:
   void dump_replay_data_unsafe(outputStream* out);
   void dump_replay_data_helper(outputStream* out);
   void dump_compile_data(outputStream* out);
+  void dump_replay_data_version(outputStream* out);
 
   const char *dyno_name(const InstanceKlass* ik) const;
   const char *replay_name(const InstanceKlass* ik) const;

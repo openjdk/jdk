@@ -236,10 +236,10 @@ public:
   inline size_t num_regions() const { return _num_regions; }
   inline bool is_heap_region_special() { return _heap_region_special; }
 
-  inline ShenandoahHeapRegion* const heap_region_containing(const void* addr) const;
+  inline ShenandoahHeapRegion* heap_region_containing(const void* addr) const;
   inline size_t heap_region_index_containing(const void* addr) const;
 
-  inline ShenandoahHeapRegion* const get_region(size_t region_idx) const;
+  inline ShenandoahHeapRegion* get_region(size_t region_idx) const;
 
   void heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
   void parallel_heap_region_iterate(ShenandoahHeapRegionClosure* blk) const;
@@ -327,12 +327,7 @@ private:
 
     // GC has been cancelled. Worker threads can not suspend for
     // safepoint but must finish their work as soon as possible.
-    CANCELLED,
-
-    // GC has not been cancelled and must not be cancelled. At least
-    // one worker thread checks for pending safepoint and may suspend
-    // if a safepoint is pending.
-    NOT_CANCELLED
+    CANCELLED
   };
 
   ShenandoahSharedEnumFlag<CancelState> _cancelled_gc;

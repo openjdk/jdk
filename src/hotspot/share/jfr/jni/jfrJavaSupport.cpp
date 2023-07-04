@@ -56,7 +56,7 @@
 
 #ifdef ASSERT
 static void check_java_thread_state(JavaThread* t, JavaThreadState state) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   assert(t->is_Java_thread(), "invariant");
   assert(t->thread_state() == state, "invariant");
 }
@@ -86,7 +86,7 @@ jobject JfrJavaSupport::local_jni_handle(const oop obj, JavaThread* t) {
 jobject JfrJavaSupport::local_jni_handle(const jobject handle, JavaThread* t) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
   const oop obj = JNIHandles::resolve(handle);
-  return obj == NULL ? NULL : local_jni_handle(obj, t);
+  return obj == nullptr ? nullptr : local_jni_handle(obj, t);
 }
 
 void JfrJavaSupport::destroy_local_jni_handle(jobject handle) {
@@ -101,7 +101,7 @@ jobject JfrJavaSupport::global_jni_handle(const oop obj, JavaThread* t) {
 
 jobject JfrJavaSupport::global_jni_handle(const jobject handle, JavaThread* t) {
   const oop obj = JNIHandles::resolve(handle);
-  return obj == NULL ? NULL : global_jni_handle(obj, t);
+  return obj == nullptr ? nullptr : global_jni_handle(obj, t);
 }
 
 void JfrJavaSupport::destroy_global_jni_handle(jobject handle) {
@@ -116,7 +116,7 @@ jweak JfrJavaSupport::global_weak_jni_handle(const oop obj, JavaThread* t) {
 
 jweak JfrJavaSupport::global_weak_jni_handle(const jobject handle, JavaThread* t) {
   const oop obj = JNIHandles::resolve(handle);
-  return obj == NULL ? NULL : global_weak_jni_handle(obj, t);
+  return obj == nullptr ? nullptr : global_weak_jni_handle(obj, t);
 }
 
 void JfrJavaSupport::destroy_global_weak_jni_handle(jweak handle) {
@@ -147,7 +147,7 @@ void JfrJavaSupport::call_virtual(JfrJavaArguments* args, TRAPS) {
 }
 
 void JfrJavaSupport::notify_all(jobject object, TRAPS) {
-  assert(object != NULL, "invariant");
+  assert(object != nullptr, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   HandleMark hm(THREAD);
   Handle h_obj(THREAD, resolve_non_null(object));
@@ -162,9 +162,9 @@ void JfrJavaSupport::notify_all(jobject object, TRAPS) {
  *  Object construction
  */
 static void object_construction(JfrJavaArguments* args, JavaValue* result, InstanceKlass* klass, TRAPS) {
-  assert(args != NULL, "invariant");
-  assert(result != NULL, "invariant");
-  assert(klass != NULL, "invariant");
+  assert(args != nullptr, "invariant");
+  assert(result != nullptr, "invariant");
+  assert(klass != nullptr, "invariant");
   assert(klass->is_initialized(), "invariant");
 
   HandleMark hm(THREAD);
@@ -179,9 +179,9 @@ static void object_construction(JfrJavaArguments* args, JavaValue* result, Insta
 }
 
 static void array_construction(JfrJavaArguments* args, JavaValue* result, InstanceKlass* klass, int array_length, TRAPS) {
-  assert(args != NULL, "invariant");
-  assert(result != NULL, "invariant");
-  assert(klass != NULL, "invariant");
+  assert(args != nullptr, "invariant");
+  assert(result != nullptr, "invariant");
+  assert(klass != nullptr, "invariant");
   assert(klass->is_initialized(), "invariant");
 
   Klass* const ak = klass->array_klass(THREAD);
@@ -192,8 +192,8 @@ static void array_construction(JfrJavaArguments* args, JavaValue* result, Instan
 }
 
 static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
-  assert(args != NULL, "invariant");
-  assert(result != NULL, "invariant");
+  assert(args != nullptr, "invariant");
+  assert(result != nullptr, "invariant");
   assert(result->get_type() == T_OBJECT, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
 
@@ -210,10 +210,10 @@ static void create_object(JfrJavaArguments* args, JavaValue* result, TRAPS) {
 }
 
 static void handle_result(JavaValue* result, bool global_ref, JavaThread* t) {
-  assert(result != NULL, "invariant");
+  assert(result != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(t));
   const oop result_oop = result->get_oop();
-  if (result_oop == NULL) {
+  if (result_oop == nullptr) {
     return;
   }
   result->set_jobject(global_ref ?
@@ -222,31 +222,31 @@ static void handle_result(JavaValue* result, bool global_ref, JavaThread* t) {
 }
 
 void JfrJavaSupport::new_object(JfrJavaArguments* args, TRAPS) {
-  assert(args != NULL, "invariant");
+  assert(args != nullptr, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   create_object(args, args->result(), THREAD);
 }
 
 void JfrJavaSupport::new_object_local_ref(JfrJavaArguments* args, TRAPS) {
-  assert(args != NULL, "invariant");
+  assert(args != nullptr, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   JavaValue* const result = args->result();
-  assert(result != NULL, "invariant");
+  assert(result != nullptr, "invariant");
   create_object(args, result, CHECK);
   handle_result(result, false, THREAD);
 }
 
 void JfrJavaSupport::new_object_global_ref(JfrJavaArguments* args, TRAPS) {
-  assert(args != NULL, "invariant");
+  assert(args != nullptr, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   JavaValue* const result = args->result();
-  assert(result != NULL, "invariant");
+  assert(result != nullptr, "invariant");
   create_object(args, result, CHECK);
   handle_result(result, true, THREAD);
 }
 
 jstring JfrJavaSupport::new_string(const char* c_str, TRAPS) {
-  assert(c_str != NULL, "invariant");
+  assert(c_str != nullptr, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(THREAD));
   const oop result = java_lang_String::create_oop_from_str(c_str, THREAD);
   return (jstring)local_jni_handle(result, THREAD);
@@ -289,7 +289,7 @@ jobject JfrJavaSupport::new_java_lang_Long(jlong value, TRAPS) {
 }
 
 void JfrJavaSupport::set_array_element(jobjectArray arr, jobject element, int index, JavaThread* t) {
-  assert(arr != NULL, "invariant");
+  assert(arr != nullptr, "invariant");
   DEBUG_ONLY(check_java_thread_in_vm(t));
   HandleMark hm(t);
   objArrayHandle a(t, (objArrayOop)resolve_non_null(arr));
@@ -301,38 +301,38 @@ void JfrJavaSupport::set_array_element(jobjectArray arr, jobject element, int in
  */
 static void write_int_field(const Handle& h_oop, fieldDescriptor* fd, jint value) {
   assert(h_oop.not_null(), "invariant");
-  assert(fd != NULL, "invariant");
+  assert(fd != nullptr, "invariant");
   h_oop->int_field_put(fd->offset(), value);
 }
 
 static void write_float_field(const Handle& h_oop, fieldDescriptor* fd, jfloat value) {
   assert(h_oop.not_null(), "invariant");
-  assert(fd != NULL, "invariant");
+  assert(fd != nullptr, "invariant");
   h_oop->float_field_put(fd->offset(), value);
 }
 
 static void write_double_field(const Handle& h_oop, fieldDescriptor* fd, jdouble value) {
   assert(h_oop.not_null(), "invariant");
-  assert(fd != NULL, "invariant");
+  assert(fd != nullptr, "invariant");
   h_oop->double_field_put(fd->offset(), value);
 }
 
 static void write_long_field(const Handle& h_oop, fieldDescriptor* fd, jlong value) {
   assert(h_oop.not_null(), "invariant");
-  assert(fd != NULL, "invariant");
+  assert(fd != nullptr, "invariant");
   h_oop->long_field_put(fd->offset(), value);
 }
 
 static void write_oop_field(const Handle& h_oop, fieldDescriptor* fd, const oop value) {
   assert(h_oop.not_null(), "invariant");
-  assert(fd != NULL, "invariant");
+  assert(fd != nullptr, "invariant");
   h_oop->obj_field_put(fd->offset(), value);
 }
 
 static void write_specialized_field(JfrJavaArguments* args, const Handle& h_oop, fieldDescriptor* fd, bool static_field) {
-  assert(args != NULL, "invariant");
+  assert(args != nullptr, "invariant");
   assert(h_oop.not_null(), "invariant");
-  assert(fd != NULL, "invariant");
+  assert(fd != nullptr, "invariant");
   assert(fd->offset() > 0, "invariant");
   assert(args->length() >= 1, "invariant");
 
@@ -367,9 +367,9 @@ static void write_specialized_field(JfrJavaArguments* args, const Handle& h_oop,
 }
 
 static void read_specialized_field(JavaValue* result, const Handle& h_oop, fieldDescriptor* fd) {
-  assert(result != NULL, "invariant");
+  assert(result != nullptr, "invariant");
   assert(h_oop.not_null(), "invariant");
-  assert(fd != NULL, "invariant");
+  assert(fd != nullptr, "invariant");
   assert(fd->offset() > 0, "invariant");
 
   switch(fd->field_type()) {
@@ -402,18 +402,18 @@ static bool find_field(const InstanceKlass* ik,
                        fieldDescriptor* fd,
                        bool is_static = false,
                        bool allow_super = false) {
-  assert(ik != NULL, "invariant");
+  assert(ik != nullptr, "invariant");
   if (allow_super || is_static) {
-    return ik->find_field(name_symbol, signature_symbol, is_static, fd) != NULL;
+    return ik->find_field(name_symbol, signature_symbol, is_static, fd) != nullptr;
   }
   return ik->find_local_field(name_symbol, signature_symbol, fd);
 }
 
 static void lookup_field(JfrJavaArguments* args, const InstanceKlass* ik, fieldDescriptor* fd, bool static_field) {
-  assert(args != NULL, "invariant");
-  assert(ik != NULL, "invariant");
+  assert(args != nullptr, "invariant");
+  assert(ik != nullptr, "invariant");
   assert(ik->is_initialized(), "invariant");
-  assert(fd != NULL, "invariant");
+  assert(fd != nullptr, "invariant");
   find_field(ik, args->name(), args->signature(), fd, static_field, true);
 }
 
@@ -431,8 +431,8 @@ static void read_field(JfrJavaArguments* args, JavaValue* result, Thread* thread
 }
 
 static void read_field(JfrJavaArguments* args, JavaValue* result, TRAPS) {
-  assert(args != NULL, "invariant");
-  assert(result != NULL, "invariant");
+  assert(args != nullptr, "invariant");
+  assert(result != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   result->set_oop(nullptr); // Initialize result in case klass initialize throws.
   InstanceKlass* const klass = static_cast<InstanceKlass*>(args->klass());
@@ -441,7 +441,7 @@ static void read_field(JfrJavaArguments* args, JavaValue* result, TRAPS) {
 }
 
 static void write_field(JfrJavaArguments* args, TRAPS) {
-  assert(args != NULL, "invariant");
+  assert(args != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
 
   InstanceKlass* const klass = static_cast<InstanceKlass*>(args->klass());
@@ -458,20 +458,20 @@ static void write_field(JfrJavaArguments* args, TRAPS) {
 }
 
 void JfrJavaSupport::set_field(JfrJavaArguments* args, TRAPS) {
-  assert(args != NULL, "invariant");
+  assert(args != nullptr, "invariant");
   write_field(args, THREAD);
 }
 
 void JfrJavaSupport::get_field(JfrJavaArguments* args, TRAPS) {
-  assert(args != NULL, "invariant");
+  assert(args != nullptr, "invariant");
   read_field(args, args->result(), THREAD);
 }
 
 static void get_field_ref(JfrJavaArguments* args, bool local_ref, TRAPS) {
-  assert(args != NULL, "invariant");
+  assert(args != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   JavaValue* const result = args->result();
-  assert(result != NULL, "invariant");
+  assert(result != nullptr, "invariant");
   assert(result->get_type() == T_OBJECT, "invariant");
   read_field(args, result, CHECK);
   const oop obj = result->get_oop();
@@ -498,7 +498,7 @@ void JfrJavaSupport::get_field_global_ref(JfrJavaArguments* args, TRAPS) {
  */
 Klass* JfrJavaSupport::klass(const jobject handle) {
   const oop obj = resolve_non_null(handle);
-  assert(obj != NULL, "invariant");
+  assert(obj != nullptr, "invariant");
   return obj->klass();
 }
 
@@ -508,13 +508,13 @@ static char* allocate_string(bool c_heap, int length, Thread* thread) {
 }
 
 const char* JfrJavaSupport::c_str(oop string, Thread* thread, bool c_heap /* false */) {
-  char* str = NULL;
+  char* str = nullptr;
   const typeArrayOop value = java_lang_String::value(string);
-  if (value != NULL) {
+  if (value != nullptr) {
     const int length = java_lang_String::utf8_length(string, value);
     str = allocate_string(c_heap, length + 1, thread);
-    if (str == NULL) {
-      return NULL;
+    if (str == nullptr) {
+      return nullptr;
     }
     java_lang_String::as_utf8_string(string, value, str, length + 1);
   }
@@ -522,14 +522,14 @@ const char* JfrJavaSupport::c_str(oop string, Thread* thread, bool c_heap /* fal
 }
 
 const char* JfrJavaSupport::c_str(jstring string, Thread* thread, bool c_heap /* false */) {
-  return string != NULL ? c_str(resolve_non_null(string), thread, c_heap) : NULL;
+  return string != nullptr ? c_str(resolve_non_null(string), thread, c_heap) : nullptr;
 }
 
 /*
  *  Exceptions and errors
  */
 static void create_and_throw(Symbol* name, const char* message, TRAPS) {
-  assert(name != NULL, "invariant");
+  assert(name != nullptr, "invariant");
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(THREAD));
   assert(!HAS_PENDING_EXCEPTION, "invariant");
   THROW_MSG(name, message);
@@ -608,7 +608,7 @@ void JfrJavaSupport::set_cause(jthrowable throwable, JavaThread* t) {
 
 void JfrJavaSupport::uncaught_exception(jthrowable throwable, JavaThread* t) {
   DEBUG_ONLY(check_java_thread_in_vm(t));
-  assert(throwable != NULL, "invariant");
+  assert(throwable != nullptr, "invariant");
   set_cause(throwable, t);
 }
 
@@ -643,7 +643,7 @@ static bool is_jdk_jfr_module_in_readability_graph() {
 }
 
 static void print_module_resolution_error(outputStream* stream) {
-  assert(stream != NULL, "invariant");
+  assert(stream != nullptr, "invariant");
   stream->print_cr("Module %s not found.", JDK_JFR_MODULE_NAME);
   stream->print_cr("Flight Recorder can not be enabled.");
 }
@@ -654,7 +654,7 @@ bool JfrJavaSupport::is_jdk_jfr_module_available() {
 
 bool JfrJavaSupport::is_jdk_jfr_module_available(outputStream* stream, TRAPS) {
   if (!JfrJavaSupport::is_jdk_jfr_module_available()) {
-    if (stream != NULL) {
+    if (stream != nullptr) {
       print_module_resolution_error(stream);
     }
     return false;
@@ -664,10 +664,10 @@ bool JfrJavaSupport::is_jdk_jfr_module_available(outputStream* stream, TRAPS) {
 
 typedef JfrOopTraceId<ThreadIdAccess> AccessThreadTraceId;
 
-static JavaThread* get_native(jobject thread) {
-  ThreadsListHandle tlh;
-  JavaThread* native_thread = NULL;
-  (void)tlh.cv_internal_thread_to_JavaThread(thread, &native_thread, NULL);
+
+static JavaThread* get_native(ThreadsListHandle& tlh, jobject thread) {
+  JavaThread* native_thread = nullptr;
+  (void)tlh.cv_internal_thread_to_JavaThread(thread, &native_thread, nullptr);
   return native_thread;
 }
 
@@ -704,7 +704,8 @@ void JfrJavaSupport::exclude(JavaThread* jt, oop ref, jobject thread) {
       return;
     }
   }
-  jt = get_native(thread);
+  ThreadsListHandle tlh;
+  jt = get_native(tlh, thread);
   if (jt != nullptr) {
     JfrThreadLocal::exclude_jvm_thread(jt);
   }
@@ -720,7 +721,8 @@ void JfrJavaSupport::include(JavaThread* jt, oop ref, jobject thread) {
       return;
     }
   }
-  jt = get_native(thread);
+  ThreadsListHandle tlh;
+  jt = get_native(tlh, thread);
   if (jt != nullptr) {
     JfrThreadLocal::include_jvm_thread(jt);
   }
@@ -776,7 +778,7 @@ bool JfrJavaSupport::is_excluded(Thread* thread) {
 
 static const Klass* get_configuration_field_descriptor(const Handle& h_mirror, fieldDescriptor* descriptor, TRAPS) {
   assert(h_mirror.not_null(), "invariant");
-  assert(descriptor != NULL, "invariant");
+  assert(descriptor != nullptr, "invariant");
   Klass* const k = java_lang_Class::as_Klass(h_mirror());
   assert(k->is_instance_klass(), "invariant");
   InstanceKlass* const ik = InstanceKlass::cast(k);
@@ -788,7 +790,7 @@ static const Klass* get_configuration_field_descriptor(const Handle& h_mirror, f
                                                          vmSymbols::jdk_jfr_internal_event_EventConfiguration_signature(),
                                                          true,
                                                          descriptor);
-  return typed_field_holder != NULL ? typed_field_holder : ik->find_field(vmSymbols::eventConfiguration_name(),
+  return typed_field_holder != nullptr ? typed_field_holder : ik->find_field(vmSymbols::eventConfiguration_name(),
                                                                           vmSymbols::object_signature(), // untyped
                                                                           true,
                                                                           descriptor);
@@ -801,13 +803,13 @@ jobject JfrJavaSupport::get_configuration(jobject clazz, TRAPS) {
   assert(h_mirror.not_null(), "invariant");
   fieldDescriptor configuration_field_descriptor;
   const Klass* const field_holder = get_configuration_field_descriptor(h_mirror, &configuration_field_descriptor, THREAD);
-  if (field_holder == NULL) {
+  if (field_holder == nullptr) {
     // The only reason should be that klass initialization failed.
-    return NULL;
+    return nullptr;
   }
   assert(java_lang_Class::as_Klass(h_mirror()) == field_holder, "invariant");
   oop configuration_oop = h_mirror->obj_field(configuration_field_descriptor.offset());
-  return configuration_oop != NULL ? JfrJavaSupport::local_jni_handle(configuration_oop, THREAD) : NULL;
+  return configuration_oop != nullptr ? JfrJavaSupport::local_jni_handle(configuration_oop, THREAD) : nullptr;
 }
 
 bool JfrJavaSupport::set_configuration(jobject clazz, jobject configuration, TRAPS) {
@@ -817,13 +819,13 @@ bool JfrJavaSupport::set_configuration(jobject clazz, jobject configuration, TRA
   assert(h_mirror.not_null(), "invariant");
   fieldDescriptor configuration_field_descriptor;
   const Klass* const field_holder = get_configuration_field_descriptor(h_mirror, &configuration_field_descriptor, THREAD);
-  if (field_holder == NULL) {
+  if (field_holder == nullptr) {
     // The only reason should be that klass initialization failed.
     return false;
   }
   assert(java_lang_Class::as_Klass(h_mirror()) == field_holder, "invariant");
   const oop configuration_oop = JNIHandles::resolve(configuration);
-  assert(configuration_oop != NULL, "invariant");
+  assert(configuration_oop != nullptr, "invariant");
   h_mirror->obj_field_put(configuration_field_descriptor.offset(), configuration_oop);
   return true;
 }
@@ -836,7 +838,7 @@ bool JfrJavaSupport::is_instrumented(jobject clazz, TRAPS) {
 }
 
 bool JfrJavaSupport::on_thread_start(Thread* t) {
-  assert(t != NULL, "invariant");
+  assert(t != nullptr, "invariant");
   assert(Thread::current() == t, "invariant");
   if (!t->is_Java_thread()) {
     return true;

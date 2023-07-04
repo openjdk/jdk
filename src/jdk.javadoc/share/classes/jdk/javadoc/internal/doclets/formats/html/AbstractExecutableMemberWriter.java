@@ -72,9 +72,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @return the type parameters.
      */
     protected Content getTypeParameters(ExecutableElement member) {
-        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS_AND_BOUNDS, member);
-        linkInfo.addLineBreaksInTypeParameters = true;
-        linkInfo.showTypeParameterAnnotations = true;
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS_AND_BOUNDS, member)
+                .addLineBreaksInTypeParameters(true)
+                .showTypeParameterAnnotations(true);
         return writer.getTypeParameterLinks(linkInfo);
     }
 
@@ -121,9 +121,9 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      */
     protected void addParam(VariableElement param, TypeMirror paramType, boolean isVarArg,
                             Content target) {
-        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS,
-                paramType).varargs(isVarArg);
-        linkInfo.showTypeParameterAnnotations = true;
+        HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration, LINK_TYPE_PARAMS, paramType)
+                .varargs(isVarArg)
+                .showTypeParameterAnnotations(true);
         Content link = writer.getLink(linkInfo);
         target.add(link);
         if(name(param).length() > 0) {
@@ -142,8 +142,8 @@ public abstract class AbstractExecutableMemberWriter extends AbstractMemberWrite
      * @param target the content to which the information will be added.
      */
     protected void addReceiver(ExecutableElement member, TypeMirror rcvrType, Content target) {
-        var info = new HtmlLinkInfo(configuration, SHOW_TYPE_PARAMS_AND_BOUNDS, rcvrType);
-        info.linkToSelf = false;
+        var info = new HtmlLinkInfo(configuration, SHOW_TYPE_PARAMS_AND_BOUNDS, rcvrType)
+                .linkToSelf(false);
         target.add(writer.getLink(info));
         target.add(Entity.NO_BREAK_SPACE);
         if (member.getKind() == ElementKind.CONSTRUCTOR) {

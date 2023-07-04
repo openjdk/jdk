@@ -320,4 +320,58 @@ public interface NavigableSet<E> extends SortedSet<E> {
      * @throws IllegalArgumentException {@inheritDoc}
      */
     SortedSet<E> tailSet(E fromElement);
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * If this set is not empty, the implementation in this interface returns the result of calling
+     * the {@code pollFirst} method. Otherwise, it throws {@code NoSuchElementException}.
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @since 21
+     */
+    default E removeFirst() {
+        if (this.isEmpty()) {
+            throw new NoSuchElementException();
+        } else {
+            return this.pollFirst();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @implSpec
+     * If this set is not empty, the implementation in this interface returns the result of calling
+     * the {@code pollLast} method. Otherwise, it throws {@code NoSuchElementException}.
+     *
+     * @throws NoSuchElementException {@inheritDoc}
+     * @throws UnsupportedOperationException {@inheritDoc}
+     * @since 21
+     */
+    default E removeLast() {
+        if (this.isEmpty()) {
+            throw new NoSuchElementException();
+        } else {
+            return this.pollLast();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * This method is equivalent to {@link #descendingSet descendingSet}.
+     *
+     * @implSpec
+     * The implementation in this interface returns the result of calling the
+     * {@code descendingSet} method.
+     *
+     * @return a reverse-ordered view of this collection, as a {@code NavigableSet}
+     * @since 21
+     */
+    default NavigableSet<E> reversed() {
+        return this.descendingSet();
+    }
 }

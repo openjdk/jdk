@@ -223,7 +223,7 @@ int RetTableEntry::_init_nof_jsrs = 5;
 
 RetTableEntry::RetTableEntry(int target, RetTableEntry *next) {
   _target_bci = target;
-  _jsrs = new GrowableArray<intptr_t>(_init_nof_jsrs);
+  _jsrs = new GrowableArray<int>(_init_nof_jsrs);
   _next = next;
 }
 
@@ -660,7 +660,7 @@ void GenerateOopMap::restore_state(BasicBlock *bb)
 }
 
 int GenerateOopMap::next_bb_start_pc(BasicBlock *bb) {
- int bbNum = bb - _basic_blocks + 1;
+ intptr_t bbNum = bb - _basic_blocks + 1;
  if (bbNum == _bb_count)
     return method()->code_size();
 
@@ -1320,7 +1320,7 @@ void GenerateOopMap::print_current_state(outputStream   *os,
     case Bytecodes::_invokeinterface: {
       int idx = currentBC->has_index_u4() ? currentBC->get_index_u4() : currentBC->get_index_u2_cpcache();
       ConstantPool* cp      = method()->constants();
-      int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx);
+      int nameAndTypeIdx    = cp->name_and_type_ref_index_at(idx, currentBC->code());
       int signatureIdx      = cp->signature_ref_index_at(nameAndTypeIdx);
       Symbol* signature     = cp->symbol_at(signatureIdx);
       os->print("%s", signature->as_C_string());
@@ -1597,16 +1597,16 @@ void GenerateOopMap::interp1(BytecodeStream *itr) {
     case Bytecodes::_jsr:               do_jsr(itr->dest());         break;
     case Bytecodes::_jsr_w:             do_jsr(itr->dest_w());       break;
 
-    case Bytecodes::_getstatic:         do_field(true,  true,  itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_putstatic:         do_field(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_putfield:          do_field(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_getstatic:         do_field(true,  true,  itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_putstatic:         do_field(false, true,  itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_getfield:          do_field(true,  false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_putfield:          do_field(false, false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
 
     case Bytecodes::_invokevirtual:
-    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2_cpcache(), itr->bci()); break;
-    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(),         itr->bci()); break;
-    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2_cpcache(), itr->bci()); break;
+    case Bytecodes::_invokespecial:     do_method(false, false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokestatic:      do_method(true,  false, itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
+    case Bytecodes::_invokedynamic:     do_method(true,  false, itr->get_index_u4(),         itr->bci(), itr->code()); break;
+    case Bytecodes::_invokeinterface:   do_method(false, true,  itr->get_index_u2_cpcache(), itr->bci(), itr->code()); break;
     case Bytecodes::_newarray:
     case Bytecodes::_anewarray:         pp_new_ref(vCTS, itr->bci()); break;
     case Bytecodes::_checkcast:         do_checkcast(); break;
@@ -1931,10 +1931,10 @@ int GenerateOopMap::copy_cts(CellTypeState *dst, CellTypeState *src) {
   return idx;
 }
 
-void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
+void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci, Bytecodes::Code bc) {
   // Dig up signature for field in constant pool
   ConstantPool* cp     = method()->constants();
-  int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx);
+  int nameAndTypeIdx     = cp->name_and_type_ref_index_at(idx, bc);
   int signatureIdx       = cp->signature_ref_index_at(nameAndTypeIdx);
   Symbol* signature      = cp->symbol_at(signatureIdx);
 
@@ -1957,10 +1957,10 @@ void GenerateOopMap::do_field(int is_get, int is_static, int idx, int bci) {
   pp(in, out);
 }
 
-void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci) {
+void GenerateOopMap::do_method(int is_static, int is_interface, int idx, int bci, Bytecodes::Code bc) {
  // Dig up signature for field in constant pool
   ConstantPool* cp  = _method->constants();
-  Symbol* signature   = cp->signature_ref_at(idx);
+  Symbol* signature   = cp->signature_ref_at(idx, bc);
 
   // Parse method signature
   CellTypeState out[4];
@@ -2057,7 +2057,7 @@ void GenerateOopMap::print_time() {
   tty->print_cr ("---------------------------");
   tty->print_cr ("  Total : %3.3f sec.", GenerateOopMap::_total_oopmap_time.seconds());
   tty->print_cr ("  (%3.0f bytecodes per sec) ",
-  GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
+  (double)GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
 }
 
 //
@@ -2101,7 +2101,7 @@ bool GenerateOopMap::compute_map(Thread* current) {
   _report_result  = false;
   _report_result_for_send = false;
   _new_var_map    = nullptr;
-  _ret_adr_tos    = new GrowableArray<intptr_t>(5);  // 5 seems like a good number;
+  _ret_adr_tos    = new GrowableArray<int>(5);  // 5 seems like a good number;
   _did_rewriting  = false;
   _did_relocation = false;
 
@@ -2401,16 +2401,16 @@ bool GenerateOopMap::rewrite_load_or_store(BytecodeStream *bcs, Bytecodes::Code 
   // Patch either directly in Method* or in temp. buffer
   if (newIlen == 1) {
     assert(varNo < 4, "varNo too large");
-    *bcp = bc0 + varNo;
+    *bcp = (u1)(bc0 + varNo);
   } else if (newIlen == 2) {
     assert(varNo < 256, "2-byte index needed!");
     *(bcp + 0) = bcN;
-    *(bcp + 1) = varNo;
+    *(bcp + 1) = (u1)varNo;
   } else {
     assert(newIlen == 4, "Wrong instruction length");
     *(bcp + 0) = Bytecodes::_wide;
     *(bcp + 1) = bcN;
-    Bytes::put_Java_u2(bcp+2, varNo);
+    Bytes::put_Java_u2(bcp+2, (u2)varNo);
   }
 
   if (newIlen != ilen) {

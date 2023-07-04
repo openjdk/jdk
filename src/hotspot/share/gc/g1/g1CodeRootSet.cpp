@@ -38,7 +38,7 @@ void G1CodeRootSet::add(nmethod* nm) {
   }
   added = _table->put(nm, nm);
   if (added && _table->table_size() == SmallSize && length() == Threshold) {
-    _table->resize(SmallSize, LargeSize);
+    _table->resize(LargeSize);
   }
 }
 

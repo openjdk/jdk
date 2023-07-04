@@ -68,10 +68,12 @@ public class LoopOverPollutedSegments extends JavaLayouts {
             unsafe.putInt(addr + (i * 4), i);
         }
         arr = new byte[ALLOC_SIZE];
-        confinedArena = Arena.openConfined();
-        sharedArena = Arena.openShared();
-        nativeSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, confinedArena.scope());
-        nativeSharedSegment = MemorySegment.allocateNative(ALLOC_SIZE, 4, sharedArena.scope());
+        confinedArena = Arena.ofConfined();
+        sharedArena = Arena.ofShared();
+        Arena scope1 = confinedArena;
+        nativeSegment = scope1.allocate(ALLOC_SIZE, 4);
+        Arena scope = sharedArena;
+        nativeSharedSegment = scope.allocate(ALLOC_SIZE, 4);
         heapSegmentBytes = MemorySegment.ofArray(new byte[ALLOC_SIZE]);
         heapSegmentFloats = MemorySegment.ofArray(new float[ELEM_SIZE]);
 
