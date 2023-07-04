@@ -156,9 +156,6 @@ enum CoredumpFilterBit {
   DAX_SHARED_BIT = 1 << 8
 };
 
-static bool UseHugeTLBFS = true;
-static bool UseSHM = false;
-
 ////////////////////////////////////////////////////////////////////////////////
 // global variables
 julong os::Linux::_physical_memory = 0;
