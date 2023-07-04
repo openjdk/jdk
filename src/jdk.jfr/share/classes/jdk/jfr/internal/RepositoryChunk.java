@@ -108,7 +108,6 @@ public final class RepositoryChunk {
                 FilePurger.add(f);
             }
         }
-
     }
 
     private void destroy() {
