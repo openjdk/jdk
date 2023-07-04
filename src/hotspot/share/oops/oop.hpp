@@ -59,6 +59,7 @@ class oopDesc {
 
  public:
   inline markWord  mark()          const;
+  inline markWord  mark_acquire()  const;
   inline markWord* mark_addr() const;
 
   inline void set_mark(markWord m);
