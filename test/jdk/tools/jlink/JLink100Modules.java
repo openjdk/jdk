@@ -61,22 +61,21 @@ public class JLink100Modules {
     public static void main(String[] args) throws Exception {
         Path src = Paths.get("bug8240567");
 
-        StringJoiner mainModuleInfoContent = new StringJoiner(";\n  requires ", "module bug8240567x {\n  requires ", "\n;}");
+        StringJoiner mainModuleInfoContent = new StringJoiner(";\n  requires ", "module bug8240567x {\n  requires ", ";\n}");
 
-        // create 100 modules. With this naming schema up to 130 seem to work
-        for (int i = 0; i < 150; i++) {
+        for (int i = 0; i < 1_000; i++) {
             String name = "module" + i + "x";
             Path moduleDir = Files.createDirectories(src.resolve(name));
 
-            StringBuilder builder = new StringBuilder("module ");
-            builder.append(name).append(" {");
-
-            if (i != 0) {
-                builder.append("requires module0x;");
+            StringBuilder moduleInfoContent = new StringBuilder("module ");
+            moduleInfoContent.append(name).append(" {\n");
+            // feed SystemModulesPlugin.SystemModulesClassGenerator.DedupSetBuilder
+            for (int j = 0; j < i % 20; j++) {
+                moduleInfoContent.append("  requires module" + j + "x;\n");
             }
+            moduleInfoContent.append("}\n");
+            Files.writeString(moduleDir.resolve("module-info.java"), moduleInfoContent.toString());
 
-            builder.append("}\n");
-            Files.writeString(moduleDir.resolve("module-info.java"), builder.toString());
             mainModuleInfoContent.add(name);
         }
 
