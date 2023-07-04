@@ -43,26 +43,9 @@ class NativeTrimmerThread : public ConcurrentGCThread {
   // Periodic trimming state
   const int64_t _interval_ms;
   const bool _periodic_trim_enabled;
-  const bool _adaptive_stepdown_enabled;
 
   int64_t _next_trim_time;
   int64_t _next_trim_time_saved; // for pause
-
-  // Adaptive step-down
-  TrimNativeStepDownControl _stepdown_control;
-  static const int _min_stepdown_factor = 2; // 2 * interval length
-  static const int _max_stepdown_factor = 8; // 8 * interval length
-  static const int64_t _stepdown_factor_reset_after = 60 * 1000;
-  int64_t _last_stepdown_time;
-  int _last_stepdown_factor;
-
-  void update_stepdown_factor(int64_t tnow) {
-    if (tnow > (_last_stepdown_time + _stepdown_factor_reset_after)) {
-      _last_stepdown_factor = _min_stepdown_factor;
-    } else {
-      _last_stepdown_factor = MIN2(_last_stepdown_factor + 1, _max_stepdown_factor);
-    }
-  }
 
   static const int64_t never = INT64_MAX;
 
@@ -111,30 +94,8 @@ class NativeTrimmerThread : public ConcurrentGCThread {
 
           if (_periodic_trim_enabled) {
             int64_t interval_length = _interval_ms;
-
-            // Handle adaptive stepdown. If heuristic recommends step-down, we prolong the
-            // wait interval by a factor that gets progressively larger with subsequent step-downs.
-            // Factor is capped and gets reset after a while.
-            if (_adaptive_stepdown_enabled) {
-              _stepdown_control.feed(result);
-
-              if (_stepdown_control.recommend_step_down()) {
-                _last_stepdown_factor =
-                    // increase or reset step-down factor depending on how many step-downs we had and
-                    // how long they are ago.
-                    (tnow > (_last_stepdown_time + _stepdown_factor_reset_after)) ?
-                    _min_stepdown_factor :
-                    MIN2(_last_stepdown_factor + 1, _max_stepdown_factor);
-
-                _last_stepdown_time = tnow;
-                interval_length = _interval_ms * _last_stepdown_factor;
-                log_debug(gc, trim)("NativeTrimmer: long pause (" INT64_FORMAT " ms)", interval_length);
-              }
-            }
             _next_trim_time = tnow + interval_length;
-
           } else {
-            // periodic trim disabled
             _next_trim_time = never;
           }
         }
@@ -178,11 +139,8 @@ public:
     _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeTrimmer_lock")),
     _interval_ms(TrimNativeHeapInterval * 1000),
     _periodic_trim_enabled(TrimNativeHeapInterval > 0),
-    _adaptive_stepdown_enabled(TrimNativeHeapAdaptiveStepDown),
     _next_trim_time(0),
-    _next_trim_time_saved(0),
-    _last_stepdown_time(0),
-    _last_stepdown_factor(_min_stepdown_factor)
+    _next_trim_time_saved(0)
   {
     set_name("Native Heap Trimmer");
     _next_trim_time = _periodic_trim_enabled ? (now() + _interval_ms) : never;
@@ -244,13 +202,9 @@ void TrimNative::initialize() {
     log_info(gc, trim)("Native trim enabled.");
 
     if (TrimNativeHeapInterval == 0) {
-      if (TrimNativeHeapAdaptiveStepDown) {
-        FLAG_SET_ERGO(TrimNativeHeapAdaptiveStepDown, false);
-      }
       log_info(gc, trim)("Periodic native trim disabled.");
     } else {
-      log_info(gc, trim)("Periodic native trim enabled (interval: %u seconds, dynamic step-down %s)",
-                         TrimNativeHeapInterval, (TrimNativeHeapAdaptiveStepDown ? "enabled" : "disabled"));
+      log_info(gc, trim)("Periodic native trim enabled (interval: %u seconds)", TrimNativeHeapInterval);
     }
     g_trimmer_thread = new NativeTrimmerThread();
   }

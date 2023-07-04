@@ -698,16 +698,10 @@
                                                                             \
   product(uint, TrimNativeHeapInterval, 30, EXPERIMENTAL,                   \
           "If TrimNativeHeap is enabled: interval, in seconds, in which "   \
-          "the GC will attempt to trim the native heap. If "                \
-          "TrimNativeHeapAdaptiveStepDown is enabled, the JVM may lower "   \
-          "the frequency of trimming."                                      \
+          "the GC will attempt to trim the native heap. "                   \
           "A value of 0 disables periodic trimming altogether while still " \
           "trimming after a GC cycle.")                                     \
           range(0, (24 * 60 * 60))                                          \
-                                                                            \
-  product(bool, TrimNativeHeapAdaptiveStepDown, false, EXPERIMENTAL,        \
-          "If TrimNativeHeap and periodic trimming are enabled: if true, "  \
-          "the GC may step down trimming frequency if needed. ")            \
                                                                             \
           // end of GC_FLAGS
 

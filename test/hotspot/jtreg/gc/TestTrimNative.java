@@ -254,11 +254,11 @@ public class TestTrimNative {
             String s = name();
             return "-XX:+Use" + s.substring(0, 1).toUpperCase() + s.substring(1) + "GC";
         }
-        boolean isZ() { return this == GC.z; }
-        boolean isSerial() { return this == GC.serial; }
-        boolean isParallel() { return this == GC.parallel; }
-        boolean isG1() { return this == GC.g1; }
-        boolean isShenandoah() { return this == GC.shenandoah; }
+        boolean isZ() { return this == z; }
+        boolean isSerial() { return this == serial; }
+        boolean isParallel() { return this == parallel; }
+        boolean isG1() { return this == g1; }
+        boolean isShenandoah() { return this == shenandoah; }
     }
 
     private static OutputAnalyzer runTestWithOptions(String[] extraOptions, String[] testArgs) throws IOException {
@@ -283,12 +283,11 @@ public class TestTrimNative {
     }
 
     private static void checkExpectedLogMessages(OutputAnalyzer output, boolean expectEnabled,
-                                                 int expectedInterval, boolean expectAutoStepDown) {
+                                                 int expectedInterval) {
         if (expectEnabled) {
             output.shouldContain("Native trim enabled");
             if (expectedInterval > 0) {
-                output.shouldContain("Periodic native trim enabled (interval: " + expectedInterval +
-                        " seconds, dynamic step-down " + (expectAutoStepDown ? "enabled" : "disabled") + ")");
+                output.shouldContain("Periodic native trim enabled (interval: " + expectedInterval + " seconds");
                 output.shouldContain("NativeTrimmer start");
                 output.shouldContain("NativeTrimmer stop");
             } else {
@@ -380,7 +379,6 @@ public class TestTrimNative {
     }
 
     final static int DEFAULT_TRIM_INTERVAL = 30;
-    final static boolean DEFAULT_AUTOSTEP = false;
 
     // Test explicit trim on full gc
     static private final void testExplicitTrimOnFullGC(GC gc) throws IOException {
@@ -391,7 +389,7 @@ public class TestTrimNative {
                 new String[] { "true" /* full gc */, String.valueOf(sleeptime_secs * 1000) /* ms after peak */ }
         );
 
-        checkExpectedLogMessages(output, true, DEFAULT_TRIM_INTERVAL, DEFAULT_AUTOSTEP);
+        checkExpectedLogMessages(output, true, DEFAULT_TRIM_INTERVAL);
 
         // We expect to see at least one pause (because we pause during STW gc cycles) followed by an reqested immediate trim
         output.shouldContain("NativeTrimmer pause");
@@ -423,7 +421,7 @@ public class TestTrimNative {
         long t2 = System.currentTimeMillis();
         int runtime_s = (int)((t2 - t1) / 1000);
 
-        checkExpectedLogMessages(output, true, 1, DEFAULT_AUTOSTEP);
+        checkExpectedLogMessages(output, true, 1);
 
         // With an interval time of 1 second and a runtime of 6..x seconds we expect to see x periodic trim
         // log lines (+- fudge factor).
@@ -442,7 +440,7 @@ public class TestTrimNative {
                 new String[] { gc.getSwitchName(), "-XX:+TrimNativeHeap", "-XX:TrimNativeHeapInterval=0" },
                 new String[] { "true" /* full gc */, "4000" /* ms after peak */ }
         );
-        checkExpectedLogMessages(output, true, 0, DEFAULT_AUTOSTEP);
+        checkExpectedLogMessages(output, true, 0);
 
         // We expect only explicit trims, no periodic trims
         parseOutputAndLookForNegativeTrim(output,
@@ -464,7 +462,7 @@ public class TestTrimNative {
                 new String[] { "-XX:+TrimNativeHeap" },
                 new String[] { "true" /* full gc */, "2000" /* ms after peak */ }
         );
-        checkExpectedLogMessages(output, false, 0, false);
+        checkExpectedLogMessages(output, false, 0);
     }
 
     // Test trim native is disabled if explicitly switched off
@@ -475,7 +473,7 @@ public class TestTrimNative {
                 new String[] { "-XX:-TrimNativeHeap" },
                 new String[] { "true" /* full gc */, "2000" /* ms after peak */ }
         );
-        checkExpectedLogMessages(output, false, 0, false);
+        checkExpectedLogMessages(output, false, 0);
     }
 
     // Test that trim-native is disabled by default
@@ -486,7 +484,7 @@ public class TestTrimNative {
                 new String[] { },
                 new String[] { "true" /* full gc */, "2000" /* ms after peak */ }
         );
-        checkExpectedLogMessages(output, false, 0, false);
+        checkExpectedLogMessages(output, false, 0);
     }
 
     public static void main(String[] args) throws Exception {
