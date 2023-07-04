@@ -354,9 +354,9 @@ class G1PostEvacuateCollectionSetCleanupTask2::ClearRetainedRegionData : public 
 
       if (clear_mark_data) {
         g1h->clear_bitmap_for_region(r);
-        r->reset_top_at_mark_start();
-        // Although we only update statistics for evacuation failed regions during
+        // Although we only update tams and statistics for evacuation failed regions during
         // the concurrent start pause, for simplicity always clear.
+        r->reset_top_at_mark_start();
         cm->clear_statistics(r);
       } else {
         assert(cm->mark_bitmap()->get_next_marked_addr(r->bottom(), r->top_at_mark_start()) != r->top_at_mark_start(),
