@@ -48,7 +48,7 @@ public class TableHeaderBorderPositionTest {
                 1. Ensure the test is running 225% scaling.
                 2. Check if the Table header border vertical lines are
                 aligned with table data grid lines.
-                3. If there is a miss-match between them press FAIL,
+                3. If there is a mismatch between them press FAIL,
                 else press PASS.
                 """;
         f = new JFrame();
