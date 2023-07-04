@@ -1941,25 +1941,25 @@ bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
     Node* rc = r->in(j);
     Node* n = in(j);
 
-    if (rc == nullptr || !rc->is_Proj()) continue;
+    if (rc == nullptr || !rc->is_Proj()) { continue; }
     if (worklist.member(rc)) {
       delay = true;
       break;
     }
 
-    if (rc->in(0) == nullptr || !rc->in(0)->is_If()) continue;
+    if (rc->in(0) == nullptr || !rc->in(0)->is_If()) { continue; }
     if (worklist.member(rc->in(0))) {
       delay = true;
       break;
     }
 
-    if (rc->in(0)->in(1) == nullptr || !rc->in(0)->in(1)->is_Bool()) continue;
+    if (rc->in(0)->in(1) == nullptr || !rc->in(0)->in(1)->is_Bool()) { continue; }
     if (worklist.member(rc->in(0)->in(1))) {
       delay = true;
       break;
     }
 
-    if (rc->in(0)->in(1)->in(1) == nullptr || !rc->in(0)->in(1)->in(1)->is_Cmp()) continue;
+    if (rc->in(0)->in(1)->in(1) == nullptr || !rc->in(0)->in(1)->in(1)->is_Cmp()) { continue; }
     if (worklist.member(rc->in(0)->in(1)->in(1))) {
       delay = true;
       break;
