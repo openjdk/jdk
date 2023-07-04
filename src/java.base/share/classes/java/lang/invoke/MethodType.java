@@ -44,7 +44,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Stream;
 
-import jdk.internal.access.SharedSecrets;
 import jdk.internal.util.ReferencedKeySet;
 import jdk.internal.util.ReferenceKey;
 import jdk.internal.vm.annotation.Stable;
@@ -894,10 +893,6 @@ class MethodType
      * @param x object to compare
      * @see Object#equals(Object)
      */
-    // This implementation may also return true if x is a WeakEntry containing
-    // a method type that is equal to this. This is an internal implementation
-    // detail to allow for faster method type lookups.
-    // See ConcurrentWeakInternSet.WeakEntry#equals(Object)
     @Override
     public boolean equals(Object x) {
         if (this == x) {

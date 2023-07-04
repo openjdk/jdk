@@ -40,6 +40,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.access.SharedSecrets;
+
 /**
  * This class provides management of {@link Map maps} where it is desirable to
  * remove entries automatically when the key is garbage collected. This is
@@ -106,7 +108,7 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     private ReferencedKeyMap(boolean isSoft, Map<ReferenceKey<K>, V> map) {
         this.isSoft = isSoft;
         this.map = map;
-        this.stale = new ReferenceQueue<>();
+        this.stale = SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue();
     }
 
     /**
