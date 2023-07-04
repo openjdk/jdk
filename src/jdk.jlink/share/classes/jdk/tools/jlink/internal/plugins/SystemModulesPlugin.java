@@ -797,8 +797,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                         MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc),
                         ACC_PUBLIC,
                         cob -> {
-                            if (nextLocalVar > firstVar) {
-                                for (int i = firstVar; i < nextLocalVar; i++) {
+                            if (curLocalVar > firstLocalVar) {
+                                for (int i = firstLocalVar; i < curLocalVar; i++) {
                                     cob.aload(DEDUP_LIST_VAR)
                                        .constantInstruction(i - firstVar)
                                        .invokevirtual(arrayListClassDesc, "get", MethodTypeDesc.of(CD_Object, CD_int))
