@@ -56,7 +56,7 @@ public class VMInfo {
         try {
             return Long.parseLong(getStringValue(key));
         } catch (NumberFormatException e) {
-            throw new TestFrameworkException("VMInfo value for \"" + key + "\" is not long, got \"" + getStringValue(key) + "\"");
+            throw new TestFrameworkException("VMInfo value for \"" + key + "\" is not a long, got \"" + getStringValue(key) + "\"");
         }
     }
 
