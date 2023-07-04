@@ -71,19 +71,17 @@ jobs:
           # 'false' otherwise.
           # arg $1: platform name or names to look for
           function check_platform() {
-            if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
-              # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
-              echo 'false'
-              return
-            fi
-
             if [[ $GITHUB_EVENT_NAME == workflow_dispatch ]]; then
               input='${{ github.event.inputs.platforms }}'
             elif [[ $GITHUB_EVENT_NAME == push ]]; then
-              input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
-            else
-              echo 'Internal error in GHA'
-              exit 1
+              if [[ '${{ !secrets.JDK_SUBMIT_FILTER || startsWith(github.ref, 'refs/heads/submit/') }}' == 'false' ]]; then
+                # If JDK_SUBMIT_FILTER is set, and this is not a "submit/" branch, don't run anything
+                >&2 echo 'JDK_SUBMIT_FILTER is set and not a "submit/" branch'
+                echo 'false'
+                return
+              else
+                input='${{ secrets.JDK_SUBMIT_PLATFORMS }}'
+              fi
             fi
 
             normalized_input="$(echo ,$input, | tr -d ' ')"
