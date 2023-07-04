@@ -759,11 +759,6 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             String helperMethodNamePrefix = "sub";
             ClassDesc arrayListClassDesc = ClassDesc.ofInternalName("java/util/ArrayList");
 
-            int dedupVarStart = nextLocalVar;
-            var wrapper = new Object() {
-                int lastCopiedVar = firstVar - 1;
-            };
-
             clb.withMethodBody(
                     "moduleDescriptors",
                     MTD_ModuleDescriptorArray,
@@ -789,18 +784,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                            .areturn();
                     });
 
+            int dedupVarStart = nextLocalVar;
             for (int n = 0, count = 0; n < splitModuleInfos.size(); count += splitModuleInfos.get(n).size(), n++) {
                 int index = n;       // the index of which ModuleInfo being processed in the current batch
                 int start = count;   // the start index to the return ModuleDescriptor array for the current batch
+                int curDedupVar = nextLocalVar;
                 clb.withMethodBody(
                         helperMethodNamePrefix + index,
                         MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc),
                         ACC_PUBLIC,
                         cob -> {
-                            if (curLocalVar > firstLocalVar) {
-                                for (int i = firstLocalVar; i < curLocalVar; i++) {
+                            if (curDedupVar > dedupVarStart) {
+                                for (int i = dedupVarStart; i < curDedupVar; i++) {
                                     cob.aload(DEDUP_LIST_VAR)
-                                       .constantInstruction(i - firstVar)
+                                       .constantInstruction(i - dedupVarStart)
                                        .invokevirtual(arrayListClassDesc, "get", MethodTypeDesc.of(CD_Object, CD_int))
                                        .astore(i);
                                 }
@@ -816,14 +813,13 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                             }
 
                             if (index < splitModuleInfos.size() - 1) {
-                                if (nextLocalVar > firstLocalVar && nextLocalVar > curLocalVar) {
-                                    for (int i = curLocalVar; i < nextLocalVar; i++) {
+                                if (nextLocalVar > curDedupVar) {
+                                    for (int i = curDedupVar; i < nextLocalVar; i++) {
                                         cob.aload(DEDUP_LIST_VAR)
                                            .aload(i)
                                            .invokevirtual(arrayListClassDesc, "add", MethodTypeDesc.of(CD_boolean, CD_Object))
                                            .pop();
                                     }
-                                    wrapper.lastCopiedVar = nextLocalVar - 1;
                                 }
                                 cob.aload(0)
                                    .aload(MD_VAR)
