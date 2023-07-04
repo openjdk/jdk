@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ clear_breakpoint(JNIEnv *jni, const char *methodName,
   set_or_clear_breakpoint(jni, JNI_FALSE, methodName, klass, methods, method_count);
 }
 
-static long tls_data = 0;
+static intptr_t tls_data = 0;
 
 static void
 breakpoint_hit1(jvmtiEnv *jvmti, JNIEnv* jni,
@@ -380,7 +380,7 @@ ThreadStart(jvmtiEnv *jvmti, JNIEnv* jni, jthread cthread) {
     return; // avoid failures with JVMTI_ERROR_WRONG_PHASE
   }
   char* tname = get_thread_name(jvmti, jni, cthread);
-  long loc_tls_data = 0;
+  intptr_t loc_tls_data = 0;
   jvmtiError err;
 
   RawMonitorLocker rml(jvmti, jni, event_mon);
