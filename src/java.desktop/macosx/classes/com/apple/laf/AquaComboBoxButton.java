@@ -156,11 +156,6 @@ class AquaComboBoxButton extends JButton {
             } else {
                 painter.state.set(isSquare ? Widget.BUTTON_POP_UP_SQUARE : Widget.BUTTON_POP_UP);
             }
-
-            AccessibleContext ac = this.getAccessibleContext();
-            if (ac != null && (comboBox.getSelectedItem() != null)) {
-                ac.setAccessibleName(comboBox.getSelectedItem().toString());
-            }
         }
         painter.state.set(hasFocus ? Focused.YES : Focused.NO);
 
@@ -234,6 +229,15 @@ class AquaComboBoxButton extends JButton {
         if (inhibitBackground) c.setBackground(new Color(0, 0, 0, 0));
 
         rendererPane.paintComponent(g, c, this, left, top, cWidth, height, shouldValidate); // h - (insets.top + insets.bottom) );
+
+        // fix for 8283214
+        // set the accessible name to the displayed text in JComboBox.
+        // screen magnifier queries to get the accessible name to display magnified text.
+
+        AccessibleContext ac = this.getAccessibleContext();
+        if (ac != null && !editable && ((JLabel)c).getText() != null) {
+            ac.setAccessibleName(((JLabel)c).getText());
+        }
 
         if (inhibitBackground) c.setBackground(bg);
 
