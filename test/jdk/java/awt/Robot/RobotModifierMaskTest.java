@@ -241,7 +241,7 @@ public class RobotModifierMaskTest {
     }
 
     private static void createTestUI() {
-        String mode = isManual ? "MANUAL" : "AUTOMATED" ;
+        String mode = isManual ? "MANUAL" : "AUTOMATED";
         jFrame = new JFrame("RobotModifierMaskTest - Mode: " + mode);
         jTextArea = new JTextArea("");
         JScrollPane pane = new JScrollPane(jTextArea);
@@ -253,10 +253,12 @@ public class RobotModifierMaskTest {
         jFrame.setVisible(true);
     }
 
-    private static void checkResult(String expectedResult, String s) throws Exception {
+    private static void checkResult(String expectedResult, String prefixText)
+                                                                throws Exception {
         invokeAndWait(() -> {
             boolean condition = expectedResult.equals(EXPECTED_RESULT_CTRL)
-                                ? jTextArea.getCaretPosition() != Integer.parseInt(EXPECTED_RESULT_CTRL)
+                                ? (jTextArea.getCaretPosition()
+                                     != Integer.parseInt(EXPECTED_RESULT_CTRL))
                                 : !jTextArea.getText().equals(expectedResult);
 
             String actualResult = expectedResult.equals(EXPECTED_RESULT_CTRL)
@@ -264,7 +266,7 @@ public class RobotModifierMaskTest {
                                   : jTextArea.getText();
 
             if (condition) {
-                errorLog.append(s + "Actual and Expected results differ"
+                errorLog.append(prefixText + "Actual and Expected results differ"
                         + " Expected : " + expectedResult
                         + " Actual : " + actualResult + "\n");
             }
