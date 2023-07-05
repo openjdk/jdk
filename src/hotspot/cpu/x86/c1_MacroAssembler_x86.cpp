@@ -178,10 +178,14 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     movl(Address(obj, arrayOopDesc::length_offset_in_bytes()), len);
+#ifdef _LP64
     if (!is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerLong)) {
       assert(is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerInt), "must be 4-byte aligned");
       movl(Address(obj, arrayOopDesc::header_size_in_bytes()), 0);
     }
+#else
+    assert(is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerInt), "must be 4-byte aligned");
+#endif
   }
 #ifdef _LP64
   else if (UseCompressedClassPointers) {
@@ -197,9 +201,6 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   assert(hdr_size_in_bytes >= 0, "header size must be positive or 0");
   Label done;
 
-  // We align the hdr_size_in_bytes up to 8 bytes here because we clear the
-  // possible alignment gap in initialize_header().
-  hdr_size_in_bytes = align_up(hdr_size_in_bytes, BytesPerLong);
   // len_in_bytes is positive and ptr sized
   subptr(len_in_bytes, hdr_size_in_bytes);
   zero_memory(obj, len_in_bytes, hdr_size_in_bytes, t1);
@@ -220,7 +221,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, 
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
-  const int hdr_size_in_bytes = instanceOopDesc::base_offset_in_bytes();
+  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
 
   initialize_header(obj, klass, noreg, t1, t2);
 
@@ -291,7 +292,10 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
 
   // clear rest of allocated space
   const Register len_zero = len;
-  initialize_body(obj, arr_size, base_offset_in_bytes, len_zero);
+  // We align-up the header size to word-size, because we clear the
+  // possible alignment gap in initialize_header().
+  int hdr_size = align_up(base_offset_in_bytes, BytesPerWord);
+  initialize_body(obj, arr_size, hdr_size, len_zero);
 
   if (CURRENT_ENV->dtrace_alloc_probes()) {
     assert(obj == rax, "must be");
