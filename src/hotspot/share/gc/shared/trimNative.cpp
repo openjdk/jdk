@@ -133,7 +133,7 @@ public:
   }
 
   void pause(const char* reason) {
-    assert(TrimNativeHeap > 0, "Only call if enabled");
+    assert(TrimNativeHeap, "Only call if enabled");
     assert(TrimNativeHeapInterval > 0, "Only call if periodic trimming is enabled");
     int lvl = 0;
     {
@@ -149,7 +149,7 @@ public:
   }
 
   void unpause(const char* reason) {
-    assert(TrimNativeHeap > 0, "Only call if enabled");
+    assert(TrimNativeHeap, "Only call if enabled");
     assert(TrimNativeHeapInterval > 0, "Only call if periodic trimming is enabled");
     int lvl = 0;
     {
