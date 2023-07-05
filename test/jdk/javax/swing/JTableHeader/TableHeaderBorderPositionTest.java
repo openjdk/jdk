@@ -21,39 +21,50 @@
  * questions.
  */
 
-import javax.swing.JFrame;
-import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
+import javax.swing.table.JTableHeader;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.UIManager;
+
+import java.awt.Dimension;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 
 /*
  * @test
  * @bug 8311031
- * @key headful
  * @library /java/awt/regtesthelpers
  * @build PassFailJFrame
  * @summary Test to validate JTable header border vertical line is
  * aligned with data grid lines (Metal L&F).
- * @run main/manual/othervm -Dsun.java2d.uiScale=2.25 TableHeaderBorderPositionTest
+ * @run main TableHeaderBorderPositionTest
  */
 
 public class TableHeaderBorderPositionTest {
-    static JFrame f;
-    static JTable j;
-    static PassFailJFrame passFailJFrame;
-    public static void showTable() throws Exception {
-        final String INSTRUCTIONS = """
-                Instructions to Test:
-                1. Ensure the test is running 225% scaling.
-                2. Check if the Table header border vertical lines are
-                aligned with table data grid lines.
-                3. If there is a mismatch between them press FAIL,
-                else press PASS.
-                """;
-        f = new JFrame();
-        f.setTitle("Sample - 225% scaling");
+    static JTable table;
+    private static final int WIDTH = 300;
+    private static final int HEIGHT = 150;
+    private static final double SCALE = 2.25;
 
+    public static void main(String[] args) throws Exception {
+        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
+        SwingUtilities.invokeAndWait(() -> {
+            try {
+                TableHeaderBorderPositionTest.Test();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+    }
+
+    public static void Test() throws Exception {
+        int verticalLineCol;
+        int expectedRGB;
+        BufferedImage imgDate;
+        BufferedImage imgHeader;
+        double w;
+        double h;
         String[][] data = {
                 { "1", "1", "Green"},
                 { "2", "2", "Blue"}
@@ -61,29 +72,58 @@ public class TableHeaderBorderPositionTest {
 
         String[] columnNames = { "Number", "Size", "Color"};
 
-        j = new JTable(data, columnNames);
-        passFailJFrame = new PassFailJFrame("Test Instructions",
-                INSTRUCTIONS, 5L, 8, 30);
+        table = new JTable(data, columnNames);
+        table.setSize(WIDTH,HEIGHT);
 
-        PassFailJFrame.addTestWindow(f);
-        PassFailJFrame.positionTestWindow(f, PassFailJFrame.Position.VERTICAL);
-        j.setBounds(30, 40, 200, 300);
+        final JTableHeader header = table.getTableHeader();
+        TableCellRenderer renderer = header.getDefaultRenderer();
+        header.setDefaultRenderer(renderer);
+        table.updateUI();
 
-        JScrollPane sp = new JScrollPane(j);
-        f.add(sp);
-        f.setSize(500, 200);
-        f.setVisible(true);
-    }
+        Dimension size = header.getPreferredSize();
+        header.setSize(size);
+        w = SCALE * size.width;
+        h = SCALE * size.height;
+        imgHeader = new BufferedImage((int)(w),(int)(h),BufferedImage.TYPE_INT_RGB);
+        Graphics2D g2d = imgHeader.createGraphics();
+        g2d.scale(SCALE, SCALE);
+        try {
+            header.paint(g2d);
+        } finally {
+            g2d.dispose();
+        }
 
-    public static void main(String[] args) throws Exception {
-        UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-        SwingUtilities.invokeAndWait(() -> {
-            try {
-                TableHeaderBorderPositionTest.showTable();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+        w = SCALE * WIDTH;
+        h = SCALE * HEIGHT;
+
+        imgDate = new BufferedImage((int)w, (int)h, BufferedImage.TYPE_INT_RGB);
+        g2d = imgDate.createGraphics();
+        g2d.scale(SCALE, SCALE);
+        try {
+            table.paint(g2d);
+        } finally {
+            g2d.dispose();
+        }
+
+        verticalLineCol = (int)(table.getTableHeader().
+                getColumnModel().getColumn(0).getWidth() * SCALE) - 2;
+        expectedRGB = imgDate.getRGB(verticalLineCol,0);
+
+        for(int i = 0; i < imgHeader.getHeight();i++) {
+            for(int j = verticalLineCol; j < verticalLineCol + 3; j++) {
+                if(expectedRGB != imgHeader.getRGB(j,i)) {
+                    throw new RuntimeException("Test Failed");
+                }
             }
-        });
-        passFailJFrame.awaitAndCheck();
+        }
+
+        for(int i = 0; i < table.getRowCount() * table.getRowHeight() * SCALE;i++) {
+            for(int j = verticalLineCol; j < verticalLineCol + 3; j++) {
+                if(expectedRGB != imgDate.getRGB(j,i)) {
+                    throw new RuntimeException("Test Failed");
+                }
+            }
+        }
+        System.out.println("Test Pass!!");
     }
 }
