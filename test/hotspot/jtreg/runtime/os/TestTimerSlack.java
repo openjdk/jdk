@@ -43,7 +43,7 @@ public class TestTimerSlack {
         // Check the timer slack value is good by default
         {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
-                                                      "TestTimerSlack$Hello");
+                                                      "TestTimerSlack$TestMain");
 
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -52,8 +52,7 @@ public class TestTimerSlack {
             defaultSlack = parseSlackValue(output);
 
             if (defaultSlack == 0) {
-                output.reportDiagnosticSummary();
-                throw new IllegalStateException("Default slack value (" + defaultSlack + ") is unexpected");
+                fail(output, "Default slack value (" + defaultSlack + ") is unexpected");
             }
         }
 
@@ -62,7 +61,7 @@ public class TestTimerSlack {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
                                                       "-XX:+UnlockExperimentalVMOptions",
                                                       "-XX:TimerSlack=" + slack,
-                                                      "TestTimerSlack$Hello");
+                                                      "TestTimerSlack$TestMain");
 
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -70,9 +69,7 @@ public class TestTimerSlack {
 
             int disabledSlack = parseSlackValue(output);
             if (disabledSlack != defaultSlack) {
-                output.reportDiagnosticSummary();
-                throw new IllegalStateException("Disabled slack value (" + disabledSlack +
-                    ") is not default (" + defaultSlack + ") when requested (" + slack + ")");
+                fail(output, "Disabled slack value (" + disabledSlack + ") is not default (" + defaultSlack + ") when requested (" + slack + ")");
             }
         }
 
@@ -81,7 +78,7 @@ public class TestTimerSlack {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
                                                       "-XX:+UnlockExperimentalVMOptions",
                                                       "-XX:TimerSlack=" + slack,
-                                                      "TestTimerSlack$Hello");
+                                                      "TestTimerSlack$TestMain");
 
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
             output.shouldHaveExitValue(0);
@@ -89,9 +86,7 @@ public class TestTimerSlack {
 
             int actualSlack = parseSlackValue(output);
             if (actualSlack != slack) {
-                output.reportDiagnosticSummary();
-                throw new IllegalStateException("Actual slack value (" + actualSlack +
-                    ") is not the requested one (" + slack + ")");
+                fail(output, "Actual slack value (" + actualSlack + ") is not the requested one (" + slack + ")");
             }
         }
     }
@@ -107,21 +102,34 @@ public class TestTimerSlack {
                 if (value == null) {
                     value = parsedValue;
                 } else if (!value.equals(parsedValue)) {
-                    output.reportDiagnosticSummary();
-                    throw new IllegalStateException("Multiple timer slack values detected");
+                    fail(output, "Multiple timer slack values detected");
                 }
             }
         }
         if (value == null) {
-            output.reportDiagnosticSummary();
-            throw new IllegalStateException("No timer slack values detected");
+            fail(output, "No timer slack values detected");
         }
         return value;
     }
 
-    public static class Hello {
-        public static void main(String... args) {
-            System.out.println("Hello!");
+    private static void fail(OutputAnalyzer output, String msg) {
+        output.reportDiagnosticSummary();
+        throw new IllegalStateException(msg);
+    }
+
+    public static class TestMain {
+        static final int THREADS = 8;
+
+        public static void main(String... args) throws Exception {
+            Thread[] ts = new Thread[THREADS];
+            for (int c = 0; c < THREADS; c++) {
+                ts[c] = new Thread();
+                ts[c].start();
+            }
+
+            for (int c = 0; c < THREADS; c++) {
+                ts[c].join();
+            }
         }
     }
 
