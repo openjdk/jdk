@@ -115,7 +115,10 @@ public class JLink100Modules {
         Path binDir = src.resolve("out-jlink").resolve("bin").toAbsolutePath();
         Path bin = binDir.resolve("java");
 
-        ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(), "-XX:+UnlockDiagnosticVMOptions", "-XX:+BytecodeVerificationLocal", "-m", "bug8240567x/testpackage.JLink100ModulesTest");
+        ProcessBuilder processBuilder = new ProcessBuilder(bin.toString(),
+                "-XX:+UnlockDiagnosticVMOptions",
+                "-XX:+BytecodeVerificationLocal",
+                "-m", "bug8240567x/testpackage.JLink100ModulesTest");
         processBuilder.inheritIO();
         processBuilder.directory(binDir.toFile());
         Process process = processBuilder.start();
