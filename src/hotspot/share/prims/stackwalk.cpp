@@ -165,7 +165,7 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
                               int max_nframes, int start_index,
                               objArrayHandle  frames_array,
-                              int& end_index, bool firstBatch, TRAPS) {
+                              int& end_index, bool is_first_batch, TRAPS) {
   log_debug(stackwalk)("fill_in_frames limit=%d start=%d frames length=%d",
                        max_nframes, start_index, frames_array->length());
   assert(max_nframes > 0, "invalid max_nframes");
@@ -213,7 +213,7 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     }
 
     if (!need_method_info(mode) && get_caller_class(mode) &&
-          firstBatch && index == start_index && method->caller_sensitive()) {
+          is_first_batch && index == start_index && method->caller_sensitive()) {
       ResourceMark rm(THREAD);
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(),
         err_msg("StackWalker::getCallerClass called from @CallerSensitive '%s' method",

@@ -145,7 +145,7 @@ private:
   static int fill_in_frames(jlong mode, BaseFrameStream& stream,
                             int max_nframes, int start_index,
                             objArrayHandle frames_array,
-                            int& end_index, bool firstBatch, TRAPS);
+                            int& end_index, bool is_first_batch, TRAPS);
 
   static inline bool get_caller_class(int mode) {
     return (mode & JVM_STACKWALK_GET_CALLER_CLASS) != 0;
