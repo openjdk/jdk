@@ -92,7 +92,7 @@ public:
     case Bytecodes::_putfield:
       return (put_code() == code);
     default:
-      assert(code == Bytecodes::_nop, "Must be get, put, or nop bytecode");
+      ShouldNotReachHere();
       return false;
     }
   }
