@@ -165,7 +165,7 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
                               int max_nframes, int start_index,
                               objArrayHandle  frames_array,
-                              int& end_index, TRAPS) {
+                              int& end_index, bool firstBatch, TRAPS) {
   log_debug(stackwalk)("fill_in_frames limit=%d start=%d frames length=%d",
                        max_nframes, start_index, frames_array->length());
   assert(max_nframes > 0, "invalid max_nframes");
@@ -213,7 +213,7 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     }
 
     if (!need_method_info(mode) && get_caller_class(mode) &&
-          index == start_index && method->caller_sensitive()) {
+          firstBatch && index == start_index && method->caller_sensitive()) {
       ResourceMark rm(THREAD);
       THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(),
         err_msg("StackWalker::getCallerClass called from @CallerSensitive '%s' method",
@@ -498,7 +498,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   if (!stream.at_end()) {
     KeepStackGCProcessedMark keep_stack(THREAD);
     numFrames = fill_in_frames(mode, stream, frame_count, start_index,
-                               frames_array, end_index, CHECK_NULL);
+                               frames_array, end_index, true, CHECK_NULL);
     if (numFrames < 1) {
       THROW_MSG_(vmSymbols::java_lang_InternalError(), "stack walk: decode failed", nullptr);
     }
@@ -583,7 +583,7 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
     stream.next(); // advance past the last frame decoded in previous batch
     if (!stream.at_end()) {
       int n = fill_in_frames(mode, stream, frame_count, start_index,
-                             frames_array, end_index, CHECK_0);
+                             frames_array, end_index, false, CHECK_0);
       if (n < 1 && !skip_hidden_frames(mode)) {
         THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: later decode failed", 0L);
       }
