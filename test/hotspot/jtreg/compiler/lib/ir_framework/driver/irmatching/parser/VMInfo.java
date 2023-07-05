@@ -45,6 +45,10 @@ public class VMInfo {
         TestFramework.check(isKey("cpuFeatures"),   "VMInfo does not contain cpuFeatures");
         TestFramework.check(isKey("MaxVectorSize"), "VMInfo does not contain MaxVectorSize");
         TestFramework.check(isKey("LoopMaxUnroll"), "VMInfo does not contain LoopMaxUnroll");
+        System.err.println("--- VMInfo from Test VM ---");
+        System.err.println("cpuFeatures:   " + getStringValue("cpuFeatures"));
+        System.err.println("MaxVectorSize: " + getLongValue("MaxVectorSize"));
+        System.err.println("LoopMaxUnroll: " + getLongValue("LoopMaxUnroll"));
     }
 
     public String getStringValue(String key) {
