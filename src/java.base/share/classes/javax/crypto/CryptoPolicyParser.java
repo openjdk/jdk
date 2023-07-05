@@ -636,7 +636,7 @@ final class CryptoPolicyParser {
             if (!(obj instanceof CryptoPermissionEntry that))
                 return false;
 
-            if (Objects.equals(this.cryptoPermission, that.cryptoPermission)) {
+            if (!Objects.equals(this.cryptoPermission, that.cryptoPermission)) {
                 return false;
             }
 

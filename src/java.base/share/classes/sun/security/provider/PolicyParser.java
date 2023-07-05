@@ -1130,6 +1130,7 @@ public class PolicyParser {
             return obj instanceof PermissionEntry that
                     && Objects.equals(this.permission, that.permission)
                     && Objects.equals(this.name, that.name)
+                    && Objects.equals(this.action, that.action)
                     && Objects.equals(this.signedBy, that.signedBy);
         }
 
