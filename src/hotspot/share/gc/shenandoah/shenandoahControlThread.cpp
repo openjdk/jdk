@@ -46,8 +46,6 @@
 #include "memory/metaspaceStats.hpp"
 #include "memory/universe.hpp"
 #include "runtime/atomic.hpp"
-#include "utilities/events.hpp"
-
 
 ShenandoahControlThread::ShenandoahControlThread() :
   ConcurrentGCThread(),

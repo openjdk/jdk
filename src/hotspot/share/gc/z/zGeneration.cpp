@@ -433,7 +433,7 @@ public:
 
   virtual void doit() {
     TrimNative::PauseMark trim_native_pause("gc");
-log_info(gc)("jallo");
+
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);
     IsGCActiveMark gc_active_mark;

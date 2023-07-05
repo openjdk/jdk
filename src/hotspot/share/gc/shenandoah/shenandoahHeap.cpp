@@ -34,6 +34,7 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/tlab_globals.hpp"
+
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
