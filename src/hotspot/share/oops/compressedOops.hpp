@@ -155,11 +155,9 @@ class CompressedKlassPointers : public AllStatic {
 
   static void set_base(address base);
   static void set_range(size_t range);
-
-public:
-
   static void set_shift(int shift);
 
+public:
 
   // Given an address p, return true if p can be used as an encoding base.
   //  (Some platforms have restrictions of what constitutes a valid base

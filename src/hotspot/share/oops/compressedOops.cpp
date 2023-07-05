@@ -186,11 +186,12 @@ NarrowPtrStruct CompressedKlassPointers::_narrow_klass = { nullptr, 0, true };
 //  are compiled for 32bit to LP64_ONLY).
 size_t CompressedKlassPointers::_range = 0;
 
+#ifdef _LP64
+
 // Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
 // set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
 // archived heap objects.
 void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift) {
-#ifdef _LP64
   assert(is_valid_base(requested_base), "Address must be a valid encoding base");
   address const end = addr + len;
 
@@ -203,10 +204,6 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   set_base(requested_base);
   set_shift(requested_shift);
   set_range(encoding_range_size);
-
-  #else
-  fatal("64bit only.");
-#endif
 }
 
 // Given an address range [addr, addr+len) which the encoding is supposed to
@@ -215,7 +212,6 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
 //  will encounter (and the implicit promise that there will be no Klass
 //  structures outside this range).
 void CompressedKlassPointers::initialize(address addr, size_t len) {
-#ifdef _LP64
   assert(is_valid_base(addr), "Address must be a valid encoding base");
   address const end = addr + len;
 
@@ -244,9 +240,6 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   set_base(base);
   set_shift(shift);
   set_range(range);
-#else
-  fatal("64bit only.");
-#endif
 }
 
 // Given an address p, return true if p can be used as an encoding base.
@@ -284,3 +277,5 @@ void CompressedKlassPointers::set_range(size_t range) {
   assert(UseCompressedClassPointers, "no compressed klass ptrs?");
   _range = range;
 }
+
+#endif // _LP64
