@@ -40,9 +40,33 @@ public class TestTimerSlack {
     public static void main(String[] args) throws Exception {
         int defaultSlack;
 
-        // Check the timer slack value is good by default
+        // Check the timer slack value is not printed by default
         {
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
+                                                      "TestTimerSlack$TestMain");
+
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldHaveExitValue(0);
+            output.shouldNotContain("timer slack:");
+        }
+
+        // Check the timer slack value is not printed when explicitly disabled
+        {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
+                                                      "-XX:+UnlockExperimentalVMOptions",
+                                                      "-XX:TimerSlack=-1",
+                                                      "TestTimerSlack$TestMain");
+
+            OutputAnalyzer output = new OutputAnalyzer(pb.start());
+            output.shouldHaveExitValue(0);
+            output.shouldNotContain("timer slack:");
+        }
+
+        // Check the timer slack value is good when system-wide default is requested
+        {
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
+                                                      "-XX:+UnlockExperimentalVMOptions",
+                                                      "-XX:TimerSlack=0",
                                                       "TestTimerSlack$TestMain");
 
             OutputAnalyzer output = new OutputAnalyzer(pb.start());
@@ -53,23 +77,6 @@ public class TestTimerSlack {
 
             if (defaultSlack == 0) {
                 fail(output, "Default slack value (" + defaultSlack + ") is unexpected");
-            }
-        }
-
-        // Check the timer slack value is still default when explicitly disabled/default
-        for (int slack : new int[] {-1, 0}) {
-            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-Xlog:os+thread",
-                                                      "-XX:+UnlockExperimentalVMOptions",
-                                                      "-XX:TimerSlack=" + slack,
-                                                      "TestTimerSlack$TestMain");
-
-            OutputAnalyzer output = new OutputAnalyzer(pb.start());
-            output.shouldHaveExitValue(0);
-            output.shouldContain("timer slack:");
-
-            int disabledSlack = parseSlackValue(output);
-            if (disabledSlack != defaultSlack) {
-                fail(output, "Disabled slack value (" + disabledSlack + ") is not default (" + defaultSlack + ") when requested (" + slack + ")");
             }
         }
 

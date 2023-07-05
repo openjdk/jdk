@@ -83,10 +83,11 @@
           "Overrides the timer slack value to the given number of "     \
           "nanoseconds. Lower value provides more accurate "            \
           "high-precision timers, at the expense of (possibly) worse "  \
-          "power efficiency. Set -1 to disable the override. In current "\
-          "Linux, 0 means using the system-wide default, which is the " \
-          "same as disabled override. See prctl(PR_SET_TIMERSLACK) for "\
-          "more info.")                                                 \
+          "power efficiency. In current Linux, 0 means using the "      \
+          "system-wide default, which would disable the override, but " \
+          "VM would still print the current timer slack values. Use -1 "\
+          "to disable both the override and the printouts."             \
+          "See prctl(PR_SET_TIMERSLACK) for more info.")                \
                                                                         \
 
 
