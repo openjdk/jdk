@@ -592,7 +592,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   const TypeInt*     step_val      = gvn().type(argument(5))->isa_int();
   const TypeInt*     wrap          = gvn().type(argument(6))->isa_int();
 
-  if (shuffle_klass == nullptr || shuffle_klass->const_oop() == nullptr     ||
+  if (shuffle_klass == nullptr || shuffle_klass->const_oop() == nullptr ||
       vlen == nullptr || !vlen->is_con() || start_val == nullptr || step_val == nullptr ||
       wrap == nullptr || !wrap->is_con()) {
     return false; // not enough info for intrinsification
@@ -617,9 +617,8 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   }
 
   if (!do_wrap && !effective_indices_in_range) {
-    // FIXME: disable instrinsification for unwrapped shuffle iota
-    // if start/step values are non-constant OR if intermediate result
-    // overflows byte value range.
+    // Disable instrinsification for unwrapped shuffle iota if start/step
+    // values are non-constant OR if intermediate result overflows byte value range.
     return false;
   }
 
@@ -638,14 +637,9 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   }
 
   bool step_multiply = !step_val->is_con() || !is_power_of_2(step_val->get_con());
-  if(step_multiply) {
-    if (!arch_supports_vector(Op_MulVB, num_elem, elem_bt, VecMaskNotUsed)) {
-      return false;
-    }
-  } else {
-    if (!arch_supports_vector(Op_LShiftVB, num_elem, elem_bt, VecMaskNotUsed)) {
-      return false;
-    }
+  if ((step_multiply && !arch_supports_vector(Op_MulVB, num_elem, elem_bt, VecMaskNotUsed)) ||
+      (!step_multiply && !arch_supports_vector(Op_LShiftVB, num_elem, elem_bt, VecMaskNotUsed))) {
+    return false;
   }
 
   const Type * type_bt = Type::get_const_basic_type(elem_bt);
@@ -656,7 +650,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   Node* start = argument(4);
   Node* step  = argument(5);
 
-  if(step_multiply) {
+  if (step_multiply) {
     Node* bcast_step     = gvn().transform(VectorNode::scalar2vector(step, num_elem, type_bt));
     res = gvn().transform(VectorNode::make(Op_MulVB, res, bcast_step, vt));
   } else if (step_val->get_con() > 1) {
@@ -673,7 +667,7 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   Node * mod_val = gvn().makecon(TypeInt::make(num_elem-1));
   Node * bcast_mod  = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, type_bt));
 
-  if(do_wrap)  {
+  if (do_wrap)  {
     // Wrap the indices greater than lane count.
      res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
   } else {
