@@ -26,6 +26,7 @@ package java.security.spec;
 
 import java.math.BigInteger;
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * This immutable class defines an elliptic curve (EC)
@@ -231,12 +232,8 @@ public class ECFieldF2m implements ECField {
      */
     @Override
     public int hashCode() {
-        int value = m << 5;
-        // consider simplifying using Objects.hashCode(rp) after JDK-8015417
-        // has been resolved:
-        value += (rp==null? 0:rp.hashCode());
         // no need to involve ks here since ks and rp
         // should be equivalent.
-        return value;
+        return m << 5 + Objects.hashCode(rp);
     }
 }
