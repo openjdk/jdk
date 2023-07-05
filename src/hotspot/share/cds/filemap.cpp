@@ -2014,7 +2014,7 @@ bool FileMapInfo::can_use_heap_region() {
     // referenced objects are replaced. See HeapShared::initialize_from_archived_subgraph().
   }
 
-  // We pre-compute narrow Klass IDs with the future mapping start intended to be the base, and a shift of
+  // We pre-compute narrow Klass IDs with the runtime mapping start intended to be the base, and a shift of
   // ArchiveHeapWriter::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
   // CompressedKlassPointers::initialize_for_given_encoding()). Therefore, the following assertions must
   // hold:
