@@ -163,6 +163,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
   virtual HeapWord* mem_allocate(size_t size,
                                  bool* gc_overhead_limit_was_exceeded) = 0;
 
+  // Filler object utilities.
+  static inline size_t filler_array_hdr_size();
+  static inline size_t filler_array_min_size();
+
   static inline void zap_filler_array_with(HeapWord* start, size_t words, juint value);
   DEBUG_ONLY(static void fill_args_check(HeapWord* start, size_t words);)
   DEBUG_ONLY(static void zap_filler_array(HeapWord* start, size_t words, bool zap = true);)
@@ -203,9 +207,6 @@ class CollectedHeap : public CHeapObj<mtGC> {
   }
 
  public:
-
-  // Filler object utilities.
-  static inline size_t filler_array_min_size();
 
   static inline size_t filler_array_max_size() {
     return _filler_array_max_size;

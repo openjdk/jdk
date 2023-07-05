@@ -337,11 +337,11 @@ JVMFlag::Error MinTLABSizeConstraintFunc(size_t value, bool verbose) {
                         value, ThreadLocalAllocBuffer::alignment_reserve_in_bytes());
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
-  if (value / HeapWordSize > ThreadLocalAllocBuffer::max_size()) {
+  if (value > (ThreadLocalAllocBuffer::max_size() * HeapWordSize)) {
     JVMFlag::printError(verbose,
-                        "MinTLABSize (" SIZE_FORMAT " bytes) must be "
-                        "less than or equal to ergonomic TLAB maximum (" SIZE_FORMAT " words)\n",
-                        value, ThreadLocalAllocBuffer::max_size());
+                        "MinTLABSize (" SIZE_FORMAT ") must be "
+                        "less than or equal to ergonomic TLAB maximum (" SIZE_FORMAT ")\n",
+                        value, ThreadLocalAllocBuffer::max_size() * HeapWordSize);
     return JVMFlag::VIOLATES_CONSTRAINT;
   }
   return JVMFlag::SUCCESS;
