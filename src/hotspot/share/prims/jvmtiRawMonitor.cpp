@@ -80,7 +80,7 @@ JvmtiRawMonitor::~JvmtiRawMonitor() {
 
 bool
 JvmtiRawMonitor::is_valid() {
-  int value = 0;
+  jlong value = 0;
 
   // This object might not be a JvmtiRawMonitor so we can't assume
   // the _magic field is properly aligned. Get the value in a safe
@@ -382,7 +382,7 @@ int JvmtiRawMonitor::raw_wait(jlong millis, Thread* self) {
   self->_ParkEvent->reset();
   OrderAccess::fence();
 
-  intptr_t save = _recursions;
+  int save = _recursions;
   _recursions = 0;
   ret = simple_wait(self, millis);
 
