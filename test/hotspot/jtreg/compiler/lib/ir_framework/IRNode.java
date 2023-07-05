@@ -907,6 +907,16 @@ public class IRNode {
         beforeMatchingNameRegex(MUL, "Mul(I|L|F|D)");
     }
 
+    public static final String MUL_ADD_S2I = PREFIX + "MUL_ADD_S2I" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(MUL_ADD_S2I, "MulAddS2I");
+    }
+
+    public static final String MUL_ADD_VS2VI = PREFIX + "MUL_ADD_VS2VI" + POSTFIX;
+    static {
+        superWordNodes(MUL_ADD_VS2VI, "MulAddVS2VI");
+    }
+
     public static final String MUL_D = PREFIX + "MUL_D" + POSTFIX;
     static {
         beforeMatchingNameRegex(MUL_D, "MulD");
