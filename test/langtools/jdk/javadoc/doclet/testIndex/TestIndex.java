@@ -62,10 +62,10 @@ public class TestIndex extends JavadocTester {
                 """
                     <a href="pkg/C.html#c-heading" class="search-tag-link">C</a> - Search tag in cla\
                     ss pkg.C""",
-                """    
+                """
                     <a href="pkg/C.html" class="type-name-link" title="class in pkg">C</a> - Class i\
                     n <a href="pkg/package-summary.html">pkg</a>""",
-                """    
+                """
                     <a href="pkg/C.html#%3Cinit%3E()" class="member-name-link">C()</a> - Constructor\
                      for class pkg.<a href="pkg/C.html" title="class in pkg">C</a>""",
                 """
