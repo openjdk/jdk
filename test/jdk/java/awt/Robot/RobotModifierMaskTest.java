@@ -21,92 +21,106 @@
  * questions.
  */
 
-
+import java.awt.BorderLayout;
 import java.awt.Robot;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
+import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
+import jtreg.SkippedException;
 import sun.awt.OSInfo;
+
+import static javax.swing.SwingUtilities.invokeAndWait;
 
 /*
  * @test
  * @bug 8302618
  * @key headful
  * @modules java.desktop/sun.awt
+ * @library /test/lib
  * @requires (os.family == "mac")
  * @summary To test if modifier keys work properly, during Robot's Key Event
  *          with and without manual mouse move.
+ *
+ * @run main RobotModifierMaskTest
+ * @run main/manual RobotModifierMaskTest manual
  */
+
 public class RobotModifierMaskTest {
 
     private static Robot robot;
     private static JFrame jFrame;
     private static JTextArea jTextArea;
+    private static boolean startTest = false;
+    private static boolean isManual = false;
 
     private static StringBuffer errorLog = new StringBuffer();
     private static final String EXPECTED_RESULT_SHIFT = "AAAAA";
     private static final String EXPECTED_RESULT_CAPS = "AaAaAa";
     private static final String EXPECTED_RESULT_META = "AAA";
     private static final String EXPECTED_RESULT_ALT = "\u00e5\u00e5\u00e5";
-    private static final int EXPECTED_CARET_POS_CTRL = 0;
+    private static final String EXPECTED_RESULT_CTRL = "0";
 
     private static final String INSTRUCTIONS = """
-            This test is a semi-automatic test which checks the effect of typing modifier keys
-            through a Robot.\n
+            This test is running in manual mode to check the effect of typing modifier keys
+            through Robot combined with concurrent external manual mouse movement.
             It tests the following key modifiers - Shift, Caps, Control, Option and Command.
-            It needs to be checked for following two scenarios \n
 
-            CASE 1 : \t Run the test as an automated test and let the Robot go through
-                     \t all the test cases.\n
-            CASE 2 : \t Run the test in semi-automated mode. While the Robot in typing,
-                     \t manually move the mouse (without clicking/dragging).
-                     \t Check if the test passes or fails.\n
-
-            NOTE: User doesn't need to compare the actual vs expected result in Case 2.
-            The test compares it.""";
+            In this mode when the Robot starts to type, the user is required to concurrently
+            move the mouse (without clicking/dragging).
+            When ready click on the "Start" button to run the test.
+            """;
 
     public static void main(String[] args) throws Exception {
         if (OSInfo.getOSType() != OSInfo.OSType.MACOSX) {
-            System.out.println("This test is for MacOS platform only");
-            return;
+            throw new SkippedException("macOS test only");
         }
 
         try {
+            isManual = args.length != 0;
+
             robot = new Robot();
             robot.setAutoWaitForIdle(true);
-            robot.setAutoDelay(200);
+            robot.setAutoDelay(100);
 
-            SwingUtilities.invokeAndWait(() -> createTestUI());
+            // create instruction frame when running in manual mode
+            if (isManual) {
+                try {
+                    invokeAndWait(RobotModifierMaskTest::createInstructionsUI);
+                    robot.waitForIdle();
+                    while (!startTest) {
+                        robot.delay(200);
+                        if (!jFrame.isVisible()) {
+                            throw new RuntimeException("Test instruction frame closed");
+                        }
+                    }
+                } finally {
+                    invokeAndWait(() -> {
+                        if (jFrame != null) {
+                            jFrame.dispose();
+                        }
+                    });
+                }
+            }
+
+            invokeAndWait(RobotModifierMaskTest::createTestUI);
             robot.waitForIdle();
-            robot.delay(1000);
+            robot.delay(500);
 
-            jTextArea.setText(INSTRUCTIONS);
-            robot.delay(8000);
-
-            testShiftKey();
-            robot.delay(100);
-            testCapsKey();
-            robot.delay(100);
-            testCmdKey();
-            robot.delay(100);
-            testCtrlKey();
-            robot.delay(100);
-            testAltKey();
+            runTests();
 
             if (!errorLog.isEmpty()) {
                 throw new RuntimeException("Test failed for following case(s): \n"
                                            + errorLog);
             }
-
         } finally {
-            SwingUtilities.invokeAndWait(() -> {
+            invokeAndWait(() -> {
                 if (jFrame != null) {
                     jFrame.dispose();
                 }
@@ -114,52 +128,50 @@ public class RobotModifierMaskTest {
         }
     }
 
-    private static void testShiftKey() {
-        jTextArea.setText("");
+    private static void runTests() throws Exception {
+        testShiftKey();
+        robot.delay(100);
+        testCapsKey();
+        robot.delay(100);
+        testCmdKey();
+        robot.delay(100);
+        testCtrlKey();
+        robot.delay(100);
+        testAltKey();
+    }
+
+    private static void testShiftKey() throws Exception {
+        invokeAndWait(() -> jTextArea.setText(""));
 
         for (int i = 0; i < 5; ++i) {
             robot.keyPress(KeyEvent.VK_SHIFT);
             robot.keyPress(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_SHIFT);
-            robot.delay(100);
+            robot.delay(50);
         }
 
-        robot.delay(500);
-
-        if (!jTextArea.getText().equals(EXPECTED_RESULT_SHIFT)) {
-            errorLog.append("For Shift key, Actual and Expected results differ\n"
-                            + "Expected Text : " + EXPECTED_RESULT_SHIFT
-                            + " Actual Text : " + jTextArea.getText() + "\n");
-        }
+        robot.delay(100);
+        checkResult(EXPECTED_RESULT_SHIFT, "For Shift key: ");
     }
 
-    private static void testCapsKey() {
-        // clear contents of JTextArea
-        jTextArea.setText("");
+    private static void testCapsKey() throws Exception {
+        invokeAndWait(() -> jTextArea.setText(""));
 
         for (int i = 0; i < 6; ++i) {
             robot.keyPress(KeyEvent.VK_CAPS_LOCK);
             robot.keyRelease(KeyEvent.VK_CAPS_LOCK);
-
             robot.keyPress(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_A);
-
-            robot.delay(100);
+            robot.delay(50);
         }
 
-        robot.delay(500);
-
-        if (!jTextArea.getText().equals(EXPECTED_RESULT_CAPS)) {
-            errorLog.append("For Caps key, Actual and Expected results differ. \n"
-                            + "Expected Text : " + EXPECTED_RESULT_CAPS
-                            + " Actual Text : " + jTextArea.getText() + "\n");
-        }
+        robot.delay(100);
+        checkResult(EXPECTED_RESULT_CAPS, "For Caps key: ");
     }
 
-    private static void testCmdKey() {
-        // clear contents of JTextArea
-        jTextArea.setText("");
+    private static void testCmdKey() throws Exception {
+        invokeAndWait(() -> jTextArea.setText(""));
 
         StringSelection stringSelection = new StringSelection("AAA");
         Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -170,71 +182,92 @@ public class RobotModifierMaskTest {
         robot.keyRelease(KeyEvent.VK_V);
         robot.keyRelease(KeyEvent.VK_META);
 
-        robot.delay(500);
-
-        if (!jTextArea.getText().equals(EXPECTED_RESULT_META)) {
-            errorLog.append("For Command key, Actual and Expected results differ \n"
-                            + "Expected Text : " + EXPECTED_RESULT_META
-                            + " Actual Text : " + jTextArea.getText() + "\n");
-        }
+        robot.delay(100);
+        checkResult(EXPECTED_RESULT_META, "For Command key: ");
     }
 
-    private static void testAltKey() {
-        jTextArea.setText("");
+    private static void testAltKey() throws Exception {
+        invokeAndWait(() -> jTextArea.setText(""));
 
         for (int i = 0; i < 3; ++i) {
             robot.keyPress(KeyEvent.VK_ALT);
             robot.keyPress(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_ALT);
-
-            robot.delay(100);
+            robot.delay(50);
         }
 
-        robot.delay(500);
-
-        if (!jTextArea.getText().equals(EXPECTED_RESULT_ALT)) {
-            errorLog.append("For Alt key, Actual and Expected results differ \n"
-                            + "Expected Text : " + EXPECTED_RESULT_ALT
-                            + " Actual Text : " + jTextArea.getText() + "\n");
-        }
+        robot.delay(100);
+        checkResult(EXPECTED_RESULT_ALT, "For Alt key: ");
     }
 
-    private static void testCtrlKey() {
-        jTextArea.setText("");
+    private static void testCtrlKey() throws Exception {
+        invokeAndWait(() -> jTextArea.setText(""));
 
         for (int i = 0; i < 5; ++i) {
             robot.keyPress(KeyEvent.VK_SHIFT);
             robot.keyPress(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_A);
             robot.keyRelease(KeyEvent.VK_SHIFT);
-
-            robot.delay(100);
+            robot.delay(50);
         }
 
-        robot.delay(200);
+        robot.delay(50);
         robot.keyPress(KeyEvent.VK_CONTROL);
         robot.keyPress(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_A);
         robot.keyRelease(KeyEvent.VK_CONTROL);
 
-        robot.delay(500);
+        robot.delay(100);
 
-        if (jTextArea.getCaretPosition() != EXPECTED_CARET_POS_CTRL) {
-            errorLog.append("For Control key, Actual and Expected caret position differ\n"
-                            + "Expected Position : " + EXPECTED_CARET_POS_CTRL
-                            + " Actual Position : " + jTextArea.getCaretPosition() + "\n");
-        }
+        checkResult(EXPECTED_RESULT_CTRL, "For Control key: ");
     }
 
-    private static void createTestUI() {
-        jFrame = new JFrame("RobotModifierMaskTest");
-        jTextArea = new JTextArea("");
+    private static void createInstructionsUI() {
+        jFrame = new JFrame("Manual Test Instructions");
+        jTextArea = new JTextArea(INSTRUCTIONS);
+
         JScrollPane pane = new JScrollPane(jTextArea);
-        jFrame.getContentPane().add(pane);
-        jFrame.setSize(600,320);
+        jFrame.getContentPane().add(pane, BorderLayout.CENTER);
+
+        JButton jButton = new JButton("Start");
+        jButton.addActionListener(e -> startTest = true);
+        jFrame.getContentPane().add(jButton, BorderLayout.PAGE_END);
+
+        jFrame.setSize(560,200);
         jFrame.setLocation(200, 200);
         jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         jFrame.setVisible(true);
+    }
+
+    private static void createTestUI() {
+        String mode = isManual ? "MANUAL" : "AUTOMATED" ;
+        jFrame = new JFrame("RobotModifierMaskTest - Mode: " + mode);
+        jTextArea = new JTextArea("");
+        JScrollPane pane = new JScrollPane(jTextArea);
+        jFrame.getContentPane().add(pane, BorderLayout.CENTER);
+
+        jFrame.setSize(450,100);
+        jFrame.setLocation(200, 200);
+        jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        jFrame.setVisible(true);
+    }
+
+    private static void checkResult(String expectedResult, String s) throws Exception {
+        invokeAndWait(() -> {
+            boolean condition = expectedResult.equals(EXPECTED_RESULT_CTRL)
+                                ? jTextArea.getCaretPosition() != Integer.parseInt(EXPECTED_RESULT_CTRL)
+                                : !jTextArea.getText().equals(expectedResult);
+
+            String actualResult = expectedResult.equals(EXPECTED_RESULT_CTRL)
+                                  ? String.valueOf(jTextArea.getCaretPosition())
+                                  : jTextArea.getText();
+
+            if (condition) {
+                errorLog.append(s + "Actual and Expected results differ"
+                        + " Expected : " + expectedResult
+                        + " Actual : " + actualResult + "\n");
+            }
+        });
     }
 }

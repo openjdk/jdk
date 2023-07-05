@@ -423,7 +423,8 @@ static inline CGKeyCode GetCGKeyCode(jint javaKeyCode)
     return [keyCodeMapping getOSXKeyCodeForJavaKey:javaKeyCode];
 }
 
-static inline int GetCGKeyMask(int cgKeyCode) {
+static inline int GetCGKeyMask(int cgKeyCode)
+{
     CRobotKeyCodeMapping *keyCodeMapping = [CRobotKeyCodeMapping sharedInstance];
     return [keyCodeMapping getFlagMaskForCGKey:cgKeyCode];
 }
