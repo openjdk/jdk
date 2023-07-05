@@ -2523,19 +2523,17 @@ void TemplateTable::pop_and_check_object(Register r)
 
 void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteControl rc)
 {
-  const Register cache = r2;
-  const Register index = r3;
+  const Register cache = r4;
   const Register obj   = r4;
+  const Register index = r3;
+  const Register tos = r3;
   const Register off   = r19;
-  const Register flags = r0;
-  const Register raw_flags = r6;
+  const Register flags = r6;
   const Register bc    = r4; // uses same reg as obj, so don't mix them
 
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_access(cache, index, is_static, false);
-  load_resolved_field_entry(obj, cache, index, off, raw_flags, is_static);
-  // Index holds the TOS
-  __ mov(flags, index);
+  load_resolved_field_entry(obj, cache, tos, off, flags, is_static);
 
   if (!is_static) {
     // obj is on the stack
@@ -2550,8 +2548,8 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // the stores in one method and we interpret the loads in another.
   if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()){
     Label notVolatile;
-    __ andr(raw_flags, raw_flags, 0x1);
-    __ tbz(raw_flags, 0, notVolatile);
+    __ andr(flags, flags, 0x1);
+    __ tbz(flags, 0, notVolatile);
     __ membar(MacroAssembler::AnyAny);
     __ bind(notVolatile);
   }
@@ -2562,7 +2560,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
               notLong, notFloat, notObj, notDouble;
 
   assert(btos == 0, "change code, btos != 0");
-  __ cbnz(flags, notByte);
+  __ cbnz(tos, notByte);
 
   // Don't rewrite getstatic, only getfield
   if (is_static) rc = may_not_rewrite;
@@ -2577,7 +2575,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notByte);
-  __ cmp(flags, (u1)ztos);
+  __ cmp(tos, (u1)ztos);
   __ br(Assembler::NE, notBool);
 
   // ztos (same code as btos)
@@ -2591,7 +2589,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notBool);
-  __ cmp(flags, (u1)atos);
+  __ cmp(tos, (u1)atos);
   __ br(Assembler::NE, notObj);
   // atos
   do_oop_load(_masm, field, r0, IN_HEAP);
@@ -2602,7 +2600,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notObj);
-  __ cmp(flags, (u1)itos);
+  __ cmp(tos, (u1)itos);
   __ br(Assembler::NE, notInt);
   // itos
   __ access_load_at(T_INT, IN_HEAP, r0, field, noreg, noreg);
@@ -2614,7 +2612,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notInt);
-  __ cmp(flags, (u1)ctos);
+  __ cmp(tos, (u1)ctos);
   __ br(Assembler::NE, notChar);
   // ctos
   __ access_load_at(T_CHAR, IN_HEAP, r0, field, noreg, noreg);
@@ -2626,7 +2624,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notChar);
-  __ cmp(flags, (u1)stos);
+  __ cmp(tos, (u1)stos);
   __ br(Assembler::NE, notShort);
   // stos
   __ access_load_at(T_SHORT, IN_HEAP, r0, field, noreg, noreg);
@@ -2638,7 +2636,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notShort);
-  __ cmp(flags, (u1)ltos);
+  __ cmp(tos, (u1)ltos);
   __ br(Assembler::NE, notLong);
   // ltos
   __ access_load_at(T_LONG, IN_HEAP, r0, field, noreg, noreg);
@@ -2650,7 +2648,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notLong);
-  __ cmp(flags, (u1)ftos);
+  __ cmp(tos, (u1)ftos);
   __ br(Assembler::NE, notFloat);
   // ftos
   __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
@@ -2663,7 +2661,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(notFloat);
 #ifdef ASSERT
-  __ cmp(flags, (u1)dtos);
+  __ cmp(tos, (u1)dtos);
   __ br(Assembler::NE, notDouble);
 #endif
   // dtos
@@ -2683,7 +2681,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ bind(Done);
 
   Label notVolatile;
-  __ tbz(raw_flags, 0, notVolatile);
+  __ tbz(flags, 0, notVolatile);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ bind(notVolatile);
 }
