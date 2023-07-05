@@ -69,9 +69,8 @@ public class JLink100Modules {
 
             StringBuilder moduleInfoContent = new StringBuilder("module ");
             moduleInfoContent.append(name).append(" {\n");
-            // feed SystemModulesPlugin.SystemModulesClassGenerator.DedupSetBuilder
-            for (int j = 0; j < i % 20; j++) {
-                moduleInfoContent.append("  requires module" + j + "x;\n");
+            if (i != 0) {
+                moduleInfoContent.append("  requires module0x;\n");
             }
             moduleInfoContent.append("}\n");
             Files.writeString(moduleDir.resolve("module-info.java"), moduleInfoContent.toString());
