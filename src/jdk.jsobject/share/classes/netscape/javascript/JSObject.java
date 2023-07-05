@@ -45,7 +45,6 @@ package netscape.javascript;
  * </p>
  * @since 1.5
  */
-@SuppressWarnings("deprecation")
 public abstract class JSObject {
     /**
      * Constructs a new JSObject. Users should neither call this method nor
