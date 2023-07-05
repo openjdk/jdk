@@ -584,18 +584,12 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
       // Can't run with more threads than provided by the WorkGang.
       WithUpdatedActiveWorkers update_and_restore(gang, parallel_thread_num);
 
-      ParallelObjectIterator* poi = Universe::heap()->parallel_object_iterator(gang->active_workers());
-      if (poi != NULL) {
-        // The GC supports parallel object iteration.
-
-        ParHeapInspectTask task(poi, cit, filter);
-        // Run task with the active workers.
-        gang->run_task(&task);
-
-        delete poi;
-        if (task.success()) {
-          return task.missed_count();
-        }
+      ParallelObjectIterator poi(gang->active_workers());
+      ParHeapInspectTask task(&poi, cit, filter);
+      // Run task with the active workers.
+      gang->run_task(&task);
+      if (task.success()) {
+        return task.missed_count();
       }
     }
   }

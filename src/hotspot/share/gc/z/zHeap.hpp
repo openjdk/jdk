@@ -141,7 +141,7 @@ public:
 
   // Iteration
   void object_iterate(ObjectClosure* cl, bool visit_weaks);
-  ParallelObjectIterator* parallel_object_iterator(uint nworkers, bool visit_weaks);
+  ParallelObjectIteratorImpl* parallel_object_iterator(uint nworkers, bool visit_weaks);
   void pages_do(ZPageClosure* cl);
 
   // Serviceability

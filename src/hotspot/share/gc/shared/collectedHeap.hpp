@@ -62,10 +62,23 @@ class VirtualSpaceSummary;
 class WorkGang;
 class nmethod;
 
-class ParallelObjectIterator : public CHeapObj<mtGC> {
+class ParallelObjectIteratorImpl : public CHeapObj<mtGC> {
 public:
+  virtual ~ParallelObjectIteratorImpl() {}
   virtual void object_iterate(ObjectClosure* cl, uint worker_id) = 0;
-  virtual ~ParallelObjectIterator() {}
+};
+
+// User facing parallel object iterator. This is a StackObj, which ensures that
+// the _impl is allocated and deleted in the scope of this object. This ensures
+// the life cycle of the implementation is as required by ThreadsListHandle,
+// which is sometimes used by the root iterators.
+class ParallelObjectIterator : public StackObj {
+  ParallelObjectIteratorImpl* _impl;
+
+public:
+  ParallelObjectIterator(uint thread_num);
+  ~ParallelObjectIterator();
+  void object_iterate(ObjectClosure* cl, uint worker_id);
 };
 
 //
@@ -82,6 +95,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class JVMCIVMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
   friend class MemAllocator;
+  friend class ParallelObjectIterator;
 
  private:
   GCHeapLog* _gc_heap_log;
@@ -382,10 +396,12 @@ class CollectedHeap : public CHeapObj<mtGC> {
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl) = 0;
 
-  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num) {
+ protected:
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num) {
     return NULL;
   }
 
+ public:
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj) {}
 

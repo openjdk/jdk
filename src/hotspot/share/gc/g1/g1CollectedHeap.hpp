@@ -1205,7 +1205,7 @@ public:
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl);
 
-  virtual ParallelObjectIterator* parallel_object_iterator(uint thread_num);
+  virtual ParallelObjectIteratorImpl* parallel_object_iterator(uint thread_num);
 
   // Keep alive an object that was loaded with AS_NO_KEEPALIVE.
   virtual void keep_alive(oop obj);
