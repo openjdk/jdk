@@ -222,7 +222,6 @@ void FileMapHeader::populate(FileMapInfo *info, size_t core_region_alignment,
   _compressed_oops = UseCompressedOops;
   _compressed_class_ptrs = UseCompressedClassPointers;
   _max_heap_size = MaxHeapSize;
-  _narrow_klass_shift = CompressedKlassPointers::shift();
   _use_optimized_module_handling = MetaspaceShared::use_optimized_module_handling();
   _use_full_module_graph = MetaspaceShared::use_full_module_graph();
 
@@ -283,7 +282,6 @@ void FileMapHeader::print(outputStream* st) {
   st->print_cr("- compact_strings:                %d", _compact_strings);
   st->print_cr("- max_heap_size:                  " UINTX_FORMAT, _max_heap_size);
   st->print_cr("- narrow_oop_mode:                %d", _narrow_oop_mode);
-  st->print_cr("- narrow_klass_shift:             %d", _narrow_klass_shift);
   st->print_cr("- compressed_oops:                %d", _compressed_oops);
   st->print_cr("- compressed_class_ptrs:          %d", _compressed_class_ptrs);
   st->print_cr("- cloned_vtables_offset:          " SIZE_FORMAT_X, _cloned_vtables_offset);
@@ -2016,10 +2014,17 @@ bool FileMapInfo::can_use_heap_region() {
     // referenced objects are replaced. See HeapShared::initialize_from_archived_subgraph().
   }
 
+  // We pre-compute narrow Klass IDs with the runtime mapping start intended to be the base, and a shift of
+  // ArchiveHeapWriter::precomputed_narrow_klass_shift. We enforce this encoding at runtime (see
+  // CompressedKlassPointers::initialize_for_given_encoding()). Therefore, the following assertions must
+  // hold:
+  address archive_narrow_klass_base = (address)header()->mapped_base_address();
+  const int archive_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+
   log_info(cds)("CDS archive was created with max heap size = " SIZE_FORMAT "M, and the following configuration:",
                 max_heap_size()/M);
-  log_info(cds)("    narrow_klass_base = " PTR_FORMAT ", narrow_klass_shift = %d",
-                p2i(narrow_klass_base()), narrow_klass_shift());
+  log_info(cds)("    narrow_klass_base at mapping start address, narrow_klass_shift = %d",
+                archive_narrow_klass_shift);
   log_info(cds)("    narrow_oop_mode = %d, narrow_oop_base = " PTR_FORMAT ", narrow_oop_shift = %d",
                 narrow_oop_mode(), p2i(narrow_oop_base()), narrow_oop_shift());
   log_info(cds)("    heap range = [" PTR_FORMAT " - "  PTR_FORMAT "]",
@@ -2037,11 +2042,11 @@ bool FileMapInfo::can_use_heap_region() {
                 UseCompressedOops ? p2i(CompressedOops::end()) :
                                     UseG1GC ? p2i((address)G1CollectedHeap::heap()->reserved().end()) : 0L);
 
-  if (narrow_klass_base() != CompressedKlassPointers::base() ||
-      narrow_klass_shift() != CompressedKlassPointers::shift()) {
-    log_info(cds)("CDS heap data cannot be used because the archive was created with an incompatible narrow klass encoding mode.");
-    return false;
-  }
+  assert(archive_narrow_klass_base == CompressedKlassPointers::base(), "Unexpected encoding base encountered "
+         "(" PTR_FORMAT ", expected " PTR_FORMAT ")", p2i(CompressedKlassPointers::base()), p2i(archive_narrow_klass_base));
+  assert(archive_narrow_klass_shift == CompressedKlassPointers::shift(), "Unexpected encoding shift encountered "
+         "(%d, expected %d)", CompressedKlassPointers::shift(), archive_narrow_klass_shift);
+
   return true;
 }
 
