@@ -3137,8 +3137,8 @@ uint VM_Version::threads_per_core() {
   return (result == 0 ? 1 : result);
 }
 
-intx VM_Version::L1_line_size() {
-  intx result = 0;
+uint VM_Version::L1_line_size() {
+  uint result = 0;
   if (is_intel()) {
     result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
   } else if (is_amd_family()) {

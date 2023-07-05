@@ -31,10 +31,10 @@
 import java.lang.foreign.*;
 import java.lang.foreign.MemoryLayout.PathElement;
 
-import org.testng.SkipException;
 import org.testng.annotations.*;
 
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.VarHandle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
@@ -42,6 +42,7 @@ import java.util.function.IntFunction;
 import static java.lang.foreign.MemoryLayout.PathElement.groupElement;
 import static java.lang.foreign.MemoryLayout.PathElement.sequenceElement;
 import static java.lang.foreign.ValueLayout.JAVA_INT;
+import static java.lang.foreign.ValueLayout.JAVA_SHORT;
 import static org.testng.Assert.*;
 
 public class TestLayoutPaths {
@@ -132,6 +133,34 @@ public class TestLayoutPaths {
     public void testByteOffsetHandleBadRange() {
         SequenceLayout seq = MemoryLayout.sequenceLayout(5, MemoryLayout.structLayout(JAVA_INT));
         seq.byteOffsetHandle(sequenceElement(5, 1)); // invalid range (starting position is outside the sequence)
+    }
+
+    @Test
+    public void testBadAlignmentOfRoot() throws Throwable {
+        MemoryLayout struct = MemoryLayout.structLayout(
+            JAVA_INT,
+            JAVA_SHORT.withName("x"));
+        assertEquals(struct.byteAlignment(), 4);
+
+        try (Arena arena = Arena.ofConfined()) {
+            MemorySegment seg = arena.allocate(struct.byteSize() + 2, struct.byteAlignment()).asSlice(2);
+            assertEquals(seg.address() % JAVA_SHORT.byteAlignment(), 0); // should be aligned
+            assertNotEquals(seg.address() % struct.byteAlignment(), 0); // should not be aligned
+
+            String expectedMessage = "Target offset incompatible with alignment constraints: " + struct.byteAlignment();
+
+            VarHandle vhX = struct.varHandle(groupElement("x"));
+            IllegalArgumentException iae = expectThrows(IllegalArgumentException.class, () -> {
+                vhX.set(seg, (short) 42);
+            });
+            assertEquals(iae.getMessage(), expectedMessage);
+
+            MethodHandle sliceX = struct.sliceHandle(groupElement("x"));
+            iae = expectThrows(IllegalArgumentException.class, () -> {
+                MemorySegment slice = (MemorySegment) sliceX.invokeExact(seg);
+            });
+            assertEquals(iae.getMessage(), expectedMessage);
+        }
     }
 
     @Test
@@ -338,4 +367,3 @@ public class TestLayoutPaths {
     }
 
 }
-

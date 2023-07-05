@@ -45,7 +45,7 @@ public sealed interface NewMultiArrayInstruction extends Instruction
     ClassEntry arrayType();
 
     /**
-     * {@return the number of dimensions of the aray}
+     * {@return the number of dimensions of the array}
      */
     int dimensions();
 

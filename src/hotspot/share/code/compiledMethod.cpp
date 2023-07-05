@@ -679,7 +679,7 @@ bool CompiledMethod::cleanup_inline_caches_impl(bool unloading_occurred, bool cl
 address CompiledMethod::continuation_for_implicit_exception(address pc, bool for_div0_check) {
   // Exception happened outside inline-cache check code => we are inside
   // an active nmethod => use cpc to determine a return address
-  int exception_offset = pc - code_begin();
+  int exception_offset = int(pc - code_begin());
   int cont_offset = ImplicitExceptionTable(this).continuation_offset( exception_offset );
 #ifdef ASSERT
   if (cont_offset == 0) {
