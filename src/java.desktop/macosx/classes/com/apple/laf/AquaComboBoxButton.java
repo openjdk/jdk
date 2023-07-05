@@ -235,8 +235,10 @@ class AquaComboBoxButton extends JButton {
         // screen magnifier queries to get the accessible name to display magnified text.
 
         AccessibleContext ac = this.getAccessibleContext();
-        if (ac != null && !editable && ((JLabel)c).getText() != null) {
-            ac.setAccessibleName(((JLabel)c).getText());
+        if (ac != null && !editable && c instanceof JLabel label) {
+            if (label.getText() != null) {
+                ac.setAccessibleName(label.getText());
+            }
         }
 
         if (inhibitBackground) c.setBackground(bg);
