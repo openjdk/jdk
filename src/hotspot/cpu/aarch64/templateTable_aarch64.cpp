@@ -2548,8 +2548,8 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   // the stores in one method and we interpret the loads in another.
   if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()){
     Label notVolatile;
-    __ andr(flags, flags, 0x1);
-    __ tbz(flags, 0, notVolatile);
+    //__ andr(flags, flags, 0x1);
+    __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
     __ bind(notVolatile);
   }
@@ -2681,7 +2681,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ bind(Done);
 
   Label notVolatile;
-  __ tbz(flags, 0, notVolatile);
+  __ tbz(flags, ResolvedFieldEntry::is_volatile_shift, notVolatile);
   __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
   __ bind(notVolatile);
 }
@@ -2769,8 +2769,8 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   {
     Label notVolatile;
-    __ andr(r5, r5, 0x1);
-    __ tbz(r5, 0, notVolatile);
+    //__ andr(r5, r5, 0x1);
+    __ tbz(r5, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreStore | MacroAssembler::LoadStore);
     __ bind(notVolatile);
   }
@@ -2932,7 +2932,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   {
     Label notVolatile;
-    __ tbz(r5, 0, notVolatile);
+    __ tbz(r5, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreLoad | MacroAssembler::StoreStore);
     __ bind(notVolatile);
   }
@@ -3021,7 +3021,7 @@ void TemplateTable::fast_storefield(TosState state)
   // R1: field offset, R2: TOS, R3: flags
   load_resolved_field_entry(r2, r2, r0, r1, r3);
   // Test for volatile
-  __ andr(r3, r3, 0x1);
+  //__ andr(r3, r3, 0x1);
   __ pop(r0);
 
   // Must prevent reordering of the following cp cache loads with bytecode load
@@ -3029,7 +3029,7 @@ void TemplateTable::fast_storefield(TosState state)
 
   {
     Label notVolatile;
-    __ tbz(r3, 0, notVolatile);
+    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreStore | MacroAssembler::LoadStore);
     __ bind(notVolatile);
   }
@@ -3077,7 +3077,7 @@ void TemplateTable::fast_storefield(TosState state)
 
   {
     Label notVolatile;
-    __ tbz(r3, 0, notVolatile);
+    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::StoreLoad | MacroAssembler::StoreStore);
     __ bind(notVolatile);
   }
@@ -3132,8 +3132,8 @@ void TemplateTable::fast_accessfield(TosState state)
   // the stores in one method and we interpret the loads in another.
   if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()) {
     Label notVolatile;
-    __ andr(r3, r3, 0x1);
-    __ tbz(r3, 0, notVolatile);
+    //__ andr(r3, r3, 0x1);
+    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
     __ bind(notVolatile);
   }
@@ -3170,7 +3170,7 @@ void TemplateTable::fast_accessfield(TosState state)
   }
   {
     Label notVolatile;
-    __ tbz(r3, 0, notVolatile);
+    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
     __ bind(notVolatile);
   }
@@ -3195,8 +3195,8 @@ void TemplateTable::fast_xaccess(TosState state)
   if (!CompilerConfig::is_c1_or_interpreter_only_no_jvmci()) {
     Label notVolatile;
     __ load_unsigned_byte(r3, Address(r2, in_bytes(ResolvedFieldEntry::flags_offset())));
-    __ andr(r3, r3, 0x1);
-    __ tbz(r3, 0, notVolatile);
+    //__ andr(r3, r3, 0x1);
+    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::AnyAny);
     __ bind(notVolatile);
   }
@@ -3223,8 +3223,8 @@ void TemplateTable::fast_xaccess(TosState state)
   {
     Label notVolatile;
     __ load_unsigned_byte(r3, Address(r2, in_bytes(ResolvedFieldEntry::flags_offset())));
-    __ andr(r3, r3, 0x1);
-    __ tbz(r3, 0, notVolatile);
+    //__ andr(r3, r3, 0x1);
+    __ tbz(r3, ResolvedFieldEntry::is_volatile_shift, notVolatile);
     __ membar(MacroAssembler::LoadLoad | MacroAssembler::LoadStore);
     __ bind(notVolatile);
   }

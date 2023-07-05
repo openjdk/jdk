@@ -50,15 +50,13 @@ void Rewriter::compute_index_maps() {
   for (int i = 0; i < length; i++) {
     int tag = _pool->tag_at(i).value();
     switch (tag) {
-      case JVM_CONSTANT_InterfaceMethodref:
-        add_cp_cache_entry(i);
-        break;
       case JVM_CONSTANT_Fieldref          :
         _cp_map.at_put(i, _field_entry_index);
         _field_entry_index++;
         _initialized_field_entries.push(ResolvedFieldEntry((u2)i));
         break;
-      case JVM_CONSTANT_Methodref         : // fall through
+      case JVM_CONSTANT_InterfaceMethodref: // fall through
+      case JVM_CONSTANT_Methodref         :
         add_cp_cache_entry(i);
         break;
       case JVM_CONSTANT_Dynamic:

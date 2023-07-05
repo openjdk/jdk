@@ -740,10 +740,14 @@ void ConstantPoolCache::deallocate_contents(ClassLoaderData* data) {
   if (_initial_entries != nullptr) {
     Arguments::assert_is_dumping_archive();
     MetadataFactory::free_array<ConstantPoolCacheEntry>(data, _initial_entries);
-    if (_resolved_indy_entries)
+    if (_resolved_indy_entries) {
       MetadataFactory::free_array<ResolvedIndyEntry>(data, _resolved_indy_entries);
-    if (_resolved_field_entries)
+      _resolved_indy_entries = nullptr;
+    }
+    if (_resolved_field_entries) {
       MetadataFactory::free_array<ResolvedFieldEntry>(data, _resolved_field_entries);
+      _resolved_field_entries = nullptr;
+    }
     _initial_entries = nullptr;
   }
 #endif

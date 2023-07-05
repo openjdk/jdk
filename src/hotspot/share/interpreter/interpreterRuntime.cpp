@@ -715,8 +715,8 @@ void InterpreterRuntime::resolve_get_put(JavaThread* current, Bytecodes::Code by
   }
 
   ResolvedFieldEntry* entry = pool->resolved_field_entry_at(field_index);
-  entry->fill_in(info.field_holder(), info.offset(), (u2)info.index(), (u1)state, (u1)get_code, (u1)put_code);
   entry->set_flags(info.access_flags().is_final(), info.access_flags().is_volatile());
+  entry->fill_in(info.field_holder(), info.offset(), (u2)info.index(), (u1)state, (u1)get_code, (u1)put_code);
 }
 
 
@@ -1175,10 +1175,10 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_access(JavaThread* current, oopDe
     // non-static field accessors have an object, but we need a handle
     h_obj = Handle(current, obj);
   }
-  InstanceKlass* entry_f1 = entry->field_holder();
-  jfieldID fid = jfieldIDWorkaround::to_jfieldID(entry_f1, entry->field_offset(), is_static);
+  InstanceKlass* field_holder = entry->field_holder(); // HERE
+  jfieldID fid = jfieldIDWorkaround::to_jfieldID(field_holder, entry->field_offset(), is_static);
   LastFrameAccessor last_frame(current);
-  JvmtiExport::post_field_access(current, last_frame.method(), last_frame.bcp(), entry_f1, h_obj, fid);
+  JvmtiExport::post_field_access(current, last_frame.method(), last_frame.bcp(), field_holder, h_obj, fid);
 JRT_END
 
 JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current, oopDesc* obj,

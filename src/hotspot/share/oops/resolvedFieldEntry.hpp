@@ -70,6 +70,7 @@ public:
   // Bit shift to get flags
   // Note: Only two flags exists at the moment but more could be added
   enum {
+      is_volatile_shift     = 0,
       is_final_shift        = 1, // unused
   };
 
@@ -81,8 +82,8 @@ public:
   u1 tos()                      const { return _tos;          }
   u1 get_code()                 const { return Atomic::load_acquire(&_get_code);      }
   u1 put_code()                 const { return Atomic::load_acquire(&_put_code);      }
-  bool is_final()               const { return (_flags & (1 << is_final_shift)) != 0; }
-  bool is_volatile ()           const { return (_flags & 1) != 0;                     }
+  bool is_final()               const { return (_flags & (1 << is_final_shift))    != 0; }
+  bool is_volatile ()           const { return (_flags & (1 << is_volatile_shift)) != 0; }
   bool is_resolved(Bytecodes::Code code) const {
     switch(code) {
     case Bytecodes::_getstatic:
