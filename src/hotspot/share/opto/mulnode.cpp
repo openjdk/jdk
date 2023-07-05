@@ -898,7 +898,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
           if (con > add1Con) {
             // Creates "(x << (C2 - C1)) & -(1 << C2)"
             Node* lshift = phase->transform(new LShiftINode(add1->in(1), phase->intcon(con - add1Con)));
-            return new AndINode(lshift, phase->intcon(-(1 << con)));
+            return new AndINode(lshift, phase->intcon(java_negate((jint)(1 << con))));
           } else {
             assert(con < add1Con, "must be (%d < %d)", con, add1Con);
             // Creates "(x >> (C1 - C2)) & -(1 << C2)"

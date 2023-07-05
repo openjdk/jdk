@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ include $(SPEC)
 include MakeBase.gmk
 include Execute.gmk
 include Modules.gmk
+include Utils.gmk
 
 JDK_TARGETS :=
 JRE_TARGETS :=
@@ -39,7 +40,7 @@ $(eval $(call IncludeCustomExtension, Images-pre.gmk))
 ################################################################################
 
 # All modules for the current target platform.
-ALL_MODULES := $(call FindAllModules)
+ALL_MODULES := $(call FindAllModules) $(EXTRA_MODULES)
 
 $(eval $(call ReadImportMetaData))
 
@@ -54,7 +55,10 @@ JDK_MODULES_LIST := $(call CommaList, $(JDK_MODULES))
 
 BASE_RELEASE_FILE := $(JDK_OUTPUTDIR)/release
 
-JMODS := $(wildcard $(IMAGES_OUTPUTDIR)/jmods/*.jmod)
+JMODS_DIRS := $(EXTRA_JMODS_DIR) $(IMAGES_OUTPUTDIR)/jmods
+
+JDK_JMODS := $(foreach m, $(JDK_MODULES), $(firstword $(wildcard $(addsuffix /$m.jmod, $(JMODS_DIRS)))))
+JRE_JMODS := $(foreach m, $(JRE_MODULES), $(firstword $(wildcard $(addsuffix /$m.jmod, $(JMODS_DIRS)))))
 
 JLINK_ORDER_RESOURCES := **module-info.class
 JLINK_JLI_CLASSES :=
@@ -71,7 +75,7 @@ JLINK_ORDER_RESOURCES += \
     #
 
 JLINK_TOOL := $(JLINK) -J-Djlink.debug=true \
-    --module-path $(IMAGES_OUTPUTDIR)/jmods \
+    --module-path $(call PathList, $(JMODS_DIRS)) \
     --endian $(OPENJDK_TARGET_CPU_ENDIAN) \
     --release-info $(BASE_RELEASE_FILE) \
     --order-resources=$(call CommaList, $(JLINK_ORDER_RESOURCES)) \
@@ -87,12 +91,15 @@ endif
 
 JLINK_DISABLE_WARNINGS := | ( $(GREP) -v -e "WARNING: Using incubator module" || test "$$?" = "1" )
 
+JDK_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk
+JRE_IMAGE_SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre
+
 $(eval $(call SetupExecute, jlink_jdk, \
     WARN := Creating jdk image, \
-    DEPS := $(JMODS) $(BASE_RELEASE_FILE) \
-        $(call DependOnVariable, JDK_MODULES_LIST), \
+    DEPS := $(JDK_JMODS) $(BASE_RELEASE_FILE) \
+        $(call DependOnVariable, JDK_MODULES_LIST, $(JDK_IMAGE_SUPPORT_DIR)/_jlink_jdk.vardeps), \
     OUTPUT_DIR := $(JDK_IMAGE_DIR), \
-    SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jdk, \
+    SUPPORT_DIR := $(JDK_IMAGE_SUPPORT_DIR), \
     PRE_COMMAND := $(RM) -r $(JDK_IMAGE_DIR), \
     COMMAND := $(JLINK_TOOL) --add-modules $(JDK_MODULES_LIST) \
         $(JLINK_JDK_EXTRA_OPTS) --output $(JDK_IMAGE_DIR) \
@@ -103,10 +110,10 @@ JLINK_JDK_TARGETS := $(jlink_jdk)
 
 $(eval $(call SetupExecute, jlink_jre, \
     WARN := Creating legacy jre image, \
-    DEPS := $(JMODS) $(BASE_RELEASE_FILE) \
-        $(call DependOnVariable, JDK_MODULES_LIST), \
+    DEPS := $(JRE_JMODS) $(BASE_RELEASE_FILE) \
+        $(call DependOnVariable, JRE_MODULES_LIST, $(JRE_IMAGE_SUPPORT_DIR)/_jlink_jre.vardeps), \
     OUTPUT_DIR := $(JRE_IMAGE_DIR), \
-    SUPPORT_DIR := $(SUPPORT_OUTPUTDIR)/images/jre, \
+    SUPPORT_DIR := $(JRE_IMAGE_SUPPORT_DIR), \
     PRE_COMMAND := $(RM) -r $(JRE_IMAGE_DIR), \
     COMMAND := $(JLINK_TOOL) --add-modules $(JRE_MODULES_LIST) \
         $(JLINK_JRE_EXTRA_OPTS) --output $(JRE_IMAGE_DIR), \
@@ -142,7 +149,7 @@ define CreateCDSArchive
       INFO := Using CDS flags for $1: $$($1_$2_CDS_DUMP_FLAGS), \
       DEPS := $$(jlink_jdk), \
       OUTPUT_FILE := $$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE), \
-      SUPPORT_DIR := $$(SUPPORT_OUTPUTDIR)/images/jdk, \
+      SUPPORT_DIR := $$(JDK_IMAGE_SUPPORT_DIR), \
       COMMAND := $$(FIXPATH) $$(JDK_IMAGE_DIR)/bin/java -Xshare:dump \
           -XX:SharedArchiveFile=$$(JDK_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE) \
           -$1 $$($1_$2_DUMP_EXTRA_ARG) $$($1_$2_CDS_DUMP_FLAGS) $$(LOG_INFO), \
@@ -155,7 +162,7 @@ define CreateCDSArchive
       INFO := Using CDS flags for $1: $$($1_$2_CDS_DUMP_FLAGS), \
       DEPS := $$(jlink_jre), \
       OUTPUT_FILE := $$(JRE_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE), \
-      SUPPORT_DIR := $$(SUPPORT_OUTPUTDIR)/images/jre, \
+      SUPPORT_DIR := $$(JRE_IMAGE_SUPPORT_DIR), \
       COMMAND := $$(FIXPATH) $$(JRE_IMAGE_DIR)/bin/java -Xshare:dump \
           -XX:SharedArchiveFile=$$(JRE_IMAGE_DIR)/$$($1_$2_CDS_ARCHIVE) \
           -$1 $$($1_$2_DUMP_EXTRA_ARG) $$($1_$2_CDS_DUMP_FLAGS) $$(LOG_INFO), \

@@ -192,6 +192,10 @@ jint ShenandoahHeap::initialize() {
 
   assert((((size_t) base()) & ShenandoahHeapRegion::region_size_bytes_mask()) == 0,
          "Misaligned heap: " PTR_FORMAT, p2i(base()));
+  os::trace_page_sizes_for_requested_size("Heap",
+                                          max_byte_size, heap_alignment,
+                                          heap_rs.base(),
+                                          heap_rs.size(), heap_rs.page_size());
 
 #if SHENANDOAH_OPTIMIZED_MARKTASK
   // The optimized ShenandoahMarkTask takes some bits away from the full object bits.
@@ -215,8 +219,8 @@ jint ShenandoahHeap::initialize() {
   // Reserve and commit memory for bitmap(s)
   //
 
-  _bitmap_size = ShenandoahMarkBitMap::compute_size(heap_rs.size());
-  _bitmap_size = align_up(_bitmap_size, bitmap_page_size);
+  size_t bitmap_size_orig = ShenandoahMarkBitMap::compute_size(heap_rs.size());
+  _bitmap_size = align_up(bitmap_size_orig, bitmap_page_size);
 
   size_t bitmap_bytes_per_region = reg_size_bytes / ShenandoahMarkBitMap::heap_map_factor();
 
@@ -242,6 +246,10 @@ jint ShenandoahHeap::initialize() {
             _bitmap_bytes_per_slice, bitmap_page_size);
 
   ReservedSpace bitmap(_bitmap_size, bitmap_page_size);
+  os::trace_page_sizes_for_requested_size("Mark Bitmap",
+                                          bitmap_size_orig, bitmap_page_size,
+                                          bitmap.base(),
+                                          bitmap.size(), bitmap.page_size());
   MemTracker::record_virtual_memory_type(bitmap.base(), mtGC);
   _bitmap_region = MemRegion((HeapWord*) bitmap.base(), bitmap.size() / HeapWordSize);
   _bitmap_region_special = bitmap.special();
@@ -258,6 +266,10 @@ jint ShenandoahHeap::initialize() {
 
   if (ShenandoahVerify) {
     ReservedSpace verify_bitmap(_bitmap_size, bitmap_page_size);
+    os::trace_page_sizes_for_requested_size("Verify Bitmap",
+                                            bitmap_size_orig, bitmap_page_size,
+                                            verify_bitmap.base(),
+                                            verify_bitmap.size(), verify_bitmap.page_size());
     if (!verify_bitmap.special()) {
       os::commit_memory_or_exit(verify_bitmap.base(), verify_bitmap.size(), bitmap_page_size, false,
                                 "Cannot commit verification bitmap memory");
@@ -270,6 +282,10 @@ jint ShenandoahHeap::initialize() {
 
   // Reserve aux bitmap for use in object_iterate(). We don't commit it here.
   ReservedSpace aux_bitmap(_bitmap_size, bitmap_page_size);
+  os::trace_page_sizes_for_requested_size("Aux Bitmap",
+                                          bitmap_size_orig, bitmap_page_size,
+                                          aux_bitmap.base(),
+                                          aux_bitmap.size(), aux_bitmap.page_size());
   MemTracker::record_virtual_memory_type(aux_bitmap.base(), mtGC);
   _aux_bitmap_region = MemRegion((HeapWord*) aux_bitmap.base(), aux_bitmap.size() / HeapWordSize);
   _aux_bitmap_region_special = aux_bitmap.special();
@@ -279,10 +295,15 @@ jint ShenandoahHeap::initialize() {
   // Create regions and region sets
   //
   size_t region_align = align_up(sizeof(ShenandoahHeapRegion), SHENANDOAH_CACHE_LINE_SIZE);
-  size_t region_storage_size = align_up(region_align * _num_regions, region_page_size);
-  region_storage_size = align_up(region_storage_size, os::vm_allocation_granularity());
+  size_t region_storage_size_orig = region_align * _num_regions;
+  size_t region_storage_size = align_up(region_storage_size_orig,
+                                        MAX2(region_page_size, os::vm_allocation_granularity()));
 
   ReservedSpace region_storage(region_storage_size, region_page_size);
+  os::trace_page_sizes_for_requested_size("Region Storage",
+                                          region_storage_size_orig, region_page_size,
+                                          region_storage.base(),
+                                          region_storage.size(), region_storage.page_size());
   MemTracker::record_virtual_memory_type(region_storage.base(), mtGC);
   if (!region_storage.special()) {
     os::commit_memory_or_exit(region_storage.base(), region_storage_size, region_page_size, false,
@@ -293,16 +314,18 @@ jint ShenandoahHeap::initialize() {
   // Go up until a sensible limit (subject to encoding constraints) and try to reserve the space there.
   // If not successful, bite a bullet and allocate at whatever address.
   {
-    size_t cset_align = MAX2<size_t>(os::vm_page_size(), os::vm_allocation_granularity());
-    size_t cset_size = align_up(((size_t) sh_rs.base() + sh_rs.size()) >> ShenandoahHeapRegion::region_size_bytes_shift(), cset_align);
+    const size_t cset_align = MAX2<size_t>(os::vm_page_size(), os::vm_allocation_granularity());
+    const size_t cset_size = align_up(((size_t) sh_rs.base() + sh_rs.size()) >> ShenandoahHeapRegion::region_size_bytes_shift(), cset_align);
+    const size_t cset_page_size = os::vm_page_size();
 
     uintptr_t min = round_up_power_of_2(cset_align);
     uintptr_t max = (1u << 30u);
+    ReservedSpace cset_rs;
 
     for (uintptr_t addr = min; addr <= max; addr <<= 1u) {
       char* req_addr = (char*)addr;
       assert(is_aligned(req_addr, cset_align), "Should be aligned");
-      ReservedSpace cset_rs(cset_size, cset_align, os::vm_page_size(), req_addr);
+      cset_rs = ReservedSpace(cset_size, cset_align, cset_page_size, req_addr);
       if (cset_rs.is_reserved()) {
         assert(cset_rs.base() == req_addr, "Allocated where requested: " PTR_FORMAT ", " PTR_FORMAT, p2i(cset_rs.base()), addr);
         _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
@@ -311,9 +334,13 @@ jint ShenandoahHeap::initialize() {
     }
 
     if (_collection_set == nullptr) {
-      ReservedSpace cset_rs(cset_size, cset_align, os::vm_page_size());
+      cset_rs = ReservedSpace(cset_size, cset_align, os::vm_page_size());
       _collection_set = new ShenandoahCollectionSet(this, cset_rs, sh_rs.base());
     }
+    os::trace_page_sizes_for_requested_size("Collection Set",
+                                            cset_size, cset_page_size,
+                                            cset_rs.base(),
+                                            cset_rs.size(), cset_rs.page_size());
   }
 
   _regions = NEW_C_HEAP_ARRAY(ShenandoahHeapRegion*, _num_regions, mtGC);

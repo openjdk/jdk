@@ -287,7 +287,7 @@ public class Flow {
         }
     }
 
-    public boolean breaksOutOf(Env<AttrContext> env, JCTree loop, JCTree body, TreeMaker make) {
+    public boolean breaksToTree(Env<AttrContext> env, JCTree breakTo, JCTree body, TreeMaker make) {
         //we need to disable diagnostics temporarily; the problem is that if
         //"that" contains e.g. an unreachable statement, an error
         //message will be reported and will cause compilation to skip the flow analysis
@@ -295,10 +295,10 @@ public class Flow {
         //related errors, which will allow for more errors to be detected
         Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
-            SnippetBreakAnalyzer analyzer = new SnippetBreakAnalyzer();
+            SnippetBreakToAnalyzer analyzer = new SnippetBreakToAnalyzer(breakTo);
 
             analyzer.analyzeTree(env, body, make);
-            return analyzer.breaksOut();
+            return analyzer.breaksTo();
         } finally {
             log.popDiagnosticHandler(diagHandler);
         }
@@ -1909,52 +1909,21 @@ public class Flow {
         }
     }
 
-    class SnippetBreakAnalyzer extends AliveAnalyzer {
-        private final Set<JCTree> seenTrees = new HashSet<>();
-        private boolean breaksOut;
+    class SnippetBreakToAnalyzer extends AliveAnalyzer {
+        private final JCTree breakTo;
+        private boolean breaksTo;
 
-        public SnippetBreakAnalyzer() {
-        }
-
-        @Override
-        public void visitLabelled(JCTree.JCLabeledStatement tree) {
-            seenTrees.add(tree);
-            super.visitLabelled(tree);
-        }
-
-        @Override
-        public void visitWhileLoop(JCTree.JCWhileLoop tree) {
-            seenTrees.add(tree);
-            super.visitWhileLoop(tree);
-        }
-
-        @Override
-        public void visitForLoop(JCTree.JCForLoop tree) {
-            seenTrees.add(tree);
-            super.visitForLoop(tree);
-        }
-
-        @Override
-        public void visitForeachLoop(JCTree.JCEnhancedForLoop tree) {
-            seenTrees.add(tree);
-            super.visitForeachLoop(tree);
-        }
-
-        @Override
-        public void visitDoLoop(JCTree.JCDoWhileLoop tree) {
-            seenTrees.add(tree);
-            super.visitDoLoop(tree);
+        public SnippetBreakToAnalyzer(JCTree breakTo) {
+            this.breakTo = breakTo;
         }
 
         @Override
         public void visitBreak(JCBreak tree) {
-            breaksOut |= (super.alive == Liveness.ALIVE &&
-                          !seenTrees.contains(tree.target));
-            super.visitBreak(tree);
+            breaksTo |= breakTo == tree.target && super.alive == Liveness.ALIVE;
         }
 
-        public boolean breaksOut() {
-            return breaksOut;
+        public boolean breaksTo() {
+            return breaksTo;
         }
     }
 
@@ -3233,7 +3202,7 @@ public class Flow {
         void checkEffectivelyFinal(DiagnosticPosition pos, VarSymbol sym) {
             if (currentTree != null &&
                     sym.owner.kind == MTH &&
-                    sym.pos < currentTree.getStartPosition()) {
+                    sym.pos < getCurrentTreeStartPosition()) {
                 switch (currentTree.getTag()) {
                     case CLASSDEF:
                     case CASE:
@@ -3243,6 +3212,11 @@ public class Flow {
                         }
                 }
             }
+        }
+
+        int getCurrentTreeStartPosition() {
+            return currentTree instanceof JCCase cse ? cse.guard.getStartPosition()
+                                                     : currentTree.getStartPosition();
         }
 
         @SuppressWarnings("fallthrough")
