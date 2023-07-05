@@ -22,26 +22,22 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package jdk.internal.classfile;
 
-package jdk.internal.classfile.attribute;
-
-import jdk.internal.classfile.Attribute;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.FieldElement;
-import jdk.internal.classfile.MatcherElement;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.impl.BoundAttribute;
+import jdk.internal.classfile.attribute.*;
 
 /**
- * Models an unknown attribute on a class, method, or field.
+ * A {@link MatcherElement} that can appear when traversing the elements
+ * of a {@link MatcherAttribute} or be presented to a {@link MethodBuilder}.
  */
-public sealed interface UnknownAttribute
-        extends Attribute<UnknownAttribute>,
-                ClassElement, MethodElement, FieldElement, MatcherElement
-        permits BoundAttribute.BoundUnknownAttribute {
+public sealed interface MatcherElement
+        extends MethodElement
+        permits AccessFlags,
+                DeprecatedAttribute,
+                MethodParametersAttribute,
+                RuntimeInvisibleParameterAnnotationsAttribute,
+                RuntimeVisibleParameterAnnotationsAttribute,
+                SignatureAttribute,
+                UnknownAttribute {
 
-    /**
-     * {@return the uninterpreted contents of the attribute payload}
-     */
-    byte[] contents();
 }

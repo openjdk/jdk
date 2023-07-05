@@ -32,6 +32,7 @@ import jdk.internal.classfile.Annotation;
 import jdk.internal.classfile.AnnotationElement;
 import jdk.internal.classfile.AnnotationValue;
 import jdk.internal.classfile.Attribute;
+import jdk.internal.classfile.AccessFlags;
 import jdk.internal.classfile.AttributeMapper;
 import jdk.internal.classfile.Attributes;
 import jdk.internal.classfile.BootstrapMethodEntry;
@@ -56,6 +57,7 @@ import jdk.internal.classfile.attribute.LocalVariableInfo;
 import jdk.internal.classfile.attribute.LocalVariableTableAttribute;
 import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
 import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
+import jdk.internal.classfile.attribute.MatcherAttribute;
 import jdk.internal.classfile.attribute.MethodParameterInfo;
 import jdk.internal.classfile.attribute.MethodParametersAttribute;
 import jdk.internal.classfile.attribute.ModuleAttribute;
@@ -307,6 +309,41 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         @Override
         public Optional<NameAndTypeEntry> enclosingMethod() {
             return Optional.ofNullable(method);
+        }
+    }
+
+    public static final class UnboundMatcherAttribute
+            extends UnboundAttribute<MatcherAttribute>
+            implements MatcherAttribute {
+        private final AccessFlags matcherFlags;
+        private final Utf8Entry matcherName;
+        private final Utf8Entry matcherMethodType;
+
+        public UnboundMatcherAttribute(AccessFlags matcherFlags, Utf8Entry matcherName, Utf8Entry matcherMethodType) {
+            super(Attributes.MATCHER);
+            this.matcherFlags = matcherFlags;
+            this.matcherName = matcherName;
+            this.matcherMethodType = matcherMethodType;
+        }
+
+        @Override
+        public AccessFlags matcherFlags() {
+            return matcherFlags;
+        }
+
+        @Override
+        public Utf8Entry matcherName() {
+            return matcherName;
+        }
+
+        @Override
+        public Utf8Entry matcherMethodType() {
+            return matcherMethodType;
+        }
+
+        @Override
+        public List<Attribute<?>> attributes() {
+            return null;
         }
     }
 

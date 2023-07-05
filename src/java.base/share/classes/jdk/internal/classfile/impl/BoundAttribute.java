@@ -25,22 +25,19 @@
 
 package jdk.internal.classfile.impl;
 
+import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.*;
-import jdk.internal.classfile.constantpool.ClassEntry;
-import jdk.internal.classfile.constantpool.ConstantPool;
-import jdk.internal.classfile.constantpool.ConstantValueEntry;
-import jdk.internal.classfile.constantpool.LoadableConstantEntry;
-import jdk.internal.classfile.constantpool.ModuleEntry;
-import jdk.internal.classfile.constantpool.NameAndTypeEntry;
-import jdk.internal.classfile.constantpool.PackageEntry;
-import jdk.internal.classfile.constantpool.Utf8Entry;
+import jdk.internal.classfile.constantpool.*;
 import jdk.internal.access.SharedSecrets;
+
+import static jdk.internal.classfile.Attributes.CONSTANT_VALUE;
 
 public abstract sealed class BoundAttribute<T extends Attribute<T>>
         extends AbstractElement
@@ -345,6 +342,48 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 localVars = List.of(elements);
             }
             return localVars;
+        }
+    }
+
+    public static final class BoundMatcherAttribute extends BoundAttribute<MatcherAttribute>
+            implements MatcherAttribute {
+        private MethodTypeDesc mDesc;
+        private List<Attribute<?>> attributes;
+
+        public BoundMatcherAttribute(ClassReader cf, AttributeMapper<MatcherAttribute> mapper, int pos) {
+            super(cf, mapper, pos);
+        }
+
+        @Override
+        public Utf8Entry matcherName() {
+            return classReader.readUtf8Entry(payloadStart);
+        }
+
+        @Override
+        public AccessFlags matcherFlags() {
+            return AccessFlags.ofMatcher(classReader.readU2(payloadStart + 2));
+        }
+
+        @Override
+        public Utf8Entry matcherMethodType() {
+            // cast will be elided after we get the typed variant for entryByIndex
+            return ((MethodTypeEntry) classReader.entryByIndex(classReader.readU2(payloadStart + 4))).descriptor();
+        }
+
+        @Override
+        public MethodTypeDesc matcherTypeSymbol() {
+            if (mDesc == null) {
+                mDesc = MethodTypeDesc.ofDescriptor(matcherMethodType().stringValue());
+            }
+            return mDesc;
+        }
+
+        @Override
+        public List<Attribute<?>> attributes() {
+            if (attributes == null) {
+                attributes = BoundAttribute.readAttributes(null, classReader, payloadStart + 6, classReader.customAttributes());
+            }
+            return attributes;
         }
     }
 

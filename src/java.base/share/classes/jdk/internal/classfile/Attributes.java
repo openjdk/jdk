@@ -48,6 +48,7 @@ import jdk.internal.classfile.attribute.LocalVariableInfo;
 import jdk.internal.classfile.attribute.LocalVariableTableAttribute;
 import jdk.internal.classfile.attribute.LocalVariableTypeInfo;
 import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
+import jdk.internal.classfile.attribute.MatcherAttribute;
 import jdk.internal.classfile.attribute.MethodParameterInfo;
 import jdk.internal.classfile.attribute.MethodParametersAttribute;
 import jdk.internal.classfile.attribute.ModuleAttribute;
@@ -104,6 +105,7 @@ public class Attributes {
     public static final String NAME_LINE_NUMBER_TABLE = "LineNumberTable";
     public static final String NAME_LOCAL_VARIABLE_TABLE = "LocalVariableTable";
     public static final String NAME_LOCAL_VARIABLE_TYPE_TABLE = "LocalVariableTypeTable";
+    public static final String NAME_MATCHER = "Matcher";
     public static final String NAME_METHOD_PARAMETERS = "MethodParameters";
     public static final String NAME_MODULE = "Module";
     public static final String NAME_MODULE_HASHES = "ModuleHashes";
@@ -350,6 +352,25 @@ public class Attributes {
                     }
                 }
             };
+
+    /** Attribute mapper for the {@code Matcher} attribute */
+    public static final AttributeMapper<MatcherAttribute>
+            MATCHER = new AbstractAttributeMapper<>(NAME_MATCHER, Classfile.JAVA_22_VERSION) {
+        @Override
+        public MatcherAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+            return new BoundAttribute.BoundMatcherAttribute(cf, this, p);
+        }
+
+        @Override
+        protected void writeBody(BufWriter buf, MatcherAttribute attr) {
+//            List<MethodParameterInfo> parameters = attr.parameters();
+//            buf.writeU1(parameters.size());
+//            for (MethodParameterInfo info : parameters) {
+//                buf.writeIndexOrZero(info.name().orElse(null));
+//                buf.writeU2(info.flagsMask());
+//            }
+        }
+    };
 
     /** Attribute mapper for the {@code MethodParameters} attribute */
     public static final AttributeMapper<MethodParametersAttribute>
@@ -750,6 +771,7 @@ public class Attributes {
             LINE_NUMBER_TABLE,
             LOCAL_VARIABLE_TABLE,
             LOCAL_VARIABLE_TYPE_TABLE,
+            MATCHER,
             METHOD_PARAMETERS,
             MODULE,
             MODULE_HASHES,

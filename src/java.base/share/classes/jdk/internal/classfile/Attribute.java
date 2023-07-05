@@ -37,6 +37,7 @@ import jdk.internal.classfile.attribute.InnerClassesAttribute;
 import jdk.internal.classfile.attribute.LineNumberTableAttribute;
 import jdk.internal.classfile.attribute.LocalVariableTableAttribute;
 import jdk.internal.classfile.attribute.LocalVariableTypeTableAttribute;
+import jdk.internal.classfile.attribute.MatcherAttribute;
 import jdk.internal.classfile.attribute.MethodParametersAttribute;
 import jdk.internal.classfile.attribute.ModuleAttribute;
 import jdk.internal.classfile.attribute.ModuleHashesAttribute;
@@ -80,7 +81,7 @@ public sealed interface Attribute<A extends Attribute<A>>
                 ConstantValueAttribute, DeprecatedAttribute, EnclosingMethodAttribute,
                 ExceptionsAttribute, InnerClassesAttribute, LineNumberTableAttribute,
                 LocalVariableTableAttribute, LocalVariableTypeTableAttribute,
-                MethodParametersAttribute, ModuleAttribute, ModuleHashesAttribute,
+                MatcherAttribute, MethodParametersAttribute, ModuleAttribute, ModuleHashesAttribute,
                 ModuleMainClassAttribute, ModulePackagesAttribute, ModuleResolutionAttribute,
                 ModuleTargetAttribute, NestHostAttribute, NestMembersAttribute,
                 PermittedSubclassesAttribute,

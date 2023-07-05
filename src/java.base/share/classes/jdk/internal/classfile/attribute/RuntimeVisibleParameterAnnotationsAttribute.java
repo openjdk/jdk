@@ -31,6 +31,7 @@ import jdk.internal.classfile.Annotation;
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.MethodElement;
 import jdk.internal.classfile.MethodModel;
+import jdk.internal.classfile.MatcherElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
@@ -40,7 +41,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * when traversing a {@link MethodModel}.
  */
 public sealed interface RuntimeVisibleParameterAnnotationsAttribute
-        extends Attribute<RuntimeVisibleParameterAnnotationsAttribute>, MethodElement
+        extends Attribute<RuntimeVisibleParameterAnnotationsAttribute>, MethodElement, MatcherElement
         permits BoundAttribute.BoundRuntimeVisibleParameterAnnotationsAttribute,
                 UnboundAttribute.UnboundRuntimeVisibleParameterAnnotationsAttribute {
 

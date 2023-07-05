@@ -30,6 +30,7 @@ import java.util.List;
 import jdk.internal.classfile.Annotation;
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.MethodElement;
+import jdk.internal.classfile.MatcherElement;
 import jdk.internal.classfile.MethodModel;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
@@ -40,7 +41,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * jdk.internal.classfile.MethodElement} when traversing a {@link MethodModel}.
  */
 public sealed interface RuntimeInvisibleParameterAnnotationsAttribute
-        extends Attribute<RuntimeInvisibleParameterAnnotationsAttribute>, MethodElement
+        extends Attribute<RuntimeInvisibleParameterAnnotationsAttribute>, MethodElement, MatcherElement
         permits BoundAttribute.BoundRuntimeInvisibleParameterAnnotationsAttribute,
                 UnboundAttribute.UnboundRuntimeInvisibleParameterAnnotationsAttribute {
 

@@ -35,7 +35,7 @@ import java.lang.reflect.AccessFlag;
  *  the corresponding model type.
  */
 public sealed interface AccessFlags
-        extends ClassElement, MethodElement, FieldElement
+        extends ClassElement, MethodElement, FieldElement, MatcherElement
         permits AccessFlagsImpl {
 
     /**
@@ -68,6 +68,14 @@ public sealed interface AccessFlags
      */
     static AccessFlags ofClass(int mask) {
         return new AccessFlagsImpl(AccessFlag.Location.CLASS, mask);
+    }
+
+    /**
+     * {@return an {@linkplain AccessFlags} for a matcher}
+     * @param mask the flags to be set, as a bit mask
+     */
+    static AccessFlags ofMatcher(int mask) {
+        return new AccessFlagsImpl(AccessFlag.Location.MATCHER, mask);
     }
 
     /**

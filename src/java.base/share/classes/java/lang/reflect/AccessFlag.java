@@ -416,7 +416,33 @@ public enum AccessFlag {
                    return (cffv.compareTo(ClassFileFormatVersion.RELEASE_9) >= 0 ) ?
                        Location.SET_CLASS:
                        Location.EMPTY_SET;}
-           })
+           }),
+
+    /**
+     * The access flag {@code ACC_MODULE} with a mask value of {@code
+     * 0x8000}.
+     */
+    DECONSTRUCTOR(0x0001, false, Location.SET_MATCHER, // TODO
+            new Function<ClassFileFormatVersion, Set<Location>>() {
+                @Override
+                public Set<Location> apply(ClassFileFormatVersion cffv) {
+                    return (cffv.compareTo(ClassFileFormatVersion.RELEASE_22) >= 0 ) ?
+                            Location.SET_MATCHER:
+                            Location.EMPTY_SET;}
+            }),
+
+    /**
+     * The access flag {@code ACC_MODULE} with a mask value of {@code
+     * 0x8000}.
+     */
+    TOTAL(0x0002, false, Location.SET_MATCHER, // TODO
+            new Function<ClassFileFormatVersion, Set<Location>>() {
+                @Override
+                public Set<Location> apply(ClassFileFormatVersion cffv) {
+                    return (cffv.compareTo(ClassFileFormatVersion.RELEASE_22) >= 0 ) ?
+                            Location.SET_MATCHER:
+                            Location.EMPTY_SET;}
+            })
     ;
 
     // May want to override toString for a different enum constant ->
@@ -533,6 +559,11 @@ public enum AccessFlag {
         METHOD,
 
         /**
+         * Matcher location.
+         */
+        MATCHER,
+
+        /**
          * Inner class location.
          * @jvms 4.7.6 The InnerClasses Attribute
          */
@@ -585,6 +616,8 @@ public enum AccessFlag {
             Set.of(FIELD, METHOD);
         private static final Set<Location> SET_FIELD_METHOD_INNER_CLASS =
             Set.of(FIELD, METHOD, INNER_CLASS);
+        private static final Set<Location> SET_MATCHER = Set.of(MATCHER);
+
         private static final Set<Location> SET_METHOD = Set.of(METHOD);
         private static final Set<Location> SET_METHOD_PARAM = Set.of(METHOD_PARAMETER);
         private static final Set<Location> SET_FIELD = Set.of(FIELD);
@@ -631,6 +664,8 @@ public enum AccessFlag {
                                 Set.of(PUBLIC, PRIVATE, PROTECTED,
                                        STATIC, FINAL, VOLATILE,
                                        TRANSIENT, SYNTHETIC, ENUM)),
+                          entry(Location.MATCHER,
+                                Set.of(DECONSTRUCTOR, TOTAL)),
                           entry(Location.METHOD,
                                 Set.of(PUBLIC, PRIVATE, PROTECTED,
                                        STATIC, FINAL, SYNCHRONIZED,

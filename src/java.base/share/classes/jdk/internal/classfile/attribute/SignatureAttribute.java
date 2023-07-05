@@ -30,6 +30,7 @@ import jdk.internal.classfile.ClassElement;
 import jdk.internal.classfile.ClassSignature;
 import jdk.internal.classfile.FieldElement;
 import jdk.internal.classfile.MethodElement;
+import jdk.internal.classfile.MatcherElement;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.MethodSignature;
@@ -46,7 +47,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  */
 public sealed interface SignatureAttribute
         extends Attribute<SignatureAttribute>,
-                ClassElement, MethodElement, FieldElement
+                ClassElement, MethodElement, FieldElement, MatcherElement
         permits BoundAttribute.BoundSignatureAttribute, UnboundAttribute.UnboundSignatureAttribute {
 
     /**
