@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,30 +23,11 @@
  * questions.
  */
 
-package gc.startup_warnings;
-
-/*
- * @test TestSerialGC
- * @bug 8006398
- * @summary Test that SerialGC does not print a warning message
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver gc.startup_warnings.TestSerialGC
+/**
+ * JDK-specific map modes for use with
+ * {@linkplain java.nio.channels.FileChannel#map FileChannel::map}.
+ *
+ * @since 14
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-
-
-public class TestSerialGC {
-
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseSerialGC", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("deprecated");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
-
-}
+package jdk.nio.mapmode;
