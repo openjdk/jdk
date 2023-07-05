@@ -968,6 +968,13 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     if (ret == 0) {
       log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
                            thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+
+      // Print current timer slack, if available
+      int slack = prctl(PR_GET_TIMERSLACK);
+      if (slack >= 0) {
+        log_info(os, thread)("Thread \"%s\" (pthread id: " UINTX_FORMAT ") timer slack: %dns",
+                             thread->name(), (uintx) tid, slack);
+      }
     } else {
       log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%s) for attributes: %s.",
                               thread->name(), os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
@@ -987,15 +994,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
       thread->set_osthread(nullptr);
       delete osthread;
       return false;
-    }
-
-    {
-      // Print current timer slack, if available
-      int slack = prctl(PR_GET_TIMERSLACK);
-      if (slack >= 0) {
-        log_info(os, thread)("Thread \"%s\" (pthread id: " UINTX_FORMAT ") timer slack: %dns",
-                             thread->name(), (uintx) tid, slack);
-      }
     }
 
     // Store pthread info into the OSThread
