@@ -2921,7 +2921,7 @@ public class DecimalFormat extends NumberFormat {
         if (!super.equals(obj))
             return false; // super does null and class checks
 
-        if (obj == this) { // disambiguate super equality from ref equality
+        if (this == obj) { // disambiguate super equality from ref equality
             return true;
         }
 
