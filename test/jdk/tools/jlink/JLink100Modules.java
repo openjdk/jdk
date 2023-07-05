@@ -120,6 +120,7 @@ public class JLink100Modules {
         processBuilder.directory(binDir.toFile());
         Process process = processBuilder.start();
         int exitCode = process.waitFor();
-        if (exitCode != 0) throw new AssertionError("Exit code is not 0");
+        if (exitCode != 0)
+             throw new AssertionError("JLink100ModulesTest failed to launch");
     }
 }
