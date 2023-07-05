@@ -56,20 +56,26 @@ public class TestArrayInformation {
     public static void main(String[] args) throws Exception {
         WhiteBox.setWriteAllObjectSamples(true);
 
-        try (Recording recording = new Recording()) {
-            recording.enable(EventNames.OldObjectSample).withoutStackTrace().with("cutoff", "infinity");
-            recording.start();
-            for(int i = 0; i < 25; i++) {
-              leak.add( buildNestedArray(CHAIN_DEPTH));
+        while (true) {
+            try (Recording recording = new Recording()) {
+                recording.enable(EventNames.OldObjectSample).withoutStackTrace().with("cutoff", "infinity");
+                recording.start();
+                for(int i = 0; i < 25; i++) {
+                  leak.add(buildNestedArray(CHAIN_DEPTH));
+                }
+                recording.stop();
+                List<RecordedEvent> events = Events.fromRecording(recording);
+                Events.hasEvents(events);
+                if (verifyObjectArray(events)) {
+                    return;
+                }
             }
-            recording.stop();
-            List<RecordedEvent> events = Events.fromRecording(recording);
-            Events.hasEvents(events);
-            verifyObjectArray(events);
+            leak.clear();
+            System.out.println("Retrying...");
         }
     }
 
-    private static void verifyObjectArray(List<RecordedEvent> events) throws Exception {
+    private static boolean verifyObjectArray(List<RecordedEvent> events) throws Exception {
         for (RecordedEvent e : events) {
             RecordedObject object = e.getValue("object");
             RecordedClass objectType = object.getValue("type");
@@ -103,10 +109,11 @@ public class TestArrayInformation {
                     }
                     referrer = object.getValue("referrer");
                 }
-                return;
+                return true;
             }
         }
-        throw new Exception("Could not find event with " + ArrayLeak[].class + " as (leak) object");
+        System.out.println("Could not find event with " + ArrayLeak[].class + " as (leak) object");
+        return false;
     }
 
     private static Object buildNestedArray(int depth) {

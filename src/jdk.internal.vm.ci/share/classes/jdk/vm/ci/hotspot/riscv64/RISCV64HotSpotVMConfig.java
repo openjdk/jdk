@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,7 @@ package jdk.vm.ci.hotspot.riscv64;
 import jdk.vm.ci.hotspot.HotSpotVMConfigAccess;
 import jdk.vm.ci.hotspot.HotSpotVMConfigStore;
 import jdk.vm.ci.services.Services;
+import jdk.internal.util.OperatingSystem;
 
 /**
  * Used to access native configuration details.
@@ -37,7 +38,7 @@ class RISCV64HotSpotVMConfig extends HotSpotVMConfigAccess {
         super(config);
     }
 
-    final boolean linuxOs = Services.getSavedProperty("os.name", "").startsWith("Linux");
+    final boolean linuxOs = OperatingSystem.isLinux();
 
     final boolean useCompressedOops = getFlag("UseCompressedOops", Boolean.class);
 

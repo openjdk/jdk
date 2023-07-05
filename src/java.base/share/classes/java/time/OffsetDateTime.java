@@ -1805,7 +1805,13 @@ public final class OffsetDateTime
      */
     @Override
     public int compareTo(OffsetDateTime other) {
-        int cmp = compareInstant(this, other);
+        int cmp = getOffset().compareTo(other.getOffset());
+        if (cmp != 0) {
+            cmp = Long.compare(toEpochSecond(), other.toEpochSecond());
+            if (cmp == 0) {
+                cmp = toLocalTime().getNano() - other.toLocalTime().getNano();
+            }
+        }
         if (cmp == 0) {
             cmp = toLocalDateTime().compareTo(other.toLocalDateTime());
         }

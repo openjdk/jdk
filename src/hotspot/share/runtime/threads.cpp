@@ -564,7 +564,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   status = init_globals2();
   if (status != JNI_OK) {
     Threads::remove(main_thread, false);
-    main_thread->smr_delete();
+    // It is possible that we managed to fully initialize Universe but have then
+    // failed by throwing an exception. In that case our caller JNI_CreateJavaVM
+    // will want to report it, so we can't delete the main thread.
+    if (!main_thread->has_pending_exception()) {
+      main_thread->smr_delete();
+    }
     *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
     return status;
   }

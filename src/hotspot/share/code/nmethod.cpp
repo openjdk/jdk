@@ -1132,7 +1132,7 @@ static void install_post_call_nop_displacement(nmethod* nm, address pc) {
   intptr_t cbaddr = (intptr_t) nm;
   intptr_t offset = ((intptr_t) pc) - cbaddr;
 
-  int oopmap_slot = nm->oop_maps()->find_slot_for_offset((intptr_t) pc - (intptr_t) nm->code_begin());
+  int oopmap_slot = nm->oop_maps()->find_slot_for_offset(int((intptr_t) pc - (intptr_t) nm->code_begin()));
   if (oopmap_slot < 0) { // this can happen at asynchronous (non-safepoint) stackwalks
     log_debug(codecache)("failed to find oopmap for cb: " INTPTR_FORMAT " offset: %d", cbaddr, (int) offset);
   } else if (((oopmap_slot & 0xff) == oopmap_slot) && ((offset & 0xffffff) == offset)) {
@@ -1274,7 +1274,7 @@ void nmethod::inc_decompile_count() {
   mdo->inc_decompile_count();
 }
 
-bool nmethod::try_transition(int new_state_int) {
+bool nmethod::try_transition(signed char new_state_int) {
   signed char new_state = new_state_int;
   assert_lock_strong(CompiledMethod_lock);
   signed char old_state = _state;
@@ -1671,7 +1671,7 @@ class IsUnloadingState: public AllStatic {
   static const uint8_t _unloading_cycle_shift = 1;
 
   static uint8_t set_is_unloading(uint8_t state, bool value) {
-    state &= ~_is_unloading_mask;
+    state &= (uint8_t)~_is_unloading_mask;
     if (value) {
       state |= 1 << _is_unloading_shift;
     }
@@ -1680,8 +1680,8 @@ class IsUnloadingState: public AllStatic {
   }
 
   static uint8_t set_unloading_cycle(uint8_t state, uint8_t value) {
-    state &= ~_unloading_cycle_mask;
-    state |= value << _unloading_cycle_shift;
+    state &= (uint8_t)~_unloading_cycle_mask;
+    state |= (uint8_t)(value << _unloading_cycle_shift);
     assert(unloading_cycle(state) == value, "unexpected unloading cycle overflow");
     return state;
   }
@@ -2695,7 +2695,7 @@ void nmethod::print_constant_pool(outputStream* st) {
       Disassembler::print_hexdata(cp, n, st, true);
       st->cr();
     } else {
-      n = (uintptr_t)cp&(bytes_per_line-1);
+      n = (int)((uintptr_t)cp & (bytes_per_line-1));
       st->print_cr("[Constant Pool (unaligned)]");
     }
 
@@ -2883,7 +2883,7 @@ void nmethod::decode2(outputStream* ost) const {
       //---<  Now, finally, print the actual instruction bytes  >---
       unsigned char* p0 = p;
       p = Disassembler::decode_instruction_abstract(p, st, instruction_size_in_bytes, instr_maxlen);
-      compressed_format_idx += p - p0;
+      compressed_format_idx += (int)(p - p0);
 
       if (Disassembler::start_newline(compressed_format_idx-1)) {
         st->cr();
@@ -3137,7 +3137,7 @@ bool nmethod::has_code_comment(address begin, address end) {
   if (str != nullptr) return true;
 
   // implicit exceptions?
-  int cont_offset = ImplicitExceptionTable(this).continuation_offset(begin - code_begin());
+  int cont_offset = ImplicitExceptionTable(this).continuation_offset((uint)(begin - code_begin()));
   if (cont_offset != 0) return true;
 
   return false;
@@ -3145,7 +3145,7 @@ bool nmethod::has_code_comment(address begin, address end) {
 
 void nmethod::print_code_comment_on(outputStream* st, int column, address begin, address end) {
   ImplicitExceptionTable implicit_table(this);
-  int pc_offset = begin - code_begin();
+  int pc_offset = (int)(begin - code_begin());
   int cont_offset = implicit_table.continuation_offset(pc_offset);
   bool oop_map_required = false;
   if (cont_offset != 0) {

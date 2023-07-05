@@ -390,6 +390,7 @@ public final class Matcher implements MatchResult {
         if (newPattern == null)
             throw new IllegalArgumentException("Pattern cannot be null");
         parentPattern = newPattern;
+        namedGroups = null;
 
         // Reallocate state storage
         int parentGroupCount = Math.max(newPattern.capturingGroupCount, 10);
@@ -1827,7 +1828,7 @@ public final class Matcher implements MatchResult {
      *
      * @return {@inheritDoc}
      *
-     * @since {@inheritDoc}
+     * @since 20
      */
     @Override
     public Map<String, Integer> namedGroups() {
@@ -1842,7 +1843,7 @@ public final class Matcher implements MatchResult {
      *
      * @return {@inheritDoc}
      *
-     * @since {@inheritDoc}
+     * @since 20
      */
     @Override
     public boolean hasMatch() {

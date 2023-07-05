@@ -56,15 +56,6 @@ enum membarrier_cmd {
   MEMBARRIER_CMD_REGISTER_PRIVATE_EXPEDITED = (1 << 4),
 };
 
-#define check_with_errno(check_type, cond, msg)                             \
-  do {                                                                      \
-    int err = errno;                                                        \
-    check_type(cond, "%s: error='%s' (errno=%s)", msg, os::strerror(err),   \
-               os::errno_name(err));                                        \
-} while (false)
-
-#define guarantee_with_errno(cond, msg) check_with_errno(guarantee, cond, msg)
-
 static int membarrier(int cmd, unsigned int flags, int cpu_id) {
   return syscall(SYS_membarrier, cmd, flags, cpu_id); // cpu_id only on >= 5.10
 }

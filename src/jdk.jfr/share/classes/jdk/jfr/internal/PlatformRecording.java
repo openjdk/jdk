@@ -58,6 +58,8 @@ import jdk.jfr.FlightRecorderListener;
 import jdk.jfr.Recording;
 import jdk.jfr.RecordingState;
 import jdk.jfr.internal.SecuritySupport.SafePath;
+import jdk.jfr.internal.util.Utils;
+import jdk.jfr.internal.util.ValueFormatter;
 
 public final class PlatformRecording implements AutoCloseable {
 
@@ -129,16 +131,16 @@ public final class PlatformRecording implements AutoCloseable {
                     options.add("disk=false");
                 }
                 if (maxAge != null) {
-                    options.add("maxage=" + Utils.formatTimespan(maxAge, ""));
+                    options.add("maxage=" + ValueFormatter.formatTimespan(maxAge, ""));
                 }
                 if (maxSize != 0) {
-                    options.add("maxsize=" + Utils.formatBytesCompact(maxSize));
+                    options.add("maxsize=" + ValueFormatter.formatBytesCompact(maxSize));
                 }
                 if (dumpOnExit) {
                     options.add("dumponexit=true");
                 }
                 if (duration != null) {
-                    options.add("duration=" + Utils.formatTimespan(duration, ""));
+                    options.add("duration=" + ValueFormatter.formatTimespan(duration, ""));
                 }
                 if (destination != null) {
                     options.add("filename=" + destination.getRealPathText());
@@ -814,7 +816,7 @@ public final class PlatformRecording implements AutoCloseable {
         }
         // always keep at least one chunk
         if (result.isEmpty()) {
-            result.add(input.get(0));
+            result.add(input.getFirst());
         }
         return result;
     }
@@ -912,7 +914,7 @@ public final class PlatformRecording implements AutoCloseable {
                     }
                     Logger.log(JFR, ERROR, msg);
 
-                    JVM.getJVM().emitDataLoss(chunk.getSize());
+                    JVM.emitDataLoss(chunk.getSize());
 
                     it.remove();
                     removed(chunk);

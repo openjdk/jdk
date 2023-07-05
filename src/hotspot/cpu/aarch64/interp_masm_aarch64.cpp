@@ -36,6 +36,7 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -691,6 +692,12 @@ void InterpreterMacroAssembler::remove_activation(
   if (StackReservedPages > 0) {
     // testing if reserved zone needs to be re-enabled
     Label no_reserved_zone_enabling;
+
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    ldrw(rscratch1, Address(rthread, JavaThread::stack_guard_state_offset()));
+    cmpw(rscratch1, (u1)StackOverflow::stack_guard_enabled);
+    br(Assembler::EQ, no_reserved_zone_enabling);
 
     // look for an overflow into the stack reserved zone, i.e.
     // interpreter_frame_sender_sp <= JavaThread::reserved_stack_activation

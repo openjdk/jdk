@@ -512,7 +512,6 @@ static SpecialFlag const special_jvm_flags[] = {
 
   // -------------- Obsolete Flags - sorted by expired_in --------------
 
-  { "EnableWaitForParallelLoad",    JDK_Version::jdk(20), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRefinementGreenZone",    JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementYellowZone",   JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementRedZone",      JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
@@ -520,7 +519,6 @@ static SpecialFlag const special_jvm_flags[] = {
   { "G1UseAdaptiveConcRefinement",  JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
   { "G1ConcRefinementServiceIntervalMillis", JDK_Version::undefined(), JDK_Version::jdk(20), JDK_Version::undefined() },
 
-  { "G1UsePreventiveGC",            JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::jdk(22) },
   { "G1ConcRSLogCacheSize",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "G1ConcRSHotCardLimit",         JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
   { "RefDiscoveryPolicy",           JDK_Version::undefined(), JDK_Version::jdk(21), JDK_Version::undefined() },
@@ -1928,7 +1926,7 @@ bool Arguments::check_vm_args_consistency() {
     return false;
   }
 #endif
-#if (defined(X86) || defined(PPC64)) && !defined(ZERO)
+#if defined(X86) && !defined(ZERO)
   if (LockingMode == LM_MONITOR && UseRTMForStackLocks) {
     jio_fprintf(defaultStream::error_stream(),
                 "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive");

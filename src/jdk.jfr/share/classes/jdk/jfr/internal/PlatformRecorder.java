@@ -59,6 +59,7 @@ import jdk.jfr.internal.SecuritySupport.SecureRecorderListener;
 import jdk.jfr.internal.consumer.EventLog;
 import jdk.jfr.internal.instrument.JDKEvents;
 import jdk.jfr.internal.periodic.PeriodicEvents;
+import jdk.jfr.internal.util.Utils;
 
 public final class PlatformRecorder {
 
@@ -66,7 +67,6 @@ public final class PlatformRecorder {
     private final ArrayList<PlatformRecording> recordings = new ArrayList<>();
     private static final List<SecureRecorderListener> changeListeners = new ArrayList<>();
     private final Repository repository;
-    private static final JVM jvm = JVM.getJVM();
     private final Thread shutdownHook;
 
     private Timer timer;
@@ -79,7 +79,7 @@ public final class PlatformRecorder {
         repository = Repository.getRepository();
         Logger.log(JFR_SYSTEM, INFO, "Initialized disk repository");
         repository.ensureRepository();
-        jvm.createNativeJFR();
+        JVMSupport.createJFR();
         Logger.log(JFR_SYSTEM, INFO, "Created native");
         JDKEvents.initialize();
         Logger.log(JFR_SYSTEM, INFO, "Registered JDK events");
@@ -97,10 +97,10 @@ public final class PlatformRecorder {
             Thread t = SecuritySupport.createThreadWitNoPermissions("Permissionless thread", ()-> {
                 result.add(new Timer("JFR Recording Scheduler", true));
             });
-            jvm.exclude(t);
+            JVM.exclude(t);
             t.start();
             t.join();
-            return result.get(0);
+            return result.getFirst();
         } catch (InterruptedException e) {
             throw new IllegalStateException("Not able to create timer task. " + e.getMessage(), e);
         }
@@ -207,11 +207,11 @@ public final class PlatformRecorder {
 
         JDKEvents.remove();
 
-        if (jvm.hasNativeJFR()) {
-            if (jvm.isRecording()) {
-                jvm.endRecording();
+        if (JVMSupport.hasJFR()) {
+            if (JVM.isRecording()) {
+                JVM.endRecording();
             }
-            jvm.destroyNativeJFR();
+            JVMSupport.destroyJFR();
         }
         repository.clear();
     }
@@ -244,8 +244,8 @@ public final class PlatformRecorder {
                 MetadataRepository.getInstance().setOutput(null);
             }
             currentChunk = newChunk;
-            jvm.beginRecording();
-            startNanos = Utils.getChunkStartNanos();
+            JVM.beginRecording();
+            startNanos = JVMSupport.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             if (currentChunk != null) {
                 currentChunk.setStartTime(startTime);
@@ -267,7 +267,7 @@ public final class PlatformRecorder {
                 startTime = MetadataRepository.getInstance().setOutput(p);
                 newChunk.setStartTime(startTime);
             }
-            startNanos = Utils.getChunkStartNanos();
+            startNanos = JVMSupport.getChunkStartNanos();
             startTime = Utils.epochNanosToInstant(startNanos);
             recording.setStartTime(startTime);
             recording.setState(RecordingState.RUNNING);
@@ -314,13 +314,13 @@ public final class PlatformRecorder {
             }
         }
         OldObjectSample.emit(recording);
-        recording.setFinalStartnanos(Utils.getChunkStartNanos());
+        recording.setFinalStartnanos(JVMSupport.getChunkStartNanos());
 
         if (endPhysical) {
             PeriodicEvents.doChunkEnd();
             if (recording.isToDisk()) {
                 if (inShutdown) {
-                    jvm.markChunkFinal();
+                    JVM.markChunkFinal();
                 }
                 stopTime = MetadataRepository.getInstance().setOutput(null);
                 finishChunk(currentChunk, stopTime, null);
@@ -329,7 +329,7 @@ public final class PlatformRecorder {
                 // last memory
                 stopTime = dumpMemoryToDestination(recording);
             }
-            jvm.endRecording();
+            JVM.endRecording();
             recording.setStopTime(stopTime);
             disableEvents();
             setRunPeriodicTask(false);
@@ -504,14 +504,14 @@ public final class PlatformRecorder {
     }
 
     private void periodicTask() {
-        if (!jvm.hasNativeJFR()) {
+        if (!JVMSupport.hasJFR()) {
             return;
         }
         while (true) {
             long wait = Options.getWaitInterval();
             try {
                 synchronized (this) {
-                    if (jvm.shouldRotateDisk()) {
+                    if (JVM.shouldRotateDisk()) {
                         rotateDisk();
                     }
                     if (isToDisk()) {
@@ -674,7 +674,7 @@ public final class PlatformRecorder {
             }
         }
         if (disk) {
-            jvm.markChunkFinal();
+            JVM.markChunkFinal();
             rotateDisk();
         }
     }

@@ -30,11 +30,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jdk.jfr.internal.OldObjectSample;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.query.Configuration;
-import jdk.jfr.internal.query.QueryPrinter;
 import jdk.jfr.internal.query.ViewPrinter;
-import jdk.jfr.internal.util.Columnizer;
 import jdk.jfr.internal.util.UserDataException;
 import jdk.jfr.internal.util.UserSyntaxException;
 /**
