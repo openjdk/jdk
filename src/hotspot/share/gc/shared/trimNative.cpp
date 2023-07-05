@@ -39,12 +39,11 @@ class NativeTrimmerThread : public ConcurrentGCThread {
 
   Monitor* _lock;
 
-  // Periodic trimming state
-  const int64_t _interval_ms;
-  const bool _periodic_trim_enabled;
-
   int64_t _next_trim_time;
-  int64_t _next_trim_time_saved; // for pause
+
+  // Pausing
+  int _pausers;
+  int64_t _next_trim_time_saved;
 
   static const int64_t never = INT64_MAX;
 
@@ -78,10 +77,8 @@ class NativeTrimmerThread : public ConcurrentGCThread {
         } while (ntt > tnow);
       }
 
-      // 2 - Trimming happens outside of lock protection. GC threads can issue new commands
-      //     concurrently.
-      const bool explicitly_scheduled = (ntt == 0);
-      execute_trim_and_log(explicitly_scheduled);
+      // 2 - Trim outside of lock protection.
+      execute_trim_and_log();
 
       // 3 - Update _next_trim_time; but give concurrent setters preference.
       {
@@ -90,13 +87,7 @@ class NativeTrimmerThread : public ConcurrentGCThread {
         int64_t ntt2 = _next_trim_time;
 
         if (ntt2 == ntt) { // not changed concurrently?
-
-          if (_periodic_trim_enabled) {
-            int64_t interval_length = _interval_ms;
-            _next_trim_time = tnow + interval_length;
-          } else {
-            _next_trim_time = never;
-          }
+          _next_trim_time = tnow + (TrimNativeHeapInterval * 1000);
         }
       } // Mutex scope
     }
@@ -108,8 +99,7 @@ class NativeTrimmerThread : public ConcurrentGCThread {
   }
 
   // Execute the native trim, log results.
-  // Return true if trim succeeded *and* we have valid size change data.
-  void execute_trim_and_log(bool explicitly_scheduled) const {
+  void execute_trim_and_log() const {
     assert(os::can_trim_native_heap(), "Unexpected");
     const int64_t tnow = now();
     os::size_change_t sc;
@@ -120,8 +110,7 @@ class NativeTrimmerThread : public ConcurrentGCThread {
       if (sc.after != SIZE_MAX) {
         const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
         const char sign = sc.after < sc.before ? '-' : '+';
-        log_info(gc, trim)("Trim native heap (%s): RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
-                           (explicitly_scheduled ? "explicit" : "periodic"),
+        log_info(gc, trim)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
                            PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                            trim_time.seconds() * 1000);
       } else {
@@ -134,39 +123,45 @@ public:
 
   NativeTrimmerThread() :
     _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeTrimmer_lock")),
-    _interval_ms(TrimNativeHeapInterval * 1000),
-    _periodic_trim_enabled(TrimNativeHeapInterval > 0),
     _next_trim_time(0),
+    _pausers(0),
     _next_trim_time_saved(0)
   {
     set_name("Native Heap Trimmer");
-    _next_trim_time = _periodic_trim_enabled ? (now() + _interval_ms) : never;
+    _next_trim_time = now() + TrimNativeHeapInterval * 1000;
     create_and_start();
   }
 
-  void pause() {
-    if (!_periodic_trim_enabled) {
-      return;
-    }
+  void pause(const char* reason) {
+    assert(TrimNativeHeap > 0, "Only call if enabled");
+    assert(TrimNativeHeapInterval > 0, "Only call if periodic trimming is enabled");
+    int lvl = 0;
     {
       MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-      _next_trim_time_saved = _next_trim_time;
-      _next_trim_time = never;
-      ml.notify_all();
+      if (_pausers == 0) {
+        _next_trim_time_saved = _next_trim_time;
+        _next_trim_time = never;
+      }
+      lvl = ++_pausers;
+      // No need to wakeup trimmer
     }
-    log_debug(gc, trim)("NativeTrimmer pause");
+    log_debug(gc, trim)("NativeTrimmer pause (%s) (%d)", reason, lvl);
   }
 
-  void unpause() {
-    if (!_periodic_trim_enabled) {
-      return;
-    }
+  void unpause(const char* reason) {
+    assert(TrimNativeHeap > 0, "Only call if enabled");
+    assert(TrimNativeHeapInterval > 0, "Only call if periodic trimming is enabled");
+    int lvl = 0;
     {
       MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-      _next_trim_time = _next_trim_time_saved;
-      ml.notify_all();
+      lvl = _pausers--;
+      if (_pausers == 0) {
+        _next_trim_time = _next_trim_time_saved;
+        _next_trim_time_saved = 0;
+        ml.notify_all();
+      }
     }
-    log_debug(gc, trim)("NativeTrimmer unpause");
+    log_debug(gc, trim)("NativeTrimmer unpause (%s) (%d)", reason, lvl);
   }
 
 }; // NativeTrimmer
@@ -182,15 +177,8 @@ void TrimNative::initialize() {
       log_info(gc, trim)("Native trim not supported on this platform.");
       return;
     }
-
-    log_info(gc, trim)("Native trim enabled.");
-
-    if (TrimNativeHeapInterval == 0) {
-      log_info(gc, trim)("Periodic native trim disabled.");
-    } else {
-      log_info(gc, trim)("Periodic native trim enabled (interval: %u seconds)", TrimNativeHeapInterval);
-    }
     g_trimmer_thread = new NativeTrimmerThread();
+    log_info(gc, trim)("Periodic native trim enabled (interval: %u seconds)", TrimNativeHeapInterval);
   }
 }
 
@@ -200,15 +188,15 @@ void TrimNative::cleanup() {
   }
 }
 
-void TrimNative::pause_periodic_trim() {
+void TrimNative::pause_periodic_trim(const char* reason) {
   if (g_trimmer_thread != nullptr) {
-    g_trimmer_thread->pause();
+    g_trimmer_thread->pause(reason);
   }
 }
 
-void TrimNative::unpause_periodic_trim() {
+void TrimNative::unpause_periodic_trim(const char* reason) {
   if (g_trimmer_thread != nullptr) {
-    g_trimmer_thread->unpause();
+    g_trimmer_thread->unpause(reason);
   }
 }
 

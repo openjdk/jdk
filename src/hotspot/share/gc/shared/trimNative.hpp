@@ -27,6 +27,7 @@
 #define SHARE_GC_SHARED_TRIMNATIVE_HPP
 
 #include "memory/allStatic.hpp"
+#include "gc/shared/gc_globals.hpp"
 
 class TrimNative : public AllStatic {
 public:
@@ -35,38 +36,26 @@ public:
   static void cleanup();
 
   // Pause periodic trim (if enabled).
-  static void pause_periodic_trim();
+  static void pause_periodic_trim(const char* reason);
 
   // Unpause periodic trim (if enabled).
-  static void unpause_periodic_trim();
-
-  // Schedule an explicit trim now.
-  // If periodic trims are enabled and had been paused, they are unpaused
-  // and the interval is reset.
-  static void schedule_trim();
+  static void unpause_periodic_trim(const char* reason);
 
   // Pause periodic trimming while in scope; when leaving scope,
   // resume periodic trimming.
   struct PauseMark {
-    PauseMark()   {
+    const char* const _reason;
+    PauseMark(const char* reason = "unknown") : _reason(reason) {
       if (TrimNativeHeap) {
-        pause_periodic_trim();
+        pause_periodic_trim(_reason);
       }
     }
     ~PauseMark()  {
       if (TrimNativeHeap) {
-        unpause_periodic_trim();
+        unpause_periodic_trim(_reason);
       }
     }
   };
-
-  // Pause periodic trimming while in scope; when leaving scope,
-  // trim immediately and resume periodic trimming with a new interval.
-  struct PauseThenTrimMark {
-    PauseThenTrimMark()   { pause_periodic_trim(); }
-    ~PauseThenTrimMark()  { schedule_trim(); }
-  };
-
 };
 
 #endif // SHARE_GC_SHARED_TRIMNATIVE_HPP

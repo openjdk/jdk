@@ -34,8 +34,6 @@
 #include "gc/shared/memAllocator.hpp"
 #include "gc/shared/plab.hpp"
 #include "gc/shared/tlab_globals.hpp"
-#include "gc/shared/trimNative.hpp"
-
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahClosures.inline.hpp"
 #include "gc/shenandoah/shenandoahCollectionSet.hpp"
@@ -653,8 +651,6 @@ void ShenandoahHeap::post_initialize() {
   _heuristics->initialize();
 
   JFR_ONLY(ShenandoahJFRSupport::register_jfr_type_serializers());
-
-  TrimNative::initialize();
 }
 
 size_t ShenandoahHeap::used() const {

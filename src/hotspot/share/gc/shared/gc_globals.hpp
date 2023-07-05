@@ -693,15 +693,14 @@
           constraint(GCCardSizeInBytesConstraintFunc,AtParse)               \
                                                                             \
   product(bool, TrimNativeHeap, false, EXPERIMENTAL,                        \
-          "GC will attempt to trim the native heap periodically and "       \
-          "at the end of a GC cycle.")                                      \
+          "GC will attempt to trim the native heap periodically. By "       \
+          "default, the interval time is 60 seconds, but can be "           \
+          "changed using TrimNativeHeapInterval.")                          \
                                                                             \
-  product(uint, TrimNativeHeapInterval, 30, EXPERIMENTAL,                   \
+  product(uint, TrimNativeHeapInterval, 60, EXPERIMENTAL,                   \
           "If TrimNativeHeap is enabled: interval, in seconds, in which "   \
-          "the GC will attempt to trim the native heap. "                   \
-          "A value of 0 disables periodic trimming altogether while still " \
-          "trimming after a GC cycle.")                                     \
-          range(0, (24 * 60 * 60))                                          \
+          "the GC will attempt to trim the native heap.")                   \
+          range(1, UINT_MAX)                                                \
                                                                             \
           // end of GC_FLAGS
 

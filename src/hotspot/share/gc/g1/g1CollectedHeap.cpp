@@ -915,6 +915,8 @@ bool G1CollectedHeap::do_full_collection(bool clear_all_soft_refs,
     return false;
   }
 
+  TrimNative::PauseMark trim_native_pause("gc");
+
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
 
@@ -1545,7 +1547,6 @@ void G1CollectedHeap::safepoint_synchronize_end() {
 void G1CollectedHeap::post_initialize() {
   CollectedHeap::post_initialize();
   ref_processing_init();
-  TrimNative::initialize();
 }
 
 void G1CollectedHeap::ref_processing_init() {
@@ -2551,7 +2552,7 @@ void G1CollectedHeap::retire_tlabs() {
 
 void G1CollectedHeap::do_collection_pause_at_safepoint_helper() {
   ResourceMark rm;
-  TrimNative::PauseThenTrimMark trim_native_pause;
+  TrimNative::PauseMark trim_native_pause("gc");
 
   IsGCActiveMark active_gc_mark;
   GCIdMark gc_id_mark;

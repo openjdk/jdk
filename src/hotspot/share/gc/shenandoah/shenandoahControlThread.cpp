@@ -283,9 +283,6 @@ void ShenandoahControlThread::run_service() {
       // Print Metaspace change following GC (if logging is enabled).
       MetaspaceUtils::print_metaspace_change(meta_sizes);
 
-      // Expedite next native trim. This also trims if periodic trims are disabled.
-      TrimNative::schedule_trim();
-
       // GC is over, we are at idle now
       if (ShenandoahPacing) {
         heap->pacer()->setup_for_idle();
@@ -429,7 +426,7 @@ void ShenandoahControlThread::stop_service() {
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
-  TrimNative::PauseMark trim_pause_mark;
+  TrimNative::PauseMark trim_native_pause("gc");
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 
@@ -444,7 +441,7 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
 
-  TrimNative::PauseMark trim_pause_mark;
+  TrimNative::PauseMark trim_native_pause("gc");
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 
