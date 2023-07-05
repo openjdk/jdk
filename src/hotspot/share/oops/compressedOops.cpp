@@ -199,7 +199,10 @@ void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t
   const size_t encoding_range_size = nth_bit(narrow_klasspointer_bits + requested_shift);
   address encoding_range_end = requested_base + encoding_range_size;
 
-  assert(requested_base <= addr && encoding_range_end >= end, "Encoding does not cover the full Klass range");
+  // Note: it would be technically valid for the encoding base to precede the start of the Klass range. But we only call
+  // this function from CDS, and therefore know this to be true.
+  assert(requested_base == addr, "Invalid requested base");
+  assert(encoding_range_end >= end, "Encoding does not cover the full Klass range");
 
   set_base(requested_base);
   set_shift(requested_shift);
