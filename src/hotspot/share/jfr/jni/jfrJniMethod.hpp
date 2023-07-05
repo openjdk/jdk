@@ -156,7 +156,7 @@ jboolean JNICALL jfr_is_containerized(JNIEnv* env, jclass jvm);
 
 jlong JNICALL jfr_host_total_memory(JNIEnv* env, jclass jvm);
 
-void JNICALL jfr_emit_data_loss(JNIEnv* env, jobject jvm, jlong bytes);
+void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
 
 #ifdef __cplusplus
 }
