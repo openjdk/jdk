@@ -400,15 +400,6 @@ oop ObjAllocator::initialize(HeapWord* mem) const {
   return finish(mem);
 }
 
-MemRegion ObjArrayAllocator::obj_memory_range(oop obj) const {
-  if (_do_zero) {
-    return MemAllocator::obj_memory_range(obj);
-  }
-  ArrayKlass* array_klass = ArrayKlass::cast(_klass);
-  const size_t hs = arrayOopDesc::header_size(array_klass->element_type());
-  return MemRegion(cast_from_oop<HeapWord*>(obj) + hs, _word_size - hs);
-}
-
 oop ObjArrayAllocator::initialize(HeapWord* mem) const {
   // Set array length before setting the _klass field because a
   // non-null klass field indicates that the object is parsable by

@@ -232,7 +232,7 @@ inline intptr_t* frame::real_fp() const {
 
 inline int frame::frame_size() const {
   return is_interpreted_frame()
-    ? sender_sp() - sp()
+    ? pointer_delta_as_int(sender_sp(), sp())
     : cb()->frame_size();
 }
 

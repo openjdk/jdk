@@ -83,7 +83,7 @@ public final class OldObjectSample {
     public static void emit(long ticks) {
         boolean emitAll = WhiteBox.getWriteAllObjectSamples();
         boolean skipBFS = WhiteBox.getSkipBFS();
-        JVM.getJVM().emitOldObjectSamples(ticks, emitAll, skipBFS);
+        JVM.emitOldObjectSamples(ticks, emitAll, skipBFS);
     }
 
     public static void updateSettingPathToGcRoots(Map<String, String> s, Boolean pathToGcRoots) {

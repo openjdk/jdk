@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,18 @@
  * questions.
  */
 
-package gc.startup_warnings;
-
 /*
- * @test TestParallelGC
- * @bug 8006398
- * @requires vm.gc.Parallel
- * @summary Test that ParallelGC does not print a warning message
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver gc.startup_warnings.TestParallelGC
+ * @test
+ * @bug 8309811
+ * @requires vm.debug
+ * @summary Test the output of -XX:+TraceBytecodes, -XX:TraceBytecodesAt, and -XX:TraceBytecodesStopAt
+ * @run main/othervm -XX:+TraceBytecodes -XX:TraceBytecodesAt=2000 -XX:TraceBytecodesStopAt=3000 TraceBytecodes
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
-
-
-public class TestParallelGC {
-
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseParallelGC", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("deprecated");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
-
+// This is just a very simple sanity test. Trace about 1000 bytecodes. See the .jtr file for the output.
+// Consider it OK if the VM doesn't crash. It should test a fair amount of the code in bytecodeTracer.cpp
+public class TraceBytecodes {
+    public static void main(String args[]) {
+        System.out.println("Hello TraceBytecodes");
+    }
 }
