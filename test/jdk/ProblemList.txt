@@ -119,7 +119,6 @@ java/awt/Focus/FocusOwnerFrameOnClick/FocusOwnerFrameOnClick.java 8081489 generi
 java/awt/Focus/IconifiedFrameFocusChangeTest/IconifiedFrameFocusChangeTest.java 6849364 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusToFrontTest.java 6848406 generic-all
 java/awt/Focus/AutoRequestFocusTest/AutoRequestFocusSetVisibleTest.java 6848407 generic-all
-java/awt/Frame/MaximizedToIconified/MaximizedToIconified.java 8296972 macosx-all
 java/awt/Frame/MaximizedUndecorated/MaximizedUndecorated.java 8022302 generic-all
 java/awt/Frame/RestoreToOppositeScreen/RestoreToOppositeScreen.java 8286840 linux-all
 java/awt/FileDialog/FileDialogIconTest/FileDialogIconTest.java 8160558 windows-all
@@ -472,13 +471,6 @@ java/beans/XMLEncoder/Test6570354.java 8015593 macosx-all
 
 ############################################################################
 
-# jdk_foreign
-
-java/foreign/callarranger/TestAarch64CallArranger.java generic-x86
-java/foreign/TestLargeSegmentCopy.java generic-x86
-
-############################################################################
-
 # jdk_lang
 
 java/lang/ProcessHandle/InfoTest.java                           8211847 aix-ppc64
@@ -527,6 +519,8 @@ javax/management/monitor/DerivedGaugeMonitorTest.java           8042211 generic-
 javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 generic-all
 
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
+
+javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 8149084 linux-aarch64
 
 ############################################################################
 

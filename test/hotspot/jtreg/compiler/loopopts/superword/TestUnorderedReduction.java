@@ -43,7 +43,7 @@ public class TestUnorderedReduction {
                                    "-XX:MaxVectorSize=16");
     }
 
-    @Run(test = {"test1", "test2"})
+    @Run(test = {"test1", "test2", "test3"})
     @Warmup(0)
     public void runTests() throws Exception {
         int[] data = new int[RANGE];
@@ -62,6 +62,14 @@ public class TestUnorderedReduction {
             int r2 = ref2(data, i);
             if (r1 != r2) {
                 throw new RuntimeException("Wrong result test2: " + r1 + " != " + r2);
+            }
+        }
+
+        for (int i = 0; i < ITER; i++) {
+            int r1 = test3(data, i);
+            int r2 = ref3(data, i);
+            if (r1 != r2) {
+                throw new RuntimeException("Wrong result test3: " + r1 + " != " + r2);
             }
         }
     }
@@ -140,6 +148,40 @@ public class TestUnorderedReduction {
         return sum;
     }
 
+    @Test
+    @IR(counts = {IRNode.LOAD_VECTOR, "> 0",
+                  IRNode.MUL_VI, "> 0",
+                  IRNode.ADD_VI, "= 0", // reduction not moved out of loop
+                  IRNode.ADD_REDUCTION_VI, "> 0",},
+        applyIfCPUFeatureOr = {"sse4.1", "true", "asimd", "true"})
+    static int test3(int[] data, int sum) {
+        for (int i = 0; i < RANGE; i+=8) {
+            // Partial vectorization of reduction chain -> cannot move out of loop
+            sum += 11 * data[i+0]; // vec 1
+            sum += 13 & data[i+1]; // ---------- breaks vec 1 -> scalar reductions
+            sum += 11 * data[i+2];
+            sum += 11 * data[i+3];
+            sum += 11 * data[i+4]; // vec 2 -> vectorizes -> vector reduction
+            sum += 11 * data[i+5];
+            sum += 11 * data[i+6];
+            sum += 11 * data[i+7];
+        }
+        return sum;
+    }
+
+    static int ref3(int[] data, int sum) {
+        for (int i = 0; i < RANGE; i+=8) {
+            sum += 11 * data[i+0];
+            sum += 13 & data[i+1];
+            sum += 11 * data[i+2];
+            sum += 11 * data[i+3];
+            sum += 11 * data[i+4];
+            sum += 11 * data[i+5];
+            sum += 11 * data[i+6];
+            sum += 11 * data[i+7];
+        }
+        return sum;
+    }
 
     static void init(int[] data) {
         for (int i = 0; i < RANGE; i++) {

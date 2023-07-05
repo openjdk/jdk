@@ -60,13 +60,14 @@ public class TestAbortVmOnException {
     private static Process runProcess(String exceptionName, boolean withMessage, String exceptionMessage) throws IOException {
         if (exceptionMessage == null) {
             return ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
-                "-XX:AbortVMOnException=" + exceptionName, "-Xcomp", "-Xbatch", "-XX:TieredStopAtLevel=3", TestAbortVmOnException.class.getName(),
+                "-XX:AbortVMOnException=" + exceptionName, "-Xcomp", "-XX:TieredStopAtLevel=3", "-XX:-CreateCoredumpOnCrash",
+                "-XX:CompileCommand=compileonly,TestAbortVmOnException::*", TestAbortVmOnException.class.getName(),
                 withMessage ? "throwExceptionWithMessage" : "throwException").start();
         } else {
             return ProcessTools.createJavaProcessBuilder("-XX:+UnlockDiagnosticVMOptions",
                 "-XX:AbortVMOnException=" + exceptionName, "-XX:AbortVMOnExceptionMessage=" + exceptionMessage,
-                "-Xcomp", "-Xbatch", "-XX:TieredStopAtLevel=3", TestAbortVmOnException.class.getName(),
-                withMessage ? "throwExceptionWithMessage" : "throwException").start();
+                "-Xcomp", "-XX:TieredStopAtLevel=3", "-XX:-CreateCoredumpOnCrash", "-XX:CompileCommand=compileonly,TestAbortVmOnException::*",
+                TestAbortVmOnException.class.getName(),withMessage ? "throwExceptionWithMessage" : "throwException").start();
         }
     }
 

@@ -23,9 +23,11 @@
 
 package jdk.jfr.jcmd;
 
+import java.time.Instant;
 import java.util.concurrent.CountDownLatch;
 
 import jdk.jfr.Recording;
+import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.consumer.RecordingStream;
 import jdk.test.lib.process.OutputAnalyzer;
 /**
@@ -40,6 +42,7 @@ import jdk.test.lib.process.OutputAnalyzer;
  *                   -XX:+UseG1GC jdk.jfr.jcmd.TestJcmdView
  */
 public class TestJcmdView {
+    private static volatile Instant lastTimestamp;
 
     public static void main(String... args) throws Throwable {
         CountDownLatch jvmInformation = new CountDownLatch(1);
@@ -60,22 +63,27 @@ public class TestJcmdView {
             rs.onEvent("jdk.JVMInformation", e -> {
                 jvmInformation.countDown();
                 System.out.println(e);
+                storeLastTimestamp(e);
             });
             rs.onEvent("jdk.SystemGC", e -> {
                 systemGC.countDown();
                 System.out.println(e);
+                storeLastTimestamp(e);
             });
             rs.onEvent("jdk.GCHeapSummary", e -> {
                 gcHeapSummary.countDown();
                 System.out.println(e);
+                storeLastTimestamp(e);
             });
             rs.onEvent("jdk.OldGarbageCollection", e -> {
                 oldCollection.countDown();
                 System.out.println(e);
+                storeLastTimestamp(e);
             });
             rs.onEvent("jdk.GarbageCollection", e-> {
                 garbageCollection.countDown();
                 System.out.println(e);
+                storeLastTimestamp(e);
             });
             rs.startAsync();
             // Emit some GC events
@@ -87,6 +95,16 @@ public class TestJcmdView {
             systemGC.await();
             gcHeapSummary.await();
             oldCollection.countDown();
+            // Wait for Instant.now() to advance 1 s past the last event timestamp.
+            // The rationale for this is twofold:
+            // - DcmdView starts one second before Instant.now() (to make the command
+            //   responsive for the user).
+            // - Instant.now() and the event timestamp use different time sources
+            //   and they need to synchronize.
+            Instant end = lastTimestamp.plusSeconds(1);
+            while (Instant.now().isBefore(end)) {
+                Thread.sleep(10);
+            }
             // Test events that are in the current chunk
             testEventType();
             testFormView();
@@ -98,6 +116,13 @@ public class TestJcmdView {
             testEventType();
             testFormView();
             testTableView();
+        }
+    }
+
+    private static void storeLastTimestamp(RecordedEvent e) {
+        Instant time = e.getEndTime();
+        if (lastTimestamp == null || time.isAfter(lastTimestamp)) {
+            lastTimestamp = time;
         }
     }
 
