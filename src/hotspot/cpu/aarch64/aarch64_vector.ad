@@ -125,7 +125,7 @@ source %{
     }
   }
 
-  const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
     if (UseSVE == 0) {
       // These operations are not profitable to be vectorized on NEON, because no direct
       // NEON instructions support them. But the match rule support for them is profitable for
@@ -148,7 +148,7 @@ source %{
 
   // Identify extra cases that we might want to provide match rules for vector nodes and
   // other intrinsics guarded with vector length (vlen) and element type (bt).
-  const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
     if (!match_rule_supported(opcode)) {
       return false;
     }
@@ -232,7 +232,7 @@ source %{
     return vector_size_supported(bt, vlen);
   }
 
-  const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+  bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
     // Only SVE supports masked operations.
     if (UseSVE == 0) {
       return false;
@@ -271,7 +271,7 @@ source %{
     return match_rule_supported_vector(opcode, vlen, bt);
   }
 
-  const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+  bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
     // Only SVE has partial vector operations
     if (UseSVE == 0) {
       return false;

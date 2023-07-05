@@ -93,7 +93,7 @@ protected:
   }
 
   virtual Node* find_previous_arraycopy(PhaseValues* phase, Node* ld_alloc, Node*& mem, bool can_see_stored_value) const { return nullptr; }
-  ArrayCopyNode* find_array_copy_clone(PhaseValues* phase, Node* ld_alloc, Node* mem) const;
+  ArrayCopyNode* find_array_copy_clone(Node* ld_alloc, Node* mem) const;
   static bool check_if_adr_maybe_raw(Node* adr);
 
 public:
@@ -199,7 +199,7 @@ private:
   // this field.
   const MemOrd _mo;
 
-  AllocateNode* is_new_object_mark_load(PhaseGVN *phase) const;
+  AllocateNode* is_new_object_mark_load() const;
 
 protected:
   virtual bool cmp(const Node &n) const;

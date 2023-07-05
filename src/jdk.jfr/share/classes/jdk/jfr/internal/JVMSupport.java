@@ -50,6 +50,7 @@ public final class JVMSupport {
      * The possible data race is benign and is worth of not introducing any contention here.
      */
     private static Instant lastTimestamp;
+    private static volatile boolean nativeOK;
 
     private static boolean checkAvailability() {
         // set jfr.unsupported.vm to true to test API on an unsupported VM
@@ -64,7 +65,7 @@ public final class JVMSupport {
         try {
             // Will typically throw UnsatisfiedLinkError if
             // there is no native implementation
-            JVM.getJVM().isAvailable();
+            JVM.isAvailable();
             return true;
         } catch (Throwable t) {
             return false;
@@ -97,11 +98,11 @@ public final class JVMSupport {
     }
 
     static long nanosToTicks(long nanos) {
-        return (long) (nanos * JVM.getJVM().getTimeConversionFactor());
+        return (long) (nanos * JVM.getTimeConversionFactor());
     }
 
     static long getChunkStartNanos() {
-        long nanos = JVM.getJVM().getChunkStartNanos();
+        long nanos = JVM.getChunkStartNanos();
         // JVM::getChunkStartNanos() may return a bumped timestamp, +1 ns or +2 ns.
         // Spin here to give Instant.now() a chance to catch up.
         awaitUniqueTimestamp();
@@ -128,7 +129,7 @@ public final class JVMSupport {
 
     public static synchronized EventConfiguration getConfiguration(Class<? extends jdk.internal.event.Event> eventClass) {
         Utils.ensureValidEventSubclass(eventClass);
-        Object configuration = JVM.getJVM().getConfiguration(eventClass);
+        Object configuration = JVM.getConfiguration(eventClass);
         if (configuration == null || configuration instanceof EventConfiguration) {
             return (EventConfiguration) configuration;
         }
@@ -137,7 +138,7 @@ public final class JVMSupport {
 
     public static synchronized void setConfiguration(Class<? extends jdk.internal.event.Event> eventClass, EventConfiguration configuration) {
         Utils.ensureValidEventSubclass(eventClass);
-        if (!JVM.getJVM().setConfiguration(eventClass, configuration)) {
+        if (!JVM.setConfiguration(eventClass, configuration)) {
             throw new InternalError("Could not set configuration object on event class " + eventClass.getName());
         }
     }
@@ -150,13 +151,31 @@ public final class JVMSupport {
             // Didn't match @Name("jdk.jfr.Container*") or class name "jdk.jfr.events.Container*"
             return true;
         }
-        return JVM.getJVM().isContainerized();
+        return JVM.isContainerized();
     }
 
     public static String makeFilename(Recording recording) {
-        String pid = JVM.getJVM().getPid();
+        String pid = JVM.getPid();
         String date = ValueFormatter.formatDateTime(LocalDateTime.now());
         String idText = recording == null ? "" :  "-id-" + Long.toString(recording.getId());
         return "hotspot-" + "pid-" + pid + idText + "-" + date + ".jfr";
+    }
+
+    public static boolean createFailedNativeJFR() throws IllegalStateException {
+        return JVM.createJFR(true);
+    }
+
+    public static void createJFR() {
+        nativeOK = JVM.createJFR(false);
+    }
+
+    public static boolean destroyJFR() {
+        boolean result = JVM.destroyJFR();
+        nativeOK = !result;
+        return result;
+    }
+
+    public static boolean hasJFR() {
+        return nativeOK;
     }
 }

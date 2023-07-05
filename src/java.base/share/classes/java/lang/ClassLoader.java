@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, Azul Systems, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -647,11 +647,20 @@ public abstract class ClassLoader {
 
     /**
      * Returns the lock object for class loading operations.
-     * For backward compatibility, the default implementation of this method
-     * behaves as follows. If this ClassLoader object is registered as
-     * parallel capable, the method returns a dedicated object associated
-     * with the specified class name. Otherwise, the method returns this
-     * ClassLoader object.
+     *
+     * @implSpec
+     * If this {@code ClassLoader} object is registered as parallel capable,
+     * this method returns a dedicated object associated with the specified
+     * class name. Otherwise, this method returns this {@code ClassLoader} object.
+     *
+     * @apiNote
+     * This method allows parallel capable class loaders to implement
+     * finer-grained locking schemes such that multiple threads may load classes
+     * concurrently without deadlocks.  For non-parallel-capable class loaders,
+     * the {@code ClassLoader} object is synchronized on during the class loading
+     * operations.  Class loaders with non-hierarchical delegation should be
+     * {@linkplain #registerAsParallelCapable() registered as parallel capable}
+     * to prevent deadlocks.
      *
      * @param  className
      *         The name of the to-be-loaded class
@@ -659,7 +668,7 @@ public abstract class ClassLoader {
      * @return the lock for class loading operations
      *
      * @throws NullPointerException
-     *         If registered as parallel capable and {@code className} is null
+     *         If registered as parallel capable and {@code className} is {@code null}
      *
      * @see #loadClass(String, boolean)
      *
