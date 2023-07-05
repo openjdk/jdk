@@ -237,91 +237,114 @@ public class MethodHandleProxies {
             "jdk.invoke.MethodHandleProxies.dumpClassFiles", "DUMP_MH_PROXY_CLASSFILES");
 
     private static final Set<Class<?>> WRAPPER_TYPES = Collections.newSetFromMap(new WeakHashMap<>());
-    private static final ClassValue<WeakReference<Lookup>> PROXY_LOOKUPS = new ClassValue<>() {
+    private static final ClassValue<WeakReferenceHolder<Lookup>> PROXY_LOOKUPS = new ClassValue<>() {
         @Override
-        protected WeakReference<Lookup> computeValue(Class<?> intfc) {
-            List<MethodInfo> methods = new ArrayList<>();
-            Set<Class<?>> referencedTypes = new HashSet<>();
-            referencedTypes.add(intfc);
-            String uniqueName = null;
-            int count = 0;
-            for (Method m : intfc.getMethods()) {
-                if (Modifier.isStatic(m.getModifiers()))
-                    continue;
-
-                if (isObjectMethod(m))
-                    continue;
-
-                if (!Modifier.isAbstract(m.getModifiers()))
-                    continue;
-
-                // ensure it's SAM interface
-                String mname = m.getName();
-                if (uniqueName == null) {
-                    uniqueName = mname;
-                } else if (!uniqueName.equals(mname)) {
-                    // too many abstract methods
-                    throw newIllegalArgumentException("not a single-method interface", intfc.getName());
-                }
-
-                // the field name holding the method handle for this method
-                String fieldName = "m" + count++;
-                var mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
-                var thrown = JLRA.getExecutableSharedExceptionTypes(m);
-                var exceptionTypeDescs =
-                     thrown.length == 0 ? DEFAULT_RETHROWS
-                                        : Stream.concat(DEFAULT_RETHROWS.stream(),
-                                                        Arrays.stream(thrown).map(MethodHandleProxies::desc))
-                                                .distinct().toList();
-                methods.add(new MethodInfo(desc(mt), exceptionTypeDescs, fieldName));
-
-                // find the types referenced by this method
-                addElementType(referencedTypes, m.getReturnType());
-                addElementTypes(referencedTypes, JLRA.getExecutableSharedParameterTypes(m));
-                addElementTypes(referencedTypes, JLRA.getExecutableSharedExceptionTypes(m));
-            }
-
-            if (uniqueName == null)
-                throw newIllegalArgumentException("no method in ", intfc.getName());
-
-            // create a dynamic module for each proxy class, which needs access
-            // to the types referenced by the members of the interface including
-            // the parameter types, return type and exception types
-            var loader = intfc.getClassLoader();
-            Module targetModule = newDynamicModule(loader, referencedTypes);
-
-            // generate a class file in the package of the dynamic module
-            String pn = targetModule.getName();
-            String n = intfc.getName();
-            int i = n.lastIndexOf('.');
-            String cn = i > 0 ? pn + "." + n.substring(i + 1) : pn + "." + n;
-            byte[] template = createTemplate(loader, ClassDesc.of(cn), desc(intfc), uniqueName, methods);
-            // define the dynamic module to the class loader of the interface
-            var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
-
-            @SuppressWarnings("removal")
-            var sm = System.getSecurityManager();
-            Lookup lookup;
-            if (sm != null) {
-                PrivilegedAction<Lookup> pa =  () -> definer.defineClassAsLookup(true);
-                @SuppressWarnings("removal")
-                var l = AccessController.doPrivileged(pa);
-                lookup = l;
-            } else {
-                lookup = definer.defineClassAsLookup(true);
-            }
-            WRAPPER_TYPES.add(lookup.lookupClass());
-            return new WeakReference<>(lookup);
+        protected WeakReferenceHolder<Lookup> computeValue(Class<?> intfc) {
+            return new WeakReferenceHolder<>(newProxyLookup(intfc));
         }
     };
 
-    private static Lookup getProxyClassLookup(Class<?> intfc) {
-        WeakReference<Lookup> r = PROXY_LOOKUPS.get(intfc);
-        if (r.refersTo(null)) {
-            PROXY_LOOKUPS.remove(intfc);
-            r = PROXY_LOOKUPS.get(intfc);
+    private static Lookup newProxyLookup(Class<?> intfc) {
+        List<MethodInfo> methods = new ArrayList<>();
+        Set<Class<?>> referencedTypes = new HashSet<>();
+        referencedTypes.add(intfc);
+        String uniqueName = null;
+        int count = 0;
+        for (Method m : intfc.getMethods()) {
+            if (Modifier.isStatic(m.getModifiers()))
+                continue;
+
+            if (isObjectMethod(m))
+                continue;
+
+            if (!Modifier.isAbstract(m.getModifiers()))
+                continue;
+
+            // ensure it's SAM interface
+            String mname = m.getName();
+            if (uniqueName == null) {
+                uniqueName = mname;
+            } else if (!uniqueName.equals(mname)) {
+                // too many abstract methods
+                throw newIllegalArgumentException("not a single-method interface", intfc.getName());
+            }
+
+            // the field name holding the method handle for this method
+            String fieldName = "m" + count++;
+            var mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
+            var thrown = JLRA.getExecutableSharedExceptionTypes(m);
+            var exceptionTypeDescs =
+                    thrown.length == 0 ? DEFAULT_RETHROWS
+                                       : Stream.concat(DEFAULT_RETHROWS.stream(),
+                                                       Arrays.stream(thrown).map(MethodHandleProxies::desc))
+                                               .distinct().toList();
+            methods.add(new MethodInfo(desc(mt), exceptionTypeDescs, fieldName));
+
+            // find the types referenced by this method
+            addElementType(referencedTypes, m.getReturnType());
+            addElementTypes(referencedTypes, JLRA.getExecutableSharedParameterTypes(m));
+            addElementTypes(referencedTypes, JLRA.getExecutableSharedExceptionTypes(m));
         }
-        return r.get();
+
+        if (uniqueName == null)
+            throw newIllegalArgumentException("no method in ", intfc.getName());
+
+        // create a dynamic module for each proxy class, which needs access
+        // to the types referenced by the members of the interface including
+        // the parameter types, return type and exception types
+        var loader = intfc.getClassLoader();
+        Module targetModule = newDynamicModule(loader, referencedTypes);
+
+        // generate a class file in the package of the dynamic module
+        String pn = targetModule.getName();
+        String n = intfc.getName();
+        int i = n.lastIndexOf('.');
+        String cn = i > 0 ? pn + "." + n.substring(i + 1) : pn + "." + n;
+        byte[] template = createTemplate(loader, ClassDesc.of(cn), desc(intfc), uniqueName, methods);
+        // define the dynamic module to the class loader of the interface
+        var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
+
+        @SuppressWarnings("removal")
+        var sm = System.getSecurityManager();
+        Lookup lookup;
+        if (sm != null) {
+            PrivilegedAction<Lookup> pa = () -> definer.defineClassAsLookup(true);
+            @SuppressWarnings("removal")
+            var l = AccessController.doPrivileged(pa);
+            lookup = l;
+        } else {
+            lookup = definer.defineClassAsLookup(true);
+        }
+        // cache the wrapper type
+        WRAPPER_TYPES.add(lookup.lookupClass());
+        return lookup;
+    }
+
+    private static class WeakReferenceHolder<T> {
+        private volatile WeakReference<T> ref;
+
+        WeakReferenceHolder(T value) {
+            set(value);
+        }
+
+        void set(T value) {
+            ref = new WeakReference<>(value);
+        }
+
+        T get() {
+            return ref.get();
+        }
+    }
+
+    private static Lookup getProxyClassLookup(Class<?> intfc) {
+        WeakReferenceHolder<Lookup> r = PROXY_LOOKUPS.get(intfc);
+        Lookup lookup = r.get();
+        if (lookup == null) {
+             // If the referent is cleared, create a new value and update cached weak reference.
+            lookup = newProxyLookup(intfc);
+            r.set(lookup);
+        }
+        return lookup;
     }
 
     private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));
