@@ -98,10 +98,10 @@ class ChunkPool {
   static bool needs_cleaning() {
     for (int i = 0; i < _num_pools; i++) {
       if (!_pools[i].empty()) {
-        return false;
+        return true;
       }
     }
-    return true;
+    return false;
   }
 
   static void clean() {
