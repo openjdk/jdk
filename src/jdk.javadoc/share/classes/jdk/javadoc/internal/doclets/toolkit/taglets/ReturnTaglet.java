@@ -37,10 +37,10 @@ import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ReturnTree;
+
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
@@ -60,14 +60,14 @@ public abstract class ReturnTaglet extends BaseTaglet implements InheritableTagl
     }
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
         try {
-            var docFinder = configuration.utils.docFinder();
+            var docFinder = utils.docFinder();
             Optional<Documentation> r;
             if (src == null) {
-                r = docFinder.find((ExecutableElement) dst, m -> Result.fromOptional(extract(configuration.utils, m))).toOptional();
+                r = docFinder.find((ExecutableElement) dst, m -> Result.fromOptional(extract(utils, m))).toOptional();
             } else {
-                r = docFinder.search((ExecutableElement) src, m -> Result.fromOptional(extract(configuration.utils, m))).toOptional();
+                r = docFinder.search((ExecutableElement) src, m -> Result.fromOptional(extract(utils, m))).toOptional();
             }
             return r.map(result -> new Output(result.returnTree, result.method, result.returnTree.getDescription(), true))
                     .orElseGet(() -> new Output(null, null, List.of(), true));
@@ -77,22 +77,22 @@ public abstract class ReturnTaglet extends BaseTaglet implements InheritableTagl
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return returnTagOutput(element, (ReturnTree) tag, true, writer);
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
+        this.tagletWriter = tagletWriter;
+        return returnTagOutput(element, (ReturnTree) tag, true);
     }
 
     @Override
-    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
+    public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
         assert holder.getKind() == ElementKind.METHOD : holder.getKind();
         var method = (ExecutableElement) holder;
-        Messages messages = writer.configuration().getMessages();
-        Utils utils = writer.configuration().utils;
+        this.tagletWriter = tagletWriter;
         List<? extends ReturnTree> tags = utils.getReturnTrees(holder);
 
         // make sure we are not using @return on a method with the void return type
-        TypeMirror returnType = utils.getReturnType(writer.getCurrentPageElement(), method);
+        TypeMirror returnType = utils.getReturnType(tagletWriter.getCurrentPageElement(), method);
         if (returnType != null && utils.isVoid(returnType)) {
-            if (!tags.isEmpty() && !writer.configuration().isDocLintReferenceGroupEnabled()) {
+            if (!tags.isEmpty() && !config.isDocLintReferenceGroupEnabled()) {
                 messages.warning(holder, "doclet.Return_tag_on_void_method");
             }
             return null;
@@ -104,7 +104,7 @@ public abstract class ReturnTaglet extends BaseTaglet implements InheritableTagl
 
         var docFinder = utils.docFinder();
         return docFinder.search(method, m -> Result.fromOptional(extract(utils, m))).toOptional()
-                .map(r -> returnTagOutput(r.method, r.returnTree, false, writer))
+                .map(r -> returnTagOutput(r.method, r.returnTree, false))
                 .orElse(null);
     }
 
@@ -117,7 +117,7 @@ public abstract class ReturnTaglet extends BaseTaglet implements InheritableTagl
      *
      * @return the output
      */
-    protected abstract Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline, TagletWriter writer);
+    protected abstract Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline);
 
     private record Documentation(ReturnTree returnTree, ExecutableElement method) { }
 

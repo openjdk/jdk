@@ -36,7 +36,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 import static jdk.javadoc.doclet.Taglet.Location.CONSTRUCTOR;
 import static jdk.javadoc.doclet.Taglet.Location.FIELD;
@@ -114,16 +113,16 @@ public final class UserTaglet implements Taglet {
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        Content output = writer.getOutputInstance();
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
+        Content output = tagletWriter.getOutputInstance();
         output.add(RawHtml.of(userTaglet.toString(List.of(tag), element)));
         return output;
     }
 
     @Override
-    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
-        Content output = writer.getOutputInstance();
-        Utils utils = writer.configuration().utils;
+    public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
+        Content output = tagletWriter.getOutputInstance();
+        var utils = tagletWriter.configuration().utils;
         List<? extends DocTree> tags = utils.getBlockTags(holder, this);
         if (!tags.isEmpty()) {
             String tagString = userTaglet.toString(tags, holder);

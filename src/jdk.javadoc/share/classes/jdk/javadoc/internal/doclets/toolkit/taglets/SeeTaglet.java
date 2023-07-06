@@ -51,16 +51,16 @@ public abstract class SeeTaglet extends BaseTaglet implements InheritableTaglet 
     }
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
-        CommentHelper ch = configuration.utils.getCommentHelper(dst);
+    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
+        CommentHelper ch = utils.getCommentHelper(dst);
         var path = ch.getDocTreePath(tag);
-        configuration.getMessages().warning(path, "doclet.inheritDocWithinInappropriateTag");
+        messages.warning(path, "doclet.inheritDocWithinInappropriateTag");
         return new Output(null, null, List.of(), true /* true, otherwise there will be an exception up the stack */);
     }
 
     @Override
-    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
-        Utils utils = writer.configuration().utils;
+    public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
+        this.tagletWriter = tagletWriter;
         List<? extends SeeTree> tags = utils.getSeeTrees(holder);
         Element e = holder;
         if (utils.isMethod(holder)) {
@@ -73,7 +73,7 @@ public abstract class SeeTaglet extends BaseTaglet implements InheritableTaglet 
                 e = m;
             }
         }
-        return seeTagOutput(e, tags, writer);
+        return seeTagOutput(e, tags);
     }
 
     /**
@@ -84,7 +84,7 @@ public abstract class SeeTaglet extends BaseTaglet implements InheritableTaglet 
      *
      * @return the output
      */
-    protected abstract Content seeTagOutput(Element element, List<? extends SeeTree> seeTags, TagletWriter writer);
+    protected abstract Content seeTagOutput(Element element, List<? extends SeeTree> seeTags);
 
     private record Documentation(List<? extends SeeTree> seeTrees, ExecutableElement method) { }
 

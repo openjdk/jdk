@@ -46,5 +46,5 @@ public abstract class DeprecatedTaglet extends BaseTaglet {
     }
 
     @Override
-    public abstract Content getAllBlockTagOutput(Element holder, TagletWriter writer);
+    public abstract Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter);
 }

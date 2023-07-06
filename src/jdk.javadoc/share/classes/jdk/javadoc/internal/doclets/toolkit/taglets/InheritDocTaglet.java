@@ -36,10 +36,10 @@ import javax.lang.model.element.TypeElement;
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.util.DocTreePath;
+
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
@@ -76,9 +76,6 @@ public class InheritDocTaglet extends BaseTaglet {
                                                    InheritDocTree inheritDoc,
                                                    boolean isFirstSentence) {
         Content replacement = writer.getOutputInstance();
-        BaseConfiguration configuration = writer.configuration();
-        Messages messages = configuration.getMessages();
-        Utils utils = configuration.utils;
         CommentHelper ch = utils.getCommentHelper(method);
         DocTreePath inheritDocPath = ch.getDocTreePath(inheritDoc);
         var path = inheritDocPath.getParentPath();
@@ -103,7 +100,7 @@ public class InheritDocTaglet extends BaseTaglet {
             //
             // This way we do more work in erroneous case, but less in the typical
             // case. We don't optimize for the former.
-            VisibleMemberTable visibleMemberTable = configuration.getVisibleMemberTable(supertype);
+            VisibleMemberTable visibleMemberTable = config.getVisibleMemberTable(supertype);
             List<Element> methods = visibleMemberTable.getAllVisibleMembers(VisibleMemberTable.Kind.METHODS);
             for (Element e : methods) {
                 ExecutableElement m = (ExecutableElement) e;
@@ -142,7 +139,7 @@ public class InheritDocTaglet extends BaseTaglet {
             return replacement;
         }
 
-        Taglet taglet = configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
+        Taglet taglet = config.tagletManager.getTaglet(ch.getTagName(holderTag));
         // taglet is null if holderTag is unknown, which it shouldn't be since we reached here
         assert taglet != null;
         if (!(taglet instanceof InheritableTaglet inheritableTaglet)) {
@@ -151,7 +148,7 @@ public class InheritDocTaglet extends BaseTaglet {
             return replacement;
         }
 
-        InheritableTaglet.Output inheritedDoc = inheritableTaglet.inherit(method, src, holderTag, isFirstSentence, configuration);
+        InheritableTaglet.Output inheritedDoc = inheritableTaglet.inherit(method, src, holderTag, isFirstSentence);
 
         if (inheritedDoc.isValidInheritDocTag()) {
             if (!inheritedDoc.inlineTags().isEmpty()) {

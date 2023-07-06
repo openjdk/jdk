@@ -25,7 +25,11 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
-import java.util.*;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
@@ -34,10 +38,10 @@ import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.ParamTree;
+
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
@@ -65,7 +69,7 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
     }
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
         assert dst.getKind() == ElementKind.METHOD;
         assert tag.getKind() == DocTree.Kind.PARAM;
         var method = (ExecutableElement) dst;
@@ -77,24 +81,24 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
         } else {
             parameterElements = method.getParameters();
         }
-        Map<String, Integer> stringIntegerMap = mapNameToPosition(configuration.utils, parameterElements);
-        CommentHelper ch = configuration.utils.getCommentHelper(dst);
+        Map<String, Integer> stringIntegerMap = mapNameToPosition(utils, parameterElements);
+        CommentHelper ch = utils.getCommentHelper(dst);
         Integer position = stringIntegerMap.get(ch.getParameterName(param));
         if (position == null) {
             return new Output(null, null, List.of(), true);
         }
         // try to inherit description of the respective parameter in an overridden method
         try {
-            var docFinder = configuration.utils.docFinder();
+            var docFinder = utils.docFinder();
 
             Optional<Documentation> r;
             if (src != null){
                 r = docFinder.search((ExecutableElement) src,
-                                m -> Result.fromOptional(extract(configuration.utils, m, position, param.isTypeParameter())))
+                                m -> Result.fromOptional(extract(utils, m, position, param.isTypeParameter())))
                         .toOptional();
             } else {
                 r = docFinder.find((ExecutableElement) dst,
-                                m -> Result.fromOptional(extract(configuration.utils, m, position, param.isTypeParameter())))
+                                m -> Result.fromOptional(extract(utils, m, position, param.isTypeParameter())))
                         .toOptional();
             }
             return r.map(result -> new Output(result.paramTree, result.method, result.paramTree.getDescription(), true))
@@ -123,21 +127,21 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
     }
 
     @Override
-    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
-        Utils utils = writer.configuration().utils;
+    public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
+        this.tagletWriter = tagletWriter;
         if (utils.isExecutableElement(holder)) {
             ExecutableElement member = (ExecutableElement) holder;
             Content output = convertParams(member, ParamKind.TYPE_PARAMETER,
-                    utils.getTypeParamTrees(member), member.getTypeParameters(), writer);
+                    utils.getTypeParamTrees(member), member.getTypeParameters(), tagletWriter);
             output.add(convertParams(member, ParamKind.PARAMETER,
-                    utils.getParamTrees(member), member.getParameters(), writer));
+                    utils.getParamTrees(member), member.getParameters(), tagletWriter));
             return output;
         } else {
             TypeElement typeElement = (TypeElement) holder;
             Content output = convertParams(typeElement, ParamKind.TYPE_PARAMETER,
-                    utils.getTypeParamTrees(typeElement), typeElement.getTypeParameters(), writer);
+                    utils.getTypeParamTrees(typeElement), typeElement.getTypeParameters(), tagletWriter);
             output.add(convertParams(typeElement, ParamKind.RECORD_COMPONENT,
-                    utils.getParamTrees(typeElement), typeElement.getRecordComponents(), writer));
+                    utils.getParamTrees(typeElement), typeElement.getRecordComponents(), tagletWriter));
             return output;
         }
     }
@@ -164,10 +168,9 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
                                   List<? extends Element> parameters,
                                   TagletWriter writer) {
         Map<Integer, ParamTree> tagOfPosition = new HashMap<>();
-        Messages messages = writer.configuration().getMessages();
-        CommentHelper ch = writer.configuration().utils.getCommentHelper(e);
+        CommentHelper ch = utils.getCommentHelper(e);
         if (!tags.isEmpty()) {
-            Map<String, Integer> positionOfName = mapNameToPosition(writer.configuration().utils, parameters);
+            Map<String, Integer> positionOfName = mapNameToPosition(utils, parameters);
             for (ParamTree tag : tags) {
                 String name = ch.getParameterName(tag);
                 String paramName = kind == ParamKind.TYPE_PARAMETER ? "<" + name + ">" : name;
@@ -177,7 +180,7 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
                         case TYPE_PARAMETER -> "doclet.TypeParameters_warn";
                         case RECORD_COMPONENT -> "doclet.RecordComponents_warn";
                     };
-                    if (!writer.configuration().isDocLintReferenceGroupEnabled()) {
+                    if (!config.isDocLintReferenceGroupEnabled()) {
                         messages.warning(ch.getDocTreePath(tag), key, paramName);
                     }
                 }
@@ -189,7 +192,7 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
                             case TYPE_PARAMETER -> "doclet.TypeParameters_dup_warn";
                             case RECORD_COMPONENT -> "doclet.RecordComponents_dup_warn";
                         };
-                        if (!writer.configuration().isDocLintReferenceGroupEnabled()) {
+                        if (!config.isDocLintReferenceGroupEnabled()) {
                             messages.warning(ch.getDocTreePath(tag), key, paramName);
                         }
                     } else {
@@ -206,7 +209,7 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
             if (tag != null) {
                 result.add(convertParam(e, kind, writer, tag,
                         ch.getParameterName(tag), result.isEmpty()));
-            } else if (writer.configuration().utils.isMethod(e)) {
+            } else if (utils.isMethod(e)) {
                 result.add(getInheritedTagletOutput(kind, e, writer,
                         parameters.get(i), i, result.isEmpty()));
             }
@@ -234,7 +237,6 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
                                              Element param,
                                              int position,
                                              boolean isFirst) {
-        Utils utils = writer.configuration().utils;
         Content result = writer.getOutputInstance();
         var r = utils.docFinder().search((ExecutableElement) holder,
                         m -> Result.fromOptional(extract(utils, m, position, kind == ParamKind.TYPE_PARAMETER)))
@@ -252,7 +254,7 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
 
     public abstract Content getParamHeader(ParamKind kind);
 
-    public abstract Content paramTagOutput(Element element, ParamTree paramTag, String paramName, TagletWriter writer);
+    public abstract Content paramTagOutput(Element element, ParamTree paramTag, String paramName);
 
     private record Documentation(ParamTree paramTree, ExecutableElement method) { }
 
@@ -283,7 +285,7 @@ public abstract class ParamTaglet extends BaseTaglet implements InheritableTagle
         if (isFirstParam) {
             result.add(getParamHeader(kind));
         }
-        result.add(paramTagOutput(e, paramTag, name, writer));
+        result.add(paramTagOutput(e, paramTag, name));
         return result;
     }
 }

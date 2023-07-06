@@ -10,7 +10,6 @@ import jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.taglets.ThrowsTaglet;
 
 public class HtmlThrowsTaglet extends ThrowsTaglet {
@@ -31,10 +30,10 @@ public class HtmlThrowsTaglet extends ThrowsTaglet {
 
 
     @Override
-    public Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content, TagletWriter writer) {
-        var w = (TagletWriterImpl) writer;
+    public Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content) {
+        var tw = (TagletWriterImpl) tagletWriter;
         var linkInfo = new HtmlLinkInfo(config, HtmlLinkInfo.Kind.PLAIN, throwsType);
-        var link = w.getHtmlWriter().getLink(linkInfo);
+        var link = tw.getHtmlWriter().getLink(linkInfo);
         var concat = new ContentBuilder(HtmlTree.CODE(link));
         if (content.isPresent()) {
             concat.add(" - ");

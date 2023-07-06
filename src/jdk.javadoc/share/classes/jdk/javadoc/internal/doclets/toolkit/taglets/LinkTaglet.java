@@ -42,5 +42,5 @@ public abstract class LinkTaglet extends BaseTaglet {
     }
 
     @Override
-    public abstract Content getInlineTagOutput(Element e, DocTree tag, TagletWriter writer);
+    public abstract Content getInlineTagOutput(Element e, DocTree tag, TagletWriter tagletWriter);
 }

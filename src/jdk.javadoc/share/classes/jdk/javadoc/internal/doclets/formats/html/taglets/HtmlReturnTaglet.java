@@ -38,8 +38,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.ReturnTaglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
-import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 public class HtmlReturnTaglet extends ReturnTaglet {
     private final Contents contents;
@@ -50,11 +48,11 @@ public class HtmlReturnTaglet extends ReturnTaglet {
     }
 
     @Override
-    public Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline, TagletWriter writer) {
-        var w = (TagletWriterImpl) writer;
-        CommentHelper ch = utils.getCommentHelper(element);
+    public Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline) {
+        var tw = (TagletWriterImpl) tagletWriter;
+        var ch = utils.getCommentHelper(element);
         List<? extends DocTree> desc = ch.getDescription(returnTag);
-        Content content = w.getHtmlWriter().commentTagsToContent(element, desc, w.getContext().within(returnTag));
+        Content content = tw.getHtmlWriter().commentTagsToContent(element, desc, tw.getContext().within(returnTag));
         return inline
                 ? new ContentBuilder(contents.getContent("doclet.Returns_0", content))
                 : new ContentBuilder(HtmlTree.DT(contents.returns), HtmlTree.DD(content));

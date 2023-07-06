@@ -48,7 +48,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
 import jdk.javadoc.internal.doclets.toolkit.taglets.SeeTaglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -67,14 +66,13 @@ public class HtmlSeeTaglet extends SeeTaglet {
     private HtmlDocletWriter htmlWriter;
 
     @Override
-    public Content seeTagOutput(Element holder, List<? extends SeeTree> seeTags, TagletWriter writer) {
-        var w = (TagletWriterImpl) writer;
-        htmlWriter = w.getHtmlWriter();
+    public Content seeTagOutput(Element holder, List<? extends SeeTree> seeTags) {
+        var tw = (TagletWriterImpl) tagletWriter;
+        htmlWriter = tw.getHtmlWriter();
 
         List<Content> links = new ArrayList<>();
         for (SeeTree dt : seeTags) {
-            TagletWriterImpl t = new TagletWriterImpl(htmlWriter, w.getContext().within(dt));
-            links.add(seeTagOutput(holder, dt, t));
+            links.add(seeTagOutput(holder, dt));
         }
         if (utils.isVariableElement(holder) && ((VariableElement)holder).getConstantValue() != null &&
                 htmlWriter instanceof ClassWriterImpl classWriter) {
@@ -127,7 +125,7 @@ public class HtmlSeeTaglet extends SeeTaglet {
      * @param element the element that has the documentation comment containing this tag
      * @param seeTag  the tag
      */
-    private Content seeTagOutput(Element element, SeeTree seeTag, TagletWriter writer) {
+    private Content seeTagOutput(Element element, SeeTree seeTag) {
 
         List<? extends DocTree> ref = seeTag.getReference();
         assert !ref.isEmpty();
@@ -151,14 +149,14 @@ public class HtmlSeeTaglet extends SeeTaglet {
                         refSignature,
                         ch.getReferencedElement(seeTag),
                         false,
-                        htmlWriter.commentTagsToContent(element, label, writer.getContext().within(seeTag)),
+                        htmlWriter.commentTagsToContent(element, label, tagletWriter.getContext().within(seeTag)),
                         (key, args) -> messages.warning(ch.getDocTreePath(seeTag), key, args),
-                        writer
+                        tagletWriter
                 );
             }
 
             case ERRONEOUS -> {
-                return writer.invalidTagOutput(resources.getText("doclet.tag.invalid_input",
+                return tagletWriter.invalidTagOutput(resources.getText("doclet.tag.invalid_input",
                                 ref0.toString()),
                         Optional.empty());
             }

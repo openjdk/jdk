@@ -41,7 +41,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.ParamTaglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 public class HtmlParamTaglet extends ParamTaglet {
@@ -63,10 +62,10 @@ public class HtmlParamTaglet extends ParamTaglet {
     }
 
     @Override
-    public Content paramTagOutput(Element element, ParamTree paramTag, String paramName, TagletWriter writer) {
+    public Content paramTagOutput(Element element, ParamTree paramTag, String paramName) {
         var body = new ContentBuilder();
-        var w = (TagletWriterImpl) writer;
-        CommentHelper ch = w.getUtils().getCommentHelper(element);
+        var tw = (TagletWriterImpl) tagletWriter;
+        CommentHelper ch = utils.getCommentHelper(element);
         // define id attributes for state components so that generated descriptions may refer to them
         boolean defineID = (element.getKind() == ElementKind.RECORD)
                 && !paramTag.isTypeParameter();
@@ -74,7 +73,7 @@ public class HtmlParamTaglet extends ParamTaglet {
         body.add(HtmlTree.CODE(defineID ? HtmlTree.SPAN_ID(HtmlIds.forParam(paramName), nameContent) : nameContent));
         body.add(" - ");
         List<? extends DocTree> description = ch.getDescription(paramTag);
-        body.add(w.getHtmlWriter().commentTagsToContent(element, description, w.getContext().within(paramTag)));
+        body.add(tw.getHtmlWriter().commentTagsToContent(element, description, tw.getContext().within(paramTag)));
         return HtmlTree.DD(body);
     }
 }

@@ -43,7 +43,7 @@ public class HtmlLiteralTaglet extends LiteralTaglet {
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
         var literalTree = (LiteralTree) tag;
         var body = Text.of(Text.normalizeNewlines(literalTree.getBody().getBody()));
         return tag.getKind() == DocTree.Kind.CODE ? HtmlTree.CODE(body) : body;

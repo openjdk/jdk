@@ -41,9 +41,9 @@ public class HtmlDocRootTaglet extends DocRootTaglet {
     }
 
     @Override
-    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer) {
-        var w = (TagletWriterImpl) writer;
-        var pathToRoot = w.getHtmlWriter().pathToRoot;
+    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter tagletWriter) {
+        var tw = (TagletWriterImpl) tagletWriter;
+        var pathToRoot = tw.getHtmlWriter().pathToRoot;
         return Text.of(pathToRoot.isEmpty() ? "." : pathToRoot.getPath());
     }
 }

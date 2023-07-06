@@ -49,5 +49,5 @@ public abstract class DocRootTaglet extends BaseTaglet {
         super(config, DocTree.Kind.DOC_ROOT, true, EnumSet.allOf(Location.class));
     }
 
-    public abstract Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer);
+    public abstract Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter tagletWriter);
 }

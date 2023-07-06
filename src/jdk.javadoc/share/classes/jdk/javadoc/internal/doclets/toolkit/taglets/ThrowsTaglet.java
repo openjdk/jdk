@@ -161,7 +161,7 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
     }
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
         // This method shouldn't be called because {@inheritDoc} tags inside
         // exception tags aren't dealt with individually. {@inheritDoc} tags
         // inside exception tags are collectively dealt with in
@@ -170,9 +170,10 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
     }
 
     @Override
-    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
+    public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
+        this.tagletWriter = tagletWriter;
         try {
-            return getAllBlockTagOutput0(holder, writer);
+            return getAllBlockTagOutput0(holder);
         } catch (Failure f) {
             // note that `f.holder()` is not necessarily the same as `holder`
             var ch = utils.getCommentHelper(f.holder());
@@ -202,14 +203,13 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
             // since {@inheritDoc} in @throws is processed by ThrowsTaglet (this taglet) rather than
             // InheritDocTaglet, we have to duplicate some of the behavior of the latter taglet
             String signature = utils.getSimpleName(holder)
-                    + utils.flatSignature((ExecutableElement) holder, writer.getCurrentPageElement());
+                    + utils.flatSignature((ExecutableElement) holder, tagletWriter.getCurrentPageElement());
             messages.warning(holder, "doclet.noInheritedDoc", signature);
         }
-        return writer.getOutputInstance(); // TODO: consider invalid rather than empty output
+        return tagletWriter.getOutputInstance(); // TODO: consider invalid rather than empty output
     }
 
-    private Content getAllBlockTagOutput0(Element holder,
-                                          TagletWriter writer)
+    private Content getAllBlockTagOutput0(Element holder)
             throws Failure.ExceptionTypeNotFound,
                    Failure.NotExceptionType,
                    Failure.Invalid,
@@ -227,20 +227,20 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
         }
         var executable = (ExecutableElement) holder;
         ExecutableType instantiatedType = utils.asInstantiatedMethodType(
-                writer.getCurrentPageElement(), executable);
+                tagletWriter.getCurrentPageElement(), executable);
         List<? extends TypeMirror> substitutedExceptionTypes = instantiatedType.getThrownTypes();
         List<? extends TypeMirror> originalExceptionTypes = executable.getThrownTypes();
         Map<TypeMirror, TypeMirror> typeSubstitutions = getSubstitutedThrownTypes(
                 utils.typeUtils,
                 originalExceptionTypes,
                 substitutedExceptionTypes);
-        var exceptionSection = new ExceptionSectionBuilder(writer, this);
+        var exceptionSection = new ExceptionSectionBuilder(tagletWriter, this);
         // Step 1: Document exception tags
         Set<TypeMirror> alreadyDocumentedExceptions = new HashSet<>();
         List<ThrowsTree> exceptionTags = utils.getThrowsTrees(executable);
         for (ThrowsTree t : exceptionTags) {
             Element exceptionElement = getExceptionType(t, executable);
-            outputAnExceptionTagDeeply(exceptionSection, exceptionElement, t, executable, alreadyDocumentedExceptions, typeSubstitutions, writer);
+            outputAnExceptionTagDeeply(exceptionSection, exceptionElement, t, executable, alreadyDocumentedExceptions, typeSubstitutions);
         }
         // Step 2: Document exception types from the `throws` clause (of a method)
         //
@@ -269,7 +269,7 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
                     continue;
                 }
                 for (Map.Entry<ThrowsTree, ExecutableElement> e : r.entrySet()) {
-                    outputAnExceptionTagDeeply(exceptionSection, exceptionElement, e.getKey(), e.getValue(), alreadyDocumentedExceptions, typeSubstitutions, writer);
+                    outputAnExceptionTagDeeply(exceptionSection, exceptionElement, e.getKey(), e.getValue(), alreadyDocumentedExceptions, typeSubstitutions);
                 }
             }
         }
@@ -306,15 +306,14 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
      *
      * @return the output
      */
-    protected abstract Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content, TagletWriter writer);
+    protected abstract Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content);
 
     private void outputAnExceptionTagDeeply(ExceptionSectionBuilder exceptionSection,
                                             Element originalExceptionElement,
                                             ThrowsTree tag,
                                             ExecutableElement holder,
                                             Set<TypeMirror> alreadyDocumentedExceptions,
-                                            Map<TypeMirror, TypeMirror> typeSubstitutions,
-                                            TagletWriter writer)
+                                            Map<TypeMirror, TypeMirror> typeSubstitutions)
             throws Failure.ExceptionTypeNotFound,
                    Failure.NotExceptionType,
                    Failure.Invalid,
@@ -323,7 +322,7 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
                    Failure.NoOverrideFound,
             DocFinder.NoOverriddenMethodFound
     {
-        outputAnExceptionTagDeeply(exceptionSection, originalExceptionElement, tag, holder, true, alreadyDocumentedExceptions, typeSubstitutions, writer);
+        outputAnExceptionTagDeeply(exceptionSection, originalExceptionElement, tag, holder, true, alreadyDocumentedExceptions, typeSubstitutions);
     }
 
     private void outputAnExceptionTagDeeply(ExceptionSectionBuilder exceptionSection,
@@ -332,8 +331,7 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
                                             ExecutableElement holder,
                                             boolean beginNewEntry,
                                             Set<TypeMirror> alreadyDocumentedExceptions,
-                                            Map<TypeMirror, TypeMirror> typeSubstitutions,
-                                            TagletWriter writer)
+                                            Map<TypeMirror, TypeMirror> typeSubstitutions)
             throws Failure.ExceptionTypeNotFound,
                    Failure.NotExceptionType,
                    Failure.Invalid,
@@ -364,7 +362,7 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
                 exceptionSection.beginEntry(exceptionType);
             }
             // append to the current entry
-            exceptionSection.continueEntry(writer.commentTagsToOutput(holder, description));
+            exceptionSection.continueEntry(tagletWriter.commentTagsToOutput(holder, description));
             if (beginNewEntry) { // if added a new entry, end it
                 exceptionSection.endEntry();
             }
@@ -382,7 +380,7 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
             if (i > 0) {
                 // if there's anything preceding {@inheritDoc}, assume an entry has been added before
                 assert exceptionSection.debugEntryBegun();
-                Content beforeInheritDoc = writer.commentTagsToOutput(holder, description.subList(0, i));
+                Content beforeInheritDoc = tagletWriter.commentTagsToOutput(holder, description.subList(0, i));
                 exceptionSection.continueEntry(beforeInheritDoc);
             }
 
@@ -431,11 +429,11 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
                 throw new Failure.Invalid(tag, holder);
             }
             for (Map.Entry<ThrowsTree, ExecutableElement> e : tags.entrySet()) {
-                outputAnExceptionTagDeeply(exceptionSection, originalExceptionElement, e.getKey(), e.getValue(), addNewEntryRecursively, alreadyDocumentedExceptions, typeSubstitutions, writer);
+                outputAnExceptionTagDeeply(exceptionSection, originalExceptionElement, e.getKey(), e.getValue(), addNewEntryRecursively, alreadyDocumentedExceptions, typeSubstitutions);
             }
             // this might be an empty list, which is fine
             if (!loneInheritDoc) {
-                Content afterInheritDoc = writer.commentTagsToOutput(holder, description.subList(i + 1, description.size()));
+                Content afterInheritDoc = tagletWriter.commentTagsToOutput(holder, description.subList(i + 1, description.size()));
                 exceptionSection.continueEntry(afterInheritDoc);
             }
             if (add) {
@@ -742,8 +740,7 @@ public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTagl
                 result.add(taglet.getThrowsHeader());
             }
             result.add(taglet.throwsTagOutput(exceptionType,
-                    current.isEmpty() ? Optional.empty() : Optional.of(current),
-                    writer));
+                    current.isEmpty() ? Optional.empty() : Optional.of(current)));
             current = null;
         }
 

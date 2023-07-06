@@ -31,7 +31,6 @@ import java.util.List;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 
 /**
  * A taglet should implement this interface if it supports an {@code {@inheritDoc}}
@@ -52,7 +51,7 @@ public interface InheritableTaglet extends Taglet {
      * In the future, this could be reworked using some other mechanism,
      * such as throwing an exception.
      */
-    Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration);
+    Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence);
 
     record Output(DocTree holderTag,
                   Element holder,

@@ -110,13 +110,14 @@ public abstract class SnippetTaglet extends BaseTaglet {
      * one of the named regions in the snippets content.
      */
     @Override
-    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter tagletWriter) {
+        this.tagletWriter = tagletWriter;
         try {
-            return generateContent(holder, tag, writer);
+            return generateContent(holder, tag);
         } catch (BadSnippetException e) {
-            error(writer, holder, e.tag(), e.key(), e.args());
-            String details = writer.configuration().getDocResources().getText(e.key(), e.args());
-            return badSnippet(writer, Optional.of(details));
+            error(tagletWriter, holder, e.tag(), e.key(), e.args());
+            String details = config.getDocResources().getText(e.key(), e.args());
+            return badSnippet(tagletWriter, Optional.of(details));
         }
     }
 
@@ -131,7 +132,7 @@ public abstract class SnippetTaglet extends BaseTaglet {
      * @return the output
      */
     protected abstract Content snippetTagOutput(Element element, SnippetTree snippetTag, StyledText text,
-                                                String id, String lang, TagletWriter writer);
+                                                String id, String lang);
 
     private static final class BadSnippetException extends Exception {
 
@@ -161,7 +162,7 @@ public abstract class SnippetTaglet extends BaseTaglet {
         }
     }
 
-    private Content generateContent(Element holder, DocTree tag, TagletWriter writer)
+    private Content generateContent(Element holder, DocTree tag)
             throws BadSnippetException
     {
         SnippetTree snippetTag = (SnippetTree) tag;
@@ -226,11 +227,10 @@ public abstract class SnippetTaglet extends BaseTaglet {
             }
 
             // we didn't create JavaFileManager, so we won't close it; even if an error occurs
-            var fileManager = writer.configuration().getFileManager();
+            var fileManager = config.getFileManager();
 
             try {
                 // first, look in local snippet-files subdirectory
-                var utils = writer.configuration().utils;
                 var pkg = getPackageElement(holder, utils);
                 var pkgLocation = utils.getLocationForPackage(pkg);
                 var pkgName = pkg.getQualifiedName().toString(); // note: empty string for unnamed package
@@ -279,36 +279,35 @@ public abstract class SnippetTaglet extends BaseTaglet {
 
         try {
             Diags d = (text, pos) -> {
-                var path = writer.configuration().utils.getCommentHelper(holder)
+                var path = utils.getCommentHelper(holder)
                         .getDocTreePath(snippetTag.getBody());
-                writer.configuration().getReporter().print(Diagnostic.Kind.WARNING,
+                config.getReporter().print(Diagnostic.Kind.WARNING,
                         path, pos, pos, pos, text);
             };
             if (inlineContent != null) {
-                inlineSnippet = parse(writer.configuration().getDocResources(), d, language, inlineContent);
+                inlineSnippet = parse(resources, d, language, inlineContent);
             }
         } catch (ParseException e) {
-            var path = writer.configuration().utils.getCommentHelper(holder)
+            var path = utils.getCommentHelper(holder)
                     .getDocTreePath(snippetTag.getBody());
             // TODO: there should be a method in Messages; that method should mirror Reporter's; use that method instead accessing Reporter.
-            String msg = writer.configuration().getDocResources()
-                    .getText("doclet.snippet.markup", e.getMessage());
-            writer.configuration().getReporter().print(Diagnostic.Kind.ERROR,
+            String msg = resources.getText("doclet.snippet.markup", e.getMessage());
+            config.getReporter().print(Diagnostic.Kind.ERROR,
                     path, e.getPosition(), e.getPosition(), e.getPosition(), msg);
-            return badSnippet(writer, Optional.of(e.getMessage()));
+            return badSnippet(tagletWriter, Optional.of(e.getMessage()));
         }
 
         try {
             var finalFileObject = fileObject;
-            Diags d = (text, pos) -> writer.configuration().getMessages().warning(finalFileObject, pos, pos, pos, text);
+            Diags d = (text, pos) -> messages.warning(finalFileObject, pos, pos, pos, text);
             if (externalContent != null) {
-                externalSnippet = parse(writer.configuration().getDocResources(), d, language, externalContent);
+                externalSnippet = parse(resources, d, language, externalContent);
             }
         } catch (ParseException e) {
             assert fileObject != null;
-            writer.configuration().getMessages().error(fileObject, e.getPosition(),
+            messages.error(fileObject, e.getPosition(),
                     e.getPosition(), e.getPosition(), "doclet.snippet.markup", e.getMessage());
-            return badSnippet(writer, Optional.of(e.getMessage()));
+            return badSnippet(tagletWriter, Optional.of(e.getMessage()));
         }
 
         // the region must be matched at least in one content: it can be matched
@@ -357,7 +356,7 @@ public abstract class SnippetTaglet extends BaseTaglet {
                 ? null
                 : stringValueOf(idAttr);
 
-        return snippetTagOutput(holder, snippetTag, text, id, lang, writer);
+        return snippetTagOutput(holder, snippetTag, text, id, lang);
     }
 
     /*
@@ -413,12 +412,11 @@ public abstract class SnippetTaglet extends BaseTaglet {
     }
 
     private void error(TagletWriter writer, Element holder, DocTree tag, String key, Object... args) {
-        writer.configuration().getMessages().error(
-            writer.configuration().utils.getCommentHelper(holder).getDocTreePath(tag), key, args);
+        messages.error(utils.getCommentHelper(holder).getDocTreePath(tag), key, args);
     }
 
     private Content badSnippet(TagletWriter writer, Optional<String> details) {
-        Resources resources = writer.configuration().getDocResources();
+        var resources = config.getDocResources();
         return writer.invalidTagOutput(resources.getText("doclet.tag.invalid", "snippet"), details);
     }
 

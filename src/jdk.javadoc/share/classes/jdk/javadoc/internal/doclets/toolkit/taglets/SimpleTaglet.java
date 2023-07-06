@@ -87,18 +87,18 @@ public abstract class SimpleTaglet extends BaseTaglet implements InheritableTagl
     }
 
     @Override
-    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
+    public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
         assert dst.getKind() == ElementKind.METHOD;
         assert !isFirstSentence;
         try {
-            var docFinder = configuration.utils.docFinder();
+            var docFinder = utils.docFinder();
             Optional<Documentation> r;
             if (src == null) {
                 r = docFinder.find((ExecutableElement) dst,
-                        m -> Result.fromOptional(extractFirst(m, configuration.utils))).toOptional();
+                        m -> Result.fromOptional(extractFirst(m, utils))).toOptional();
             } else {
                 r = docFinder.search((ExecutableElement) src,
-                        m -> Result.fromOptional(extractFirst(m, configuration.utils))).toOptional();
+                        m -> Result.fromOptional(extractFirst(m, utils))).toOptional();
             }
             return r.map(result -> new Output(result.tag, result.method, result.description, true))
                     .orElseGet(()->new Output(null, null, List.of(), true));
@@ -119,13 +119,12 @@ public abstract class SimpleTaglet extends BaseTaglet implements InheritableTagl
     }
 
     @Override
-    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
-        Utils utils = writer.configuration().utils;
+    public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
         List<? extends DocTree> tags = utils.getBlockTags(holder, this);
         if (header == null || tags.isEmpty()) {
             return null;
         }
-        return simpleBlockTagOutput(holder, tags, header, writer);
+        return simpleBlockTagOutput(holder, tags, header, tagletWriter);
     }
 
     /**

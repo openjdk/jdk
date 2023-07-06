@@ -41,7 +41,6 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet.UnsupportedTagletOperationException;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * The interface for the taglet writer.
@@ -162,7 +161,7 @@ public abstract class TagletWriter {
         }
 
         Content output = getOutputInstance();
-        Utils utils = configuration().utils;
+        var utils = configuration().utils;
         tagletManager.checkTags(element, utils.getBlockTags(element));
         tagletManager.checkTags(element, utils.getFullBody(element));
         for (Taglet taglet : taglets) {

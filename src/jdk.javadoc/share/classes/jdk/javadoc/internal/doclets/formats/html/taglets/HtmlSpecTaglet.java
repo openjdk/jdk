@@ -44,7 +44,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.SpecTaglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 public class HtmlSpecTaglet extends SpecTaglet {
@@ -59,13 +58,13 @@ public class HtmlSpecTaglet extends SpecTaglet {
     }
 
     @Override
-    public Content specTagOutput(Element holder, List<? extends SpecTree> specTags, TagletWriter writer) {
+    public Content specTagOutput(Element holder, List<? extends SpecTree> specTags) {
         if (specTags.isEmpty()) {
             return Text.EMPTY;
         }
 
         List<Content> links = specTags.stream()
-                .map(st -> specTagToContent(holder, st, writer)).toList();
+                .map(st -> specTagToContent(holder, st)).toList();
 
         // Use a different style if any link label is longer than 30 chars or contains commas.
         boolean hasLongLabels = links.stream().anyMatch(this::isLongOrHasComma);
@@ -79,14 +78,14 @@ public class HtmlSpecTaglet extends SpecTaglet {
                 HtmlTree.DD(specList));
     }
 
-    private Content specTagToContent(Element holder, SpecTree specTree, TagletWriter writer) {
-        TagletWriterImpl w = (TagletWriterImpl) writer;
+    private Content specTagToContent(Element holder, SpecTree specTree) {
+        TagletWriterImpl tw = (TagletWriterImpl) tagletWriter;
         String specTreeURL = specTree.getURL().getBody();
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
-        Content label = w.getHtmlWriter().commentTagsToContent(holder, specTreeLabel, writer.context.isFirstSentence);
+        Content label = tw.getHtmlWriter().commentTagsToContent(holder, specTreeLabel, tagletWriter.context.isFirstSentence);
         return getExternalSpecContent(holder, specTree, specTreeURL,
-                w.textOf(specTreeLabel).replaceAll("\\s+", " "), label,
-                w);
+                tw.textOf(specTreeLabel).replaceAll("\\s+", " "), label,
+                tw);
     }
 
     Content getExternalSpecContent(Element holder, DocTree docTree, String url, String searchText, Content title, TagletWriterImpl w) {

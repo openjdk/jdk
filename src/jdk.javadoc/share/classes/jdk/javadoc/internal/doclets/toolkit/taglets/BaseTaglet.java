@@ -43,15 +43,22 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * A base class that implements the {@link Taglet} interface.
  */
 public class BaseTaglet implements Taglet {
+    // The following members are global to the lifetime of the doclet
     protected final BaseConfiguration config;
     protected final Messages messages;
     protected final Resources resources;
     protected final Utils utils;
 
+    // The following members are specific to the instance of the taglet
     protected final DocTree.Kind tagKind;
     protected final String name;
     private final boolean inline;
     private final Set<Location> sites;
+
+    // The following is dynamically set for the duration of the methods
+    //      getInlineTagOutput and getAllBlockTagOutput
+    // by those taglets that need to refer to it
+    protected TagletWriter tagletWriter;
 
     public BaseTaglet(BaseConfiguration config, DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
         this(config, tagKind.tagName, tagKind, inline, sites);
@@ -154,7 +161,7 @@ public class BaseTaglet implements Taglet {
      * @implSpec This implementation throws {@link UnsupportedTagletOperationException}.
      */
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");
     }
 
@@ -164,7 +171,7 @@ public class BaseTaglet implements Taglet {
      * @implSpec This implementation throws {@link UnsupportedTagletOperationException}
      */
     @Override
-    public Content getAllBlockTagOutput(Element holder, TagletWriter writer) {
+    public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
         throw new UnsupportedTagletOperationException("Method not supported in taglet " + getName() + ".");
     }
 }

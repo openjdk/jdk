@@ -130,12 +130,12 @@ public interface Taglet {
      *
      * @param owner  the element for the enclosing doc comment
      * @param tag    the tag
-     * @param writer the taglet-writer used in this doclet
+     * @param tagletWriter the taglet-writer used in this doclet
      *
      * @return the output for this tag
      * @throws UnsupportedTagletOperationException if the method is not supported by the taglet
      */
-    Content getInlineTagOutput(Element owner, DocTree tag, TagletWriter writer) throws
+    Content getInlineTagOutput(Element owner, DocTree tag, TagletWriter tagletWriter) throws
             UnsupportedTagletOperationException;
 
     /**
@@ -143,12 +143,12 @@ public interface Taglet {
      * all instances of block tags handled by this taglet.
      *
      * @param owner  the element for the enclosing doc comment
-     * @param writer the taglet-writer used in this doclet
+     * @param tagletWriter the taglet-writer used in this doclet
      *
      * @return the output for this tag
      * @throws UnsupportedTagletOperationException if the method is not supported by the taglet
      */
-    Content getAllBlockTagOutput(Element owner, TagletWriter writer) throws
+    Content getAllBlockTagOutput(Element owner, TagletWriter tagletWriter) throws
             UnsupportedTagletOperationException;
 
     class UnsupportedTagletOperationException extends UnsupportedOperationException {

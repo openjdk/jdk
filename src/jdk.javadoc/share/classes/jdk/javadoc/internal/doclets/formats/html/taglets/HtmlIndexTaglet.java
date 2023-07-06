@@ -42,9 +42,9 @@ public class HtmlIndexTaglet extends IndexTaglet {
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
         var indexTree = (IndexTree) tag;
-        var w = (TagletWriterImpl) writer;
+        var tw = (TagletWriterImpl) tagletWriter;
 
         DocTree searchTerm = indexTree.getSearchTerm();
         String tagText = (searchTerm instanceof TextTree tt) ? tt.getBody() : "";
@@ -53,10 +53,10 @@ public class HtmlIndexTaglet extends IndexTaglet {
         }
         tagText = tagText.replaceAll("\\s+", " ");
 
-        Content desc = w.getHtmlWriter().commentTagsToContent(element, indexTree.getDescription(), w.getContext().within(indexTree));
+        Content desc = tw.getHtmlWriter().commentTagsToContent(element, indexTree.getDescription(), tw.getContext().within(indexTree));
         String descText = extractText(desc);
 
-        return w.createAnchorAndSearchIndex(element, tagText, descText, tag);
+        return tw.createAnchorAndSearchIndex(element, tagText, descText, tag);
     }
 
 

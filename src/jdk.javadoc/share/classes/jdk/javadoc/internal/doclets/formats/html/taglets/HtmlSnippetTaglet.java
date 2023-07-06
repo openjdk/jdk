@@ -42,7 +42,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.SnippetTaglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.Style;
 import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.StyledText;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -55,8 +54,8 @@ public class HtmlSnippetTaglet extends SnippetTaglet {
 
     @Override
     protected Content snippetTagOutput(Element element, SnippetTree tag, StyledText content,
-                                       String id, String lang, TagletWriter writer) {
-        var w = (TagletWriterImpl) writer;
+                                       String id, String lang) {
+        var tw = (TagletWriterImpl) tagletWriter;
         var pre = new HtmlTree(TagName.PRE).setStyle(HtmlStyle.snippet);
         if (id != null && !id.isBlank()) {
             pre.put(HtmlAttr.ID, id);
@@ -115,7 +114,7 @@ public class HtmlSnippetTaglet extends SnippetTaglet {
                                 false, // TODO: for now
                                 Text.of(sequence.toString()),
                                 (key, args) -> { /* TODO: report diagnostic */ },
-                                writer);
+                                tagletWriter);
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
                     }
@@ -134,7 +133,7 @@ public class HtmlSnippetTaglet extends SnippetTaglet {
                         .add(HtmlTree.SPAN(Text.of(copyText))
                                 .put(HtmlAttr.DATA_COPIED, copiedText))
                         .add(new HtmlTree(TagName.IMG)
-                                .put(HtmlAttr.SRC, w.getHtmlWriter().pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
+                                .put(HtmlAttr.SRC, tw.getHtmlWriter().pathToRoot.resolve(DocPaths.CLIPBOARD_SVG).getPath())
                                 .put(HtmlAttr.ALT, copySnippetText))
                         .addStyle(HtmlStyle.copy)
                         .addStyle(HtmlStyle.snippetCopy)

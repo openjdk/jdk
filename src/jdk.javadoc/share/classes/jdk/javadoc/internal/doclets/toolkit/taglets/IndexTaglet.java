@@ -47,7 +47,7 @@ public abstract class IndexTaglet extends BaseTaglet {
     }
 
     @Override
-    public abstract Content getInlineTagOutput(Element owner, DocTree tag, TagletWriter writer) throws
+    public abstract Content getInlineTagOutput(Element owner, DocTree tag, TagletWriter tagletWriter) throws
             UnsupportedTagletOperationException;
 
 }

@@ -136,10 +136,10 @@ public class HtmlSimpleTaglet extends SimpleTaglet {
                                         List<? extends DocTree> simpleTags,
                                         String header,
                                         TagletWriter writer) {
-        TagletWriterImpl w = (TagletWriterImpl) writer;
+        TagletWriterImpl tw = (TagletWriterImpl) writer;
         var ch = utils.getCommentHelper(element);
-        var htmlWriter = w.getHtmlWriter();
-        var context = w.getContext();
+        var htmlWriter = tw.getHtmlWriter();
+        var context = tw.getContext();
 
         ContentBuilder body = new ContentBuilder();
         boolean many = false;

@@ -46,8 +46,9 @@ public abstract class SystemPropertyTaglet extends BaseTaglet {
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return systemPropertyTagOutput(element, (SystemPropertyTree) tag, writer);
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
+        this.tagletWriter = tagletWriter;
+        return systemPropertyTagOutput(element, (SystemPropertyTree) tag);
     }
 
     /**
@@ -58,7 +59,5 @@ public abstract class SystemPropertyTaglet extends BaseTaglet {
      *
      * @return the output
      */
-    protected abstract Content systemPropertyTagOutput(Element element,
-                                                       SystemPropertyTree systemPropertyTag,
-                                                       TagletWriter writer);
+    protected abstract Content systemPropertyTagOutput(Element element, SystemPropertyTree systemPropertyTag);
 }

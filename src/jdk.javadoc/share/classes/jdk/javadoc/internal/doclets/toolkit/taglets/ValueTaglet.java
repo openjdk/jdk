@@ -28,18 +28,18 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 import java.util.EnumSet;
 import java.util.IllegalFormatException;
 import java.util.Optional;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.VariableElement;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.doctree.ValueTree;
+
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
-import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * An inline taglet representing the value tag. This tag should only be used with
@@ -83,11 +83,9 @@ public abstract class ValueTaglet extends BaseTaglet {
     }
 
     @Override
-    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer) {
-        BaseConfiguration configuration = writer.configuration();
-        Utils utils = configuration.utils;
-        Messages messages = configuration.getMessages();
-        VariableElement field = getVariableElement(holder, configuration, tag);
+    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter tagletWriter) {
+        this.tagletWriter = tagletWriter;
+        VariableElement field = getVariableElement(holder, config, tag);
         if (field == null) {
             if (tag.toString().isEmpty()) {
                 //Invalid use of @value
@@ -107,24 +105,24 @@ public abstract class ValueTaglet extends BaseTaglet {
                     f = f.substring(1, f.length() - 1);
                 }
                 try {
-                    text = String.format(configuration.getLocale(), f, field.getConstantValue());
+                    text = String.format(config.getLocale(), f, field.getConstantValue());
                 } catch (IllegalFormatException e) {
                     messages.error(holder,
                             "doclet.value_tag_invalid_format", format);
-                    return writer.invalidTagOutput(
+                    return tagletWriter.invalidTagOutput(
                             messages.getResources().getText("doclet.value_tag_invalid_format", format),
                             Optional.empty());
                 }
             } else {
                 text = utils.constantValueExpression(field);
             }
-            return valueTagOutput(field, text, !field.equals(holder), writer);
+            return valueTagOutput(field, text, !field.equals(holder));
         } else {
             //Referenced field is not a constant.
             messages.warning(holder,
                 "doclet.value_tag_invalid_constant", utils.getSimpleName(field));
         }
-        return writer.getOutputInstance();
+        return tagletWriter.getOutputInstance();
     }
 
 
@@ -138,8 +136,5 @@ public abstract class ValueTaglet extends BaseTaglet {
      *
      * @return the output
      */
-    protected abstract Content valueTagOutput(VariableElement field,
-                                              String constantVal,
-                                              boolean includeLink,
-                                              TagletWriter writer);
+    protected abstract Content valueTagOutput(VariableElement field, String constantVal, boolean includeLink);
 }

@@ -63,11 +63,11 @@ public class HtmlLinkTaglet extends LinkTaglet {
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
+    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter tagletWriter) {
         var linkTree = (LinkTree) tag;
-        var w = (TagletWriterImpl) writer;
+        var tw = (TagletWriterImpl) tagletWriter;
         var ch = utils.getCommentHelper(element);
-        var context = w.getContext();
+        var context = tw.getContext();
 
         var inTags = context.inTags;
         if (inTags.contains(LINK) || inTags.contains(LINK_PLAIN) || inTags.contains(SEE)) {
@@ -75,7 +75,7 @@ public class HtmlLinkTaglet extends LinkTaglet {
             if (dtp != null) {
                 messages.warning(dtp, "doclet.see.nested_link", "{@" + linkTree.getTagName() + "}");
             }
-            Content label = w.getHtmlWriter().commentTagsToContent(element, linkTree.getLabel(), context.within(linkTree));
+            Content label = tw.getHtmlWriter().commentTagsToContent(element, linkTree.getLabel(), context.within(linkTree));
             if (label.isEmpty()) {
                 label = Text.of(linkTree.getReference().getSignature());
             }
@@ -85,7 +85,7 @@ public class HtmlLinkTaglet extends LinkTaglet {
         var linkRef = linkTree.getReference();
         if (linkRef == null) {
             messages.warning(ch.getDocTreePath(tag), "doclet.link.no_reference");
-            return writer.invalidTagOutput(resources.getText("doclet.tag.invalid_input", tag.toString()),
+            return tagletWriter.invalidTagOutput(resources.getText("doclet.tag.invalid_input", tag.toString()),
                     Optional.empty());
         }
 
@@ -97,9 +97,9 @@ public class HtmlLinkTaglet extends LinkTaglet {
                 refSignature,
                 ch.getReferencedElement(tag),
                 (kind == LINK_PLAIN),
-                w.getHtmlWriter().commentTagsToContent(element, linkTree.getLabel(), context.within(linkTree)),
+                tw.getHtmlWriter().commentTagsToContent(element, linkTree.getLabel(), context.within(linkTree)),
                 (key, args) -> messages.warning(ch.getDocTreePath(tag), key, args),
-                writer);
+                tagletWriter);
     }
 
     /**
@@ -128,8 +128,8 @@ public class HtmlLinkTaglet extends LinkTaglet {
                                    BiConsumer<String, Object[]> reportWarning,
                                    TagletWriter writer) {
         var config = (HtmlConfiguration) this.config;
-        var w = (TagletWriterImpl) writer;
-        var htmlWriter = w.getHtmlWriter();
+        var tw = (TagletWriterImpl) writer;
+        var htmlWriter = tw.getHtmlWriter();
 
         Content labelContent = plainOrCode(isLinkPlain, label);
 

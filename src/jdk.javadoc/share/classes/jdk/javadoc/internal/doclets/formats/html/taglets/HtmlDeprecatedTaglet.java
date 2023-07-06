@@ -47,10 +47,9 @@ public class HtmlDeprecatedTaglet extends DeprecatedTaglet {
     }
 
     @Override
-    public Content getAllBlockTagOutput(Element element, TagletWriter writer) {
-        var w = (TagletWriterImpl) writer;
-        var utils = w.getUtils();
-        var htmlWriter = w.getHtmlWriter();
+    public Content getAllBlockTagOutput(Element element, TagletWriter tagletWriter) {
+        var tw = (TagletWriterImpl) tagletWriter;
+        var htmlWriter = tw.getHtmlWriter();
 
         ContentBuilder result = new ContentBuilder();
         CommentHelper ch = utils.getCommentHelper(element);
@@ -62,17 +61,17 @@ public class HtmlDeprecatedTaglet extends DeprecatedTaglet {
                 if (!deprs.isEmpty()) {
                     List<? extends DocTree> commentTrees = ch.getDescription(deprs.get(0));
                     if (!commentTrees.isEmpty()) {
-                        result.add(w.commentTagsToOutput(element, null, commentTrees, false));
+                        result.add(tw.commentTagsToOutput(element, null, commentTrees, false));
                     }
                 }
             }
         } else {
             if (utils.isDeprecated(element)) {
                 result.add(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
-                        w.getHtmlWriter().getDeprecatedPhrase(element)));
+                        tw.getHtmlWriter().getDeprecatedPhrase(element)));
                 if (!deprs.isEmpty()) {
                     List<? extends DocTree> bodyTrees = ch.getBody(deprs.get(0));
-                    Content body = w.commentTagsToOutput(element, null, bodyTrees, false);
+                    Content body = tw.commentTagsToOutput(element, null, bodyTrees, false);
                     if (!body.isEmpty())
                         result.add(HtmlTree.DIV(HtmlStyle.deprecationComment, body));
                 }
