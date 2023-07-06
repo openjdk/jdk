@@ -472,7 +472,7 @@ void ShenandoahReferenceProcessor::process_references(ShenandoahRefProcThreadLoc
     oop head = lrb(CompressedOops::decode_not_null(*list));
     shenandoah_assert_not_in_cset_except(&head, head, ShenandoahHeap::heap()->cancelled_gc() || !ShenandoahLoadRefBarrier);
     oop prev = Atomic::xchg(&_pending_list, head);
-    RawAccess<>::oop_store(p, prev);
+    set_oop_field(p, prev);
     if (prev == nullptr) {
       // First to prepend to list, record tail
       _pending_list_tail = reinterpret_cast<void*>(p);
