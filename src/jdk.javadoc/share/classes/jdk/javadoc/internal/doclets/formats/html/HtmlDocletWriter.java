@@ -69,13 +69,11 @@ import com.sun.source.doctree.EndElementTree;
 import com.sun.source.doctree.EntityTree;
 import com.sun.source.doctree.ErroneousTree;
 import com.sun.source.doctree.EscapeTree;
-import com.sun.source.doctree.IndexTree;
 import com.sun.source.doctree.InheritDocTree;
+import com.sun.source.doctree.InlineTagTree;
 import com.sun.source.doctree.LinkTree;
 import com.sun.source.doctree.LiteralTree;
 import com.sun.source.doctree.StartElementTree;
-import com.sun.source.doctree.SummaryTree;
-import com.sun.source.doctree.SystemPropertyTree;
 import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreePath;
 import com.sun.source.util.SimpleDocTreeVisitor;
@@ -1306,12 +1304,6 @@ public class HtmlDocletWriter {
                 }
 
                 @Override
-                public Boolean visitDocRoot(DocRootTree node, Content content) {
-                    content.add(getInlineTagOutput(element, node, context));
-                    return false;
-                }
-
-                @Override
                 public Boolean visitEndElement(EndElementTree node, Content content) {
                     content.add(RawHtml.endElement(node.getName()));
                     return false;
@@ -1360,15 +1352,6 @@ public class HtmlDocletWriter {
                 }
 
                 @Override
-                public Boolean visitIndex(IndexTree node, Content content) {
-                    Content output = getInlineTagOutput(element, node, context);
-                    if (output != null) {
-                        content.add(output);
-                    }
-                    return false;
-                }
-
-                @Override
                 public Boolean visitLink(LinkTree node, Content content) {
                     // TODO: can this be moved into LinkTaglet or HtmlLinkTaglet, so that we can delete this
                     //       code and just use defaultAction
@@ -1404,22 +1387,6 @@ public class HtmlDocletWriter {
                     return false;
                 }
 
-                @Override
-                public Boolean visitSummary(SummaryTree node, Content content) {
-                    Content output = getInlineTagOutput(element, node, context);
-                    content.add(output);
-                    return false;
-                }
-
-                @Override
-                public Boolean visitSystemProperty(SystemPropertyTree node, Content content) {
-                    Content output = getInlineTagOutput(element, node, context);
-                    if (output != null) {
-                        content.add(output);
-                    }
-                    return false;
-                }
-
                 private CharSequence textCleanup(String text, boolean isLast) {
                     return textCleanup(text, isLast, false);
                 }
@@ -1448,9 +1415,11 @@ public class HtmlDocletWriter {
 
                 @Override
                 protected Boolean defaultAction(DocTree node, Content content) {
-                    Content output = getInlineTagOutput(element, node, context);
-                    if (output != null) {
-                        content.add(output);
+                    if (node instanceof InlineTagTree) {
+                        var output = getInlineTagOutput(element, node, context);
+                        if (output != null) {
+                            content.add(output);
+                        }
                     }
                     return false;
                 }
