@@ -61,7 +61,7 @@ public class TableHeaderBorderPositionTest {
     public static void Test() throws Exception {
         int verticalLineCol;
         int expectedRGB;
-        BufferedImage imgDate;
+        BufferedImage imgData;
         BufferedImage imgHeader;
         double w;
         double h;
@@ -96,8 +96,8 @@ public class TableHeaderBorderPositionTest {
         w = SCALE * WIDTH;
         h = SCALE * HEIGHT;
 
-        imgDate = new BufferedImage((int)w, (int)h, BufferedImage.TYPE_INT_RGB);
-        g2d = imgDate.createGraphics();
+        imgData = new BufferedImage((int)w, (int)h, BufferedImage.TYPE_INT_RGB);
+        g2d = imgData.createGraphics();
         g2d.scale(SCALE, SCALE);
         try {
             table.paint(g2d);
@@ -107,19 +107,19 @@ public class TableHeaderBorderPositionTest {
 
         verticalLineCol = (int)(table.getTableHeader().
                 getColumnModel().getColumn(0).getWidth() * SCALE) - 2;
-        expectedRGB = imgDate.getRGB(verticalLineCol,0);
+        expectedRGB = imgData.getRGB(verticalLineCol,0);
 
-        for(int i = 0; i < imgHeader.getHeight();i++) {
+        for(int i = 0; i < imgHeader.getHeight(); i++) {
             for(int j = verticalLineCol; j < verticalLineCol + 3; j++) {
-                if(expectedRGB != imgHeader.getRGB(j,i)) {
+                if(expectedRGB != imgHeader.getRGB(j, i)) {
                     throw new RuntimeException("Test Failed");
                 }
             }
         }
 
-        for(int i = 0; i < table.getRowCount() * table.getRowHeight() * SCALE;i++) {
+        for(int i = 0; i < table.getRowCount() * table.getRowHeight() * SCALE; i++) {
             for(int j = verticalLineCol; j < verticalLineCol + 3; j++) {
-                if(expectedRGB != imgDate.getRGB(j,i)) {
+                if(expectedRGB != imgData.getRGB(j, i)) {
                     throw new RuntimeException("Test Failed");
                 }
             }
