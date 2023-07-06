@@ -28,7 +28,6 @@
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/suspendibleThreadSet.hpp"
-#include "runtime/trimNative.hpp"
 #include "gc/z/zAllocator.inline.hpp"
 #include "gc/z/zBarrierSet.hpp"
 #include "gc/z/zBarrierSetAssembler.hpp"
@@ -432,8 +431,6 @@ public:
   }
 
   virtual void doit() {
-    TrimNative::SuspendMark tnsm("gc");
-
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);
     IsGCActiveMark gc_active_mark;

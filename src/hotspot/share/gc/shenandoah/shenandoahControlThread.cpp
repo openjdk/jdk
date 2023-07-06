@@ -40,7 +40,6 @@
 #include "gc/shenandoah/shenandoahVMOperations.hpp"
 #include "gc/shenandoah/shenandoahWorkerPolicy.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "runtime/trimNative.hpp"
 #include "memory/iterator.hpp"
 #include "memory/metaspaceUtils.hpp"
 #include "memory/metaspaceStats.hpp"
@@ -423,7 +422,6 @@ void ShenandoahControlThread::stop_service() {
 }
 
 void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
-  TrimNative::SuspendMark tnsm("gc");
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 
@@ -438,7 +436,6 @@ void ShenandoahControlThread::service_stw_full_cycle(GCCause::Cause cause) {
 void ShenandoahControlThread::service_stw_degenerated_cycle(GCCause::Cause cause, ShenandoahGC::ShenandoahDegenPoint point) {
   assert (point != ShenandoahGC::_degenerated_unset, "Degenerated point should be set");
 
-  TrimNative::SuspendMark tnsm("gc");
   GCIdMark gc_id_mark;
   ShenandoahGCSession session(cause);
 

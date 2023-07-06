@@ -31,6 +31,7 @@
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/os.inline.hpp"
+#include "runtime/safepoint.hpp"
 #include "runtime/trimNative.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -40,11 +41,40 @@ class NativeTrimmerThread : public NamedThread {
 
   Monitor* const _lock;
   bool _stop;
+  unsigned _suspend_count;
 
-  // Pausing
-  int _pausers;
+  // Statistics
+  uint64_t _num_trims_performed;
 
-  bool paused() const { return _pausers > 0; }
+  bool suspended() const {
+    assert(_lock->is_locked(), "Must be");
+    return _suspend_count > 0;
+  }
+
+  unsigned inc_suspend_count() {
+    assert(_lock->is_locked(), "Must be");
+    assert(_suspend_count < UINT_MAX, "Sanity");
+    return ++_suspend_count;
+  }
+
+  unsigned dec_suspend_count() {
+    assert(_lock->is_locked(), "Must be");
+    assert(_suspend_count != 0, "Sanity");
+    return --_suspend_count;
+  }
+
+  bool stopped() const {
+    assert(_lock->is_locked(), "Must be");
+    return _stop;
+  }
+
+  bool at_or_nearing_safepoint() const {
+    return
+        SafepointSynchronize::is_at_safepoint() ||
+        SafepointSynchronize::is_synchronizing();
+  }
+  static constexpr int safepoint_poll_ms = 250;
+
   static int64_t now() { return os::javaTimeMillis(); }
 
   void run() override {
@@ -55,43 +85,52 @@ class NativeTrimmerThread : public NamedThread {
 
   void run_inner() {
 
-    int64_t ntt = 0; // next trim time
-    int64_t tnow = 0;
+    bool trim_result = false;
 
     for (;;) {
-      // 1 - Wait for _next_trim_time. Handle spurious wakeups and shutdown.
+
+      int64_t tnow = now();
+      int64_t next_trim_time = tnow + TrimNativeHeapInterval;
+
       {
         MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
 
-        tnow = now();
-
-        // Set next trim time
-        ntt = tnow + TrimNativeHeapInterval;
+        if (trim_result) {
+          _num_trims_performed++;
+        }
 
         do { // handle spurious wakeups
+
           if (_stop) {
             return;
           }
-          if (paused()) {
+
+          if (suspended()) {
             ml.wait(0);
-          } else if (ntt > tnow) {
-            ml.wait(ntt - tnow);
+          } else if (next_trim_time > tnow) {
+            ml.wait(next_trim_time - tnow);
+          } else if (at_or_nearing_safepoint()) {
+            ml.wait(safepoint_poll_ms);
           }
+
           if (_stop) {
             return;
           }
+
           tnow = now();
-        } while (paused() || ntt > tnow);
-      }
+
+        } while (at_or_nearing_safepoint() || suspended() || next_trim_time > tnow);
+
+      } // Lock scope
 
       // 2 - Trim outside of lock protection.
-      execute_trim_and_log();
+      trim_result = execute_trim_and_log();
 
     }
   }
 
   // Execute the native trim, log results.
-  void execute_trim_and_log() const {
+  bool execute_trim_and_log() const {
     assert(os::can_trim_native_heap(), "Unexpected");
     const int64_t tnow = now();
     os::size_change_t sc;
@@ -105,10 +144,13 @@ class NativeTrimmerThread : public NamedThread {
         log_info(trim)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
                            PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                            trim_time.seconds() * 1000);
+        log_debug(trim)("Total trims: " UINT64_FORMAT ".", _num_trims_performed);
+        return true;
       } else {
         log_info(trim)("Trim native heap (no details)");
       }
     }
+    return false;
   }
 
 public:
@@ -116,7 +158,8 @@ public:
   NativeTrimmerThread() :
     _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeTrimmer_lock")),
     _stop(false),
-    _pausers(0)
+    _suspend_count(0),
+    _num_trims_performed(0)
   {
     set_name("Native Heap Trimmer");
     if (os::create_thread(this, os::vm_thread)) {
@@ -126,28 +169,31 @@ public:
 
   void suspend(const char* reason) {
     assert(TrimNativeHeap, "Only call if enabled");
-    assert(TrimNativeHeapInterval > 0, "Only call if periodic trimming is enabled");
-    int lvl = 0;
+    unsigned n = 0;
     {
       MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-      lvl = ++_pausers;
+      n = inc_suspend_count();
       // No need to wakeup trimmer
     }
-    log_debug(trim)("NativeTrimmer pause (%s) (%d)", reason, lvl);
+    log_debug(trim)("NativeTrimmer pause (%s) (%u)", reason, n);
   }
 
   void resume(const char* reason) {
     assert(TrimNativeHeap, "Only call if enabled");
-    assert(TrimNativeHeapInterval > 0, "Only call if periodic trimming is enabled");
-    int lvl = 0;
+    unsigned n = 0;
     {
       MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
-      lvl = _pausers--;
-      if (_pausers == 0) {
+      n = dec_suspend_count();
+      if (n == 0) {
         ml.notify_all(); // pause end
       }
     }
-    log_debug(trim)("NativeTrimmer unpause (%s) (%d)", reason, lvl);
+    log_debug(trim)("NativeTrimmer unpause (%s) (%u)", reason, n);
+  }
+
+  uint64_t num_trims_performed() const {
+    MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
+    return _num_trims_performed;
   }
 
   void stop() {
@@ -190,5 +236,12 @@ void TrimNative::resume_periodic_trim(const char* reason) {
   if (g_trimmer_thread != nullptr) {
     g_trimmer_thread->resume(reason);
   }
+}
+
+uint64_t TrimNative::num_trims_performed() {
+  if (g_trimmer_thread != nullptr) {
+    return g_trimmer_thread->num_trims_performed();
+  }
+  return 0;
 }
 

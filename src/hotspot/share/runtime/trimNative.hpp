@@ -31,16 +31,19 @@
 #include "runtime/globals.hpp"
 
 class TrimNative : public AllStatic {
-public:
-
-  static void initialize();
-  static void cleanup();
 
   // Pause periodic trim (if enabled).
   static void suspend_periodic_trim(const char* reason);
 
   // Unpause periodic trim (if enabled).
   static void resume_periodic_trim(const char* reason);
+
+public:
+
+  static void initialize();
+  static void cleanup();
+
+  static uint64_t num_trims_performed();
 
   // Pause periodic trimming while in scope; when leaving scope,
   // resume periodic trimming.

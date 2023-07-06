@@ -56,7 +56,6 @@
 #include "gc/shared/scavengableNMethods.hpp"
 #include "gc/shared/space.hpp"
 #include "gc/shared/strongRootsScope.hpp"
-#include "runtime/trimNative.hpp"
 #include "gc/shared/weakProcessor.hpp"
 #include "gc/shared/workerThread.hpp"
 #include "memory/iterator.hpp"
@@ -442,8 +441,6 @@ void GenCollectedHeap::do_collection(bool           full,
   assert(Heap_lock->is_locked(),
          "the requesting thread should have the Heap_lock");
   guarantee(!is_gc_active(), "collection is not reentrant");
-
-  TrimNative::SuspendMark tnsm("gc");
 
   if (GCLocker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)

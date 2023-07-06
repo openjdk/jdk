@@ -26,7 +26,6 @@
 #include "gc/shared/gcLocker.hpp"
 #include "gc/shared/gcVMOperations.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
-#include "runtime/trimNative.hpp"
 #include "gc/x/xAbort.inline.hpp"
 #include "gc/x/xBreakpoint.hpp"
 #include "gc/x/xCollectedHeap.hpp"
@@ -114,8 +113,6 @@ public:
       _gc_locked = true;
       return;
     }
-
-    TrimNative::SuspendMark tnsm("gc");
 
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);

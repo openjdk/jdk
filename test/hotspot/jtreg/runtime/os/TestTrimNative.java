@@ -25,51 +25,12 @@
  */
 
 /*
- * @test id=serial
- * @requires vm.gc.Serial
+ * @test
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver TestTrimNative test -XX:+UseSerialGC
+ * @run driver TestTrimNative test
  */
-
-/*
- * @test id=parallel
- * @requires vm.gc.Serial
- * @requires (os.family=="linux") & !vm.musl
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver TestTrimNative test -XX:+UseParallelGC
- */
-
-/*
- * @test id=shenandoah
- * @requires vm.gc.Serial
- * @requires (os.family=="linux") & !vm.musl
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver TestTrimNative test -XX:+UseShenandoahGC
- */
-
-/*
- * @test id=Znongen
- * @requires vm.gc.Serial
- * @requires (os.family=="linux") & !vm.musl
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver TestTrimNative test -XX:+UseZGC -XX:-ZGenerational
- */
-
-/*
- * @test id=Zgen
- * @requires vm.gc.Serial
- * @requires (os.family=="linux") & !vm.musl
- * @modules java.base/jdk.internal.misc
- * @library /test/lib
- * @run driver TestTrimNative test -XX:+UseZGC -XX:+ZGenerational
- */
-
-// Other tests
 
 /*
  * @test id=testOffByDefault
@@ -127,20 +88,26 @@ public class TestTrimNative {
         Unit(long size) { this.size = size; }
     }
 
-    private static OutputAnalyzer runTestWithOptions(String[] extraOptions) throws IOException {
-
+    private static String[] prepareOptions(String[] extraVMOptions, String[] programOptions) {
         List<String> allOptions = new ArrayList<String>();
-        allOptions.addAll(Arrays.asList(extraOptions));
+        if (extraVMOptions != null) {
+            allOptions.addAll(Arrays.asList(extraVMOptions));
+        }
         allOptions.add("-Xmx128m");
         allOptions.add("-Xms128m"); // Stabilize RSS
         allOptions.add("-XX:+AlwaysPreTouch"); // Stabilize RSS
         allOptions.add("-XX:-ExplicitGCInvokesConcurrent"); // Invoke explicit GC on System.gc
         allOptions.add("-Xlog:trim=debug");
         allOptions.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
-
         allOptions.add(TestTrimNative.class.getName());
-        allOptions.add("RUN");
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(allOptions.toArray(new String[0]));
+        if (programOptions != null) {
+            allOptions.addAll(Arrays.asList(programOptions));
+        }
+        return allOptions.toArray(new String[0]);
+    }
+
+    private static OutputAnalyzer runTestWithOptions(String[] extraOptions, String[] programOptions) throws IOException {
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(prepareOptions(extraOptions, programOptions));
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldHaveExitValue(0);
         return output;
@@ -214,17 +181,13 @@ public class TestTrimNative {
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { "-XX:+UnlockExperimentalVMOptions",
                                "-XX:+TrimNativeHeap",
-                               "-XX:TrimNativeHeapInterval=" + trimInterval
-                }
+                               "-XX:TrimNativeHeapInterval=" + trimInterval },
+                new String[] { "RUN", "5000" }
         );
         long ms2 = System.currentTimeMillis();
         long runtime_ms = ms2 - ms1;
 
         checkExpectedLogMessages(output, true, 500);
-
-        // We expect to see at least one GC-related trimming pause
-        output.shouldMatch("NativeTrimmer pause.*(gc)");
-        output.shouldMatch("NativeTrimmer unpause.*(gc)");
 
         long maxTrimsExpected = runtime_ms / trimInterval;
         long minTrimsExpected = maxTrimsExpected / 2;
@@ -236,8 +199,9 @@ public class TestTrimNative {
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { "-XX:+UnlockExperimentalVMOptions",
                                "-XX:+TrimNativeHeap",
-                               "-XX:TrimNativeHeapInterval=" + Integer.MAX_VALUE
-                });
+                               "-XX:TrimNativeHeapInterval=" + Integer.MAX_VALUE },
+                new String[] { "RUN", "5000" }
+        );
         checkExpectedLogMessages(output, true, Integer.MAX_VALUE);
         parseOutputAndLookForNegativeTrim(output,0, /*  minTrimsExpected */ 0  /*  maxTrimsExpected */);
     }
@@ -246,8 +210,9 @@ public class TestTrimNative {
     static private final void testOffOnNonCompliantPlatforms() throws IOException {
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { "-XX:+UnlockExperimentalVMOptions",
-                               "-XX:+TrimNativeHeap"
-                });
+                               "-XX:+TrimNativeHeap" },
+                new String[] { "RUN", "0" }
+        );
         checkExpectedLogMessages(output, false, 0);
         output.shouldContain("Native trim not supported on this platform");
     }
@@ -257,13 +222,15 @@ public class TestTrimNative {
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { "-XX:+UnlockExperimentalVMOptions",
                                "-XX:-TrimNativeHeap"
-                });
+                },
+                new String[] { "RUN", "0" }
+                );
         checkExpectedLogMessages(output, false, 0);
     }
 
     // Test trim native is disabled if explicitly switched off
     static private final void testOffByDefault() throws IOException {
-        OutputAnalyzer output = runTestWithOptions (new String[] { });
+        OutputAnalyzer output = runTestWithOptions (null, new String[] { "RUN", "0" } );
         checkExpectedLogMessages(output, false, 0);
     }
 

@@ -49,7 +49,6 @@
 #include "gc/shared/gcTimer.hpp"
 #include "gc/shared/gcTrace.hpp"
 #include "gc/shared/gcTraceTime.inline.hpp"
-#include "runtime/trimNative.hpp"
 #include "gc/shared/isGCActiveMark.hpp"
 #include "gc/shared/oopStorage.inline.hpp"
 #include "gc/shared/oopStorageSet.inline.hpp"
@@ -1709,9 +1708,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
   if (GCLocker::check_active_before_gc()) {
     return false;
   }
-
-  // Pause native trimming for the duration of the GC
-  TrimNative::SuspendMark tnsm("gc");
 
   ParallelScavengeHeap* heap = ParallelScavengeHeap::heap();
 
