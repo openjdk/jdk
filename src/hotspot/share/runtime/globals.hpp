@@ -1981,14 +1981,14 @@ const int ObjectAlignmentInBytes = 8;
           range(0, 2)                                                       \
                                                                             \
   product(bool, TrimNativeHeap, false, EXPERIMENTAL,                        \
-          "GC will attempt to trim the native heap periodically. By "       \
+          "JVM will attempt to trim the native heap periodically. By "      \
           "default, the interval time is 60 seconds, but can be "           \
           "changed using TrimNativeHeapInterval.")                          \
                                                                             \
-  product(uint, TrimNativeHeapInterval, 60, EXPERIMENTAL,                   \
-          "If TrimNativeHeap is enabled: interval, in seconds, in which "   \
+  product(uint, TrimNativeHeapInterval, 60 * 1000, EXPERIMENTAL,            \
+          "If TrimNativeHeap is enabled: interval, in ms, at which "        \
           "the GC will attempt to trim the native heap.")                   \
-          range(1, UINT_MAX)                                                \
+          range(100, UINT_MAX)                                              \
 
 // end of RUNTIME_FLAGS
 

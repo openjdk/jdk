@@ -66,7 +66,7 @@ class NativeTrimmerThread : public NamedThread {
         tnow = now();
 
         // Set next trim time
-        ntt = tnow + (TrimNativeHeapInterval * 1000);
+        ntt = tnow + TrimNativeHeapInterval;
 
         do { // handle spurious wakeups
           if (_stop) {
@@ -170,7 +170,7 @@ void TrimNative::initialize() {
       return;
     }
     g_trimmer_thread = new NativeTrimmerThread();
-    log_info(trim)("Periodic native trim enabled (interval: %u seconds)", TrimNativeHeapInterval);
+    log_info(trim)("Periodic native trim enabled (interval: %u ms)", TrimNativeHeapInterval);
   }
 }
 

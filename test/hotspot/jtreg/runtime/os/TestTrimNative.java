@@ -149,7 +149,7 @@ public class TestTrimNative {
     private static void checkExpectedLogMessages(OutputAnalyzer output, boolean expectEnabled,
                                                  int expectedInterval) {
         if (expectEnabled) {
-            output.shouldContain("Periodic native trim enabled (interval: " + expectedInterval + " seconds");
+            output.shouldContain("Periodic native trim enabled (interval: " + expectedInterval + " ms");
             output.shouldContain("NativeTrimmer start");
             output.shouldContain("NativeTrimmer stop");
         } else {
@@ -209,20 +209,26 @@ public class TestTrimNative {
     }
 
     static private final void runTest(String[] VMargs) throws IOException {
+        long trimInterval = 500; // twice per second
+        long ms1 = System.currentTimeMillis();
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { "-XX:+UnlockExperimentalVMOptions",
                                "-XX:+TrimNativeHeap",
-                               "-XX:TrimNativeHeapInterval=1"
+                               "-XX:TrimNativeHeapInterval=" + trimInterval
                 }
         );
+        long ms2 = System.currentTimeMillis();
+        long runtime_ms = ms2 - ms1;
 
-        checkExpectedLogMessages(output, true, 1);
+        checkExpectedLogMessages(output, true, 500);
 
         // We expect to see at least one GC-related trimming pause
         output.shouldMatch("NativeTrimmer pause.*(gc)");
         output.shouldMatch("NativeTrimmer unpause.*(gc)");
 
-        parseOutputAndLookForNegativeTrim(output,0, /*  minTrimsExpected */ 10  /*  maxTrimsExpected */);
+        long maxTrimsExpected = runtime_ms / trimInterval;
+        long minTrimsExpected = maxTrimsExpected / 2;
+        parseOutputAndLookForNegativeTrim(output, (int)minTrimsExpected, (int)maxTrimsExpected);
     }
 
     // Test that a high trim interval effectively disables trimming
@@ -230,9 +236,9 @@ public class TestTrimNative {
         OutputAnalyzer output = runTestWithOptions (
                 new String[] { "-XX:+UnlockExperimentalVMOptions",
                                "-XX:+TrimNativeHeap",
-                               "-XX:TrimNativeHeapInterval=3600"
+                               "-XX:TrimNativeHeapInterval=" + Integer.MAX_VALUE
                 });
-        checkExpectedLogMessages(output, true, 3600);
+        checkExpectedLogMessages(output, true, Integer.MAX_VALUE);
         parseOutputAndLookForNegativeTrim(output,0, /*  minTrimsExpected */ 0  /*  maxTrimsExpected */);
     }
 
