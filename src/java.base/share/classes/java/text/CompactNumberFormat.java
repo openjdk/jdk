@@ -2354,12 +2354,12 @@ public final class CompactNumberFormat extends NumberFormat {
     @Override
     public boolean equals(Object obj) {
 
-        if (!super.equals(obj)) { // super does null and class checks
-            return false;
+        if (this == obj) {
+            return true;
         }
 
-        if (this == obj) { // disambiguate super equality from ref equality
-            return true;
+        if (!super.equals(obj)) { // super does null and class checks
+            return false;
         }
 
         CompactNumberFormat other = (CompactNumberFormat) obj;
