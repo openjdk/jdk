@@ -1981,9 +1981,8 @@ const int ObjectAlignmentInBytes = 8;
           range(0, 2)                                                       \
                                                                             \
   product(bool, TrimNativeHeap, false, EXPERIMENTAL,                        \
-          "JVM will attempt to trim the native heap periodically. By "      \
-          "default, the interval time is 60 seconds, but can be "           \
-          "changed using TrimNativeHeapInterval.")                          \
+          "JVM will attempt to trim the native heap periodically. "         \
+          "Interval is controlled by TrimNativeHeapInterval.")              \
                                                                             \
   product(uint, TrimNativeHeapInterval, 60 * 1000, EXPERIMENTAL,            \
           "If TrimNativeHeap is enabled: interval, in ms, at which "        \

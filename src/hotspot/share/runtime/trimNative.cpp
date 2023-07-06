@@ -124,15 +124,14 @@ class NativeTrimmerThread : public NamedThread {
       } // Lock scope
 
       // 2 - Trim outside of lock protection.
-      trim_result = execute_trim_and_log();
+      trim_result = execute_trim_and_log(tnow);
 
     }
   }
 
   // Execute the native trim, log results.
-  bool execute_trim_and_log() const {
+  bool execute_trim_and_log(int64_t tnow) const {
     assert(os::can_trim_native_heap(), "Unexpected");
-    const int64_t tnow = now();
     os::size_change_t sc;
     Ticks start = Ticks::now();
     log_debug(trim)("Trim native heap started...");

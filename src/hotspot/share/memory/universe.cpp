@@ -1055,7 +1055,6 @@ bool universe_post_init() {
 #if INCLUDE_CDS
   MetaspaceShared::post_initialize(CHECK_false);
 #endif
-
   return true;
 }
 
