@@ -4224,7 +4224,8 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
           if (use != phi && ctrl_or_self(use) == cl) {
             DEBUG_ONLY( current->dump(-1); )
             assert(false, "reduction has use inside loop");
-            break; // Chain traversal fails.
+            // Should not be allowed by SuperWord::mark_reductions
+            return; // bail out of optimization
           }
         }
       } else {
@@ -4245,8 +4246,9 @@ void PhaseIdealLoop::move_unordered_reduction_out_of_loop(IdealLoopTree* loop) {
         current = nullptr;
         break; // Success.
       } else {
-        DEBUG_ONLY( current->dump(1); )
-        assert(false, "scalar_input is neither phi nor a matchin reduction");
+        // scalar_input is neither phi nor a matching reduction
+        // Can for example be scalar reduction when we have
+        // partial vectorization.
         break; // Chain traversal fails.
       }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -899,7 +899,7 @@ BOOL AwtWin32GraphicsDevice::AreSameMonitors(HMONITOR mon1, HMONITOR mon2) {
     {
         if (::EqualRect(&mi1.rcMonitor, &mi2.rcMonitor) &&
             ::EqualRect(&mi1.rcWork, &mi2.rcWork) &&
-            (mi1.dwFlags  == mi1.dwFlags))
+            (mi1.dwFlags == mi2.dwFlags))
         {
 
             J2dTraceLn(J2D_TRACE_VERBOSE, "  the monitors are the same");

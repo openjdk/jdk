@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 1995, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Rivos Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,20 +20,20 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * Posix-compatible directory access routines
- */
+#ifndef OS_LINUX_RISCV_FLUSH_ICACHE_LINUX_HPP
+#define OS_LINUX_RISCV_FLUSH_ICACHE_LINUX_HPP
 
-#ifndef _WIN32_DIRENT_H_
-#define _WIN32_DIRENT_H_
+#include "memory/allStatic.hpp"
+#include "runtime/vm_version.hpp"
+#include "utilities/growableArray.hpp"
 
-#include "jvm_md.h"     /* DIR actually defined in here */
+class RiscvFlushIcache: public AllStatic {
+ public:
+  static bool test();
+  static void flush(uintptr_t start, uintptr_t end);
+};
 
-DIR *opendir(const char *dirname);
-struct dirent *readdir(DIR *dirp);
-int closedir(DIR *dirp);
-void rewinddir(DIR *dirp);
-
-#endif
+#endif // OS_LINUX_RISCV_FLUSH_ICACHE_LINUX_HPP
