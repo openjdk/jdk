@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1995, 1997, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,18 +21,30 @@
  * questions.
  */
 
-/*
- * Posix-compatible directory access routines
+/**
+ * @test
+ * @bug 8311023
+ * @summary Crash encountered while converting the types of non-escaped object to instance types.
+ *
+ * @run main/othervm
+ *      -XX:-TieredCompilation -Xbatch compiler.escapeAnalysis.TestEAVectorizedHashCode
  */
 
-#ifndef _WIN32_DIRENT_H_
-#define _WIN32_DIRENT_H_
+package compiler.escapeAnalysis;
 
-#include "jvm_md.h"     /* DIR actually defined in here */
+import java.util.Arrays;
 
-DIR *opendir(const char *dirname);
-struct dirent *readdir(DIR *dirp);
-int closedir(DIR *dirp);
-void rewinddir(DIR *dirp);
+public class TestEAVectorizedHashCode {
+    public static int micro() {
+        int[] a = { 10, 20, 30, 40, 50, 60};
+        return Arrays.hashCode(a);
+    }
 
-#endif
+    public static void main(String [] args) {
+        int res = 0;
+        for (int i = 0; i < 10000; i++) {
+            res += micro();
+        }
+        System.out.println("PASS:" +  res);
+    }
+}
