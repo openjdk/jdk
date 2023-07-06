@@ -72,8 +72,7 @@ class CompilerThread : public JavaThread {
 
   virtual bool can_call_java() const;
 
-  // Hide native compiler threads from external view.
-  bool is_hidden_from_external_view() const      { return !can_call_java(); }
+  virtual bool is_hidden_from_external_view() const;
 
   void set_compiler(AbstractCompiler* c)         { _compiler = c; }
   AbstractCompiler* compiler() const             { return _compiler; }
