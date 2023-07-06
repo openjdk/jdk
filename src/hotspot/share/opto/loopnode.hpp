@@ -646,6 +646,7 @@ public:
   // Perform optimization to use the loop predicates for null checks and range checks.
   // Applies to any loop level (not just the innermost one)
   bool loop_predication( PhaseIdealLoop *phase);
+  bool can_apply_loop_predication();
 
   // Perform iteration-splitting on inner loops.  Split iterations to
   // avoid range checks or one-shot null checks.  Returns false if the
@@ -1369,8 +1370,19 @@ public:
                                                         Node* offset, Node* limit, jint stride_con, Node* value);
 
   // Helper function to collect predicate for eliminating the useless ones
-  void collect_potentially_useful_predicates(IdealLoopTree *loop, Unique_Node_List &predicate_opaque1);
   void eliminate_useless_predicates();
+
+  void eliminate_useless_parse_predicates();
+  void mark_all_parse_predicates_useless() const;
+  void mark_loop_associated_parse_predicates_useful();
+  static void mark_useful_parse_predicates_for_loop(IdealLoopTree* loop);
+  void add_useless_parse_predicates_to_igvn_worklist();
+
+  void eliminate_useless_template_assertion_predicates();
+  void collect_useful_template_assertion_predicates(Unique_Node_List& useful_predicates);
+  static void collect_useful_template_assertion_predicates_for_loop(IdealLoopTree* loop, Unique_Node_List& useful_predicates);
+  void eliminate_useless_template_assertion_predicates(Unique_Node_List& useful_predicates);
+
   void eliminate_useless_zero_trip_guard();
 
   bool has_control_dependencies_from_predicates(LoopNode* head) const;

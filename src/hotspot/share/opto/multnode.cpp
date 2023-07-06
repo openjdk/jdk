@@ -222,19 +222,15 @@ CallStaticJavaNode* ProjNode::is_uncommon_trap_if_pattern(Deoptimization::DeoptR
   if (in0->outcnt() < 2)  return nullptr;
   IfNode* iff = in0->as_If();
 
-  // we need "If(Conv2B(Opaque1(...)))" pattern for reason_predicate
-  if (reason != Deoptimization::Reason_none) {
-    if (iff->in(1)->Opcode() != Op_Conv2B ||
-       iff->in(1)->in(1)->Opcode() != Op_Opaque1) {
-      return nullptr;
-    }
+  // we need a ParsePredicate node for predicate reasons
+  if (reason != Deoptimization::Reason_none && !iff->is_ParsePredicate()) {
+    return nullptr;
   }
 
   ProjNode* other_proj = iff->proj_out(1-_con);
   CallStaticJavaNode* call = other_proj->is_uncommon_trap_proj(reason);
   if (call != nullptr) {
-    assert(reason == Deoptimization::Reason_none ||
-           Compile::current()->is_predicate_opaq(iff->in(1)->in(1)), "should be on the list");
+    assert(reason == Deoptimization::Reason_none || iff->is_ParsePredicate(), "sanity check");
     return call;
   }
   return nullptr;

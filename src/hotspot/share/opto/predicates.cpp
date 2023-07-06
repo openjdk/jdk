@@ -84,6 +84,30 @@ bool RuntimePredicate::is_success_proj(Node* node, Deoptimization::DeoptReason d
   }
 }
 
+ParsePredicateIterator::ParsePredicateIterator(const Predicates& predicates) : _current_index(0) {
+  const PredicateBlock* loop_limit_check_predicate_block = predicates.loop_limit_check_predicate_block();
+  if (loop_limit_check_predicate_block->has_parse_predicate()) {
+    _parse_predicates.push(loop_limit_check_predicate_block->parse_predicate());
+  }
+  if (UseProfiledLoopPredicate) {
+    const PredicateBlock* profiled_loop_predicate_block = predicates.profiled_loop_predicate_block();
+    if (profiled_loop_predicate_block->has_parse_predicate()) {
+      _parse_predicates.push(profiled_loop_predicate_block->parse_predicate());
+    }
+  }
+  if (UseLoopPredicate) {
+    const PredicateBlock* loop_predicate_block = predicates.loop_predicate_block();
+    if (loop_predicate_block->has_parse_predicate()) {
+      _parse_predicates.push(loop_predicate_block->parse_predicate());
+    }
+  }
+}
+
+ParsePredicateNode* ParsePredicateIterator::next() {
+  assert(has_next(), "always check has_next() first");
+  return _parse_predicates.at(_current_index++);
+}
+
 // Walk over all Regular Predicates of this block (if any) and return the first node not belonging to the block
 // anymore (i.e. entry to the first Regular Predicate in this block if any or `regular_predicate_proj` otherwise).
 Node* PredicateBlock::skip_regular_predicates(Node* regular_predicate_proj, Deoptimization::DeoptReason deopt_reason) {

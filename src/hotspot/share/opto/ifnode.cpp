@@ -1975,11 +1975,13 @@ Node* RangeCheckNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   return dominated_by(prev_dom, igvn);
 }
 
-ParsePredicateNode::ParsePredicateNode(Node* control, Node* bol, Deoptimization::DeoptReason deopt_reason)
-    : IfNode(control, bol, PROB_MAX, COUNT_UNKNOWN),
-      _deopt_reason(deopt_reason) {
+ParsePredicateNode::ParsePredicateNode(Node* control, Deoptimization::DeoptReason deopt_reason, PhaseGVN* gvn)
+    : IfNode(control, gvn->intcon(1), PROB_MAX, COUNT_UNKNOWN),
+      _deopt_reason(deopt_reason),
+      _useless(false) {
   init_class_id(Class_ParsePredicate);
-  assert(bol->Opcode() == Op_Conv2B && bol->in(1) != nullptr && bol->in(1)->is_Opaque1(), "wrong boolean input");
+  gvn->C->add_parse_predicate(this);
+  gvn->C->record_for_post_loop_opts_igvn(this);
 #ifdef ASSERT
   switch (deopt_reason) {
     case Deoptimization::Reason_predicate:
@@ -1997,6 +1999,18 @@ Node* ParsePredicateNode::uncommon_trap() const {
   Node* uct_region_or_call = uncommon_proj->unique_ctrl_out();
   assert(uct_region_or_call->is_Region() || uct_region_or_call->is_Call(), "must be a region or call uct");
   return uct_region_or_call;
+}
+
+// Fold this node away once it becomes useless or at latest in post loop opts IGVN.
+const Type* ParsePredicateNode::Value(PhaseGVN* phase) const {
+  if (phase->type(in(0)) == Type::TOP) {
+    return Type::TOP;
+  }
+  if (_useless || phase->C->post_loop_opts_phase()) {
+    return TypeTuple::IFTRUE;
+  } else {
+    return bottom_type();
+  }
 }
 
 #ifndef PRODUCT
