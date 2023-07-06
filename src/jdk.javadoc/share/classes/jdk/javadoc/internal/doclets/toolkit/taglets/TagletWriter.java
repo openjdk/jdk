@@ -131,7 +131,7 @@ public abstract class TagletWriter {
      * @param detail the optional detail message which may contain preformatted text
      * @return the output
      */
-    protected abstract Content invalidTagOutput(String summary, Optional<String> detail);
+    public abstract Content invalidTagOutput(String summary, Optional<String> detail);
 
     /**
      * Returns the main type element of the current page or null for pages that don't have one.

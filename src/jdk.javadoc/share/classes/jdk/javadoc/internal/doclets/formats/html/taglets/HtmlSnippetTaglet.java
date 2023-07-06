@@ -30,6 +30,7 @@ import java.util.Set;
 
 import javax.lang.model.element.Element;
 
+import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SnippetTree;
 import com.sun.source.util.DocTreePath;
 
@@ -106,13 +107,15 @@ public class HtmlSnippetTaglet extends SnippetTaglet {
                     //disable preview tagging inside the snippets:
                     Utils.PreviewFlagProvider prevPreviewProvider = utils.setPreviewFlagProvider(el -> false);
                     try {
-                        c = w.linkSeeReferenceOutput(element,
+                        var lt = (HtmlLinkTaglet) config.tagletManager.getTaglet(DocTree.Kind.LINK);
+                        c = lt.linkSeeReferenceOutput(element,
                                 null,
                                 t,
                                 e,
                                 false, // TODO: for now
                                 Text.of(sequence.toString()),
-                                (key, args) -> { /* TODO: report diagnostic */ });
+                                (key, args) -> { /* TODO: report diagnostic */ },
+                                writer);
                     } finally {
                         utils.setPreviewFlagProvider(prevPreviewProvider);
                     }

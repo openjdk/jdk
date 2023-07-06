@@ -111,9 +111,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 import jdk.javadoc.internal.doclint.HtmlTag;
 
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;
-import static com.sun.source.doctree.DocTree.Kind.LINK;
-import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
-import static com.sun.source.doctree.DocTree.Kind.SEE;
 import static com.sun.source.doctree.DocTree.Kind.TEXT;
 
 
@@ -1349,29 +1346,6 @@ public class HtmlDocletWriter {
                     content.add(output);
                     // if we obtained the first sentence successfully, nothing more to do
                     return (context.isFirstSentence && !output.isEmpty());
-                }
-
-                @Override
-                public Boolean visitLink(LinkTree node, Content content) {
-                    // TODO: can this be moved into LinkTaglet or HtmlLinkTaglet, so that we can delete this
-                    //       code and just use defaultAction
-                    var inTags = context.inTags;
-                    if (inTags.contains(LINK) || inTags.contains(LINK_PLAIN) || inTags.contains(SEE)) {
-                        DocTreePath dtp = ch.getDocTreePath(node);
-                        if (dtp != null) {
-                            messages.warning(dtp, "doclet.see.nested_link", "{@" + node.getTagName() + "}");
-                        }
-                        Content label = commentTagsToContent(element, node.getLabel(), context);
-                        if (label.isEmpty()) {
-                            label = Text.of(node.getReference().getSignature());
-                        }
-                        content.add(label);
-                    } else {
-                        var t = configuration.tagletManager.getTaglet(DocTree.Kind.LINK);
-                        var w = getTagletWriterInstance(context.within(node));
-                        content.add(t.getInlineTagOutput(element, node, w));
-                    }
-                    return false;
                 }
 
                 @Override

@@ -127,7 +127,7 @@ public class HtmlSeeTaglet extends SeeTaglet {
      * @param element the element that has the documentation comment containing this tag
      * @param seeTag  the tag
      */
-    private Content seeTagOutput(Element element, SeeTree seeTag, TagletWriterImpl w) {
+    private Content seeTagOutput(Element element, SeeTree seeTag, TagletWriter writer) {
 
         List<? extends DocTree> ref = seeTag.getReference();
         assert !ref.isEmpty();
@@ -145,18 +145,20 @@ public class HtmlSeeTaglet extends SeeTaglet {
                 String refSignature = ch.getReferencedSignature(ref0);
                 List<? extends DocTree> label = ref.subList(1, ref.size());
 
-                return w.linkSeeReferenceOutput(element,
+                var lt = (HtmlLinkTaglet) config.tagletManager.getTaglet(DocTree.Kind.LINK);
+                return lt.linkSeeReferenceOutput(element,
                         seeTag,
                         refSignature,
                         ch.getReferencedElement(seeTag),
                         false,
-                        htmlWriter.commentTagsToContent(element, label, w.getContext()),
-                        (key, args) -> messages.warning(ch.getDocTreePath(seeTag), key, args)
+                        htmlWriter.commentTagsToContent(element, label, writer.getContext().within(seeTag)),
+                        (key, args) -> messages.warning(ch.getDocTreePath(seeTag), key, args),
+                        writer
                 );
             }
 
             case ERRONEOUS -> {
-                return w.invalidTagOutput(resources.getText("doclet.tag.invalid_input",
+                return writer.invalidTagOutput(resources.getText("doclet.tag.invalid_input",
                                 ref0.toString()),
                         Optional.empty());
             }
