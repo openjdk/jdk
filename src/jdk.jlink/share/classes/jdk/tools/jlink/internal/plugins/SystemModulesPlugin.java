@@ -120,6 +120,8 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             ClassDesc.ofInternalName(SYSTEM_MODULES_MAP_CLASSNAME);
     private static final MethodTypeDesc MTD_StringArray = MethodTypeDesc.of(CD_String.arrayType());
     private static final MethodTypeDesc MTD_SystemModules = MethodTypeDesc.of(CD_SYSTEM_MODULES);
+
+    private int moduleDescriptorsPerMethod = 75;
     private boolean enabled;
 
     public SystemModulesPlugin() {
@@ -142,7 +144,14 @@ public final class SystemModulesPlugin extends AbstractPlugin {
     public void configure(Map<String, String> config) {
         String arg = config.get(getName());
         if (arg != null) {
-            throw new IllegalArgumentException(getName() + ": " + arg);
+            String[] split = arg.split("=");
+            if (split.length != 2) {
+                throw new IllegalArgumentException(getName() + ": " + arg);
+            }
+            if (split[0].equals("batch-size")) {
+                throw new IllegalArgumentException(getName() + ": " + arg);
+            }
+            this.moduleDescriptorsPerMethod = Integer.parseInt(split[1]);
         }
     }
 
@@ -318,7 +327,7 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                                          String className,
                                          ResourcePoolBuilder out) {
         SystemModulesClassGenerator generator
-            = new SystemModulesClassGenerator(className, moduleInfos);
+            = new SystemModulesClassGenerator(className, moduleInfos, moduleDescriptorsPerMethod);
         byte[] bytes = generator.genClassBytes(cf);
         String rn = "/java.base/" + className + ".class";
         ResourcePoolEntry e = ResourcePoolEntry.create(rn, bytes);
@@ -533,17 +542,20 @@ public final class SystemModulesPlugin extends AbstractPlugin {
 
         private static final int MAX_LOCAL_VARS = 256;
 
-        private final int BUILDER_VAR    = 0;
         private final int MD_VAR         = 1;  // variable for ModuleDescriptor
         private final int MT_VAR         = 1;  // variable for ModuleTarget
         private final int MH_VAR         = 1;  // variable for ModuleHashes
-        private int nextLocalVar         = 2;  // index to next local variable
+        private final int DEDUP_LIST_VAR = 2;
+        private final int BUILDER_VAR    = 3;
+        private int nextLocalVar         = 4;  // index to next local variable
 
         // name of class to generate
         private final ClassDesc classDesc;
 
         // list of all ModuleInfos
         private final List<ModuleInfo> moduleInfos;
+
+        private final int moduleDescriptorsPerMethod;
 
         // A builder to create one single Set instance for a given set of
         // names or modifiers to reduce the footprint
@@ -552,9 +564,11 @@ public final class SystemModulesPlugin extends AbstractPlugin {
             = new DedupSetBuilder(this::getNextLocalVar);
 
         public SystemModulesClassGenerator(String className,
-                                           List<ModuleInfo> moduleInfos) {
+                                           List<ModuleInfo> moduleInfos,
+                                           int moduleDescriptorsPerMethod) {
             this.classDesc = ClassDesc.ofInternalName(className);
             this.moduleInfos = moduleInfos;
+            this.moduleDescriptorsPerMethod = moduleDescriptorsPerMethod;
             moduleInfos.forEach(mi -> dedups(mi.descriptor()));
         }
 
@@ -680,6 +694,71 @@ public final class SystemModulesPlugin extends AbstractPlugin {
          * Generate bytecode for moduleDescriptors method
          */
         private void genModuleDescriptorsMethod(ClassBuilder clb) {
+            if (moduleInfos.size() <= moduleDescriptorsPerMethod) {
+                clb.withMethodBody(
+                        "moduleDescriptors",
+                        MTD_ModuleDescriptorArray,
+                        ACC_PUBLIC,
+                        cob -> {
+                            cob.constantInstruction(moduleInfos.size())
+                               .anewarray(CD_MODULE_DESCRIPTOR)
+                               .astore(MD_VAR);
+
+                            for (int index = 0; index < moduleInfos.size(); index++) {
+                                ModuleInfo minfo = moduleInfos.get(index);
+                                new ModuleDescriptorBuilder(cob,
+                                                            minfo.descriptor(),
+                                                            minfo.packages(),
+                                                            index).build();
+                            }
+                            cob.aload(MD_VAR)
+                               .areturn();
+                        });
+                return;
+            }
+
+
+            // Split the module descriptors be created by multiple helper methods.
+            // Each helper method "subi" creates the maximum N number of module descriptors
+            //     mi, m{i+1} ...
+            // to avoid exceeding the 64kb limit of method length.  Then it will call
+            // "sub{i+1}" to creates the next batch of module descriptors m{i+n}, m{i+n+1}...
+            // and so on.  During the construction of the module descriptors, the string sets and
+            // modifier sets are deduplicated (see SystemModulesClassGenerator.DedupSetBuilder)
+            // and cached in the locals. These locals are saved in an array list so
+            // that the helper method can restore the local variables that may be
+            // referenced by the bytecode generated for creating module descriptors.
+            // Pseudo code looks like this:
+            //
+            // void subi(ModuleDescriptor[] mdescs, ArrayList<Object> localvars) {
+            //      // assign localvars to local variables
+            //      var l3 = localvars.get(0);
+            //      var l4 = localvars.get(1);
+            //        :
+            //      // fill mdescs[i] to mdescs[i+n-1]
+            //      mdescs[i] = ...
+            //      mdescs[i+1] = ...
+            //        :
+            //      // save new local variables added
+            //      localvars.add(lx)
+            //      localvars.add(l{x+1})
+            //        :
+            //      sub{i+i}(mdescs, localvars);
+            // }
+
+            List<List<ModuleInfo>> splitModuleInfos = new ArrayList<>();
+            List<ModuleInfo> currentModuleInfos = null;
+            for (int index = 0; index < moduleInfos.size(); index++) {
+                if (index % moduleDescriptorsPerMethod == 0) {
+                    currentModuleInfos = new ArrayList<>();
+                    splitModuleInfos.add(currentModuleInfos);
+                }
+                currentModuleInfos.add(moduleInfos.get(index));
+            }
+
+            String helperMethodNamePrefix = "sub";
+            ClassDesc arrayListClassDesc = ClassDesc.ofInternalName("java/util/ArrayList");
+
             clb.withMethodBody(
                     "moduleDescriptors",
                     MTD_ModuleDescriptorArray,
@@ -687,18 +766,74 @@ public final class SystemModulesPlugin extends AbstractPlugin {
                     cob -> {
                         cob.constantInstruction(moduleInfos.size())
                            .anewarray(CD_MODULE_DESCRIPTOR)
+                           .dup()
                            .astore(MD_VAR);
-
-                        for (int index = 0; index < moduleInfos.size(); index++) {
-                            ModuleInfo minfo = moduleInfos.get(index);
-                            new ModuleDescriptorBuilder(cob,
-                                                        minfo.descriptor(),
-                                                        minfo.packages(),
-                                                        index).build();
-                        }
-                        cob.aload(MD_VAR)
+                        cob.new_(arrayListClassDesc)
+                           .dup()
+                           .constantInstruction(moduleInfos.size())
+                           .invokespecial(arrayListClassDesc, INIT_NAME, MethodTypeDesc.of(CD_void, CD_int))
+                           .astore(DEDUP_LIST_VAR);
+                        cob.aload(0)
+                           .aload(MD_VAR)
+                           .aload(DEDUP_LIST_VAR)
+                           .invokevirtual(
+                                   this.classDesc,
+                                   helperMethodNamePrefix + "0",
+                                   MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc)
+                           )
                            .areturn();
                     });
+
+            int dedupVarStart = nextLocalVar;
+            for (int n = 0, count = 0; n < splitModuleInfos.size(); count += splitModuleInfos.get(n).size(), n++) {
+                int index = n;       // the index of which ModuleInfo being processed in the current batch
+                int start = count;   // the start index to the return ModuleDescriptor array for the current batch
+                int curDedupVar = nextLocalVar;
+                clb.withMethodBody(
+                        helperMethodNamePrefix + index,
+                        MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc),
+                        ACC_PUBLIC,
+                        cob -> {
+                            if (curDedupVar > dedupVarStart) {
+                                for (int i = dedupVarStart; i < curDedupVar; i++) {
+                                    cob.aload(DEDUP_LIST_VAR)
+                                       .constantInstruction(i - dedupVarStart)
+                                       .invokevirtual(arrayListClassDesc, "get", MethodTypeDesc.of(CD_Object, CD_int))
+                                       .astore(i);
+                                }
+                            }
+
+                            List<ModuleInfo> currentBatch = splitModuleInfos.get(index);
+                            for (int j = 0; j < currentBatch.size(); j++) {
+                                ModuleInfo minfo = currentBatch.get(j);
+                                new ModuleDescriptorBuilder(cob,
+                                                            minfo.descriptor(),
+                                                            minfo.packages(),
+                                                            start + j).build();
+                            }
+
+                            if (index < splitModuleInfos.size() - 1) {
+                                if (nextLocalVar > curDedupVar) {
+                                    for (int i = curDedupVar; i < nextLocalVar; i++) {
+                                        cob.aload(DEDUP_LIST_VAR)
+                                           .aload(i)
+                                           .invokevirtual(arrayListClassDesc, "add", MethodTypeDesc.of(CD_boolean, CD_Object))
+                                           .pop();
+                                    }
+                                }
+                                cob.aload(0)
+                                   .aload(MD_VAR)
+                                   .aload(DEDUP_LIST_VAR)
+                                   .invokevirtual(
+                                           this.classDesc,
+                                           helperMethodNamePrefix + (index+1),
+                                           MethodTypeDesc.of(CD_void, CD_MODULE_DESCRIPTOR.arrayType(), arrayListClassDesc)
+                                   );
+                            }
+
+                            cob.return_();
+                        });
+            }
         }
 
         /**
