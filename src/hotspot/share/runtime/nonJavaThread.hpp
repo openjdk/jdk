@@ -141,7 +141,6 @@ class WatcherThread: public NonJavaThread {
   // initialized. Meanwhile only error reporting will be checked.
   static void run_all_tasks();
  private:
-  void notify_exit();
   int sleep() const;
 };
 

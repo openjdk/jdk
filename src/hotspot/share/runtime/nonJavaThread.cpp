@@ -159,42 +159,6 @@ WatcherThread* WatcherThread::_watcher_thread   = nullptr;
 bool WatcherThread::_run_all_tasks = false;
 volatile bool  WatcherThread::_should_terminate = false;
 
-static void check_error_reporting() {
-  if (!VMError::is_error_reported()) {
-    return;
-  }
-
-  // A fatal error has happened, the error handler(VMError::report_and_die)
-  // should abort JVM after creating an error log file. However in some
-  // rare cases, the error handler itself might deadlock. Here periodically
-  // check for error reporting timeouts, and if it happens, just proceed to
-  // abort the VM.
-
-  // This code is in WatcherThread because WatcherThread wakes up
-  // periodically so the fatal error handler doesn't need to do anything;
-  // also because the WatcherThread is less likely to crash than other
-  // threads.
-
-  for (;;) {
-    // Note: we use naked sleep in this loop because we want to avoid using
-    // any kind of VM infrastructure which may be broken at this point.
-    if (VMError::check_timeout()) {
-      // We hit error reporting timeout. Error reporting was interrupted and
-      // will be wrapping things up now (closing files etc). Give it some more
-      // time, then quit the VM.
-      os::naked_short_sleep(200);
-      // Print a message to stderr.
-      fdStream err(defaultStream::output_fd());
-      err.print_raw_cr("# [ timer expired, abort... ]");
-      // skip atexit/vm_exit/vm_abort hooks
-      os::die();
-    }
-
-    // Wait a bit, then recheck for timeout.
-    os::naked_short_sleep(250);
-  }
-}
-
 WatcherThread::WatcherThread() : NonJavaThread() {
   assert(watcher_thread() == nullptr, "we can only allocate one WatcherThread");
   if (os::create_thread(this, os::watcher_thread)) {
@@ -219,6 +183,11 @@ int WatcherThread::sleep() const {
   if (_should_terminate) {
     // check for termination before we do any housekeeping or wait
     return 0;  // we did not sleep.
+  }
+
+  if (!_run_all_tasks) {
+    ml.wait(100);
+    return 0;
   }
 
   // remaining will be zero if there are no tasks,
@@ -272,20 +241,6 @@ void WatcherThread::run() {
   assert(this == watcher_thread(), "just checking");
 
   while (true) {
-    // Just check for error reporting hangs until either VM is fully
-    // initialized or we are notified to stop running.
-    check_error_reporting();
-    MonitorLocker ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
-    if (_should_terminate || _run_all_tasks) break;
-    ml.wait(100);
-  }
-
-  if (_should_terminate) {
-    notify_exit();
-    return;
-  }
-
-  while (true) {
     assert(watcher_thread() == Thread::current(), "thread consistency check");
     assert(watcher_thread() == this, "thread consistency check");
 
@@ -293,14 +248,55 @@ void WatcherThread::run() {
     // should be done, and sleep that amount of time.
     int time_waited = sleep();
 
-    check_error_reporting();
+    if (VMError::is_error_reported()) {
+      // A fatal error has happened, the error handler(VMError::report_and_die)
+      // should abort JVM after creating an error log file. However in some
+      // rare cases, the error handler itself might deadlock. Here periodically
+      // check for error reporting timeouts, and if it happens, just proceed to
+      // abort the VM.
 
-    if (_should_terminate) {
-      notify_exit();
-      return;
+      // This code is in WatcherThread because WatcherThread wakes up
+      // periodically so the fatal error handler doesn't need to do anything;
+      // also because the WatcherThread is less likely to crash than other
+      // threads.
+
+      for (;;) {
+        // Note: we use naked sleep in this loop because we want to avoid using
+        // any kind of VM infrastructure which may be broken at this point.
+        if (VMError::check_timeout()) {
+          // We hit error reporting timeout. Error reporting was interrupted and
+          // will be wrapping things up now (closing files etc). Give it some more
+          // time, then quit the VM.
+          os::naked_short_sleep(200);
+          // Print a message to stderr.
+          fdStream err(defaultStream::output_fd());
+          err.print_raw_cr("# [ timer expired, abort... ]");
+          // skip atexit/vm_exit/vm_abort hooks
+          os::die();
+        }
+
+        // Wait a bit, then recheck for timeout.
+        os::naked_short_sleep(250);
+      }
     }
 
-    PeriodicTask::real_time_tick(time_waited);
+    if (_should_terminate) {
+      // check for termination before posting the next tick
+      break;
+    }
+
+    // Don't process enrolled tasks until VM is fully initialized.
+    if (_run_all_tasks) {
+      PeriodicTask::real_time_tick(time_waited);
+    }
+  }
+
+  // Signal that it is terminated
+  {
+    MutexLocker mu(Terminator_lock, Mutex::_no_safepoint_check_flag);
+    LSAN_IGNORE_OBJECT(_watcher_thread);
+    _watcher_thread = nullptr;
+    Terminator_lock->notify_all();
   }
 }
 
@@ -337,13 +333,6 @@ void WatcherThread::stop() {
     // This wait should make safepoint checks and wait without a timeout.
     mu.wait(0);
   }
-}
-
-void WatcherThread::notify_exit() {
-  MonitorLocker ml(Terminator_lock, Mutex::_no_safepoint_check_flag);
-  LSAN_IGNORE_OBJECT(_watcher_thread);
-  _watcher_thread = nullptr;
-  ml.notify_all();
 }
 
 void WatcherThread::unpark() {
