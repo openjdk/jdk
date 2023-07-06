@@ -92,7 +92,7 @@ class ObjectCountEventSenderClosure : public KlassInfoClosure {
   }
 };
 
-void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
+void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl, WorkGang* workers) {
   assert(is_alive_cl != NULL, "Must supply function to check liveness");
 
   if (ObjectCountEventSender::should_send_event()) {
@@ -101,7 +101,7 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
     KlassInfoTable cit(false);
     if (!cit.allocation_failed()) {
       HeapInspection hi;
-      hi.populate_table(&cit, is_alive_cl);
+      hi.populate_table(&cit, is_alive_cl, workers);
       ObjectCountEventSenderClosure event_sender(cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }

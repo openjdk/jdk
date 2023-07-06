@@ -1629,10 +1629,10 @@ void G1ConcurrentMark::report_object_count(bool mark_completed) {
   // using either the next or prev bitmap.
   if (mark_completed) {
     G1ObjectCountIsAliveClosure is_alive(_g1h);
-    _gc_tracer_cm->report_object_count_after_gc(&is_alive);
+    _gc_tracer_cm->report_object_count_after_gc(&is_alive, _g1h->workers());
   } else {
     G1CMIsAliveClosure is_alive(_g1h);
-    _gc_tracer_cm->report_object_count_after_gc(&is_alive);
+    _gc_tracer_cm->report_object_count_after_gc(&is_alive, _g1h->workers());
   }
 }
 

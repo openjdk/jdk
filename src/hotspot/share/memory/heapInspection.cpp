@@ -571,26 +571,16 @@ void ParHeapInspectTask::work(uint worker_id) {
   }
 }
 
-uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *filter, uint parallel_thread_num) {
-
+uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *filter, WorkGang* workers) {
   // Try parallel first.
-  if (parallel_thread_num > 1) {
+  if (workers != nullptr) {
     ResourceMark rm;
-
-    WorkGang* gang = Universe::heap()->safepoint_workers();
-    if (gang != NULL) {
-      // The GC provided a WorkGang to be used during a safepoint.
-
-      // Can't run with more threads than provided by the WorkGang.
-      WithUpdatedActiveWorkers update_and_restore(gang, parallel_thread_num);
-
-      ParallelObjectIterator poi(gang->active_workers());
-      ParHeapInspectTask task(&poi, cit, filter);
-      // Run task with the active workers.
-      gang->run_task(&task);
-      if (task.success()) {
-        return task.missed_count();
-      }
+    ParallelObjectIterator poi(workers->active_workers());
+    ParHeapInspectTask task(&poi, cit, filter);
+    // Run task with the active workers.
+    workers->run_task(&task);
+    if (task.success()) {
+      return task.missed_count();
     }
   }
 
@@ -601,13 +591,13 @@ uintx HeapInspection::populate_table(KlassInfoTable* cit, BoolObjectClosure *fil
   return ric.missed_count();
 }
 
-void HeapInspection::heap_inspection(outputStream* st, uint parallel_thread_num) {
+void HeapInspection::heap_inspection(outputStream* st, WorkGang* workers) {
   ResourceMark rm;
 
   KlassInfoTable cit(false);
   if (!cit.allocation_failed()) {
     // populate table with object allocation info
-    uintx missed_count = populate_table(&cit, NULL, parallel_thread_num);
+    uintx missed_count = populate_table(&cit, NULL, workers);
     if (missed_count != 0) {
       log_info(gc, classhisto)("WARNING: Ran out of C-heap; undercounted " UINTX_FORMAT
                                " total instances in data below",

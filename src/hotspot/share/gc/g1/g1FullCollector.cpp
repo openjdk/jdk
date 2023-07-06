@@ -306,7 +306,7 @@ void G1FullCollector::phase1_mark_live_objects() {
 
   {
     GCTraceTime(Debug, gc, phases) debug("Report Object Count", scope()->timer());
-    scope()->tracer()->report_object_count_after_gc(&_is_alive);
+    scope()->tracer()->report_object_count_after_gc(&_is_alive, _heap->workers());
   }
 }
 
