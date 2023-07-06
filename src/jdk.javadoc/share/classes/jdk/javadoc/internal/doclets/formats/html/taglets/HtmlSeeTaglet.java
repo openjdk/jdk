@@ -28,7 +28,6 @@ package jdk.javadoc.internal.doclets.formats.html.taglets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
@@ -42,7 +41,6 @@ import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -58,9 +56,6 @@ public class HtmlSeeTaglet extends SeeTaglet {
         super(config);
         contents = config.contents;
     }
-
-    // Threshold for length of @see tag label for switching from inline to block layout.
-    private static final int TAG_LIST_ITEM_MAX_INLINE_LENGTH = 30; // FIXME: dup in TagletWriterImpl
 
     private final Contents contents;
     private HtmlDocletWriter htmlWriter;
@@ -99,25 +94,20 @@ public class HtmlSeeTaglet extends SeeTaglet {
         if (links.isEmpty()) {
             return Text.EMPTY;
         }
-        // Use a different style if any link label is longer than 30 chars or contains commas.
-        boolean hasLongLabels = links.stream().anyMatch(this::isLongOrHasComma);
-        var seeList = HtmlTree.UL(hasLongLabels ? HtmlStyle.tagListLong : HtmlStyle.tagList);
-        links.stream()
-                .filter(Predicate.not(Content::isEmpty))
-                .forEach(item -> seeList.add(HtmlTree.LI(item)));
 
+        var seeList = tw.tagList(links);
         return new ContentBuilder(
                 HtmlTree.DT(contents.seeAlso),
                 HtmlTree.DD(seeList));
     }
 
-    private boolean isLongOrHasComma(Content c) {
-        String s = c.toString()
-                .replaceAll("<.*?>", "")              // ignore HTML
-                .replaceAll("&#?[A-Za-z0-9]+;", " ")  // entities count as a single character
-                .replaceAll("\\R", "\n");             // normalize newlines
-        return s.length() > TAG_LIST_ITEM_MAX_INLINE_LENGTH || s.contains(",");
-    }
+//    private boolean isLongOrHasComma(Content c) {
+//        String s = c.toString()
+//                .replaceAll("<.*?>", "")              // ignore HTML
+//                .replaceAll("&#?[A-Za-z0-9]+;", " ")  // entities count as a single character
+//                .replaceAll("\\R", "\n");             // normalize newlines
+//        return s.length() > TAG_LIST_ITEM_MAX_INLINE_LENGTH || s.contains(",");
+//    }
 
     /**
      * {@return the output for a single {@code @see} tag}

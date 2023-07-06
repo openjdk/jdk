@@ -27,7 +27,7 @@ package jdk.javadoc.internal.doclets.formats.html.taglets;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
+import java.util.function.Predicate;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -38,9 +38,7 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.SimpleElementVisitor14;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.TextTree;
 
-import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
 import jdk.javadoc.internal.doclets.formats.html.HtmlIds;
@@ -70,12 +68,7 @@ public class TagletWriterImpl extends TagletWriter {
     private final Utils utils;
     private final Resources resources;
 
-    private final Contents contents;
     private final Context context;
-
-    // Threshold for length of @see tag label for switching from inline to block layout.
-    private static final int TAG_LIST_ITEM_MAX_INLINE_LENGTH = 30;
-
     /**
      * Creates a taglet writer.
      *
@@ -114,7 +107,6 @@ public class TagletWriterImpl extends TagletWriter {
         options = configuration.getOptions();
         utils = configuration.utils;
         resources = configuration.getDocResources();
-        contents = configuration.getContents();
     }
 
     @Override
@@ -122,19 +114,26 @@ public class TagletWriterImpl extends TagletWriter {
         return new ContentBuilder();
     }
 
+    Content tagList(List<Content> items) {
+        // Use a different style if any list item is longer than 30 chars or contains commas.
+        boolean hasLongLabels = items.stream().anyMatch(this::isLongOrHasComma);
+        var list = HtmlTree.UL(hasLongLabels ? HtmlStyle.tagListLong : HtmlStyle.tagList);
+        items.stream()
+                .filter(Predicate.not(Content::isEmpty))
+                .forEach(item -> list.add(HtmlTree.LI(item)));
+        return list;
+    }
+
+
+    // Threshold for length of list item for switching from inline to block layout.
+    private static final int TAG_LIST_ITEM_MAX_INLINE_LENGTH = 30;
+
     private boolean isLongOrHasComma(Content c) {
         String s = c.toString()
                 .replaceAll("<.*?>", "")              // ignore HTML
                 .replaceAll("&#?[A-Za-z0-9]+;", " ")  // entities count as a single character
                 .replaceAll("\\R", "\n");             // normalize newlines
         return s.length() > TAG_LIST_ITEM_MAX_INLINE_LENGTH || s.contains(",");
-    }
-
-    String textOf(List<? extends DocTree> trees) {
-        return trees.stream()
-                .filter(dt -> dt instanceof TextTree)
-                .map(dt -> ((TextTree) dt).getBody().trim())
-                .collect(Collectors.joining(" "));
     }
 
     @Override

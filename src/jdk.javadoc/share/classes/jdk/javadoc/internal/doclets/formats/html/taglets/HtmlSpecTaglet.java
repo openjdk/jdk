@@ -28,18 +28,18 @@ package jdk.javadoc.internal.doclets.formats.html.taglets;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.List;
-import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SpecTree;
+import com.sun.source.doctree.TextTree;
 import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
-import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -47,8 +47,6 @@ import jdk.javadoc.internal.doclets.toolkit.taglets.SpecTaglet;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 
 public class HtmlSpecTaglet extends SpecTaglet {
-    // Threshold for length of @spec tag label for switching from inline to block layout.
-    private static final int TAG_LIST_ITEM_MAX_INLINE_LENGTH = 30; // FIXME: dup in HtmlSeeTaglet
 
     private final Contents contents;
 
@@ -63,16 +61,12 @@ public class HtmlSpecTaglet extends SpecTaglet {
             return Text.EMPTY;
         }
 
-        List<Content> links = specTags.stream()
+        var tw = (TagletWriterImpl) tagletWriter;
+
+        var links = specTags.stream()
                 .map(st -> specTagToContent(holder, st)).toList();
 
-        // Use a different style if any link label is longer than 30 chars or contains commas.
-        boolean hasLongLabels = links.stream().anyMatch(this::isLongOrHasComma);
-        var specList = HtmlTree.UL(hasLongLabels ? HtmlStyle.tagListLong : HtmlStyle.tagList);
-        links.stream()
-                .filter(Predicate.not(Content::isEmpty))
-                .forEach(item -> specList.add(HtmlTree.LI(item)));
-
+        var specList = tw.tagList(links);
         return new ContentBuilder(
                 HtmlTree.DT(contents.externalSpecifications),
                 HtmlTree.DD(specList));
@@ -84,8 +78,15 @@ public class HtmlSpecTaglet extends SpecTaglet {
         List<? extends DocTree> specTreeLabel = specTree.getTitle();
         Content label = tw.getHtmlWriter().commentTagsToContent(holder, specTreeLabel, tagletWriter.context.isFirstSentence);
         return getExternalSpecContent(holder, specTree, specTreeURL,
-                tw.textOf(specTreeLabel).replaceAll("\\s+", " "), label,
+                textOf(specTreeLabel).replaceAll("\\s+", " "), label,
                 tw);
+    }
+
+    private String textOf(List<? extends DocTree> trees) {
+        return trees.stream()
+                .filter(dt -> dt instanceof TextTree)
+                .map(dt -> ((TextTree) dt).getBody().trim())
+                .collect(Collectors.joining(" "));
     }
 
     Content getExternalSpecContent(Element holder, DocTree docTree, String url, String searchText, Content title, TagletWriterImpl w) {
@@ -115,11 +116,11 @@ public class HtmlSpecTaglet extends SpecTaglet {
     }
 
 
-    private boolean isLongOrHasComma(Content c) {
-        String s = c.toString()
-                .replaceAll("<.*?>", "")              // ignore HTML
-                .replaceAll("&#?[A-Za-z0-9]+;", " ")  // entities count as a single character
-                .replaceAll("\\R", "\n");             // normalize newlines
-        return s.length() > TAG_LIST_ITEM_MAX_INLINE_LENGTH || s.contains(",");
-    }
+//    private boolean isLongOrHasComma(Content c) {
+//        String s = c.toString()
+//                .replaceAll("<.*?>", "")              // ignore HTML
+//                .replaceAll("&#?[A-Za-z0-9]+;", " ")  // entities count as a single character
+//                .replaceAll("\\R", "\n");             // normalize newlines
+//        return s.length() > TAG_LIST_ITEM_MAX_INLINE_LENGTH || s.contains(",");
+//    }
 }
