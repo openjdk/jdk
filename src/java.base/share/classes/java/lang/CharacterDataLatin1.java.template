@@ -90,6 +90,10 @@ class CharacterDataLatin1 extends CharacterData {
         return (getPropertiesEx(ch) & $$maskOtherLowercase) != 0;
     }
 
+    boolean isLowerCaseEx(int ch) {
+        return ch >= 'a' && (ch <= 'z' || ch == 181 || (ch >= 223 && ch != 247));
+    }
+
     @IntrinsicCandidate
     boolean isUpperCase(int ch) {
         return (getPropertiesEx(ch) & $$maskOtherUppercase) != 0;
