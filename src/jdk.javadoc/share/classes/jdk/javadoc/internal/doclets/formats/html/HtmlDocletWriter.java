@@ -2011,7 +2011,7 @@ public class HtmlDocletWriter {
      * Returns the path of module/package specific stylesheets for the element.
      * @param element module/Package element
      * @return list of path of module/package specific stylesheets
-     * @throws DocFileIOException
+     * @throws DocFileIOException if an issue arises while accessing any stylesheets
      */
     List<DocPath> getLocalStylesheets(Element element) throws DocFileIOException {
         List<DocPath> stylesheets = new ArrayList<>();
