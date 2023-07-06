@@ -153,7 +153,7 @@ public class TestTrimNative {
             output.shouldContain("NativeTrimmer start");
             output.shouldContain("NativeTrimmer stop");
         } else {
-            output.shouldNotContain("Native trim");
+            output.shouldNotContain("Periodic native trim enabled");
         }
     }
 
@@ -243,6 +243,7 @@ public class TestTrimNative {
                                "-XX:+TrimNativeHeap"
                 });
         checkExpectedLogMessages(output, false, 0);
+        output.shouldContain("Native trim not supported on this platform");
     }
 
     // Test trim native is disabled if explicitly switched off
