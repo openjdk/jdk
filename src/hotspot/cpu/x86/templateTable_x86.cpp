@@ -2934,11 +2934,12 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register index = rdx;
   const Register off   = rbx;
   const Register tos   = rax;
+  const Register flags = rdx;
   const Register bc    = LP64_ONLY(c_rarg3) NOT_LP64(rcx); // uses same reg as obj, so don't mix them
 
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_access(cache, index, is_static, false);
-  load_resolved_field_entry(obj, cache, tos, off, noreg, is_static);
+  load_resolved_field_entry(obj, cache, tos, off, flags, is_static);
 
   if (!is_static) pop_and_check_object(obj);
 
@@ -3179,9 +3180,8 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   Label notVolatile, Done;
 
-  // Swap registers so flags has TOS state
-  __ andl(flags, (1 << ResolvedFieldEntry::is_volatile_shift));
   // Check for volatile store
+  __ andl(flags, (1 << ResolvedFieldEntry::is_volatile_shift));
   __ testl(flags, flags);
   __ jcc(Assembler::zero, notVolatile);
 
