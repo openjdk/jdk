@@ -128,11 +128,8 @@ final class CertificateRequest {
             ArrayList<String> keyTypes = new ArrayList<>(3);
             for (byte id : ids) {
                 ClientCertificateType cct = ClientCertificateType.valueOf(id);
-                if(cct == null) {
-                    throw new IllegalArgumentException(id + " was " +
-                            "not a valid ClientCertificateType id");
-                }
-                if (cct.isAvailable) {
+
+                if (cct != null && cct.isAvailable) {
                     cct.keyAlgorithm.forEach(key -> {
                         if (!keyTypes.contains(key)) {
                             keyTypes.add(key);
