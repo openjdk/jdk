@@ -73,6 +73,8 @@ public class ISO639 {
                         "Got '%s' instead of '%s'", loc, actualISO3, expectedISO3));
     }
 
+    // expectedISO639Codes generated from https://www.loc.gov/standards/iso639-2/ISO-639-2_utf-8.txt
+    // on March 9th, 2023.
     private static Stream<Arguments> expectedISO639Codes() {
         return Stream.of(
              Arguments.of("aa","aar","aar"),
@@ -269,7 +271,6 @@ public class ISO639 {
         generateTables();
     }
 
-    // The following code was used to generate the table above from the two ISO standards.
     private static final String ISO639 = "ISO-639-2_utf-8.txt";
     private static void generateTables() {
         try {
@@ -294,6 +295,3 @@ public class ISO639 {
         }
     }
 }
-
-// CODES generated from https://www.loc.gov/standards/iso639-2/ISO-639-2_utf-8.txt
-// on March 9th, 2023.
