@@ -35,7 +35,7 @@
 
 size_t PLAB::min_size() {
   // Make sure that we return something that is larger than AlignmentReserve
-  return align_object_size(MAX2(MinTLABSize / HeapWordSize, checked_cast<size_t>(oopDesc::header_size()))) + CollectedHeap::lab_alignment_reserve();
+  return align_object_size(MAX2(MinTLABSize / HeapWordSize, (size_t)oopDesc::header_size())) + CollectedHeap::lab_alignment_reserve();
 }
 
 size_t PLAB::max_size() {

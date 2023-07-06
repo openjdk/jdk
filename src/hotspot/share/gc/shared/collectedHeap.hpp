@@ -308,8 +308,8 @@ class CollectedHeap : public CHeapObj<mtGC> {
   }
 
   virtual void fill_with_dummy_object(HeapWord* start, HeapWord* end, bool zap);
-  static size_t min_dummy_object_size() {
-    return min_fill_size();
+  static constexpr size_t min_dummy_object_size() {
+    return oopDesc::header_size();
   }
 
   static size_t lab_alignment_reserve() {

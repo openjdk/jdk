@@ -2001,6 +2001,7 @@ run:
 
               // Initialize header, mirrors MemAllocator.
               oopDesc::set_mark(result, markWord::prototype());
+              oopDesc::set_klass_gap(result, 0);
               oopDesc::release_set_klass(result, ik);
 
               oop obj = cast_to_oop(result);
