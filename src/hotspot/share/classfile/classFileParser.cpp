@@ -4961,7 +4961,7 @@ void ClassFileParser::verify_legal_field_signature(const Symbol* name,
                                                    TRAPS) const {
   if (!_need_verify) { return; }
 
-  const char* const bytes = (const char* const)signature->bytes();
+  const char* const bytes = (const char*)signature->bytes();
   const unsigned int length = signature->utf8_length();
   const char* const p = skip_over_field_signature(bytes, false, length, CHECK);
 
@@ -5672,7 +5672,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   parse_constant_pool(stream, cp, _orig_cp_size, CHECK);
 
-  assert(cp_size == (const u2)cp->length(), "invariant");
+  assert(cp_size == (u2)cp->length(), "invariant");
 
   // ACCESS FLAGS
   stream->guarantee_more(8, CHECK);  // flags, this_class, super_class, infs_len

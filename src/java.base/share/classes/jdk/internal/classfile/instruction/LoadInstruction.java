@@ -50,7 +50,7 @@ public sealed interface LoadInstruction extends Instruction
      * {@return a local variable load instruction}
      *
      * @param kind the type of the value to be loaded
-     * @param slot the local varaible slot to load from
+     * @param slot the local variable slot to load from
      */
     static LoadInstruction of(TypeKind kind, int slot) {
         return of(BytecodeHelpers.loadOpcode(kind, slot), slot);
@@ -61,7 +61,7 @@ public sealed interface LoadInstruction extends Instruction
      *
      * @param op the opcode for the specific type of load instruction,
      *           which must be of kind {@link Opcode.Kind#LOAD}
-     * @param slot the local varaible slot to load from
+     * @param slot the local variable slot to load from
      */
     static LoadInstruction of(Opcode op, int slot) {
         Util.checkKind(op, Opcode.Kind.LOAD);

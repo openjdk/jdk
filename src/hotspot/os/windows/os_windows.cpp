@@ -5451,6 +5451,10 @@ void Parker::unpark() {
   SetEvent(_ParkHandle);
 }
 
+PlatformMutex::~PlatformMutex() {
+  DeleteCriticalSection(&_mutex);
+}
+
 // Platform Monitor implementation
 
 // Must already be locked

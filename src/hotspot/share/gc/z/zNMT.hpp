@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,26 +20,34 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/**
-    @test
-    @summary Locale constructor should allow language-only argument
-    @bug 4316602
-    @author joconner
-*/
 
-import java.util.Locale;
+#ifndef SHARE_GC_Z_ZNMT_HPP
+#define SHARE_GC_Z_ZNMT_HPP
 
-public class Bug4316602 {
+#include "gc/z/zAddress.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "gc/z/zMemory.hpp"
+#include "gc/z/zVirtualMemory.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/nativeCallStack.hpp"
 
-    public static void main(String[] args) throws Exception {
-        String language = "ja";
-        Locale aLocale = Locale.of(language);
-        if (aLocale.toString().equals(language)) {
-            System.out.println("passed");
-        } else {
-            System.out.println("Bug4316602 failed");
-            throw new Exception("Bug4316602 failed");
-        }
-    }
+class ZNMT : public AllStatic {
+private:
+  struct Reservation {
+    zaddress_unsafe _start;
+    size_t          _size;
+  };
+  static Reservation _reservations[ZMaxVirtualReservations];
+  static size_t      _num_reservations;
 
-}
+  static size_t reservation_index(zoffset offset, size_t* offset_in_reservation);
+  static void process_fake_mapping(zoffset offset, size_t size, bool commit);
+
+public:
+  static void reserve(zaddress_unsafe start, size_t size);
+  static void commit(zoffset offset, size_t size);
+  static void uncommit(zoffset offset, size_t size);
+};
+
+#endif // SHARE_GC_Z_ZNMT_HPP
