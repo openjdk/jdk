@@ -49,7 +49,9 @@ public interface Taglet {
      * @return {@code true} if this {@code Taglet} can be used in field documentation
      *         and {@code false} otherwise
      */
-    boolean inField();
+    default boolean inField() {
+        return getAllowedLocations().contains(Location.FIELD);
+    }
 
     /**
      * Indicates whether this {@code Taglet} can be used in constructor documentation.
@@ -57,7 +59,9 @@ public interface Taglet {
      * @return {@code true} if this {@code Taglet} can be used in constructor documentation
      *         and {@code false} otherwise
      */
-    boolean inConstructor();
+    default boolean inConstructor() {
+        return getAllowedLocations().contains(Location.CONSTRUCTOR);
+    }
 
     /**
      * Indicates whether this {@code Taglet} can be used in method documentation.
@@ -65,7 +69,9 @@ public interface Taglet {
      * @return {@code true} if this {@code Taglet} can be used in method documentation
      *         and {@code false} otherwise
      */
-    boolean inMethod();
+    default boolean inMethod() {
+        return getAllowedLocations().contains(Location.METHOD);
+    }
 
     /**
      * Indicates whether this {@code Taglet} can be used in overview documentation.
@@ -73,7 +79,9 @@ public interface Taglet {
      * @return {@code true} if this {@code Taglet} can be used in overview documentation
      *         and {@code false} otherwise
      */
-    boolean inOverview();
+    default boolean inOverview() {
+        return getAllowedLocations().contains(Location.OVERVIEW);
+    }
 
     /**
      * Indicates whether this {@code Taglet} can be used in module documentation.
@@ -81,7 +89,9 @@ public interface Taglet {
      * @return {@code true} if this {@code Taglet} can be used in module documentation
      *         and {@code false} otherwise
      */
-    boolean inModule();
+    default boolean inModule()  {
+        return getAllowedLocations().contains(Location.MODULE);
+    }
 
     /**
      * Indicates whether this {@code Taglet} can be used in package documentation.
@@ -89,7 +99,9 @@ public interface Taglet {
      * @return {@code true} if this {@code Taglet} can be used in package documentation
      *         and {@code false} otherwise
      */
-    boolean inPackage();
+    default boolean inPackage() {
+        return getAllowedLocations().contains(Location.PACKAGE);
+    }
 
     /**
      * Indicates whether this {@code Taglet} can be used in type documentation (classes or interfaces).
@@ -97,7 +109,9 @@ public interface Taglet {
      * @return {@code true} if this {@code Taglet} can be used in type documentation
      *         and {@code false} otherwise
      */
-    boolean inType();
+    default boolean inType()  {
+        return getAllowedLocations().contains(Location.TYPE);
+    }
 
     /**
      * Indicates whether this {@code Taglet} represents an inline tag.

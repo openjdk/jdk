@@ -37,14 +37,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 
-import static jdk.javadoc.doclet.Taglet.Location.CONSTRUCTOR;
-import static jdk.javadoc.doclet.Taglet.Location.FIELD;
-import static jdk.javadoc.doclet.Taglet.Location.METHOD;
-import static jdk.javadoc.doclet.Taglet.Location.MODULE;
-import static jdk.javadoc.doclet.Taglet.Location.OVERVIEW;
-import static jdk.javadoc.doclet.Taglet.Location.PACKAGE;
-import static jdk.javadoc.doclet.Taglet.Location.TYPE;
-
 /**
  * A taglet wrapper, allows the public taglet {@link jdk.javadoc.doclet.Taglet}
  * wrapped into an internal {@code Taglet} representation.
@@ -60,41 +52,6 @@ public final class UserTaglet implements Taglet {
     @Override
     public Set<jdk.javadoc.doclet.Taglet.Location> getAllowedLocations() {
         return userTaglet.getAllowedLocations();
-    }
-
-    @Override
-    public boolean inField() {
-        return userTaglet.getAllowedLocations().contains(FIELD);
-    }
-
-    @Override
-    public boolean inConstructor() {
-        return userTaglet.getAllowedLocations().contains(CONSTRUCTOR);
-    }
-
-    @Override
-    public boolean inMethod() {
-        return userTaglet.getAllowedLocations().contains(METHOD);
-    }
-
-    @Override
-    public boolean inOverview() {
-        return userTaglet.getAllowedLocations().contains(OVERVIEW);
-    }
-
-    @Override
-    public boolean inModule() {
-        return userTaglet.getAllowedLocations().contains(MODULE);
-    }
-
-    @Override
-    public boolean inPackage() {
-        return userTaglet.getAllowedLocations().contains(PACKAGE);
-    }
-
-    @Override
-    public boolean inType() {
-        return userTaglet.getAllowedLocations().contains(TYPE);
     }
 
     @Override

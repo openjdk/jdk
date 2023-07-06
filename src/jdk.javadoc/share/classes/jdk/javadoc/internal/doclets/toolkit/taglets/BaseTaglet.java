@@ -87,41 +87,6 @@ public class BaseTaglet implements Taglet {
     }
 
     @Override
-    public final boolean inField() {
-        return sites.contains(Location.FIELD);
-    }
-
-    @Override
-    public final boolean inConstructor() {
-        return sites.contains(Location.CONSTRUCTOR);
-    }
-
-    @Override
-    public final boolean inMethod() {
-        return sites.contains(Location.METHOD);
-    }
-
-    @Override
-    public final boolean inOverview() {
-        return sites.contains(Location.OVERVIEW);
-    }
-
-    @Override
-    public final boolean inModule() {
-        return sites.contains(Location.MODULE);
-    }
-
-    @Override
-    public final boolean inPackage() {
-        return sites.contains(Location.PACKAGE);
-    }
-
-    @Override
-    public final boolean inType() {
-        return sites.contains(Location.TYPE);
-    }
-
-    @Override
     public final boolean isInlineTag() {
         return inline;
     }
