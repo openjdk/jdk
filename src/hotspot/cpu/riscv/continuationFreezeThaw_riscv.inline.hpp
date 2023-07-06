@@ -83,11 +83,11 @@ template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& calle
   if (FKind::interpreted) {
     assert((intptr_t*)f.at(frame::interpreter_frame_last_sp_offset) == nullptr
       || f.unextended_sp() == (intptr_t*)f.at(frame::interpreter_frame_last_sp_offset), "");
-    int locals = f.interpreter_frame_method()->max_locals();
+    intptr_t locals_offset = *f.addr_at(frame::interpreter_frame_locals_offset);
     // If the caller.is_empty(), i.e. we're freezing into an empty chunk, then we set
     // the chunk's argsize in finalize_freeze and make room for it above the unextended_sp
     bool overlap_caller = caller.is_interpreted_frame() || caller.is_empty();
-    fp = caller.unextended_sp() - (locals + frame::sender_sp_offset) + (overlap_caller ? ContinuationHelper::InterpretedFrame::stack_argsize(f) : 0);
+    fp = caller.unextended_sp() - 1 - locals_offset + (overlap_caller ? ContinuationHelper::InterpretedFrame::stack_argsize(f) : 0);
     sp = fp - (f.fp() - f.unextended_sp());
     assert(sp <= fp, "");
     assert(fp <= caller.unextended_sp(), "");
@@ -96,7 +96,7 @@ template<typename FKind> frame FreezeBase::new_heap_frame(frame& f, frame& calle
     assert(_cont.tail()->is_in_chunk(sp), "");
 
     frame hf(sp, sp, fp, f.pc(), nullptr, nullptr, true /* on_heap */);
-    *hf.addr_at(frame::interpreter_frame_locals_offset) = frame::sender_sp_offset + locals - 1;
+    *hf.addr_at(frame::interpreter_frame_locals_offset) = locals_offset;
     return hf;
   } else {
     // We need to re-read fp out of the frame because it may be an oop and we might have
@@ -144,13 +144,11 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
 
   // On RISCV, we may insert padding between the locals and the rest of the frame
   // (see TemplateInterpreterGenerator::generate_normal_entry, and AbstractInterpreter::layout_activation)
-  // so we compute locals "from scratch" rather than relativizing the value in the stack frame, which might include padding,
-  // since we don't freeze the padding word (see recurse_freeze_interpreted_frame).
+  // because we freeze the padding word (see recurse_freeze_interpreted_frame) in order to keep the same relativized
+  // locals value, we don't need to change the locals value here.
 
   // at(frame::interpreter_frame_last_sp_offset) can be null at safepoint preempts
   *hf.addr_at(frame::interpreter_frame_last_sp_offset) = hf.unextended_sp() - hf.fp();
-  // this line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
-  *hf.addr_at(frame::interpreter_frame_locals_offset) = frame::sender_sp_offset + f.interpreter_frame_method()->max_locals() - 1;
 
   relativize_one(vfp, hfp, frame::interpreter_frame_initial_sp_offset); // == block_top == block_bottom
   relativize_one(vfp, hfp, frame::interpreter_frame_extended_sp_offset);
@@ -221,15 +219,13 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     intptr_t* heap_sp = hf.unextended_sp();
     // If caller is interpreted it already made room for the callee arguments
     int overlap = caller.is_interpreted_frame() ? ContinuationHelper::InterpretedFrame::stack_argsize(hf) : 0;
-    const int fsize = ContinuationHelper::InterpretedFrame::frame_bottom(hf) - hf.unextended_sp() - overlap;
+    const int fsize = (int)(ContinuationHelper::InterpretedFrame::frame_bottom(hf) - hf.unextended_sp() - overlap);
     const int locals = hf.interpreter_frame_method()->max_locals();
     intptr_t* frame_sp = caller.unextended_sp() - fsize;
     intptr_t* fp = frame_sp + (hf.fp() - heap_sp);
-    int padding = 0;
     if ((intptr_t)fp % frame::frame_alignment != 0) {
       fp--;
       frame_sp--;
-      padding++;
       log_develop_trace(continuations)("Adding internal interpreted frame alignment");
     }
     DEBUG_ONLY(intptr_t* unextended_sp = fp + *hf.addr_at(frame::interpreter_frame_last_sp_offset);)
@@ -238,10 +234,8 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     frame f(frame_sp, frame_sp, fp, hf.pc());
     // we need to set the locals so that the caller of new_stack_frame() can call
     // ContinuationHelper::InterpretedFrame::frame_bottom
-    intptr_t offset = *hf.addr_at(frame::interpreter_frame_locals_offset);
-    assert((int)offset == frame::sender_sp_offset + locals - 1, "");
-    // set relativized locals
-    *f.addr_at(frame::interpreter_frame_locals_offset) = padding + offset;
+    // copy relativized locals from the heap frame
+    *f.addr_at(frame::interpreter_frame_locals_offset) = *hf.addr_at(frame::interpreter_frame_locals_offset);
     assert((intptr_t)f.fp() % frame::frame_alignment == 0, "");
     return f;
   } else {
@@ -301,12 +295,6 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   derelativize_one(vfp, frame::interpreter_frame_last_sp_offset);
   derelativize_one(vfp, frame::interpreter_frame_initial_sp_offset);
   derelativize_one(vfp, frame::interpreter_frame_extended_sp_offset);
-}
-
-inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
-  // set relativized locals
-  // This line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
-  *f.addr_at(frame::interpreter_frame_locals_offset) = (bottom - 1) - f.fp();
 }
 
 #endif // CPU_RISCV_CONTINUATIONFREEZETHAW_RISCV_INLINE_HPP

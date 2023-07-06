@@ -595,16 +595,7 @@ define SetupRunMicroTestBody
   endif
 
   # Set library path for native dependencies
-  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native \
-        --add-exports java.base/jdk.internal.org.objectweb.asm=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.org.objectweb.asm.tree=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.attribute=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.constantpool=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.instruction=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.java.lang.constant=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.components=ALL-UNNAMED \
-        --add-exports java.base/jdk.internal.classfile.impl=ALL-UNNAMED
+  $1_JMH_JVM_ARGS := -Djava.library.path=$$(TEST_IMAGE_DIR)/micro/native
 
   ifneq ($$(MICRO_VM_OPTIONS)$$(MICRO_JAVA_OPTIONS), )
     $1_JMH_JVM_ARGS += $$(MICRO_VM_OPTIONS) $$(MICRO_JAVA_OPTIONS)

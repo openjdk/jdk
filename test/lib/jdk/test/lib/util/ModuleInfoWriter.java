@@ -31,7 +31,7 @@ import java.lang.reflect.AccessFlag;
 import java.nio.ByteBuffer;
 import java.util.Map;
 import jdk.internal.classfile.Classfile;
-import jdk.internal.classfile.java.lang.constant.PackageDesc;
+import java.lang.constant.PackageDesc;
 import jdk.internal.classfile.attribute.ModuleAttribute;
 import jdk.internal.classfile.attribute.ModuleExportInfo;
 import jdk.internal.classfile.attribute.ModuleMainClassAttribute;
@@ -87,7 +87,7 @@ public final class ModuleInfoWriter {
                                        ModuleResolution mres,
                                        ModuleTarget target) {
         //using low-level module building to avoid validation in ModuleDesc and allow invalid names
-        return Classfile.build(ClassDesc.of("module-info"), clb -> {
+        return Classfile.of().build(ClassDesc.of("module-info"), clb -> {
             clb.withFlags(AccessFlag.MODULE);
             var cp = clb.constantPool();
             clb.with(ModuleAttribute.of(cp.moduleEntry(cp.utf8Entry(md.name())), mb -> {

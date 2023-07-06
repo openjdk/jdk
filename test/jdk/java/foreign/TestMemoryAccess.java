@@ -50,7 +50,7 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "elements")
     public void testPaddedAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, Checker checker) {
-        GroupLayout layout = MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"));
+        GroupLayout layout = MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.byteSize()), elemLayout.withName("elem"));
         testAccessInternal(viewFactory, layout, layout.varHandle(PathElement.groupElement("elem")), checker);
     }
 
@@ -74,7 +74,7 @@ public class TestMemoryAccess {
 
     @Test(dataProvider = "arrayElements")
     public void testPaddedArrayAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, ArrayChecker checker) {
-        SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem")));
+        SequenceLayout seq = MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.byteSize()), elemLayout.withName("elem")));
         testArrayAccessInternal(viewFactory, seq, seq.varHandle(MemoryLayout.PathElement.sequenceElement(), MemoryLayout.PathElement.groupElement("elem")), checker);
     }
 
@@ -168,7 +168,7 @@ public class TestMemoryAccess {
     @Test(dataProvider = "matrixElements")
     public void testPaddedMatrixAccessByName(Function<MemorySegment, MemorySegment> viewFactory, MemoryLayout elemLayout, MatrixChecker checker) {
         SequenceLayout seq = MemoryLayout.sequenceLayout(20,
-                MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.bitSize()), elemLayout.withName("elem"))));
+                MemoryLayout.sequenceLayout(10, MemoryLayout.structLayout(MemoryLayout.paddingLayout(elemLayout.byteSize()), elemLayout.withName("elem"))));
         testMatrixAccessInternal(viewFactory, seq,
                 seq.varHandle(
                         PathElement.sequenceElement(), PathElement.sequenceElement(), PathElement.groupElement("elem")),

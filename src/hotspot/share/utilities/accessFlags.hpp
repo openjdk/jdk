@@ -37,12 +37,13 @@ class outputStream;
 enum {
   // See jvm.h for shared JVM_ACC_XXX access flags
 
-  // HotSpot-specific access flags
-
   // flags actually put in .class file
   JVM_ACC_WRITTEN_FLAGS           = 0x00007FFF,
 
-  // Klass* flags
+  // HotSpot-specific access flags
+  // These Klass flags should be migrated, to a field such as InstanceKlass::_misc_flags,
+  // or to a similar flags field in Klass itself.
+  // Do not add new ACC flags here.
   JVM_ACC_HAS_FINALIZER           = 0x40000000,     // True if klass has a non-empty finalize() method
   JVM_ACC_IS_CLONEABLE_FAST       = (int)0x80000000,// True if klass implements the Cloneable interface and can be optimized in generated code
   JVM_ACC_IS_HIDDEN_CLASS         = 0x04000000,     // True if klass is hidden
@@ -53,7 +54,7 @@ enum {
 class AccessFlags {
   friend class VMStructs;
  private:
-  jint _flags;
+  jint _flags;  // TODO: move 4 access flags above to Klass and change to u2
 
  public:
   AccessFlags() : _flags(0) {}

@@ -192,7 +192,7 @@ void AsyncLogWriter::initialize() {
   AsyncLogWriter* self = new AsyncLogWriter();
   if (self->_initialized) {
     Atomic::release_store_fence(&AsyncLogWriter::_instance, self);
-    // All readers of _instance after the fence see non-nullptr.
+    // All readers of _instance after the fence see non-null.
     // We use LogOutputList's RCU counters to ensure all synchronous logsites have completed.
     // After that, we start AsyncLog Thread and it exclusively takes over all logging I/O.
     for (LogTagSet* ts = LogTagSet::first(); ts != nullptr; ts = ts->next()) {

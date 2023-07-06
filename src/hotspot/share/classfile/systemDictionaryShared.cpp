@@ -77,9 +77,7 @@ SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_static_archive;
 SystemDictionaryShared::ArchiveInfo SystemDictionaryShared::_dynamic_archive;
 
 DumpTimeSharedClassTable* SystemDictionaryShared::_dumptime_table = nullptr;
-DumpTimeSharedClassTable* SystemDictionaryShared::_cloned_dumptime_table = nullptr;
 DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_dumptime_lambda_proxy_class_dictionary = nullptr;
-DumpTimeLambdaProxyClassDictionary* SystemDictionaryShared::_cloned_dumptime_lambda_proxy_class_dictionary = nullptr;
 
 // Used by NoClassLoadingMark
 DEBUG_ONLY(bool SystemDictionaryShared::_class_loading_may_happen = true;)
@@ -1166,22 +1164,19 @@ public:
   AdjustLambdaProxyClassInfo() {}
   bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
     int len = info._proxy_klasses->length();
-    if (len > 1) {
-      for (int i = 0; i < len-1; i++) {
-        InstanceKlass* ok0 = info._proxy_klasses->at(i+0); // this is original klass
-        InstanceKlass* ok1 = info._proxy_klasses->at(i+1); // this is original klass
-        assert(ArchiveBuilder::current()->is_in_buffer_space(ok0), "must be");
-        assert(ArchiveBuilder::current()->is_in_buffer_space(ok1), "must be");
-        InstanceKlass* bk0 = ok0;
-        InstanceKlass* bk1 = ok1;
-        assert(bk0->next_link() == 0, "must be called after Klass::remove_unshareable_info()");
-        assert(bk1->next_link() == 0, "must be called after Klass::remove_unshareable_info()");
-        bk0->set_next_link(bk1);
-        bk1->set_lambda_proxy_is_available();
-        ArchivePtrMarker::mark_pointer(bk0->next_link_addr());
+    InstanceKlass* last_buff_k = nullptr;
+
+    for (int i = len - 1; i >= 0; i--) {
+      InstanceKlass* orig_k = info._proxy_klasses->at(i);
+      InstanceKlass* buff_k = ArchiveBuilder::current()->get_buffered_addr(orig_k);
+      assert(ArchiveBuilder::current()->is_in_buffer_space(buff_k), "must be");
+      buff_k->set_lambda_proxy_is_available();
+      buff_k->set_next_link(last_buff_k);
+      if (last_buff_k != nullptr) {
+        ArchivePtrMarker::mark_pointer(buff_k->next_link_addr());
       }
+      last_buff_k = buff_k;
     }
-    info._proxy_klasses->at(0)->set_lambda_proxy_is_available();
 
     return true;
   }
@@ -1205,6 +1200,7 @@ public:
 
       unsigned int hash;
       Symbol* name = info._klass->name();
+      name = ArchiveBuilder::current()->get_buffered_addr(name);
       hash = SystemDictionaryShared::hash_for_shared_dictionary((address)name);
       u4 delta = _builder->buffer_to_offset_u4((address)record);
       if (_is_builtin && info._klass->is_hidden()) {
@@ -1218,7 +1214,8 @@ public:
       }
 
       // Save this for quick runtime lookup of InstanceKlass* -> RunTimeClassInfo*
-      RunTimeClassInfo::set_for(info._klass, record);
+      InstanceKlass* buffered_klass = ArchiveBuilder::current()->get_buffered_addr(info._klass);
+      RunTimeClassInfo::set_for(buffered_klass, record);
     }
   }
 };
@@ -1268,7 +1265,7 @@ void SystemDictionaryShared::serialize_dictionary_headers(SerializeClosure* soc,
 
 void SystemDictionaryShared::serialize_vm_classes(SerializeClosure* soc) {
   for (auto id : EnumRange<vmClassID>{}) {
-    soc->do_ptr((void**)vmClasses::klass_addr_at(id));
+    soc->do_ptr(vmClasses::klass_addr_at(id));
   }
 }
 
@@ -1360,6 +1357,10 @@ public:
     ResourceMark rm;
     _st->print_cr("%4d: %s %s", _index++, record->_klass->external_name(),
         class_loader_name_for_shared(record->_klass));
+    if (record->_klass->array_klasses() != nullptr) {
+      record->_klass->array_klasses()->cds_print_value_on(_st);
+      _st->cr();
+    }
   }
   int index() const { return _index; }
 };
@@ -1439,87 +1440,6 @@ bool SystemDictionaryShared::is_dumptime_table_empty() {
     return true;
   }
   return false;
-}
-
-class CloneDumpTimeClassTable: public StackObj {
-  DumpTimeSharedClassTable* _table;
-  DumpTimeSharedClassTable* _cloned_table;
- public:
-  CloneDumpTimeClassTable(DumpTimeSharedClassTable* table, DumpTimeSharedClassTable* clone) :
-                      _table(table), _cloned_table(clone) {
-    assert(_table != nullptr, "_dumptime_table is nullptr");
-    assert(_cloned_table != nullptr, "_cloned_table is nullptr");
-  }
-  void do_entry(InstanceKlass* k, DumpTimeClassInfo& info) {
-    bool created;
-    _cloned_table->put_if_absent(k, info, &created);
-    assert(created, "must be");
-  }
-};
-
-class CloneDumpTimeLambdaProxyClassTable: StackObj {
-  DumpTimeLambdaProxyClassDictionary* _table;
-  DumpTimeLambdaProxyClassDictionary* _cloned_table;
- public:
-  CloneDumpTimeLambdaProxyClassTable(DumpTimeLambdaProxyClassDictionary* table,
-                                     DumpTimeLambdaProxyClassDictionary* clone) :
-                      _table(table), _cloned_table(clone) {
-    assert(_table != nullptr, "_dumptime_table is nullptr");
-    assert(_cloned_table != nullptr, "_cloned_table is nullptr");
-  }
-
-  bool do_entry(LambdaProxyClassKey& key, DumpTimeLambdaProxyClassInfo& info) {
-    assert_lock_strong(DumpTimeTable_lock);
-    bool created;
-    // make copies then store in _clone_table
-    LambdaProxyClassKey keyCopy = key;
-    _cloned_table->put_if_absent(keyCopy, info, &created);
-    assert(created, "must be");
-    ++ _cloned_table->_count;
-    return true; // keep on iterating
-  }
-};
-
-// When dumping the CDS archive, the ArchiveBuilder will irrecoverably modify the
-// _dumptime_table and _dumptime_lambda_proxy_class_dictionary (e.g., metaspace
-// pointers are changed to use "buffer" addresses.)
-//
-// We save a copy of these tables and restore them after the dumping is finished.
-// This makes it possible to repeat the dumping operation (e.g., use
-// "jcmd VM.cds dynamic_dump" multiple times on the same JVM process).
-//
-// We use the copy constructors to clone the values in these tables. The copy constructors
-// must make a deep copy, as internal data structures such as the contents of
-// DumpTimeClassInfo::_loader_constraints are also modified by the ArchiveBuilder.
-
-void SystemDictionaryShared::clone_dumptime_tables() {
-  Arguments::assert_is_dumping_archive();
-  assert_lock_strong(DumpTimeTable_lock);
-
-  assert(_cloned_dumptime_table == nullptr, "_cloned_dumptime_table must be cleaned");
-  _cloned_dumptime_table = new (mtClass) DumpTimeSharedClassTable;
-  CloneDumpTimeClassTable copy_classes(_dumptime_table, _cloned_dumptime_table);
-  _dumptime_table->iterate_all_live_classes(&copy_classes);
-  _cloned_dumptime_table->update_counts();
-
-  assert(_cloned_dumptime_lambda_proxy_class_dictionary == nullptr,
-         "_cloned_dumptime_lambda_proxy_class_dictionary must be cleaned");
-  _cloned_dumptime_lambda_proxy_class_dictionary =
-                                        new (mtClass) DumpTimeLambdaProxyClassDictionary;
-  CloneDumpTimeLambdaProxyClassTable copy_proxy_classes(_dumptime_lambda_proxy_class_dictionary,
-                                                        _cloned_dumptime_lambda_proxy_class_dictionary);
-  _dumptime_lambda_proxy_class_dictionary->iterate(&copy_proxy_classes);
-}
-
-void SystemDictionaryShared::restore_dumptime_tables() {
-  assert_lock_strong(DumpTimeTable_lock);
-  delete _dumptime_table;
-  _dumptime_table = _cloned_dumptime_table;
-  _cloned_dumptime_table = nullptr;
-
-  delete _dumptime_lambda_proxy_class_dictionary;
-  _dumptime_lambda_proxy_class_dictionary = _cloned_dumptime_lambda_proxy_class_dictionary;
-  _cloned_dumptime_lambda_proxy_class_dictionary = nullptr;
 }
 
 class CleanupDumpTimeLambdaProxyClassTable: StackObj {

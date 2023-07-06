@@ -50,7 +50,6 @@
 #include "opto/runtime.hpp"
 #include "opto/rootnode.hpp"
 #include "opto/subnode.hpp"
-#include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/unsafe.hpp"
 #include "runtime/jniHandles.inline.hpp"
@@ -481,11 +480,15 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_setScopedValueCache:       return inline_native_setScopedValueCache();
 
 #if INCLUDE_JVMTI
-  case vmIntrinsics::_notifyJvmtiMount:         return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_mount()),
-                                                                                        "notifyJvmtiMount");
-  case vmIntrinsics::_notifyJvmtiUnmount:       return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_unmount()),
-                                                                                        "notifyJvmtiUnmount");
-  case vmIntrinsics::_notifyJvmtiHideFrames:    return inline_native_notify_jvmti_hide();
+  case vmIntrinsics::_notifyJvmtiVThreadStart:   return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_start()),
+                                                                                         "notifyJvmtiStart", true, false);
+  case vmIntrinsics::_notifyJvmtiVThreadEnd:     return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_end()),
+                                                                                         "notifyJvmtiEnd", false, true);
+  case vmIntrinsics::_notifyJvmtiVThreadMount:   return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_mount()),
+                                                                                         "notifyJvmtiMount", false, false);
+  case vmIntrinsics::_notifyJvmtiVThreadUnmount: return inline_native_notify_jvmti_funcs(CAST_FROM_FN_PTR(address, OptoRuntime::notify_jvmti_vthread_unmount()),
+                                                                                         "notifyJvmtiUnmount", false, false);
+  case vmIntrinsics::_notifyJvmtiVThreadHideFrames: return inline_native_notify_jvmti_hide();
 #endif
 
 #ifdef JFR_HAVE_INTRINSICS
@@ -695,8 +698,12 @@ bool LibraryCallKit::try_to_inline(int predicate) {
     return inline_vector_nary_operation(3);
   case vmIntrinsics::_VectorFromBitsCoerced:
     return inline_vector_frombits_coerced();
+  case vmIntrinsics::_VectorShuffleIota:
+    return inline_vector_shuffle_iota();
   case vmIntrinsics::_VectorMaskOp:
     return inline_vector_mask_operation();
+  case vmIntrinsics::_VectorShuffleToVector:
+    return inline_vector_shuffle_to_vector();
   case vmIntrinsics::_VectorLoadOp:
     return inline_vector_mem_operation(/*is_store=*/false);
   case vmIntrinsics::_VectorLoadMaskedOp:
@@ -2825,29 +2832,8 @@ bool LibraryCallKit::inline_unsafe_allocate() {
     test = _gvn.transform(new SubINode(inst, bits));
     // The 'test' is non-zero if we need to take a slow path.
   }
-  Node* obj = new_instance(kls, test);
-#if INCLUDE_JVMTI
-  // Check if JvmtiExport::_should_notify_object_alloc is enabled and post notifications
-  IdealKit ideal(this);
-  IdealVariable result(ideal); ideal.declarations_done();
-  Node* ONE = ideal.ConI(1);
-  Node* addr = makecon(TypeRawPtr::make((address) &JvmtiExport::_should_notify_object_alloc));
-  Node* should_post_vm_object_alloc = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
-  ideal.sync_kit(this);
-  ideal.if_then(should_post_vm_object_alloc, BoolTest::eq, ONE); {
-    const TypeFunc *tf = OptoRuntime::notify_jvmti_object_alloc_Type();
-    address funcAddr = OptoRuntime::notify_jvmti_object_alloc();
-    sync_kit(ideal);
-    Node* call = make_runtime_call(RC_NO_LEAF, tf, funcAddr, "_notify_jvmti_object_alloc", TypePtr::BOTTOM, obj);
-    ideal.sync_kit(this);
-    ideal.set(result,_gvn.transform(new ProjNode(call, TypeFunc::Parms+0)));
-  } ideal.else_(); {
-    ideal.set(result,obj);
-  } ideal.end_if();
-  final_sync(ideal);
-  obj = ideal.value(result);
-#endif //INCLUDE_JVMTI
+  Node* obj = new_instance(kls, test);
   set_result(obj);
   return true;
 }
@@ -2873,25 +2859,24 @@ bool LibraryCallKit::inline_native_time_funcs(address funcAddr, const char* func
 
 // When notifications are disabled then just update the VTMS transition bit and return.
 // Otherwise, the bit is updated in the given function call implementing JVMTI notification protocol.
-bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName) {
+bool LibraryCallKit::inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end) {
   if (!DoJVMTIVirtualThreadTransitions) {
     return true;
   }
   IdealKit ideal(this);
 
   Node* ONE = ideal.ConI(1);
-  Node* hide = _gvn.transform(argument(1)); // hide argument: true for begin and false for end of VTMS transition
+  Node* hide = is_start ? ideal.ConI(0) : (is_end ? ideal.ConI(1) : _gvn.transform(argument(1)));
   Node* addr = makecon(TypeRawPtr::make((address)&JvmtiVTMSTransitionDisabler::_VTMS_notify_jvmti_events));
   Node* notify_jvmti_enabled = ideal.load(ideal.ctrl(), addr, TypeInt::BOOL, T_BOOLEAN, Compile::AliasIdxRaw);
 
   ideal.if_then(notify_jvmti_enabled, BoolTest::eq, ONE); {
     // if notifyJvmti enabled then make a call to the given SharedRuntime function
-    const TypeFunc* tf = OptoRuntime::notify_jvmti_Type();
+    const TypeFunc* tf = OptoRuntime::notify_jvmti_vthread_Type();
     Node* vt_oop = _gvn.transform(must_be_not_null(argument(0), true)); // VirtualThread this argument
-    Node* cond   = _gvn.transform(argument(2)); // firstMount or lastUnmount argument
 
     sync_kit(ideal);
-    make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide, cond);
+    make_runtime_call(RC_NO_LEAF, tf, funcAddr, funcName, TypePtr::BOTTOM, vt_oop, hide);
     ideal.sync_kit(this);
   } ideal.else_(); {
     // set hide value to the VTMS transition bit in current JavaThread and VirtualThread object
@@ -3997,6 +3982,7 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
   Node* mirror;
   Node* count_val;
   if (uninitialized) {
+    null_check_receiver();
     mirror    = argument(1);
     count_val = argument(2);
   } else {
@@ -4056,7 +4042,7 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
 
     if (uninitialized) {
       // Mark the allocation so that zeroing is skipped
-      AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(obj, &_gvn);
+      AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(obj);
       alloc->maybe_set_complete(&_gvn);
     }
   }
@@ -4256,7 +4242,7 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
   // Get the Method* out of the appropriate vtable entry.
   int entry_offset  = in_bytes(Klass::vtable_start_offset()) +
                      vtable_index*vtableEntry::size_in_bytes() +
-                     vtableEntry::method_offset_in_bytes();
+                     in_bytes(vtableEntry::method_offset());
   Node* entry_addr  = basic_plus_adr(obj_klass, entry_offset);
   Node* target_call = make_load(nullptr, entry_addr, TypePtr::NOTNULL, T_ADDRESS, MemNode::unordered);
 
@@ -4293,7 +4279,7 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
     slow_call = new CallStaticJavaNode(C, tf,
                            SharedRuntime::get_resolve_static_call_stub(), method);
   } else if (is_virtual) {
-    null_check_receiver();
+    assert(!gvn().type(argument(0))->maybe_null(), "should not be null");
     int vtable_index = Method::invalid_vtable_index;
     if (UseInlineCaches) {
       // Suppress the vtable call
@@ -4309,7 +4295,7 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
                           SharedRuntime::get_resolve_virtual_call_stub(),
                           method, vtable_index);
   } else {  // neither virtual nor static:  opt_virtual
-    null_check_receiver();
+    assert(!gvn().type(argument(0))->maybe_null(), "should not be null");
     slow_call = new CallStaticJavaNode(C, tf,
                                 SharedRuntime::get_resolve_opt_virtual_call_stub(), method);
     slow_call->set_optimized_virtual(true);
@@ -4770,7 +4756,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   if (ReduceBulkZeroing) {
     // We will be completely responsible for initializing this object -
     // mark Initialize node as complete.
-    alloc = AllocateNode::Ideal_allocation(alloc_obj, &_gvn);
+    alloc = AllocateNode::Ideal_allocation(alloc_obj);
     // The object was just allocated - there should be no any stores!
     guarantee(alloc != nullptr && alloc->maybe_set_complete(&_gvn), "");
     // Mark as complete_with_arraycopy so that on AllocateNode
@@ -5479,7 +5465,7 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   if (stopped())             return nullptr;  // no fast path
   if (!C->do_aliasing())     return nullptr;  // no MergeMems around
 
-  AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(ptr, &_gvn);
+  AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(ptr);
   if (alloc == nullptr)  return nullptr;
 
   Node* rawmem = memory(Compile::AliasIdxRaw);

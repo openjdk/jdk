@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -859,7 +859,7 @@ void G1CardSet::print_info(outputStream* st, uintptr_t card) {
 
   G1CardSetHashTableValue* table_entry = get_container(card_region);
   if (table_entry == nullptr) {
-    st->print("NULL card set");
+    st->print("null card set");
     return;
   }
 

@@ -26,11 +26,13 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -179,13 +181,13 @@ void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
   if (!reverse) {
     int  cp_index    = Bytes::get_Java_u2(p);
     int  cache_index = cp_entry_to_cp_cache(cp_index);
-    Bytes::put_native_u2(p, cache_index);
+    Bytes::put_native_u2(p, (u2)cache_index);
     if (!_method_handle_invokers.is_empty())
       maybe_rewrite_invokehandle(p - 1, cp_index, cache_index, reverse);
   } else {
     int cache_index = Bytes::get_native_u2(p);
     int pool_index = cp_cache_entry_pool_index(cache_index);
-    Bytes::put_Java_u2(p, pool_index);
+    Bytes::put_Java_u2(p, (u2)pool_index);
     if (!_method_handle_invokers.is_empty())
       maybe_rewrite_invokehandle(p - 1, pool_index, cache_index, reverse);
   }
@@ -204,7 +206,7 @@ void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool
       if (cache_index != (int)(jushort) cache_index) {
         *invokespecial_error = true;
       }
-      Bytes::put_native_u2(p, cache_index);
+      Bytes::put_native_u2(p, (u2)cache_index);
     } else {
       rewrite_member_reference(bcp, offset, reverse);
     }
@@ -226,15 +228,15 @@ void Rewriter::maybe_rewrite_invokehandle(address opc, int cp_index, int cache_i
       int status = _method_handle_invokers.at(cp_index);
       assert(status >= -1 && status <= 1, "oob tri-state");
       if (status == 0) {
-        if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
+        if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_MethodHandle() &&
             MethodHandles::is_signature_polymorphic_name(vmClasses::MethodHandle_klass(),
-                                                         _pool->name_ref_at(cp_index))) {
+                                                         _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
           add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
-        } else if (_pool->klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
+        } else if (_pool->uncached_klass_ref_at_noresolve(cp_index) == vmSymbols::java_lang_invoke_VarHandle() &&
                    MethodHandles::is_signature_polymorphic_name(vmClasses::VarHandle_klass(),
-                                                                _pool->name_ref_at(cp_index))) {
+                                                                _pool->uncached_name_ref_at(cp_index))) {
           // we may need a resolved_refs entry for the appendix
           add_invokedynamic_resolved_references_entry(cp_index, cache_index);
           status = +1;
@@ -293,7 +295,7 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
     // zero out 4 bytes
     Bytes::put_Java_u4(p, 0);
-    Bytes::put_Java_u2(p, cp_index);
+    Bytes::put_Java_u2(p, (u2)cp_index);
   }
 }
 
@@ -317,7 +319,7 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
       if (is_wide) {
         (*bcp) = Bytecodes::_fast_aldc_w;
         assert(ref_index == (u2)ref_index, "index overflow");
-        Bytes::put_native_u2(p, ref_index);
+        Bytes::put_native_u2(p, (u2)ref_index);
       } else {
         (*bcp) = Bytecodes::_fast_aldc;
         assert(ref_index == (u1)ref_index, "index overflow");
@@ -334,7 +336,7 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
       if (is_wide) {
         (*bcp) = Bytecodes::_ldc_w;
         assert(pool_index == (u2)pool_index, "index overflow");
-        Bytes::put_Java_u2(p, pool_index);
+        Bytes::put_Java_u2(p, (u2)pool_index);
       } else {
         (*bcp) = Bytecodes::_ldc;
         assert(pool_index == (u1)pool_index, "index overflow");
@@ -421,11 +423,11 @@ void Rewriter::scan_method(Thread* thread, Method* method, bool reverse, bool* i
           InstanceKlass* klass = method->method_holder();
           u2 bc_index = Bytes::get_Java_u2(bcp + prefix_length + 1);
           constantPoolHandle cp(thread, method->constants());
-          Symbol* ref_class_name = cp->klass_name_at(cp->klass_ref_index_at(bc_index));
+          Symbol* ref_class_name = cp->klass_name_at(cp->uncached_klass_ref_index_at(bc_index));
 
           if (klass->name() == ref_class_name) {
-            Symbol* field_name = cp->name_ref_at(bc_index);
-            Symbol* field_sig = cp->signature_ref_at(bc_index);
+            Symbol* field_name = cp->uncached_name_ref_at(bc_index);
+            Symbol* field_sig = cp->uncached_signature_ref_at(bc_index);
 
             fieldDescriptor fd;
             if (klass->find_field(field_name, field_sig, &fd) != nullptr) {

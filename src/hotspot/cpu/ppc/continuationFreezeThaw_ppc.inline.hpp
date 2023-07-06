@@ -84,9 +84,9 @@ inline void FreezeBase::relativize_interpreted_frame_metadata(const frame& f, co
   assert(f.fp() > (intptr_t*)f.interpreter_frame_esp(), "");
 
   // There is alignment padding between vfp and f's locals array in the original
-  // frame, therefore we cannot use it to relativize the locals pointer.
-  // This line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
-  *hf.addr_at(ijava_idx(locals)) = frame::metadata_words + f.interpreter_frame_method()->max_locals() - 1;
+  // frame, because we freeze the padding (see recurse_freeze_interpreted_frame)
+  // in order to keep the same relativized locals pointer, we don't need to change it here.
+
   relativize_one(vfp, hfp, ijava_idx(monitors));
   relativize_one(vfp, hfp, ijava_idx(esp));
   relativize_one(vfp, hfp, ijava_idx(top_frame_sp));
@@ -264,7 +264,7 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
 
   intptr_t *sp, *fp;
   if (FKind::interpreted) {
-    int locals = f.interpreter_frame_method()->max_locals();
+    intptr_t locals_offset = *f.addr_at(ijava_idx(locals));
     // If the caller.is_empty(), i.e. we're freezing into an empty chunk, then we set
     // the chunk's argsize in finalize_freeze and make room for it above the unextended_sp
     // See also comment on StackChunkFrameStream<frame_kind>::interpreter_frame_size()
@@ -272,7 +272,7 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
         (caller.is_interpreted_frame() || caller.is_empty())
         ? ContinuationHelper::InterpretedFrame::stack_argsize(f) + frame::metadata_words_at_top
         : 0;
-    fp = caller.unextended_sp() + overlap - locals - frame::metadata_words_at_top;
+    fp = caller.unextended_sp() - 1 - locals_offset + overlap;
     // esp points one slot below the last argument
     intptr_t* x86_64_like_unextended_sp = f.interpreter_frame_esp() + 1 - frame::metadata_words_at_top;
     sp = fp - (f.fp() - x86_64_like_unextended_sp);
@@ -286,7 +286,7 @@ frame FreezeBase::new_heap_frame(frame& f, frame& caller) {
 
     frame hf(sp, sp, fp, f.pc(), nullptr, nullptr, true /* on_heap */);
     // frame_top() and frame_bottom() read these before relativize_interpreted_frame_metadata() is called
-    *hf.addr_at(ijava_idx(locals)) = frame::metadata_words + locals - 1;
+    *hf.addr_at(ijava_idx(locals)) = locals_offset;
     *hf.addr_at(ijava_idx(esp))    = f.interpreter_frame_esp() - f.fp();
     return hf;
   } else {
@@ -507,10 +507,8 @@ template<typename FKind> frame ThawBase::new_stack_frame(const frame& hf, frame&
     frame f(frame_sp, hf.pc(), frame_sp, fp);
     // we need to set the locals so that the caller of new_stack_frame() can call
     // ContinuationHelper::InterpretedFrame::frame_bottom
-    intptr_t offset = *hf.addr_at(ijava_idx(locals)) + padding;
-    assert((int)offset == hf.interpreter_frame_method()->max_locals() + frame::metadata_words_at_top + padding - 1, "");
-    // set relativized locals
-    *f.addr_at(ijava_idx(locals)) = offset;
+    // copy relativized locals from the heap frame
+    *f.addr_at(ijava_idx(locals)) = *hf.addr_at(ijava_idx(locals));
 
     return f;
   } else {
@@ -547,12 +545,6 @@ inline void ThawBase::derelativize_interpreted_frame_metadata(const frame& hf, c
   derelativize_one(vfp, ijava_idx(monitors));
   derelativize_one(vfp, ijava_idx(esp));
   derelativize_one(vfp, ijava_idx(top_frame_sp));
-}
-
-inline void ThawBase::set_interpreter_frame_bottom(const frame& f, intptr_t* bottom) {
-  // set relativized locals
-  // This line can be changed into an assert when we have fixed the "frame padding problem", see JDK-8300197
-  *f.addr_at(ijava_idx(locals)) = (bottom - 1) - f.fp();
 }
 
 inline void ThawBase::patch_pd(frame& f, const frame& caller) {

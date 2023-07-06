@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,10 +30,13 @@ import java.awt.Dimension;
 import java.awt.Insets;
 import java.awt.Point;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 
 /**
  * Implements Theme Support for Windows XP.
@@ -44,7 +47,24 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
  */
 public final class ThemeReader {
 
-    private static final Map<String, Long> widgetToTheme = new HashMap<>();
+    private static final int defaultDPI = 96;
+
+    /**
+     * List of widgets for which we need to get the part size for the current DPI.
+     */
+    private static final  List<String> partSizeWidgets =
+            List.of("MENU", "BUTTON");
+
+    /**
+     * List of widget parts for which we need to get the part size for the current DPI.
+     */
+    private static final List<Integer> partSizeWidgetParts =
+            List.of(Part.BP_RADIOBUTTON.getValue(),
+                    Part.BP_CHECKBOX.getValue(),
+                    Part.MP_POPUPCHECK.getValue());
+
+    private static final Map<Integer, Map<String, Long>> dpiAwareWidgetToTheme
+            = new HashMap<>();
 
     // lock for the cache
     // reading should be done with readLock
@@ -80,28 +100,30 @@ public final class ThemeReader {
         return xpStyleEnabled;
     }
 
+    private static Long openThemeImpl(String widget, int dpi) {
+       Long theme;
+       int i = widget.indexOf("::");
+       if (i > 0) {
+           // We're using the syntax "subAppName::controlName" here, as used by msstyles.
+           // See documentation for SetWindowTheme on MSDN.
+           setWindowTheme(widget.substring(0, i));
+           theme = openTheme(widget.substring(i + 2), dpi);
+           setWindowTheme(null);
+       } else {
+           theme = openTheme(widget, dpi);
+       }
+       return theme;
+    }
+
     // this should be called only with writeLock held
-    private static Long getThemeImpl(String widget) {
-        Long theme = widgetToTheme.get(widget);
-        if (theme == null) {
-            int i = widget.indexOf("::");
-            if (i > 0) {
-                // We're using the syntax "subAppName::controlName" here, as used by msstyles.
-                // See documentation for SetWindowTheme on MSDN.
-                setWindowTheme(widget.substring(0, i));
-                theme = openTheme(widget.substring(i+2));
-                setWindowTheme(null);
-            } else {
-                theme = openTheme(widget);
-            }
-            widgetToTheme.put(widget, theme);
-        }
-        return theme;
+    private static Long getThemeImpl(String widget, int dpi) {
+       return dpiAwareWidgetToTheme.computeIfAbsent(dpi, key -> new HashMap<>())
+                .computeIfAbsent(widget, w -> openThemeImpl(widget, dpi));
     }
 
     // returns theme value
     // this method should be invoked with readLock locked
-    private static Long getTheme(String widget) {
+    private static Long getTheme(String widget, int dpi) {
         if (!isThemed) {
             throw new IllegalStateException("Themes are not loaded");
         }
@@ -111,10 +133,12 @@ public final class ThemeReader {
             try {
                 if (!valid) {
                     // Close old themes.
-                    for (Long value : widgetToTheme.values()) {
-                        closeTheme(value);
+                    for (Map<String, Long> dpiVal : dpiAwareWidgetToTheme.values()) {
+                        for (Long value : dpiVal.values()) {
+                            closeTheme(value);
+                        }
                     }
-                    widgetToTheme.clear();
+                    dpiAwareWidgetToTheme.clear();
                     valid = true;
                 }
             } finally {
@@ -123,13 +147,20 @@ public final class ThemeReader {
             }
         }
 
+        Long theme = null;
+
+        Map<String, Long> widgetToTheme = dpiAwareWidgetToTheme.get(dpi);
+
+        if (widgetToTheme != null) {
+            theme = widgetToTheme.get(widget);
+        }
+
         // mostly copied from the javadoc for ReentrantReadWriteLock
-        Long theme = widgetToTheme.get(widget);
         if (theme == null) {
             readLock.unlock();
             writeLock.lock();
             try {
-                theme = getThemeImpl(widget);
+                theme = getThemeImpl(widget, dpi);
             } finally {
                 readLock.lock();
                 writeLock.unlock();// Unlock write, still hold read
@@ -139,14 +170,23 @@ public final class ThemeReader {
     }
 
     private static native void paintBackground(int[] buffer, long theme,
-                                               int part, int state, int x,
-                                               int y, int w, int h, int stride);
+                                               int part, int state,
+                                               int rectRight, int rectBottom,
+                                               int w, int h, int stride);
 
     public static void paintBackground(int[] buffer, String widget,
-           int part, int state, int x, int y, int w, int h, int stride) {
+           int part, int state, int x, int y, int w, int h, int stride, int dpi) {
         readLock.lock();
         try {
-            paintBackground(buffer, getTheme(widget), part, state, x, y, w, h, stride);
+            /* For widgets and parts in the lists, we get the part size
+            for the current screen DPI to scale them better. */
+            Dimension d = (partSizeWidgets.contains(widget)
+                          && partSizeWidgetParts.contains(Integer.valueOf(part)))
+                          ? getPartSize(getTheme(widget, dpi), part, state)
+                          : new Dimension(w, h);
+
+            paintBackground(buffer, getTheme(widget, dpi), part, state,
+                            d.width, d.height, w, h, stride);
         } finally {
             readLock.unlock();
         }
@@ -158,7 +198,7 @@ public final class ThemeReader {
     public static Insets getThemeMargins(String widget, int part, int state, int marginType) {
         readLock.lock();
         try {
-            return getThemeMargins(getTheme(widget), part, state, marginType);
+            return getThemeMargins(getTheme(widget, defaultDPI), part, state, marginType);
         } finally {
             readLock.unlock();
         }
@@ -169,7 +209,7 @@ public final class ThemeReader {
     public static boolean isThemePartDefined(String widget, int part, int state) {
         readLock.lock();
         try {
-            return isThemePartDefined(getTheme(widget), part, state);
+            return isThemePartDefined(getTheme(widget, defaultDPI), part, state);
         } finally {
             readLock.unlock();
         }
@@ -181,7 +221,7 @@ public final class ThemeReader {
     public static Color getColor(String widget, int part, int state, int property) {
         readLock.lock();
         try {
-            return getColor(getTheme(widget), part, state, property);
+            return getColor(getTheme(widget, defaultDPI), part, state, property);
         } finally {
             readLock.unlock();
         }
@@ -193,7 +233,7 @@ public final class ThemeReader {
     public static int getInt(String widget, int part, int state, int property) {
         readLock.lock();
         try {
-            return getInt(getTheme(widget), part, state, property);
+            return getInt(getTheme(widget, defaultDPI), part, state, property);
         } finally {
             readLock.unlock();
         }
@@ -205,7 +245,7 @@ public final class ThemeReader {
     public static int getEnum(String widget, int part, int state, int property) {
         readLock.lock();
         try {
-            return getEnum(getTheme(widget), part, state, property);
+            return getEnum(getTheme(widget, defaultDPI), part, state, property);
         } finally {
             readLock.unlock();
         }
@@ -218,7 +258,7 @@ public final class ThemeReader {
                                      int property) {
         readLock.lock();
         try {
-            return getBoolean(getTheme(widget), part, state, property);
+            return getBoolean(getTheme(widget, defaultDPI), part, state, property);
         } finally {
             readLock.unlock();
         }
@@ -229,7 +269,7 @@ public final class ThemeReader {
     public static boolean getSysBoolean(String widget, int property) {
         readLock.lock();
         try {
-            return getSysBoolean(getTheme(widget), property);
+            return getSysBoolean(getTheme(widget, defaultDPI), property);
         } finally {
             readLock.unlock();
         }
@@ -241,7 +281,7 @@ public final class ThemeReader {
     public static Point getPoint(String widget, int part, int state, int property) {
         readLock.lock();
         try {
-            return getPoint(getTheme(widget), part, state, property);
+            return getPoint(getTheme(widget, defaultDPI), part, state, property);
         } finally {
             readLock.unlock();
         }
@@ -254,7 +294,7 @@ public final class ThemeReader {
                                         int property) {
         readLock.lock();
         try {
-            return getPosition(getTheme(widget), part,state,property);
+            return getPosition(getTheme(widget, defaultDPI), part,state,property);
         } finally {
             readLock.unlock();
         }
@@ -266,13 +306,13 @@ public final class ThemeReader {
     public static Dimension getPartSize(String widget, int part, int state) {
         readLock.lock();
         try {
-            return getPartSize(getTheme(widget), part, state);
+            return getPartSize(getTheme(widget, defaultDPI), part, state);
         } finally {
             readLock.unlock();
         }
     }
 
-    private static native long openTheme(String widget);
+    private static native long openTheme(String widget, int dpi);
 
     private static native void closeTheme(long theme);
 
@@ -285,8 +325,9 @@ public final class ThemeReader {
                                        int stateFrom, int stateTo, int propId) {
         readLock.lock();
         try {
-            return getThemeTransitionDuration(getTheme(widget),
-                                              part, stateFrom, stateTo, propId);
+            return getThemeTransitionDuration(getTheme(widget, defaultDPI),
+                                              part, stateFrom, stateTo,
+                                              propId);
         } finally {
             readLock.unlock();
         }
@@ -299,8 +340,9 @@ public final class ThemeReader {
                     int part, int state, int boundingWidth, int boundingHeight) {
         readLock.lock();
         try {
-            return getThemeBackgroundContentMargins(getTheme(widget),
-                                    part, state, boundingWidth, boundingHeight);
+            return getThemeBackgroundContentMargins(getTheme(widget, defaultDPI),
+                                                    part, state,
+                                                    boundingWidth, boundingHeight);
         } finally {
             readLock.unlock();
         }

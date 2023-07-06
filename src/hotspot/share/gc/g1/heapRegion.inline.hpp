@@ -32,6 +32,7 @@
 #include "gc/g1/g1CollectedHeap.inline.hpp"
 #include "gc/g1/g1ConcurrentMarkBitMap.inline.hpp"
 #include "gc/g1/g1MonotonicArena.inline.hpp"
+#include "gc/g1/g1Policy.hpp"
 #include "gc/g1/g1Predictions.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.hpp"
@@ -54,7 +55,7 @@ inline HeapWord* HeapRegion::allocate_impl(size_t min_word_size,
     *actual_size = want_to_allocate;
     return obj;
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -77,7 +78,7 @@ inline HeapWord* HeapRegion::par_allocate_impl(size_t min_word_size,
         return obj;
       }
     } else {
-      return NULL;
+      return nullptr;
     }
   } while (true);
 }
@@ -108,11 +109,11 @@ inline HeapWord* HeapRegion::block_start(const void* addr, HeapWord* const pb) c
   return advance_to_block_containing_addr(addr, pb, first_block);
 }
 
-inline bool HeapRegion::obj_in_unparsable_area(oop obj, HeapWord* const pb) {
-  return !HeapRegion::obj_in_parsable_area(cast_from_oop<HeapWord*>(obj), pb);
+inline bool HeapRegion::is_in_parsable_area(const void* const addr) const {
+  return is_in_parsable_area(addr, parsable_bottom());
 }
 
-inline bool HeapRegion::obj_in_parsable_area(const HeapWord* addr, HeapWord* const pb) {
+inline bool HeapRegion::is_in_parsable_area(const void* const addr, const void* const pb) {
   return addr >= pb;
 }
 
@@ -124,7 +125,7 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   assert(p >= bottom() && p < top(), "precondition");
   assert(!is_continues_humongous(), "p must point to block-start");
 
-  if (obj_in_parsable_area(p, pb)) {
+  if (is_in_parsable_area(p, pb)) {
     return true;
   }
 
@@ -139,19 +140,6 @@ inline bool HeapRegion::block_is_obj(const HeapWord* const p, HeapWord* const pb
   return is_marked_in_bitmap(cast_to_oop(p));
 }
 
-inline bool HeapRegion::is_obj_dead(const oop obj, HeapWord* const pb) const {
-  assert(is_in_reserved(obj), "Object " PTR_FORMAT " must be in region", p2i(obj));
-
-  // From Remark until a region has been concurrently scrubbed, parts of the
-  // region is not guaranteed to be parsable. Use the bitmap for liveness.
-  if (obj_in_unparsable_area(obj, pb)) {
-    return !is_marked_in_bitmap(obj);
-  }
-
-  // This object is in the parsable part of the heap, live unless scrubbed.
-  return G1CollectedHeap::is_obj_filler(obj);
-}
-
 inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, const HeapWord* p, HeapWord* const limit) const {
   return bitmap->get_next_marked_addr(p, limit);
 }
@@ -159,6 +147,10 @@ inline HeapWord* HeapRegion::next_live_in_unparsable(G1CMBitMap* const bitmap, c
 inline HeapWord* HeapRegion::next_live_in_unparsable(const HeapWord* p, HeapWord* const limit) const {
   G1CMBitMap* bitmap = G1CollectedHeap::heap()->concurrent_mark()->mark_bitmap();
   return next_live_in_unparsable(bitmap, p, limit);
+}
+
+inline bool HeapRegion::is_collection_set_candidate() const {
+ return G1CollectedHeap::heap()->is_collection_set_candidate(this);
 }
 
 inline size_t HeapRegion::block_size(const HeapWord* p) const {
@@ -177,7 +169,7 @@ inline size_t HeapRegion::block_size(const HeapWord* p, HeapWord* const pb) cons
 
 inline void HeapRegion::reset_compacted_after_full_gc(HeapWord* new_top) {
   set_top(new_top);
-  // After a compaction the mark bitmap in a non-pinned regions is invalid.
+  // After a compaction the mark bitmap in a movable region is invalid.
   // But all objects are live, we get this by setting TAMS to bottom.
   init_top_at_mark_start();
 
@@ -289,14 +281,18 @@ inline void HeapRegion::reset_parsable_bottom() {
 }
 
 inline void HeapRegion::note_start_of_marking() {
-  set_top_at_mark_start(top());
-  _gc_efficiency = -1.0;
+  assert(top_at_mark_start() == bottom(), "CA region's TAMS must always be at bottom");
+  if (is_old_or_humongous()) {
+    set_top_at_mark_start(top());
+  }
 }
 
 inline void HeapRegion::note_end_of_marking(size_t marked_bytes) {
   assert_at_safepoint();
 
-  _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  if (top_at_mark_start() != bottom()) {
+    _garbage_bytes = byte_size(bottom(), top_at_mark_start()) - marked_bytes;
+  }
 
   if (needs_scrubbing()) {
     _parsable_bottom = top_at_mark_start();
@@ -324,6 +320,10 @@ inline void HeapRegion::reset_top_at_mark_start() {
   set_top_at_mark_start(bottom());
 }
 
+inline bool HeapRegion::needs_scrubbing() const {
+  return is_old();
+}
+
 inline bool HeapRegion::in_collection_set() const {
   return G1CollectedHeap::heap()->is_in_cset(this);
 }
@@ -335,14 +335,14 @@ HeapWord* HeapRegion::do_oops_on_memregion_in_humongous(MemRegion mr,
   HeapRegion* sr = humongous_start_region();
   oop obj = cast_to_oop(sr->bottom());
 
-  // If concurrent and klass_or_null is NULL, then space has been
+  // If concurrent and klass_or_null is null, then space has been
   // allocated but the object has not yet been published by setting
   // the klass.  That can only happen if the card is stale.  However,
   // we've already set the card clean, so we must return failure,
   // since the allocating thread could have performed a write to the
   // card that might be missed otherwise.
-  if (!in_gc_pause && (obj->klass_or_null_acquire() == NULL)) {
-    return NULL;
+  if (!in_gc_pause && (obj->klass_or_null_acquire() == nullptr)) {
+    return nullptr;
   }
 
   // We have a well-formed humongous object at the start of sr.
@@ -437,7 +437,7 @@ inline HeapWord* HeapRegion::oops_on_memregion_iterate(MemRegion mr, Closure* cl
   //   safepoints.
   //
   HeapWord* cur = block_start(start, pb);
-  if (!obj_in_parsable_area(start, pb)) {
+  if (!is_in_parsable_area(start, pb)) {
     // Limit the MemRegion to the part of the area to scan to the unparsable one as using the bitmap
     // is slower than blindly iterating the objects.
     MemRegion mr_in_unparsable(mr.start(), MIN2(mr.end(), pb));
@@ -491,7 +491,7 @@ HeapWord* HeapRegion::oops_on_memregion_seq_iterate_careful(MemRegion mr,
   assert(is_old(), "Wrongly trying to iterate over region %u type %s", _hrm_index, get_type_str());
 
   // Because mr has been trimmed to what's been allocated in this
-  // region, the objects in these parts of the heap have non-NULL
+  // region, the objects in these parts of the heap have non-null
   // klass pointers. There's no need to use klass_or_null to detect
   // in-progress allocation.
   // We might be in the progress of scrubbing this region and in this
@@ -512,7 +512,7 @@ inline bool HeapRegion::has_valid_age_in_surv_rate() const {
 }
 
 inline bool HeapRegion::has_surv_rate_group() const {
-  return _surv_rate_group != NULL;
+  return _surv_rate_group != nullptr;
 }
 
 inline double HeapRegion::surv_rate_prediction(G1Predictions const& predictor) const {
@@ -521,7 +521,7 @@ inline double HeapRegion::surv_rate_prediction(G1Predictions const& predictor) c
 }
 
 inline void HeapRegion::install_surv_rate_group(G1SurvRateGroup* surv_rate_group) {
-  assert(surv_rate_group != NULL, "pre-condition");
+  assert(surv_rate_group != nullptr, "pre-condition");
   assert(!has_surv_rate_group(), "pre-condition");
   assert(is_young(), "pre-condition");
 
@@ -534,7 +534,7 @@ inline void HeapRegion::uninstall_surv_rate_group() {
     assert(has_valid_age_in_surv_rate(), "pre-condition");
     assert(is_young(), "pre-condition");
 
-    _surv_rate_group = NULL;
+    _surv_rate_group = nullptr;
     _age_index = G1SurvRateGroup::InvalidAgeIndex;
   } else {
     assert(!has_valid_age_in_surv_rate(), "pre-condition");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,9 @@
 
 /*
  * @test
- * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563 8245147 8245586 8257453 8286035
+ * @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545
+ * 8000961 8030610 8028546 8188870 8173382 8173382 8193290 8205619 8028563
+ * 8245147 8245586 8257453 8286035 8306586
  * @summary Check interpretation of -target and -source options
  * @modules java.compiler
  *          jdk.compiler
@@ -71,41 +73,54 @@ public class Versions {
 
     public static final Set<String> VALID_SOURCES =
         Set.of("1.8", "1.9", "1.10", "11", "12", "13", "14",
-               "15", "16", "17", "18", "19", "20", "21");
+               "15", "16", "17", "18", "19", "20", "21", "22");
 
-    public static final String LATEST_MAJOR_VERSION = "65.0";
+    public static final String LATEST_MAJOR_VERSION = "66.0";
 
     static enum SourceTarget {
-        EIGHT(true,      "52.0",  "8", Versions::checksrc8),
-        NINE(true,       "53.0",  "9", Versions::checksrc9),
-        TEN(true,        "54.0", "10", Versions::checksrc10),
-        ELEVEN(false,    "55.0", "11", Versions::checksrc11),
-        TWELVE(false,    "56.0", "12", Versions::checksrc12),
-        THIRTEEN(false,  "57.0", "13", Versions::checksrc13),
-        FOURTEEN(false,  "58.0", "14", Versions::checksrc14),
-        FIFTEEN(false,   "59.0", "15", Versions::checksrc15),
-        SIXTEEN(false,   "60.0", "16", Versions::checksrc16),
-        SEVENTEEN(false, "61.0", "17", Versions::checksrc17),
-        EIGHTEEN(false,  "62.0", "18", Versions::checksrc18),
-        NINETEEN(false,  "63.0", "19", Versions::checksrc19),
-        TWENTY(false,    "64.0", "20", Versions::checksrc20),
-        TWENTY_ONE(false,"65.0", "21", Versions::checksrc20);
+        EIGHT(true,      "52.0",  "8"),
+        NINE(true,       "53.0",  "9"),
+        TEN(true,        "54.0", "10"),
+        ELEVEN(false,    "55.0", "11"),
+        TWELVE(false,    "56.0", "12"),
+        THIRTEEN(false,  "57.0", "13"),
+        FOURTEEN(false,  "58.0", "14"),
+        FIFTEEN(false,   "59.0", "15"),
+        SIXTEEN(false,   "60.0", "16"),
+        SEVENTEEN(false, "61.0", "17"),
+        EIGHTEEN(false,  "62.0", "18"),
+        NINETEEN(false,  "63.0", "19"),
+        TWENTY(false,    "64.0", "20"),
+        TWENTY_ONE(false,"65.0", "21"),
+        TWENTY_TWO(false,"66.0", "22"),
+        ; // Reduce code churn when appending new constants
 
         private final boolean dotOne;
         private final String classFileVer;
         private final String target;
-        private final BiConsumer<Versions, List<String>> checker;
+        private final int intTarget;
 
-        private SourceTarget(boolean dotOne, String classFileVer, String target,
-                             BiConsumer<Versions, List<String>> checker) {
+        private SourceTarget(boolean dotOne, String classFileVer, String target) {
             this.dotOne = dotOne;
             this.classFileVer = classFileVer;
             this.target = target;
-            this.checker = checker;
+            this.intTarget = Integer.parseInt(target);
         }
 
-        public void checksrc(Versions version, List<String> args) {
-            checker.accept(version, args);
+        public void checksrc(Versions versions, List<String> args) {
+            // checker.accept(version, args);
+            versions.printargs("checksrc" + target, args);
+            List<String> expectedPassFiles = new ArrayList<>();
+            List<String> expectedFailFiles = new ArrayList<>();
+
+            for (SourceExample srcEg : SourceExample.values()) {
+                var x = (srcEg.sourceLevel <= this.intTarget) ?
+                    expectedPassFiles.add(srcEg.fileName()):
+                    expectedFailFiles.add(srcEg.fileName());
+            }
+
+            versions.expectedPass(args, expectedPassFiles);
+            versions.expectedFail(args, expectedFailFiles);
         }
 
         public boolean dotOne() {
@@ -118,6 +133,10 @@ public class Versions {
 
         public String target() {
             return target;
+        }
+
+        public int intTarget() {
+            return intTarget;
         }
     }
 
@@ -245,89 +264,131 @@ public class Versions {
         }
     }
 
-    protected void checksrc8(List<String> args) {
-        printargs("checksrc8", args);
-        expectedPass(args, List.of("New7.java", "New8.java"));
-        expectedFail(args, List.of("New10.java"));
-    }
+    /**
+     * The BASE source example is expected to compile on all source
+     * levels. Otherwise, an example is expected to compile on its
+     * declared source level and later, but to _not_ compile on
+     * earlier source levels. (This enum is _not_ intended to capture
+     * the uncommon program that is accepted in one version of the
+     * language and rejected in a later version.)
+     *
+     * When version of the language get a new, non-preview feature, a
+     * new source example enum constant should be added.
+     */
+    enum SourceExample {
+        BASE(7, "Base.java", "public class Base { }\n"),
 
-    protected void checksrc9(List<String> args) {
-        printargs("checksrc9", args);
-        expectedPass(args, List.of("New7.java", "New8.java"));
-        expectedFail(args, List.of("New10.java"));
-    }
 
-    protected void checksrc10(List<String> args) {
-        printargs("checksrc10", args);
-        expectedPass(args, List.of("New7.java", "New8.java", "New10.java"));
-        expectedFail(args, List.of("New11.java"));
-    }
+        SOURCE_8(8, "New8.java",
+            // New feature in 8: lambda
+            """
+            public class New8 {
+                void m() {
+                    new Thread(() -> { });
+                }
+            }
+             """),
 
-    protected void checksrc11(List<String> args) {
-        printargs("checksrc11", args);
-        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java"));
-        expectedFail(args, List.of("New14.java"));
-    }
+        SOURCE_10(10, "New10.java",
+            // New feature in 10: var
+            """
+            public class New10 {
+                void m() {
+                    var tmp = new Thread(() -> { });
+                }
+            }
+            """),
 
-    protected void checksrc12(List<String> args) {
-        printargs("checksrc12", args);
-        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java"));
-        expectedFail(args, List.of("New14.java"));
-    }
+        SOURCE_11(11, "New11.java",
+            // New feature in 11: var for lambda parameters
+            """
+            public class New11 {
+                static java.util.function.Function<String,String> f = (var x) -> x.substring(0);
+                void m(String name) {
+                    var tmp = new Thread(() -> { }, f.apply(name));
+                }
+            }
+            """),
 
-    protected void checksrc13(List<String> args) {
-        printargs("checksrc13", args);
-        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java"));
-        expectedFail(args, List.of("New14.java"));
-    }
+         SOURCE_14(14, "New14.java",
+             // New feature in 14: text blocks
+             """
+             public class New14 {
+                 static {
+                     int i = 5;
+                     System.out.println(
+                         switch(i) {
+                             case 0 -> false;
+                             default -> true;
+                         }
+                     );
+                 }
+             }
+             """),
 
-    protected void checksrc14(List<String> args) {
-        printargs("checksrc14", args);
-        expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                   "New14.java"));
-        expectedFail(args, List.of("New15.java"));
-    }
+         SOURCE_15(15, "New15.java",
+             // New feature in 15: text blocks
+             """
+             public class New15 {
+                 public static final String s =
+                 \"\"\"
+                 Hello, World.
+                 \"\"\"
+                 ;
+             }
+             """),
 
-   protected void checksrc15(List<String> args) {
-       printargs("checksrc15", args);
-       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java"));
-        expectedFail(args, List.of("New16.java"));
-    }
+         SOURCE_16(16, "New16.java",
+             // New feature in 16: records
+             """
+             public class New16 {
+                 public record Record(double rpm) {
+                     public static final Record LONG_PLAY = new Record(100.0/3.0);
+                 }
+             }
+             """),
 
-   protected void checksrc16(List<String> args) {
-       printargs("checksrc16", args);
-       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java", "New16.java"));
-        expectedFail(args, List.of("New17.java"));
-    }
+         SOURCE_17(17, "New17.java",
+             // New feature in 17: sealed classes
+             """
+             public class New17 {
+                 public static sealed class Seal {}
 
-   protected void checksrc17(List<String> args) {
-       printargs("checksrc17", args);
-       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java", "New16.java", "New17.java"));
-       // Add expectedFail after new language features added in a later release.
-    }
+                 public static final class Pinniped extends Seal {}
+                 public static final class TaperedThread extends Seal {}
+                 public static final class Wax extends Seal {}
+             }
+             """),
 
-   protected void checksrc18(List<String> args) {
-       printargs("checksrc18", args);
-       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java", "New16.java", "New17.java"));
-       // Add expectedFail after new language features added in a later release.
-    }
+         SOURCE_21(21, "New21.java",
+             // New feature in 21: pattern matching for switch
+             """
+             public class New21 {
+                 public static void main(String... args) {
+                     Object o = new Object(){};
 
-   protected void checksrc19(List<String> args) {
-       printargs("checksrc19", args);
-       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java", "New16.java", "New17.java"));
-       // Add expectedFail after new language features added in a later release.
-    }
+                     System.out.println(switch (o) {
+                                        case Integer i -> String.format("%d", i);
+                                        default        -> o.toString();
+                                        });
+                 }
+             }
+             """),
 
-   protected void checksrc20(List<String> args) {
-       printargs("checksrc20", args);
-       expectedPass(args, List.of("New7.java", "New8.java", "New10.java", "New11.java",
-                                  "New14.java", "New15.java", "New16.java", "New17.java"));
-       // Add expectedFail after new language features added in a later release.
+            ; // Reduce code churn when appending new constants
+
+        private int sourceLevel;
+        private String fileName;
+        private String fileContents;
+
+        private SourceExample(int sourceLevel, String fileName, String fileContents) {
+            this.sourceLevel = sourceLevel;
+            this.fileName = fileName;
+            this.fileContents = fileContents;
+        }
+
+        public String fileName() {return fileName;}
+        public String fileContents() {return fileContents;}
     }
 
     protected void expected(List<String> args, List<String> fileNames,
@@ -384,7 +445,6 @@ public class Versions {
             failedCases++;
 
         }
-
     }
 
     protected void fail(List<String> args) {
@@ -454,121 +514,9 @@ public class Versions {
     }
 
     protected void genSourceFiles() throws IOException{
-        /* Create a file that executes with all supported versions. */
-        writeSourceFile("Base.java","public class Base { }\n");
-
-        /*
-         * Create a file with a new feature in 7, not in 6 : "<>"
-         */
-        writeSourceFile("New7.java",
-            """
-            import java.util.List;
-            import java.util.ArrayList;
-            class New7 { List<String> s = new ArrayList<>(); }
-            """
-        );
-
-        /*
-         * Create a file with a new feature in 8, not in 7 : lambda
-         */
-        writeSourceFile("New8.java",
-            """
-            public class New8 {
-                void m() {
-                new Thread(() -> { });
-                }
-            }
-             """
-        );
-
-        /*
-         * Create a file with a new feature in 10, not in 9 : var
-         */
-        writeSourceFile("New10.java",
-            """
-            public class New10 {
-                void m() {
-                var tmp = new Thread(() -> { });
-                }
-            }
-            """
-        );
-
-        /*
-         * Create a file with a new feature in 11, not in 10 : var for lambda parameters
-         */
-        writeSourceFile("New11.java",
-            """
-            public class New11 {
-                static java.util.function.Function<String,String> f = (var x) -> x.substring(0);
-                void m(String name) {
-                var tmp = new Thread(() -> { }, f.apply(name));
-                }
-            }
-            """
-        );
-
-        /*
-         * Create a file with a new feature in 14, not in 13 : switch expressions
-         */
-        writeSourceFile("New14.java",
-            """
-            public class New14 {
-                static {
-                    int i = 5;
-                    System.out.println(
-                        switch(i) {
-                            case 0 -> false;
-                            default -> true;
-                        }
-                    );
-                }
-            }
-            """
-        );
-
-        /*
-         * Create a file with a new feature in 15, not in 14 : text blocks
-         */
-        writeSourceFile("New15.java",
-            """
-            public class New15 {
-                public static final String s =
-                \"\"\"
-                Hello, World.
-                \"\"\"
-                ;
-            }
-            """
-        );
-
-        /*
-         * Create a file with a new feature in 16, not in 15 : records
-         */
-        writeSourceFile("New16.java",
-            """
-            public class New16 {
-                public record Record(double rpm) {
-                    public static final Record LONG_PLAY = new Record(100.0/3.0);
-                }
-            }
-            """
-        );
-
-        /*
-         * Create a file with a new feature in 17, not in 16 : sealed classes
-         */
-        writeSourceFile("New17.java",
-            """
-            public class New17 {
-                public static sealed class Seal {}
-
-                public static final class Pinniped extends Seal {}
-                public static final class TaperedThread extends Seal {}
-                public static final class Wax extends Seal {}
-            }
-            """
-        );
+        for (SourceExample srcEg : SourceExample.values()) {
+            writeSourceFile(srcEg.fileName(), srcEg.fileContents());
+        }
     }
 
     protected boolean checkClassFileVersion

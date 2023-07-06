@@ -34,7 +34,9 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -46,12 +48,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
@@ -64,6 +68,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
@@ -118,7 +123,6 @@ import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
-import jdk.javadoc.internal.tool.DocEnvImpl;
 
 import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
@@ -138,12 +142,14 @@ public class Utils {
     public final Comparators comparators;
     private final JavaScriptScanner javaScriptScanner;
     private final DocFinder docFinder = newDocFinder();
+    private final TypeElement JAVA_LANG_OBJECT;
 
     public Utils(BaseConfiguration c) {
         configuration = c;
         options = configuration.getOptions();
         resources = configuration.getDocResources();
         elementUtils = c.docEnv.getElementUtils();
+        JAVA_LANG_OBJECT = elementUtils.getTypeElement("java.lang.Object");
         typeUtils = c.docEnv.getTypeUtils();
         docTrees = c.docEnv.getDocTrees();
         javaScriptScanner = c.isAllowScriptInComments() ? null : new JavaScriptScanner();
@@ -2178,8 +2184,14 @@ public class Utils {
         if (path != null || elementToTreePath.containsKey(e)) {
             // expedite the path and one that is a null
             return path;
+        } else {
+            var p = docTrees.getPath(e);
+            // if docTrees.getPath itself has put a path for e into elementToTreePath
+            // (see 8304878), we assume that the path already in the map is equivalent
+            // to the path we are about to put: hence, no harm if replaced
+            elementToTreePath.put(e, p);
+            return p;
         }
-        return elementToTreePath.computeIfAbsent(e, docTrees::getPath);
     }
 
     /**
@@ -2742,14 +2754,125 @@ public class Utils {
     }
 
     private DocFinder newDocFinder() {
-        return new DocFinder(e -> {
-            var i = overriddenMethod(e);
-            return i == null ? null : i.overriddenMethod();
-        }, this::implementedMethods);
+        return new DocFinder(this::overriddenMethods);
     }
 
-    private Iterable<ExecutableElement> implementedMethods(ExecutableElement originalMethod, ExecutableElement m) {
-        var type = configuration.utils.getEnclosingTypeElement(m);
-        return configuration.getVisibleMemberTable(type).getImplementedMethods(originalMethod);
+    /*
+     * Returns an iterable over all unique methods overridden by the given
+     * method from its enclosing type element. The methods encounter order
+     * is that of described in the "Automatic Supertype Search" section of
+     * the Documentation Comment Specification for the Standard Doclet.
+     */
+    private Iterable<? extends ExecutableElement> overriddenMethods(ExecutableElement method) {
+        return () -> new Overrides(method);
+    }
+
+    private class Overrides implements Iterator<ExecutableElement> {
+
+        // prefer java.util.Deque to java.util.Stack API for stacks
+        final Deque<TypeElement> searchStack = new ArrayDeque<>();
+        final Set<TypeElement> visited = new HashSet<>();
+
+        final ExecutableElement overrider;
+        ExecutableElement next;
+
+        public Overrides(ExecutableElement method) {
+            if (method.getKind() != ElementKind.METHOD) {
+                throw new IllegalArgumentException(diagnosticDescriptionOf(method));
+            }
+            overrider = method;
+            // java.lang.Object is to be searched for overrides last
+            searchStack.push(JAVA_LANG_OBJECT);
+            searchStack.push((TypeElement) method.getEnclosingElement());
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (next != null) {
+                return true;
+            }
+            updateNext();
+            return next != null;
+        }
+
+        @Override
+        public ExecutableElement next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            var n = next;
+            updateNext();
+            return n;
+        }
+
+        private void updateNext() {
+            while (!searchStack.isEmpty()) {
+                // replace the top class or interface with its supertypes
+                var t = searchStack.pop();
+
+                // <TODO refactor once java.util.List.reversed() from
+                //   SequencedCollection is available>
+                var filteredSupertypes = typeUtils.directSupertypes(t.asType()).stream()
+                        .map(t_ -> (TypeElement) ((DeclaredType) t_).asElement())
+                        // filter out java.lang.Object using the fact that at
+                        // most one class type comes first in the stream of
+                        // direct supertypes
+                        .dropWhile(JAVA_LANG_OBJECT::equals)
+                        .filter(visited::add) // idempotent side effect
+                        .collect(Collectors.toCollection(ArrayList::new));
+                // push supertypes in reverse order, so that they are popped
+                // back in the initial order
+                Collections.reverse(filteredSupertypes);
+                filteredSupertypes.forEach(searchStack::push);
+                // </TODO>
+
+                // consider only the declared methods for consistency with
+                // the existing facilities, such as Utils.overriddenMethod
+                // and VisibleMemberTable.getImplementedMethods
+                TypeElement peek = searchStack.peek();
+                if (peek == null) {
+                    next = null; // end-of-hierarchy
+                    break;
+                }
+                if (isPlainInterface(peek) && !isPublic(peek) && !isLinkable(peek)) {
+                    // we don't consider such interfaces directly, but may consider
+                    // their supertypes (subject to this check for each of them)
+                    continue;
+                }
+                List<Element> declaredMethods = configuration.getVisibleMemberTable(peek)
+                        .getMembers(VisibleMemberTable.Kind.METHODS);
+                var overridden = declaredMethods.stream()
+                        .filter(candidate -> elementUtils.overrides(overrider, (ExecutableElement) candidate,
+                                (TypeElement) overrider.getEnclosingElement()))
+                        .findFirst();
+                // assume a method may override at most one method in any
+                // given class or interface; hence findFirst
+                assert declaredMethods.stream()
+                        .filter(candidate -> elementUtils.overrides(overrider, (ExecutableElement) candidate,
+                                (TypeElement) overrider.getEnclosingElement()))
+                        .count() <= 1 : diagnosticDescriptionOf(overrider);
+
+                if (overridden.isPresent()) {
+                    next = (ExecutableElement) overridden.get();
+                    break;
+                }
+
+                // TODO we're currently ignoring simpleOverride
+                //  (it's unavailable in this data structure)
+            }
+
+            // if the stack is empty, there's no unconsumed override:
+            // if that ever fails, an iterator's client will be stuck
+            // in an infinite loop
+            assert !searchStack.isEmpty() || next == null
+                    : diagnosticDescriptionOf(overrider);
+        }
+    }
+
+    public static String diagnosticDescriptionOf(Element e) {
+        if (e == null) // shouldn't NPE if passed null
+            return "null";
+        return e + ", " + (e instanceof QualifiedNameable q ? q.getQualifiedName() : e.getSimpleName())
+                + ", " + e.getKind() + ", " + Objects.toIdentityString(e);
     }
 }

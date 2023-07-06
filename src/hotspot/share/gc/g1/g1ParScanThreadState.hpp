@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,7 @@
 #include "utilities/ticks.hpp"
 
 class G1CardTable;
+class G1CollectionSet;
 class G1EvacFailureRegions;
 class G1EvacuationRootClosures;
 class G1OopStarChunkedList;
@@ -117,8 +118,7 @@ public:
                        PreservedMarks* preserved_marks,
                        uint worker_id,
                        uint num_workers,
-                       size_t young_cset_length,
-                       size_t optional_cset_length,
+                       G1CollectionSet* collection_set,
                        G1EvacFailureRegions* evac_failure_regions);
   virtual ~G1ParScanThreadState();
 
@@ -185,7 +185,7 @@ private:
   // Tries to allocate word_sz in the PLAB of the next "generation" after trying to
   // allocate into dest. Previous_plab_refill_failed indicates whether previous
   // PLAB refill for the original (source) object failed.
-  // Returns a non-NULL pointer if successful, and updates dest if required.
+  // Returns a non-null pointer if successful, and updates dest if required.
   // Also determines whether we should continue to try to allocate into the various
   // generations or just end trying to allocate.
   HeapWord* allocate_in_next_plab(G1HeapRegionAttr* dest,
@@ -231,12 +231,11 @@ public:
 
 class G1ParScanThreadStateSet : public StackObj {
   G1CollectedHeap* _g1h;
+  G1CollectionSet* _collection_set;
   G1RedirtyCardsQueueSet _rdcqs;
   PreservedMarksSet _preserved_marks_set;
   G1ParScanThreadState** _states;
   size_t* _surviving_young_words_total;
-  size_t _young_cset_length;
-  size_t _optional_cset_length;
   uint _num_workers;
   bool _flushed;
   G1EvacFailureRegions* _evac_failure_regions;
@@ -244,8 +243,7 @@ class G1ParScanThreadStateSet : public StackObj {
  public:
   G1ParScanThreadStateSet(G1CollectedHeap* g1h,
                           uint num_workers,
-                          size_t young_cset_length,
-                          size_t optional_cset_length,
+                          G1CollectionSet* collection_set,
                           G1EvacFailureRegions* evac_failure_regions);
   ~G1ParScanThreadStateSet();
 

@@ -32,16 +32,10 @@
 
 #define SUPPORT_MONITOR_COUNT
 
-#ifdef __APPLE__
-#define FFI_GO_CLOSURES 0
-#endif
-
 #include <ffi.h>
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
 const bool CCallingConventionRequiresIntsAsLongs = false;
-
-#define COMPRESSED_CLASS_POINTERS_DEPENDS_ON_COMPRESSED_OOPS false
 
 #endif // CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP

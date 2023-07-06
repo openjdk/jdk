@@ -1492,7 +1492,7 @@ static Register reg_to_register_object(int register_encoding) {
   return as_Register(register_encoding);
 }
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
@@ -1510,26 +1510,22 @@ const bool Matcher::match_rule_supported(int opcode) {
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   if (!match_rule_supported(opcode) || !vector_size_supported(bt, vlen)) {
     return false;
   }
   return true; // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
   return false;
 }
 
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
-  return false;
-}
-
-const bool Matcher::vector_needs_load_shuffle(BasicType elem_bt, int vlen) {
+bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
@@ -1542,7 +1538,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -1554,32 +1550,32 @@ OptoRegPair Matcher::vector_return_value(uint ideal_reg) {
 //----------SUPERWORD HELPERS----------------------------------------
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(MaxVectorSize == 8, "");
   return 8;
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int size) {
+uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize == 8 && size == 8, "");
   return Op_RegL;
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   return max_vector_size(bt); // Same as max.
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
 
@@ -2191,7 +2187,7 @@ encode %{
       __ load_klass(Z_method, Z_R2);
 
       int entry_offset = in_bytes(Klass::vtable_start_offset()) + vtable_index * vtableEntry::size_in_bytes();
-      int v_off        = entry_offset + vtableEntry::method_offset_in_bytes();
+      int v_off        = entry_offset + in_bytes(vtableEntry::method_offset());
 
       if (Displacement::is_validDisp(v_off) ) {
         // Can use load instruction with large offset.

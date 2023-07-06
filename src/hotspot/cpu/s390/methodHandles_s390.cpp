@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2016, 2017 SAP SE. All rights reserved.
+ * Copyright (c) 2016, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -276,10 +276,10 @@ address MethodHandles::generate_method_handle_interpreter_entry(MacroAssembler* 
 
     // Supplement to 8139891: _intrinsic_id exceeded 1-byte size limit.
     if (Method::intrinsic_id_size_in_bytes() == 1) {
-      __ z_cli(Address(Z_method, Method::intrinsic_id_offset_in_bytes()), (int)iid);
+      __ z_cli(Address(Z_method, Method::intrinsic_id_offset()), (int)iid);
     } else {
       assert(Method::intrinsic_id_size_in_bytes() == 2, "size error: check Method::_intrinsic_id");
-      __ z_lh(Z_R0_scratch, Address(Z_method, Method::intrinsic_id_offset_in_bytes()));
+      __ z_lh(Z_R0_scratch, Address(Z_method, Method::intrinsic_id_offset()));
       __ z_chi(Z_R0_scratch, (int)iid);
     }
     __ z_bre(L);
@@ -387,6 +387,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   } else if (iid == vmIntrinsics::_linkToNative) {
     assert(for_compiler_entry, "only compiler entry is supported");
     jump_to_native_invoker(_masm, member_reg, temp1);
+    return;
   }
 
   // The method is a member invoker used by direct method handles.
@@ -638,7 +639,7 @@ void MethodHandles::trace_method_handle(MacroAssembler* _masm, const char* adapt
   if (!log_is_enabled(Info, methodhandles)) { return; }
 
   // If arg registers are contiguous, we can use STMG/LMG.
-  assert((Z_ARG5->encoding() - Z_ARG1->encoding() + 1) == RegisterImpl::number_of_arg_registers, "Oops");
+  assert((Z_ARG5->encoding() - Z_ARG1->encoding() + 1) == Register::number_of_arg_registers, "Oops");
 
   BLOCK_COMMENT("trace_method_handle {");
 

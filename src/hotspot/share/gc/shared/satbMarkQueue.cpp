@@ -124,7 +124,7 @@ void SATBMarkQueueSet::set_process_completed_buffers_threshold(size_t value) {
 
 void SATBMarkQueueSet::set_buffer_enqueue_threshold_percentage(uint value) {
   // Minimum threshold of 1 ensures enqueuing of completely full buffers.
-  size_t size = buffer_size();
+  size_t size = buffer_capacity();
   size_t enqueue_qty = (size * value) / 100;
   _buffer_enqueue_threshold = MAX2(size - enqueue_qty, (size_t)1);
 }
@@ -194,9 +194,9 @@ void SATBMarkQueueSet::set_active_all_threads(bool active, bool expected_active)
     virtual void do_thread(Thread* t) {
       SATBMarkQueue& queue = _qset->satb_queue_for_thread(t);
       if (queue.buffer() != nullptr) {
-        assert(!_active || queue.index() == _qset->buffer_size(),
+        assert(!_active || queue.index() == _qset->buffer_capacity(),
                "queues should be empty when activated");
-        queue.set_index(_qset->buffer_size());
+        queue.set_index(_qset->buffer_capacity());
       }
       queue.set_active(_active);
     }
@@ -209,7 +209,7 @@ bool SATBMarkQueueSet::apply_closure_to_completed_buffer(SATBBufferClosure* cl) 
   if (nd != nullptr) {
     void **buf = BufferNode::make_buffer_from_node(nd);
     size_t index = nd->index();
-    size_t size = buffer_size();
+    size_t size = buffer_capacity();
     assert(index <= size, "invariant");
     cl->do_buffer(buf + index, size - index);
     deallocate_buffer(nd);
@@ -255,9 +255,9 @@ bool SATBMarkQueueSet::should_enqueue_buffer(SATBMarkQueue& queue) {
   // Ensure we'll enqueue completely full buffers.
   assert(threshold > 0, "enqueue threshold = 0");
   // Ensure we won't enqueue empty buffers.
-  assert(threshold <= buffer_size(),
+  assert(threshold <= buffer_capacity(),
          "enqueue threshold %zu exceeds capacity %zu",
-         threshold, buffer_size());
+         threshold, buffer_capacity());
   return queue.index() < threshold;
 }
 
@@ -310,7 +310,7 @@ void SATBMarkQueueSet::print_all(const char* msg) {
   while (nd != nullptr) {
     void** buf = BufferNode::make_buffer_from_node(nd);
     os::snprintf(buffer, SATB_PRINTER_BUFFER_SIZE, "Enqueued: %d", i);
-    print_satb_buffer(buffer, buf, nd->index(), buffer_size());
+    print_satb_buffer(buffer, buf, nd->index(), buffer_capacity());
     nd = nd->next();
     i += 1;
   }

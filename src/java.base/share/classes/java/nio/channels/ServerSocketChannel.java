@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -198,9 +198,9 @@ public abstract class ServerSocketChannel
      * to listen for connections.
      *
      * <p> An invocation of this method is equivalent to the following:
-     * <blockquote><pre>
-     * bind(local, 0);
-     * </pre></blockquote>
+     * {@snippet lang=java :
+     *     bind(local, 0);
+     * }
      *
      * @param   local
      *          The local address to bind the socket, or {@code null} to bind

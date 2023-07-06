@@ -262,6 +262,21 @@ void DumpRegion::pack(DumpRegion* next) {
   }
 }
 
+void WriteClosure::do_ptr(void** p) {
+  // Write ptr into the archive; ptr can be:
+  //   (a) null                 -> written as 0
+  //   (b) a "buffered" address -> written as is
+  //   (c) a "source"   address -> convert to "buffered" and write
+  // The common case is (c). E.g., when writing the vmClasses into the archive.
+  // We have (b) only when we don't have a corresponding source object. E.g.,
+  // the archived c++ vtable entries.
+  address ptr = *(address*)p;
+  if (ptr != nullptr && !ArchiveBuilder::current()->is_in_buffer_space(ptr)) {
+    ptr = ArchiveBuilder::current()->get_buffered_addr(ptr);
+  }
+  _dump_region->append_intptr_t((intptr_t)ptr, true);
+}
+
 void WriteClosure::do_oop(oop* o) {
   if (*o == nullptr) {
     _dump_region->append_intptr_t(0);
@@ -282,7 +297,7 @@ void WriteClosure::do_region(u_char* start, size_t size) {
   assert(size % sizeof(intptr_t) == 0, "bad size");
   do_tag((int)size);
   while (size > 0) {
-    _dump_region->append_intptr_t(*(intptr_t*)start, true);
+    do_ptr((void**)start);
     start += sizeof(intptr_t);
     size -= sizeof(intptr_t);
   }
@@ -299,6 +314,11 @@ void ReadClosure::do_ptr(void** p) {
 void ReadClosure::do_u4(u4* p) {
   intptr_t obj = nextPtr();
   *p = (u4)(uintx(obj));
+}
+
+void ReadClosure::do_int(int* p) {
+  intptr_t obj = nextPtr();
+  *p = (int)(intx(obj));
 }
 
 void ReadClosure::do_bool(bool* p) {

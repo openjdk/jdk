@@ -783,21 +783,22 @@ UNSAFE_ENTRY(void, Unsafe_Park(JNIEnv *env, jobject unsafe, jboolean isAbsolute,
 
 UNSAFE_ENTRY(void, Unsafe_Unpark(JNIEnv *env, jobject unsafe, jobject jthread)) {
   if (jthread != nullptr) {
-    ThreadsListHandle tlh;
-    JavaThread* thr = nullptr;
-    oop java_thread = nullptr;
-    (void) tlh.cv_internal_thread_to_JavaThread(jthread, &thr, &java_thread);
-    if (java_thread != nullptr) {
-      // This is a valid oop.
-      if (thr != nullptr) {
-        // The JavaThread is alive.
-        Parker* p = thr->parker();
-        HOTSPOT_THREAD_UNPARK((uintptr_t) p);
-        p->unpark();
-      }
+    oop thread_oop = JNIHandles::resolve_non_null(jthread);
+    // Get the JavaThread* stored in the java.lang.Thread object _before_
+    // the embedded ThreadsListHandle is constructed so we know if the
+    // early life stage of the JavaThread* is protected. We use acquire
+    // here to ensure that if we see a non-nullptr value, then we also
+    // see the main ThreadsList updates from the JavaThread* being added.
+    FastThreadsListHandle ftlh(thread_oop, java_lang_Thread::thread_acquire(thread_oop));
+    JavaThread* thr = ftlh.protected_java_thread();
+    if (thr != nullptr) {
+      // The still live JavaThread* is protected by the FastThreadsListHandle
+      // so it is safe to access.
+      Parker* p = thr->parker();
+      HOTSPOT_THREAD_UNPARK((uintptr_t) p);
+      p->unpark();
     }
-  } // ThreadsListHandle is destroyed here.
-
+  } // FastThreadsListHandle is destroyed here.
 } UNSAFE_END
 
 UNSAFE_ENTRY(jint, Unsafe_GetLoadAverage0(JNIEnv *env, jobject unsafe, jdoubleArray loadavg, jint nelem)) {

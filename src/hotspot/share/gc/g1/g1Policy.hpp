@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,8 +46,10 @@
 
 class HeapRegion;
 class G1CollectionSet;
+class G1CollectionCandidateList;
 class G1CollectionSetCandidates;
 class G1CollectionSetChooser;
+class G1CollectionCandidateRegionList;
 class G1IHOPControl;
 class G1Analytics;
 class G1SurvivorRegions;
@@ -154,7 +156,7 @@ public:
   // Predict other time for count young regions.
   double predict_young_region_other_time_ms(uint count) const;
   // Predict copying live data time for count eden regions. Return the predict bytes if
-  // bytes_to_copy is non-nullptr.
+  // bytes_to_copy is non-null.
   double predict_eden_copy_time_ms(uint count, size_t* bytes_to_copy = nullptr) const;
   // Total time for a region is handling remembered sets (as a single unit), copying its live data
   // and other time.
@@ -181,6 +183,7 @@ public:
 
 private:
   G1CollectionSet* _collection_set;
+  G1CollectionSetCandidates* candidates() const;
 
   double average_time_ms(G1GCPhaseTimes::GCParPhases phase) const;
   double other_time_ms(double pause_time_ms) const;
@@ -265,13 +268,8 @@ public:
   // during a mixed GC.
   uint calc_max_old_cset_length() const;
 
-  // Returns the given amount of reclaimable bytes (that represents
-  // the amount of reclaimable space still to be collected) as a
-  // percentage of the current heap capacity.
-  double reclaimable_bytes_percent(size_t reclaimable_bytes) const;
-
 private:
-  void clear_collection_set_candidates();
+  void abandon_collection_set_candidates();
   // Sets up marking if proper conditions are met.
   void maybe_start_marking();
   // Manage time-to-mixed tracking.
@@ -313,7 +311,7 @@ public:
 
   bool need_to_start_conc_mark(const char* source, size_t alloc_word_size = 0);
 
-  bool concurrent_operation_is_full_mark(const char* msg = NULL);
+  bool concurrent_operation_is_full_mark(const char* msg = nullptr);
 
   bool about_to_start_mixed_phase() const;
 
@@ -336,24 +334,24 @@ public:
   void record_concurrent_mark_cleanup_start();
   void record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_sets);
 
-  bool next_gc_should_be_mixed(const char* no_candidates_str) const;
+  bool next_gc_should_be_mixed() const;
 
   // Amount of allowed waste in bytes in the collection set.
   size_t allowed_waste_in_collection_set() const;
-  // Calculate and return the number of initial and optional old gen regions from
-  // the given collection set candidates and the remaining time.
-  void calculate_old_collection_set_regions(G1CollectionSetCandidates* candidates,
-                                            double time_remaining_ms,
-                                            uint& num_initial_regions,
-                                            uint& num_optional_regions);
+  // Calculate and fill in the initial and optional old gen candidate regions from
+  // the given candidate list and the remaining time.
+  // Returns the remaining time.
+  double select_candidates_from_marking(G1CollectionCandidateList* marking_list,
+                                        double time_remaining_ms,
+                                        G1CollectionCandidateRegionList* initial_old_regions,
+                                        G1CollectionCandidateRegionList* optional_old_regions);
 
   // Calculate the number of optional regions from the given collection set candidates,
   // the remaining time and the maximum number of these regions and return the number
   // of actually selected regions in num_optional_regions.
-  void calculate_optional_collection_set_regions(G1CollectionSetCandidates* candidates,
-                                                 uint const max_optional_regions,
+  void calculate_optional_collection_set_regions(G1CollectionCandidateRegionList* optional_old_regions,
                                                  double time_remaining_ms,
-                                                 uint& num_optional_regions);
+                                                 G1CollectionCandidateRegionList* selected);
 
 private:
 
@@ -422,12 +420,12 @@ private:
   // Fraction used when predicting how many optional regions to include in
   // the CSet. This fraction of the available time is used for optional regions,
   // the rest is used to add old regions to the normal CSet.
-  double optional_prediction_fraction() { return 0.2; }
+  double optional_prediction_fraction() const { return 0.2; }
 
 public:
   // Fraction used when evacuating the optional regions. This fraction of the
   // remaining time is used to choose what regions to include in the evacuation.
-  double optional_evacuation_fraction() { return 0.75; }
+  double optional_evacuation_fraction() const { return 0.75; }
 
   uint tenuring_threshold() const { return _tenuring_threshold; }
 

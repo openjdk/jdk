@@ -114,11 +114,6 @@ class WatcherThread: public NonJavaThread {
   // volatile due to at least one lock-free read
   volatile static bool _should_terminate;
  public:
-
-  enum SomeConstants {
-    delay_interval = 10                          // interrupt delay in milliseconds
-  };
-
   // Constructor
   WatcherThread();
 

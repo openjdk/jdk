@@ -246,7 +246,7 @@ class LibraryCallKit : public GraphKit {
 
   bool inline_native_time_funcs(address method, const char* funcName);
 #if INCLUDE_JVMTI
-  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName);
+  bool inline_native_notify_jvmti_funcs(address funcAddr, const char* funcName, bool is_start, bool is_end);
   bool inline_native_notify_jvmti_hide();
 #endif
 
@@ -345,6 +345,8 @@ class LibraryCallKit : public GraphKit {
   // Vector API support
   bool inline_vector_nary_operation(int n);
   bool inline_vector_frombits_coerced();
+  bool inline_vector_shuffle_to_vector();
+  bool inline_vector_shuffle_iota();
   bool inline_vector_mask_operation();
   bool inline_vector_mem_operation(bool is_store);
   bool inline_vector_mem_masked_operation(bool is_store);

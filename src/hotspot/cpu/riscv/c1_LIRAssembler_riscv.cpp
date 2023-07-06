@@ -360,7 +360,7 @@ int LIR_Assembler::emit_unwind_handler() {
   if (method()->is_synchronized()) {
     monitor_address(0, FrameMap::r10_opr);
     stub = new MonitorExitStub(FrameMap::r10_opr, true, 0);
-    if (UseHeavyMonitors) {
+    if (LockingMode == LM_MONITOR) {
       __ j(*stub->entry());
     } else {
       __ unlock_object(x15, x14, x10, *stub->entry());
@@ -858,7 +858,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src, LIR_Opr dest, BasicType type, LIR_Patch
       __ decode_heap_oop(dest->as_register());
     }
 
-    if (!UseZGC) {
+    if (!(UseZGC && !ZGenerational)) {
       // Load barrier has not yet been applied, so ZGC can't verify the oop here
       __ verify_oop(dest->as_register());
     }
@@ -976,14 +976,13 @@ void LIR_Assembler::emit_opConvert(LIR_OpConvert* op) {
     case Bytecodes::_i2c:
       __ zero_extend(dest->as_register(), src->as_register(), 16); break;
     case Bytecodes::_i2l:
-      __ addw(dest->as_register_lo(), src->as_register(), zr); break;
+      __ sign_extend(dest->as_register_lo(), src->as_register(), 32); break;
     case Bytecodes::_i2s:
       __ sign_extend(dest->as_register(), src->as_register(), 16); break;
     case Bytecodes::_i2b:
       __ sign_extend(dest->as_register(), src->as_register(), 8); break;
     case Bytecodes::_l2i:
-      _masm->block_comment("FIXME: This coulde be no-op");
-      __ addw(dest->as_register(), src->as_register_lo(), zr); break;
+      __ sign_extend(dest->as_register(), src->as_register_lo(), 32); break;
     case Bytecodes::_d2l:
       __ fcvt_l_d_safe(dest->as_register_lo(), src->as_double_reg()); break;
     case Bytecodes::_f2i:
@@ -1264,10 +1263,13 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     if (UseCompressedOops) {
       Register tmp1 = op->tmp1()->as_register();
       assert(op->tmp1()->is_valid(), "must be");
+      Register tmp2 = op->tmp2()->as_register();
+      assert(op->tmp2()->is_valid(), "must be");
+
       __ encode_heap_oop(tmp1, cmpval);
       cmpval = tmp1;
-      __ encode_heap_oop(t1, newval);
-      newval = t1;
+      __ encode_heap_oop(tmp2, newval);
+      newval = tmp2;
       caswu(addr, newval, cmpval);
     } else {
       casl(addr, newval, cmpval);
@@ -1276,6 +1278,11 @@ void LIR_Assembler::emit_compare_and_swap(LIR_OpCompareAndSwap* op) {
     casw(addr, newval, cmpval);
   } else {
     casl(addr, newval, cmpval);
+  }
+
+  if (op->result_opr()->is_valid()) {
+    assert(op->result_opr()->is_register(), "need a register");
+    __ mv(as_reg(op->result_opr()), t0); // cas result in t0, and 0 for success
   }
 }
 
@@ -1296,7 +1303,7 @@ void LIR_Assembler::logic_op(LIR_Code code, LIR_Opr left, LIR_Opr right, LIR_Opr
       int right_const = right->as_jint();
       if (Assembler::is_simm12(right_const)) {
         logic_op_imm(Rdst, Rleft, right_const, code);
-        __ addw(Rdst, Rdst, zr);
+        __ sign_extend(Rdst, Rdst, 32);
      } else {
         __ mv(t0, right_const);
         logic_op_reg32(Rdst, Rleft, t0, code);
@@ -1499,7 +1506,7 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   Register obj = op->obj_opr()->as_register();  // may not be an oop
   Register hdr = op->hdr_opr()->as_register();
   Register lock = op->lock_opr()->as_register();
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     if (op->info() != nullptr) {
       add_debug_info_for_null_check_here(op->info());
       __ null_check(obj);

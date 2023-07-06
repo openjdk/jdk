@@ -7,6 +7,11 @@
 
 <configuration version="2.0" label="Profiling" description="Low overhead configuration for profiling, typically around 2 % overhead." provider="Oracle">
 
+    <event name="jdk.ResidentSetSize">
+      <setting name="enabled">true</setting>
+      <setting name="period">1000 ms</setting>
+    </event>
+
     <event name="jdk.ThreadAllocationStatistics">
       <setting name="enabled">true</setting>
       <setting name="period">everyChunk</setting>
@@ -322,6 +327,16 @@
       <setting name="enabled">false</setting>
     </event>
 
+    <event name="jdk.GCHeapMemoryUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
+    <event name="jdk.GCHeapMemoryPoolUsage">
+      <setting name="enabled" control="gc-enabled-normal">true</setting>
+      <setting name="period">everyChunk</setting>
+    </event>
+
     <event name="jdk.GCHeapSummary">
       <setting name="enabled" control="gc-enabled-normal">true</setting>
     </event>
@@ -418,6 +433,11 @@
     </event>
 
     <event name="jdk.GCPhaseConcurrentLevel1">
+      <setting name="enabled" control="gc-enabled-high">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.GCPhaseConcurrentLevel2">
       <setting name="enabled" control="gc-enabled-high">true</setting>
       <setting name="threshold">0 ms</setting>
     </event>
@@ -715,8 +735,8 @@
     </event>
 
     <event name="jdk.Deserialization">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.InitialSecurityProperty">
@@ -725,13 +745,13 @@
     </event>
 
     <event name="jdk.SecurityPropertyModification">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.SecurityProviderService">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.TLSHandshake">
@@ -740,13 +760,13 @@
     </event>
 
     <event name="jdk.X509Validation">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.X509Certificate">
-       <setting name="enabled">false</setting>
-       <setting name="stackTrace">true</setting>
+      <setting name="enabled">false</setting>
+      <setting name="stackTrace">true</setting>
     </event>
 
     <event name="jdk.JavaExceptionThrow">
@@ -831,6 +851,16 @@
       <setting name="threshold">0 ms</setting>
     </event>
 
+    <event name="jdk.ZYoungGarbageCollection">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
+    <event name="jdk.ZOldGarbageCollection">
+      <setting name="enabled">true</setting>
+      <setting name="threshold">0 ms</setting>
+    </event>
+
     <event name="jdk.Deoptimization">
       <setting name="enabled">true</setting>
       <setting name="stackTrace">true</setting>
@@ -897,7 +927,7 @@
   carry the control attribute.
   -->
     <control>
-        <selection name="gc" default="detailed" label="Garbage Collector">
+      <selection name="gc" default="detailed" label="Garbage Collector">
         <option label="Off" name="off">off</option>
         <option label="Normal" name="normal">normal</option>
         <option label="Detailed" name="detailed">detailed</option>
@@ -915,11 +945,11 @@
       </condition>
 
       <condition name="gc-enabled-detailed" true="true" false="false">
-       <or>
+        <or>
           <test name="gc" operator="equal" value="detailed"/>
           <test name="gc" operator="equal" value="high"/>
           <test name="gc" operator="equal" value="all"/>
-       </or>
+        </or>
       </condition>
 
       <condition name="gc-enabled-high" true="true" false="false">
@@ -937,7 +967,7 @@
         <option label="Off" name="off">0/s</option>
         <option label="Low" name="low">150/s</option>
         <option label="Medium" name="medium">300/s</option>
-	    <option label="High" name="high">1000/s</option>
+        <option label="High" name="high">1000/s</option>
         <option label="Maximum" name="maximum">1000000000/s</option>
       </selection>
 
@@ -1090,7 +1120,6 @@
       <text name="socket-threshold" label="Socket I/O Threshold" contentType="timespan" minimum="0 s">10 ms</text>
 
       <flag name="class-loading" label="Class Loading">false</flag>
-
     </control>
 
 </configuration>
