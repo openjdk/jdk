@@ -47,6 +47,7 @@
 #include "gc/shared/plab.hpp"
 #include "gc/shared/stringdedup/stringDedup.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "runtime/trimNative.hpp"
 #include "logging/log.hpp"
 #include "logging/logStream.hpp"
 #include "memory/metadataFactory.hpp"
@@ -1055,6 +1056,11 @@ bool universe_post_init() {
 #if INCLUDE_CDS
   MetaspaceShared::post_initialize(CHECK_false);
 #endif
+
+  if (TrimNativeHeap) {
+    TrimNative::initialize();
+  }
+
   return true;
 }
 

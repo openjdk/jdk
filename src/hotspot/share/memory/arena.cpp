@@ -24,6 +24,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/trimNative.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -52,7 +53,7 @@ class ChunkPool {
   const size_t _size;         // (inner payload) size of the chunks this pool serves
 
   // Our four static pools
-  static const int _num_pools = 4;
+  static constexpr int _num_pools = 4;
   static ChunkPool _pools[_num_pools];
 
  public:
@@ -80,7 +81,6 @@ class ChunkPool {
   void prune() {
     // Free all chunks while in ThreadCritical lock
     // so NMT adjustment is stable.
-    ThreadCritical tc;
     Chunk* cur = _first;
     Chunk* next = nullptr;
     while (cur != nullptr) {
@@ -91,9 +91,26 @@ class ChunkPool {
     _first = nullptr;
   }
 
-  static void clean() {
+  bool empty() const {
+    return _first == nullptr;
+  }
+
+  static bool needs_cleaning() {
     for (int i = 0; i < _num_pools; i++) {
-      _pools[i].prune();
+      if (!_pools[i].empty()) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static void clean() {
+    ThreadCritical tc;
+    if (needs_cleaning()) {
+      TrimNative::PauseMark trim_native_pause("chunk pool cleaner");
+      for (int i = 0; i < _num_pools; i++) {
+        _pools[i].prune();
+      }
     }
   }
 

@@ -91,6 +91,7 @@
 #include "gc/shared/taskqueue.inline.hpp"
 #include "gc/shared/taskTerminator.hpp"
 #include "gc/shared/tlab_globals.hpp"
+#include "runtime/trimNative.hpp"
 #include "gc/shared/workerPolicy.hpp"
 #include "gc/shared/weakProcessor.inline.hpp"
 #include "logging/log.hpp"
@@ -913,6 +914,8 @@ bool G1CollectedHeap::do_full_collection(bool clear_all_soft_refs,
     // Full GC was not completed.
     return false;
   }
+
+  TrimNative::PauseMark trim_native_pause("gc");
 
   const bool do_clear_all_soft_refs = clear_all_soft_refs ||
       soft_ref_policy()->should_clear_all_soft_refs();
@@ -2549,6 +2552,7 @@ void G1CollectedHeap::retire_tlabs() {
 
 void G1CollectedHeap::do_collection_pause_at_safepoint_helper() {
   ResourceMark rm;
+  TrimNative::PauseMark trim_native_pause("gc");
 
   IsGCActiveMark active_gc_mark;
   GCIdMark gc_id_mark;

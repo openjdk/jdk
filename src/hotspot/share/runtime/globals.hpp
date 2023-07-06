@@ -1979,6 +1979,16 @@ const int ObjectAlignmentInBytes = 8;
           "1: monitors & legacy stack-locking (LM_LEGACY, default), "       \
           "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
           range(0, 2)                                                       \
+                                                                            \
+  product(bool, TrimNativeHeap, false, EXPERIMENTAL,                        \
+          "GC will attempt to trim the native heap periodically. By "       \
+          "default, the interval time is 60 seconds, but can be "           \
+          "changed using TrimNativeHeapInterval.")                          \
+                                                                            \
+  product(uint, TrimNativeHeapInterval, 60, EXPERIMENTAL,                   \
+          "If TrimNativeHeap is enabled: interval, in seconds, in which "   \
+          "the GC will attempt to trim the native heap.")                   \
+          range(1, UINT_MAX)                                                \
 
 // end of RUNTIME_FLAGS
 
