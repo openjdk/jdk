@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import jdk.test.lib.dcmd.PidJcmdExecutor;
 public class HeapDumpTest {
     protected String heapDumpArgs = "";
 
-    public void run(CommandExecutor executor, boolean overwrite) throws IOException {
+    public void run(CommandExecutor executor, boolean overwrite, int parallelNum) throws IOException {
         File dump = new File("jcmd.gc.heap_dump." + System.currentTimeMillis() + ".hprof");
         if (!overwrite && dump.exists()) {
             dump.delete();
@@ -58,7 +58,12 @@ public class HeapDumpTest {
             dump.createNewFile();
         }
 
-        String cmd = "GC.heap_dump " + (overwrite ? "-overwrite " : "") + heapDumpArgs + " " + dump.getAbsolutePath();
+        String cmd = "GC.heap_dump " +
+                    (overwrite ? "-overwrite " : " ") +
+                    heapDumpArgs +
+                    "-parallel=" + parallelNum +
+                    " " +
+                    dump.getAbsolutePath();
         executor.execute(cmd);
 
         verifyHeapDump(dump);
@@ -87,12 +92,22 @@ public class HeapDumpTest {
     /* GC.heap_dump is not available over JMX, running jcmd pid executor instead */
     @Test
     public void pid() throws IOException {
-        run(new PidJcmdExecutor(), false);
+        run(new PidJcmdExecutor(), false, 1);
     }
 
     @Test
     public void pidRewrite() throws IOException {
-        run(new PidJcmdExecutor(), true);
+        run(new PidJcmdExecutor(), true, 1);
+    }
+
+    /* Parallel variant*/
+    @Test
+    public void pidParallel() throws IOException {
+        run(new PidJcmdExecutor(), false, Runtime.getRuntime().availableProcessors());
+        run(new PidJcmdExecutor(), true, Runtime.getRuntime().availableProcessors());
+        run(new PidJcmdExecutor(), false, -1);
+        run(new PidJcmdExecutor(), false, 0);
+        run(new PidJcmdExecutor(), false, Integer.MAX_VALUE);
     }
 }
 

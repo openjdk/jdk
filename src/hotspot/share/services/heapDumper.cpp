@@ -603,16 +603,16 @@ void AbstractDumpWriter::end_sub_record() {
 
 class DumpWriter : public AbstractDumpWriter {
 private:
- FileWriter* _writer;
- AbstractCompressor* _compressor;
- size_t _bytes_written;
- char* _error;
- // Compression support
- char* _out_buffer;
- size_t _out_size;
- size_t _out_pos;
- char* _tmp_buffer;
- size_t _tmp_size;
+  FileWriter* _writer;
+  AbstractCompressor* _compressor;
+  size_t _bytes_written;
+  char* _error;
+  // Compression support
+  char* _out_buffer;
+  size_t _out_size;
+  size_t _out_pos;
+  char* _tmp_buffer;
+  size_t _tmp_size;
 
 private:
   void do_compress();
@@ -1508,7 +1508,7 @@ class DumperController : public CHeapObj<mtInternal> {
      _complete_number++;
      // propagate local error to global if any
      if (local_writer->has_error()) {
-      global_writer->set_error(local_writer->error());
+       global_writer->set_error(local_writer->error());
      }
      ml.notify();
    }
