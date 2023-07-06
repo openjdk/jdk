@@ -37,6 +37,11 @@ import jdk.internal.util.ByteArray;
  * thread then access to the data output stream should be controlled
  * by appropriate synchronization.
  *
+ * @apiNote
+ * The write methods of this class merely delegate to the methods of
+ * the underlying output stream, hence there is no guarantee as to
+ * the details of how the bytes are written.
+ *
  * @see     java.io.DataInputStream
  * @since   1.0
  */
