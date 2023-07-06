@@ -418,9 +418,17 @@ public class X500Name implements GeneralNameInterface, Principal {
             return this.canonicalDn.equals(other.canonicalDn);
         }
         // quick check that number of RDNs and AVAs match before canonicalizing
-        if (!Arrays.equals(this.names, other.names,
-                Comparator.comparingInt(n -> n.assertion.length)))
+        int n = this.names.length;
+        if (n != other.names.length) {
             return false;
+        }
+        for (int i = 0; i < n; i++) {
+            RDN r1 = this.names[i];
+            RDN r2 = other.names[i];
+            if (r1.assertion.length != r2.assertion.length) {
+                return false;
+            }
+        }
         // definite check via canonical form
         String thisCanonical = this.getRFC2253CanonicalName();
         String otherCanonical = other.getRFC2253CanonicalName();
