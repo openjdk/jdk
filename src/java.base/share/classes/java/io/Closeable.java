@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,11 +26,13 @@
 package java.io;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 
 /**
  * A {@code Closeable} is a source or destination of data that can be closed.
- * The close method is invoked to release resources that the object is
- * holding (such as open files).
+ * The {@code close} method is invoked to release resources that the object is
+ * holding (such as open files).  The {@code closeUnchecked} method
+ * closes the stream and may throw only an unchecked exception.
  *
  * @since 1.5
  */
@@ -41,7 +43,7 @@ public interface Closeable extends AutoCloseable {
      * with it. If the stream is already closed then invoking this
      * method has no effect.
      *
-     * <p> As noted in {@link AutoCloseable#close()}, cases where the
+     * <p> As noted in {@linkplain AutoCloseable#close()}, cases where the
      * close may fail require careful attention. It is strongly advised
      * to relinquish the underlying resources and to internally
      * <em>mark</em> the {@code Closeable} as closed, prior to throwing
@@ -50,4 +52,35 @@ public interface Closeable extends AutoCloseable {
      * @throws IOException if an I/O error occurs
      */
     public void close() throws IOException;
+
+    /**
+     * Closes this stream and releases any system resources associated
+     * with it. If the stream is already closed then invoking this
+     * method has no effect.
+     *
+     * @implSpec
+     * The default implementation is equivalent for this stream to:
+     * {@snippet lang=java :
+     * try {
+     *     close();
+     * } catch (IOException cause) {
+     *     throw new UncheckedIOException(cause);
+     * }
+     * }
+     * Therefore if an {@linkplain UncheckedIOException} is thrown then its
+     * {@linkplain UncheckedIOException#getCause() getCause} method will return the
+     * {@linkplain IOException} thrown by {@link #close() close}.
+     *
+     * @throws UncheckedIOException If invoking {@code close} throws
+     * an {@code IOException}.
+     *
+     * @since 22
+     */
+    default void closeUnchecked() {
+        try {
+            close();
+        } catch (IOException cause) {
+            throw new UncheckedIOException(cause);
+        }
+    }
 }
