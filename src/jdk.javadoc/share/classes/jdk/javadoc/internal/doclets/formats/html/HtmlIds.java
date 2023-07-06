@@ -394,7 +394,7 @@ public class HtmlIds {
      *
      * @return the id
      */
-    static HtmlId forParam(String paramName) {
+    public static HtmlId forParam(String paramName) {
         return HtmlId.of("param-" + paramName);
     }
 
@@ -407,7 +407,7 @@ public class HtmlIds {
      *
      * @return the id
      */
-    static HtmlId forText(String text, Map<String, Integer> counts) {
+    public static HtmlId forText(String text, Map<String, Integer> counts) {
         String base = text.replaceAll("\\s+", "");
         int count = counts.compute(base, (k, v) -> v == null ? 0 : v + 1);
         return HtmlId.of(count == 0 ? base : base + "-" + count);

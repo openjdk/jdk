@@ -26,10 +26,13 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
+
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -37,17 +40,14 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * used to get the relative path to the document's root output
  * directory.
  */
-public class DocRootTaglet extends BaseTaglet {
+public abstract class DocRootTaglet extends BaseTaglet {
 
     /**
      * Construct a new DocRootTaglet.
      */
-    public DocRootTaglet() {
-        super(DocTree.Kind.DOC_ROOT, true, EnumSet.allOf(Location.class));
+    protected DocRootTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.DOC_ROOT, true, EnumSet.allOf(Location.class));
     }
 
-    @Override
-    public Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer) {
-        return writer.getDocRootOutput();
-    }
+    public abstract Content getInlineTagOutput(Element holder, DocTree tag, TagletWriter writer);
 }

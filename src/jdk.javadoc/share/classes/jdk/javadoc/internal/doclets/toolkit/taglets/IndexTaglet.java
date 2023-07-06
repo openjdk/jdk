@@ -26,11 +26,13 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
+
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.IndexTree;
+
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -38,14 +40,14 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * The enclosed text is interpreted as not containing HTML markup or
  * nested javadoc tags.
  */
-public class IndexTaglet extends BaseTaglet {
+public abstract class IndexTaglet extends BaseTaglet {
 
-    IndexTaglet() {
-        super(DocTree.Kind.INDEX, true, EnumSet.allOf(Location.class));
+    protected IndexTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.INDEX, true, EnumSet.allOf(Location.class));
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return writer.indexTagOutput(element, (IndexTree) tag);
-    }
+    public abstract Content getInlineTagOutput(Element owner, DocTree tag, TagletWriter writer) throws
+            UnsupportedTagletOperationException;
+
 }

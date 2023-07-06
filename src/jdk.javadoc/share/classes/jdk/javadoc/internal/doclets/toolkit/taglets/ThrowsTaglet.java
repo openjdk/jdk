@@ -53,9 +53,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.InheritDocTree;
 import com.sun.source.doctree.ThrowsTree;
 
-import com.sun.source.util.DocTreePath;
 import jdk.javadoc.doclet.Taglet.Location;
-import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
@@ -67,7 +65,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
  * A taglet that processes {@link ThrowsTree}, which represents {@code @throws}
  * and {@code @exception} tags, collectively referred to as exception tags.
  */
-public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
+public abstract class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
 
     /*
      * Relevant bits from JLS
@@ -156,16 +154,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
      *       mA as a member of the supertype of C that names A.
      */
 
-    public ThrowsTaglet(BaseConfiguration configuration) {
+    protected ThrowsTaglet(BaseConfiguration configuration) {
         // of all language elements only constructors and methods can declare
         // thrown exceptions and, hence, document them
-        super(DocTree.Kind.THROWS, false, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD));
-        this.configuration = configuration;
-        this.utils = this.configuration.utils;
+        super(configuration, DocTree.Kind.THROWS, false, EnumSet.of(Location.CONSTRUCTOR, Location.METHOD));
     }
-
-    private final BaseConfiguration configuration;
-    private final Utils utils;
 
     @Override
     public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence, BaseConfiguration configuration) {
@@ -183,7 +176,6 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         } catch (Failure f) {
             // note that `f.holder()` is not necessarily the same as `holder`
             var ch = utils.getCommentHelper(f.holder());
-            var messages = configuration.getMessages();
             if (f instanceof Failure.ExceptionTypeNotFound e) {
                 var path = ch.getDocTreePath(e.tag().getExceptionName());
                 messages.warning(path, "doclet.throws.reference_not_found");
@@ -211,7 +203,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             // InheritDocTaglet, we have to duplicate some of the behavior of the latter taglet
             String signature = utils.getSimpleName(holder)
                     + utils.flatSignature((ExecutableElement) holder, writer.getCurrentPageElement());
-            configuration.getMessages().warning(holder, "doclet.noInheritedDoc", signature);
+            messages.warning(holder, "doclet.noInheritedDoc", signature);
         }
         return writer.getOutputInstance(); // TODO: consider invalid rather than empty output
     }
@@ -242,7 +234,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 utils.typeUtils,
                 originalExceptionTypes,
                 substitutedExceptionTypes);
-        var exceptionSection = new ExceptionSectionBuilder(writer);
+        var exceptionSection = new ExceptionSectionBuilder(writer, this);
         // Step 1: Document exception tags
         Set<TypeMirror> alreadyDocumentedExceptions = new HashSet<>();
         List<ThrowsTree> exceptionTags = utils.getThrowsTrees(executable);
@@ -298,6 +290,23 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
         assert alreadyDocumentedExceptions.containsAll(substitutedExceptionTypes);
         return exceptionSection.build();
     }
+
+    /**
+     * Returns the header for the {@code @throws} tag.
+     *
+     * @return the header for the throws tag
+     */
+    protected abstract Content getThrowsHeader();
+
+    /**
+     * Returns the output for a default {@code @throws} tag.
+     *
+     * @param throwsType the type that is thrown
+     * @param content    the optional content to add as a description
+     *
+     * @return the output
+     */
+    protected abstract Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content, TagletWriter writer);
 
     private void outputAnExceptionTagDeeply(ExceptionSectionBuilder exceptionSection,
                                             Element originalExceptionElement,
@@ -386,7 +395,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 if (supertype == null) {
                     throw new Failure.NoOverrideFound(tag, holder, inheritDoc);
                 }
-                VisibleMemberTable visibleMemberTable = configuration.getVisibleMemberTable(supertype);
+                VisibleMemberTable visibleMemberTable = config.getVisibleMemberTable(supertype);
                 List<Element> methods = visibleMemberTable.getAllVisibleMembers(VisibleMemberTable.Kind.METHODS);
                 for (Element e : methods) {
                     ExecutableElement m = (ExecutableElement) e;
@@ -694,14 +703,16 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
     private static class ExceptionSectionBuilder {
 
         private final TagletWriter writer;
+        private final ThrowsTaglet taglet;
         private final Content result;
-        private ContentBuilder current;
+        private Content current;
         private boolean began;
         private boolean headerAdded;
         private TypeMirror exceptionType;
 
-        ExceptionSectionBuilder(TagletWriter writer) {
+        ExceptionSectionBuilder(TagletWriter writer, ThrowsTaglet taglet) {
             this.writer = writer;
+            this.taglet = taglet;
             this.result = writer.getOutputInstance();
         }
 
@@ -710,7 +721,7 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
                 throw new IllegalStateException();
             }
             began = true;
-            current = new ContentBuilder();
+            current = writer.getOutputInstance();
             this.exceptionType = exceptionType;
         }
 
@@ -728,9 +739,11 @@ public class ThrowsTaglet extends BaseTaglet implements InheritableTaglet {
             began = false;
             if (!headerAdded) {
                 headerAdded = true;
-                result.add(writer.getThrowsHeader());
+                result.add(taglet.getThrowsHeader());
             }
-            result.add(writer.throwsTagOutput(exceptionType, current.isEmpty() ? Optional.empty() : Optional.of(current)));
+            result.add(taglet.throwsTagOutput(exceptionType,
+                    current.isEmpty() ? Optional.empty() : Optional.of(current),
+                    writer));
             current = null;
         }
 

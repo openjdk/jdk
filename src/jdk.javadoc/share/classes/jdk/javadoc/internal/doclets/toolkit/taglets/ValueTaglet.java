@@ -50,13 +50,13 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
  * is retrieved for the field that the inline tag appears on.  The name is specified
  * in the following format:  [fully qualified class name]#[constant field name].
  */
-public class ValueTaglet extends BaseTaglet {
+public abstract class ValueTaglet extends BaseTaglet {
 
     /**
      * Construct a new ValueTaglet.
      */
-    public ValueTaglet() {
-        super(DocTree.Kind.VALUE, true, EnumSet.allOf(Location.class));
+    protected ValueTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.VALUE, true, EnumSet.allOf(Location.class));
     }
 
     /**
@@ -118,9 +118,7 @@ public class ValueTaglet extends BaseTaglet {
             } else {
                 text = utils.constantValueExpression(field);
             }
-            return writer.valueTagOutput(field,
-                text,
-                !field.equals(holder));
+            return valueTagOutput(field, text, !field.equals(holder), writer);
         } else {
             //Referenced field is not a constant.
             messages.warning(holder,
@@ -128,4 +126,20 @@ public class ValueTaglet extends BaseTaglet {
         }
         return writer.getOutputInstance();
     }
+
+
+    /**
+     * Returns the output for a {@code {@value}} tag.
+     *
+     * @param field       the constant field that holds the value tag
+     * @param constantVal the constant value to document
+     * @param includeLink true if we should link the constant text to the
+     *                    constant field itself
+     *
+     * @return the output
+     */
+    protected abstract Content valueTagOutput(VariableElement field,
+                                              String constantVal,
+                                              boolean includeLink,
+                                              TagletWriter writer);
 }

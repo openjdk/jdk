@@ -48,10 +48,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 /**
  * A taglet that represents the {@code @return} and {@code {@return }} tags.
  */
-public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
+public abstract class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
 
-    public ReturnTaglet() {
-        super(DocTree.Kind.RETURN, true, EnumSet.of(Location.METHOD));
+    protected ReturnTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.RETURN, true, EnumSet.of(Location.METHOD));
     }
 
     @Override
@@ -78,7 +78,7 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
 
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return writer.returnTagOutput(element, (ReturnTree) tag, true);
+        return returnTagOutput(element, (ReturnTree) tag, true, writer);
     }
 
     @Override
@@ -104,9 +104,20 @@ public class ReturnTaglet extends BaseTaglet implements InheritableTaglet {
 
         var docFinder = utils.docFinder();
         return docFinder.search(method, m -> Result.fromOptional(extract(utils, m))).toOptional()
-                .map(r -> writer.returnTagOutput(r.method, r.returnTree, false))
+                .map(r -> returnTagOutput(r.method, r.returnTree, false, writer))
                 .orElse(null);
     }
+
+    /**
+     * Returns the output for a {@code @return} tag.
+     *
+     * @param element   the element that owns the doc comment
+     * @param returnTag the return tag to document
+     * @param inline    whether this should be written as an inline instance or block instance
+     *
+     * @return the output
+     */
+    protected abstract Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline, TagletWriter writer);
 
     private record Documentation(ReturnTree returnTree, ExecutableElement method) { }
 

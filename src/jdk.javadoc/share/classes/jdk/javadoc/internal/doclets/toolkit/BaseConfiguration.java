@@ -459,7 +459,7 @@ public abstract class BaseConfiguration {
      *                      either -tag or -taglet arguments.
      */
     private void initTagletManager(Set<List<String>> customTagStrs) {
-        tagletManager = tagletManager != null ? tagletManager : new TagletManager(this);
+        tagletManager = tagletManager != null ? tagletManager : newTagletManager();
         JavaFileManager fileManager = getFileManager();
         Messages messages = getMessages();
         try {
@@ -505,6 +505,8 @@ public abstract class BaseConfiguration {
             messages.error("doclet.taglet_could_not_set_location", e.toString());
         }
     }
+
+    protected abstract TagletManager newTagletManager();
 
     /**
      * Given a string, return an array of tokens, separated by ':'.

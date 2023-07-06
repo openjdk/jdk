@@ -43,10 +43,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 /**
  * A taglet that represents the {@code @spec} tag.
  */
-public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
+public abstract class SpecTaglet extends BaseTaglet implements InheritableTaglet {
 
-    public SpecTaglet() {
-        super(DocTree.Kind.SPEC, false, EnumSet.allOf(Location.class));
+    protected SpecTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.SPEC, false, EnumSet.allOf(Location.class));
     }
 
     @Override
@@ -71,8 +71,18 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
                 tags = result.get().specTrees();
             }
         }
-        return writer.specTagOutput(e, tags);
+        return specTagOutput(e, tags, writer);
     }
+
+    /**
+     * Returns the output for one or more {@code @spec} tags.
+     *
+     * @param element  the element that owns the doc comment
+     * @param specTags the array of @spec tags.
+     *
+     * @return the output
+     */
+    protected abstract Content specTagOutput(Element element, List<? extends SpecTree> specTags, TagletWriter writer);
 
     private record Documentation(List<? extends SpecTree> specTrees, ExecutableElement method) { }
 

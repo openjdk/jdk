@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,42 +23,27 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.taglets;
-
-import java.util.EnumSet;
+package jdk.javadoc.internal.doclets.formats.html.taglets;
 
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.SystemPropertyTree;
+import com.sun.source.doctree.LiteralTree;
 
-import jdk.javadoc.doclet.Taglet.Location;
-import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
+import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.taglets.LiteralTaglet;
+import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 
-/**
- * A taglet that represents the {@code @systemProperty} tag.
- */
-public abstract class SystemPropertyTaglet extends BaseTaglet {
-
-    protected SystemPropertyTaglet(BaseConfiguration config) {
-        super(config, DocTree.Kind.SYSTEM_PROPERTY, true, EnumSet.allOf(Location.class));
+public class HtmlLiteralTaglet extends LiteralTaglet {
+    HtmlLiteralTaglet(HtmlConfiguration config) {
+        super(config);
     }
 
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return systemPropertyTagOutput(element, (SystemPropertyTree) tag, writer);
+        var literalTree = (LiteralTree) tag;
+        return Text.of(Text.normalizeNewlines(literalTree.getBody().getBody()));
     }
-
-    /**
-     * Returns the output for a {@code {@systemProperty...}} tag.
-     *
-     * @param element           the element that owns the doc comment
-     * @param systemPropertyTag the system property tag
-     *
-     * @return the output
-     */
-    protected abstract Content systemPropertyTagOutput(Element element,
-                                                       SystemPropertyTree systemPropertyTag,
-                                                       TagletWriter writer);
 }

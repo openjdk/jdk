@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,35 +30,17 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.SystemPropertyTree;
 
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
-/**
- * A taglet that represents the {@code @systemProperty} tag.
- */
-public abstract class SystemPropertyTaglet extends BaseTaglet {
+public abstract class LinkTaglet extends BaseTaglet {
 
-    protected SystemPropertyTaglet(BaseConfiguration config) {
-        super(config, DocTree.Kind.SYSTEM_PROPERTY, true, EnumSet.allOf(Location.class));
+    protected LinkTaglet(BaseConfiguration config, DocTree.Kind kind) {
+        super(config, kind, true, EnumSet.allOf(Location.class));
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return systemPropertyTagOutput(element, (SystemPropertyTree) tag, writer);
-    }
-
-    /**
-     * Returns the output for a {@code {@systemProperty...}} tag.
-     *
-     * @param element           the element that owns the doc comment
-     * @param systemPropertyTag the system property tag
-     *
-     * @return the output
-     */
-    protected abstract Content systemPropertyTagOutput(Element element,
-                                                       SystemPropertyTree systemPropertyTag,
-                                                       TagletWriter writer);
+    public abstract Content getInlineTagOutput(Element e, DocTree tag, TagletWriter writer);
 }

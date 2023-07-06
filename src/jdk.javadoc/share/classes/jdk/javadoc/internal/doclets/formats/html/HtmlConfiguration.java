@@ -49,12 +49,14 @@ import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.Versions;
+import jdk.javadoc.internal.doclets.formats.html.taglets.HtmlTagletManager;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
+import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -104,7 +106,7 @@ public class HtmlConfiguration extends BaseConfiguration {
      * 2. items for elements are added in bulk before generating the index files
      * 3. additional items are added as needed
      */
-    protected HtmlIndexBuilder mainIndex;
+    public HtmlIndexBuilder mainIndex;
 
     /**
      * The collection of deprecated items, if any, to be displayed on the deprecated-list page,
@@ -133,7 +135,7 @@ public class HtmlConfiguration extends BaseConfiguration {
 
     public Contents contents;
 
-    protected final Messages messages;
+    public final Messages messages;
 
     public DocPaths docPaths;
 
@@ -285,6 +287,11 @@ public class HtmlConfiguration extends BaseConfiguration {
         setTopFile();
         initDocLint(options.doclintOpts(), tagletManager.getAllTagletNames());
         return true;
+    }
+
+    @Override
+    protected TagletManager newTagletManager() {
+        return new HtmlTagletManager(this);
     }
 
     /**

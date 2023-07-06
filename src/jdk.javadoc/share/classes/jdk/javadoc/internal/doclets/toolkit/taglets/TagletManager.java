@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -63,27 +62,17 @@ import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static com.sun.source.doctree.DocTree.Kind.AUTHOR;
-import static com.sun.source.doctree.DocTree.Kind.EXCEPTION;
-import static com.sun.source.doctree.DocTree.Kind.HIDDEN;
-import static com.sun.source.doctree.DocTree.Kind.LINK;
-import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
 import static com.sun.source.doctree.DocTree.Kind.PARAM;
-import static com.sun.source.doctree.DocTree.Kind.PROVIDES;
 import static com.sun.source.doctree.DocTree.Kind.SEE;
-import static com.sun.source.doctree.DocTree.Kind.SERIAL;
 import static com.sun.source.doctree.DocTree.Kind.SERIAL_DATA;
-import static com.sun.source.doctree.DocTree.Kind.SERIAL_FIELD;
 import static com.sun.source.doctree.DocTree.Kind.SINCE;
 import static com.sun.source.doctree.DocTree.Kind.THROWS;
-import static com.sun.source.doctree.DocTree.Kind.USES;
-import static com.sun.source.doctree.DocTree.Kind.VERSION;
 import static javax.tools.DocumentationTool.Location.TAGLET_PATH;
 
 /**
  * Manages the {@code Taglet}s used by doclets.
  */
-public class TagletManager {
+public abstract class TagletManager {
 
     /**
      * All taglets, keyed either by their {@link Taglet#getName() name},
@@ -93,29 +82,28 @@ public class TagletManager {
      * the one instance that does is {@code ThrowsTaglet}, which handles
      * both {@code @throws} tags and {@code @exception} tags.
      */
-    private final LinkedHashMap<String, Taglet> allTaglets;
+    protected final LinkedHashMap<String, Taglet> allTaglets;
 
     /**
      * Block (non-inline) taglets, grouped by {@link Location location}.
      */
-    private Map<Location, List<Taglet>> blockTagletsByLocation;
+    protected Map<Location, List<Taglet>> blockTagletsByLocation;
 
     /**
      * The taglets that can appear inline in descriptive text.
      */
-    private Map<String, Taglet> inlineTags;
+    protected Map<String, Taglet> inlineTags;
 
     /**
      * The taglets that can appear in the serialized form.
      */
-    private List<Taglet> serializedFormTags;
+    protected List<Taglet> serializedFormTags;
 
     private final DocletEnvironment docEnv;
     private final Doclet doclet;
 
     private final Utils utils;
     private final Messages messages;
-    private final Resources resources;
 
     /**
      * Keep track of standard tags.
@@ -149,27 +137,27 @@ public class TagletManager {
     /**
      * True if we do not want to use {@code @since} tags.
      */
-    private final boolean nosince;
+    protected final boolean nosince;
 
     /**
      * True if we want to use {@code @version} tags.
      */
-    private final boolean showversion;
+    protected final boolean showversion;
 
     /**
      * True if we want to use {@code @author} tags.
      */
-    private final boolean showauthor;
+    protected final boolean showauthor;
 
     /**
      * True if we want to use JavaFX-related tags ({@code @defaultValue}, {@code @treatAsPrivate}).
      */
-    private final boolean javafx;
+    protected final boolean javafx;
 
     /**
      * Show the taglets table when it has been initialized.
      */
-    private final boolean showTaglets;
+    protected final boolean showTaglets;
 
     private final String tagletPath;
 
@@ -196,11 +184,10 @@ public class TagletManager {
         this.docEnv = configuration.docEnv;
         this.doclet = configuration.doclet;
         this.messages = configuration.getMessages();
-        this.resources = configuration.getDocResources();
         this.showTaglets = options.showTaglets();
         this.utils = configuration.utils;
         this.tagletPath = options.tagletPath();
-        initStandardTaglets();
+//        initStandardTaglets();
     }
 
     public Set<String> getAllTagletNames() {
@@ -285,10 +272,12 @@ public class TagletManager {
      */
     private void registerTaglet(jdk.javadoc.doclet.Taglet instance) {
         instance.init(docEnv, doclet);
-        Taglet newLegacy = new UserTaglet(instance);
+        Taglet newLegacy = wrapTaglet(instance);
         allTaglets.put(newLegacy.getName(), newLegacy);
         messages.notice("doclet.Notice_taglet_registered", instance.getClass().getName());
     }
+
+    protected abstract Taglet wrapTaglet(jdk.javadoc.doclet.Taglet instance);
 
     /**
      * Adds a new {@code SimpleTaglet}.
@@ -309,7 +298,7 @@ public class TagletManager {
         // remove + put in both branches below move the tag to the back of the map's ordering
         Taglet tag = allTaglets.remove(tagName);
         if (tag == null || header != null) {
-            allTaglets.put(tagName, new SimpleTaglet(tagName, header, locations));
+            allTaglets.put(tagName, newSimpleTaglet(tagName, header, locations));
             if (Utils.toLowerCase(locations).indexOf('x') == -1) {
                 checkTagName(tagName);
             }
@@ -318,6 +307,8 @@ public class TagletManager {
             allTaglets.put(tagName, tag);
         }
     }
+
+    protected abstract Taglet newSimpleTaglet(String tagname, String header, String locations);
 
     /**
      * Given a tag name, add it to the set of tags it belongs to.
@@ -583,87 +574,14 @@ public class TagletManager {
         }
     }
 
-    /**
-     * Initialize standard Javadoc tags for ordering purposes.
-     */
-    private void initStandardTaglets() {
-        if (javafx) {
-            initJavaFXTaglets();
-        }
-
-        addStandardTaglet(new ParamTaglet());
-        addStandardTaglet(new ReturnTaglet());
-        addStandardTaglet(new ThrowsTaglet(configuration), EXCEPTION);
-        addStandardTaglet(
-                new SimpleTaglet(SINCE, resources.getText("doclet.Since"),
-                    EnumSet.allOf(Location.class), !nosince));
-        addStandardTaglet(
-                new SimpleTaglet(VERSION, resources.getText("doclet.Version"),
-                    EnumSet.of(Location.OVERVIEW, Location.MODULE, Location.PACKAGE, Location.TYPE), showversion));
-        addStandardTaglet(
-                new SimpleTaglet(AUTHOR, resources.getText("doclet.Author"),
-                    EnumSet.of(Location.OVERVIEW, Location.MODULE, Location.PACKAGE, Location.TYPE), showauthor));
-        addStandardTaglet(
-                new SimpleTaglet(SERIAL_DATA, resources.getText("doclet.SerialData"),
-                    EnumSet.noneOf(Location.class)));
-        addStandardTaglet(
-                new SimpleTaglet(HIDDEN, null,
-                    EnumSet.of(Location.TYPE, Location.METHOD, Location.FIELD)));
-
-        // This appears to be a default custom (non-standard) taglet
-        Taglet factoryTaglet = new SimpleTaglet("factory", resources.getText("doclet.Factory"),
-                EnumSet.of(Location.METHOD));
-        allTaglets.put(factoryTaglet.getName(), factoryTaglet);
-
-        addStandardTaglet(new SeeTaglet());
-        addStandardTaglet(new SpecTaglet());
-
-        // Standard inline tags
-        addStandardTaglet(new DocRootTaglet());
-        addStandardTaglet(new InheritDocTaglet());
-        addStandardTaglet(new ValueTaglet());
-        addStandardTaglet(new LiteralTaglet());
-        addStandardTaglet(new CodeTaglet());
-        addStandardTaglet(new SnippetTaglet());
-        addStandardTaglet(new IndexTaglet());
-        addStandardTaglet(new SummaryTaglet());
-        addStandardTaglet(new SystemPropertyTaglet());
-
-        // Keep track of the names of standard tags for error checking purposes.
-        // The following are not handled above.
-        addStandardTaglet(new DeprecatedTaglet());
-        addStandardTaglet(new BaseTaglet(LINK, true, EnumSet.allOf(Location.class)));
-        addStandardTaglet(new BaseTaglet(LINK_PLAIN, true, EnumSet.allOf(Location.class)));
-        addStandardTaglet(new BaseTaglet(USES, false, EnumSet.of(Location.MODULE)));
-        addStandardTaglet(new BaseTaglet(PROVIDES, false, EnumSet.of(Location.MODULE)));
-        addStandardTaglet(
-                new SimpleTaglet(SERIAL, null,
-                    EnumSet.of(Location.PACKAGE, Location.TYPE, Location.FIELD)));
-        addStandardTaglet(
-                new SimpleTaglet(SERIAL_FIELD, null, EnumSet.of(Location.FIELD)));
-    }
-
-    /**
-     * Initialize JavaFX-related tags.
-     */
-    private void initJavaFXTaglets() {
-        addStandardTaglet(new SimpleTaglet("propertyDescription",
-                resources.getText("doclet.PropertyDescription"),
-                EnumSet.of(Location.METHOD, Location.FIELD)));
-        addStandardTaglet(new SimpleTaglet("defaultValue", resources.getText("doclet.DefaultValue"),
-                EnumSet.of(Location.METHOD, Location.FIELD)));
-        addStandardTaglet(new SimpleTaglet("treatAsPrivate", null,
-                EnumSet.of(Location.TYPE, Location.METHOD, Location.FIELD)));
-    }
-
-    private void addStandardTaglet(Taglet taglet) {
+    protected void addStandardTaglet(Taglet taglet) {
         String name = taglet.getName();
         allTaglets.put(name, taglet);
         standardTags.add(name);
         standardTagsLowercase.add(Utils.toLowerCase(name));
     }
 
-    private void addStandardTaglet(Taglet taglet, DocTree.Kind alias) {
+    protected void addStandardTaglet(Taglet taglet, DocTree.Kind alias) {
         addStandardTaglet(taglet);
         String name = alias.tagName;
         allTaglets.put(name, taglet);
@@ -711,12 +629,20 @@ public class TagletManager {
         }
     }
 
+    public Taglet getTaglet(DocTree.Kind kind) {
+        return switch (kind) {
+            case DEPRECATED, LINK, LINK_PLAIN, PARAM, RETURN, THROWS -> getTaglet(kind.tagName);
+            default ->
+                throw new IllegalArgumentException(kind.toString());
+        };
+    }
+
     /*
      * The output of this method is the basis for a table at the end of the
      * doc comment specification, so any changes in the output may indicate
      * a need for a corresponding update to the spec.
      */
-    private void showTaglets(PrintStream out) {
+    protected void showTaglets(PrintStream out) {
         Map<String, Taglet> taglets = new TreeMap<>(allTaglets);
 
         taglets.forEach((n, t) -> {

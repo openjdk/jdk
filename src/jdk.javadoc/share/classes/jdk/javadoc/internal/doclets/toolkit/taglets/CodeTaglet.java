@@ -30,8 +30,9 @@ import java.util.EnumSet;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.LiteralTree;
+
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
@@ -46,14 +47,12 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * displays as:
  * <blockquote>  The type {@code List<P>}  </blockquote>
  */
-public class CodeTaglet extends BaseTaglet {
+public abstract class CodeTaglet extends BaseTaglet {
 
-    CodeTaglet() {
-        super(DocTree.Kind.CODE, true, EnumSet.allOf(Location.class));
+    protected CodeTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.CODE, true, EnumSet.allOf(Location.class));
     }
 
     @Override
-    public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
-        return writer.codeTagOutput(element, (LiteralTree) tag);
-    }
+    public abstract Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer);
 }

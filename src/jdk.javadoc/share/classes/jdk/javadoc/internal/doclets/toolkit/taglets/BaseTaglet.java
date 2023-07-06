@@ -26,36 +26,52 @@
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.Set;
+
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.UnknownBlockTagTree;
+
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.Messages;
+import jdk.javadoc.internal.doclets.toolkit.Resources;
+import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
  * A base class that implements the {@link Taglet} interface.
  */
 public class BaseTaglet implements Taglet {
+    protected final BaseConfiguration config;
+    protected final Messages messages;
+    protected final Resources resources;
+    protected final Utils utils;
 
     protected final DocTree.Kind tagKind;
     protected final String name;
     private final boolean inline;
     private final Set<Location> sites;
 
-    BaseTaglet(DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
-        this(tagKind.tagName, tagKind, inline, sites);
+    public BaseTaglet(BaseConfiguration config, DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
+        this(config, tagKind.tagName, tagKind, inline, sites);
     }
 
-    BaseTaglet(String name, boolean inline, Set<Location> sites) {
-        this(name, inline ? DocTree.Kind.UNKNOWN_INLINE_TAG : DocTree.Kind.UNKNOWN_BLOCK_TAG, inline, sites);
+    BaseTaglet(BaseConfiguration config, String name, boolean inline, Set<Location> sites) {
+        this(config, name, inline ? DocTree.Kind.UNKNOWN_INLINE_TAG : DocTree.Kind.UNKNOWN_BLOCK_TAG, inline, sites);
     }
 
-    private BaseTaglet(String name, DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
+    private BaseTaglet(BaseConfiguration config, String name, DocTree.Kind tagKind, boolean inline, Set<Location> sites) {
+        this.config = config;
+        this.messages = config.getMessages();
+        this.resources = config.getDocResources();
+        this.utils = config.utils;
+
         this.name = name;
         this.tagKind = tagKind;
         this.inline = inline;
         this.sites = sites;
+
     }
 
     @Override
@@ -118,7 +134,7 @@ public class BaseTaglet implements Taglet {
     }
 
     /**
-     * Returns whether or not this taglet accepts a {@code DocTree} node.
+     * Returns whether this taglet accepts a {@code DocTree} node.
      * The taglet accepts a tree node if it has the same kind, and
      * if the kind is {@code UNKNOWN_BLOCK_TAG} the same tag name.
      *

@@ -44,10 +44,10 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 /**
  * A taglet that represents the {@code @see} tag.
  */
-public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
+public abstract class SeeTaglet extends BaseTaglet implements InheritableTaglet {
 
-    public SeeTaglet() {
-        super(DocTree.Kind.SEE, false, EnumSet.allOf(Location.class));
+    protected SeeTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.SEE, false, EnumSet.allOf(Location.class));
     }
 
     @Override
@@ -73,8 +73,18 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
                 e = m;
             }
         }
-        return writer.seeTagOutput(e, tags);
+        return seeTagOutput(e, tags, writer);
     }
+
+    /**
+     * Returns the output for {@code @see} tags.
+     *
+     * @param element The element that owns the doc comment
+     * @param seeTags the list of tags
+     *
+     * @return the output
+     */
+    protected abstract Content seeTagOutput(Element element, List<? extends SeeTree> seeTags, TagletWriter writer);
 
     private record Documentation(List<? extends SeeTree> seeTrees, ExecutableElement method) { }
 

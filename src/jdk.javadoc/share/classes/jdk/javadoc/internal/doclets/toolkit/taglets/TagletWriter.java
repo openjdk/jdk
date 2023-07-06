@@ -25,30 +25,21 @@
 
 package jdk.javadoc.internal.doclets.toolkit.taglets;
 
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.SpecTree;
-import com.sun.source.doctree.IndexTree;
-import com.sun.source.doctree.LinkTree;
-import com.sun.source.doctree.LiteralTree;
-import com.sun.source.doctree.ParamTree;
-import com.sun.source.doctree.ReturnTree;
-import com.sun.source.doctree.SeeTree;
-import com.sun.source.doctree.SnippetTree;
-import com.sun.source.doctree.SystemPropertyTree;
-import com.sun.source.doctree.ThrowsTree;
+
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet.UnsupportedTagletOperationException;
-import jdk.javadoc.internal.doclets.toolkit.taglets.snippet.StyledText;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
@@ -58,12 +49,70 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 public abstract class TagletWriter {
 
     /**
-     * True if we only want to write the first sentence.
+     * A class that provides the information about the enclosing context for
+     * a series of {@code DocTree} nodes.
+     * This context may be used to determine the content that should be generated from the tree nodes.
      */
-    protected final boolean isFirstSentence;
+    public static class Context {
+        /**
+         * Whether the trees are appearing in a context of just the first sentence,
+         * such as in the summary table of the enclosing element.
+         */
+        public final boolean isFirstSentence;
+        /**
+         * Whether the trees are appearing in the "summary" section of the
+         * page for a declaration.
+         */
+        public final boolean inSummary;
+        /**
+         * The set of enclosing kinds of tags.
+         */
+        public final Set<DocTree.Kind> inTags;
 
-    protected TagletWriter(boolean isFirstSentence) {
-        this.isFirstSentence = isFirstSentence;
+        /**
+         * Creates an outermost context, with no enclosing tags.
+         *
+         * @param isFirstSentence {@code true} if the trees are appearing in a context of just the
+         *                        first sentence and {@code false} otherwise
+         * @param inSummary       {@code true} if the trees are appearing in the "summary" section
+         *                        of the page for a declaration and {@code false} otherwise
+         */
+        public Context(boolean isFirstSentence, boolean inSummary) {
+            this(isFirstSentence, inSummary, EnumSet.noneOf(DocTree.Kind.class));
+        }
+
+        private Context(boolean isFirstSentence, boolean inSummary, Set<DocTree.Kind> inTags) {
+            this.isFirstSentence = isFirstSentence;
+            this.inSummary = inSummary;
+            this.inTags = inTags;
+        }
+
+        /**
+         * Creates a new {@code Context} that includes an extra tag kind in the set of enclosing
+         * kinds of tags.
+         *
+         * @param tree the enclosing tree
+         *
+         * @return the new {@code Context}
+         */
+        public Context within(DocTree tree) {
+            var newInTags = EnumSet.copyOf(inTags);
+            newInTags.add(tree.getKind());
+            return new Context(isFirstSentence, inSummary, newInTags);
+        }
+    }
+
+    /**
+     * The context in which to generate the output for a series of {@code DocTree} nodes.
+     */
+    public final Context context;
+
+    protected TagletWriter(Context context) {
+        this.context = context;
+    }
+
+    public Context getContext() {
+        return context;
     }
 
     /**
@@ -72,179 +121,6 @@ public abstract class TagletWriter {
      * @return an instance of an output object
      */
     public abstract Content getOutputInstance();
-
-    /**
-     * Returns the output for a {@code {@code ...}} tag.
-     *
-     * @param element The element that owns the doc comment
-     * @param tag     the tag
-     *
-     * @return the output
-     */
-    protected abstract Content codeTagOutput(Element element, LiteralTree tag);
-
-    /**
-     * Returns the output for a {@code {@index...}} tag.
-     *
-     * @param element The element that owns the doc comment
-     * @param tag     the tag
-     *
-     * @return the output
-     */
-    protected abstract Content indexTagOutput(Element element, IndexTree tag);
-
-    /**
-     * Returns the output for a {@code {@docRoot}} tag.
-     *
-     * @return the output
-     */
-    protected abstract Content getDocRootOutput();
-
-    /**
-     * Returns the output for a {@code @deprecated} tag.
-     *
-     * @param element The element that owns the doc comment
-     *
-     * @return the output
-     */
-    protected abstract Content deprecatedTagOutput(Element element);
-
-    /**
-     * Returns the output for a {@code {@link ...}} or {@code {@linkplain ...}} tag.
-     *
-     * @param element The element that owns the doc comment
-     * @param tag     the tag
-     *
-     * @return the output
-     */
-    protected abstract Content linkTagOutput(Element element, LinkTree tag);
-
-    /**
-     * Returns the output for a {@code {@literal ...}} tag.
-     *
-     * @param element The element that owns the doc comment
-     * @param tag     the tag
-     *
-     * @return the output
-     */
-    protected abstract Content literalTagOutput(Element element, LiteralTree tag);
-
-    /**
-     * Returns the header for the {@code @param} tags.
-     *
-     * @param kind the kind of header that is required
-     *
-     * @return the header
-     */
-    protected abstract Content getParamHeader(ParamTaglet.ParamKind kind);
-
-    /**
-     * Returns the output for a {@code @param} tag.
-     * Note we cannot rely on the name in the tag, because we might be
-     * inheriting the tag.
-     *
-     * @param element   The element that owns the doc comment
-     * @param paramTag  the parameter to document
-     * @param paramName the name of the parameter
-     *
-     * @return the output
-     */
-    protected abstract Content paramTagOutput(Element element, ParamTree paramTag, String paramName);
-
-    /**
-     * Returns the output for a {@code @return} tag.
-     *
-     * @param element   the element that owns the doc comment
-     * @param returnTag the return tag to document
-     * @param inline    whether this should be written as an inline instance or block instance
-     *
-     * @return the output
-     */
-    protected abstract Content returnTagOutput(Element element, ReturnTree returnTag, boolean inline);
-
-    /**
-     * Returns the output for {@code @see} tags.
-     *
-     * @param element The element that owns the doc comment
-     * @param seeTags the list of tags
-     *
-     * @return the output
-     */
-    protected abstract Content seeTagOutput(Element element, List<? extends SeeTree> seeTags);
-
-    /**
-     * Returns the output for a series of simple tags.
-     *
-     * @param element    The element that owns the doc comment
-     * @param simpleTags the list of simple tags
-     * @param header     the header for the series of tags
-     *
-     * @return the output
-     */
-    protected abstract Content simpleBlockTagOutput(Element element, List<? extends DocTree> simpleTags, String header);
-
-    /**
-     * Returns the output for a {@code {@snippet ...}} tag.
-     *
-     * @param element    The element that owns the doc comment
-     * @param snippetTag the snippet tag
-     * @param id         the value of the id attribute, or null if not defined
-     * @param lang       the value of the lang attribute, or null if not defined
-     *
-     * @return the output
-     */
-    protected abstract Content snippetTagOutput(Element element, SnippetTree snippetTag, StyledText text,
-                                                String id, String lang);
-
-    /**
-     * Returns the output for one or more {@code @spec} tags.
-     *
-     * @param element  the element that owns the doc comment
-     * @param specTags the array of @spec tags.
-     *
-     * @return the output
-     */
-    protected abstract Content specTagOutput(Element element, List<? extends SpecTree> specTags);
-
-    /**
-     * Returns the output for a {@code {@systemProperty...}} tag.
-     *
-     * @param element           the element that owns the doc comment
-     * @param systemPropertyTag the system property tag
-     *
-     * @return the output
-     */
-    protected abstract Content systemPropertyTagOutput(Element element, SystemPropertyTree systemPropertyTag);
-
-    /**
-     * Returns the header for the {@code @throws} tag.
-     *
-     * @return the header for the throws tag
-     */
-    protected abstract Content getThrowsHeader();
-
-    /**
-     * Returns the output for a default {@code @throws} tag.
-     *
-     * @param throwsType the type that is thrown
-     * @param content    the optional content to add as a description
-     *
-     * @return the output
-     */
-    protected abstract Content throwsTagOutput(TypeMirror throwsType, Optional<Content> content);
-
-    /**
-     * Returns the output for a {@code {@value}} tag.
-     *
-     * @param field       the constant field that holds the value tag
-     * @param constantVal the constant value to document
-     * @param includeLink true if we should link the constant text to the
-     *                    constant field itself
-     *
-     * @return the output
-     */
-    protected abstract Content valueTagOutput(VariableElement field,
-        String constantVal, boolean includeLink);
 
     /**
      * Returns the output for an invalid tag. The returned content uses special styling to
@@ -337,17 +213,16 @@ public abstract class TagletWriter {
      * or {@code null} if the tag is not supported or does not return any output.
      *
      * @param holder        the element associated with the doc comment
-     * @param tagletManager the taglet manager for the current doclet
      * @param inlineTag     the inline tag to be documented
      *
      * @return the content, or {@code null}
      */
     public Content getInlineTagOutput(Element holder,
-                                      TagletManager tagletManager,
                                       DocTree inlineTag) {
-
+        var config = configuration();
+        var tagletManager = config.tagletManager;
         Map<String, Taglet> inlineTags = tagletManager.getInlineTaglets();
-        CommentHelper ch = configuration().utils.getCommentHelper(holder);
+        CommentHelper ch = config.utils.getCommentHelper(holder);
         final String inlineTagName = ch.getTagName(inlineTag);
         Taglet t = inlineTags.get(inlineTagName);
         if (t == null) {

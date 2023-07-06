@@ -54,8 +54,8 @@ public class InheritDocTaglet extends BaseTaglet {
     /**
      * Construct a new InheritDocTaglet.
      */
-    public InheritDocTaglet() {
-        super(DocTree.Kind.INHERIT_DOC, true, EnumSet.of(Location.METHOD));
+    public InheritDocTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.INHERIT_DOC, true, EnumSet.of(Location.METHOD));
     }
 
     /**
@@ -182,6 +182,9 @@ public class InheritDocTaglet extends BaseTaglet {
         if (e.getKind() != ElementKind.METHOD) {
             return tagletWriter.getOutputInstance();
         }
-        return retrieveInheritedDocumentation(tagletWriter, (ExecutableElement) e, (InheritDocTree) inheritDoc, tagletWriter.isFirstSentence);
+        return retrieveInheritedDocumentation(tagletWriter,
+                (ExecutableElement) e,
+                (InheritDocTree) inheritDoc,
+                tagletWriter.context.isFirstSentence);
     }
 }

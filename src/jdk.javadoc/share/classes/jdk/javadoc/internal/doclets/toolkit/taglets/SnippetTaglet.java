@@ -44,6 +44,7 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.SnippetTree;
 import com.sun.source.doctree.TextTree;
 import jdk.javadoc.doclet.Taglet;
+import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
@@ -56,7 +57,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 /**
  * A taglet that represents the {@code @snippet} tag.
  */
-public class SnippetTaglet extends BaseTaglet {
+public abstract class SnippetTaglet extends BaseTaglet {
 
     public enum Language {
 
@@ -90,8 +91,8 @@ public class SnippetTaglet extends BaseTaglet {
         public String getIdentifier() {return identifier;}
     }
 
-    public SnippetTaglet() {
-        super(DocTree.Kind.SNIPPET, true, EnumSet.allOf(Taglet.Location.class));
+    protected SnippetTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.SNIPPET, true, EnumSet.allOf(Taglet.Location.class));
     }
 
     /*
@@ -118,6 +119,19 @@ public class SnippetTaglet extends BaseTaglet {
             return badSnippet(writer, Optional.of(details));
         }
     }
+
+    /**
+     * Returns the output for a {@code {@snippet ...}} tag.
+     *
+     * @param element    The element that owns the doc comment
+     * @param snippetTag the snippet tag
+     * @param id         the value of the id attribute, or null if not defined
+     * @param lang       the value of the lang attribute, or null if not defined
+     *
+     * @return the output
+     */
+    protected abstract Content snippetTagOutput(Element element, SnippetTree snippetTag, StyledText text,
+                                                String id, String lang, TagletWriter writer);
 
     private static final class BadSnippetException extends Exception {
 
@@ -343,7 +357,7 @@ public class SnippetTaglet extends BaseTaglet {
                 ? null
                 : stringValueOf(idAttr);
 
-        return writer.snippetTagOutput(holder, snippetTag, text, id, lang);
+        return snippetTagOutput(holder, snippetTag, text, id, lang, writer);
     }
 
     /*

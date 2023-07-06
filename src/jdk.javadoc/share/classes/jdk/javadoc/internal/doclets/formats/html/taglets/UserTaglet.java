@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.taglets;
+package jdk.javadoc.internal.doclets.formats.html.taglets;
 
 import java.util.List;
 import java.util.Set;
@@ -31,11 +31,20 @@ import java.util.Set;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
+
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
+import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
-import static jdk.javadoc.doclet.Taglet.Location.*;
+import static jdk.javadoc.doclet.Taglet.Location.CONSTRUCTOR;
+import static jdk.javadoc.doclet.Taglet.Location.FIELD;
+import static jdk.javadoc.doclet.Taglet.Location.METHOD;
+import static jdk.javadoc.doclet.Taglet.Location.MODULE;
+import static jdk.javadoc.doclet.Taglet.Location.OVERVIEW;
+import static jdk.javadoc.doclet.Taglet.Location.PACKAGE;
+import static jdk.javadoc.doclet.Taglet.Location.TYPE;
 
 /**
  * A taglet wrapper, allows the public taglet {@link jdk.javadoc.doclet.Taglet}
@@ -45,7 +54,7 @@ public final class UserTaglet implements Taglet {
 
     private final jdk.javadoc.doclet.Taglet userTaglet;
 
-    public UserTaglet(jdk.javadoc.doclet.Taglet t) {
+    UserTaglet(jdk.javadoc.doclet.Taglet t) {
         userTaglet = t;
     }
 

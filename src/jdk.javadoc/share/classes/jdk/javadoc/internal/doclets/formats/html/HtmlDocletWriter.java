@@ -41,6 +41,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.Element;
@@ -91,10 +92,10 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriterImpl;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.taglets.DocRootTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -109,7 +110,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.DeclarationPreviewLanguageFeatures;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
-import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 import jdk.javadoc.internal.doclint.HtmlTag;
 
 import static com.sun.source.doctree.DocTree.Kind.CODE;
@@ -160,11 +160,11 @@ public class HtmlDocletWriter {
 
     protected final Contents contents;
 
-    protected final Messages messages;
+    public final Messages messages;
 
     protected final Resources resources;
 
-    protected final Links links;
+    public final Links links;
 
     protected final DocPaths docPaths;
 
@@ -197,7 +197,7 @@ public class HtmlDocletWriter {
      * (Ideally, javadoc should be tracking all id's generated in a file
      * to avoid generating duplicates.)
      */
-    Map<String, Integer> indexAnchorTable = new HashMap<>();
+    public final Map<String, Integer> indexAnchorTable = new HashMap<>();
 
     /**
      * Creates an {@code HtmlDocletWriter}.
@@ -278,7 +278,7 @@ public class HtmlDocletWriter {
         return buf.toString();
     }
     //where:
-        // Note: {@docRoot} is not case sensitive when passed in with a command-line option:
+        // Note: {@docRoot} is not case-sensitive when passed in with a command-line option:
         private static final Pattern docrootPattern =
                 Pattern.compile(Pattern.quote("{@docroot}"), Pattern.CASE_INSENSITIVE);
 
@@ -375,8 +375,7 @@ public class HtmlDocletWriter {
     }
 
     private Content getInlineTagOutput(Element element, DocTree tree, TagletWriterImpl.Context context) {
-        return getTagletWriterInstance(context)
-                .getInlineTagOutput(element, configuration.tagletManager, tree);
+        return getTagletWriterInstance(context).getInlineTagOutput(element, tree);
     }
 
     /**
@@ -756,7 +755,7 @@ public class HtmlDocletWriter {
     }
 
     /*************************************************************
-     * Return a class cross link to external class documentation.
+     * Return a class cross-link to external class documentation.
      * The -link option does not allow users to
      * link to external classes in the "default" package.
      *
@@ -886,7 +885,7 @@ public class HtmlDocletWriter {
      *
      * @return the type element of the current page.
      */
-    protected TypeElement getCurrentPageElement() {
+    public TypeElement getCurrentPageElement() {
         return null;
     }
 
@@ -1372,6 +1371,8 @@ public class HtmlDocletWriter {
 
                 @Override
                 public Boolean visitLink(LinkTree node, Content content) {
+                    // TODO: can this be moved into LinkTaglet or HtmlLinkTaglet, so that we can delete this
+                    //       code and just use defaultAction
                     var inTags = context.inTags;
                     if (inTags.contains(LINK) || inTags.contains(LINK_PLAIN) || inTags.contains(SEE)) {
                         DocTreePath dtp = ch.getDocTreePath(node);
@@ -1384,14 +1385,17 @@ public class HtmlDocletWriter {
                         }
                         content.add(label);
                     } else {
-                        TagletWriterImpl t = getTagletWriterInstance(context.within(node));
-                        content.add(t.linkTagOutput(element, node));
+                        var t = configuration.tagletManager.getTaglet(DocTree.Kind.LINK);
+                        var w = getTagletWriterInstance(context.within(node));
+                        content.add(t.getInlineTagOutput(element, node, w));
                     }
                     return false;
                 }
 
                 @Override
                 public Boolean visitLiteral(LiteralTree node, Content content) {
+                    // for better or worse, this is completely bypassing taglet support
+                    // TODO: try replace with `getInlineTagOutput` and/or delete this method to use `defaultAction`
                     String s = node.getBody().getBody();
                     Content t = Text.of(Text.normalizeNewlines(s));
                     content.add(node.getKind() == CODE ? HtmlTree.CODE(t) : t);
@@ -1562,7 +1566,7 @@ public class HtmlDocletWriter {
      * @param detail the optional detail message which may contain preformatted text
      * @return the output
      */
-    protected Content invalidTagOutput(String summary, Optional<Content> detail) {
+    public Content invalidTagOutput(String summary, Optional<Content> detail) {
         if (detail.isEmpty() || detail.get().isEmpty()) {
             return HtmlTree.SPAN(HtmlStyle.invalidTag, Text.of(summary));
         }
@@ -1665,7 +1669,7 @@ public class HtmlDocletWriter {
                 }
             }.visit(element);
             if (redirectPathFromRoot != null) {
-                text = "{@" + (new DocRootTaglet()).getName() + "}/"
+                text = "{@" + Kind.DOC_ROOT.tagName + "}/"
                         + redirectPathFromRoot.resolve(text).getPath();
                 return replaceDocRootDir(text);
             }

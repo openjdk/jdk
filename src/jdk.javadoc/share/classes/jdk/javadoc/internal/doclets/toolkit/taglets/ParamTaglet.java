@@ -46,7 +46,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 /**
  * A taglet that represents the {@code @param} tag.
  */
-public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
+public abstract class ParamTaglet extends BaseTaglet implements InheritableTaglet {
+
     public enum ParamKind {
         /** Parameter of an executable element. */
         PARAMETER,
@@ -59,8 +60,8 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
     /**
      * Construct a ParamTaglet.
      */
-    public ParamTaglet() {
-        super(DocTree.Kind.PARAM, false, EnumSet.of(Location.TYPE, Location.CONSTRUCTOR, Location.METHOD));
+    protected ParamTaglet(BaseConfiguration config) {
+        super(config, DocTree.Kind.PARAM, false, EnumSet.of(Location.TYPE, Location.CONSTRUCTOR, Location.METHOD));
     }
 
     @Override
@@ -249,6 +250,10 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
         return result;
     }
 
+    public abstract Content getParamHeader(ParamKind kind);
+
+    public abstract Content paramTagOutput(Element element, ParamTree paramTag, String paramName, TagletWriter writer);
+
     private record Documentation(ParamTree paramTree, ExecutableElement method) { }
 
     private static Optional<Documentation> extract(Utils utils, ExecutableElement method, Integer position, boolean typeParam) {
@@ -276,9 +281,9 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                                  boolean isFirstParam) {
         Content result = writer.getOutputInstance();
         if (isFirstParam) {
-            result.add(writer.getParamHeader(kind));
+            result.add(getParamHeader(kind));
         }
-        result.add(writer.paramTagOutput(e, paramTag, name));
+        result.add(paramTagOutput(e, paramTag, name, writer));
         return result;
     }
 }
