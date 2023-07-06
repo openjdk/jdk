@@ -193,7 +193,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     strw(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-    if (!is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerLong)) {
+    if (!is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerWord)) {
       assert(is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerInt), "must be 4-byte aligned");
       strw(zr, Address(obj, arrayOopDesc::header_size_in_bytes()));
     }
