@@ -48,7 +48,6 @@
 #include "utilities/debug.hpp"
 #include "utilities/formatBuffer.hpp"
 
-AttachListenerThread* AttachListener::_attach_listener_thread = NULL;
 volatile AttachListenerState AttachListener::_state = AL_NOT_INITIALIZED;
 
 // Implementation of "properties" command.
@@ -458,10 +457,10 @@ void AttachListener::init() {
     return;
   }
 
-  _attach_listener_thread = new AttachListenerThread();
-  JavaThread::vm_exit_on_osthread_failure(_attach_listener_thread);
+  JavaThread* thread = new AttachListenerThread();
+  JavaThread::vm_exit_on_osthread_failure(thread);
 
-  JavaThread::start_internal_daemon(THREAD, _attach_listener_thread, thread_oop, NoPriority);
+  JavaThread::start_internal_daemon(THREAD, thread, thread_oop, NoPriority);
 }
 
 // Performs clean-up tasks on platforms where we can detect that the last

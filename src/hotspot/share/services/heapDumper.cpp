@@ -45,7 +45,6 @@
 #include "oops/typeArrayOop.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
-#include "runtime/handshake.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.hpp"
@@ -57,7 +56,6 @@
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/timerTrace.hpp"
-#include "services/attachListener.hpp"
 #include "services/heapDumper.hpp"
 #include "services/heapDumperCompression.hpp"
 #include "services/threadService.hpp"
@@ -1523,9 +1521,8 @@ class DumperController : public CHeapObj<mtInternal> {
    }
 };
 
-// HeapDumpMergeClosure merges separate dump files into a complete one, this clousre
-// is desired to be performed by attach listener thread
-class HeapDumpMergeClosure: public HandshakeClosure {
+// DumpMerger merges separate dump files into a complete one
+class DumpMerger : public StackObj {
 private:
   DumpWriter* _writer;
   const char* _path;
@@ -1535,23 +1532,18 @@ private:
 private:
   void merge_file(char* path);
   void merge_done();
-  void do_merge();
 
 public:
-  HeapDumpMergeClosure(const char* path, DumpWriter* writer, int dump_seq) :
-    HandshakeClosure("HeapDumpMerge"),
+  DumpMerger(const char* path, DumpWriter* writer, int dump_seq) :
     _writer(writer),
     _path(path),
     _has_error(_writer->has_error()),
     _dump_seq(dump_seq) {}
 
-  void do_thread(Thread* thread) {
-    guarantee(thread->is_AttachListener_thread(), "must be");
-    do_merge();
-  }
+  void do_merge();
 };
 
-void HeapDumpMergeClosure::merge_done() {
+void DumpMerger::merge_done() {
   // Writes the HPROF_HEAP_DUMP_END record.
   if (!_has_error) {
     DumperSupport::end_of_dump(_writer);
@@ -1560,7 +1552,7 @@ void HeapDumpMergeClosure::merge_done() {
   _dump_seq = 0; //reset
 }
 
-void HeapDumpMergeClosure::merge_file(char* path) {
+void DumpMerger::merge_file(char* path) {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge segmented heap file", TRACETIME_LOG(Info, heapdump));
 
@@ -1588,7 +1580,7 @@ void HeapDumpMergeClosure::merge_file(char* path) {
   }
 }
 
-void HeapDumpMergeClosure::do_merge() {
+void DumpMerger::do_merge() {
   assert(!SafepointSynchronize::is_at_safepoint(), "merging happens outside safepoint");
   TraceTime timer("Merge heap files complete", TRACETIME_LOG(Info, heapdump));
 
@@ -1612,6 +1604,20 @@ void HeapDumpMergeClosure::do_merge() {
   _writer->set_compressor(saved_compressor);
   merge_done();
 }
+
+// The VM operation wraps DumpMerger so that it could be performed by VM thread
+class VM_HeapDumpMerge : public VM_Operation {
+private:
+  DumpMerger* _merger;
+public:
+  VM_HeapDumpMerge(DumpMerger* merger) : _merger(merger) {}
+  VMOp_Type type() const { return VMOp_HeapDumpMerge; }
+  // heap dump merge could happen outside safepoint
+  virtual bool evaluate_at_safepoint() const { return false; }
+  void doit() {
+    _merger->do_merge();
+  }
+};
 
 // The VM operation that performs the heap dump
 class VM_HeapDumper : public VM_GC_Operation, public WorkerTask {
@@ -2193,18 +2199,24 @@ int HeapDumper::dump(const char* path, outputStream* out, int compression, bool 
   // is done, no further phases needed. For parallel dump, the whole heap dump
   // process is done in two phases
   //
-  // Phase 1: Concurrent threads directly write data to multiple heap files.
+  // Phase 1: Concurrent threads directly write heap data to multiple heap files.
   //          This is done by VM_HeapDumper, which is performed within safepoint.
   //
   // Phase 2: Merge multiple heap files into one complete heap dump file.
-  //          This is done within HeapDumpMergeClosure by attach listener thread,
-  //          this prevents us from occupying the VM Thread, which in turn affects
-  //          the occurrence of GC and other VM operations.
+  //          This is done by DumpMerger, which is performed outside safepoint
   if (dumper.is_parallel_dump()) {
-    Thread* calling_thread = Thread::current();
-    ThreadsListHandle tlh(calling_thread);
-    HeapDumpMergeClosure closure(path, &writer, dumper.dump_seq());
-    Handshake::execute(&closure, AttachListener::attach_listener_thread());
+    DumpMerger merger(path, &writer, dumper.dump_seq());
+    Thread* current_thread = Thread::current();
+    if (current_thread->is_AttachListener_thread()) {
+      // perform heapdump file merge operation in the current thread prevents us
+      // from occupying the VM Thread, which in turn affects the occurrence of
+      // GC and other VM operations.
+      merger.do_merge();
+    } else {
+      // otherwise, performs it by VM thread
+      VM_HeapDumpMerge op(&merger);
+      VMThread::execute(&op);
+    }
     set_error(writer.error());
   }
 
