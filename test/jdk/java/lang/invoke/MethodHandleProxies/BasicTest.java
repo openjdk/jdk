@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -247,6 +248,20 @@ public class BasicTest {
         assertThrows(IllegalAccessException.class, () -> ctor.newInstance(MethodHandles.publicLookup(), mh, mh));
     }
 
+    @Test
+    public void testNulls() {
+        // asInterfaceInstance
+        assertThrows(NullPointerException.class, () -> MethodHandleProxies.asInterfaceInstance(null, MethodHandles.zero(void.class)));
+        assertThrows(NullPointerException.class, () -> MethodHandleProxies.asInterfaceInstance(Runnable.class, null));
+
+        // isWrapperInstance
+        assertFalse(MethodHandleProxies.isWrapperInstance(null));
+
+        // wrapperInstanceTarget/Type
+        assertThrows(IllegalArgumentException.class, () -> MethodHandleProxies.wrapperInstanceTarget(null));
+        assertThrows(IllegalArgumentException.class, () -> MethodHandleProxies.wrapperInstanceType(null));
+    }
+
     void checkMethods(Method[] methods) {
         assertTrue(methods.length > 1, () -> "Should have more than 1 declared methods, found only " + Arrays.toString(methods));
         for (Method method : methods) {
@@ -254,17 +269,14 @@ public class BasicTest {
         }
     }
 
-    private Class<?> loadHidden() throws IllegalAccessException {
-        ClassDesc baseCd = ClassDesc.of("BasicTest$HiddenItf");
-        var objMtd = MethodTypeDesc.of(CD_Object);
-        var baseBytes = Classfile.of().build(baseCd, clb -> {
-            clb.withSuperclass(CD_Object);
-            clb.withFlags(ACC_PUBLIC | ACC_INTERFACE | ACC_ABSTRACT);
-            clb.withMethod("value", objMtd, ACC_PUBLIC | ACC_ABSTRACT, mb -> {});
-        });
-
-        var lookup = MethodHandles.lookup();
-        return lookup.defineHiddenClass(baseBytes, true).lookupClass();
+    private Class<?> loadHidden() {
+        try (var is = BasicTest.class.getResourceAsStream("Client.class")) {
+            var bytes = Objects.requireNonNull(is).readAllBytes();
+            var lookup = MethodHandles.lookup();
+            return lookup.defineHiddenClass(bytes, true).lookupClass();
+        } catch (Throwable ex) {
+            return fail("Hidden interface loading failure", ex);
+        }
     }
 
     // Base: Object value();

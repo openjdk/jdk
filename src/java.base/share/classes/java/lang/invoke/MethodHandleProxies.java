@@ -86,8 +86,7 @@ public class MethodHandleProxies {
      * even though it re-declares the {@code Object.equals} method and also
      * declares default methods, such as {@code Comparator.reverse}.
      * <p>
-     * The interface must be public, not {@linkplain Class#isHidden() hidden},
-     * and not {@linkplain Class#isSealed() sealed}.
+     * The interface must be public and not {@linkplain Class#isSealed() sealed}.
      * No additional access checks are performed.
      * <p>
      * The resulting instance of the required type will respond to
@@ -159,28 +158,17 @@ public class MethodHandleProxies {
      * @throws WrongMethodTypeException if the target cannot
      *         be converted to the type required by the requested interface
      */
-    // Other notes to implementors:
-    // <p>
-    // No stable mapping is promised between the single-method interface and
-    // the implementation class C.  Over time, several implementation
-    // classes might be used for the same type.
-    // <p>
-    // If the implementation is able
-    // to prove that a wrapper of the required type
-    // has already been created for a given
-    // method handle, or for another method handle with the
-    // same behavior, the implementation may return that wrapper in place of
-    // a new wrapper.
-    // <p>
-    // This method is designed to apply to common use cases
-    // where a single method handle must interoperate with
-    // an interface that implements a function-like
-    // API.  Additional variations, such as single-abstract-method classes with
-    // private constructors, or interfaces with multiple but related
-    // entry points, must be covered by hand-written or automatically
-    // generated adapter classes.
-    //
     /*
+     * Implementor notes:
+     * This API is free to reuse the same implementation instance or class for
+     * suitable inputs. It is not guaranteed to return a new instance for every
+     * call. No stable mapping is promised between the single-method interface
+     * and the wrapper's implementation class. Over time, several implementation
+     * classes might be used for the same type. If the implementation is able to
+     * prove that a wrapper of the required type has already been created for a
+     * given method handle, the implementation may return that wrapper in place
+     * of a new wrapper.
+     *
      * Discussion:
      * Since project leyden aims to improve startup speed, asInterfaceInstance
      * will share one implementation class for each interface than one implementation
@@ -208,7 +196,9 @@ public class MethodHandleProxies {
             throw newIllegalArgumentException("a hidden interface", intfc.getName());
         Objects.requireNonNull(target);
         final MethodHandle mh;
-        if (System.getSecurityManager() != null) {
+        @SuppressWarnings("removal")
+        var sm = System.getSecurityManager();
+        if (sm != null) {
             final Class<?> caller = Reflection.getCallerClass();
             final ClassLoader ccl = caller != null ? caller.getClassLoader() : null;
             ReflectUtil.checkProxyPackageAccess(ccl, intfc);
@@ -251,27 +241,24 @@ public class MethodHandleProxies {
         String uniqueName = null;
         int count = 0;
         for (Method m : intfc.getMethods()) {
-            if (Modifier.isStatic(m.getModifiers()))
+            if (!Modifier.isAbstract(m.getModifiers()))
                 continue;
 
             if (isObjectMethod(m))
                 continue;
 
-            if (!Modifier.isAbstract(m.getModifiers()))
-                continue;
-
             // ensure it's SAM interface
-            String mname = m.getName();
+            String methodName = m.getName();
             if (uniqueName == null) {
-                uniqueName = mname;
-            } else if (!uniqueName.equals(mname)) {
+                uniqueName = methodName;
+            } else if (!uniqueName.equals(methodName)) {
                 // too many abstract methods
                 throw newIllegalArgumentException("not a single-method interface", intfc.getName());
             }
 
             // the field name holding the method handle for this method
             String fieldName = "m" + count++;
-            var mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m));
+            var mt = methodType(m.getReturnType(), JLRA.getExecutableSharedParameterTypes(m), true);
             var thrown = JLRA.getExecutableSharedExceptionTypes(m);
             var exceptionTypeDescs =
                     thrown.length == 0 ? DEFAULT_RETHROWS
@@ -296,21 +283,22 @@ public class MethodHandleProxies {
         Module targetModule = newDynamicModule(loader, referencedTypes);
 
         // generate a class file in the package of the dynamic module
-        String pn = targetModule.getName();
-        String n = intfc.getName();
-        int i = n.lastIndexOf('.');
-        String cn = i > 0 ? pn + "." + n.substring(i + 1) : pn + "." + n;
-        byte[] template = createTemplate(loader, ClassDesc.of(cn), desc(intfc), uniqueName, methods);
+        String packageName = targetModule.getName();
+        String intfcName = intfc.getName();
+        int i = intfcName.lastIndexOf('.');
+        // jdk.MHProxy#.Interface
+        String className = packageName + "." + (i > 0 ? intfcName.substring(i + 1) : intfcName);
+        byte[] template = createTemplate(loader, ClassDesc.of(className), desc(intfc), uniqueName, methods);
         // define the dynamic module to the class loader of the interface
-        var definer = new Lookup(intfc).makeHiddenClassDefiner(cn, template, Set.of(), DUMPER);
+        var definer = new Lookup(intfc).makeHiddenClassDefiner(className, template, Set.of(), DUMPER);
 
         @SuppressWarnings("removal")
         var sm = System.getSecurityManager();
         Lookup lookup;
         if (sm != null) {
-            PrivilegedAction<Lookup> pa = () -> definer.defineClassAsLookup(true);
             @SuppressWarnings("removal")
-            var l = AccessController.doPrivileged(pa);
+            var l = AccessController.doPrivileged((PrivilegedAction<Lookup>) () ->
+                    definer.defineClassAsLookup(true));
             lookup = l;
         } else {
             lookup = definer.defineClassAsLookup(true);
@@ -320,7 +308,7 @@ public class MethodHandleProxies {
         return lookup;
     }
 
-    private static class WeakReferenceHolder<T> {
+    private static final class WeakReferenceHolder<T> {
         private volatile WeakReference<T> ref;
 
         WeakReferenceHolder(T value) {
@@ -427,9 +415,9 @@ public class MethodHandleProxies {
                 cob.return_();
             });
 
-            // void ensureOriginalLookup(Lookup) checks if the given Lookup has ORIGINAL
-            // access to this class, i.e. the lookup class is this class; otherwise,
-            // IllegalAccessException is thrown
+            // private static void ensureOriginalLookup(Lookup) checks if the given Lookup
+            // has ORIGINAL access to this class, i.e. the lookup class is this class;
+            // otherwise, IllegalAccessException is thrown
             clb.withMethodBody(ENSURE_ORIGINAL_LOOKUP, MTD_void_Lookup, ACC_PRIVATE | ACC_STATIC, cob -> {
                 var failLabel = cob.newLabel();
                 // check lookupClass
@@ -464,7 +452,8 @@ public class MethodHandleProxies {
                                     bcb.aload(0);
                                     bcb.getfield(proxyDesc, mi.fieldName, CD_MethodHandle);
                                     for (int j = 0; j < mi.desc.parameterCount(); j++) {
-                                        bcb.loadInstruction(TypeKind.from(mi.desc.parameterType(j)), bcb.parameterSlot(j));
+                                        bcb.loadInstruction(TypeKind.from(mi.desc.parameterType(j)),
+                                                bcb.parameterSlot(j));
                                     }
                                     bcb.invokevirtual(CD_MethodHandle, "invokeExact", mi.desc);
                                     bcb.returnInstruction(TypeKind.from(mi.desc.returnType()));
@@ -476,7 +465,8 @@ public class MethodHandleProxies {
                                                 .new_(CD_UndeclaredThrowableException)
                                                 .dup_x1()
                                                 .swap()
-                                                .invokespecial(CD_UndeclaredThrowableException, INIT_NAME, MTD_void_Throwable)
+                                                .invokespecial(CD_UndeclaredThrowableException,
+                                                        INIT_NAME, MTD_void_Throwable)
                                                 .athrow()
                                         )
                         ));
@@ -494,11 +484,7 @@ public class MethodHandleProxies {
      * @return true if the reference is not null and points to an object produced by {@code asInterfaceInstance}
      */
     public static boolean isWrapperInstance(Object x) {
-        return isWrapperClass(x.getClass());
-    }
-
-    private static boolean isWrapperClass(Class<?> cls) {
-        return WRAPPER_TYPES.contains(cls);
+        return x != null && WRAPPER_TYPES.contains(x.getClass());
     }
 
     /**
