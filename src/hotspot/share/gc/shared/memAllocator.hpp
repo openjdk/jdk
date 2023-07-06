@@ -66,10 +66,6 @@ protected:
   // back to calling CollectedHeap::mem_allocate().
   HeapWord* mem_allocate(Allocation& allocation) const;
 
-  virtual MemRegion obj_memory_range(oop obj) const {
-    return MemRegion(cast_from_oop<HeapWord*>(obj), _word_size);
-  }
-
 public:
   oop allocate() const;
   virtual oop initialize(HeapWord* mem) const = 0;
@@ -85,8 +81,6 @@ public:
 class ObjArrayAllocator: public MemAllocator {
   const int  _length;
   const bool _do_zero;
-protected:
-  virtual MemRegion obj_memory_range(oop obj) const;
 
 public:
   ObjArrayAllocator(Klass* klass, size_t word_size, int length, bool do_zero,
