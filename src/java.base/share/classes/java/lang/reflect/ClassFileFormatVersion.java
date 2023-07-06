@@ -370,7 +370,7 @@ public enum ClassFileFormatVersion {
     public static ClassFileFormatVersion fromMajor(int major) {
         if (major < 45  // RELEASE_0.major()
             || major > latest().major()) {
-            throw new IllegalArgumentException("Out of range major class file vesion "
+            throw new IllegalArgumentException("Out of range major class file version "
                                                + major);
         }
         // RELEASE_0 and RELEASE_1 both have a major version of 45;

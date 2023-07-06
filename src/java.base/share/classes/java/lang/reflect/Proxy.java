@@ -1268,7 +1268,7 @@ public class Proxy implements java.io.Serializable {
                     // the method's declaring class is left unvisited.
                     continue;
                 }
-                // visit all superinteraces of one proxy interface to find if
+                // visit all superinterfaces of one proxy interface to find if
                 // this proxy interface inherits the method directly or indirectly
                 visited.add(c);
                 for (Class<?> superIntf : c.getInterfaces()) {
