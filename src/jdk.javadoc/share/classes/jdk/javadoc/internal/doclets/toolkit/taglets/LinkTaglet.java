@@ -37,8 +37,8 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 
 public abstract class LinkTaglet extends BaseTaglet {
 
-    protected LinkTaglet(BaseConfiguration config, DocTree.Kind kind) {
-        super(config, kind, true, EnumSet.allOf(Location.class));
+    protected LinkTaglet(BaseConfiguration config, DocTree.Kind tagKind) {
+        super(config, tagKind, true, EnumSet.allOf(Location.class));
     }
 
     @Override

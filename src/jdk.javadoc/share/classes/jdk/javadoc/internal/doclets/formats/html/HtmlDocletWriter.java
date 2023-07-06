@@ -112,7 +112,6 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils.ElementFlag;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils.PreviewSummary;
 import jdk.javadoc.internal.doclint.HtmlTag;
 
-import static com.sun.source.doctree.DocTree.Kind.CODE;
 import static com.sun.source.doctree.DocTree.Kind.COMMENT;
 import static com.sun.source.doctree.DocTree.Kind.LINK;
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
@@ -1389,16 +1388,6 @@ public class HtmlDocletWriter {
                         var w = getTagletWriterInstance(context.within(node));
                         content.add(t.getInlineTagOutput(element, node, w));
                     }
-                    return false;
-                }
-
-                @Override
-                public Boolean visitLiteral(LiteralTree node, Content content) {
-                    // for better or worse, this is completely bypassing taglet support
-                    // TODO: try replace with `getInlineTagOutput` and/or delete this method to use `defaultAction`
-                    String s = node.getBody().getBody();
-                    Content t = Text.of(Text.normalizeNewlines(s));
-                    content.add(node.getKind() == CODE ? HtmlTree.CODE(t) : t);
                     return false;
                 }
 

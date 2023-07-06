@@ -31,19 +31,21 @@ import com.sun.source.doctree.DocTree;
 import com.sun.source.doctree.LiteralTree;
 
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.taglets.LiteralTaglet;
 import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 
 public class HtmlLiteralTaglet extends LiteralTaglet {
-    HtmlLiteralTaglet(HtmlConfiguration config) {
-        super(config);
+    HtmlLiteralTaglet(HtmlConfiguration config, DocTree.Kind tagKind) {
+        super(config, tagKind);
     }
 
     @Override
     public Content getInlineTagOutput(Element element, DocTree tag, TagletWriter writer) {
         var literalTree = (LiteralTree) tag;
-        return Text.of(Text.normalizeNewlines(literalTree.getBody().getBody()));
+        var body = Text.of(Text.normalizeNewlines(literalTree.getBody().getBody()));
+        return tag.getKind() == DocTree.Kind.CODE ? HtmlTree.CODE(body) : body;
     }
 }

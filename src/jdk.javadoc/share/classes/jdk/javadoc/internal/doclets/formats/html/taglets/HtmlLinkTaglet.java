@@ -41,8 +41,8 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import static com.sun.source.doctree.DocTree.Kind.LINK_PLAIN;
 
 public class HtmlLinkTaglet extends LinkTaglet {
-    HtmlLinkTaglet(HtmlConfiguration config, DocTree.Kind kind) {
-        super(config, kind);
+    HtmlLinkTaglet(HtmlConfiguration config, DocTree.Kind tagKind) {
+        super(config, tagKind);
     }
 
     @Override

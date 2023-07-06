@@ -36,16 +36,25 @@ import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
- * An inline taglet used to denote literal text.
+ * An inline taglet used to denote literal text, possibly in monospace font.
+ *
  * For example, the text:
  * <blockquote>  {@code {@literal a<B>c}}  </blockquote>
  * displays as:
  * <blockquote>  {@literal a<B>c}  </blockquote>
+ *
+ * <p> The tag {@code {@code ...}} is equivalent to
+ * {@code <code>{@literal ...}</code>}.
+ *
+ * For example, the text:
+ * <blockquote>  The type {@code {@code List<P>}}  </blockquote>
+ * displays as:
+ * <blockquote>  The type {@code List<P>}  </blockquote>
  */
 public abstract class LiteralTaglet extends BaseTaglet {
 
-    protected LiteralTaglet(BaseConfiguration config) {
-        super(config, DocTree.Kind.LITERAL, true, EnumSet.allOf(Location.class));
+    protected LiteralTaglet(BaseConfiguration config, DocTree.Kind tagKind) {
+        super(config, tagKind, true, EnumSet.allOf(Location.class));
     }
 
     @Override

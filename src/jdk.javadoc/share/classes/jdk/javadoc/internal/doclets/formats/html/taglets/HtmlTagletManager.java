@@ -101,8 +101,8 @@ public class HtmlTagletManager extends TagletManager {
         addStandardTaglet(new HtmlValueTaglet(config));
         addStandardTaglet(new HtmlLinkTaglet(config, DocTree.Kind.LINK));
         addStandardTaglet(new HtmlLinkTaglet(config, DocTree.Kind.LINK_PLAIN));
-        addStandardTaglet(new HtmlLiteralTaglet(config));
-        addStandardTaglet(new HtmlCodeTaglet(config));
+        addStandardTaglet(new HtmlLiteralTaglet(config, DocTree.Kind.CODE));
+        addStandardTaglet(new HtmlLiteralTaglet(config, DocTree.Kind.LITERAL));
         addStandardTaglet(new HtmlSnippetTaglet(config));
         addStandardTaglet(new HtmlIndexTaglet(config));
         addStandardTaglet(new SummaryTaglet(config));
