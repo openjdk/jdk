@@ -367,7 +367,7 @@ final class Carriers {
          * Cache mapping {@link MethodType} to previously defined {@link CarrierElements}.
          */
         private static final Map<MethodType, CarrierElements>
-                methodTypeCache = ReferencedKeyMap.create(false, ConcurrentHashMap::new);
+                methodTypeCache = ReferencedKeyMap.create(false, false, ConcurrentHashMap::new);
 
         /**
          * Permute a raw constructor and component accessor {@link MethodHandle MethodHandles} to

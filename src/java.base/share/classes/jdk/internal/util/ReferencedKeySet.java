@@ -26,6 +26,7 @@
 package jdk.internal.util;
 
 import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.*;
@@ -85,32 +86,19 @@ public class ReferencedKeySet<T> extends AbstractSet<T> {
     /**
      * Create a new {@link ReferencedKeySet} elements.
      *
-     * @param isSoft    true if {@link SoftReference} elements are to
-     *                  be used, {@link WeakReference} otherwise.
-     * @param supplier  {@link Supplier} of the backing map
+     * @param isSoft          true if {@link SoftReference} elements are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param useNativeQueue  true if uses NativeReferenceQueue
+     *                        otherwise use {@link ReferenceQueue}.
+     * @param supplier        {@link Supplier} of the backing map
      *
      * @return a new set with {@link Reference} elements
      *
      * @param <E> the type of elements maintained by this set
      */
     public static <E> ReferencedKeySet<E>
-    create(boolean isSoft, Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> supplier) {
-         return new ReferencedKeySet<>(ReferencedKeyMap.create(isSoft, supplier));
-    }
-
-    /**
-     * Create a new {@link ReferencedKeySet} set using
-     * {@link WeakReference} elements.
-     *
-     * @param supplier  {@link Supplier} of the backing map
-     *
-     * @return a new set with {@link Reference} elements
-     *
-     * @param <E> the type of elements maintained by this set
-     */
-    public static <E> ReferencedKeySet<E>
-    create(Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> supplier) {
-        return new ReferencedKeySet<>(ReferencedKeyMap.create(false, supplier));
+    create(boolean isSoft, boolean useNativeQueue, Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> supplier) {
+         return new ReferencedKeySet<>(ReferencedKeyMap.create(isSoft, useNativeQueue, supplier));
     }
 
     /**

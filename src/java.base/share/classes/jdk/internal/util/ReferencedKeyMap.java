@@ -94,29 +94,34 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     private final Map<ReferenceKey<K>, V> map;
 
     /**
-     * {@link ReferenceQueue} for cleaning up {@link WeakReferenceKey EntryKeys}.
+     * {@link ReferenceQueue} for cleaning up entries.
      */
     private final ReferenceQueue<K> stale;
 
     /**
      * Private constructor.
      *
-     * @param isSoft  true if {@link SoftReference} keys are to
-     *                be used, {@link WeakReference} otherwise.
-     * @param map     backing map
+     * @param isSoft          true if {@link SoftReference} keys are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param useNativeQueue  true if uses NativeReferenceQueue
+     *                        otherwise use {@link ReferenceQueue}.
+     * @param map             backing map
+     * @param stale           {@link ReferenceQueue} for cleaning up entries
      */
-    private ReferencedKeyMap(boolean isSoft, Map<ReferenceKey<K>, V> map) {
+    private ReferencedKeyMap(boolean isSoft, Map<ReferenceKey<K>, V> map, ReferenceQueue<K> stale) {
         this.isSoft = isSoft;
         this.map = map;
-        this.stale = SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue();
+        this.stale = stale;
     }
 
     /**
      * Create a new {@link ReferencedKeyMap} map.
      *
-     * @param isSoft    true if {@link SoftReference} keys are to
-     *                  be used, {@link WeakReference} otherwise.
-     * @param supplier  {@link Supplier} of the backing map
+     * @param isSoft          true if {@link SoftReference} keys are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param useNativeQueue  true if uses NativeReferenceQueue
+     *                        otherwise use {@link ReferenceQueue}.
+     * @param supplier        {@link Supplier} of the backing map
      *
      * @return a new map with {@link Reference} keys
      *
@@ -124,24 +129,11 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
      * @param <V> the type of mapped values
      */
     public static <K, V> ReferencedKeyMap<K, V>
-    create(boolean isSoft, Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return new ReferencedKeyMap<K, V>(isSoft, supplier.get());
-    }
-
-    /**
-     * Create a new {@link ReferencedKeyMap} map using
-     * {@link WeakReference} keys.
-     *
-     * @param supplier  {@link Supplier} of the backing map
-     *
-     * @return a new map with {@link Reference} keys
-     *
-     * @param <K> the type of keys maintained by the new map
-     * @param <V> the type of mapped values
-     */
-    public static <K, V> ReferencedKeyMap<K, V>
-    create(Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return new ReferencedKeyMap<K, V>(false, supplier.get());
+    create(boolean isSoft, boolean useNativeQueue, Supplier<Map<ReferenceKey<K>, V>> supplier) {
+        return new ReferencedKeyMap<K, V>(isSoft, supplier.get(),
+                useNativeQueue ? SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue()
+                               : new ReferenceQueue<>()
+                );
     }
 
     /**

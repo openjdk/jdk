@@ -231,7 +231,7 @@ class MethodType
     }
 
     static final ReferencedKeySet<MethodType> internTable =
-        ReferencedKeySet.create(false, new Supplier<>() {
+        ReferencedKeySet.create(false, true, new Supplier<>() {
             @Override
             public Map<ReferenceKey<MethodType>, ReferenceKey<MethodType>> get() {
                 return new ConcurrentHashMap<>(512);

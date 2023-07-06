@@ -73,6 +73,8 @@ final class WeakReferenceKey<T> extends WeakReference<T> implements ReferenceKey
         if (obj instanceof ReferenceKey<?> key) {
             obj = key.get();
         }
+        // Note: refersTo is insufficient since keys require equivalence.
+        // refersTo would also require a cast to type T.
         return Objects.equals(get(), obj);
     }
 
