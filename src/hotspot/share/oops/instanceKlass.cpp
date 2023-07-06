@@ -977,8 +977,8 @@ void InstanceKlass::initialize_super_interfaces(TRAPS) {
   }
 }
 
-ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>
-      _initialization_error_table;
+using InitializationErrorTable = ResourceHashtable<const InstanceKlass*, OopHandle, 107, AnyObj::C_HEAP, mtClass>;
+static InitializationErrorTable* _initialization_error_table;
 
 void InstanceKlass::add_initialization_error(JavaThread* current, Handle exception) {
   // Create the same exception with a message indicating the thread name,
@@ -996,14 +996,20 @@ void InstanceKlass::add_initialization_error(JavaThread* current, Handle excepti
   MutexLocker ml(THREAD, ClassInitError_lock);
   OopHandle elem = OopHandle(Universe::vm_global(), init_error());
   bool created;
-  _initialization_error_table.put_if_absent(this, elem, &created);
+  if (_initialization_error_table == nullptr) {
+    _initialization_error_table = new (mtClass) InitializationErrorTable();
+  }
+  _initialization_error_table->put_if_absent(this, elem, &created);
   assert(created, "Initialization is single threaded");
   log_trace(class, init)("Initialization error added for class %s", external_name());
 }
 
 oop InstanceKlass::get_initialization_error(JavaThread* current) {
   MutexLocker ml(current, ClassInitError_lock);
-  OopHandle* h = _initialization_error_table.get(this);
+  if (_initialization_error_table == nullptr) {
+    return nullptr;
+  }
+  OopHandle* h = _initialization_error_table->get(this);
   return (h != nullptr) ? h->resolve() : nullptr;
 }
 
@@ -1022,7 +1028,9 @@ void InstanceKlass::clean_initialization_error_table() {
 
   assert_locked_or_safepoint(ClassInitError_lock);
   InitErrorTableCleaner cleaner;
-  _initialization_error_table.unlink(&cleaner);
+  if (_initialization_error_table != nullptr) {
+    _initialization_error_table->unlink(&cleaner);
+  }
 }
 
 void InstanceKlass::initialize_impl(TRAPS) {
@@ -4313,3 +4321,4 @@ void ClassHierarchyIterator::next() {
   _current = _current->next_sibling();
   return; // visit next sibling subclass
 }
+
