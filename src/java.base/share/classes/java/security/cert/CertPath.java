@@ -188,9 +188,9 @@ public abstract class CertPath implements Serializable {
     }
 
     /**
-     * {@return the hashcode value for this certification path} The hash code
-     * of a certification path is defined to be the result of the following
-     * calculation:
+     * {@return the hashcode value for this certification path}
+     * The hash code of a certification path is defined to be the result of
+     * the following calculation:
      * <pre>{@code
      *  hashCode = path.getType().hashCode();
      *  hashCode = 31*hashCode + path.getCertificates().hashCode();
