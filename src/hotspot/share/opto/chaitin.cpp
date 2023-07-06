@@ -1794,6 +1794,13 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
   if( derived_base_map[derived->_idx] )
     return derived_base_map[derived->_idx];
 
+  if (derived->is_Mach() && derived->as_Mach()->ideal_Opcode() == Op_VerifyAlignment) {
+    // Bypass the verification node
+    Node* base = find_base_for_derived(derived_base_map, derived->in(1), maxlrg);
+    derived_base_map[derived->_idx] = base;
+    return base;
+  }
+
   // See if this happens to be a base.
   // NOTE: we use TypePtr instead of TypeOopPtr because we can have
   // pointers derived from null!  These are always along paths that
