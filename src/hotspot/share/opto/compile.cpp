@@ -3659,6 +3659,33 @@ void Compile::final_graph_reshaping_main_switch(Node* n, Final_Reshape_Counts& f
 
   case Op_LoadVector:
   case Op_StoreVector:
+#ifdef ASSERT
+#ifdef AMD64
+    // Add VerifyAlignment node between adr and load / store.
+    if (AlignVector && VerifyAlignVector) {
+      bool must_verify_alignment = n->is_LoadVector() ? n->as_LoadVector()->must_verify_alignment() :
+                                                        n->as_StoreVector()->must_verify_alignment();
+      if (must_verify_alignment) {
+        jlong memory_size = n->is_LoadVector() ? n->as_LoadVector()->memory_size() :
+                                                 n->as_StoreVector()->memory_size();
+        // The memory access should be aligned to the vector length in bytes.
+        // However, the underlying array is possibly less well aligned, but at least
+        // to ObjectAlignmentInBytes. Hence, even if multiple arrays are accessed in
+        // a loop we can expect at least the following alignment:
+        jlong alignment = MIN2(memory_size, (jlong)ObjectAlignmentInBytes);
+        assert(2 <= alignment && alignment <= 64, "alignment must be in range");
+        assert(is_power_of_2(alignment), "alignment must be power of 2");
+        // Create mask from alignment. e.g. 0b1000 -> 0b0111
+        jlong mask = alignment - 1;
+        Node* mask_con = ConLNode::make(mask);
+        VerifyAlignmentNode* va = new VerifyAlignmentNode(n->in(MemNode::Address), mask_con);
+        n->set_req(MemNode::Address, va);
+      }
+    }
+#endif
+#endif
+    break;
+
   case Op_LoadVectorGather:
   case Op_StoreVectorScatter:
   case Op_LoadVectorGatherMasked:

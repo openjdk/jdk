@@ -135,6 +135,7 @@ public class TestFramework {
                     "CompileThreshold",
                     "Xmixed",
                     "server",
+                    "AlignVector",
                     "UseAVX",
                     "UseSSE",
                     "UseSVE",

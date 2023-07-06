@@ -837,6 +837,8 @@ class ExpandVNode: public VectorNode {
 //------------------------------LoadVectorNode---------------------------------
 // Load Vector from memory
 class LoadVectorNode : public LoadNode {
+ private:
+  DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   LoadVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, const TypeVect* vt, ControlDependency control_dependency = LoadNode::DependsOnlyOnTest)
     : LoadNode(c, mem, adr, at, vt, MemNode::unordered, control_dependency) {
@@ -861,6 +863,11 @@ class LoadVectorNode : public LoadNode {
                               uint vlen, BasicType bt,
                               ControlDependency control_dependency = LoadNode::DependsOnlyOnTest);
   uint element_size(void) { return type2aelembytes(vect_type()->element_basic_type()); }
+
+#ifdef ASSERT
+  bool must_verify_alignment() const { return _must_verify_alignment; }
+  void set_must_verify_alignment() { _must_verify_alignment = true; }
+#endif
 };
 
 //------------------------------LoadVectorGatherNode------------------------------
@@ -884,6 +891,7 @@ class LoadVectorGatherNode : public LoadVectorNode {
 class StoreVectorNode : public StoreNode {
  private:
   const TypeVect* _vect_type;
+  DEBUG_ONLY( bool _must_verify_alignment = false; );
  public:
   StoreVectorNode(Node* c, Node* mem, Node* adr, const TypePtr* at, Node* val)
     : StoreNode(c, mem, adr, at, val, MemNode::unordered), _vect_type(val->bottom_type()->is_vect()) {
@@ -908,6 +916,11 @@ class StoreVectorNode : public StoreNode {
 
   // Needed for proper cloning.
   virtual uint size_of() const { return sizeof(*this); }
+
+#ifdef ASSERT
+  bool must_verify_alignment() const { return _must_verify_alignment; }
+  void set_must_verify_alignment() { _must_verify_alignment = true; }
+#endif
 };
 
 //------------------------------StoreVectorScatterNode------------------------------
@@ -1005,6 +1018,25 @@ class StoreVectorScatterMaskedNode : public StoreVectorNode {
                                                     idx == MemNode::ValueIn ||
                                                     idx == MemNode::ValueIn + 1 ||
                                                     idx == MemNode::ValueIn + 2; }
+};
+
+// Verify that memory address (adr) is alignemd. The mask specifies the
+// least significant bits which have to be zero in the address.
+//
+// if (adr & mask == 0) {
+//   return adr
+// } else {
+//   stop("verify_alignment found a misaligned vector memory access")
+// }
+//
+// This node is used just before a vector load/store with -XX:+VerifyAlignVector
+class VerifyAlignmentNode : public Node {
+  virtual uint hash() const { return NO_HASH; };
+public:
+  VerifyAlignmentNode(Node* adr, Node* mask) : Node(nullptr, adr, mask) {}
+public:
+  virtual int Opcode() const;
+  virtual const Type *bottom_type() const { return in(1)->bottom_type(); }
 };
 
 //------------------------------VectorCmpMaskedNode--------------------------------

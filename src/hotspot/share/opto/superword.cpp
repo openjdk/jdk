@@ -2928,6 +2928,17 @@ bool SuperWord::output() {
         ShouldNotReachHere();
       }
 
+#ifdef ASSERT
+      // Mark Load/Store Vector for alignment verification
+      if (AlignVector && VerifyAlignVector && cl->is_main_loop()) {
+        if (vn->Opcode() == Op_LoadVector) {
+          vn->as_LoadVector()->set_must_verify_alignment();
+        } else if (vn->Opcode() == Op_StoreVector) {
+          vn->as_StoreVector()->set_must_verify_alignment();
+        }
+      }
+#endif
+
       _block.at_put(i, vn);
       _igvn.register_new_node_with_optimizer(vn);
       _phase->set_ctrl(vn, _phase->get_ctrl(first));

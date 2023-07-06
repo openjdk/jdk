@@ -90,6 +90,9 @@
   product(bool, AlignVector, true,                                          \
           "Perform vector store/load alignment in loop")                    \
                                                                             \
+  develop(bool, VerifyAlignVector, false,                                   \
+          "Check that vector store/load are aligned if AlignVector is on.") \
+                                                                            \
   product(intx, NumberOfLoopInstrToAlign, 4,                                \
           "Number of first instructions in a loop to align")                \
           range(0, max_jint)                                                \
