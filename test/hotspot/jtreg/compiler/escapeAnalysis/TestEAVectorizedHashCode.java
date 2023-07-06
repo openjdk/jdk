@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,30 @@
  * questions.
  */
 
-package gc.startup_warnings;
-
-/*
- * @test TestParallelGC
- * @bug 8006398
- * @requires vm.gc.Parallel
- * @summary Test that ParallelGC does not print a warning message
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver gc.startup_warnings.TestParallelGC
+/**
+ * @test
+ * @bug 8311023
+ * @summary Crash encountered while converting the types of non-escaped object to instance types.
+ *
+ * @run main/othervm
+ *      -XX:-TieredCompilation -Xbatch compiler.escapeAnalysis.TestEAVectorizedHashCode
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+package compiler.escapeAnalysis;
 
+import java.util.Arrays;
 
-public class TestParallelGC {
+public class TestEAVectorizedHashCode {
+    public static int micro() {
+        int[] a = { 10, 20, 30, 40, 50, 60};
+        return Arrays.hashCode(a);
+    }
 
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseParallelGC", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("deprecated");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
-
+    public static void main(String [] args) {
+        int res = 0;
+        for (int i = 0; i < 10000; i++) {
+            res += micro();
+        }
+        System.out.println("PASS:" +  res);
+    }
 }

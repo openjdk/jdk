@@ -531,7 +531,7 @@ public final class ScopedValue<T> {
 
     /**
      * Creates a new {@code Carrier} with a single mapping of a {@code ScopedValue}
-     * <em>key</em> to a value. The {@code Carrier} can be used to accumlate mappings so
+     * <em>key</em> to a value. The {@code Carrier} can be used to accumulate mappings so
      * that an operation can be executed with all scoped values in the mapping bound to
      * values. The following example runs an operation with {@code k1} bound (or rebound)
      * to {@code v1}, and {@code k2} bound (or rebound) to {@code v2}.

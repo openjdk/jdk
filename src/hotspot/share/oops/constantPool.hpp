@@ -587,16 +587,16 @@ class ConstantPool : public Metadata {
            "Corrupted CP operands");
     return operand_offset_at(operands(), bsms_attribute_index);
   }
-  int operand_bootstrap_method_ref_index_at(int bsms_attribute_index) {
+  u2 operand_bootstrap_method_ref_index_at(int bsms_attribute_index) {
     int offset = operand_offset_at(bsms_attribute_index);
     return operands()->at(offset + _indy_bsm_offset);
   }
-  int operand_argument_count_at(int bsms_attribute_index) {
+  u2 operand_argument_count_at(int bsms_attribute_index) {
     int offset = operand_offset_at(bsms_attribute_index);
-    int argc = operands()->at(offset + _indy_argc_offset);
+    u2 argc = operands()->at(offset + _indy_argc_offset);
     return argc;
   }
-  int operand_argument_index_at(int bsms_attribute_index, int j) {
+  u2 operand_argument_index_at(int bsms_attribute_index, int j) {
     int offset = operand_offset_at(bsms_attribute_index);
     return operands()->at(offset + _indy_argv_offset + j);
   }
@@ -618,21 +618,21 @@ class ConstantPool : public Metadata {
   // Shrink the operands array to a smaller array with new_len length
   void shrink_operands(int new_len, TRAPS);
 
-  int bootstrap_method_ref_index_at(int which) {
+  u2 bootstrap_method_ref_index_at(int which) {
     assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     int op_base = bootstrap_operand_base(which);
     return operands()->at(op_base + _indy_bsm_offset);
   }
-  int bootstrap_argument_count_at(int which) {
+  u2 bootstrap_argument_count_at(int which) {
     assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     int op_base = bootstrap_operand_base(which);
-    int argc = operands()->at(op_base + _indy_argc_offset);
+    u2 argc = operands()->at(op_base + _indy_argc_offset);
     DEBUG_ONLY(int end_offset = op_base + _indy_argv_offset + argc;
                int next_offset = bootstrap_operand_limit(which));
     assert(end_offset == next_offset, "matched ending");
     return argc;
   }
-  int bootstrap_argument_index_at(int which, int j) {
+  u2 bootstrap_argument_index_at(int which, int j) {
     int op_base = bootstrap_operand_base(which);
     DEBUG_ONLY(int argc = operands()->at(op_base + _indy_argc_offset));
     assert((uint)j < (uint)argc, "oob");

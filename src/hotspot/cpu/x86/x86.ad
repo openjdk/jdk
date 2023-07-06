@@ -1392,7 +1392,7 @@ Assembler::Width widthForType(BasicType bt) {
   static address vector_double_signflip() { return StubRoutines::x86::vector_double_sign_flip();}
 
 //=============================================================================
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode)) {
     return false; // no match rule present
   }
@@ -1694,13 +1694,13 @@ static inline bool is_pop_count_instr_target(BasicType bt) {
          (is_non_subword_integral_type(bt) && VM_Version::supports_avx512_vpopcntdq());
 }
 
-const bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_superword(int opcode, int vlen, BasicType bt) {
   return match_rule_supported_vector(opcode, vlen, bt);
 }
 
 // Identify extra cases that we might want to provide match rules for vector nodes and
 // other intrinsics guarded with vector length (vlen) and element type (bt).
-const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType bt) {
   const bool is_LP64 = LP64_ONLY(true) NOT_LP64(false);
   if (!match_rule_supported(opcode)) {
     return false;
@@ -1988,7 +1988,7 @@ const bool Matcher::match_rule_supported_vector(int opcode, int vlen, BasicType 
   return true;  // Per default match rules are supported.
 }
 
-const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
+bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, BasicType bt) {
   // ADLC based match_rule_supported routine checks for the existence of pattern based
   // on IR opcode. Most of the unary/binary/ternary masked operation share the IR nodes
   // of their non-masked counterpart with mask edge being the differentiator.
@@ -2147,7 +2147,7 @@ const bool Matcher::match_rule_supported_vector_masked(int opcode, int vlen, Bas
   }
 }
 
-const bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
+bool Matcher::vector_needs_partial_operations(Node* node, const TypeVect* vt) {
   return false;
 }
 
@@ -2219,7 +2219,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Max vector size in bytes. 0 if not supported.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   assert(is_java_primitive(bt), "only primitive type vectors");
   if (UseSSE < 2) return 0;
   // SSE2 supports 128bit vectors for all types.
@@ -2262,10 +2262,10 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Min size which can be loaded into vector is 4 bytes.
   int size = (type2aelembytes(bt) == 1) ? 4 : 2;
@@ -2276,7 +2276,7 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size,max_size);
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   // Limit the max vector size for auto vectorization to 256 bits (32 bytes)
   // by default on Cascade Lake
   if (VM_Version::is_default_intel_cascade_lake()) {
@@ -2285,12 +2285,12 @@ const int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return -1;
 }
 
 // Vector ideal reg corresponding to specified size in bytes
-const uint Matcher::vector_ideal_reg(int size) {
+uint Matcher::vector_ideal_reg(int size) {
   assert(MaxVectorSize >= size, "");
   switch(size) {
     case  4: return Op_VecS;
@@ -3625,7 +3625,7 @@ instruct sqrtD_reg(regD dst) %{
   ins_pipe(pipe_slow);
 %}
 
-instruct convF2HF_reg_reg(rRegI dst, regF src, regF tmp) %{
+instruct convF2HF_reg_reg(rRegI dst, vlRegF src, vlRegF tmp) %{
   effect(TEMP tmp);
   match(Set dst (ConvF2HF src));
   ins_cost(125);
@@ -3669,7 +3669,7 @@ instruct vconvF2HF_mem_reg(memory mem, vec src) %{
   ins_pipe( pipe_slow );
 %}
 
-instruct convHF2F_reg_reg(regF dst, rRegI src) %{
+instruct convHF2F_reg_reg(vlRegF dst, rRegI src) %{
   match(Set dst (ConvHF2F src));
   format %{ "vcvtph2ps $dst,$src" %}
   ins_encode %{
