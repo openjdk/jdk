@@ -107,7 +107,7 @@ class ChunkPool {
   static void clean() {
     ThreadCritical tc;
     if (needs_cleaning()) {
-      TrimNative::PauseMark trim_native_pause("chunk pool cleaner");
+      TrimNative::SuspendMark tnsm("chunk pool cleaner");
       for (int i = 0; i < _num_pools; i++) {
         _pools[i].prune();
       }

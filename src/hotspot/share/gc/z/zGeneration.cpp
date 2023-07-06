@@ -432,7 +432,7 @@ public:
   }
 
   virtual void doit() {
-    TrimNative::PauseMark trim_native_pause("gc");
+    TrimNative::SuspendMark tnsm("gc");
 
     // Setup GC id and active marker
     GCIdMark gc_id_mark(_gc_id);

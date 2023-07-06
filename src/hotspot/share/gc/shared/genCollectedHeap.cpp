@@ -443,7 +443,7 @@ void GenCollectedHeap::do_collection(bool           full,
          "the requesting thread should have the Heap_lock");
   guarantee(!is_gc_active(), "collection is not reentrant");
 
-  TrimNative::PauseMark trim_native_pause("gc");
+  TrimNative::SuspendMark tnsm("gc");
 
   if (GCLocker::check_active_before_gc()) {
     return; // GC is disabled (e.g. JNI GetXXXCritical operation)

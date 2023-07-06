@@ -37,23 +37,23 @@ public:
   static void cleanup();
 
   // Pause periodic trim (if enabled).
-  static void pause_periodic_trim(const char* reason);
+  static void suspend_periodic_trim(const char* reason);
 
   // Unpause periodic trim (if enabled).
-  static void unpause_periodic_trim(const char* reason);
+  static void resume_periodic_trim(const char* reason);
 
   // Pause periodic trimming while in scope; when leaving scope,
   // resume periodic trimming.
-  struct PauseMark {
+  struct SuspendMark {
     const char* const _reason;
-    PauseMark(const char* reason = "unknown") : _reason(reason) {
+    SuspendMark(const char* reason = "unknown") : _reason(reason) {
       if (TrimNativeHeap) {
-        pause_periodic_trim(_reason);
+        suspend_periodic_trim(_reason);
       }
     }
-    ~PauseMark()  {
+    ~SuspendMark()  {
       if (TrimNativeHeap) {
-        unpause_periodic_trim(_reason);
+        resume_periodic_trim(_reason);
       }
     }
   };

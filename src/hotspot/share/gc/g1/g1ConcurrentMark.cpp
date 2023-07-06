@@ -1235,7 +1235,7 @@ void G1ConcurrentMark::remark() {
     return;
   }
 
-  TrimNative::PauseMark trim_native_pause("gc");
+  TrimNative::SuspendMark tnsm("gc");
 
   G1Policy* policy = _g1h->policy();
   policy->record_concurrent_mark_remark_start();
@@ -1451,7 +1451,7 @@ void G1ConcurrentMark::cleanup() {
     return;
   }
 
-  TrimNative::PauseMark trim_native_pause("gc");
+  TrimNative::SuspendMark tnsm("gc");
 
   G1Policy* policy = _g1h->policy();
   policy->record_concurrent_mark_cleanup_start();

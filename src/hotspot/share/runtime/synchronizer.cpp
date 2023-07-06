@@ -1647,7 +1647,7 @@ public:
 };
 
 static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
-  TrimNative::PauseMark trim_native_pause("monitor deletion");
+  TrimNative::SuspendMark trim_native_pause("monitor deletion");
   size_t count = 0;
   for (ObjectMonitor* monitor: *delete_list) {
     delete monitor;

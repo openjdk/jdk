@@ -457,7 +457,7 @@ void StringTable::clean_dead_entries(JavaThread* jt) {
 
   StringTableDeleteCheck stdc;
   StringTableDoDelete stdd;
-  TrimNative::PauseMark trim_native_pause("stringtable");
+  TrimNative::SuspendMark tnsm("stringtable");
   {
     TraceTime timer("Clean", TRACETIME_LOG(Debug, stringtable, perf));
     while(bdt.do_task(jt, stdc, stdd)) {

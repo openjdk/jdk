@@ -124,7 +124,7 @@ public:
     }
   }
 
-  void pause(const char* reason) {
+  void suspend(const char* reason) {
     assert(TrimNativeHeap, "Only call if enabled");
     assert(TrimNativeHeapInterval > 0, "Only call if periodic trimming is enabled");
     int lvl = 0;
@@ -136,7 +136,7 @@ public:
     log_debug(trim)("NativeTrimmer pause (%s) (%d)", reason, lvl);
   }
 
-  void unpause(const char* reason) {
+  void resume(const char* reason) {
     assert(TrimNativeHeap, "Only call if enabled");
     assert(TrimNativeHeapInterval > 0, "Only call if periodic trimming is enabled");
     int lvl = 0;
@@ -180,15 +180,15 @@ void TrimNative::cleanup() {
   }
 }
 
-void TrimNative::pause_periodic_trim(const char* reason) {
+void TrimNative::suspend_periodic_trim(const char* reason) {
   if (g_trimmer_thread != nullptr) {
-    g_trimmer_thread->pause(reason);
+    g_trimmer_thread->suspend(reason);
   }
 }
 
-void TrimNative::unpause_periodic_trim(const char* reason) {
+void TrimNative::resume_periodic_trim(const char* reason) {
   if (g_trimmer_thread != nullptr) {
-    g_trimmer_thread->unpause(reason);
+    g_trimmer_thread->resume(reason);
   }
 }
 
