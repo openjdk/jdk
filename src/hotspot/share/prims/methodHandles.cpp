@@ -659,7 +659,7 @@ static oop object_java_mirror() {
 
 oop MethodHandles::field_name_or_null(Symbol* s) {
   if (s == nullptr)  return nullptr;
-  return StringTable::lookup(s);
+  return JavaClassFile::StringTable::lookup(s);
 }
 
 oop MethodHandles::field_signature_type_or_null(Symbol* s) {
@@ -890,7 +890,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
       }
       if (!have_name) {
         //not java_lang_String::create_from_symbol; let's intern member names
-        oop name = StringTable::intern(m->name(), CHECK);
+        oop name = JavaClassFile::StringTable::intern(m->name(), CHECK);
         java_lang_invoke_MemberName::set_name(mname(), name);
       }
       if (!have_type) {
@@ -914,7 +914,7 @@ void MethodHandles::expand_MemberName(Handle mname, int suppress, TRAPS) {
         break;                  // cannot expand
       if (!have_name) {
         //not java_lang_String::create_from_symbol; let's intern member names
-        oop name = StringTable::intern(fd.name(), CHECK);
+        oop name = JavaClassFile::StringTable::intern(fd.name(), CHECK);
         java_lang_invoke_MemberName::set_name(mname(), name);
       }
       if (!have_type) {

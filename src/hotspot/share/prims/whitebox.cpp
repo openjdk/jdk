@@ -1445,7 +1445,7 @@ WB_ENTRY(jboolean, WB_IsInStringTable(JNIEnv* env, jobject o, jstring javaString
   ResourceMark rm(THREAD);
   int len;
   jchar* name = java_lang_String::as_unicode_string(JNIHandles::resolve(javaString), len, CHECK_false);
-  return (StringTable::lookup(name, len) != nullptr);
+  return (JavaClassFile::StringTable::lookup(name, len) != nullptr);
 WB_END
 
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
@@ -2054,7 +2054,7 @@ WB_ENTRY(jboolean, WB_IsSharedInternedString(JNIEnv* env, jobject wb, jobject st
   oop str_oop = JNIHandles::resolve(str);
   int length;
   jchar* chars = java_lang_String::as_unicode_string(str_oop, length, CHECK_(false));
-  return StringTable::lookup_shared(chars, length) == str_oop;
+  return JavaClassFile::StringTable::lookup_shared(chars, length) == str_oop;
 WB_END
 
 WB_ENTRY(jboolean, WB_IsSharedClass(JNIEnv* env, jobject wb, jclass clazz))

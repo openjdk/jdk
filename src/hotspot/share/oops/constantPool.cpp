@@ -1201,7 +1201,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
 
 oop ConstantPool::uncached_string_at(int which, TRAPS) {
   Symbol* sym = unresolved_string_at(which);
-  oop str = StringTable::intern(sym, CHECK_(nullptr));
+  oop str = JavaClassFile::StringTable::intern(sym, CHECK_(nullptr));
   assert(java_lang_String::is_instance(str), "must be string");
   return str;
 }
@@ -1249,7 +1249,7 @@ oop ConstantPool::string_at_impl(const constantPoolHandle& this_cp, int which, i
   assert(str != Universe::the_null_sentinel(), "");
   if (str != nullptr) return str;
   Symbol* sym = this_cp->unresolved_string_at(which);
-  str = StringTable::intern(sym, CHECK_(nullptr));
+  str = JavaClassFile::StringTable::intern(sym, CHECK_(nullptr));
   this_cp->string_at_put(which, obj_index, str);
   assert(java_lang_String::is_instance(str), "must be string");
   return str;

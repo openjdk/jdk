@@ -63,6 +63,8 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif
 
+namespace JavaClassFile {
+
 // We prefer short chains of avg 2
 const double PREF_AVG_LIST_LEN = 2.0;
 // 2^24 is max size
@@ -764,6 +766,8 @@ void StringTable::dump(outputStream* st, bool verbose) {
   }
 }
 
+} // namespace JavaClassFile
+
 // Utility for dumping strings
 StringtableDCmd::StringtableDCmd(outputStream* output, bool heap) :
                                  DCmdWithParser(output, heap),
@@ -778,6 +782,7 @@ void StringtableDCmd::execute(DCmdSource source, TRAPS) {
   VMThread::execute(&dumper);
 }
 
+namespace JavaClassFile {
 // Sharing
 #if INCLUDE_CDS_JAVA_HEAP
 size_t StringTable::shared_entry_count() {
@@ -934,4 +939,5 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   soc->do_bool(&_is_two_dimensional_shared_strings_array);
   soc->do_int(&_shared_strings_array_root_index);
 }
+} // namespace JavaClassFile
 #endif //INCLUDE_CDS_JAVA_HEAP

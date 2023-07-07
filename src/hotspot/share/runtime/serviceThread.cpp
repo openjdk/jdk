@@ -115,7 +115,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
               (has_jvmti_events = _jvmti_service_queue.has_events()) |
               (has_gc_notification_event = (!UseNotificationThread && GCNotifier::has_event())) |
               (has_dcmd_notification_event = (!UseNotificationThread && DCmdFactory::has_pending_jmx_notification())) |
-              (stringtable_work = StringTable::has_work()) |
+              (stringtable_work = JavaClassFile::StringTable::has_work()) |
               (symboltable_work = SymbolTable::has_work()) |
               (finalizerservice_work = FinalizerService::has_work()) |
               (resolved_method_table_work = ResolvedMethodTable::has_work()) |
@@ -138,7 +138,7 @@ void ServiceThread::service_thread_entry(JavaThread* jt, TRAPS) {
     }
 
     if (stringtable_work) {
-      StringTable::do_concurrent_work(jt);
+      JavaClassFile::StringTable::do_concurrent_work(jt);
     }
 
     if (symboltable_work) {

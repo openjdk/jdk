@@ -356,9 +356,9 @@ void Universe::genesis(TRAPS) {
     SystemDictionary::initialize(CHECK);
 
     // Create string constants
-    oop s = StringTable::intern("null", CHECK);
+    oop s = JavaClassFile::StringTable::intern("null", CHECK);
     _the_null_string = OopHandle(vm_global(), s);
-    s = StringTable::intern("-2147483648", CHECK);
+    s = JavaClassFile::StringTable::intern("-2147483648", CHECK);
     _the_min_jint_string = OopHandle(vm_global(), s);
 
 
@@ -828,7 +828,7 @@ jint universe_init() {
 #endif
 
   SymbolTable::create_table();
-  StringTable::create_table();
+  JavaClassFile::StringTable::create_table();
 
   if (strlen(VerifySubSet) > 0) {
     Universe::initialize_verify_flags();
@@ -1155,7 +1155,7 @@ void Universe::verify(VerifyOption option, const char* prefix) {
   }
   if (should_verify_subset(Verify_StringTable)) {
     log_debug(gc, verify)("StringTable");
-    StringTable::verify();
+    JavaClassFile::StringTable::verify();
   }
   if (should_verify_subset(Verify_CodeCache)) {
     log_debug(gc, verify)("CodeCache");

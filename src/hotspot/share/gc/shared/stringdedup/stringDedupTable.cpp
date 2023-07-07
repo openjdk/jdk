@@ -529,7 +529,7 @@ bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
     // non-latin1, and deduplicating if we find a match.  For deduplication we
     // only care if the arrays consist of the same sequence of bytes.
     const jchar* chars = static_cast<jchar*>(value->base(T_CHAR));
-    oop found = StringTable::lookup_shared(chars, length >> 1);
+    oop found = JavaClassFile::StringTable::lookup_shared(chars, length >> 1);
     // If found is latin1, then it's byte array differs from the unicode
     // table key, so not actually a match to value.
     if ((found != nullptr) &&
@@ -553,7 +553,7 @@ bool StringDedup::Table::try_deduplicate_shared(oop java_string) {
   for (int i = 0; i < length; ++i) {
     chars[i] = value->byte_at(i) & 0xff;
   }
-  oop found = StringTable::lookup_shared(chars, length);
+  oop found = JavaClassFile::StringTable::lookup_shared(chars, length);
   if (found == nullptr) return false;
   assert(java_lang_String::is_latin1(found), "invariant");
   return try_deduplicate_found_shared(java_string, found);
@@ -610,7 +610,7 @@ bool StringDedup::Table::deduplicate_if_permitted(oop java_string,
 void StringDedup::Table::deduplicate(oop java_string) {
   assert(java_lang_String::is_instance(java_string), "precondition");
   _cur_stat.inc_inspected();
-  if ((StringTable::shared_entry_count() > 0) &&
+  if ((JavaClassFile::StringTable::shared_entry_count() > 0) &&
       try_deduplicate_shared(java_string)) {
     return;                     // Done if deduplicated against shared StringTable.
   }

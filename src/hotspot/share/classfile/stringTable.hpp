@@ -37,6 +37,8 @@ class DumpedInternedStrings;
 class JavaThread;
 class SerializeClosure;
 
+namespace JavaClassFile {
+
 class StringTable;
 class StringTableConfig;
 class StringTableCreateEntry;
@@ -157,5 +159,7 @@ private:
   static size_t verify_and_compare_entries();
   static void verify();
 };
+
+} // namespace JavaClassFile
 
 #endif // SHARE_CLASSFILE_STRINGTABLE_HPP

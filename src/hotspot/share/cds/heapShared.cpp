@@ -416,13 +416,13 @@ void HeapShared::archive_java_mirrors() {
 }
 
 void HeapShared::archive_strings() {
-  oop shared_strings_array = StringTable::init_shared_table(_dumped_interned_strings);
+  oop shared_strings_array = JavaClassFile::StringTable::init_shared_table(_dumped_interned_strings);
   bool success = archive_reachable_objects_from(1, _default_subgraph_info, shared_strings_array);
   // We must succeed because:
   // - _dumped_interned_strings do not contain any large strings.
   // - StringTable::init_shared_table() doesn't create any large arrays.
   assert(success, "shared strings array must not point to arrays or strings that are too large to archive");
-  StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
+  JavaClassFile::StringTable::set_shared_strings_array_index(append_root(shared_strings_array));
 }
 
 void HeapShared::mark_native_pointers(oop orig_obj) {

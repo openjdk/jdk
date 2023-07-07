@@ -791,7 +791,7 @@ oop Reflection::new_method(const methodHandle& method, bool for_constant_pool_ac
   assert(!exception_types.is_null(), "cannot return null");
 
   Symbol*  method_name = method->name();
-  oop name_oop = StringTable::intern(method_name, CHECK_NULL);
+  oop name_oop = JavaClassFile::StringTable::intern(method_name, CHECK_NULL);
   Handle name = Handle(THREAD, name_oop);
   if (name == nullptr) return nullptr;
 
@@ -861,7 +861,7 @@ oop Reflection::new_constructor(const methodHandle& method, TRAPS) {
 
 oop Reflection::new_field(fieldDescriptor* fd, TRAPS) {
   Symbol*  field_name = fd->name();
-  oop name_oop = StringTable::intern(field_name, CHECK_NULL);
+  oop name_oop = JavaClassFile::StringTable::intern(field_name, CHECK_NULL);
   Handle name = Handle(THREAD, name_oop);
   Symbol*  signature  = fd->signature();
   InstanceKlass* holder = fd->field_holder();

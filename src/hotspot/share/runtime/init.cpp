@@ -198,7 +198,7 @@ void exit_globals() {
     SafepointTracing::statistics_exit_log();
     if (PrintStringTableStatistics) {
       SymbolTable::dump(tty);
-      StringTable::dump(tty);
+      JavaClassFile::StringTable::dump(tty);
     }
     ostream_exit();
 #ifdef LEAK_SANITIZER

@@ -1088,14 +1088,14 @@ JVMCIObject JVMCIEnv::new_StackTraceElement(const methodHandle& method, int bci,
     oop objOop = HotSpotJVMCI::StackTraceElement::klass()->allocate_instance(CHECK_(JVMCIObject()));
     Handle obj = Handle(THREAD, objOop);
 
-    oop declaring_class = StringTable::intern((char*) declaring_class_str, CHECK_(JVMCIObject()));
+    oop declaring_class = JavaClassFile::StringTable::intern((char*) declaring_class_str, CHECK_(JVMCIObject()));
     HotSpotJVMCI::StackTraceElement::set_declaringClass(this, obj(), declaring_class);
 
-    oop method_name = StringTable::intern(method_name_sym, CHECK_(JVMCIObject()));
+    oop method_name = JavaClassFile::StringTable::intern(method_name_sym, CHECK_(JVMCIObject()));
     HotSpotJVMCI::StackTraceElement::set_methodName(this, obj(), method_name);
 
     if (file_name_sym != nullptr) {
-      oop file_name = StringTable::intern(file_name_sym, CHECK_(JVMCIObject()));
+      oop file_name = JavaClassFile::StringTable::intern(file_name_sym, CHECK_(JVMCIObject()));
       HotSpotJVMCI::StackTraceElement::set_fileName(this, obj(), file_name);
     }
     HotSpotJVMCI::StackTraceElement::set_lineNumber(this, obj(), line_number);
