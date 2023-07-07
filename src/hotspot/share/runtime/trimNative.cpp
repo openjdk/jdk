@@ -206,8 +206,6 @@ public:
 
 static NativeTrimmerThread* g_trimmer_thread = nullptr;
 
-/// GCTrimNative outside facing methods
-
 void TrimNative::initialize() {
   if (TrimNativeHeap) {
     if (!os::can_trim_native_heap()) {

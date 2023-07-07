@@ -25,7 +25,7 @@
  */
 
 /*
- * @test
+ * @test id=trimNative
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -34,7 +34,7 @@
 
 /*
  * @test id=testOffByDefault
- * @summary Test that -GCTrimNative disables the feature
+ * @summary Test that trimming is disabled by default
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -43,7 +43,7 @@
 
 /*
  * @test id=testOffExplicit
- * @summary Test that GCTrimNative is off by default
+ * @summary Test that trimming can be disabled explicitly
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
@@ -52,7 +52,7 @@
 
 /*
  * @test id=testOffOnNonCompliantPlatforms
- * @summary Test that GCTrimNative is off on unsupportive platforms
+ * @summary Test that trimming is correctly reported as unavailable if unavailable
  * @requires (os.family!="linux") | vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
