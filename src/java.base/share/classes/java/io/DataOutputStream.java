@@ -38,7 +38,7 @@ import jdk.internal.util.ByteArray;
  * by appropriate synchronization.
  *
  * @apiNote
- * The write methods of this class merely delegate to the methods of
+ * The write methods of this class delegate to the methods of
  * the underlying output stream, hence there is no guarantee as to
  * the details of how the bytes are written.
  *
