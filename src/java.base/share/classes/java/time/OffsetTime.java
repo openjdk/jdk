@@ -1281,7 +1281,7 @@ public final class OffsetTime
      * use {@link ChronoField#NANO_OF_DAY} as a comparator.
      *
      * @param other  the other time to compare to, not null
-     * @return the comparator value is the comparison of the UTC equivalent {@code other} instant,
+     * @return the comparator value, that is the comparison of the UTC equivalent {@code other} instant,
      *          if they are not equal, and if the UTC equivalent {@code other} instant is equal,
      *          the comparison of the {@code other} local date-time
      * @see #isBefore

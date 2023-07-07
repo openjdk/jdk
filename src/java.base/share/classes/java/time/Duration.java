@@ -1419,7 +1419,7 @@ public final class Duration
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param otherDuration the other duration to compare to, not null
-     * @return the comparator value is less than zero if the {@code otherDuration}
+     * @return the comparator value, that is less than zero if the {@code otherDuration}
      *          has a smaller length, zero if they are equal,
      *          greater than zero if the {@code otherDuration} has a greater length
      */

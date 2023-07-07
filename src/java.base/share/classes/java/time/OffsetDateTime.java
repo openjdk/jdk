@@ -169,7 +169,7 @@ public final class OffsetDateTime
      *
      * @param datetime1  the first date-time to compare, not null
      * @param datetime2  the other date-time to compare to, not null
-     * @return the comparator value is less than zero if {@code datetime2} is before {@code datetime1},
+     * @return the comparator value, that is less than zero if {@code datetime2} is before {@code datetime1},
      *          zero if they are equal, greater than zero if {@code datetime2} is after {@code datetime1}
      */
     private static int compareInstant(OffsetDateTime datetime1, OffsetDateTime datetime2) {
@@ -1802,7 +1802,7 @@ public final class OffsetDateTime
      * consistent with {@code equals()}.
      *
      * @param other  the other date-time to compare to, not null
-     * @return the comparator value is the comparison with the {@code other}'s instant, if they are not equal;
+     * @return the comparator value, that is the comparison with the {@code other}'s instant, if they are not equal;
      *          and if equal to the {@code other}'s instant, the comparison of the {@code other}'s local date-time
      * @see #isBefore
      * @see #isAfter

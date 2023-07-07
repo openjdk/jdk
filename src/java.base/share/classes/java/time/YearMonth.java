@@ -1122,7 +1122,7 @@ public final class YearMonth
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param other  the other year-month to compare to, not null
-     * @return the comparator value is less than zero if the {@code other} is before,
+     * @return the comparator value, that is less than zero if the {@code other} is before,
      *          zero if they are equal, greater than zero if the {@code other} is after
      * @see #isBefore
      * @see #isAfter

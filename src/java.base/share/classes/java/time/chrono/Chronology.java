@@ -807,7 +807,7 @@ public interface Chronology extends Comparable<Chronology> {
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param other  the other chronology to compare to, not null
-     * @return the comparator value is less than zero if {@code other}'s ID string
+     * @return the comparator value, that is less than zero if {@code other}'s ID string
      *          is lexicographically before this ID string, greater than zero
      *          if {@code other}'s ID string is lexicographically greater than this ID string;
      *          otherwise, if the ID strings are equal, the value is zero unless

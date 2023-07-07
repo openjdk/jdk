@@ -1272,7 +1272,7 @@ public final class Instant
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param otherInstant  the other instant to compare to, not null
-     * @return the comparator value is less than zero if {@code otherInstant} is before this instant,
+     * @return the comparator value, that is less than zero if {@code otherInstant} is before this instant,
      *          zero if they are equal, or greater than zero if {@code otherInstant} is after this instant
      * @throws NullPointerException if otherInstant is null
      * @see #isBefore
