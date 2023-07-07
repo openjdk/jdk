@@ -46,6 +46,22 @@ class arrayOopDesc : public oopDesc {
 
   // Interpreter/Compiler offsets
 
+public:
+  // Header size computation.
+  // The header is considered the oop part of this type plus the length.
+  // This is not equivalent to sizeof(arrayOopDesc) which should not appear in the code.
+  static int header_size_in_bytes() {
+    size_t hs = length_offset_in_bytes() + sizeof(int);
+#ifdef ASSERT
+    // make sure it isn't called before UseCompressedOops is initialized.
+    static size_t arrayoopdesc_hs = 0;
+    if (arrayoopdesc_hs == 0) arrayoopdesc_hs = hs;
+    assert(arrayoopdesc_hs == hs, "header size can't change");
+#endif // ASSERT
+    return (int)hs;
+  }
+
+private:
   // Returns the address of the length "field".  See length_offset_in_bytes().
   static int* length_addr_impl(void* obj_ptr) {
     char* ptr = static_cast<char*>(obj_ptr);
@@ -73,30 +89,10 @@ class arrayOopDesc : public oopDesc {
                                sizeof(arrayOopDesc);
   }
 
-  // Header size computation.
-  // The header is considered the oop part of this type plus the length.
-  // This is not equivalent to sizeof(arrayOopDesc) which should not appear in the code.
-  static int header_size_in_bytes() {
-    size_t hs = length_offset_in_bytes() + sizeof(int);
-#ifdef ASSERT
-    // make sure it isn't called before UseCompressedOops is initialized.
-    static size_t arrayoopdesc_hs = 0;
-    if (arrayoopdesc_hs == 0) arrayoopdesc_hs = hs;
-    assert(arrayoopdesc_hs == hs, "header size can't change");
-#endif // ASSERT
-    return (int)hs;
-  }
-
   // Returns the offset of the first element.
   static int base_offset_in_bytes(BasicType type) {
     size_t hs = header_size_in_bytes();
     return (int)(element_type_should_be_aligned(type) ? align_up(hs, BytesPerLong) : hs);
-  }
-
-  static int base_offset_in_ints(BasicType type) {
-    int base_offset_in_bytes = arrayOopDesc::base_offset_in_bytes(type);
-    assert(is_aligned(base_offset_in_bytes, BytesPerInt), "must be aligned to int");
-    return base_offset_in_bytes / BytesPerInt;
   }
 
   // Returns the address of the first element. The elements in the array will not
@@ -144,7 +140,7 @@ class arrayOopDesc : public oopDesc {
       : align_up(typesize_in_bytes, HeapWordSize)/HeapWordSize);
   }
 
-  // Return the maximum number of elements of an array of BasicType.  The length can passed
+  // Return the maximum length of an array of BasicType.  The length can passed
   // to typeArrayOop::object_size(scale, length, header_size) without causing an
   // overflow. We also need to make sure that this will not overflow a size_t on
   // 32 bit platforms when we convert it to a byte size.
@@ -165,6 +161,7 @@ class arrayOopDesc : public oopDesc {
     }
     return (int32_t)max_elements_per_size_t;
   }
+
 };
 
 #endif // SHARE_OOPS_ARRAYOOP_HPP

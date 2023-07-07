@@ -424,16 +424,8 @@ size_t CollectedHeap::filler_array_min_size() {
 }
 
 void CollectedHeap::zap_filler_array_with(HeapWord* start, size_t words, juint value) {
-  int payload_offset = arrayOopDesc::base_offset_in_bytes(T_INT);
-  if (!is_aligned(payload_offset, HeapWordSize)) {
-    assert(is_aligned(payload_offset, BytesPerInt), "must be 4-byte aligned");
-    *(reinterpret_cast<juint*>(start) + (payload_offset / BytesPerInt)) = value;
-    payload_offset += BytesPerInt;
-  }
-  assert(is_aligned(payload_offset, HeapWordSize), "payload start must be heap word aligned");
-  int payload_offset_in_words = payload_offset / HeapWordSize;
-  Copy::fill_to_words(start + payload_offset_in_words,
-                      words - payload_offset_in_words, value);
+  Copy::fill_to_words(start + filler_array_hdr_size(),
+                      words - filler_array_hdr_size(), value);
 }
 
 #ifdef ASSERT

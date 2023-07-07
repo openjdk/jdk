@@ -250,7 +250,7 @@ void C1_MacroAssembler::initialize_object(
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
   assert(var_size_in_bytes == noreg, "not implemented");
-  const int hdr_size_in_bytes = instanceOopDesc::base_offset_in_bytes();
+  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
 
   const Register Rzero = t2;
 

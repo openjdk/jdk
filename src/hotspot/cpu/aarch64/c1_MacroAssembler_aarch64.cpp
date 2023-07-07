@@ -193,7 +193,7 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     strw(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
-    if (!is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerLong)) {
+    if (!is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerWord)) {
       assert(is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerInt), "must be 4-byte aligned");
       strw(zr, Address(obj, arrayOopDesc::header_size_in_bytes()));
     }
@@ -218,9 +218,7 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
 
   // zero_words() takes ptr in r10 and count in words in r11
   mov(rscratch1, len_in_bytes);
-  // We align the hdr_size_in_bytes up to 8 bytes here because we clear the
-  // possible alignment gap in initialize_header().
-  lea(t1, Address(obj, align_up(hdr_size_in_bytes, BytesPerLong)));
+  lea(t1, Address(obj, hdr_size_in_bytes));
   lsr(t2, rscratch1, LogBytesPerWord);
   address tpc = zero_words(t1, t2);
 
@@ -244,7 +242,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register t1, Register t2, 
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Register t2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
-  const int hdr_size_in_bytes = align_up(instanceOopDesc::base_offset_in_bytes(), HeapWordSize);
+  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
 
   initialize_header(obj, klass, noreg, t1, t2);
 
@@ -299,7 +297,10 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register t1, 
   initialize_header(obj, klass, len, t1, t2);
 
   // clear rest of allocated space
-  initialize_body(obj, arr_size, base_offset_in_bytes, t1, t2);
+  // We align-up the header size to word-size, because we clear the
+  // possible alignment gap in initialize_header().
+  int hdr_size = align_up(base_offset_in_bytes, BytesPerWord);
+  initialize_body(obj, arr_size, hdr_size, t1, t2);
   if (Compilation::current()->bailed_out()) {
     return;
   }
