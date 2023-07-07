@@ -24,8 +24,8 @@
  *
  */
 
-#ifndef SHARE_GC_SHARED_TRIMNATIVE_HPP
-#define SHARE_GC_SHARED_TRIMNATIVE_HPP
+#ifndef SHARE_RUNTIME_TRIMNATIVE_HPP
+#define SHARE_RUNTIME_TRIMNATIVE_HPP
 
 #include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
@@ -62,4 +62,4 @@ public:
   };
 };
 
-#endif // SHARE_GC_SHARED_TRIMNATIVE_HPP
+#endif // SHARE_RUNTIME_TRIMNATIVE_HPP
