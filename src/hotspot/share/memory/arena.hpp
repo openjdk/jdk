@@ -39,13 +39,12 @@
 
 //------------------------------Chunk------------------------------------------
 // Linked list of raw memory chunks
-class Chunk: CHeapObj<mtChunk> {
+class Chunk {
 
  private:
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
  public:
-  void* operator new(size_t size, AllocFailType alloc_failmode, size_t length) throw();
   void  operator delete(void* p);
   Chunk(size_t length);
 
@@ -67,6 +66,8 @@ class Chunk: CHeapObj<mtChunk> {
     non_pool_size = init_size + 32 // An initial size which is not one of above
   };
 
+  static Chunk* allocate_chunk(AllocFailType alloc_failmode, size_t length);
+  static void deallocate_chunk(Chunk* chunk);
   static void chop(Chunk* chunk);                  // Chop this chunk
   static void next_chop(Chunk* chunk);             // Chop next chunk
   static size_t aligned_overhead_size(void) { return ARENA_ALIGN(sizeof(Chunk)); }
