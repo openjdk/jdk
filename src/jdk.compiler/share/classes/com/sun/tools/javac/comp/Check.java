@@ -128,6 +128,9 @@ public class Check {
     // Attr as it visits new method declarations.
     private MethodSymbol method;
 
+    // Cached instance of SuperThisChecker
+    private final SuperThisChecker superThisChecker;
+
     public static Check instance(Context context) {
         Check instance = context.get(checkKey);
         if (instance == null)
@@ -152,6 +155,7 @@ public class Check {
         Options options = Options.instance(context);
         lint = Lint.instance(context);
         fileManager = context.get(JavaFileManager.class);
+        superThisChecker = new SuperThisChecker();
 
         source = Source.instance(context);
         target = Target.instance(context);
@@ -3967,7 +3971,7 @@ public class Check {
  **************************************************************************/
 
     void checkSuperInitCalls(JCClassDecl tree) {
-        new SuperThisChecker().check(tree);
+        superThisChecker.check(tree);
     }
 
     private class SuperThisChecker extends TreeScanner {
@@ -3981,7 +3985,16 @@ public class Check {
         private Name initCall;              // whichever of "super" or "init" we've seen already
         private int scanDepth;              // current scan recursion depth in method body
 
+        public void resetState() {
+            constructor = false;
+            firstStatement = false;
+            earlyReturn = null;
+            initCall = null;
+            scanDepth = 0;
+        }
+
         public void check(JCClassDecl classDef) {
+            resetState();
             scan(classDef.defs);
         }
 
