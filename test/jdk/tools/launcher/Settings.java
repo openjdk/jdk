@@ -72,7 +72,7 @@ public class Settings extends TestHelper {
                 "Security settings summary:";
     private static final String SEC_PROVIDER_SETTINGS =
                 "Security provider static configuration:";
-    private static final String SEC_TLS_SETTINGS = "Security TLS configuration:";
+    private static final String SEC_TLS_SETTINGS = "Security TLS configuration";
     private static final String BAD_SEC_OPTION_MSG = "Unrecognized security subcommand";
     private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
     private static final String STACKSIZE_SETTINGS = "Stack Size:";
