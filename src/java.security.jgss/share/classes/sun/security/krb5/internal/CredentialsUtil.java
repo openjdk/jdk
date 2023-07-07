@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -326,18 +326,30 @@ public class CredentialsUtil {
             PrincipalName user, Credentials additionalCreds,
             PAData[] extraPAs, S4U2Type s4u2Type)
             throws KrbException, IOException {
+        KrbException ke = null;
         if (!Config.DISABLE_REFERRALS) {
             try {
                 return serviceCredsReferrals(options, asCreds, cname, sname,
                         s4u2Type, user, additionalCreds, extraPAs);
             } catch (KrbException e) {
+                ke = e;
                 // Server may raise an error if CANONICALIZE is true.
                 // Try CANONICALIZE false.
             }
         }
-        return serviceCredsSingle(options, asCreds, cname,
-                asCreds.getClientAlias(), sname, sname, s4u2Type,
-                user, additionalCreds, extraPAs);
+        try {
+            return serviceCredsSingle(options, asCreds, cname,
+                    asCreds.getClientAlias(), sname, sname, s4u2Type,
+                    user, additionalCreds, extraPAs);
+        } catch (KrbException ke2) {
+            if (ke != null) {
+                // Still throw original exception
+                ke.addSuppressed(ke2);
+                throw ke;
+            } else {
+                throw ke2;
+            }
+        }
     }
 
     /*

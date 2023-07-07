@@ -251,7 +251,7 @@ public final class ValueDescriptor {
      */
     public String getTypeName() {
         if (type.isSimpleType()) {
-            return type.getFields().get(0).getTypeName();
+            return type.getFields().getFirst().getTypeName();
         }
         return type.getName();
     }

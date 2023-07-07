@@ -62,6 +62,7 @@ public class ConstMethod extends Metadata {
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type                  = db.lookupType("ConstMethod");
     constants                  = new MetadataField(type.getAddressField("_constants"), 0);
+    stackMapData               = type.getAddressField("_stackmap_data");
     constMethodSize            = new CIntField(type.getCIntegerField("_constMethod_size"), 0);
     flags                      = new CIntField(type.getCIntegerField("_flags._flags"), 0);
 
@@ -108,6 +109,7 @@ public class ConstMethod extends Metadata {
 
   // Fields
   private static MetadataField constants;
+  private static AddressField stackMapData; // Raw stackmap data for the method (#entries + entries)
   private static CIntField constMethodSize;
   private static CIntField flags;
   private static CIntField codeSize;
@@ -134,6 +136,15 @@ public class ConstMethod extends Metadata {
   // Accessors for declared fields
   public ConstantPool getConstants() {
     return (ConstantPool) constants.getValue(this);
+  }
+
+  public boolean hasStackMapTable() {
+    return stackMapData.getValue(getAddress()) != null;
+  }
+
+  public U1Array getStackMapData() {
+    Address addr = stackMapData.getValue(getAddress());
+    return VMObjectFactory.newObject(U1Array.class, addr);
   }
 
   public long getConstMethodSize() {

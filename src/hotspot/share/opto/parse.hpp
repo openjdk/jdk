@@ -434,12 +434,12 @@ class Parse : public GraphKit {
   void set_alloc_with_final(Node* n)  {
     if (DoPartialEscapeAnalysis) {
       assert((_alloc_with_final == nullptr) || (_alloc_with_final == jvms()->alloc_state().is_alias(n))
-         || _alloc_with_final == AllocateNode::Ideal_allocation(n, nullptr) , "different init objects?");
+         || _alloc_with_final == AllocateNode::Ideal_allocation(n) , "different init objects?");
 
       if (jvms()->alloc_state().is_alias(n)) {
        _alloc_with_final = jvms()->alloc_state().is_alias(n);
       } else {
-        _alloc_with_final = AllocateNode::Ideal_allocation(n, nullptr);
+        _alloc_with_final = AllocateNode::Ideal_allocation(n);
       }
     } else {
       assert((_alloc_with_final == nullptr) || (_alloc_with_final == n), "different init objects?");

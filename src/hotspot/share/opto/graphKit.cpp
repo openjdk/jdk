@@ -1207,7 +1207,7 @@ Node* GraphKit::load_object_klass(Node* obj) {
 //-------------------------load_array_length-----------------------------------
 Node* GraphKit::load_array_length(Node* array) {
   // Special-case a fresh allocation to avoid building nodes:
-  AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(array, &_gvn);
+  AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(array);
   Node *alen;
   if (alloc == nullptr) {
     Node *r_adr = basic_plus_adr(array, arrayOopDesc::length_offset_in_bytes());
@@ -3623,14 +3623,14 @@ Node* GraphKit::set_output_for_allocation_common(AllocateNode* alloc,
 
 #ifdef ASSERT
   { // Verify that the AllocateNode::Ideal_allocation recognizers work:
-    assert(AllocateNode::Ideal_allocation(rawoop, &_gvn) == alloc,
+    assert(AllocateNode::Ideal_allocation(rawoop) == alloc,
            "Ideal_allocation works");
-    assert(AllocateNode::Ideal_allocation(javaoop, &_gvn) == alloc,
+    assert(AllocateNode::Ideal_allocation(javaoop) == alloc,
            "Ideal_allocation works");
     if (alloc->is_AllocateArray()) {
-      assert(AllocateArrayNode::Ideal_array_allocation(rawoop, &_gvn) == alloc->as_AllocateArray(),
+      assert(AllocateArrayNode::Ideal_array_allocation(rawoop) == alloc->as_AllocateArray(),
              "Ideal_allocation works");
-      assert(AllocateArrayNode::Ideal_array_allocation(javaoop, &_gvn) == alloc->as_AllocateArray(),
+      assert(AllocateArrayNode::Ideal_array_allocation(javaoop) == alloc->as_AllocateArray(),
              "Ideal_allocation works");
     } else {
       assert(alloc->in(AllocateNode::ALength)->is_top(), "no length, please");
@@ -3972,7 +3972,7 @@ Node* GraphKit::new_array(Node* klass_node,     // array klass (maybe variable)
 
 //---------------------------Ideal_allocation----------------------------------
 // Given an oop pointer or raw pointer, see if it feeds from an AllocateNode.
-AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseValues* phase) {
+AllocateNode* AllocateNode::Ideal_allocation(Node* ptr) {
   if (ptr == nullptr) {     // reduce dumb test in callers
     return nullptr;
   }
@@ -4003,7 +4003,7 @@ AllocateNode* AllocateNode::Ideal_allocation(Node* ptr, PhaseValues* phase,
                                              intptr_t& offset) {
   Node* base = AddPNode::Ideal_base_and_offset(ptr, phase, offset);
   if (base == nullptr)  return nullptr;
-  return Ideal_allocation(base, phase);
+  return Ideal_allocation(base);
 }
 
 // Trace Initialize <- Proj[Parm] <- Allocate
@@ -4265,7 +4265,7 @@ void GraphKit::backfill_materialized(SafePointNode* map, uint begin, uint end, P
     Node* t = map->in(i);
 
     if (t != nullptr && t->is_CheckCastPP()) {
-      AllocateNode* alloc = AllocateNode::Ideal_allocation(t, &_gvn);
+      AllocateNode* alloc = AllocateNode::Ideal_allocation(t);
 
       if (as.contains(alloc)) {
         Node* neww = as.get_java_oop(alloc, true);

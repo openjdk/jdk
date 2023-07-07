@@ -1054,27 +1054,25 @@ void Parse::do_exits() {
          (AlwaysSafeConstructors && wrote_fields()) ||
          (support_IRIW_for_not_multiple_copy_atomic_cpu && wrote_volatile()))) {
     if (!DoPartialEscapeAnalysis) {
-      _exits.insert_mem_bar(Op_MemBarRelease, alloc_with_final());
-
       // If Memory barrier is created for final fields write
       // and allocation node does not escape the initialize method,
       // then barrier introduced by allocation node can be removed.
       if (DoEscapeAnalysis && alloc_with_final()) {
-        AllocateNode *alloc = AllocateNode::Ideal_allocation(alloc_with_final(), &_gvn);
+        AllocateNode *alloc = AllocateNode::Ideal_allocation(alloc_with_final());
         alloc->compute_MemBar_redundancy(method());
       }
     } else {
       // in PEA, alloc_with_final stores ObjID
       AllocateNode* alloc = (ObjID)alloc_with_final();
       PEAState& as = _exits.jvms()->alloc_state();
-
       Node* obj = as.get_java_oop(alloc, false);
-      _exits.insert_mem_bar(Op_MemBarRelease, obj);
 
       if (DoEscapeAnalysis && alloc != nullptr) {
+        _exits.insert_mem_bar(Op_MemBarRelease, obj);
         alloc->compute_MemBar_redundancy(method());
       }
     }
+
     if (PrintOpto && (Verbose || WizardMode)) {
       method()->print_name();
       tty->print_cr(" writes finals and needs a memory barrier");
