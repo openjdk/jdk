@@ -2067,8 +2067,9 @@ address FileMapInfo::heap_region_requested_address() {
     // which is the runtime location of the referenced object.
     return /*runtime*/ CompressedOops::base() + r->mapping_offset();
   } else {
-    // We can avoid relocation if each region is mapped into the exact same address
-    // where it was at dump time.
+    // This was the hard-coded requested base address used at dump time. With uncompressed oops,
+    // the heap range is assigned by the OS so we will most likely have to relocate anyway, no matter
+    // what base address was picked at duump time.
     return (address)ArchiveHeapWriter::NOCOOPS_REQUESTED_BASE;
   }
 }

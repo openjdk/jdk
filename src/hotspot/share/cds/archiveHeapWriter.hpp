@@ -77,7 +77,7 @@ class ArchiveHeapWriter : AllStatic {
   //   stored into the CDS archive. These are entered into HeapShared::archived_object_cache().
   //
   // - "buffered objects" are copies of the "source objects", and are stored in into
-  //   ArchiveHeapWriter::_buffer, which is a GrowableArray that sites outside of
+  //   ArchiveHeapWriter::_buffer, which is a GrowableArray that sits outside of
   //   the valid heap range. Therefore we avoid using the addresses of these copies
   //   as oops. They are usually called "buffered_addr" in the code (of the type "address").
   //
