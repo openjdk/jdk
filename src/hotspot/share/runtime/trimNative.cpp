@@ -177,7 +177,7 @@ public:
       n = inc_suspend_count();
       // No need to wakeup trimmer
     }
-    log_debug(trim)("NativeTrimmer pause (%s) (%u)", reason, n);
+    log_debug(trim)("NativeTrimmer pause for %s (%u)", reason, n);
   }
 
   void resume(const char* reason) {
@@ -190,7 +190,7 @@ public:
         ml.notify_all(); // pause end
       }
     }
-    log_debug(trim)("NativeTrimmer unpause (%s) (%u)", reason, n);
+    log_debug(trim)("NativeTrimmer unpause for %s (%u)", reason, n);
   }
 
   uint64_t num_trims_performed() const {
