@@ -37,7 +37,7 @@
  * array index.
  */
 
-#include <cmath>
+#include <cmath> // ceil()
 #include <awt.h>
 #include "awt_Canvas.h"
 #include "awt_Win32GraphicsDevice.h"
