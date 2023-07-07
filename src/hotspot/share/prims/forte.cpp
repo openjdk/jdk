@@ -598,6 +598,9 @@ void AsyncGetCallTrace(ASGCT_CallTrace *trace, jint depth, void* ucontext) {
   // !important! make sure all to call thread->set_in_asgct(false) before every return
   thread->set_in_asgct(true);
 
+  // signify to other code in the VM that we're in ASGCT
+  ThreadInAsgct tia(thread);
+
   switch (thread->thread_state()) {
   case _thread_new:
   case _thread_uninitialized:
