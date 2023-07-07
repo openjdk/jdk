@@ -783,6 +783,7 @@ void StringtableDCmd::execute(DCmdSource source, TRAPS) {
 }
 
 namespace JavaClassFile {
+
 // Sharing
 #if INCLUDE_CDS_JAVA_HEAP
 size_t StringTable::shared_entry_count() {
@@ -939,5 +940,6 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   soc->do_bool(&_is_two_dimensional_shared_strings_array);
   soc->do_int(&_shared_strings_array_root_index);
 }
-} // namespace JavaClassFile
 #endif //INCLUDE_CDS_JAVA_HEAP
+
+} // namespace JavaClassFile
