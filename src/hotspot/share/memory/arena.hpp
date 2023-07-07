@@ -37,7 +37,7 @@
 #define ARENA_AMALLOC_ALIGNMENT BytesPerLong
 #define ARENA_ALIGN(x) (align_up((x), ARENA_AMALLOC_ALIGNMENT))
 
-//------------------------------Chunk------------------------------------------
+
 // Linked list of raw memory chunks
 class Chunk {
 
@@ -110,7 +110,7 @@ public:
   static void start_chunk_pool_cleaner_task();
 };
 
-//------------------------------Arena------------------------------------------
+
 // Fast allocation of memory
 class Arena : public CHeapObjBase {
 protected:

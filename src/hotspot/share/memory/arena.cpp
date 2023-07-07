@@ -146,10 +146,6 @@ void ChunkPool::deallocate_chunk(Chunk* p) {
 
 ChunkPool ChunkPool::_pools[] = { Chunk::size, Chunk::medium_size, Chunk::init_size, Chunk::tiny_size };
 
-//--------------------------------------------------------------------------------------
-// ChunkPoolCleaner implementation
-//
-
 class ChunkPoolCleaner : public PeriodicTask {
   static const int cleaning_interval = 5000; // cleaning interval in ms
 
@@ -170,9 +166,6 @@ void ChunkPool::start_chunk_pool_cleaner_task() {
   cleaner->enroll();
 }
 
-//--------------------------------------------------------------------------------------
-// Chunk implementation
-
 Chunk::Chunk(size_t length) : _len(length) {
   _next = nullptr;         // Chain on the linked list
 }
@@ -192,8 +185,6 @@ void Chunk::next_chop(Chunk* k) {
   Chunk::chop(k->_next);
   k->_next = nullptr;
 }
-
-//------------------------------Arena------------------------------------------
 
 Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0)  {
   init_size = ARENA_ALIGN(init_size);
