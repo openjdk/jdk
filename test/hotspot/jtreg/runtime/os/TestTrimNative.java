@@ -29,7 +29,9 @@
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver TestTrimNative test
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative test
  */
 
 /*
@@ -38,7 +40,9 @@
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver TestTrimNative testOffByDefault
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative testOffByDefault
  */
 
 /*
@@ -47,7 +51,9 @@
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver TestTrimNative testOffExplicit
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative testOffExplicit
  */
 
 /*
@@ -56,20 +62,21 @@
  * @requires (os.family!="linux") | vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
- * @run driver TestTrimNative testOffOnNonCompliantPlatforms
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative testOffOnNonCompliantPlatforms
  */
 
-import jdk.internal.misc.Unsafe;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 
 import java.io.IOException;
-import java.lang.reflect.Array;
-import java.rmi.RemoteException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import jdk.test.whitebox.WhiteBox;
 
 public class TestTrimNative {
 
@@ -96,6 +103,8 @@ public class TestTrimNative {
         allOptions.add("-Xmx128m");
         allOptions.add("-Xms128m"); // Stabilize RSS
         allOptions.add("-XX:+AlwaysPreTouch"); // Stabilize RSS
+        allOptions.add("-XX:+WhiteBoxAPI");
+        allOptions.add("-Xbootclasspath/a:.");
         allOptions.add("-XX:-ExplicitGCInvokesConcurrent"); // Invoke explicit GC on System.gc
         allOptions.add("-Xlog:trimnh=debug");
         allOptions.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
@@ -243,13 +252,13 @@ public class TestTrimNative {
         if (args[0].equals("RUN")) {
 
             System.out.println("Will spike now...");
+            WhiteBox wb = WhiteBox.getWhiteBox();
             for (int i = 0; i < numAllocations; i++) {
-                ptrs[i] = Unsafe.getUnsafe().allocateMemory(szAllocations);
-                Unsafe.getUnsafe().putByte(ptrs[i], (byte)0);
-                Unsafe.getUnsafe().putByte(ptrs[i] + szAllocations / 2, (byte)0);
+                ptrs[i] = wb.NMTMalloc(szAllocations);
+                wb.preTouchMemory(ptrs[i], szAllocations);
             }
             for (int i = 0; i < numAllocations; i++) {
-                Unsafe.getUnsafe().freeMemory(ptrs[i]);
+                wb.NMTFree(ptrs[i]);
             }
             System.out.println("Done spiking.");
 
