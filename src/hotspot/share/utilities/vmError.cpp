@@ -472,6 +472,8 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
       st->print_cr("...<more frames>...");
     }
 
+  } else {
+    st->print_cr("Native frames: <unavailable>");
   }
 }
 
