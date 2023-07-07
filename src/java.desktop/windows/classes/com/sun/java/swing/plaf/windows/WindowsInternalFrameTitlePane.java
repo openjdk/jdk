@@ -77,7 +77,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
         if (XPStyle.getXP() != null) {
             // Fix for XP bug where sometimes these sizes aren't updated properly
             // Assume for now that height is correct and derive width from height
-            buttonWidth = buttonHeight + 6;
+            buttonWidth = buttonHeight + 14;
         } else {
             buttonWidth = buttonHeight;
             buttonWidth += 2;

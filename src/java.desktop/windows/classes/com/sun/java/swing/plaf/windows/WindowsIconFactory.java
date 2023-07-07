@@ -287,7 +287,7 @@ public class WindowsIconFactory implements Serializable
             if (XPStyle.getXP() != null) {
                 // Fix for XP bug where sometimes these sizes aren't updated properly
                 // Assume for now that height is correct and derive width from height
-                width = UIManager.getInt("InternalFrame.titleButtonHeight") + 2;
+                width = UIManager.getInt("InternalFrame.titleButtonHeight") + 10;
             } else {
                 width = UIManager.getInt("InternalFrame.titleButtonHeight") - 2;
             }
