@@ -43,7 +43,7 @@ public interface Closeable extends AutoCloseable {
      * with it. If the stream is already closed then invoking this
      * method has no effect.
      *
-     * <p> As noted in {@linkplain AutoCloseable#close()}, cases where the
+     * <p> As noted in {@link AutoCloseable#close()}, cases where the
      * close may fail require careful attention. It is strongly advised
      * to relinquish the underlying resources and to internally
      * <em>mark</em> the {@code Closeable} as closed, prior to throwing
@@ -67,11 +67,11 @@ public interface Closeable extends AutoCloseable {
      *     throw new UncheckedIOException(cause);
      * }
      * }
-     * Therefore if an {@linkplain UncheckedIOException} is thrown then its
-     * {@linkplain UncheckedIOException#getCause() getCause} method will return the
-     * {@linkplain IOException} thrown by {@link #close() close}.
+     * Therefore if an {@link UncheckedIOException} is thrown then its
+     * {@link UncheckedIOException#getCause() getCause} method will return the
+     * {@link IOException} thrown by {@link #close() close}.
      *
-     * @throws UncheckedIOException If invoking {@code close} throws
+     * @throws UncheckedIOException if invoking {@code close} throws
      * an {@code IOException}.
      *
      * @since 22
