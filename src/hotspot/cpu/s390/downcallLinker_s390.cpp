@@ -75,7 +75,7 @@ class DowncallStubGenerator : public StubCodeGenerator {
     _needs_transition(needs_transition),
     _frame_complete(0),
     _frame_size_slots(0),
-    _oop_maps(NULL) {
+    _oop_maps(nullptr) {
     }
   void generate();
   int frame_complete() const {
@@ -95,14 +95,14 @@ static const int native_invoker_code_base_size = 384;
 static const int native_invoker_size_per_args = 8;
 
 RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
-    int num_args,
-    BasicType ret_bt,
-    const ABIDescriptor& abi,
-    const GrowableArray<VMStorage>& input_registers,
-    const GrowableArray<VMStorage>& output_registers,
-    bool needs_return_buffer,
-    int captured_state_mask,
-    bool needs_transition) {
+                                                int num_args,
+                                                BasicType ret_bt,
+                                                const ABIDescriptor& abi,
+                                                const GrowableArray<VMStorage>& input_registers,
+                                                const GrowableArray<VMStorage>& output_registers,
+                                                bool needs_return_buffer,
+                                                int captured_state_mask,
+                                                bool needs_transition) {
 
   int code_size = native_invoker_code_base_size + (num_args * native_invoker_size_per_args);
   int locs_size = 1; //must be non zero

@@ -228,11 +228,11 @@ bool frame::upcall_stub_frame_is_first() const {
   assert(is_upcall_stub_frame(), "must be optimzed entry frame");
   UpcallStub* blob = _cb->as_upcall_stub();
   JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
-  return jfa->last_Java_sp() == NULL;
+  return jfa->last_Java_sp() == nullptr;
 }
 
 frame frame::sender_for_upcall_stub_frame(RegisterMap* map) const {
-  assert(map != NULL, "map must be set");
+  assert(map != nullptr, "map must be set");
   UpcallStub* blob = _cb->as_upcall_stub();
   // Java frame called from C; skip all C frames and return top C
   // frame of that chunk as the sender

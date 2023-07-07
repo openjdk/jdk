@@ -38,12 +38,12 @@
 
 bool ABIDescriptor::is_volatile_reg(Register reg) const {
   return _integer_argument_registers.contains(reg)
-    || _integer_additional_volatile_registers.contains(reg);
+          || _integer_additional_volatile_registers.contains(reg);
 }
 
 bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
   return _float_argument_registers.contains(reg)
-    || _float_additional_volatile_registers.contains(reg);
+          || _float_additional_volatile_registers.contains(reg);
 }
 
 bool ForeignGlobals::is_foreign_linker_supported() {
