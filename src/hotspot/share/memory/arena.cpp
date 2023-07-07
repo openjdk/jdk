@@ -42,9 +42,6 @@ STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
 
-//--------------------------------------------------------------------------------------
-// ChunkPool implementation
-
 Chunk* ChunkPool::take_from_pool() {
   ThreadCritical tc;
   Chunk* c = _first;
