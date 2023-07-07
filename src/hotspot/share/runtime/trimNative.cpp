@@ -41,19 +41,19 @@ class NativeTrimmerThread : public NamedThread {
 
   Monitor* const _lock;
   bool _stop;
-  unsigned _suspend_count;
+  uint16_t _suspend_count;
 
   // Statistics
   uint64_t _num_trims_performed;
 
-  bool suspended() const {
+  bool is_suspended() const {
     assert(_lock->is_locked(), "Must be");
     return _suspend_count > 0;
   }
 
   unsigned inc_suspend_count() {
     assert(_lock->is_locked(), "Must be");
-    assert(_suspend_count < UINT_MAX, "Sanity");
+    assert(_suspend_count < UINT16_MAX, "Sanity");
     return ++_suspend_count;
   }
 
@@ -63,14 +63,13 @@ class NativeTrimmerThread : public NamedThread {
     return --_suspend_count;
   }
 
-  bool stopped() const {
+  bool is_stopped() const {
     assert(_lock->is_locked(), "Must be");
     return _stop;
   }
 
   bool at_or_nearing_safepoint() const {
-    return
-        SafepointSynchronize::is_at_safepoint() ||
+    return SafepointSynchronize::is_at_safepoint() ||
         SafepointSynchronize::is_synchronizing();
   }
   static constexpr int safepoint_poll_ms = 250;
@@ -109,7 +108,7 @@ class NativeTrimmerThread : public NamedThread {
           }
 
           int64_t wait_ms = 0;
-          if (suspended()) {
+          if (is_suspended()) {
             wait_ms = 0; // infinite
           } else if (next_trim_time > tnow) {
             wait_ms = MAX2(1.0, to_ms(next_trim_time - tnow));
@@ -124,7 +123,7 @@ class NativeTrimmerThread : public NamedThread {
 
           tnow = now();
 
-        } while (at_or_nearing_safepoint() || suspended() || next_trim_time > tnow);
+        } while (at_or_nearing_safepoint() || is_suspended() || next_trim_time > tnow);
 
       } // Lock scope
 
