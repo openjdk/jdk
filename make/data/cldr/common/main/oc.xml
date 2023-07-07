@@ -531,11 +531,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á à b c ç d e é è f g h i í ï j k l m n o ó ò p q r s t u ú ü v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ă â å ä ã ā æ ĕ ê ë ē ì ĭ î ī ñ ŏ ô ö ø ō œ ù ŭ û ū ÿ]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="unconfirmed">[A Á À B C Ç D E É È F G H I Í Ï J K L M N O Ó Ò P Q R S T U V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters>[aáà b cç d eéè f g h iíï j k l m n oóò p q r s t uúü v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ăâåäãā æ ĕêëē ìĭîī ñ ŏôöøō œ ùŭûū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[AÁÀ B CÇ D EÉÈ F G H IÍÏ J K L M N OÓÒ P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # † ‡ ⋅]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … ’ &quot;“” « » ( ) \[ \] § @ * / \&amp; # † ‡ ⋅]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="word-final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="word-initial" draft="unconfirmed">…{0}</ellipsis>

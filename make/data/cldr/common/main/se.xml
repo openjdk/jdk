@@ -463,8 +463,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a á b c č d đ e f g h i j k l m n ŋ o p r s š t ŧ u v z ž]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à ç é è í ń ñ ó ò q ú w x y ü ø æ å ä ã ö]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[A Á B C Č D Đ E É F G H I J K L M N Ŋ O P Q R S Š T Ŧ U V W X Y Z Ž Ø Æ Å Ä Ö]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[à ç éè í ńñ óò q ú w x yü ø æ å äã ö]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[A Á B C Č D Đ EÉ F G H I J K L M N Ŋ O P Q R S Š T Ŧ U V W X Y Z Ž Ø Æ Å Ä Ö]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>

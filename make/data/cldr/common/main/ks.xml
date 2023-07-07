@@ -731,7 +731,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">اسرا ییل</territory>
 			<territory type="IM">آیِل آف مین</territory>
 			<territory type="IN">ہِندوستان</territory>
-			<territory type="IO">برطانوی بحرِ ہِندۍ علاقہٕ</territory>
+			<territory type="IO" draft="provisional">برطانوی بحرِ ہِندۍ علاقہٕ</territory>
 			<territory type="IQ">ایٖراق</territory>
 			<territory type="IR">ایٖران</territory>
 			<territory type="IS">اَیِسلینڑ</territory>
@@ -921,8 +921,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">گرگوریَن کیلنڑَر</type>
 			<type key="calendar" type="hebrew">ہِبرِو کیلنڑَر</type>
 			<type key="calendar" type="indian">انڈین نیشنل کیلنڈر</type>
-			<type key="calendar" type="islamic">اِسلٲمی کیلنڑَر</type>
-			<type key="calendar" type="islamic-civil">اِسلٲمی اِجتمٲیی کیلنڑَر</type>
+			<type key="calendar" type="islamic" draft="provisional">اِسلٲمی کیلنڑَر</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">اِسلٲمی اِجتمٲیی کیلنڑَر</type>
 			<type key="calendar" type="iso8601">ISO-8601 کیلنڈر</type>
 			<type key="calendar" type="japanese">جاپٲنۍ کیلنڑَر</type>
 			<type key="calendar" type="roc">جموٗریٲتی چیٖنی کیلَنڑَر</type>
@@ -955,9 +955,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</layout>
 	<characters>
 		<exemplarCharacters>[ء آ أ ٲ ؤ ا ب پ ت ث ٹ ج چ ح خ د ذ ڈ ر ز ڑ ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن ں ھ ہ و ۄ ۆ ی ۍ ؠ ے]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200E\u200F \u064E \u064F \u0650 \u0654 \u0655 \u065F \u0656 \u0657 ئ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200E\u200F َ ُ ِ ٔ ٕ ٟ ٖ ٗ ئ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E \- ‑ , ٫ ٬ . % ‰ + 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

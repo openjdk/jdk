@@ -149,7 +149,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Ireland</territory>
 			<territory type="IL">Izuraeri</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">British Indian Ocean Territory</territory>
+			<territory type="IO" draft="provisional">British Indian Ocean Territory</territory>
 			<territory type="IQ">Iraq</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Iceland</territory>

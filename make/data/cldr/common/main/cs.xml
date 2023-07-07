@@ -1002,7 +1002,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Izrael</territory>
 			<territory type="IM">Ostrov Man</territory>
 			<territory type="IN">Indie</territory>
-			<territory type="IO">Britské indickooceánské území</territory>
+			<territory type="IO" draft="provisional">Britské indickooceánské území</territory>
 			<territory type="IQ">Irák</territory>
 			<territory type="IR">Írán</territory>
 			<territory type="IS">Island</territory>
@@ -1201,9 +1201,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Gregoriánský kalendář</type>
 			<type key="calendar" type="hebrew">Hebrejský kalendář</type>
 			<type key="calendar" type="indian">Indický národní kalendář</type>
-			<type key="calendar" type="islamic">Islámský kalendář</type>
-			<type key="calendar" type="islamic-civil">Muslimský občanský kalendář</type>
-			<type key="calendar" type="islamic-umalqura">Muslimský kalendář (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Islámský kalendář</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Muslimský občanský kalendář</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Muslimský kalendář (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Kalendář ISO-8601</type>
 			<type key="calendar" type="japanese">Japonský kalendář</type>
 			<type key="calendar" type="persian">Perský kalendář</type>
@@ -1347,11 +1347,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a á b c č d ď e é ě f g h {ch} i í j k l m n ň o ó p q r ř s š t ť u ú ů v w x y ý z ž]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à ă â å ä ã ā æ ç è ĕ ê ë ē ì ĭ î ï ī ľ ł ñ ò ŏ ô ö ø ō œ ŕ ù ŭ û ü ū ÿ]</exemplarCharacters>
+		<exemplarCharacters>[aá b c č dď eéě f g h {ch} ií j k l m nň oó p q r ř s š tť uúů v w x yý z ž]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[àăâåäãā æ ç èĕêëē ìĭîïī ľł ñ òŏôöøō œ ŕ ùŭûüū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Č D E F G H {CH} I J K L M N O P Q R Ř S Š T U V W X Y Z Ž]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – , ; \: ! ? . … ‘ ‚ “ „ ( ) \[ \] § @ * / \&amp;]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – , ; \: ! ? . … ‘‚ “„ ( ) \[ \] § @ * / \&amp;]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">… {0}</ellipsis>
 		<ellipsis type="medial">{0}… {1}</ellipsis>
@@ -14535,11 +14535,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} kaloriích</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kilokalorie</displayName>
-				<unitPattern count="one">{0} kilokalorie</unitPattern>
-				<unitPattern count="few">{0} kilokalorie</unitPattern>
-				<unitPattern count="many">{0} kilokalorie</unitPattern>
-				<unitPattern count="other">{0} kilokalorií</unitPattern>
+				<displayName draft="provisional">kilokalorie</displayName>
+				<unitPattern count="one" draft="provisional">{0} kilokalorie</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kilokalorie</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} kilokalorie</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kilokalorií</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>inanimate</gender>
@@ -14941,25 +14941,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixelů na palec</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>body na centimetr</displayName>
-				<unitPattern count="one">{0} bod na centimetr</unitPattern>
-				<unitPattern count="few">{0} body na centimetr</unitPattern>
-				<unitPattern count="many">{0} bodu na centimetr</unitPattern>
-				<unitPattern count="other">{0} bodů na centimetr</unitPattern>
+				<displayName draft="provisional">body na centimetr</displayName>
+				<unitPattern count="one" draft="provisional">{0} bod na centimetr</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} body na centimetr</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} bodu na centimetr</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} bodů na centimetr</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>body na palec</displayName>
-				<unitPattern count="one">{0} bod na palec</unitPattern>
-				<unitPattern count="few">{0} body na palec</unitPattern>
-				<unitPattern count="many">{0} bodu na palec</unitPattern>
-				<unitPattern count="other">{0} bodů na palec</unitPattern>
+				<displayName draft="provisional">body na palec</displayName>
+				<unitPattern count="one" draft="provisional">{0} bod na palec</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} body na palec</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} bodu na palec</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} bodů na palec</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>obrazové body</displayName>
-				<unitPattern count="one">{0} obrazový bod</unitPattern>
-				<unitPattern count="few">{0} obrazové body</unitPattern>
-				<unitPattern count="many">{0} obrazového bodu</unitPattern>
-				<unitPattern count="other">{0} obrazových bodů</unitPattern>
+				<displayName draft="provisional">obrazové body</displayName>
+				<unitPattern count="one" draft="provisional">{0} obrazový bod</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} obrazové body</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} obrazového bodu</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} obrazových bodů</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>poloměr Země</displayName>
@@ -17216,11 +17216,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="few">{0} kcal</unitPattern>
-				<unitPattern count="many">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -17349,25 +17349,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} PPI</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>DPCM</displayName>
-				<unitPattern count="one">{0} DPCM</unitPattern>
-				<unitPattern count="few">{0} DPCM</unitPattern>
-				<unitPattern count="many">{0} DPCM</unitPattern>
-				<unitPattern count="other">{0} DPCM</unitPattern>
+				<displayName draft="provisional">DPCM</displayName>
+				<unitPattern count="one" draft="provisional">{0} DPCM</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} DPCM</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} DPCM</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} DPCM</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>DPI</displayName>
-				<unitPattern count="one">{0} DPI</unitPattern>
-				<unitPattern count="few">{0} DPI</unitPattern>
-				<unitPattern count="many">{0} DPI</unitPattern>
-				<unitPattern count="other">{0} DPI</unitPattern>
+				<displayName draft="provisional">DPI</displayName>
+				<unitPattern count="one" draft="provisional">{0} DPI</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} DPI</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} DPI</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} DPI</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pixely</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="many">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">pixely</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -18637,11 +18637,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="few">{0} kcal</unitPattern>
-				<unitPattern count="many">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -18770,25 +18770,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} PPI</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>DPCM</displayName>
-				<unitPattern count="one">{0} DPCM</unitPattern>
-				<unitPattern count="few">{0} DPCM</unitPattern>
-				<unitPattern count="many">{0} DPCM</unitPattern>
-				<unitPattern count="other">{0} DPCM</unitPattern>
+				<displayName draft="provisional">DPCM</displayName>
+				<unitPattern count="one" draft="provisional">{0} DPCM</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} DPCM</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} DPCM</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} DPCM</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>DPI</displayName>
-				<unitPattern count="one">{0} DPI</unitPattern>
-				<unitPattern count="few">{0} DPI</unitPattern>
-				<unitPattern count="many">{0} DPI</unitPattern>
-				<unitPattern count="other">{0} DPI</unitPattern>
+				<displayName draft="provisional">DPI</displayName>
+				<unitPattern count="one" draft="provisional">{0} DPI</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} DPI</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} DPI</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} DPI</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>bod</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="many">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">bod</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -19919,27 +19919,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="credentials">PhD</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
-			<nameField type="given">Jack</nameField>
+			<nameField type="given" draft="provisional">Jack</nameField>
 		</sampleName>
 		<sampleName item="foreignGS">
-			<nameField type="given">Käthe</nameField>
-			<nameField type="surname">Müller</nameField>
+			<nameField type="given" draft="provisional">Käthe</nameField>
+			<nameField type="surname" draft="provisional">Müller</nameField>
 		</sampleName>
 		<sampleName item="foreignGGS">
-			<nameField type="given">Zäzilia</nameField>
-			<nameField type="given2">Hamish</nameField>
-			<nameField type="surname">Stöber</nameField>
+			<nameField type="given" draft="provisional">Zäzilia</nameField>
+			<nameField type="given2" draft="provisional">Hamish</nameField>
+			<nameField type="surname" draft="provisional">Stöber</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title">Mgr. Ing.</nameField>
-			<nameField type="given">Anna Jaroslava</nameField>
-			<nameField type="given-informal">Slávka</nameField>
-			<nameField type="given2">Eva Lucie</nameField>
-			<nameField type="surname-prefix">von</nameField>
-			<nameField type="surname-core">Kant</nameField>
-			<nameField type="surname2">Novotná Dvořáková</nameField>
-			<nameField type="generation">ml.</nameField>
-			<nameField type="credentials">CSc.</nameField>
+			<nameField type="title" draft="provisional">Mgr. Ing.</nameField>
+			<nameField type="given" draft="provisional">Anna Jaroslava</nameField>
+			<nameField type="given-informal" draft="provisional">Slávka</nameField>
+			<nameField type="given2" draft="provisional">Eva Lucie</nameField>
+			<nameField type="surname-prefix" draft="provisional">von</nameField>
+			<nameField type="surname-core" draft="provisional">Kant</nameField>
+			<nameField type="surname2" draft="provisional">Novotná Dvořáková</nameField>
+			<nameField type="generation" draft="provisional">ml.</nameField>
+			<nameField type="credentials" draft="provisional">CSc.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

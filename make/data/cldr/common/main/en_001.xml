@@ -1001,9 +1001,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixels per centimetre</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dots per centimetre</displayName>
-				<unitPattern count="one">{0} dot per centimetre</unitPattern>
-				<unitPattern count="other">{0} dots per centimetre</unitPattern>
+				<displayName draft="provisional">dots per centimetre</displayName>
+				<unitPattern count="one" draft="provisional">{0} dot per centimetre</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dots per centimetre</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="other">{0} earth radii</unitPattern>
@@ -1253,10 +1253,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<unit type="duration-second">
 				<unitPattern count="one">{0} sec</unitPattern>
 				<unitPattern count="other">{0} secs</unitPattern>
-			</unit>
-			<unit type="graphics-dot">
-				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} dots</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>metres</displayName>

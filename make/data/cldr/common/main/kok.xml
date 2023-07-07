@@ -683,7 +683,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">इस्त्राइल</territory>
 			<territory type="IM">इसले ऑफ मॅन</territory>
 			<territory type="IN">भारत</territory>
-			<territory type="IO">ब्रिटिश हिंद महासागरीय क्षेत्र</territory>
+			<territory type="IO" draft="provisional">ब्रिटिश हिंद महासागरीय क्षेत्र</territory>
 			<territory type="IQ">इराक</territory>
 			<territory type="IR">इरान</territory>
 			<territory type="IS">आइसलैंड</territory>
@@ -860,9 +860,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">ग्रेगोरियन कॅलॅण्डर</type>
 			<type key="calendar" type="hebrew">हिब्रू दिनदर्शिका</type>
 			<type key="calendar" type="indian">भारतीय राष्ट्रीय दिनदर्शिका</type>
-			<type key="calendar" type="islamic">ईस्लामीक दिनदर्शिका</type>
-			<type key="calendar" type="islamic-civil">ईस्लामीक दिनदर्शिका (कोश्टक, नागरी शक)</type>
-			<type key="calendar" type="islamic-umalqura">ईस्लामीक दिनदर्शिका (उम अल-कुरा)</type>
+			<type key="calendar" type="islamic" draft="provisional">ईस्लामीक दिनदर्शिका</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ईस्लामीक दिनदर्शिका (कोश्टक, नागरी शक)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">ईस्लामीक दिनदर्शिका (उम अल-कुरा)</type>
 			<type key="calendar" type="iso8601">आयएसओ-8601 दिनदर्शिका</type>
 			<type key="calendar" type="japanese">जपानी दिनदर्शिका</type>
 			<type key="calendar" type="persian">पर्शियन दिनदर्शिका</type>
@@ -935,11 +935,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u093C ० १ २ ३ ४ ५ ६ ७ ८ ९ ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क {क\u093C} ख {ख\u093C} ग {ग\u093C} घ ङ च छ ज {ज\u093C} झ ञ ट ठ ड {ड\u093C} ढ {ढ\u093C} ण त थ द ध न प फ {फ\u093C} ब भ म य {य\u093C} र ल व श ष स ह ळ ऽ ा ि ी \u0941 \u0942 \u0943 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200D \u0944]</exemplarCharacters>
+		<exemplarCharacters>[़ ० १ २ ३ ४ ५ ६ ७ ८ ९ ॐ ं ँ ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क{क़} ख{ख़} ग{ग़} घ ङ च छ ज{ज़} झ ञ ट ठ ड{ड़} ढ{ढ़} ण त थ द ध न प फ{फ़} ब भ म य{य़} र ल व श ष स ह ळ ऽ ा ि ी ु ू ृ ॅ े ै ॉ ो ौ ्]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D ॄ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ळ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -5943,8 +5943,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} कॅलरीज</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>कॅलरीज</displayName>
-				<unitPattern count="other">{0} कॅलरीज</unitPattern>
+				<displayName draft="provisional">कॅलरीज</displayName>
+				<unitPattern count="other" draft="provisional">{0} कॅलरीज</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>किलोज्युल</displayName>
@@ -6019,16 +6019,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">दर इंचाक पिक्सेल {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>दर सेंटिमीटर ठिपके</displayName>
-				<unitPattern count="other">दर सेंटिमीटर ठिपके {0}</unitPattern>
+				<displayName draft="provisional">दर सेंटिमीटर ठिपके</displayName>
+				<unitPattern count="other" draft="provisional">दर सेंटिमीटर ठिपके {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>दर इंचाक ठिपके</displayName>
-				<unitPattern count="other">दर इंचाक ठिपके {0}</unitPattern>
+				<displayName draft="provisional">दर इंचाक ठिपके</displayName>
+				<unitPattern count="other" draft="provisional">दर इंचाक ठिपके {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ठिपको</displayName>
-				<unitPattern count="other">{0}ठिपको</unitPattern>
+				<displayName draft="provisional">ठिपको</displayName>
+				<unitPattern count="other" draft="provisional">{0}ठिपको</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>पृथ्वी त्रिज्या</displayName>
@@ -6802,8 +6802,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>किलोज्युल</displayName>
@@ -6878,16 +6878,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ठिपको</displayName>
-				<unitPattern count="other">{0} ठिपको</unitPattern>
+				<displayName draft="provisional">ठिपको</displayName>
+				<unitPattern count="other" draft="provisional">{0} ठिपको</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -7668,8 +7668,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="other">{0}Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="other" draft="provisional">{0}Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -7744,16 +7744,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0}dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="other" draft="provisional">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="other">{0}dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="other" draft="provisional">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ठिपको</displayName>
-				<unitPattern count="other">{0}ठिपको</unitPattern>
+				<displayName draft="provisional">ठिपको</displayName>
+				<unitPattern count="other" draft="provisional">{0}ठिपको</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -8383,16 +8383,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wdth" subtype="87.5" alt="narrow">अर्दआकुंचीत</styleName>
 		<styleName type="wdth" subtype="100">सादारण</styleName>
 		<styleName type="wdth" subtype="112.5">अर्दविस्तारीत</styleName>
-		<styleName type="wdth" subtype="112.5" alt="extended">अर्दविस्तारीत</styleName>
 		<styleName type="wdth" subtype="112.5" alt="wide">अर्दरुंदी</styleName>
 		<styleName type="wdth" subtype="125">विस्तारीत</styleName>
-		<styleName type="wdth" subtype="125" alt="extended">विस्तारीत</styleName>
 		<styleName type="wdth" subtype="125" alt="wide">रुंद</styleName>
 		<styleName type="wdth" subtype="150">अतिरिक्त-विस्तारीत</styleName>
-		<styleName type="wdth" subtype="150" alt="extended">अतिरिक्त-विस्तारीत</styleName>
 		<styleName type="wdth" subtype="150" alt="wide">अतिरिक्त रुंद</styleName>
 		<styleName type="wdth" subtype="200">चडविस्तारीत</styleName>
-		<styleName type="wdth" subtype="200" alt="extended">चडविस्तारीत</styleName>
 		<styleName type="wdth" subtype="200" alt="wide">चडरुंद</styleName>
 		<styleName type="wght" subtype="100">बारीक</styleName>
 		<styleName type="wght" subtype="200">अतिरिक्त-विरळ</styleName>
@@ -8403,7 +8399,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="400">नियमीत</styleName>
 		<styleName type="wght" subtype="500">माध्यम</styleName>
 		<styleName type="wght" subtype="600">अर्दठळक</styleName>
-		<styleName type="wght" subtype="600" alt="demi">अर्दठळक</styleName>
 		<styleName type="wght" subtype="700">ठळक</styleName>
 		<styleName type="wght" subtype="800">अतिरिक्त-ठळक</styleName>
 		<styleName type="wght" subtype="900">काळें</styleName>
@@ -8475,7 +8470,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
 			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
@@ -8487,10 +8482,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
 			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
@@ -8505,10 +8500,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
 			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
@@ -8523,19 +8518,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
 			<nameField type="given">दिशा</nameField>
@@ -8561,27 +8556,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nameField type="credentials">एमपी</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
-			<nameField type="given">सिंदबाद</nameField>
+			<nameField type="given" draft="provisional">सिंदबाद</nameField>
 		</sampleName>
 		<sampleName item="foreignGS">
-			<nameField type="given">आरवी</nameField>
-			<nameField type="surname">कामत</nameField>
+			<nameField type="given" draft="provisional">आरवी</nameField>
+			<nameField type="surname" draft="provisional">कामत</nameField>
 		</sampleName>
 		<sampleName item="foreignGGS">
-			<nameField type="given">मनोहर</nameField>
-			<nameField type="given2">माधव</nameField>
-			<nameField type="surname">नायक</nameField>
+			<nameField type="given" draft="provisional">मनोहर</nameField>
+			<nameField type="given2" draft="provisional">माधव</nameField>
+			<nameField type="surname" draft="provisional">नायक</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title">प्रो. डॉ.</nameField>
-			<nameField type="given">विक्रम सिंह</nameField>
-			<nameField type="given-informal">विकी</nameField>
-			<nameField type="given2">रामचरण दास</nameField>
-			<nameField type="surname-prefix">शेणवी कुंकळ्येकार</nameField>
-			<nameField type="surname-core">शर्मा</nameField>
-			<nameField type="surname2">सरदेसाय</nameField>
-			<nameField type="generation">जेआर</nameField>
-			<nameField type="credentials">बी.ए. एल.एल.बी</nameField>
+			<nameField type="title" draft="provisional">प्रो. डॉ.</nameField>
+			<nameField type="given" draft="provisional">विक्रम सिंह</nameField>
+			<nameField type="given-informal" draft="provisional">विकी</nameField>
+			<nameField type="given2" draft="provisional">रामचरण दास</nameField>
+			<nameField type="surname-prefix" draft="provisional">शेणवी कुंकळ्येकार</nameField>
+			<nameField type="surname-core" draft="provisional">शर्मा</nameField>
+			<nameField type="surname2" draft="provisional">सरदेसाय</nameField>
+			<nameField type="generation" draft="provisional">जेआर</nameField>
+			<nameField type="credentials" draft="provisional">बी.ए. एल.एल.बी</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

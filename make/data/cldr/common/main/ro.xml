@@ -928,7 +928,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Insula Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Teritoriul Britanic din Oceanul Indian</territory>
+			<territory type="IO" draft="provisional">Teritoriul Britanic din Oceanul Indian</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Islanda</territory>
@@ -1235,11 +1235,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">calendar gregorian</type>
 			<type key="calendar" type="hebrew">calendar ebraic</type>
 			<type key="calendar" type="indian">calendar național indian</type>
-			<type key="calendar" type="islamic">calendar islamic</type>
-			<type key="calendar" type="islamic-civil">calendar islamic civil</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">calendar islamic (Arabia Saudită, lunar)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">calendar islamic (tabular, epocă astronomică)</type>
-			<type key="calendar" type="islamic-umalqura">calendar islamic (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">calendar islamic</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">calendar islamic civil</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">calendar islamic (Arabia Saudită, lunar)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">calendar islamic (tabular, epocă astronomică)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">calendar islamic (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">calendar ISO-8601</type>
 			<type key="calendar" type="japanese">calendar japonez</type>
 			<type key="calendar" type="persian">calendar persan</type>
@@ -1402,10 +1402,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</contextTransforms>
 	<characters>
 		<exemplarCharacters>[a ă â b c d e f g h i î j k l m n o p q r s ș t ț u v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à å ä ç é è ê ë ñ ö ş ţ ü]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàåä ç éèêë ñ ö ş ţ ü]</exemplarCharacters>
 		<exemplarCharacters type="index">[A Ă Â B C D E F G H I Î J K L M N O P Q R S Ș T Ț U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ &quot; “ ” „ « » ( ) \[ \] @ * /]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘ &quot;“”„ « » ( ) \[ \] @ * /]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1414,23 +1414,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>...</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8941,10 +8941,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} de calorii</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kilocalorii</displayName>
-				<unitPattern count="one">{0} kilocalorie</unitPattern>
-				<unitPattern count="few">{0} kilocalorii</unitPattern>
-				<unitPattern count="other">{0} de kilocalorii</unitPattern>
+				<displayName draft="provisional">kilocalorii</displayName>
+				<unitPattern count="one" draft="provisional">{0} kilocalorie</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kilocalorii</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} de kilocalorii</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>masculine</gender>
@@ -9107,22 +9107,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} de pixeli pe inch</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>puncte pe centimetru</displayName>
-				<unitPattern count="one">{0} punct pe centimetru</unitPattern>
-				<unitPattern count="few">{0} puncte pe centimetru</unitPattern>
-				<unitPattern count="other">{0} de puncte pe centimetru</unitPattern>
+				<displayName draft="provisional">puncte pe centimetru</displayName>
+				<unitPattern count="one" draft="provisional">{0} punct pe centimetru</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} puncte pe centimetru</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} de puncte pe centimetru</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>puncte pe inch</displayName>
-				<unitPattern count="one">{0} punct pe inch</unitPattern>
-				<unitPattern count="few">{0} puncte pe inch</unitPattern>
-				<unitPattern count="other">{0} de puncte pe inch</unitPattern>
+				<displayName draft="provisional">puncte pe inch</displayName>
+				<unitPattern count="one" draft="provisional">{0} punct pe inch</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} puncte pe inch</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} de puncte pe inch</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>punct</displayName>
-				<unitPattern count="one">{0} punct</unitPattern>
-				<unitPattern count="few">{0} puncte</unitPattern>
-				<unitPattern count="other">{0} de puncte</unitPattern>
+				<displayName draft="provisional">punct</displayName>
+				<unitPattern count="one" draft="provisional">{0} punct</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} puncte</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} de puncte</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>rază terestră</displayName>
@@ -10390,10 +10390,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="few">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -10501,22 +10501,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpc</displayName>
-				<unitPattern count="one">{0} dpc</unitPattern>
-				<unitPattern count="few">{0} dpc</unitPattern>
-				<unitPattern count="other">{0} dpc</unitPattern>
+				<displayName draft="provisional">dpc</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpc</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dpc</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpc</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="few">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pct.</displayName>
-				<unitPattern count="one">{0} pct</unitPattern>
-				<unitPattern count="few">{0} pct.</unitPattern>
-				<unitPattern count="other">{0} de pct.</unitPattern>
+				<displayName draft="provisional">pct.</displayName>
+				<unitPattern count="one" draft="provisional">{0} pct</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} pct.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} de pct.</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -11615,10 +11615,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="few">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -11729,22 +11729,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpc</displayName>
-				<unitPattern count="one">{0} dpc</unitPattern>
-				<unitPattern count="few">{0} dpc</unitPattern>
-				<unitPattern count="other">{0} dpc</unitPattern>
+				<displayName draft="provisional">dpc</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpc</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dpc</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpc</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="few">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pct.</displayName>
-				<unitPattern count="one">{0} pct</unitPattern>
-				<unitPattern count="few">{0} pct.</unitPattern>
-				<unitPattern count="other">{0} de pct.</unitPattern>
+				<displayName draft="provisional">pct.</displayName>
+				<unitPattern count="one" draft="provisional">{0} pct</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} pct.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} de pct.</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -12770,27 +12770,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="credentials">Dr.</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
-			<nameField type="given">Mark</nameField>
+			<nameField type="given" draft="provisional">Mark</nameField>
 		</sampleName>
 		<sampleName item="foreignGS">
-			<nameField type="given">Mary</nameField>
-			<nameField type="surname">Johnson</nameField>
+			<nameField type="given" draft="provisional">Mary</nameField>
+			<nameField type="surname" draft="provisional">Johnson</nameField>
 		</sampleName>
 		<sampleName item="foreignGGS">
-			<nameField type="given">Despina</nameField>
-			<nameField type="given2">Katerina</nameField>
-			<nameField type="surname">Yannaki</nameField>
+			<nameField type="given" draft="provisional">Despina</nameField>
+			<nameField type="given2" draft="provisional">Katerina</nameField>
+			<nameField type="surname" draft="provisional">Yannaki</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title">Prof. dr.</nameField>
-			<nameField type="given">Teodora</nameField>
-			<nameField type="given-informal">Teo</nameField>
-			<nameField type="given2">Ana-Maria</nameField>
-			<nameField type="surname-prefix">de la</nameField>
-			<nameField type="surname-core">Brad</nameField>
-			<nameField type="surname2">Constantinescu</nameField>
-			<nameField type="generation">Jr.</nameField>
-			<nameField type="credentials">MD Chirurgie dentară</nameField>
+			<nameField type="title" draft="provisional">Prof. dr.</nameField>
+			<nameField type="given" draft="provisional">Teodora</nameField>
+			<nameField type="given-informal" draft="provisional">Teo</nameField>
+			<nameField type="given2" draft="provisional">Ana-Maria</nameField>
+			<nameField type="surname-prefix" draft="provisional">de la</nameField>
+			<nameField type="surname-core" draft="provisional">Brad</nameField>
+			<nameField type="surname2" draft="provisional">Constantinescu</nameField>
+			<nameField type="generation" draft="provisional">Jr.</nameField>
+			<nameField type="credentials" draft="provisional">MD Chirurgie dentară</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

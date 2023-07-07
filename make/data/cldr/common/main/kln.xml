@@ -149,7 +149,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Emetab Ireland</territory>
 			<territory type="IL">Emetab Israel</territory>
 			<territory type="IN">Emetab India</territory>
-			<territory type="IO">Kebebertab araraitab indian Ocean nebo Uingeresa</territory>
+			<territory type="IO" draft="provisional">Kebebertab araraitab indian Ocean nebo Uingeresa</territory>
 			<territory type="IQ">Emetab Iraq</territory>
 			<territory type="IR">Emetab Iran</territory>
 			<territory type="IS">Emetab Iceland</territory>

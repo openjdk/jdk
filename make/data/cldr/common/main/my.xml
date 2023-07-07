@@ -706,7 +706,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">အစ္စရေး</territory>
 			<territory type="IM">မန်ကျွန်း</territory>
 			<territory type="IN">အိန္ဒိယ</territory>
-			<territory type="IO">ဗြိတိသျှပိုင် အိန္ဒိယသမုဒ္ဒရာကျွန်းများ</territory>
+			<territory type="IO" draft="provisional">ဗြိတိသျှပိုင် အိန္ဒိယသမုဒ္ဒရာကျွန်းများ</territory>
 			<territory type="IQ">အီရတ်</territory>
 			<territory type="IR">အီရန်</territory>
 			<territory type="IS">အိုက်စလန်</territory>
@@ -901,9 +901,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">နိုင်ငံတကာသုံး ပြက္ခဒိန်</type>
 			<type key="calendar" type="hebrew">ဟီဘရူး ပြက္ခဒိန်</type>
 			<type key="calendar" type="indian">အိန္ဒြိယ အမျိုးသား ပြက္ခဒိန်</type>
-			<type key="calendar" type="islamic">အစ္စလာမ် ပြက္ခဒိန်</type>
-			<type key="calendar" type="islamic-civil">အစ်လာမ်မစ် ပြက္ခဒိန်</type>
-			<type key="calendar" type="islamic-umalqura">အယ်လ်ကူရာ အစ်လာမ်မစ် ပြက္ခဒိန်</type>
+			<type key="calendar" type="islamic" draft="provisional">အစ္စလာမ် ပြက္ခဒိန်</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">အစ်လာမ်မစ် ပြက္ခဒိန်</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">အယ်လ်ကူရာ အစ်လာမ်မစ် ပြက္ခဒိန်</type>
 			<type key="calendar" type="iso8601">ISO-8601 ပြက္ခဒိန်</type>
 			<type key="calendar" type="japanese">ဂျပန် ပြက္ခဒိန်</type>
 			<type key="calendar" type="persian">ပါရှား ပြက္ခဒိန်</type>
@@ -978,11 +978,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[က ခ ဂ ဃ င စ ဆ ဇ ဈ ဉ ည ဋ ဌ ဍ ဎ ဏ တ ထ ဒ ဓ န ပ ဖ ဗ ဘ မ ယ ရ လ ဝ သ ဟ ဠ အ ဣ ၏ ဤ ဥ ဦ ဧ ဩ ဪ ာ ါ \u102D \u102E \u102F \u1030 ေ \u1032 \u1036 ဿ ျ ြ \u103D \u103E \u1039 \u103A \u1037 း]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[၀႐ ၁႑ ၂႒ ၃႓ ၄႔ ၅႕ ၆႖ ၇႗ ၈႘ ၉႙ ၵ ၚ ၽ ၾ ၐ ၑ ၥ ဨ ဢ ၒ ၓ ၔ ၕ \u1033 ၖ ၗ \u1058 \u1059 \u1086 \u1034 ၢ ၤ ႈ ႊ ႏ]</exemplarCharacters>
+		<exemplarCharacters>[က ခ ဂ ဃ င စ ဆ ဇ ဈ ဉ ည ဋ ဌ ဍ ဎ ဏ တ ထ ဒ ဓ န ပ ဖ ဗ ဘ မ ယ ရ လ ဝ သ ဟ ဠ အ ဣ၏ ဤ ဥ ဦ ဧ ဩ ဪ ာါ ိ ီ ု ူ ေ ဲ ံ ဿ ျ ြ ွ ှ ္ ် ့ း]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[၀႐ ၁႑ ၂႒ ၃႓ ၄႔ ၅႕ ၆႖ ၇႗ ၈႘ ၉႙ ၵ ၚ ၽ ၾ ၐ ၑ ၥ ဨ ဢ ၒ ၓ ၔ ၕ ဳ ၖ ၗ ၘ ၙ ႆ ဴ ၢ ၤ ႈ ႊ ႏ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[က ခ ဂ ဃ င စ ဆ ဇ ဈ ဉ ည ဋ ဌ ဍ ဎ ဏ တ ထ ဒ ဓ န ပ ဖ ဗ ဘ မ ယ ရ လ ဝ သ ဟ ဠ အ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0၀ 1၁ 2၂ 3၃ 4၄ 5၅ 6၆ 7၇ 8၈ 9၉]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — … ၊ ။ ‘ ’ “ ” ( ) \[ \] \{ \} @ * / #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — … ၊ ။ ‘’ “” ( ) \[ \] \{ \} @ * / #]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -991,23 +991,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -6068,8 +6068,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ကယ်လိုရီ</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ကယ်လိုရီ</displayName>
-				<unitPattern count="other">{0} ကယ်လိုရီ</unitPattern>
+				<displayName draft="provisional">ကယ်လိုရီ</displayName>
+				<unitPattern count="other" draft="provisional">{0} ကယ်လိုရီ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ကီလိုဂျူးလ်</displayName>
@@ -6144,16 +6144,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">တစ်လက်မလျှင် {0} ပစ်ဆယ်</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>တစ်စင်တီမီတာပါ အစက်</displayName>
-				<unitPattern count="other">တစ်စင်တီမီတာလျှင် {0} စက်</unitPattern>
+				<displayName draft="provisional">တစ်စင်တီမီတာပါ အစက်</displayName>
+				<unitPattern count="other" draft="provisional">တစ်စင်တီမီတာလျှင် {0} စက်</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>တစ်လက်မပါ အစက်</displayName>
-				<unitPattern count="other">တစ်လက်မလျှင် {0} စက်</unitPattern>
+				<displayName draft="provisional">တစ်လက်မပါ အစက်</displayName>
+				<unitPattern count="other" draft="provisional">တစ်လက်မလျှင် {0} စက်</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>အစက်</displayName>
-				<unitPattern count="other">{0} အစက်</unitPattern>
+				<displayName draft="provisional">အစက်</displayName>
+				<unitPattern count="other" draft="provisional">{0} အစက်</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>ကမ္ဘာ့ အချင်းဝက်</displayName>
@@ -6862,8 +6862,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ကယ်လိုရီ</displayName>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">ကယ်လိုရီ</displayName>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ကီလိုဂျူးလ်</displayName>
@@ -6919,16 +6919,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>မီဂါပစ်ဆယ်</displayName>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ပစ်ဆယ်</displayName>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">ပစ်ဆယ်</displayName>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>ကမ္ဘာ့အချင်းဝက်</displayName>
@@ -7690,8 +7690,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ကယ်လိုရီ</displayName>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">ကယ်လိုရီ</displayName>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ကီလိုဂျူးလ်</displayName>
@@ -7766,16 +7766,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>အစက်</displayName>
-				<unitPattern count="other">{0} အစက်</unitPattern>
+				<displayName draft="provisional">အစက်</displayName>
+				<unitPattern count="other" draft="provisional">{0} အစက်</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -8450,144 +8450,144 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<foreignSpaceReplacement xml:space="preserve"> </foreignSpaceReplacement>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{surname} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
-			<namePattern>{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
+			<namePattern draft="provisional">{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
+			<namePattern draft="provisional">{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
+			<namePattern draft="provisional">{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
+			<namePattern draft="provisional">{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
+			<namePattern draft="provisional">{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
+			<namePattern draft="provisional">{surname-core}၊ {given} {given2} {surname-prefix}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given">ဇင်ဒါယာ</nameField>
+			<nameField type="given" draft="provisional">ဇင်ဒါယာ</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given">အိုင်ရင်း</nameField>
-			<nameField type="surname">အက်ဒ်လာ</nameField>
+			<nameField type="given" draft="provisional">အိုင်ရင်း</nameField>
+			<nameField type="surname" draft="provisional">အက်ဒ်လာ</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given">မေရီ စူး</nameField>
-			<nameField type="given2">ဟာမစ်ရှ်</nameField>
-			<nameField type="surname">ဝပ်ဆင်</nameField>
+			<nameField type="given" draft="provisional">မေရီ စူး</nameField>
+			<nameField type="given2" draft="provisional">ဟာမစ်ရှ်</nameField>
+			<nameField type="surname" draft="provisional">ဝပ်ဆင်</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">မစ္စတာ</nameField>
-			<nameField type="given">ဘာထရမ် ဝဲလ်ဘာဖို့စ်</nameField>
-			<nameField type="given-informal">ဘာတီ</nameField>
-			<nameField type="given2">ဟင်နရီ ရောဘတ်</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">ဝူစ်တာ</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
-			<nameField type="generation">ဂျူနီယာ</nameField>
-			<nameField type="credentials">ဒေါက်တာ</nameField>
+			<nameField type="title" draft="provisional">မစ္စတာ</nameField>
+			<nameField type="given" draft="provisional">ဘာထရမ် ဝဲလ်ဘာဖို့စ်</nameField>
+			<nameField type="given-informal" draft="provisional">ဘာတီ</nameField>
+			<nameField type="given2" draft="provisional">ဟင်နရီ ရောဘတ်</nameField>
+			<nameField type="surname-prefix" draft="provisional">∅∅∅</nameField>
+			<nameField type="surname-core" draft="provisional">ဝူစ်တာ</nameField>
+			<nameField type="surname2" draft="provisional">∅∅∅</nameField>
+			<nameField type="generation" draft="provisional">ဂျူနီယာ</nameField>
+			<nameField type="credentials" draft="provisional">ဒေါက်တာ</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
 			<nameField type="given">ဆင်းဘတ်</nameField>

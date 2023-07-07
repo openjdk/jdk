@@ -791,7 +791,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">𞤋𞤧𞤪𞤢𞥄𞤴𞤭𞥅𞤤</territory>
 			<territory type="IM">𞤅𞤵𞤪𞤭𞥅𞤪𞤫 𞤃𞤫𞥅𞤲</territory>
 			<territory type="IN">𞤋𞤲𞤣𞤭𞤴𞤢</territory>
-			<territory type="IO">𞤚𞤵𞤥𞤦𞤫𞤪𞤫 𞤄𞤪𞤭𞤼𞤢𞤲𞤭𞤲𞤳𞤮𞥅𞤪𞤫 𞤀𞤬𞤪𞤭𞤳𞤭</territory>
+			<territory type="IO" draft="provisional">𞤚𞤵𞤥𞤦𞤫𞤪𞤫 𞤄𞤪𞤭𞤼𞤢𞤲𞤭𞤲𞤳𞤮𞥅𞤪𞤫 𞤀𞤬𞤪𞤭𞤳𞤭</territory>
 			<territory type="IQ">𞤋𞤪𞤢𞥄𞤳</territory>
 			<territory type="IR">𞤋𞤪𞤢𞥄𞤲</territory>
 			<territory type="IS">𞤀𞤴𞤧𞤵𞤤𞤢𞤲𞤣</territory>
@@ -981,11 +981,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤘𞤫𞤪𞤺𞤮𞤪𞤭𞤴𞤢𞤲𞤳𞤮</type>
 			<type key="calendar" type="hebrew">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤋𞤦𞤪𞤭𞤴𞤢𞤲𞤳𞤮</type>
 			<type key="calendar" type="indian">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤘𞤫𞤲𞤣𞤭𞤴𞤢𞤲𞤳𞤮𞥅𞤪𞤫 𞤋𞤲𞤣𞤭𞤴𞤢</type>
-			<type key="calendar" type="islamic">𞤙𞤢𞤤𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤴𞤢𞤲𞤳𞤮</type>
-			<type key="calendar" type="islamic-civil">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤴𞤢𞤲𞤳𞤮 (𞤢𞤤𞥆𞤵𞤱𞤢𞤤, 𞤬𞤫𞤱𞤲𞥋𞤣𞤮 𞤲𞥋𞤦𞤫𞤯𞥆𞤢𞥄𞤳𞤵)</type>
-			<type key="calendar" type="islamic-rgsa">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤵 (𞤼𞤭𞤲𞤢𞤲𞤣𞤫 𞤀𞥄𞤪𞤢𞤦𞤭 𞤅𞤢𞤱𞤮𞤣𞤭𞥅(</type>
-			<type key="calendar" type="islamic-tbla">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤵 (𞤀𞤤𞥆𞤵𞤲𞤳𞤮, 𞤊𞤫𞤱𞤣𞤮 𞤋𞤲𞤳𞤮𞥅𞤣𞤭𞤲𞤳𞤮)</type>
-			<type key="calendar" type="islamic-umalqura">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤵 (𞤓𞤥𞥆𞤵𞤤-𞤗𞤵𞤪𞤢𞥄)</type>
+			<type key="calendar" type="islamic" draft="provisional">𞤙𞤢𞤤𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤴𞤢𞤲𞤳𞤮</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤴𞤢𞤲𞤳𞤮 (𞤢𞤤𞥆𞤵𞤱𞤢𞤤, 𞤬𞤫𞤱𞤲𞥋𞤣𞤮 𞤲𞥋𞤦𞤫𞤯𞥆𞤢𞥄𞤳𞤵)</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤵 (𞤼𞤭𞤲𞤢𞤲𞤣𞤫 𞤀𞥄𞤪𞤢𞤦𞤭 𞤅𞤢𞤱𞤮𞤣𞤭𞥅(</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤵 (𞤀𞤤𞥆𞤵𞤲𞤳𞤮, 𞤊𞤫𞤱𞤣𞤮 𞤋𞤲𞤳𞤮𞥅𞤣𞤭𞤲𞤳𞤮)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤂𞤭𞤧𞤤𞤢𞥄𞤥𞤵 (𞤓𞤥𞥆𞤵𞤤-𞤗𞤵𞤪𞤢𞥄)</type>
 			<type key="calendar" type="iso8601">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 ISO-8601</type>
 			<type key="calendar" type="japanese">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤔𞤢𞥄𞤨𞤮𞤲𞤭𞤲𞤳𞤮</type>
 			<type key="calendar" type="persian">𞤙𞤢𞤤𞤯𞤭𞤥𞤫𞤪𞤫 𞤊𞤢𞥄𞤪𞤭𞤧𞤭𞤴𞤢𞤲𞤳𞤮</type>
@@ -1080,7 +1080,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\U0001E944\U0001E945\U0001E946 𞤢 𞤣 𞤤 𞤥 𞤦 𞤧 𞤨 𞤩 𞤪 𞤫 𞤬 𞤭 𞤮 𞤯 𞤰 𞤱 𞤲 𞤳 𞤴 𞤵 𞤶 𞤷 𞤸 𞤹 𞤺 𞤻 𞤼 𞤽 𞥋]</exemplarCharacters>
+		<exemplarCharacters>[𞥄 𞥅 𞥆 𞤢 𞤣 𞤤 𞤥 𞤦 𞤧 𞤨 𞤩 𞤪 𞤫 𞤬 𞤭 𞤮 𞤯 𞤰 𞤱 𞤲 𞤳 𞤴 𞤵 𞤶 𞤷 𞤸 𞤹 𞤺 𞤻 𞤼 𞤽 𞥋]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[𞤾 𞤿 𞥀 𞥁 𞥂 𞥃]</exemplarCharacters>
 		<exemplarCharacters type="index">[𞤀 𞤛]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[𞥐 𞥑 𞥒 𞥓 𞥔 𞥕 𞥖 𞥗 𞥘 𞥙]</exemplarCharacters>
@@ -1093,28 +1093,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶︓﹕：]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\:：﹕︓ ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’" draft="contributed">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%" draft="contributed">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤￡]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="’" draft="contributed">['＇’ ՚ ᾽᾿ ʼ]</parseLenient>
+			<parseLenient sample="%" draft="contributed">[%％﹪ ٪]</parseLenient>
+			<parseLenient sample="‰" draft="contributed">[‰ ؉]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£￡ ₤]</parseLenient>
 			<parseLenient sample="¥" draft="contributed">[¥￥]</parseLenient>
 			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‐‒–⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‐‑ ‒ – −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -14065,9 +14065,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𞤲𞤺𞤵𞤤𞤭</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>𞤐𞤺𞤵𞤤𞤭</displayName>
-				<unitPattern count="one">{0} 𞤐𞤺𞤵𞤤𞤵</unitPattern>
-				<unitPattern count="other">{0} 𞤐𞤺𞤵𞤤𞤭</unitPattern>
+				<displayName draft="provisional">𞤐𞤺𞤵𞤤𞤭</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𞤐𞤺𞤵𞤤𞤵</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𞤐𞤺𞤵𞤤𞤭</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>𞤳𞤭𞤤𞤮𞥁𞤵𞥅𞤤𞤶𞤭</displayName>
@@ -14160,19 +14160,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𞤨𞤭𞤳𞤷𞤭 𞤲𞤣𞤫𞤪 𞤲𞤺𞤮𞤪𞤰𞤵</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>𞤼𞤮𞤩𞥆𞤫 𞤲𞤣𞤫𞤪 𞤧𞤢𞤲𞤼𞤭𞤥𞤫𞥅𞤼𞤮𞤤</displayName>
-				<unitPattern count="one">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫 𞤲𞤣𞤫𞤪 𞤧𞤢𞤲𞤼𞤭𞤥𞤫𞥅𞤼𞤮𞤤</unitPattern>
-				<unitPattern count="other">{0} 𞤼𞤮𞤩𞥆𞤫 𞤲𞤣𞤫𞤪 𞤧𞤢𞤲𞤼𞤭𞤥𞤫𞥅𞤼𞤮𞤤</unitPattern>
+				<displayName draft="provisional">𞤼𞤮𞤩𞥆𞤫 𞤲𞤣𞤫𞤪 𞤧𞤢𞤲𞤼𞤭𞤥𞤫𞥅𞤼𞤮𞤤</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫 𞤲𞤣𞤫𞤪 𞤧𞤢𞤲𞤼𞤭𞤥𞤫𞥅𞤼𞤮𞤤</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𞤼𞤮𞤩𞥆𞤫 𞤲𞤣𞤫𞤪 𞤧𞤢𞤲𞤼𞤭𞤥𞤫𞥅𞤼𞤮𞤤</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>𞤼𞤮𞤩𞥆𞤫 𞤲𞤣𞤫𞤪 𞤲𞤺𞤮𞤪𞤰𞤵</displayName>
-				<unitPattern count="one">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫 𞤲𞤣𞤫𞤪 𞤲𞤺𞤮𞤪𞤰𞤵</unitPattern>
-				<unitPattern count="other">{0} 𞤼𞤮𞤩𞥆𞤫 𞤲𞤣𞤫𞤪 𞤲𞤺𞤮𞤪𞤰𞤵</unitPattern>
+				<displayName draft="provisional">𞤼𞤮𞤩𞥆𞤫 𞤲𞤣𞤫𞤪 𞤲𞤺𞤮𞤪𞤰𞤵</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫 𞤲𞤣𞤫𞤪 𞤲𞤺𞤮𞤪𞤰𞤵</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𞤼𞤮𞤩𞥆𞤫 𞤲𞤣𞤫𞤪 𞤲𞤺𞤮𞤪𞤰𞤵</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>𞤼𞤮𞤩𞥆𞤫</displayName>
-				<unitPattern count="one">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
-				<unitPattern count="other">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
+				<displayName draft="provisional">𞤼𞤮𞤩𞥆𞤫</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>𞤤𞤢𞥄𞤧𞤮𞤤 𞤤𞤫𞤴𞤣𞤭 𞤲𞤣𞤭𞤲</displayName>
@@ -15114,9 +15114,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𞤺𞤵𞤤</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>𞤘𞤵𞤤</displayName>
-				<unitPattern count="one">{0} 𞤘𞤵𞤤</unitPattern>
-				<unitPattern count="other">{0} 𞤘𞤵𞤤</unitPattern>
+				<displayName draft="provisional">𞤘𞤵𞤤</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𞤘𞤵𞤤</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𞤘𞤵𞤤</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>𞤳𞤭𞤤𞤮𞥁𞤵𞥅𞤤𞤱𞤵</displayName>
@@ -15209,19 +15209,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𞤨𞤳𞤣𞤺𞤰</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>𞤼𞤩𞤧𞤥</displayName>
-				<unitPattern count="one">{0} 𞤼𞤩𞤧𞤥</unitPattern>
-				<unitPattern count="other">{0} 𞤼𞤩𞤧𞤥</unitPattern>
+				<displayName draft="provisional">𞤼𞤩𞤧𞤥</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𞤼𞤩𞤧𞤥</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𞤼𞤩𞤧𞤥</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>𞤼𞤩𞤺𞤰</displayName>
-				<unitPattern count="one">{0} 𞤼𞤩𞤺𞤰</unitPattern>
-				<unitPattern count="other">{0} 𞤼𞤩𞤺𞤰</unitPattern>
+				<displayName draft="provisional">𞤼𞤩𞤺𞤰</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𞤼𞤩𞤺𞤰</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𞤼𞤩𞤺𞤰</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>𞤨𞤭𞤳𞤷𞤭</displayName>
-				<unitPattern count="one">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
-				<unitPattern count="other">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
+				<displayName draft="provisional">𞤨𞤭𞤳𞤷𞤭</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>𞤂⊕</displayName>
@@ -16162,9 +16162,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}𞤺𞤵𞤤</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>𞤘𞤵𞤤</displayName>
-				<unitPattern count="one">{0}𞤘𞤵𞤤</unitPattern>
-				<unitPattern count="other">{0}𞤘𞤵𞤤</unitPattern>
+				<displayName draft="provisional">𞤘𞤵𞤤</displayName>
+				<unitPattern count="one" draft="provisional">{0}𞤘𞤵𞤤</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}𞤘𞤵𞤤</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>𞤳𞤟</displayName>
@@ -16257,19 +16257,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}𞤨𞤳𞤣𞤺𞤰</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>𞤼𞤩𞤧𞤥</displayName>
-				<unitPattern count="one">{0}𞤼𞤩𞤧𞤥</unitPattern>
-				<unitPattern count="other">{0}𞤼𞤩𞤧𞤥</unitPattern>
+				<displayName draft="provisional">𞤼𞤩𞤧𞤥</displayName>
+				<unitPattern count="one" draft="provisional">{0}𞤼𞤩𞤧𞤥</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}𞤼𞤩𞤧𞤥</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>𞤼𞤩𞤺𞤰</displayName>
-				<unitPattern count="one">{0}𞤼𞤩𞤺𞤰</unitPattern>
-				<unitPattern count="other">{0}𞤼𞤩𞤺𞤰</unitPattern>
+				<displayName draft="provisional">𞤼𞤩𞤺𞤰</displayName>
+				<unitPattern count="one" draft="provisional">{0}𞤼𞤩𞤺𞤰</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}𞤼𞤩𞤺𞤰</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>𞤼𞤮𞤩𞥆𞤫𞤪𞤫</displayName>
-				<unitPattern count="one">{0}𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
-				<unitPattern count="other">{0}𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
+				<displayName draft="provisional">𞤼𞤮𞤩𞥆𞤫𞤪𞤫</displayName>
+				<unitPattern count="one" draft="provisional">{0}𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}𞤼𞤮𞤩𞥆𞤫𞤪𞤫</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>𞤂⊕</displayName>

@@ -427,7 +427,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</layout>
 	<characters>
 		<exemplarCharacters draft="unconfirmed">[ء ٶ آ أ ئ ا ب پ ت ث ٹ ج چ ڇ ح خ څ ݲ د ذ ڈ ر ز ڑ ژ ڙ س ش ݜ ص ض ط ظ ع غ ف ق ک گ ل م ن ں ھ ہ و ی ے]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[؀؁؂؃\u200C\u200D\u200E\u200F \u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 \u0654 \u0656 \u0657 \u0658 \u0670 ٻ ٺ ټ ٽ ۃ ي]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[؀؁؂؃\u200C\u200D\u200E\u200F ً ٌ ٍ َ ُ ِ ّ ْ ٔ ٖ ٗ ٘ ٰ ٻ ٺ ټ ٽ ۃ ي]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[ء ٶ آ أ ئ ا ب پ ت ث ٹ ج چ ڇ ح خ څ ݲ د ذ ڈ ر ز ڑ ژ ڙ س ش ݜ ص ض ط ظ ع غ ف ق ک گ ل م ن ں ھ ہ و ی ے]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E \- ‑ , ٫ ٬ . % ‰ + 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[، ؍ ٫ ٬ ؛ \: ؟ . ۔ ( ) \[ \]]</exemplarCharacters>

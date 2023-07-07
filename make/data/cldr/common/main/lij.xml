@@ -922,11 +922,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à â ä æ b c ç d e é è ê ë f g h i ì î ï j k l m n ñ o ó ò ô ö p q r s t u ù û ü v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[õ ō œ ř]</exemplarCharacters>
+		<exemplarCharacters>[aàâä æ b cç d eéèêë f g h iìîï j k l m nñ oóòôö p q r s t uùûü v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[õō œ ř]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . ' % ‰ + − 0 1 2 3 4 5 6 7 8 9 ª º]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # † ‡]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … ’ &quot;“” « » ( ) \[ \] § @ * / \&amp; # † ‡]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>«</quotationStart>
@@ -7414,47 +7414,26 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="slnt" subtype="12" draft="unconfirmed">cegou</styleName>
 		<styleName type="slnt" subtype="24" draft="unconfirmed">extracegou</styleName>
 		<styleName type="wdth" subtype="50" draft="unconfirmed">ultrastreito</styleName>
-		<styleName type="wdth" subtype="50" alt="compressed" draft="unconfirmed">ultrastreito</styleName>
-		<styleName type="wdth" subtype="50" alt="narrow" draft="unconfirmed">ultrastreito</styleName>
 		<styleName type="wdth" subtype="62.5" draft="unconfirmed">extrastreito</styleName>
-		<styleName type="wdth" subtype="62.5" alt="compressed" draft="unconfirmed">extrastreito</styleName>
-		<styleName type="wdth" subtype="62.5" alt="narrow" draft="unconfirmed">extrastreito</styleName>
 		<styleName type="wdth" subtype="75" draft="unconfirmed">streito</styleName>
-		<styleName type="wdth" subtype="75" alt="compressed" draft="unconfirmed">streito</styleName>
-		<styleName type="wdth" subtype="75" alt="narrow" draft="unconfirmed">streito</styleName>
 		<styleName type="wdth" subtype="87.5" draft="unconfirmed">semistreito</styleName>
-		<styleName type="wdth" subtype="87.5" alt="compressed" draft="unconfirmed">semistreito</styleName>
-		<styleName type="wdth" subtype="87.5" alt="narrow" draft="unconfirmed">semistreito</styleName>
 		<styleName type="wdth" subtype="100" draft="unconfirmed">normale</styleName>
 		<styleName type="wdth" subtype="112.5" draft="unconfirmed">semilargo</styleName>
-		<styleName type="wdth" subtype="112.5" alt="extended" draft="unconfirmed">semilargo</styleName>
-		<styleName type="wdth" subtype="112.5" alt="wide" draft="unconfirmed">semilargo</styleName>
 		<styleName type="wdth" subtype="125" draft="unconfirmed">largo</styleName>
-		<styleName type="wdth" subtype="125" alt="extended" draft="unconfirmed">largo</styleName>
-		<styleName type="wdth" subtype="125" alt="wide" draft="unconfirmed">largo</styleName>
 		<styleName type="wdth" subtype="150" draft="unconfirmed">extralargo</styleName>
-		<styleName type="wdth" subtype="150" alt="extended" draft="unconfirmed">extralargo</styleName>
-		<styleName type="wdth" subtype="150" alt="wide" draft="unconfirmed">extralargo</styleName>
 		<styleName type="wdth" subtype="200" draft="unconfirmed">ultralargo</styleName>
-		<styleName type="wdth" subtype="200" alt="extended" draft="unconfirmed">ultralargo</styleName>
-		<styleName type="wdth" subtype="200" alt="wide" draft="unconfirmed">ultralargo</styleName>
 		<styleName type="wght" subtype="100" draft="unconfirmed">ultrafin</styleName>
 		<styleName type="wght" subtype="200" draft="unconfirmed">extrafin</styleName>
-		<styleName type="wght" subtype="200" alt="ultra" draft="unconfirmed">extrafin</styleName>
 		<styleName type="wght" subtype="300" draft="unconfirmed">fin</styleName>
 		<styleName type="wght" subtype="350" draft="unconfirmed">semifin</styleName>
 		<styleName type="wght" subtype="380" draft="unconfirmed">libbro</styleName>
 		<styleName type="wght" subtype="400" draft="unconfirmed">regolâ</styleName>
 		<styleName type="wght" subtype="500" draft="unconfirmed">medio</styleName>
 		<styleName type="wght" subtype="600" draft="unconfirmed">semidruo</styleName>
-		<styleName type="wght" subtype="600" alt="demi" draft="unconfirmed">semidruo</styleName>
 		<styleName type="wght" subtype="700" draft="unconfirmed">druo</styleName>
 		<styleName type="wght" subtype="800" draft="unconfirmed">extradruo</styleName>
 		<styleName type="wght" subtype="900" draft="unconfirmed">scuo</styleName>
-		<styleName type="wght" subtype="900" alt="heavy" draft="unconfirmed">scuo</styleName>
 		<styleName type="wght" subtype="950" draft="unconfirmed">extrascuo</styleName>
-		<styleName type="wght" subtype="950" alt="ultrablack" draft="unconfirmed">extrascuo</styleName>
-		<styleName type="wght" subtype="950" alt="ultraheavy" draft="unconfirmed">extrascuo</styleName>
 		<featureName type="afrc" draft="unconfirmed">fraçioin verticale</featureName>
 		<featureName type="cpsp" draft="unconfirmed">spaçiatua de lettie gròsse</featureName>
 		<featureName type="dlig" draft="unconfirmed">ligatue facoltative</featureName>

@@ -782,7 +782,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Iosrael</territory>
 			<territory type="IM">Oileán Mhanann</territory>
 			<territory type="IN">an India</territory>
-			<territory type="IO">Críoch Aigéan Indiach na Breataine</territory>
+			<territory type="IO" draft="provisional">Críoch Aigéan Indiach na Breataine</territory>
 			<territory type="IQ">an Iaráic</territory>
 			<territory type="IR">an Iaráin</territory>
 			<territory type="IS">an Íoslainn</territory>
@@ -1051,11 +1051,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Féilire Ghréagóra</type>
 			<type key="calendar" type="hebrew">Féilire na nEabhrach</type>
 			<type key="calendar" type="indian">Féilire Náisiúnta na hIndia</type>
-			<type key="calendar" type="islamic">Féilire Ioslamach</type>
-			<type key="calendar" type="islamic-civil">Féilire Ioslamach (táblach, seanré shibhialta)</type>
-			<type key="calendar" type="islamic-rgsa">Féilire Ioslamach (an Araib Shádach, dearcadh)</type>
-			<type key="calendar" type="islamic-tbla">Féilire Ioslamach (táblach, seanré réalteolaíoch)</type>
-			<type key="calendar" type="islamic-umalqura">Féilire Ioslamach (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Féilire Ioslamach</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Féilire Ioslamach (táblach, seanré shibhialta)</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">Féilire Ioslamach (an Araib Shádach, dearcadh)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Féilire Ioslamach (táblach, seanré réalteolaíoch)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Féilire Ioslamach (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Féilire ISO-8601</type>
 			<type key="calendar" type="japanese">Féilire Seapánach</type>
 			<type key="calendar" type="persian">Féilire Peirseach</type>
@@ -1176,13 +1176,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á b c d e é f g h i í l m n o ó p r s t u ú]</exemplarCharacters>
+		<exemplarCharacters>[aá b c d eé f g h ií l m n oó p r s t uú]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[å ḃ ċ ḋ ḟ ġ j k ṁ ṗ q ṡ ṫ v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>
@@ -8688,12 +8688,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} calra</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Calraí</displayName>
-				<unitPattern count="one">{0} Chalra</unitPattern>
-				<unitPattern count="two">{0} Chalra</unitPattern>
-				<unitPattern count="few">{0} Chalra</unitPattern>
-				<unitPattern count="many">{0} gCalra</unitPattern>
-				<unitPattern count="other">{0} Calra</unitPattern>
+				<displayName draft="provisional">Calraí</displayName>
+				<unitPattern count="one" draft="provisional">{0} Chalra</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} Chalra</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} Chalra</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} gCalra</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Calra</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ciligiúil</displayName>
@@ -8840,28 +8840,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} picteilín san orlach</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>poncanna sa cheintiméadar</displayName>
-				<unitPattern count="one">{0} phonc sa cheintiméadar</unitPattern>
-				<unitPattern count="two">{0} phonc sa cheintiméadar</unitPattern>
-				<unitPattern count="few">{0} phonc sa cheintiméadar</unitPattern>
-				<unitPattern count="many">{0} bponc sa cheintiméadar</unitPattern>
-				<unitPattern count="other">{0} ponc sa cheintiméadar</unitPattern>
+				<displayName draft="provisional">poncanna sa cheintiméadar</displayName>
+				<unitPattern count="one" draft="provisional">{0} phonc sa cheintiméadar</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} phonc sa cheintiméadar</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} phonc sa cheintiméadar</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} bponc sa cheintiméadar</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ponc sa cheintiméadar</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>poncanna san orlach</displayName>
-				<unitPattern count="one">{0} phonc san orlach</unitPattern>
-				<unitPattern count="two">{0} phonc san orlach</unitPattern>
-				<unitPattern count="few">{0} phonc san orlach</unitPattern>
-				<unitPattern count="many">{0} bponc san orlach</unitPattern>
-				<unitPattern count="other">{0} ponc san orlach</unitPattern>
+				<displayName draft="provisional">poncanna san orlach</displayName>
+				<unitPattern count="one" draft="provisional">{0} phonc san orlach</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} phonc san orlach</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} phonc san orlach</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} bponc san orlach</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ponc san orlach</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ponc</displayName>
-				<unitPattern count="one">{0} phonc</unitPattern>
-				<unitPattern count="two">{0} phonc</unitPattern>
-				<unitPattern count="few">{0} phonc</unitPattern>
-				<unitPattern count="many">{0} bponc</unitPattern>
-				<unitPattern count="other">{0} ponc</unitPattern>
+				<displayName draft="provisional">ponc</displayName>
+				<unitPattern count="one" draft="provisional">{0} phonc</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} phonc</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} phonc</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} bponc</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ponc</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>ga an domhain</displayName>
@@ -10277,12 +10277,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="two">{0} Cal</unitPattern>
-				<unitPattern count="few">{0} Cal</unitPattern>
-				<unitPattern count="many">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ciligiúl</displayName>
@@ -10426,28 +10426,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="two">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="many">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="two">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="many">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ponc</displayName>
-				<unitPattern count="one">{0} phonc</unitPattern>
-				<unitPattern count="two">{0} phonc</unitPattern>
-				<unitPattern count="few">{0} phonc</unitPattern>
-				<unitPattern count="many">{0} bponc</unitPattern>
-				<unitPattern count="other">{0} ponc</unitPattern>
+				<displayName draft="provisional">ponc</displayName>
+				<unitPattern count="one" draft="provisional">{0} phonc</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} phonc</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} phonc</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} bponc</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ponc</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -11876,12 +11876,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0}Cal</unitPattern>
-				<unitPattern count="two">{0}Cal</unitPattern>
-				<unitPattern count="few">{0}Cal</unitPattern>
-				<unitPattern count="many">{0}Cal</unitPattern>
-				<unitPattern count="other">{0}Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="two" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -12028,28 +12028,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="two">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="many">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="two">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="many">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ponc</displayName>
-				<unitPattern count="one">{0} phonc</unitPattern>
-				<unitPattern count="two">{0} phonc</unitPattern>
-				<unitPattern count="few">{0} phonc</unitPattern>
-				<unitPattern count="many">{0} bponc</unitPattern>
-				<unitPattern count="other">{0} ponc</unitPattern>
+				<displayName draft="provisional">ponc</displayName>
+				<unitPattern count="one" draft="provisional">{0} phonc</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} phonc</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} phonc</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} bponc</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ponc</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -13090,7 +13090,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wdth" subtype="112.5" alt="extended">leath-shínte</styleName>
 		<styleName type="wdth" subtype="112.5" alt="wide">leath-leathan</styleName>
 		<styleName type="wdth" subtype="125">sínte</styleName>
-		<styleName type="wdth" subtype="125" alt="extended">sínte</styleName>
 		<styleName type="wdth" subtype="125" alt="wide">leathan</styleName>
 		<styleName type="wdth" subtype="150">an-leathnaithe</styleName>
 		<styleName type="wdth" subtype="150" alt="extended">an-sínte</styleName>

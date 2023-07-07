@@ -823,7 +823,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Izraēla</territory>
 			<territory type="IM">Menas sala</territory>
 			<territory type="IN">Indija</territory>
-			<territory type="IO">Indijas okeāna Britu teritorija</territory>
+			<territory type="IO" draft="provisional">Indijas okeāna Britu teritorija</territory>
 			<territory type="IQ">Irāka</territory>
 			<territory type="IR">Irāna</territory>
 			<territory type="IS">Islande</territory>
@@ -1036,9 +1036,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Gregora kalendārs</type>
 			<type key="calendar" type="hebrew">ebreju kalendārs</type>
 			<type key="calendar" type="indian">Indijas nacionālais kalendārs</type>
-			<type key="calendar" type="islamic">islāma kalendārs</type>
-			<type key="calendar" type="islamic-civil">islāma pilsoņu kalendārs</type>
-			<type key="calendar" type="islamic-umalqura">islāma kalendārs (Umm al-kura)</type>
+			<type key="calendar" type="islamic" draft="provisional">islāma kalendārs</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">islāma pilsoņu kalendārs</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">islāma kalendārs (Umm al-kura)</type>
 			<type key="calendar" type="iso8601">ISO 8601 kalendārs</type>
 			<type key="calendar" type="japanese">japāņu kalendārs</type>
 			<type key="calendar" type="persian">persiešu kalendārs</type>
@@ -1151,11 +1151,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a ā b c č d e ē f g ģ h i ī j k ķ l ļ m n ņ o p r s š t u ū v z ž]</exemplarCharacters>
+		<exemplarCharacters>[aā b c č d eē f g ģ h iī j k ķ l ļ m n ņ o p r s š t uū v z ž]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[y ō q ŗ w x]</exemplarCharacters>
-		<exemplarCharacters type="index">[A Ā B C Č D E Ē F G Ģ H I Ī Y J K Ķ L Ļ M N Ņ O P Q R S Š T U Ū V W X Z Ž]</exemplarCharacters>
+		<exemplarCharacters type="index">[AĀ B C Č D EĒ F G Ģ H IĪY J K Ķ L Ļ M N Ņ O P Q R S Š T UŪ V W X Z Ž]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ ‚ &quot; “ ” „ ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’‚ &quot;“”„ ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1164,23 +1164,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0}…{1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8173,10 +8173,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} kalorijās</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kalorijas</displayName>
-				<unitPattern count="zero">{0} kaloriju</unitPattern>
-				<unitPattern count="one">{0} kalorija</unitPattern>
-				<unitPattern count="other">{0} kalorijas</unitPattern>
+				<displayName draft="provisional">kalorijas</displayName>
+				<unitPattern count="zero" draft="provisional">{0} kaloriju</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} kalorija</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kalorijas</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>masculine</gender>
@@ -8456,22 +8456,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pikseļi collā</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>punkti centimetrā</displayName>
-				<unitPattern count="zero">{0} dpc</unitPattern>
-				<unitPattern count="one">{0} punkts centimetrā</unitPattern>
-				<unitPattern count="other">{0} punkti centimetrā</unitPattern>
+				<displayName draft="provisional">punkti centimetrā</displayName>
+				<unitPattern count="zero" draft="provisional">{0} dpc</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} punkts centimetrā</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkti centimetrā</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>punkti collā</displayName>
-				<unitPattern count="zero">{0} ppi</unitPattern>
-				<unitPattern count="one">{0} punkts collā</unitPattern>
-				<unitPattern count="other">{0} punkti collā</unitPattern>
+				<displayName draft="provisional">punkti collā</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} punkts collā</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkti collā</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>punkts</displayName>
-				<unitPattern count="zero">{0} px</unitPattern>
-				<unitPattern count="one">{0} p.</unitPattern>
-				<unitPattern count="other">{0} p.</unitPattern>
+				<displayName draft="provisional">punkts</displayName>
+				<unitPattern count="zero" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} p.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} p.</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>Zemes rādiuss</displayName>
@@ -10099,10 +10099,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="zero">{0} cal</unitPattern>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="zero" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -10207,22 +10207,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpc</displayName>
-				<unitPattern count="zero">{0} dpc</unitPattern>
-				<unitPattern count="one">{0} dpc</unitPattern>
-				<unitPattern count="other">{0} dpc</unitPattern>
+				<displayName draft="provisional">dpc</displayName>
+				<unitPattern count="zero" draft="provisional">{0} dpc</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} dpc</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpc</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="zero">{0} ppi</unitPattern>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>punkts</displayName>
-				<unitPattern count="zero">{0} px</unitPattern>
-				<unitPattern count="one">{0} p.</unitPattern>
-				<unitPattern count="other">{0} p.</unitPattern>
+				<displayName draft="provisional">punkts</displayName>
+				<unitPattern count="zero" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} p.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} p.</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="zero">{0} R⊕</unitPattern>
@@ -11320,10 +11320,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="zero">{0} cal</unitPattern>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="zero" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -11434,22 +11434,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpc</displayName>
-				<unitPattern count="zero">{0} dpc</unitPattern>
-				<unitPattern count="one">{0} dpc</unitPattern>
-				<unitPattern count="other">{0} dpc</unitPattern>
+				<displayName draft="provisional">dpc</displayName>
+				<unitPattern count="zero" draft="provisional">{0} dpc</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} dpc</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpc</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="zero">{0} ppi</unitPattern>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>punkts</displayName>
-				<unitPattern count="zero">{0} px</unitPattern>
-				<unitPattern count="one">{0} p.</unitPattern>
-				<unitPattern count="other">{0} p.</unitPattern>
+				<displayName draft="provisional">punkts</displayName>
+				<unitPattern count="zero" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} p.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} p.</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -12302,7 +12302,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">parasts</styleName>
 		<styleName type="wght" subtype="500">vidējs</styleName>
 		<styleName type="wght" subtype="600">pustrekns</styleName>
-		<styleName type="wght" subtype="600" alt="demi">pustrekns</styleName>
 		<styleName type="wght" subtype="700">treknraksts</styleName>
 		<styleName type="wght" subtype="800">īpaši trekns</styleName>
 		<styleName type="wght" subtype="900">melns</styleName>

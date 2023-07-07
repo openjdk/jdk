@@ -664,7 +664,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Ysraýyl</territory>
 			<territory type="IM">Men adasy</territory>
 			<territory type="IN">Hindistan</territory>
-			<territory type="IO">Britaniýanyň Hindi okeanyndaky territoriýalary</territory>
+			<territory type="IO" draft="provisional">Britaniýanyň Hindi okeanyndaky territoriýalary</territory>
 			<territory type="IQ">Yrak</territory>
 			<territory type="IR">Eýran</territory>
 			<territory type="IS">Islandiýa</territory>
@@ -846,10 +846,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic-amete-alem" draft="contributed">Efiopiýa Amete Alem senenamasy</type>
 			<type key="calendar" type="gregorian">Grigorian senenamasy</type>
 			<type key="calendar" type="hebrew">Ýewreý senenamasy</type>
-			<type key="calendar" type="islamic">Hijri-kamary senenamasy</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">Hijri-kamary senenamasy (tablisaly, raýat eýýamy)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">Hijri-kamary senenamasy (tablisaly, astronimiýa eýýamy)</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">Hijri-kamary senenamasy (Umm al-Kura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Hijri-kamary senenamasy</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Hijri-kamary senenamasy (tablisaly, raýat eýýamy)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Hijri-kamary senenamasy (tablisaly, astronimiýa eýýamy)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Hijri-kamary senenamasy (Umm al-Kura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 senenamasy</type>
 			<type key="calendar" type="japanese">Ýapon senenamasy</type>
 			<type key="calendar" type="persian">Pars senenamasy</type>
@@ -931,7 +931,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[c q v x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B Ç D E Ä F G H I J Ž K L M N Ň O Ö P R S Ş T U Ü W Y Ý Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ – — , ; \: ! ? . … &quot; “ ” ( ) \[ \] \{ \} § @ * #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ – — , ; \: ! ? . … &quot;“” ( ) \[ \] \{ \} § @ * #]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -940,23 +940,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -6364,9 +6364,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kaloriýa</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kaloriýa</displayName>
-				<unitPattern count="one">{0} kaloriýa</unitPattern>
-				<unitPattern count="other">{0} kaloriýa</unitPattern>
+				<displayName draft="provisional">Kaloriýa</displayName>
+				<unitPattern count="one" draft="provisional">{0} kaloriýa</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kaloriýa</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoul</displayName>
@@ -6459,19 +6459,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} dýuým başyna piksel</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>santimetr başyna nokat</displayName>
-				<unitPattern count="one">{0} santimetr başyna nokat</unitPattern>
-				<unitPattern count="other">{0} santimetr başyna nokat</unitPattern>
+				<displayName draft="provisional">santimetr başyna nokat</displayName>
+				<unitPattern count="one" draft="provisional">{0} santimetr başyna nokat</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} santimetr başyna nokat</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dýuým başyna nokat</displayName>
-				<unitPattern count="one">{0} dýuým başyna nokat</unitPattern>
-				<unitPattern count="other">{0} dýuým başyna nokat</unitPattern>
+				<displayName draft="provisional">dýuým başyna nokat</displayName>
+				<unitPattern count="one" draft="provisional">{0} dýuým başyna nokat</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dýuým başyna nokat</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>nokat</displayName>
-				<unitPattern count="one">{0} nokat</unitPattern>
-				<unitPattern count="other">{0} nokat</unitPattern>
+				<displayName draft="provisional">nokat</displayName>
+				<unitPattern count="one" draft="provisional">{0} nokat</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nokat</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>ýer togalagynyň radiusy</displayName>
@@ -7352,9 +7352,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kal</displayName>
-				<unitPattern count="one">{0} kal</unitPattern>
-				<unitPattern count="other">{0} kal</unitPattern>
+				<displayName draft="provisional">Kal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoul</displayName>
@@ -7446,19 +7446,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} dbp</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>smbn</displayName>
-				<unitPattern count="one">{0} smbn</unitPattern>
-				<unitPattern count="other">{0} smbn</unitPattern>
+				<displayName draft="provisional">smbn</displayName>
+				<unitPattern count="one" draft="provisional">{0} smbn</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} smbn</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dbn</displayName>
-				<unitPattern count="one">{0} dbn</unitPattern>
-				<unitPattern count="other">{0} dbn</unitPattern>
+				<displayName draft="provisional">dbn</displayName>
+				<unitPattern count="one" draft="provisional">{0} dbn</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dbn</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>nokat</displayName>
-				<unitPattern count="one">{0} nokat</unitPattern>
-				<unitPattern count="other">{0} nokat</unitPattern>
+				<displayName draft="provisional">nokat</displayName>
+				<unitPattern count="one" draft="provisional">{0} nokat</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nokat</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -8400,9 +8400,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kal</displayName>
-				<unitPattern count="one">{0} kal</unitPattern>
-				<unitPattern count="other">{0} kal</unitPattern>
+				<displayName draft="provisional">Kal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoul</displayName>
@@ -8495,19 +8495,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} dbp</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>smbn</displayName>
-				<unitPattern count="one">{0} smbn</unitPattern>
-				<unitPattern count="other">{0} smbn</unitPattern>
+				<displayName draft="provisional">smbn</displayName>
+				<unitPattern count="one" draft="provisional">{0} smbn</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} smbn</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dbn</displayName>
-				<unitPattern count="one">{0} dbn</unitPattern>
-				<unitPattern count="other">{0} dbn</unitPattern>
+				<displayName draft="provisional">dbn</displayName>
+				<unitPattern count="one" draft="provisional">{0} dbn</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dbn</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>nokat</displayName>
-				<unitPattern count="one">{0} nokat</unitPattern>
-				<unitPattern count="other">{0} nokat</unitPattern>
+				<displayName draft="provisional">nokat</displayName>
+				<unitPattern count="one" draft="provisional">{0} nokat</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nokat</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -9259,7 +9259,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="400">kadaly</styleName>
 		<styleName type="wght" subtype="500">orta</styleName>
 		<styleName type="wght" subtype="600">ýarym galyň</styleName>
-		<styleName type="wght" subtype="600" alt="demi">ýarym galyň</styleName>
 		<styleName type="wght" subtype="700">galyň</styleName>
 		<styleName type="wght" subtype="800">has galyň</styleName>
 		<styleName type="wght" subtype="900">gara</styleName>

@@ -22,11 +22,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a {a\u0331} b {ch} f h i {i\u0331} k l {lh} m n {ng} o {o\u0331} p s {sh} t w y ʼ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á {á\u0331} c d e g í {í\u0331} j ó {ó\u0331} q r u v x z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A {A\u0331} B {CH} D E F H I {I\u0331} K L {LH} M N O {O\u0331} P S {SH} T V W Y]</exemplarCharacters>
+		<exemplarCharacters>[a{a̱} b {ch} f h i{i̱} k l {lh} m n {ng} o{o̱} p s {sh} t w y ʼ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[á{á̱} c d e g í{í̱} j ó{ó̱} q r u v x z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A{A̱} B {CH} D E F H I{I̱} K L {LH} M N O{O̱} P S {SH} T V W Y]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

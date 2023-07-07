@@ -880,7 +880,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">اسرائیل</territory>
 			<territory type="IM">جزیرهٔ من</territory>
 			<territory type="IN">هند</territory>
-			<territory type="IO">قلمرو بریتانیا در اقیانوس هند</territory>
+			<territory type="IO" draft="provisional">قلمرو بریتانیا در اقیانوس هند</territory>
 			<territory type="IQ">عراق</territory>
 			<territory type="IR">ایران</territory>
 			<territory type="IS">ایسلند</territory>
@@ -1090,11 +1090,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">تقویم میلادی</type>
 			<type key="calendar" type="hebrew">تقویم عبری</type>
 			<type key="calendar" type="indian">تقویم ملی هند</type>
-			<type key="calendar" type="islamic">تقویم هجری قمری</type>
-			<type key="calendar" type="islamic-civil">تقویم هجری قمری جدولی مدنی</type>
-			<type key="calendar" type="islamic-rgsa">قویم هجری قمری هلالی عربستان سعودی</type>
-			<type key="calendar" type="islamic-tbla">تقویم هجری قمری جدولی نجومی</type>
-			<type key="calendar" type="islamic-umalqura">تقویم هجری قمری ام‌القری</type>
+			<type key="calendar" type="islamic" draft="provisional">تقویم هجری قمری</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">تقویم هجری قمری جدولی مدنی</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">قویم هجری قمری هلالی عربستان سعودی</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">تقویم هجری قمری جدولی نجومی</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">تقویم هجری قمری ام‌القری</type>
 			<type key="calendar" type="iso8601">تقویم ایزو ۸۶۰۱</type>
 			<type key="calendar" type="japanese">تقویم ژاپنی</type>
 			<type key="calendar" type="persian">تقویم هجری شمسی</type>
@@ -1221,18 +1221,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\u064B \u064D \u064C \u0651 \u0654 آ ا ء أ ؤ ئ ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ه ة ی]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ـ\u200C\u200D\u200E\u200F \u064E \u0650 \u064F \u0652 \u0656 \u0670 إ ك ى ي]</exemplarCharacters>
+		<exemplarCharacters>[ً ٍ ٌ ّ ٔ آ ا ءأؤئ ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و هة ی]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ـ\u200C\u200D\u200E\u200F َ ِ ُ ْ ٖ ٰ إ ك ىي]</exemplarCharacters>
 		<exemplarCharacters type="index">[آ ا ب پ ت ث ج چ ح خ د ذ ر ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ه ی]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E , ٫ ٬ . % ٪ ‰ ؉ + − 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ ، ٫ ٬ ؛ \: ! ؟ . … ‹ › « » ( ) \[ \] * / \\]</exemplarCharacters>
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8151,9 +8151,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} کالری</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>کالری</displayName>
-				<unitPattern count="one">{0} کالری</unitPattern>
-				<unitPattern count="other">{0} کالری</unitPattern>
+				<displayName draft="provisional">کالری</displayName>
+				<unitPattern count="one" draft="provisional">{0} کالری</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} کالری</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>کیلوژول</displayName>
@@ -8246,19 +8246,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} پیکسل در اینچ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>نقطه در سانتی‌متر</displayName>
-				<unitPattern count="one">{0} نقطه در سانتی‌متر</unitPattern>
-				<unitPattern count="other">{0} نقطه در سانتی‌متر</unitPattern>
+				<displayName draft="provisional">نقطه در سانتی‌متر</displayName>
+				<unitPattern count="one" draft="provisional">{0} نقطه در سانتی‌متر</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} نقطه در سانتی‌متر</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>نقطه در اینچ</displayName>
-				<unitPattern count="one">{0} نقطه در اینچ</unitPattern>
-				<unitPattern count="other">{0} نقطه در اینچ</unitPattern>
+				<displayName draft="provisional">نقطه در اینچ</displayName>
+				<unitPattern count="one" draft="provisional">{0} نقطه در اینچ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} نقطه در اینچ</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>نقطه</displayName>
-				<unitPattern count="one">{0}نقطه</unitPattern>
-				<unitPattern count="other">{0}نقطه</unitPattern>
+				<displayName draft="provisional">نقطه</displayName>
+				<unitPattern count="one" draft="provisional">{0}نقطه</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}نقطه</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>شعاع زمین</displayName>
@@ -9174,9 +9174,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} کالری</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>کالری</displayName>
-				<unitPattern count="one">{0} کالری</unitPattern>
-				<unitPattern count="other">{0} کالری</unitPattern>
+				<displayName draft="provisional">کالری</displayName>
+				<unitPattern count="one" draft="provisional">{0} کالری</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} کالری</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ک.ژول</displayName>
@@ -9266,19 +9266,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>نقطه</displayName>
-				<unitPattern count="one">{0} نقطه</unitPattern>
-				<unitPattern count="other">{0} نقطه</unitPattern>
+				<displayName draft="provisional">نقطه</displayName>
+				<unitPattern count="one" draft="provisional">{0} نقطه</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} نقطه</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -10209,9 +10209,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} کالری</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>کالری</displayName>
-				<unitPattern count="one">{0} کالری</unitPattern>
-				<unitPattern count="other">{0} کالری</unitPattern>
+				<displayName draft="provisional">کالری</displayName>
+				<unitPattern count="one" draft="provisional">{0} کالری</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} کالری</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ک.ژول</displayName>
@@ -10304,19 +10304,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0}dpi</unitPattern>
-				<unitPattern count="other">{0}dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>نقطه</displayName>
-				<unitPattern count="one">{0} نقطه</unitPattern>
-				<unitPattern count="other">{0} نقطه</unitPattern>
+				<displayName draft="provisional">نقطه</displayName>
+				<unitPattern count="one" draft="provisional">{0} نقطه</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} نقطه</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11068,7 +11068,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">عادی</styleName>
 		<styleName type="wght" subtype="500">متوسط</styleName>
 		<styleName type="wght" subtype="600">نیم‌توپر</styleName>
-		<styleName type="wght" subtype="600" alt="demi">نیم‌توپر</styleName>
 		<styleName type="wght" subtype="700">توپر</styleName>
 		<styleName type="wght" subtype="800">خیلی توپر</styleName>
 		<styleName type="wght" subtype="900">مشکی</styleName>
@@ -11104,10 +11103,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern draft="contributed">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern draft="contributed">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
 			<namePattern>{title} {given} {given2} {surname} {generation}، {credentials}</namePattern>
@@ -11122,10 +11121,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern draft="contributed">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern draft="contributed">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
 			<namePattern>{given-initial} {given2-initial} {surname}</namePattern>
@@ -11140,10 +11139,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern draft="contributed">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
-			<namePattern draft="contributed">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}.{given2-monogram-allCaps}.{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="formal">
 			<namePattern>{surname}، {title} {given} {given2} {generation}، {credentials}</namePattern>
@@ -11158,10 +11157,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern draft="contributed">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
-			<namePattern draft="contributed">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
 			<namePattern>{surname}، {given} {given2-initial} {generation}، {credentials}</namePattern>
@@ -11176,10 +11175,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern draft="contributed">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern draft="contributed">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
 			<namePattern>{surname}، {given-initial} {given2-initial}</namePattern>
@@ -11194,10 +11193,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}.{given-monogram-allCaps}.{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="formal">
 			<namePattern>{surname-core}، {given} {given2} {surname-prefix}</namePattern>

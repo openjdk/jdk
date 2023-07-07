@@ -996,7 +996,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Izrael</territory>
 			<territory type="IM">Wyspa Man</territory>
 			<territory type="IN">Indie</territory>
-			<territory type="IO">Brytyjskie Terytorium Oceanu Indyjskiego</territory>
+			<territory type="IO" draft="provisional">Brytyjskie Terytorium Oceanu Indyjskiego</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Islandia</territory>
@@ -1224,11 +1224,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">kalendarz gregoriański</type>
 			<type key="calendar" type="hebrew">kalendarz hebrajski</type>
 			<type key="calendar" type="indian">narodowy kalendarz hinduski</type>
-			<type key="calendar" type="islamic">kalendarz muzułmański</type>
-			<type key="calendar" type="islamic-civil">kalendarz islamski (metoda obliczeniowa)</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">kalendarz islamski (Arabia Saudyjska, metoda wzrokowa)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">kalendarz islamski (metoda obliczeniowa, epoka astronomiczna)</type>
-			<type key="calendar" type="islamic-umalqura">kalendarz islamski (Umm al-Kura)</type>
+			<type key="calendar" type="islamic" draft="provisional">kalendarz muzułmański</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">kalendarz islamski (metoda obliczeniowa)</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">kalendarz islamski (Arabia Saudyjska, metoda wzrokowa)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">kalendarz islamski (metoda obliczeniowa, epoka astronomiczna)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">kalendarz islamski (Umm al-Kura)</type>
 			<type key="calendar" type="iso8601">kalendarz ISO-8601</type>
 			<type key="calendar" type="japanese">kalendarz japoński</type>
 			<type key="calendar" type="persian">kalendarz perski</type>
@@ -1365,21 +1365,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</contextTransforms>
 	<characters>
 		<exemplarCharacters>[a ą b c ć d e ę f g h i j k l ł m n ń o ó p r s ś t u w y z ź ż]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à â å ä æ ç é è ê ë î ï ô ö œ q ß ù û ü v x ÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[àâåä æ ç éèêë îï ôö œ q ß ùûü v x ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Ć D E F G H I J K L Ł M N O Ó P Q R S Ś T U V W X Y Z Ź Ż]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' &quot; ” „ « » ( ) \[ \] \{ \} § @ * / \&amp; # % † ‡ ′ ″ ° ~]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … ' &quot;”„ « » ( ) \[ \] \{ \} § @ * / \&amp; # % † ‡ ′ ″ ° ~]</exemplarCharacters>
 		<ellipsis type="word-final">{0}…</ellipsis>
 		<ellipsis type="word-initial">…{0}</ellipsis>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -9311,36 +9311,36 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} kalorii</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<gender>feminine</gender>
-				<displayName>kalorie</displayName>
-				<unitPattern count="one">{0} kaloria</unitPattern>
-				<unitPattern count="one" case="accusative">{0} kalorię</unitPattern>
-				<unitPattern count="one" case="dative">{0} kalorii</unitPattern>
-				<unitPattern count="one" case="genitive">{0} kalorii</unitPattern>
-				<unitPattern count="one" case="instrumental">{0} kalorią</unitPattern>
-				<unitPattern count="one" case="locative">{0} kalorii</unitPattern>
-				<unitPattern count="one" case="vocative">{0} kalorio</unitPattern>
-				<unitPattern count="few">{0} kalorie</unitPattern>
-				<unitPattern count="few" case="accusative">{0} kalorie</unitPattern>
-				<unitPattern count="few" case="dative">{0} kaloriom</unitPattern>
-				<unitPattern count="few" case="genitive">{0} kalorii</unitPattern>
-				<unitPattern count="few" case="instrumental">{0} kaloriami</unitPattern>
-				<unitPattern count="few" case="locative">{0} kaloriach</unitPattern>
-				<unitPattern count="few" case="vocative">{0} kalorie</unitPattern>
-				<unitPattern count="many">{0} kalorii</unitPattern>
-				<unitPattern count="many" case="accusative">{0} kalorii</unitPattern>
-				<unitPattern count="many" case="dative">{0} kaloriom</unitPattern>
-				<unitPattern count="many" case="genitive">{0} kalorii</unitPattern>
-				<unitPattern count="many" case="instrumental">{0} kaloriami</unitPattern>
-				<unitPattern count="many" case="locative">{0} kaloriach</unitPattern>
-				<unitPattern count="many" case="vocative">{0} kalorii</unitPattern>
-				<unitPattern count="other">{0} kalorii</unitPattern>
-				<unitPattern count="other" case="accusative">{0} kalorii</unitPattern>
-				<unitPattern count="other" case="dative">{0} kalorii</unitPattern>
-				<unitPattern count="other" case="genitive">{0} kalorii</unitPattern>
-				<unitPattern count="other" case="instrumental">{0} kalorii</unitPattern>
-				<unitPattern count="other" case="locative">{0} kalorii</unitPattern>
-				<unitPattern count="other" case="vocative">{0} kalorii</unitPattern>
+				<gender draft="provisional">feminine</gender>
+				<displayName draft="provisional">kalorie</displayName>
+				<unitPattern count="one" draft="provisional">{0} kaloria</unitPattern>
+				<unitPattern count="one" case="accusative" draft="provisional">{0} kalorię</unitPattern>
+				<unitPattern count="one" case="dative" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="one" case="genitive" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="one" case="instrumental" draft="provisional">{0} kalorią</unitPattern>
+				<unitPattern count="one" case="locative" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="one" case="vocative" draft="provisional">{0} kalorio</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kalorie</unitPattern>
+				<unitPattern count="few" case="accusative" draft="provisional">{0} kalorie</unitPattern>
+				<unitPattern count="few" case="dative" draft="provisional">{0} kaloriom</unitPattern>
+				<unitPattern count="few" case="genitive" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="few" case="instrumental" draft="provisional">{0} kaloriami</unitPattern>
+				<unitPattern count="few" case="locative" draft="provisional">{0} kaloriach</unitPattern>
+				<unitPattern count="few" case="vocative" draft="provisional">{0} kalorie</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="many" case="accusative" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="many" case="dative" draft="provisional">{0} kaloriom</unitPattern>
+				<unitPattern count="many" case="genitive" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="many" case="instrumental" draft="provisional">{0} kaloriami</unitPattern>
+				<unitPattern count="many" case="locative" draft="provisional">{0} kaloriach</unitPattern>
+				<unitPattern count="many" case="vocative" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="other" case="accusative" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="other" case="dative" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="other" case="genitive" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="other" case="instrumental" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="other" case="locative" draft="provisional">{0} kalorii</unitPattern>
+				<unitPattern count="other" case="vocative" draft="provisional">{0} kalorii</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>inanimate</gender>
@@ -9586,25 +9586,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="many">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="many">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>px</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="many">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">px</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>promień Ziemi</displayName>
@@ -12325,11 +12325,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="few">{0} kcal</unitPattern>
-				<unitPattern count="many">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<unitPattern count="one">{0} kJ</unitPattern>
@@ -12446,25 +12446,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="many">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="many">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>px</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="many">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">px</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -13678,11 +13678,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="few">{0} kcal</unitPattern>
-				<unitPattern count="many">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -13811,25 +13811,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="many">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="many">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>px</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="many">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">px</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -14748,30 +14748,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="slnt" subtype="12">pochylone</styleName>
 		<styleName type="slnt" subtype="24">bardzo pochylone</styleName>
 		<styleName type="wdth" subtype="50">ultrawąskie</styleName>
-		<styleName type="wdth" subtype="50" alt="compressed">ultrawąskie</styleName>
-		<styleName type="wdth" subtype="50" alt="narrow">ultrawąskie</styleName>
 		<styleName type="wdth" subtype="62.5">bardzo wąskie</styleName>
-		<styleName type="wdth" subtype="62.5" alt="compressed">bardzo wąskie</styleName>
-		<styleName type="wdth" subtype="62.5" alt="narrow">bardzo wąskie</styleName>
 		<styleName type="wdth" subtype="75">wąskie</styleName>
-		<styleName type="wdth" subtype="75" alt="compressed">wąskie</styleName>
-		<styleName type="wdth" subtype="75" alt="narrow">wąskie</styleName>
 		<styleName type="wdth" subtype="87.5">półwąskie</styleName>
-		<styleName type="wdth" subtype="87.5" alt="compressed">półwąskie</styleName>
-		<styleName type="wdth" subtype="87.5" alt="narrow">półwąskie</styleName>
 		<styleName type="wdth" subtype="100">normalne</styleName>
 		<styleName type="wdth" subtype="112.5">półszerokie</styleName>
-		<styleName type="wdth" subtype="112.5" alt="extended">półszerokie</styleName>
-		<styleName type="wdth" subtype="112.5" alt="wide">półszerokie</styleName>
 		<styleName type="wdth" subtype="125">szerokie</styleName>
-		<styleName type="wdth" subtype="125" alt="extended">szerokie</styleName>
-		<styleName type="wdth" subtype="125" alt="wide">szerokie</styleName>
 		<styleName type="wdth" subtype="150">bardzo szerokie</styleName>
-		<styleName type="wdth" subtype="150" alt="extended">bardzo szerokie</styleName>
-		<styleName type="wdth" subtype="150" alt="wide">bardzo szerokie</styleName>
 		<styleName type="wdth" subtype="200">ultraszerokie</styleName>
-		<styleName type="wdth" subtype="200" alt="extended">ultraszerokie</styleName>
-		<styleName type="wdth" subtype="200" alt="wide">ultraszerokie</styleName>
 		<styleName type="wght" subtype="100">najcieńsze</styleName>
 		<styleName type="wght" subtype="200">bardzo cienkie</styleName>
 		<styleName type="wght" subtype="200" alt="ultra">ultracienkie</styleName>
@@ -14781,11 +14765,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">zwykłe</styleName>
 		<styleName type="wght" subtype="500">średnio grube</styleName>
 		<styleName type="wght" subtype="600">półgrube</styleName>
-		<styleName type="wght" subtype="600" alt="demi">półgrube</styleName>
 		<styleName type="wght" subtype="700">grube</styleName>
 		<styleName type="wght" subtype="800">bardzo pogrubione</styleName>
 		<styleName type="wght" subtype="900">tłuste</styleName>
-		<styleName type="wght" subtype="900" alt="heavy">tłuste</styleName>
 		<styleName type="wght" subtype="950">bardzo tłuste</styleName>
 		<styleName type="wght" subtype="950" alt="ultrablack">ultragrube</styleName>
 		<styleName type="wght" subtype="950" alt="ultraheavy">ultratłuste</styleName>

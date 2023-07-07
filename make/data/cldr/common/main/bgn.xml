@@ -558,7 +558,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters>[آ ئ ا ب پ ت ث ٹ ج چ ح خ د ڈ ر ز ڑ ژ س ش ص ض ط ظ غ ف ق ک گ ل م ن ھ و ۆ ی ێ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C ؤ]</exemplarCharacters>
 		<exemplarCharacters type="index">[آ ئ ا ب پ ت ث ٹ ج چ ح خ د ڈ ر ز ڑ ژ س ش ص ض ط ظ غ ف ق ک گ ل م ن ھ و ۆ ی ێ]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[‐ – — ، ؛ \: ! ؟ . … ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[‐ – — ، ؛ \: ! ؟ . … ‘’ &quot;“” « » ( ) \[ \] § @ * \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<fields>

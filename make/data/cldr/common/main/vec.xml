@@ -37,8 +37,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="contributed">[a à b c d e é è f g h i ì j l m n o ó ò p r s t u ù v x z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[ª á ć ç ḑ ʣ ǵ í k ł º q ş ţ ʦ ú w y {z\u0327}]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ ‒ – — ― ⁓ , ; \: ! ? . … · ' ‘ ’ &quot; “ ” « » ( ) \[ \] \{ \} 〈 〉 @ * / \\ \&amp; # + = ⁄]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[aà b c d eéè f g h iì j l m n oóò p r s t uù v x z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[ªá ćç ḑ ʣ ǵ í k ł º q ş ţ ʦ ú w y {z̧}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ ‒ – — ― ⁓ , ; \: ! ? . … · '‘’ &quot;“” « » ( ) \[ \] \{ \} 〈 〉 @ * / \\ \&amp; # + = ⁄]</exemplarCharacters>
 	</characters>
 </ldml>

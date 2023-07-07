@@ -608,7 +608,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Израиль</territory>
 			<territory type="IM">Мэн гӀайре</territory>
 			<territory type="IN">ХӀинди</territory>
-			<territory type="IO">Британин латта Индин океанехь</territory>
+			<territory type="IO" draft="provisional">Британин латта Индин океанехь</territory>
 			<territory type="IQ">Ӏиракъ</territory>
 			<territory type="IR">ГӀажарийчоь</territory>
 			<territory type="IS">Исланди</territory>
@@ -767,7 +767,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</keys>
 		<types>
 			<type key="calendar" type="gregorian">григорианан</type>
-			<type key="calendar" type="islamic">исламан</type>
+			<type key="calendar" type="islamic" draft="provisional">исламан</type>
 			<type key="calendar" type="japanese">японийн</type>
 			<type key="calendar" type="persian">гӀажарийн</type>
 		</types>
@@ -789,10 +789,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[а {аь} б в г {гӏ} д е ё ж з и {ий} й к {кк} {ккх} {кх} {кь} {кӏ} л м н о {ов} {оь} п {пп} {пӏ} р {рхӏ} с {сс} т {тт} {тӏ} у {ув} {уь} {уьй} ф х {хь} {хӏ} ц {цӏ} ч {чӏ} ш щ ъ ы ь э ю {юь} я {яь}]</exemplarCharacters>
-		<exemplarCharacters type="index">[А Б В Г Д Е Ё Ж З И К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters>[а {аь} б в г {гӏ} д её ж з и {ий} й к {кк} {ккх} {кх} {кь} {кӏ} л м н о {ов} {оь} п {пп} {пӏ} р {рхӏ} с {сс} т {тт} {тӏ} у {ув} {уь} {уьй} ф х {хь} {хӏ} ц {цӏ} ч {чӏ} ш щ ъ ы ь э ю {юь} я {яь}]</exemplarCharacters>
+		<exemplarCharacters type="index">[А Б В Г Д ЕЁ Ж З И К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘‚ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

@@ -756,7 +756,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Իսրայել</territory>
 			<territory type="IM">Մեն կղզի</territory>
 			<territory type="IN">Հնդկաստան</territory>
-			<territory type="IO">Բրիտանական Տարածք Հնդկական Օվկիանոսում</territory>
+			<territory type="IO" draft="provisional">Բրիտանական Տարածք Հնդկական Օվկիանոսում</territory>
 			<territory type="IQ">Իրաք</territory>
 			<territory type="IR">Իրան</territory>
 			<territory type="IS">Իսլանդիա</territory>
@@ -943,9 +943,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="ethiopic-amete-alem">եթովպական Ամետե Ալեմ օրացույց</type>
 			<type key="calendar" type="gregorian">գրիգորյան օրացույց</type>
 			<type key="calendar" type="hebrew">հրեական օրացույց</type>
-			<type key="calendar" type="islamic">իսլամական օրացույց</type>
-			<type key="calendar" type="islamic-civil">իսլամական քաղաքացիական օրացույց</type>
-			<type key="calendar" type="islamic-umalqura">իսլամական օրացույց Ում Ալ Քուրա</type>
+			<type key="calendar" type="islamic" draft="provisional">իսլամական օրացույց</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">իսլամական քաղաքացիական օրացույց</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">իսլամական օրացույց Ում Ալ Քուրա</type>
 			<type key="calendar" type="iso8601">ISO-8601 օրացույց</type>
 			<type key="calendar" type="japanese">ճապոնական օրացույց</type>
 			<type key="calendar" type="persian">պարսկական օրացույց</type>
@@ -6726,9 +6726,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} կալորիայում</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>կալորիաներ</displayName>
-				<unitPattern count="one">{0} կալորիա</unitPattern>
-				<unitPattern count="other">{0} կալորիա</unitPattern>
+				<displayName draft="provisional">կալորիաներ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կալորիա</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կալորիա</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>կիլոջոուլներ</displayName>
@@ -6925,19 +6925,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} փիքսել մատնաչափի վրա</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>կետեր սանտիմետրի վրա</displayName>
-				<unitPattern count="one">{0} կետ սանտիմետրի վրա</unitPattern>
-				<unitPattern count="other">{0} կետ սանտիմետրի վրա</unitPattern>
+				<displayName draft="provisional">կետեր սանտիմետրի վրա</displayName>
+				<unitPattern count="one" draft="provisional">{0} կետ սանտիմետրի վրա</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կետ սանտիմետրի վրա</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>կետեր մատնաչափի վրա</displayName>
-				<unitPattern count="one">{0} կետ մատնաչափի վրա</unitPattern>
-				<unitPattern count="other">{0} կետ մատնաչափի վրա</unitPattern>
+				<displayName draft="provisional">կետեր մատնաչափի վրա</displayName>
+				<unitPattern count="one" draft="provisional">{0} կետ մատնաչափի վրա</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կետ մատնաչափի վրա</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>կետ</displayName>
-				<unitPattern count="one">{0} կետ</unitPattern>
-				<unitPattern count="other">{0} կետ</unitPattern>
+				<displayName draft="provisional">կետ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կետ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կետ</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>երկրային շառավիղ</displayName>
@@ -8252,9 +8252,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} կալ</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>կալ</displayName>
-				<unitPattern count="one">{0} կալ</unitPattern>
-				<unitPattern count="other">{0} կալ</unitPattern>
+				<displayName draft="provisional">կալ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կալ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կալ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>կՋ</displayName>
@@ -8346,19 +8346,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} փմչ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>կսմ</displayName>
-				<unitPattern count="one">{0} կսմ</unitPattern>
-				<unitPattern count="other">{0} կսմ</unitPattern>
+				<displayName draft="provisional">կսմ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կսմ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կսմ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>կմչ</displayName>
-				<unitPattern count="one">{0} կմչ</unitPattern>
-				<unitPattern count="other">{0} կմչ</unitPattern>
+				<displayName draft="provisional">կմչ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կմչ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կմչ</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>կետ</displayName>
-				<unitPattern count="one">{0} կետ</unitPattern>
-				<unitPattern count="other">{0} կետ</unitPattern>
+				<displayName draft="provisional">կետ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կետ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կետ</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -9298,9 +9298,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} կալ</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>կալ</displayName>
-				<unitPattern count="one">{0} կալ</unitPattern>
-				<unitPattern count="other">{0} կալ</unitPattern>
+				<displayName draft="provisional">կալ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կալ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կալ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>կՋ</displayName>
@@ -9393,19 +9393,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} փմչ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>կսմ</displayName>
-				<unitPattern count="one">{0} կսմ</unitPattern>
-				<unitPattern count="other">{0} կսմ</unitPattern>
+				<displayName draft="provisional">կսմ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կսմ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կսմ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>կմչ</displayName>
-				<unitPattern count="one">{0} կմչ</unitPattern>
-				<unitPattern count="other">{0} կմչ</unitPattern>
+				<displayName draft="provisional">կմչ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կմչ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կմչ</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>կետ</displayName>
-				<unitPattern count="one">{0} կետ</unitPattern>
-				<unitPattern count="other">{0} կետ</unitPattern>
+				<displayName draft="provisional">կետ</displayName>
+				<unitPattern count="one" draft="provisional">{0} կետ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} կետ</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>

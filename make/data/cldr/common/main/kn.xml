@@ -877,7 +877,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">ಇಸ್ರೇಲ್</territory>
 			<territory type="IM">ಐಲ್ ಆಫ್ ಮ್ಯಾನ್</territory>
 			<territory type="IN">ಭಾರತ</territory>
-			<territory type="IO">ಬ್ರಿಟೀಷ್ ಹಿಂದೂ ಮಹಾಸಾಗರದ ಪ್ರದೇಶ</territory>
+			<territory type="IO" draft="provisional">ಬ್ರಿಟೀಷ್ ಹಿಂದೂ ಮಹಾಸಾಗರದ ಪ್ರದೇಶ</territory>
 			<territory type="IQ">ಇರಾಕ್</territory>
 			<territory type="IR">ಇರಾನ್</territory>
 			<territory type="IS">ಐಸ್‌ಲ್ಯಾಂಡ್</territory>
@@ -1075,10 +1075,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">ಗ್ರೆಗೋರಿಯನ್ ಕ್ಯಾಲೆಂಡರ್</type>
 			<type key="calendar" type="hebrew">ಹೀಬ್ರೂ ಕ್ಯಾಲೆಂಡರ್</type>
 			<type key="calendar" type="indian">ಭಾರತೀಯ ರಾಷ್ಟ್ರೀಯ ಕ್ಯಾಲೆಂಡರ್</type>
-			<type key="calendar" type="islamic">ಇಸ್ಲಾಮಿಕ್ ಕ್ಯಾಲೆಂಡರ್</type>
-			<type key="calendar" type="islamic-civil">ಇಸ್ಲಾಮಿಕ್-ಸಿವಿಲ್ ಕ್ಯಾಲೆಂಡರ್</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">ಇಸ್ಲಾಮಿಕ್‌ ಕ್ಯಾಲೆಂಡರ್‌ (ಸೌದಿ ಅರೇಬಿಯಾ, ಸೈಟಿಂಗ್‌)bia, sighting)</type>
-			<type key="calendar" type="islamic-umalqura">ಇಸ್ಲಾಮಿಕ್ ಕ್ಯಾಲೆಂಡರ್ (ಉಮ್ ಅಲ್-ಖುರಾ)</type>
+			<type key="calendar" type="islamic" draft="provisional">ಇಸ್ಲಾಮಿಕ್ ಕ್ಯಾಲೆಂಡರ್</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ಇಸ್ಲಾಮಿಕ್-ಸಿವಿಲ್ ಕ್ಯಾಲೆಂಡರ್</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">ಇಸ್ಲಾಮಿಕ್‌ ಕ್ಯಾಲೆಂಡರ್‌ (ಸೌದಿ ಅರೇಬಿಯಾ, ಸೈಟಿಂಗ್‌)bia, sighting)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">ಇಸ್ಲಾಮಿಕ್ ಕ್ಯಾಲೆಂಡರ್ (ಉಮ್ ಅಲ್-ಖುರಾ)</type>
 			<type key="calendar" type="iso8601">ISO-8601 ಕ್ಯಾಲೆಂಡರ್</type>
 			<type key="calendar" type="japanese">ಜಪಾನೀಸ್ ಕ್ಯಾಲೆಂಡರ್</type>
 			<type key="calendar" type="persian">ಪರ್ಷಿಯನ್ ಕ್ಯಾಲೆಂಡರ್</type>
@@ -1191,11 +1191,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u0CBC ೦ ೧ ೨ ೩ ೪ ೫ ೬ ೭ ೮ ೯ ಅ ಆ ಇ ಈ ಉ ಊ ಋ ೠ ಌ ೡ ಎ ಏ ಐ ಒ ಓ ಔ ಂ ಃ ಕ ಖ ಗ ಘ ಙ ಚ ಛ ಜ ಝ ಞ ಟ ಠ ಡ ಢ ಣ ತ ಥ ದ ಧ ನ ಪ ಫ ಬ ಭ ಮ ಯ ರ ಱ ಲ ವ ಶ ಷ ಸ ಹ ಳ ಽ ಾ \u0CBF ೀ ು ೂ ೃ ೄ \u0CC6 ೇ ೈ ೊ ೋ \u0CCC \u0CCD ೕ ೖ]</exemplarCharacters>
+		<exemplarCharacters>[಼ ೦ ೧ ೨ ೩ ೪ ೫ ೬ ೭ ೮ ೯ ಅ ಆ ಇ ಈ ಉ ಊ ಋ ೠ ಌ ೡ ಎ ಏ ಐ ಒ ಓ ಔ ಂ ಃ ಕ ಖ ಗ ಘ ಙ ಚ ಛ ಜ ಝ ಞ ಟ ಠ ಡ ಢ ಣ ತ ಥ ದ ಧ ನ ಪ ಫ ಬ ಭ ಮ ಯ ರ ಱ ಲ ವ ಶ ಷ ಸ ಹ ಳ ಽ ಾ ಿ ೀ ು ೂ ೃ ೄ ೆ ೇ ೈ ೊ ೋ ೌ ್ ೕ ೖ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D ೞ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ಅ ಆ ಇ ಈ ಉ ಊ ಋ ೠ ಌ ೡ ಎ ಏ ಐ ಒ ಓ ಔ ಕ ಖ ಗ ಘ ಙ ಚ ಛ ಜ ಝ ಞ ಟ ಠ ಡ ಢ ಣ ತ ಥ ದ ಧ ನ ಪ ಫ ಬ ಭ ಮ ಯ ರ ಱ ಲ ವ ಶ ಷ ಸ ಹ ಳ ೞ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0೦ 1೧ 2೨ 3೩ 4೪ 5೫ 6೬ 7೭ 8೮ 9೯]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1204,23 +1204,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8476,9 +8476,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="vocative">{0} ಕ್ಯಾಲೋರಿಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ಕ್ಯಾಲೋರಿಗಳು</displayName>
-				<unitPattern count="one">{0} ಕ್ಯಾಲೋರಿ</unitPattern>
-				<unitPattern count="other">{0} ಕ್ಯಾಲೋರಿಗಳು</unitPattern>
+				<displayName draft="provisional">ಕ್ಯಾಲೋರಿಗಳು</displayName>
+				<unitPattern count="one" draft="provisional">{0} ಕ್ಯಾಲೋರಿ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ಕ್ಯಾಲೋರಿಗಳು</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>neuter</gender>
@@ -8698,19 +8698,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ಪಿಕ್ಸೆಲ್ಸ್ ಪರ್ ಇಂಚ್</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ಡಾಟ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್</displayName>
-				<unitPattern count="one">{0} ಡಾಟ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್</unitPattern>
-				<unitPattern count="other">{0} ಡಾಟ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್</unitPattern>
+				<displayName draft="provisional">ಡಾಟ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್</displayName>
+				<unitPattern count="one" draft="provisional">{0} ಡಾಟ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ಡಾಟ್ಸ್ ಪರ್ ಸೆಂಟಿಮೀಟರ್</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ಡಾಟ್ಸ್ ಪರ್ ಇಂಚ್</displayName>
-				<unitPattern count="one">{0} ಡಾಟ್ ಪರ್ ಇಂಚ್</unitPattern>
-				<unitPattern count="other">{0} ಡಾಟ್ಸ್ ಪರ್ ಇಂಚ್</unitPattern>
+				<displayName draft="provisional">ಡಾಟ್ಸ್ ಪರ್ ಇಂಚ್</displayName>
+				<unitPattern count="one" draft="provisional">{0} ಡಾಟ್ ಪರ್ ಇಂಚ್</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ಡಾಟ್ಸ್ ಪರ್ ಇಂಚ್</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ಡಾಟ್‌ಗಳು</displayName>
-				<unitPattern count="one">{0} ಡಾಟ್‌</unitPattern>
-				<unitPattern count="other">{0} ಡಾಟ್‌ಗಳು</unitPattern>
+				<displayName draft="provisional">ಡಾಟ್‌ಗಳು</displayName>
+				<unitPattern count="one" draft="provisional">{0} ಡಾಟ್‌</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ಡಾಟ್‌ಗಳು</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>ಭೂಮಿಯ ತ್ರಿಜ್ಯ</displayName>
@@ -10113,9 +10113,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ಕ್ಯಾಲೊ</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ಕ್ಯಾ</displayName>
-				<unitPattern count="one">{0} ಕ್ಯಾ</unitPattern>
-				<unitPattern count="other">{0} ಕ್ಯಾ</unitPattern>
+				<displayName draft="provisional">ಕ್ಯಾ</displayName>
+				<unitPattern count="one" draft="provisional">{0} ಕ್ಯಾ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ಕ್ಯಾ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ಕಿ.ಜೌ</displayName>
@@ -10208,19 +10208,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ಪಿಕ್ಸೆಲ್‌ಗಳು</displayName>
-				<unitPattern count="one">{0} ಪಿಕ್ಸೆ</unitPattern>
-				<unitPattern count="other">{0} ಪಿಕ್ಸೆ</unitPattern>
+				<displayName draft="provisional">ಪಿಕ್ಸೆಲ್‌ಗಳು</displayName>
+				<unitPattern count="one" draft="provisional">{0} ಪಿಕ್ಸೆ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ಪಿಕ್ಸೆ</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11164,9 +11164,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ಕ್ಯಾಲೊ</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ಕ್ಯಾಲೊ</displayName>
-				<unitPattern count="one">{0}ಕ್ಯಾಲೊ</unitPattern>
-				<unitPattern count="other">{0}ಕ್ಯಾಲೊ</unitPattern>
+				<displayName draft="provisional">ಕ್ಯಾಲೊ</displayName>
+				<unitPattern count="one" draft="provisional">{0}ಕ್ಯಾಲೊ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}ಕ್ಯಾಲೊ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ಕಿ.ಜೌ</displayName>
@@ -11259,19 +11259,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0}dpcm</unitPattern>
-				<unitPattern count="other">{0}dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0}dpi</unitPattern>
-				<unitPattern count="other">{0}dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ಡಾಟ್</displayName>
-				<unitPattern count="one">{0} ಡಾಟ್</unitPattern>
-				<unitPattern count="other">{0} ಪಿಕ್ಸೆ</unitPattern>
+				<displayName draft="provisional">ಡಾಟ್</displayName>
+				<unitPattern count="one" draft="provisional">{0} ಡಾಟ್</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ಪಿಕ್ಸೆ</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -12167,27 +12167,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given">ಝೆಂಡೇಯಾ</nameField>
+			<nameField type="given" draft="provisional">ಝೆಂಡೇಯಾ</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given">ಐರಿನ್</nameField>
-			<nameField type="surname">ಆ್ಯಡ್ಲರ್</nameField>
+			<nameField type="given" draft="provisional">ಐರಿನ್</nameField>
+			<nameField type="surname" draft="provisional">ಆ್ಯಡ್ಲರ್</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given">ಮೇರಿ ಸೂ</nameField>
-			<nameField type="given2">ಹಮಿಶ್</nameField>
-			<nameField type="surname">ವ್ಯಾಟ್ಸನ್</nameField>
+			<nameField type="given" draft="provisional">ಮೇರಿ ಸೂ</nameField>
+			<nameField type="given2" draft="provisional">ಹಮಿಶ್</nameField>
+			<nameField type="surname" draft="provisional">ವ್ಯಾಟ್ಸನ್</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">ಶ್ರೀ.</nameField>
-			<nameField type="given">ಬರ್ಟ್‌ರಾಮ್ ವಿಲ್ಬರ್‌ಫೋರ್ಸ್</nameField>
-			<nameField type="given-informal">ಬರ್ಟೀ</nameField>
-			<nameField type="given2">ಹೆನ್ರಿ ರಾಬರ್ಟ್</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">ವೂಸ್ಟರ್</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
-			<nameField type="generation">ಜೂನಿಯರ್</nameField>
-			<nameField type="credentials">ಎಮ್‌ಪಿ</nameField>
+			<nameField type="title" draft="provisional">ಶ್ರೀ.</nameField>
+			<nameField type="given" draft="provisional">ಬರ್ಟ್‌ರಾಮ್ ವಿಲ್ಬರ್‌ಫೋರ್ಸ್</nameField>
+			<nameField type="given-informal" draft="provisional">ಬರ್ಟೀ</nameField>
+			<nameField type="given2" draft="provisional">ಹೆನ್ರಿ ರಾಬರ್ಟ್</nameField>
+			<nameField type="surname-prefix" draft="provisional">∅∅∅</nameField>
+			<nameField type="surname-core" draft="provisional">ವೂಸ್ಟರ್</nameField>
+			<nameField type="surname2" draft="provisional">∅∅∅</nameField>
+			<nameField type="generation" draft="provisional">ಜೂನಿಯರ್</nameField>
+			<nameField type="credentials" draft="provisional">ಎಮ್‌ಪಿ</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
 			<nameField type="given">ಸಿನ್‍ಬಾದ್</nameField>

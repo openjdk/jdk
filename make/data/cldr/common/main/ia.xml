@@ -660,7 +660,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Insula de Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Territorio oceanic britanno-indian</territory>
+			<territory type="IO" draft="provisional">Territorio oceanic britanno-indian</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Islanda</territory>
@@ -836,9 +836,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic-amete-alem">calendario ethiope Amete Alem</type>
 			<type key="calendar" type="gregorian">calendario gregorian</type>
 			<type key="calendar" type="hebrew">calendario hebraic</type>
-			<type key="calendar" type="islamic">calendario islamic</type>
-			<type key="calendar" type="islamic-civil">calendario islamic (tabular, epocha civil)</type>
-			<type key="calendar" type="islamic-umalqura">calendario islamic (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">calendario islamic</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">calendario islamic (tabular, epocha civil)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">calendario islamic (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">calendario ISO-8601</type>
 			<type key="calendar" type="japanese">calendario japonese</type>
 			<type key="calendar" type="persian">calendario persa</type>
@@ -912,9 +912,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s t u v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[á à ă â å ä ã ā æ ç é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ö ø ō œ ú ù ŭ û ü ū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[áàăâåäãā æ ç éèĕêëē íìĭîïī ñ óòŏôöøō œ úùŭûüū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -4127,9 +4127,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} calorias</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kilocalorias</displayName>
-				<unitPattern count="one">{0} kilocaloria</unitPattern>
-				<unitPattern count="other">{0} kilocalorias</unitPattern>
+				<displayName draft="provisional">kilocalorias</displayName>
+				<unitPattern count="one" draft="provisional">{0} kilocaloria</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kilocalorias</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoules</displayName>
@@ -4893,9 +4893,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -5691,9 +5691,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>

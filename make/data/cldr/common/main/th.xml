@@ -1004,7 +1004,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">อิสราเอล</territory>
 			<territory type="IM">เกาะแมน</territory>
 			<territory type="IN">อินเดีย</territory>
-			<territory type="IO">บริติชอินเดียนโอเชียนเทร์ริทอรี</territory>
+			<territory type="IO" draft="provisional">บริติชอินเดียนโอเชียนเทร์ริทอรี</territory>
 			<territory type="IQ">อิรัก</territory>
 			<territory type="IR">อิหร่าน</territory>
 			<territory type="IS">ไอซ์แลนด์</territory>
@@ -1263,11 +1263,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">ปฏิทินเกรกอเรียน</type>
 			<type key="calendar" type="hebrew">ปฏิทินฮิบรู</type>
 			<type key="calendar" type="indian">ปฏิทินแห่งชาติอินเดีย</type>
-			<type key="calendar" type="islamic">ปฏิทินอิสลาม</type>
-			<type key="calendar" type="islamic-civil">ปฏิทินอิสลามซีวิล</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">ปฏิทินอิสลาม (ซาอุดีอาระเบีย แบบพระจันทร์เสี้ยว)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">ปฏิทินอิสลาม (แบบตาราง สมัยดาราศาสตร์)</type>
-			<type key="calendar" type="islamic-umalqura">ปฏิทินอิสลาม (อุมม์อัลกุรา)</type>
+			<type key="calendar" type="islamic" draft="provisional">ปฏิทินอิสลาม</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ปฏิทินอิสลามซีวิล</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">ปฏิทินอิสลาม (ซาอุดีอาระเบีย แบบพระจันทร์เสี้ยว)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">ปฏิทินอิสลาม (แบบตาราง สมัยดาราศาสตร์)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">ปฏิทินอิสลาม (อุมม์อัลกุรา)</type>
 			<type key="calendar" type="iso8601">ปฏิทิน ISO-8601</type>
 			<type key="calendar" type="japanese">ปฏิทินญี่ปุ่น</type>
 			<type key="calendar" type="persian">ปฏิทินเปอร์เชีย</type>
@@ -1398,11 +1398,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[ฯ ๆ \u0E4E \u0E4C \u0E47 \u0E48 \u0E49 \u0E4A \u0E4B ก ข ฃ ค ฅ ฆ ง จ ฉ ช ซ ฌ ญ ฎ ฏ ฐ ฑ ฒ ณ ด ต ถ ท ธ น บ ป ผ ฝ พ ฟ ภ ม ย ร ฤ ล ฦ ว ศ ษ ส ห ฬ อ ฮ \u0E4D ะ \u0E31 า ๅ ำ \u0E34 \u0E35 \u0E36 \u0E37 \u0E38 \u0E39 เ แ โ ใ ไ \u0E3A]</exemplarCharacters>
+		<exemplarCharacters>[ฯๆ ๎ ์ ็ ่ ้ ๊ ๋ ก ข ฃ ค ฅ ฆ ง จ ฉ ช ซ ฌ ญ ฎ ฏ ฐ ฑ ฒ ณ ด ต ถ ท ธ น บ ป ผ ฝ พ ฟ ภ ม ย ร ฤ ล ฦ ว ศ ษ ส ห ฬ อ ฮ ํ ะ ั าๅ ำ ิ ี ึ ื ุ ู เ แ โ ใ ไ ฺ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200B]</exemplarCharacters>
 		<exemplarCharacters type="index">[ก ข ฃ ค ฅ ฆ ง จ ฉ ช ซ ฌ ญ ฎ ฏ ฐ ฑ ฒ ณ ด ต ถ ท ธ น บ ป ผ ฝ พ ฟ ภ ม ย ร ฤ ล ฦ ว ศ ษ ส ห ฬ อ ฮ]</exemplarCharacters>
-		<exemplarCharacters type="numbers">[% , \- . ‑ ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[! &quot; # ' ( ) * , \- . / \: @ \[ \] ‐ ‑ – — ‘ ’ “ ” … ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="numbers">[\-‑,.%‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\-‐‑–—,\:!.…'‘’&quot;“”()\[\]@*/#′″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1411,22 +1411,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\-‑./]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.․﹒．。︒｡]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-﹣－‑‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,︐﹐，،٫、︑﹑､]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
+			<parseLenient sample=",">[,︐﹐，٫]</parseLenient>
 			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
 		</parseLenients>
 	</characters>
@@ -8786,8 +8786,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>แคลอรี</displayName>
-				<unitPattern count="other">{0} แคลอรี</unitPattern>
+				<displayName draft="provisional">แคลอรี</displayName>
+				<unitPattern count="other" draft="provisional">{0} แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>กิโลจูล</displayName>
@@ -8862,16 +8862,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} พิกเซลต่อนิ้ว</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>จุดต่อเซนติเมตร</displayName>
-				<unitPattern count="other">{0} จุดต่อเซนติเมตร</unitPattern>
+				<displayName draft="provisional">จุดต่อเซนติเมตร</displayName>
+				<unitPattern count="other" draft="provisional">{0} จุดต่อเซนติเมตร</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>จุดต่อนิ้ว</displayName>
-				<unitPattern count="other">{0} จุดต่อนิ้ว</unitPattern>
+				<displayName draft="provisional">จุดต่อนิ้ว</displayName>
+				<unitPattern count="other" draft="provisional">{0} จุดต่อนิ้ว</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ดอท</displayName>
-				<unitPattern count="other">{0} ดอท</unitPattern>
+				<displayName draft="provisional">ดอท</displayName>
+				<unitPattern count="other" draft="provisional">{0} ดอท</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>รัศมีของโลก</displayName>
@@ -9637,8 +9637,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>แคลอรี</displayName>
-				<unitPattern count="other">{0} แคลอรี</unitPattern>
+				<displayName draft="provisional">แคลอรี</displayName>
+				<unitPattern count="other" draft="provisional">{0} แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>กิโลจูล</displayName>
@@ -9690,16 +9690,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ดอท</displayName>
-				<unitPattern count="other">{0} ดอท</unitPattern>
+				<displayName draft="provisional">ดอท</displayName>
+				<unitPattern count="other" draft="provisional">{0} ดอท</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>กม.</displayName>
@@ -10427,8 +10427,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>แคลอรี</displayName>
-				<unitPattern count="other">{0}แคลอรี</unitPattern>
+				<displayName draft="provisional">แคลอรี</displayName>
+				<unitPattern count="other" draft="provisional">{0}แคลอรี</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>กิโลจูล</displayName>
@@ -10503,16 +10503,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0}dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="other" draft="provisional">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="other">{0}dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="other" draft="provisional">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ดอท</displayName>
-				<unitPattern count="other">{0}ดอท</unitPattern>
+				<displayName draft="provisional">ดอท</displayName>
+				<unitPattern count="other" draft="provisional">{0}ดอท</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>

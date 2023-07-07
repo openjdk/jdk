@@ -149,7 +149,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Huayalandi</territory>
 			<territory type="IL">Huislaheli</territory>
 			<territory type="IN">Huindia</territory>
-			<territory type="IO">Ulubali lwa Hubahari ya Hindi lwa Huingereza</territory>
+			<territory type="IO" draft="provisional">Ulubali lwa Hubahari ya Hindi lwa Huingereza</territory>
 			<territory type="IQ">Huilaki</territory>
 			<territory type="IR">Huuajemi</territory>
 			<territory type="IS">Huaislandi</territory>

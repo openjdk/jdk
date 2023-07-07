@@ -841,7 +841,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Isihaé</territory>
 			<territory type="IM">Mỹn Goj-vẽso</territory>
 			<territory type="IN">Ĩnija</territory>
-			<territory type="IO">Osiỹno Ĩniko tỹ Tehitórijo Mritỹnĩku</territory>
+			<territory type="IO" draft="provisional">Osiỹno Ĩniko tỹ Tehitórijo Mritỹnĩku</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Irỹ</territory>
 			<territory type="IS">Inhrỹnija</territory>
@@ -1077,9 +1077,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Papa Gregorju Prỹg-kurã-kar</type>
 			<type key="calendar" type="hebrew">Emrajko Prỹg-kurã-kar</type>
 			<type key="calendar" type="indian">Ĩnija Prỹg-kurã-kar pẽ</type>
-			<type key="calendar" type="islamic">Isirỹ Prỹg-kurã-kar</type>
-			<type key="calendar" type="islamic-civil">Isirỹ Prỹg-kurã-kar Siviv</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">Isirỹ Prỹg-kurã-kar (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Isirỹ Prỹg-kurã-kar</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Isirỹ Prỹg-kurã-kar Siviv</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Isirỹ Prỹg-kurã-kar (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Prỹg-kurã-kar ISO-8601</type>
 			<type key="calendar" type="japanese">Japonẽj Prỹg-kurã-kar</type>
 			<type key="calendar" type="persian">Pérsa Prỹg-kurã-kar</type>
@@ -1210,22 +1210,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a á ã e é ẽ f g h i ĩ j k m n o ó p r s t u ũ v y ỹ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ª à ă â å ä ā æ b c ç d ᵉ è ĕ ê ë ē ᵍ ʰ í ì ĭ î ï ī l ⁿ ñ º ò ŏ ô ö õ ø ō œ q ú ù ŭ û ü ū w x ÿ z]</exemplarCharacters>
+		<exemplarCharacters>[aáã eéẽ f g h iĩ j k m n oó p r s t uũ v yỹ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ªàăâåäā æ b cç d ᵉèĕêëē ᵍ ʰ íìĭîïī l ⁿñ ºòŏôöõøō œ q úùŭûüū w x ÿ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A E F G H I J K M N O P R S T U V Y]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="medial">{0}… {1}</ellipsis>
 		<ellipsis type="word-final">{0}…</ellipsis>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>
@@ -7302,9 +7302,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} karorija ag</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Karoria ag</displayName>
-				<unitPattern count="one">{0} Karorija</unitPattern>
-				<unitPattern count="other">{0} Karorija ag</unitPattern>
+				<displayName draft="provisional">Karoria ag</displayName>
+				<unitPattern count="one" draft="provisional">{0} Karorija</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Karorija ag</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kirojoule ag</displayName>
@@ -7392,14 +7392,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixel ag poregana ki</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>sẽntimẽturo ki pãntu ag</displayName>
-				<unitPattern count="one">{0} pãntu sẽntimẽturo ki</unitPattern>
-				<unitPattern count="other">{0} pãntu ag sẽntimẽturo ki</unitPattern>
+				<displayName draft="provisional">sẽntimẽturo ki pãntu ag</displayName>
+				<unitPattern count="one" draft="provisional">{0} pãntu sẽntimẽturo ki</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pãntu ag sẽntimẽturo ki</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>poregana ki pãntu ag</displayName>
-				<unitPattern count="one">{0} pãntu poregana ki</unitPattern>
-				<unitPattern count="other">{0} pãntu ag poregana ki</unitPattern>
+				<displayName draft="provisional">poregana ki pãntu ag</displayName>
+				<unitPattern count="one" draft="provisional">{0} pãntu poregana ki</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pãntu ag poregana ki</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>kiromẽturo ag</displayName>
@@ -8131,9 +8131,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kirojoule</displayName>
@@ -8199,14 +8199,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<unitPattern count="one">{0} km</unitPattern>
@@ -9069,7 +9069,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">ge pẽ</styleName>
 		<styleName type="wght" subtype="500">ve</styleName>
 		<styleName type="wght" subtype="600">vẽnhrá kãnho ve</styleName>
-		<styleName type="wght" subtype="600" alt="demi">vẽnhrá kãnho ve</styleName>
 		<styleName type="wght" subtype="700">vẽnhrá kãnho</styleName>
 		<styleName type="wght" subtype="800">vẽnhrá kãnho tỹvĩ</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">vẽnhrá kãnho tỹvĩ-tỹvĩ</styleName>

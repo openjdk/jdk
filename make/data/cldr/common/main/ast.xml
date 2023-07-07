@@ -963,7 +963,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Islla de Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Territoriu Británicu del Océanu Índicu</territory>
+			<territory type="IO" draft="provisional">Territoriu Británicu del Océanu Índicu</territory>
 			<territory type="IQ">Iraq</territory>
 			<territory type="IR">Irán</territory>
 			<territory type="IS">Islandia</territory>
@@ -1193,11 +1193,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">calendariu gregorianu</type>
 			<type key="calendar" type="hebrew">calendariu hebréu</type>
 			<type key="calendar" type="indian">calendariu nacional indiu</type>
-			<type key="calendar" type="islamic">calendariu islámicu</type>
-			<type key="calendar" type="islamic-civil">calendariu islámicu (tabular, época civil)</type>
-			<type key="calendar" type="islamic-rgsa">calendariu islámicu (Arabia Saudita, visual)</type>
-			<type key="calendar" type="islamic-tbla">calendariu islámicu (tabular, época astronómica)</type>
-			<type key="calendar" type="islamic-umalqura">calendariu islámicu (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">calendariu islámicu</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">calendariu islámicu (tabular, época civil)</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">calendariu islámicu (Arabia Saudita, visual)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">calendariu islámicu (tabular, época astronómica)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">calendariu islámicu (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">calendariu ISO-8601</type>
 			<type key="calendar" type="japanese">calendariu xaponés</type>
 			<type key="calendar" type="persian">calendariu persa</type>
@@ -1317,11 +1317,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á b c d e é f g h ḥ i í l ḷ m n ñ o ó p q r s t u ú ü v x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ª à ă â å ä ã ā æ ç è ĕ ê ë ē ì ĭ î ï ī j k º ò ŏ ô ö ø ō œ ù ŭ û ū w ÿ]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B C D E F G H I L M N Ñ O P Q R S T U V X Y Z]</exemplarCharacters>
+		<exemplarCharacters>[aá b c d eé f g hḥ ií lḷ m nñ oó p q r s t uúü v x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ªàăâåäãā æ ç èĕêëē ìĭîïī j k ºòŏôöøō œ ùŭûū w ÿ]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C D E F G H I L M NÑ O P Q R S T U V X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ¡ ? ¿ . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ¡ ? ¿ . … '‘’ &quot;“” « » ( ) \[ \] § @ * / \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}… {1}</ellipsis>
@@ -1330,23 +1330,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0}… {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -9467,9 +9467,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} caloríes</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Caloríes</displayName>
-				<unitPattern count="one">{0} Caloría</unitPattern>
-				<unitPattern count="other">{0} Caloríes</unitPattern>
+				<displayName draft="provisional">Caloríes</displayName>
+				<unitPattern count="one" draft="provisional">{0} Caloría</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Caloríes</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>quiloxulios</displayName>
@@ -10179,9 +10179,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>quiloxuliu</displayName>
@@ -10891,9 +10891,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0}Cal</unitPattern>
-				<unitPattern count="other">{0}Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>

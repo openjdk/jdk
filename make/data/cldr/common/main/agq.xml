@@ -149,7 +149,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Aelɨ̀lân</territory>
 			<territory type="IL">Ezɨ̀lɛ̂</territory>
 			<territory type="IN">Endìa</territory>
-			<territory type="IO">Dɨŋò kɨ dzughùnstòʔ kɨ Endìa kɨ Bɨ̀letì kò</territory>
+			<territory type="IO" draft="provisional">Dɨŋò kɨ dzughùnstòʔ kɨ Endìa kɨ Bɨ̀letì kò</territory>
 			<territory type="IQ">Èlâkɨ̀</territory>
 			<territory type="IR">Èlân</territory>
 			<territory type="IS">Aesɨ̀lân</territory>
@@ -285,7 +285,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à â ǎ ā b c d e è ê ě ē ɛ {ɛ\u0300} {ɛ\u0302} {ɛ\u030C} {ɛ\u0304} f g h i ì î ǐ ī ɨ {ɨ\u0300} {ɨ\u0302} {ɨ\u030C} {ɨ\u0304} k l m n ŋ o ò ô ǒ ō ɔ {ɔ\u0300} {ɔ\u0302} {ɔ\u030C} {ɔ\u0304} p s t u ù û ǔ ū ʉ {ʉ\u0300} {ʉ\u0302} {ʉ\u030C} {ʉ\u0304} v w y z ʔ]</exemplarCharacters>
+		<exemplarCharacters>[aàâǎā b c d eèêěē ɛ{ɛ̀}{ɛ̂}{ɛ̌}{ɛ̄} f g h iìîǐī ɨ{ɨ̀}{ɨ̂}{ɨ̌}{ɨ̄} k l m n ŋ oòôǒō ɔ{ɔ̀}{ɔ̂}{ɔ̌}{ɔ̄} p s t uùûǔū ʉ{ʉ̀}{ʉ̂}{ʉ̌}{ʉ̄} v w y z ʔ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[q r x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E Ɛ F G H I Ɨ K L M N Ŋ O Ɔ P S T U Ʉ V W Y Z ʔ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>

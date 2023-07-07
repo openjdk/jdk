@@ -35,10 +35,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a b c d e è f g h i j k l m n ñ o ò p q r s t u ù ü v w x y z]</exemplarCharacters>
+		<exemplarCharacters>[a b c d eè f g h i j k l m nñ oò p q r s t uùü v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[á é í ó ú]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ / \&amp; # % ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ / \&amp; # % ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

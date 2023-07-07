@@ -222,7 +222,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<key type="numbers">tal</key>
 		</keys>
 		<types>
-			<type key="calendar" type="islamic-civil">islamsk sivil kalender</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">islamsk sivil kalender</type>
 			<type key="cf" type="account">valutaformat for rekneskapsføring</type>
 			<type key="collation" type="big5han">tradisjonell kinesisk sortering</type>
 			<type key="collation" type="ducet">standard Unicode-sorteringsrekkjefølgje</type>
@@ -279,7 +279,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters type="auxiliary">[á ǎ č ç đ è ê ń ñ ŋ š ŧ ü ž ä ö]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áǎ čç đ èê ńñ ŋ š ŧ ü ž ä ö]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -2436,9 +2436,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="genitive">{0} kaloriars</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kaloriar</displayName>
-				<unitPattern count="one">{0} kalori</unitPattern>
-				<unitPattern count="other">{0} kaloriar</unitPattern>
+				<displayName draft="provisional">kaloriar</displayName>
+				<unitPattern count="one" draft="provisional">{0} kalori</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kaloriar</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<unitPattern count="one">{0} joule</unitPattern>
@@ -2490,18 +2490,18 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} pikslar per tomme</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>punkt per centimeter</displayName>
-				<unitPattern count="one">{0} punkt per centimeter</unitPattern>
-				<unitPattern count="other">{0} punkt per centimeter</unitPattern>
+				<displayName draft="provisional">punkt per centimeter</displayName>
+				<unitPattern count="one" draft="provisional">{0} punkt per centimeter</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkt per centimeter</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>punkt per tomme</displayName>
-				<unitPattern count="one">{0} punkt per tomme</unitPattern>
-				<unitPattern count="other">{0} punkt per tomme</unitPattern>
+				<displayName draft="provisional">punkt per tomme</displayName>
+				<unitPattern count="one" draft="provisional">{0} punkt per tomme</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkt per tomme</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<unitPattern count="one">{0} punkt</unitPattern>
-				<unitPattern count="other">{0} punkt</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} punkt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkt</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} jordradius</unitPattern>
@@ -2785,13 +2785,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>megapikslar</displayName>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppt</displayName>
-				<unitPattern count="one">{0} ppt</unitPattern>
-				<unitPattern count="other">{0} ppt</unitPattern>
+				<displayName draft="provisional">ppt</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppt</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>m</displayName>
@@ -2953,12 +2953,12 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>millisekund</displayName>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<unitPattern count="one">{0} ppt</unitPattern>
-				<unitPattern count="other">{0} ppt</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} ppt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppt</unitPattern>
 			</unit>
 			<unit type="length-picometer">
 				<displayName>pikometer</displayName>

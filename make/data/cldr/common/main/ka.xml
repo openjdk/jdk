@@ -864,7 +864,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">ისრაელი</territory>
 			<territory type="IM">მენის კუნძული</territory>
 			<territory type="IN">ინდოეთი</territory>
-			<territory type="IO">ბრიტანეთის ტერიტორია ინდოეთის ოკეანეში</territory>
+			<territory type="IO" draft="provisional">ბრიტანეთის ტერიტორია ინდოეთის ოკეანეში</territory>
 			<territory type="IQ">ერაყი</territory>
 			<territory type="IR">ირანი</territory>
 			<territory type="IS">ისლანდია</territory>
@@ -1109,9 +1109,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">გრიგორიანული კალენდარი</type>
 			<type key="calendar" type="hebrew">ებრაული კალენდარი</type>
 			<type key="calendar" type="indian">ინდოეთის ეროვნული კალენდარი</type>
-			<type key="calendar" type="islamic">ისლამური კალენდარი</type>
-			<type key="calendar" type="islamic-civil">ისლამური სამოქალაქო კალენდარი</type>
-			<type key="calendar" type="islamic-umalqura">ისლამური კალენდარი (უმ-ალ-ქურა)</type>
+			<type key="calendar" type="islamic" draft="provisional">ისლამური კალენდარი</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ისლამური სამოქალაქო კალენდარი</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">ისლამური კალენდარი (უმ-ალ-ქურა)</type>
 			<type key="calendar" type="iso8601">ISO-8601 კალენდარი</type>
 			<type key="calendar" type="japanese">იაპონური კალენდარი</type>
 			<type key="calendar" type="persian">სპარსული კალენდარი</type>
@@ -1212,7 +1212,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="auxiliary">[ⴀ ⴁ ⴂ ⴃ ⴄ ⴅ ⴆ ჱ ⴡ ⴇ ⴈ ⴉ ⴊ ⴋ ⴌ ჲ ⴢ ⴍ ⴎ ⴏ ⴐ ⴑ ⴒ ჳ ⴣ ⴓ ⴔ ⴕ ⴖ ⴗ ⴘ ⴙ ⴚ ⴛ ⴜ ⴝ ⴞ ჴ ⴤ ⴟ ⴠ ჵ ⴥ ჶ ჷ ჸ ჹ ჺ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ა ბ გ დ ე ვ ზ თ ი კ ლ მ ნ ო პ ჟ რ ს ტ უ ფ ქ ღ ყ შ ჩ ც ძ წ ჭ ხ ჯ ჰ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ჻ ' ‘ ‚ “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″ №]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … ჻ '‘‚ “„ « » ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″ №]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -7011,9 +7011,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} კალორია</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>კალორია</displayName>
-				<unitPattern count="one">{0} კალორია</unitPattern>
-				<unitPattern count="other">{0} კალორია</unitPattern>
+				<displayName draft="provisional">კალორია</displayName>
+				<unitPattern count="one" draft="provisional">{0} კალორია</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} კალორია</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>კილოჯოული</displayName>
@@ -7106,19 +7106,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} პიქსელი დუიმზე</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>წერტილი სანტიმეტრზე</displayName>
-				<unitPattern count="one">{0} წერტილი სანტიმეტრზე</unitPattern>
-				<unitPattern count="other">{0} წერტილი სანტიმეტრზე</unitPattern>
+				<displayName draft="provisional">წერტილი სანტიმეტრზე</displayName>
+				<unitPattern count="one" draft="provisional">{0} წერტილი სანტიმეტრზე</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} წერტილი სანტიმეტრზე</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>წერტილი დუიმზე</displayName>
-				<unitPattern count="one">{0} წერტილი დუიმზე</unitPattern>
-				<unitPattern count="other">{0} წერტილი დუიმზე</unitPattern>
+				<displayName draft="provisional">წერტილი დუიმზე</displayName>
+				<unitPattern count="one" draft="provisional">{0} წერტილი დუიმზე</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} წერტილი დუიმზე</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>წერტილი</displayName>
-				<unitPattern count="one">{0} წერტილი</unitPattern>
-				<unitPattern count="other">{0} წერტილი</unitPattern>
+				<displayName draft="provisional">წერტილი</displayName>
+				<unitPattern count="one" draft="provisional">{0} წერტილი</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} წერტილი</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>დედამიწის რადიუსი</displayName>
@@ -8057,9 +8057,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} კალ</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>კალ</displayName>
-				<unitPattern count="one">{0} კალ</unitPattern>
-				<unitPattern count="other">{0} კალ</unitPattern>
+				<displayName draft="provisional">კალ</displayName>
+				<unitPattern count="one" draft="provisional">{0} კალ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} კალ</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>კჯ</displayName>
@@ -8150,19 +8150,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} პიქს/დუიმზე</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>წერტ/სმ-ზე</displayName>
-				<unitPattern count="one">{0} წერტ/სმ-ზე</unitPattern>
-				<unitPattern count="other">{0} წერტ/სმ-ზე</unitPattern>
+				<displayName draft="provisional">წერტ/სმ-ზე</displayName>
+				<unitPattern count="one" draft="provisional">{0} წერტ/სმ-ზე</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} წერტ/სმ-ზე</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>წერტ/დუიმზე</displayName>
-				<unitPattern count="one">{0} წერტ/დუიმზე</unitPattern>
-				<unitPattern count="other">{0} წერტ/დუიმზე</unitPattern>
+				<displayName draft="provisional">წერტ/დუიმზე</displayName>
+				<unitPattern count="one" draft="provisional">{0} წერტ/დუიმზე</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} წერტ/დუიმზე</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>წერტილი</displayName>
-				<unitPattern count="one">{0} წერტილი</unitPattern>
-				<unitPattern count="other">{0} წერტილი</unitPattern>
+				<displayName draft="provisional">წერტილი</displayName>
+				<unitPattern count="one" draft="provisional">{0} წერტილი</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} წერტილი</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>⊕ რადიუსი</displayName>
@@ -9317,121 +9317,121 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<nameOrderLocales order="givenFirst">und ka</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+			<namePattern draft="provisional">{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{given-informal-monogram}{surname-monogram}</namePattern>
+			<namePattern draft="provisional">{given-informal-monogram}{surname-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+			<namePattern draft="provisional">{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+			<namePattern draft="provisional">{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+			<namePattern draft="provisional">{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
+			<namePattern draft="provisional">{given-monogram}{given2-monogram}{surname-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+			<namePattern draft="provisional">{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+			<namePattern draft="provisional">{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+			<namePattern draft="provisional">{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+			<namePattern draft="provisional">{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+			<namePattern draft="provisional">{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
+			<namePattern draft="provisional">{surname-monogram}{given-monogram}{given2-monogram}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
 			<nameField type="given">ნინო</nameField>

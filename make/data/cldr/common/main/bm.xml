@@ -149,7 +149,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Irilandi</territory>
 			<territory type="IL">Isirayeli</territory>
 			<territory type="IN">Ɛndujamana</territory>
-			<territory type="IO">Angilɛ ka ɛndu dugukolo</territory>
+			<territory type="IO" draft="provisional">Angilɛ ka ɛndu dugukolo</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Iraŋ</territory>
 			<territory type="IS">Isilandi</territory>

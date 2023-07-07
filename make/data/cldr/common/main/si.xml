@@ -689,7 +689,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">ඊශ්‍රායලය</territory>
 			<territory type="IM">අයිල් ඔෆ් මෑන්</territory>
 			<territory type="IN">ඉන්දියාව</territory>
-			<territory type="IO">බ්‍රිතාන්‍ය ඉන්දීය සාගර බල ප්‍රදේශය</territory>
+			<territory type="IO" draft="provisional">බ්‍රිතාන්‍ය ඉන්දීය සාගර බල ප්‍රදේශය</territory>
 			<territory type="IQ">ඉරාකය</territory>
 			<territory type="IR">ඉරානය</territory>
 			<territory type="IS">අයිස්ලන්තය</territory>
@@ -871,9 +871,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="ethiopic-amete-alem">ඉතියෝපික් ඇමේට් ඇලම් දින දර්ශනය</type>
 			<type key="calendar" type="gregorian">ග්‍රෙගරියානු දින දර්ශනය</type>
 			<type key="calendar" type="hebrew">හීබෲ දින දර්ශනය</type>
-			<type key="calendar" type="islamic">ඉස්ලාමීය දින දර්ශනය</type>
-			<type key="calendar" type="islamic-civil">ඉස්ලාමීය දින දර්ශනය (වගුව, සිවිල් යුගය)</type>
-			<type key="calendar" type="islamic-umalqura">ඉස්ලාමීය දින දර්ශනය (වගුව, සිවිල් යුගය)</type>
+			<type key="calendar" type="islamic" draft="provisional">ඉස්ලාමීය දින දර්ශනය</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ඉස්ලාමීය දින දර්ශනය (වගුව, සිවිල් යුගය)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">ඉස්ලාමීය දින දර්ශනය (වගුව, සිවිල් යුගය)</type>
 			<type key="calendar" type="iso8601">අඑස්ඔ-8601 දින දර්ශනය</type>
 			<type key="calendar" type="japanese">ජපන් දින දර්ශනය</type>
 			<type key="calendar" type="persian">පර්සියානු දින දර්ශනය</type>
@@ -947,11 +947,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[අ ආ ඇ ඈ ඉ ඊ උ ඌ ඍ එ ඒ ඓ ඔ ඕ ඖ ං ඃ ක ඛ ග ඝ ඞ ඟ ච ඡ ජ ඣ ඥ ඤ ට ඨ ඩ ඪ ණ ඬ ත ථ ද ධ න ඳ ප ඵ බ භ ම ඹ ය ර ල ව ශ ෂ ස හ ළ ෆ ා ැ ෑ \u0DD2 \u0DD3 \u0DD4 \u0DD6 ෘ ෲ ෟ ෙ ේ ෛ ො ෝ ෞ \u0DCA]</exemplarCharacters>
+		<exemplarCharacters>[අ ආ ඇ ඈ ඉ ඊ උ ඌ ඍ එ ඒ ඓ ඔ ඕ ඖ ං ඃ ක ඛ ග ඝ ඞ ඟ ච ඡ ජ ඣ ඥ ඤ ට ඨ ඩ ඪ ණ ඬ ත ථ ද ධ න ඳ ප ඵ බ භ ම ඹ ය ර ල ව ශ ෂ ස හ ළ ෆ ා ැ ෑ ි ී ු ූ ෘ ෲ ෟ ෙ ේ ෛ ො ෝ ෞ ්]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200B\u200C\u200D ඎ ඏ ඐ ඦ ෳ]</exemplarCharacters>
 		<exemplarCharacters type="index">[අ ආ ඇ ඈ ඉ ඊ උ ඌ ඍ එ ඒ ඓ ඔ ඕ ඖ ක ඛ ග ඝ ඞ ඟ ච ඡ ජ ඣ ඥ ඤ ට ඨ ඩ ඪ ණ ඬ ත ථ ද ධ න ඳ ප ඵ බ භ ම ඹ ය ර ල ව ශ ෂ ස හ ළ ෆ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -960,28 +960,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶︓﹕：]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\:：﹕︓ ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰">[؉‰]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄]</parseLenient>
-			<parseLenient sample="£">[£₤￡]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="’">['＇’ ՚ ᾽᾿ ʼ]</parseLenient>
+			<parseLenient sample="%">[%％﹪ ٪]</parseLenient>
+			<parseLenient sample="‰">[‰ ؉]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 			<parseLenient sample="¥">[¥￥]</parseLenient>
 			<parseLenient sample="₩">[₩￦]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‐‒–⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‐‑ ‒ – −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -6588,9 +6588,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">කැලරි {0}</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>කැලරි</displayName>
-				<unitPattern count="one">කැලරි {0}</unitPattern>
-				<unitPattern count="other">කැලරි {0}</unitPattern>
+				<displayName draft="provisional">කැලරි</displayName>
+				<unitPattern count="one" draft="provisional">කැලරි {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">කැලරි {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>කිලෝ ජුල්</displayName>
@@ -6683,19 +6683,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">අඟලකට පික්සල් {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>සෙන්ටිමීටරයකට තිත්</displayName>
-				<unitPattern count="one">සෙන්ටිමීටරයකට තිත් {0}</unitPattern>
-				<unitPattern count="other">සෙන්ටිමීටරයකට තිත් {0}</unitPattern>
+				<displayName draft="provisional">සෙන්ටිමීටරයකට තිත්</displayName>
+				<unitPattern count="one" draft="provisional">සෙන්ටිමීටරයකට තිත් {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">සෙන්ටිමීටරයකට තිත් {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>අඟලකට තිත්</displayName>
-				<unitPattern count="one">අඟලකට තිත් {0}</unitPattern>
-				<unitPattern count="other">අඟලකට තිත් {0}</unitPattern>
+				<displayName draft="provisional">අඟලකට තිත්</displayName>
+				<unitPattern count="one" draft="provisional">අඟලකට තිත් {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">අඟලකට තිත් {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>තිත</displayName>
-				<unitPattern count="one">{0}තිත</unitPattern>
-				<unitPattern count="other">{0}තිත</unitPattern>
+				<displayName draft="provisional">තිත</displayName>
+				<unitPattern count="one" draft="provisional">{0}තිත</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}තිත</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>පෘථිවි අරය</displayName>
@@ -7639,9 +7639,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">කැල {0}</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>කැල</displayName>
-				<unitPattern count="one">කැල {0}</unitPattern>
-				<unitPattern count="other">කැල {0}</unitPattern>
+				<displayName draft="provisional">කැල</displayName>
+				<unitPattern count="one" draft="provisional">කැල {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">කැල {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>කිලෝ ජුල්</displayName>
@@ -7734,19 +7734,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>තිත</displayName>
-				<unitPattern count="one">{0} තිත</unitPattern>
-				<unitPattern count="other">තිත් {0}</unitPattern>
+				<displayName draft="provisional">තිත</displayName>
+				<unitPattern count="one" draft="provisional">{0} තිත</unitPattern>
+				<unitPattern count="other" draft="provisional">තිත් {0}</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -8690,9 +8690,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">කැල {0}</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>කැල</displayName>
-				<unitPattern count="one">කැල {0}</unitPattern>
-				<unitPattern count="other">කැල {0}</unitPattern>
+				<displayName draft="provisional">කැල</displayName>
+				<unitPattern count="one" draft="provisional">කැල {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">කැල {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>කිජු</displayName>
@@ -8785,19 +8785,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>තිත</displayName>
-				<unitPattern count="one">{0} තිත</unitPattern>
-				<unitPattern count="other">තිත් {0}</unitPattern>
+				<displayName draft="provisional">තිත</displayName>
+				<unitPattern count="one" draft="provisional">{0} තිත</unitPattern>
+				<unitPattern count="other" draft="provisional">තිත් {0}</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -9698,27 +9698,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{given-informal}, {surname}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given">සෙන්ඩයා</nameField>
+			<nameField type="given" draft="provisional">සෙන්ඩයා</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given">අයිරින්</nameField>
-			<nameField type="surname">ඇඩ්ලර්</nameField>
+			<nameField type="given" draft="provisional">අයිරින්</nameField>
+			<nameField type="surname" draft="provisional">ඇඩ්ලර්</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given">මේරි සූ</nameField>
-			<nameField type="given2">හමිෂ්</nameField>
-			<nameField type="surname">වොට්සන්</nameField>
+			<nameField type="given" draft="provisional">මේරි සූ</nameField>
+			<nameField type="given2" draft="provisional">හමිෂ්</nameField>
+			<nameField type="surname" draft="provisional">වොට්සන්</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">මහතා</nameField>
-			<nameField type="given">බර්ට්‍රම් විල්බර්ෆෝස්</nameField>
-			<nameField type="given-informal">බර්ටි</nameField>
-			<nameField type="given2">හෙන්රි රොබට්</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">වූස්ටර්</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
-			<nameField type="generation">බාල</nameField>
-			<nameField type="credentials">පා.ම.</nameField>
+			<nameField type="title" draft="provisional">මහතා</nameField>
+			<nameField type="given" draft="provisional">බර්ට්‍රම් විල්බර්ෆෝස්</nameField>
+			<nameField type="given-informal" draft="provisional">බර්ටි</nameField>
+			<nameField type="given2" draft="provisional">හෙන්රි රොබට්</nameField>
+			<nameField type="surname-prefix" draft="provisional">∅∅∅</nameField>
+			<nameField type="surname-core" draft="provisional">වූස්ටර්</nameField>
+			<nameField type="surname2" draft="provisional">∅∅∅</nameField>
+			<nameField type="generation" draft="provisional">බාල</nameField>
+			<nameField type="credentials" draft="provisional">පා.ම.</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
 			<nameField type="given">සින්බෑඩ්</nameField>

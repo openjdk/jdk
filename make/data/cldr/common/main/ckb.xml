@@ -11,6 +11,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<language type="ckb"/>
 	</identity>
 	<localeDisplayNames>
+		<localeDisplayPattern>
+			<localePattern>{0} ({1})</localePattern>
+			<localeSeparator>{0}، {1}</localeSeparator>
+			<localeKeyTypePattern>{0}: {1}</localeKeyTypePattern>
+		</localeDisplayPattern>
 		<languages>
 			<language type="aa">ئەفار</language>
 			<language type="ab">ئەبخازی</language>
@@ -593,7 +598,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">ئیسرائیل</territory>
 			<territory type="IM">دوورگەی مان</territory>
 			<territory type="IN">ھیندستان</territory>
-			<territory type="IO">ھەرێمی بەریتانی لە ئۆقیانووسی ھیند</territory>
+			<territory type="IO" draft="provisional">ھەرێمی بەریتانی لە ئۆقیانووسی ھیند</territory>
 			<territory type="IQ">عێراق</territory>
 			<territory type="IR">ئێران</territory>
 			<territory type="IS">ئایسلەند</territory>
@@ -787,10 +792,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[ئ ا ب پ ت ج چ ح خ د ر ز ڕ ژ س ش ع غ ف ڤ ق ک گ ل ڵ م ن ھ ە و ۆ ی ێ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200E\u200F \u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 ء آ أ ؤ إ ة ث ذ ص ض ط ظ ك ه ى ي]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="unconfirmed">[ئ ا ب پ ت ج چ ح خ د ر ز ڕ ژ س ش ع غ ف ڤ ق ک گ ل ڵ م ن ھ ە و ۆ ی ێ]</exemplarCharacters>
+		<exemplarCharacters>[ئ ا ب پ ت ج چ ح خ د ر ز ڕ ژ س ش ع غ ف ڤ ق ک گ ل ڵ م ن ه ە و ۆ ی ێ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200E\u200F ً ٌ ٍ َ ُ ِ ّ ْ ء آ أ ؤ إ ة ث ذ ص ض ط ظ ك ھ ى ي]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[ئ ا ب پ ت ج چ ح خ د ر ز ڕ ژ س ش ع غ ف ڤ ق ک گ ل ڵ م ن ه ە و ۆ ی ێ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E\u200F \- ‑ , ٫ ٬ . % ٪ ‰ ؉ + 0٠ 1١ 2٢ 3٣ 4٤ 5٥ 6٦ 7٧ 8٨ 9٩]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — ، ؛ \: ! ؟ . … ' &quot; « » ( ) \[ \]]</exemplarCharacters>
 		<moreInformation draft="unconfirmed">؟</moreInformation>
 	</characters>
 	<dates>
@@ -1323,6 +1329,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 						<appendItem request="Timezone">{0} {1}</appendItem>
 					</appendItems>
 					<intervalFormats>
+						<intervalFormatFallback>{0} – {1}</intervalFormatFallback>
 						<intervalFormatItem id="MEd">
 							<greatestDifference id="d" draft="unconfirmed">E، M/d – E، M/d</greatestDifference>
 							<greatestDifference id="M" draft="unconfirmed">E، M/d – E، M/d</greatestDifference>
@@ -1487,6 +1494,15 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName draft="unconfirmed">کاتی هەرێمی</displayName>
 			</field>
 		</fields>
+		<timeZoneNames>
+			<hourFormat>+HH:mm;-HH:mm</hourFormat>
+			<gmtFormat>گرینیچ {0}</gmtFormat>
+			<gmtZeroFormat>گرینیچ</gmtZeroFormat>
+			<regionFormat>بەکاتی {0}</regionFormat>
+			<regionFormat type="daylight">کاتی {0} هاوینە</regionFormat>
+			<regionFormat type="standard">کاتی {0} فەرمی</regionFormat>
+			<fallbackFormat>{1} ({0})</fallbackFormat>
+		</timeZoneNames>
 	</dates>
 	<numbers>
 		<defaultNumberingSystem>arab</defaultNumberingSystem>

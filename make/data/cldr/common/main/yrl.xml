@@ -841,7 +841,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Isirayeu</territory>
 			<territory type="IM">Mã Kapuãma</territory>
 			<territory type="IN">Ĩdiya</territory>
-			<territory type="IO">Biritãniku Usuasawa Useyanu Ĩdiku</territory>
+			<territory type="IO" draft="provisional">Biritãniku Usuasawa Useyanu Ĩdiku</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Irã</territory>
 			<territory type="IS">Isirãdiya</territory>
@@ -1077,9 +1077,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Akayupawa Greguriuwara</type>
 			<type key="calendar" type="hebrew">Akayupawa Yudeu</type>
 			<type key="calendar" type="indian">Akayupawa Tetãmapawa Ĩdiawara</type>
-			<type key="calendar" type="islamic">Akayupawa Islãsuera</type>
-			<type key="calendar" type="islamic-civil">Akayupawa Siwiu Islãsuera</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">Akayupawa Islãsuera (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Akayupawa Islãsuera</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Akayupawa Siwiu Islãsuera</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Akayupawa Islãsuera (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Akayupawa ISSO-8601</type>
 			<type key="calendar" type="japanese">Akayupawa Nipõwara</type>
 			<type key="calendar" type="persian">Akayupawa Persiyawara</type>
@@ -1210,11 +1210,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a ã b d e ẽ g i ĩ k m n p r s t u ũ w x y]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ª á à ă â å ä ā æ c ç é è ĕ ê ë ē f h í ì ĭ î ï ī j l ñ o º ó ò ŏ ô ö õ ø ō œ q ú ù ŭ û ü ū v ÿ ỹ z]</exemplarCharacters>
+		<exemplarCharacters>[aã b d eẽ g iĩ k m n p r s t uũ w x y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ªáàăâåäā æ cç éèĕêëē f h íìĭîïī j l ñ oºóòŏôöõøō œ q úùŭûüū v ÿỹ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E G I K M N P R S T U W X Y]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ¡ ? ¿ . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ¡ ? ¿ . … '‘’ &quot;“” « » ( ) \[ \] § @ * / \\ \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}… {1}</ellipsis>
@@ -1223,23 +1223,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>
@@ -7279,9 +7279,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} karuria-ita</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Karuria</displayName>
-				<unitPattern count="one">{0} Karuria</unitPattern>
-				<unitPattern count="other">{0} Karuria-ita</unitPattern>
+				<displayName draft="provisional">Karuria</displayName>
+				<unitPattern count="one" draft="provisional">{0} Karuria</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Karuria-ita</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kirujoule-ita</displayName>
@@ -7369,14 +7369,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pikisel-ita puregada rupi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>pitusá-ita sẽtimeturu rupi</displayName>
-				<unitPattern count="one">{0} pitusá sẽtimeturu rupi</unitPattern>
-				<unitPattern count="other">{0} pitusá-ita sẽtimeturu rupi</unitPattern>
+				<displayName draft="provisional">pitusá-ita sẽtimeturu rupi</displayName>
+				<unitPattern count="one" draft="provisional">{0} pitusá sẽtimeturu rupi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pitusá-ita sẽtimeturu rupi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>pitusá-ita puregada rupi</displayName>
-				<unitPattern count="one">{0} pitusá puregada rupi</unitPattern>
-				<unitPattern count="other">{0} pitusá-ita puregada rupi</unitPattern>
+				<displayName draft="provisional">pitusá-ita puregada rupi</displayName>
+				<unitPattern count="one" draft="provisional">{0} pitusá puregada rupi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pitusá-ita puregada rupi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>apekatusawa-ita</displayName>
@@ -8108,9 +8108,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kirujoule</displayName>
@@ -8176,14 +8176,14 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="one">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<unitPattern count="one">{0} km</unitPattern>
@@ -9045,7 +9045,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">mayewera</styleName>
 		<styleName type="wght" subtype="500">pitérupi</styleName>
 		<styleName type="wght" subtype="600">negiritu-pisawera</styleName>
-		<styleName type="wght" subtype="600" alt="demi">negiritu-pisawera</styleName>
 		<styleName type="wght" subtype="700">negiritu</styleName>
 		<styleName type="wght" subtype="800">negiritu-retana</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">negiritu-retanaeté</styleName>

@@ -848,7 +848,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">इज्राईल</territory>
 			<territory type="IM">आयोल अफ मेन</territory>
 			<territory type="IN">भारत</territory>
-			<territory type="IO">ब्रिटिशनि भारतारि लैथो बाहागो</territory>
+			<territory type="IO" draft="provisional">ब्रिटिशनि भारतारि लैथो बाहागो</territory>
 			<territory type="IQ">ईराक</territory>
 			<territory type="IR">ईरान</territory>
 			<territory type="IS">आइसलेण्ड</territory>
@@ -1051,9 +1051,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">ग्रेग’रियान फान्जामुथि</type>
 			<type key="calendar" type="hebrew">हिब्रिउ फान्जामुथि</type>
 			<type key="calendar" type="indian">भारतनि हादोरनां फान्जामुथि</type>
-			<type key="calendar" type="islamic">इस्लामिक फान्जामुथि</type>
-			<type key="calendar" type="islamic-civil">इस्लामिक फान्जामुथि ( फारि, हादोरारि मुगा)</type>
-			<type key="calendar" type="islamic-umalqura">इस्लामिक फान्जामुथि( ऊम आल-कूरा)</type>
+			<type key="calendar" type="islamic" draft="provisional">इस्लामिक फान्जामुथि</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">इस्लामिक फान्जामुथि ( फारि, हादोरारि मुगा)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">इस्लामिक फान्जामुथि( ऊम आल-कूरा)</type>
 			<type key="calendar" type="iso8601">आइ.एस.अ-8601 फान्जामुथि</type>
 			<type key="calendar" type="japanese">जापानीज फान्जामुथि</type>
 			<type key="calendar" type="persian">पार्सियान फान्जामुथि</type>
@@ -1132,11 +1132,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u093C \u0901 \u0902 अ आ इ ई उ ऊ ऍ ए ऐ ऑ ओ औ क ख ग घ च छ ज झ ञ ट ठ ड {ड\u093C} ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह ा ि ी \u0941 \u0942 \u0943 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
+		<exemplarCharacters>[़ ँ ं अ आ इ ई उ ऊ ऍ ए ऐ ऑ ओ औ क ख ग घ च छ ज झ ञ ट ठ ड{ड़} ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह ा ि ी ु ू ृ ॅ े ै ॉ ो ौ ्]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
-		<exemplarCharacters type="index">[अ आ इ ई उ ऊ ऍ ए ऐ ऑ ओ औ क ख ग घ च छ ज झ ञ ट ठ ड {ड\u093C} ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह]</exemplarCharacters>
+		<exemplarCharacters type="index">[अ आ इ ई उ ऊ ऍ ए ऐ ऑ ओ औ क ख ग घ च छ ज झ ञ ट ठ ड{ड़} ढ ण त थ द ध न प फ ब भ म य र ल ळ व श ष स ह]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>

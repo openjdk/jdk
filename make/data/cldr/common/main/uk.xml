@@ -909,7 +909,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Ізраїль</territory>
 			<territory type="IM">Острів Мен</territory>
 			<territory type="IN">Індія</territory>
-			<territory type="IO">Британська територія в Індійському Океані</territory>
+			<territory type="IO" draft="provisional">Британська територія в Індійському Океані</territory>
 			<territory type="IQ">Ірак</territory>
 			<territory type="IR">Іран</territory>
 			<territory type="IS">Ісландія</territory>
@@ -1138,11 +1138,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">григоріанський календар</type>
 			<type key="calendar" type="hebrew">єврейський календар</type>
 			<type key="calendar" type="indian">індійський світський календар</type>
-			<type key="calendar" type="islamic">ісламський календар</type>
-			<type key="calendar" type="islamic-civil">мусульманський світський календар</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">ісламський календар Саудівської Аравії</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">ісламський астрономічний календар</type>
-			<type key="calendar" type="islamic-umalqura">ісламський календар (Умм аль-Кура)</type>
+			<type key="calendar" type="islamic" draft="provisional">ісламський календар</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">мусульманський світський календар</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">ісламський календар Саудівської Аравії</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">ісламський астрономічний календар</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">ісламський календар (Умм аль-Кура)</type>
 			<type key="calendar" type="iso8601">календар ISO-8601</type>
 			<type key="calendar" type="japanese">японський календар</type>
 			<type key="calendar" type="persian">перський календар</type>
@@ -1288,10 +1288,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</contextTransforms>
 	<characters>
 		<exemplarCharacters>[а б в г ґ д е є ж з и і ї й к л м н о п р с т у ф х ц ч ш щ ь ю я ʼ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[{а\u0301} {е\u0301} ё {є\u0301} {и\u0301} {і\u0301} {ї\u0301} {о\u0301} {у\u0301} ъ ы э {ю\u0301} {я\u0301}]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[{а́} {е́}ё {є́} {и́} {і́} {ї́} {о́} {у́} ъ ы э {ю́} {я́}]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б В Г Ґ Д Е Є Ж З И І Ї Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Щ Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ – , ; \: ! ? . ' ’ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \\ №]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ – , ; \: ! ? . '’ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \\ №]</exemplarCharacters>
 		<ellipsis type="final" draft="contributed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="contributed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="contributed">{0}…{1}</ellipsis>
@@ -1300,23 +1300,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0}…{1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -9869,11 +9869,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} калорії</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>кілокалорії</displayName>
-				<unitPattern count="one">{0} кілокалорія</unitPattern>
-				<unitPattern count="few">{0} кілокалорії</unitPattern>
-				<unitPattern count="many">{0} кілокалорій</unitPattern>
-				<unitPattern count="other">{0} кілокалорії</unitPattern>
+				<displayName draft="provisional">кілокалорії</displayName>
+				<unitPattern count="one" draft="provisional">{0} кілокалорія</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кілокалорії</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кілокалорій</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кілокалорії</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>masculine</gender>
@@ -10275,25 +10275,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} пікселя на дюйм</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>точки на сантиметр</displayName>
-				<unitPattern count="one">{0} точка на сантиметр</unitPattern>
-				<unitPattern count="few">{0} точки на сантиметр</unitPattern>
-				<unitPattern count="many">{0} точок на сантиметр</unitPattern>
-				<unitPattern count="other">{0} точки на сантиметр</unitPattern>
+				<displayName draft="provisional">точки на сантиметр</displayName>
+				<unitPattern count="one" draft="provisional">{0} точка на сантиметр</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} точки на сантиметр</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} точок на сантиметр</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} точки на сантиметр</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>точки на дюйм</displayName>
-				<unitPattern count="one">{0} точка на дюйм</unitPattern>
-				<unitPattern count="few">{0} точки на дюйм</unitPattern>
-				<unitPattern count="many">{0} точок на дюйм</unitPattern>
-				<unitPattern count="other">{0} точки на дюйм</unitPattern>
+				<displayName draft="provisional">точки на дюйм</displayName>
+				<unitPattern count="one" draft="provisional">{0} точка на дюйм</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} точки на дюйм</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} точок на дюйм</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} точки на дюйм</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>точки</displayName>
-				<unitPattern count="one">{0} точка</unitPattern>
-				<unitPattern count="few">{0} точки</unitPattern>
-				<unitPattern count="many">{0} точок</unitPattern>
-				<unitPattern count="other">{0} точки</unitPattern>
+				<displayName draft="provisional">точки</displayName>
+				<unitPattern count="one" draft="provisional">{0} точка</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} точки</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} точок</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} точки</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>радіус Землі</displayName>
@@ -12550,11 +12550,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ккал</displayName>
-				<unitPattern count="one">{0} ккал</unitPattern>
-				<unitPattern count="few">{0} ккал</unitPattern>
-				<unitPattern count="many">{0} ккал</unitPattern>
-				<unitPattern count="other">{0} ккал</unitPattern>
+				<displayName draft="provisional">ккал</displayName>
+				<unitPattern count="one" draft="provisional">{0} ккал</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ккал</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ккал</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ккал</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>кілоджоуль</displayName>
@@ -12683,25 +12683,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>точки на см</displayName>
-				<unitPattern count="one">{0} точка на см</unitPattern>
-				<unitPattern count="few">{0} точки на см</unitPattern>
-				<unitPattern count="many">{0} точок на см</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} dpcm</unitPattern>
+				<displayName draft="provisional">точки на см</displayName>
+				<unitPattern count="one" draft="provisional">{0} точка на см</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} точки на см</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} точок на см</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="many">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>тчк</displayName>
-				<unitPattern count="one">{0} тчк</unitPattern>
-				<unitPattern count="few">{0} тчк</unitPattern>
-				<unitPattern count="many">{0} тчк</unitPattern>
-				<unitPattern count="other">{0} тчк</unitPattern>
+				<displayName draft="provisional">тчк</displayName>
+				<unitPattern count="one" draft="provisional">{0} тчк</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} тчк</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} тчк</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} тчк</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -13968,11 +13968,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName draft="contributed">ккал</displayName>
-				<unitPattern count="one" draft="contributed">{0} ккал</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} ккал</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} ккал</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} ккал</unitPattern>
+				<displayName draft="provisional">ккал</displayName>
+				<unitPattern count="one" draft="provisional">{0} ккал</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ккал</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ккал</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ккал</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName draft="contributed">кДж</displayName>
@@ -14101,25 +14101,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} пкс/“</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName draft="contributed">тчк/см</displayName>
-				<unitPattern count="one" draft="contributed">{0} тчк/см</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} тчк/см</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} тчк/см</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} тчк/см</unitPattern>
+				<displayName draft="provisional">тчк/см</displayName>
+				<unitPattern count="one" draft="provisional">{0} тчк/см</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} тчк/см</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} тчк/см</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} тчк/см</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName draft="contributed">тчк/“</displayName>
-				<unitPattern count="one" draft="contributed">{0} тчк/“</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} тчк/“</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} тчк/“</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} тчк/“</unitPattern>
+				<displayName draft="provisional">тчк/“</displayName>
+				<unitPattern count="one" draft="provisional">{0} тчк/“</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} тчк/“</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} тчк/“</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} тчк/“</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName draft="contributed">тчк</displayName>
-				<unitPattern count="one" draft="contributed">{0} тчк</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} тчк</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} тчк</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} тчк</unitPattern>
+				<displayName draft="provisional">тчк</displayName>
+				<unitPattern count="one" draft="provisional">{0} тчк</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} тчк</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} тчк</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} тчк</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName draft="contributed">R⊕</displayName>
@@ -15181,7 +15181,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{title} {surname} {surname2} {given-initial} {given2-initial} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{surname-initial} {surname2-initial}{given-informal}</namePattern>
+			<namePattern>{surname-initial} {surname2-initial} {given-informal}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
 			<namePattern>{surname-monogram-allCaps}{surname2-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>

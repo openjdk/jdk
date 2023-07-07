@@ -890,10 +890,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[а ә б в г {гә} {гь} ӷ {ӷә} {ӷь} д {дә} е ж {жә} {жь} з ӡ {ӡә} и к {кә} {кь} қ {қә} {қь} ҟ {ҟә} {ҟь} л м н о п ԥ р с т {тә} ҭ {ҭә} у ф х {хә} {хь} ҳ {ҳә} ц {цә} ҵ {ҵә} ч ҷ ҽ ҿ џ {џь} ш {шә} {шь} ы ь ҩ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[{а\u0301} ҕ {ҕә} {ҕь} {е\u0301} {и\u0301} {о\u0301} ҧ {у\u0301} {ы\u0301}]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[{а́} ҕ {ҕә} {ҕь} {е́} {и́} {о́} ҧ {у́} {ы́}]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б В Г {ГӘ} {ГЬ} Ӷ {ӶӘ} {ӶЬ} Д {ДӘ} Е Ж {ЖӘ} {ЖЬ} З Ӡ {ӠӘ} И К {КӘ} {КЬ} Қ {ҚӘ} {ҚЬ} Ҟ {ҞӘ} {ҞЬ} Л М Н О П Ԥ Р С Т {ТӘ} Ҭ {ҬӘ} У Ф Х {ХӘ} {ХЬ} Ҳ {ҲӘ} Ц {ЦӘ} Ҵ {ҴӘ} Ч Ҷ Ҽ Ҿ Џ {ЏЬ} Ш {ШӘ} {ШЬ} Ы Ҩ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘‚ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
@@ -902,28 +902,28 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial" draft="unconfirmed">{0} … {1}</ellipsis>
 		<moreInformation draft="unconfirmed">?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="unconfirmed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="unconfirmed">[\:∶]</parseLenient>
+			<parseLenient sample="-" draft="unconfirmed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="unconfirmed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="unconfirmed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’" draft="unconfirmed">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%" draft="unconfirmed">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰" draft="unconfirmed">[؉‰]</parseLenient>
-			<parseLenient sample="$" draft="unconfirmed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="unconfirmed">[£₤]</parseLenient>
+			<parseLenient sample="." draft="unconfirmed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="’" draft="unconfirmed">['＇’ ՚ ᾽᾿ ʼ]</parseLenient>
+			<parseLenient sample="%" draft="unconfirmed">[%％﹪ ٪]</parseLenient>
+			<parseLenient sample="‰" draft="unconfirmed">[‰ ؉]</parseLenient>
+			<parseLenient sample="$" draft="unconfirmed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="unconfirmed">[£ ₤]</parseLenient>
 			<parseLenient sample="¥" draft="unconfirmed">[¥￥]</parseLenient>
 			<parseLenient sample="₩" draft="unconfirmed">[₩￦]</parseLenient>
-			<parseLenient sample="₹" draft="unconfirmed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="₹" draft="unconfirmed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="unconfirmed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="unconfirmed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="unconfirmed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="unconfirmed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="unconfirmed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="unconfirmed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="unconfirmed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="unconfirmed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="unconfirmed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="unconfirmed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>

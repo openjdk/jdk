@@ -562,7 +562,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israel nutome</territory>
 			<territory type="IM">Aisle of Man nutome</territory>
 			<territory type="IN">India nutome</territory>
-			<territory type="IO">Britaintɔwo ƒe india ƒudome nutome</territory>
+			<territory type="IO" draft="provisional">Britaintɔwo ƒe india ƒudome nutome</territory>
 			<territory type="IQ">iraqdukɔ</territory>
 			<territory type="IR">Iran nutome</territory>
 			<territory type="IS">Aiseland nutome</territory>
@@ -730,8 +730,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Gregorian kalenda</type>
 			<type key="calendar" type="hebrew">hebritɔwo ƒe kalenda</type>
 			<type key="calendar" type="indian">india dukɔ ƒe kalenda</type>
-			<type key="calendar" type="islamic">islam subɔlawo ƒe kalenda</type>
-			<type key="calendar" type="islamic-civil">islam subɔlawo ƒe sivil kalenda</type>
+			<type key="calendar" type="islamic" draft="provisional">islam subɔlawo ƒe kalenda</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">islam subɔlawo ƒe sivil kalenda</type>
 			<type key="calendar" type="japanese">japantɔwo ƒe kalenda</type>
 			<type key="calendar" type="persian">persiatɔwo ƒe kalenda</type>
 			<type key="calendar" type="roc">china repɔbliktɔwo ƒe kalenda tso 1912</type>
@@ -813,11 +813,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á à ã b d ɖ e é è ẽ ɛ {ɛ\u0301} {ɛ\u0300} {ɛ\u0303} f ƒ g ɣ h x i í ì ĩ k l m n ŋ o ó ò õ ɔ {ɔ\u0301} {ɔ\u0300} {ɔ\u0303} p r s t u ú ù ũ v ʋ w y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ă â å ä ā æ c ç ĕ ê ë ĭ î ï j ñ ŏ ô ö ø œ q ŭ û ü ÿ]</exemplarCharacters>
+		<exemplarCharacters>[aáàã b d ɖ eéèẽ ɛ{ɛ́}{ɛ̀}{ɛ̃} f ƒ g ɣ h x iíìĩ k l m n ŋ oóòõ ɔ{ɔ́}{ɔ̀}{ɔ̃} p r s t uúùũ v ʋ w y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ăâåäā æ cç ĕêë ĭîï j ñ ŏôöø œ q ŭûü ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D Ɖ E Ɛ F Ƒ G Ɣ H X I K L M N Ŋ O Ɔ P R S T U V Ʋ W Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] \{ \} § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>

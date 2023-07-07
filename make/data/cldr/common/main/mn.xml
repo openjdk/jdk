@@ -800,7 +800,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Израиль</territory>
 			<territory type="IM">Мэн Арал</territory>
 			<territory type="IN">Энэтхэг</territory>
-			<territory type="IO">Британийн харьяа Энэтхэгийн далай дахь нутаг дэвсгэр</territory>
+			<territory type="IO" draft="provisional">Британийн харьяа Энэтхэгийн далай дахь нутаг дэвсгэр</territory>
 			<territory type="IQ">Ирак</territory>
 			<territory type="IR">Иран</territory>
 			<territory type="IS">Исланд</territory>
@@ -984,11 +984,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">грегорийн цаглавар</type>
 			<type key="calendar" type="hebrew">еврей цаглавар</type>
 			<type key="calendar" type="indian">энэтхэгийн үндэсний цаглавар</type>
-			<type key="calendar" type="islamic">исламын цаглавар</type>
-			<type key="calendar" type="islamic-civil">исламын цаглавар (tabular, civil epoch)</type>
-			<type key="calendar" type="islamic-rgsa">исламийн цаглавар (саудын араб, газарзүйн)</type>
-			<type key="calendar" type="islamic-tbla">исламийн цаглавар (хүснэгтэн, одон орны эрин)</type>
-			<type key="calendar" type="islamic-umalqura">исламын цаглавар (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">исламын цаглавар</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">исламын цаглавар (tabular, civil epoch)</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">исламийн цаглавар (саудын араб, газарзүйн)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">исламийн цаглавар (хүснэгтэн, одон орны эрин)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">исламын цаглавар (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 цаглавар</type>
 			<type key="calendar" type="japanese">япон цаглавар</type>
 			<type key="calendar" type="persian">перс цаглавар</type>
@@ -1116,11 +1116,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[а б в г д е ё ж з и й к л м н о ө п р с т у ү ф х ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters>[а б в г д её ж з и й к л м н о ө п р с т у ү ф х ц ч ш щ ъ ы ь э ю я]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ә җ ӊ һ]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б В Г Д Е Ж З И Й К Л М Н О Ө П Р С Т У Ү Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -8602,9 +8602,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} калори</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>калори</displayName>
-				<unitPattern count="one">{0} калори</unitPattern>
-				<unitPattern count="other">{0} калори</unitPattern>
+				<displayName draft="provisional">калори</displayName>
+				<unitPattern count="one" draft="provisional">{0} калори</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} калори</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>килоЖоуль</displayName>
@@ -8697,19 +8697,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} пиксель/инч</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>цэг/см</displayName>
-				<unitPattern count="one">{0} цэг/см</unitPattern>
-				<unitPattern count="other">{0} цэг/см</unitPattern>
+				<displayName draft="provisional">цэг/см</displayName>
+				<unitPattern count="one" draft="provisional">{0} цэг/см</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} цэг/см</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>цэг</displayName>
-				<unitPattern count="one">{0} цэг</unitPattern>
-				<unitPattern count="other">{0} цэг</unitPattern>
+				<displayName draft="provisional">цэг</displayName>
+				<unitPattern count="one" draft="provisional">{0} цэг</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} цэг</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>дэлхийн радиус</displayName>
@@ -9650,9 +9650,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>кал</displayName>
-				<unitPattern count="one">{0} кал</unitPattern>
-				<unitPattern count="other">{0} кал</unitPattern>
+				<displayName draft="provisional">кал</displayName>
+				<unitPattern count="one" draft="provisional">{0} кал</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>килоЖоуль</displayName>
@@ -9740,19 +9740,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>цэг/см</displayName>
-				<unitPattern count="one">{0} цэг/см</unitPattern>
-				<unitPattern count="other">{0} цэг/см</unitPattern>
+				<displayName draft="provisional">цэг/см</displayName>
+				<unitPattern count="one" draft="provisional">{0} цэг/см</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} цэг/см</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>цэг</displayName>
-				<unitPattern count="one">{0} цэг</unitPattern>
-				<unitPattern count="other">{0} цэг</unitPattern>
+				<displayName draft="provisional">цэг</displayName>
+				<unitPattern count="one" draft="provisional">{0} цэг</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} цэг</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -10691,9 +10691,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>кал</displayName>
-				<unitPattern count="one">{0} кал</unitPattern>
-				<unitPattern count="other">{0} кал</unitPattern>
+				<displayName draft="provisional">кал</displayName>
+				<unitPattern count="one" draft="provisional">{0} кал</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>килоЖоуль</displayName>
@@ -10786,19 +10786,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>цэг/см</displayName>
-				<unitPattern count="one">{0} цэг/см</unitPattern>
-				<unitPattern count="other">{0} цэг/см</unitPattern>
+				<displayName draft="provisional">цэг/см</displayName>
+				<unitPattern count="one" draft="provisional">{0} цэг/см</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} цэг/см</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>цэг/инч</displayName>
-				<unitPattern count="one">{0} цэг/инч</unitPattern>
-				<unitPattern count="other">{0} цэг/инч</unitPattern>
+				<displayName draft="provisional">цэг/инч</displayName>
+				<unitPattern count="one" draft="provisional">{0} цэг/инч</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} цэг/инч</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>цэг</displayName>
-				<unitPattern count="one">{0}цэг</unitPattern>
-				<unitPattern count="other">{0}цэг</unitPattern>
+				<displayName draft="provisional">цэг</displayName>
+				<unitPattern count="one" draft="provisional">{0}цэг</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}цэг</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11550,7 +11550,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">ердийн</styleName>
 		<styleName type="wght" subtype="500">дунд</styleName>
 		<styleName type="wght" subtype="600">хагас тодруулах</styleName>
-		<styleName type="wght" subtype="600" alt="demi">хагас тодруулах</styleName>
 		<styleName type="wght" subtype="700">тодруулах</styleName>
 		<styleName type="wght" subtype="800">илүү тодруулах</styleName>
 		<styleName type="wght" subtype="900">хар</styleName>
@@ -11691,27 +11690,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given">Синбад</nameField>
+			<nameField type="given" draft="provisional">Синбад</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given">Ирине</nameField>
-			<nameField type="surname">Адлэр</nameField>
+			<nameField type="given" draft="provisional">Ирине</nameField>
+			<nameField type="surname" draft="provisional">Адлэр</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given">Мэри Сю</nameField>
-			<nameField type="given2">Хамиш</nameField>
-			<nameField type="surname">Ватсон</nameField>
+			<nameField type="given" draft="provisional">Мэри Сю</nameField>
+			<nameField type="given2" draft="provisional">Хамиш</nameField>
+			<nameField type="surname" draft="provisional">Ватсон</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">Ноён</nameField>
-			<nameField type="given">Бэртрам Вилбэрфорс</nameField>
-			<nameField type="given-informal">Бэртие</nameField>
-			<nameField type="given2">Хэнри Роберт</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">Вүүстэр</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
-			<nameField type="generation">∅∅∅</nameField>
-			<nameField type="credentials">∅∅∅</nameField>
+			<nameField type="title" draft="provisional">Ноён</nameField>
+			<nameField type="given" draft="provisional">Бэртрам Вилбэрфорс</nameField>
+			<nameField type="given-informal" draft="provisional">Бэртие</nameField>
+			<nameField type="given2" draft="provisional">Хэнри Роберт</nameField>
+			<nameField type="surname-prefix" draft="provisional">∅∅∅</nameField>
+			<nameField type="surname-core" draft="provisional">Вүүстэр</nameField>
+			<nameField type="surname2" draft="provisional">∅∅∅</nameField>
+			<nameField type="generation" draft="provisional">∅∅∅</nameField>
+			<nameField type="credentials" draft="provisional">∅∅∅</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
 			<nameField type="given">Синбад</nameField>

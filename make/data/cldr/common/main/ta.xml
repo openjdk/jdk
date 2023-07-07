@@ -882,7 +882,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">இஸ்ரேல்</territory>
 			<territory type="IM">ஐல் ஆஃப் மேன்</territory>
 			<territory type="IN">இந்தியா</territory>
-			<territory type="IO">பிரிட்டிஷ் இந்தியப் பெருங்கடல் பிரதேசம்</territory>
+			<territory type="IO" draft="provisional">பிரிட்டிஷ் இந்தியப் பெருங்கடல் பிரதேசம்</territory>
 			<territory type="IQ">ஈராக்</territory>
 			<territory type="IR">ஈரான்</territory>
 			<territory type="IS">ஐஸ்லாந்து</territory>
@@ -1079,10 +1079,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">கிரிகோரியன் நாள்காட்டி</type>
 			<type key="calendar" type="hebrew">ஹீப்ரு நாள்காட்டி</type>
 			<type key="calendar" type="indian">இந்திய தேச நாள்காட்டி</type>
-			<type key="calendar" type="islamic">இஸ்லாமிய நாள்காட்டி</type>
-			<type key="calendar" type="islamic-civil">இஸ்லாமிய சிவில் நாள்காட்டி</type>
-			<type key="calendar" type="islamic-tbla">இஸ்லாமிய வானியல் நாள்காட்டி</type>
-			<type key="calendar" type="islamic-umalqura">இஸ்லாமிய நாள்காட்டி (உம்-அல்-குரா)</type>
+			<type key="calendar" type="islamic" draft="provisional">இஸ்லாமிய நாள்காட்டி</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">இஸ்லாமிய சிவில் நாள்காட்டி</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">இஸ்லாமிய வானியல் நாள்காட்டி</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">இஸ்லாமிய நாள்காட்டி (உம்-அல்-குரா)</type>
 			<type key="calendar" type="iso8601">ISO-8601 நாள்காட்டி</type>
 			<type key="calendar" type="japanese">ஜப்பானிய நாள்காட்டி</type>
 			<type key="calendar" type="persian">பாரசீக நாள்காட்டி</type>
@@ -1195,11 +1195,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ ஃ க ங ச ஞ ட ண த ந ப ம ய ர ல வ ழ ள ற ன ஜ ஷ ஸ ஹ ா ி \u0BC0 ு ூ ெ ே ை ொ ோ ௌ \u0BCD]</exemplarCharacters>
+		<exemplarCharacters>[அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ ஃ க ங ச ஞ ட ண த ந ப ம ய ர ல வ ழ ள ற ன ஜ ஷ ஸ ஹ ா ி ீ ு ூ ெ ே ை ொ ோ ௌ ்]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D]</exemplarCharacters>
 		<exemplarCharacters type="index">[அ ஆ இ ஈ உ ஊ எ ஏ ஐ ஒ ஓ ஔ க ங ச ஞ ட ண த ந ப ம ய ர ல வ ழ ள ற ன]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0௦ 1௧ 2௨ 3௩ 4௪ 5௫ 6௬ 7௭ 8௮ 9௯]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1208,23 +1208,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -7627,9 +7627,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="dative">{0} கலோரிகளுக்கு</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>கலோரிகள்</displayName>
-				<unitPattern count="one">{0} கலோரி</unitPattern>
-				<unitPattern count="other">{0} கலோரிகள்</unitPattern>
+				<displayName draft="provisional">கலோரிகள்</displayName>
+				<unitPattern count="one" draft="provisional">{0} கலோரி</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} கலோரிகள்</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>கிலோஜூல்கள்</displayName>
@@ -7800,19 +7800,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} பிக்சல்கள்/ அங்குலம்</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>புள்ளிகள் / சென்டிமீட்டர்</displayName>
-				<unitPattern count="one">{0} புள்ளி / சென்டிமீட்டர்</unitPattern>
-				<unitPattern count="other">{0} புள்ளிகள் / சென்டிமீட்டர்</unitPattern>
+				<displayName draft="provisional">புள்ளிகள் / சென்டிமீட்டர்</displayName>
+				<unitPattern count="one" draft="provisional">{0} புள்ளி / சென்டிமீட்டர்</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} புள்ளிகள் / சென்டிமீட்டர்</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>புள்ளிகள் / அங்குலம்</displayName>
-				<unitPattern count="one">{0} புள்ளி / அங்குலம்</unitPattern>
-				<unitPattern count="other">{0} புள்ளிகள் / அங்குலம்</unitPattern>
+				<displayName draft="provisional">புள்ளிகள் / அங்குலம்</displayName>
+				<unitPattern count="one" draft="provisional">{0} புள்ளி / அங்குலம்</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} புள்ளிகள் / அங்குலம்</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>புள்ளிகள்</displayName>
-				<unitPattern count="one">{0}புள்ளி</unitPattern>
-				<unitPattern count="other">{0}புள்ளிகள்</unitPattern>
+				<displayName draft="provisional">புள்ளிகள்</displayName>
+				<unitPattern count="one" draft="provisional">{0}புள்ளி</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}புள்ளிகள்</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>புவி ஆரம்</displayName>
@@ -9030,9 +9030,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} கலோ.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>கலோ.</displayName>
-				<unitPattern count="one">{0} கலோ.</unitPattern>
-				<unitPattern count="other">{0} கலோ.</unitPattern>
+				<displayName draft="provisional">கலோ.</displayName>
+				<unitPattern count="one" draft="provisional">{0} கலோ.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} கலோ.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>கி.ஜூ.</displayName>
@@ -9125,19 +9125,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} பிக். / அங்.</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>பு / செ.மீ</displayName>
-				<unitPattern count="one">{0} பு / செ.மீ</unitPattern>
-				<unitPattern count="other">{0} பு / செ.மீ</unitPattern>
+				<displayName draft="provisional">பு / செ.மீ</displayName>
+				<unitPattern count="one" draft="provisional">{0} பு / செ.மீ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} பு / செ.மீ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>பு / அங்.</displayName>
-				<unitPattern count="one">{0} பு / அங்.</unitPattern>
-				<unitPattern count="other">{0} பு / அங்.</unitPattern>
+				<displayName draft="provisional">பு / அங்.</displayName>
+				<unitPattern count="one" draft="provisional">{0} பு / அங்.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} பு / அங்.</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>புள்ளி</displayName>
-				<unitPattern count="one">{0} புள்ளி</unitPattern>
-				<unitPattern count="other">{0} புள்ளி</unitPattern>
+				<displayName draft="provisional">புள்ளி</displayName>
+				<unitPattern count="one" draft="provisional">{0} புள்ளி</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} புள்ளி</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -10080,9 +10080,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}கலோ.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>கலோ.</displayName>
-				<unitPattern count="one" draft="contributed">{0}கலோ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}கலோ.</unitPattern>
+				<displayName draft="provisional">கலோ.</displayName>
+				<unitPattern count="one" draft="provisional">{0}கலோ.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}கலோ.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>கி.ஜூ.</displayName>
@@ -10175,19 +10175,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0}பி/அங்.</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>பு / செ.மீ</displayName>
-				<unitPattern count="one" draft="contributed">{0}பு/செ.மீ</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பு/செ.மீ</unitPattern>
+				<displayName draft="provisional">பு / செ.மீ</displayName>
+				<unitPattern count="one" draft="provisional">{0}பு/செ.மீ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}பு/செ.மீ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>பு / அங்.</displayName>
-				<unitPattern count="one" draft="contributed">{0}பு/அங்.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}பு/அங்.</unitPattern>
+				<displayName draft="provisional">பு / அங்.</displayName>
+				<unitPattern count="one" draft="provisional">{0}பு/அங்.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}பு/அங்.</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>புள்ளி</displayName>
-				<unitPattern count="one" draft="contributed">{0}புள்ளி</unitPattern>
-				<unitPattern count="other" draft="contributed">{0}புள்ளி</unitPattern>
+				<displayName draft="provisional">புள்ளி</displayName>
+				<unitPattern count="one" draft="provisional">{0}புள்ளி</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}புள்ளி</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>

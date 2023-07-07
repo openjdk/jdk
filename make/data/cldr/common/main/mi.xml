@@ -621,7 +621,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Aerana</territory>
 			<territory type="IM">Motu Tangata</territory>
 			<territory type="IN">Inia</territory>
-			<territory type="IO">Te Rohe o te Moana Īniana Piritihi</territory>
+			<territory type="IO" draft="provisional">Te Rohe o te Moana Īniana Piritihi</territory>
 			<territory type="IS">Tiorangi</territory>
 			<territory type="IT">Itāria</territory>
 			<territory type="JE">Tiehe</territory>
@@ -723,7 +723,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a ā e ē h i ī k m n {ng} o ō p r t u ū w {wh}]</exemplarCharacters>
+		<exemplarCharacters>[aā eē h iī k m n {ng} oō p r t uū w {wh}]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[b c d f g j l q s v x y z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A E H I K M N O P R T U W]</exemplarCharacters>
 	</characters>

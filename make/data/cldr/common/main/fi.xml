@@ -1043,7 +1043,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Mansaari</territory>
 			<territory type="IN">Intia</territory>
-			<territory type="IO">Brittiläinen Intian valtameren alue</territory>
+			<territory type="IO" draft="provisional">Brittiläinen Intian valtameren alue</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Islanti</territory>
@@ -1350,11 +1350,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">gregoriaaninen kalenteri</type>
 			<type key="calendar" type="hebrew">juutalainen kalenteri</type>
 			<type key="calendar" type="indian">intialainen kalenteri</type>
-			<type key="calendar" type="islamic">islamilainen kalenteri</type>
-			<type key="calendar" type="islamic-civil">islamilainen siviilikalenteri, perjantai-epookki</type>
-			<type key="calendar" type="islamic-rgsa">islamilainen saudiarabialainen kalenteri</type>
-			<type key="calendar" type="islamic-tbla">islamilainen matemaattinen kalenteri, torstai-epookki</type>
-			<type key="calendar" type="islamic-umalqura">islamilainen Umm al-Qura -kalenteri</type>
+			<type key="calendar" type="islamic" draft="provisional">islamilainen kalenteri</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">islamilainen siviilikalenteri, perjantai-epookki</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">islamilainen saudiarabialainen kalenteri</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">islamilainen matemaattinen kalenteri, torstai-epookki</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">islamilainen Umm al-Qura -kalenteri</type>
 			<type key="calendar" type="iso8601">ISO 8601 -kalenteri</type>
 			<type key="calendar" type="japanese">japanilainen kalenteri</type>
 			<type key="calendar" type="persian">persialainen kalenteri</type>
@@ -1522,11 +1522,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r s š t u v w x y z ž å ä ö]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â ã ą ā ć č ċ ç ď ð đ é è ê ě ë ė ę ē ğ ǧ ģ ǥ ȟ ħ í î ï İ į ī ı ǩ ķ ĺ ľ ļ ł ń ň ñ ņ ŋ ó ò ô ő õ œ ŕ ř ś ŝ ş ș ß ť ţ ț ŧ ú ù û ů ű ų ū ý ÿ ü ź ż ʒ ǯ þ æ ø]</exemplarCharacters>
+		<exemplarCharacters>[a b c d e f g h i j k l m n o p q r sš t u v w x y zž å ä ö]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâãąā ćčċç ďð đ éèêěëėęē ğǧģ ǥ ȟħ íîïİįī ı ǩķ ĺľļł ńňñņ ŋ óòôőõ œ ŕř śŝşș ß ťţț ŧ úùûůűųū ýÿü źż ʒǯ þ æ ø]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Å Ä Ö]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – , ; \: ! ? . … ’ ” » ( ) \[ \] § @ * / \\ \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – , ; \: ! ? . … ’ ” » ( ) \[ \] § @ * / \\ \&amp; #]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1535,23 +1535,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0}…{1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8885,9 +8885,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="partitive">{0} kaloria</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kilokalorit</displayName>
-				<unitPattern count="one">{0} kilokalori</unitPattern>
-				<unitPattern count="other">{0} kilokaloria</unitPattern>
+				<displayName draft="provisional">kilokalorit</displayName>
+				<unitPattern count="one" draft="provisional">{0} kilokalori</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kilokaloria</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoulet</displayName>
@@ -9084,19 +9084,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>piste</displayName>
-				<unitPattern count="one">{0} piste</unitPattern>
-				<unitPattern count="other">{0} pistettä</unitPattern>
+				<displayName draft="provisional">piste</displayName>
+				<unitPattern count="one" draft="provisional">{0} piste</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pistettä</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>Maan säteet</displayName>
@@ -10323,9 +10323,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -10412,19 +10412,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>piste</displayName>
-				<unitPattern count="one">{0} piste</unitPattern>
-				<unitPattern count="other">{0} pistettä</unitPattern>
+				<displayName draft="provisional">piste</displayName>
+				<unitPattern count="one" draft="provisional">{0} piste</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pistettä</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -11360,9 +11360,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0}kcal</unitPattern>
-				<unitPattern count="other">{0}kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0}kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -11455,19 +11455,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0}dpcm</unitPattern>
-				<unitPattern count="other">{0}dpcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0}dpi</unitPattern>
-				<unitPattern count="other">{0}dpi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>piste</displayName>
-				<unitPattern count="one">{0}piste</unitPattern>
-				<unitPattern count="other">{0}pistettä</unitPattern>
+				<displayName draft="provisional">piste</displayName>
+				<unitPattern count="one" draft="provisional">{0}piste</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}pistettä</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -12190,7 +12190,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wdth" subtype="50" alt="narrow">ultrakavennettu</styleName>
 		<styleName type="wdth" subtype="62.5">erikoiskapea</styleName>
 		<styleName type="wdth" subtype="62.5" alt="compressed">erikoistiivis</styleName>
-		<styleName type="wdth" subtype="62.5" alt="narrow">erikoiskapea</styleName>
 		<styleName type="wdth" subtype="75">kavennettu</styleName>
 		<styleName type="wdth" subtype="75" alt="compressed">tiivistetty</styleName>
 		<styleName type="wdth" subtype="75" alt="narrow">kapea</styleName>
@@ -12209,7 +12208,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wdth" subtype="150" alt="wide">extraleveä</styleName>
 		<styleName type="wdth" subtype="200">ultraleveä</styleName>
 		<styleName type="wdth" subtype="200" alt="extended">ultralaajennettu</styleName>
-		<styleName type="wdth" subtype="200" alt="wide">ultraleveä</styleName>
 		<styleName type="wght" subtype="100">laiha</styleName>
 		<styleName type="wght" subtype="200">erikoislaiha</styleName>
 		<styleName type="wght" subtype="200" alt="ultra">ultraohut</styleName>
@@ -12219,7 +12217,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">normaali</styleName>
 		<styleName type="wght" subtype="500">keskipaksu</styleName>
 		<styleName type="wght" subtype="600">puolilihava</styleName>
-		<styleName type="wght" subtype="600" alt="demi">puolilihava</styleName>
 		<styleName type="wght" subtype="700">lihava</styleName>
 		<styleName type="wght" subtype="800">extralihava</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">ultralihava</styleName>

@@ -616,7 +616,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Izrayil</territory>
 			<territory type="IM" draft="unconfirmed">Tigzirt n Man</territory>
 			<territory type="IN">Lhend</territory>
-			<territory type="IO">Akal Aglizi deg Ugaraw Ahendi</territory>
+			<territory type="IO" draft="provisional">Akal Aglizi deg Ugaraw Ahendi</territory>
 			<territory type="IQ">Lɛiraq</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Island</territory>
@@ -857,11 +857,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a b c č d ḍ e ɛ f g ǧ ɣ h ḥ i j k l m n p q r ṛ s ṣ t ṭ u w x y z ẓ]</exemplarCharacters>
+		<exemplarCharacters>[a b cč dḍ e ɛ f gǧ ɣ hḥ i j k l m n p q rṛ sṣ tṭ u w x y zẓ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[o v]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B C Č D Ḍ E Ɛ F G Ǧ Ɣ H Ḥ I J K L M N P Q R Ṛ S Ṣ T Ṭ U W X Y Z Ẓ]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B CČ DḌ E Ɛ F GǦ Ɣ HḤ I J K L M N P Q RṚ SṢ TṬ U W X Y ZẒ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
@@ -8187,7 +8187,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="400" draft="unconfirmed">alugan</styleName>
 		<styleName type="wght" subtype="500" draft="unconfirmed">alemmas</styleName>
 		<styleName type="wght" subtype="600" draft="unconfirmed">zur azgen</styleName>
-		<styleName type="wght" subtype="600" alt="demi" draft="unconfirmed">zur azgen</styleName>
 		<styleName type="wght" subtype="700" draft="unconfirmed">zur</styleName>
 		<styleName type="wght" subtype="800" draft="unconfirmed">zur nezzeh</styleName>
 		<styleName type="wght" subtype="900" draft="unconfirmed">aberkan</styleName>

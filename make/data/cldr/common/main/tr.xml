@@ -1006,7 +1006,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">İsrail</territory>
 			<territory type="IM">Man Adası</territory>
 			<territory type="IN">Hindistan</territory>
-			<territory type="IO">Britanya Hint Okyanusu Toprakları</territory>
+			<territory type="IO" draft="provisional">Britanya Hint Okyanusu Toprakları</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">İran</territory>
 			<territory type="IS">İzlanda</territory>
@@ -1235,11 +1235,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Miladi Takvim</type>
 			<type key="calendar" type="hebrew">İbrani Takvimi</type>
 			<type key="calendar" type="indian">Ulusal Hint Takvimi</type>
-			<type key="calendar" type="islamic">Hicri Takvim</type>
-			<type key="calendar" type="islamic-civil">Arap Takvimi</type>
-			<type key="calendar" type="islamic-rgsa">Hicri Takvim (Suudi)</type>
-			<type key="calendar" type="islamic-tbla">Hicri Takvim (Astronomik Evreler)</type>
-			<type key="calendar" type="islamic-umalqura">Hicri Takvim (Ümmü-l Kurra Takvimi)</type>
+			<type key="calendar" type="islamic" draft="provisional">Hicri Takvim</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Arap Takvimi</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">Hicri Takvim (Suudi)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Hicri Takvim (Astronomik Evreler)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Hicri Takvim (Ümmü-l Kurra Takvimi)</type>
 			<type key="calendar" type="iso8601">ISO-8601 Takvimi</type>
 			<type key="calendar" type="japanese">Japon Takvimi</type>
 			<type key="calendar" type="persian">İran Takvimi</type>
@@ -1397,11 +1397,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a b c ç d e f g ğ h ı i İ j k l m n o ö p r s ş t u ü v y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ø ō œ q ß ú ù ŭ û ū w x ÿ]</exemplarCharacters>
+		<exemplarCharacters>[a b c ç d e f g ğ h ı iİ j k l m n o ö p r s ş t u ü v y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâåäãā æ éèĕêëē íìĭîïī ñ óòŏôøō œ q ß úùŭûū w x ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Ç D E F G H I İ J K L M N O Ö P Q R S Ş T U Ü V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1410,23 +1410,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8235,9 +8235,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kalori</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kilokalori</displayName>
-				<unitPattern count="one">{0} kilokalori</unitPattern>
-				<unitPattern count="other">{0} kilokalori</unitPattern>
+				<displayName draft="provisional">kilokalori</displayName>
+				<unitPattern count="one" draft="provisional">{0} kilokalori</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kilokalori</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojul</displayName>
@@ -8330,19 +8330,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} piksel/inç</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>nokta/santimetre</displayName>
-				<unitPattern count="one">{0} nokta/santimetre</unitPattern>
-				<unitPattern count="other">{0} nokta/santimetre</unitPattern>
+				<displayName draft="provisional">nokta/santimetre</displayName>
+				<unitPattern count="one" draft="provisional">{0} nokta/santimetre</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nokta/santimetre</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>nokta/inç</displayName>
-				<unitPattern count="one">{0} nokta/inç</unitPattern>
-				<unitPattern count="other">{0} nokta/inç</unitPattern>
+				<displayName draft="provisional">nokta/inç</displayName>
+				<unitPattern count="one" draft="provisional">{0} nokta/inç</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nokta/inç</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>nokta</displayName>
-				<unitPattern count="one">{0} nokta</unitPattern>
-				<unitPattern count="other">{0} nokta</unitPattern>
+				<displayName draft="provisional">nokta</displayName>
+				<unitPattern count="one" draft="provisional">{0} nokta</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nokta</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>Dünya yarıçapı</displayName>
@@ -9220,9 +9220,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -9312,19 +9312,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>nokta</displayName>
-				<unitPattern count="one">{0} nokta</unitPattern>
-				<unitPattern count="other">{0} nokta</unitPattern>
+				<displayName draft="provisional">nokta</displayName>
+				<unitPattern count="one" draft="provisional">{0} nokta</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nokta</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -10261,9 +10261,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -10356,19 +10356,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>nokta</displayName>
-				<unitPattern count="one">{0} nokta</unitPattern>
-				<unitPattern count="other">{0} nokta</unitPattern>
+				<displayName draft="provisional">nokta</displayName>
+				<unitPattern count="one" draft="provisional">{0} nokta</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nokta</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11120,7 +11120,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">standart</styleName>
 		<styleName type="wght" subtype="500">orta</styleName>
 		<styleName type="wght" subtype="600">yarı kalın</styleName>
-		<styleName type="wght" subtype="600" alt="demi">yarı kalın</styleName>
 		<styleName type="wght" subtype="700">kalın</styleName>
 		<styleName type="wght" subtype="800">ekstra kalın</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">ultra kalın</styleName>

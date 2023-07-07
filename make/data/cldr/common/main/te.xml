@@ -882,7 +882,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">ఇజ్రాయెల్</territory>
 			<territory type="IM">ఐల్ ఆఫ్ మాన్</territory>
 			<territory type="IN">భారతదేశం</territory>
-			<territory type="IO">బ్రిటిష్ హిందూ మహాసముద్ర ప్రాంతం</territory>
+			<territory type="IO" draft="provisional">బ్రిటిష్ హిందూ మహాసముద్ర ప్రాంతం</territory>
 			<territory type="IQ">ఇరాక్</territory>
 			<territory type="IR">ఇరాన్</territory>
 			<territory type="IS">ఐస్లాండ్</territory>
@@ -1086,11 +1086,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">గ్రేగోరియన్ క్యాలెండర్</type>
 			<type key="calendar" type="hebrew">హిబ్రూ క్యాలెండర్</type>
 			<type key="calendar" type="indian">భారతీయ జాతీయ క్యాలెండర్</type>
-			<type key="calendar" type="islamic">ఇస్లామిక్ క్యాలెండర్</type>
-			<type key="calendar" type="islamic-civil">ఇస్లామిక్-సివిల్ క్యాలెండర్</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">ఇస్లామిక్ క్యాలెండర్ (సౌదీ అరేబియా)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">ఇస్లామిక్ క్యాలెండర్</type>
-			<type key="calendar" type="islamic-umalqura">ఇస్లామిక్ క్యాలెండర్ (ఉమ్ అల్-ఖురా)</type>
+			<type key="calendar" type="islamic" draft="provisional">ఇస్లామిక్ క్యాలెండర్</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ఇస్లామిక్-సివిల్ క్యాలెండర్</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">ఇస్లామిక్ క్యాలెండర్ (సౌదీ అరేబియా)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">ఇస్లామిక్ క్యాలెండర్</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">ఇస్లామిక్ క్యాలెండర్ (ఉమ్ అల్-ఖురా)</type>
 			<type key="calendar" type="iso8601">ISO-8601 క్యాలెండర్</type>
 			<type key="calendar" type="japanese">జపానీయుల క్యాలెండర్</type>
 			<type key="calendar" type="persian">పర్షియన్ క్యాలెండర్</type>
@@ -1203,11 +1203,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[అ ఆ ఇ ఈ ఉ ఊ ఋ ౠ ఌ ౡ ఎ ఏ ఐ ఒ ఓ ఔ ఁ ం ః క ఖ గ ఘ ఙ చ ఛ జ ఝ ఞ ట ఠ డ ఢ ణ త థ ద ధ న ప ఫ బ భ మ య ర ఱ ల వ శ ష స హ ళ \u0C3E \u0C3F \u0C40 ు ూ ృ ౄ \u0C46 \u0C47 \u0C48 \u0C4A \u0C4B \u0C4C \u0C4D \u0C55 \u0C56]</exemplarCharacters>
+		<exemplarCharacters>[అ ఆ ఇ ఈ ఉ ఊ ఋ ౠ ఌ ౡ ఎ ఏ ఐ ఒ ఓ ఔ ఁ ం ః క ఖ గ ఘ ఙ చ ఛ జ ఝ ఞ ట ఠ డ ఢ ణ త థ ద ధ న ప ఫ బ భ మ య ర ఱ ల వ శ ష స హ ళ ా ి ీ ు ూ ృ ౄ ె ే ై ొ ో ౌ ్ ౕ ౖ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[\u200C\u200D ౦ ౧ ౨ ౩ ౪ ౫ ౬ ౭ ౮ ౯]</exemplarCharacters>
 		<exemplarCharacters type="index">[అ ఆ ఇ ఈ ఉ ఊ ఋ ౠ ఎ ఏ ఐ ఒ ఓ ఔ క ఖ గ ఘ ఙ చ ఛ జ ఝ ఞ ట ఠ డ ఢ ణ త థ ద ధ న ప ఫ బ భ మ య ర ఱ ల వ శ ష స హ ళ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0౦ 1౧ 2౨ 3౩ 4౪ 5౫ 6౬ 7౭ 8౮ 9౯]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . '‘’ &quot;“” ( ) \[ \] \{ \}]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1216,18 +1216,18 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -7365,9 +7365,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} కేలరీలు</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>కేలరీలు</displayName>
-				<unitPattern count="one">{0} కేలరీ</unitPattern>
-				<unitPattern count="other">{0} కేలరీలు</unitPattern>
+				<displayName draft="provisional">కేలరీలు</displayName>
+				<unitPattern count="one" draft="provisional">{0} కేలరీ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} కేలరీలు</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>కిలోజౌల్స్</displayName>
@@ -7460,19 +7460,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} పిక్సెల్స్ ప్రతి అంగుళానికి</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>బిందువులు ప్రతి సెంటిమీటరుకు</displayName>
-				<unitPattern count="one">{0} బిందువు ప్రతి సెంటిమీటరుకు</unitPattern>
-				<unitPattern count="other">{0} బిందువులు ప్రతి సెంటిమీటరుకు</unitPattern>
+				<displayName draft="provisional">బిందువులు ప్రతి సెంటిమీటరుకు</displayName>
+				<unitPattern count="one" draft="provisional">{0} బిందువు ప్రతి సెంటిమీటరుకు</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} బిందువులు ప్రతి సెంటిమీటరుకు</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>బిందువులు ప్రతి అంగుళానికి</displayName>
-				<unitPattern count="one">{0} బిందువు ప్రతి అంగుళానికి</unitPattern>
-				<unitPattern count="other">{0} బిందువులు ప్రతి అంగుళానికి</unitPattern>
+				<displayName draft="provisional">బిందువులు ప్రతి అంగుళానికి</displayName>
+				<unitPattern count="one" draft="provisional">{0} బిందువు ప్రతి అంగుళానికి</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} బిందువులు ప్రతి అంగుళానికి</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>బిందువు</displayName>
-				<unitPattern count="one">{0} బిందువు</unitPattern>
-				<unitPattern count="other">{0} బిందువు</unitPattern>
+				<displayName draft="provisional">బిందువు</displayName>
+				<unitPattern count="one" draft="provisional">{0} బిందువు</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} బిందువు</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>భూమి వ్యాసార్ధం</displayName>
@@ -8411,9 +8411,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} కే.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>కే.</displayName>
-				<unitPattern count="one">{0} కే.</unitPattern>
-				<unitPattern count="other">{0} కే.</unitPattern>
+				<displayName draft="provisional">కే.</displayName>
+				<unitPattern count="one" draft="provisional">{0} కే.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} కే.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>కిలోజౌల్</displayName>
@@ -8504,19 +8504,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} పి/అం.</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>బి/సె.మీ.</displayName>
-				<unitPattern count="one">{0} బి/సె.మీ.</unitPattern>
-				<unitPattern count="other">{0} బి/సె.మీ.</unitPattern>
+				<displayName draft="provisional">బి/సె.మీ.</displayName>
+				<unitPattern count="one" draft="provisional">{0} బి/సె.మీ.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} బి/సె.మీ.</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>బి/అం.</displayName>
-				<unitPattern count="one">{0} బి/అం.</unitPattern>
-				<unitPattern count="other">{0} బి/అం.</unitPattern>
+				<displayName draft="provisional">బి/అం.</displayName>
+				<unitPattern count="one" draft="provisional">{0} బి/అం.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} బి/అం.</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>బిందువు</displayName>
-				<unitPattern count="one">{0} బిందువు</unitPattern>
-				<unitPattern count="other">{0} బిందువు</unitPattern>
+				<displayName draft="provisional">బిందువు</displayName>
+				<unitPattern count="one" draft="provisional">{0} బిందువు</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} బిందువు</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -9457,9 +9457,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} కే.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>కే.</displayName>
-				<unitPattern count="one">{0} కే.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} కే.</unitPattern>
+				<displayName draft="provisional">కే.</displayName>
+				<unitPattern count="one" draft="provisional">{0} కే.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} కే.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName draft="contributed">కిలోజౌల్</displayName>
@@ -9552,19 +9552,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} పి/అం.</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>బి/సె.మీ.</displayName>
-				<unitPattern count="one">{0} బి/సె.మీ.</unitPattern>
-				<unitPattern count="other">{0} బి/సె.మీ.</unitPattern>
+				<displayName draft="provisional">బి/సె.మీ.</displayName>
+				<unitPattern count="one" draft="provisional">{0} బి/సె.మీ.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} బి/సె.మీ.</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>బి/అం.</displayName>
-				<unitPattern count="one">{0} బి/అం.</unitPattern>
-				<unitPattern count="other">{0} బి/అం.</unitPattern>
+				<displayName draft="provisional">బి/అం.</displayName>
+				<unitPattern count="one" draft="provisional">{0} బి/అం.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} బి/అం.</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>బిందువు</displayName>
-				<unitPattern count="one">{0} బిందువు</unitPattern>
-				<unitPattern count="other">{0} బిందువు</unitPattern>
+				<displayName draft="provisional">బిందువు</displayName>
+				<unitPattern count="one" draft="provisional">{0} బిందువు</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} బిందువు</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -10490,27 +10490,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="credentials">ఎం. పి.</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
-			<nameField type="given">రవి</nameField>
+			<nameField type="given" draft="provisional">రవి</nameField>
 		</sampleName>
 		<sampleName item="foreignGS">
-			<nameField type="given">రఘు</nameField>
-			<nameField type="surname">భరత్</nameField>
+			<nameField type="given" draft="provisional">రఘు</nameField>
+			<nameField type="surname" draft="provisional">భరత్</nameField>
 		</sampleName>
 		<sampleName item="foreignGGS">
-			<nameField type="given">శంకర్</nameField>
-			<nameField type="given2">నరేష్</nameField>
-			<nameField type="surname">ప్రసాద్</nameField>
+			<nameField type="given" draft="provisional">శంకర్</nameField>
+			<nameField type="given2" draft="provisional">నరేష్</nameField>
+			<nameField type="surname" draft="provisional">ప్రసాద్</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title">ప్రొ. డా.</nameField>
-			<nameField type="given">సూర్య ప్రతాప్</nameField>
-			<nameField type="given-informal">సంధ్య</nameField>
-			<nameField type="given2">లాస్య ప్రియ</nameField>
-			<nameField type="surname-prefix">శర్మ</nameField>
-			<nameField type="surname-core">చౌదరి</nameField>
-			<nameField type="surname2">శర్మ చౌదరి</nameField>
-			<nameField type="generation">జూ</nameField>
-			<nameField type="credentials">ఎం. డి. పిహెచ్. డి.</nameField>
+			<nameField type="title" draft="provisional">ప్రొ. డా.</nameField>
+			<nameField type="given" draft="provisional">సూర్య ప్రతాప్</nameField>
+			<nameField type="given-informal" draft="provisional">సంధ్య</nameField>
+			<nameField type="given2" draft="provisional">లాస్య ప్రియ</nameField>
+			<nameField type="surname-prefix" draft="provisional">శర్మ</nameField>
+			<nameField type="surname-core" draft="provisional">చౌదరి</nameField>
+			<nameField type="surname2" draft="provisional">శర్మ చౌదరి</nameField>
+			<nameField type="generation" draft="provisional">జూ</nameField>
+			<nameField type="credentials" draft="provisional">ఎం. డి. పిహెచ్. డి.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

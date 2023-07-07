@@ -49,10 +49,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a ä b c d e f g h i j k l m n o ö p q r s t u ü v w x y z]</exemplarCharacters>
+		<exemplarCharacters>[aä b c d e f g h i j k l m n oö p q r s t uü v w x y z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ . ’ % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="’">['ʼ՚᾽᾿’＇]</parseLenient>
+			<parseLenient sample="’">['＇’ ՚ ᾽᾿ ʼ]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>

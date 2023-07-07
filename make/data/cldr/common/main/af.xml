@@ -689,7 +689,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Eiland Man</territory>
 			<territory type="IN">Indië</territory>
-			<territory type="IO">Brits-Indiese Oseaangebied</territory>
+			<territory type="IO" draft="provisional">Brits-Indiese Oseaangebied</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Ysland</territory>
@@ -887,9 +887,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Gregoriaanse kalender</type>
 			<type key="calendar" type="hebrew">Hebreeuse kalender</type>
 			<type key="calendar" type="indian">Indiese nasionale kalender</type>
-			<type key="calendar" type="islamic">Islamitiese kalender</type>
-			<type key="calendar" type="islamic-civil">Islamitiese siviele kalender</type>
-			<type key="calendar" type="islamic-umalqura">Islamitiese kalender (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Islamitiese kalender</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Islamitiese siviele kalender</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Islamitiese kalender (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601-kalender</type>
 			<type key="calendar" type="japanese">Japannese kalender</type>
 			<type key="calendar" type="persian">Persiese kalender</type>
@@ -1000,11 +1000,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á â b c d e é è ê ë f g h i î ï j k l m n o ô ö p q r s t u û v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à å ä ã æ ç í ì ó ò ú ù ü ý]</exemplarCharacters>
+		<exemplarCharacters>[aáâ b c d eéèêë f g h iîï j k l m n oôö p q r s t uû v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[àåäã æ ç íì óò úùü ý]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -6393,9 +6393,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kalorieë</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kalorieë</displayName>
-				<unitPattern count="one">{0} kalorie</unitPattern>
-				<unitPattern count="other">{0} kalorieë</unitPattern>
+				<displayName draft="provisional">Kalorieë</displayName>
+				<unitPattern count="one" draft="provisional">{0} kalorie</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kalorieë</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -6488,19 +6488,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pieksels per duim</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>stippels per sentimeter</displayName>
-				<unitPattern count="one">{0} stippel per sentimeter</unitPattern>
-				<unitPattern count="other">{0} stippels per sentimeter</unitPattern>
+				<displayName draft="provisional">stippels per sentimeter</displayName>
+				<unitPattern count="one" draft="provisional">{0} stippel per sentimeter</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} stippels per sentimeter</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>stippels per duim</displayName>
-				<unitPattern count="one">{0} stippel per duim</unitPattern>
-				<unitPattern count="other">{0} stippels per duim</unitPattern>
+				<displayName draft="provisional">stippels per duim</displayName>
+				<unitPattern count="one" draft="provisional">{0} stippel per duim</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} stippels per duim</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>stippel</displayName>
-				<unitPattern count="one">{0} stippel</unitPattern>
-				<unitPattern count="other">{0} stippel</unitPattern>
+				<displayName draft="provisional">stippel</displayName>
+				<unitPattern count="one" draft="provisional">{0} stippel</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} stippel</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>aardstraal</displayName>
@@ -7357,9 +7357,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kal.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kal.</displayName>
-				<unitPattern count="one">{0} kal.</unitPattern>
-				<unitPattern count="other">{0} kal.</unitPattern>
+				<displayName draft="provisional">kal.</displayName>
+				<unitPattern count="one" draft="provisional">{0} kal.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kal.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -7449,19 +7449,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pixels</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">pixels</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -8397,9 +8397,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}kal.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kal.</displayName>
-				<unitPattern count="one">{0}kal.</unitPattern>
-				<unitPattern count="other">{0}kal.</unitPattern>
+				<displayName draft="provisional">kal.</displayName>
+				<unitPattern count="one" draft="provisional">{0}kal.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}kal.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -8492,19 +8492,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0}dpcm</unitPattern>
-				<unitPattern count="other">{0}dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>stippel</displayName>
-				<unitPattern count="one">{0}stippel</unitPattern>
-				<unitPattern count="other">{0}stippel</unitPattern>
+				<displayName draft="provisional">stippel</displayName>
+				<unitPattern count="one" draft="provisional">{0}stippel</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}stippel</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>

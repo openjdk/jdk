@@ -875,7 +875,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">إسرائيل</territory>
 			<territory type="IM">جزيرة مان</territory>
 			<territory type="IN">الهند</territory>
-			<territory type="IO">الإقليم البريطاني في المحيط الهندي</territory>
+			<territory type="IO" draft="provisional">الإقليم البريطاني في المحيط الهندي</territory>
 			<territory type="IQ">العراق</territory>
 			<territory type="IR">إيران</territory>
 			<territory type="IS">آيسلندا</territory>
@@ -1086,11 +1086,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">التقويم الميلادي</type>
 			<type key="calendar" type="hebrew">التقويم العبري</type>
 			<type key="calendar" type="indian">التقويم القومي الهندي</type>
-			<type key="calendar" type="islamic">التقويم الهجري</type>
-			<type key="calendar" type="islamic-civil">التقويم الإسلامي المدني</type>
-			<type key="calendar" type="islamic-rgsa">التقويم الإسلامي (السعودية - الرؤية)</type>
-			<type key="calendar" type="islamic-tbla">التقويم الإسلامي (الحسابات الفلكية)</type>
-			<type key="calendar" type="islamic-umalqura">التقويم الإسلامي (أم القرى)</type>
+			<type key="calendar" type="islamic" draft="provisional">التقويم الهجري</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">التقويم الإسلامي المدني</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">التقويم الإسلامي (السعودية - الرؤية)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">التقويم الإسلامي (الحسابات الفلكية)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">التقويم الإسلامي (أم القرى)</type>
 			<type key="calendar" type="iso8601">تقويم ISO-8601</type>
 			<type key="calendar" type="japanese">التقويم الياباني</type>
 			<type key="calendar" type="persian">التقويم الفارسي</type>
@@ -1208,11 +1208,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 \u0670 ء أ ؤ إ ئ ا آ ب ة ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ى ي]</exemplarCharacters>
+		<exemplarCharacters>[ً ٌ ٍ َ ُ ِ ّ ْ ٰ ءأؤإئا آ ب ةت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ىي]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ـ\u200C\u200D\u200E\u200F پ چ ژ ڜ ڢ ڤ ڥ ٯ ڧ ڨ ک گ ی]</exemplarCharacters>
 		<exemplarCharacters type="index">[ا ب ت ث ج ح خ د ذ ر ز س ش ص ض ط ظ ع غ ف ق ك ل م ن ه و ي]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u061C\u200E \- ‑ , ٫ ٬ . % ٪ ‰ ؉ + 0٠ 1١ 2٢ 3٣ 4٤ 5٥ 6٦ 7٧ 8٨ 9٩]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — ، ؛ \: ! ؟ . … ' &quot; « » ( ) \[ \]]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — ، ؛ \: ! ؟ . … ' &quot; « » ( ) \[ \]]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1221,10 +1221,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -9350,13 +9350,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} سعرة</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>سعرة</displayName>
-				<unitPattern count="zero">{0} سعرة</unitPattern>
-				<unitPattern count="one">{0} سعرة</unitPattern>
-				<unitPattern count="two">{0} سعرة</unitPattern>
-				<unitPattern count="few">{0} سعرة</unitPattern>
-				<unitPattern count="many">{0} سعرة</unitPattern>
-				<unitPattern count="other">{0} سعرة</unitPattern>
+				<displayName draft="provisional">سعرة</displayName>
+				<unitPattern count="zero" draft="provisional">{0} سعرة</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} سعرة</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} سعرة</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} سعرة</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} سعرة</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} سعرة</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>masculine</gender>
@@ -9534,31 +9534,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} بكسل لكل بوصة</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>نقطة لكل سنتيمتر</displayName>
-				<unitPattern count="zero">{0} نقطة لكل سنتيمتر</unitPattern>
-				<unitPattern count="one">{0} نقطة لكل سنتيمتر</unitPattern>
-				<unitPattern count="two">نقطتان لكل سنتيمتر</unitPattern>
-				<unitPattern count="few">{0} نقاط لكل سنتيمتر</unitPattern>
-				<unitPattern count="many">{0} نقطة لكل سنتيمتر</unitPattern>
-				<unitPattern count="other">{0} نقطة لكل سنتيمتر</unitPattern>
+				<displayName draft="provisional">نقطة لكل سنتيمتر</displayName>
+				<unitPattern count="zero" draft="provisional">{0} نقطة لكل سنتيمتر</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} نقطة لكل سنتيمتر</unitPattern>
+				<unitPattern count="two" draft="provisional">نقطتان لكل سنتيمتر</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} نقاط لكل سنتيمتر</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} نقطة لكل سنتيمتر</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} نقطة لكل سنتيمتر</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>نقطة لكل بوصة</displayName>
-				<unitPattern count="zero">{0} نقطة لكل بوصة</unitPattern>
-				<unitPattern count="one">{0} نقطة لكل بوصة</unitPattern>
-				<unitPattern count="two">نقطتان لكل بوصة</unitPattern>
-				<unitPattern count="few">{0} نقاط لكل بوصة</unitPattern>
-				<unitPattern count="many">{0} نقطة لكل بوصة</unitPattern>
-				<unitPattern count="other">{0} نقطة لكل بوصة</unitPattern>
+				<displayName draft="provisional">نقطة لكل بوصة</displayName>
+				<unitPattern count="zero" draft="provisional">{0} نقطة لكل بوصة</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} نقطة لكل بوصة</unitPattern>
+				<unitPattern count="two" draft="provisional">نقطتان لكل بوصة</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} نقاط لكل بوصة</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} نقطة لكل بوصة</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} نقطة لكل بوصة</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>بكسل</displayName>
-				<unitPattern count="zero">{0} بكسل</unitPattern>
-				<unitPattern count="one">{0} بكسل</unitPattern>
-				<unitPattern count="two">{0} بكسل</unitPattern>
-				<unitPattern count="few">{0} بكسل</unitPattern>
-				<unitPattern count="many">{0} بكسل</unitPattern>
-				<unitPattern count="other">{0} بكسل</unitPattern>
+				<displayName draft="provisional">بكسل</displayName>
+				<unitPattern count="zero" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} بكسل</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>نصف قطر أرضي</displayName>
@@ -11198,13 +11198,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} سع</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>سع</displayName>
-				<unitPattern count="zero">{0} سع</unitPattern>
-				<unitPattern count="one">{0} سع</unitPattern>
-				<unitPattern count="two">{0} سع</unitPattern>
-				<unitPattern count="few">{0} سع</unitPattern>
-				<unitPattern count="many">{0} سع</unitPattern>
-				<unitPattern count="other">{0} سع</unitPattern>
+				<displayName draft="provisional">سع</displayName>
+				<unitPattern count="zero" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} سع</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ك جول</displayName>
@@ -11369,31 +11369,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} بكسل/بوصة</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>نقطة/سم</displayName>
-				<unitPattern count="zero">{0} نقطة/سم</unitPattern>
-				<unitPattern count="one">{0} نقطة/سم</unitPattern>
-				<unitPattern count="two">{0} بكسل/سم</unitPattern>
-				<unitPattern count="few">{0} نقاط/سم</unitPattern>
-				<unitPattern count="many">{0} نقطة/سم</unitPattern>
-				<unitPattern count="other">{0} نقطة/سم</unitPattern>
+				<displayName draft="provisional">نقطة/سم</displayName>
+				<unitPattern count="zero" draft="provisional">{0} نقطة/سم</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} نقطة/سم</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} بكسل/سم</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} نقاط/سم</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} نقطة/سم</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} نقطة/سم</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>نقطة لكل بوصة</displayName>
-				<unitPattern count="zero">{0} نقطة/بوصة</unitPattern>
-				<unitPattern count="one">{0} نقطة/بوصة</unitPattern>
-				<unitPattern count="two">{0} بكسل/بوصة</unitPattern>
-				<unitPattern count="few">{0} نقاط/بوصة</unitPattern>
-				<unitPattern count="many">{0} نقطة/بوصة</unitPattern>
-				<unitPattern count="other">{0} نقطة/بوصة</unitPattern>
+				<displayName draft="provisional">نقطة لكل بوصة</displayName>
+				<unitPattern count="zero" draft="provisional">{0} نقطة/بوصة</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} نقطة/بوصة</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} بكسل/بوصة</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} نقاط/بوصة</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} نقطة/بوصة</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} نقطة/بوصة</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>بكسل</displayName>
-				<unitPattern count="zero">{0} بكسل</unitPattern>
-				<unitPattern count="one">{0} بكسل</unitPattern>
-				<unitPattern count="two">{0} بكسل</unitPattern>
-				<unitPattern count="few">{0} بكسل</unitPattern>
-				<unitPattern count="many">{0} بكسل</unitPattern>
-				<unitPattern count="other">{0} بكسل</unitPattern>
+				<displayName draft="provisional">بكسل</displayName>
+				<unitPattern count="zero" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} بكسل</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>نق أرضي</displayName>
@@ -12989,13 +12989,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} سع</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName draft="contributed">سع</displayName>
-				<unitPattern count="zero" draft="contributed">{0} سع</unitPattern>
-				<unitPattern count="one" draft="contributed">{0} سع</unitPattern>
-				<unitPattern count="two" draft="contributed">{0} سع</unitPattern>
-				<unitPattern count="few" draft="contributed">{0} سع</unitPattern>
-				<unitPattern count="many" draft="contributed">{0} سع</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} سع</unitPattern>
+				<displayName draft="provisional">سع</displayName>
+				<unitPattern count="zero" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} سع</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} سع</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName draft="contributed">ك جول</displayName>
@@ -13160,31 +13160,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} بك/بوصة</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ن/سم</displayName>
-				<unitPattern count="zero">{0} ن/سم</unitPattern>
-				<unitPattern count="one">{0} ن/سم</unitPattern>
-				<unitPattern count="two">{0} ن/سم</unitPattern>
-				<unitPattern count="few">{0} ن/سم</unitPattern>
-				<unitPattern count="many">{0} ن/سم</unitPattern>
-				<unitPattern count="other">{0} ن/سم</unitPattern>
+				<displayName draft="provisional">ن/سم</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ن/سم</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} ن/سم</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ن/سم</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ن/سم</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ن/سم</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ن/سم</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ن/بوصة</displayName>
-				<unitPattern count="zero">{0} ن/بوصة</unitPattern>
-				<unitPattern count="one">{0} ن/بوصة</unitPattern>
-				<unitPattern count="two">{0} ن/بوصة</unitPattern>
-				<unitPattern count="few">{0} ن/بوصة</unitPattern>
-				<unitPattern count="many">{0} ن/بوصة</unitPattern>
-				<unitPattern count="other">{0} ن/بوصة</unitPattern>
+				<displayName draft="provisional">ن/بوصة</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ن/بوصة</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} ن/بوصة</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ن/بوصة</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ن/بوصة</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ن/بوصة</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ن/بوصة</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>بكسل</displayName>
-				<unitPattern count="zero">{0} بكسل</unitPattern>
-				<unitPattern count="one">{0} بكسل</unitPattern>
-				<unitPattern count="two">{0} بكسل</unitPattern>
-				<unitPattern count="few">{0} بكسل</unitPattern>
-				<unitPattern count="many">{0} بكسل</unitPattern>
-				<unitPattern count="other">{0} بكسل</unitPattern>
+				<displayName draft="provisional">بكسل</displayName>
+				<unitPattern count="zero" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} بكسل</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} بكسل</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>نق أرضي</displayName>

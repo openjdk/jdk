@@ -677,7 +677,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">اسرائيل</territory>
 			<territory type="IM">انسانن جو ٻيٽ</territory>
 			<territory type="IN">ڀارت</territory>
-			<territory type="IO">برطانوي هندي سمنڊ خطو</territory>
+			<territory type="IO" draft="provisional">برطانوي هندي سمنڊ خطو</territory>
 			<territory type="IQ">عراق</territory>
 			<territory type="IR">ايران</territory>
 			<territory type="IS">آئس لينڊ</territory>
@@ -862,10 +862,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">جارجيائي ڪئلينڊر</type>
 			<type key="calendar" type="hebrew">عبراني ڪئلينڊر</type>
 			<type key="calendar" type="indian">هندوستاني قومي ڪئلينڊر</type>
-			<type key="calendar" type="islamic">اسلامي ڪئلينڊر</type>
-			<type key="calendar" type="islamic-civil">اسلامي ڪئلينڊر (ٽيبلر، مدني دور)</type>
-			<type key="calendar" type="islamic-tbla">اسلامي ڪئلينڊر (ٽيبلر، فلڪياتي دور)</type>
-			<type key="calendar" type="islamic-umalqura">اسلامي ڪئلينڊر (اُم القرا)</type>
+			<type key="calendar" type="islamic" draft="provisional">اسلامي ڪئلينڊر</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">اسلامي ڪئلينڊر (ٽيبلر، مدني دور)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">اسلامي ڪئلينڊر (ٽيبلر، فلڪياتي دور)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">اسلامي ڪئلينڊر (اُم القرا)</type>
 			<type key="calendar" type="iso8601">ISO-8601 ڪئلينڊر</type>
 			<type key="calendar" type="japanese">جاپاني ڪئلينڊر</type>
 			<type key="calendar" type="persian">فارسي ڪئلينڊر</type>
@@ -945,7 +945,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</layout>
 	<characters>
 		<exemplarCharacters>[ء آ ا ب ٻ پ ڀ ت ث ٺ ٽ ٿ ج {جھ} ڃ ڄ چ ڇ ح خ د ذ ڊ ڌ ڍ ڏ ر ز ڙ س ش ص ض ط ظ ع غ ف ڦ ق ک ڪ گ {گھ} ڱ ڳ ل م ن ڻ ه ھ و ي]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u064E \u064F \u0650 ئ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[َ ُ ِ ئ]</exemplarCharacters>
 		<exemplarCharacters type="index">[ا ب ٻ پ ڀ ت ث ٺ ٽ ٿ ج {جھ} ڃ ڄ چ ڇ ح خ د ذ ڊ ڌ ڍ ڏ ر ز ڙ س ش ص ض ط ظ ع غ ف ڦ ق ک ڪ گ {گھ} ڱ ڳ ل م ن ڻ ه ھ و ي]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[⹁ ⁏ \: ! ۔ ‘ ( ) \[ \] \{ \} /]</exemplarCharacters>
@@ -955,16 +955,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-initial">… {0}</ellipsis>
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="‰" draft="contributed">[؉‰]</parseLenient>
+			<parseLenient sample="‰" draft="contributed">[‰ ؉]</parseLenient>
 			<parseLenient sample="¥" draft="contributed">[¥￥]</parseLenient>
 			<parseLenient sample="₩" draft="contributed">[₩￦]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -6569,9 +6569,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ڪيلوريز</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ڪيلوريز</displayName>
-				<unitPattern count="one">{0} ڪيلوري</unitPattern>
-				<unitPattern count="other">{0} ڪيلوريز</unitPattern>
+				<displayName draft="provisional">ڪيلوريز</displayName>
+				<unitPattern count="one" draft="provisional">{0} ڪيلوري</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ڪيلوريز</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ڪلو جولز</displayName>
@@ -6664,19 +6664,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} پڪسلز في انچ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>في سينٽي ميٽر ڊاٽس</displayName>
-				<unitPattern count="one">{0} في سينٽي ميٽر ڊاٽ</unitPattern>
-				<unitPattern count="other">{0} في سينٽي ميٽر ڊاٽس</unitPattern>
+				<displayName draft="provisional">في سينٽي ميٽر ڊاٽس</displayName>
+				<unitPattern count="one" draft="provisional">{0} في سينٽي ميٽر ڊاٽ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} في سينٽي ميٽر ڊاٽس</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ڊاٽس في انچ</displayName>
-				<unitPattern count="one">{0} ڊاٽ في انچ</unitPattern>
-				<unitPattern count="other">{0} ڊاٽس في انچ</unitPattern>
+				<displayName draft="provisional">ڊاٽس في انچ</displayName>
+				<unitPattern count="one" draft="provisional">{0} ڊاٽ في انچ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ڊاٽس في انچ</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>پڪسلز</displayName>
-				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} dots</unitPattern>
+				<displayName draft="provisional">پڪسلز</displayName>
+				<unitPattern count="one" draft="provisional">{0} dot</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dots</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -7585,9 +7585,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ڪيلوري</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ڪيلوري</displayName>
-				<unitPattern count="one">{0} ڪيلوري</unitPattern>
-				<unitPattern count="other">{0} ڪيلوري</unitPattern>
+				<displayName draft="provisional">ڪيلوري</displayName>
+				<unitPattern count="one" draft="provisional">{0} ڪيلوري</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ڪيلوري</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ڪلو جول</displayName>
@@ -7677,19 +7677,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>پڪسلز</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">پڪسلز</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -8541,9 +8541,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ڪيلوري</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>ڪيلوري</displayName>
-				<unitPattern count="one">{0} ڪيلوري</unitPattern>
-				<unitPattern count="other">{0} ڪيلوري</unitPattern>
+				<displayName draft="provisional">ڪيلوري</displayName>
+				<unitPattern count="one" draft="provisional">{0} ڪيلوري</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ڪيلوري</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>ڪلو جول</displayName>
@@ -8618,19 +8618,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0}dpcm</unitPattern>
-				<unitPattern count="other">{0}dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0}dpi</unitPattern>
-				<unitPattern count="other">{0}dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>پڪسلز</displayName>
-				<unitPattern count="one">{0}dot</unitPattern>
-				<unitPattern count="other">{0}dot</unitPattern>
+				<displayName draft="provisional">پڪسلز</displayName>
+				<unitPattern count="one" draft="provisional">{0}dot</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dot</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -9202,13 +9202,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wdth" subtype="112.5" alt="extended">اڌ پکيڙيل</styleName>
 		<styleName type="wdth" subtype="112.5" alt="wide">اڌ ويڪرو</styleName>
 		<styleName type="wdth" subtype="125">پکيڙيل</styleName>
-		<styleName type="wdth" subtype="125" alt="extended">پکيڙيل</styleName>
 		<styleName type="wdth" subtype="125" alt="wide">ويڪرو</styleName>
 		<styleName type="wdth" subtype="150">ايڪسٽرا-پکيڙيل</styleName>
-		<styleName type="wdth" subtype="150" alt="extended">ايڪسٽرا-پکيڙيل</styleName>
 		<styleName type="wdth" subtype="150" alt="wide">ايڪسٽرا-ويڪرو</styleName>
 		<styleName type="wdth" subtype="200">الٽرا پکيڙيل</styleName>
-		<styleName type="wdth" subtype="200" alt="extended">الٽرا پکيڙيل</styleName>
 		<styleName type="wdth" subtype="200" alt="wide">الٽرا ويڪرو</styleName>
 		<styleName type="wght" subtype="100">سنهو</styleName>
 		<styleName type="wght" subtype="200">ايڪسٽرا-هلڪو</styleName>
@@ -9243,138 +9240,138 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<nameOrderLocales order="givenFirst">und sd</nameOrderLocales>
 		<nameOrderLocales order="surnameFirst">ko si ta te vi yue zh</nameOrderLocales>
 		<personName order="givenFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
+			<namePattern draft="provisional">{title} {given} {given2} {surname} {surname2} {credentials}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="givenFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{given-monogram-allCaps}{given2-monogram-allCaps}{surname-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="addressing" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="long" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="addressing" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="medium" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="formal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="addressing" formality="informal">
-			<namePattern>{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2} {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="formal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="surnameFirst" length="short" usage="monogram" formality="informal">
-			<namePattern>{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
+			<namePattern draft="provisional">{surname-monogram-allCaps}{given-monogram-allCaps}{given2-monogram-allCaps}</namePattern>
 		</personName>
 		<personName order="sorting" length="long" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="medium" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="formal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<personName order="sorting" length="short" usage="referring" formality="informal">
-			<namePattern>{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
+			<namePattern draft="provisional">{surname} {surname2}, {title} {given} {given2} {credentials}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given">سنباد</nameField>
+			<nameField type="given" draft="provisional">سنباد</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given">آئرين</nameField>
-			<nameField type="surname">ائڊلر</nameField>
+			<nameField type="given" draft="provisional">آئرين</nameField>
+			<nameField type="surname" draft="provisional">ائڊلر</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given">ميري سيو</nameField>
-			<nameField type="given2">ھامش</nameField>
-			<nameField type="surname">واٽسن</nameField>
+			<nameField type="given" draft="provisional">ميري سيو</nameField>
+			<nameField type="given2" draft="provisional">ھامش</nameField>
+			<nameField type="surname" draft="provisional">واٽسن</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">محترم</nameField>
-			<nameField type="given">برٽرم ولبرفورس</nameField>
-			<nameField type="given-informal">برٽي</nameField>
-			<nameField type="given2">ھينري رابرٽ</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">ووسٽر</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
-			<nameField type="generation">جونيئر</nameField>
-			<nameField type="credentials">ايم پي</nameField>
+			<nameField type="title" draft="provisional">محترم</nameField>
+			<nameField type="given" draft="provisional">برٽرم ولبرفورس</nameField>
+			<nameField type="given-informal" draft="provisional">برٽي</nameField>
+			<nameField type="given2" draft="provisional">ھينري رابرٽ</nameField>
+			<nameField type="surname-prefix" draft="provisional">∅∅∅</nameField>
+			<nameField type="surname-core" draft="provisional">ووسٽر</nameField>
+			<nameField type="surname2" draft="provisional">∅∅∅</nameField>
+			<nameField type="generation" draft="provisional">جونيئر</nameField>
+			<nameField type="credentials" draft="provisional">ايم پي</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
 			<nameField type="given">سندباد</nameField>

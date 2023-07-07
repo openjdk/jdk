@@ -663,7 +663,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israèl</territory>
 			<territory type="IM">Pulo Man</territory>
 			<territory type="IN">Indhia</territory>
-			<territory type="IO">Wilayah Inggris nang Segoro Hindia</territory>
+			<territory type="IO" draft="provisional">Wilayah Inggris nang Segoro Hindia</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Èslan</territory>
@@ -844,10 +844,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic-amete-alem">Tanggalan Etiopia Amete Alem</type>
 			<type key="calendar" type="gregorian">Tanggalan Gregorian</type>
 			<type key="calendar" type="hebrew">Tanggalan Ibrani</type>
-			<type key="calendar" type="islamic">Tanggalan Islam</type>
-			<type key="calendar" type="islamic-civil">Tanggalan Islam (tabel, jaman sipil)</type>
-			<type key="calendar" type="islamic-tbla">Tanggalan Islam (tabel, jaman astronomi)</type>
-			<type key="calendar" type="islamic-umalqura">Tanggalan Islam (Mekah)</type>
+			<type key="calendar" type="islamic" draft="provisional">Tanggalan Islam</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Tanggalan Islam (tabel, jaman sipil)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Tanggalan Islam (tabel, jaman astronomi)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Tanggalan Islam (Mekah)</type>
 			<type key="calendar" type="iso8601">Tanggalan ISO-8601</type>
 			<type key="calendar" type="japanese">Tanggalan Jepang</type>
 			<type key="calendar" type="persian">Tanggalan Persia</type>
@@ -926,9 +926,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[a â å b c d e é è ê g h i ì j k l m n o ò p r s t u ù w y]</exemplarCharacters>
+		<exemplarCharacters>[aâå b c d eéèê g h iì j k l m n oò p r s t uù w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[f q v x z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A Â Å B C D E É È Ê G H I Ì J K L M N O Ò P R S T U Ù W Y]</exemplarCharacters>
+		<exemplarCharacters type="index">[AÂÅ B C D EÉÈÊ G H IÌ J K L M N OÒ P R S T UÙ W Y]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -937,14 +937,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -5667,8 +5667,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kalori</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kalori</displayName>
-				<unitPattern count="other">{0} Kalori</unitPattern>
+				<displayName draft="provisional">Kalori</displayName>
+				<unitPattern count="other" draft="provisional">{0} Kalori</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojol</displayName>
@@ -5743,16 +5743,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>titek saben sentimeter</displayName>
-				<unitPattern count="other">{0} titek saben sentimeter</unitPattern>
+				<displayName draft="provisional">titek saben sentimeter</displayName>
+				<unitPattern count="other" draft="provisional">{0} titek saben sentimeter</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>titek saben inci</displayName>
-				<unitPattern count="other">{0} titek saben inci</unitPattern>
+				<displayName draft="provisional">titek saben inci</displayName>
+				<unitPattern count="other" draft="provisional">{0} titek saben inci</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>titik</displayName>
-				<unitPattern count="other">{0} titik</unitPattern>
+				<displayName draft="provisional">titik</displayName>
+				<unitPattern count="other" draft="provisional">{0} titik</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>radius donya</displayName>
@@ -6431,8 +6431,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kal</displayName>
-				<unitPattern count="other">{0} Kal</unitPattern>
+				<displayName draft="provisional">Kal</displayName>
+				<unitPattern count="other" draft="provisional">{0} Kal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojol</displayName>
@@ -6479,16 +6479,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>tscm</displayName>
-				<unitPattern count="other">{0} tscm</unitPattern>
+				<displayName draft="provisional">tscm</displayName>
+				<unitPattern count="other" draft="provisional">{0} tscm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>tsi</displayName>
-				<unitPattern count="other">{0} tsi</unitPattern>
+				<displayName draft="provisional">tsi</displayName>
+				<unitPattern count="other" draft="provisional">{0} tsi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>titik</displayName>
-				<unitPattern count="other">{0} titik</unitPattern>
+				<displayName draft="provisional">titik</displayName>
+				<unitPattern count="other" draft="provisional">{0} titik</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>
@@ -7221,8 +7221,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kal</displayName>
-				<unitPattern count="other">{0} Kal</unitPattern>
+				<displayName draft="provisional">Kal</displayName>
+				<unitPattern count="other" draft="provisional">{0} Kal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojol</displayName>
@@ -7297,16 +7297,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>tscm</displayName>
-				<unitPattern count="other">{0} tscm</unitPattern>
+				<displayName draft="provisional">tscm</displayName>
+				<unitPattern count="other" draft="provisional">{0} tscm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>tsi</displayName>
-				<unitPattern count="other">{0} tsi</unitPattern>
+				<displayName draft="provisional">tsi</displayName>
+				<unitPattern count="other" draft="provisional">{0} tsi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>titik</displayName>
-				<unitPattern count="other">{0} titik</unitPattern>
+				<displayName draft="provisional">titik</displayName>
+				<unitPattern count="other" draft="provisional">{0} titik</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -8098,27 +8098,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given">Sinbad</nameField>
+			<nameField type="given" draft="provisional">Sinbad</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given">Irin</nameField>
-			<nameField type="surname">Adler</nameField>
+			<nameField type="given" draft="provisional">Irin</nameField>
+			<nameField type="surname" draft="provisional">Adler</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given">Jon</nameField>
-			<nameField type="given2">Hamis</nameField>
-			<nameField type="surname">Watson</nameField>
+			<nameField type="given" draft="provisional">Jon</nameField>
+			<nameField type="given2" draft="provisional">Hamis</nameField>
+			<nameField type="surname" draft="provisional">Watson</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">Bp.</nameField>
-			<nameField type="given">Bertram Wilberforce</nameField>
-			<nameField type="given-informal">Bertie</nameField>
-			<nameField type="given2">Henry Robert</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">Wooster</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
-			<nameField type="generation">Jr</nameField>
-			<nameField type="credentials">MP</nameField>
+			<nameField type="title" draft="provisional">Bp.</nameField>
+			<nameField type="given" draft="provisional">Bertram Wilberforce</nameField>
+			<nameField type="given-informal" draft="provisional">Bertie</nameField>
+			<nameField type="given2" draft="provisional">Henry Robert</nameField>
+			<nameField type="surname-prefix" draft="provisional">∅∅∅</nameField>
+			<nameField type="surname-core" draft="provisional">Wooster</nameField>
+			<nameField type="surname2" draft="provisional">∅∅∅</nameField>
+			<nameField type="generation" draft="provisional">Jr</nameField>
+			<nameField type="credentials" draft="provisional">MP</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
 			<nameField type="given">Sinbad</nameField>

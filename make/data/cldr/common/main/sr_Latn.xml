@@ -865,7 +865,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Izrael</territory>
 			<territory type="IM">Ostrvo Man</territory>
 			<territory type="IN">Indija</territory>
-			<territory type="IO">Britanska teritorija Indijskog okeana</territory>
+			<territory type="IO" draft="provisional">Britanska teritorija Indijskog okeana</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Island</territory>
@@ -1090,10 +1090,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">gregorijanski kalendar</type>
 			<type key="calendar" type="hebrew">hebrejski kalendar</type>
 			<type key="calendar" type="indian">Indijski nacionalni kalendar</type>
-			<type key="calendar" type="islamic">islamski kalendar</type>
-			<type key="calendar" type="islamic-civil">islamski civilni kalendar</type>
-			<type key="calendar" type="islamic-tbla">islamski astronomski kalendar</type>
-			<type key="calendar" type="islamic-umalqura">islamski kalendar (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">islamski kalendar</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">islamski civilni kalendar</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">islamski astronomski kalendar</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">islamski kalendar (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 kalendar</type>
 			<type key="calendar" type="japanese">japanski kalendar</type>
 			<type key="calendar" type="persian">persijski kalendar</type>
@@ -1211,7 +1211,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[å q w x y]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Č Ć D {DŽ} E F G H I J K L {LJ} M N {NJ} O P Q R S Š T U V W X Y Z Ž]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – , ; \: ! ? . … ‘ ‚ “ „ ( ) \[ \] \{ \} * #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – , ; \: ! ? . … ‘‚ “„ ( ) \[ \] \{ \} * #]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1220,14 +1220,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8846,10 +8846,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other" case="instrumental">{0} kalorija</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kalorije</displayName>
-				<unitPattern count="one">{0} kalorija</unitPattern>
-				<unitPattern count="few">{0} kalorije</unitPattern>
-				<unitPattern count="other">{0} kalorija</unitPattern>
+				<displayName draft="provisional">Kalorije</displayName>
+				<unitPattern count="one" draft="provisional">{0} kalorija</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kalorije</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kalorija</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>inanimate</gender>
@@ -9090,22 +9090,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>tačka</displayName>
-				<unitPattern count="one">{0} tačka</unitPattern>
-				<unitPattern count="few">{0} tačke</unitPattern>
-				<unitPattern count="other">{0} tačaka</unitPattern>
+				<displayName draft="provisional">tačka</displayName>
+				<unitPattern count="one" draft="provisional">{0} tačka</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} tačke</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tačaka</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>poluprečnik Zemlje</displayName>
@@ -10594,10 +10594,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="few">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -10705,22 +10705,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>tačka</displayName>
-				<unitPattern count="one">{0} tačka</unitPattern>
-				<unitPattern count="few">{0} tačke</unitPattern>
-				<unitPattern count="other">{0} tačaka</unitPattern>
+				<displayName draft="provisional">tačka</displayName>
+				<unitPattern count="one" draft="provisional">{0} tačka</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} tačke</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tačaka</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11809,10 +11809,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="few">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -11923,22 +11923,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>tačka</displayName>
-				<unitPattern count="one">{0} tačka</unitPattern>
-				<unitPattern count="few">{0} tačke</unitPattern>
-				<unitPattern count="other">{0} tačaka</unitPattern>
+				<displayName draft="provisional">tačka</displayName>
+				<unitPattern count="one" draft="provisional">{0} tačka</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} tačke</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tačaka</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -12760,16 +12760,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="slnt" subtype="24">ekstranagnut</styleName>
 		<styleName type="wdth" subtype="50">ultrasužen</styleName>
 		<styleName type="wdth" subtype="50" alt="compressed">ultrazbijen</styleName>
-		<styleName type="wdth" subtype="50" alt="narrow">ultrasužen</styleName>
 		<styleName type="wdth" subtype="62.5">ekstrasužen</styleName>
 		<styleName type="wdth" subtype="62.5" alt="compressed">ekstrazbijen</styleName>
-		<styleName type="wdth" subtype="62.5" alt="narrow">ekstrasužen</styleName>
 		<styleName type="wdth" subtype="75">sužen</styleName>
 		<styleName type="wdth" subtype="75" alt="compressed">zbijeno</styleName>
 		<styleName type="wdth" subtype="75" alt="narrow">zbijeno</styleName>
 		<styleName type="wdth" subtype="87.5">polusužen</styleName>
 		<styleName type="wdth" subtype="87.5" alt="compressed">poluzbijen</styleName>
-		<styleName type="wdth" subtype="87.5" alt="narrow">polusužen</styleName>
 		<styleName type="wdth" subtype="100">normalan</styleName>
 		<styleName type="wdth" subtype="112.5">poluproširen</styleName>
 		<styleName type="wdth" subtype="112.5" alt="extended">poluprodužen</styleName>
@@ -12792,7 +12789,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="400">običan</styleName>
 		<styleName type="wght" subtype="500">srednji</styleName>
 		<styleName type="wght" subtype="600">polupodebljan</styleName>
-		<styleName type="wght" subtype="600" alt="demi">polupodebljan</styleName>
 		<styleName type="wght" subtype="700">podebljan</styleName>
 		<styleName type="wght" subtype="800">ekstrapodebljan</styleName>
 		<styleName type="wght" subtype="900">crn</styleName>

@@ -112,8 +112,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters draft="contributed">[\u064E \u064F \u0650 \u0651 \u0652 آ ا ئ ب پ ت ٹ ج چ د ڈ ر ڑ ز ژ س ش ک گ ل م ن و ۆ ه ی ێ ے]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[\u200C\u200D \u064B \u0654 ء أ ؤ إ ة ث ح خ ذ ص ض ط ظ ع غ ف ق ں ھ ہ]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[َ ُ ِ ّ ْ آ ا ئ ب پ ت ٹ ج چ د ڈ ر ڑ ز ژ س ش ک گ ل م ن و ۆ ه ی ێ ے]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[\u200C\u200D ً ٔ ء أ ؤ إ ة ث ح خ ذ ص ض ط ظ ع غ ف ق ں ھ ہ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[آ ا {ای} {اێ} {ائی} ب پ ت ٹ ج چ د ڈ ر ڑ ز ژ س ش ف ک گ ل م ن و ه ی]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[، ؛ \: ! ؟ . ' ‹ › &quot; « »]</exemplarCharacters>
 	</characters>

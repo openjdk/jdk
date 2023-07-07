@@ -658,7 +658,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">इजरायल</territory>
 			<territory type="IM">आइल ऑफ मैन</territory>
 			<territory type="IN">भारत</territory>
-			<territory type="IO">ब्रिटिश हिंद महासागरीय क्षेत्र</territory>
+			<territory type="IO" draft="provisional">ब्रिटिश हिंद महासागरीय क्षेत्र</territory>
 			<territory type="IQ">इराक</territory>
 			<territory type="IR">ईरान</territory>
 			<territory type="IS">आइसलैंड</territory>
@@ -834,9 +834,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">ग्रेगोरियन कैलेंडर</type>
 			<type key="calendar" type="hebrew">हीब्रू कैलेंडर</type>
 			<type key="calendar" type="indian">भारतीय राष्ट्रीय कैलेंडर</type>
-			<type key="calendar" type="islamic">इस्लामिक कैलेंडर</type>
-			<type key="calendar" type="islamic-civil">इस्लामिक कैलेंडर (टैबुलर, सिविल एपेक)</type>
-			<type key="calendar" type="islamic-umalqura">इस्लामिक कैलेंडर (उम अल कुरा)</type>
+			<type key="calendar" type="islamic" draft="provisional">इस्लामिक कैलेंडर</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">इस्लामिक कैलेंडर (टैबुलर, सिविल एपेक)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">इस्लामिक कैलेंडर (उम अल कुरा)</type>
 			<type key="calendar" type="iso8601">ISO-8601 कैलेंडर</type>
 			<type key="calendar" type="japanese">जापानी कैलेंडर</type>
 			<type key="calendar" type="persian">फारसी कैलेंडर</type>
@@ -909,10 +909,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u093C \u0902 ः क {क\u094Dष} ख ग घ च छ ज {ज\u094Dञ} झ ञ ट ठ ड {ड\u0902} ढ ण त {त\u094Dर} थ द ध न प फ ब भ म य र ल व श {श\u094Dर} ष स ह ा ि ी \u0941 \u0942 \u0947 \u0948 ो ौ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[अ {अ\u0902} {अः} आ इ ई उ ऊ ऋ ऌ ॡ ए ऐ ओ औ]</exemplarCharacters>
-		<exemplarCharacters type="index">[\u093C अ {अ\u0902} {अः} आ इ ई उ ऊ ऋ ऌ ॡ ए ऐ ओ औ क {क\u094Dष} ख ग घ च छ ज {ज\u094Dञ} झ ञ ट ठ ड {ड\u0902} ढ ण त {त\u094Dर} थ द ध न प फ ब भ म य र ल व श {श\u094Dर} ष स ह]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[_ \- ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} § @ * / \\ \&amp; # ′ ″ ` + | ~]</exemplarCharacters>
+		<exemplarCharacters>[़ ंः क {क्ष} ख ग घ च छ ज {ज्ञ} झ ञ ट ठ ड{डं} ढ ण त {त्र} थ द ध न प फ ब भ म य र ल व श {श्र} ष स ह ा ि ी ु ू े ै ो ौ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[अ{अं}{अः} आ इ ई उ ऊ ऋ ऌ ॡ ए ऐ ओ औ]</exemplarCharacters>
+		<exemplarCharacters type="index">[़ अ{अं}{अः} आ इ ई उ ऊ ऋ ऌ ॡ ए ऐ ओ औ क {क्ष} ख ग घ च छ ज {ज्ञ} झ ञ ट ठ ड{डं} ढ ण त {त्र} थ द ध न प फ ब भ म य र ल व श {श्र} ष स ह]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[_ \- ‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] \{ \} § @ * / \\ \&amp; # ′ ″ ` + | ~]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

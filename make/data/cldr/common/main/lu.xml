@@ -147,7 +147,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Irelande</territory>
 			<territory type="IL">Isirayele</territory>
 			<territory type="IN">Inde</territory>
-			<territory type="IO">Lutanda lwa Angeletele ku mbu wa Indiya</territory>
+			<territory type="IO" draft="provisional">Lutanda lwa Angeletele ku mbu wa Indiya</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Ira</territory>
 			<territory type="IS">Isilande</territory>
@@ -283,7 +283,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á à b c d e é è ɛ {ɛ\u0301} {ɛ\u0300} f h i í ì j k l m n {ng} {ny} o ó ò ɔ {ɔ\u0301} {ɔ\u0300} p {ph} q s {shi} t u ú ù v w y z]</exemplarCharacters>
+		<exemplarCharacters>[aáà b c d eéè ɛ{ɛ́}{ɛ̀} f h iíì j k l m n {ng} {ny} oóò ɔ{ɔ́}{ɔ̀} p {ph} q s {shi} t uúù v w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[g r x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F H I J K L M N O P Q S T U V W Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>

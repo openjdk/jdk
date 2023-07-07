@@ -886,7 +886,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Ισραήλ</territory>
 			<territory type="IM">Νήσος του Μαν</territory>
 			<territory type="IN">Ινδία</territory>
-			<territory type="IO">Βρετανικά Εδάφη Ινδικού Ωκεανού</territory>
+			<territory type="IO" draft="provisional">Βρετανικά Εδάφη Ινδικού Ωκεανού</territory>
 			<territory type="IQ">Ιράκ</territory>
 			<territory type="IR">Ιράν</territory>
 			<territory type="IS">Ισλανδία</territory>
@@ -1115,11 +1115,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Γρηγοριανό ημερολόγιο</type>
 			<type key="calendar" type="hebrew">Εβραϊκό ημερολόγιο</type>
 			<type key="calendar" type="indian">Ινδικό εθνικό ημερολόγιο</type>
-			<type key="calendar" type="islamic">Ισλαμικό ημερολόγιο</type>
-			<type key="calendar" type="islamic-civil">Ισλαμικό ημερολόγιο (σε μορφή πίνακα, αστικό εποχής)</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">Ισλαμικό ημερολόγιο (Σαουδική Αραβία, θέαση)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">Ισλαμικό ημερολόγιο (δομημένο, αστρονομική εποχή)</type>
-			<type key="calendar" type="islamic-umalqura">Ισλαμικό ημερολόγιο (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Ισλαμικό ημερολόγιο</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Ισλαμικό ημερολόγιο (σε μορφή πίνακα, αστικό εποχής)</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">Ισλαμικό ημερολόγιο (Σαουδική Αραβία, θέαση)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Ισλαμικό ημερολόγιο (δομημένο, αστρονομική εποχή)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Ισλαμικό ημερολόγιο (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Ημερολόγιο ISO-8601</type>
 			<type key="calendar" type="japanese">Ιαπωνικό ημερολόγιο</type>
 			<type key="calendar" type="persian">Περσικό ημερολόγιο</type>
@@ -1239,11 +1239,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[α ά β γ δ ε έ ζ η ή θ ι ί ϊ ΐ κ λ μ ν ξ ο ό π ρ σ ς τ υ ύ ϋ ΰ φ χ ψ ω ώ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ἀ ἄ ἂ ἆ ἁ ἅ ἃ ἇ ὰ ᾶ ἐ ἔ ἒ ἑ ἕ ἓ ὲ ἠ ἤ ἢ ἦ ἡ ἥ ἣ ἧ ὴ ῆ ἰ ἴ ἲ ἶ ἱ ἵ ἳ ἷ ὶ ῖ ῒ ῗ ὄ ὂ ὃ ὸ ὐ ὔ ὒ ὖ ὑ ὕ ὓ ὗ ὺ ῦ ῢ ῧ ὤ ὢ ὦ ὥ ὣ ὧ ὼ ῶ]</exemplarCharacters>
+		<exemplarCharacters>[αά β γ δ εέ ζ ηή θ ιίϊΐ κ λ μ ν ξ οό π ρ σς τ υύϋΰ φ χ ψ ωώ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ἀἄἂἆἁἅἃἇὰᾶ ἐἔἒἑἕἓὲ ἠἤἢἦἡἥἣἧὴῆ ἰἴἲἶἱἵἳἷὶῖῒῗ ὄὂὃὸ ὐὔὒὖὑὕὓὗὺῦῢῧ ὤὢὦὥὣὧὼῶ]</exemplarCharacters>
 		<exemplarCharacters type="index">[Α Β Γ Δ Ε Ζ Η Θ Ι Κ Λ Μ Ν Ξ Ο Π Ρ Σ Τ Υ Φ Χ Ψ Ω]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! . … &quot; « » ( ) \[ \] § @ * / \\ \&amp;]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! . … &quot; « » ( ) \[ \] § @ * / \\ \&amp;]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1252,23 +1252,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>;</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8265,9 +8265,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} θερμίδων</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Θερμίδες</displayName>
-				<unitPattern count="one">{0} θερμίδα</unitPattern>
-				<unitPattern count="other">{0} θερμίδες</unitPattern>
+				<displayName draft="provisional">Θερμίδες</displayName>
+				<unitPattern count="one" draft="provisional">{0} θερμίδα</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} θερμίδες</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>neuter</gender>
@@ -8425,19 +8425,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixel ανά ίντσα</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>κουκκίδες ανά εκατοστό</displayName>
-				<unitPattern count="one">{0} κουκκίδα ανά εκατοστό</unitPattern>
-				<unitPattern count="other">{0} κουκκίδες ανά εκατοστό</unitPattern>
+				<displayName draft="provisional">κουκκίδες ανά εκατοστό</displayName>
+				<unitPattern count="one" draft="provisional">{0} κουκκίδα ανά εκατοστό</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} κουκκίδες ανά εκατοστό</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>κουκκίδες ανά ίντσα</displayName>
-				<unitPattern count="one">{0} κουκκίδα ανά ίντσα</unitPattern>
-				<unitPattern count="other">{0} κουκκίδες ανά ίντσα</unitPattern>
+				<displayName draft="provisional">κουκκίδες ανά ίντσα</displayName>
+				<unitPattern count="one" draft="provisional">{0} κουκκίδα ανά ίντσα</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} κουκκίδες ανά ίντσα</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>κουκκίδα</displayName>
-				<unitPattern count="one">{0} κουκκίδα</unitPattern>
-				<unitPattern count="other">{0} κουκκίδες</unitPattern>
+				<displayName draft="provisional">κουκκίδα</displayName>
+				<unitPattern count="one" draft="provisional">{0} κουκκίδα</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} κουκκίδες</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>ακτίνα της Γης</displayName>
@@ -9610,9 +9610,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} θερμ.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>θερμ.</displayName>
-				<unitPattern count="one">{0} θερμ.</unitPattern>
-				<unitPattern count="other">{0} θερμ.</unitPattern>
+				<displayName draft="provisional">θερμ.</displayName>
+				<unitPattern count="one" draft="provisional">{0} θερμ.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} θερμ.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>κιλοτζάουλ</displayName>
@@ -9698,19 +9698,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>κουκ./εκ.</displayName>
-				<unitPattern count="one">{0} κουκ./εκ.</unitPattern>
-				<unitPattern count="other">{0} κουκ./εκ.</unitPattern>
+				<displayName draft="provisional">κουκ./εκ.</displayName>
+				<unitPattern count="one" draft="provisional">{0} κουκ./εκ.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} κουκ./εκ.</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>κουκ./ίντσα</displayName>
-				<unitPattern count="one">{0} κουκ./ίντσα</unitPattern>
-				<unitPattern count="other">{0} κουκ./ίντσα</unitPattern>
+				<displayName draft="provisional">κουκ./ίντσα</displayName>
+				<unitPattern count="one" draft="provisional">{0} κουκ./ίντσα</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} κουκ./ίντσα</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pixel</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">pixel</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -10652,9 +10652,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} θερμ.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName draft="contributed">θερμ.</displayName>
-				<unitPattern count="one" draft="contributed">{0} θερμ.</unitPattern>
-				<unitPattern count="other" draft="contributed">{0} θερμ.</unitPattern>
+				<displayName draft="provisional">θερμ.</displayName>
+				<unitPattern count="one" draft="provisional">{0} θερμ.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} θερμ.</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -10747,19 +10747,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pixel</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">pixel</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>

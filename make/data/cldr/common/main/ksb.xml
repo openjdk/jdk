@@ -148,7 +148,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Ayalandi</territory>
 			<territory type="IL">Islaeli</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Eneo ja Uingeeza mwe Bahali Hindi</territory>
+			<territory type="IO" draft="provisional">Eneo ja Uingeeza mwe Bahali Hindi</territory>
 			<territory type="IQ">Ilaki</territory>
 			<territory type="IR">Uajemi</territory>
 			<territory type="IS">Aislandi</territory>

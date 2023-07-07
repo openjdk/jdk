@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE supplementalData SYSTEM "../../common/dtd/ldmlSupplemental.dtd">
 <!--
-Copyright © 1991-2015 Unicode, Inc.
+Copyright © 1991-2023 Unicode, Inc.
 CLDR data files are interpreted according to the LDML specification (http://unicode.org/reports/tr35/)
-For terms of use, see http://www.unicode.org/copyright.html
+For terms of use, see https://www.unicode.org/copyright.html
 -->
 
 <supplementalData>
@@ -1271,7 +1271,7 @@ XXX Code for transations where no currency is involved
         <group type="EZ" contains="AT BE CY DE EE ES FI FR GR IE IT LT LU LV MT NL PT SI SK" grouping="true"/> <!-- Eurozone, see https://en.wikipedia.org/wiki/Eurozone -->
         <group type="UN" contains="AD AE AF AG AL AM AO AR AT AU AZ BA BB BD BE BF BG BH BI BJ BN BO BR BS BT BW BY BZ CA CD CF CG CH CI CL CM CN CO CR CU CV CY CZ DE DJ DK DM DO DZ EC EE EG ER ES ET FI FJ FM FR GA GB GD GE GH GM GN GQ GR GT GW GY HN HR HT HU ID IE IL IN IQ IR IS IT JM JO JP KE KG KH KI KM KN KP KR KW KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MG MH MK ML MM MN MR MT MU MV MX MW MY MZ NA NE NG NI NL NO NR NP NZ OM PA PE PG PH PK PL PT PW PY QA RO RS RU RW SA SB SC SD SE SG SI SK SL SM SN SO SR SS ST SV SY SZ TD TG TH TJ TL TM TN TO TR TT TV TZ UA UG US UY UZ VC VE VN VU WS YE ZA ZM ZW" grouping="true"/> <!-- United Nations, see https://en.wikipedia.org/wiki/Member_states_of_the_United_Nations -->
     </territoryContainment>
-    <!-- Start of Generated Data: see https://cldr.unicode.org/development/updating-codes/update-language-script-info -->
+    <!-- Start of Generated Data: see https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
 	<languageData>
 		<language type="aa" scripts="Latn"/>
 		<language type="aa" territories="DJ ET" alt="secondary"/>
@@ -1396,6 +1396,7 @@ XXX Code for transations where no currency is involved
 		<language type="bku" scripts="Latn"/>
 		<language type="bku" scripts="Buhd" alt="secondary"/>
 		<language type="bla" scripts="Latn"/>
+		<language type="blo" scripts="Latn" territories="BJ TG"/>
 		<language type="blt" scripts="Tavt"/>
 		<language type="bm" scripts="Latn Nkoo"/>
 		<language type="bm" territories="ML" alt="secondary"/>
@@ -1813,6 +1814,8 @@ XXX Code for transations where no currency is involved
 		<language type="kxm" scripts="Thai"/>
 		<language type="kxm" territories="TH" alt="secondary"/>
 		<language type="kxp" scripts="Arab"/>
+		<language type="kxv" scripts="Latn"/>
+		<language type="kxv" scripts="Deva Orya Telu" alt="secondary"/>
 		<language type="ky" scripts="Arab Cyrl Latn" territories="KG"/>
 		<language type="kyu" scripts="Kali"/>
 		<language type="la" scripts="Latn" territories="VA" alt="secondary"/>
@@ -2564,6 +2567,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="fr" populationPercent="35" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="fon" populationPercent="25"/>	<!--Fon-->
 			<languagePopulation type="yo" populationPercent="6.7"/>	<!--Yoruba-->
+			<languagePopulation type="blo" populationPercent="0.26"/>	<!--Anii-->
 		</territory>
 		<territory type="BL" gdp="255000000" literacyPercent="99" population="7122">	<!--St. Barthélemy-->
 			<languagePopulation type="fr" populationPercent="96" officialStatus="official"/>	<!--French-->
@@ -2668,7 +2672,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="chp" populationPercent="0.034" officialStatus="official_regional" references="R1329"/>	<!--Chipewyan-->
 			<languagePopulation type="moe" populationPercent="0.032" references="R1329"/>	<!--Innu-aimun-->
 			<languagePopulation type="cr" populationPercent="0.024" officialStatus="official_regional" references="R1329"/>	<!--Cree-->
-			<languagePopulation type="mic" populationPercent="0.021" references="R1329"/>	<!--Mi'kmaq-->
+			<languagePopulation type="mic" populationPercent="0.021" references="R1329"/>	<!--Mi'kmaw-->
 			<languagePopulation type="atj" populationPercent="0.017" references="R1329"/>	<!--Atikamekw-->
 			<languagePopulation type="bla" populationPercent="0.013" references="R1329"/>	<!--Siksiká-->
 			<languagePopulation type="crk" populationPercent="0.011" references="R1329"/>	<!--Plains Cree-->
@@ -3301,6 +3305,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="bft" populationPercent="0.0062"/>	<!--Balti-->
 			<languagePopulation type="bra" populationPercent="0.0041"/>	<!--Braj-->
 			<languagePopulation type="lep" populationPercent="0.0035"/>	<!--Lepcha-->
+			<languagePopulation type="kxv" populationPercent="0.0029"/>	<!--Kuvi-->
 			<languagePopulation type="btv" populationPercent="0.0026"/>	<!--Bateri-->
 			<languagePopulation type="lif" populationPercent="0.0026"/>	<!--Limbu-->
 			<languagePopulation type="lah" populationPercent="0.0025"/>	<!--Western Panjabi-->
@@ -4141,6 +4146,7 @@ XXX Code for transations where no currency is involved
 			<languagePopulation type="fr" populationPercent="61" officialStatus="official"/>	<!--French-->
 			<languagePopulation type="ee" populationPercent="17"/>	<!--Ewe-->
 			<languagePopulation type="ife" literacyPercent="15" populationPercent="1.3" references="R1048"/>	<!--Ifè-->
+			<languagePopulation type="blo" populationPercent="0.14"/>	<!--Anii-->
 		</territory>
 		<territory type="TH" gdp="1236000000000" literacyPercent="93.5" population="68977400">	<!--Thailand-->
 			<languagePopulation type="th" literacyPercent="93" populationPercent="80" officialStatus="official" references="R1090"/>	<!--Thai-->
@@ -4404,7 +4410,7 @@ XXX Code for transations where no currency is involved
 		<territory type="ZZ" gdp="0" literacyPercent="0" population="0">	<!--Unknown Region-->
 		</territory>
 	</territoryInfo>
-    <!-- End of Generated Data: see http://sites.google.com/site/cldr/Home/updating-codes -->
+    <!-- End of Generated Data: see https://cldr.unicode.org/development/updating-codes -->
     <calendarData>
         <calendar type="gregorian">
            <calendarSystem type="solar" />
@@ -4914,7 +4920,7 @@ XXX Code for transations where no currency is involved
 
 	<!-- <unitPreferenceData> moved to units.txt -->
 
-    <!-- start of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
+    <!-- start of data generated with CountItems tool per https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
     <codeMappings>
         <territoryCodes type="AA" numeric="958" alpha3="AAA"/>
         <territoryCodes type="AC" alpha3="ASC"/>
@@ -5225,7 +5231,7 @@ XXX Code for transations where no currency is involved
         <territoryCodes type="ZR" numeric="180" alpha3="ZAR"/>
         <territoryCodes type="ZW" numeric="716" alpha3="ZWE" fips10="ZI"/>
         <territoryCodes type="ZZ" numeric="999" alpha3="ZZZ"/>
-    <!-- end of data generated with CountItems tool per http://sites.google.com/site/cldr/development/updating-codes/update-languagescriptregion-subtags -->
+    <!-- end of data generated with CountItems tool per https://cldr.unicode.org/development/updating-codes/update-languagescriptregion-subtags -->
 
 	    <currencyCodes type="AED" numeric="784"/>
 		<currencyCodes type="AFN" numeric="971"/>
@@ -5413,7 +5419,7 @@ XXX Code for transations where no currency is involved
     </codeMappings>
 
 	<parentLocales>
-		<parentLocale parent="root" locales="az_Arab az_Cyrl bal_Latn blt_Latn bm_Nkoo bs_Cyrl byn_Latn cu_Glag dje_Arab dyo_Arab en_Dsrt en_Shaw ff_Adlm ff_Arab ha_Arab iu_Latn kk_Arab ks_Deva ku_Arab ky_Arab ky_Latn ml_Arab mn_Mong mni_Mtei ms_Arab pa_Arab sat_Deva sd_Deva sd_Khoj sd_Sind shi_Latn so_Arab sr_Latn sw_Arab tg_Arab ug_Cyrl uz_Arab uz_Cyrl vai_Latn wo_Arab yo_Arab yue_Hans zh_Hant"/>
+		<parentLocale parent="root" locales="az_Arab az_Cyrl bal_Latn blt_Latn bm_Nkoo bs_Cyrl byn_Latn cu_Glag dje_Arab dyo_Arab en_Dsrt en_Shaw ff_Adlm ff_Arab ha_Arab iu_Latn kk_Arab ks_Deva ku_Arab kxv_Deva kxv_Orya kxv_Telu ky_Arab ky_Latn ml_Arab mn_Mong mni_Mtei ms_Arab pa_Arab sat_Deva sd_Deva sd_Khoj sd_Sind shi_Latn so_Arab sr_Latn sw_Arab tg_Arab ug_Cyrl uz_Arab uz_Cyrl vai_Latn wo_Arab yo_Arab yue_Hans zh_Hant"/>
 		<parentLocale parent="en_001" locales="en_150 en_AG en_AI en_AU en_BB en_BM en_BS en_BW en_BZ en_CC en_CK en_CM en_CX en_CY en_DG en_DM en_ER en_FJ en_FK en_FM en_GB en_GD en_GG en_GH en_GI en_GM en_GY en_HK en_IE en_IL en_IM en_IN en_IO en_JE en_JM en_KE en_KI en_KN en_KY en_LC en_LR en_LS en_MG en_MO en_MS en_MT en_MU en_MV en_MW en_MY en_NA en_NF en_NG en_NR en_NU en_NZ en_PG en_PK en_PN en_PW en_RW en_SB en_SC en_SD en_SG en_SH en_SL en_SS en_SX en_SZ en_TC en_TK en_TO en_TT en_TV en_TZ en_UG en_VC en_VG en_VU en_WS en_ZA en_ZM en_ZW"/>
 		<parentLocale parent="en_150" locales="en_AT en_BE en_CH en_DE en_DK en_FI en_NL en_SE en_SI"/>
 		<parentLocale parent="en_IN" locales="hi_Latn"/>

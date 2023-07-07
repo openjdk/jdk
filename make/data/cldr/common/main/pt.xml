@@ -879,7 +879,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Ilha de Man</territory>
 			<territory type="IN">Índia</territory>
-			<territory type="IO">Território Britânico do Oceano Índico</territory>
+			<territory type="IO" draft="provisional">Território Britânico do Oceano Índico</territory>
 			<territory type="IQ">Iraque</territory>
 			<territory type="IR">Irã</territory>
 			<territory type="IS">Islândia</territory>
@@ -1116,9 +1116,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Calendário Gregoriano</type>
 			<type key="calendar" type="hebrew">Calendário Hebraico</type>
 			<type key="calendar" type="indian">Calendário Nacional Indiano</type>
-			<type key="calendar" type="islamic">Calendário Islâmico</type>
-			<type key="calendar" type="islamic-civil">Calendário Civil Islâmico</type>
-			<type key="calendar" type="islamic-umalqura">Calendário Islâmico (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Calendário Islâmico</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Calendário Civil Islâmico</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Calendário Islâmico (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Calendário ISO-8601</type>
 			<type key="calendar" type="japanese">Calendário Japonês</type>
 			<type key="calendar" type="persian">Calendário Persa</type>
@@ -1254,22 +1254,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a á à â ã b c ç d e é ê f g h i í j k l m n o ó ò ô õ p q r s t u ú v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ª ă å ä ā æ è ĕ ë ē ì ĭ î ï ī ñ º ŏ ö ø ō œ ù ŭ û ü ū ÿ]</exemplarCharacters>
+		<exemplarCharacters>[aáàâã b cç d eéê f g h ií j k l m n oóòôõ p q r s t uú v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ªăåäā æ èĕëē ìĭîïī ñ ºŏöøō œ ùŭûüū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="medial">{0}… {1}</ellipsis>
 		<ellipsis type="word-final">{0}…</ellipsis>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 		</parseLenients>
 	</characters>
 	<dates>
@@ -7597,10 +7597,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} calorias</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<gender>feminine</gender>
-				<displayName>Calorias</displayName>
-				<unitPattern count="one">{0} Caloria</unitPattern>
-				<unitPattern count="other">{0} Calorias</unitPattern>
+				<gender draft="provisional">feminine</gender>
+				<displayName draft="provisional">Calorias</displayName>
+				<unitPattern count="one" draft="provisional">{0} Caloria</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Calorias</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>masculine</gender>
@@ -7706,19 +7706,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixels por polegada</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>pontos por centímetro</displayName>
-				<unitPattern count="one">{0} ponto por centímetro</unitPattern>
-				<unitPattern count="other">{0} pontos por centímetro</unitPattern>
+				<displayName draft="provisional">pontos por centímetro</displayName>
+				<unitPattern count="one" draft="provisional">{0} ponto por centímetro</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pontos por centímetro</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>pontos por polegada</displayName>
-				<unitPattern count="one">{0} ponto por polegada</unitPattern>
-				<unitPattern count="other">{0} pontos por polegada</unitPattern>
+				<displayName draft="provisional">pontos por polegada</displayName>
+				<unitPattern count="one" draft="provisional">{0} ponto por polegada</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pontos por polegada</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ponto</displayName>
-				<unitPattern count="one">{0} ponto</unitPattern>
-				<unitPattern count="other">{0} pts</unitPattern>
+				<displayName draft="provisional">ponto</displayName>
+				<unitPattern count="one" draft="provisional">{0} ponto</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pts</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>raio terrestre</displayName>
@@ -8657,9 +8657,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>quilojoule</displayName>
@@ -8744,19 +8744,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ponto</displayName>
-				<unitPattern count="one">{0} p</unitPattern>
-				<unitPattern count="other">{0} pts</unitPattern>
+				<displayName draft="provisional">ponto</displayName>
+				<unitPattern count="one" draft="provisional">{0} p</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pts</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -9653,9 +9653,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -9748,19 +9748,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ponto</displayName>
-				<unitPattern count="one">{0} p</unitPattern>
-				<unitPattern count="other">{0} pts</unitPattern>
+				<displayName draft="provisional">ponto</displayName>
+				<unitPattern count="one" draft="provisional">{0} p</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pts</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -10508,7 +10508,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">normal</styleName>
 		<styleName type="wght" subtype="500">médio</styleName>
 		<styleName type="wght" subtype="600">seminegrito</styleName>
-		<styleName type="wght" subtype="600" alt="demi">seminegrito</styleName>
 		<styleName type="wght" subtype="700">negrito</styleName>
 		<styleName type="wght" subtype="800">extranegrito</styleName>
 		<styleName type="wght" subtype="800" alt="ultra">ultranegrito</styleName>

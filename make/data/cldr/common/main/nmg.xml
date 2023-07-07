@@ -149,7 +149,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">Irland</territory>
 			<territory type="IL">Äsrɛl</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Nlambɔ́ ngɛlɛn ma yí maŋ ntsiɛh</territory>
+			<territory type="IO" draft="provisional">Nlambɔ́ ngɛlɛn ma yí maŋ ntsiɛh</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Island</territory>
@@ -285,7 +285,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á â ǎ ä ā b ɓ c d e é ê ě ē ǝ {ǝ\u0301} {ǝ\u0302} {ǝ\u030C} {ǝ\u0304} ɛ {ɛ\u0301} {ɛ\u0302} {ɛ\u030C} {ɛ\u0304} f g h i í î ǐ ï ī j k l m n ń ŋ o ó ô ǒ ö ō ɔ {ɔ\u0301} {ɔ\u0302} {ɔ\u030C} {ɔ\u0304} p r ŕ s t u ú û ǔ ū v w y]</exemplarCharacters>
+		<exemplarCharacters>[aáâǎäā b ɓ c d eéêěē ǝ{ǝ́}{ǝ̂}{ǝ̌}{ǝ̄} ɛ{ɛ́}{ɛ̂}{ɛ̌}{ɛ̄} f g h iíîǐïī j k l m nń ŋ oóôǒöō ɔ{ɔ́}{ɔ̂}{ɔ̌}{ɔ̄} p rŕ s t uúûǔū v w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[q x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B Ɓ C D E Ǝ Ɛ F G H I J K L M N Ŋ O Ɔ P R S T U V W Y]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>

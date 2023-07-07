@@ -2639,7 +2639,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 千卡</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<unitPattern count="other">{0} 卡路里</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 卡路里</unitPattern>
 			</unit>
 			<unit type="energy-british-thermal-unit">
 				<displayName>英制熱量單位</displayName>
@@ -2957,8 +2957,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 納秒</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>千卡</displayName>
-				<unitPattern count="other">{0} 千卡</unitPattern>
+				<displayName draft="provisional">千卡</displayName>
+				<unitPattern count="other" draft="provisional">{0} 千卡</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>千焦</displayName>

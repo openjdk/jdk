@@ -1024,7 +1024,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">Indien</territory>
-			<territory type="IO">Brittiska territoriet i Indiska oceanen</territory>
+			<territory type="IO" draft="provisional">Brittiska territoriet i Indiska oceanen</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Island</territory>
@@ -1321,11 +1321,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">gregoriansk kalender</type>
 			<type key="calendar" type="hebrew">hebreisk kalender</type>
 			<type key="calendar" type="indian">indisk kalender</type>
-			<type key="calendar" type="islamic">islamisk kalender</type>
-			<type key="calendar" type="islamic-civil">islamisk civil kalender</type>
-			<type key="calendar" type="islamic-rgsa">islamisk kalender, Saudi-Arabien</type>
-			<type key="calendar" type="islamic-tbla">islamisk kalender, astronomisk</type>
-			<type key="calendar" type="islamic-umalqura">islamisk kalender, Umm al-Qura</type>
+			<type key="calendar" type="islamic" draft="provisional">islamisk kalender</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">islamisk civil kalender</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">islamisk kalender, Saudi-Arabien</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">islamisk kalender, astronomisk</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">islamisk kalender, Umm al-Qura</type>
 			<type key="calendar" type="iso8601">ISO 8601-kalender</type>
 			<type key="calendar" type="japanese">japansk kalender</type>
 			<type key="calendar" type="persian">persisk kalender</type>
@@ -1492,11 +1492,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a à b c d e é f g h i j k l m n o p q r s t u v w x y z å ä ö]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á â ã ā ç è ë í î ï ī ñ ó ú ÿ ü æ ø]</exemplarCharacters>
+		<exemplarCharacters>[aà b c d eé f g h i j k l m n o p q r s t u v w x y z å ä ö]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áâãā ç èë íîïī ñ ó ú ÿü æ ø]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z Å Ä Ö]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1505,10 +1505,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -9130,10 +9130,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="genitive">{0} kaloriers</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<gender>common</gender>
-				<displayName>kilokalorier</displayName>
-				<unitPattern count="one">{0} kilokalori</unitPattern>
-				<unitPattern count="other">{0} kilokalorier</unitPattern>
+				<gender draft="provisional">common</gender>
+				<displayName draft="provisional">kilokalorier</displayName>
+				<unitPattern count="one" draft="provisional">{0} kilokalori</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kilokalorier</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>common</gender>
@@ -9265,19 +9265,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixel per tum</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>punkter per centimeter</displayName>
-				<unitPattern count="one">{0} punkt per centimeter</unitPattern>
-				<unitPattern count="other">{0} punkter per centimeter</unitPattern>
+				<displayName draft="provisional">punkter per centimeter</displayName>
+				<unitPattern count="one" draft="provisional">{0} punkt per centimeter</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkter per centimeter</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>punkter per tum</displayName>
-				<unitPattern count="one">{0} punkt per tum</unitPattern>
-				<unitPattern count="other">{0} punkter per tum</unitPattern>
+				<displayName draft="provisional">punkter per tum</displayName>
+				<unitPattern count="one" draft="provisional">{0} punkt per tum</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkter per tum</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>punkt</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} punkter</unitPattern>
+				<displayName draft="provisional">punkt</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkter</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>jordradie</displayName>
@@ -10334,9 +10334,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -10427,19 +10427,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} px/tum</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>d/cm</displayName>
-				<unitPattern count="one">{0} d/cm</unitPattern>
-				<unitPattern count="other">{0} d/cm</unitPattern>
+				<displayName draft="provisional">d/cm</displayName>
+				<unitPattern count="one" draft="provisional">{0} d/cm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} d/cm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>d/tum</displayName>
-				<unitPattern count="one">{0} d/tum</unitPattern>
-				<unitPattern count="other">{0} d/tum</unitPattern>
+				<displayName draft="provisional">d/tum</displayName>
+				<unitPattern count="one" draft="provisional">{0} d/tum</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} d/tum</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pixlar</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">pixlar</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -11366,9 +11366,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0}kcal</unitPattern>
-				<unitPattern count="other">{0}kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0}kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -11461,19 +11461,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" draft="contributed">{0} px/tum</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName draft="contributed">d/cm</displayName>
-				<unitPattern count="one">{0}d/cm</unitPattern>
-				<unitPattern count="other">{0}d/cm</unitPattern>
+				<displayName draft="provisional">d/cm</displayName>
+				<unitPattern count="one" draft="provisional">{0}d/cm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}d/cm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName draft="contributed">d/tum</displayName>
-				<unitPattern count="one">{0}d/tum</unitPattern>
-				<unitPattern count="other">{0}d/tum</unitPattern>
+				<displayName draft="provisional">d/tum</displayName>
+				<unitPattern count="one" draft="provisional">{0}d/tum</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}d/tum</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pkt</displayName>
-				<unitPattern count="one">{0}pkt</unitPattern>
-				<unitPattern count="other">{0}pkt</unitPattern>
+				<displayName draft="provisional">pkt</displayName>
+				<unitPattern count="one" draft="provisional">{0}pkt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}pkt</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -12228,11 +12228,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">normal</styleName>
 		<styleName type="wght" subtype="500">medel</styleName>
 		<styleName type="wght" subtype="600">halvfet</styleName>
-		<styleName type="wght" subtype="600" alt="demi">halvfet</styleName>
 		<styleName type="wght" subtype="700">fet</styleName>
 		<styleName type="wght" subtype="800">extrafet</styleName>
 		<styleName type="wght" subtype="900">tjock</styleName>
-		<styleName type="wght" subtype="900" alt="heavy">tjock</styleName>
 		<styleName type="wght" subtype="950">hyperfet</styleName>
 		<styleName type="wght" subtype="950" alt="ultrablack">ultrasvart</styleName>
 		<styleName type="wght" subtype="950" alt="ultraheavy">ultrafet</styleName>

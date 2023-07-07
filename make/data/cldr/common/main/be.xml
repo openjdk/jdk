@@ -705,7 +705,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Ізраіль</territory>
 			<territory type="IM">Востраў Мэн</territory>
 			<territory type="IN">Індыя</territory>
-			<territory type="IO">Брытанская тэрыторыя ў Індыйскім акіяне</territory>
+			<territory type="IO" draft="provisional">Брытанская тэрыторыя ў Індыйскім акіяне</territory>
 			<territory type="IQ">Ірак</territory>
 			<territory type="IR">Іран</territory>
 			<territory type="IS">Ісландыя</territory>
@@ -887,9 +887,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="ethiopic-amete-alem">эфіопскі каляндар Аметэ Алем</type>
 			<type key="calendar" type="gregorian">грыгарыянскі каляндар</type>
 			<type key="calendar" type="hebrew">яўрэйскі каляндар</type>
-			<type key="calendar" type="islamic">мусульманскі каляндар</type>
-			<type key="calendar" type="islamic-civil">мусульманскі свецкі каляндар</type>
-			<type key="calendar" type="islamic-umalqura">мусульманскі каляндар (Ум аль-Кура)</type>
+			<type key="calendar" type="islamic" draft="provisional">мусульманскі каляндар</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">мусульманскі свецкі каляндар</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">мусульманскі каляндар (Ум аль-Кура)</type>
 			<type key="calendar" type="iso8601">каляндар ISO-8601</type>
 			<type key="calendar" type="japanese">японскі каляндар</type>
 			<type key="calendar" type="persian">персідскі каляндар</type>
@@ -963,7 +963,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[а б в г д {дж} {дз} е ё ж з і й к л м н о п р с т у ў ф х ц ч ш ы ь э ю я]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[{а\u0301} {е\u0301} {ё\u0301} {і\u0301} {о\u0301} {у\u0301} {ы\u0301} {э\u0301} {ю\u0301} {я\u0301}]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[{а́} {е́} {ё́} {і́} {о́} {у́} {ы́} {э́} {ю́} {я́}]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[А Б В Г Д Е Ё Ж З І Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Ы Ь Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . « » ( ) \[ \] \{ \}]</exemplarCharacters>
@@ -7177,11 +7177,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} калорыі</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>калорыі</displayName>
-				<unitPattern count="one">{0} калорыя</unitPattern>
-				<unitPattern count="few">{0} калорыі</unitPattern>
-				<unitPattern count="many">{0} калорый</unitPattern>
-				<unitPattern count="other">{0} калорыі</unitPattern>
+				<displayName draft="provisional">калорыі</displayName>
+				<unitPattern count="one" draft="provisional">{0} калорыя</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} калорыі</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} калорый</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} калорыі</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>кіладжоўлі</displayName>
@@ -7310,25 +7310,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} пікселя на цалю</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>кропкі на сантыметр</displayName>
-				<unitPattern count="one">{0} кропка на сантыметр</unitPattern>
-				<unitPattern count="few">{0} кропкі на сантыметр</unitPattern>
-				<unitPattern count="many">{0} кропак на сантыметр</unitPattern>
-				<unitPattern count="other">{0} кропкі на сантыметр</unitPattern>
+				<displayName draft="provisional">кропкі на сантыметр</displayName>
+				<unitPattern count="one" draft="provisional">{0} кропка на сантыметр</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кропкі на сантыметр</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кропак на сантыметр</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кропкі на сантыметр</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>кропкі на цалю</displayName>
-				<unitPattern count="one">{0} кропка на цалю</unitPattern>
-				<unitPattern count="few">{0} кропкі на цалю</unitPattern>
-				<unitPattern count="many">{0} кропак на цалю</unitPattern>
-				<unitPattern count="other">{0} кропкі на цалю</unitPattern>
+				<displayName draft="provisional">кропкі на цалю</displayName>
+				<unitPattern count="one" draft="provisional">{0} кропка на цалю</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кропкі на цалю</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кропак на цалю</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кропкі на цалю</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>кропкі</displayName>
-				<unitPattern count="one">{0} кропка</unitPattern>
-				<unitPattern count="few">{0} кропкі</unitPattern>
-				<unitPattern count="many">{0} кропак</unitPattern>
-				<unitPattern count="other">{0} кропкі</unitPattern>
+				<displayName draft="provisional">кропкі</displayName>
+				<unitPattern count="one" draft="provisional">{0} кропка</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кропкі</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кропак</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кропкі</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>радыус Зямлі</displayName>
@@ -8598,11 +8598,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>кал</displayName>
-				<unitPattern count="one">{0} кал</unitPattern>
-				<unitPattern count="few">{0} кал</unitPattern>
-				<unitPattern count="many">{0} кал</unitPattern>
-				<unitPattern count="other">{0} кал</unitPattern>
+				<displayName draft="provisional">кал</displayName>
+				<unitPattern count="one" draft="provisional">{0} кал</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кал</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кал</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>кДж</displayName>
@@ -8731,25 +8731,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} пікселя/цалю</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>кр/см</displayName>
-				<unitPattern count="one">{0} кр/см</unitPattern>
-				<unitPattern count="few">{0} кр/см</unitPattern>
-				<unitPattern count="many">{0} кр/см</unitPattern>
-				<unitPattern count="other">{0} кр/см</unitPattern>
+				<displayName draft="provisional">кр/см</displayName>
+				<unitPattern count="one" draft="provisional">{0} кр/см</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кр/см</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кр/см</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кр/см</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="few">{0} dpi</unitPattern>
-				<unitPattern count="many">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>кр</displayName>
-				<unitPattern count="one">{0} кр</unitPattern>
-				<unitPattern count="few">{0} кр</unitPattern>
-				<unitPattern count="many">{0} кр</unitPattern>
-				<unitPattern count="other">{0} кр</unitPattern>
+				<displayName draft="provisional">кр</displayName>
+				<unitPattern count="one" draft="provisional">{0} кр</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кр</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кр</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кр</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -10018,11 +10018,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>кал</displayName>
-				<unitPattern count="one">{0} кал</unitPattern>
-				<unitPattern count="few">{0} кал</unitPattern>
-				<unitPattern count="many">{0} кал</unitPattern>
-				<unitPattern count="other">{0} кал</unitPattern>
+				<displayName draft="provisional">кал</displayName>
+				<unitPattern count="one" draft="provisional">{0} кал</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кал</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кал</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>кДж</displayName>
@@ -10151,25 +10151,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} пікселя/цалю</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>кр/см</displayName>
-				<unitPattern count="one">{0} кр/см</unitPattern>
-				<unitPattern count="few">{0} кр/см</unitPattern>
-				<unitPattern count="many">{0} кр/см</unitPattern>
-				<unitPattern count="other">{0} кр/см</unitPattern>
+				<displayName draft="provisional">кр/см</displayName>
+				<unitPattern count="one" draft="provisional">{0} кр/см</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кр/см</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кр/см</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кр/см</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="few">{0} dpi</unitPattern>
-				<unitPattern count="many">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>кр</displayName>
-				<unitPattern count="one">{0} кр</unitPattern>
-				<unitPattern count="few">{0} кр</unitPattern>
-				<unitPattern count="many">{0} кр</unitPattern>
-				<unitPattern count="other">{0} кр</unitPattern>
+				<displayName draft="provisional">кр</displayName>
+				<unitPattern count="one" draft="provisional">{0} кр</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} кр</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} кр</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} кр</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11125,7 +11125,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">звычайны</styleName>
 		<styleName type="wght" subtype="500">сярэдні</styleName>
 		<styleName type="wght" subtype="600">паўтоўсты</styleName>
-		<styleName type="wght" subtype="600" alt="demi">паўтоўсты</styleName>
 		<styleName type="wght" subtype="700">тоўсты</styleName>
 		<styleName type="wght" subtype="800">надзвычай тоўсты</styleName>
 		<styleName type="wght" subtype="900">насычаны</styleName>

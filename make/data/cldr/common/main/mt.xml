@@ -684,7 +684,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Iżrael</territory>
 			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">l-Indja</territory>
-			<territory type="IO">Territorju Brittaniku tal-Oċean Indjan</territory>
+			<territory type="IO" draft="provisional">Territorju Brittaniku tal-Oċean Indjan</territory>
 			<territory type="IQ">l-Iraq</territory>
 			<territory type="IR">l-Iran</territory>
 			<territory type="IS">l-Iżlanda</territory>
@@ -857,8 +857,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic">Kalendarju Etjopiku</type>
 			<type key="calendar" type="gregorian">Kalendarju Gregorjan</type>
 			<type key="calendar" type="hebrew">Kalendarju Ebrajk</type>
-			<type key="calendar" type="islamic">Kalendarju Iżlamiku</type>
-			<type key="calendar" type="islamic-civil">Kalendarju Islamiku-Ċivili</type>
+			<type key="calendar" type="islamic" draft="provisional">Kalendarju Iżlamiku</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Kalendarju Islamiku-Ċivili</type>
 			<type key="calendar" type="iso8601">Kalendarju ISO-8601</type>
 			<type key="calendar" type="japanese">Kalendarju Ġappuniż</type>
 			<type key="collation" type="big5han">Ordni Ċiniż Tradizzjonali (Big5)</type>
@@ -883,11 +883,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à b ċ d e è f ġ g {għ} h ħ i ì j k l m n o ò p q r s t u ù v w x ż z]</exemplarCharacters>
+		<exemplarCharacters>[aà b ċ d eè f ġ g {għ} h ħ iì j k l m n oò p q r s t uù v w x ż z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c y]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[A B Ċ C D E F Ġ G {GĦ} H Ħ I {IE*} J K L M N O P Q R S T U V W X Y Ż Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ; \: ! ? . '‘’ &quot;“” ( ) \[ \] \{ \}]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>

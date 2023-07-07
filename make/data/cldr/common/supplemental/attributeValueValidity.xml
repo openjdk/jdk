@@ -7,10 +7,40 @@
 	<metadata>
 		<validity>
 			<!-- BCP 47 contains many more language codes than we are interested in maintaining as a part of the CLDR -->
-			<!-- This list contains ONLY those languages considered to be 'of interest' as part of CLDR, -->
-			<!-- and is maintained manually by the CLDR TC -->
-			<!-- The following are in $language but not in common/main or in modern coverage: cu lij prg vo -->
+			<!-- This $language list contains ONLY those languages that are in the CLDR locales' IDs (after maximizing with LikelySubtags) -->
 			<variable id='$language' type='choice'>
+                aa ab af agq ak am an ann apc ar arn as asa ast az
+                ba bal bas be bem bew bez bg bgc bgn bho blo blt bm bn bo br brx bs bss byn
+                ca cad cch ccp ce ceb cgg cho chr cic ckb co cs csw cu cv cy
+                da dav de dje doi dsb dua dv dyo dz
+                ebu ee el en eo es et eu ewo
+                fa ff fi fil fo fr frr fur fy
+                ga gaa gd gez gl gn gsw gu guz gv
+                ha haw he hi hnj hr hsb hu hy
+                ia id ie ig ii io is it iu
+                ja jbo jgo jmc jv
+                ka kab kaj kam kcg kde kea ken kgp khq ki kk kkj kl kln km kn ko kok kpe ks ksb ksf ksh ku kw kxv ky
+                la lag lb lg lij lkt lmo ln lo lrc lt lu luo luy lv
+                mai mas mdf mer mfe mg mgh mgo mi mic mk ml mn mni moh mr ms mt mua mus my myv mzn
+                naq nb nd nds ne nl nmg nn nnh no nqo nr nso nus nv ny nyn
+                oc om or os osa
+                pa pap pcm pis pl prg ps pt
+                qu quc
+                raj rhg rif rm rn ro rof ru rw rwk
+                sa sah saq sat sbp sc scn sd sdh se seh ses sg shi shn si sid sk skr sl sma smj smn sms sn so sq sr ss ssy st su sv sw syr szl
+                ta te teo tg th ti tig tk tn to tok tpi tr trv trw ts tt twq tyv tzm
+                ug uk ur uz
+                vai ve vec vi vmw vo vun
+                wa wae wal wbp wo
+                xh xnr xog
+                yav yi yo yrl yue
+                za zgh zh zu
+			</variable>
+			<!-- The following are exceptional cases.
+				In v44 this contains a copy of the previous $language list to make review of CLDR-16789 easier;
+				this should be rationalized later. 
+			  -->
+			<variable id='$languageExceptions' type='choice'>
 				af agq ak am ann apc ar as asa ast az
 				bas be bem bez bg bgc bho bm bn bo br brx bs
 				ca ccp ce ceb cgg chr ckb cs cu cv cy
@@ -39,8 +69,7 @@
 				xh xog
 				yav yi yo yrl yue
 				zgh zh zu
-			</variable>
-			<variable id='$languageExceptions' type='choice'>
+
 				mul root zxx
 				ab ace ada ady ain ale alt an anp arn arp ars atj av awa ay
 				ba ban bi bin bla bug byn

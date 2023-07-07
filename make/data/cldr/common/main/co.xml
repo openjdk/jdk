@@ -145,10 +145,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[a à b c {chj} d e è f g {ghj} h i ì ï j l m n o ò p q r s {sc} {sg} t u ù ü v z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[â æ ç é ê ë î k ñ ô œ ú û w x y ÿ]</exemplarCharacters>
+		<exemplarCharacters>[aà b c {chj} d eè f g {ghj} h iìï j l m n oò p q r s {sc} {sg} t uùü v z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[â æ ç éêë î k ñ ô œ úû w x yÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C {CHJ} D E F G {GHJ} H I J L M N O P Q R S {SC} {SG} T U V Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="word-final" draft="unconfirmed">{0}…</ellipsis>
 	</characters>
 	<delimiters>

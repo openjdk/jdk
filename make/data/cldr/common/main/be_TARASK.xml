@@ -507,8 +507,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="provisional">[а б в г ґ д {дж} {дз} е ё ж з і й к л м н о п р с т у ў ф х ц ч ш ы ь э ю я]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="provisional">[А Б В Г Ґ Д Е Ё Ж З І Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Ы Ь Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters draft="provisional">[а б в гґ д {дж} {дз} е ё ж з і й к л м н о п р с т у ў ф х ц ч ш ы ь э ю я]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="provisional">[А Б В ГҐ Д Е Ё Ж З І Й К Л М Н О П Р С Т У Ф Х Ц Ч Ш Ы Ь Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="provisional">[\- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<dates>

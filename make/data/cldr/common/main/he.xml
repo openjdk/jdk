@@ -921,7 +921,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">ישראל</territory>
 			<territory type="IM">האי מאן</territory>
 			<territory type="IN">הודו</territory>
-			<territory type="IO">הטריטוריה הבריטית באוקיינוס ההודי</territory>
+			<territory type="IO" draft="provisional">הטריטוריה הבריטית באוקיינוס ההודי</territory>
 			<territory type="IQ">עיראק</territory>
 			<territory type="IR">איראן</territory>
 			<territory type="IS">איסלנד</territory>
@@ -1224,11 +1224,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">לוח השנה הגרגוריאני</type>
 			<type key="calendar" type="hebrew">לוח השנה העברי</type>
 			<type key="calendar" type="indian">לוח השנה ההודי הלאומי</type>
-			<type key="calendar" type="islamic">לוח השנה המוסלמי</type>
-			<type key="calendar" type="islamic-civil">לוח השנה המוסלמי האזרחי</type>
-			<type key="calendar" type="islamic-rgsa">לוח השנה המוסלמי (ערב הסעודית)</type>
-			<type key="calendar" type="islamic-tbla">לוח השנה המוסלמי האסטרולוגי</type>
-			<type key="calendar" type="islamic-umalqura">לוח השנה המוסלמי אום אל-קורא</type>
+			<type key="calendar" type="islamic" draft="provisional">לוח השנה המוסלמי</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">לוח השנה המוסלמי האזרחי</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">לוח השנה המוסלמי (ערב הסעודית)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">לוח השנה המוסלמי האסטרולוגי</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">לוח השנה המוסלמי אום אל-קורא</type>
 			<type key="calendar" type="iso8601">לוח שנה ISO-8601</type>
 			<type key="calendar" type="japanese">לוח השנה היפני</type>
 			<type key="calendar" type="persian">לוח השנה הפרסי</type>
@@ -1387,11 +1387,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[א ב ג ד ה ו ז ח ט י כ ך ל מ ם נ ן ס ע פ ף צ ץ ק ר ש ת]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u05BD\u05C4\u200E\u200F \u05B0 \u05B1 \u05B2 \u05B3 \u05B4 \u05B5 \u05B6 \u05B7 \u05B8 \u05B9 \u05BB \u05C2 \u05C1 \u05BC \u05BF ״]</exemplarCharacters>
+		<exemplarCharacters>[א ב ג ד ה ו ז ח ט י כך ל מם נן ס ע פף צץ ק ר ש ת]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ֽ ׄ\u200E\u200F ְ ֱ ֲ ֳ ִ ֵ ֶ ַ ָ ֹ ֻ ׂ ׁ ּ ֿ ״]</exemplarCharacters>
 		<exemplarCharacters type="index">[א ב ג ד ה ו ז ח ט י כ ל מ נ ס ע פ צ ק ר ש ת]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E \- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . ' ׳ &quot; ״ ( ) \[ \] / ־]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . '׳ &quot;״ ( ) \[ \] / ־]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1400,23 +1400,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -9297,11 +9297,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} קלוריות</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>קלוריות</displayName>
-				<unitPattern count="one">קלוריה {0}</unitPattern>
-				<unitPattern count="two">{0} קלוריות</unitPattern>
-				<unitPattern count="many">{0} קלוריות</unitPattern>
-				<unitPattern count="other">{0} קלוריות</unitPattern>
+				<displayName draft="provisional">קלוריות</displayName>
+				<unitPattern count="one" draft="provisional">קלוריה {0}</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} קלוריות</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} קלוריות</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} קלוריות</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>masculine</gender>
@@ -9443,25 +9443,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} פיקסלים לאינץ'</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>נקודות לסנטימטר</displayName>
-				<unitPattern count="one">נקודה {0} לסנטימטר</unitPattern>
-				<unitPattern count="two">‎{0} dpcm‎</unitPattern>
-				<unitPattern count="many">‎{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} נקודות לסנטימטר</unitPattern>
+				<displayName draft="provisional">נקודות לסנטימטר</displayName>
+				<unitPattern count="one" draft="provisional">נקודה {0} לסנטימטר</unitPattern>
+				<unitPattern count="two" draft="provisional">‎{0} dpcm‎</unitPattern>
+				<unitPattern count="many" draft="provisional">‎{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} נקודות לסנטימטר</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>נקודות לאינץ׳</displayName>
-				<unitPattern count="one">‎{0} dpi‎</unitPattern>
-				<unitPattern count="two">‎{0} dpi‎</unitPattern>
-				<unitPattern count="many">‎{0} dpi‎</unitPattern>
-				<unitPattern count="other">‎{0} dots per inch‎</unitPattern>
+				<displayName draft="provisional">נקודות לאינץ׳</displayName>
+				<unitPattern count="one" draft="provisional">‎{0} dpi‎</unitPattern>
+				<unitPattern count="two" draft="provisional">‎{0} dpi‎</unitPattern>
+				<unitPattern count="many" draft="provisional">‎{0} dpi‎</unitPattern>
+				<unitPattern count="other" draft="provisional">‎{0} dots per inch‎</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>נקודה קטנה</displayName>
-				<unitPattern count="one">{0} נקודה</unitPattern>
-				<unitPattern count="two">{0} נקודות קטנות</unitPattern>
-				<unitPattern count="many">{0} נקודות קטנות</unitPattern>
-				<unitPattern count="other">{0} נקודות קטנות</unitPattern>
+				<displayName draft="provisional">נקודה קטנה</displayName>
+				<unitPattern count="one" draft="provisional">{0} נקודה</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} נקודות קטנות</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} נקודות קטנות</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} נקודות קטנות</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>רדיוס כדור-הארץ</displayName>
@@ -10746,11 +10746,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="two">{0} Cal</unitPattern>
-				<unitPattern count="many">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>קילו ג׳אול</displayName>
@@ -10870,25 +10870,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">‎{0} ppi‎</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">‎{0} dpcm</unitPattern>
-				<unitPattern count="two">‎{0} dpcm</unitPattern>
-				<unitPattern count="many">‎{0} dpcm</unitPattern>
-				<unitPattern count="other">‎{0} dpcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">‎{0} dpcm</unitPattern>
+				<unitPattern count="two" draft="provisional">‎{0} dpcm</unitPattern>
+				<unitPattern count="many" draft="provisional">‎{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">‎{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">‎{0} dpi‎</unitPattern>
-				<unitPattern count="two">‎{0} dpi‎</unitPattern>
-				<unitPattern count="many">‎{0} dpi‎</unitPattern>
-				<unitPattern count="other">‎{0} dpi‎</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">‎{0} dpi‎</unitPattern>
+				<unitPattern count="two" draft="provisional">‎{0} dpi‎</unitPattern>
+				<unitPattern count="many" draft="provisional">‎{0} dpi‎</unitPattern>
+				<unitPattern count="other" draft="provisional">‎{0} dpi‎</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>נקודה קטנה</displayName>
-				<unitPattern count="one">{0} נק′ קטנה</unitPattern>
-				<unitPattern count="two">{0} נק′ קטנות</unitPattern>
-				<unitPattern count="many">{0} נק′ קטנות</unitPattern>
-				<unitPattern count="other">{0} נק′ קטנות</unitPattern>
+				<displayName draft="provisional">נקודה קטנה</displayName>
+				<unitPattern count="one" draft="provisional">{0} נק′ קטנה</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} נק′ קטנות</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} נק′ קטנות</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} נק′ קטנות</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -12135,11 +12135,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="two">{0} Cal</unitPattern>
-				<unitPattern count="many">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>קילו ג׳אול</displayName>
@@ -12268,25 +12268,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">‎{0} ppi‎</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">‎{0} dpcm</unitPattern>
-				<unitPattern count="two">‎{0} dpcm</unitPattern>
-				<unitPattern count="many">‎{0} dpcm</unitPattern>
-				<unitPattern count="other">‎{0} dpcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">‎{0} dpcm</unitPattern>
+				<unitPattern count="two" draft="provisional">‎{0} dpcm</unitPattern>
+				<unitPattern count="many" draft="provisional">‎{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">‎{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">‎{0} dpi‎</unitPattern>
-				<unitPattern count="two">‎{0} dpi‎</unitPattern>
-				<unitPattern count="many">‎{0} dpi‎</unitPattern>
-				<unitPattern count="other">‎{0} dpi‎</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">‎{0} dpi‎</unitPattern>
+				<unitPattern count="two" draft="provisional">‎{0} dpi‎</unitPattern>
+				<unitPattern count="many" draft="provisional">‎{0} dpi‎</unitPattern>
+				<unitPattern count="other" draft="provisional">‎{0} dpi‎</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>נק׳ קטנה</displayName>
-				<unitPattern count="one">{0} נק' ק'</unitPattern>
-				<unitPattern count="two">{0} נק' ק'</unitPattern>
-				<unitPattern count="many">{0} נק' ק'</unitPattern>
-				<unitPattern count="other">{0} נק' ק'</unitPattern>
+				<displayName draft="provisional">נק׳ קטנה</displayName>
+				<unitPattern count="one" draft="provisional">{0} נק' ק'</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} נק' ק'</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} נק' ק'</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} נק' ק'</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -13405,27 +13405,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="credentials">ח״כ</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
-			<nameField type="given">ולדימיר</nameField>
+			<nameField type="given" draft="provisional">ולדימיר</nameField>
 		</sampleName>
 		<sampleName item="foreignGS">
-			<nameField type="given">יוליה</nameField>
-			<nameField type="surname">שטרן</nameField>
+			<nameField type="given" draft="provisional">יוליה</nameField>
+			<nameField type="surname" draft="provisional">שטרן</nameField>
 		</sampleName>
 		<sampleName item="foreignGGS">
-			<nameField type="given">אמילי</nameField>
-			<nameField type="given2">אנט</nameField>
-			<nameField type="surname">פרידמן</nameField>
+			<nameField type="given" draft="provisional">אמילי</nameField>
+			<nameField type="given2" draft="provisional">אנט</nameField>
+			<nameField type="surname" draft="provisional">פרידמן</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title">פרופ׳</nameField>
-			<nameField type="given">רונית</nameField>
-			<nameField type="given-informal">רוני</nameField>
-			<nameField type="given2">חנה</nameField>
-			<nameField type="surname-prefix">בן</nameField>
-			<nameField type="surname-core">ארי</nameField>
-			<nameField type="surname2">מזרחי</nameField>
-			<nameField type="generation">ג׳וניור</nameField>
-			<nameField type="credentials">ד״ר</nameField>
+			<nameField type="title" draft="provisional">פרופ׳</nameField>
+			<nameField type="given" draft="provisional">רונית</nameField>
+			<nameField type="given-informal" draft="provisional">רוני</nameField>
+			<nameField type="given2" draft="provisional">חנה</nameField>
+			<nameField type="surname-prefix" draft="provisional">בן</nameField>
+			<nameField type="surname-core" draft="provisional">ארי</nameField>
+			<nameField type="surname2" draft="provisional">מזרחי</nameField>
+			<nameField type="generation" draft="provisional">ג׳וניור</nameField>
+			<nameField type="credentials" draft="provisional">ד״ר</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

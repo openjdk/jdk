@@ -30,7 +30,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</measurementSystemNames>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á â ǎ ā b c d e é ê ě ē ə {ə\u0301} {ə\u0302} {ə\u030C} {ə\u0304} ɛ {ɛ\u0301} {ɛ\u0302} {ɛ\u030C} {ɛ\u0304} g h i í î ǐ ī j k l m ḿ n ń ŋ o ó ô ǒ ō ɔ {ɔ\u0301} {ɔ\u0302} {ɔ\u030C} {ɔ\u0304} p s t u ú û ǔ ū w y z ʼ]</exemplarCharacters>
+		<exemplarCharacters>[aáâǎā b c d eéêěē ə{ə́}{ə̂}{ə̌}{ə̄} ɛ{ɛ́}{ɛ̂}{ɛ̌}{ɛ̄} g h iíîǐī j k l mḿ nń ŋ oóôǒō ɔ{ɔ́}{ɔ̂}{ɔ̌}{ɔ̄} p s t uúûǔū w y z ʼ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[f q r v x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E Ə Ɛ G H I J K L M N Ŋ O Ɔ P S T U W Y Z]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[, ; \: ! ? . ' &quot;]</exemplarCharacters>

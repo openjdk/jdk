@@ -232,7 +232,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GT">Gwatemala</territory>
 			<territory type="GU">Guami</territory>
 			<territory type="HR">Kroashia</territory>
-			<territory type="IO">Himaya ya Uingereza katika Bahari Hindi</territory>
+			<territory type="IO" draft="provisional">Himaya ya Uingereza katika Bahari Hindi</territory>
 			<territory type="JO">Yordani</territory>
 			<territory type="LA">Laosi</territory>
 			<territory type="LB">Lebanoni</territory>
@@ -1411,14 +1411,14 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">pikseli {0} kwa kila sekunde</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>nukta kwa kila sentimita</displayName>
-				<unitPattern count="one">nukta {0} kwa kila sentimita</unitPattern>
-				<unitPattern count="other">nukta {0} kwa kila sentimita</unitPattern>
+				<displayName draft="provisional">nukta kwa kila sentimita</displayName>
+				<unitPattern count="one" draft="provisional">nukta {0} kwa kila sentimita</unitPattern>
+				<unitPattern count="other" draft="provisional">nukta {0} kwa kila sentimita</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>nukta kwa kila inchi</displayName>
-				<unitPattern count="one">nuka {0} kwa kila inchi</unitPattern>
-				<unitPattern count="other">nukta {0} kwa kila inchi</unitPattern>
+				<displayName draft="provisional">nukta kwa kila inchi</displayName>
+				<unitPattern count="one" draft="provisional">nuka {0} kwa kila inchi</unitPattern>
+				<unitPattern count="other" draft="provisional">nukta {0} kwa kila inchi</unitPattern>
 			</unit>
 			<unit type="length-micrometer">
 				<displayName>maikromita</displayName>

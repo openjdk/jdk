@@ -834,7 +834,7 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<territory type="IL">ئىسرائىلىيە</territory>
 			<territory type="IM">مان ئارىلى</territory>
 			<territory type="IN">ھىندىستان</territory>
-			<territory type="IO">ئەنگلىيەگە قاراشلىق ھىندى ئوكيان تېررىتورىيەسى</territory>
+			<territory type="IO" draft="provisional">ئەنگلىيەگە قاراشلىق ھىندى ئوكيان تېررىتورىيەسى</territory>
 			<territory type="IQ">ئىراق</territory>
 			<territory type="IR">ئىران</territory>
 			<territory type="IS">ئىسلاندىيە</territory>
@@ -1049,11 +1049,11 @@ Reviewed by Waris Abdukerim Janbaz <oyghan@gmail.com> of the Uyghur Computer Sci
 			<type key="calendar" type="gregorian" draft="contributed">مىلادىيە يىلنامەسى</type>
 			<type key="calendar" type="hebrew" draft="contributed">يەھۇدى يىلنامەسى</type>
 			<type key="calendar" type="indian" draft="contributed">ھىندىستان دۆلەت يىلنامەسى</type>
-			<type key="calendar" type="islamic" draft="contributed">ئىسلام ھىجرىيە يىلنامەسى</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">ئىسلام ھىجرىيە يىلنامەسى (مەدىنە)</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">ئىسلام ھىجرىيە يىلنامەسى (سەئۇدى ئەرەبىستان ئاي)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">ئىسلام ھىجرىيە يىلنامەسى (ئاسترونومىيە دەۋرى)</type>
-			<type key="calendar" type="islamic-umalqura" draft="contributed">ئىسلام ھىجرىيە يىلنامەسى (ئۇم ئەلقۇرا)</type>
+			<type key="calendar" type="islamic" draft="provisional">ئىسلام ھىجرىيە يىلنامەسى</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ئىسلام ھىجرىيە يىلنامەسى (مەدىنە)</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">ئىسلام ھىجرىيە يىلنامەسى (سەئۇدى ئەرەبىستان ئاي)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">ئىسلام ھىجرىيە يىلنامەسى (ئاسترونومىيە دەۋرى)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">ئىسلام ھىجرىيە يىلنامەسى (ئۇم ئەلقۇرا)</type>
 			<type key="calendar" type="iso8601" draft="contributed">ISO-8601 يىلنامەسى</type>
 			<type key="calendar" type="japanese" draft="contributed">ياپونىيە يىلنامەسى</type>
 			<type key="calendar" type="persian" draft="contributed">پارىس يىلنامەسى</type>

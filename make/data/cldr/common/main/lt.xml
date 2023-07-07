@@ -1000,7 +1000,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Izraelis</territory>
 			<territory type="IM">Meno Sala</territory>
 			<territory type="IN">Indija</territory>
-			<territory type="IO">Indijos Vandenyno Britų Sritis</territory>
+			<territory type="IO" draft="provisional">Indijos Vandenyno Britų Sritis</territory>
 			<territory type="IQ">Irakas</territory>
 			<territory type="IR">Iranas</territory>
 			<territory type="IS">Islandija</territory>
@@ -1226,11 +1226,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Grigaliaus kalendorius</type>
 			<type key="calendar" type="hebrew">hebrajų kalendorius</type>
 			<type key="calendar" type="indian">nacionalinis indų kalendorius</type>
-			<type key="calendar" type="islamic">islamo kalendorius</type>
-			<type key="calendar" type="islamic-civil">Islamo kalendorius (lentelinis, pilietinė era)</type>
-			<type key="calendar" type="islamic-rgsa">Islamo kalendorius (Saudo Arabija)</type>
-			<type key="calendar" type="islamic-tbla">Islamo kalendorius (lentelinis, astronominė era)</type>
-			<type key="calendar" type="islamic-umalqura">Islamo kalendorius (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">islamo kalendorius</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Islamo kalendorius (lentelinis, pilietinė era)</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">Islamo kalendorius (Saudo Arabija)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Islamo kalendorius (lentelinis, astronominė era)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Islamo kalendorius (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO 8601 kalendorius</type>
 			<type key="calendar" type="japanese">japonų kalendorius</type>
 			<type key="calendar" type="persian">persų kalendorius</type>
@@ -1361,11 +1361,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a ą b c č d e ę ė f g h i į y j k l m n o p r s š t u ų ū v z ž]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ã {ą\u0301} {ą\u0303} {ch} {dz} {dž} é è ẽ {ę\u0301} {ę\u0303} {ė\u0301} {ė\u0303} {i\u0307\u0301}í {i\u0307\u0300}ì {i\u0307\u0303}ĩ {į\u0301}{į\u0307\u0301} {į\u0303}{į\u0307\u0303} {j\u0303}{j\u0307\u0303} {l\u0303} {m\u0303} ñ ó ò õ q {r\u0303} ú ù ũ {ų\u0301} {ų\u0303} {ū\u0301} {ū\u0303} w x]</exemplarCharacters>
-		<exemplarCharacters type="index">[A Ą B C Č D E Ę Ė F G H I Į Y J K L M N O P R S Š T U Ų Ū V Z Ž]</exemplarCharacters>
+		<exemplarCharacters>[aą b c č d eęė f g h iįy j k l m n o p r s š t uųū v z ž]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàã{ą́}{ą̃} {ch} {dz} {dž} éèẽ{ę́}{ę̃}{ė́}{ė̃} í{i̇́}ì{i̇̀}ĩ{i̇̃}{į́}{į̇́}{į̃}{į̇̃} {j̃}{j̇̃} {l̃} {m̃} ñ óòõ q {r̃} úùũ{ų́}{ų̃}{ū́}{ū̃} w x]</exemplarCharacters>
+		<exemplarCharacters type="index">[AĄ B C Č D EĘĖ F G H IĮY J K L M N O P R S Š T UŲŪ V Z Ž]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … “ „ ( ) \[ \] \{ \}]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … “„ ( ) \[ \] \{ \}]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1374,23 +1374,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -11319,11 +11319,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="locative">{0} kalorijų</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kalorijos</displayName>
-				<unitPattern count="one">{0} kalorija</unitPattern>
-				<unitPattern count="few">{0} kalorijos</unitPattern>
-				<unitPattern count="many">{0} kalorijos</unitPattern>
-				<unitPattern count="other">{0} kalorijų</unitPattern>
+				<displayName draft="provisional">kalorijos</displayName>
+				<unitPattern count="one" draft="provisional">{0} kalorija</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kalorijos</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} kalorijos</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kalorijų</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>masculine</gender>
@@ -11725,25 +11725,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pikselių colyje</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>taškai centimetre</displayName>
-				<unitPattern count="one">{0} taškas centimetre</unitPattern>
-				<unitPattern count="few">{0} taškai centimetre</unitPattern>
-				<unitPattern count="many">{0} taško centimetre</unitPattern>
-				<unitPattern count="other">{0} taškų centimetre</unitPattern>
+				<displayName draft="provisional">taškai centimetre</displayName>
+				<unitPattern count="one" draft="provisional">{0} taškas centimetre</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} taškai centimetre</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} taško centimetre</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} taškų centimetre</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>taškai colyje</displayName>
-				<unitPattern count="one">{0} taškas colyje</unitPattern>
-				<unitPattern count="few">{0} taškai colyje</unitPattern>
-				<unitPattern count="many">{0} taško colyje</unitPattern>
-				<unitPattern count="other">{0} taškų colyje</unitPattern>
+				<displayName draft="provisional">taškai colyje</displayName>
+				<unitPattern count="one" draft="provisional">{0} taškas colyje</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} taškai colyje</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} taško colyje</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} taškų colyje</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>taškas</displayName>
-				<unitPattern count="one">{0} taškas</unitPattern>
-				<unitPattern count="few">{0} taškai</unitPattern>
-				<unitPattern count="many">{0} taško</unitPattern>
-				<unitPattern count="other">{0} taškų</unitPattern>
+				<displayName draft="provisional">taškas</displayName>
+				<unitPattern count="one" draft="provisional">{0} taškas</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} taškai</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} taško</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} taškų</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>žemės spindulys</displayName>
@@ -13933,11 +13933,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="few">{0} cal</unitPattern>
-				<unitPattern count="many">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -14061,25 +14061,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>taškai centimetre</displayName>
-				<unitPattern count="one">{0} tšk./cm</unitPattern>
-				<unitPattern count="few">{0} tšk./cm</unitPattern>
-				<unitPattern count="many">{0} tšk./cm</unitPattern>
-				<unitPattern count="other">{0} tšk./cm</unitPattern>
+				<displayName draft="provisional">taškai centimetre</displayName>
+				<unitPattern count="one" draft="provisional">{0} tšk./cm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} tšk./cm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} tšk./cm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tšk./cm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>taškai colyje</displayName>
-				<unitPattern count="one">{0} tšk./in</unitPattern>
-				<unitPattern count="few">{0} tšk./in</unitPattern>
-				<unitPattern count="many">{0} tšk./in</unitPattern>
-				<unitPattern count="other">{0} tšk./in</unitPattern>
+				<displayName draft="provisional">taškai colyje</displayName>
+				<unitPattern count="one" draft="provisional">{0} tšk./in</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} tšk./in</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} tšk./in</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tšk./in</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>tšk.</displayName>
-				<unitPattern count="one">{0} tšk.</unitPattern>
-				<unitPattern count="few">{0} tšk.</unitPattern>
-				<unitPattern count="many">{0} tšk.</unitPattern>
-				<unitPattern count="other">{0} tšk.</unitPattern>
+				<displayName draft="provisional">tšk.</displayName>
+				<unitPattern count="one" draft="provisional">{0} tšk.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} tšk.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} tšk.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tšk.</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -15340,11 +15340,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="few">{0} cal</unitPattern>
-				<unitPattern count="many">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -15473,25 +15473,25 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>taškai centimetre</displayName>
-				<unitPattern count="one">{0} tšk./cm</unitPattern>
-				<unitPattern count="few">{0} tšk./cm</unitPattern>
-				<unitPattern count="many">{0} tšk./cm</unitPattern>
-				<unitPattern count="other">{0} tšk./cm</unitPattern>
+				<displayName draft="provisional">taškai centimetre</displayName>
+				<unitPattern count="one" draft="provisional">{0} tšk./cm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} tšk./cm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} tšk./cm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tšk./cm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>taškai colyje</displayName>
-				<unitPattern count="one">{0} tšk./in</unitPattern>
-				<unitPattern count="few">{0} tšk./in</unitPattern>
-				<unitPattern count="many">{0} tšk./in</unitPattern>
-				<unitPattern count="other">{0} tšk./in</unitPattern>
+				<displayName draft="provisional">taškai colyje</displayName>
+				<unitPattern count="one" draft="provisional">{0} tšk./in</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} tšk./in</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} tšk./in</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tšk./in</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>tšk.</displayName>
-				<unitPattern count="one">{0} tšk.</unitPattern>
-				<unitPattern count="few">{0} tšk.</unitPattern>
-				<unitPattern count="many">{0} tšk.</unitPattern>
-				<unitPattern count="other">{0} tšk.</unitPattern>
+				<displayName draft="provisional">tšk.</displayName>
+				<unitPattern count="one" draft="provisional">{0} tšk.</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} tšk.</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} tšk.</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tšk.</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>

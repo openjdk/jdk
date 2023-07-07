@@ -120,7 +120,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="HM">îles Heard et McDonald</territory>
 			<territory type="IC">îles Canaries</territory>
 			<territory type="IM">île de Man</territory>
-			<territory type="IO">territoire britannique de l’océan Indien</territory>
+			<territory type="IO" draft="provisional">territoire britannique de l’océan Indien</territory>
 			<territory type="KG">Kirghizistan</territory>
 			<territory type="LR">Libéria</territory>
 			<territory type="MF">Saint-Martin (France)</territory>
@@ -141,7 +141,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="VN">Vietnam</territory>
 		</territories>
 		<types>
-			<type key="calendar" type="islamic-umalqura">calendrier musulman (calculé, Umm al-Qura)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">calendrier musulman (calculé, Umm al-Qura)</type>
 			<type key="collation" type="big5han">ordre de tri chinois traditionnel - Big5</type>
 			<type key="collation" type="dictionary">ordre de tri du dictionnaire</type>
 			<type key="collation" type="eor">ordre multilingue européen</type>
@@ -167,7 +167,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters type="auxiliary">[á å ä ã ā ē í ì ī ñ ó ò ö ø ú ǔ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áåäãā ē íìī ñ óòöø úǔ]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<alternateQuotationStart>”</alternateQuotationStart>
@@ -2370,8 +2370,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} calories</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<unitPattern count="one">{0} kilocalorie</unitPattern>
-				<unitPattern count="other">{0} kilocalories</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} kilocalorie</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kilocalories</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<unitPattern count="one">{0} kilojoule</unitPattern>
@@ -2413,7 +2413,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} hertz</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>point</displayName>
+				<displayName draft="provisional">point</displayName>
 			</unit>
 			<unit type="length-kilometer">
 				<unitPattern count="one">{0} kilomètre</unitPattern>
@@ -2865,8 +2865,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<unitPattern count="one">{0} kJ</unitPattern>
@@ -2901,19 +2901,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppp</displayName>
-				<unitPattern count="one">{0} ppp</unitPattern>
-				<unitPattern count="other">{0} ppp</unitPattern>
+				<displayName draft="provisional">ppp</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppp</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppp</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>p</displayName>
-				<unitPattern count="one">{0} p</unitPattern>
-				<unitPattern count="other">{0} p</unitPattern>
+				<displayName draft="provisional">p</displayName>
+				<unitPattern count="one" draft="provisional">{0} p</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} p</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<unitPattern count="one">{0} km</unitPattern>
@@ -3247,17 +3247,17 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}therm US</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0}ppcm</unitPattern>
-				<unitPattern count="other">{0}ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0}ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppp</displayName>
-				<unitPattern count="one">{0}ppp</unitPattern>
-				<unitPattern count="other">{0}ppp</unitPattern>
+				<displayName draft="provisional">ppp</displayName>
+				<unitPattern count="one" draft="provisional">{0}ppp</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}ppp</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>p</displayName>
+				<displayName draft="provisional">p</displayName>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0}R⊕</unitPattern>
@@ -3467,7 +3467,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nameField type="surname2">Drainville</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title">Mme</nameField>
+			<nameField type="title" draft="provisional">Mme</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

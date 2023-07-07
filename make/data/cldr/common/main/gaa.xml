@@ -311,10 +311,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters draft="unconfirmed">[a b d e ɛ f g h i j k l m n ŋ o ɔ p q r s t u v w y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary" draft="unconfirmed">[á ã é í ĩ ó ũ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="unconfirmed">[áã é íĩ ó ũ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="unconfirmed">[A B D E Ɛ F G H I J K L M N Ŋ O Ɔ P Q R S T U V W Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="unconfirmed">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>
@@ -323,28 +323,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial" draft="unconfirmed">{0} … {1}</ellipsis>
 		<moreInformation draft="unconfirmed">?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="unconfirmed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="unconfirmed">[\:∶︓﹕：]</parseLenient>
+			<parseLenient sample="-" draft="unconfirmed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="unconfirmed">[\:：﹕︓ ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="unconfirmed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’" draft="unconfirmed">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%" draft="unconfirmed">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰" draft="unconfirmed">[؉‰]</parseLenient>
-			<parseLenient sample="$" draft="unconfirmed">[\$﹩＄]</parseLenient>
-			<parseLenient sample="£" draft="unconfirmed">[£₤￡]</parseLenient>
+			<parseLenient sample="." draft="unconfirmed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="’" draft="unconfirmed">['＇’ ՚ ᾽᾿ ʼ]</parseLenient>
+			<parseLenient sample="%" draft="unconfirmed">[%％﹪ ٪]</parseLenient>
+			<parseLenient sample="‰" draft="unconfirmed">[‰ ؉]</parseLenient>
+			<parseLenient sample="$" draft="unconfirmed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="unconfirmed">[£￡ ₤]</parseLenient>
 			<parseLenient sample="¥" draft="unconfirmed">[¥￥]</parseLenient>
 			<parseLenient sample="₩" draft="unconfirmed">[₩￦]</parseLenient>
-			<parseLenient sample="₹" draft="unconfirmed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="₹" draft="unconfirmed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="unconfirmed">[\-‐‒–⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="unconfirmed">[,،٫⹁、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="unconfirmed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="unconfirmed">[\-－﹣ ‐‑ ‒ – −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="unconfirmed">[,，﹐︐ ⹁ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="unconfirmed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="unconfirmed">[,٫⹁︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="unconfirmed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="unconfirmed">[,，﹐︐ ⹁ ٫]</parseLenient>
+			<parseLenient sample="." draft="unconfirmed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>

@@ -437,7 +437,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Ilha di Man</territory>
 			<territory type="IN">Índia</territory>
-			<territory type="IO">Ilhas Británikas di Índiku</territory>
+			<territory type="IO" draft="provisional">Ilhas Británikas di Índiku</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Irãu</territory>
 			<territory type="IS">Islándia</territory>
@@ -614,10 +614,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Kalendáriu Gregorianu</type>
 			<type key="calendar" type="hebrew">Kalendáriu ebraiku</type>
 			<type key="calendar" type="indian">Kalendáriu nasional indianu</type>
-			<type key="calendar" type="islamic">Kalendáriu islámiku</type>
-			<type key="calendar" type="islamic-civil">Kalendáriu islámiku (sivil)</type>
-			<type key="calendar" type="islamic-tbla">Kalendáriu islámiku (astronómiku)</type>
-			<type key="calendar" type="islamic-umalqura">Kalendáriu islámiku (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Kalendáriu islámiku</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Kalendáriu islámiku (sivil)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Kalendáriu islámiku (astronómiku)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Kalendáriu islámiku (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Kalendáriu ISO-8601</type>
 			<type key="calendar" type="japanese">Kalendáriu japones</type>
 			<type key="calendar" type="persian">Kalendáriu persa</type>
@@ -651,11 +651,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a b d {dj} e f g h i j k l {lh} m n ñ {nh} o p r s t {tx} u v x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ª á à ă â å ä ã ā æ c ç é è ĕ ê ë ẽ ē í ì ĭ î ï ĩ ī {n\u0308} º ó ò ŏ ô ö õ ø ō œ q {rr} ᵘ ú ù ŭ û ü ũ ū w ÿ]</exemplarCharacters>
+		<exemplarCharacters>[a b d {dj} e f g h i j k l {lh} m nñ {nh} o p r s t {tx} u v x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ªáàăâåäãā æ cç éèĕêëẽē íìĭîïĩī {n̈} ºóòŏôöõøō œ q {rr} ᵘúùŭûüũū w ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P R S T U V X Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] § @ * / \&amp; # † ‡]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” « » ( ) \[ \] § @ * / \&amp; # † ‡]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -3322,8 +3322,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kaloria</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kaloria</displayName>
-				<unitPattern count="other">{0} Kaloria</unitPattern>
+				<displayName draft="provisional">Kaloria</displayName>
+				<unitPattern count="other" draft="provisional">{0} Kaloria</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -3394,16 +3394,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} piksel pur pulegada</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>pontu pur sentímeru</displayName>
-				<unitPattern count="other">{0} pontu pur sentímetru</unitPattern>
+				<displayName draft="provisional">pontu pur sentímeru</displayName>
+				<unitPattern count="other" draft="provisional">{0} pontu pur sentímetru</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>pontu pur pulegada</displayName>
-				<unitPattern count="other">{0} pontu pur pulegada</unitPattern>
+				<displayName draft="provisional">pontu pur pulegada</displayName>
+				<unitPattern count="other" draft="provisional">{0} pontu pur pulegada</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pontu</displayName>
-				<unitPattern count="other">{0} pontu</unitPattern>
+				<displayName draft="provisional">pontu</displayName>
+				<unitPattern count="other" draft="provisional">{0} pontu</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>raiu di Tera</displayName>
@@ -4028,8 +4028,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -4063,16 +4063,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>px</displayName>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">px</displayName>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>km</displayName>

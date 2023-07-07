@@ -632,7 +632,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Ísrael</territory>
 			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Stóra Bretlands Indiahavoyggjar</territory>
+			<territory type="IO" draft="provisional">Stóra Bretlands Indiahavoyggjar</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Ísland</territory>
@@ -811,7 +811,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic">etiopiskur kalendari</type>
 			<type key="calendar" type="gregorian">gregorianskur kalendari</type>
 			<type key="calendar" type="hebrew">hebraiskur kalendari</type>
-			<type key="calendar" type="islamic">islamiskur kalendari</type>
+			<type key="calendar" type="islamic" draft="provisional">islamiskur kalendari</type>
 			<type key="calendar" type="iso8601">ISO-8601 kalendari</type>
 			<type key="calendar" type="japanese">japanskur kalendari</type>
 			<type key="calendar" type="persian">persiskur kalendari</type>
@@ -880,11 +880,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á b d ð e f g h i í j k l m n o ó p r s t u ú v y ý æ ø]</exemplarCharacters>
+		<exemplarCharacters>[aá b dð e f g h ií j k l m n oó p r s t uú v yý æ ø]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c q w x z]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[A Á B C D Ð E F G H I Í J K L M N O Ó P Q R S T U Ú V W X Y Ý Z Æ Ø]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[AÁ B C DÐ E F G H IÍ J K L M N OÓ P Q R S T UÚ V W X YÝ Z Æ Ø]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[, . % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -893,23 +893,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -6175,9 +6175,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kaloriur</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kostkaloriur</displayName>
-				<unitPattern count="one">{0} kostkaloria</unitPattern>
-				<unitPattern count="other">{0} kostkaloriur</unitPattern>
+				<displayName draft="provisional">kostkaloriur</displayName>
+				<unitPattern count="one" draft="provisional">{0} kostkaloria</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kostkaloriur</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -6265,19 +6265,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} skíggjadeplar fyri hvønn tunna</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>punkt fyri hvønn sentimetur</displayName>
-				<unitPattern count="one">{0} punkt fyri hvønn sentimetur</unitPattern>
-				<unitPattern count="other">{0} punkt fyri hvønn sentimetur</unitPattern>
+				<displayName draft="provisional">punkt fyri hvønn sentimetur</displayName>
+				<unitPattern count="one" draft="provisional">{0} punkt fyri hvønn sentimetur</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkt fyri hvønn sentimetur</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>punkt fyri hvønn tumma</displayName>
-				<unitPattern count="one">{0} punkt fyri hvønn tumma</unitPattern>
-				<unitPattern count="other">{0} punkt fyri hvønn tumma</unitPattern>
+				<displayName draft="provisional">punkt fyri hvønn tumma</displayName>
+				<unitPattern count="one" draft="provisional">{0} punkt fyri hvønn tumma</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkt fyri hvønn tumma</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>punkt</displayName>
-				<unitPattern count="one">{0} punkt</unitPattern>
-				<unitPattern count="other">{0} punkt</unitPattern>
+				<displayName draft="provisional">punkt</displayName>
+				<unitPattern count="one" draft="provisional">{0} punkt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkt</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>radius á jørðuni</displayName>
@@ -7121,9 +7121,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kal.</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kostkaloriur</displayName>
-				<unitPattern count="one">{0} kostkaloria</unitPattern>
-				<unitPattern count="other">{0} kostkaloriur</unitPattern>
+				<displayName draft="provisional">kostkaloriur</displayName>
+				<unitPattern count="one" draft="provisional">{0} kostkaloria</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kostkaloriur</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -7207,19 +7207,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>punkt</displayName>
-				<unitPattern count="one">{0} punkt</unitPattern>
-				<unitPattern count="other">{0} punkt</unitPattern>
+				<displayName draft="provisional">punkt</displayName>
+				<unitPattern count="one" draft="provisional">{0} punkt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} punkt</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>

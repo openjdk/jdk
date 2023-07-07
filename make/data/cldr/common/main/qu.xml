@@ -650,7 +650,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Isla de Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Territorio Británico del Océano Índico</territory>
+			<territory type="IO" draft="provisional">Territorio Británico del Océano Índico</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Irán</territory>
 			<territory type="IS">Islandia</territory>
@@ -825,9 +825,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic-amete-alem">Etíope Amete Alem Intiwatana</type>
 			<type key="calendar" type="gregorian">Gregoriano Intiwatana</type>
 			<type key="calendar" type="hebrew">Hebreo Intiwatana</type>
-			<type key="calendar" type="islamic">Islamico Intiwatana</type>
-			<type key="calendar" type="islamic-civil">Islamico Intiwatana (tabular, época civil)</type>
-			<type key="calendar" type="islamic-umalqura">Islamico Intiwatana (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Islamico Intiwatana</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Islamico Intiwatana (tabular, época civil)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Islamico Intiwatana (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 Intiwatana</type>
 			<type key="calendar" type="japanese">Japones Intiwatana</type>
 			<type key="calendar" type="persian">Persa Intiwatana</type>
@@ -901,11 +901,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[a {ch} {chʼ} h i k {kʼ} l {ll} m n ñ p {pʼ} q {qʼ} s t {tʼ} u w y]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ b c ç d e é è ĕ ê ë ē f g í ì ĭ î ï ī j o ó ò ŏ ô ö ø ō œ r ú ù ŭ û ü ū v x ÿ z]</exemplarCharacters>
-		<exemplarCharacters type="index">[A {Ch} H I K L {Ll} M N Ñ P Q S T U W Y]</exemplarCharacters>
+		<exemplarCharacters>[a {ch} {chʼ} h i k {kʼ} l {ll} m nñ p {pʼ} q {qʼ} s t {tʼ} u w y]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâåäãā æ b cç d eéèĕêëē f g íìĭîïī j oóòŏôöøō œ r úùŭûüū v x ÿ z]</exemplarCharacters>
+		<exemplarCharacters type="index">[A {Ch} H I K L {Ll} M NÑ P Q S T U W Y]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -5606,8 +5606,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -5682,16 +5682,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} pixels por pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>puntos por centímetro</displayName>
-				<unitPattern count="other">{0} puntos por centímetro</unitPattern>
+				<displayName draft="provisional">puntos por centímetro</displayName>
+				<unitPattern count="other" draft="provisional">{0} puntos por centímetro</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>puntos por pulgada</displayName>
-				<unitPattern count="other">{0} puntos por pulgada</unitPattern>
+				<displayName draft="provisional">puntos por pulgada</displayName>
+				<unitPattern count="other" draft="provisional">{0} puntos por pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>chiku</displayName>
-				<unitPattern count="other">{0} chiku</unitPattern>
+				<displayName draft="provisional">chiku</displayName>
+				<unitPattern count="other" draft="provisional">{0} chiku</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>radio de la tierra</displayName>
@@ -6144,20 +6144,20 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} L/100 km</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>punto</displayName>
-				<unitPattern count="other">{0} punto</unitPattern>
+				<displayName draft="provisional">punto</displayName>
+				<unitPattern count="other" draft="provisional">{0} punto</unitPattern>
 			</unit>
 			<unit type="length-furlong">
 				<displayName>furlong</displayName>
@@ -6602,27 +6602,27 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<nameField type="credentials">A. R.</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
-			<nameField type="given">Pedro</nameField>
+			<nameField type="given" draft="provisional">Pedro</nameField>
 		</sampleName>
 		<sampleName item="foreignGS">
-			<nameField type="given">Ana</nameField>
-			<nameField type="surname">Torres</nameField>
+			<nameField type="given" draft="provisional">Ana</nameField>
+			<nameField type="surname" draft="provisional">Torres</nameField>
 		</sampleName>
 		<sampleName item="foreignGGS">
-			<nameField type="given">Edwin</nameField>
-			<nameField type="given2">Segundo</nameField>
-			<nameField type="surname">Condori</nameField>
+			<nameField type="given" draft="provisional">Edwin</nameField>
+			<nameField type="given2" draft="provisional">Segundo</nameField>
+			<nameField type="surname" draft="provisional">Condori</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title">Prof. Dr.</nameField>
-			<nameField type="given">Alejandro Manuel</nameField>
-			<nameField type="given-informal">Ale</nameField>
-			<nameField type="given2">César Mamani</nameField>
-			<nameField type="surname-prefix">de la</nameField>
-			<nameField type="surname-core">Cruz</nameField>
-			<nameField type="surname2">Guzmán Huamán</nameField>
-			<nameField type="generation">Jr.</nameField>
-			<nameField type="credentials">Ph. D.</nameField>
+			<nameField type="title" draft="provisional">Prof. Dr.</nameField>
+			<nameField type="given" draft="provisional">Alejandro Manuel</nameField>
+			<nameField type="given-informal" draft="provisional">Ale</nameField>
+			<nameField type="given2" draft="provisional">César Mamani</nameField>
+			<nameField type="surname-prefix" draft="provisional">de la</nameField>
+			<nameField type="surname-core" draft="provisional">Cruz</nameField>
+			<nameField type="surname2" draft="provisional">Guzmán Huamán</nameField>
+			<nameField type="generation" draft="provisional">Jr.</nameField>
+			<nameField type="credentials" draft="provisional">Ph. D.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

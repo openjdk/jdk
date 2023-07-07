@@ -690,7 +690,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">British Indian Ocean Territory</territory>
+			<territory type="IO" draft="provisional">British Indian Ocean Territory</territory>
 			<territory type="IQ">Iraq</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Iceland</territory>
@@ -887,11 +887,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Gregorian na Kalendaryo</type>
 			<type key="calendar" type="hebrew">Hebrew na Kalendaryo</type>
 			<type key="calendar" type="indian">Pambansang Kalendaryong Indian</type>
-			<type key="calendar" type="islamic">Kalendaryong Islamic</type>
-			<type key="calendar" type="islamic-civil">Kalendaryong Islamic-Civil</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">Kalendaryong Islamiko (Saudi Arabia, sighting)</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">Kalendaryong Islamiko (tabular, astronomikal na epoch)</type>
-			<type key="calendar" type="islamic-umalqura">Kalendaryong Islam (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Kalendaryong Islamic</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Kalendaryong Islamic-Civil</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">Kalendaryong Islamiko (Saudi Arabia, sighting)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Kalendaryong Islamiko (tabular, astronomikal na epoch)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Kalendaryong Islam (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 na Kalendaryo</type>
 			<type key="calendar" type="japanese">Kalendaryong Japanese</type>
 			<type key="calendar" type="persian">Kalendaryong Persian</type>
@@ -1029,10 +1029,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b c d e f g h i j k l m n ñ {ng} o p q r s t u v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à â é è ê í ì î ó ò ô ú ù û]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàâ éèê íìî óòô úùû]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N Ñ {Ng} O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § * / \&amp; # ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § * / \&amp; # ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1041,23 +1041,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8560,9 +8560,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} na calories</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Calories</displayName>
-				<unitPattern count="one">{0} Calorie</unitPattern>
-				<unitPattern count="other">{0} na Calories</unitPattern>
+				<displayName draft="provisional">Calories</displayName>
+				<unitPattern count="one" draft="provisional">{0} Calorie</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} na Calories</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoules</displayName>
@@ -8655,19 +8655,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixel bawat pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>tuldok bawat sentimetro</displayName>
-				<unitPattern count="one">{0} tuldok bawat sentimetro</unitPattern>
-				<unitPattern count="other">{0} tuldok bawat sentimetro</unitPattern>
+				<displayName draft="provisional">tuldok bawat sentimetro</displayName>
+				<unitPattern count="one" draft="provisional">{0} tuldok bawat sentimetro</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tuldok bawat sentimetro</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>tuldok bawat pulgada</displayName>
-				<unitPattern count="one">{0} tuldok bawat pulgada</unitPattern>
-				<unitPattern count="other">{0} tuldok bawat pulgada</unitPattern>
+				<displayName draft="provisional">tuldok bawat pulgada</displayName>
+				<unitPattern count="one" draft="provisional">{0} tuldok bawat pulgada</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tuldok bawat pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>tuldok</displayName>
-				<unitPattern count="one">{0} tuldok</unitPattern>
-				<unitPattern count="other">{0} tuldok</unitPattern>
+				<displayName draft="provisional">tuldok</displayName>
+				<unitPattern count="one" draft="provisional">{0} tuldok</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tuldok</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>earth radius</displayName>
@@ -9583,9 +9583,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -9675,19 +9675,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>tuldok</displayName>
-				<unitPattern count="one">{0} tuldok</unitPattern>
-				<unitPattern count="other">{0} tuldok</unitPattern>
+				<displayName draft="provisional">tuldok</displayName>
+				<unitPattern count="one" draft="provisional">{0} tuldok</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} tuldok</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} na R⊕</unitPattern>
@@ -10621,9 +10621,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -10716,19 +10716,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>tuldok</displayName>
-				<unitPattern count="one">{0}dot</unitPattern>
-				<unitPattern count="other">{0}dot</unitPattern>
+				<displayName draft="provisional">tuldok</displayName>
+				<unitPattern count="one" draft="provisional">{0}dot</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dot</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11620,27 +11620,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given">Zendaya</nameField>
+			<nameField type="given" draft="provisional">Zendaya</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given">Irene</nameField>
-			<nameField type="surname">Adler</nameField>
+			<nameField type="given" draft="provisional">Irene</nameField>
+			<nameField type="surname" draft="provisional">Adler</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given">John</nameField>
-			<nameField type="given2">Hamish</nameField>
-			<nameField type="surname">Watson</nameField>
+			<nameField type="given" draft="provisional">John</nameField>
+			<nameField type="given2" draft="provisional">Hamish</nameField>
+			<nameField type="surname" draft="provisional">Watson</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">Mr.</nameField>
-			<nameField type="given">Bertram Wilberforce</nameField>
-			<nameField type="given-informal">Bertie</nameField>
-			<nameField type="given2">Henry Robert</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">Wooster</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
-			<nameField type="generation">Jr</nameField>
-			<nameField type="credentials">MP</nameField>
+			<nameField type="title" draft="provisional">Mr.</nameField>
+			<nameField type="given" draft="provisional">Bertram Wilberforce</nameField>
+			<nameField type="given-informal" draft="provisional">Bertie</nameField>
+			<nameField type="given2" draft="provisional">Henry Robert</nameField>
+			<nameField type="surname-prefix" draft="provisional">∅∅∅</nameField>
+			<nameField type="surname-core" draft="provisional">Wooster</nameField>
+			<nameField type="surname2" draft="provisional">∅∅∅</nameField>
+			<nameField type="generation" draft="provisional">Jr</nameField>
+			<nameField type="credentials" draft="provisional">MP</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
 			<nameField type="given">Sinbad</nameField>

@@ -1005,7 +1005,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Iosrael</territory>
 			<territory type="IM">Eilean Mhanainn</territory>
 			<territory type="IN">Na h-Innseachan</territory>
-			<territory type="IO">Ranntair Breatannach Cuan nan Innseachan</territory>
+			<territory type="IO" draft="provisional">Ranntair Breatannach Cuan nan Innseachan</territory>
 			<territory type="IQ">Ioràc</territory>
 			<territory type="IR">Ioràn</territory>
 			<territory type="IS">Innis Tìle</territory>
@@ -1300,11 +1300,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Am Mìosachan Griogarach</type>
 			<type key="calendar" type="hebrew">Am Mìosachan Eabhrach</type>
 			<type key="calendar" type="indian">Mìosachan Nàiseanta nan Innseachan</type>
-			<type key="calendar" type="islamic">Am Mìosachan Ioslamach</type>
-			<type key="calendar" type="islamic-civil">Am Mìosachan Ioslamach (clàrach, linn sìobhalta)</type>
-			<type key="calendar" type="islamic-rgsa">Am Mìosachan Ioslamach (Aràibia nan Sabhd, sealladh)</type>
-			<type key="calendar" type="islamic-tbla">Am Mìosachan Ioslamach (clàrach, linn reul-eòlach)</type>
-			<type key="calendar" type="islamic-umalqura">Am Mìosachan Ioslamach (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Am Mìosachan Ioslamach</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Am Mìosachan Ioslamach (clàrach, linn sìobhalta)</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">Am Mìosachan Ioslamach (Aràibia nan Sabhd, sealladh)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Am Mìosachan Ioslamach (clàrach, linn reul-eòlach)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Am Mìosachan Ioslamach (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Mìosachan ISO-8601</type>
 			<type key="calendar" type="japanese">Am Mìosachan Seapanach</type>
 			<type key="calendar" type="persian">Am Mìosachan Pearsach</type>
@@ -1438,11 +1438,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à b c d e è f g h i ì l m n o ò p r s t u ù]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á ă â å ä ã ā æ ċ ç ḋ é ĕ ê ë ē ḟ ġ í ĭ î ï ī ı j k ł ṁ ñ ó ŏ ô ö ø ō œ ṗ q ṡ ş ș ṫ ú ŭ û ü ū v w x y ÿ z]</exemplarCharacters>
+		<exemplarCharacters>[aà b c d eè f g h iì l m n oò p r s t uù]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áăâåäãā æ ċç ḋ éĕêëē ḟ ġ íĭîïī ı j k ł ṁ ñ óŏôöøō œ ṗ q ṡşș ṫ úŭûüū v w x yÿ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I L M N O P R S T U]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — , ; \: ! ¡ ? . … · ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} § ¶ @ * / \&amp; ⁊ # % † ‡ ‧ ° © ® ™]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — , ; \: ! ¡ ? . … · '‘’ &quot;“” ( ) \[ \] \{ \} § ¶ @ * / \&amp; ⁊ # % † ‡ ‧ ° © ® ™]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1451,23 +1451,23 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
-			<parseLenient sample="₹" draft="contributed">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
+			<parseLenient sample="₹" draft="contributed">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -10970,11 +10970,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} calaraidh</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>calaraidh bidhe</displayName>
-				<unitPattern count="one">{0} chalaraidh bidhe</unitPattern>
-				<unitPattern count="two">{0} chalaraidh bidhe</unitPattern>
-				<unitPattern count="few">{0} calaraidhean bidhe</unitPattern>
-				<unitPattern count="other">{0} calaraidh bidhe</unitPattern>
+				<displayName draft="provisional">calaraidh bidhe</displayName>
+				<unitPattern count="one" draft="provisional">{0} chalaraidh bidhe</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} chalaraidh bidhe</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} calaraidhean bidhe</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} calaraidh bidhe</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>cilea-joule</displayName>
@@ -11103,25 +11103,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} piogsail san òirleach</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dotag sa cheudameatair</displayName>
-				<unitPattern count="one">{0} dotag sa cheudameatair</unitPattern>
-				<unitPattern count="two">{0} dhotag sa cheudameatair</unitPattern>
-				<unitPattern count="few">{0} dotagan sa cheudameatair</unitPattern>
-				<unitPattern count="other">{0} dotag sa cheudameatair</unitPattern>
+				<displayName draft="provisional">dotag sa cheudameatair</displayName>
+				<unitPattern count="one" draft="provisional">{0} dotag sa cheudameatair</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} dhotag sa cheudameatair</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dotagan sa cheudameatair</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dotag sa cheudameatair</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dotag san òirleach</displayName>
-				<unitPattern count="one">{0} dotag san òirleach</unitPattern>
-				<unitPattern count="two">{0} dhotag san òirleach</unitPattern>
-				<unitPattern count="few">{0} dotagan san òirleach</unitPattern>
-				<unitPattern count="other">{0} dotag san òirleach</unitPattern>
+				<displayName draft="provisional">dotag san òirleach</displayName>
+				<unitPattern count="one" draft="provisional">{0} dotag san òirleach</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} dhotag san òirleach</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dotagan san òirleach</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dotag san òirleach</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>dotag</displayName>
-				<unitPattern count="one">{0} dotag</unitPattern>
-				<unitPattern count="two">{0} dhotag</unitPattern>
-				<unitPattern count="few">{0} dotagan</unitPattern>
-				<unitPattern count="other">{0} dotag</unitPattern>
+				<displayName draft="provisional">dotag</displayName>
+				<unitPattern count="one" draft="provisional">{0} dotag</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} dhotag</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dotagan</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dotag</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>rèideas-talmhainn</displayName>
@@ -12329,11 +12329,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="two">{0} Cal</unitPattern>
-				<unitPattern count="few">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>cilea-joule</displayName>
@@ -12458,25 +12458,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="two">{0} dpcm</unitPattern>
-				<unitPattern count="few">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="two">{0} dpi</unitPattern>
-				<unitPattern count="few">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>dotag</displayName>
-				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="two">{0} dot</unitPattern>
-				<unitPattern count="few">{0} dot</unitPattern>
-				<unitPattern count="other">{0} dot</unitPattern>
+				<displayName draft="provisional">dotag</displayName>
+				<unitPattern count="one" draft="provisional">{0} dot</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} dot</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} dot</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dot</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -13741,11 +13741,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0}Cal</unitPattern>
-				<unitPattern count="two">{0}Cal</unitPattern>
-				<unitPattern count="few">{0}Cal</unitPattern>
-				<unitPattern count="other">{0}Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="two" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -13874,25 +13874,25 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0}dpcm</unitPattern>
-				<unitPattern count="two">{0}dpcm</unitPattern>
-				<unitPattern count="few">{0}dpcm</unitPattern>
-				<unitPattern count="other">{0}dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpcm</unitPattern>
+				<unitPattern count="two" draft="provisional">{0}dpcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0}dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0}dpi</unitPattern>
-				<unitPattern count="two">{0}dpi</unitPattern>
-				<unitPattern count="few">{0}dpi</unitPattern>
-				<unitPattern count="other">{0}dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0}dpi</unitPattern>
+				<unitPattern count="two" draft="provisional">{0}dpi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0}dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>dot</displayName>
-				<unitPattern count="one">{0}dot</unitPattern>
-				<unitPattern count="two">{0}dhot</unitPattern>
-				<unitPattern count="few">{0}dot</unitPattern>
-				<unitPattern count="other">{0}dot</unitPattern>
+				<displayName draft="provisional">dot</displayName>
+				<unitPattern count="one" draft="provisional">{0}dot</unitPattern>
+				<unitPattern count="two" draft="provisional">{0}dhot</unitPattern>
+				<unitPattern count="few" draft="provisional">{0}dot</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dot</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -14848,7 +14848,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="400">riaghailteach</styleName>
 		<styleName type="wght" subtype="500">meadhanach</styleName>
 		<styleName type="wght" subtype="600">leth-throm</styleName>
-		<styleName type="wght" subtype="600" alt="demi">leth-throm</styleName>
 		<styleName type="wght" subtype="700">trom</styleName>
 		<styleName type="wght" subtype="800">anabarrach trom</styleName>
 		<styleName type="wght" subtype="900">dubh</styleName>

@@ -23,10 +23,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</territories>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="contributed">[\u200B း ႞ ႟ ၵ ၶ ၷ င ၸ ၺ ꧣ တ ထ ၻ ၼ ပ ၽ ၾ ၿ ꧤ မ ယ ျ ရ ြ လ ဝ \u103D \u1082 ႀ သ ႁ ဢ ႃ \u102D \u102E \u102F \u1030 ေ ႄ \uA9E5 \u103A ႇ ႈ ႉ ႊ]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[\u200Bး ႞ ႟ ၵ ၶ ၷ င ၸ ၺ ꧣ တ ထ ၻ ၼ ပ ၽ ၾ ၿ ꧤ မ ယ ျ ရ ြ လ ဝ ွ ႂ ႀ သ ႁ ဢ ႃ ိ ီ ု ူ ေ ႄ ꧥ ် ႇ ႈ ႉ ႊ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="contributed">[ꩡ ꩦ ꩧ ꩨ ꩩ ꩮ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ၵ ၶ ၷ ꧠ င ၸ ꩡ ꧡ ꧢ ၺ ꩦ ꩧ ꩨ ꩩ တ ထ ၻ ၼ ပ ၽ ၾ ၿ ꧤ မ ယ ရ လ ဝ ႀ သ ႁ ꩮ ဢ]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[႐ ႑ ႒ ႓ ႔ ႕ ႖ ႗ ႘ ႙]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[၊ ။ ‘ ’ “ ”]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[၊ ။ ‘’ “”]</exemplarCharacters>
 	</characters>
 </ldml>

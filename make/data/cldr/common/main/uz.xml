@@ -685,7 +685,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Isroil</territory>
 			<territory type="IM">Men oroli</territory>
 			<territory type="IN">Hindiston</territory>
-			<territory type="IO">Britaniyaning Hind okeanidagi hududi</territory>
+			<territory type="IO" draft="provisional">Britaniyaning Hind okeanidagi hududi</territory>
 			<territory type="IQ">Iroq</territory>
 			<territory type="IR">Eron</territory>
 			<territory type="IS">Islandiya</territory>
@@ -867,10 +867,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="ethiopic-amete-alem">Amete Alem habash taqvimi</type>
 			<type key="calendar" type="gregorian">grigorian taqvimi</type>
 			<type key="calendar" type="hebrew">yahudiy taqvimi</type>
-			<type key="calendar" type="islamic">islomiy taqvim</type>
-			<type key="calendar" type="islamic-civil">jadvalli islomiy taqvim</type>
-			<type key="calendar" type="islamic-tbla">jadvalli islomiy taqvim (astronomik davr)</type>
-			<type key="calendar" type="islamic-umalqura">islomiy taqvim (Ummul Quro)</type>
+			<type key="calendar" type="islamic" draft="provisional">islomiy taqvim</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">jadvalli islomiy taqvim</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">jadvalli islomiy taqvim (astronomik davr)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">islomiy taqvim (Ummul Quro)</type>
 			<type key="calendar" type="iso8601">ISO-8601 taqvimi</type>
 			<type key="calendar" type="japanese">yapon taqvimi</type>
 			<type key="calendar" type="persian">fors taqvimi</type>
@@ -944,10 +944,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[a b d e f g h i j k l m n o p q r s t u v x y z {oʻ} {gʻ} {sh} {ch} ʼ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ā æ c ç é è ĕ ê ë ē í ì ĭ î ï ī ñ ó ò ŏ ô ö ø ō œ ú ù ŭ û ü ū w ÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâåäãā æ cç éèĕêëē íìĭîïī ñ óòŏôöøō œ úùŭûüū w ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B D E F G H I J K L M N O P Q R S T U V X Y Z {Oʻ} {Gʻ} {Sh} {Ch}]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -6516,9 +6516,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kaloriya</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kaloriya</displayName>
-				<unitPattern count="one">{0} kaloriya</unitPattern>
-				<unitPattern count="other">{0} kaloriya</unitPattern>
+				<displayName draft="provisional">kaloriya</displayName>
+				<unitPattern count="one" draft="provisional">{0} kaloriya</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kaloriya</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoul</displayName>
@@ -6611,19 +6611,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} piksel/duym</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>nuqta/santimetr</displayName>
-				<unitPattern count="one">{0} nuqta/santimetr</unitPattern>
-				<unitPattern count="other">{0} nuqta/santimetr</unitPattern>
+				<displayName draft="provisional">nuqta/santimetr</displayName>
+				<unitPattern count="one" draft="provisional">{0} nuqta/santimetr</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nuqta/santimetr</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>nuqta/duym</displayName>
-				<unitPattern count="one">{0} nuqta/duym</unitPattern>
-				<unitPattern count="other">{0} nuqta/duym</unitPattern>
+				<displayName draft="provisional">nuqta/duym</displayName>
+				<unitPattern count="one" draft="provisional">{0} nuqta/duym</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nuqta/duym</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>piksel</displayName>
-				<unitPattern count="one">{0} piksel</unitPattern>
-				<unitPattern count="other">{0} piksel</unitPattern>
+				<displayName draft="provisional">piksel</displayName>
+				<unitPattern count="one" draft="provisional">{0} piksel</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} piksel</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>yer radiusi</displayName>
@@ -7543,9 +7543,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kal</displayName>
-				<unitPattern count="one">{0} kal</unitPattern>
-				<unitPattern count="other">{0} kal</unitPattern>
+				<displayName draft="provisional">kal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoul</displayName>
@@ -7638,19 +7638,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} piksel/duym</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>nuqta/sm</displayName>
-				<unitPattern count="one">{0} nuqta/sm</unitPattern>
-				<unitPattern count="other">{0} nuqta/sm</unitPattern>
+				<displayName draft="provisional">nuqta/sm</displayName>
+				<unitPattern count="one" draft="provisional">{0} nuqta/sm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nuqta/sm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>nuqta/duym</displayName>
-				<unitPattern count="one">{0} nuqta/duym</unitPattern>
-				<unitPattern count="other">{0} nuqta/duym</unitPattern>
+				<displayName draft="provisional">nuqta/duym</displayName>
+				<unitPattern count="one" draft="provisional">{0} nuqta/duym</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nuqta/duym</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>piksel</displayName>
-				<unitPattern count="one">{0} piksel</unitPattern>
-				<unitPattern count="other">{0} piksel</unitPattern>
+				<displayName draft="provisional">piksel</displayName>
+				<unitPattern count="one" draft="provisional">{0} piksel</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} piksel</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>yer radiusi</displayName>
@@ -8593,9 +8593,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kal</displayName>
-				<unitPattern count="one">{0} kal</unitPattern>
-				<unitPattern count="other">{0} kal</unitPattern>
+				<displayName draft="provisional">kal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoul</displayName>
@@ -8688,19 +8688,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} piksel/duym</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>nuqta/sm</displayName>
-				<unitPattern count="one">{0} nqt/sm</unitPattern>
-				<unitPattern count="other">{0} nuqta/sm</unitPattern>
+				<displayName draft="provisional">nuqta/sm</displayName>
+				<unitPattern count="one" draft="provisional">{0} nqt/sm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nuqta/sm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>nuqta/duym</displayName>
-				<unitPattern count="one">{0} nuqta/duym</unitPattern>
-				<unitPattern count="other">{0} nuqta/duym</unitPattern>
+				<displayName draft="provisional">nuqta/duym</displayName>
+				<unitPattern count="one" draft="provisional">{0} nuqta/duym</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} nuqta/duym</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>piksel</displayName>
-				<unitPattern count="one">{0} piksel</unitPattern>
-				<unitPattern count="other">{0} piksel</unitPattern>
+				<displayName draft="provisional">piksel</displayName>
+				<unitPattern count="one" draft="provisional">{0} piksel</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} piksel</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>yer radiusi</displayName>
@@ -9596,27 +9596,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given">Sinbod</nameField>
+			<nameField type="given" draft="provisional">Sinbod</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given">Iren</nameField>
-			<nameField type="surname">Adler</nameField>
+			<nameField type="given" draft="provisional">Iren</nameField>
+			<nameField type="surname" draft="provisional">Adler</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given">Jon</nameField>
-			<nameField type="given2">Hemish</nameField>
-			<nameField type="surname">Vatson</nameField>
+			<nameField type="given" draft="provisional">Jon</nameField>
+			<nameField type="given2" draft="provisional">Hemish</nameField>
+			<nameField type="surname" draft="provisional">Vatson</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">Janob</nameField>
-			<nameField type="given">Alisher</nameField>
-			<nameField type="given-informal">Alisher</nameField>
-			<nameField type="given2">Salimovich</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">Qodirov</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
-			<nameField type="generation">Kichik</nameField>
-			<nameField type="credentials">MP</nameField>
+			<nameField type="title" draft="provisional">Janob</nameField>
+			<nameField type="given" draft="provisional">Alisher</nameField>
+			<nameField type="given-informal" draft="provisional">Alisher</nameField>
+			<nameField type="given2" draft="provisional">Salimovich</nameField>
+			<nameField type="surname-prefix" draft="provisional">∅∅∅</nameField>
+			<nameField type="surname-core" draft="provisional">Qodirov</nameField>
+			<nameField type="surname2" draft="provisional">∅∅∅</nameField>
+			<nameField type="generation" draft="provisional">Kichik</nameField>
+			<nameField type="credentials" draft="provisional">MP</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
 			<nameField type="given">Sinbad</nameField>

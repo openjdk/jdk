@@ -552,7 +552,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Исраил</territory>
 			<territory type="IM">Мен адасы</territory>
 			<territory type="IN">Һиндистан</territory>
-			<territory type="IO">Британтјанын Һинд Океаны Әразиси</territory>
+			<territory type="IO" draft="provisional">Британтјанын Һинд Океаны Әразиси</territory>
 			<territory type="IQ">Ираг</territory>
 			<territory type="IR">Иран</territory>
 			<territory type="IS">Исландија</territory>

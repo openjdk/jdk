@@ -677,7 +677,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Израиль</territory>
 			<territory type="IM">Мэн аралы</territory>
 			<territory type="IN">Индия</territory>
-			<territory type="IO">Инди океанындагы Британ территориясы</territory>
+			<territory type="IO" draft="provisional">Инди океанындагы Британ территориясы</territory>
 			<territory type="IQ">Ирак</territory>
 			<territory type="IR">Иран</territory>
 			<territory type="IS">Исландия</territory>
@@ -857,9 +857,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="ethiopic-amete-alem">Эфиопиялык Амет Алем жылнаамасы</type>
 			<type key="calendar" type="gregorian">Григориан жылнаамасы</type>
 			<type key="calendar" type="hebrew">Иврит жылнаамасы</type>
-			<type key="calendar" type="islamic">Ислам жылнаамасы</type>
-			<type key="calendar" type="islamic-civil">Ислам жылнаамасы (жадыбал)</type>
-			<type key="calendar" type="islamic-umalqura">Ислам жылнаамасы (Умм аль-Кура)</type>
+			<type key="calendar" type="islamic" draft="provisional">Ислам жылнаамасы</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Ислам жылнаамасы (жадыбал)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Ислам жылнаамасы (Умм аль-Кура)</type>
 			<type key="calendar" type="iso8601">ИСО-8601 жылнаамасы</type>
 			<type key="calendar" type="japanese">Жапон жылнаамасы</type>
 			<type key="calendar" type="persian">Перс жылнаамасы</type>
@@ -939,7 +939,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<exemplarCharacters type="auxiliary">[в ф ц щ ь]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б В Г Д Е Ё Ж З И Й К Л М Н Ң О Ө П Р С Т У Ү Ф Х Ц Ч Ш Щ Ъ Ы Ь Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘‚ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -948,23 +948,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -6209,9 +6209,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} калория</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Калория</displayName>
-				<unitPattern count="one">{0} Калория</unitPattern>
-				<unitPattern count="other">{0} Калория</unitPattern>
+				<displayName draft="provisional">Калория</displayName>
+				<unitPattern count="one" draft="provisional">{0} Калория</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Калория</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>киложоул</displayName>
@@ -6304,19 +6304,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>чекит</displayName>
-				<unitPattern count="one">{0} графикалык чекит</unitPattern>
-				<unitPattern count="other">{0} графикалык чекит</unitPattern>
+				<displayName draft="provisional">чекит</displayName>
+				<unitPattern count="one" draft="provisional">{0} графикалык чекит</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} графикалык чекит</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>жер радиусу</displayName>
@@ -7228,9 +7228,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Кал</displayName>
-				<unitPattern count="one">{0} Кал</unitPattern>
-				<unitPattern count="other">{0} Кал</unitPattern>
+				<displayName draft="provisional">Кал</displayName>
+				<unitPattern count="one" draft="provisional">{0} Кал</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Кал</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>киложоул</displayName>
@@ -7318,19 +7318,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>графикалык чекит</displayName>
-				<unitPattern count="one">{0} графикалык чекит</unitPattern>
-				<unitPattern count="other">{0} графикалык чекит</unitPattern>
+				<displayName draft="provisional">графикалык чекит</displayName>
+				<unitPattern count="one" draft="provisional">{0} графикалык чекит</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} графикалык чекит</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -8263,9 +8263,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Кал</displayName>
-				<unitPattern count="one">{0} Кал</unitPattern>
-				<unitPattern count="other">{0} Кал</unitPattern>
+				<displayName draft="provisional">Кал</displayName>
+				<unitPattern count="one" draft="provisional">{0} Кал</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Кал</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>киложоул</displayName>
@@ -8358,19 +8358,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>графикалык чекит</displayName>
-				<unitPattern count="one">{0}грф чкт</unitPattern>
-				<unitPattern count="other">{0}грф чкт</unitPattern>
+				<displayName draft="provisional">графикалык чекит</displayName>
+				<unitPattern count="one" draft="provisional">{0}грф чкт</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}грф чкт</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -9122,7 +9122,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">кадимки</styleName>
 		<styleName type="wght" subtype="500">орточо</styleName>
 		<styleName type="wght" subtype="600">жарым-жартылай жоон</styleName>
-		<styleName type="wght" subtype="600" alt="demi">жарым-жартылай жоон</styleName>
 		<styleName type="wght" subtype="700">жоон</styleName>
 		<styleName type="wght" subtype="800">өтө жоон</styleName>
 		<styleName type="wght" subtype="900">кара</styleName>

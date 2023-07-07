@@ -815,7 +815,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Ynys Manaw</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Tiriogaeth Brydeinig Cefnfor India</territory>
+			<territory type="IO" draft="provisional">Tiriogaeth Brydeinig Cefnfor India</territory>
 			<territory type="IQ">Irac</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Gwlad yr Iâ</territory>
@@ -1024,9 +1024,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Calendr Gregori</type>
 			<type key="calendar" type="hebrew">Calendr Hebreaidd</type>
 			<type key="calendar" type="indian">Calendr Cenedlaethol India</type>
-			<type key="calendar" type="islamic">Calendr Islam</type>
-			<type key="calendar" type="islamic-civil">Calendr Islamaidd (tabl, cyfnod sifil)</type>
-			<type key="calendar" type="islamic-umalqura">Calendr Islam (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Calendr Islam</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Calendr Islamaidd (tabl, cyfnod sifil)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Calendr Islam (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Calendr ISO-8601</type>
 			<type key="calendar" type="japanese">Calendr Japan</type>
 			<type key="calendar" type="persian">Calendr Persia</type>
@@ -1110,11 +1110,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á à â ä b c {ch} d {dd} e é è ê ë f {ff} g {ng} h i í ì î ï j l {ll} m n o ó ò ô ö p {ph} r {rh} s t {th} u ú ù û ü w ẃ ẁ ŵ ẅ y ý ỳ ŷ ÿ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ă å ã ā æ ç ĕ ē ĭ ī k ñ ŏ ø ō œ q ŭ ū v x z]</exemplarCharacters>
+		<exemplarCharacters>[aáàâä b c {ch} d {dd} eéèêë f {ff} g {ng} h iíìîï j l {ll} m n oóòôö p {ph} r {rh} s t {th} uúùûü wẃẁŵẅ yýỳŷÿ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ăåãā æ ç ĕē ĭī k ñ ŏøō œ q ŭū v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C {CH} D {DD} E F {FF} G {NG} H I J K L {LL} M N O P {PH} Q R {RH} S T {TH} U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -8864,13 +8864,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} calori</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Calorïau</displayName>
-				<unitPattern count="zero">{0} Cal</unitPattern>
-				<unitPattern count="one">{0} Calori</unitPattern>
-				<unitPattern count="two">{0} kcal</unitPattern>
-				<unitPattern count="few">{0} kcal</unitPattern>
-				<unitPattern count="many">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} Calori</unitPattern>
+				<displayName draft="provisional">Calorïau</displayName>
+				<unitPattern count="zero" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} Calori</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Calori</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>cilojouleau</displayName>
@@ -9035,31 +9035,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} picsel mewn modfedd</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dotiau mewn centimedr</displayName>
-				<unitPattern count="zero">{0} ppcm</unitPattern>
-				<unitPattern count="one">{0} dot mewn centimedr</unitPattern>
-				<unitPattern count="two">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="many">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} mewn centimedr</unitPattern>
+				<displayName draft="provisional">dotiau mewn centimedr</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} dot mewn centimedr</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} mewn centimedr</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dotiau mewn modfedd</displayName>
-				<unitPattern count="zero">{0} ppi</unitPattern>
-				<unitPattern count="one">{0} dot mewn modfedd</unitPattern>
-				<unitPattern count="two">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="many">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} dot mewn modfedd</unitPattern>
+				<displayName draft="provisional">dotiau mewn modfedd</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} dot mewn modfedd</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dot mewn modfedd</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>picseli</displayName>
-				<unitPattern count="zero">{0} px</unitPattern>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="two">{0} ddot</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="many">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">picseli</displayName>
+				<unitPattern count="zero" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ddot</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>radiws y Ddaear</displayName>
@@ -10562,13 +10562,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="zero">{0} Cal</unitPattern>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="two">{0} kcal</unitPattern>
-				<unitPattern count="few">{0} kcal</unitPattern>
-				<unitPattern count="many">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="zero" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>cilojouleau</displayName>
@@ -10728,31 +10728,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="zero">{0} ppcm</unitPattern>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="two">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="many">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="zero">{0} ppi</unitPattern>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="two">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="many">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>picseli</displayName>
-				<unitPattern count="zero">{0} px</unitPattern>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="two">{0} ddot</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="many">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">picseli</displayName>
+				<unitPattern count="zero" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ddot</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="zero">{0} R⊕</unitPattern>
@@ -12332,13 +12332,13 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0}cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="zero">{0}Cal</unitPattern>
-				<unitPattern count="one">{0}Cal</unitPattern>
-				<unitPattern count="two">{0}Cal</unitPattern>
-				<unitPattern count="few">{0}Cal</unitPattern>
-				<unitPattern count="many">{0}Cal</unitPattern>
-				<unitPattern count="other">{0}Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="zero" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="one" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="two" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="many" draft="provisional">{0}Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -12503,31 +12503,31 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="zero">{0} ppcm</unitPattern>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="two">{0} ppcm</unitPattern>
-				<unitPattern count="few">{0} ppcm</unitPattern>
-				<unitPattern count="many">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="zero">{0} ppi</unitPattern>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="two">{0} ppi</unitPattern>
-				<unitPattern count="few">{0} ppi</unitPattern>
-				<unitPattern count="many">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="zero" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>picseli</displayName>
-				<unitPattern count="zero">{0} px</unitPattern>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="two">{0} ddot</unitPattern>
-				<unitPattern count="few">{0} px</unitPattern>
-				<unitPattern count="many">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">picseli</displayName>
+				<unitPattern count="zero" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} ddot</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="many" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -13690,7 +13690,6 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="700">trwm</styleName>
 		<styleName type="wght" subtype="800">trwm iawn</styleName>
 		<styleName type="wght" subtype="900">du</styleName>
-		<styleName type="wght" subtype="900" alt="heavy">du</styleName>
 		<styleName type="wght" subtype="950">du iawn</styleName>
 		<styleName type="wght" subtype="950" alt="ultrablack">tra-ddu</styleName>
 		<styleName type="wght" subtype="950" alt="ultraheavy">tra-drwm</styleName>

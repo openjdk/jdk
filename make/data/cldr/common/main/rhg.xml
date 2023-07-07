@@ -21,10 +21,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters draft="contributed">[\U00010D24\U00010D25\U00010D26\U00010D27 𐴀 𐴝 𐴞 𐴟 𐴠 𐴡 𐴁 𐴂 𐴃 𐴄 𐴅 𐴆 𐴇 𐴈 𐴉 𐴊 𐴋 𐴌 𐴍 𐴎 𐴏 𐴐 𐴑 𐴒 𐴓 𐴔 𐴕 𐴖 𐴗 𐴘 𐴙 𐴚 𐴛 𐴢 𐴣]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[𐴤 𐴥 𐴦 𐴧 𐴀 𐴝 𐴞 𐴟 𐴠 𐴡 𐴁 𐴂 𐴃 𐴄 𐴅 𐴆 𐴇 𐴈 𐴉 𐴊 𐴋 𐴌 𐴍 𐴎 𐴏 𐴐 𐴑 𐴒 𐴓 𐴔 𐴕 𐴖 𐴗 𐴘 𐴙 𐴚 𐴛 𐴢 𐴣]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="contributed">[ـ]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[\- ‑ , . % + 0𐴰 1𐴱 2𐴲 3𐴳 4𐴴 5𐴵 6𐴶 7𐴷 8𐴸 9𐴹]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — ، ؛ \: ! ؟ . … ' &quot; ( ) \[ \]]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — ، ؛ \: ! ؟ . … ' &quot; ( ) \[ \]]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

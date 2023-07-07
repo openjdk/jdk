@@ -116,7 +116,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters draft="provisional">[á a b c d é e g h i j k l m n ó o p r s t u v w y z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary" draft="provisional">[f ń q x]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="provisional">[Á A B {Ch} D {Dh} É E F G H I J K L M N Ó O P R {Rh} S {Sh} T {Th} U V W Y Z {Zh}]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="provisional">[, ; \: ? . ‘ ’ “ ”]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="provisional">[, ; \: ? . ‘’ “”]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

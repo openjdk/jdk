@@ -355,7 +355,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">𐐆𐑆𐑉𐐨𐐲𐑊</territory>
 			<territory type="IM">𐐌𐐲𐑊 𐐲𐑁 𐐣𐐰𐑌</territory>
 			<territory type="IN">𐐆𐑌𐐼𐐨𐐲</territory>
-			<territory type="IO">𐐒𐑉𐐮𐐼𐐮𐑇 𐐆𐑌𐐼𐐨𐐲𐑌 𐐄𐑇𐐲𐑌 𐐓𐐯𐑉𐐲𐐻𐐱𐑉𐐨</territory>
+			<territory type="IO" draft="provisional">𐐒𐑉𐐮𐐼𐐮𐑇 𐐆𐑌𐐼𐐨𐐲𐑌 𐐄𐑇𐐲𐑌 𐐓𐐯𐑉𐐲𐐻𐐱𐑉𐐨</territory>
 			<territory type="IQ">𐐆𐑉𐐰𐐿</territory>
 			<territory type="IR">𐐆𐑉𐐪𐑌</territory>
 			<territory type="IS">𐐌𐑅𐑊𐐲𐑌𐐼</territory>

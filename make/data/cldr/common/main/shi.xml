@@ -149,7 +149,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IE">ⵉⵔⵍⴰⵏⴷⴰ</territory>
 			<territory type="IL">ⵉⵙⵔⴰⵢⵉⵍ</territory>
 			<territory type="IN">ⵍⵀⵉⵏⴷ</territory>
-			<territory type="IO">ⵜⴰⵎⵏⴰⴹⵜ ⵜⴰⵏⴳⵍⵉⵣⵉⵜ ⵏ ⵓⴳⴰⵔⵓ ⴰⵀⵉⵏⴷⵉ</territory>
+			<territory type="IO" draft="provisional">ⵜⴰⵎⵏⴰⴹⵜ ⵜⴰⵏⴳⵍⵉⵣⵉⵜ ⵏ ⵓⴳⴰⵔⵓ ⴰⵀⵉⵏⴷⵉ</territory>
 			<territory type="IQ">ⵍⵄⵉⵔⴰⵇ</territory>
 			<territory type="IR">ⵉⵔⴰⵏ</territory>
 			<territory type="IS">ⵉⵙⵍⴰⵏⴷ</territory>

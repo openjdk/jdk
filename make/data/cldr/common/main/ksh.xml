@@ -556,7 +556,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL" draft="contributed">Ißraäl</territory>
 			<territory type="IM" draft="contributed">de Ensel Män</territory>
 			<territory type="IN" draft="contributed">Indije</territory>
-			<territory type="IO" draft="contributed">Brettesche Besezunge em indesche Oozejahn</territory>
+			<territory type="IO" draft="provisional">Brettesche Besezunge em indesche Oozejahn</territory>
 			<territory type="IQ" draft="contributed">Irak</territory>
 			<territory type="IR" draft="contributed">Persije</territory>
 			<territory type="IS" draft="contributed">Ißland</territory>
@@ -759,8 +759,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">jrejorejahnesche Kalännder</type>
 			<type key="calendar" type="hebrew">jühdesche Kalännder</type>
 			<type key="calendar" type="indian" draft="contributed">indesche Nazjonahl-Kaländer</type>
-			<type key="calendar" type="islamic" draft="contributed">ißlaamesche Kaländer</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">wältlesche islaamesche Kaländer</type>
+			<type key="calendar" type="islamic" draft="provisional">ißlaamesche Kaländer</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">wältlesche islaamesche Kaländer</type>
 			<type key="calendar" type="japanese" draft="contributed">japaanesche Kaländer</type>
 			<type key="calendar" type="persian" draft="contributed">pärsesche Kaländer</type>
 			<type key="calendar" type="roc" draft="contributed">rotschineesesche Kaländer</type>
@@ -824,11 +824,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a å ä æ b c d e ë ė f g h i j k l m n o ö œ p q r s ß t u ů ü v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â ã ā ç é è ĕ ê ē ğ í ì ĭ î ï ī ĳ ı ł ñ ó ò ŏ ô ø ō ú ù ŭ û ū ÿ]</exemplarCharacters>
+		<exemplarCharacters>[aåä æ b c d eëė f g h i j k l m n oö œ p q r s ß t uůü v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâãā ç éèĕêē ğ íìĭîïī ĳ ı ł ñ óòŏôøō úùŭûū ÿ]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[_ ‐ – — ⸗ , ; \: ! ? . … ' ‘ ‚ &quot; “ „ ( ) \[ \] \{ \} § @ * / \&amp; # % † ‡ ° &lt; = &gt; ~]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[_ ‐ – — ⸗ , ; \: ! ? . … '‘‚ &quot;“„ ( ) \[ \] \{ \} § @ * / \&amp; # % † ‡ ° &lt; = &gt; ~]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart draft="contributed">„</quotationStart>

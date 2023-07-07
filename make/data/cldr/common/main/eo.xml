@@ -587,7 +587,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israelo</territory>
 			<territory type="IM" draft="unconfirmed">Mankinsulo</territory>
 			<territory type="IN">Hindujo</territory>
-			<territory type="IO">Brita Hindoceana Teritorio</territory>
+			<territory type="IO" draft="provisional">Brita Hindoceana Teritorio</territory>
 			<territory type="IQ">Irako</territory>
 			<territory type="IR">Irano</territory>
 			<territory type="IS">Islando</territory>
@@ -761,7 +761,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<exemplarCharacters type="auxiliary">[q w x y]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Ĉ D E F G Ĝ H Ĥ I J Ĵ K L M N O P R S Ŝ T U Ŭ V Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  , % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] \{ \} /]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] \{ \} /]</exemplarCharacters>
 		<ellipsis type="final" draft="unconfirmed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="unconfirmed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="unconfirmed">{0}…{1}</ellipsis>

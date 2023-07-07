@@ -713,7 +713,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israeli</territory>
 			<territory type="IM">Kisiwa cha Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Eneo la Uingereza katika Bahari Hindi</territory>
+			<territory type="IO" draft="provisional">Eneo la Uingereza katika Bahari Hindi</territory>
 			<territory type="IQ">Iraki</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Aisilandi</territory>
@@ -906,9 +906,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Kalenda ya Kigregori</type>
 			<type key="calendar" type="hebrew">Kalenda ya Kiebrania</type>
 			<type key="calendar" type="indian">Kalenda ya Taifa ya India</type>
-			<type key="calendar" type="islamic">Kalenda ya Kiislamu</type>
-			<type key="calendar" type="islamic-civil">Kalenda ya Kiislamu/Rasmi</type>
-			<type key="calendar" type="islamic-umalqura">Kalenda ya kiislamu (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Kalenda ya Kiislamu</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Kalenda ya Kiislamu/Rasmi</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Kalenda ya kiislamu (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">Kalenda ya ISO-8601</type>
 			<type key="calendar" type="japanese">Kalenda ya Kijapani</type>
 			<type key="calendar" type="persian">Kalenda ya Kiajemi</type>
@@ -1035,22 +1035,22 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -6405,9 +6405,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">kalori {0}</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kalori</displayName>
-				<unitPattern count="one">kalori {0}</unitPattern>
-				<unitPattern count="other">kalori {0}</unitPattern>
+				<displayName draft="provisional">kalori</displayName>
+				<unitPattern count="one" draft="provisional">kalori {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">kalori {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojuli</displayName>
@@ -6500,19 +6500,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">pikseli {0} kwa kila inchi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>vitone kwa kila sentimita</displayName>
-				<unitPattern count="one">kitone {0} kwa kila sentimita</unitPattern>
-				<unitPattern count="other">vitone {0} kwa kila sentimita</unitPattern>
+				<displayName draft="provisional">vitone kwa kila sentimita</displayName>
+				<unitPattern count="one" draft="provisional">kitone {0} kwa kila sentimita</unitPattern>
+				<unitPattern count="other" draft="provisional">vitone {0} kwa kila sentimita</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>vitone kwa kila inchi</displayName>
-				<unitPattern count="one">kitone {0} kwa kila inchi</unitPattern>
-				<unitPattern count="other">vitone {0} kwa kila inchi</unitPattern>
+				<displayName draft="provisional">vitone kwa kila inchi</displayName>
+				<unitPattern count="one" draft="provisional">kitone {0} kwa kila inchi</unitPattern>
+				<unitPattern count="other" draft="provisional">vitone {0} kwa kila inchi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>kitone</displayName>
-				<unitPattern count="one">kitone {0}</unitPattern>
-				<unitPattern count="other">vitone {0}</unitPattern>
+				<displayName draft="provisional">kitone</displayName>
+				<unitPattern count="one" draft="provisional">kitone {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">vitone {0}</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>nusu kipenyo cha dunia</displayName>
@@ -7451,9 +7451,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">kalori {0}</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kalori</displayName>
-				<unitPattern count="one">kalori {0}</unitPattern>
-				<unitPattern count="other">kalori {0}</unitPattern>
+				<displayName draft="provisional">kalori</displayName>
+				<unitPattern count="one" draft="provisional">kalori {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">kalori {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojuli</displayName>
@@ -7542,19 +7542,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">ppi {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">dpcm {0}</unitPattern>
-				<unitPattern count="other">dpcm {0}</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">dpcm {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">dpcm {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">dpi {0}</unitPattern>
-				<unitPattern count="other">dpi {0}</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">dpi {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">dpi {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>kitone</displayName>
-				<unitPattern count="one">kitone {0}</unitPattern>
-				<unitPattern count="other">vitone {0}</unitPattern>
+				<displayName draft="provisional">kitone</displayName>
+				<unitPattern count="one" draft="provisional">kitone {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">vitone {0}</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">R⊕ {0}</unitPattern>
@@ -8489,9 +8489,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">kalori {0}</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kalori</displayName>
-				<unitPattern count="one">kalori {0}</unitPattern>
-				<unitPattern count="other">kalori {0}</unitPattern>
+				<displayName draft="provisional">kalori</displayName>
+				<unitPattern count="one" draft="provisional">kalori {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">kalori {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojuli</displayName>
@@ -8584,19 +8584,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">ppi {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">dpcm {0}</unitPattern>
-				<unitPattern count="other">dpcm {0}</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">dpcm {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">dpcm {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">dpi {0}</unitPattern>
-				<unitPattern count="other">dpi {0}</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">dpi {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">dpi {0}</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>kitone</displayName>
-				<unitPattern count="one">kitone {0}</unitPattern>
-				<unitPattern count="other">vitone {0}</unitPattern>
+				<displayName draft="provisional">kitone</displayName>
+				<unitPattern count="one" draft="provisional">kitone {0}</unitPattern>
+				<unitPattern count="other" draft="provisional">vitone {0}</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -9515,27 +9515,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="credentials">MB</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
-			<nameField type="given">Kevin</nameField>
+			<nameField type="given" draft="provisional">Kevin</nameField>
 		</sampleName>
 		<sampleName item="foreignGS">
-			<nameField type="given">John</nameField>
-			<nameField type="surname">Mkwawa</nameField>
+			<nameField type="given" draft="provisional">John</nameField>
+			<nameField type="surname" draft="provisional">Mkwawa</nameField>
 		</sampleName>
 		<sampleName item="foreignGGS">
-			<nameField type="given">Zamara</nameField>
-			<nameField type="given2">Imani</nameField>
-			<nameField type="surname">Bukenya</nameField>
+			<nameField type="given" draft="provisional">Zamara</nameField>
+			<nameField type="given2" draft="provisional">Imani</nameField>
+			<nameField type="surname" draft="provisional">Bukenya</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title">Prof. Dk.</nameField>
-			<nameField type="given">Salima</nameField>
-			<nameField type="given-informal">Sarah</nameField>
-			<nameField type="given2">Farida</nameField>
-			<nameField type="surname-prefix">mwana</nameField>
-			<nameField type="surname-core">Hamisi</nameField>
-			<nameField type="surname2">Musa</nameField>
-			<nameField type="generation">Jr</nameField>
-			<nameField type="credentials">M.D. Ph.D.</nameField>
+			<nameField type="title" draft="provisional">Prof. Dk.</nameField>
+			<nameField type="given" draft="provisional">Salima</nameField>
+			<nameField type="given-informal" draft="provisional">Sarah</nameField>
+			<nameField type="given2" draft="provisional">Farida</nameField>
+			<nameField type="surname-prefix" draft="provisional">mwana</nameField>
+			<nameField type="surname-core" draft="provisional">Hamisi</nameField>
+			<nameField type="surname2" draft="provisional">Musa</nameField>
+			<nameField type="generation" draft="provisional">Jr</nameField>
+			<nameField type="credentials" draft="provisional">M.D. Ph.D.</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

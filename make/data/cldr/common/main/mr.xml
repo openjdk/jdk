@@ -876,7 +876,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">इस्त्राइल</territory>
 			<territory type="IM">आयल ऑफ मॅन</territory>
 			<territory type="IN">भारत</territory>
-			<territory type="IO">ब्रिटिश हिंद महासागर प्रदेश</territory>
+			<territory type="IO" draft="provisional">ब्रिटिश हिंद महासागर प्रदेश</territory>
 			<territory type="IQ">इराक</territory>
 			<territory type="IR">इराण</territory>
 			<territory type="IS">आइसलँड</territory>
@@ -1074,9 +1074,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">ग्रेगोरियन दिनदर्शिका</type>
 			<type key="calendar" type="hebrew">यहूदी दिनदर्शिका</type>
 			<type key="calendar" type="indian">भारतीय राष्ट्रीय दिनदर्शिका</type>
-			<type key="calendar" type="islamic">मुस्लिम दिनदर्शिका</type>
-			<type key="calendar" type="islamic-civil">इस्लामी दिनदर्शिका</type>
-			<type key="calendar" type="islamic-umalqura">मुस्लिम दिनदर्शिका उम-अल-कुरा</type>
+			<type key="calendar" type="islamic" draft="provisional">मुस्लिम दिनदर्शिका</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">इस्लामी दिनदर्शिका</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">मुस्लिम दिनदर्शिका उम-अल-कुरा</type>
 			<type key="calendar" type="iso8601">(ISO-8601) दिनदर्शिका</type>
 			<type key="calendar" type="japanese">जपानी दिनदर्शिका</type>
 			<type key="calendar" type="persian">फारसी दिनदर्शिका</type>
@@ -1189,11 +1189,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u093C ॐ \u0902 \u0901 ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ऱ ल व श ष स ह ळ ऽ ा ि ी \u0941 \u0942 \u0943 \u0945 \u0947 \u0948 ॉ ो ौ \u094D]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u200C\u200D \u0944]</exemplarCharacters>
-		<exemplarCharacters type="index">[\u200D ॐ \u0902 ः अ आ इ ई उ ऊ ऋ ऌ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ळ ऽ \u0945 \u094D]</exemplarCharacters>
+		<exemplarCharacters>[़ ॐ ं ँ ः अ आ इ ई उ ऊ ऋ ऌ ऍ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य रऱ ल व श ष स ह ळ ऽ ा ि ी ु ू ृ ॅ े ै ॉ ो ौ ्]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u200C\u200D ॄ]</exemplarCharacters>
+		<exemplarCharacters type="index">[\u200D ॐ ं ः अ आ इ ई उ ऊ ऋ ऌ ए ऐ ऑ ओ औ क ख ग घ ङ च छ ज झ ञ ट ठ ड ढ ण त थ द ध न प फ ब भ म य र ल व श ष स ह ळ ऽ ॅ ्]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0० 1१ 2२ 3३ 4४ 5५ 6६ 7७ 8८ 9९]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1202,23 +1202,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8107,9 +8107,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="oblique">{0} कॅलरीज</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>कॅलरीज</displayName>
-				<unitPattern count="one">{0} कॅलरी</unitPattern>
-				<unitPattern count="other">{0} कॅलरीज</unitPattern>
+				<displayName draft="provisional">कॅलरीज</displayName>
+				<unitPattern count="one" draft="provisional">{0} कॅलरी</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} कॅलरीज</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>neuter</gender>
@@ -8381,19 +8381,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} पिक्सेल्स प्रति इंच</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>प्रति सेंटीमीटर बिंदू</displayName>
-				<unitPattern count="one">{0} प्रति सेंटीमीटर बिंदू</unitPattern>
-				<unitPattern count="other">{0} प्रति सेंटीमीटर बिंदू</unitPattern>
+				<displayName draft="provisional">प्रति सेंटीमीटर बिंदू</displayName>
+				<unitPattern count="one" draft="provisional">{0} प्रति सेंटीमीटर बिंदू</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} प्रति सेंटीमीटर बिंदू</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>प्रति इंच बिंदू</displayName>
-				<unitPattern count="one">{0} प्रति इंच बिंदू</unitPattern>
-				<unitPattern count="other">{0} प्रति इंच बिंदू</unitPattern>
+				<displayName draft="provisional">प्रति इंच बिंदू</displayName>
+				<unitPattern count="one" draft="provisional">{0} प्रति इंच बिंदू</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} प्रति इंच बिंदू</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>टिंब</displayName>
-				<unitPattern count="one">{0}टिंब</unitPattern>
-				<unitPattern count="other">{0}टिंब</unitPattern>
+				<displayName draft="provisional">टिंब</displayName>
+				<unitPattern count="one" draft="provisional">{0}टिंब</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}टिंब</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>पृथ्वी त्रिज्या</displayName>
@@ -9959,9 +9959,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>किलोज्यूल</displayName>
@@ -10052,19 +10052,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} पि प्र इं</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>प्र सें बिं</displayName>
-				<unitPattern count="one">{0} प्र सें बिं</unitPattern>
-				<unitPattern count="other">{0} प्र सें बिं</unitPattern>
+				<displayName draft="provisional">प्र सें बिं</displayName>
+				<unitPattern count="one" draft="provisional">{0} प्र सें बिं</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} प्र सें बिं</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>प्र इं बिं</displayName>
-				<unitPattern count="one">{0} प्र इं बिं</unitPattern>
-				<unitPattern count="other">{0} प्र इं बिं</unitPattern>
+				<displayName draft="provisional">प्र इं बिं</displayName>
+				<unitPattern count="one" draft="provisional">{0} प्र इं बिं</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} प्र इं बिं</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>पिक्सेल्स</displayName>
-				<unitPattern count="one">{0} पि</unitPattern>
-				<unitPattern count="other">{0} पि</unitPattern>
+				<displayName draft="provisional">पिक्सेल्स</displayName>
+				<unitPattern count="one" draft="provisional">{0} पि</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} पि</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11003,9 +11003,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>किलोज्यूल</displayName>
@@ -11098,19 +11098,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} पि प्र इं</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>प्र सें बिं</displayName>
-				<unitPattern count="one">{0} प्र सें बिं</unitPattern>
-				<unitPattern count="other">{0} प्र सें बिं</unitPattern>
+				<displayName draft="provisional">प्र सें बिं</displayName>
+				<unitPattern count="one" draft="provisional">{0} प्र सें बिं</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} प्र सें बिं</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>प्र इं बिं</displayName>
-				<unitPattern count="one">{0} प्र इं बिं</unitPattern>
-				<unitPattern count="other">{0} प्र इं बिं</unitPattern>
+				<displayName draft="provisional">प्र इं बिं</displayName>
+				<unitPattern count="one" draft="provisional">{0} प्र इं बिं</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} प्र इं बिं</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>पिक्सेल्स</displayName>
-				<unitPattern count="one">{0} पि</unitPattern>
-				<unitPattern count="other">{0} पि</unitPattern>
+				<displayName draft="provisional">पिक्सेल्स</displayName>
+				<unitPattern count="one" draft="provisional">{0} पि</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} पि</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11842,16 +11842,12 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wdth" subtype="87.5" alt="narrow">अर्धअरूंद</styleName>
 		<styleName type="wdth" subtype="100">सामान्य</styleName>
 		<styleName type="wdth" subtype="112.5">अर्धविस्तृत</styleName>
-		<styleName type="wdth" subtype="112.5" alt="extended">अर्धविस्तृत</styleName>
 		<styleName type="wdth" subtype="112.5" alt="wide">अर्धरूंद</styleName>
 		<styleName type="wdth" subtype="125">विस्तृत</styleName>
-		<styleName type="wdth" subtype="125" alt="extended">विस्तृत</styleName>
 		<styleName type="wdth" subtype="125" alt="wide">रूंद</styleName>
 		<styleName type="wdth" subtype="150">जास्त-विस्तृत</styleName>
-		<styleName type="wdth" subtype="150" alt="extended">जास्त-विस्तृत</styleName>
 		<styleName type="wdth" subtype="150" alt="wide">जास्त-रुंद</styleName>
 		<styleName type="wdth" subtype="200">खूपविस्तृत</styleName>
-		<styleName type="wdth" subtype="200" alt="extended">खूपविस्तृत</styleName>
 		<styleName type="wdth" subtype="200" alt="wide">खूपरूंद</styleName>
 		<styleName type="wght" subtype="100">बारीक</styleName>
 		<styleName type="wght" subtype="200">जास्त-हलके</styleName>
@@ -11862,11 +11858,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<styleName type="wght" subtype="400">रेग्युलर</styleName>
 		<styleName type="wght" subtype="500">मीडियम</styleName>
 		<styleName type="wght" subtype="600">अर्धठळक</styleName>
-		<styleName type="wght" subtype="600" alt="demi">अर्धठळक</styleName>
 		<styleName type="wght" subtype="700">ठळक</styleName>
 		<styleName type="wght" subtype="800">जास्त-ठळक</styleName>
 		<styleName type="wght" subtype="900">काळे</styleName>
-		<styleName type="wght" subtype="900" alt="heavy">काळे</styleName>
 		<styleName type="wght" subtype="950">जास्त-काळे</styleName>
 		<styleName type="wght" subtype="950" alt="ultrablack">खूपकाळे</styleName>
 		<styleName type="wght" subtype="950" alt="ultraheavy">खूपठळक</styleName>

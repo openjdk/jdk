@@ -842,7 +842,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL" draft="contributed">Israël</territory>
 			<territory type="IM" draft="contributed">Isle of Man</territory>
 			<territory type="IN" draft="contributed">India</territory>
-			<territory type="IO" draft="contributed">Britse Gebieden yn de Indyske Oseaan</territory>
+			<territory type="IO" draft="provisional">Britse Gebieden yn de Indyske Oseaan</territory>
 			<territory type="IQ" draft="contributed">Irak</territory>
 			<territory type="IR" draft="contributed">Iran</territory>
 			<territory type="IS" draft="contributed">Yslân</territory>
@@ -1081,8 +1081,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian" draft="contributed">Gregoriaanske kalinder</type>
 			<type key="calendar" type="hebrew" draft="contributed">Hebreeuwse kalinder</type>
 			<type key="calendar" type="indian" draft="contributed">Indiase natjonale kalinder</type>
-			<type key="calendar" type="islamic" draft="contributed">Islamityske kalinder</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">Islamityske kalinder (cyclysk)</type>
+			<type key="calendar" type="islamic" draft="provisional">Islamityske kalinder</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Islamityske kalinder (cyclysk)</type>
 			<type key="calendar" type="japanese" draft="contributed">Japanske kalinder</type>
 			<type key="calendar" type="persian" draft="contributed">Perzyske kalinder</type>
 			<type key="calendar" type="roc" draft="contributed">Kalinder fan de Sineeske Republyk</type>
@@ -1200,11 +1200,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a á à â ä b c d e é è ê ë f g h i í ï y ý {ij} {íj\u0301} j k l m n o ó ô ö p r s t u ú û ü v w z]</exemplarCharacters>
+		<exemplarCharacters>[aáàâä b c d eéèêë f g h iíïyý {ij}{íj́} j k l m n oóôö p r s t uúûü v w z]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[æ ò ù]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P R S T U V W X Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final" draft="contributed">{0}…</ellipsis>
 		<ellipsis type="initial" draft="contributed">…{0}</ellipsis>
 		<ellipsis type="medial" draft="contributed">{0}…{1}</ellipsis>

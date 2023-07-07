@@ -92,8 +92,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<key type="colNormalization">orden normalizado</key>
 		</keys>
 		<types>
-			<type key="calendar" type="islamic-rgsa">calendario islámico (Arabia Saudita)</type>
-			<type key="calendar" type="islamic-tbla">calendario islámico tabular</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">calendario islámico (Arabia Saudita)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">calendario islámico tabular</type>
 			<type key="colAlternate" type="non-ignorable">ordenar símbolos</type>
 			<type key="colAlternate" type="shifted">ordenar ignorando símbolos</type>
 			<type key="colBackwards" type="no">ordenar acentos normalmente</type>
@@ -1278,9 +1278,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<perUnitPattern>{0}/d.</perUnitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>p</displayName>
-				<unitPattern count="one">{0} p</unitPattern>
-				<unitPattern count="other">{0} p</unitPattern>
+				<displayName draft="provisional">p</displayName>
+				<unitPattern count="one" draft="provisional">{0} p</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} p</unitPattern>
 			</unit>
 			<unit type="length-yard">
 				<displayName>yardas</displayName>

@@ -109,10 +109,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">Gregorian calendar</type>
 			<type key="calendar" type="hebrew">Hebrew calendar</type>
 			<type key="calendar" type="indian">Indian national calendar</type>
-			<type key="calendar" type="islamic">Islamic calendar</type>
-			<type key="calendar" type="islamic-civil">Islamic calendar (tabular, civil epoch)</type>
-			<type key="calendar" type="islamic-tbla">Islamic calendar (tabular, astronomical epoch)</type>
-			<type key="calendar" type="islamic-umalqura">Islamic calendar (Umm al-Qura)</type>
+			<type key="calendar" type="islamic" draft="provisional">Islamic calendar</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Islamic calendar (tabular, civil epoch)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Islamic calendar (tabular, astronomical epoch)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Islamic calendar (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">ISO-8601 calendar</type>
 			<type key="calendar" type="japanese">Japanese calendar</type>
 			<type key="calendar" type="persian">Persian calendar</type>
@@ -1758,13 +1758,13 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} pixels per centimetre</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dots per centimetre</displayName>
-				<unitPattern count="one">{0} dot per centimetre</unitPattern>
-				<unitPattern count="other">{0} dots per centimetre</unitPattern>
+				<displayName draft="provisional">dots per centimetre</displayName>
+				<unitPattern count="one" draft="provisional">{0} dot per centimetre</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dots per centimetre</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} dots</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} dot</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dots</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} earth radius</unitPattern>
@@ -2084,10 +2084,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<displayName>kWh/100 km</displayName>
 				<unitPattern count="one">{0} kWh/100 km</unitPattern>
 				<unitPattern count="other">{0} kWh/100 km</unitPattern>
-			</unit>
-			<unit type="graphics-dot">
-				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} dots</unitPattern>
 			</unit>
 			<unit type="length-meter">
 				<displayName>metres</displayName>

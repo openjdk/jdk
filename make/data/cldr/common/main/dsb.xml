@@ -681,7 +681,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Man</territory>
 			<territory type="IN">Indiska</territory>
-			<territory type="IO">Britiski indiskooceaniski teritorium</territory>
+			<territory type="IO" draft="provisional">Britiski indiskooceaniski teritorium</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Islandska</territory>
@@ -857,9 +857,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic-amete-alem">etiopiski amete-alem-kalendaŕ</type>
 			<type key="calendar" type="gregorian">gregoriański kalender</type>
 			<type key="calendar" type="hebrew">žydojski kalender</type>
-			<type key="calendar" type="islamic">islamski kalender</type>
-			<type key="calendar" type="islamic-civil">islamski ciwilny kalendaŕ</type>
-			<type key="calendar" type="islamic-umalqura">islamski umalqui-kalendaŕ</type>
+			<type key="calendar" type="islamic" draft="provisional">islamski kalender</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">islamski ciwilny kalendaŕ</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">islamski umalqui-kalendaŕ</type>
 			<type key="calendar" type="iso8601">iso-8601-kalender</type>
 			<type key="calendar" type="japanese">japański kalender</type>
 			<type key="calendar" type="persian">persiski kalender</type>
@@ -938,11 +938,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[a b c č ć d e ě f g h {ch} i j k ł l m n ń o ó p q r ŕ s š ś t u v w x y z ž ź]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à ă â å ä ã ą ā æ ç ď đ é è ĕ ê ë ė ę ē ğ í ì ĭ î ï İ ī ı ĺ ľ ň ñ ò ŏ ô ö ő ø ō œ ř ş ß ť ú ù ŭ û ů ü ű ū ý ÿ ż]</exemplarCharacters>
+		<exemplarCharacters>[a b c č ć d e ě f g h {ch} i j k ł l m n ń oó p q r ŕ s š ś t u v w x y z ž ź]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàăâåäãąā æ ç ďđ éèĕêëėęē ğ íìĭîïİī ı ĺľ ňñ òŏôöőøō œ ř ş ß ť úùŭûůüűū ýÿ ż]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C Č Ć D E F G H {Ch} I J K Ł L M N O P Q R S Š Ś T U V W X Y Z Ž Ź]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ ‚ &quot; “ „ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’‚ &quot;“„ « » ( ) \[ \] \{ \} § @ * / \&amp; #]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>„</quotationStart>
@@ -5926,11 +5926,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kalorijow</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kilokalorije</displayName>
-				<unitPattern count="one">{0} kilokalorija</unitPattern>
-				<unitPattern count="two">{0} kilokaloriji</unitPattern>
-				<unitPattern count="few">{0} kilokalorije</unitPattern>
-				<unitPattern count="other">{0} kilokalorijow</unitPattern>
+				<displayName draft="provisional">kilokalorije</displayName>
+				<unitPattern count="one" draft="provisional">{0} kilokalorija</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} kilokaloriji</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kilokalorije</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kilokalorijow</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -7323,11 +7323,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="two">{0} kcal</unitPattern>
-				<unitPattern count="few">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="two" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="few" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -9511,7 +9511,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="400">regularny</styleName>
 		<styleName type="wght" subtype="500">medium</styleName>
 		<styleName type="wght" subtype="600">połtucny</styleName>
-		<styleName type="wght" subtype="600" alt="demi">połtucny</styleName>
 		<styleName type="wght" subtype="700">tucny</styleName>
 		<styleName type="wght" subtype="800">ekstratucny</styleName>
 		<styleName type="wght" subtype="900">carny</styleName>

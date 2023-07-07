@@ -240,7 +240,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">ܐܝܣܪܐܝܠ</territory>
 			<territory type="IM">ܓܙܪܬܐ ܕܡܐܢ</territory>
 			<territory type="IN">ܗܢܕܘ</territory>
-			<territory type="IO">ܩܠܝܡܐ ܕܒܪܝܛܢܝܐ ܓܘ ܐܘܩܝܢܘܣ ܗܢܕܘܝܐ</territory>
+			<territory type="IO" draft="provisional">ܩܠܝܡܐ ܕܒܪܝܛܢܝܐ ܓܘ ܐܘܩܝܢܘܣ ܗܢܕܘܝܐ</territory>
 			<territory type="IQ">ܥܝܪܩ</territory>
 			<territory type="IR">ܐܝܪܐܢ</territory>
 			<territory type="IS">ܐܝܣܠܢܕ</territory>
@@ -410,8 +410,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">ܣܘܪܓܕܐ ܓܪܝܓܘܪܝܐ</type>
 			<type key="calendar" type="hebrew">ܣܘܪܓܕܐ ܝܗܘܕܝܐ</type>
 			<type key="calendar" type="indian">ܣܘܪܓܕܐ ܐܘܡܬܢܝܐ ܗܢܕܘܝܐ</type>
-			<type key="calendar" type="islamic">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ</type>
-			<type key="calendar" type="islamic-civil">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ ܡܕܝܢܝܐ</type>
+			<type key="calendar" type="islamic" draft="provisional">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ܣܘܪܓܕܐ ܡܫܠܡܢܝܐ ܡܕܝܢܝܐ</type>
 			<type key="calendar" type="iso8601">ܣܘܪܓܕܐ ISO-8601</type>
 			<type key="calendar" type="japanese">ܣܘܪܓܕܐ ܝܦܢܝܐ</type>
 			<type key="calendar" type="persian">ܣܘܪܓܕܐ ܦܪܣܝܐ</type>
@@ -457,21 +457,21 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\u0740\u0743\u0744\u0747\u0748\u0749\u074A \u0741\u0745 \u0742\u0746 \u0711 \u0730 \u0731 \u0732 \u0733 \u0734 \u0735 \u0736 \u0737 \u0738 \u0739 \u073A \u073B \u073C \u073D \u073E \u073F ܃ ܄ ܅ ܆ ܇ ܈ ܉ ܁ ܂ ܀ ܊ ܋ ܌ ܍ ܐ ܒ ܓ ܔ ܖ ܕ ܗ ܘ ܙ ܚ ܛ ܜ ܝ ܞ ܟ ܠ ܡ ܢ ܣ ܤ ܥ ܦ ܧ ܨ ܩ ܪ ܫ ܬ]</exemplarCharacters>
+		<exemplarCharacters>[݀ ݃ ݄ ݇ ݈ ݉ ݊ ݁ ݅ ݂ ݆ ܑ ܰ ܱ ܲ ܳ ܴ ܵ ܶ ܷ ܸ ܹ ܺ ܻ ܼ ܽ ܾ ܿ ܃ ܄ ܅ ܆ ܇ ܈ ܉ ܁ ܂ ܀ ܊ ܋ ܌ ܍ ܐ ܒ ܓܔ ܖ ܕ ܗ ܘ ܙ ܚ ܛܜ ܝ ܞ ܟ ܠ ܡ ܢ ܣܤ ܥ ܦܧ ܨ ܩ ܪ ܫ ܬ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[܏\u200C\u200D ܭ ܮ ܯ ݍ ݎ ݏ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ܐ ܒ ܓ ܖ ܕ ܗ ܘ ܙ ܚ ܛ ܝ ܟ ܠ ܡ ܢ ܣ ܥ ܦ ܨ ܩ ܪ ܫ ܬ]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="contributed">[\u061C\u200E \- ‑ , ٫ ٬ . % ٪ ‰ ؉ + 0٠ 1١ 2٢ 3٣ 4٤ 5٥ 6٦ 7٧ 8٨ 9٩]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐ ‑ – — ، ؛ \: ܃ ܄ ܅ ܆ ܇ ܈ ! ؟ ܉ . … ܁ ܂ ܀ ' ‘ ’ &quot; “ ” « » ( ) \[ \] ܊ ܋ ܌ ܍]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‐‑ – — ، ؛ \: ܃ ܄ ܅ ܆ ܇ ܈ ! ؟ ܉ . … ܁ ܂ ܀ '‘’ &quot;“” « » ( ) \[ \] ܊ ܋ ܌ ܍]</exemplarCharacters>
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>

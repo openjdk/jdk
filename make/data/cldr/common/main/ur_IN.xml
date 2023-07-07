@@ -43,7 +43,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="GF">فرانسیسی گیانا</territory>
 			<territory type="HM">جزائر ہرڈ و مکڈونلڈ</territory>
 			<territory type="IC">جزائر کناری</territory>
-			<territory type="IO">برطانوی بحرہند خطہ</territory>
+			<territory type="IO" draft="provisional">برطانوی بحرہند خطہ</territory>
 			<territory type="MH">جزائر مارشل</territory>
 			<territory type="MP">جزائر شمالی ماریانا</territory>
 			<territory type="NF">جزیرہ نارفوک</territory>

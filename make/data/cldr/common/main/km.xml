@@ -718,7 +718,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">អ៊ីស្រាអែល</territory>
 			<territory type="IM">អែលអុហ្វមែន</territory>
 			<territory type="IN">ឥណ្ឌា</territory>
-			<territory type="IO">ដែនដី​អង់គ្លេស​នៅ​មហា​សមុទ្រ​ឥណ្ឌា</territory>
+			<territory type="IO" draft="provisional">ដែនដី​អង់គ្លេស​នៅ​មហា​សមុទ្រ​ឥណ្ឌា</territory>
 			<territory type="IQ">អ៊ីរ៉ាក់</territory>
 			<territory type="IR">អ៊ីរ៉ង់</territory>
 			<territory type="IS">អ៊ីស្លង់</territory>
@@ -900,9 +900,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="ethiopic-amete-alem">ប្រតិទិនអេត្យូពីអាម៉េតេ​អាលែម</type>
 			<type key="calendar" type="gregorian">ប្រតិទិន​ហ្សកហ្ស៊ី</type>
 			<type key="calendar" type="hebrew">ប្រតិទិនហេប្រឺ</type>
-			<type key="calendar" type="islamic">ប្រតិទិនអ៊ីស្លាម</type>
-			<type key="calendar" type="islamic-civil">ប្រតិទិនអ៊ិស្លាម (តារាង, សម័យស៊ីវិល)</type>
-			<type key="calendar" type="islamic-umalqura">ប្រតិទិនអ៊ិស្លាម (អ៊ុំអាល់គូរ៉ា)</type>
+			<type key="calendar" type="islamic" draft="provisional">ប្រតិទិនអ៊ីស្លាម</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">ប្រតិទិនអ៊ិស្លាម (តារាង, សម័យស៊ីវិល)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">ប្រតិទិនអ៊ិស្លាម (អ៊ុំអាល់គូរ៉ា)</type>
 			<type key="calendar" type="iso8601">ប្រតិទិន ISO-8601</type>
 			<type key="calendar" type="japanese">ប្រតិទិន​ជប៉ុន</type>
 			<type key="calendar" type="persian">ប្រតិទិនពែក្ស</type>
@@ -975,11 +975,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[\u17D0 ៈ \u17CB \u17C9 \u17CA \u17CD ក ខ គ ឃ ង ច ឆ ជ ឈ ញ ដ ឋ ឌ ឍ ណ ត ថ ទ ធ ន ប ផ ព ភ ម យ រ ឫ ឬ ល ឭ ឮ វ ស ហ ឡ អ {អា} ឥ ឦ ឧ {ឧក} ឩ ឪ ឯ ឰ ឱ ឲ ឳ ា \u17B7 \u17B8 \u17B9 \u17BA \u17BB \u17BC \u17BD ើ ឿ ៀ េ ែ ៃ ោ ៅ \u17C6 ះ \u17D2]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[\u17B4\u17B5\u200B \u17CC \u17CE \u17CF \u17D1 ឝ ឞ]</exemplarCharacters>
+		<exemplarCharacters>[័ៈ ់ ៉ ៊ ៍ ក ខ គ ឃ ង ច ឆ ជ ឈ ញ ដ ឋ ឌ ឍ ណ ត ថ ទ ធ ន ប ផ ព ភ ម យ រ ឫ ឬ ល ឭ ឮ វ ស ហ ឡ អ {អា} ឥ ឦ ឧ {ឧក} ឩ ឪ ឯ ឰ ឱឲ ឳ ា ិ ី ឹ ឺ ុ ូ ួ ើ ឿ ៀ េ ែ ៃ ោ ៅ ំ ះ ្]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[\u17B4\u17B5\u200B ៌ ៎ ៏ ៑ ឝ ឞ]</exemplarCharacters>
 		<exemplarCharacters type="index" draft="contributed">[ក ខ គ ឃ ង ច ឆ ជ ឈ ញ ដ ឋ ឌ ឍ ណ ត ថ ទ ធ ន ប ផ ព ភ ម យ រ ឫ ឬ ល ឭ ឮ វ ស ហ ឡ អ ឥ ឦ ឧ ឩ ឪ ឯ ឰ ឱ ឳ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ , ៖ ! ? . ។ ៕ ‘ ’ &quot; “ ” ( ) \[ \] \{ \} ៙ ៚]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ , ៖ ! ? . ។ ៕ ‘’ &quot;“” ( ) \[ \] \{ \} ៙ ៚]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -5969,8 +5969,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} កាឡូរី</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>កាឡូរី</displayName>
-				<unitPattern count="other">{0} កាឡូរី</unitPattern>
+				<displayName draft="provisional">កាឡូរី</displayName>
+				<unitPattern count="other" draft="provisional">{0} កាឡូរី</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>គីឡូស៊ូល</displayName>
@@ -6045,16 +6045,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ភិចស៊ែលក្នុង១អ៊ីញ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ចំណុចក្នុង១សង់ទីម៉ែត្រ</displayName>
-				<unitPattern count="other">{0} ចំណុចក្នុង១សង់ទីម៉ែត្រ</unitPattern>
+				<displayName draft="provisional">ចំណុចក្នុង១សង់ទីម៉ែត្រ</displayName>
+				<unitPattern count="other" draft="provisional">{0} ចំណុចក្នុង១សង់ទីម៉ែត្រ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ចំណុចក្នុង១អ៊ីញ</displayName>
-				<unitPattern count="other">{0} ចំណុចក្នុង១អ៊ីញ</unitPattern>
+				<displayName draft="provisional">ចំណុចក្នុង១អ៊ីញ</displayName>
+				<unitPattern count="other" draft="provisional">{0} ចំណុចក្នុង១អ៊ីញ</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ចំណុច</displayName>
-				<unitPattern count="other">{0}ចំណុច</unitPattern>
+				<displayName draft="provisional">ចំណុច</displayName>
+				<unitPattern count="other" draft="provisional">{0}ចំណុច</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>កាំផែនដី</displayName>
@@ -6798,8 +6798,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>គីឡូស៊ូល</displayName>
@@ -6833,16 +6833,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} Hz</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ចំណុច</displayName>
-				<unitPattern count="other">{0} ចំណុច</unitPattern>
+				<displayName draft="provisional">ចំណុច</displayName>
+				<unitPattern count="other" draft="provisional">{0} ចំណុច</unitPattern>
 			</unit>
 			<unit type="length-kilometer">
 				<displayName>គម</displayName>
@@ -7545,8 +7545,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>គីឡូស៊ូល</displayName>
@@ -7621,16 +7621,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ចំណុច</displayName>
-				<unitPattern count="other">{0} ចំណុច</unitPattern>
+				<displayName draft="provisional">ចំណុច</displayName>
+				<unitPattern count="other" draft="provisional">{0} ចំណុច</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>

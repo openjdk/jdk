@@ -35,11 +35,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a b c d ḍ e ɛ f g ɣ h ḥ i j k l m n p q r s ṣ t ṭ u w x y z ẓ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[á à â ä ç é è ê ë î ï ñ o ó ô ö œ ß ú ù û ü v ʷ ÿ]</exemplarCharacters>
-		<exemplarCharacters type="index">[A B C D Ḍ E Ɛ F G Ɣ H Ḥ I J K L M N P Q R S Ṣ T Ṭ U W X Y Z Ẓ]</exemplarCharacters>
+		<exemplarCharacters>[a b c dḍ e ɛ f g ɣ hḥ i j k l m n p q r sṣ tṭ u w x y zẓ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[áàâä ç éèêë îï ñ oóôö œ ß úùûü v ʷ ÿ]</exemplarCharacters>
+		<exemplarCharacters type="index">[A B C DḌ E Ɛ F G Ɣ HḤ I J K L M N P Q R SṢ TṬ U W X Y ZẒ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” « » ( ) \[ \] \{ \} § @ * / \&amp; # `]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” « » ( ) \[ \] \{ \} § @ * / \&amp; # `]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

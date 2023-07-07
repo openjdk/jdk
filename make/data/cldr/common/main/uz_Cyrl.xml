@@ -510,7 +510,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Исроил</territory>
 			<territory type="IM">Мэн ороли</territory>
 			<territory type="IN">Ҳиндистон</territory>
-			<territory type="IO">Британиянинг Ҳинд океанидаги ҳудуди</territory>
+			<territory type="IO" draft="provisional">Британиянинг Ҳинд океанидаги ҳудуди</territory>
 			<territory type="IQ">Ироқ</territory>
 			<territory type="IR">Эрон</territory>
 			<territory type="IS">Исландия</territory>
@@ -722,9 +722,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[а б в г ғ д е ё ж з и й к қ л м н о п р с т у ў ф х ҳ ч ш ъ э ю я]</exemplarCharacters>
+		<exemplarCharacters>[а б в г ғ д её ж з и й к қ л м н о п р с т уў ф х ҳ ч ш ъ э ю я]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[ц щ ы ь]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="unconfirmed">[А Б В Г Ғ Д Е Ж З И Й К Қ Л М Н О П Р С Т У Ў Ф Х Ҳ Ч Ш Ъ Э Ю Я]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="unconfirmed">[А Б В Г Ғ Д Е Ж З И Й К Қ Л М Н О П Р С Т УЎ Ф Х Ҳ Ч Ш Ъ Э Ю Я]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>

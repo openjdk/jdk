@@ -892,7 +892,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Izrael</territory>
 			<territory type="IM">Man-sziget</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">Brit Indiai-óceáni Terület</territory>
+			<territory type="IO" draft="provisional">Brit Indiai-óceáni Terület</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Irán</territory>
 			<territory type="IS">Izland</territory>
@@ -1144,9 +1144,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Gergely-naptár</type>
 			<type key="calendar" type="hebrew">Héber naptár</type>
 			<type key="calendar" type="indian">Indiai nemzeti naptár</type>
-			<type key="calendar" type="islamic">Iszlám naptár</type>
-			<type key="calendar" type="islamic-civil">Iszlám civil naptár</type>
-			<type key="calendar" type="islamic-umalqura">Iszlám Umm al-Qura naptár</type>
+			<type key="calendar" type="islamic" draft="provisional">Iszlám naptár</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Iszlám civil naptár</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Iszlám Umm al-Qura naptár</type>
 			<type key="calendar" type="iso8601">ISO-8601 naptár</type>
 			<type key="calendar" type="japanese">Japán naptár</type>
 			<type key="calendar" type="persian">Perzsa naptár</type>
@@ -1267,11 +1267,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a á b c {cs} {ccs} d {dz} {ddz} {dzs} {ddzs} e é f g {gy} {ggy} h i í j k l {ly} {lly} m n {ny} {nny} o ó ö ő p r s {sz} {ssz} t {ty} {tty} u ú ü ű v z {zs} {zzs}]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à ă â å ä ã ā æ ç è ĕ ê ë ē ì ĭ î ï ī ñ ò ŏ ô ø ō œ q ù ŭ û ū w x y ÿ]</exemplarCharacters>
-		<exemplarCharacters type="index">[A Á B C {CS} D {DZ} {DZS} E É F G {GY} H I Í J K L {LY} M N {NY} O Ó Ö Ő P Q R S {SZ} T {TY} U Ú Ü Ű V W X Y Z {ZS}]</exemplarCharacters>
+		<exemplarCharacters>[aá b c {cs} {ccs} d {dz} {ddz} {dzs} {ddzs} eé f g {gy} {ggy} h ií j k l {ly} {lly} m n {ny} {nny} oó öő p r s {sz} {ssz} t {ty} {tty} uú üű v z {zs} {zzs}]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[àăâåäãā æ ç èĕêëē ìĭîïī ñ òŏôøō œ q ùŭûū w x yÿ]</exemplarCharacters>
+		<exemplarCharacters type="index">[AÁ B C {CS} D {DZ} {DZS} EÉ F G {GY} H IÍ J K L {LY} M N {NY} OÓ ÖŐ P Q R S {SZ} T {TY} UÚ ÜŰ V W X Y Z {ZS}]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‑ – , ; \: ! ? . … ' ’ &quot; ” „ « » ( ) \[ \] \{ \} ⟨ ⟩ § @ * / \&amp; # ~ ⁒]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‑ – , ; \: ! ? . … '’ &quot;”„ « » ( ) \[ \] \{ \} ⟨ ⟩ § @ * / \&amp; # ~ ⁒]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1280,23 +1280,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8248,9 +8248,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other" case="translative">{0} kalóriává</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kalória</displayName>
-				<unitPattern count="one">{0} kalória</unitPattern>
-				<unitPattern count="other">{0} kalória</unitPattern>
+				<displayName draft="provisional">kalória</displayName>
+				<unitPattern count="one" draft="provisional">{0} kalória</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kalória</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -8447,19 +8447,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} képpont per hüvelyk</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>pont per centiméter</displayName>
-				<unitPattern count="one">{0} pont per centiméter</unitPattern>
-				<unitPattern count="other">{0} pont per centiméter</unitPattern>
+				<displayName draft="provisional">pont per centiméter</displayName>
+				<unitPattern count="one" draft="provisional">{0} pont per centiméter</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pont per centiméter</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>pont per hüvelyk</displayName>
-				<unitPattern count="one">{0} pont per hüvelyk</unitPattern>
-				<unitPattern count="other">{0} pont per hüvelyk</unitPattern>
+				<displayName draft="provisional">pont per hüvelyk</displayName>
+				<unitPattern count="one" draft="provisional">{0} pont per hüvelyk</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} pont per hüvelyk</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>képpont</displayName>
-				<unitPattern count="one">képpont</unitPattern>
-				<unitPattern count="other">{0} képpont</unitPattern>
+				<displayName draft="provisional">képpont</displayName>
+				<unitPattern count="one" draft="provisional">képpont</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} képpont</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>földsugár</displayName>
@@ -9710,9 +9710,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -9799,19 +9799,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>képpont</displayName>
-				<unitPattern count="one">{0} képpont</unitPattern>
-				<unitPattern count="other">{0} képpont</unitPattern>
+				<displayName draft="provisional">képpont</displayName>
+				<unitPattern count="one" draft="provisional">{0} képpont</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} képpont</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -10743,9 +10743,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>cal</displayName>
-				<unitPattern count="one">{0} cal</unitPattern>
-				<unitPattern count="other">{0} cal</unitPattern>
+				<displayName draft="provisional">cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -10838,19 +10838,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>képpont</displayName>
-				<unitPattern count="one">{0} képpont</unitPattern>
-				<unitPattern count="other">{0} képpont</unitPattern>
+				<displayName draft="provisional">képpont</displayName>
+				<unitPattern count="one" draft="provisional">{0} képpont</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} képpont</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -11749,27 +11749,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<namePattern>{surname}, {given-informal}</namePattern>
 		</personName>
 		<sampleName item="nativeG">
-			<nameField type="given">Vuk</nameField>
+			<nameField type="given" draft="provisional">Vuk</nameField>
 		</sampleName>
 		<sampleName item="nativeGS">
-			<nameField type="given">Dóra</nameField>
-			<nameField type="surname">Mátrai</nameField>
+			<nameField type="given" draft="provisional">Dóra</nameField>
+			<nameField type="surname" draft="provisional">Mátrai</nameField>
 		</sampleName>
 		<sampleName item="nativeGGS">
-			<nameField type="given">Máté</nameField>
-			<nameField type="given2">Bendegúz</nameField>
-			<nameField type="surname">Szabados</nameField>
+			<nameField type="given" draft="provisional">Máté</nameField>
+			<nameField type="given2" draft="provisional">Bendegúz</nameField>
+			<nameField type="surname" draft="provisional">Szabados</nameField>
 		</sampleName>
 		<sampleName item="nativeFull">
-			<nameField type="title">∅∅∅</nameField>
-			<nameField type="given">Bertram Wilberforce</nameField>
-			<nameField type="given-informal">Bertie</nameField>
-			<nameField type="given2">Henry Robert</nameField>
-			<nameField type="surname-prefix">∅∅∅</nameField>
-			<nameField type="surname-core">Wooster</nameField>
-			<nameField type="surname2">∅∅∅</nameField>
-			<nameField type="generation">ifj.</nameField>
-			<nameField type="credentials">∅∅∅</nameField>
+			<nameField type="title" draft="provisional">∅∅∅</nameField>
+			<nameField type="given" draft="provisional">Bertram Wilberforce</nameField>
+			<nameField type="given-informal" draft="provisional">Bertie</nameField>
+			<nameField type="given2" draft="provisional">Henry Robert</nameField>
+			<nameField type="surname-prefix" draft="provisional">∅∅∅</nameField>
+			<nameField type="surname-core" draft="provisional">Wooster</nameField>
+			<nameField type="surname2" draft="provisional">∅∅∅</nameField>
+			<nameField type="generation" draft="provisional">ifj.</nameField>
+			<nameField type="credentials" draft="provisional">∅∅∅</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
 			<nameField type="given">Sinbad</nameField>

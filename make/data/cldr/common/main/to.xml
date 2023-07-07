@@ -1023,7 +1023,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">ʻIsileli</territory>
 			<territory type="IM">Motu Mani</territory>
 			<territory type="IN">ʻInitia</territory>
-			<territory type="IO">Potu fonua moana ʻInitia fakapilitānia</territory>
+			<territory type="IO" draft="provisional">Potu fonua moana ʻInitia fakapilitānia</territory>
 			<territory type="IQ">ʻIlaaki</territory>
 			<territory type="IR">ʻIlaani</territory>
 			<territory type="IS">ʻAisilani</territory>
@@ -1312,11 +1312,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">fakakelekolia</type>
 			<type key="calendar" type="hebrew">fakahepelū</type>
 			<type key="calendar" type="indian">fakaʻinitia</type>
-			<type key="calendar" type="islamic">fakamohameti</type>
-			<type key="calendar" type="islamic-civil">fakamohameti-sivile</type>
+			<type key="calendar" type="islamic" draft="provisional">fakamohameti</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">fakamohameti-sivile</type>
 			<type key="calendar" type="islamic-rgsa" draft="unconfirmed">fakamohameti-ʻasimāhina</type>
 			<type key="calendar" type="islamic-tbla" draft="unconfirmed">fakamohameti -fakatēpile</type>
-			<type key="calendar" type="islamic-umalqura">fakamohameti-ʻumalakula</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">fakamohameti-ʻumalakula</type>
 			<type key="calendar" type="iso8601">faka-iso8601</type>
 			<type key="calendar" type="japanese">fakasiapani</type>
 			<type key="calendar" type="persian">fakapēsia</type>
@@ -1445,11 +1445,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á ā e é ē f h i í ī k l m n {ng} o ó ō p s t u ú ū v ʻ]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à ă â å ä æ b c ç d è ĕ ê ë g ì ĭ î ï j ñ ò ŏ ô ö ø œ q r ù ŭ û ü w x y ÿ z]</exemplarCharacters>
+		<exemplarCharacters>[aáā eéē f h iíī k l m n {ng} oóō p s t uúū v ʻ]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[àăâåä æ b cç d èĕêë g ìĭîï j ñ òŏôöø œ q r ùŭûü w x yÿ z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A E F H I K L M N {NG} O P S T U V ʻ]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -1458,22 +1458,22 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\--/]</parseLenient>
-			<parseLenient sample=":" draft="contributed">[\:∶]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":" draft="contributed">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="." draft="contributed">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$" draft="contributed">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£" draft="contributed">[£₤]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$" draft="contributed">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£" draft="contributed">[£ ₤]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-" draft="contributed">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample="," draft="contributed">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+" draft="contributed">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-" draft="contributed">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+" draft="contributed">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample="," draft="contributed">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample="." draft="contributed">[.․﹒．｡]</parseLenient>
+			<parseLenient sample="," draft="contributed">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample="." draft="contributed">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8303,8 +8303,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">kaloli ʻe {0}</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kaloli-kai</displayName>
-				<unitPattern count="other">kaloli-kai ʻe {0}</unitPattern>
+				<displayName draft="provisional">kaloli-kai</displayName>
+				<unitPattern count="other" draft="provisional">kaloli-kai ʻe {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilosiule</displayName>
@@ -8379,16 +8379,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">meʻatā ʻe {0} he ʻinisi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>toti he senitimita</displayName>
-				<unitPattern count="other">toti ʻe {0} he senitimita</unitPattern>
+				<displayName draft="provisional">toti he senitimita</displayName>
+				<unitPattern count="other" draft="provisional">toti ʻe {0} he senitimita</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>toti he ʻinisi</displayName>
-				<unitPattern count="other">toti ʻe {0} he ʻinisi</unitPattern>
+				<displayName draft="provisional">toti he ʻinisi</displayName>
+				<unitPattern count="other" draft="provisional">toti ʻe {0} he ʻinisi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>toti</displayName>
-				<unitPattern count="other">toti ʻe {0}</unitPattern>
+				<displayName draft="provisional">toti</displayName>
+				<unitPattern count="other" draft="provisional">toti ʻe {0}</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>lētiasi fakamāmani</displayName>
@@ -9088,8 +9088,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">kal ʻe {0}</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kal-k</displayName>
-				<unitPattern count="other">kal-k ʻe {0}</unitPattern>
+				<displayName draft="provisional">kal-k</displayName>
+				<unitPattern count="other" draft="provisional">kal-k ʻe {0}</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -9158,16 +9158,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">meʻatā ʻe {0}/in</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>toti/sm</displayName>
-				<unitPattern count="other">toti ʻe {0}/sm</unitPattern>
+				<displayName draft="provisional">toti/sm</displayName>
+				<unitPattern count="other" draft="provisional">toti ʻe {0}/sm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>toti/in</displayName>
-				<unitPattern count="other">toti ʻe {0}/in</unitPattern>
+				<displayName draft="provisional">toti/in</displayName>
+				<unitPattern count="other" draft="provisional">toti ʻe {0}/in</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>toti</displayName>
-				<unitPattern count="other">toti ʻe {0}</unitPattern>
+				<displayName draft="provisional">toti</displayName>
+				<unitPattern count="other" draft="provisional">toti ʻe {0}</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>L⊕</displayName>
@@ -9942,8 +9942,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kal-k</displayName>
-				<unitPattern count="other">{0} kal-k</unitPattern>
+				<displayName draft="provisional">kal-k</displayName>
+				<unitPattern count="other" draft="provisional">{0} kal-k</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -10017,16 +10017,16 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0}mt/in</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>t/sm</displayName>
-				<unitPattern count="other">{0}t/sm</unitPattern>
+				<displayName draft="provisional">t/sm</displayName>
+				<unitPattern count="other" draft="provisional">{0}t/sm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>t/in</displayName>
-				<unitPattern count="other">{0}t/in</unitPattern>
+				<displayName draft="provisional">t/in</displayName>
+				<unitPattern count="other" draft="provisional">{0}t/in</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>t</displayName>
-				<unitPattern count="other">{0}t</unitPattern>
+				<displayName draft="provisional">t</displayName>
+				<unitPattern count="other" draft="provisional">{0}t</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>L⊕</displayName>
@@ -10676,7 +10676,6 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<styleName type="wght" subtype="400">totonu</styleName>
 		<styleName type="wght" subtype="500">tauloto</styleName>
 		<styleName type="wght" subtype="600">sino siʻi</styleName>
-		<styleName type="wght" subtype="600" alt="demi">sino siʻi</styleName>
 		<styleName type="wght" subtype="700">sino</styleName>
 		<styleName type="wght" subtype="800">sino lahi</styleName>
 		<styleName type="wght" subtype="900">ʻuliʻuli</styleName>

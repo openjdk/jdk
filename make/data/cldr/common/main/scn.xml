@@ -252,10 +252,10 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</types>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a à â b c d ḍ e è ê f g h i í î j l m n o ò ô p q r s t u ú û v z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[ç đ é ë ə ḥ ì k š ù w x y]</exemplarCharacters>
+		<exemplarCharacters>[aàâ b c dḍ eèê f g h iíî j l m n oòô p q r s t uúû v z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[ç đ éë ə ḥ ì k š ù w x y]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J L M N O P Q R S T U V Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="unconfirmed">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>

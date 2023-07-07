@@ -228,7 +228,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Isle of Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO">British Indian Ocean Territory</territory>
+			<territory type="IO" draft="provisional">British Indian Ocean Territory</territory>
 			<territory type="IQ">Iraq</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Iceland</territory>
@@ -418,7 +418,7 @@ the LDML specification (http://unicode.org/reports/tr35/)
 		<exemplarCharacters>[a b d e g h i k l m n o p r s t u w y]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[c f j ñ q v x z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]</exemplarCharacters>
-		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation" draft="contributed">[\- ‑ , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] @ * / \&amp; # ′ ″]</exemplarCharacters>
 	</characters>
 	<delimiters>
 		<quotationStart>“</quotationStart>
@@ -3410,9 +3410,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga calorie</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>mga Calorie</displayName>
-				<unitPattern count="one">{0} ka Calorie</unitPattern>
-				<unitPattern count="other">{0} ka mga Calorie</unitPattern>
+				<displayName draft="provisional">mga Calorie</displayName>
+				<unitPattern count="one" draft="provisional">{0} ka Calorie</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ka mga Calorie</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>mga kilojoule</displayName>
@@ -3500,19 +3500,19 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ka mga pixel kada pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>mga dot kada sentimetro</displayName>
-				<unitPattern count="one">{0} ka dot kada sentimetro</unitPattern>
-				<unitPattern count="other">{0} ka mga dot kada sentimetro</unitPattern>
+				<displayName draft="provisional">mga dot kada sentimetro</displayName>
+				<unitPattern count="one" draft="provisional">{0} ka dot kada sentimetro</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ka mga dot kada sentimetro</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>mga dot kada pulgada</displayName>
-				<unitPattern count="one">{0} ka dot kada pulgada</unitPattern>
-				<unitPattern count="other">{0} ka mga dot kada pulgada</unitPattern>
+				<displayName draft="provisional">mga dot kada pulgada</displayName>
+				<unitPattern count="one" draft="provisional">{0} ka dot kada pulgada</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ka mga dot kada pulgada</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>mga pixel</displayName>
-				<unitPattern count="one">{0} dot</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">mga pixel</displayName>
+				<unitPattern count="one" draft="provisional">{0} dot</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>radyus sa yuta</displayName>
@@ -4317,9 +4317,9 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="one">{0} kcal</unitPattern>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="one" draft="provisional">{0} kcal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilojoule</displayName>
@@ -4400,19 +4400,19 @@ the LDML specification (http://unicode.org/reports/tr35/)
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ppcm</displayName>
-				<unitPattern count="one">{0} ppcm</unitPattern>
-				<unitPattern count="other">{0} ppcm</unitPattern>
+				<displayName draft="provisional">ppcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ppi</displayName>
-				<unitPattern count="one">{0} ppi</unitPattern>
-				<unitPattern count="other">{0} ppi</unitPattern>
+				<displayName draft="provisional">ppi</displayName>
+				<unitPattern count="one" draft="provisional">{0} ppi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>mga pixel</displayName>
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<displayName draft="provisional">mga pixel</displayName>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>

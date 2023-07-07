@@ -692,7 +692,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">اسرائیل</territory>
 			<territory type="IM">آئل آف مین</territory>
 			<territory type="IN">بھارت</territory>
-			<territory type="IO">برطانوی بحر ہند کا علاقہ</territory>
+			<territory type="IO" draft="provisional">برطانوی بحر ہند کا علاقہ</territory>
 			<territory type="IQ">عراق</territory>
 			<territory type="IR">ایران</territory>
 			<territory type="IS">آئس لینڈ</territory>
@@ -885,10 +885,10 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">گریگورین کیلنڈر</type>
 			<type key="calendar" type="hebrew">عبرانی کیلنڈر</type>
 			<type key="calendar" type="indian">ہندوستانی قومی کیلنڈر</type>
-			<type key="calendar" type="islamic">اسلامی کیلنڈر</type>
-			<type key="calendar" type="islamic-civil">اسلامی شہری کیلنڈر (شہری دور)</type>
-			<type key="calendar" type="islamic-tbla">اسلامی کیلنڈر (ٹیبولر، فلکیاتی دور)</type>
-			<type key="calendar" type="islamic-umalqura">اسلامی کیلنڈر (ام القراہ)</type>
+			<type key="calendar" type="islamic" draft="provisional">اسلامی کیلنڈر</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">اسلامی شہری کیلنڈر (شہری دور)</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">اسلامی کیلنڈر (ٹیبولر، فلکیاتی دور)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">اسلامی کیلنڈر (ام القراہ)</type>
 			<type key="calendar" type="iso8601">ISO-8601 کیلنڈر</type>
 			<type key="calendar" type="japanese">جاپانی کیلنڈر</type>
 			<type key="calendar" type="persian">فارسی کیلنڈر</type>
@@ -1007,7 +1007,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 	</layout>
 	<characters>
 		<exemplarCharacters>[ا ب پ ت ٹ ث ج چ ح خ د ڈ ذ ر ڑ ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ہ ھ ء ی ے]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[؀؁؂؃\u200C\u200D\u200E\u200F \u064B \u064C \u064D \u064E \u064F \u0650 \u0651 \u0652 \u0654 \u0656 \u0657 \u0658 \u0670 أ آ ں ؤ ۂ ۃ ئ ٻ ة ٺ ټ ٽ ه ي]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[؀؁؂؃\u200C\u200D\u200E\u200F ً ٌ ٍ َ ُ ِ ّ ْ ٔ ٖ ٗ ٘ ٰ أ آ ں ؤ ۂ ۃ ئ ٻ ة ٺ ټ ٽ ه ي]</exemplarCharacters>
 		<exemplarCharacters type="index">[ا ب پ ت ٹ ث ج چ ح خ د ڈ ذ ر ڑ ز ژ س ش ص ض ط ظ ع غ ف ق ک گ ل م ن و ہ ھ ء ی ے]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\u200E \- ‑ , ٫ ٬ . % ‰ + 0۰ 1۱ 2۲ 3۳ 4۴ 5۵ 6۶ 7۷ 8۸ 9۹]</exemplarCharacters>
 		<exemplarCharacters type="punctuation">[، ؍ ٫ ٬ ؛ \: ؟ . ۔ ( ) \[ \]]</exemplarCharacters>
@@ -1019,23 +1019,23 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>؟</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤￡]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -7112,9 +7112,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} کیلوریز</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>کیلوریز</displayName>
-				<unitPattern count="one">{0} کیلوری</unitPattern>
-				<unitPattern count="other">{0} کیلوریز</unitPattern>
+				<displayName draft="provisional">کیلوریز</displayName>
+				<unitPattern count="one" draft="provisional">{0} کیلوری</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} کیلوریز</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<gender>masculine</gender>
@@ -7220,19 +7220,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} پکسلز فی انچ</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>ڈاٹس فی سینٹی میٹر</displayName>
-				<unitPattern count="one">{0} ڈاٹ فی سینٹی میٹر</unitPattern>
-				<unitPattern count="other">{0} ڈاٹس فی سینٹی میٹر</unitPattern>
+				<displayName draft="provisional">ڈاٹس فی سینٹی میٹر</displayName>
+				<unitPattern count="one" draft="provisional">{0} ڈاٹ فی سینٹی میٹر</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ڈاٹس فی سینٹی میٹر</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>ڈاٹس فی انچ</displayName>
-				<unitPattern count="one">{0} ڈاٹ فی انچ</unitPattern>
-				<unitPattern count="other">{0} ڈاٹس فی انچ</unitPattern>
+				<displayName draft="provisional">ڈاٹس فی انچ</displayName>
+				<unitPattern count="one" draft="provisional">{0} ڈاٹ فی انچ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ڈاٹس فی انچ</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ڈاٹ</displayName>
-				<unitPattern count="one">{0} ڈاٹ</unitPattern>
-				<unitPattern count="other">{0} ڈاٹ</unitPattern>
+				<displayName draft="provisional">ڈاٹ</displayName>
+				<unitPattern count="one" draft="provisional">{0} ڈاٹ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ڈاٹ</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>زمینی رداس</displayName>
@@ -8215,9 +8215,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -8306,19 +8306,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ڈاٹ</displayName>
-				<unitPattern count="one">{0} ڈاٹ</unitPattern>
-				<unitPattern count="other">{0} ڈاٹ</unitPattern>
+				<displayName draft="provisional">ڈاٹ</displayName>
+				<unitPattern count="one" draft="provisional">{0} ڈاٹ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ڈاٹ</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -9257,9 +9257,9 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -9352,19 +9352,19 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="one">{0} dpcm</unitPattern>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpcm</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="one">{0} dpi</unitPattern>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="one" draft="provisional">{0} dpi</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>ڈاٹ</displayName>
-				<unitPattern count="one">{0} ڈاٹ</unitPattern>
-				<unitPattern count="other">{0} ڈاٹ</unitPattern>
+				<displayName draft="provisional">ڈاٹ</displayName>
+				<unitPattern count="one" draft="provisional">{0} ڈاٹ</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ڈاٹ</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -10288,27 +10288,27 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<nameField type="credentials">ایم پی</nameField>
 		</sampleName>
 		<sampleName item="foreignG">
-			<nameField type="given">سندباد</nameField>
+			<nameField type="given" draft="provisional">سندباد</nameField>
 		</sampleName>
 		<sampleName item="foreignGS">
-			<nameField type="given">حاتم</nameField>
-			<nameField type="surname">منصور</nameField>
+			<nameField type="given" draft="provisional">حاتم</nameField>
+			<nameField type="surname" draft="provisional">منصور</nameField>
 		</sampleName>
 		<sampleName item="foreignGGS">
-			<nameField type="given">محمد</nameField>
-			<nameField type="given2">ہاشم</nameField>
-			<nameField type="surname">صابری</nameField>
+			<nameField type="given" draft="provisional">محمد</nameField>
+			<nameField type="given2" draft="provisional">ہاشم</nameField>
+			<nameField type="surname" draft="provisional">صابری</nameField>
 		</sampleName>
 		<sampleName item="foreignFull">
-			<nameField type="title">پروفیسر ڈاکٹر</nameField>
-			<nameField type="given">یاسمین راشد</nameField>
-			<nameField type="given-informal">ملک</nameField>
-			<nameField type="given2">سدرہ منیر</nameField>
-			<nameField type="surname-prefix">ندیم</nameField>
-			<nameField type="surname-core">رضا</nameField>
-			<nameField type="surname2">یوسف زئی</nameField>
-			<nameField type="generation">جونيئر</nameField>
-			<nameField type="credentials">ایم ڈی ڈی ڈی ایس</nameField>
+			<nameField type="title" draft="provisional">پروفیسر ڈاکٹر</nameField>
+			<nameField type="given" draft="provisional">یاسمین راشد</nameField>
+			<nameField type="given-informal" draft="provisional">ملک</nameField>
+			<nameField type="given2" draft="provisional">سدرہ منیر</nameField>
+			<nameField type="surname-prefix" draft="provisional">ندیم</nameField>
+			<nameField type="surname-core" draft="provisional">رضا</nameField>
+			<nameField type="surname2" draft="provisional">یوسف زئی</nameField>
+			<nameField type="generation" draft="provisional">جونيئر</nameField>
+			<nameField type="credentials" draft="provisional">ایم ڈی ڈی ڈی ایس</nameField>
 		</sampleName>
 	</personNames>
 </ldml>

@@ -123,7 +123,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="buddhist">Буудда халандаара</type>
 			<type key="calendar" type="chinese">Кытай халандаара</type>
 			<type key="calendar" type="hebrew">Дьэбириэй халандаара</type>
-			<type key="calendar" type="islamic">Ислаам халандаара</type>
+			<type key="calendar" type="islamic" draft="provisional">Ислаам халандаара</type>
 			<type key="calendar" type="japanese">Дьоппуон халандаара</type>
 			<type key="hc" type="h11">12 чаастаах тиһик (0–11)</type>
 			<type key="hc" type="h12">12 чаастаах тиһик (0–12)</type>
@@ -143,7 +143,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 	</localeDisplayNames>
 	<characters>
 		<exemplarCharacters>[а б г ҕ д {дь} и й к л м н {нь} ҥ о ө п р с т у ү х һ ч ы э]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[в е ё ж з ф ц ш щ ъ ь ю я]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[в её ж з ф ц ш щ ъ ь ю я]</exemplarCharacters>
 		<exemplarCharacters type="index">[А Б Г Ҕ Д {Дь} И Й К Л М Н {Нь} Ҥ О Ө П Р С Т У Ү Х Һ Ч Ы Э]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[  \- ‑ , % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 		<exemplarCharacters type="punctuation" draft="contributed">[\:]</exemplarCharacters>
@@ -1643,8 +1643,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} калорий</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Калорий</displayName>
-				<unitPattern count="other">{0} Калорий</unitPattern>
+				<displayName draft="provisional">Калорий</displayName>
+				<unitPattern count="other" draft="provisional">{0} Калорий</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>килоджоуль</displayName>
@@ -1839,8 +1839,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} кал</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Кал</displayName>
-				<unitPattern count="other">{0} Кал</unitPattern>
+				<displayName draft="provisional">Кал</displayName>
+				<unitPattern count="other" draft="provisional">{0} Кал</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>кдж</displayName>

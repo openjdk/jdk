@@ -838,7 +838,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL" draft="contributed">Israel</territory>
 			<territory type="IM" draft="contributed">Insla da Man</territory>
 			<territory type="IN">India</territory>
-			<territory type="IO" draft="contributed">Territori Britannic en l’Ocean Indic</territory>
+			<territory type="IO" draft="provisional">Territori Britannic en l’Ocean Indic</territory>
 			<territory type="IQ" draft="contributed">Irac</territory>
 			<territory type="IR" draft="contributed">Iran</territory>
 			<territory type="IS" draft="contributed">Islanda</territory>
@@ -1042,8 +1042,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian" draft="contributed">chalender gregorian</type>
 			<type key="calendar" type="hebrew" draft="contributed">chalender ebraic</type>
 			<type key="calendar" type="indian" draft="contributed">chalender naziunal indic</type>
-			<type key="calendar" type="islamic" draft="contributed">chalender islamic</type>
-			<type key="calendar" type="islamic-civil" draft="contributed">chalender islamic civil</type>
+			<type key="calendar" type="islamic" draft="provisional">chalender islamic</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">chalender islamic civil</type>
 			<type key="calendar" type="islamic-rgsa" draft="unconfirmed">chalender islamic (Arabia Saudita)</type>
 			<type key="calendar" type="islamic-umalqura" draft="unconfirmed">chalender islamic (Umm al-Qura)</type>
 			<type key="calendar" type="iso8601">chalender tenor ISO 8601</type>
@@ -1089,9 +1089,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters draft="contributed">[a à b c d e é è f g h i ì j k l m n o ò p q r s t u ù v w x y z]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[á ă â å ä ā æ ç ĕ ê ë ē í ĭ î ï ī ñ ó ŏ ô ö ø ō œ ú ŭ û ü ū ÿ]</exemplarCharacters>
-		<exemplarCharacters type="index" draft="contributed">[A À B C D E É È F G H I Ì J K L M N O Ò P Q R S T U Ù V W X Y Z]</exemplarCharacters>
+		<exemplarCharacters draft="contributed">[aà b c d eéè f g h iì j k l m n oò p q r s t uù v w x y z]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[áăâåäā æ ç ĕêëē íĭîïī ñ óŏôöøō œ úŭûüū ÿ]</exemplarCharacters>
+		<exemplarCharacters type="index" draft="contributed">[AÀ B C D EÉÈ F G H IÌ J K L M N OÒ P Q R S T UÙ V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[. ’ % ‰ + − 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
 	</characters>
 	<delimiters>

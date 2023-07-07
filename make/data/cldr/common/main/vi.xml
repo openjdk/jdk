@@ -934,7 +934,7 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<territory type="IL">Israel</territory>
 			<territory type="IM">Đảo Man</territory>
 			<territory type="IN">Ấn Độ</territory>
-			<territory type="IO">Lãnh thổ Ấn Độ Dương thuộc Anh</territory>
+			<territory type="IO" draft="provisional">Lãnh thổ Ấn Độ Dương thuộc Anh</territory>
 			<territory type="IQ">Iraq</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Iceland</territory>
@@ -1172,11 +1172,11 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 			<type key="calendar" type="gregorian">Lịch Gregory</type>
 			<type key="calendar" type="hebrew">Lịch Do Thái</type>
 			<type key="calendar" type="indian">Lịch Quốc gia Ấn Độ</type>
-			<type key="calendar" type="islamic">Lịch Hồi Giáo</type>
-			<type key="calendar" type="islamic-civil">Lịch Islamic-Civil</type>
-			<type key="calendar" type="islamic-rgsa" draft="contributed">Lịch Hồi Giáo - Ả Rập Xê-út</type>
-			<type key="calendar" type="islamic-tbla" draft="contributed">Lịch Hồi Giáo - Thiên văn</type>
-			<type key="calendar" type="islamic-umalqura">Lịch Hồi Giáo - Umm al-Qura</type>
+			<type key="calendar" type="islamic" draft="provisional">Lịch Hồi Giáo</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Lịch Islamic-Civil</type>
+			<type key="calendar" type="islamic-rgsa" draft="provisional">Lịch Hồi Giáo - Ả Rập Xê-út</type>
+			<type key="calendar" type="islamic-tbla" draft="provisional">Lịch Hồi Giáo - Thiên văn</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Lịch Hồi Giáo - Umm al-Qura</type>
 			<type key="calendar" type="iso8601">Lịch ISO-8601</type>
 			<type key="calendar" type="japanese">Lịch Nhật Bản</type>
 			<type key="calendar" type="persian">Lịch Ba Tư</type>
@@ -1334,21 +1334,21 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 		</contextTransformUsage>
 	</contextTransforms>
 	<characters>
-		<exemplarCharacters>[a à ả ã á ạ ă ằ ẳ ẵ ắ ặ â ầ ẩ ẫ ấ ậ b c d đ e è ẻ ẽ é ẹ ê ề ể ễ ế ệ g h i ì ỉ ĩ í ị k l m n o ò ỏ õ ó ọ ô ồ ổ ỗ ố ộ ơ ờ ở ỡ ớ ợ p q r s t u ù ủ ũ ú ụ ư ừ ử ữ ứ ự v x y ỳ ỷ ỹ ý ỵ]</exemplarCharacters>
+		<exemplarCharacters>[aàảãáạ ăằẳẵắặ âầẩẫấậ b c d đ eèẻẽéẹ êềểễếệ g h iìỉĩíị k l m n oòỏõóọ ôồổỗốộ ơờởỡớợ p q r s t uùủũúụ ưừửữứự v x yỳỷỹýỵ]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[f j w z]</exemplarCharacters>
 		<exemplarCharacters type="index">[A Ă Â B C D Đ E Ê F G H I J K L M N O Ô Ơ P Q R S T U Ư V W X Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample=":">[\:∶]</parseLenient>
+			<parseLenient sample=":">[\: ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample="$">[\$﹩＄$]</parseLenient>
-			<parseLenient sample="£">[£₤]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£ ₤]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‒⁻₋−➖﹣－]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‑ ‒ −⁻₋ ➖]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -8452,8 +8452,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} calo</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Calo</displayName>
-				<unitPattern count="other">{0} Calo</unitPattern>
+				<displayName draft="provisional">Calo</displayName>
+				<unitPattern count="other" draft="provisional">{0} Calo</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kilô jun</displayName>
@@ -8528,16 +8528,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} pixel/inch</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>chấm/xentimét</displayName>
-				<unitPattern count="other">{0} chấm/xentimét</unitPattern>
+				<displayName draft="provisional">chấm/xentimét</displayName>
+				<unitPattern count="other" draft="provisional">{0} chấm/xentimét</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>chấm/inch</displayName>
-				<unitPattern count="other">{0} chấm/inch</unitPattern>
+				<displayName draft="provisional">chấm/inch</displayName>
+				<unitPattern count="other" draft="provisional">{0} chấm/inch</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>chấm</displayName>
-				<unitPattern count="other">{0} chấm</unitPattern>
+				<displayName draft="provisional">chấm</displayName>
+				<unitPattern count="other" draft="provisional">{0} chấm</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>bán kính trái đất</displayName>
@@ -9134,8 +9134,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>v</displayName>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-joule">
 				<displayName>J</displayName>
@@ -9176,16 +9176,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<displayName>megapixel</displayName>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>chấm</displayName>
-				<unitPattern count="other">{0} chấm</unitPattern>
+				<displayName draft="provisional">chấm</displayName>
+				<unitPattern count="other" draft="provisional">{0} chấm</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>
@@ -9805,8 +9805,8 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>kcal</displayName>
-				<unitPattern count="other">{0} kcal</unitPattern>
+				<displayName draft="provisional">kcal</displayName>
+				<unitPattern count="other" draft="provisional">{0} kcal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>
@@ -9881,16 +9881,16 @@ Warnings: All cp values have U+FE0F characters removed. See /annotationsDerived/
 				<unitPattern count="other">{0} ppi</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>dpcm</displayName>
-				<unitPattern count="other">{0} dpcm</unitPattern>
+				<displayName draft="provisional">dpcm</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpcm</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>dpi</displayName>
-				<unitPattern count="other">{0} dpi</unitPattern>
+				<displayName draft="provisional">dpi</displayName>
+				<unitPattern count="other" draft="provisional">{0} dpi</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>chấm</displayName>
-				<unitPattern count="other">{0} chấm</unitPattern>
+				<displayName draft="provisional">chấm</displayName>
+				<unitPattern count="other" draft="provisional">{0} chấm</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>

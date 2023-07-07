@@ -666,7 +666,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Ízrẹl</territory>
 			<territory type="IM">Aíl ọf Man</territory>
 			<territory type="IN">Índia</territory>
-			<territory type="IO">Brítísh Índián Óshen Tẹ́rẹ́tri</territory>
+			<territory type="IO" draft="provisional">Brítísh Índián Óshen Tẹ́rẹ́tri</territory>
 			<territory type="IQ">Irak</territory>
 			<territory type="IR">Iran</territory>
 			<territory type="IS">Aísland</territory>
@@ -841,9 +841,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="ethiopic-amete-alem">Ẹtiópiá Amẹtẹ́ Álẹ́m Kalénda</type>
 			<type key="calendar" type="gregorian">Grẹ́górí Kalẹ́nda</type>
 			<type key="calendar" type="hebrew">Híbrú Kalẹ́nda</type>
-			<type key="calendar" type="islamic">Íslám Kalẹ́nda</type>
-			<type key="calendar" type="islamic-civil">Íslám Kalẹ́nda (Tébúlá Taip an Sívúl Taip)</type>
-			<type key="calendar" type="islamic-umalqura">Íslám Kalẹ́nda (Úmm al-Kúra)</type>
+			<type key="calendar" type="islamic" draft="provisional">Íslám Kalẹ́nda</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Íslám Kalẹ́nda (Tébúlá Taip an Sívúl Taip)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Íslám Kalẹ́nda (Úmm al-Kúra)</type>
 			<type key="calendar" type="iso8601">ISO-8601 Kalẹ́nda</type>
 			<type key="calendar" type="japanese">Japán Kalẹ́nda</type>
 			<type key="calendar" type="persian">Pẹ́shia Kalẹ́nda</type>
@@ -916,11 +916,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters>[a á b {ch} d e é ẹ {ẹ\u0301} f g {gb} h i í j k {kp} l m n o ó ọ {ọ\u0301} p r s {sh} t u ú v w y z {zh}]</exemplarCharacters>
-		<exemplarCharacters type="auxiliary">[à c è {ẹ\u0300} ì ò {ọ\u0300} q ù x]</exemplarCharacters>
+		<exemplarCharacters>[aá b {ch} d eéẹ{ẹ́} f g {gb} h ií j k {kp} l m n oóọ{ọ́} p r s {sh} t uú v w y z {zh}]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary">[à c è{ẹ̀} ì ò{ọ̀} q ù x]</exemplarCharacters>
 		<exemplarCharacters type="index">[A B {CH} D E F G H I J K L M N O P R S T U V W Y Z]</exemplarCharacters>
 		<exemplarCharacters type="numbers">[\- ‑ , . % ‰ + 0 1 2 3 4 5 6 7 8 9]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? . … ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? . … '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<ellipsis type="final">{0}…</ellipsis>
 		<ellipsis type="initial">…{0}</ellipsis>
 		<ellipsis type="medial">{0}…{1}</ellipsis>
@@ -929,28 +929,28 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		<ellipsis type="word-medial">{0} … {1}</ellipsis>
 		<moreInformation>?</moreInformation>
 		<parseLenients scope="date" level="lenient">
-			<parseLenient sample="-">[\--/]</parseLenient>
-			<parseLenient sample=":">[\:∶︓﹕：]</parseLenient>
+			<parseLenient sample="-">[\- ‑ . /]</parseLenient>
+			<parseLenient sample=":">[\:：﹕︓ ∶]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="general" level="lenient">
-			<parseLenient sample=".">[.․。︒﹒．｡]</parseLenient>
-			<parseLenient sample="’">['ʼ՚᾽᾿’＇]</parseLenient>
-			<parseLenient sample="%">[%٪﹪％]</parseLenient>
-			<parseLenient sample="‰">[؉‰]</parseLenient>
-			<parseLenient sample="$">[\$﹩＄]</parseLenient>
-			<parseLenient sample="£">[£₤￡]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ 。｡︒]</parseLenient>
+			<parseLenient sample="’">['＇’ ՚ ᾽᾿ ʼ]</parseLenient>
+			<parseLenient sample="%">[%％﹪ ٪]</parseLenient>
+			<parseLenient sample="‰">[‰ ؉]</parseLenient>
+			<parseLenient sample="$">[\$＄﹩]</parseLenient>
+			<parseLenient sample="£">[£￡ ₤]</parseLenient>
 			<parseLenient sample="¥">[¥￥]</parseLenient>
 			<parseLenient sample="₩">[₩￦]</parseLenient>
-			<parseLenient sample="₹">[₨₹{Rp}{Rs}]</parseLenient>
+			<parseLenient sample="₹">[₹ ₨ {Rp} {Rs}]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="lenient">
-			<parseLenient sample="-">[\-‐‒–⁻₋−➖﹣－]</parseLenient>
-			<parseLenient sample=",">[,،٫、︐︑﹐﹑，､]</parseLenient>
-			<parseLenient sample="+">[+⁺₊➕﬩﹢＋]</parseLenient>
+			<parseLenient sample="-">[\-－﹣ ‐‑ ‒ – −⁻₋ ➖]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ، ٫ 、﹑､︑]</parseLenient>
+			<parseLenient sample="+">[+＋﬩﹢⁺₊ ➕]</parseLenient>
 		</parseLenients>
 		<parseLenients scope="number" level="stricter">
-			<parseLenient sample=",">[,٫︐﹐，]</parseLenient>
-			<parseLenient sample=".">[.․﹒．｡]</parseLenient>
+			<parseLenient sample=",">[,，﹐︐ ٫]</parseLenient>
+			<parseLenient sample=".">[.．․﹒ ｡]</parseLenient>
 		</parseLenients>
 	</characters>
 	<delimiters>
@@ -6176,9 +6176,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Kálọ́ri</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kálọ́ri-dẹm</displayName>
-				<unitPattern count="one">{0} Kálọ́ri</unitPattern>
-				<unitPattern count="other">{0} Kálọ́ri</unitPattern>
+				<displayName draft="provisional">Kálọ́ri-dẹm</displayName>
+				<unitPattern count="one" draft="provisional">{0} Kálọ́ri</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Kálọ́ri</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>Kílojul-dẹm</displayName>
@@ -6271,19 +6271,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} Píksẹl Fọ Ẹ́vrí Inch</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>Pọint-dẹm fọ ích sẹntímíta</displayName>
-				<unitPattern count="one">{0} Pọint fọ ích sẹntímíta</unitPattern>
-				<unitPattern count="other">{0} Pọint fọ ích sẹntímíta</unitPattern>
+				<displayName draft="provisional">Pọint-dẹm fọ ích sẹntímíta</displayName>
+				<unitPattern count="one" draft="provisional">{0} Pọint fọ ích sẹntímíta</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Pọint fọ ích sẹntímíta</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>Pọint-Dẹm Fọ Ẹ́vrí Inch</displayName>
-				<unitPattern count="one">{0} Pọint Fọ Ẹ́vrí Inch</unitPattern>
-				<unitPattern count="other">{0} Pọint Fọ Ẹ́vrí Inch</unitPattern>
+				<displayName draft="provisional">Pọint-Dẹm Fọ Ẹ́vrí Inch</displayName>
+				<unitPattern count="one" draft="provisional">{0} Pọint Fọ Ẹ́vrí Inch</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Pọint Fọ Ẹ́vrí Inch</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>dọt</displayName>
-				<unitPattern count="one">{0}dọt</unitPattern>
-				<unitPattern count="other">{0}dọt</unitPattern>
+				<displayName draft="provisional">dọt</displayName>
+				<unitPattern count="one" draft="provisional">{0}dọt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0}dọt</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>Wọ́ld Rédiọs</displayName>
@@ -7226,9 +7226,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kal</displayName>
-				<unitPattern count="one">{0} Kal</unitPattern>
-				<unitPattern count="other">{0} Kal</unitPattern>
+				<displayName draft="provisional">Kal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Kal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Kal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>Kílojul</displayName>
@@ -7320,19 +7320,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} PFI</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>Pọints fọ ích sẹntímíta</displayName>
-				<unitPattern count="one">{0} PFIS</unitPattern>
-				<unitPattern count="other">{0} PFIS</unitPattern>
+				<displayName draft="provisional">Pọints fọ ích sẹntímíta</displayName>
+				<unitPattern count="one" draft="provisional">{0} PFIS</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} PFIS</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>Pọints Fọ Ẹ́vrí Inch</displayName>
-				<unitPattern count="one">{0} PFẸI</unitPattern>
-				<unitPattern count="other">{0} PFẸI</unitPattern>
+				<displayName draft="provisional">Pọints Fọ Ẹ́vrí Inch</displayName>
+				<unitPattern count="one" draft="provisional">{0} PFẸI</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} PFẸI</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>dọt</displayName>
-				<unitPattern count="one">{0} dọt</unitPattern>
-				<unitPattern count="other">{0} dọt</unitPattern>
+				<displayName draft="provisional">dọt</displayName>
+				<unitPattern count="one" draft="provisional">{0} dọt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dọt</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<unitPattern count="one">{0} R⊕</unitPattern>
@@ -8275,9 +8275,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} kal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Kal</displayName>
-				<unitPattern count="one">{0} Kal</unitPattern>
-				<unitPattern count="other">{0} Kal</unitPattern>
+				<displayName draft="provisional">Kal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Kal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Kal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>Kílojul</displayName>
@@ -8370,19 +8370,19 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} PFI</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-centimeter">
-				<displayName>Pọints fọ ích sẹntímíta</displayName>
-				<unitPattern count="one">{0} PFIS</unitPattern>
-				<unitPattern count="other">{0} PFIS</unitPattern>
+				<displayName draft="provisional">Pọints fọ ích sẹntímíta</displayName>
+				<unitPattern count="one" draft="provisional">{0} PFIS</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} PFIS</unitPattern>
 			</unit>
 			<unit type="graphics-dot-per-inch">
-				<displayName>Pọints Fọ Ẹ́vrí Inch</displayName>
-				<unitPattern count="one">{0} PFẸI</unitPattern>
-				<unitPattern count="other">{0} PFẸI</unitPattern>
+				<displayName draft="provisional">Pọints Fọ Ẹ́vrí Inch</displayName>
+				<unitPattern count="one" draft="provisional">{0} PFẸI</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} PFẸI</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>dọt</displayName>
-				<unitPattern count="one">{0} dọt</unitPattern>
-				<unitPattern count="other">{0} dọt</unitPattern>
+				<displayName draft="provisional">dọt</displayName>
+				<unitPattern count="one" draft="provisional">{0} dọt</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} dọt</unitPattern>
 			</unit>
 			<unit type="length-earth-radius">
 				<displayName>R⊕</displayName>

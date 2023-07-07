@@ -822,7 +822,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">𑄄𑄎𑄴𑄢𑄠𑄬𑄣𑄴</territory>
 			<territory type="IM">𑄃𑄭𑄣𑄴 𑄃𑄧𑄜𑄴 𑄟𑄳𑄠𑄚𑄴</territory>
 			<territory type="IN">𑄞𑄢𑄧𑄖𑄴</territory>
-			<territory type="IO">𑄝𑄳𑄢𑄨𑄑𑄨𑄌𑄴 𑄞𑄢𑄧𑄖𑄴 𑄟𑄧𑄦𑄥𑄉𑄧𑄢𑄨𑄠𑄧 𑄞𑄨𑄘𑄳𑄠</territory>
+			<territory type="IO" draft="provisional">𑄝𑄳𑄢𑄨𑄑𑄨𑄌𑄴 𑄞𑄢𑄧𑄖𑄴 𑄟𑄧𑄦𑄥𑄉𑄧𑄢𑄨𑄠𑄧 𑄞𑄨𑄘𑄳𑄠</territory>
 			<territory type="IQ">𑄄𑄢𑄇𑄴</territory>
 			<territory type="IR">𑄄𑄢𑄚𑄴</territory>
 			<territory type="IS">𑄃𑄭𑄥𑄴𑄣𑄳𑄠𑄚𑄴𑄓𑄴</territory>
@@ -1018,8 +1018,8 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<type key="calendar" type="gregorian">𑄉𑄳𑄢𑄉𑄮𑄢𑄨𑄠𑄚𑄴 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
 			<type key="calendar" type="hebrew">𑄦𑄨𑄝𑄳𑄢𑄪 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
 			<type key="calendar" type="indian">𑄞𑄢𑄧𑄘𑄧𑄢𑄴 𑄎𑄖𑄩𑄠𑄧 𑄝𑄧𑄢𑄴𑄥𑄧𑄛𑄧𑄚𑄴𑄏𑄩</type>
-			<type key="calendar" type="islamic">𑄃𑄨𑄥𑄴𑄣𑄟𑄨𑄇𑄴 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
-			<type key="calendar" type="islamic-civil">𑄃𑄨𑄥𑄴𑄣𑄟𑄨𑄇𑄴-𑄥𑄨𑄞𑄨𑄣𑄴 𑄝𑄧𑄢𑄴𑄥𑄧𑄛𑄧𑄚𑄴𑄏𑄩</type>
+			<type key="calendar" type="islamic" draft="provisional">𑄃𑄨𑄥𑄴𑄣𑄟𑄨𑄇𑄴 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">𑄃𑄨𑄥𑄴𑄣𑄟𑄨𑄇𑄴-𑄥𑄨𑄞𑄨𑄣𑄴 𑄝𑄧𑄢𑄴𑄥𑄧𑄛𑄧𑄚𑄴𑄏𑄩</type>
 			<type key="calendar" type="iso8601">ISO-861 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
 			<type key="calendar" type="japanese">𑄎𑄛𑄚𑄨 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
 			<type key="calendar" type="persian">𑄜𑄢𑄴𑄥𑄨 𑄇𑄳𑄠𑄣𑄬𑄚𑄴𑄓𑄢𑄴</type>
@@ -1132,11 +1132,11 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 		</orientation>
 	</layout>
 	<characters>
-		<exemplarCharacters>[\U00011100 \U00011101 \U00011102 𑄃 𑄄 𑄅 𑄆 𑄇 𑄈 𑄉 𑄊 𑄋 𑄌 𑄍 𑄎 𑄏 𑄐 𑄑 𑄒 𑄓 𑄔 𑄕 𑄖 𑄗 𑄘 𑄙 𑄚 𑄛 𑄜 𑄝 𑄞 𑄟 𑄠 𑄡 𑄢 𑄣 𑄤 𑄥 𑄦 \U00011127 \U00011128 \U00011129 \U0001112A \U0001112B 𑄬 \U0001112D \U0001112E \U0001112F \U00011130 \U00011131 \U00011132 \U00011133 \U00011134]</exemplarCharacters>
+		<exemplarCharacters>[𑄀 𑄁 𑄂 𑄃 𑄄 𑄅 𑄆 𑄇 𑄈 𑄉 𑄊 𑄋 𑄌 𑄍 𑄎 𑄏 𑄐 𑄑 𑄒 𑄓 𑄔 𑄕 𑄖 𑄗 𑄘 𑄙 𑄚 𑄛 𑄜 𑄝 𑄞 𑄟 𑄠 𑄡 𑄢 𑄣 𑄤 𑄥 𑄦 𑄧 𑄨 𑄩 𑄪 𑄫 𑄬 𑄭 𑄮 𑄯 𑄰 𑄱 𑄲 𑄳 𑄴]</exemplarCharacters>
 		<exemplarCharacters type="auxiliary">[]</exemplarCharacters>
 		<exemplarCharacters type="index">[𑄃 𑄄 𑄅 𑄆 𑄇 𑄈 𑄉 𑄊 𑄋 𑄌 𑄍 𑄎 𑄏 𑄐 𑄑 𑄒 𑄓 𑄔 𑄕 𑄖 𑄗 𑄘 𑄙 𑄚 𑄛 𑄜 𑄝 𑄞 𑄟 𑄠 𑄡 𑄢 𑄣 𑄤 𑄥 𑄦]</exemplarCharacters>
 		<exemplarCharacters type="numbers" draft="unconfirmed">[\- ‑ , . % ‰ + 𑄶 𑄷 𑄸 𑄹 𑄺 𑄻 𑄼 𑄽 𑄾 𑄿]</exemplarCharacters>
-		<exemplarCharacters type="punctuation">[\- ‐ ‑ – — , ; \: ! ? 𑅃 . … 𑅁 𑅂 𑅀 ' ‘ ’ &quot; “ ” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
+		<exemplarCharacters type="punctuation">[\- ‐‑ – — , ; \: ! ? 𑅃 . … 𑅁 𑅂 𑅀 '‘’ &quot;“” ( ) \[ \] § @ * / \&amp; # † ‡ ′ ″]</exemplarCharacters>
 		<moreInformation draft="unconfirmed">𑅃</moreInformation>
 	</characters>
 	<delimiters>
@@ -6501,9 +6501,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>𑄇𑄳𑄠𑄣𑄮𑄢𑄨</displayName>
-				<unitPattern count="one">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
-				<unitPattern count="other">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
+				<displayName draft="provisional">𑄇𑄳𑄠𑄣𑄮𑄢𑄨</displayName>
+				<unitPattern count="one" draft="provisional">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} 𑄇𑄳𑄠𑄣𑄮𑄢𑄨</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>𑄇𑄨𑄣𑄮𑄎𑄪𑄣𑄴</displayName>
@@ -7188,9 +7188,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<unitPattern count="other">{0} cal</unitPattern>
 			</unit>
 			<unit type="energy-foodcalorie">
-				<displayName>Cal</displayName>
-				<unitPattern count="one">{0} Cal</unitPattern>
-				<unitPattern count="other">{0} Cal</unitPattern>
+				<displayName draft="provisional">Cal</displayName>
+				<unitPattern count="one" draft="provisional">{0} Cal</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} Cal</unitPattern>
 			</unit>
 			<unit type="energy-kilojoule">
 				<displayName>kJ</displayName>

@@ -901,9 +901,9 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 				<perUnitPattern>{0}/d</perUnitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<displayName>pto</displayName>
-				<unitPattern count="one">{0} pto</unitPattern>
-				<unitPattern count="other">{0} ptos</unitPattern>
+				<displayName draft="provisional">pto</displayName>
+				<unitPattern count="one" draft="provisional">{0} pto</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} ptos</unitPattern>
 			</unit>
 			<unit type="length-mile">
 				<displayName draft="contributed">millas</displayName>

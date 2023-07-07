@@ -26,6 +26,7 @@ annotations.
 			<language type="fa">Faarsi</language>
 			<language type="ff">Fulah</language>
 			<language type="lah">Lahnda</language>
+			<language type="mic">Mi'kmaq</language>
 			<language type="mus">Muscogee</language>
 			<language type="nan">Min Nan</language>
 			<language type="nb">Norwegian Bokmal</language>
@@ -75,7 +76,9 @@ annotations.
 			<key type="rg">Supplemental Data ke liye region</key>
 		</keys>
 		<types>
-			<type key="calendar" type="islamic-civil">Islamic Civil Calendar (tabular, civil epoch)</type>
+			<type key="calendar" type="islamic" draft="provisional">Islamic Calendar</type>
+			<type key="calendar" type="islamic-civil" draft="provisional">Islamic Civil Calendar (tabular, civil epoch)</type>
+			<type key="calendar" type="islamic-umalqura" draft="provisional">Islamic Calendar (Umm al-Qura)</type>
 			<type key="colAlternate" type="non-ignorable">Symbols ko sort karein</type>
 			<type key="colAlternate" type="shifted">Symbols ko ignore karte hue sort karein</type>
 			<type key="colBackwards" type="no">Accents ko normally sort karein</type>
@@ -148,7 +151,7 @@ annotations.
 		</codePatterns>
 	</localeDisplayNames>
 	<characters>
-		<exemplarCharacters type="auxiliary" draft="contributed">[ā ḍ ĕ ē ḥ ī ḷ {l\u0325} ṁ {m\u0310} ñ ṅ ṇ ŏ ō ṛ {r\u0325} {r\u0325\u0304} ś ṣ ṭ ū]</exemplarCharacters>
+		<exemplarCharacters type="auxiliary" draft="contributed">[ā ḍ ĕē ḥ ī ḷ{l̥} ṁ{m̐} ñṅṇ ŏō ṛ{r̥}{r̥̄} śṣ ṭ ū]</exemplarCharacters>
 	</characters>
 	<dates>
 		<calendars>
@@ -458,16 +461,10 @@ annotations.
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
 						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
-						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<dateTimeFormatLength type="short">
 						<dateTimeFormat>
 							<pattern>{1} {0}</pattern>
-						</dateTimeFormat>
-						<dateTimeFormat type="atTime">
-							<pattern>{1}, {0}</pattern>
 						</dateTimeFormat>
 					</dateTimeFormatLength>
 					<availableFormats>
@@ -2648,8 +2645,8 @@ annotations.
 				<unitPattern count="other">{0} din</unitPattern>
 			</unit>
 			<unit type="graphics-dot">
-				<unitPattern count="one">{0} px</unitPattern>
-				<unitPattern count="other">{0} px</unitPattern>
+				<unitPattern count="one" draft="provisional">{0} px</unitPattern>
+				<unitPattern count="other" draft="provisional">{0} px</unitPattern>
 			</unit>
 			<unit type="mass-stone">
 				<displayName>stones</displayName>

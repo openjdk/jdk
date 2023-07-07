@@ -297,7 +297,7 @@ CLDR data files are interpreted according to the LDML specification (http://unic
 			<territory type="IL">Israyel</territory>
 			<territory type="IM">Dunu Maan</territory>
 			<territory type="IN">End</territory>
-			<territory type="IO">Terituwaaru Brëtaañ ci Oseyaa Enjeŋ</territory>
+			<territory type="IO" draft="provisional">Terituwaaru Brëtaañ ci Oseyaa Enjeŋ</territory>
 			<territory type="IQ">Irag</territory>
 			<territory type="IR">Iraŋ</territory>
 			<territory type="IS">Islànd</territory>
