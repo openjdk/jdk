@@ -21,7 +21,10 @@
  * questions.
  */
 
-public class tableswitchp1 version 50:0 {
+// This test generates (high - lo) that overflows int so tableswitch is an invalid bytecode
+// If treated as unsigned lo > high but the tableswitch operands are signed int.
+
+public class TableSwitchp1 version 50:0 {
 
 public static Method runTable:"()V"
 	stack 4 locals 3

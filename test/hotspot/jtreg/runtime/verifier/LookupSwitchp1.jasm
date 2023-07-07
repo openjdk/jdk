@@ -21,7 +21,9 @@
  * questions.
  */
 
-public class lookupswitchp1 version 50:0 {
+// This test generates a npairs that overflows int so lookupswitch is an invalid bytecode
+
+public class LookupSwitchp1 version 50:0 {
 
 public static Method runLookup:"()V"
 	stack 4 locals 3
