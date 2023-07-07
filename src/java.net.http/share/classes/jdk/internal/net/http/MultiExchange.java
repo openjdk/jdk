@@ -282,6 +282,9 @@ class MultiExchange<T> implements Cancelable {
             if (interrupted.get() == null) {
                 interrupted.compareAndSet(null,
                         new CancellationException("Request cancelled"));
+                debug.log("multi exchange recording: " + interrupted.get());
+            } else {
+                debug.log("multi exchange recorded: " + interrupted.get());
             }
             this.cancelled = true;
             var exchange = getExchange();
@@ -289,12 +292,22 @@ class MultiExchange<T> implements Cancelable {
                 exchange.cancel();
             }
             return true;
+        } else {
+            if (cancelled) {
+                debug.log("multi exchange already cancelled: " + interrupted.get());
+            } else {
+                debug.log("multi exchange mayInterruptIfRunning=" + mayInterruptIfRunning);
+            }
         }
         return false;
     }
 
+    public <U> MinimalFuture<U> newMinimalFuture() {
+        return new MinimalFuture<>(new CancelableRef(this));
+    }
+
     public CompletableFuture<HttpResponse<T>> responseAsync(Executor executor) {
-        CompletableFuture<Void> start = new MinimalFuture<>(new CancelableRef(this));
+        CompletableFuture<Void> start = newMinimalFuture();
         CompletableFuture<HttpResponse<T>> cf = responseAsync0(start);
         start.completeAsync( () -> null, executor); // trigger execution
         return cf;
@@ -546,8 +559,10 @@ class MultiExchange<T> implements Cancelable {
             // allow the retry mechanism to do its work
             retryCause = cause;
             if (!expiredOnce) {
-                if (debug.on())
-                    debug.log(t.getClass().getSimpleName() + " (async): retrying...", t);
+                if (debug.on()) {
+                    debug.log(t.getClass().getSimpleName()
+                            + " (async): retrying due to: ", t);
+                }
                 expiredOnce = true;
                 // The connection was abruptly closed.
                 // We return null to retry the same request a second time.

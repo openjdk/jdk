@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,13 +27,15 @@ package jdk.javadoc.internal.doclets.toolkit.taglets;
 
 import java.util.EnumSet;
 import java.util.List;
-import java.util.Optional;
 
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.TypeElement;
 
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.InheritDocTree;
+import com.sun.source.util.DocTreePath;
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.Content;
@@ -42,6 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder.Result;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * A taglet that represents the {@code {@inheritDoc}} tag.
@@ -70,25 +73,68 @@ public class InheritDocTaglet extends BaseTaglet {
      */
     private Content retrieveInheritedDocumentation(TagletWriter writer,
                                                    ExecutableElement method,
-                                                   DocTree inheritDoc,
+                                                   InheritDocTree inheritDoc,
                                                    boolean isFirstSentence) {
         Content replacement = writer.getOutputInstance();
         BaseConfiguration configuration = writer.configuration();
         Messages messages = configuration.getMessages();
         Utils utils = configuration.utils;
         CommentHelper ch = utils.getCommentHelper(method);
-        var path = ch.getDocTreePath(inheritDoc).getParentPath();
+        DocTreePath inheritDocPath = ch.getDocTreePath(inheritDoc);
+        var path = inheritDocPath.getParentPath();
         DocTree holderTag = path.getLeaf();
+
+        ExecutableElement src = null;
+        // 1. Does @inheritDoc specify a type?
+        if (inheritDoc.getSupertype() != null) {
+            // 2. Can we find that type?
+            var supertype = (TypeElement) ch.getReferencedElement(inheritDoc.getSupertype());
+            if (supertype == null) {
+                messages.error(inheritDocPath, "doclet.inheritDocBadSupertype");
+                return replacement;
+            }
+            // 3. Does that type have a method that this method overrides?
+            // Skip a direct check that the type that declares this method is a subtype
+            // of the type that @inheritDoc specifies. Do the "overrides" check for
+            // individual methods. Not only will such a check find the overridden
+            // method, but it will also filter out self-referring inheritors
+            // (S is the same type as the type that contains {@inheritDoc S})
+            // due to irreflexivity of the "overrides" relationship.
+            //
+            // This way we do more work in erroneous case, but less in the typical
+            // case. We don't optimize for the former.
+            VisibleMemberTable visibleMemberTable = configuration.getVisibleMemberTable(supertype);
+            List<Element> methods = visibleMemberTable.getAllVisibleMembers(VisibleMemberTable.Kind.METHODS);
+            for (Element e : methods) {
+                ExecutableElement m = (ExecutableElement) e;
+                if (utils.elementUtils.overrides(method, m, (TypeElement) method.getEnclosingElement())) {
+                    assert !method.equals(m) : Utils.diagnosticDescriptionOf(method);
+                    src = m;
+                    break;
+                }
+            }
+            if (src == null) {
+                // "self-inheritors" and supertypes that do not contain a method
+                // that this method overrides
+                messages.error(inheritDocPath, "doclet.inheritDocBadSupertype");
+                return replacement;
+            }
+        }
+
         if (holderTag.getKind() == DocTree.Kind.DOC_COMMENT) {
             try {
                 var docFinder = utils.docFinder();
-                Optional<Documentation> r = docFinder.trySearch(method,
-                        m -> Result.fromOptional(extractMainDescription(m, isFirstSentence, utils))).toOptional();
-                if (r.isPresent()) {
-                    replacement = writer.commentTagsToOutput(r.get().method, null,
-                            r.get().mainDescription, isFirstSentence);
+                Result<Documentation> d;
+                if (src == null) {
+                    d = docFinder.find(method, m -> extractMainDescription(m, isFirstSentence, utils));
+                } else {
+                    d = docFinder.search(src, m -> extractMainDescription(m, isFirstSentence, utils));
                 }
-            } catch (DocFinder.NoOverriddenMethodsFound e) {
+                if (d instanceof Result.Conclude<Documentation> doc) {
+                    replacement = writer.commentTagsToOutput(doc.value().method, null,
+                            doc.value().mainDescription, isFirstSentence);
+                }
+            } catch (DocFinder.NoOverriddenMethodFound e) {
                 String signature = utils.getSimpleName(method)
                         + utils.flatSignature(method, writer.getCurrentPageElement());
                 messages.warning(method, "doclet.noInheritedDoc", signature);
@@ -97,13 +143,16 @@ public class InheritDocTaglet extends BaseTaglet {
         }
 
         Taglet taglet = configuration.tagletManager.getTaglet(ch.getTagName(holderTag));
-        if (taglet != null && !(taglet instanceof InheritableTaglet)) {
+        // taglet is null if holderTag is unknown, which it shouldn't be since we reached here
+        assert taglet != null;
+        if (!(taglet instanceof InheritableTaglet inheritableTaglet)) {
             // This tag does not support inheritance.
             messages.warning(path, "doclet.inheritDocWithinInappropriateTag");
             return replacement;
         }
 
-        InheritableTaglet.Output inheritedDoc = ((InheritableTaglet) taglet).inherit(method, holderTag, isFirstSentence, configuration);
+        InheritableTaglet.Output inheritedDoc = inheritableTaglet.inherit(method, src, holderTag, isFirstSentence, configuration);
+
         if (inheritedDoc.isValidInheritDocTag()) {
             if (!inheritedDoc.inlineTags().isEmpty()) {
                 replacement = writer.commentTagsToOutput(inheritedDoc.holder(), inheritedDoc.holderTag(),
@@ -119,13 +168,13 @@ public class InheritDocTaglet extends BaseTaglet {
 
     private record Documentation(List<? extends DocTree> mainDescription, ExecutableElement method) { }
 
-    private static Optional<Documentation> extractMainDescription(ExecutableElement m,
+    private static Result<Documentation> extractMainDescription(ExecutableElement m,
                                                                 boolean extractFirstSentenceOnly,
                                                                 Utils utils) {
-        List<? extends DocTree> docTrees = extractFirstSentenceOnly
+        var mainDescriptionTrees = extractFirstSentenceOnly
                 ? utils.getFirstSentenceTrees(m)
                 : utils.getFullBody(m);
-        return docTrees.isEmpty() ? Optional.empty() : Optional.of(new Documentation(docTrees, m));
+        return mainDescriptionTrees.isEmpty() ? Result.CONTINUE() : Result.CONCLUDE(new Documentation(mainDescriptionTrees, m));
     }
 
     @Override
@@ -133,6 +182,6 @@ public class InheritDocTaglet extends BaseTaglet {
         if (e.getKind() != ElementKind.METHOD) {
             return tagletWriter.getOutputInstance();
         }
-        return retrieveInheritedDocumentation(tagletWriter, (ExecutableElement) e, inheritDoc, tagletWriter.isFirstSentence);
+        return retrieveInheritedDocumentation(tagletWriter, (ExecutableElement) e, (InheritDocTree) inheritDoc, tagletWriter.isFirstSentence);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -119,7 +119,7 @@ public class IndexBuilder {
         itemsByFirstChar = new TreeMap<>();
         itemsByCategory = new EnumMap<>(IndexItem.Category.class);
 
-        mainComparator = makeIndexComparator(classesOnly);
+        mainComparator = classesOnly ? makeClassComparator() : makeIndexComparator();
     }
 
     /**
@@ -300,9 +300,23 @@ public class IndexBuilder {
     }
 
     private static Character keyCharacter(String s) {
-        return s.isEmpty() ? '*' : Character.toUpperCase(s.charAt(0));
+        // Use first valid java identifier start character as key,
+        // or '*' for strings that do not contain one.
+        for (int i = 0; i < s.length(); i++) {
+            if (Character.isJavaIdentifierStart(s.charAt(i))) {
+                return Character.toUpperCase(s.charAt(i));
+            }
+        }
+        return '*';
     }
 
+    /**
+     * Returns a comparator for the all-classes list.
+     * @return a comparator for class element items
+     */
+    private Comparator<IndexItem> makeClassComparator() {
+        return Comparator.comparing(IndexItem::getElement, utils.comparators.makeAllClassesComparator());
+    }
 
     /**
      * Returns a comparator for the {@code IndexItem}s in the index page.
@@ -311,15 +325,17 @@ public class IndexBuilder {
      *
      * @return a comparator for index page items
      */
-    private Comparator<IndexItem> makeIndexComparator(boolean classesOnly) {
-        Comparator<Element> elementComparator = classesOnly
-                ? utils.comparators.makeAllClassesComparator()
-                : utils.comparators.makeIndexElementComparator();
-
-        Comparator<IndexItem> labelComparator =
-                (ii1, ii2) -> utils.compareStrings(ii1.getLabel(), ii2.getLabel());
+    private Comparator<IndexItem> makeIndexComparator() {
+        // We create comparators specific to element and search tag items, and a
+        // base comparator used to compare between the two kinds of items.
+        // In order to produce consistent results, it is important that the base comparator
+        // uses the same primary sort keys as both the element and search tag comparators
+        // (see JDK-8311264).
+        Comparator<Element> elementComparator = utils.comparators.makeIndexElementComparator();
+        Comparator<IndexItem> baseComparator =
+                (ii1, ii2) -> utils.compareStrings(getIndexItemKey(ii1), getIndexItemKey(ii2));
         Comparator<IndexItem> searchTagComparator =
-                labelComparator
+                baseComparator
                         .thenComparing(IndexItem::getHolder)
                         .thenComparing(IndexItem::getDescription)
                         .thenComparing(IndexItem::getUrl);
@@ -343,15 +359,23 @@ public class IndexBuilder {
                 return d;
             }
 
-            // If one is an element item, compare labels; if equal, put element item last
+            // If one is an element item, compare item keys; if equal, put element item last
             if (ii1.isElementItem() || ii2.isElementItem()) {
-                int d = labelComparator.compare(ii1, ii2);
+                int d = baseComparator.compare(ii1, ii2);
                 return d != 0 ? d : ii1.isElementItem() ? 1 : -1;
             }
 
             // Otherwise, compare labels and other fields of the items
             return searchTagComparator.compare(ii1, ii2);
         };
+    }
+
+    private String getIndexItemKey(IndexItem ii) {
+        // For element items return the key used by the element comparator;
+        // for search tag items return the item's label.
+        return ii.isElementItem()
+                ? utils.comparators.getIndexElementKey(ii.getElement())
+                : ii.getLabel();
     }
 
     /**

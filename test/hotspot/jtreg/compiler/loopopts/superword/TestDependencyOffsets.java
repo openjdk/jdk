@@ -25,10 +25,9 @@
  * Summary:
  *   Test SuperWord vectorization with different access offsets
  *   and various MaxVectorSize values, and +- AlignVector.
- *   Note: CompileCommand Option Vectorize is enabled.
  *
  * Note: this test is auto-generated. Please modify / generate with script:
- *       https://bugs.openjdk.org/browse/JDK-8298935
+ *       https://bugs.openjdk.org/browse/JDK-8308606
  *
  * Types: int, long, short, char, byte, float, double
  * Offsets: 0, -1, 1, -2, 2, -3, 3, -4, 4, -7, 7, -8, 8, -14, 14, -16, 16, -18, 18, -20, 20, -31, 31, -32, 32, -63, 63, -64, 64, -65, 65, -128, 128, -129, 129, -192, 192
@@ -91,7 +90,7 @@
 
 /*
  * @test id=vanilla-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @library /test/lib /
@@ -100,7 +99,7 @@
 
 /*
  * @test id=vanilla-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @library /test/lib /
@@ -109,7 +108,7 @@
 
 /*
  * @test id=sse4-v016-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -120,7 +119,7 @@
 
 /*
  * @test id=sse4-v016-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -131,7 +130,7 @@
 
 /*
  * @test id=sse4-v008-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -142,7 +141,7 @@
 
 /*
  * @test id=sse4-v008-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -153,7 +152,7 @@
 
 /*
  * @test id=sse4-v004-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -164,7 +163,7 @@
 
 /*
  * @test id=sse4-v004-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -175,7 +174,7 @@
 
 /*
  * @test id=sse4-v002-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -186,7 +185,7 @@
 
 /*
  * @test id=sse4-v002-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -197,7 +196,7 @@
 
 /*
  * @test id=avx1-v032-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -208,7 +207,7 @@
 
 /*
  * @test id=avx1-v032-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -219,7 +218,7 @@
 
 /*
  * @test id=avx1-v016-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -230,7 +229,7 @@
 
 /*
  * @test id=avx1-v016-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -241,7 +240,7 @@
 
 /*
  * @test id=avx2-v032-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -252,7 +251,7 @@
 
 /*
  * @test id=avx2-v032-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -263,7 +262,7 @@
 
 /*
  * @test id=avx2-v016-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -274,7 +273,7 @@
 
 /*
  * @test id=avx2-v016-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -285,7 +284,7 @@
 
 /*
  * @test id=avx512-v064-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -296,7 +295,7 @@
 
 /*
  * @test id=avx512-v064-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -307,7 +306,7 @@
 
 /*
  * @test id=avx512-v032-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -318,7 +317,7 @@
 
 /*
  * @test id=avx512-v032-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -329,7 +328,7 @@
 
 /*
  * @test id=avx512bw-v064-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -340,7 +339,7 @@
 
 /*
  * @test id=avx512bw-v064-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -351,7 +350,7 @@
 
 /*
  * @test id=avx512bw-v032-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -362,7 +361,7 @@
 
 /*
  * @test id=avx512bw-v032-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch=="x86" | os.arch=="i386" | os.arch=="amd64" | os.arch=="x86_64")
@@ -373,7 +372,7 @@
 
 /*
  * @test id=vec-v064-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -383,7 +382,7 @@
 
 /*
  * @test id=vec-v064-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -393,7 +392,7 @@
 
 /*
  * @test id=vec-v032-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -403,7 +402,7 @@
 
 /*
  * @test id=vec-v032-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -413,7 +412,7 @@
 
 /*
  * @test id=vec-v016-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -423,7 +422,7 @@
 
 /*
  * @test id=vec-v016-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -433,7 +432,7 @@
 
 /*
  * @test id=vec-v008-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -443,7 +442,7 @@
 
 /*
  * @test id=vec-v008-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -453,7 +452,7 @@
 
 /*
  * @test id=vec-v004-A
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -463,7 +462,7 @@
 
 /*
  * @test id=vec-v004-U
- * @bug 8298935
+ * @bug 8298935 8308606
  * @summary Test SuperWord: vector size, offsets, dependencies, alignment.
  * @requires vm.compiler2.enabled
  * @requires (os.arch!="x86" & os.arch!="i386" & os.arch!="amd64" & os.arch!="x86_64")
@@ -1262,7 +1261,6 @@ public class TestDependencyOffsets {
     public static void main(String args[]) {
         TestFramework framework = new TestFramework(TestDependencyOffsets.class);
         framework.addFlags("-XX:-TieredCompilation",
-                           "-XX:CompileCommand=option,compiler.loopopts.superword.TestDependencyOffsets::test*,Vectorize",
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::init",
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::test*",
                            "-XX:CompileCommand=compileonly,compiler.loopopts.superword.TestDependencyOffsets::verify",

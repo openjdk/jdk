@@ -35,6 +35,44 @@ import jdk.internal.vm.annotation.Stable;
  * @since 21
  */
 final class HexDigits implements Digits {
+    /**
+     * Each element of the array represents the ascii encoded
+     * hex relative to its index, for example:<p>
+     * <pre>
+     *       0 -> '00' -> ('0' << 8) | '0' -> 12336
+     *       1 -> '01' -> ('0' << 8) | '1' -> 12337
+     *       2 -> '02' -> ('0' << 8) | '2' -> 12338
+     *
+     *     ...
+     *
+     *      10 -> '0a' -> ('0' << 8) | 'a' -> 12385
+     *      11 -> '0b' -> ('0' << 8) | 'b' -> 12386
+     *      12 -> '0c' -> ('0' << 8) | 'b' -> 12387
+     *
+     *     ...
+     *
+     *      26 -> '1a' -> ('1' << 8) | 'a' -> 12641
+     *      27 -> '1b' -> ('1' << 8) | 'b' -> 12642
+     *      28 -> '1c' -> ('1' << 8) | 'c' -> 12643
+     *
+     *     ...
+     *
+     *     253 -> 'fd' -> ('f' << 8) | 'd' -> 26212
+     *     254 -> 'fe' -> ('f' << 8) | 'e' -> 26213
+     *     255 -> 'ff' -> ('f' << 8) | 'f' -> 26214
+     * </pre>
+     * <p>use like this:
+     * <pre>
+     *     int v = 254;
+     *
+     *     char[] chars = new char[2];
+     *
+     *     short i = DIGITS[v]; // 26213
+     *
+     *     chars[0] = (char) (byte) (i >> 8); // 'f'
+     *     chars[1] = (char) (byte) i;        // 'e'
+     * </pre>
+     */
     @Stable
     private static final short[] DIGITS;
 
@@ -62,6 +100,23 @@ final class HexDigits implements Digits {
      * Constructor.
      */
     private HexDigits() {
+    }
+
+    /**
+     * Combine two hex shorts into one int based on big endian
+     */
+    static int digit(int b0, int b1) {
+        return (DIGITS[b0 & 0xff] << 16) | DIGITS[b1 & 0xff];
+    }
+
+    /**
+     * Combine four hex shorts into one long based on big endian
+     */
+    static long digit(int b0, int b1, int b2, int b3) {
+        return (((long) DIGITS[b0 & 0xff]) << 48)
+                | (((long) DIGITS[b1 & 0xff]) << 32)
+                | (DIGITS[b2 & 0xff] << 16)
+                | DIGITS[b3 & 0xff];
     }
 
     @Override

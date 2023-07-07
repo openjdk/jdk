@@ -94,8 +94,9 @@ One might also want to restrict the application of certain `@IR` rules depending
 - `applyIfOr`:  Only apply a rule if **at least one** flag has the specified value/range of values.
 
 #### Disable/Enable IR Rules based on available CPU Features
-Sometimes, an `@IR` rule should only be applied if a certain CPU feature is present. This can be done with
-the attributes `applyIfCPUFeatureXXX` in [@IR](./IR.java) which follow the same logic as the `applyIfXXX` methods for flags in the previous section. If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction. An example with `applyIfCPUFeatureXXX` can be found in [TestCPUFeatureCheck](../../../testlibrary_tests/ir_framework/tests/TestCPUFeatureCheck.java) (internal framework test).
+Sometimes, an `@IR` rule should only be applied if a certain CPU feature is present. This can be done with the attributes `applyIfCPUFeatureXXX` in [@IR](./IR.java) which follow the same logic as the `applyIfXXX` methods for flags in the previous section. An example with `applyIfCPUFeatureXXX` can be found in [TestCPUFeatureCheck](../../../testlibrary_tests/ir_framework/tests/TestCPUFeatureCheck.java) (internal framework test).
+
+If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction. It's worth noting that flags in `applyIf` are checked only if the CPU features in `applyIfCPUFeature` are matched when they are both specified. This avoids the VM flag being evaluated on hardware that does not support it. An example with both `applyIfCPUFeatureXXX` and `applyIfXXX` can be found in [TestPreconditions](../../../testlibrary_tests/ir_framework/tests/TestPreconditions.java) (internal framework test).
 
 #### Implicitly Skipping IR Verification
 An IR verification cannot always be performed. Certain VM flags explicitly disable IR verification, change the IR shape in unexpected ways letting IR rules fail or even make IR verification impossible:

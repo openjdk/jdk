@@ -576,8 +576,8 @@ abstract class MethodHandleImpl {
             return;
         } else if (av == null) {
             throw new NullPointerException("null array reference");
-        } else if (av instanceof Object[]) {
-            int len = ((Object[])av).length;
+        } else if (av instanceof Object[] array) {
+            int len = array.length;
             if (len == n)  return;
         } else {
             int len = java.lang.reflect.Array.getLength(av);
@@ -1124,7 +1124,7 @@ abstract class MethodHandleImpl {
          * Method::invoke on a caller-sensitive method will call
          * MethodAccessorImpl::invoke(Object, Object[]) through reflect_invoke_V
          *     target.csm(args)
-         *     NativeMethodAccesssorImpl::invoke(target, args)
+         *     NativeMethodAccessorImpl::invoke(target, args)
          *     MethodAccessImpl::invoke(target, args)
          *     InjectedInvoker::reflect_invoke_V(vamh, target, args);
          *     method::invoke(target, args)
@@ -1683,7 +1683,7 @@ abstract class MethodHandleImpl {
      * @param tloop the return type of the loop.
      * @param targs types of the arguments to be passed to the loop.
      * @param init sanitized array of initializers for loop-local variables.
-     * @param step sanitited array of loop bodies.
+     * @param step sanitized array of loop bodies.
      * @param pred sanitized array of predicates.
      * @param fini sanitized array of loop finalizers.
      *
