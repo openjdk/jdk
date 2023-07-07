@@ -1987,7 +1987,7 @@ const int ObjectAlignmentInBytes = 8;
   product(uint, TrimNativeHeapInterval, 60 * 1000, EXPERIMENTAL,            \
           "If TrimNativeHeap is enabled: interval, in ms, at which "        \
           "the to trim the native heap.")                                   \
-          range(100, UINT_MAX)                                              \
+          range(1, UINT_MAX)                                                \
 
 // end of RUNTIME_FLAGS
 
