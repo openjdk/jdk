@@ -940,9 +940,9 @@ public final class AccessControlContext {
 
 
     /**
-     * {@return the hash code value for this context} The hash code
-     * is computed by exclusive or-ing the hash code of all the protection
-     * domains in the context together.
+     * {@return the hash code value for this context}
+     * The hash code is computed by exclusive or-ing the hash code of all the
+     * protection domains in the context together.
      */
     @Override
     public int hashCode() {
