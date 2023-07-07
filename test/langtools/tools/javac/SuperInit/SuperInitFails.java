@@ -154,4 +154,10 @@ public class SuperInitFails extends AtomicReference<Object> implements Iterable<
         new Foo();                      // this should FAIL
         super();
     }
+
+    public SuperInitFails(float[][] x) {
+        Runnable r = () -> {
+            super();                    // this should FAIL
+        };
+    }
 }
