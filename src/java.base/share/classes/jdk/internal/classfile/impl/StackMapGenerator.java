@@ -205,14 +205,14 @@ public final class StackMapGenerator {
      * New <code>Generator</code> instance must be created for each individual class/method.
      * Instance contains only immutable results, all the calculations are processed during instance construction.
      *
-     * @param labelContext <code>LableContext</code> instance used to resolve or patch <code>ExceptionHandler</code>
+     * @param labelContext <code>LabelContext</code> instance used to resolve or patch <code>ExceptionHandler</code>
      * labels to bytecode offsets (or vice versa)
      * @param thisClass class to generate stack maps for
      * @param methodName method name to generate stack maps for
      * @param methodDesc method descriptor to generate stack maps for
      * @param isStatic information whether the method is static
      * @param bytecode R/W <code>ByteBuffer</code> wrapping method bytecode, the content is altered in case <code>Generator</code> detects  and patches dead code
-     * @param cp R/W <code>ConstantPoolBuilder</code> instance used to resolve all involved CP entries and also generate new entries referenced from the generted stack maps
+     * @param cp R/W <code>ConstantPoolBuilder</code> instance used to resolve all involved CP entries and also generate new entries referenced from the generated stack maps
      * @param handlers R/W <code>ExceptionHandler</code> list used to detect mandatory frame offsets as well as to determine stack maps in exception handlers
      * and also to be altered when dead code is detected and must be excluded from exception handlers
      */
@@ -826,7 +826,7 @@ public final class StackMapGenerator {
         /**
      * Throws <code>java.lang.VerifyError</code> with given error message
      * @param msg error message
-     * @param offset bytecode offset where the error occured
+     * @param offset bytecode offset where the error occurred
      */
     private void generatorError(String msg, int offset) {
         var sb = new StringBuilder("%s at bytecode offset %d of method %s(%s)".formatted(
@@ -1291,7 +1291,7 @@ public final class StackMapGenerator {
             return new Type(ITEM_UNINITIALIZED, null, bci);
         }
 
-        @Override //mandatory overrride to avoid use of method reference during JDK bootstrap
+        @Override //mandatory override to avoid use of method reference during JDK bootstrap
         public boolean equals(Object o) {
             return (o instanceof Type t) && t.tag == tag && t.bci == bci && Objects.equals(sym, t.sym);
         }

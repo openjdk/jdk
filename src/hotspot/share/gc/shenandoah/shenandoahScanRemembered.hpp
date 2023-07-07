@@ -975,7 +975,7 @@ private:
   // smallest_chunk_size is 4 clusters.  Each cluster spans 128 KiB.
   // This is computed from CardTable::card_size_in_words() *
   //      ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
-  static const size_t smallest_chunk_size_words() {
+  static size_t smallest_chunk_size_words() {
       return _clusters_in_smallest_chunk * CardTable::card_size_in_words() *
              ShenandoahCardCluster<ShenandoahDirectCardMarkRememberedSet>::CardsPerCluster;
   }

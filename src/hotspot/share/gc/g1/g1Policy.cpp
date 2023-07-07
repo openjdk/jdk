@@ -398,7 +398,7 @@ uint G1Policy::calculate_young_target_length(uint desired_young_length) const {
 uint G1Policy::calculate_desired_eden_length_by_pause(double base_time_ms,
                                                       uint min_eden_length,
                                                       uint max_eden_length) const {
-  if (!next_gc_should_be_mixed(nullptr)) {
+  if (!next_gc_should_be_mixed()) {
     return calculate_desired_eden_length_before_young_only(base_time_ms,
                                                            min_eden_length,
                                                            max_eden_length);
@@ -797,7 +797,8 @@ void G1Policy::record_young_collection_end(bool concurrent_operation_is_full_mar
   } else if (G1GCPauseTypeHelper::is_mixed_pause(this_pause)) {
     // This is a mixed GC. Here we decide whether to continue doing more
     // mixed GCs or not.
-    if (!next_gc_should_be_mixed("do not continue mixed GCs")) {
+    if (!next_gc_should_be_mixed()) {
+      log_debug(gc, ergo)("do not continue mixed GCs (candidate old regions not available)");
       collector_state()->set_in_young_only_phase(true);
 
       assert(!candidates()->has_more_marking_candidates(),
@@ -1250,7 +1251,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
   bool mixed_gc_pending = false;
   if (has_rebuilt_remembered_sets) {
     G1CollectionSetChooser::build(_g1h->workers(), _g1h->num_regions(), candidates());
-    mixed_gc_pending = next_gc_should_be_mixed("request young-only gcs");
+    mixed_gc_pending = next_gc_should_be_mixed();
   }
 
   if (log_is_enabled(Trace, gc, liveness)) {
@@ -1260,6 +1261,7 @@ void G1Policy::record_concurrent_mark_cleanup_end(bool has_rebuilt_remembered_se
 
   if (!mixed_gc_pending) {
     abort_time_to_mixed_tracking();
+    log_debug(gc, ergo)("request young-only gcs (candidate old regions not available)");
   }
   collector_state()->set_in_young_gc_before_mixed(mixed_gc_pending);
   collector_state()->set_mark_or_rebuild_in_progress(false);
@@ -1360,17 +1362,9 @@ void G1Policy::abort_time_to_mixed_tracking() {
   _concurrent_start_to_mixed.reset();
 }
 
-bool G1Policy::next_gc_should_be_mixed(const char* no_candidates_str) const {
-  if (!candidates()->has_more_marking_candidates()) {
-    if (no_candidates_str != nullptr) {
-      log_debug(gc, ergo)("%s (candidate old regions not available)", no_candidates_str);
-    }
-    return false;
-  }
-  // Otherwise always continue mixed collection. There is no other reason to stop the
-  // mixed phase than there are no more candidates. All candidates not pruned earlier
-  // during candidate selection are worth collecting.
-  return true;
+bool G1Policy::next_gc_should_be_mixed() const {
+  // Mixed GCs should continue until marking candidates are completely consumed.
+  return candidates()->has_more_marking_candidates();
 }
 
 size_t G1Policy::allowed_waste_in_collection_set() const {

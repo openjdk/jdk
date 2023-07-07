@@ -444,23 +444,6 @@ typedef unsigned int uint;   NEEDS_CLEANUP
 typedef   signed char s_char;
 typedef unsigned char u_char;
 typedef u_char*       address;
-typedef uintptr_t     address_word; // unsigned integer which will hold a pointer
-                                    // except for some implementations of a C++
-                                    // linkage pointer to function. Should never
-                                    // need one of those to be placed in this
-                                    // type anyway.
-
-//  Utility functions to "portably" (?) bit twiddle pointers
-//  Where portable means keep ANSI C++ compilers quiet
-
-inline address       set_address_bits(address x, int m)       { return address(intptr_t(x) | m); }
-inline address       clear_address_bits(address x, int m)     { return address(intptr_t(x) & ~m); }
-
-//  Utility functions to "portably" make cast to/from function pointers.
-
-inline address_word  mask_address_bits(address x, int m)      { return address_word(x) & m; }
-inline address_word  castable_address(address x)              { return address_word(x) ; }
-inline address_word  castable_address(void* x)                { return address_word(x) ; }
 
 // Pointer subtraction.
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
@@ -503,7 +486,7 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // many C++ compilers.
 //
 #define CAST_TO_FN_PTR(func_type, value) (reinterpret_cast<func_type>(value))
-#define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((address_word)(func_ptr)))
+#define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((uintptr_t)(func_ptr)))
 
 // In many places we've added C-style casts to silence compiler
 // warnings, for example when truncating a size_t to an int when we

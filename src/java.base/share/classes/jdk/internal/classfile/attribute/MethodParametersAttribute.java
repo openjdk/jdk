@@ -45,7 +45,7 @@ public sealed interface MethodParametersAttribute
 
     /**
      * {@return information about the parameters of the method}  The i'th entry
-     * in the list correponds to the i'th parameter in the method declaration.
+     * in the list corresponds to the i'th parameter in the method declaration.
      */
     List<MethodParameterInfo> parameters();
 

@@ -324,7 +324,7 @@ public:
   static bool is_read_only_by_default() { return true; }
 
   // code size
-  int code_size() const                          { return _code_size; }
+  u2 code_size() const                          { return _code_size; }
   void set_code_size(int size) {
     assert(max_method_code_size < (1 << 16),
            "u2 is too small to hold method code size in general");
