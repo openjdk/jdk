@@ -103,14 +103,14 @@ public final class ClassHierarchyImpl {
     }
 
     public boolean isAssignableFrom(ClassDesc thisClass, ClassDesc fromClass) {
-        //extra check if fromClass is an interface is necessay to handle situation when thisClass might not been fully resolved and so it is potentially an unidentified interface
-        //this special corner-case handling has been added based on better success rate of constructing stack maps with simulated broken resulution of classes and interfaces
+        //extra check if fromClass is an interface is necessary to handle situation when thisClass might not been fully resolved and so it is potentially an unidentified interface
+        //this special corner-case handling has been added based on better success rate of constructing stack maps with simulated broken resolution of classes and interfaces
         if (isInterface(fromClass)) return resolve(thisClass).superClass() == null;
         //regular calculation of assignability is based on common ancestor calculation
         var anc = commonAncestor(thisClass, fromClass);
         //if common ancestor does not exist (as the class hierarchy could not be fully resolved) we optimistically assume the classes might be accessible
         //if common ancestor is equal to thisClass then the classes are clearly accessible
-        //if other common ancestor is calculated (which works even when their grand-parents could not be resolved) then it is clear that thisClass could not be asigned from fromClass
+        //if other common ancestor is calculated (which works even when their grandparents could not be resolved) then it is clear that thisClass could not be assigned from fromClass
         return anc == null || thisClass.equals(anc);
     }
 

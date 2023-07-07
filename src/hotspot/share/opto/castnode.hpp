@@ -117,7 +117,7 @@ class CastIINode: public ConstraintCastNode {
   virtual Node* Identity(PhaseGVN* phase);
   virtual const Type* Value(PhaseGVN* phase) const;
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
-  const bool has_range_check() {
+  bool has_range_check() {
 #ifdef _LP64
     return _range_check_dependency;
 #else

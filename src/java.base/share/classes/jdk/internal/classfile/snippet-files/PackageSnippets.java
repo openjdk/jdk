@@ -26,12 +26,11 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
 
 import java.lang.reflect.AccessFlag;
-import java.util.ArrayDeque;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -125,26 +124,33 @@ class PackageSnippets {
         // @end
     }
 
+    private static final ClassDesc CD_Hello = ClassDesc.of("Hello");
+    private static final ClassDesc CD_Foo = ClassDesc.of("Foo");
+    private static final ClassDesc CD_Bar = ClassDesc.of("Bar");
+    private static final ClassDesc CD_System = ClassDesc.of("java.lang.System");
+    private static final ClassDesc CD_PrintStream = ClassDesc.of("java.io.PrintStream");
+    private static final MethodTypeDesc MTD_void_StringArray = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType());
+    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String);
+
     void writeHelloWorld() {
         // @start region="helloWorld"
-        byte[] bytes = Classfile.of().build(ClassDesc.of("Hello"), cb -> {
+        byte[] bytes = Classfile.of().build(CD_Hello, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
-            cb.withMethod("<init>", MethodTypeDesc.of(ConstantDescs.CD_void), Classfile.ACC_PUBLIC,
+            cb.withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Classfile.ACC_PUBLIC,
                           mb -> mb.withCode(
                                   b -> b.aload(0)
-                                        .invokespecial(ConstantDescs.CD_Object, "<init>",
-                                                       MethodTypeDesc.of(ConstantDescs.CD_void))
+                                        .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME,
+                                                       ConstantDescs.MTD_void)
                                         .returnInstruction(TypeKind.VoidType)
                           )
               )
-              .withMethod("main", MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType()),
+              .withMethod("main", MTD_void_StringArray,
                           Classfile.ACC_PUBLIC,
                           mb -> mb.withFlags(AccessFlag.STATIC, AccessFlag.PUBLIC)
                                   .withCode(
-                                  b -> b.getstatic(ClassDesc.of("java.lang.System"), "out", ClassDesc.of("java.io.PrintStream"))
+                                  b -> b.getstatic(CD_System, "out", CD_PrintStream)
                                         .constantInstruction(Opcode.LDC, "Hello World")
-                                        .invokevirtual(ClassDesc.of("java.io.PrintStream"), "println",
-                                                       MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String))
+                                        .invokevirtual(CD_PrintStream, "println", MTD_void_String)
                                         .returnInstruction(TypeKind.VoidType)
             ));
         });
@@ -182,7 +188,7 @@ class PackageSnippets {
             if (e instanceof InvokeInstruction i
                     && i.owner().asInternalName().equals("Foo")
                     && i.opcode() == Opcode.INVOKESTATIC)
-                        b.invokeInstruction(i.opcode(), ClassDesc.of("Bar"), i.name().stringValue(), i.typeSymbol(), i.isInterface());
+                        b.invokeInstruction(i.opcode(), CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
             else b.with(e);
         };
         // @end
@@ -192,10 +198,9 @@ class PackageSnippets {
         // @start region="instrumentCallsTransform"
         CodeTransform instrumentCalls = (b, e) -> {
             if (e instanceof InvokeInstruction i) {
-                b.getstatic(ClassDesc.of("java.lang.System"), "out", ClassDesc.of("java.io.PrintStream"))
+                b.getstatic(CD_System, "out", CD_PrintStream)
                  .constantInstruction(Opcode.LDC, i.name().stringValue())
-                 .invokevirtual(ClassDesc.of("java.io.PrintStream"), "println",
-                                MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String));
+                 .invokevirtual(CD_PrintStream, "println", MTD_void_String);
             }
             b.with(e);
         };
@@ -217,7 +222,7 @@ class PackageSnippets {
                                               for (CodeElement e : xm) {
                                                   if (e instanceof InvokeInstruction i && i.owner().asInternalName().equals("Foo")
                                                                                && i.opcode() == Opcode.INVOKESTATIC)
-                                                              codeBuilder.invokeInstruction(i.opcode(), ClassDesc.of("Bar"),
+                                                              codeBuilder.invokeInstruction(i.opcode(), CD_Bar,
                                                                                             i.name().stringValue(), i.typeSymbol(), i.isInterface());
                                                   else codeBuilder.with(e);
                                               }});
@@ -303,7 +308,7 @@ class PackageSnippets {
                                     !(cle instanceof FieldModel fm
                                             && !targetFieldNames.contains(fm.fieldName().stringValue()))
                                     && !(cle instanceof MethodModel mm
-                                            && !"<init>".equals(mm.methodName().stringValue())
+                                            && !ConstantDescs.INIT_NAME.equals(mm.methodName().stringValue())
                                             && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
                             //and instrumentor class references remapped to target class
                             .andThen(instrumentorClassRemapper)))));
