@@ -36,7 +36,6 @@
 #include "runtime/trimNative.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "utilities/ticks.hpp"
 
 class NativeTrimmerThread : public NamedThread {
 
@@ -76,7 +75,9 @@ class NativeTrimmerThread : public NamedThread {
   }
   static constexpr int safepoint_poll_ms = 250;
 
-  static int64_t now() { return os::javaTimeMillis(); }
+  // in seconds
+  static double now() { return os::elapsedTime(); }
+  static double to_ms(double seconds) { return seconds * 1000.0; }
 
   void run() override {
     log_info(trim)("NativeTrimmer start.");
@@ -90,8 +91,9 @@ class NativeTrimmerThread : public NamedThread {
 
     for (;;) {
 
-      int64_t tnow = now();
-      int64_t next_trim_time = tnow + TrimNativeHeapInterval;
+      double tnow = now();
+      const double interval_secs = (double)TrimNativeHeapInterval / 1000;
+      double next_trim_time = tnow + interval_secs;
 
       {
         MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
@@ -106,13 +108,15 @@ class NativeTrimmerThread : public NamedThread {
             return;
           }
 
+          int64_t wait_ms = 0;
           if (suspended()) {
-            ml.wait(0);
+            wait_ms = 0; // infinite
           } else if (next_trim_time > tnow) {
-            ml.wait(next_trim_time - tnow);
+            wait_ms = MAX2(1.0, to_ms(next_trim_time - tnow));
           } else if (at_or_nearing_safepoint()) {
-            ml.wait(safepoint_poll_ms);
+            wait_ms = safepoint_poll_ms;
           }
+          ml.wait(wait_ms);
 
           if (_stop) {
             return;
@@ -131,23 +135,22 @@ class NativeTrimmerThread : public NamedThread {
   }
 
   // Execute the native trim, log results.
-  bool execute_trim_and_log(int64_t tnow) const {
+  bool execute_trim_and_log(double t1) const {
     assert(os::can_trim_native_heap(), "Unexpected");
     os::size_change_t sc;
-    Ticks start = Ticks::now();
     log_debug(trim)("Trim native heap started...");
     if (os::trim_native_heap(&sc)) {
-      Tickspan trim_time = (Ticks::now() - start);
+      double t2 = now();
       if (sc.after != SIZE_MAX) {
         const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
         const char sign = sc.after < sc.before ? '-' : '+';
         log_info(trim)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
                            PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
-                           trim_time.seconds() * 1000);
+                           to_ms(t2 - t1));
         log_debug(trim)("Total trims: " UINT64_FORMAT ".", _num_trims_performed);
         return true;
       } else {
-        log_info(trim)("Trim native heap (no details)");
+        log_info(trim)("Trim native heap: complete, no details, %1.3fms", to_ms(t2 - t1));
       }
     }
     return false;
@@ -207,6 +210,7 @@ public:
 static NativeTrimmerThread* g_trimmer_thread = nullptr;
 
 void TrimNative::initialize() {
+  assert(g_trimmer_thread == nullptr, "Only once");
   if (TrimNativeHeap) {
     if (!os::can_trim_native_heap()) {
       FLAG_SET_ERGO(TrimNativeHeap, false);
