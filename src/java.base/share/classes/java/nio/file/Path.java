@@ -517,6 +517,89 @@ public interface Path
     }
 
     /**
+     * Resolves a path or a sequence of paths against this path.
+     *
+     * <p> The result of this method is the same as would be obtained
+     * by resolving the first parameter path against this path, then
+     * resovling the second parameter path against the derived path,
+     * and so on until all parameters have been processed. Each single
+     * resolution in the chain behaves as specified by {@linkplain
+     * #resolve(Path) resolve}.
+     *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * {@snippet lang=java :
+     * Path result = resolve(first);
+     * for (Path p : more) {
+     *     result = result.resolve(p);
+     * }
+     * }
+     *
+     * @param first the first path to resolve against this path
+     *
+     * @param more additional paths to be joined to form the path
+     *
+     * @return the resulting path
+     *
+     * @throws  InvalidPathException
+     *          if the path string cannot be converted to a Path.
+     *
+     * @see #resolve(Path)
+     *
+     * @since 22
+     */
+    default Path resolve(Path first, Path... more) {
+        Path result = resolve(first);
+        for (Path p : more) {
+            result = result.resolve(p);
+        }
+        return result;
+    }
+
+    /**
+     * Converts a path string or a sequence of path strings into one or more
+     * {@code Path}s and resolves them against this {@code Path} in exactly
+     * the same manner specified by the {@link #resolve(Path,Path...) resolve}
+     * method.
+     *
+     * <p> The result of this method is the same as would be obtained
+     * by resolving the first parameter path string against this path, then
+     * resovling the second parameter path string against the derived path,
+     * and so on until all parameters have been processed. Each single
+     * resolution in the chain behaves as specified by {@linkplain
+     * #resolve(String) resolve}.
+     *
+     * @implSpec
+     * The default implementation is equivalent for this path to:
+     * {@snippet lang=java :
+     * Path result = resolve(first);
+     * for (String s : more) {
+     *     result = result.resolve(s);
+     * }
+     * }
+     *
+     * @param first the first path string to resolve against this path
+     *
+     * @param more additional path strings to be joined to form the path
+     *
+     * @return the resulting path
+     *
+     * @throws  InvalidPathException
+     *          if the path string cannot be converted to a Path.
+     *
+     * @see #resolve(String)
+     *
+     * @since 22
+     */
+    default Path resolve(String first, String... more) {
+        Path result = resolve(first);
+        for (String s : more) {
+            result = result.resolve(s);
+        }
+        return result;
+    }
+
+    /**
      * Resolves the given path against this path's {@link #getParent parent}
      * path. This is useful where a file name needs to be <i>replaced</i> with
      * another file name. For example, suppose that the name separator is

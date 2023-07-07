@@ -395,6 +395,84 @@ class UnixPath implements Path {
         return resolve(new UnixPath(getFileSystem(), other));
     }
 
+   private static final byte[] resolve(byte[] base, byte[]... descendants) {
+       // 'start' is either zero, indicating the base, or indicates which
+       // descendant is that last one which is an absolute path
+       int start = 0;
+       int length = base.length;
+
+       // Locate the last descendant which is an absolute path and calculate
+       // the total number of bytes in the resolved path
+       final int count = descendants.length;
+       if (count > 0) {
+           for (int i = 0; i < count; i++) {
+               byte[] b = descendants[i];
+               if (b.length > 0) {
+                   if (b[0] == '/') {
+                       start = i + 1;
+                       length = b.length;
+                   } else {
+                       if (length > 0)
+                           length++;
+                       length += b.length;
+                   }
+               }
+           }
+       }
+
+       // If the base is not being superseded by a descendant which is an
+       // absolute path, then if at least one descendant is non-empty and
+       // the base consists only of a '/', then decrement the length to
+       // account for an extra '/' added in the length computation.
+       if (start == 0 && length > base.length &&
+           base.length == 1 && base[0] == '/')
+           length--;
+
+       // Allocate the result array and return if empty.
+       byte[] result = new byte[length];
+       if (result.length == 0)
+           return result;
+
+       // Prepend the base if it is non-empty and would not later be
+       // overwritten by an absolute descendant
+       int offset = 0;
+       if (start == 0 && base.length > 0) {
+           System.arraycopy(base, 0, result, 0, base.length);
+           offset += base.length;
+       }
+
+       // Append descendants starting with the last one which is an
+       // absolute path
+       if (count > 0) {
+           int idx = Math.max(0, start - 1);
+           for (int i = idx; i < count; i++) {
+               byte[] b = descendants[i];
+               if (b.length > 0) {
+                   if (offset > 0 && result[offset - 1] != '/')
+                       result[offset++] = '/';
+                   System.arraycopy(b, 0, result, offset, b.length);
+                   offset += b.length;
+               }
+           }
+       }
+
+       return result;
+   }
+
+    @Override
+    public UnixPath resolve(Path first, Path... more) {
+        if (more.length == 0)
+            return resolve(first);
+
+        byte[][] descendants = new byte[1 + more.length][];
+        descendants[0] = toUnixPath(first).path;
+        for (int i = 0; i < more.length; i++)
+            descendants[i + 1] = toUnixPath(more[i]).path;
+
+        byte[] result = resolve(path, descendants);
+        return new UnixPath(getFileSystem(), result);
+    }
+
     @Override
     public UnixPath relativize(Path obj) {
         UnixPath child = toUnixPath(obj);
