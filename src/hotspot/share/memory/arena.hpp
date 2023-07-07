@@ -94,9 +94,10 @@ protected:
 
   MEMFLAGS    _flags;           // Memory tracking flags
 
-  Chunk *_first;                // First chunk
-  Chunk *_chunk;                // current chunk
-  char *_hwm, *_max;            // High water mark and max in current chunk
+  Chunk* _first;                // First chunk
+  Chunk* _chunk;                // current chunk
+  char* _hwm;                   // High water mark
+  char* _max;                   // and max in current chunk
   // Get a new Chunk of at least size x
   void* grow(size_t x, AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM);
   size_t _size_in_bytes;        // Size of arena (used for native memory tracking)
