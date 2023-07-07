@@ -43,6 +43,7 @@ import static org.testng.Assert.*;
 
 public class TestLayouts {
 
+    boolean byteorder = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
     @Test(dataProvider = "badAlignments", expectedExceptions = IllegalArgumentException.class)
     public void testBadLayoutAlignment(MemoryLayout layout, long alignment) {
         layout.withByteAlignment(alignment);
@@ -261,9 +262,9 @@ public class TestLayouts {
     @Test
     public void testStructToString() {
         StructLayout padding = MemoryLayout.structLayout(JAVA_INT).withName("struct");
-        assertEquals(padding.toString(), "[i4](struct)");
+        assertEquals(padding.toString(), byteorder ? "[i4](struct)" : "[I4](struct)");
         var toStringUnaligned = padding.withByteAlignment(8).toString();
-        assertEquals(toStringUnaligned, "8%[i4](struct)");
+        assertEquals(toStringUnaligned, byteorder ? "8%[i4](struct)" : "8%[I4](struct)");
     }
 
     @Test(dataProvider = "layoutKinds")

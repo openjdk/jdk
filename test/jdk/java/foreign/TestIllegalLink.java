@@ -54,6 +54,7 @@ import static org.testng.Assert.fail;
 public class TestIllegalLink extends NativeTestHelper {
 
     private static final boolean IS_SYSV = CABI.current() == CABI.SYS_V;
+    private static final boolean byteorder = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN;
 
     private static final MemorySegment DUMMY_TARGET = MemorySegment.ofAddress(1);
     private static final MethodHandle DUMMY_TARGET_MH = MethodHandles.empty(MethodType.methodType(void.class));
@@ -113,27 +114,27 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.of(MemoryLayout.sequenceLayout(2, C_INT)),
                     NO_OPTIONS,
-                    "Unsupported layout: [2:i4]"
+                    byteorder ? "Unsupported layout: [2:i4]" : "Unsupported layout: [2:I4]"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.sequenceLayout(2, C_INT)),
                     NO_OPTIONS,
-                    "Unsupported layout: [2:i4]"
+                    byteorder ? "Unsupported layout: [2:i4]" : "Unsupported layout: [2:I4]"
             },
             {
                     FunctionDescriptor.ofVoid(C_INT.withByteAlignment(2)),
                     NO_OPTIONS,
-                    "Unsupported layout: 2%i4"
+                    byteorder ? "Unsupported layout: 2%i4" : "Unsupported layout: 2%I4"
             },
             {
                     FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
                     NO_OPTIONS,
-                    "Unsupported layout: 2%a8"
+                    byteorder ? "Unsupported layout: 2%a8" : "Unsupported layout: 2%A8"
             },
             {
                     FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
                     NO_OPTIONS,
-                    "Unsupported layout: 4%c2"
+                    byteorder ? "Unsupported layout: 4%c2" : "Unsupported layout: 4%C2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -142,7 +143,7 @@ public class TestIllegalLink extends NativeTestHelper {
                             C_INT.withName("z").withByteAlignment(1)
                             ).withByteAlignment(1)),
                     NO_OPTIONS,
-                    "Unsupported layout: 1%s2"
+                    byteorder ? "Unsupported layout: 1%s2" : "Unsupported layout: 1%S2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -152,7 +153,7 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_INT.withName("z").withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
-                    "Unsupported layout: 1%s2"
+                    byteorder ? "Unsupported layout: 1%s2" : "Unsupported layout: 1%S2"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -160,7 +161,7 @@ public class TestIllegalLink extends NativeTestHelper {
                                 C_INT.withByteAlignment(1)
                             ))),
                     NO_OPTIONS,
-                    "Unsupported layout: 1%i4"
+                    byteorder ? "Unsupported layout: 1%i4" : "Unsupported layout: 1%I4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -173,17 +174,17 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.of(C_INT.withOrder(nonNativeOrder())),
                     NO_OPTIONS,
-                    "Unsupported layout: I4"
+                    byteorder ? "Unsupported layout: I4" : "Unsupported layout: i4"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(C_INT.withOrder(nonNativeOrder()))),
                     NO_OPTIONS,
-                    "Unsupported layout: I4"
+                    byteorder ? "Unsupported layout: I4" : "Unsupported layout: i4"
             },
             {
                     FunctionDescriptor.of(MemoryLayout.structLayout(MemoryLayout.sequenceLayout(C_INT.withOrder(nonNativeOrder())))),
                     NO_OPTIONS,
-                    "Unsupported layout: I4"
+                    byteorder ? "Unsupported layout: I4" : "Unsupported layout: i4"
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
@@ -227,5 +228,4 @@ public class TestIllegalLink extends NativeTestHelper {
                 ? ByteOrder.BIG_ENDIAN
                 : ByteOrder.LITTLE_ENDIAN;
     }
-
 }

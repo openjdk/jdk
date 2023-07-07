@@ -31,6 +31,7 @@
 import java.lang.foreign.Arena;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SymbolLookup;
+import java.nio.ByteOrder;
 import org.testng.annotations.Test;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
@@ -58,8 +59,8 @@ public class TestClassLoaderFindNative {
 
     @Test
     public void testVariableSymbolLookup() {
-        MemorySegment segment = SymbolLookup.loaderLookup().find("c").get().reinterpret(1);
-        assertEquals(segment.get(JAVA_BYTE, 0), 42);
+        MemorySegment segment = SymbolLookup.loaderLookup().find("c").get().reinterpret(ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ? 1 : 4);
+        assertEquals(segment.get(JAVA_BYTE, ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN ? 0 : 3), 42);
     }
 
     @Test

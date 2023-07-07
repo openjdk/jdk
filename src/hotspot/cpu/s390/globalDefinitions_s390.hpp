@@ -28,7 +28,7 @@
 
 #define ShortenBranches true
 
-const int StackAlignmentInBytes = 16;
+const int StackAlignmentInBytes = 8;
 
 #define SUPPORTS_NATIVE_CX8
 
