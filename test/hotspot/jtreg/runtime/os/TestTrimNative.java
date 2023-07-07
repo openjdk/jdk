@@ -35,6 +35,16 @@
  */
 
 /*
+ * @test id=trimNativeHighInterval
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative testWithHighTrimInterval
+ */
+
+/*
  * @test id=testOffByDefault
  * @summary Test that trimming is disabled by default
  * @requires (os.family=="linux") & !vm.musl
@@ -108,7 +118,7 @@ public class TestTrimNative {
         allOptions.add("-XX:-ExplicitGCInvokesConcurrent"); // Invoke explicit GC on System.gc
         allOptions.add("-Xlog:trimnh=debug");
         allOptions.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
-        allOptions.add(TestTrimNative.class.getName());
+        allOptions.add(TestTrimNative.Tester.class.getName());
         if (programOptions != null) {
             allOptions.addAll(Arrays.asList(programOptions));
         }
@@ -167,90 +177,27 @@ public class TestTrimNative {
             throw new RuntimeException("We found fewer (periodic) trim lines in UL log than expected (expected at least " + minTrimsExpected +
                     ", found " + numTrimsFound + ").");
         }
-        // This is very fuzzy. Test program malloced X bytes, then freed them again and trimmed. But the log line prints change in RSS.
-        // Which, of course, is influenced by a lot of other factors. But we expect to see *some* reasonable reduction in RSS
-        // due to trimming.
-        float fudge = 0.5f;
-        // On ppc, we see a vastly diminished return (~3M reduction instead of ~200), I suspect because of the underlying
-        // 64k pages lead to a different geometry. Manual tests with larger reclaim sizes show that autotrim works. For
-        // this test, we just reduce the fudge factor.
-        if (Platform.isPPC()) { // le and be both
-            fudge = 0.01f;
+        if (maxTrimsExpected > 0) {
+            // This is very fuzzy. Test program malloced X bytes, then freed them again and trimmed. But the log line prints change in RSS.
+            // Which, of course, is influenced by a lot of other factors. But we expect to see *some* reasonable reduction in RSS
+            // due to trimming.
+            float fudge = 0.5f;
+            // On ppc, we see a vastly diminished return (~3M reduction instead of ~200), I suspect because of the underlying
+            // 64k pages lead to a different geometry. Manual tests with larger reclaim sizes show that autotrim works. For
+            // this test, we just reduce the fudge factor.
+            if (Platform.isPPC()) { // le and be both
+                fudge = 0.01f;
+            }
+            long expectedMinimalReduction = (long) (totalAllocationsSize * fudge);
+            if (rssReductionTotal < expectedMinimalReduction) {
+                throw new RuntimeException("We did not see the expected RSS reduction in the UL log. Expected (with fudge)" +
+                        " to see at least a combined reduction of " + expectedMinimalReduction + ".");
+            }
         }
-        long expectedMinimalReduction = (long) (totalAllocationsSize * fudge);
-        if (rssReductionTotal < expectedMinimalReduction) {
-            throw new RuntimeException("We did not see the expected RSS reduction in the UL log. Expected (with fudge)" +
-                    " to see at least a combined reduction of " + expectedMinimalReduction + ".");
-        }
     }
 
-    static private final void runTest(String[] VMargs) throws IOException {
-        long trimInterval = 500; // twice per second
-        long ms1 = System.currentTimeMillis();
-        OutputAnalyzer output = runTestWithOptions (
-                new String[] { "-XX:+UnlockExperimentalVMOptions",
-                               "-XX:+TrimNativeHeap",
-                               "-XX:TrimNativeHeapInterval=" + trimInterval },
-                new String[] { "RUN", "5000" }
-        );
-        long ms2 = System.currentTimeMillis();
-        long runtime_ms = ms2 - ms1;
-
-        checkExpectedLogMessages(output, true, 500);
-
-        long maxTrimsExpected = runtime_ms / trimInterval;
-        long minTrimsExpected = maxTrimsExpected / 2;
-        parseOutputAndLookForNegativeTrim(output, (int)minTrimsExpected, (int)maxTrimsExpected);
-    }
-
-    // Test that a high trim interval effectively disables trimming
-    static private final void testHighTrimInterval() throws IOException {
-        OutputAnalyzer output = runTestWithOptions (
-                new String[] { "-XX:+UnlockExperimentalVMOptions",
-                               "-XX:+TrimNativeHeap",
-                               "-XX:TrimNativeHeapInterval=" + Integer.MAX_VALUE },
-                new String[] { "RUN", "5000" }
-        );
-        checkExpectedLogMessages(output, true, Integer.MAX_VALUE);
-        parseOutputAndLookForNegativeTrim(output,0, /*  minTrimsExpected */ 0  /*  maxTrimsExpected */);
-    }
-
-    // Test that trim-native gets disabled on platforms that don't support it.
-    static private final void testOffOnNonCompliantPlatforms() throws IOException {
-        OutputAnalyzer output = runTestWithOptions (
-                new String[] { "-XX:+UnlockExperimentalVMOptions",
-                               "-XX:+TrimNativeHeap" },
-                new String[] { "RUN", "0" }
-        );
-        checkExpectedLogMessages(output, false, 0);
-        output.shouldContain("Native trim not supported on this platform");
-    }
-
-    // Test trim native is disabled if explicitly switched off
-    static private final void testOffExplicit() throws IOException {
-        OutputAnalyzer output = runTestWithOptions (
-                new String[] { "-XX:+UnlockExperimentalVMOptions",
-                               "-XX:-TrimNativeHeap"
-                },
-                new String[] { "RUN", "0" }
-                );
-        checkExpectedLogMessages(output, false, 0);
-    }
-
-    // Test trim native is disabled if explicitly switched off
-    static private final void testOffByDefault() throws IOException {
-        OutputAnalyzer output = runTestWithOptions (null, new String[] { "RUN", "0" } );
-        checkExpectedLogMessages(output, false, 0);
-    }
-
-    public static void main(String[] args) throws Exception {
-
-        if (args.length == 0) {
-            throw new RuntimeException("Argument error");
-        }
-
-        if (args[0].equals("RUN")) {
-
+    static class Tester {
+        public static void main(String[] args) throws Exception {
             System.out.println("Will spike now...");
             WhiteBox wb = WhiteBox.getWhiteBox();
             for (int i = 0; i < numAllocations; i++) {
@@ -270,19 +217,73 @@ public class TestTrimNative {
             System.out.println("Sleeping...");
             Thread.sleep(3000);
             System.out.println("Done.");
+        }
+    }
 
-            return;
+    public static void main(String[] args) throws Exception {
 
-        } else if (args[0].equals("test")) {
-            runTest(Arrays.copyOfRange(args, 1, args.length));
-        } else if (args[0].equals("testOffOnNonCompliantPlatforms")) {
-            testOffOnNonCompliantPlatforms();
-        } else if (args[0].equals("testOffExplicit")) {
-            testOffExplicit();
-        } else if (args[0].equals("testOffByDefault")) {
-            testOffByDefault();
-        } else {
-            throw new RuntimeException("Invalid test " + args[0]);
+        if (args.length == 0) {
+            throw new RuntimeException("Argument error");
+        }
+
+        switch (args[0]) {
+            case "test": {
+                long trimInterval = 500; // twice per second
+                long ms1 = System.currentTimeMillis();
+                OutputAnalyzer output = runTestWithOptions(
+                        new String[]{"-XX:+UnlockExperimentalVMOptions",
+                                "-XX:+TrimNativeHeap",
+                                "-XX:TrimNativeHeapInterval=" + trimInterval},
+                        new String[]{"RUN", "5000"}
+                );
+                long ms2 = System.currentTimeMillis();
+                long runtime_ms = ms2 - ms1;
+
+                checkExpectedLogMessages(output, true, 500);
+
+                long maxTrimsExpected = runtime_ms / trimInterval;
+                long minTrimsExpected = maxTrimsExpected / 2;
+                parseOutputAndLookForNegativeTrim(output, (int) minTrimsExpected, (int) maxTrimsExpected);
+            } break;
+
+            case "testWithHighTrimInterval": {
+                OutputAnalyzer output = runTestWithOptions(
+                        new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+TrimNativeHeap", "-XX:TrimNativeHeapInterval=" + Integer.MAX_VALUE},
+                        new String[]{"RUN", "5000"}
+                );
+                checkExpectedLogMessages(output, true, Integer.MAX_VALUE);
+                // We should not see any trims since the interval would prevent them
+                parseOutputAndLookForNegativeTrim(output, 0, 0);
+            } break;
+
+            case "testOffOnNonCompliantPlatforms": {
+                OutputAnalyzer output = runTestWithOptions(
+                        new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+TrimNativeHeap"},
+                        new String[]{"RUN", "0"}
+                );
+                checkExpectedLogMessages(output, false, 0);
+                parseOutputAndLookForNegativeTrim(output, 0, 0);
+                output.shouldContain("Native trim not supported on this platform");
+            } break;
+
+            case "testOffExplicit": {
+                OutputAnalyzer output = runTestWithOptions(
+                        new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:-TrimNativeHeap"},
+                        new String[]{"RUN", "0"}
+                );
+                checkExpectedLogMessages(output, false, 0);
+                parseOutputAndLookForNegativeTrim(output, 0, 0);
+            } break;
+
+            case "testOffByDefault": {
+                OutputAnalyzer output = runTestWithOptions(null, new String[]{"RUN", "0"});
+                checkExpectedLogMessages(output, false, 0);
+                parseOutputAndLookForNegativeTrim(output, 0, 0);
+            } break;
+
+            default:
+                throw new RuntimeException("Invalid test " + args[0]);
+
         }
     }
 }
