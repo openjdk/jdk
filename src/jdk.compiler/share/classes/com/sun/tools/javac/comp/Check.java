@@ -3919,11 +3919,9 @@ public class Check {
 
         // enter each constructor this-call into the map
         for (List<JCTree> l = tree.defs; l.nonEmpty(); l = l.tail) {
-            if (!l.head.hasTag(METHODDEF))
+            if (!TreeInfo.isConstructor(l.head))
                 continue;
             JCMethodDecl meth = (JCMethodDecl)l.head;
-            if (meth.name != names.init)
-                continue;
             JCMethodInvocation app = TreeInfo.findConstructorCall(meth);
             if (app != null && TreeInfo.name(app.meth) == names._this) {
                 callMap.put(meth.sym, TreeInfo.symbol(app.meth));
@@ -3995,7 +3993,7 @@ public class Check {
             Assert.check(scanDepth == 1);
 
             // Initialize state for this method
-            constructor = tree.name == names.init;
+            constructor = TreeInfo.isConstructor(tree);
             try {
 
                 // Scan method body

@@ -548,7 +548,7 @@ public class Gen extends JCTree.Visitor {
      *  @param initTAs  Type annotations from the initializer expression.
      */
     void normalizeMethod(JCMethodDecl md, List<JCStatement> initCode, List<TypeCompound> initTAs) {
-        if (md.name == names.init && TreeInfo.hasConstructorCall(md, names._super)) {
+        if (TreeInfo.isConstructor(md) && TreeInfo.hasConstructorCall(md, names._super)) {
             // We are seeing a constructor that has a super() call.
             // Find the super() invocation and append the given initializer code.
             TreeInfo.mapSuperCalls(md.body, supercall -> make.Block(0, initCode.prepend(supercall)));

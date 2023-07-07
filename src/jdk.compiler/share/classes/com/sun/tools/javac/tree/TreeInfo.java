@@ -237,10 +237,9 @@ public class TreeInfo {
     /** Find the first super() or init() call in the given constructor.
      */
     public static JCMethodInvocation findConstructorCall(JCMethodDecl md) {
-        Names names = md.name.table.names;
-        if (md.name != names.init || md.body == null)
+        if (!TreeInfo.isConstructor(md) || md.body == null)
             return null;
-        return new ConstructorCallFinder(names).find(md).head;
+        return new ConstructorCallFinder(md.name.table.names).find(md).head;
     }
 
     /** Finds all calls to this() and/or super() in a given constructor.

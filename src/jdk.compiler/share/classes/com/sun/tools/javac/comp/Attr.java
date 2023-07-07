@@ -1050,7 +1050,7 @@ public class Attr extends JCTree.Visitor {
             }
 
             // Is this method a constructor?
-            boolean isConstructor = tree.name == names.init;
+            boolean isConstructor = TreeInfo.isConstructor(tree);
 
             if (env.enclClass.sym.isRecord() && tree.sym.owner.kind == TYP) {
                 // lets find if this method is an accessor
