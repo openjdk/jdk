@@ -1172,6 +1172,9 @@ public:
                                 const ClassFileStream* cfs) const;
  private:
   void print_class_load_cause_logging() const;
+  void print_class_load_helper(ClassLoaderData* loader_data,
+                               const ModuleEntry* module_entry,
+                               const ClassFileStream* cfs) const;
 };
 
 // for adding methods
