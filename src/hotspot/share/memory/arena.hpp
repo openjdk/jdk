@@ -66,8 +66,6 @@ class Chunk {
     non_pool_size = init_size + 32 // An initial size which is not one of above
   };
 
-  static Chunk* allocate_chunk(AllocFailType alloc_failmode, size_t length);
-  static void deallocate_chunk(Chunk* chunk);
   static void chop(Chunk* chunk);                  // Chop this chunk
   static void next_chop(Chunk* chunk);             // Chop next chunk
   static size_t aligned_overhead_size(void) { return ARENA_ALIGN(sizeof(Chunk)); }
@@ -80,6 +78,34 @@ class Chunk {
   char* bottom() const          { return ((char*) this) + aligned_overhead_size();  }
   char* top()    const          { return bottom() + _len; }
   bool contains(char* p) const  { return bottom() <= p && p <= top(); }
+};
+
+// MT-safe pool of same-sized chunks to reduce malloc/free thrashing
+// NB: not using Mutex because pools are used before Threads are initialized
+class ChunkPool {
+  // Our four static pools
+  static const int _num_pools = 4;
+  static ChunkPool _pools[_num_pools];
+
+  Chunk*       _first;        // first cached Chunk; its first word points to next chunk
+  const size_t _size;         // (inner payload) size of the chunks this pool serves
+
+  // Allocate a chunk from the pool; returns null if pool is empty.
+  Chunk* take_from_pool();
+  // Return a chunk to the pool
+  void return_to_pool(Chunk* chunk);
+  // Prune the pool
+  void prune();
+
+  // Given a (inner payload) size, return the pool responsible for it, or null if the size is non-standard
+  static ChunkPool* get_pool_for_size(size_t size);
+
+public:
+  ChunkPool(size_t size) : _first(nullptr), _size(size) {}
+
+  static void clean();
+  static Chunk* allocate_chunk(AllocFailType alloc_failmode, size_t length);
+  static void deallocate_chunk(Chunk* p);
 
   // Start the chunk_pool cleaner task
   static void start_chunk_pool_cleaner_task();
