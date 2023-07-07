@@ -656,9 +656,7 @@ public abstract class AbstractChronology implements Chronology {
      * Subclasses must compare any additional state that they store.
      *
      * @param other  the other chronology to compare to, not null
-     * @return the comparator value, that is less than zero if {@code other}'s ID string
-     *          is lexicographically before this ID string, zero if they are equal,
-     *          greater than zero if {@code other}'s ID string is lexicographically after this ID string
+     * @return the comparator value, that is this ID string compared with the {@code other}'s ID string
      */
     @Override
     public int compareTo(Chronology other) {

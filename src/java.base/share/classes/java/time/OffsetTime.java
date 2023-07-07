@@ -1283,7 +1283,7 @@ public final class OffsetTime
      * @param other  the other time to compare to, not null
      * @return the comparator value, that is the comparison of the UTC equivalent {@code other} instant,
      *          if they are not equal, and if the UTC equivalent {@code other} instant is equal,
-     *          the comparison of the {@code other} local date-time
+     *          the comparison of this local date-time with {@code other} local date-time
      * @see #isBefore
      * @see #isAfter
      */

@@ -569,9 +569,8 @@ public interface ChronoZonedDateTime<D extends ChronoLocalDate>
      * This default implementation performs the comparison defined above.
      *
      * @param other  the other date-time to compare to, not null
-     * @return the comparator value, that is the comparison of the {@code other} instant,
-     *          the {@code other} local date-time, the {@code other} zone ID,
-     *          and the {@code other} chronology, in order, returning the first non-zero result,
+     * @return the comparator value, that is the comparison of this with the {@code other} values for the instant,
+     *          the local date-time, the zone ID, and the chronology, in order, returning the first non-zero result,
      *          and otherwise returning zero
      * @see #isBefore
      * @see #isAfter

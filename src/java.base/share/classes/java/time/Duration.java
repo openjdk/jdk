@@ -1419,9 +1419,8 @@ public final class Duration
      * It is "consistent with equals", as defined by {@link Comparable}.
      *
      * @param otherDuration the other duration to compare to, not null
-     * @return the comparator value, that is less than zero if the {@code otherDuration}
-     *          has a smaller length, zero if they are equal,
-     *          greater than zero if the {@code otherDuration} has a greater length
+     * @return the comparator value, that is less than zero if this duration is less than {@code otherDuration},
+     *          zero if they are equal, greater than zero if this duration is greater than {@code otherDuration}
      */
     @Override
     public int compareTo(Duration otherDuration) {
