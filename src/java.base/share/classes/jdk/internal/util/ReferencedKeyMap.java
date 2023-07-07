@@ -40,6 +40,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import jdk.internal.access.SharedSecrets;
+
 /**
  * This class provides management of {@link Map maps} where it is desirable to
  * remove entries automatically when the key is garbage collected. This is
@@ -92,29 +94,30 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
     private final Map<ReferenceKey<K>, V> map;
 
     /**
-     * {@link ReferenceQueue} for cleaning up {@link WeakReferenceKey EntryKeys}.
+     * {@link ReferenceQueue} for cleaning up entries.
      */
     private final ReferenceQueue<K> stale;
 
     /**
      * Private constructor.
      *
-     * @param isSoft  true if {@link SoftReference} keys are to
-     *                be used, {@link WeakReference} otherwise.
-     * @param map     backing map
+     * @param isSoft          true if {@link SoftReference} keys are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param map             backing map
+     * @param stale           {@link ReferenceQueue} for cleaning up entries
      */
-    private ReferencedKeyMap(boolean isSoft, Map<ReferenceKey<K>, V> map) {
+    private ReferencedKeyMap(boolean isSoft, Map<ReferenceKey<K>, V> map, ReferenceQueue<K> stale) {
         this.isSoft = isSoft;
         this.map = map;
-        this.stale = new ReferenceQueue<>();
+        this.stale = stale;
     }
 
     /**
      * Create a new {@link ReferencedKeyMap} map.
      *
-     * @param isSoft    true if {@link SoftReference} keys are to
-     *                  be used, {@link WeakReference} otherwise.
-     * @param supplier  {@link Supplier} of the backing map
+     * @param isSoft          true if {@link SoftReference} keys are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param supplier        {@link Supplier} of the backing map
      *
      * @return a new map with {@link Reference} keys
      *
@@ -123,14 +126,17 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
      */
     public static <K, V> ReferencedKeyMap<K, V>
     create(boolean isSoft, Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return new ReferencedKeyMap<K, V>(isSoft, supplier.get());
+        return create(isSoft, false, supplier);
     }
 
     /**
-     * Create a new {@link ReferencedKeyMap} map using
-     * {@link WeakReference} keys.
+     * Create a new {@link ReferencedKeyMap} map.
      *
-     * @param supplier  {@link Supplier} of the backing map
+     * @param isSoft          true if {@link SoftReference} keys are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param useNativeQueue  true if uses NativeReferenceQueue
+     *                        otherwise use {@link ReferenceQueue}.
+     * @param supplier        {@link Supplier} of the backing map
      *
      * @return a new map with {@link Reference} keys
      *
@@ -138,8 +144,11 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
      * @param <V> the type of mapped values
      */
     public static <K, V> ReferencedKeyMap<K, V>
-    create(Supplier<Map<ReferenceKey<K>, V>> supplier) {
-        return new ReferencedKeyMap<K, V>(false, supplier.get());
+    create(boolean isSoft, boolean useNativeQueue, Supplier<Map<ReferenceKey<K>, V>> supplier) {
+        return new ReferencedKeyMap<K, V>(isSoft, supplier.get(),
+                useNativeQueue ? SharedSecrets.getJavaLangRefAccess().newNativeReferenceQueue()
+                               : new ReferenceQueue<>()
+                );
     }
 
     /**

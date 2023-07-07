@@ -91,7 +91,7 @@ public sealed interface ClassModel
      *
      * @param debugOutput handler to receive debug information
      * @param classHierarchyResolver class hierarchy resolver to provide
-     *                               additional information about the class hiearchy
+     *                               additional information about the class hierarchy
      * @return a list of verification errors, or an empty list if no errors are
      * found
      */
