@@ -103,8 +103,6 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
      *
      * @param isSoft          true if {@link SoftReference} keys are to
      *                        be used, {@link WeakReference} otherwise.
-     * @param useNativeQueue  true if uses NativeReferenceQueue
-     *                        otherwise use {@link ReferenceQueue}.
      * @param map             backing map
      * @param stale           {@link ReferenceQueue} for cleaning up entries
      */
@@ -112,6 +110,23 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
         this.isSoft = isSoft;
         this.map = map;
         this.stale = stale;
+    }
+
+    /**
+     * Create a new {@link ReferencedKeyMap} map.
+     *
+     * @param isSoft          true if {@link SoftReference} keys are to
+     *                        be used, {@link WeakReference} otherwise.
+     * @param supplier        {@link Supplier} of the backing map
+     *
+     * @return a new map with {@link Reference} keys
+     *
+     * @param <K> the type of keys maintained by the new map
+     * @param <V> the type of mapped values
+     */
+    public static <K, V> ReferencedKeyMap<K, V>
+    create(boolean isSoft, Supplier<Map<ReferenceKey<K>, V>> supplier) {
+        return create(isSoft, false, supplier);
     }
 
     /**
