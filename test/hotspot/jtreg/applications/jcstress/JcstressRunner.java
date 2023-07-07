@@ -110,8 +110,8 @@ public class JcstressRunner {
         extraFlags.add("-Djava.io.tmpdir=" + System.getProperty("user.dir"));
 
         // The "default" preset might take days for some tests
-        // so use sanity testing by default.
-        String mode = "sanity";
+        // so use quick testing by default.
+        String mode = "quick";
         for (String jvmArg : Utils.getTestJavaOpts()) {
             if(jvmArg.startsWith("-D" + MODE_PROPERTY)) {
                 String[] pair = jvmArg.split("=", 2);
@@ -127,6 +127,9 @@ public class JcstressRunner {
 
         extraFlags.add("-sc");
         extraFlags.add("false");
+
+        extraFlags.add("-af");
+        extraFlags.add("GLOBAL");
 
         String[] result = new String[extraFlags.size() + args.length];
         extraFlags.toArray(result);
