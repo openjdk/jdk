@@ -112,7 +112,7 @@ public final class LauncherHelper {
 
     private static StringBuilder outBuf = new StringBuilder();
 
-    private static final String INDENT = " ".repeat(4);
+    private static final String INDENT = "    ";
     private static final String VM_SETTINGS     = "VM settings:";
     private static final String PROP_SETTINGS   = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";

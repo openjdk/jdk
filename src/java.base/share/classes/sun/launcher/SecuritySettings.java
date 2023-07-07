@@ -47,9 +47,9 @@ import jdk.internal.access.SharedSecrets;
  */
 public final class SecuritySettings {
 
-    private static final String INDENT = " ".repeat(4);
-    private static final String TWOINDENT = " ".repeat(8);
-    private static final String THREEINDENT = " ".repeat(12);
+    private static final String INDENT = "    ";
+    private static final String TWOINDENT = INDENT + INDENT;
+    private static final String THREEINDENT = TWOINDENT + INDENT;
     private static final String PROV_INFO_STRING = "Provider information: ";
     private static PrintStream ostream = null;
 
@@ -113,14 +113,16 @@ public final class SecuritySettings {
 
     private static void printSecurityTLSConfig(boolean verbose) {
         SSLSocket ssls;
+        SSLContext sslContext;
         try {
-            ssls = (SSLSocket)
-                    SSLContext.getDefault().getSocketFactory().createSocket();
+            sslContext = SSLContext.getDefault();
+            ssls = (SSLSocket)sslContext.getSocketFactory().createSocket();
         } catch (IOException | NoSuchAlgorithmException e) {
             throw new InternalError("Failed to create SSL socket");
         }
 
-        ostream.println(INDENT + "Security TLS configuration:");
+        ostream.println(INDENT + "Security TLS configuration (" +
+                sslContext.getProvider().getName() + " provider):");
         ostream.println(TWOINDENT + "Enabled Protocols:");
         for (String s : ssls.getEnabledProtocols()) {
             ostream.println(THREEINDENT + s);
