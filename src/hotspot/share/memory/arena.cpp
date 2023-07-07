@@ -42,6 +42,35 @@ STATIC_ASSERT(is_aligned((int)Chunk::medium_size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::size, ARENA_AMALLOC_ALIGNMENT));
 STATIC_ASSERT(is_aligned((int)Chunk::non_pool_size, ARENA_AMALLOC_ALIGNMENT));
 
+// MT-safe pool of same-sized chunks to reduce malloc/free thrashing
+// NB: not using Mutex because pools are used before Threads are initialized
+class ChunkPool {
+  // Our four static pools
+  static const int _num_pools = 4;
+  static ChunkPool _pools[_num_pools];
+
+  Chunk*       _first;        // first cached Chunk; its first word points to next chunk
+  const size_t _size;         // (inner payload) size of the chunks this pool serves
+
+  // Allocate a chunk from the pool; returns null if pool is empty.
+  Chunk* take_from_pool();
+  // Return a chunk to the pool
+  void return_to_pool(Chunk* chunk);
+  // Prune the pool
+  void prune();
+
+  // Given a (inner payload) size, return the pool responsible for it, or null if the size is non-standard
+  static ChunkPool* get_pool_for_size(size_t size);
+
+public:
+  ChunkPool(size_t size) : _first(nullptr), _size(size) {}
+
+  static void clean();
+  static Chunk* allocate_chunk(AllocFailType alloc_failmode, size_t length);
+  static void deallocate_chunk(Chunk* p);
+};
+
+
 Chunk* ChunkPool::take_from_pool() {
   ThreadCritical tc;
   Chunk* c = _first;
@@ -153,7 +182,7 @@ class ChunkPoolCleaner : public PeriodicTask {
    }
 };
 
-void ChunkPool::start_chunk_pool_cleaner_task() {
+void Arena::start_chunk_pool_cleaner_task() {
 #ifdef ASSERT
   static bool task_created = false;
   assert(!task_created, "should not start chuck pool cleaner twice");
