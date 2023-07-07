@@ -334,7 +334,7 @@ void BarrierSetC1::generate_referent_check(LIRAccess& access, LabelObj* cont) {
     if (gen_type_check) {
       // We have determined that offset == referent_offset && src != null.
       // if (src->_klass->_reference_type == REF_NONE) -> continue
-      __ move(new LIR_Address(base_reg, oopDesc::klass_offset_in_bytes(), T_ADDRESS), src_klass);
+      gen->load_klass(base_reg, src_klass, NULL);
       LIR_Address* reference_type_addr = new LIR_Address(src_klass, in_bytes(InstanceKlass::reference_type_offset()), T_BYTE);
       LIR_Opr reference_type = gen->new_register(T_INT);
       __ move(reference_type_addr, reference_type);

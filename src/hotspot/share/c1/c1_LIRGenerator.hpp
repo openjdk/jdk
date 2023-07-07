@@ -239,6 +239,8 @@ class LIRGenerator: public InstructionVisitor, public BlockClosure {
   void  move_to_phi(PhiResolver* resolver, Value cur_val, Value sux_val);
   void  move_to_phi(ValueStack* cur_state);
 
+  void load_klass(LIR_Opr obj, LIR_Opr klass, CodeEmitInfo* null_check_info);
+
   // platform dependent
   LIR_Opr getThreadPointer();
 

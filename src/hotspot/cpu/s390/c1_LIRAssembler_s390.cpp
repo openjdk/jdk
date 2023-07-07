@@ -950,12 +950,7 @@ void LIR_Assembler::mem2reg(LIR_Opr src_opr, LIR_Opr dest, BasicType type, LIR_P
       }
       break;
     case T_ADDRESS:
-      if (UseCompressedClassPointers && addr->disp() == oopDesc::klass_offset_in_bytes()) {
-        __ z_llgf(dest->as_register(), disp_value, disp_reg, src);
-        __ decode_klass_not_null(dest->as_register());
-      } else {
-        __ z_lg(dest->as_register(), disp_value, disp_reg, src);
-      }
+      __ z_lg(dest->as_register(), disp_value, disp_reg, src);
       break;
     case T_ARRAY : // fall through
     case T_OBJECT:
@@ -2754,6 +2749,22 @@ void LIR_Assembler::emit_lock(LIR_OpLock* op) {
   __ bind(*op->stub()->continuation());
 }
 
+void LIR_Assembler::emit_load_klass(LIR_OpLoadKlass* op) {
+  Register obj = op->obj()->as_pointer_register();
+  Register result = op->result_opr()->as_pointer_register();
+
+  CodeEmitInfo* info = op->info();
+  if (info != NULL) {
+    add_debug_info_for_null_check_here(info);
+  }
+
+  if (UseCompressedClassPointers) {
+    __ z_llgf(result, Address(obj, oopDesc::klass_offset_in_bytes()));
+    __ decode_klass_not_null(result);
+  } else {
+    __ z_lg(result, Address(obj, oopDesc::klass_offset_in_bytes()));
+  }
+}
 void LIR_Assembler::emit_profile_call(LIR_OpProfileCall* op) {
   ciMethod* method = op->profiled_method();
   int bci          = op->profiled_bci();
