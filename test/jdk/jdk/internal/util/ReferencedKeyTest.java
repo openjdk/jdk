@@ -60,7 +60,7 @@ public class ReferencedKeyTest {
     }
 
     static void mapTest(boolean isSoft, Supplier<Map<ReferenceKey<Long>, String>> supplier) {
-        Map<Long, String> map = ReferencedKeyMap.create(isSoft, false, supplier);
+        Map<Long, String> map = ReferencedKeyMap.create(isSoft, supplier);
         populate(map);
         collect();
         // assertTrue(map.isEmpty() || isSoft, "Weak not collecting");
@@ -69,7 +69,7 @@ public class ReferencedKeyTest {
     }
 
     static void setTest(boolean isSoft, Supplier<Map<ReferenceKey<Long>, ReferenceKey<Long>>> supplier) {
-        ReferencedKeySet<Long> set = ReferencedKeySet.create(isSoft, false, supplier);
+        ReferencedKeySet<Long> set = ReferencedKeySet.create(isSoft, supplier);
         populate(set);
         collect();
         // assertTrue(set.isEmpty() || isSoft, "Weak not collecting");
