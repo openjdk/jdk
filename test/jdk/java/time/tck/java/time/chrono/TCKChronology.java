@@ -156,7 +156,7 @@ public class TCKChronology {
     @DataProvider(name = "calendarDisplayName")
     Object[][] data_of_calendarDisplayNames() {
         return new Object[][] {
-                    {"Hijrah", "Islamic Calendar (Umm al-Qura)"},
+                    {"Hijrah", "Hijri Calendar (Umm al-Qura)"},
                     {"ISO", "ISO"},
                     {"Japanese", "Japanese Calendar"},
                     {"Minguo", "Minguo Calendar"},

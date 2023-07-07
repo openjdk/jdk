@@ -119,7 +119,7 @@ public class TestNonIsoFormatter {
             // Chronology, Locale, Chronology Name
             { ISO8601,  Locale.ENGLISH, "ISO" },    // No data in CLDR; Use Id.
             { BUDDHIST, Locale.ENGLISH, "Buddhist Calendar" },
-            { HIJRAH,   Locale.ENGLISH, "Islamic Calendar (Umm al-Qura)" },
+            { HIJRAH,   Locale.ENGLISH, "Hijri Calendar (Umm al-Qura)" },
             { JAPANESE, Locale.ENGLISH, "Japanese Calendar" },
             { MINGUO,   Locale.ENGLISH, "Minguo Calendar" },
 
