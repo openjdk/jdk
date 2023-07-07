@@ -243,7 +243,7 @@ public final class SharedUtils {
             case WIN_AARCH_64 -> WindowsAArch64Linker.getInstance();
             case LINUX_PPC_64_LE -> LinuxPPC64leLinker.getInstance();
             case LINUX_RISCV_64 -> LinuxRISCV64Linker.getInstance();
-	    case LINUX_S390 -> LinuxS390Linker.getInstance();
+            case LINUX_S390 -> LinuxS390Linker.getInstance();
             case FALLBACK -> FallbackLinker.getInstance();
             case UNSUPPORTED -> throw new UnsupportedOperationException("Platform does not support native linker");
         };

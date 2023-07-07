@@ -62,7 +62,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
                                                                       SysVx64Linker, WindowsAArch64Linker,
                                                                       Windowsx64Linker, LinuxPPC64leLinker,
                                                                       LinuxRISCV64Linker, LinuxS390Linker,
-								      FallbackLinker {
+                                                                      FallbackLinker {
 
     public interface UpcallStubFactory {
         MemorySegment makeStub(MethodHandle target, Arena arena);
@@ -75,7 +75,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     @Override
     @CallerSensitive
     public final MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
-	Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+    Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
         SharedUtils.checkSymbol(symbol);
         return downcallHandle0(function, options).bindTo(symbol);
     }
