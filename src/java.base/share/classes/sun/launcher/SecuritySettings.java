@@ -118,7 +118,9 @@ public final class SecuritySettings {
             sslContext = SSLContext.getDefault();
             ssls = (SSLSocket)sslContext.getSocketFactory().createSocket();
         } catch (IOException | NoSuchAlgorithmException e) {
-            throw new InternalError("Failed to create SSL socket");
+            ostream.println(INDENT + "Failed to create SSL socket");
+            ostream.println(INDENT + e + "\n");
+            return;
         }
 
         ostream.println(INDENT + "Security TLS configuration (" +
