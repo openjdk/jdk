@@ -186,8 +186,7 @@ Chunk::Chunk(size_t length) : _len(length) {
   _next = nullptr;         // Chain on the linked list
 }
 
-void Chunk::chop() {
-  Chunk *k = this;
+void Chunk::chop(Chunk* k) {
   while( k ) {
     Chunk *tmp = k->next();
     // clear out this chunk (to detect allocation bugs)
@@ -197,9 +196,9 @@ void Chunk::chop() {
   }
 }
 
-void Chunk::next_chop() {
-  _next->chop();
-  _next = nullptr;
+void Chunk::next_chop(Chunk* k) {
+  Chunk::chop(k->_next);
+  k->_next = nullptr;
 }
 
 void Chunk::start_chunk_pool_cleaner_task() {
@@ -242,7 +241,7 @@ void Arena::destruct_contents() {
   // that can have total arena memory exceed total chunk memory
   set_size_in_bytes(0);
   if (_first != nullptr) {
-    _first->chop();
+    Chunk::chop(_first);
   }
   reset();
 }
