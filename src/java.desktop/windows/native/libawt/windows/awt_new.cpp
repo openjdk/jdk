@@ -81,37 +81,37 @@ NewHandler::handler(size_t) {
 // These three functions throw std::bad_alloc in an out of memory condition
 // instead of returning 0. safe_Realloc will return 0 if memblock is not
 // NULL and size is 0. safe_Malloc and safe_Calloc will never return 0.
-void *safe_Malloc(size_t size) throw (std::bad_alloc) {
-    register void *ret_val = malloc(size);
-    if (ret_val == NULL) {
+void *safe_Malloc(size_t size) {
+    void *ptr = malloc(size);
+    if (ptr == nullptr) {
         throw std::bad_alloc();
     }
 
-    return ret_val;
+    return ptr;
 }
 
-void *safe_Calloc(size_t num, size_t size) throw (std::bad_alloc) {
-    register void *ret_val = calloc(num, size);
-    if (ret_val == NULL) {
+void *safe_Calloc(size_t num, size_t size) {
+    void *ptr = calloc(num, size);
+    if (ptr == nullptr) {
         throw std::bad_alloc();
     }
 
-    return ret_val;
+    return nullptr;
 }
 
-void *safe_Realloc(void *memblock, size_t size) throw (std::bad_alloc) {
-    register void *ret_val = realloc(memblock, size);
+void *safe_Realloc(void *memblock, size_t size) {
+    void *ptr = realloc(memblock, size);
 
     // Special case for realloc.
-    if (memblock != NULL && size == 0) {
-        return ret_val; // even if it's NULL
+    if (memblock != nullptr && size == 0) {
+        return ptr; // even if it's NULL
     }
 
-    if (ret_val == NULL) {
+    if (ptr == nullptr) {
         throw std::bad_alloc();
     }
 
-    return ret_val;
+    return ptr;
 }
 
 #if !defined(DEBUG)
@@ -120,7 +120,7 @@ void *safe_Realloc(void *memblock, size_t size) throw (std::bad_alloc) {
 // std::bad_alloc in an out of memory situation. Instead, VC++ 5.0 returns 0.
 //
 // This function can be safely removed when the problem is corrected.
-void * CDECL operator new(size_t size) throw (std::bad_alloc) {
+void * CDECL operator new(size_t size) {
     return safe_Malloc(size);
 }
 #endif
