@@ -23,28 +23,42 @@
 
 /*
    @test
-  @key headful
+   @key headful
    @bug 6889007
    @summary No resize cursor during hovering mouse over JTable
-   @author Alexander Potochkin
 */
 
-import javax.swing.*;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.Point;
+import java.awt.Rectangle;
+import java.awt.Robot;
+import java.awt.Toolkit;
+import java.awt.image.BufferedImage;
+import javax.imageio.ImageIO;
+import javax.swing.JFrame;
 import javax.swing.plaf.basic.BasicTableHeaderUI;
 import javax.swing.table.JTableHeader;
-import java.awt.*;
+import javax.swing.JTable;
+import javax.swing.SwingUtilities;
 
 public class bug6889007 {
 
+    static JFrame frame;
+    static Robot robot;
+    static volatile Point point;
+    static volatile int width;
+    static volatile int height;
+
     public static void main(String[] args) throws Exception {
-        Robot robot = new Robot();
-        robot.setAutoDelay(20);
+        try {
+            robot = new Robot();
+            robot.setAutoDelay(100);
 
-        final JFrame frame = new JFrame();
-        frame.setUndecorated(true);
+            SwingUtilities.invokeAndWait(() -> {
+                frame = new JFrame();
+                frame.setUndecorated(true);
 
-        SwingUtilities.invokeAndWait(new Runnable() {
-            public void run() {
                 frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
                 JTableHeader th = new JTableHeader();
@@ -56,21 +70,33 @@ public class bug6889007 {
                 frame.pack();
                 frame.setLocationRelativeTo(null);
                 frame.setVisible(true);
+            });
+            robot.waitForIdle();
+            robot.delay(1000);
+            SwingUtilities.invokeAndWait(() -> {
+                point = frame.getLocationOnScreen();
+                width = frame.getWidth();
+                height = frame.getHeight();
+            });
+            int shift = 10;
+            int x = point.x;
+            int y = point.y + height/2;
+            for(int i = -shift; i < width + 2*shift; i++) {
+                robot.mouseMove(x++, y);
+                robot.waitForIdle();
             }
-        });
-        robot.waitForIdle();
-        Point point = frame.getLocationOnScreen();
-        int shift = 10;
-        int x = point.x;
-        int y = point.y + frame.getHeight()/2;
-        for(int i = -shift; i < frame.getWidth() + 2*shift; i++) {
-            robot.mouseMove(x++, y);
-        }
-        robot.waitForIdle();
-        // 9 is a magic test number
-        if (MyTableHeaderUI.getTestValue() != 9) {
-            throw new RuntimeException("Unexpected test number "
-                    + MyTableHeaderUI.getTestValue());
+            robot.waitForIdle();
+            // 9 is a magic test number
+            if (MyTableHeaderUI.getTestValue() != 9) {
+                throw new RuntimeException("Unexpected test number "
+                        + MyTableHeaderUI.getTestValue());
+            }
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
         }
         System.out.println("ok");
     }
@@ -83,6 +109,15 @@ public class bug6889007 {
             Cursor cursor = Cursor.getPredefinedCursor(Cursor.E_RESIZE_CURSOR);
             if (oldColumn != -1 && newColumn != -1 &&
                     header.getCursor() != cursor) {
+                try {
+                    Dimension screenSize =
+                               Toolkit.getDefaultToolkit().getScreenSize();
+                    Rectangle screen = new Rectangle(0, 0,
+                                               (int) screenSize.getWidth(),
+                                               (int) screenSize.getHeight());
+                    BufferedImage img = robot.createScreenCapture(screen);
+                    ImageIO.write(img, "png", new java.io.File("image.png"));
+                } catch (Exception e) {}
                 throw new RuntimeException("Wrong type of cursor!");
             }
         }
