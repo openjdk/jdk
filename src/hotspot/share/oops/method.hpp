@@ -254,7 +254,7 @@ class Method : public Metadata {
   void set_orig_method_idnum(u2 idnum)   { constMethod()->set_orig_method_idnum(idnum); }
 
   // code size
-  int code_size() const                  { return constMethod()->code_size(); }
+  u2 code_size() const                   { return constMethod()->code_size(); }
 
   // method size in words
   int method_size() const                { return sizeof(Method)/wordSize + ( is_native() ? 2 : 0 ); }
@@ -265,13 +265,13 @@ class Method : public Metadata {
 
   // max stack
   // return original max stack size for method verification
-  int  verifier_max_stack() const                { return constMethod()->max_stack(); }
-  int           max_stack() const                { return constMethod()->max_stack() + extra_stack_entries(); }
-  void      set_max_stack(int size)              {        constMethod()->set_max_stack(size); }
+  u2  verifier_max_stack() const               { return constMethod()->max_stack(); }
+  int          max_stack() const               { return constMethod()->max_stack() + extra_stack_entries(); }
+  void      set_max_stack(int size)            {        constMethod()->set_max_stack(size); }
 
   // max locals
-  int  max_locals() const                        { return constMethod()->max_locals(); }
-  void set_max_locals(int size)                  { constMethod()->set_max_locals(size); }
+  u2  max_locals() const                       { return constMethod()->max_locals(); }
+  void set_max_locals(int size)                { constMethod()->set_max_locals(size); }
 
   int highest_comp_level() const;
   void set_highest_comp_level(int level);
@@ -410,7 +410,7 @@ class Method : public Metadata {
   // nmethod/verified compiler entry
   address verified_code_entry();
   bool check_code() const;      // Not inline to avoid circular ref
-  CompiledMethod* volatile code() const;
+  CompiledMethod* code() const;
 
   // Locks CompiledMethod_lock if not held.
   void unlink_code(CompiledMethod *compare);
@@ -520,18 +520,18 @@ public:
   int method_parameters_length() const
                          { return constMethod()->method_parameters_length(); }
   MethodParametersElement* method_parameters_start() const
-                          { return constMethod()->method_parameters_start(); }
+                         { return constMethod()->method_parameters_start(); }
 
   // checked exceptions
-  int checked_exceptions_length() const
+  u2 checked_exceptions_length() const
                          { return constMethod()->checked_exceptions_length(); }
   CheckedExceptionElement* checked_exceptions_start() const
-                          { return constMethod()->checked_exceptions_start(); }
+                         { return constMethod()->checked_exceptions_start(); }
 
   // localvariable table
   bool has_localvariable_table() const
                           { return constMethod()->has_localvariable_table(); }
-  int localvariable_table_length() const
+  u2 localvariable_table_length() const
                         { return constMethod()->localvariable_table_length(); }
   LocalVariableTableElement* localvariable_table_start() const
                          { return constMethod()->localvariable_table_start(); }
@@ -1038,7 +1038,7 @@ class ExceptionTable : public StackObj {
     }
   }
 
-  int length() const {
+  u2 length() const {
     return _length;
   }
 

@@ -76,7 +76,7 @@ public class Type implements Comparable<Type> {
     }
 
     private static Type createKnownType(String name, Class<?> clazz) {
-        long id = JVM.getJVM().getTypeId(name);
+        long id = JVM.getTypeId(name);
         Type t =  new Type(name, null, id, null);
         knownTypes.put(t, clazz);
         return t;
@@ -122,7 +122,7 @@ public class Type implements Comparable<Type> {
 
     public static long getTypeId(Class<?> clazz) {
         Type type = Type.getKnownType(clazz);
-        return type == null ? JVM.getJVM().getTypeId(clazz) : type.getId();
+        return type == null ? JVM.getTypeId(clazz) : type.getId();
     }
 
     static Collection<Type> getKnownTypes() {
