@@ -24,13 +24,13 @@
  *
  */
 
-#ifndef SHARE_RUNTIME_TRIMNATIVE_HPP
-#define SHARE_RUNTIME_TRIMNATIVE_HPP
+#ifndef SHARE_RUNTIME_TRIMNATIVEHEAP_HPP
+#define SHARE_RUNTIME_TRIMNATIVEHEAP_HPP
 
 #include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
 
-class TrimNative : public AllStatic {
+class NativeHeapTrimmer : public AllStatic {
 
   // Pause periodic trim (if enabled).
   static void suspend_periodic_trim(const char* reason);
@@ -62,4 +62,4 @@ public:
   };
 };
 
-#endif // SHARE_RUNTIME_TRIMNATIVE_HPP
+#endif // SHARE_RUNTIME_TRIMNATIVEHEAP_HPP

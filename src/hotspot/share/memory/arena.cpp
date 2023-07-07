@@ -30,7 +30,7 @@
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"
-#include "runtime/trimNative.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "services/memTracker.inline.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -93,7 +93,7 @@ class ChunkPool {
   }
 
   static void clean() {
-    TrimNative::SuspendMark tnsm("chunk pool cleaner");
+    NativeHeapTrimmer::SuspendMark sm("chunk pool cleaner");
     for (int i = 0; i < _num_pools; i++) {
       _pools[i].prune();
     }

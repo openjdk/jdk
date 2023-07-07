@@ -97,7 +97,7 @@ public class TestTrimNative {
         allOptions.add("-Xms128m"); // Stabilize RSS
         allOptions.add("-XX:+AlwaysPreTouch"); // Stabilize RSS
         allOptions.add("-XX:-ExplicitGCInvokesConcurrent"); // Invoke explicit GC on System.gc
-        allOptions.add("-Xlog:trim=debug");
+        allOptions.add("-Xlog:trimnh=debug");
         allOptions.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         allOptions.add(TestTrimNative.class.getName());
         if (programOptions != null) {
@@ -135,7 +135,7 @@ public class TestTrimNative {
                                                           int maxTrimsExpected) {
         output.reportDiagnosticSummary();
         List<String> lines = output.asLines();
-        Pattern pat = Pattern.compile(".*\\[trim\\] Trim native heap: RSS\\+Swap: (\\d+)([BKMG])->(\\d+)([BKMG]).*");
+        Pattern pat = Pattern.compile(".*\\[trimnh\\] Trim native heap: RSS\\+Swap: (\\d+)([BKMG])->(\\d+)([BKMG]).*");
         int numTrimsFound = 0;
         long rssReductionTotal = 0;
         for (String line : lines) {

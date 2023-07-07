@@ -87,7 +87,7 @@
 #include "runtime/threadSMR.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/timerTrace.hpp"
-#include "runtime/trimNative.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
@@ -757,7 +757,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 #endif
 
   if (TrimNativeHeap) {
-    TrimNative::initialize();
+    NativeHeapTrimmer::initialize();
   }
 
   // Always call even when there are not JVMTI environments yet, since environments

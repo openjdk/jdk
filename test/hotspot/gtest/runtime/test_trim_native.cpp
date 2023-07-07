@@ -26,7 +26,7 @@
 
 #include "precompiled.hpp"
 #include "runtime/os.hpp"
-#include "runtime/trimNative.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "unittest.hpp"
 
 TEST_VM(TrimNative, SuspendMark) {
@@ -37,11 +37,11 @@ TEST_VM(TrimNative, SuspendMark) {
 
   // Try recursive pausing
   {
-    TrimNative::SuspendMark sm1("Test1");
+    NativeHeapTrimmer::SuspendMark sm1("Test1");
     {
-      TrimNative::SuspendMark sm2("Test2");
+      NativeHeapTrimmer::SuspendMark sm2("Test2");
       {
-        TrimNative::SuspendMark sm3("Test3");
+        NativeHeapTrimmer::SuspendMark sm3("Test3");
       }
     }
   }

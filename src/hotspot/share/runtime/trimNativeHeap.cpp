@@ -34,7 +34,7 @@
 #include "runtime/nonJavaThread.hpp"
 #include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
-#include "runtime/trimNative.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -80,7 +80,7 @@ class NativeTrimmerThread : public NamedThread {
   static double to_ms(double seconds) { return seconds * 1000.0; }
 
   struct LogStartStop {
-    void log(const char* s) { log_info(trim)("NativeTrimmer %s.", s); }
+    void log(const char* s) { log_info(trimnh)("NativeTrimmer %s.", s); }
     LogStartStop()  { log("start"); }
     ~LogStartStop() { log("stop"); }
   };
@@ -123,19 +123,19 @@ class NativeTrimmerThread : public NamedThread {
   void execute_trim_and_log(double t1) {
     assert(os::can_trim_native_heap(), "Unexpected");
     os::size_change_t sc;
-    log_debug(trim)("Trim native heap started...");
+    log_debug(trimnh)("Trim native heap started...");
     if (os::trim_native_heap(&sc)) {
       double t2 = now();
       if (sc.after != SIZE_MAX) {
         const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
         const char sign = sc.after < sc.before ? '-' : '+';
-        log_info(trim)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
+        log_info(trimnh)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
                            PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                            to_ms(t2 - t1));
         Atomic::inc(&_num_trims_performed);
-        log_debug(trim)("Total trims: " UINT64_FORMAT ".", Atomic::load(&_num_trims_performed));
+        log_debug(trimnh)("Total trims: " UINT64_FORMAT ".", Atomic::load(&_num_trims_performed));
       } else {
-        log_info(trim)("Trim native heap: complete, no details, %1.3fms", to_ms(t2 - t1));
+        log_info(trimnh)("Trim native heap: complete, no details, %1.3fms", to_ms(t2 - t1));
       }
     }
   }
@@ -162,7 +162,7 @@ public:
       n = inc_suspend_count();
       // No need to wakeup trimmer
     }
-    log_debug(trim)("NativeTrimmer pause for %s (%u suspend requests)", reason, n);
+    log_debug(trimnh)("NativeTrimmer pause for %s (%u suspend requests)", reason, n);
   }
 
   void resume(const char* reason) {
@@ -175,7 +175,7 @@ public:
         ml.notify_all(); // pause end
       }
     }
-    log_debug(trim)("NativeTrimmer unpause for %s (%u suspend requests)", reason, n);
+    log_debug(trimnh)("NativeTrimmer unpause for %s (%u suspend requests)", reason, n);
   }
 
   void stop() {
@@ -188,32 +188,32 @@ public:
 
 static NativeTrimmerThread* g_trimmer_thread = nullptr;
 
-void TrimNative::initialize() {
+void NativeHeapTrimmer::initialize() {
   assert(g_trimmer_thread == nullptr, "Only once");
   if (TrimNativeHeap) {
     if (!os::can_trim_native_heap()) {
       FLAG_SET_ERGO(TrimNativeHeap, false);
-      log_info(trim)("Native trim not supported on this platform.");
+      log_info(trimnh)("Native trim not supported on this platform.");
       return;
     }
     g_trimmer_thread = new NativeTrimmerThread();
-    log_info(trim)("Periodic native trim enabled (interval: %u ms)", TrimNativeHeapInterval);
+    log_info(trimnh)("Periodic native trim enabled (interval: %u ms)", TrimNativeHeapInterval);
   }
 }
 
-void TrimNative::cleanup() {
+void NativeHeapTrimmer::cleanup() {
   if (g_trimmer_thread != nullptr) {
     g_trimmer_thread->stop();
   }
 }
 
-void TrimNative::suspend_periodic_trim(const char* reason) {
+void NativeHeapTrimmer::suspend_periodic_trim(const char* reason) {
   if (g_trimmer_thread != nullptr) {
     g_trimmer_thread->suspend(reason);
   }
 }
 
-void TrimNative::resume_periodic_trim(const char* reason) {
+void NativeHeapTrimmer::resume_periodic_trim(const char* reason) {
   if (g_trimmer_thread != nullptr) {
     g_trimmer_thread->resume(reason);
   }

@@ -70,7 +70,7 @@
 #include "runtime/task.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
-#include "runtime/trimNative.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vm_version.hpp"
@@ -480,7 +480,7 @@ void before_exit(JavaThread* thread, bool halt) {
   StatSampler::disengage();
   StatSampler::destroy();
 
-  TrimNative::cleanup();
+  NativeHeapTrimmer::cleanup();
 
   // Stop concurrent GC threads
   Universe::heap()->stop();
