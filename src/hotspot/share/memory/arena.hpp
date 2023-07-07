@@ -45,7 +45,6 @@ class Chunk {
   Chunk*       _next;     // Next Chunk in list
   const size_t _len;      // Size of this Chunk
  public:
-  void  operator delete(void* p);
   Chunk(size_t length);
 
   enum {
