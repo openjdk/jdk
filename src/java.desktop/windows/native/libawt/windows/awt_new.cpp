@@ -160,7 +160,7 @@ handle_bad_alloc(void) {
 // std::bad_alloc if a java.lang.OutOfMemoryError is currently pending
 // on the calling thread.
 jthrowable
-safe_ExceptionOccurred(JNIEnv *env) throw (std::bad_alloc) {
+safe_ExceptionOccurred(JNIEnv *env) {
     jthrowable xcp = env->ExceptionOccurred();
     if (xcp != NULL) {
         env->ExceptionClear(); // if we don't do this, isInstanceOf will fail
@@ -188,8 +188,7 @@ safe_ExceptionOccurred(JNIEnv *env) throw (std::bad_alloc) {
 #include <limits.h>
 
 static void
-rand_alloc_fail(const char *file, int line) throw (std::bad_alloc)
-{
+rand_alloc_fail(const char *file, int line) {
     if (alloc_lock == NULL) { // Not yet initialized
         return;
     }
@@ -213,31 +212,23 @@ rand_alloc_fail(const char *file, int line) throw (std::bad_alloc)
     }
 }
 
-void *safe_Malloc_outofmem(size_t size, const char *file, int line)
-    throw (std::bad_alloc)
-{
+void *safe_Malloc_outofmem(size_t size, const char *file, int line) {
     rand_alloc_fail(file, line);
     return safe_Malloc(size);
 }
 
-void *safe_Calloc_outofmem(size_t num, size_t size, const char *file, int line)
-    throw (std::bad_alloc)
-{
+void *safe_Calloc_outofmem(size_t num, size_t size, const char *file, int line) {
     rand_alloc_fail(file, line);
     return safe_Calloc(num, size);
 }
 
 void *safe_Realloc_outofmem(void *memblock, size_t size, const char *file,
-                            int line)
-    throw (std::bad_alloc)
-{
+                            int line) {
     rand_alloc_fail(file, line);
     return safe_Realloc(memblock, size);
 }
 
-void * CDECL operator new(size_t size, const char *file, int line)
-    throw (std::bad_alloc)
-{
+void * CDECL operator new(size_t size, const char *file, int line) {
     rand_alloc_fail(file, line);
     return operator new(size);
 }
