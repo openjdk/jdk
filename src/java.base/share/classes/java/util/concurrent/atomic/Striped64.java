@@ -124,6 +124,10 @@ abstract class Striped64 extends Number {
     @jdk.internal.vm.annotation.Contended static final class Cell {
         volatile long value;
         Cell(long x) { value = x; }
+
+        final void add(long delta) {
+            VALUE.getAndAddRelease(this, delta);
+        }
         final boolean cas(long cmp, long val) {
             return VALUE.weakCompareAndSetRelease(this, cmp, val);
         }
