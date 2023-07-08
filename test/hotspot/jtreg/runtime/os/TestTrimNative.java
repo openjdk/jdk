@@ -31,17 +31,29 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative test
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative trimNative
  */
 
 /*
  * @test id=trimNativeHighInterval
+ * @summary High interval trimming should not even kick in for short program runtimes
  * @requires (os.family=="linux") & !vm.musl
  * @modules java.base/jdk.internal.misc
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative testWithHighTrimInterval
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative trimNativeHighInterval
+ */
+
+/*
+ * @test id=trimNativeLowInterval
+ * @summary Very low (sub-second) interval, nothing should explode
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative trimNativeLowInterval
  */
 
 /*
@@ -118,7 +130,6 @@ public class TestTrimNative {
         allOptions.add("-XX:-ExplicitGCInvokesConcurrent"); // Invoke explicit GC on System.gc
         allOptions.add("-Xlog:trimnh=debug");
         allOptions.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
-        allOptions.add(TestTrimNative.Tester.class.getName());
         if (programOptions != null) {
             allOptions.addAll(Arrays.asList(programOptions));
         }
@@ -162,7 +173,6 @@ public class TestTrimNative {
             if (mat.matches()) {
                 long rss1 = Long.parseLong(mat.group(1)) * Unit.valueOf(mat.group(2)).size;
                 long rss2 = Long.parseLong(mat.group(3)) * Unit.valueOf(mat.group(4)).size;
-                System.out.println("Parsed Trim Line. rss1: " + rss1 + " rss2: " + rss2);
                 if (rss1 > rss2) {
                     rssReductionTotal += (rss1 - rss2);
                 }
@@ -198,6 +208,8 @@ public class TestTrimNative {
 
     static class Tester {
         public static void main(String[] args) throws Exception {
+            long sleeptime = Long.parseLong(args[0]);
+
             System.out.println("Will spike now...");
             WhiteBox wb = WhiteBox.getWhiteBox();
             for (int i = 0; i < numAllocations; i++) {
@@ -209,13 +221,12 @@ public class TestTrimNative {
             }
             System.out.println("Done spiking.");
 
-            // Do a system GC. Native trimming should be paused in that time.
             System.out.println("GC...");
             System.gc();
 
             // give GC time to react
             System.out.println("Sleeping...");
-            Thread.sleep(3000);
+            Thread.sleep(sleeptime);
             System.out.println("Done.");
         }
     }
@@ -227,14 +238,12 @@ public class TestTrimNative {
         }
 
         switch (args[0]) {
-            case "test": {
+            case "trimNative": {
                 long trimInterval = 500; // twice per second
                 long ms1 = System.currentTimeMillis();
                 OutputAnalyzer output = runTestWithOptions(
-                        new String[]{"-XX:+UnlockExperimentalVMOptions",
-                                "-XX:+TrimNativeHeap",
-                                "-XX:TrimNativeHeapInterval=" + trimInterval},
-                        new String[]{"RUN", "5000"}
+                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:+TrimNativeHeap", "-XX:TrimNativeHeapInterval=" + trimInterval },
+                        new String[] { TestTrimNative.Tester.class.getName(), "5000" }
                 );
                 long ms2 = System.currentTimeMillis();
                 long runtime_ms = ms2 - ms1;
@@ -246,20 +255,29 @@ public class TestTrimNative {
                 parseOutputAndLookForNegativeTrim(output, (int) minTrimsExpected, (int) maxTrimsExpected);
             } break;
 
-            case "testWithHighTrimInterval": {
+            case "trimNativeHighInterval": {
                 OutputAnalyzer output = runTestWithOptions(
-                        new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+TrimNativeHeap", "-XX:TrimNativeHeapInterval=" + Integer.MAX_VALUE},
-                        new String[]{"RUN", "5000"}
+                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:+TrimNativeHeap", "-XX:TrimNativeHeapInterval=" + Integer.MAX_VALUE },
+                        new String[] { TestTrimNative.Tester.class.getName(), "5000" }
                 );
                 checkExpectedLogMessages(output, true, Integer.MAX_VALUE);
                 // We should not see any trims since the interval would prevent them
                 parseOutputAndLookForNegativeTrim(output, 0, 0);
             } break;
 
+            case "trimNativeLowInterval": {
+                OutputAnalyzer output = runTestWithOptions(
+                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:+TrimNativeHeap", "-XX:TrimNativeHeapInterval=1" },
+                        new String[] { TestTrimNative.Tester.class.getName(), "0" }
+                );
+                checkExpectedLogMessages(output, true, 1);
+                parseOutputAndLookForNegativeTrim(output, 1, 3000);
+            } break;
+
             case "testOffOnNonCompliantPlatforms": {
                 OutputAnalyzer output = runTestWithOptions(
-                        new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:+TrimNativeHeap"},
-                        new String[]{"RUN", "0"}
+                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:+TrimNativeHeap" },
+                        new String[] { "-version" }
                 );
                 checkExpectedLogMessages(output, false, 0);
                 parseOutputAndLookForNegativeTrim(output, 0, 0);
@@ -268,15 +286,15 @@ public class TestTrimNative {
 
             case "testOffExplicit": {
                 OutputAnalyzer output = runTestWithOptions(
-                        new String[]{"-XX:+UnlockExperimentalVMOptions", "-XX:-TrimNativeHeap"},
-                        new String[]{"RUN", "0"}
+                        new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:-TrimNativeHeap" },
+                        new String[] { "-version" }
                 );
                 checkExpectedLogMessages(output, false, 0);
                 parseOutputAndLookForNegativeTrim(output, 0, 0);
             } break;
 
             case "testOffByDefault": {
-                OutputAnalyzer output = runTestWithOptions(null, new String[]{"RUN", "0"});
+                OutputAnalyzer output = runTestWithOptions(null, new String[] { "-version" } );
                 checkExpectedLogMessages(output, false, 0);
                 parseOutputAndLookForNegativeTrim(output, 0, 0);
             } break;
