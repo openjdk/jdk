@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARED_CDS_SERIALIZECLOSURE_HPP
-#define SHARED_CDS_SERIALIZECLOSURE_HPP
+#ifndef SHARE_CDS_SERIALIZECLOSURE_HPP
+#define SHARE_CDS_SERIALIZECLOSURE_HPP
 
 #include "memory/allocation.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -65,4 +65,4 @@ public:
   template <typename T> void do_ptr(T** p) { do_ptr((void**)p); }
 };
 
-#endif // SHARED_CDS_SERIALIZECLOSURE_HPP
+#endif // SHARE_CDS_SERIALIZECLOSURE_HPP
