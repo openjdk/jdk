@@ -101,17 +101,6 @@ public enum TypeClass {
         if (baseArgClass != FLOAT)
             return false;
 
-        for (MemoryLayout elem : scalarLayouts) {
-            if (!(elem instanceof ValueLayout))
-                return false;
-
-            TypeClass argClass = classifyValueType((ValueLayout) elem);
-            if (elem.byteSize() != baseType.byteSize() ||
-                    elem.byteAlignment() != baseType.byteAlignment() ||
-                    baseArgClass != argClass) {
-                return false;
-                    }
-        }
         return true;
     }
 

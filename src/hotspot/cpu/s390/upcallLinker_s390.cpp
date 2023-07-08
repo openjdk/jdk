@@ -128,9 +128,7 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   int code_size = upcall_stub_code_base_size + (total_in_args * upcall_stub_size_per_arg);
   CodeBuffer buffer("upcall_stub", code_size, /* locs_size = */ 0);
 
-  Register call_target_address = Z_R1_scratch,
-           callerSP = Z_tmp_1,
-           tmp = Z_R0_scratch;
+  Register call_target_address = Z_R1_scratch;
 
   VMStorage shuffle_reg = abi._scratch1;
   JavaCallingConvention out_conv;
@@ -168,9 +166,6 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   //
   // FP-> |                     |
   //      |---------------------| = frame_bottom_offset = frame_size
-  //      | (optional)          |
-  //      | ret_buf             |
-  //      |---------------------| = ret_buf_offset
   //      |                     |
   //      | FrameData           |
   //      |---------------------| = frame_data_offset
@@ -212,9 +207,8 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ block_comment("} on_entry");
 
   arg_spiller.generate_fill(_masm, arg_save_area_offset);
-  __ z_lg(callerSP, _z_abi(callers_sp), Z_SP); // preset (used to access caller frame argument slots)
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, as_VMStorage(callerSP), abi._shadow_space_bytes, frame::z_jit_out_preserve_size, locs);
+  arg_shuffle.generate(_masm, shuffle_reg, abi._shadow_space_bytes, frame::z_jit_out_preserve_size, locs);
   __ block_comment("} argument shuffle");
 
   __ block_comment("{ receiver ");
@@ -229,29 +223,28 @@ address UpcallLinker::make_upcall_stub(jobject receiver, Method* entry,
   __ call(call_target_address);
 
   // return value shuffle
-  if (!needs_return_buffer) {
-    // CallArranger can pick a return type that goes in the same reg for both CCs.
-    if (call_regs._ret_regs.length() > 0) { // 0 or 1
-      VMStorage ret_reg = call_regs._ret_regs.at(0);
-      // Check if the return reg is as expected.
-      switch (ret_type) {
-        case T_BOOLEAN:
-        case T_BYTE:
-        case T_SHORT:
-        case T_CHAR:
-        case T_INT:
-          __ z_lgfr(Z_RET, Z_RET); // Clear garbage in high half.
-          // fallthrough
-        case T_LONG:
-          assert(as_Register(ret_reg) == Z_RET, "unexpected result register");
-          break;
-        case T_FLOAT:
-        case T_DOUBLE:
-          assert(as_FloatRegister(ret_reg) == Z_FRET, "unexpected result register");
-          break;
-        default:
-          fatal("unexpected return type: %s", type2name(ret_type));
-      }
+  assert(!needs_return_buffer, "unexpected needs_return_buffer");
+  // CallArranger can pick a return type that goes in the same reg for both CCs.
+  if (call_regs._ret_regs.length() > 0) { // 0 or 1
+    VMStorage ret_reg = call_regs._ret_regs.at(0);
+    // Check if the return reg is as expected.
+    switch (ret_type) {
+      case T_BOOLEAN:
+      case T_BYTE:
+      case T_SHORT:
+      case T_CHAR:
+      case T_INT:
+        __ z_lgfr(Z_RET, Z_RET); // Clear garbage in high half.
+                                 // fallthrough
+      case T_LONG:
+        assert(as_Register(ret_reg) == Z_RET, "unexpected result register");
+        break;
+      case T_FLOAT:
+      case T_DOUBLE:
+        assert(as_FloatRegister(ret_reg) == Z_FRET, "unexpected result register");
+        break;
+      default:
+        fatal("unexpected return type: %s", type2name(ret_type));
     }
   }
 

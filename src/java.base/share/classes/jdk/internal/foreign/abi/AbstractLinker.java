@@ -75,7 +75,7 @@ public abstract sealed class AbstractLinker implements Linker permits LinuxAArch
     @Override
     @CallerSensitive
     public final MethodHandle downcallHandle(MemorySegment symbol, FunctionDescriptor function, Option... options) {
-    Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
+        Reflection.ensureNativeAccess(Reflection.getCallerClass(), Linker.class, "downcallHandle");
         SharedUtils.checkSymbol(symbol);
         return downcallHandle0(function, options).bindTo(symbol);
     }

@@ -136,7 +136,6 @@ RuntimeStub* DowncallLinker::make_downcall_stub(BasicType* signature,
 
 void DowncallStubGenerator::generate() {
   Register call_target_address = Z_R1_scratch,
-           callerSP = Z_tmp_1,
            tmp = Z_R0_scratch;
 
   VMStorage shuffle_reg = _abi._scratch1;
@@ -156,10 +155,11 @@ void DowncallStubGenerator::generate() {
 
   int allocated_frame_size = 0;
   assert(_abi._shadow_space_bytes == frame::z_abi_160_size, "expected space according to ABI");
-  allocated_frame_size = frame::z_abi_160_size;
+  allocated_frame_size = _abi._shadow_space_bytes;
   allocated_frame_size += arg_shuffle.out_arg_bytes();
 
-  bool should_save_return_value = !_needs_return_buffer && _needs_transition;;
+  assert(!_needs_return_buffer, "unexpected needs_return_buffer");
+  bool should_save_return_value = _needs_transition;;
   RegSpiller out_reg_spiller(_output_registers);
   int spill_offset = -1;
 
@@ -185,7 +185,7 @@ void DowncallStubGenerator::generate() {
   address start = __ pc();
 
   __ save_return_pc();
-  __ push_frame(allocated_frame_size); // Create a new frame for the wrapper.
+  __ push_frame(allocated_frame_size, Z_R11); // Create a new frame for the wrapper.
 
   _frame_complete = __ pc() - start;  // frame build complete.
 
@@ -202,9 +202,8 @@ void DowncallStubGenerator::generate() {
     __ set_thread_state(_thread_in_native);
     __ block_comment("} thread java2native");
   }
-  __ z_lg(callerSP, _z_abi(callers_sp), Z_SP); // preset (used to access caller frame argument slots)
   __ block_comment("{ argument shuffle");
-  arg_shuffle.generate(_masm, as_VMStorage(callerSP), frame::z_jit_out_preserve_size, _abi._shadow_space_bytes, locs);
+  arg_shuffle.generate(_masm, shuffle_reg, frame::z_jit_out_preserve_size, _abi._shadow_space_bytes, locs);
   __ block_comment("} argument shuffle");
 
   __ call(as_Register(locs.get(StubLocations::TARGET_ADDRESS)));

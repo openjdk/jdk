@@ -132,7 +132,6 @@ public class LinuxS390CallArranger {
 
     private static boolean isInMemoryReturn(Optional<MemoryLayout> returnLayout) {
         return returnLayout
-            .filter(GroupLayout.class::isInstance)
             .filter(layout -> layout instanceof GroupLayout)
             .isPresent();
     }

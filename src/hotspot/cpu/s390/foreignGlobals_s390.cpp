@@ -107,7 +107,7 @@ static int reg2offset(VMStorage vms, int stk_bias) {
   return vms.index_or_offset() + stk_bias;
 }
 
-static void move_reg64(MacroAssembler* masm, int out_stk_bias,
+static void move_reg(MacroAssembler* masm, int out_stk_bias,
                        VMStorage from_reg, VMStorage to_reg) {
   int out_bias = 0;
   switch (to_reg.type()) {
@@ -160,10 +160,10 @@ static void move_float(MacroAssembler* masm, int out_stk_bias,
   }
 }
 
-static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias, int out_stk_bias,
+static void move_stack(MacroAssembler* masm, Register tmp_reg, int in_stk_bias, int out_stk_bias,
                        VMStorage from_reg, VMStorage to_reg) {
   int out_bias = 0;
-  Address from_addr(callerSP, reg2offset(from_reg, in_stk_bias));
+  Address from_addr(Z_R11, reg2offset(from_reg, in_stk_bias));
   switch (to_reg.type()) {
     case StorageType::INTEGER:
       switch (from_reg.stack_size()) {
@@ -183,18 +183,18 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
       out_bias = out_stk_bias; // fallthrough
     case StorageType::FRAME_DATA: {
       switch (from_reg.stack_size()) {
-        case 8: __ mem2reg_opt(Z_R0_scratch, Address (callerSP, reg2offset(from_reg, in_stk_bias)), true); break;
+        case 8: __ mem2reg_opt(tmp_reg, from_addr, true); break;
         case 4: if (to_reg.stack_size() == 8) {
-                  __ mem2reg_signed_opt(Z_R0_scratch, Address (callerSP, reg2offset(from_reg, in_stk_bias)));
+                  __ mem2reg_signed_opt(tmp_reg, from_addr);
                 } else {
-                  __ mem2reg_opt(Z_R0_scratch, Address (callerSP, reg2offset(from_reg, in_stk_bias)), false);
+                  __ mem2reg_opt(tmp_reg, from_addr, false);
                 }
                 break;
         default: ShouldNotReachHere();
       }
       switch (to_reg.stack_size()) {
-        case 8: __ reg2mem_opt(Z_R0_scratch, Address (Z_SP, reg2offset(to_reg, out_bias)), true); break;
-        case 4: __ reg2mem_opt(Z_R0_scratch, Address (Z_SP, reg2offset(to_reg, out_bias)), false); break;
+        case 8: __ reg2mem_opt(tmp_reg, Address (Z_SP, reg2offset(to_reg, out_bias)), true); break;
+        case 4: __ reg2mem_opt(tmp_reg, Address (Z_SP, reg2offset(to_reg, out_bias)), false); break;
         default: ShouldNotReachHere();
       }
     } break;
@@ -203,7 +203,7 @@ static void move_stack(MacroAssembler* masm, Register callerSP, int in_stk_bias,
 }
 
 void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_stk_bias, int out_stk_bias, const StubLocations& locs) const {
-  Register callerSP = as_Register(tmp); // preset
+  Register tmp_reg = as_Register(tmp);
   for (int i = 0; i < _moves.length(); i++) {
     Move move = _moves.at(i);
     VMStorage from_reg = move.from;
@@ -219,13 +219,13 @@ void ArgumentShuffle::pd_generate(MacroAssembler* masm, VMStorage tmp, int in_st
 
     switch (from_reg.type()) {
       case StorageType::INTEGER:
-        move_reg64(masm, out_stk_bias, from_reg, to_reg);
+        move_reg(masm, out_stk_bias, from_reg, to_reg);
         break;
       case StorageType::FLOAT:
         move_float(masm, out_stk_bias, from_reg, to_reg);
         break;
       case StorageType::STACK:
-        move_stack(masm, callerSP, in_stk_bias, out_stk_bias, from_reg, to_reg);
+        move_stack(masm, tmp_reg, in_stk_bias, out_stk_bias, from_reg, to_reg);
         break;
       default: ShouldNotReachHere();
     }

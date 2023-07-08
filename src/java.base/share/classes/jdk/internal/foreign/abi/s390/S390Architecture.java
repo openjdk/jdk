@@ -1,6 +1,5 @@
 /*
  * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2023 SAP SE. All rights reserved.
  * Copyright (c) 2023 IBM Corp. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -112,7 +111,7 @@ public final class S390Architecture implements Architecture {
     }
 
     private static VMStorage floatRegister(int index) {
-        return new VMStorage(StorageType.FLOAT, REG64_MASK, index, "v" + index);
+        return new VMStorage(StorageType.FLOAT, REG64_MASK, index, "f" + index);
     }
 
     public static VMStorage stackStorage(short size, int byteOffset) {
