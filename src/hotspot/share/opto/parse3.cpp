@@ -242,7 +242,7 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
     // Any method can write a @Stable field; insert memory barriers after those also.
     if (field->is_final()) {
       set_wrote_final(true);
-      if (AllocateNode::Ideal_allocation(obj, &_gvn) != nullptr) {
+      if (AllocateNode::Ideal_allocation(obj) != nullptr) {
         // Preserve allocation ptr to create precedent edge to it in membar
         // generated on exit from constructor.
         // Can't bind stable with its allocation, only record allocation for final field.

@@ -251,6 +251,13 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
         DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
         DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
+        DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
+        DISABLED_WARNINGS_clang_gtk2_interface.c := parentheses, \
+        DISABLED_WARNINGS_clang_gtk3_interface.c := parentheses, \
+        DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_screencast_pipewire.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
         DISABLED_WARNINGS_clang_aix := deprecated-non-prototype, \
         DISABLED_WARNINGS_clang_aix_awt_Taskbar.c := parentheses, \
         DISABLED_WARNINGS_clang_aix_OGLPaints.c := format-nonliteral, \

@@ -259,9 +259,7 @@ class ConstantPool : public Metadata {
   // Given the per-instruction index of an indy instruction, report the
   // main constant pool entry for its bootstrap specifier.
   // From there, uncached_name/signature_ref_at will get the name/type.
-  u2 invokedynamic_bootstrap_ref_index_at(int indy_index) const {
-    return cache()->resolved_indy_entry_at(decode_invokedynamic_index(indy_index))->constant_pool_index();
-  }
+  inline u2 invokedynamic_bootstrap_ref_index_at(int indy_index) const;
 
   // Assembly code support
   static ByteSize tags_offset()         { return byte_offset_of(ConstantPool, _tags); }
@@ -589,16 +587,16 @@ class ConstantPool : public Metadata {
            "Corrupted CP operands");
     return operand_offset_at(operands(), bsms_attribute_index);
   }
-  int operand_bootstrap_method_ref_index_at(int bsms_attribute_index) {
+  u2 operand_bootstrap_method_ref_index_at(int bsms_attribute_index) {
     int offset = operand_offset_at(bsms_attribute_index);
     return operands()->at(offset + _indy_bsm_offset);
   }
-  int operand_argument_count_at(int bsms_attribute_index) {
+  u2 operand_argument_count_at(int bsms_attribute_index) {
     int offset = operand_offset_at(bsms_attribute_index);
-    int argc = operands()->at(offset + _indy_argc_offset);
+    u2 argc = operands()->at(offset + _indy_argc_offset);
     return argc;
   }
-  int operand_argument_index_at(int bsms_attribute_index, int j) {
+  u2 operand_argument_index_at(int bsms_attribute_index, int j) {
     int offset = operand_offset_at(bsms_attribute_index);
     return operands()->at(offset + _indy_argv_offset + j);
   }
@@ -620,21 +618,21 @@ class ConstantPool : public Metadata {
   // Shrink the operands array to a smaller array with new_len length
   void shrink_operands(int new_len, TRAPS);
 
-  int bootstrap_method_ref_index_at(int which) {
+  u2 bootstrap_method_ref_index_at(int which) {
     assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     int op_base = bootstrap_operand_base(which);
     return operands()->at(op_base + _indy_bsm_offset);
   }
-  int bootstrap_argument_count_at(int which) {
+  u2 bootstrap_argument_count_at(int which) {
     assert(tag_at(which).has_bootstrap(), "Corrupted constant pool");
     int op_base = bootstrap_operand_base(which);
-    int argc = operands()->at(op_base + _indy_argc_offset);
+    u2 argc = operands()->at(op_base + _indy_argc_offset);
     DEBUG_ONLY(int end_offset = op_base + _indy_argv_offset + argc;
                int next_offset = bootstrap_operand_limit(which));
     assert(end_offset == next_offset, "matched ending");
     return argc;
   }
-  int bootstrap_argument_index_at(int which, int j) {
+  u2 bootstrap_argument_index_at(int which, int j) {
     int op_base = bootstrap_operand_base(which);
     DEBUG_ONLY(int argc = operands()->at(op_base + _indy_argc_offset));
     assert((uint)j < (uint)argc, "oob");
@@ -922,15 +920,9 @@ class ConstantPool : public Metadata {
   const char* internal_name() const { return "{constant pool}"; }
 
   // ResolvedIndyEntry getters
-  ResolvedIndyEntry* resolved_indy_entry_at(int index) {
-    return cache()->resolved_indy_entry_at(index);
-  }
-  int resolved_indy_entries_length() {
-    return cache()->resolved_indy_entries_length();
-  }
-  oop resolved_reference_from_indy(int index) {
-    return resolved_references()->obj_at(cache()->resolved_indy_entry_at(index)->resolved_references_index());
-  }
+  inline ResolvedIndyEntry* resolved_indy_entry_at(int index);
+  inline int resolved_indy_entries_length() const;
+  inline oop resolved_reference_from_indy(int index) const;
 };
 
 #endif // SHARE_OOPS_CONSTANTPOOL_HPP

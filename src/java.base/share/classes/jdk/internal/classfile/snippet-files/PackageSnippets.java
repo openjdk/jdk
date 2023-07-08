@@ -26,11 +26,11 @@ import java.lang.constant.ClassDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles;
+import java.util.ArrayDeque;
 import java.util.HashSet;
 import java.util.Set;
 
 import java.lang.reflect.AccessFlag;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -62,7 +62,7 @@ import jdk.internal.classfile.instruction.StoreInstruction;
 class PackageSnippets {
     void enumerateFieldsMethods1(byte[] bytes) {
         // @start region="enumerateFieldsMethods1"
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = Classfile.of().parse(bytes);
         for (FieldModel fm : cm.fields())
             System.out.printf("Field %s%n", fm.fieldName().stringValue());
         for (MethodModel mm : cm.methods())
@@ -72,7 +72,7 @@ class PackageSnippets {
 
     void enumerateFieldsMethods2(byte[] bytes) {
         // @start region="enumerateFieldsMethods2"
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = Classfile.of().parse(bytes);
         for (ClassElement ce : cm) {
             switch (ce) {
                 case MethodModel mm -> System.out.printf("Method %s%n", mm.methodName().stringValue());
@@ -85,7 +85,7 @@ class PackageSnippets {
 
     void gatherDependencies1(byte[] bytes) {
         // @start region="gatherDependencies1"
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = Classfile.of().parse(bytes);
         Set<ClassDesc> dependencies = new HashSet<>();
 
         for (ClassElement ce : cm) {
@@ -108,7 +108,7 @@ class PackageSnippets {
 
     void gatherDependencies2(byte[] bytes) {
         // @start region="gatherDependencies2"
-        ClassModel cm = Classfile.parse(bytes);
+        ClassModel cm = Classfile.of().parse(bytes);
         Set<ClassDesc> dependencies =
               cm.elementStream()
                 .flatMap(ce -> ce instanceof MethodModel mm ? mm.elementStream() : Stream.empty())
@@ -124,26 +124,33 @@ class PackageSnippets {
         // @end
     }
 
+    private static final ClassDesc CD_Hello = ClassDesc.of("Hello");
+    private static final ClassDesc CD_Foo = ClassDesc.of("Foo");
+    private static final ClassDesc CD_Bar = ClassDesc.of("Bar");
+    private static final ClassDesc CD_System = ClassDesc.of("java.lang.System");
+    private static final ClassDesc CD_PrintStream = ClassDesc.of("java.io.PrintStream");
+    private static final MethodTypeDesc MTD_void_StringArray = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType());
+    private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String);
+
     void writeHelloWorld() {
         // @start region="helloWorld"
-        byte[] bytes = Classfile.build(ClassDesc.of("Hello"), cb -> {
+        byte[] bytes = Classfile.of().build(CD_Hello, cb -> {
             cb.withFlags(AccessFlag.PUBLIC);
-            cb.withMethod("<init>", MethodTypeDesc.of(ConstantDescs.CD_void), Classfile.ACC_PUBLIC,
+            cb.withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Classfile.ACC_PUBLIC,
                           mb -> mb.withCode(
                                   b -> b.aload(0)
-                                        .invokespecial(ConstantDescs.CD_Object, "<init>",
-                                                       MethodTypeDesc.of(ConstantDescs.CD_void))
+                                        .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME,
+                                                       ConstantDescs.MTD_void)
                                         .returnInstruction(TypeKind.VoidType)
                           )
               )
-              .withMethod("main", MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType()),
+              .withMethod("main", MTD_void_StringArray,
                           Classfile.ACC_PUBLIC,
                           mb -> mb.withFlags(AccessFlag.STATIC, AccessFlag.PUBLIC)
                                   .withCode(
-                                  b -> b.getstatic(ClassDesc.of("java.lang.System"), "out", ClassDesc.of("java.io.PrintStream"))
+                                  b -> b.getstatic(CD_System, "out", CD_PrintStream)
                                         .constantInstruction(Opcode.LDC, "Hello World")
-                                        .invokevirtual(ClassDesc.of("java.io.PrintStream"), "println",
-                                                       MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String))
+                                        .invokevirtual(CD_PrintStream, "println", MTD_void_String)
                                         .returnInstruction(TypeKind.VoidType)
             ));
         });
@@ -152,8 +159,8 @@ class PackageSnippets {
 
     void stripDebugMethods1(byte[] bytes) {
         // @start region="stripDebugMethods1"
-        ClassModel classModel = Classfile.parse(bytes);
-        byte[] newBytes = Classfile.build(classModel.thisClass().asSymbol(),
+        ClassModel classModel = Classfile.of().parse(bytes);
+        byte[] newBytes = Classfile.of().build(classModel.thisClass().asSymbol(),
                                           classBuilder -> {
                                               for (ClassElement ce : classModel) {
                                                   if (!(ce instanceof MethodModel mm
@@ -170,7 +177,8 @@ class PackageSnippets {
             if (!(element instanceof MethodModel mm && mm.methodName().stringValue().startsWith("debug")))
                 builder.with(element);
         };
-        byte[] newBytes = Classfile.parse(bytes).transform(ct);
+        var cc = Classfile.of();
+        byte[] newBytes = cc.transform(cc.parse(bytes), ct);
         // @end
     }
 
@@ -180,7 +188,7 @@ class PackageSnippets {
             if (e instanceof InvokeInstruction i
                     && i.owner().asInternalName().equals("Foo")
                     && i.opcode() == Opcode.INVOKESTATIC)
-                        b.invokeInstruction(i.opcode(), ClassDesc.of("Bar"), i.name().stringValue(), i.typeSymbol(), i.isInterface());
+                        b.invokeInstruction(i.opcode(), CD_Bar, i.name().stringValue(), i.typeSymbol(), i.isInterface());
             else b.with(e);
         };
         // @end
@@ -190,10 +198,9 @@ class PackageSnippets {
         // @start region="instrumentCallsTransform"
         CodeTransform instrumentCalls = (b, e) -> {
             if (e instanceof InvokeInstruction i) {
-                b.getstatic(ClassDesc.of("java.lang.System"), "out", ClassDesc.of("java.io.PrintStream"))
+                b.getstatic(CD_System, "out", CD_PrintStream)
                  .constantInstruction(Opcode.LDC, i.name().stringValue())
-                 .invokevirtual(ClassDesc.of("java.io.PrintStream"), "println",
-                                MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String));
+                 .invokevirtual(CD_PrintStream, "println", MTD_void_String);
             }
             b.with(e);
         };
@@ -202,7 +209,7 @@ class PackageSnippets {
 
     void fooToBarUnrolled(ClassModel classModel) {
         // @start region="fooToBarUnrolled"
-        byte[] newBytes = Classfile.build(classModel.thisClass().asSymbol(),
+        byte[] newBytes = Classfile.of().build(classModel.thisClass().asSymbol(),
             classBuilder -> {
               for (ClassElement ce : classModel) {
                   if (ce instanceof MethodModel mm) {
@@ -215,7 +222,7 @@ class PackageSnippets {
                                               for (CodeElement e : xm) {
                                                   if (e instanceof InvokeInstruction i && i.owner().asInternalName().equals("Foo")
                                                                                && i.opcode() == Opcode.INVOKESTATIC)
-                                                              codeBuilder.invokeInstruction(i.opcode(), ClassDesc.of("Bar"),
+                                                              codeBuilder.invokeInstruction(i.opcode(), CD_Bar,
                                                                                             i.name().stringValue(), i.typeSymbol(), i.isInterface());
                                                   else codeBuilder.with(e);
                                               }});
@@ -234,7 +241,7 @@ class PackageSnippets {
 
     void codeRelabeling(ClassModel classModel) {
         // @start region="codeRelabeling"
-        byte[] newBytes = classModel.transform(
+        byte[] newBytes = Classfile.of().transform(classModel,
                 ClassTransform.transformingMethodBodies(
                         CodeTransform.ofStateful(CodeRelabeler::of)));
         // @end
@@ -244,11 +251,11 @@ class PackageSnippets {
     byte[] classInstrumentation(ClassModel target, ClassModel instrumentor, Predicate<MethodModel> instrumentedMethodsFilter) {
         var instrumentorCodeMap = instrumentor.methods().stream()
                                               .filter(instrumentedMethodsFilter)
-                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElse(null)));
+                                              .collect(Collectors.toMap(mm -> mm.methodName().stringValue() + mm.methodType().stringValue(), mm -> mm.code().orElseThrow()));
         var targetFieldNames = target.fields().stream().map(f -> f.fieldName().stringValue()).collect(Collectors.toSet());
         var targetMethods = target.methods().stream().map(m -> m.methodName().stringValue() + m.methodType().stringValue()).collect(Collectors.toSet());
         var instrumentorClassRemapper = ClassRemapper.of(Map.of(instrumentor.thisClass().asSymbol(), target.thisClass().asSymbol()));
-        return target.transform(
+        return Classfile.of().transform(target,
                 ClassTransform.transformingMethods(
                         instrumentedMethodsFilter,
                         (mb, me) -> {
@@ -266,13 +273,13 @@ class PackageSnippets {
                                                 && mm.methodType().stringValue().equals(inv.type().stringValue())) {
 
                                                 //store stacked method parameters into locals
-                                                var storeStack = new LinkedList<StoreInstruction>();
+                                                var storeStack = new ArrayDeque<StoreInstruction>();
                                                 int slot = 0;
                                                 if (!mm.flags().has(AccessFlag.STATIC))
-                                                    storeStack.add(StoreInstruction.of(TypeKind.ReferenceType, slot++));
+                                                    storeStack.push(StoreInstruction.of(TypeKind.ReferenceType, slot++));
                                                 for (var pt : mm.methodTypeSymbol().parameterList()) {
                                                     var tk = TypeKind.from(pt);
-                                                    storeStack.addFirst(StoreInstruction.of(tk, slot));
+                                                    storeStack.push(StoreInstruction.of(tk, slot));
                                                     slot += tk.slotSize();
                                                 }
                                                 storeStack.forEach(codeBuilder::with);
@@ -301,7 +308,7 @@ class PackageSnippets {
                                     !(cle instanceof FieldModel fm
                                             && !targetFieldNames.contains(fm.fieldName().stringValue()))
                                     && !(cle instanceof MethodModel mm
-                                            && !"<init>".equals(mm.methodName().stringValue())
+                                            && !ConstantDescs.INIT_NAME.equals(mm.methodName().stringValue())
                                             && !targetMethods.contains(mm.methodName().stringValue() + mm.methodType().stringValue())))
                             //and instrumentor class references remapped to target class
                             .andThen(instrumentorClassRemapper)))));
