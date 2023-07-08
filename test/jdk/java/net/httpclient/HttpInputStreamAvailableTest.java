@@ -26,14 +26,13 @@
  * @bug 8306040
  * @summary HttpResponseInputStream.available() returns 1 on empty stream
  * @library /test/lib /test/jdk/java/net/httpclient/lib
- * @run testng/othervm  HttpInputStreamAvailableTest
- * 
+ * @run testng/othervm HttpInputStreamAvailableTest
+ *
  */
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
-
 
 import java.io.IOException;
 import java.io.InputStream;
