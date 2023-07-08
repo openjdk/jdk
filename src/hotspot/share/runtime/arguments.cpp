@@ -3961,6 +3961,12 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
     warning("dependency logging results may be inflated by VerifyDependencies");
   }
 
+  bool log_class_load_cause = log_is_enabled(Info, class, load, cause, native) ||
+                              log_is_enabled(Info, class, load, cause);
+  if (log_class_load_cause && LogClassLoadingCauseFor == nullptr) {
+    warning("class load cause logging will not produce output without LogClassLoadingCauseFor");
+  }
+
   apply_debugger_ergo();
 
   if (log_is_enabled(Info, arguments)) {
