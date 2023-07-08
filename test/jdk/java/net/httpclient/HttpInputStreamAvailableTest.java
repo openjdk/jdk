@@ -24,17 +24,16 @@
 /**
  * @test
  * @bug 8306040
- * @library /test/lib
- * @run junit HttpInputStreamAvailableTest
+ * @summary HttpResponseInputStream.available() returns 1 on empty stream
+ * @library /test/lib /test/jdk/java/net/httpclient/lib
+ * @run testng/othervm  HttpInputStreamAvailableTest
+ * 
  */
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import jdk.test.lib.net.URIBuilder;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -47,10 +46,11 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import org.testng.annotations.Test;
+import org.testng.annotations.AfterTest;
+import org.testng.annotations.BeforeTest;
+import static org.testng.Assert.assertEquals;
 
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class HttpInputStreamAvailableTest {
 
     private HttpServer server;
@@ -58,8 +58,8 @@ public class HttpInputStreamAvailableTest {
     static final String TEST_MESSAGE = "This is test message";
     static final int ZERO = 0;
 
-    @BeforeAll
-    void before() throws Exception {
+    @BeforeTest
+    void setup() throws Exception {
         InetAddress loopback = InetAddress.getLoopbackAddress();
         InetSocketAddress addr = new InetSocketAddress(loopback, 0);
         server = HttpServer.create(addr, 0);
@@ -71,8 +71,8 @@ public class HttpInputStreamAvailableTest {
         server.start();
     }
 
-    @AfterAll
-    void after() throws Exception {
+    @AfterTest
+    void teardown() throws Exception {
         server.stop(0);
     }
 
@@ -112,7 +112,7 @@ public class HttpInputStreamAvailableTest {
                 assertEquals(ZERO, in.available());
             }
         } catch (IOException | InterruptedException | URISyntaxException t) {
-            fail();
+            throw t;
         }
     }
 
@@ -145,7 +145,7 @@ public class HttpInputStreamAvailableTest {
                 assertEquals(ZERO, in.available());
             }
         } catch (IOException | InterruptedException | URISyntaxException t) {
-            fail();
+            throw t;
         }
     }
 
