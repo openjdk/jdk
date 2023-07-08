@@ -26,13 +26,12 @@
 
 #include "precompiled.hpp"
 #include "logging/log.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/os.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/trimNativeHeap.hpp"
 #include "utilities/debug.hpp"
@@ -45,7 +44,7 @@ class NativeTrimmerThread : public NamedThread {
   uint16_t _suspend_count;
 
   // Statistics
-  volatile unsigned _num_trims_performed;
+  unsigned _num_trims_performed;
 
   bool is_suspended() const {
     assert(_lock->is_locked(), "Must be");
@@ -132,8 +131,8 @@ class NativeTrimmerThread : public NamedThread {
         log_info(trimnh)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
                            PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                            to_ms(t2 - t1));
-        Atomic::inc(&_num_trims_performed);
-        log_debug(trimnh)("Total trims: %u.", Atomic::load(&_num_trims_performed));
+        _num_trims_performed++;
+        log_debug(trimnh)("Total trims: %u.", _num_trims_performed);
       } else {
         log_info(trimnh)("Trim native heap: complete, no details, %1.3fms", to_ms(t2 - t1));
       }
