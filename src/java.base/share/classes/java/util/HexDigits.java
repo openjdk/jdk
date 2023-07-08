@@ -113,7 +113,7 @@ final class HexDigits implements Digits {
 
     /**
      * Return a big-endian packed long for the 8 ASCII bytes for an input unsigned 4-byte integer.
-     * {@code b0} is the most significant byte and {@code b4} is the least significant byte.
+     * {@code b0} is the most significant byte and {@code b3} is the least significant byte.
      * The integer is passed byte-wise to allow reordering of execution.
      */
     static long packDigits(int b0, int b1, int b2, int b3) {
