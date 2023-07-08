@@ -45,7 +45,7 @@ class NativeTrimmerThread : public NamedThread {
   uint16_t _suspend_count;
 
   // Statistics
-  volatile uint64_t _num_trims_performed;
+  volatile unsigned _num_trims_performed;
 
   bool is_suspended() const {
     assert(_lock->is_locked(), "Must be");
@@ -133,7 +133,7 @@ class NativeTrimmerThread : public NamedThread {
                            PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                            to_ms(t2 - t1));
         Atomic::inc(&_num_trims_performed);
-        log_debug(trimnh)("Total trims: " UINT64_FORMAT ".", Atomic::load(&_num_trims_performed));
+        log_debug(trimnh)("Total trims: %u.", Atomic::load(&_num_trims_performed));
       } else {
         log_info(trimnh)("Trim native heap: complete, no details, %1.3fms", to_ms(t2 - t1));
       }
