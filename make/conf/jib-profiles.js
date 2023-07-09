@@ -463,7 +463,8 @@ var getJibProfilesProfiles = function (input, common, data) {
             target_cpu: "x86",
             build_cpu: "x64",
             dependencies: ["devkit", "gtest"],
-            configure_args: concat(common.configure_args_32bit),
+            configure_args: concat(common.configure_args_32bit,
+                "--enable-deprecated-ports"),
         },
 
         "windows-aarch64": {
