@@ -27,6 +27,7 @@ import java.awt.Dimension;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Point;
+import java.awt.Robot;
 import java.awt.ScrollPane;
 
 /*
@@ -47,7 +48,7 @@ public final class ScrollPaneScrollEnd {
             new Dimension(CANVAS_SIZE.width / 3, CANVAS_SIZE.height / 3);
     private static final int SCROLL_OFFSET = 100;
 
-    private static final long DELAY = 200;
+    private static final int DELAY = 200;
 
     public static void main(String[] args) throws Exception {
         Canvas canvas = new Canvas() {
@@ -73,7 +74,9 @@ public final class ScrollPaneScrollEnd {
         frame.pack();
         frame.setVisible(true);
 
-        Thread.sleep(DELAY);
+        final Robot robot = new Robot();
+        robot.waitForIdle();
+        robot.delay(DELAY);
 
         final Dimension vp = scrollPane.getViewportSize();
         final Point expected = new Point(CANVAS_SIZE.width - vp.width,
