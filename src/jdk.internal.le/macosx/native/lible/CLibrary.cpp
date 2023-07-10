@@ -192,6 +192,7 @@ JNIEXPORT void JNICALL Java_jdk_internal_org_jline_terminal_impl_jna_osx_CLibrar
 
     if (error != 0) {
         throw_errno(env);
+        delete[] data;
         return ;
     }
 
