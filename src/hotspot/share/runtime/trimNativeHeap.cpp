@@ -72,7 +72,7 @@ class NativeTrimmerThread : public NamedThread {
     return SafepointSynchronize::is_at_safepoint() ||
         SafepointSynchronize::is_synchronizing();
   }
-  static constexpr int safepoint_poll_ms = 250;
+  static constexpr int64_t safepoint_poll_ms = 250;
 
   // in seconds
   static double now() { return os::elapsedTime(); }
@@ -106,6 +106,7 @@ class NativeTrimmerThread : public NamedThread {
             const int64_t wait_ms = MAX2(1.0, to_ms(next_trim_time - tnow));
             ml.wait(wait_ms);
           } else if (at_or_nearing_safepoint()) {
+            const int64_t wait_ms = MIN2((int64_t)TrimNativeHeapInterval, safepoint_poll_ms);
             ml.wait(safepoint_poll_ms);
           }
 
