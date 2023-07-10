@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/moduleEntry.hpp"
