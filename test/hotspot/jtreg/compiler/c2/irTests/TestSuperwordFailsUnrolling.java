@@ -32,6 +32,7 @@ import jdk.test.whitebox.WhiteBox;
  * @summary C2: loop candidate for superword not always unrolled fully if superword fails
  * @library /test/lib /
  * @build jdk.test.whitebox.WhiteBox
+ * @requires vm.compiler2.enabled
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -DSkipWhiteBoxInstall=true -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.TestSuperwordFailsUnrolling
  */
