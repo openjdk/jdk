@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,12 +120,13 @@ public class interrupt001a {
             breakHere();  // a break to get thread ids and then to interrupt MyThreads.
         } while (!allWorkersAreWaiting);
 
-        long waitTime = argumentHandler.getWaitTime() * 60 * 1000;
+        long waitTime = argumentHandler.getWaitTime() * 60 * 1000; // max time in loop
         long startTime = System.currentTimeMillis();
         while (notInterrupted.get() > 0 && System.currentTimeMillis() - startTime <= waitTime) {
             synchronized (waitnotify) {
                 try {
-                    waitnotify.wait(waitTime);
+                    // Short wait to give interrupts a chance to complete
+                    waitnotify.wait(200);
                 } catch (InterruptedException e) {
                     log.display("Main thread was interrupted while waiting");
                 }
