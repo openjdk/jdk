@@ -623,6 +623,20 @@ void ClassLoaderData::unload() {
 
   // Clean up global class iterator for compiler
   ClassLoaderDataGraph::adjust_saved_class(this);
+
+  // Release C heap allocated hashtable for all the modules.
+  if (_modules != nullptr) {
+    // Destroy the table itself
+    delete _modules;
+    _modules = nullptr;
+  }
+
+  // Release C heap allocated hashtable for the dictionary
+  if (_dictionary != nullptr) {
+    // Destroy the table itself
+    delete _dictionary;
+    _dictionary = nullptr;
+  }
 }
 
 ModuleEntryTable* ClassLoaderData::modules() {
@@ -732,20 +746,6 @@ ClassLoaderData::~ClassLoaderData() {
     // Destroy the table itself
     delete _packages;
     _packages = nullptr;
-  }
-
-  // Release C heap allocated hashtable for all the modules.
-  if (_modules != nullptr) {
-    // Destroy the table itself
-    delete _modules;
-    _modules = nullptr;
-  }
-
-  // Release C heap allocated hashtable for the dictionary
-  if (_dictionary != nullptr) {
-    // Destroy the table itself
-    delete _dictionary;
-    _dictionary = nullptr;
   }
 
   if (_unnamed_module != nullptr) {
