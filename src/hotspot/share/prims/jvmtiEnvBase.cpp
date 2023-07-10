@@ -145,7 +145,7 @@ JvmtiEnvBase::phase() {
 
 bool
 JvmtiEnvBase::is_valid() {
-  jint value = 0;
+  jlong value = 0;
 
   // This object might not be a JvmtiEnvBase so we can't assume
   // the _magic field is properly aligned. Get the value in a safe
@@ -616,7 +616,7 @@ JvmtiEnvBase::get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd
     found = id->find_local_field(fd);
   } else {
     // Non-static field. The fieldID is really the offset of the field within the object.
-    int offset = jfieldIDWorkaround::from_instance_jfieldID(k, field);
+    int offset = checked_cast<int>(jfieldIDWorkaround::from_instance_jfieldID(k, field));
     found = InstanceKlass::cast(k)->find_field_from_offset(offset, false, fd);
   }
   return found;
@@ -796,7 +796,7 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
     // This call can trigger a safepoint, so thread_oop must not be used after it.
     state = get_thread_state_base(ct_oop, java_thread) & ~filtered_bits;
   } else {
-    jshort vt_state = java_lang_VirtualThread::state(thread_oop);
+    int vt_state = java_lang_VirtualThread::state(thread_oop);
     state = (jint)java_lang_VirtualThread::map_state_to_thread_status(vt_state);
   }
   if (ext_suspended && ((state & JVMTI_THREAD_STATE_ALIVE) != 0)) {
@@ -2549,7 +2549,7 @@ VirtualThreadGetFrameLocationClosure::do_thread(Thread *target) {
 void
 VirtualThreadGetThreadStateClosure::do_thread(Thread *target) {
   assert(target->is_Java_thread(), "just checking");
-  jshort vthread_state = java_lang_VirtualThread::state(_vthread_h());
+  int vthread_state = java_lang_VirtualThread::state(_vthread_h());
   oop carrier_thread_oop = java_lang_VirtualThread::carrier_thread(_vthread_h());
   jint state;
 

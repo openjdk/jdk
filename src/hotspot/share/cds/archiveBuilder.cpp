@@ -809,12 +809,16 @@ uintx ArchiveBuilder::any_to_offset(address p) const {
   return buffer_to_offset(p);
 }
 
+#if INCLUDE_CDS_JAVA_HEAP
 narrowKlass ArchiveBuilder::get_requested_narrow_klass(Klass* k) {
   assert(DumpSharedSpaces, "sanity");
   k = get_buffered_klass(k);
   Klass* requested_k = to_requested(k);
-  return CompressedKlassPointers::encode_not_null(requested_k, _requested_static_archive_bottom);
+  address narrow_klass_base = _requested_static_archive_bottom; // runtime encoding base == runtime mapping start
+  const int narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+  return CompressedKlassPointers::encode_not_null(requested_k, narrow_klass_base, narrow_klass_shift);
 }
+#endif // INCLUDE_CDS_JAVA_HEAP
 
 // RelocateBufferToRequested --- Relocate all the pointers in rw/ro,
 // so that the archive can be mapped to the "requested" location without runtime relocation.
@@ -1030,7 +1034,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
 
 #if INCLUDE_CDS_JAVA_HEAP
   static void log_heap_region(ArchiveHeapInfo* heap_info) {
-    MemRegion r = heap_info->memregion();
+    MemRegion r = heap_info->buffer_region();
     address start = address(r.start());
     address end = address(r.end());
     log_region("heap", start, end, to_requested(start));
@@ -1200,8 +1204,8 @@ void ArchiveBuilder::print_bitmap_region_stats(size_t size, size_t total_size) {
 }
 
 void ArchiveBuilder::print_heap_region_stats(ArchiveHeapInfo *info, size_t total_size) {
-  char* start = info->start();
-  size_t size = info->byte_size();
+  char* start = info->buffer_start();
+  size_t size = info->buffer_byte_size();
   char* top = start + size;
   log_debug(cds)("hp space: " SIZE_FORMAT_W(9) " [ %4.1f%% of total] out of " SIZE_FORMAT_W(9) " bytes [100.0%% used] at " INTPTR_FORMAT,
                      size, size/double(total_size)*100.0, size, p2i(start));

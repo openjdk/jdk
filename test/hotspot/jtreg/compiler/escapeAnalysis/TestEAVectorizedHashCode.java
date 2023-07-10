@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Red Hat, Inc. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,30 @@
  * questions.
  */
 
-package gc.startup_warnings;
+/**
+ * @test
+ * @bug 8311023
+ * @summary Crash encountered while converting the types of non-escaped object to instance types.
+ *
+ * @run main/othervm
+ *      -XX:-TieredCompilation -Xbatch compiler.escapeAnalysis.TestEAVectorizedHashCode
+ */
 
-/*
-* @test TestShenandoah
-* @requires vm.gc.Shenandoah
-* @bug 8006398
-* @summary Test that the Shenandoah collector does not print a warning message
-* @library /test/lib
-* @modules java.base/jdk.internal.misc
-*          java.management
-* @run driver gc.startup_warnings.TestShenandoah
-*/
+package compiler.escapeAnalysis;
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
+import java.util.Arrays;
 
-public class TestShenandoah {
+public class TestEAVectorizedHashCode {
+    public static int micro() {
+        int[] a = { 10, 20, 30, 40, 50, 60};
+        return Arrays.hashCode(a);
+    }
 
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UnlockExperimentalVMOptions", "-XX:+UseShenandoahGC", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("deprecated");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
-
+    public static void main(String [] args) {
+        int res = 0;
+        for (int i = 0; i < 10000; i++) {
+            res += micro();
+        }
+        System.out.println("PASS:" +  res);
+    }
 }

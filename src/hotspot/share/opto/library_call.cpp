@@ -4042,7 +4042,7 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
 
     if (uninitialized) {
       // Mark the allocation so that zeroing is skipped
-      AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(obj, &_gvn);
+      AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(obj);
       alloc->maybe_set_complete(&_gvn);
     }
   }
@@ -4756,7 +4756,7 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   if (ReduceBulkZeroing) {
     // We will be completely responsible for initializing this object -
     // mark Initialize node as complete.
-    alloc = AllocateNode::Ideal_allocation(alloc_obj, &_gvn);
+    alloc = AllocateNode::Ideal_allocation(alloc_obj);
     // The object was just allocated - there should be no any stores!
     guarantee(alloc != nullptr && alloc->maybe_set_complete(&_gvn), "");
     // Mark as complete_with_arraycopy so that on AllocateNode
@@ -5465,7 +5465,7 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr) {
   if (stopped())             return nullptr;  // no fast path
   if (!C->do_aliasing())     return nullptr;  // no MergeMems around
 
-  AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(ptr, &_gvn);
+  AllocateArrayNode* alloc = AllocateArrayNode::Ideal_array_allocation(ptr);
   if (alloc == nullptr)  return nullptr;
 
   Node* rawmem = memory(Compile::AliasIdxRaw);

@@ -932,10 +932,11 @@
     <Field type="string" name="result" label="Thread Dump" />
   </Event>
 
-  <Event name="NativeLibrary" category="Java Virtual Machine, Runtime" label="Native Library" period="everyChunk">
+  <Event name="NativeLibrary" category="Java Virtual Machine, Runtime" label="Native Library" period="everyChunk"
+    description="Information about a dynamic library or other native image loaded by the JVM process">
     <Field type="string" name="name" label="Name" />
     <Field type="ulong" contentType="address" name="baseAddress" label="Base Address" description="Starting address of the module" />
-    <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module" />
+    <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module, if available" />
   </Event>
 
   <Event name="ModuleRequire" category="Java Virtual Machine, Runtime, Modules" label="Module Require" thread="false" period="everyChunk"

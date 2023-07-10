@@ -123,20 +123,20 @@ static inline bool check_alignment(Klass* v) {
 }
 
 inline Klass* CompressedKlassPointers::decode_raw(narrowKlass v) {
-  return decode_raw(v, base());
+  return decode_raw(v, base(), shift());
 }
 
-inline Klass* CompressedKlassPointers::decode_raw(narrowKlass v, address narrow_base) {
-  return (Klass*)((uintptr_t)narrow_base +((uintptr_t)v << shift()));
+inline Klass* CompressedKlassPointers::decode_raw(narrowKlass v, address narrow_base, int shift) {
+  return (Klass*)((uintptr_t)narrow_base +((uintptr_t)v << shift));
 }
 
 inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v) {
-  return decode_not_null(v, base());
+  return decode_not_null(v, base(), shift());
 }
 
-inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v, address narrow_base) {
+inline Klass* CompressedKlassPointers::decode_not_null(narrowKlass v, address narrow_base, int shift) {
   assert(!is_null(v), "narrow klass value can never be zero");
-  Klass* result = decode_raw(v, narrow_base);
+  Klass* result = decode_raw(v, narrow_base, shift);
   assert(check_alignment(result), "address not aligned: " PTR_FORMAT, p2i(result));
   return result;
 }
@@ -146,17 +146,17 @@ inline Klass* CompressedKlassPointers::decode(narrowKlass v) {
 }
 
 inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v) {
-  return encode_not_null(v, base());
+  return encode_not_null(v, base(), shift());
 }
 
-inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v, address narrow_base) {
+inline narrowKlass CompressedKlassPointers::encode_not_null(Klass* v, address narrow_base, int shift) {
   assert(!is_null(v), "klass value can never be zero");
   assert(check_alignment(v), "Address not aligned");
   uint64_t pd = (uint64_t)(pointer_delta(v, narrow_base, 1));
   assert(KlassEncodingMetaspaceMax > pd, "change encoding max if new encoding");
-  uint64_t result = pd >> shift();
+  uint64_t result = pd >> shift;
   assert((result & CONST64(0xffffffff00000000)) == 0, "narrow klass pointer overflow");
-  assert(decode_not_null((narrowKlass)result, narrow_base) == v, "reversibility");
+  assert(decode_not_null((narrowKlass)result, narrow_base, shift) == v, "reversibility");
   return (narrowKlass)result;
 }
 
