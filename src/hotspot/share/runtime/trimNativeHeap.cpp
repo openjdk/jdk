@@ -125,20 +125,26 @@ class NativeTrimmerThread : public NamedThread {
   // Execute the native trim, log results.
   void execute_trim_and_log(double t1) {
     assert(os::can_trim_native_heap(), "Unexpected");
+
     os::size_change_t sc;
-    log_debug(trimnative)("Trim native heap started...");
-    if (os::trim_native_heap(&sc)) {
-      double t2 = now();
-      if (sc.after != SIZE_MAX) {
-        const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
-        const char sign = sc.after < sc.before ? '-' : '+';
-        log_info(trimnative)("Trim native heap: RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
-                           PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
-                           to_ms(t2 - t1));
-        _num_trims_performed++;
-        log_debug(trimnative)("Total trims: %u.", _num_trims_performed);
-      } else {
-        log_info(trimnative)("Trim native heap: complete, no details, %1.3fms", to_ms(t2 - t1));
+    LogTarget(Info, trimnative) lt;
+    const bool logging_enabled = lt.is_enabled();
+
+    // We only collect size change information if we are logging; save the access to procfs otherwise.
+    if (os::trim_native_heap(logging_enabled ? &sc : nullptr)) {
+      _num_trims_performed++;
+      if (logging_enabled) {
+        double t2 = now();
+        if (sc.after != SIZE_MAX) {
+          const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
+          const char sign = sc.after < sc.before ? '-' : '+';
+          log_info(trimnative)("Trim native heap (%u): RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
+                               _num_trims_performed,
+                               PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
+                               to_ms(t2 - t1));
+        } else {
+          log_info(trimnative)("Trim native heap (%u): complete, no details, %1.3fms", _num_trims_performed, to_ms(t2 - t1));
+        }
       }
     }
   }
