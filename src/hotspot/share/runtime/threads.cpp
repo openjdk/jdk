@@ -756,7 +756,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif
 
-  if (TrimNativeHeap) {
+  if (NativeHeapTrimmer::enabled()) {
     NativeHeapTrimmer::initialize();
   }
 

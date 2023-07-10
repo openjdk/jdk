@@ -45,17 +45,19 @@ public:
 
   static uint64_t num_trims_performed();
 
+  static inline bool enabled() { return TrimNativeHeapInterval > 0; }
+
   // Pause periodic trimming while in scope; when leaving scope,
   // resume periodic trimming.
   struct SuspendMark {
     const char* const _reason;
     SuspendMark(const char* reason = "unknown") : _reason(reason) {
-      if (TrimNativeHeap) {
+      if (NativeHeapTrimmer::enabled()) {
         suspend_periodic_trim(_reason);
       }
     }
     ~SuspendMark()  {
-      if (TrimNativeHeap) {
+      if (NativeHeapTrimmer::enabled()) {
         resume_periodic_trim(_reason);
       }
     }

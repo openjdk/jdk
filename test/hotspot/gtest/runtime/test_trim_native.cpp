@@ -31,7 +31,7 @@
 
 TEST_VM(TrimNative, SuspendMark) {
 
-  if (!TrimNativeHeap) {
+  if (!NativeHeapTrimmer::enabled()) {
     return;
   }
 

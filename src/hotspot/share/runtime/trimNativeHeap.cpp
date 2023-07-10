@@ -85,6 +85,8 @@ class NativeTrimmerThread : public NamedThread {
   };
 
   void run() override {
+    assert(NativeHeapTrimmer::enabled(), "Only call if enabled");
+
     LogStartStopMark logStartStop;
 
     const double interval_secs = (double)TrimNativeHeapInterval / 1000;
@@ -155,7 +157,7 @@ public:
   }
 
   void suspend(const char* reason) {
-    assert(TrimNativeHeap, "Only call if enabled");
+    assert(NativeHeapTrimmer::enabled(), "Only call if enabled");
     uint16_t n = 0;
     {
       MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
@@ -166,7 +168,7 @@ public:
   }
 
   void resume(const char* reason) {
-    assert(TrimNativeHeap, "Only call if enabled");
+    assert(NativeHeapTrimmer::enabled(), "Only call if enabled");
     uint16_t n = 0;
     {
       MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
@@ -190,9 +192,9 @@ static NativeTrimmerThread* g_trimmer_thread = nullptr;
 
 void NativeHeapTrimmer::initialize() {
   assert(g_trimmer_thread == nullptr, "Only once");
-  if (TrimNativeHeap) {
+  if (TrimNativeHeapInterval > 0) {
     if (!os::can_trim_native_heap()) {
-      FLAG_SET_ERGO(TrimNativeHeap, false);
+      FLAG_SET_ERGO(TrimNativeHeapInterval, 0);
       log_info(trimnh)("Native trim not supported on this platform.");
       return;
     }

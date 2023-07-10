@@ -1985,14 +1985,12 @@ const int ObjectAlignmentInBytes = 8;
           "2: monitors & new lightweight locking (LM_LIGHTWEIGHT)")         \
           range(0, 2)                                                       \
                                                                             \
-  product(bool, TrimNativeHeap, false, EXPERIMENTAL,                        \
-          "JVM will attempt to trim the native heap periodically. "         \
-          "Interval is controlled by TrimNativeHeapInterval.")              \
-                                                                            \
-  product(uint, TrimNativeHeapInterval, 60 * 1000, EXPERIMENTAL,            \
-          "If TrimNativeHeap is enabled: interval, in ms, at which "        \
-          "the to trim the native heap.")                                   \
-          range(1, UINT_MAX)                                                \
+  product(uint, TrimNativeHeapInterval, 0, EXPERIMENTAL,                    \
+          "Interval, in ms, at which the JVM will trim the native heap if " \
+          "the platform supports that. Lower values will reclaim memory "   \
+          "more eagerly at the cost of higher overhead. A value of 0 "      \
+          "(default) disables the native heap trimming.")                   \
+          range(0, UINT_MAX)                                                \
 
 // end of RUNTIME_FLAGS
 
