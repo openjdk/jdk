@@ -53,66 +53,57 @@ class ChunkPool {
   const size_t _size;         // (inner payload) size of the chunks this pool serves
 
   // Returns null if pool is empty.
-  Chunk* take_from_pool();
-  void return_to_pool(Chunk* chunk);
-  void prune();
+  Chunk* take_from_pool() {
+    ThreadCritical tc;
+    Chunk* c = _first;
+    if (_first != nullptr) {
+      _first = _first->next();
+    }
+    return c;
+  }
+  void return_to_pool(Chunk* chunk) {
+    assert(chunk->length() == _size, "wrong pool for this chunk");
+    ThreadCritical tc;
+    chunk->set_next(_first);
+    _first = chunk;
+  }
+
+  void prune() {
+    // Free all chunks while in ThreadCritical lock
+    // so NMT adjustment is stable.
+    ThreadCritical tc;
+    Chunk* cur = _first;
+    Chunk* next = nullptr;
+    while (cur != nullptr) {
+      next = cur->next();
+      os::free(cur);
+      cur = next;
+    }
+    _first = nullptr;
+  }
 
   // Given a (inner payload) size, return the pool responsible for it, or null if the size is non-standard
-  static ChunkPool* get_pool_for_size(size_t size);
+  static ChunkPool* get_pool_for_size(size_t size) {
+    for (int i = 0; i < _num_pools; i++) {
+      if (_pools[i]._size == size) {
+        return _pools + i;
+      }
+    }
+    return nullptr;
+  }
 
 public:
   ChunkPool(size_t size) : _first(nullptr), _size(size) {}
 
-  static void clean();
+  static void clean()  {
+    for (int i = 0; i < _num_pools; i++) {
+      _pools[i].prune();
+    }
+  }
+
   static Chunk* allocate_chunk(AllocFailType alloc_failmode, size_t length);
   static void deallocate_chunk(Chunk* p);
 };
-
-
-Chunk* ChunkPool::take_from_pool() {
-  ThreadCritical tc;
-  Chunk* c = _first;
-  if (_first != nullptr) {
-    _first = _first->next();
-  }
-  return c;
-}
-
-void ChunkPool::return_to_pool(Chunk* chunk) {
-  assert(chunk->length() == _size, "wrong pool for this chunk");
-  ThreadCritical tc;
-  chunk->set_next(_first);
-  _first = chunk;
-}
-
-ChunkPool* ChunkPool::get_pool_for_size(size_t size) {
-  for (int i = 0; i < _num_pools; i++) {
-    if (_pools[i]._size == size) {
-      return _pools + i;
-    }
-  }
-  return nullptr;
-}
-
-void ChunkPool::prune() {
-  // Free all chunks while in ThreadCritical lock
-  // so NMT adjustment is stable.
-  ThreadCritical tc;
-  Chunk* cur = _first;
-  Chunk* next = nullptr;
-  while (cur != nullptr) {
-    next = cur->next();
-    os::free(cur);
-    cur = next;
-  }
-  _first = nullptr;
-}
-
-void ChunkPool::clean() {
-  for (int i = 0; i < _num_pools; i++) {
-    _pools[i].prune();
-  }
-}
 
 Chunk* ChunkPool::allocate_chunk(AllocFailType alloc_failmode, size_t length) {
   // - requested_size = sizeof(Chunk)
