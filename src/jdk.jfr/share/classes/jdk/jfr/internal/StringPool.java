@@ -101,6 +101,15 @@ public final class StringPool {
         return isCurrentGeneration(internalSid) ? externalSid(internalSid) : storeString(s);
     }
 
+    /*
+     * The string pool uses a generational id scheme to sync the JVM and Java sides.
+     * The string pool relies on the EventWriter and its implementation, especially
+     * its ability to restart event write attempts on interleaving epoch shifts.
+     * Even though a string id is generationally valid during StringPool lookup,
+     * the JVM can evolve the generation before the event is committed,
+     * effectively invalidating the fetched string id. The event restart mechanism
+     * of the EventWriter ensures that committed strings are in the correct generation.
+     */
     public static long addString(String s) {
         Long lsid = cache.get(s);
         if (lsid != null) {

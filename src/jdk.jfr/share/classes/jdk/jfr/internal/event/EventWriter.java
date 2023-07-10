@@ -281,17 +281,19 @@ public final class EventWriter {
         }
         long nextPosition = JVM.commit(currentPosition);
         if (nextPosition == currentPosition) {
-            // event writer updated after successful commit.
+            // Successful commit. Update the writer start position.
             startPosition = nextPosition;
             return true;
         }
-        // if nextPosition == 0, the event was committed and the underlying buffer lease was returned.
+        // If nextPosition == 0, the event was committed, the underlying buffer lease
+        // returned and new writer positions updated. Nothing to do.
         if (nextPosition == 0) {
             return true;
         }
-        // If commit aborted due to epoch shift, the start position is returned.
-        assert(nextPosition == startPosition);
-        currentPosition = startPosition;
+        // The commit was aborted because of an interleaving epoch shift.
+        // The nextPosition returned is the current start position.
+        // Reset the writer and return false to restart the write attempt.
+        currentPosition = nextPosition;
         return false;
     }
 
