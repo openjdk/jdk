@@ -93,7 +93,7 @@ public class IntegrityHeapDumpTest {
         output.shouldHaveExitValue(0);
         Asserts.assertTrue(stdoutStr.contains("Heap dump file created"));
         Asserts.assertTrue(stderrStr.equals(""));
-        
+
         verifyHeapDump(heapDumpFile);
     }
 
