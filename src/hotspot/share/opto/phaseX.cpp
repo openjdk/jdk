@@ -1447,8 +1447,8 @@ void PhaseIterGVN::add_users_to_worklist0( Node *n ) {
   }
 }
 
-// If cmp is part of a counted loop exit condition, and n is either the incr or limit,
-// then return the counted loop Phi. Else return nullptr.
+// Return counted loop Phi if as a counted loop exit condition, cmp
+// compares the induction variable with n
 static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
   for (DUIterator_Fast imax, i = cmp->fast_outs(imax); i < imax; i++) {
     Node* bol = cmp->fast_out(i);
@@ -1456,7 +1456,7 @@ static PhiNode* countedloop_phi_from_cmp(CmpNode* cmp, Node* n) {
       Node* iff = bol->fast_out(i2);
       if (iff->is_BaseCountedLoopEnd()) {
         BaseCountedLoopEndNode* cle = iff->as_BaseCountedLoopEnd();
-        if (cle->limit() == n || cle->incr() == n) {
+        if (cle->limit() == n) {
           PhiNode* phi = cle->phi();
           if (phi != nullptr) {
             return phi;
@@ -1518,12 +1518,6 @@ void PhaseIterGVN::add_users_to_worklist( Node *n ) {
           // the loop limit may have changed, which can then change the
           // range values of the trip-count Phi.
           _worklist.push(phi);
-          // This can also have an effect on the counted loop incr. For
-          // example we may be subsuming an identical AddI node, replacing
-          // the incr. The new incr then cannot have a type overflow, which
-          // may make its type more precise. Any potential incr must be a
-          // user of the phi.
-          add_users_to_worklist0(phi);
         }
       }
       if (use_op == Op_CmpI) {

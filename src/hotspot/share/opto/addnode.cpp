@@ -419,64 +419,30 @@ Node* AddINode::Identity(PhaseGVN* phase) {
 // Supplied function returns the sum of the inputs.  Guaranteed never
 // to be passed a TOP or BOTTOM type, these are filtered out by
 // pre-check.
-const Type* AddINode::add_ring(const Type* t0, const Type* t1) const {
-  const TypeInt* r0 = t0->is_int();
-  const TypeInt* r1 = t1->is_int();
-
-  // Because of the limit check, we know that the counted loop incr never overflows
-  bool overflow_impossible = is_counted_loop_incr();
-
-  // Compute new range in jlong. Overflow / Underflow can be detected if the lo / hi
-  // go outside the int range.
-  jlong lo = java_add(r0->lo_as_long(), r1->lo_as_long());
-  jlong hi = java_add(r0->hi_as_long(), r1->hi_as_long());
-  int widen = MAX2(r0->_widen,r1->_widen);
-
-  if (overflow_impossible) {
-    // Overflow / Underflow impossible
-    if (hi < (jlong)min_jint || lo > (jlong)max_jint) {
-      // [lo, hi] is outside of int range -> never valid
-      assert(false, "is there any such case?"); // TODO remove
-      return Type::TOP;
-    } else {
-      // To prevent type overflow, clamp bounds individually
-      lo = MAX2((jlong)min_jint, lo);
-      hi = MIN2((jlong)max_jint, hi);
-      return TypeInt::make(lo, hi, widen);
+const Type *AddINode::add_ring( const Type *t0, const Type *t1 ) const {
+  const TypeInt *r0 = t0->is_int(); // Handy access
+  const TypeInt *r1 = t1->is_int();
+  int lo = java_add(r0->_lo, r1->_lo);
+  int hi = java_add(r0->_hi, r1->_hi);
+  if( !(r0->is_con() && r1->is_con()) ) {
+    // Not both constants, compute approximate result
+    if( (r0->_lo & r1->_lo) < 0 && lo >= 0 ) {
+      lo = min_jint; hi = max_jint; // Underflow on the low side
+    }
+    if( (~(r0->_hi | r1->_hi)) < 0 && hi < 0 ) {
+      lo = min_jint; hi = max_jint; // Overflow on the high side
+    }
+    if( lo > hi ) {               // Handle overflow
+      lo = min_jint; hi = max_jint;
     }
   } else {
-    // Overflow / Underflow possible
-    if (r0->is_con() && r1->is_con()) {
-      // Both constants, compute precise result. Semantics define
-      // overflow and underflow for integer addition as expected.
-      // In particular: 0x80000000 + 0x80000000 --> 0x0
-      jint add_con = java_add(r0->get_con(), r1->get_con());
-      return TypeInt::make(add_con);
-    } else {
-      if (lo < (jlong)min_jint || hi > (jlong)max_jint) {
-        // Overflow / Underflow -> return int
-        return TypeInt::INT;
-      } else {
-        assert((jlong)min_jint <= lo &&
-               lo <= hi &&
-               hi <= (jlong)max_jint, "no overflow");
-        return TypeInt::make(lo, hi, widen);
-      }
-    }
+    // both constants, compute precise result using 'lo' and 'hi'
+    // Semantics define overflow and underflow for integer addition
+    // as expected.  In particular: 0x80000000 + 0x80000000 --> 0x0
   }
+  return TypeInt::make( lo, hi, MAX2(r0->_widen,r1->_widen) );
 }
 
-bool AddINode::is_counted_loop_incr() const {
-  PhiNode* phi = in(1)->isa_Phi();
-  if (phi == nullptr || phi->in(2) != this) {
-    return false; // AddI is not on backedge of a Phi
-  }
-  BaseCountedLoopNode* loop = phi->in(0)->isa_BaseCountedLoop();
-  if (loop == nullptr || loop->incr() != this) {
-    return false; // AddI is not incr of a BaseCountedLoop
-  }
-  return true;
-}
 
 //=============================================================================
 //------------------------------Idealize---------------------------------------

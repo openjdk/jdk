@@ -28,7 +28,6 @@
 #include "opto/node.hpp"
 #include "opto/opcodes.hpp"
 #include "opto/type.hpp"
-#include "opto/loopnode.hpp"
 #include "utilities/pair.hpp"
 
 // Portions of code courtesy of Clifford Click
@@ -94,8 +93,6 @@ public:
   int min_opcode() const { return Op_MinI; }
   virtual Node* Ideal(PhaseGVN* phase, bool can_reshape);
   virtual Node* Identity(PhaseGVN* phase);
-
-  bool is_counted_loop_incr() const;
 
   virtual uint ideal_reg() const { return Op_RegI; }
 };
