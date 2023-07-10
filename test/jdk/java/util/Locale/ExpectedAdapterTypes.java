@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2015, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,27 +25,36 @@
  * @test
  * @bug 8008577 8138613
  * @summary Check whether CLDR locale provider adapter is enabled by default
- * @compile -XDignore.symbol.file Bug8008577.java
+ * @compile -XDignore.symbol.file ExpectedAdapterTypes.java
  * @modules java.base/sun.util.locale.provider
- * @run main Bug8008577
+ * @run junit ExpectedAdapterTypes
  */
 
 import java.util.Arrays;
 import java.util.List;
 import sun.util.locale.provider.LocaleProviderAdapter;
 
-public class Bug8008577 {
+import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class ExpectedAdapterTypes {
 
     static final LocaleProviderAdapter.Type[] expected = {
         LocaleProviderAdapter.Type.CLDR,
         LocaleProviderAdapter.Type.JRE,
     };
 
-    public static void main(String[] args) {
-        List<LocaleProviderAdapter.Type> types = LocaleProviderAdapter.getAdapterPreference();
-        List<LocaleProviderAdapter.Type> expectedList = Arrays.asList(expected);
-        if (!types.equals(expectedList)) {
-            throw new RuntimeException("Default locale provider adapter list is incorrect");
-        }
+    /**
+     * This test ensures LocaleProviderAdapter.getAdapterPreference() returns
+     * the correct preferred adapter types. This test should fail whenever a change is made
+     * to the implementation and the expected list is not updated accordingly.
+     */
+    @Test
+    public void correctAdapterListTest() {
+        List<LocaleProviderAdapter.Type> actualTypes = LocaleProviderAdapter.getAdapterPreference();
+        List<LocaleProviderAdapter.Type> expectedTypes = Arrays.asList(expected);
+        assertEquals(actualTypes, expectedTypes, String.format("getAdapterPreference() " +
+                "returns: %s, but the expected adapter list returns: %s", actualTypes, expectedTypes));
     }
 }

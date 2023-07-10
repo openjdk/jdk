@@ -83,6 +83,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/reflectionUtils.hpp"
 #include "runtime/threads.hpp"
 #include "services/classLoadingService.hpp"
@@ -3786,9 +3787,18 @@ const char* InstanceKlass::internal_name() const {
 void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
                                              const ModuleEntry* module_entry,
                                              const ClassFileStream* cfs) const {
+
   if (ClassListWriter::is_enabled()) {
     ClassListWriter::write(this, cfs);
   }
+
+  print_class_load_helper(loader_data, module_entry, cfs);
+  print_class_load_cause_logging();
+}
+
+void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
+                                             const ModuleEntry* module_entry,
+                                             const ClassFileStream* cfs) const {
 
   if (!log_is_enabled(Info, class, load)) {
     return;
@@ -3847,7 +3857,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
 
     // Class hierarchy info
     debug_stream.print(" klass: " PTR_FORMAT " super: " PTR_FORMAT,
-                       p2i(this),  p2i(superklass()));
+                      p2i(this),  p2i(superklass()));
 
     // Interfaces
     if (local_interfaces() != nullptr && local_interfaces()->length() > 0) {
@@ -3855,7 +3865,7 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
       int length = local_interfaces()->length();
       for (int i = 0; i < length; i++) {
         debug_stream.print(" " PTR_FORMAT,
-                           p2i(InstanceKlass::cast(local_interfaces()->at(i))));
+                          p2i(InstanceKlass::cast(local_interfaces()->at(i))));
       }
     }
 
@@ -3867,12 +3877,72 @@ void InstanceKlass::print_class_load_logging(ClassLoaderData* loader_data,
     // Classfile checksum
     if (cfs) {
       debug_stream.print(" bytes: %d checksum: %08x",
-                         cfs->length(),
-                         ClassLoader::crc32(0, (const char*)cfs->buffer(),
-                         cfs->length()));
+                        cfs->length(),
+                        ClassLoader::crc32(0, (const char*)cfs->buffer(),
+                        cfs->length()));
     }
 
     msg.debug("%s", debug_stream.as_string());
+  }
+}
+
+void InstanceKlass::print_class_load_cause_logging() const {
+  bool log_cause_native = log_is_enabled(Info, class, load, cause, native);
+  if (log_cause_native || log_is_enabled(Info, class, load, cause)) {
+    JavaThread* current = JavaThread::current();
+    ResourceMark rm(current);
+    const char* name = external_name();
+
+    if (LogClassLoadingCauseFor == nullptr ||
+        (strcmp("*", LogClassLoadingCauseFor) != 0 &&
+         strstr(name, LogClassLoadingCauseFor) == nullptr)) {
+        return;
+    }
+
+    // Log Java stack first
+    {
+      LogMessage(class, load, cause) msg;
+      NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
+
+      info_stream.print_cr("Java stack when loading %s:", name);
+      current->print_stack_on(&info_stream);
+    }
+
+    // Log native stack second
+    if (log_cause_native) {
+      // Log to string first so that lines can be indented
+      stringStream stack_stream;
+      char buf[O_BUFLEN];
+      address lastpc = nullptr;
+      if (os::platform_print_native_stack(&stack_stream, nullptr, buf, O_BUFLEN, lastpc)) {
+        // We have printed the native stack in platform-specific code,
+        // so nothing else to do in this case.
+      } else {
+        frame f = os::current_frame();
+        VMError::print_native_stack(&stack_stream, f, current, true /*print_source_info */,
+                                    -1 /* max stack_stream */, buf, O_BUFLEN);
+      }
+
+      LogMessage(class, load, cause, native) msg;
+      NonInterleavingLogStream info_stream{LogLevelType::Info, msg};
+      info_stream.print_cr("Native stack when loading %s:", name);
+
+      // Print each native stack line to the log
+      int size = (int) stack_stream.size();
+      char* stack = stack_stream.as_string();
+      char* stack_end = stack + size;
+      char* line_start = stack;
+      for (char* p = stack; p < stack_end; p++) {
+        if (*p == '\n') {
+          *p = '\0';
+          info_stream.print_cr("\t%s", line_start);
+          line_start = p + 1;
+        }
+      }
+      if (line_start < stack_end) {
+        info_stream.print_cr("\t%s", line_start);
+      }
+    }
   }
 }
 

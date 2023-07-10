@@ -1148,7 +1148,7 @@ bool Arguments::process_argument(const char* arg,
     JVMFlag* fuzzy_matched = JVMFlag::fuzzy_match((const char*)argname, arg_len, true);
     if (fuzzy_matched != nullptr) {
       jio_fprintf(defaultStream::error_stream(),
-                  "Did you mean '%s%s%s'? ",
+                  "Did you mean '%s%s%s'?\n",
                   (fuzzy_matched->is_bool()) ? "(+/-)" : "",
                   fuzzy_matched->name(),
                   (fuzzy_matched->is_bool()) ? "" : "=<value>");
@@ -1913,7 +1913,7 @@ bool Arguments::check_vm_args_consistency() {
   if (UseHeavyMonitors) {
     if (FLAG_IS_CMDLINE(LockingMode) && LockingMode != LM_MONITOR) {
       jio_fprintf(defaultStream::error_stream(),
-                  "Conflicting -XX:+UseHeavyMonitors and -XX:LockingMode=%d flags", LockingMode);
+                  "Conflicting -XX:+UseHeavyMonitors and -XX:LockingMode=%d flags\n", LockingMode);
       return false;
     }
     FLAG_SET_CMDLINE(LockingMode, LM_MONITOR);
@@ -1922,21 +1922,21 @@ bool Arguments::check_vm_args_consistency() {
 #if !defined(X86) && !defined(AARCH64) && !defined(PPC64) && !defined(RISCV64) && !defined(S390)
   if (LockingMode == LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture");
+                "LockingMode == 0 (LM_MONITOR) is not fully implemented on this architecture\n");
     return false;
   }
 #endif
 #if defined(X86) && !defined(ZERO)
   if (LockingMode == LM_MONITOR && UseRTMForStackLocks) {
     jio_fprintf(defaultStream::error_stream(),
-                "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive");
+                "LockingMode == 0 (LM_MONITOR) and -XX:+UseRTMForStackLocks are mutually exclusive\n");
 
     return false;
   }
 #endif
   if (VerifyHeavyMonitors && LockingMode != LM_MONITOR) {
     jio_fprintf(defaultStream::error_stream(),
-                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)");
+                "-XX:+VerifyHeavyMonitors requires LockingMode == 0 (LM_MONITOR)\n");
     return false;
   }
   return status;
@@ -2838,7 +2838,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
         if (jvmci_compiler != nullptr) {
           if (strncmp(jvmci_compiler, "graal", strlen("graal")) != 0) {
             jio_fprintf(defaultStream::error_stream(),
-              "Value of jvmci.Compiler incompatible with +UseGraalJIT: %s", jvmci_compiler);
+              "Value of jvmci.Compiler incompatible with +UseGraalJIT: %s\n", jvmci_compiler);
             return JNI_ERR;
           }
         } else if (!add_property("jvmci.Compiler=graal")) {
@@ -2855,7 +2855,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       if (jvmciFlag != nullptr && jvmciFlag->is_unlocked()) {
         if (!JVMCIGlobals::enable_jvmci_product_mode(origin, use_graal_jit)) {
           jio_fprintf(defaultStream::error_stream(),
-            "Unable to enable JVMCI in product mode");
+            "Unable to enable JVMCI in product mode\n");
           return JNI_ERR;
         }
       }
@@ -3948,7 +3948,7 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);
   if (lvl == NMT_unknown) {
     jio_fprintf(defaultStream::error_stream(),
-                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", nullptr);
+                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]\n");
     return JNI_ERR;
   }
   if (PrintNMTStatistics && lvl == NMT_off) {
@@ -3959,6 +3959,12 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   bool trace_dependencies = log_is_enabled(Debug, dependencies);
   if (trace_dependencies && VerifyDependencies) {
     warning("dependency logging results may be inflated by VerifyDependencies");
+  }
+
+  bool log_class_load_cause = log_is_enabled(Info, class, load, cause, native) ||
+                              log_is_enabled(Info, class, load, cause);
+  if (log_class_load_cause && LogClassLoadingCauseFor == nullptr) {
+    warning("class load cause logging will not produce output without LogClassLoadingCauseFor");
   }
 
   apply_debugger_ergo();
