@@ -51,13 +51,13 @@ class NativeTrimmerThread : public NamedThread {
     return _suspend_count > 0;
   }
 
-  unsigned inc_suspend_count() {
+  uint16_t inc_suspend_count() {
     assert(_lock->is_locked(), "Must be");
     assert(_suspend_count < UINT16_MAX, "Sanity");
     return ++_suspend_count;
   }
 
-  unsigned dec_suspend_count() {
+  uint16_t dec_suspend_count() {
     assert(_lock->is_locked(), "Must be");
     assert(_suspend_count != 0, "Sanity");
     return --_suspend_count;
@@ -155,7 +155,7 @@ public:
 
   void suspend(const char* reason) {
     assert(TrimNativeHeap, "Only call if enabled");
-    unsigned n = 0;
+    uint16_t n = 0;
     {
       MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
       n = inc_suspend_count();
@@ -166,7 +166,7 @@ public:
 
   void resume(const char* reason) {
     assert(TrimNativeHeap, "Only call if enabled");
-    unsigned n = 0;
+    uint16_t n = 0;
     {
       MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
       n = dec_suspend_count();
