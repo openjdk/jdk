@@ -563,11 +563,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
     /* write the two structs and the data buffer */
     if (writeFully(c->childenv[1], (char *)&magic, sizeof(magic)) != sizeof(magic)) { // magic number first
         free(buf);
-<<<<<<< HEAD
         return -1;
-=======
-	return -1;
->>>>>>> ca127f59105d786ba85da5ca941e8d76bb030aca
     }
 #ifdef DEBUG
     jtregSimulateCrash(resultPid, 2);
@@ -576,11 +572,7 @@ spawnChild(JNIEnv *env, jobject process, ChildStuff *c, const char *helperpath) 
         writeFully(c->childenv[1], (char *)&sp, sizeof(sp)) != sizeof(sp) ||
         writeFully(c->childenv[1], buf, bufsize) != bufsize) {
         free(buf);
-<<<<<<< HEAD
         return -1;
-=======
-	return -1;
->>>>>>> ca127f59105d786ba85da5ca941e8d76bb030aca
     }
     /* We're done. Let jspwanhelper know he can't expect any more data from us. */
     close(c->childenv[1]);
