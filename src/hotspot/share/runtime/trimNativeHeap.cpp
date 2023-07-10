@@ -31,7 +31,7 @@
 #include "runtime/mutex.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
-#include "runtime/os.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/trimNativeHeap.hpp"
 #include "utilities/debug.hpp"
