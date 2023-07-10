@@ -521,7 +521,7 @@ public interface Path
      *
      * <p> The result of this method is the same as would be obtained
      * by resolving the first parameter path against this path, then
-     * resovling the second parameter path against the derived path,
+     * resolving the second parameter path against the derived path,
      * and so on until all parameters have been processed. Each single
      * resolution in the chain behaves as specified by {@linkplain
      * #resolve(Path) resolve}.
