@@ -541,9 +541,6 @@ public interface Path
      *
      * @return the resulting path
      *
-     * @throws  InvalidPathException
-     *          if the path string cannot be converted to a Path.
-     *
      * @see #resolve(Path)
      *
      * @since 22
@@ -564,7 +561,7 @@ public interface Path
      *
      * <p> The result of this method is the same as would be obtained
      * by resolving the first parameter path string against this path, then
-     * resovling the second parameter path string against the derived path,
+     * resolving the second parameter path string against the derived path,
      * and so on until all parameters have been processed. Each single
      * resolution in the chain behaves as specified by {@linkplain
      * #resolve(String) resolve}.
