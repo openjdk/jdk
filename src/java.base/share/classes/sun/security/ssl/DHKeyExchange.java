@@ -327,45 +327,36 @@ final class DHKeyExchange {
             }
 
             /*
-             * 768 bits ephemeral DH private keys were used to be used in
+             * 768 bit ephemeral DH private keys used to be used in
              * ServerKeyExchange except that exportable ciphers max out at 512
-             * bits modulus values. We still adhere to this behavior in legacy
+             * bit modulus values. We still adhere to this behavior in legacy
              * mode (system property "jdk.tls.ephemeralDHKeySize" is defined
              * as "legacy").
              *
-             * Old JDK (JDK 7 and previous) releases don't support DH keys
-             * bigger than 1024 bits. We have to consider the compatibility
-             * requirement. 1024 bits DH key is always used for non-exportable
-             * cipher suites in default mode (system property
+             * Only very old JDK releases don't support DH keys bigger than
+             * 1024 bits (JDK 1.5 and 6u/7u releases prior to adding support
+             * for DH keys > 1024 bits - see JDK-8062834). A 2048 bit
+             * DH key is always used for non-exportable cipher suites in
+             * default mode (when the system property
              * "jdk.tls.ephemeralDHKeySize" is not defined).
-             *
-             * However, if applications want more stronger strength, setting
-             * system property "jdk.tls.ephemeralDHKeySize" to "matched"
-             * is a workaround to use ephemeral DH key which size matches the
-             * corresponding authentication key. For example, if the public key
-             * size of an authentication certificate is 2048 bits, then the
-             * ephemeral DH key size should be 2048 bits accordingly unless
-             * the cipher suite is exportable.  This key sizing scheme keeps
-             * the cryptographic strength consistent between authentication
-             * keys and key-exchange keys.
              *
              * Applications may also want to customize the ephemeral DH key
              * size to a fixed length for non-exportable cipher suites. This
-             * can be approached by setting system property
+             * can be done by setting the system property
              * "jdk.tls.ephemeralDHKeySize" to a valid positive integer between
              * 1024 and 8192 bits, inclusive.
              *
-             * Note that the minimum acceptable key size is 1024 bits except
-             * exportable cipher suites or legacy mode.
+             * Note that the minimum acceptable key size is 2048 bits except
+             * for exportable cipher suites or legacy mode.
              *
              * Note that per RFC 2246, the key size limit of DH is 512 bits for
              * exportable cipher suites.  Because of the weakness, exportable
              * cipher suites are deprecated since TLS v1.1 and they are not
              * enabled by default in Oracle provider. The legacy behavior is
-             * reserved and 512 bits DH key is always used for exportable
+             * preserved and a 512 bit DH key is always used for exportable
              * cipher suites.
              */
-            int keySize = exportable ? 512 : 1024;           // default mode
+            int keySize = exportable ? 512 : 2048;           // default mode
             if (!exportable) {
                 if (useLegacyEphemeralDHKeys) {          // legacy mode
                     keySize = 768;
@@ -391,7 +382,7 @@ final class DHKeyExchange {
                         // limit in the future when the compatibility and
                         // interoperability impact is limited.
                         keySize = ks <= 1024 ? 1024 : 2048;
-                    } // Otherwise, anonymous cipher suites, 1024-bit is used.
+                    } // Otherwise, anonymous cipher suites, 2048-bit is used.
                 } else if (customizedDHKeySize > 0) {    // customized mode
                     keySize = customizedDHKeySize;
                 }
