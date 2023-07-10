@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,30 +21,38 @@
  * questions.
  */
 
-package gc.startup_warnings;
-
 /*
- * @test TestSerialGC
- * @bug 8006398
- * @summary Test that SerialGC does not print a warning message
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.management
- * @run driver gc.startup_warnings.TestSerialGC
+ * @test
+ * @bug 8309902
+ * @summary C2: assert(false) failed: Bad graph detected in build_loop_late after JDK-8305189
+ * @run main/othervm  -Xcomp -XX:CompileCommand=compileonly,TestAssertPredicatePeeling::* TestAssertPredicatePeeling
  */
 
-import jdk.test.lib.process.ProcessTools;
-import jdk.test.lib.process.OutputAnalyzer;
 
+public class TestAssertPredicatePeeling {
+    static volatile long instanceCount;
 
-public class TestSerialGC {
+    public static void main(String[] strArr) {
+        test();
+    }
 
-  public static void main(String args[]) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:+UseSerialGC", "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("deprecated");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
+    static int test() {
+        int i2 = 2, i17 = 3, i18 = 2, iArr[] = new int[10];
 
+        int i15 = 1;
+        while (i15 < 100000) {
+            for (int i16 = i15; i16 < 1; ++i16) {
+                try {
+                    iArr[i16] = 5 / iArr[6];
+                    i17 = iArr[5] / i2;
+                    i2 = i15;
+                } catch (ArithmeticException a_e) {
+                }
+                instanceCount -= i15;
+            }
+            i15++;
+        }
+        return i17;
+    }
 }
+

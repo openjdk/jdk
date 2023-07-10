@@ -55,7 +55,7 @@ public sealed interface SignatureAttribute
     Utf8Entry signature();
 
     /**
-     * Parse the siganture as a class signature.
+     * Parse the signature as a class signature.
      * @return the class signature
      */
     default ClassSignature asClassSignature() {
@@ -71,7 +71,7 @@ public sealed interface SignatureAttribute
     }
 
     /**
-     * Parse the siganture as a type signature.
+     * Parse the signature as a type signature.
      * @return the type signature
      */
     default Signature asTypeSignature() {
