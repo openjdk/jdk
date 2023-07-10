@@ -3265,19 +3265,19 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(rscratch4, r1, rscratch2);           \
     __ ldrw(rscratch1, Address(buf, k*4));       \
     __ eorw(rscratch3, rscratch3, r4);           \
-    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch4, rscratch4, rscratch1);    \
     __ addw(rscratch3, rscratch3, rscratch4);    \
     __ rorw(rscratch2, rscratch3, 32 - s);       \
     __ addw(r1, rscratch2, r2);
 
 #define GG(r1, r2, r3, r4, k, s, t)              \
-    __ eorw(rscratch2, r2, r3);                  \
+    __ andw(rscratch3, r2, r4);                  \
+    __ bicw(rscratch4, r3, r4);                  \
     __ ldrw(rscratch1, Address(buf, k*4));       \
-    __ andw(rscratch3, rscratch2, r4);           \
     __ movw(rscratch2, t);                       \
-    __ eorw(rscratch3, rscratch3, r3);           \
+    __ orrw(rscratch3, rscratch3, rscratch4);    \
     __ addw(rscratch4, r1, rscratch2);           \
-    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch4, rscratch4, rscratch1);    \
     __ addw(rscratch3, rscratch3, rscratch4);    \
     __ rorw(rscratch2, rscratch3, 32 - s);       \
     __ addw(r1, rscratch2, r2);
@@ -3288,7 +3288,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(rscratch4, r1, rscratch2);           \
     __ ldrw(rscratch1, Address(buf, k*4));       \
     __ eorw(rscratch3, rscratch3, r2);           \
-    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch4, rscratch4, rscratch1);    \
     __ addw(rscratch3, rscratch3, rscratch4);    \
     __ rorw(rscratch2, rscratch3, 32 - s);       \
     __ addw(r1, rscratch2, r2);
@@ -3299,7 +3299,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(rscratch4, r1, rscratch3);           \
     __ ldrw(rscratch1, Address(buf, k*4));       \
     __ eorw(rscratch3, rscratch2, r3);           \
-    __ addw(rscratch3, rscratch3, rscratch1);    \
+    __ addw(rscratch4, rscratch4, rscratch1);    \
     __ addw(rscratch3, rscratch3, rscratch4);    \
     __ rorw(rscratch2, rscratch3, 32 - s);       \
     __ addw(r1, rscratch2, r2);
