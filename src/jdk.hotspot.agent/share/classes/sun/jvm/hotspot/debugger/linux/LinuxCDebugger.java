@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2015, Red Hat Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -33,11 +33,13 @@ import sun.jvm.hotspot.debugger.cdbg.*;
 import sun.jvm.hotspot.debugger.x86.*;
 import sun.jvm.hotspot.debugger.amd64.*;
 import sun.jvm.hotspot.debugger.aarch64.*;
+import sun.jvm.hotspot.debugger.riscv64.*;
 import sun.jvm.hotspot.debugger.ppc64.*;
 import sun.jvm.hotspot.debugger.linux.x86.*;
 import sun.jvm.hotspot.debugger.linux.amd64.*;
 import sun.jvm.hotspot.debugger.linux.ppc64.*;
 import sun.jvm.hotspot.debugger.linux.aarch64.*;
+import sun.jvm.hotspot.debugger.linux.riscv64.*;
 import sun.jvm.hotspot.utilities.*;
 
 class LinuxCDebugger implements CDebugger {
@@ -105,7 +107,14 @@ class LinuxCDebugger implements CDebugger {
        Address pc  = context.getRegisterAsAddress(AARCH64ThreadContext.PC);
        if (pc == null) return null;
        return new LinuxAARCH64CFrame(dbg, fp, pc);
-     } else {
+    } else if (cpu.equals("riscv64")) {
+       RISCV64ThreadContext context = (RISCV64ThreadContext) thread.getContext();
+       Address fp = context.getRegisterAsAddress(RISCV64ThreadContext.FP);
+       if (fp == null) return null;
+       Address pc  = context.getRegisterAsAddress(RISCV64ThreadContext.PC);
+       if (pc == null) return null;
+       return new LinuxRISCV64CFrame(dbg, fp, pc);
+    } else {
        // Runtime exception thrown by LinuxThreadContextFactory if unknown cpu
        ThreadContext context = (ThreadContext) thread.getContext();
        return context.getTopFrame(dbg);

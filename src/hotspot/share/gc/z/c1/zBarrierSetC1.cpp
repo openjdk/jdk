@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,11 @@ private:
 
 public:
   LIR_OpZLoadBarrierTest(LIR_Opr opr) :
+#ifdef RISCV
+      LIR_Op(lir_zloadbarrier_test, LIR_OprFact::illegalOpr, NULL),
+#else
       LIR_Op(),
+#endif
       _opr(opr) {}
 
   virtual void visit(LIR_OpVisitState* state) {

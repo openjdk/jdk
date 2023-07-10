@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2019, 2021, NTT DATA.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -58,6 +58,10 @@
 
 #ifdef aarch64
 #include "sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext.h"
+#endif
+
+#ifdef riscv64
+#include "sun_jvm_hotspot_debugger_riscv64_RISCV64ThreadContext.h"
 #endif
 
 class AutoJavaString {
@@ -408,7 +412,7 @@ JNIEXPORT jbyteArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
   return (err == PS_OK)? array : 0;
 }
 
-#if defined(i586) || defined(amd64) || defined(ppc64) || defined(ppc64le) || defined(aarch64)
+#if defined(i586) || defined(amd64) || defined(ppc64) || defined(ppc64le) || defined(aarch64) || defined(riscv64)
 extern "C"
 JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_getThreadIntegerRegisterSet0
   (JNIEnv *env, jobject this_obj, jint lwp_id) {
@@ -439,6 +443,9 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
 #endif
 #ifdef aarch64
 #define NPRGREG sun_jvm_hotspot_debugger_aarch64_AARCH64ThreadContext_NPRGREG
+#endif
+#ifdef riscv64
+#define NPRGREG sun_jvm_hotspot_debugger_riscv64_RISCV64ThreadContext_NPRGREG
 #endif
 #if defined(ppc64) || defined(ppc64le)
 #define NPRGREG sun_jvm_hotspot_debugger_ppc64_PPC64ThreadContext_NPRGREG
@@ -515,6 +522,44 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLo
     regs[REG_INDEX(PC)] = gregs.pc;
   }
 #endif /* aarch64 */
+
+#if defined(riscv64)
+#define REG_INDEX(reg)  sun_jvm_hotspot_debugger_riscv64_RISCV64ThreadContext_##reg
+
+  regs[REG_INDEX(PC)]  = gregs.pc;
+  regs[REG_INDEX(LR)]  = gregs.ra;
+  regs[REG_INDEX(SP)]  = gregs.sp;
+  regs[REG_INDEX(R3)]  = gregs.gp;
+  regs[REG_INDEX(R4)]  = gregs.tp;
+  regs[REG_INDEX(R5)]  = gregs.t0;
+  regs[REG_INDEX(R6)]  = gregs.t1;
+  regs[REG_INDEX(R7)]  = gregs.t2;
+  regs[REG_INDEX(R8)]  = gregs.s0;
+  regs[REG_INDEX(R9)]  = gregs.s1;
+  regs[REG_INDEX(R10)]  = gregs.a0;
+  regs[REG_INDEX(R11)]  = gregs.a1;
+  regs[REG_INDEX(R12)]  = gregs.a2;
+  regs[REG_INDEX(R13)]  = gregs.a3;
+  regs[REG_INDEX(R14)]  = gregs.a4;
+  regs[REG_INDEX(R15)]  = gregs.a5;
+  regs[REG_INDEX(R16)]  = gregs.a6;
+  regs[REG_INDEX(R17)]  = gregs.a7;
+  regs[REG_INDEX(R18)]  = gregs.s2;
+  regs[REG_INDEX(R19)]  = gregs.s3;
+  regs[REG_INDEX(R20)]  = gregs.s4;
+  regs[REG_INDEX(R21)]  = gregs.s5;
+  regs[REG_INDEX(R22)]  = gregs.s6;
+  regs[REG_INDEX(R23)]  = gregs.s7;
+  regs[REG_INDEX(R24)]  = gregs.s8;
+  regs[REG_INDEX(R25)]  = gregs.s9;
+  regs[REG_INDEX(R26)]  = gregs.s10;
+  regs[REG_INDEX(R27)]  = gregs.s11;
+  regs[REG_INDEX(R28)]  = gregs.t3;
+  regs[REG_INDEX(R29)]  = gregs.t4;
+  regs[REG_INDEX(R30)]  = gregs.t5;
+  regs[REG_INDEX(R31)]  = gregs.t6;
+
+#endif /* riscv64 */
 
 #if defined(ppc64) || defined(ppc64le)
 #define REG_INDEX(reg) sun_jvm_hotspot_debugger_ppc64_PPC64ThreadContext_##reg
