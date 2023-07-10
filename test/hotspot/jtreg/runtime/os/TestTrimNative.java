@@ -105,8 +105,8 @@ public class TestTrimNative {
     // Actual RSS increase is a lot larger than 4 MB. Depends on glibc overhead, and NMT malloc headers in debug VMs.
     // We need small-grained allocations to make sure they actually increase RSS (all touched) and to see the
     // glibc-retaining-memory effect.
-    static final int szAllocations = 16;
-    static final int totalAllocationsSize = 16 * 1024 * 1024; // 16 MB total
+    static final int szAllocations = 128;
+    static final int totalAllocationsSize = 128 * 1024 * 1024; // 128 MB total
     static final int numAllocations = totalAllocationsSize / szAllocations;
 
     static long[] ptrs = new long[numAllocations];
@@ -125,6 +125,7 @@ public class TestTrimNative {
         allOptions.add("-Xmx128m");
         allOptions.add("-Xms128m"); // Stabilize RSS
         allOptions.add("-XX:+AlwaysPreTouch"); // Stabilize RSS
+        allOptions.add("-XX:+UnlockDiagnosticVMOptions"); // For whitebox
         allOptions.add("-XX:+WhiteBoxAPI");
         allOptions.add("-Xbootclasspath/a:.");
         allOptions.add("-XX:-ExplicitGCInvokesConcurrent"); // Invoke explicit GC on System.gc
