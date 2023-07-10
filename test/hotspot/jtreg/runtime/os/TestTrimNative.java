@@ -128,7 +128,7 @@ public class TestTrimNative {
         allOptions.add("-XX:+WhiteBoxAPI");
         allOptions.add("-Xbootclasspath/a:.");
         allOptions.add("-XX:-ExplicitGCInvokesConcurrent"); // Invoke explicit GC on System.gc
-        allOptions.add("-Xlog:trimnh=debug");
+        allOptions.add("-Xlog:trimnative=debug");
         allOptions.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         if (programOptions != null) {
             allOptions.addAll(Arrays.asList(programOptions));
@@ -165,7 +165,7 @@ public class TestTrimNative {
                                                           int maxTrimsExpected) {
         output.reportDiagnosticSummary();
         List<String> lines = output.asLines();
-        Pattern pat = Pattern.compile(".*\\[trimnh\\] Trim native heap: RSS\\+Swap: (\\d+)([BKMG])->(\\d+)([BKMG]).*");
+        Pattern pat = Pattern.compile(".*\\[trimnative\\] Trim native heap: RSS\\+Swap: (\\d+)([BKMG])->(\\d+)([BKMG]).*");
         int numTrimsFound = 0;
         long rssReductionTotal = 0;
         for (String line : lines) {
