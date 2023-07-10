@@ -134,6 +134,7 @@ GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 OopHandle HeapShared::_roots;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 KlassToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
+HeapShared::ResolvedReferenceScratchTable* HeapShared::_scratch_references_table = nullptr;
 
 static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], InstanceKlass* ik) {
   for (int i = 0; fields[i].valid(); i++) {
@@ -338,6 +339,29 @@ public:
     }
   }
 };
+
+void HeapShared::init_scratch_references() {
+  if (_scratch_references_table == nullptr)
+    _scratch_references_table = new (mtClass)ResolvedReferenceScratchTable();
+}
+
+void HeapShared::add_scratch_resolved_reference(intptr_t src, int index, oop new_result) {
+  MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+  OopHandle* scratch_handle = _scratch_references_table->get(src);
+  objArrayOop scratch = (objArrayOop)(scratch_handle->resolve());
+  scratch->obj_at_put(index, new_result);
+}
+
+void HeapShared::add_scratch_resolved_references(intptr_t src, OopHandle dest) {
+  assert(_scratch_references_table != nullptr, "must be initialized");
+  MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+  _scratch_references_table->put(src, dest);
+}
+
+OopHandle HeapShared::scratch_resolved_references(intptr_t src) {
+  MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+  return *(_scratch_references_table->get(src));
+}
 
 void HeapShared::init_scratch_objects(TRAPS) {
   for (int i = T_BOOLEAN; i < T_VOID+1; i++) {

@@ -503,6 +503,9 @@ void VM_PopulateDumpSharedSpace::doit() {
 
   char* cloned_vtables = CppVtables::dumptime_init(&builder);
 
+  // Initialize random for updating the hash of symbols
+  os::init_random(0x12345678);
+
   builder.dump_rw_metadata();
   builder.dump_ro_metadata();
   builder.relocate_metaspaceobj_embedded_pointers();
@@ -543,8 +546,6 @@ void VM_PopulateDumpSharedSpace::doit() {
     log_warning(cds)("This archive was created with AllowArchivingWithJavaAgent. It should be used "
             "for testing purposes only and should not be used in a production environment");
   }
-
-  MetaspaceShared::exit_after_static_dump();
 }
 
 class CollectCLDClosure : public CLDClosure {
@@ -661,10 +662,6 @@ void MetaspaceShared::preload_and_dump() {
                      java_lang_String::as_utf8_string(java_lang_Throwable::message(PENDING_EXCEPTION)));
       MetaspaceShared::unrecoverable_writing_error("VM exits due to exception, use -Xlog:cds,exceptions=trace for detail");
     }
-  } else {
-    // On success, the VM_PopulateDumpSharedSpace op should have
-    // exited the VM.
-    ShouldNotReachHere();
   }
 }
 
@@ -894,14 +891,6 @@ void MetaspaceShared::unrecoverable_writing_error(const char* message) {
     log_error(cds)("%s", message);
   }
   vm_direct_exit(1);
-}
-
-// We have finished dumping the static archive. At this point, there may be pending VM
-// operations. We have changed some global states (such as vmClasses::_klasses) that
-// may cause these VM operations to fail. For safety, forget these operations and
-// exit the VM directly.
-void MetaspaceShared::exit_after_static_dump() {
-  os::_exit(0);
 }
 
 void MetaspaceShared::initialize_runtime_shared_and_meta_spaces() {

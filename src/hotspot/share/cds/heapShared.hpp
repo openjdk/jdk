@@ -282,6 +282,12 @@ private:
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
   static KlassToOopHandleTable* _scratch_java_mirror_table;
 
+  typedef ResourceHashtable<intptr_t, OopHandle,
+    36137, // prime number
+    AnyObj::C_HEAP,
+    mtClassShared> ResolvedReferenceScratchTable;
+  static ResolvedReferenceScratchTable* _scratch_references_table;
+
   static void init_seen_objects_table() {
     assert(_seen_objects_table == nullptr, "must be");
     _seen_objects_table = new (mtClass)SeenObjectsTable();
@@ -394,6 +400,10 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
+  static void init_scratch_references() NOT_CDS_JAVA_HEAP_RETURN;
+  static OopHandle scratch_resolved_references(intptr_t src) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static void add_scratch_resolved_reference(intptr_t src, int index, oop new_result) NOT_CDS_JAVA_HEAP_RETURN;
+  static void add_scratch_resolved_references(intptr_t src, OopHandle dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
     CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
