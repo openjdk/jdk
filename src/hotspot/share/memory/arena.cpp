@@ -49,14 +49,12 @@ class ChunkPool {
   static const int _num_pools = 4;
   static ChunkPool _pools[_num_pools];
 
-  Chunk*       _first;        // first cached Chunk; its first word points to next chunk
+  Chunk*       _first;
   const size_t _size;         // (inner payload) size of the chunks this pool serves
 
-  // Allocate a chunk from the pool; returns null if pool is empty.
+  // Returns null if pool is empty.
   Chunk* take_from_pool();
-  // Return a chunk to the pool
   void return_to_pool(Chunk* chunk);
-  // Prune the pool
   void prune();
 
   // Given a (inner payload) size, return the pool responsible for it, or null if the size is non-standard
