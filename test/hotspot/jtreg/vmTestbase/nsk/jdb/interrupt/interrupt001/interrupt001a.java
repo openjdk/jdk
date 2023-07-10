@@ -120,13 +120,17 @@ public class interrupt001a {
             breakHere();  // a break to get thread ids and then to interrupt MyThreads.
         } while (!allWorkersAreWaiting);
 
-        long waitTime = argumentHandler.getWaitTime() * 60 * 1000; // max time in loop
+        long waitTime = argumentHandler.getWaitTime() * 60 * 1000;
         long startTime = System.currentTimeMillis();
         while (notInterrupted.get() > 0 && System.currentTimeMillis() - startTime <= waitTime) {
             synchronized (waitnotify) {
                 try {
-                    // Short wait to give interrupts a chance to complete
-                    waitnotify.wait(200);
+                    // Wait for a thread to be interrupted. We first need to recheck
+                    // the count inside the synchronized block because it may have gone
+                    // to 0 since last check.
+                    if (notInterrupted.get() > 0) {
+                        waitnotify.wait(waitTime);
+                    }
                 } catch (InterruptedException e) {
                     log.display("Main thread was interrupted while waiting");
                 }
