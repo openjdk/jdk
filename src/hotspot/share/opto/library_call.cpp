@@ -3013,9 +3013,9 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   set_all_memory(input_memory_state);
   Node* input_io_state = i_o();
 
-  // TLS
+  // TLS.
   Node* tls_ptr = _gvn.transform(new ThreadLocalNode());
-  // Java buffer.
+  // Jfr java buffer.
   Node* java_buffer_offset = _gvn.transform(new AddPNode(top(), tls_ptr, _gvn.transform(MakeConX(in_bytes(JAVA_BUFFER_OFFSET_JFR)))));
   Node* java_buffer = _gvn.transform(new LoadPNode(control(), input_memory_state, java_buffer_offset, TypePtr::BOTTOM, TypeRawPtr::NOTNULL, MemNode::unordered));
   Node* java_buffer_pos_offset = _gvn.transform(new AddPNode(top(), java_buffer, _gvn.transform(MakeConX(in_bytes(JFR_BUFFER_POS_OFFSET)))));
@@ -3046,12 +3046,12 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   set_control(not_notified);
   set_all_memory(input_memory_state);
 
-  // Arg is the next position as a long
+  // Arg is the next position as a long.
   Node* arg = argument(0);
-  // long to machine-word size
+  // Convert long to machine-word.
   Node* next_pos_X = _gvn.transform(ConvL2X(arg));
 
-  // Store the next_position to the underlying java buffer.
+  // Store the next_position to the underlying jfr java buffer.
   Node* commit_memory;
 #ifdef _LP64
   commit_memory = store_to_memory(control(), java_buffer_pos_offset, next_pos_X, T_LONG, Compile::AliasIdxRaw, MemNode::release);
@@ -3064,7 +3064,7 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   Node* flags = make_load(control(), java_buffer_flags_offset, TypeInt::UBYTE, T_BYTE, MemNode::unordered);
   Node* lease_constant = _gvn.transform(_gvn.intcon(4));
 
-  // And flags with lease constant
+  // And flags with lease constant.
   Node* lease = _gvn.transform(new AndINode(flags, lease_constant));
 
   // Branch on lease to conditionalize returning the leased java buffer.
@@ -3079,7 +3079,7 @@ bool LibraryCallKit::inline_native_jvm_commit() {
   Node* is_lease = _gvn.transform(new IfTrueNode(iff_lease));
   set_control(is_lease);
 
-  // Make a runtime call, which can safepoint, to return the leased buffer. This updates both the JfrThreadLocal and the Java event writer.
+  // Make a runtime call, which can safepoint, to return the leased buffer. This updates both the JfrThreadLocal and the Java event writer oop.
   Node* call_return_lease = make_runtime_call(RC_NO_LEAF,
                                               OptoRuntime::void_void_Type(),
                                               StubRoutines::jfr_return_lease(),

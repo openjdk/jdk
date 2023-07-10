@@ -50,7 +50,7 @@ public final class StringPool {
     private static int preCacheOld = 0;
     /* max size bytes */
     private static long currentSizeUTF16;
-    /* string pool generation (0-65535) set by the JVM on epoch shift. Not private to avoid being optimied away. */
+    /* string pool generation (0-65535) set by the JVM on epoch shift. Not private to avoid being optimized away. */
     static short generation = 0;
 
     /* internalSid is a composite id [48-bit externalSid][16-bit generation]. */

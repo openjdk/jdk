@@ -177,11 +177,14 @@ BufferPtr JfrStorage::acquire_promotion_buffer(size_t size, JfrStorageMspace* ms
   assert(size <= mspace->min_element_size(), "invariant");
   while (true) {
     BufferPtr buffer = mspace_acquire_live_with_retry(size, mspace, retry_count, thread);
-    if (buffer == nullptr && storage_instance.control().should_discard()) {
+    if (buffer != nullptr) {
+      return buffer;
+    }
+    if (storage_instance.control().should_discard()) {
       storage_instance.discard_oldest(thread);
       continue;
     }
-    return buffer != nullptr ? buffer : JfrStorage::acquire_transient(size, thread);
+    return JfrStorage::acquire_transient(size, thread);
   }
 }
 
@@ -281,7 +284,6 @@ void JfrStorage::release_large(BufferPtr buffer, Thread* thread) {
 
 void JfrStorage::register_full(BufferPtr buffer, Thread* thread) {
   assert(buffer != nullptr, "invariant");
-  assert(buffer->acquired_by(thread), "invariant");
   assert(buffer->retired(), "invariant");
   if (_full_list->add(buffer)) {
     if (thread->is_Java_thread()) {
@@ -340,7 +342,6 @@ void JfrStorage::discard_oldest(Thread* thread) {
     while (_full_list->is_nonempty()) {
       BufferPtr oldest = _full_list->remove();
       assert(oldest != nullptr, "invariant");
-      assert(oldest->identity() != nullptr, "invariant");
       discarded_size += oldest->discard();
       assert(oldest->unflushed_size() == 0, "invariant");
       if (oldest->transient()) {
@@ -349,6 +350,7 @@ void JfrStorage::discard_oldest(Thread* thread) {
       }
       oldest->reinitialize();
       assert(!oldest->retired(), "invariant");
+      assert(oldest->identity() != nullptr, "invariant");
       oldest->release(); // publish
       break;
     }
