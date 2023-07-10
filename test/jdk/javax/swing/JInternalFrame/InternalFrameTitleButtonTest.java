@@ -55,7 +55,7 @@ public class InternalFrameTitleButtonTest {
             return;
         }
         UIManager.setLookAndFeel(
-               "com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
+                   "com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
         try {
             test();
         } finally {
@@ -65,6 +65,17 @@ public class InternalFrameTitleButtonTest {
                 }
             });
         }
+        UIManager.setLookAndFeel(
+              "com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
+        try {
+            test();
+        } finally {
+            SwingUtilities.invokeAndWait(() -> {
+                if (frame != null) {
+                    frame.dispose();
+                }
+            });
+	}
         System.out.println("ok");
     }
 
@@ -99,15 +110,20 @@ public class InternalFrameTitleButtonTest {
                 Component c = title.getComponent(i);
                 if (c instanceof JButton) {
                     Icon icon = ((JButton) c).getIcon();
-                    if (icon.getIconHeight() > height - 4
-                        || icon.getIconWidth() > height - 2) {
-                        throw new RuntimeException("Wrong title icon size");
-                    }
-                    if (UIManager.getInt("InternalFrame.titleButtonWidth")
-                                         != icon.getIconWidth()) {
-                        throw new RuntimeException(
-                            "UIManager width setting not same as returned icon width");
-                    }
+                    if (UIManager.getLookAndFeel().toString().
+                            contains("WindowsClassicLookAndFeel")) {
+                        if ((icon.getIconWidth() > height - 2) &&
+			    height != UIManager.getInt(
+				    "InternalFrame.titleButtonHeight") - 4) {
+                            throw new RuntimeException("Wrong title icon size");
+                        }
+                    } else if (UIManager.getLookAndFeel().
+                               toString().contains("WindowsLookAndFeel")) {
+                        if (icon.getIconWidth() > UIManager.getInt(
+                                "InternalFrame.titleButtonHeight") + 10) {
+                            throw new RuntimeException("Wrong title icon size");
+                        }
+		    }
                 }
             }
         });

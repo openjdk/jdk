@@ -28,7 +28,6 @@ package com.sun.java.swing.plaf.windows;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -175,7 +174,7 @@ public class WindowsIconFactory implements Serializable
 
     @SuppressWarnings("serial") // Same-version serialization only
     private static class FrameButtonIcon implements Icon, Serializable {
-        private Part part;
+        private final Part part;
 
         private FrameButtonIcon(Part part) {
             this.part = part;
@@ -291,7 +290,6 @@ public class WindowsIconFactory implements Serializable
             } else {
                 width = UIManager.getInt("InternalFrame.titleButtonHeight") - 2;
             }
-            UIManager.put("InternalFrame.titleButtonWidth", width);
             return width;
         }
 

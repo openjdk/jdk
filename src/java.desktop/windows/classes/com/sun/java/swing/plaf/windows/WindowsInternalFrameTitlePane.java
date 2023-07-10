@@ -27,13 +27,36 @@ package com.sun.java.swing.plaf.windows;
 
 import sun.swing.SwingUtilities2;
 
-import javax.swing.*;
-import javax.swing.border.*;
+import java.awt.Component;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.GradientPaint;
+import java.awt.Insets;
+import java.awt.LayoutManager;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.Paint;
+import java.awt.Point;
+import java.awt.Rectangle;
+import javax.swing.JComponent;
+import javax.swing.border.Border;
+import javax.swing.BorderFactory;
+import javax.swing.Icon;
+import javax.swing.JInternalFrame;
+import javax.swing.JLabel;
+import javax.swing.JMenuItem;
+import javax.swing.JPopupMenu;
+import javax.swing.JSeparator;
+import javax.swing.LookAndFeel;
+import javax.swing.UIDefaults;
 import javax.swing.UIManager;
-import javax.swing.plaf.*;
 import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import java.awt.*;
-import java.awt.event.*;
+import javax.swing.plaf.UIResource;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyVetoException;
@@ -79,13 +102,11 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
             // Assume for now that height is correct and derive width from height
             buttonWidth = buttonHeight + 14;
         } else {
-            buttonWidth = buttonHeight;
-            buttonWidth += 2;
+            buttonWidth = buttonHeight + 2;
             Color activeBorderColor =
                     UIManager.getColor("InternalFrame.activeBorderColor");
             setBorder(BorderFactory.createLineBorder(activeBorderColor, 1));
         }
-        UIManager.put("InternalFrame.titleButtonWidth", buttonWidth);
         // JDK-8039383: initialize these colors because getXP() may return null when theme is changed
         selectedTitleGradientColor =
                 UIManager.getColor("InternalFrame.activeTitleGradient");
