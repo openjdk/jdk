@@ -70,9 +70,7 @@ public final class ScrollPaneScrollEnd {
         Frame frame = new Frame("ScrollPaneScrollEnd");
         frame.add(scrollPane, "Center");
         frame.setLocation(100, 100);
-        System.out.println("frame.setSize");
         frame.pack();
-        System.out.println("frame.setVisible");
         frame.setVisible(true);
 
         Thread.sleep(DELAY);
