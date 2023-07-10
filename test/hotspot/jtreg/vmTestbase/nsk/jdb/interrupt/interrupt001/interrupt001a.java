@@ -127,7 +127,7 @@ public class interrupt001a {
                 try {
                     // Wait for a thread to be interrupted. We first need to recheck
                     // the count inside the synchronized block because it may have gone
-                    // to 0 since last check.
+                    // to 0 since last check, in which case we'll never get a notify().
                     if (notInterrupted.get() > 0) {
                         waitnotify.wait(waitTime);
                     }
