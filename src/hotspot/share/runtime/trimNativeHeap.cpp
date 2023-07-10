@@ -78,18 +78,19 @@ class NativeTrimmerThread : public NamedThread {
   static double now() { return os::elapsedTime(); }
   static double to_ms(double seconds) { return seconds * 1000.0; }
 
-  struct LogStartStop {
+  struct LogStartStopMark {
     void log(const char* s) { log_info(trimnh)("NativeTrimmer %s.", s); }
-    LogStartStop()  { log("start"); }
-    ~LogStartStop() { log("stop"); }
+    LogStartStopMark()  { log("start"); }
+    ~LogStartStopMark() { log("stop"); }
   };
 
   void run() override {
-    LogStartStop logStartStop;
+    LogStartStopMark logStartStop;
+
+    const double interval_secs = (double)TrimNativeHeapInterval / 1000;
 
     for (;;) {
       double tnow = now();
-      const double interval_secs = (double)TrimNativeHeapInterval / 1000;
       double next_trim_time = tnow + interval_secs;
 
       {
