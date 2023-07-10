@@ -366,7 +366,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   // Dump/restore miscellaneous metadata.
   JavaClasses::serialize_offsets(soc);
-  HeapShared::serialize_root(soc);
   Universe::serialize(soc);
   soc->do_tag(--tag);
 

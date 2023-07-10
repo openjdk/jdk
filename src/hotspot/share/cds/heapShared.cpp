@@ -832,23 +832,10 @@ void HeapShared::write_subgraph_info_table() {
   }
 }
 
-void HeapShared::serialize_root(SerializeClosure* soc) {
-  oop roots_oop = nullptr;
-
-  if (soc->reading()) {
-    soc->do_oop(&roots_oop); // read from archive
-    assert(oopDesc::is_oop_or_null(roots_oop), "is oop");
-    // Create an OopHandle only if we have actually mapped or loaded the roots
-    if (roots_oop != nullptr) {
-      assert(ArchiveHeapLoader::is_in_use(), "must be");
-      _roots = OopHandle(Universe::vm_global(), roots_oop);
-    }
-  } else {
-    // writing
-    if (HeapShared::can_write()) {
-      roots_oop = ArchiveHeapWriter::heap_roots_requested_address();
-    }
-    soc->do_oop(&roots_oop); // write to archive
+void HeapShared::init_roots(oop roots_oop) {
+  if (roots_oop != nullptr) {
+    assert(ArchiveHeapLoader::is_in_use(), "must be");
+    _roots = OopHandle(Universe::vm_global(), roots_oop);
   }
 }
 
@@ -1669,8 +1656,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
     _num_total_oops ++;
     narrowOop v = *p;
     if (!CompressedOops::is_null(v)) {
-      // Note: HeapShared::to_requested_address() is not necessary because
-      // the heap always starts at a deterministic address with UseCompressedOops==true.
       size_t idx = p - (narrowOop*)_start;
       _oopmap->set_bit(idx);
     } else {
@@ -1691,33 +1676,6 @@ class FindEmbeddedNonNullPointers: public BasicOopIterateClosure {
   int num_null_oops()  const { return _num_null_oops; }
 };
 #endif
-
-address HeapShared::to_requested_address(address dumptime_addr) {
-  assert(DumpSharedSpaces, "static dump time only");
-  if (dumptime_addr == nullptr || UseCompressedOops) {
-    return dumptime_addr;
-  }
-
-  // With UseCompressedOops==false, actual_base is selected by the OS so
-  // it's different across -Xshare:dump runs.
-  address actual_base = (address)G1CollectedHeap::heap()->reserved().start();
-  address actual_end  = (address)G1CollectedHeap::heap()->reserved().end();
-  assert(actual_base <= dumptime_addr && dumptime_addr <= actual_end, "must be an address in the heap");
-
-  // We always write the objects as if the heap started at this address. This
-  // makes the heap content deterministic.
-  //
-  // Note that at runtime, the heap address is also selected by the OS, so
-  // the archive heap will not be mapped at 0x10000000. Instead, we will call
-  // HeapShared::patch_embedded_pointers() to relocate the heap contents
-  // accordingly.
-  const address REQUESTED_BASE = (address)0x10000000;
-  intx delta = REQUESTED_BASE - actual_base;
-
-  address requested_addr = dumptime_addr + delta;
-  assert(REQUESTED_BASE != 0 && requested_addr != nullptr, "sanity");
-  return requested_addr;
-}
 
 #ifndef PRODUCT
 ResourceBitMap HeapShared::calculate_oopmap(MemRegion region) {
