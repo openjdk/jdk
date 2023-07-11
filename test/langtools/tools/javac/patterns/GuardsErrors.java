@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8262891
+ * @bug 8262891 8310133
  * @summary Check errors reported for guarded patterns.
  * @compile/fail/ref=GuardsErrors.out -XDrawDiagnostics GuardsErrors.java
  */
@@ -54,6 +54,9 @@ public class GuardsErrors {
                     return i == 2;
                 }
             }.test() -> {}
+            case Integer v when v != null -> {
+                v = null;
+            }
             case Number v1 when v1 instanceof Integer v2 && (v2 = 0) == 0 -> {}
             default -> {}
         }

@@ -433,13 +433,7 @@ inline void Assembler::mftb(Register d )          { emit_int32(MFTB_OPCODE  | rt
 // Data Stream Control Register
 inline void Assembler::mtdscr(Register s1)        { emit_int32(MTDSCR_OPCODE | rs(s1)); }
 inline void Assembler::mfdscr(Register d )        { emit_int32(MFDSCR_OPCODE | rt(d)); }
-// Transactional Memory Registers
-inline void Assembler::mftfhar(Register d )       { emit_int32(MFTFHAR_OPCODE   | rt(d)); }
-inline void Assembler::mftfiar(Register d )       { emit_int32(MFTFIAR_OPCODE   | rt(d)); }
-inline void Assembler::mftexasr(Register d )      { emit_int32(MFTEXASR_OPCODE  | rt(d)); }
-inline void Assembler::mftexasru(Register d )     { emit_int32(MFTEXASRU_OPCODE | rt(d)); }
 
-// SAP JVM 2006-02-13 PPC branch instruction.
 // PPC 1, section 2.4.1 Branch Instructions
 inline void Assembler::b( address a, relocInfo::relocType rt) { emit_data(BXX_OPCODE| li(disp( intptr_t(a), intptr_t(pc()))) |aa(0)|lk(0), rt); }
 inline void Assembler::b( Label& L)                           { b( target(L)); }
@@ -1047,21 +1041,6 @@ inline void Assembler::vpmsumw(  VectorRegister d, VectorRegister a, VectorRegis
 
 // Vector Permute and Xor (introduced with Power 8)
 inline void Assembler::vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c) { emit_int32( VPERMXOR_OPCODE | vrt(d) | vra(a) | vrb(b) | vrc(c)); }
-
-// Transactional Memory instructions (introduced with Power 8)
-inline void Assembler::tbegin_()                                { emit_int32( TBEGIN_OPCODE | rc(1)); }
-inline void Assembler::tbeginrot_()                             { emit_int32( TBEGIN_OPCODE | /*R=1*/ 1u << (31-10) | rc(1)); }
-inline void Assembler::tend_()                                  { emit_int32( TEND_OPCODE | rc(1)); }
-inline void Assembler::tendall_()                               { emit_int32( TEND_OPCODE | /*A=1*/ 1u << (31-6) | rc(1)); }
-inline void Assembler::tabort_()                                { emit_int32( TABORT_OPCODE | rc(1)); }
-inline void Assembler::tabort_(Register a)                      { assert(a != R0, "r0 not allowed"); emit_int32( TABORT_OPCODE | ra(a) | rc(1)); }
-inline void Assembler::tabortwc_(int t, Register a, Register b) { emit_int32( TABORTWC_OPCODE | to(t) | ra(a) | rb(b) | rc(1)); }
-inline void Assembler::tabortwci_(int t, Register a, int si)    { emit_int32( TABORTWCI_OPCODE | to(t) | ra(a) | sh1620(si) | rc(1)); }
-inline void Assembler::tabortdc_(int t, Register a, Register b) { emit_int32( TABORTDC_OPCODE | to(t) | ra(a) | rb(b) | rc(1)); }
-inline void Assembler::tabortdci_(int t, Register a, int si)    { emit_int32( TABORTDCI_OPCODE | to(t) | ra(a) | sh1620(si) | rc(1)); }
-inline void Assembler::tsuspend_()                              { emit_int32( TSR_OPCODE | rc(1)); }
-inline void Assembler::tresume_()                               { emit_int32( TSR_OPCODE | /*L=1*/ 1u << (31-10) | rc(1)); }
-inline void Assembler::tcheck(int f)                            { emit_int32( TCHECK_OPCODE | bf(f)); }
 
 // Deliver A Random Number (introduced with POWER9)
 inline void Assembler::darn(Register d, int l /* =1 */) { emit_int32( DARN_OPCODE | rt(d) | l14(l)); }

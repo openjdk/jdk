@@ -488,6 +488,11 @@ extern "C" {
 // Loading the agent by invoking Agent_OnAttach.
 // This function is called before the agent is added to JvmtiAgentList.
 static bool invoke_Agent_OnAttach(JvmtiAgent* agent, outputStream* st) {
+  if (!EnableDynamicAgentLoading) {
+    st->print_cr("Dynamic agent loading is not enabled. "
+                 "Use -XX:+EnableDynamicAgentLoading to launch target VM.");
+    return false;
+  }
   DEBUG_ONLY(assert_preload(agent);)
   assert(agent->is_dynamic(), "invariant");
   assert(st != nullptr, "invariant");

@@ -551,7 +551,7 @@ void ReservedHeapSpace::initialize_compressed_heap(const size_t size, size_t ali
     const size_t class_space = align_up(CompressedClassSpaceSize, alignment);
     // For small heaps, save some space for compressed class pointer
     // space so it can be decoded with no base.
-    if (UseCompressedClassPointers && !UseSharedSpaces &&
+    if (UseCompressedClassPointers && !UseSharedSpaces && !DumpSharedSpaces &&
         OopEncodingHeapMax <= KlassEncodingMetaspaceMax &&
         (uint64_t)(aligned_heap_base_min_address + size + class_space) <= KlassEncodingMetaspaceMax) {
       zerobased_max = (char *)OopEncodingHeapMax - class_space;

@@ -887,18 +887,22 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     @Override
     public Insets getScreenInsets(final GraphicsConfiguration gc) {
-        final X11GraphicsDevice device = (X11GraphicsDevice) gc.getDevice();
-        Insets insets = device.getInsets();
-        if (insets == null) {
-            synchronized (device) {
-                insets = device.getInsets();
-                if (insets == null) {
-                    insets = getScreenInsetsImpl(gc);
-                    device.setInsets(insets);
+        final GraphicsDevice gd = gc.getDevice();
+        if (gd instanceof X11GraphicsDevice x11Device) {
+            Insets insets = x11Device.getInsets();
+            if (insets == null) {
+                synchronized (x11Device) {
+                    insets = x11Device.getInsets();
+                    if (insets == null) {
+                        insets = getScreenInsetsImpl(gc);
+                        x11Device.setInsets(insets);
+                    }
                 }
             }
+            return (Insets) insets.clone();
+        } else {
+            return super.getScreenInsets(gc);
         }
-        return (Insets) insets.clone();
     }
 
     /*

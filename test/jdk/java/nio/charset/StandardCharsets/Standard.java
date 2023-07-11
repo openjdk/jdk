@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 4884238
+ * @bug 4884238 8310047
  * @summary Test standard charset name constants.
  * @author Mike Duigou
  * @run main Standard
@@ -41,7 +41,9 @@ public class Standard {
 
     private final static String standardCharsets[] = {
         "US-ASCII", "ISO-8859-1", "UTF-8",
-        "UTF-16BE", "UTF-16LE", "UTF-16" };
+        "UTF-16BE", "UTF-16LE", "UTF-16",
+        "UTF-32BE", "UTF-32LE", "UTF-32",
+    };
 
     public static void realMain(String[] args) {
         check(StandardCharsets.US_ASCII instanceof Charset);
@@ -50,6 +52,9 @@ public class Standard {
         check(StandardCharsets.UTF_16BE instanceof Charset);
         check(StandardCharsets.UTF_16LE instanceof Charset);
         check(StandardCharsets.UTF_16 instanceof Charset);
+        check(StandardCharsets.UTF_32BE instanceof Charset);
+        check(StandardCharsets.UTF_32LE instanceof Charset);
+        check(StandardCharsets.UTF_32 instanceof Charset);
 
         check("US-ASCII".equals(StandardCharsets.US_ASCII.name()));
         check("ISO-8859-1".equals(StandardCharsets.ISO_8859_1.name()));
@@ -57,6 +62,9 @@ public class Standard {
         check("UTF-16BE".equals(StandardCharsets.UTF_16BE.name()));
         check("UTF-16LE".equals(StandardCharsets.UTF_16LE.name()));
         check("UTF-16".equals(StandardCharsets.UTF_16.name()));
+        check("UTF-32BE".equals(StandardCharsets.UTF_32BE.name()));
+        check("UTF-32LE".equals(StandardCharsets.UTF_32LE.name()));
+        check("UTF-32".equals(StandardCharsets.UTF_32.name()));
 
         check(Charset.forName("US-ASCII") == StandardCharsets.US_ASCII);
         check(Charset.forName("ISO-8859-1") == StandardCharsets.ISO_8859_1);
@@ -64,6 +72,9 @@ public class Standard {
         check(Charset.forName("UTF-16BE") == StandardCharsets.UTF_16BE);
         check(Charset.forName("UTF-16LE") == StandardCharsets.UTF_16LE);
         check(Charset.forName("UTF-16") == StandardCharsets.UTF_16);
+        check(Charset.forName("UTF-32BE") == StandardCharsets.UTF_32BE);
+        check(Charset.forName("UTF-32LE") == StandardCharsets.UTF_32LE);
+        check(Charset.forName("UTF-32") == StandardCharsets.UTF_32);
 
         Set<String> charsets = new HashSet<>();
         Field standardCharsetFields[] = StandardCharsets.class.getFields();

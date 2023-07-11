@@ -754,6 +754,21 @@ JVM_ENTRY_NO_ENV(jobject, JVM_GetJVMCIRuntime(JNIEnv *env, jclass c))
   return JVMCIENV->get_jobject(runtime);
 JVM_END
 
+// private static long Services.readSystemPropertiesInfo(int[] offsets)
+JVM_ENTRY_NO_ENV(jlong, JVM_ReadSystemPropertiesInfo(JNIEnv *env, jclass c, jintArray offsets_handle))
+  JNI_JVMCIENV(thread, env);
+  if (!EnableJVMCI) {
+    JVMCI_THROW_MSG_0(InternalError, "JVMCI is not enabled");
+  }
+  JVMCIPrimitiveArray offsets = JVMCIENV->wrap(offsets_handle);
+  JVMCIENV->put_int_at(offsets, 0, SystemProperty::next_offset_in_bytes());
+  JVMCIENV->put_int_at(offsets, 1, SystemProperty::key_offset_in_bytes());
+  JVMCIENV->put_int_at(offsets, 2, PathString::value_offset_in_bytes());
+
+  return (jlong) Arguments::system_properties();
+JVM_END
+
+
 void JVMCIRuntime::call_getCompiler(TRAPS) {
   THREAD_JVMCIENV(JavaThread::current());
   JVMCIObject jvmciRuntime = JVMCIRuntime::get_HotSpotJVMCIRuntime(JVMCI_CHECK);
@@ -1399,9 +1414,6 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
 
   JavaThread* THREAD = JavaThread::current();
 
-  int properties_len = 0;
-  jbyte* properties = nullptr;
-
   MutexLocker locker(_lock);
   // Check again under _lock
   if (_init_state == fully_initialized) {
@@ -1464,16 +1476,6 @@ void JVMCIRuntime::initialize(JVMCI_TRAPS) {
     create_jvmci_primitive_type(T_VOID, JVMCI_CHECK_EXIT_((void)0));
 
     DEBUG_ONLY(CodeInstaller::verify_bci_constants(JVMCIENV);)
-
-    if (!JVMCIENV->is_hotspot()) {
-      Handle properties_exception;
-      properties = JVMCIENV->get_serialized_saved_properties(properties_len, THREAD);
-      if (JVMCIEnv::transfer_pending_exception_to_jni(THREAD, nullptr, JVMCIENV)) {
-        JVMCI_event_1("error initializing system properties for JVMCI runtime %d", _id);
-        return;
-      }
-      JVMCIENV->copy_saved_properties(properties, properties_len, JVMCI_CHECK);
-    }
   }
 
   _init_state = fully_initialized;

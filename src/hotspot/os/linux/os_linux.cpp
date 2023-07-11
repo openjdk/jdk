@@ -77,6 +77,9 @@
 #include "utilities/macros.hpp"
 #include "utilities/powerOfTwo.hpp"
 #include "utilities/vmError.hpp"
+#if INCLUDE_JFR
+#include "jfr/jfrEvents.hpp"
+#endif
 
 // put OS-includes here
 # include <sys/types.h>
@@ -110,6 +113,7 @@
 # include <inttypes.h>
 # include <sys/ioctl.h>
 # include <linux/elf-em.h>
+# include <sys/prctl.h>
 #ifdef __GLIBC__
 # include <malloc.h>
 #endif
@@ -964,6 +968,16 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     if (ret == 0) {
       log_info(os, thread)("Thread \"%s\" started (pthread id: " UINTX_FORMAT ", attributes: %s). ",
                            thread->name(), (uintx) tid, os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
+
+      // Print current timer slack if override is enabled and timer slack value is available.
+      // Avoid calling prctl otherwise for extra safety.
+      if (TimerSlack >= 0) {
+        int slack = prctl(PR_GET_TIMERSLACK);
+        if (slack >= 0) {
+          log_info(os, thread)("Thread \"%s\" (pthread id: " UINTX_FORMAT ") timer slack: %dns",
+                               thread->name(), (uintx) tid, slack);
+        }
+      }
     } else {
       log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%s) for attributes: %s.",
                               thread->name(), os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
@@ -2469,6 +2483,28 @@ void os::pd_print_cpu_info(outputStream* st, char* buf, size_t buflen) {
   st->cr();
   print_sys_devices_cpu_info(st);
 }
+
+#if INCLUDE_JFR
+
+void os::jfr_report_memory_info() {
+  os::Linux::meminfo_t info;
+  if (os::Linux::query_process_memory_info(&info)) {
+    // Send the RSS JFR event
+    EventResidentSetSize event;
+    event.set_size(info.vmrss * K);
+    event.set_peak(info.vmhwm * K);
+    event.commit();
+  } else {
+    // Log a warning
+    static bool first_warning = true;
+    if (first_warning) {
+      log_warning(jfr)("Error fetching RSS values: query_process_memory_info failed");
+      first_warning = false;
+    }
+  }
+}
+
+#endif // INCLUDE_JFR
 
 #if defined(AMD64) || defined(IA32) || defined(X32)
 const char* search_string = "model name";
@@ -4674,6 +4710,15 @@ jint os::init_2(void) {
     // Disable code cache flushing to ensure the map file written at
     // exit contains all nmethods generated during execution.
     FLAG_SET_DEFAULT(UseCodeCacheFlushing, false);
+  }
+
+  // Override the timer slack value if needed. The adjustment for the main
+  // thread will establish the setting for child threads, which would be
+  // most threads in JDK/JVM.
+  if (TimerSlack >= 0) {
+    if (prctl(PR_SET_TIMERSLACK, TimerSlack) < 0) {
+      vm_exit_during_initialization("Setting timer slack failed: %s", os::strerror(errno));
+    }
   }
 
   return JNI_OK;

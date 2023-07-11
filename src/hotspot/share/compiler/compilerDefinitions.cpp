@@ -545,7 +545,7 @@ bool CompilerConfig::check_args_consistency(bool status) {
       FLAG_SET_DEFAULT(SegmentedCodeCache, false);
     }
 #if INCLUDE_JVMCI
-    if (EnableJVMCI) {
+    if (EnableJVMCI || UseJVMCICompiler) {
       if (!FLAG_IS_DEFAULT(EnableJVMCI) || !FLAG_IS_DEFAULT(UseJVMCICompiler)) {
         warning("JVMCI Compiler disabled due to -Xint.");
       }

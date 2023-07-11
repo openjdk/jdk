@@ -824,7 +824,9 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 
   if (!default_handler) {
     bcis->append(-1);
-    extypes->append(TypeOopPtr::make_from_klass(env()->Throwable_klass())->is_instptr());
+    const Type* extype = TypeOopPtr::make_from_klass(env()->Throwable_klass())->is_instptr();
+    extype = extype->join(TypeInstPtr::NOTNULL);
+    extypes->append(extype);
   }
 
   int len = bcis->length();
@@ -854,7 +856,7 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
 #ifndef PRODUCT
       // We do not expect the same handler bci to take both cold unloaded
       // and hot loaded exceptions.  But, watch for it.
-      if ((Verbose || WizardMode) && extype->is_loaded()) {
+      if (PrintOpto && (Verbose || WizardMode) && extype->is_loaded()) {
         tty->print("Warning: Handler @%d takes mixed loaded/unloaded exceptions in ", bci());
         method()->print_name(); tty->cr();
       } else if (PrintOpto && (Verbose || WizardMode)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug  8295974
- * @requires os.family != "windows"
+ * @requires os.family != "windows" & os.arch != "arm"
  * @library /test/lib
  * @summary Generate a JNI Fatal error, or a warning, in a launched VM and check
  *          the native stack is present as expected.

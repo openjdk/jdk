@@ -140,7 +140,8 @@ public class strace001 {
     private static boolean fillTrace() {
         expectedSystemTrace = new String[]{
                 "java.lang.Thread.sleep",
-                "java.lang.Thread.sleep0",
+                "java.lang.Thread.sleepNanos",
+                "java.lang.Thread.sleepNanos0",
                 "java.lang.Thread.beforeSleep",
                 "java.lang.Thread.afterSleep",
                 "java.lang.Thread.yield",

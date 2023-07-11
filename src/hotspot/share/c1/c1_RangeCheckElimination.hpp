@@ -97,12 +97,9 @@ public:
     void and_op(Bound *b);
     bool has_upper();
     bool has_lower();
-    void set_upper(int upper, Value upper_instr);
-    void set_lower(int lower, Value lower_instr);
     bool is_smaller(Bound *b);
     void remove_upper();
     void remove_lower();
-    void add_constant(int value);
     Bound *copy();
   };
 

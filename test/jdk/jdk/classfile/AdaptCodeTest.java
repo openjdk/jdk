@@ -58,9 +58,10 @@ class AdaptCodeTest {
 
     @Test
     void testNullAdaptIterator() throws Exception {
-        ClassModel cm = Classfile.parse(testClassPath);
+        var cc = Classfile.of();
+        ClassModel cm = cc.parse(testClassPath);
         for (ClassTransform t : Transforms.noops) {
-            byte[] newBytes = cm.transform(t);
+            byte[] newBytes = cc.transform(cm, t);
             String result = (String)
                     new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)
                             .getMethod(testClassName, "many")
@@ -77,15 +78,17 @@ class AdaptCodeTest {
     })
     void testNullAdaptIterator2(String path) throws Exception {
         FileSystem fs = FileSystems.getFileSystem(URI.create("jrt:/"));
-        ClassModel cm = Classfile.parse(fs.getPath(path));
+        var cc = Classfile.of();
+        ClassModel cm = cc.parse(fs.getPath(path));
         for (ClassTransform t : Transforms.noops) {
-            byte[] newBytes = cm.transform(t);
+            byte[] newBytes = cc.transform(cm, t);
         }
     }
 
     @Test
     void testSevenOfThirteenIterator() throws Exception {
-        ClassModel cm = Classfile.parse(testClassPath);
+        var cc = Classfile.of();
+        ClassModel cm = cc.parse(testClassPath);
 
         var transform = ClassTransform.transformingMethodBodies((codeB, codeE) -> {
             switch (codeE) {
@@ -100,7 +103,7 @@ class AdaptCodeTest {
             }
         });
 
-        byte[] newBytes = cm.transform(transform);
+        byte[] newBytes = cc.transform(cm, transform);
 //        Files.write(Path.of("foo.class"), newBytes);
         String result = (String)
                 new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)
@@ -111,8 +114,9 @@ class AdaptCodeTest {
 
     @Test
     void testCopy() throws Exception {
-        ClassModel cm = Classfile.parse(testClassPath);
-        byte[] newBytes = Classfile.build(cm.thisClass().asSymbol(), cb -> cm.forEachElement(cb));
+        var cc = Classfile.of();
+        ClassModel cm = cc.parse(testClassPath);
+        byte[] newBytes = cc.build(cm.thisClass().asSymbol(), cb -> cm.forEachElement(cb));
 //        TestUtil.writeClass(newBytes, "TestClass.class");
         String result = (String)
                 new ByteArrayClassLoader(AdaptCodeTest.class.getClassLoader(), testClassName, newBytes)

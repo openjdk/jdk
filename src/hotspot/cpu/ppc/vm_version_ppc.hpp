@@ -49,7 +49,6 @@ protected:
     ldbrx,
     stdbrx,
     vshasig,
-    rtm,
     darn,
     brw,
     num_features // last entry to count features
@@ -73,7 +72,6 @@ protected:
     ldbrx_m               = (1 << ldbrx  ),
     stdbrx_m              = (1 << stdbrx ),
     vshasig_m             = (1 << vshasig),
-    rtm_m                 = (1 << rtm    ),
     darn_m                = (1 << darn   ),
     brw_m                 = (1 << brw    ),
     all_features_m        = (unsigned long)-1
@@ -116,7 +114,6 @@ public:
   static bool has_ldbrx()   { return (_features & ldbrx_m) != 0; }
   static bool has_stdbrx()  { return (_features & stdbrx_m) != 0; }
   static bool has_vshasig() { return (_features & vshasig_m) != 0; }
-  static bool has_tm()      { return (_features & rtm_m) != 0; }
   static bool has_darn()    { return (_features & darn_m) != 0; }
   static bool has_brw()     { return (_features & brw_m) != 0; }
 

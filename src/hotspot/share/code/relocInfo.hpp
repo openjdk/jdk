@@ -285,7 +285,7 @@ class relocInfo {
   static const enum class RawBitsToken {} RAW_BITS{};
 
   relocInfo(relocType type, RawBitsToken, int bits)
-    : _value((type << nontype_width) + bits) { }
+    : _value(checked_cast<unsigned short>((type << nontype_width) + bits)) { }
 
   static relocType check_relocType(relocType type) NOT_DEBUG({ return type; });
 
@@ -321,7 +321,7 @@ class relocInfo {
 
 
  public:
-  enum {
+  enum : unsigned short{
     value_width             = sizeof(unsigned short) * BitsPerByte,
     type_width              = 5,   // == log2(type_mask+1)
     nontype_width           = value_width - type_width,
@@ -340,11 +340,11 @@ class relocInfo {
                                   return (_value & offset_mask)*offset_unit; }
 
  protected:
-  const short* data()     const { assert(is_datalen(), "must have data");
-                                  return (const short*)(this + 1); }
-  int          datalen()  const { assert(is_datalen(), "must have data");
+  const short* data()       const { assert(is_datalen(), "must have data");
+                                    return (const short*)(this + 1); }
+  unsigned short datalen()  const { assert(is_datalen(), "must have data");
                                   return (_value & datalen_mask); }
-  int         immediate() const { assert(is_immediate(), "must have immed");
+  unsigned short immediate() const { assert(is_immediate(), "must have immed");
                                   return (_value & datalen_mask); }
  public:
   static int addr_unit()        { return offset_unit; }
@@ -414,8 +414,8 @@ class relocInfo {
   // As it happens, the bytes within the shorts are ordered natively,
   // but the shorts within the word are ordered big-endian.
   // This is an arbitrary choice, made this way mainly to ease debugging.
-  static int data0_from_int(jint x)         { return x >> value_width; }
-  static int data1_from_int(jint x)         { return (short)x; }
+  static short data0_from_int(jint x)         { return (short)(x >> value_width); }
+  static short data1_from_int(jint x)         { return (short)x; }
   static jint jint_from_data(short* data) {
     return (data[0] << value_width) + (unsigned short)data[1];
   }
@@ -735,13 +735,13 @@ class Relocation {
   // Most relocation records are quite simple, containing at most two ints.
 
   static bool is_short(jint x) { return x == (short)x; }
-  static short* add_short(short* p, int x)  { *p++ = x; return p; }
+  static short* add_short(short* p, short x)  { *p++ = x; return p; }
   static short* add_jint (short* p, jint x) {
     *p++ = relocInfo::data0_from_int(x); *p++ = relocInfo::data1_from_int(x);
     return p;
   }
   static short* add_var_int(short* p, jint x) {   // add a variable-width int
-    if (is_short(x))  p = add_short(p, x);
+    if (is_short(x))  p = add_short(p, (short)x);
     else              p = add_jint (p, x);
     return p;
   }
@@ -763,7 +763,7 @@ class Relocation {
       // no halfwords needed to store zeroes
     } else if (is_short(x0) && is_short(x1)) {
       // 1-2 halfwords needed to store shorts
-      p = add_short(p, x0); if (x1!=0) p = add_short(p, x1);
+      p = add_short(p, (short)x0); if (x1!=0) p = add_short(p, (short)x1);
     } else {
       // 3-4 halfwords needed to store jints
       p = add_jint(p, x0);             p = add_var_int(p, x1);
@@ -801,7 +801,7 @@ class Relocation {
 
   // these convert from byte offsets, to scaled offsets, to addresses
   static jint scaled_offset(address x, address base) {
-    int byte_offset = x - base;
+    int byte_offset = checked_cast<int>(x - base);
     int offset = -byte_offset / relocInfo::addr_unit();
     assert(address_from_scaled_offset(offset, base) == x, "just checkin'");
     return offset;

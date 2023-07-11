@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,10 +42,14 @@ import java.util.List;
  * jcstress tests wrapper
  */
 @Artifact(organization = "org.openjdk.jcstress", name = "jcstress-tests-all",
-        revision = "0.5", extension = "jar", unpack = false)
+        revision = "0.16", extension = "jar", unpack = false)
 public class JcstressRunner {
 
     public static final String MAIN_CLASS = "org.openjdk.jcstress.Main";
+
+    // Allow to configure jcstress mode parameter.
+    // Test mode preset: sanity, quick, default, tough, stress.
+    public static final String MODE_PROPERTY = "jcstress.mode";
 
     public static Path pathToArtifact() {
         Map<String, Path> artifacts;
@@ -55,7 +59,7 @@ public class JcstressRunner {
             throw new Error("TESTBUG: Can not resolve artifacts for "
                             + JcstressRunner.class.getName(), e);
         }
-        return artifacts.get("org.openjdk.jcstress.jcstress-tests-all-0.5")
+        return artifacts.get("org.openjdk.jcstress.jcstress-tests-all-0.16")
                         .toAbsolutePath();
     }
 
@@ -104,10 +108,28 @@ public class JcstressRunner {
 
         extraFlags.add("--jvmArgs");
         extraFlags.add("-Djava.io.tmpdir=" + System.getProperty("user.dir"));
+
+        // The "default" preset might take days for some tests
+        // so use quick testing by default.
+        String mode = "quick";
         for (String jvmArg : Utils.getTestJavaOpts()) {
+            if(jvmArg.startsWith("-D" + MODE_PROPERTY)) {
+                String[] pair = jvmArg.split("=", 2);
+                mode = pair[1];
+                continue;
+            }
             extraFlags.add("--jvmArgs");
             extraFlags.add(jvmArg);
         }
+
+        extraFlags.add("-m");
+        extraFlags.add(mode);
+
+        extraFlags.add("-sc");
+        extraFlags.add("false");
+
+        extraFlags.add("-af");
+        extraFlags.add("GLOBAL");
 
         String[] result = new String[extraFlags.size() + args.length];
         extraFlags.toArray(result);

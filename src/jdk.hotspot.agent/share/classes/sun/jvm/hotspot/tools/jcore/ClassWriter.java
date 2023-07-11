@@ -57,9 +57,11 @@ public class ClassWriter implements /* imports */ ClassConstants
     protected short  _constantValueIndex;
     protected short  _codeIndex;
     protected short  _exceptionsIndex;
+    protected short  _stackMapTableIndex;
     protected short  _lineNumberTableIndex;
     protected short  _localVariableTableIndex;
     protected short  _signatureIndex;
+    protected short  _bootstrapMethodsIndex;
 
     protected static int extractHighShortFromInt(int val) {
         // must stay in sync with ConstantPool::name_and_type_at_put, method_at_put, etc.
@@ -141,6 +143,8 @@ public class ClassWriter implements /* imports */ ClassConstants
         _innerClassesIndex = (innerClassesIndex != null)? innerClassesIndex.shortValue() : 0;
         if (DEBUG) debugMessage("InnerClasses index = " + _innerClassesIndex);
 
+        Short bootstrapMethodsIndex = utf8ToIndex.get("BootstrapMethods");
+        _bootstrapMethodsIndex = (bootstrapMethodsIndex != null) ? bootstrapMethodsIndex.shortValue() : 0;
         // field attributes
         Short constantValueIndex = utf8ToIndex.get("ConstantValue");
         _constantValueIndex = (constantValueIndex != null)?
@@ -168,6 +172,11 @@ public class ClassWriter implements /* imports */ ClassConstants
         // Short deprecatedIndex = (Short) utf8ToIndex.get("Deprecated");
 
         // Code attributes
+        Short stackMapTableIndex = utf8ToIndex.get("StackMapTable");
+        _stackMapTableIndex = (stackMapTableIndex != null) ?
+                              stackMapTableIndex.shortValue() : 0;
+        if (DEBUG) debugMessage("StackMapTable index = " + _stackMapTableIndex);
+
         Short lineNumberTableIndex = utf8ToIndex.get("LineNumberTable");
         _lineNumberTableIndex = (lineNumberTableIndex != null)?
                                        lineNumberTableIndex.shortValue() : 0;
@@ -515,6 +524,27 @@ public class ClassWriter implements /* imports */ ClassConstants
                                             2 /* catch_type   */);
             }
 
+            boolean hasStackMapTable = m.hasStackMapTable();
+            U1Array stackMapData = null;
+            int stackMapAttrLen = 0;
+
+            if (hasStackMapTable) {
+                if (DEBUG) debugMessage("\tmethod has stack map table");
+                stackMapData = m.getStackMapData();
+                if (DEBUG) debugMessage("\t\tstack map table length = " + stackMapData.length());
+
+                stackMapAttrLen = stackMapData.length();
+
+                codeSize += 2 /* stack map table attr index */ +
+                            4 /* stack map table attr length */ +
+                            stackMapAttrLen;
+
+                if (DEBUG) debugMessage("\t\tstack map table attr size = " +
+                                        stackMapAttrLen);
+
+                codeAttrCount++;
+            }
+
             boolean hasLineNumberTable = m.hasLineNumberTable();
             LineNumberTableElement[] lineNumberTable = null;
             int lineNumberAttrLen = 0;
@@ -601,6 +631,17 @@ public class ClassWriter implements /* imports */ ClassConstants
             dos.writeShort(codeAttrCount);
             if (DEBUG) debugMessage("\tcode attribute count = " + codeAttrCount);
 
+            // write StackMapTable, if available
+            if (hasStackMapTable) {
+                writeIndex(_stackMapTableIndex);
+                dos.writeInt(stackMapAttrLen);
+                // We write bytes directly as stackMapData is
+                // raw data (#entries + entries)
+                for (int i = 0; i < stackMapData.length(); i++) {
+                    dos.writeByte(stackMapData.at(i));
+                }
+            }
+
             // write LineNumberTable, if available.
             if (hasLineNumberTable) {
                 writeIndex(_lineNumberTableIndex);
@@ -685,6 +726,11 @@ public class ClassWriter implements /* imports */ ClassConstants
         if (numInnerClasses != 0)
             classAttributeCount++;
 
+        int bsmCount = klass.getConstants().getBootstrapMethodsCount();
+        if (bsmCount != 0) {
+            classAttributeCount++;
+        }
+
         dos.writeShort(classAttributeCount);
         if (DEBUG) debugMessage("class attribute count = " + classAttributeCount);
 
@@ -722,6 +768,28 @@ public class ClassWriter implements /* imports */ ClassConstants
 
             for (int index = 0; index < numInnerClasses * 4; index++) {
                 dos.writeShort(innerClasses.at(index));
+            }
+        }
+
+        // write bootstrap method attribute, if any
+        if (bsmCount != 0) {
+            ConstantPool cpool = klass.getConstants();
+            writeIndex(_bootstrapMethodsIndex);
+            if (DEBUG) debugMessage("bootstrap methods attribute = " + _bootstrapMethodsIndex);
+            int attrLen = 2; // num_bootstrap_methods
+            for (int index = 0; index < bsmCount; index++) {
+                int bsmArgsCount = cpool.getBootstrapMethodArgsCount(index);
+                attrLen += 2 // bootstrap_method_ref
+                           + 2 // num_bootstrap_arguments
+                           + bsmArgsCount * 2;
+            }
+            dos.writeInt(attrLen);
+            dos.writeShort(bsmCount);
+            for (int index = 0; index < bsmCount; index++) {
+                short value[] = cpool.getBootstrapMethodAt(index);
+                for (int i = 0; i < value.length; i++) {
+                    dos.writeShort(value[i]);
+                }
             }
         }
     }

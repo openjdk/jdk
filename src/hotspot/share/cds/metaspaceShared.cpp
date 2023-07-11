@@ -69,6 +69,7 @@
 #include "oops/oopHandle.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/globals.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/os.inline.hpp"
@@ -365,7 +366,6 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   // Dump/restore miscellaneous metadata.
   JavaClasses::serialize_offsets(soc);
-  HeapShared::serialize_root(soc);
   Universe::serialize(soc);
   soc->do_tag(--tag);
 
@@ -1136,7 +1136,7 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
 
   if (result == MAP_ARCHIVE_SUCCESS) {
     SharedBaseAddress = (size_t)mapped_base_address;
-    LP64_ONLY({
+#ifdef _LP64
         if (Metaspace::using_class_space()) {
           // Set up ccs in metaspace.
           Metaspace::initialize_class_space(class_space_rs);
@@ -1146,13 +1146,24 @@ MapArchiveResult MetaspaceShared::map_archives(FileMapInfo* static_mapinfo, File
           address cds_base = (address)static_mapinfo->mapped_base();
           address ccs_end = (address)class_space_rs.end();
           assert(ccs_end > cds_base, "Sanity check");
-          CompressedKlassPointers::initialize(cds_base, ccs_end - cds_base);
-
+#if INCLUDE_CDS_JAVA_HEAP
+          // We archived objects with pre-computed narrow Klass id. Set up encoding such that these Ids stay valid.
+          address precomputed_narrow_klass_base = cds_base;
+          const int precomputed_narrow_klass_shift = ArchiveHeapWriter::precomputed_narrow_klass_shift;
+          CompressedKlassPointers::initialize_for_given_encoding(
+            cds_base, ccs_end - cds_base, // Klass range
+            precomputed_narrow_klass_base, precomputed_narrow_klass_shift // precomputed encoding, see ArchiveHeapWriter
+            );
+#else
+          CompressedKlassPointers::initialize (
+            cds_base, ccs_end - cds_base // Klass range
+            );
+#endif // INCLUDE_CDS_JAVA_HEAP
           // map_or_load_heap_region() compares the current narrow oop and klass encodings
           // with the archived ones, so it must be done after all encodings are determined.
           static_mapinfo->map_or_load_heap_region();
         }
-      });
+#endif // _LP64
     log_info(cds)("optimized module handling: %s", MetaspaceShared::use_optimized_module_handling() ? "enabled" : "disabled");
     log_info(cds)("full module graph: %s", MetaspaceShared::use_full_module_graph() ? "enabled" : "disabled");
   } else {

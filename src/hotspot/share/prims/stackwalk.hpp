@@ -78,7 +78,7 @@ public:
   }
 
   jlong address_value() {
-    return (jlong) castable_address(this);
+    return (jlong) this;
   }
 
   static BaseFrameStream* from_current(JavaThread* thread, jlong magic, objArrayHandle frames_array);

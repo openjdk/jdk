@@ -161,6 +161,7 @@ address StubRoutines::_vectorizedMismatch = nullptr;
 address StubRoutines::_dexp = nullptr;
 address StubRoutines::_dlog = nullptr;
 address StubRoutines::_dlog10 = nullptr;
+address StubRoutines::_fmod = nullptr;
 address StubRoutines::_dpow = nullptr;
 address StubRoutines::_dsin = nullptr;
 address StubRoutines::_dcos = nullptr;
