@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -350,6 +350,7 @@ public abstract class ColorSpace implements Serializable {
      * @return a float array of length 3
      * @throws ArrayIndexOutOfBoundsException if array length is not at least
      *         the number of components in this {@code ColorSpace}
+     * @throws NullPointerException if {@code colorvalue} is {@code null}
      */
     public abstract float[] toRGB(float[] colorvalue);
 
@@ -371,6 +372,7 @@ public abstract class ColorSpace implements Serializable {
      * @return a float array with length equal to the number of components in
      *         this {@code ColorSpace}
      * @throws ArrayIndexOutOfBoundsException if array length is not at least 3
+     * @throws NullPointerException if {@code rgbvalue} is {@code null}
      */
     public abstract float[] fromRGB(float[] rgbvalue);
 
@@ -395,7 +397,8 @@ public abstract class ColorSpace implements Serializable {
      *         components in this {@code ColorSpace}
      * @return a float array of length 3
      * @throws ArrayIndexOutOfBoundsException if array length is not at least
-     *         the number of components in this {@code ColorSpace}.
+     *         the number of components in this {@code ColorSpace}
+     * @throws NullPointerException if {@code colorvalue} is {@code null}
      */
     public abstract float[] toCIEXYZ(float[] colorvalue);
 
@@ -421,6 +424,7 @@ public abstract class ColorSpace implements Serializable {
      * @return a float array with length equal to the number of components in
      *         this {@code ColorSpace}
      * @throws ArrayIndexOutOfBoundsException if array length is not at least 3
+     * @throws NullPointerException if {@code colorvalue} is {@code null}
      */
     public abstract float[] fromCIEXYZ(float[] colorvalue);
 
