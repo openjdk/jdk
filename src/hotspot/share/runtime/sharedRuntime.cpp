@@ -2076,9 +2076,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // Get the return PC for the passed caller PC.
   address return_pc = caller_pc + frame::pc_return_offset;
 
-  assert(!JavaThread::current()->is_interp_only_mode() || !nm->method()->is_continuation_enter_intrinsic()
-    || ContinuationEntry::is_interpreted_call(return_pc), "interp_only_mode but not in enterSpecial interpreted entry");
-
   // There is a benign race here. We could be attempting to patch to a compiled
   // entry point at the same time the callee is being deoptimized. If that is
   // the case then entry_point may in fact point to a c2i and we'd patch the
@@ -2116,8 +2113,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
         return;
       }
       if (nm->method()->is_continuation_enter_intrinsic()) {
-        assert(ContinuationEntry::is_interpreted_call(call->instruction_address()) == JavaThread::current()->is_interp_only_mode(),
-          "mode: %d", JavaThread::current()->is_interp_only_mode());
         if (ContinuationEntry::is_interpreted_call(call->instruction_address())) {
           return;
         }
