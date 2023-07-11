@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -189,8 +189,11 @@ abstract class RSASignature extends SignatureSpi {
         byte[] digest = getDigestValue();
         try {
             byte[] encoded = RSAUtil.encodeSignature(digestOID, digest);
-            byte[] padded = padding.pad(encoded);
-            return RSACore.rsa(padded, privateKey, true);
+            RSAPadding.Output po = padding.pad(encoded);
+            if (po.status()) {
+                return RSACore.rsa(po.result(), privateKey, true);
+            }
+            throw new SignatureException("Could not sign data");
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not sign data", e);
         }
@@ -205,27 +208,22 @@ abstract class RSASignature extends SignatureSpi {
         }
         try {
             if (sigBytes.length != RSACore.getByteLength(publicKey)) {
-                throw new SignatureException("Signature length not correct: got " +
+                throw new SignatureException("Bad signature length: got " +
                     sigBytes.length + " but was expecting " +
                     RSACore.getByteLength(publicKey));
             }
             byte[] digest = getDigestValue();
             byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
-            byte[] unpadded = padding.unpad(decrypted);
+            RSAPadding.Output po = padding.unpad(decrypted);
             // https://www.rfc-editor.org/rfc/rfc8017.html#section-8.2.2
             // Step 4 suggests comparing the encoded message instead of the
-            // decoded, but some vendors might omit the NULL params in
-            // digest algorithm identifier.
-            byte[] decodedDigest = RSAUtil.decodeSignature(digestOID, unpadded);
-            return MessageDigest.isEqual(digest, decodedDigest);
+            byte[] encodedDigest = RSAUtil.encodeSignature(digestOID,
+                    digest);
+
+            return po.status() &&
+                    MessageDigest.isEqual(encodedDigest, po.result());
         } catch (javax.crypto.BadPaddingException e) {
-            // occurs if the app has used the wrong RSA public key
-            // or if sigBytes is invalid
-            // return false rather than propagating the exception for
-            // compatibility/ease of use
             return false;
-        } catch (IOException e) {
-            throw new SignatureException("Signature encoding error", e);
         } finally {
             resetDigest();
         }
