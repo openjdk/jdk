@@ -312,13 +312,9 @@ final class LauncherData {
 
     private static List<Path> getPathListParameter(String paramName,
             Map<String, ? super Object> params) throws ConfigException {
-        return getPathParam(params, paramName, () -> {
-            String value = (String) params.get(paramName);
-            return (value == null) ? List.of() :
-                    List.of(value.split(File.pathSeparator)).stream()
-                    .map(Path::of)
-                    .collect(Collectors.toUnmodifiableList());
-        });
+        return getPathParam(params, paramName, () ->
+                params.get(paramName) instanceof String value ?
+                        Stream.of(value.split(File.pathSeparator)).map(Path::of).toList() : List.of());
     }
 
     private String qualifiedClassName;
