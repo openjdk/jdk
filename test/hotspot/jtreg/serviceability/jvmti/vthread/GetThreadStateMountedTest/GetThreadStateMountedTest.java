@@ -38,7 +38,7 @@ import java.util.concurrent.locks.LockSupport;
 
 /**
  * The test implements different scenarios to get desired JVMTI thread states.
- * For each scenario test also checks states after carrier and virtual threads suspend/resume
+ * For each scenario the test also checks states after carrier and virtual threads suspend/resume
  * and after virtual thread interrupt.
  * Special handling is required for WAITING state scenarios:
  * Spurious wakeups may cause unexpected thread state change and this causes test failure.
