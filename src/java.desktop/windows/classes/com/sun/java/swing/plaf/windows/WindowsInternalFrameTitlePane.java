@@ -25,28 +25,29 @@
 
 package com.sun.java.swing.plaf.windows;
 
-import sun.swing.SwingUtilities2;
-
-import java.awt.Component;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.GradientPaint;
 import java.awt.Insets;
 import java.awt.LayoutManager;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.Paint;
 import java.awt.Point;
 import java.awt.Rectangle;
-import javax.swing.JComponent;
-import javax.swing.border.Border;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyVetoException;
+
 import javax.swing.BorderFactory;
 import javax.swing.Icon;
+import javax.swing.JComponent;
 import javax.swing.JInternalFrame;
 import javax.swing.JLabel;
 import javax.swing.JMenuItem;
@@ -55,13 +56,15 @@ import javax.swing.JSeparator;
 import javax.swing.LookAndFeel;
 import javax.swing.UIDefaults;
 import javax.swing.UIManager;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
+import javax.swing.border.Border;
 import javax.swing.plaf.UIResource;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.beans.PropertyVetoException;
+import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
 
-import static com.sun.java.swing.plaf.windows.TMSchema.*;
+import sun.swing.SwingUtilities2;
+
+import static com.sun.java.swing.plaf.windows.TMSchema.Part;
+import static com.sun.java.swing.plaf.windows.TMSchema.Prop;
+import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions

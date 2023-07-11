@@ -31,17 +31,17 @@
  */
 
 import java.awt.Component;
-import java.awt.Insets;
 import java.awt.Robot;
+
 import javax.swing.Icon;
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JDesktopPane;
-import javax.swing.JInternalFrame;
 import javax.swing.JFrame;
-import javax.swing.plaf.basic.BasicInternalFrameTitlePane;
-import javax.swing.plaf.basic.BasicInternalFrameUI;
+import javax.swing.JInternalFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.plaf.basic.BasicInternalFrameUI;
 
 public class InternalFrameTitleButtonTest {
 
@@ -54,10 +54,11 @@ public class InternalFrameTitleButtonTest {
             System.out.println("The test is applicable only for Windows.");
             return;
         }
+
         UIManager.setLookAndFeel(
                    "com.sun.java.swing.plaf.windows.WindowsClassicLookAndFeel");
         try {
-            test();
+            test(2);
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
@@ -65,21 +66,23 @@ public class InternalFrameTitleButtonTest {
                 }
             });
         }
+
         UIManager.setLookAndFeel(
               "com.sun.java.swing.plaf.windows.WindowsLookAndFeel");
         try {
-            test();
+            test(14);
         } finally {
             SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
                 }
             });
-	}
+        }
+
         System.out.println("ok");
     }
 
-    private static void test() throws Exception {
+    private static void test(final int widthAdd) throws Exception {
         SwingUtilities.invokeAndWait(() -> {
             frame = new JFrame();
 
@@ -100,33 +103,25 @@ public class InternalFrameTitleButtonTest {
         robot.delay(1000);
 
         SwingUtilities.invokeAndWait(() -> {
-            BasicInternalFrameTitlePane title =
-                    ((BasicInternalFrameTitlePane)((BasicInternalFrameUI)
-                            iframe.getUI()).getNorthPane());
-            int height = title.getHeight();
-            Insets insets = title.getInsets();
-            height = height - insets.top - insets.bottom;
+            JComponent title = ((BasicInternalFrameUI) iframe.getUI()).getNorthPane();
             for (int i = 0; i < title.getComponentCount(); i++) {
                 Component c = title.getComponent(i);
-                if (c instanceof JButton) {
-                    Icon icon = ((JButton) c).getIcon();
-                    if (UIManager.getLookAndFeel().toString().
-                            contains("WindowsClassicLookAndFeel")) {
-                        if ((icon.getIconWidth() > height - 2) &&
-			    height != UIManager.getInt(
-				    "InternalFrame.titleButtonHeight") - 4) {
-                            throw new RuntimeException("Wrong title icon size");
-                        }
-                    } else if (UIManager.getLookAndFeel().
-                               toString().contains("WindowsLookAndFeel")) {
-                        if (icon.getIconWidth() > UIManager.getInt(
-                                "InternalFrame.titleButtonHeight") + 10) {
-                            throw new RuntimeException("Wrong title icon size");
-                        }
-		    }
+                if (c instanceof JButton button
+                    && !testButtonSize(button, widthAdd)) {
+                    throw new RuntimeException("Wrong title icon size");
                 }
             }
         });
+    }
+
+    private static boolean testButtonSize(final JButton button,
+                                          final int widthAdd) {
+        int height = UIManager.getInt("InternalFrame.titleButtonHeight") - 4;
+        Icon icon = button.getIcon();
+        return height == button.getHeight()
+               && (height + widthAdd) == button.getWidth()
+               && height == icon.getIconHeight()
+               && (height + widthAdd) == icon.getIconWidth();
     }
 }
 
