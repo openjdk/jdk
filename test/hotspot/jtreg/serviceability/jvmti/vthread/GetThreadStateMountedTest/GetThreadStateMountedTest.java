@@ -42,7 +42,7 @@ import java.util.concurrent.locks.LockSupport;
  * and after virtual thread interrupt.
  * Special handling is required for WAITING state scenarios:
  * Spurious wakeups may cause unexpected thread state change and this causes test failure.
- * To avoid this test thread should be suspended (i.e. carrier and/or mounted virtual thread is suspended).
+ * To avoid this, the test thread should be suspended (i.e. carrier and/or mounted virtual thread is suspended).
  */
 public class GetThreadStateMountedTest {
 
