@@ -39,6 +39,10 @@ public class TestRemovalPeephole {
     long[] valuesLong2;
     int[] valuesInt1;
     int[] valuesInt2;
+    long valueLong1;
+    long valueLong2;
+    int valueInt1;
+    int valueInt2;
 
     @Setup
     public void setup() {
@@ -60,6 +64,10 @@ public class TestRemovalPeephole {
         for (int i = 0; i < valuesInt2.length; i++) {
             valuesInt2[i] = random.nextInt();
         }
+        valueLong1 = random.nextLong();
+        valueLong2 = random.nextLong();
+        valueInt1 = random.nextInt();
+        valueInt2 = random.nextInt();
     }
 
     @Benchmark
@@ -132,5 +140,54 @@ public class TestRemovalPeephole {
 
             bh.consume(withAnd1 > 0x0L && withAnd2 > 0x0L && withAnd1 < 0xFFFFFFFFFFL && withAnd2 < 0xFFFFFFFFFFL);
         }
+    }
+
+
+    @Benchmark
+    public void benchmarkAndTestFusableIntSingle(Blackhole bh) {
+        int withAnd1 = valueInt1 & 0xF;
+        int withAnd2 = valueInt2 & 0xF;
+
+        bh.consume(withAnd1 > 0x0 && withAnd2 > 0x0 && withAnd1 < 0xF && withAnd2 < 0xF);
+    }
+
+    @Benchmark
+    public void benchmarkAndTestFusableLongSingle(Blackhole bh) {
+        long withAnd1 = valueLong1 & 0xFFFFFFFFFFL;
+        long withAnd2 = valueLong2 & 0xFFFFFFFFFFL;
+
+        bh.consume(withAnd1 > 0x0L && withAnd2 > 0x0L && withAnd1 < 0xFFFFFFFFFFL && withAnd2 < 0xFFFFFFFFFFL);
+    }
+
+    @Benchmark
+    public void benchmarkOrTestFusableIntSingle(Blackhole bh) {
+        int withAnd1 = valueInt1 | 0xF;
+        int withAnd2 = valueInt2 | 0xF;
+
+        bh.consume(withAnd1 > 0x0 && withAnd2 > 0x0 && withAnd1 < 0xF && withAnd2 < 0xF);
+    }
+
+    @Benchmark
+    public void benchmarkOrTestFusableLongSingle(Blackhole bh) {
+        long withAnd1 = valueLong1 | 0xFFFFFFFFFFL;
+        long withAnd2 = valueLong2 | 0xFFFFFFFFFFL;
+
+        bh.consume(withAnd1 > 0x0L && withAnd2 > 0x0L && withAnd1 < 0xFFFFFFFFFFL && withAnd2 < 0xFFFFFFFFFFL);
+    }
+
+    @Benchmark
+    public void benchmarkXorTestFusableIntSingle(Blackhole bh) {
+        int withAnd1 = valueInt1 ^ 0xF;
+        int withAnd2 = valueInt2 ^ 0xF;
+
+        bh.consume(withAnd1 > 0x0 && withAnd2 > 0x0 && withAnd1 < 0xF && withAnd2 < 0xF);
+    }
+
+    @Benchmark
+    public void benchmarkXorTestFusableLongSingle(Blackhole bh) {
+        long withAnd1 = valueLong1 ^ 0xFFFFFFFFFFL;
+        long withAnd2 = valueLong2 ^ 0xFFFFFFFFFFL;
+
+        bh.consume(withAnd1 > 0x0L && withAnd2 > 0x0L && withAnd1 < 0xFFFFFFFFFFL && withAnd2 < 0xFFFFFFFFFFL);
     }
 }
