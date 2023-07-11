@@ -148,8 +148,8 @@ public final class BaseLocale {
         // Check for constant base locales first
         if (script.isEmpty() && variant.isEmpty()) {
             for (BaseLocale baseLocale : constantBaseLocales) {
-                if (baseLocale.getLanguage().equals(language)
-                        && baseLocale.getRegion().equals(region)) {
+                if (baseLocale.language.equals(language)
+                        && baseLocale.region.equals(region)) {
                     return baseLocale;
                 }
             }
@@ -166,10 +166,10 @@ public final class BaseLocale {
         // guarantees the locale components are properly cased/interned.
         return CACHE.computeIfAbsent(new BaseLocale(language, script, region, variant),
                 (b) -> new BaseLocale(
-                        LocaleUtils.toLowerString(b.getLanguage()).intern(),
-                        LocaleUtils.toTitleString(b.getScript()).intern(),
-                        LocaleUtils.toUpperString(b.getRegion()).intern(),
-                        b.getVariant().intern()));
+                        LocaleUtils.toLowerString(b.language).intern(),
+                        LocaleUtils.toTitleString(b.script).intern(),
+                        LocaleUtils.toUpperString(b.region).intern(),
+                        b.variant.intern()));
     }
 
     public static String convertOldISOCodes(String language) {
@@ -203,11 +203,11 @@ public final class BaseLocale {
             return true;
         }
         if (obj instanceof BaseLocale other) {
-            return LocaleUtils.caseIgnoreMatch(other.getLanguage(), language)
-                && LocaleUtils.caseIgnoreMatch(other.getScript(), script)
-                && LocaleUtils.caseIgnoreMatch(other.getRegion(), region)
+            return LocaleUtils.caseIgnoreMatch(other.language, language)
+                && LocaleUtils.caseIgnoreMatch(other.region, region)
+                && LocaleUtils.caseIgnoreMatch(other.script, script)
                 // variant is case sensitive in JDK!
-                && other.getVariant().equals(variant);
+                && other.variant.equals(variant);
         }
         return false;
     }
