@@ -399,13 +399,13 @@ public final class ZoneOffsetTransition
      * This compares the instants of each transition.
      * The offsets are ignored, making this order inconsistent with equals.
      *
-     * @param transition  the transition to compare to, not null
-     * @return the comparator value, that is the comparison of this {@code transition} instant
-     *          with {@code transition} instant
+     * @param otherTransition  the transition to compare to, not null
+     * @return the comparator value, that is the comparison of this transition instant
+     *          with {@code otherTransition} instant
      */
     @Override
-    public int compareTo(ZoneOffsetTransition transition) {
-        return Long.compare(epochSecond, transition.epochSecond);
+    public int compareTo(ZoneOffsetTransition otherTransition) {
+        return Long.compare(epochSecond, otherTransition.epochSecond);
     }
 
     //-----------------------------------------------------------------------
