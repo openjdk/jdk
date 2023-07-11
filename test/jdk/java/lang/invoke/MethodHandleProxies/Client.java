@@ -25,11 +25,11 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 
 /**
- * A general-purposed client interface for testing.
+ * A general-purposed public client interface for testing.
  */
 public interface Client {
     /**
-     * Leaks a lookup that has full privilege access in Untrusted.class.
+     * Leaks a lookup that has full privilege access in Client.class.
      */
     static Lookup leakLookup() {
         return MethodHandles.lookup();

@@ -45,12 +45,14 @@ public class WithSecurityManagerTest {
         var originalMh = MethodHandles.zero(void.class);
 
         // Test system and user interfaces
-        for (Class<?> cl : List.of(Runnable.class, Client.class, NestedInterface.class)) try {
-            Object o = MethodHandleProxies.asInterfaceInstance(cl, originalMh);
-            testWrapperInstanceTarget(o, originalMh);
-            testWrapperInstanceType(o, cl);
-        } catch (Throwable ex) {
-            throw new AssertionError("Test failed for " + cl, ex);
+        for (Class<?> cl : List.of(Runnable.class, Client.class, NestedInterface.class)) {
+            try {
+                Object o = MethodHandleProxies.asInterfaceInstance(cl, originalMh);
+                testWrapperInstanceTarget(o, originalMh);
+                testWrapperInstanceType(o, cl);
+            } catch (Throwable ex) {
+                throw new AssertionError("Test failed for " + cl, ex);
+            }
         }
     }
 

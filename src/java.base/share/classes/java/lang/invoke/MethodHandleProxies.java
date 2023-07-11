@@ -158,34 +158,7 @@ public class MethodHandleProxies {
      * @throws WrongMethodTypeException if the target cannot
      *         be converted to the type required by the requested interface
      */
-    /*
-     * Implementor notes:
-     * This API is free to reuse the same implementation instance or class for
-     * suitable inputs. It is not guaranteed to return a new instance for every
-     * call. No stable mapping is promised between the single-method interface
-     * and the wrapper's implementation class. Over time, several implementation
-     * classes might be used for the same type. If the implementation is able to
-     * prove that a wrapper of the required type has already been created for a
-     * given method handle, the implementation may return that wrapper in place
-     * of a new wrapper.
-     *
-     * Discussion:
-     * Since project leyden aims to improve startup speed, asInterfaceInstance
-     * will share one implementation class for each interface than one implementation
-     * class for each method handle. This is good for use cases where multiple distinct
-     * method handles are converted into one interface stored in a collection, where each
-     * instance is invoked rarely (or only once), such as property getters on a bean.
-     *
-     * Using super-customized implementation classes for each method handle would
-     * allow constant-folding of calls through the returned instance, but it comes with
-     * a huge class definition overhead for each instance and is not feasible for rare
-     * invocation use cases like above.
-     *
-     * The shared-class implementation is also closer in behavior to the original
-     * proxy-backed implementation. We might add another API for super-customized instances.
-     */
-    @SuppressWarnings({"removal",
-                       "doclint:reference"}) // cross-module links
+    @SuppressWarnings("doclint:reference") // cross-module links
     @CallerSensitive
     public static <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
@@ -207,6 +180,22 @@ public class MethodHandleProxies {
             mh = target;
         }
 
+        // Define one hidden class for each interface.  Create an instance of
+        // the hidden class for a given target method handle which will be
+        // accessed via getfield.  Multiple instances may be created for a
+        // hidden class.  This approach allows the generated hidden classes
+        // more shareable.
+        //
+        // The implementation class is weakly referenced; a new class is
+        // defined if the last one has been garbage collected.
+        //
+        // An alternative approach is to define one hidden class with the
+        // target method handle as class data and the target method handle
+        // is loaded via ldc/condy.  If more than one target method handles
+        // are used, the extra classes will pollute the same type profiles.
+        // In addition, hidden classes without class data is more friendly
+        // for pre-generation (shifting the dynamic class generation from
+        // runtime to an earlier phrase).
         Lookup lookup = getProxyClassLookup(intfc);  // throws IllegalArgumentException
         Object proxy;
         try {
