@@ -35,7 +35,7 @@ public static Method runTable:"()V"
     bytecode 0,0,0,15; // default target == L16
     bytecode 0x80,0,0,0; // 0x80000000 low
     bytecode 0x7F,0xFF,0xFF,0xFF; // 0x7fffffff high
-    // illegal empty table, but gets past verifier
+    // illegal empty table
   L16:
     iconst_0;
     ireturn;
