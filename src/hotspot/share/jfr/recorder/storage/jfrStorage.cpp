@@ -184,7 +184,7 @@ BufferPtr JfrStorage::acquire_promotion_buffer(size_t size, JfrStorageMspace* ms
       storage_instance.discard_oldest(thread);
       continue;
     }
-    return JfrStorage::acquire_transient(size, thread);
+    return storage_instance.control().to_disk() ? JfrStorage::acquire_transient(size, thread) : nullptr;
   }
 }
 
