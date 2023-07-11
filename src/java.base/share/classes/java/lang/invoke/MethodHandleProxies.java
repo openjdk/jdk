@@ -216,14 +216,14 @@ public class MethodHandleProxies {
             "jdk.invoke.MethodHandleProxies.dumpClassFiles", "DUMP_MH_PROXY_CLASSFILES");
 
     private static final Set<Class<?>> WRAPPER_TYPES = Collections.newSetFromMap(new WeakHashMap<>());
-    private static final ClassValue<WeakReferenceHolder<Lookup>> PROXY_LOOKUPS = new ClassValue<>() {
+    private static final ClassValue<WeakReferenceHolder<Class<?>>> PROXIES = new ClassValue<>() {
         @Override
-        protected WeakReferenceHolder<Lookup> computeValue(Class<?> intfc) {
-            return new WeakReferenceHolder<>(newProxyLookup(intfc));
+        protected WeakReferenceHolder<Class<?>> computeValue(Class<?> intfc) {
+            return new WeakReferenceHolder<>(newProxy(intfc));
         }
     };
 
-    private static Lookup newProxyLookup(Class<?> intfc) {
+    private static Class<?> newProxy(Class<?> intfc) {
         List<MethodInfo> methods = new ArrayList<>();
         Set<Class<?>> referencedTypes = new HashSet<>();
         referencedTypes.add(intfc);
@@ -293,8 +293,9 @@ public class MethodHandleProxies {
             lookup = definer.defineClassAsLookup(true);
         }
         // cache the wrapper type
-        WRAPPER_TYPES.add(lookup.lookupClass());
-        return lookup;
+        var ret = lookup.lookupClass();
+        WRAPPER_TYPES.add(ret);
+        return ret;
     }
 
     private static final class WeakReferenceHolder<T> {
@@ -314,14 +315,14 @@ public class MethodHandleProxies {
     }
 
     private static Lookup getProxyClassLookup(Class<?> intfc) {
-        WeakReferenceHolder<Lookup> r = PROXY_LOOKUPS.get(intfc);
-        Lookup lookup = r.get();
-        if (lookup == null) {
+        WeakReferenceHolder<Class<?>> r = PROXIES.get(intfc);
+        Class<?> cl = r.get();
+        if (cl == null) {
              // If the referent is cleared, create a new value and update cached weak reference.
-            lookup = newProxyLookup(intfc);
-            r.set(lookup);
+            cl = newProxy(intfc);
+            r.set(cl);
         }
-        return lookup;
+        return new Lookup(cl);
     }
 
     private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));

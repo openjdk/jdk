@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Comparator;
 
@@ -189,16 +190,19 @@ public class ProxiesImplementationTest {
         var mh = MethodHandles.zero(void.class);
         WeakReference<Class<?>> cl;
 
-        {
-            var c1 = asInterfaceInstance(ifaceClass, mh);
-            cl = new WeakReference<>(c1.getClass());
-
-            //System.gc(); // clears the WeakReference while it's still reachable?
-            var c2 = asInterfaceInstance(ifaceClass, mh);
-            assertTrue(cl.refersTo(c2.getClass()), "MHP should reuse implementation class when available");
-        }
+        var c1 = asInterfaceInstance(ifaceClass, mh);
+        cl = new WeakReference<>(c1.getClass());
 
         System.gc();
-        //assertTrue(cl.refersTo(null), "MHP impl class should be cleared by gc"); // broken
+        var c2 = asInterfaceInstance(ifaceClass, mh);
+        assertTrue(cl.refersTo(c2.getClass()), "MHP should reuse implementation class when available");
+        Reference.reachabilityFence(c1);
+
+        // allow GC in interpreter
+        c1 = null;
+        c2 = null;
+
+        System.gc();
+        assertTrue(cl.refersTo(null), "MHP impl class should be cleared by gc"); // broken
     }
 }
