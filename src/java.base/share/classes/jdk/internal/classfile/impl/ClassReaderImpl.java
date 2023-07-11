@@ -424,85 +424,85 @@ public final class ClassReaderImpl
     @Override
     public ModuleEntry readModuleEntry(int pos) {
         if (readEntry(pos) instanceof ModuleEntry me) return me;
-        throw new ConstantPoolException("Not a module entry at pos: " + pos);
+        throw new ConstantPoolException("Not a module entry at index: " + readU2(pos));
     }
 
     @Override
     public PackageEntry readPackageEntry(int pos) {
         if (readEntry(pos) instanceof PackageEntry pe) return pe;
-        throw new ConstantPoolException("Not a package entry at pos: " + pos);
+        throw new ConstantPoolException("Not a package entry at index: " + readU2(pos));
     }
 
     @Override
     public ClassEntry readClassEntry(int pos) {
         if (readEntry(pos) instanceof ClassEntry ce) return ce;
-        throw new ConstantPoolException("Not a class entry at pos: " + pos);
+        throw new ConstantPoolException("Not a class entry at index: " + readU2(pos));
     }
 
     @Override
     public NameAndTypeEntry readNameAndTypeEntry(int pos) {
         if (readEntry(pos) instanceof NameAndTypeEntry nate) return nate;
-        throw new ConstantPoolException("Not a name and type entry at pos: " + pos);
+        throw new ConstantPoolException("Not a name and type entry at index: " + readU2(pos));
     }
 
     @Override
     public MethodHandleEntry readMethodHandleEntry(int pos) {
         if (readEntry(pos) instanceof MethodHandleEntry mhe) return mhe;
-        throw new ConstantPoolException("Not a method handle entry at pos: " + pos);
+        throw new ConstantPoolException("Not a method handle entry at index: " + readU2(pos));
     }
 
     @Override
     public ConstantValueEntry readConstantValueEntry(int pos) {
         if (readEntry(pos) instanceof ConstantValueEntry e) return e;
-        throw new ConstantPoolException("Not a constant value entry at pos: " + pos);
+        throw new ConstantPoolException("Not a constant value entry at index: " + readU2(pos));
     }
 
     @Override
     public IntegerEntry readIntegerEntry(int pos) {
         if (readEntry(pos) instanceof IntegerEntry e) return e;
-        throw new ConstantPoolException("Not an integer entry at pos: " + pos);
+        throw new ConstantPoolException("Not an integer entry at index: " + readU2(pos));
     }
 
     @Override
     public DoubleEntry readDoubleEntry(int pos) {
         if (readEntry(pos) instanceof DoubleEntry e) return e;
-        throw new ConstantPoolException("Not a double entry at pos: " + pos);
+        throw new ConstantPoolException("Not a double entry at index: " + readU2(pos));
     }
 
     @Override
     public LongEntry readLongEntry(int pos) {
         if (readEntry(pos) instanceof LongEntry e) return e;
-        throw new ConstantPoolException("Not a long entry at pos: " + pos);
+        throw new ConstantPoolException("Not a long entry at index: " + readU2(pos));
     }
 
     @Override
     public FloatEntry readFloatEntry(int pos) {
         if (readEntry(pos) instanceof FloatEntry e) return e;
-        throw new ConstantPoolException("Not a float entry at pos: " + pos);
+        throw new ConstantPoolException("Not a float entry at index: " + readU2(pos));
     }
 
     @Override
     public FieldRefEntry readFieldRefEntry(int pos) {
         if (readEntry(pos) instanceof FieldRefEntry e) return e;
-        throw new ConstantPoolException("Not a field ref entry at pos: " + pos);
+        throw new ConstantPoolException("Not a field ref entry at index: " + readU2(pos));
     }
 
     @Override
     public MemberRefEntry readMemberRefEntry(int pos) {
         if (readEntry(pos) instanceof MemberRefEntry e) return e;
-        throw new ConstantPoolException("Not a member ref entry at pos: " + pos);
+        throw new ConstantPoolException("Not a member ref entry at index: " + readU2(pos));
     }
 
     @Override
     public InterfaceMethodRefEntry readInterfaceMethodRefEntry(int pos) {
         if (readEntry(pos) instanceof InterfaceMethodRefEntry e) return e;
-        throw new ConstantPoolException("Not an interface method ref entry at pos: " + pos);
+        throw new ConstantPoolException("Not an interface method ref entry at index: " + readU2(pos));
     }
 
     @Override
     public InvokeDynamicEntry readInvokeDynamicEntry(int pos) {
         if (readEntry(pos) instanceof InvokeDynamicEntry e) return e;
-        throw new ConstantPoolException("Not an invoke dynamic entry at pos: " + pos);
+        throw new ConstantPoolException("Not an invoke dynamic entry at index: " + readU2(pos));
     }
 
     @Override

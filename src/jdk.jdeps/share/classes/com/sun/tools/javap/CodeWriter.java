@@ -112,67 +112,71 @@ public class CodeWriter extends BasicWriter {
 
     public void writeInstr(int pc, Instruction ins, CodeAttribute lr) {
         print(String.format("%4d: %-13s ", pc, ins.opcode().name().toLowerCase(Locale.US)));
-        // compute the number of indentations for the body of multi-line instructions
-        // This is 6 (the width of "%4d: "), divided by the width of each indentation level,
-        // and rounded up to the next integer.
-        int indentWidth = options.indentWidth;
-        int indent = (6 + indentWidth - 1) / indentWidth;
-        switch (ins) {
-            case BranchInstruction instr ->
-                print(lr.labelToBci(instr.target()));
-            case ConstantInstruction.ArgumentConstantInstruction instr ->
-                print(instr.constantValue());
-            case ConstantInstruction.LoadConstantInstruction instr ->
-                printConstantPoolRef(instr.constantEntry());
-            case FieldInstruction instr ->
-                printConstantPoolRef(instr.field());
-            case InvokeDynamicInstruction instr ->
-                printConstantPoolRefAndValue(instr.invokedynamic(), 0);
-            case InvokeInstruction instr -> {
-                if (instr.isInterface() && instr.opcode() != Opcode.INVOKESTATIC)
-                    printConstantPoolRefAndValue(instr.method(), instr.count());
-                else printConstantPoolRef(instr.method());
+        try {
+            // compute the number of indentations for the body of multi-line instructions
+            // This is 6 (the width of "%4d: "), divided by the width of each indentation level,
+            // and rounded up to the next integer.
+            int indentWidth = options.indentWidth;
+            int indent = (6 + indentWidth - 1) / indentWidth;
+            switch (ins) {
+                case BranchInstruction instr ->
+                    print(lr.labelToBci(instr.target()));
+                case ConstantInstruction.ArgumentConstantInstruction instr ->
+                    print(instr.constantValue());
+                case ConstantInstruction.LoadConstantInstruction instr ->
+                    printConstantPoolRef(instr.constantEntry());
+                case FieldInstruction instr ->
+                    printConstantPoolRef(instr.field());
+                case InvokeDynamicInstruction instr ->
+                    printConstantPoolRefAndValue(instr.invokedynamic(), 0);
+                case InvokeInstruction instr -> {
+                    if (instr.isInterface() && instr.opcode() != Opcode.INVOKESTATIC)
+                        printConstantPoolRefAndValue(instr.method(), instr.count());
+                    else printConstantPoolRef(instr.method());
+                }
+                case LoadInstruction instr ->
+                    print(instr.sizeInBytes() > 1 ? instr.slot() : "");
+                case StoreInstruction instr ->
+                    print(instr.sizeInBytes() > 1 ? instr.slot() : "");
+                case IncrementInstruction instr ->
+                    print(instr.slot() + ", " + instr.constant());
+                case LookupSwitchInstruction instr -> {
+                    var cases = instr.cases();
+                    print("{ // " + cases.size());
+                    indent(indent);
+                    for (var c : cases)
+                        print(String.format("%n%12d: %d", c.caseValue(),
+                                lr.labelToBci(c.target())));
+                    print("\n     default: " + lr.labelToBci(instr.defaultTarget()) + "\n}");
+                    indent(-indent);
+                }
+                case NewMultiArrayInstruction instr ->
+                    printConstantPoolRefAndValue(instr.arrayType(), instr.dimensions());
+                case NewObjectInstruction instr ->
+                    printConstantPoolRef(instr.className());
+                case NewPrimitiveArrayInstruction instr ->
+                    print(" " + instr.typeKind().typeName());
+                case NewReferenceArrayInstruction instr ->
+                    printConstantPoolRef(instr.componentType());
+                case TableSwitchInstruction instr -> {
+                    print("{ // " + instr.lowValue() + " to " + instr.highValue());
+                    indent(indent);
+                    var caseMap = instr.cases().stream().collect(
+                            Collectors.toMap(SwitchCase::caseValue, SwitchCase::target));
+                    for (int i = instr.lowValue(); i <= instr.highValue(); i++)
+                        print(String.format("%n%12d: %d", i,
+                                lr.labelToBci(caseMap.getOrDefault(i, instr.defaultTarget()))));
+                    print("\n     default: " + lr.labelToBci(instr.defaultTarget()) + "\n}");
+                    indent(-indent);
+                }
+                case TypeCheckInstruction instr ->
+                    printConstantPoolRef(instr.type());
+                default -> {}
             }
-            case LoadInstruction instr ->
-                print(instr.sizeInBytes() > 1 ? instr.slot() : "");
-            case StoreInstruction instr ->
-                print(instr.sizeInBytes() > 1 ? instr.slot() : "");
-            case IncrementInstruction instr ->
-                print(instr.slot() + ", " + instr.constant());
-            case LookupSwitchInstruction instr -> {
-                var cases = instr.cases();
-                print("{ // " + cases.size());
-                indent(indent);
-                for (var c : cases)
-                    print(String.format("%n%12d: %d", c.caseValue(),
-                            lr.labelToBci(c.target())));
-                print("\n     default: " + lr.labelToBci(instr.defaultTarget()) + "\n}");
-                indent(-indent);
-            }
-            case NewMultiArrayInstruction instr ->
-                printConstantPoolRefAndValue(instr.arrayType(), instr.dimensions());
-            case NewObjectInstruction instr ->
-                printConstantPoolRef(instr.className());
-            case NewPrimitiveArrayInstruction instr ->
-                print(" " + instr.typeKind().typeName());
-            case NewReferenceArrayInstruction instr ->
-                printConstantPoolRef(instr.componentType());
-            case TableSwitchInstruction instr -> {
-                print("{ // " + instr.lowValue() + " to " + instr.highValue());
-                indent(indent);
-                var caseMap = instr.cases().stream().collect(
-                        Collectors.toMap(SwitchCase::caseValue, SwitchCase::target));
-                for (int i = instr.lowValue(); i <= instr.highValue(); i++)
-                    print(String.format("%n%12d: %d", i,
-                            lr.labelToBci(caseMap.getOrDefault(i, instr.defaultTarget()))));
-                print("\n     default: " + lr.labelToBci(instr.defaultTarget()) + "\n}");
-                indent(-indent);
-            }
-            case TypeCheckInstruction instr ->
-                printConstantPoolRef(instr.type());
-            default -> {}
+            println();
+        } catch (IllegalArgumentException e) {
+            println(report(e));
         }
-        println();
     }
 
     private void printConstantPoolRef(PoolEntry entry) {
