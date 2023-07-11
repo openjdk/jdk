@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "runtime/atomic.hpp"
+#include "utilities/sizes.hpp"
 
 //
 // Represents a piece of committed memory.
