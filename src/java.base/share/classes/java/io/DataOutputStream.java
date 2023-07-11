@@ -32,9 +32,8 @@ import jdk.internal.util.ByteArray;
  * types to an output stream in a portable way. An application can
  * then use a data input stream to read the data back in. A data output
  * stream wraps another output stream and delegates writing bytes to the
- * write methods of that output stream. Hence writing data consisting of
- * more than a single byte may cause several writes to the underlying
- * output stream.
+ * write methods of that output stream. Writing data consisting of more than
+ * a single byte may cause several writes to the underlying output stream.
  * <p>
  * A DataOutputStream is not safe for use by multiple concurrent
  * threads. If a DataOutputStream is to be used by more than one
