@@ -4193,7 +4193,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
 #if INCLUDE_JFR
-  void StubGenerator::generate_jfr_stubs() {
+  void generate_jfr_stubs() {
     StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
     StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
     StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
