@@ -25,6 +25,7 @@
  * @test
  * @bug 8173898
  * @summary Basic test for checking filtering of reflection frames
+ * @requires vm.opt.ShowHiddenFrames == false
  * @run testng ReflectionFrames
  */
 

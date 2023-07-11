@@ -23,6 +23,7 @@
 
 package java.util;
 
+import java.lang.reflect.Method;
 import static java.lang.StackWalker.Option.*;
 import java.lang.StackWalker.StackFrame;
 import java.util.stream.Collectors;
@@ -69,6 +70,46 @@ public class CSM {
     public static Result getCallerClass() {
         Class<?> caller = walker.getCallerClass();
         return new Result(List.of(caller), dump());
+    }
+
+    /*
+     * All invocations of StackWalker::getCallerClass() from this @CallerSensitive method
+     * should fail with an UnsupportedOperationException.
+     */
+    @CallerSensitive
+    public static void getCallerClassReflectively(Method inv, List<Object[]> parameters) {
+        String msg = "when calling StackWalker::getCallerClass() from @CallerSensitive method";
+        for (Object[] params : parameters) {
+            try {
+                Object res;
+                if (params[0] != inv) {
+                    // First invocation is a direct reflective call of StackWalker::getCallerClass.
+                    // params[0]    = StackWalker::getCallerClass()
+                    // params[1][0] = StackWalker instance
+                    // params[1][1] = null
+                    res = ((Method)params[0]).invoke(((Object[])params[1])[0], (Object[])((Object[])params[1])[1]);
+                } else {
+                    // Subsequent invocations reflectively call StackWalker::getCallerClass via reflective calls to Method::invoke.
+                    // inv    = Method::invoke()
+                    // params = { .. { inv, { StackWalker::getCallerClass, new Object[] { WALKER, null } } } }
+                    res = inv.invoke(inv, inv, params);
+                }
+                System.out.println("CallerSensitiveMethod::getCallerClass() called from " + res);
+            } catch (Throwable expected) {
+                while (expected.getCause() != null) {
+                    expected = expected.getCause();
+                }
+                if (expected instanceof UnsupportedOperationException) {
+                    System.out.println("Caught expected UnsupportedOperationException " + msg + " reflectively:");
+                    expected.printStackTrace(System.out);
+                    continue;
+                } else {
+                    System.out.println("Unexpected exception " + msg + " reflectively:");
+                    expected.printStackTrace(System.out);
+                }
+            }
+            throw new RuntimeException("Expected UnsupportedOperationException " + msg + " reflectively");
+        }
     }
 
     static List<StackFrame> dump() {

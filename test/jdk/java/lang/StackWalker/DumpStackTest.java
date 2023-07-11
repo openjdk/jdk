@@ -27,6 +27,7 @@
  * @summary Verify outputs of Thread.dumpStack() and Throwable.printStackTrace().
  *          This test should also been run against jdk9 successfully except of
  *          VM option MemberNameInStackFrame.
+ * @requires vm.opt.ShowHiddenFrames == false
  * @run main/othervm DumpStackTest
  */
 

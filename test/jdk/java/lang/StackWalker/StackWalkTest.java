@@ -37,6 +37,7 @@ import jdk.test.lib.RandomFactory;
  * @test
  * @bug 8140450
  * @summary Stack Walk Test (use -Dseed=X to set PRNG seed)
+ * @requires vm.opt.ShowHiddenFrames == false
  * @library /test/lib
  * @build jdk.test.lib.RandomFactory
  * @compile StackRecorderUtil.java

@@ -25,6 +25,7 @@
  * @test
  * @bug 8140450 8152893 8189291
  * @summary Basic test for StackWalker.getCallerClass()
+ * @requires vm.opt.ShowHiddenFrames == false
  * @run main/othervm GetCallerClassTest
  * @run main/othervm -Djava.security.manager=allow GetCallerClassTest sm
  */

@@ -43,6 +43,7 @@
 #include "runtime/keepStackGCProcessed.hpp"
 #include "runtime/stackWatermarkSet.hpp"
 #include "runtime/vframe.inline.hpp"
+#include "classfile/systemDictionary.hpp"
 #include "utilities/formatBuffer.hpp"
 #include "utilities/globalDefinitions.hpp"
 
@@ -82,9 +83,10 @@ void BaseFrameStream::set_continuation(Handle cont) {
 
 JavaFrameStream::JavaFrameStream(JavaThread* thread, int mode, Handle cont_scope, Handle cont)
   : BaseFrameStream(thread, cont),
-   _vfst(cont.is_null()
+    _vfst(cont.is_null()
       ? vframeStream(thread, cont_scope)
-      : vframeStream(cont(), cont_scope)) {
+      : vframeStream(cont(), cont_scope)),
+    _needs_caller_sensitive_check(true) {
   _need_method_info = StackWalk::need_method_info(mode);
 }
 
@@ -143,6 +145,25 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
   return stream;
 }
 
+static bool is_reflection_or_methodhandle_frame(Method* method, TRAPS) {
+  static InstanceKlass* method_accessor = nullptr;
+  static InstanceKlass* constructor_accessor = nullptr;
+  if (method_accessor == nullptr) {
+    Klass* k = SystemDictionary::resolve_or_fail(vmSymbols::reflect_MethodAccessor(), true, THREAD);
+    assert(k != nullptr, "Can't load MethodAccessor");
+    method_accessor = InstanceKlass::cast(k);
+    k = SystemDictionary::resolve_or_fail(vmSymbols::reflect_ConstructorAccessor(), true, THREAD);
+    assert(k != nullptr, "Can't load ConstructorAccessor");
+    constructor_accessor = InstanceKlass::cast(k);
+  }
+  return (method->method_holder() == vmClasses::reflect_Method_klass() ||
+    method->method_holder() == vmClasses::reflect_Constructor_klass() ||
+    method->method_holder()->is_subtype_of(method_accessor) ||
+    method->method_holder()->is_subtype_of(constructor_accessor) ||
+    // MethodHandle frames are not hidden and StackWalker::getCallerClass has to filter them out
+    method->method_holder()->name()->starts_with("java/lang/invoke"));
+}
+
 // Unpacks one or more frames into user-supplied buffers.
 // Updates the end index, and returns the number of unpacked frames.
 // Always start with the existing vfst.method and bci.
@@ -165,7 +186,7 @@ BaseFrameStream* BaseFrameStream::from_current(JavaThread* thread, jlong magic,
 int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
                               int max_nframes, int start_index,
                               objArrayHandle  frames_array,
-                              int& end_index, bool is_first_batch, TRAPS) {
+                              int& end_index, TRAPS) {
   log_debug(stackwalk)("fill_in_frames limit=%d start=%d frames length=%d",
                        max_nframes, start_index, frames_array->length());
   assert(max_nframes > 0, "invalid max_nframes");
@@ -184,9 +205,10 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
 
     if (method == nullptr) continue;
 
-    // skip hidden frames for default StackWalker option (i.e. SHOW_HIDDEN_FRAMES
-    // not set) and when StackWalker::getCallerClass is called
-    if (!ShowHiddenFrames && (skip_hidden_frames(mode) || get_caller_class(mode))) {
+    // Always skip hidden frames when StackWalker::getCallerClass is called or for the
+    // default StackWalker option (i.e. SHOW_HIDDEN_FRAMES not set) if ShowHiddenFrames is false.
+    // For StackWalker::getCallerClass also skip reflective/methodhandle frames.
+    if (get_caller_class(mode) || (skip_hidden_frames(mode) && !ShowHiddenFrames)) {
       if (method->is_hidden()) {
         LogTarget(Debug, stackwalk) lt;
         if (lt.is_enabled()) {
@@ -198,6 +220,17 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
         }
         // We end a batch on continuation bottom to let the Java side skip top frames of the next one
         if (stream.continuation() != nullptr && method->intrinsic_id() == vmIntrinsics::_Continuation_enter) break;
+        continue;
+      }
+      if (get_caller_class(mode) && is_reflection_or_methodhandle_frame(method, THREAD)) {
+        LogTarget(Debug, stackwalk) lt;
+        if (lt.is_enabled()) {
+          ResourceMark rm(THREAD);
+          LogStream ls(lt);
+          ls.print("  reflective/methodhandle method: ");
+          method->print_short_name(&ls);
+          ls.cr();
+        }
         continue;
       }
     }
@@ -213,12 +246,19 @@ int StackWalk::fill_in_frames(jlong mode, BaseFrameStream& stream,
     }
 
     if (!need_method_info(mode) && get_caller_class(mode) &&
-          is_first_batch && index == start_index && method->caller_sensitive()) {
-      ResourceMark rm(THREAD);
-      THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(),
-        err_msg("StackWalker::getCallerClass called from @CallerSensitive '%s' method",
-                method->external_name()));
+        // if we're in "get_caller_class" mode, 'stream' is a "JavaFrameStream"
+        ((JavaFrameStream&)stream).needs_caller_sensitive_check()) {
+      // reflective and method handle frames have already been skipped in the previous step
+      if (method->caller_sensitive()) {
+        ResourceMark rm(THREAD);
+        THROW_MSG_0(vmSymbols::java_lang_UnsupportedOperationException(),
+          err_msg("StackWalker::getCallerClass called from @CallerSensitive '%s' method",
+                  method->external_name()));
+      } else {
+        ((JavaFrameStream&)stream).caller_sensitive_check_done();
+      }
     }
+
     // fill in StackFrameInfo and initialize MemberName
     stream.fill_frame(index, frames_array, methodHandle(THREAD, method), CHECK_0);
 
@@ -498,7 +538,7 @@ oop StackWalk::fetchFirstBatch(BaseFrameStream& stream, Handle stackStream,
   if (!stream.at_end()) {
     KeepStackGCProcessedMark keep_stack(THREAD);
     numFrames = fill_in_frames(mode, stream, frame_count, start_index,
-                               frames_array, end_index, true, CHECK_NULL);
+                               frames_array, end_index, CHECK_NULL);
     if (numFrames < 1) {
       THROW_MSG_(vmSymbols::java_lang_InternalError(), "stack walk: decode failed", nullptr);
     }
@@ -583,7 +623,7 @@ jint StackWalk::fetchNextBatch(Handle stackStream, jlong mode, jlong magic,
     stream.next(); // advance past the last frame decoded in previous batch
     if (!stream.at_end()) {
       int n = fill_in_frames(mode, stream, frame_count, start_index,
-                             frames_array, end_index, false, CHECK_0);
+                             frames_array, end_index, CHECK_0);
       if (n < 1 && !skip_hidden_frames(mode)) {
         THROW_MSG_(vmSymbols::java_lang_InternalError(), "doStackWalk: later decode failed", 0L);
       }

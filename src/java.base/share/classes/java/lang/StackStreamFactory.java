@@ -271,8 +271,7 @@ final class StackStreamFactory {
 
         /*
          * Returns {@code Class} object at the current frame;
-         * or {@code null} if no more frame. If advanceToNextBatch is true,
-         * it will only fetch the next batch.
+         * or {@code null} if no more frame.
          */
         final Class<?> peekFrame() {
             while (frameBuffer.isActive() && depth < maxDepth) {
@@ -385,7 +384,7 @@ final class StackStreamFactory {
         /*
          * Returns true if there is next frame to be traversed.
          * This skips hidden frames unless this StackWalker has
-         * {@link Option#SHOW_REFLECT_FRAMES}
+         * {@link Option#SHOW_REFLECT_FRAMES} or {@link Option#SHOW_HIDDEN_FRAMES}
          */
         final boolean hasNext() {
             return peekFrame() != null;
@@ -732,12 +731,11 @@ final class StackStreamFactory {
             int n = 0;
             Class<?>[] frames = new Class<?>[2];
             // skip the API calling this getCallerClass method
-            // 0: StackWalker::getCallerClass
-            // 1: caller-sensitive method
-            // 2: caller class
+            //  : StackWalker::getCallerClass (already skipped in the VM)
+            // 0: caller-sensitive method
+            //  : reflection and MethodHandle frames are skipped in the VM for GET_CALLER_CLASS mode
+            // 1: caller class
             while (n < 2 && (caller = nextFrame()) != null) {
-                if (isMethodHandleFrame(caller)) { continue; }
-                if (isReflectionFrame(caller)) { continue; }
                 frames[n++] = caller;
             }
             if (frames[1] == null) {
@@ -1046,12 +1044,6 @@ final class StackStreamFactory {
     private static boolean filterStackWalkImpl(Class<?> c) {
         return stackWalkImplClasses.contains(c) ||
                 c.getName().startsWith("java.util.stream.");
-    }
-
-    // MethodHandle frames are not hidden and CallerClassFinder has
-    // to filter them out
-    private static boolean isMethodHandleFrame(Class<?> c) {
-        return c.getName().startsWith("java.lang.invoke.");
     }
 
     private static boolean isReflectionFrame(Class<?> c) {

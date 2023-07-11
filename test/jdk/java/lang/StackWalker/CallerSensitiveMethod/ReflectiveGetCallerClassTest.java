@@ -26,21 +26,26 @@
  * @test
  * @bug 8311500
  * @summary StackWalker.getCallerClass() can throw if invoked reflectively
+ * @library src
+ * @build java.base/java.util.CSM
  * @run main/othervm ReflectiveGetCallerClassTest
  * @run main/othervm -XX:+UnlockDiagnosticVMOptions -XX:+ShowHiddenFrames ReflectiveGetCallerClassTest
  */
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.CSM;
 
 public class ReflectiveGetCallerClassTest {
     private static StackWalker WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-    private static Method gcc, inv;
+    private static Method gcc, swgcc, inv;
     static {
         try {
             inv = Method.class.getDeclaredMethod("invoke", Object.class, Object[].class);
             gcc = ReflectiveGetCallerClassTest.class.getDeclaredMethod("getCallerClass");
+            swgcc = StackWalker.class.getDeclaredMethod("getCallerClass");
         } catch (SecurityException se) {
             // This test can't run if a security manager prohibits "getStackWalkerWithClassReference"
             System.err.println(se);
@@ -52,7 +57,7 @@ public class ReflectiveGetCallerClassTest {
     }
 
     public static void getCallerClass() {
-        System.out.println(WALKER.getCallerClass());
+        System.out.println("ReflectiveGetCallerClassTest::getCallerClass() called from " + WALKER.getCallerClass());
     }
 
     // Create a list of Object[] of the form:
@@ -69,10 +74,15 @@ public class ReflectiveGetCallerClassTest {
     }
 
     public static void main(String[] args) throws Throwable {
+
         // gcc is ReflectiveGetCallerClassTest::getCallerClass()
         // inv is Method::invoke()
         for (Object[] params : prepareArgs(new Object[] { gcc, new Object[] { null, null } }, inv, 10)) {
             inv.invoke(inv, inv, params);
         }
+
+        // swgcc is StackWalker::getCallerClass()
+        // inv is Method::invoke()
+        CSM.getCallerClassReflectively(inv, prepareArgs(new Object[] { swgcc, new Object[] { WALKER, null } }, inv, 10));
     }
 }

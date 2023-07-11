@@ -25,6 +25,7 @@
  * @test
  * @bug 8020968
  * @summary Basic test for hidden frames
+ * @requires vm.opt.ShowHiddenFrames == false
  * @run main HiddenFrames
  */
 

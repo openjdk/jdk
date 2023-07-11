@@ -272,6 +272,8 @@
                                                                                                   \
   template(jdk_internal_reflect,                      "jdk/internal/reflect")                     \
   template(reflect_MethodAccessorImpl,                "jdk/internal/reflect/MethodAccessorImpl")      \
+  template(reflect_MethodAccessor,                    "jdk/internal/reflect/MethodAccessor")          \
+  template(reflect_ConstructorAccessor,               "jdk/internal/reflect/ConstructorAccessor")     \
   template(reflect_DelegatingClassLoader,             "jdk/internal/reflect/DelegatingClassLoader")   \
   template(reflect_Reflection,                        "jdk/internal/reflect/Reflection")              \
   template(reflect_CallerSensitive,                   "jdk/internal/reflect/CallerSensitive")         \

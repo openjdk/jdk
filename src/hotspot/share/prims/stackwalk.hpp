@@ -88,6 +88,7 @@ class JavaFrameStream : public BaseFrameStream {
 private:
   vframeStream          _vfst;
   bool                  _need_method_info;
+  bool                  _needs_caller_sensitive_check;
 
 public:
   JavaFrameStream(JavaThread* thread, int mode, Handle cont_scope, Handle cont);
@@ -103,6 +104,13 @@ public:
 
   void fill_frame(int index, objArrayHandle  frames_array,
                   const methodHandle& method, TRAPS) override;
+
+  bool needs_caller_sensitive_check() {
+    return _needs_caller_sensitive_check;
+  }
+  void caller_sensitive_check_done() {
+    _needs_caller_sensitive_check = false;
+  }
 };
 
 class LiveFrameStream : public BaseFrameStream {
@@ -145,7 +153,7 @@ private:
   static int fill_in_frames(jlong mode, BaseFrameStream& stream,
                             int max_nframes, int start_index,
                             objArrayHandle frames_array,
-                            int& end_index, bool is_first_batch, TRAPS);
+                            int& end_index, TRAPS);
 
   static inline bool get_caller_class(int mode) {
     return (mode & JVM_STACKWALK_GET_CALLER_CLASS) != 0;
