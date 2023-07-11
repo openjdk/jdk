@@ -30,10 +30,18 @@ import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
 import jdk.javadoc.doclet.Taglet.Location;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 
 /**
  * This is the taglet interface used internally within the doclet.
+ *
+ * The public {@link jdk.javadoc.doclet.Taglet} interface only supports
+ * output to strings.   This interface supports structured output,
+ * to {@link Content} objects, such as {@link HtmlTree}.
+ *
+ * User-provided taglets are supported using the {@link UserTaglet}
+ * wrapper class.
  */
 public interface Taglet {
     /**

@@ -36,7 +36,7 @@ import com.sun.source.doctree.DocTree;
  * A taglet should implement this interface if it supports an {@code {@inheritDoc}}
  * tag or is automatically inherited if it is missing.
  */
-public interface InheritableTaglet extends Taglet {
+public interface InheritableTaglet {
 
     /*
      * Called by InheritDocTaglet on an inheritable taglet to expand {@inheritDoc S}
