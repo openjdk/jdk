@@ -969,7 +969,7 @@
   unchecked_nonstatic_field(Array<Method*>,           _data,                                  sizeof(Method*))                       \
   unchecked_nonstatic_field(Array<Klass*>,            _data,                                  sizeof(Klass*))                        \
   unchecked_nonstatic_field(Array<ResolvedIndyEntry>, _data,                                  sizeof(ResolvedIndyEntry))             \
-  unchecked_nonstatic_field(Array<Array<u1>*>,         _data,                                 sizeof(Array<u1>*))                    \
+  unchecked_nonstatic_field(Array<Array<u1>*>,        _data,                                  sizeof(Array<u1>*))                    \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \

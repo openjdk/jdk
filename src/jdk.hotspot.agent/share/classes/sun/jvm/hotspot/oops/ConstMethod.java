@@ -429,9 +429,41 @@ public class ConstMethod extends Metadata {
     return (getFlags() & HAS_METHOD_ANNOTATIONS) != 0;
   }
 
+  // Pointers to annotations are stored towards the end of the ConstMethod in following format:
+  //
+  //   start of ConstMethod                          end of ConstMethod
+  //            |                                           |
+  //            V                                           V
+  //            | ... | default | type | parameter | method |
+  //
+  private int getMethodAnnotationsOffset() {
+    return 1;
+  }
+  private int getParameterAnnotationsOffset() {
+    int offset = 1;
+    if (hasMethodAnnotations()) {
+      offset += getMethodAnnotationsOffset();
+    }
+    return offset;
+  }
+  private int getTypeAnnotationsOffset() {
+    int offset = 1;
+    if (hasParameterAnnotations()) {
+      offset += getParameterAnnotationsOffset();
+    }
+    return offset;
+  }
+  private int getDefaultAnnotationsOffset() {
+    int offset = 1;
+    if (hasTypeAnnotations()) {
+      offset += getTypeAnnotationsOffset();
+    }
+    return offset;
+  }
+
   public U1Array getMethodAnnotations() {
     if (hasMethodAnnotations()) {
-      Address addr = getAddress().getAddressAt((getSize() - 1) * VM.getVM().getAddressSize());
+      Address addr = getAddress().getAddressAt((getSize() - getMethodAnnotationsOffset()) * VM.getVM().getAddressSize());
       return VMObjectFactory.newObject(U1Array.class, addr);
     } else {
       return null;
@@ -444,11 +476,7 @@ public class ConstMethod extends Metadata {
 
   public U1Array getParameterAnnotations() {
     if (hasParameterAnnotations()) {
-      int offset = 1;
-      if (hasMethodAnnotations()) {
-        offset += 1;
-      }
-      Address addr = getAddress().getAddressAt((getSize() - offset) * VM.getVM().getAddressSize());
+      Address addr = getAddress().getAddressAt((getSize() - getParameterAnnotationsOffset()) * VM.getVM().getAddressSize());
       return VMObjectFactory.newObject(U1Array.class, addr);
     } else {
       return null;
@@ -461,14 +489,7 @@ public class ConstMethod extends Metadata {
 
   public U1Array getTypeAnnotations() {
     if (hasTypeAnnotations()) {
-      int offset = 1;
-      if (hasMethodAnnotations()) {
-        offset += 1;
-      }
-      if (hasParameterAnnotations()) {
-        offset += 1;
-      }
-      Address addr = getAddress().getAddressAt((getSize() - offset) * VM.getVM().getAddressSize());
+      Address addr = getAddress().getAddressAt((getSize() - getTypeAnnotationsOffset()) * VM.getVM().getAddressSize());
       return VMObjectFactory.newObject(U1Array.class, addr);
     } else {
       return null;
@@ -481,17 +502,7 @@ public class ConstMethod extends Metadata {
 
   public U1Array getDefaultAnnotations() {
     if (hasDefaultAnnotations()) {
-      int offset = 1;
-      if (hasMethodAnnotations()) {
-        offset += 1;
-      }
-      if (hasParameterAnnotations()) {
-        offset += 1;
-      }
-      if (hasTypeAnnotations()) {
-        offset += 1;
-      }
-      Address addr = getAddress().getAddressAt((getSize() - offset) * VM.getVM().getAddressSize());
+      Address addr = getAddress().getAddressAt((getSize() - getDefaultAnnotationsOffset()) * VM.getVM().getAddressSize());
       return VMObjectFactory.newObject(U1Array.class, addr);
     } else {
       return null;
