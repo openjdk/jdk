@@ -4335,6 +4335,15 @@ void MacroAssembler::shadd(Register Rd, Register Rs1, Register Rs2, Register tmp
   }
 }
 
+void MacroAssembler::slli_uw(Register Rd, Register Rs, int shamt) {
+  if (UseZba) {
+    _slli_uw(Rd, Rs, shamt);
+  } else {
+    slli(Rd, Rs, shamt+32);
+    srli(Rd, Rd, 32);
+  }
+}
+
 void MacroAssembler::zero_extend(Register dst, Register src, int bits) {
   if (UseZba && bits == 32) {
     zext_w(dst, src);
