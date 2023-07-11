@@ -238,7 +238,6 @@ public final class EventWriter {
     }
 
     public boolean beginEvent(EventConfiguration configuration, long typeId) {
-        assert(startPosition == currentPosition);
         // Malicious code could take the EventConfiguration object from one
         // event class field and assign it to another. This check makes sure
         // the event type matches what was added by instrumentation.

@@ -96,7 +96,6 @@ public final class StringPool {
 
     /* a string fetched from the string pool must be of the current generation */
     private static long ensureCurrentGeneration(String s, Long lsid) {
-        assert(lsid != null);
         long internalSid = lsid.longValue();
         return isCurrentGeneration(internalSid) ? externalSid(internalSid) : storeString(s);
     }
