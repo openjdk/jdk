@@ -2777,7 +2777,7 @@ Node* Phase::gen_subtype_check(Node* subklass, Node* superklass, Node** ctrl, No
 
   // If we might perform an expensive check, first try to take advantage of profile data that was attached to the
   // SubTypeCheck node
-  if (might_be_cache && method != nullptr) {
+  if (might_be_cache && method != nullptr && VM_Version::profile_all_receivers_at_type_check()) {
     ciCallProfile profile = method->call_profile_at_bci(bci);
     float total_prob = 0;
     for (int i = 0; ; ++i) {

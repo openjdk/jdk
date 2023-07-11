@@ -409,7 +409,8 @@ class GraphKit : public Phase {
   // Check for unique class for receiver at call
   ciKlass* profile_has_unique_klass() {
     ciCallProfile profile = method()->call_profile_at_bci(bci());
-    if (profile.has_receiver(0) &&
+    if (profile.count() >= 0 &&         // no cast failures here
+        profile.has_receiver(0) &&
         profile.morphism() == 1) {
       return profile.receiver(0);
     }
