@@ -804,10 +804,10 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         if (insLog.isLoggable(PlatformLogger.Level.FINE)) {
             insLog.fine(xe.toString());
         }
-        checkIfOnNewScreen(toGlobal(new Rectangle(scaleDown(xe.get_x()),
+        checkIfOnNewScreen(new Rectangle(scaleDown(xe.get_x()),
                 scaleDown(xe.get_y()),
                 scaleDown(xe.get_width()),
-                scaleDown(xe.get_height()))));
+                scaleDown(xe.get_height())));
 
         Rectangle oldBounds = getBounds();
 
