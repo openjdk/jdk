@@ -4359,11 +4359,7 @@ public final class Arrays {
         if (a == null) {
             return 0;
         }
-        return switch (a.length) {
-            case 0 -> 1;
-            case 1 -> 31 + a[0];
-            default -> ArraysSupport.vectorizedHashCode(a, 0, a.length, 1, ArraysSupport.T_INT);
-        };
+        return ArraysSupport.hashCode(a, 0, a.length, 1);
     }
 
     /**

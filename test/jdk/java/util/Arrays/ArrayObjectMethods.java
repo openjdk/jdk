@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     4906359 6239296
+ * @bug     4906359 6239296 8311864
  * @summary Basic test for content-based array object methods
  * @author  Josh Bloch, Martin Buchholz
  * @key randomness
@@ -52,6 +52,16 @@ public class ArrayObjectMethods {
             a[0] = a[1] = new Object[]{1, null, a};
             equal(Arrays.deepToString(a), "[[1, null, [...]], [1, null, [...]]]");
         }
+
+        equal(Arrays.hashCode((byte[]) null), 0);
+        equal(Arrays.hashCode((short[]) null), 0);
+        equal(Arrays.hashCode((int[]) null), 0);
+        equal(Arrays.hashCode((long[]) null), 0);
+        equal(Arrays.hashCode((char[]) null), 0);
+        equal(Arrays.hashCode((float[]) null), 0);
+        equal(Arrays.hashCode((double[]) null), 0);
+        equal(Arrays.hashCode((boolean[]) null), 0);
+        equal(Arrays.hashCode((Object[]) null), 0);
 
         for (int size : sizes) {
             {
