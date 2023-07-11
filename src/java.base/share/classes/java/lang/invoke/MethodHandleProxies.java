@@ -196,10 +196,11 @@ public class MethodHandleProxies {
         // In addition, hidden classes without class data is more friendly
         // for pre-generation (shifting the dynamic class generation from
         // runtime to an earlier phrase).
-        Lookup lookup = getProxyClassLookup(intfc);  // throws IllegalArgumentException
+        Class<?> proxyClass = getProxyClass(intfc);  // throws IllegalArgumentException
+        Lookup lookup = new Lookup(proxyClass);
         Object proxy;
         try {
-            MethodHandle constructor = lookup.findConstructor(lookup.lookupClass(),
+            MethodHandle constructor = lookup.findConstructor(proxyClass,
                                                               MT_void_Lookup_MethodHandle_MethodHandle)
                                              .asType(MT_Object_Lookup_MethodHandle_MethodHandle);
             proxy = constructor.invokeExact(lookup, target, mh);
@@ -219,11 +220,11 @@ public class MethodHandleProxies {
     private static final ClassValue<WeakReferenceHolder<Class<?>>> PROXIES = new ClassValue<>() {
         @Override
         protected WeakReferenceHolder<Class<?>> computeValue(Class<?> intfc) {
-            return new WeakReferenceHolder<>(newProxy(intfc));
+            return new WeakReferenceHolder<>(newProxyClass(intfc));
         }
     };
 
-    private static Class<?> newProxy(Class<?> intfc) {
+    private static Class<?> newProxyClass(Class<?> intfc) {
         List<MethodInfo> methods = new ArrayList<>();
         Set<Class<?>> referencedTypes = new HashSet<>();
         referencedTypes.add(intfc);
@@ -314,15 +315,23 @@ public class MethodHandleProxies {
         }
     }
 
-    private static Lookup getProxyClassLookup(Class<?> intfc) {
+    private static Class<?> getProxyClass(Class<?> intfc) {
         WeakReferenceHolder<Class<?>> r = PROXIES.get(intfc);
         Class<?> cl = r.get();
-        if (cl == null) {
-             // If the referent is cleared, create a new value and update cached weak reference.
-            cl = newProxy(intfc);
+        if (cl != null)
+            return cl;
+
+        // avoid spinning multiple classes in a race
+        synchronized (r) {
+            cl = r.get();
+            if (cl != null)
+                return cl;
+
+            // If the referent is cleared, create a new value and update cached weak reference.
+            cl = newProxyClass(intfc);
             r.set(cl);
+            return cl;
         }
-        return new Lookup(cl);
     }
 
     private static final List<ClassDesc> DEFAULT_RETHROWS = List.of(desc(RuntimeException.class), desc(Error.class));

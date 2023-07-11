@@ -22,6 +22,7 @@
  */
 
 import jdk.internal.classfile.Classfile;
+import jdk.test.lib.util.ForceGC;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -32,7 +33,6 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.lang.ref.Reference;
 import java.lang.ref.WeakReference;
 import java.util.Comparator;
 
@@ -45,14 +45,15 @@ import static org.junit.jupiter.api.Assertions.*;
 /*
  * @test
  * @bug 6983726
+ * @library /test/lib
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
- * @summary Tests on implementation classes spinned by MethodHandleProxies
- * @build ProxiesImplementationTest Client
- * @run junit ProxiesImplementationTest
+ * @summary Tests on implementation hidden classes spinned by MethodHandleProxies
+ * @build WrapperHiddenClassTest Client jdk.test.lib.util.ForceGC
+ * @run junit WrapperHiddenClassTest
  */
-public class ProxiesImplementationTest {
+public class WrapperHiddenClassTest {
 
     /**
      * Tests an adversary "implementation" class will not be
@@ -127,13 +128,13 @@ public class ProxiesImplementationTest {
      */
     @Test
     public void testNoAccess() {
-        Client untrusted = asInterfaceInstance(Client.class, MethodHandles.zero(void.class));
-        var instanceClass = untrusted.getClass();
-        var leakLookup = Client.leakLookup();
-        assertEquals(MethodHandles.Lookup.ORIGINAL, leakLookup.lookupModes() & MethodHandles.Lookup.ORIGINAL,
-                "Leaked lookup original flag");
+        var instance = asInterfaceInstance(Client.class, MethodHandles.zero(void.class));
+        var instanceClass = instance.getClass();
+        var interfaceLookup = Client.lookup();
+        assertEquals(MethodHandles.Lookup.ORIGINAL, interfaceLookup.lookupModes() & MethodHandles.Lookup.ORIGINAL,
+                "Missing original flag on interface's lookup");
         assertThrows(IllegalAccessException.class, () -> MethodHandles.privateLookupIn(instanceClass,
-                Client.leakLookup()));
+                interfaceLookup));
     }
 
     /**
@@ -176,33 +177,36 @@ public class ProxiesImplementationTest {
         var instanceClass = asInterfaceInstance(ifaceClass, mh).getClass();
         var ctor = instanceClass.getDeclaredConstructor(MethodHandles.Lookup.class, MethodHandle.class, MethodHandle.class);
 
-        assertThrows(IllegalAccessException.class, () -> ctor.newInstance(Client.leakLookup(), mh, mh));
+        assertThrows(IllegalAccessException.class, () -> ctor.newInstance(Client.lookup(), mh, mh));
         assertThrows(IllegalAccessException.class, () -> ctor.newInstance(MethodHandles.lookup(), mh, mh));
         assertThrows(IllegalAccessException.class, () -> ctor.newInstance(MethodHandles.publicLookup(), mh, mh));
     }
 
     /**
-     * Tests the caching and weak reference of implementation classes.
+     * Tests the caching and weak reference of implementation classes for
+     * system and user interfaces.
      */
     @ParameterizedTest
     @ValueSource(classes = {Runnable.class, Client.class})
     public void testWeakImplClass(Class<?> ifaceClass) {
         var mh = MethodHandles.zero(void.class);
-        WeakReference<Class<?>> cl;
 
-        var c1 = asInterfaceInstance(ifaceClass, mh);
-        cl = new WeakReference<>(c1.getClass());
+        var wrapper1 = asInterfaceInstance(ifaceClass, mh);
+        var implClass = wrapper1.getClass();
 
-        System.gc();
-        var c2 = asInterfaceInstance(ifaceClass, mh);
-        assertTrue(cl.refersTo(c2.getClass()), "MHP should reuse implementation class when available");
-        Reference.reachabilityFence(c1);
+        System.gc(); // helps debug if incorrect items are weakly referenced
+        var wrapper2 = asInterfaceInstance(ifaceClass, mh);
+        assertSame(implClass, wrapper2.getClass(),
+                "MHP should reuse old implementation class when available");
 
-        // allow GC in interpreter
-        c1 = null;
-        c2 = null;
+        var implClassRef = new WeakReference<>(implClass);
+        // clear strong references
+        implClass = null;
+        wrapper1 = null;
+        wrapper2 = null;
 
-        System.gc();
-        assertTrue(cl.refersTo(null), "MHP impl class should be cleared by gc"); // broken
+        if (!ForceGC.wait(() -> implClassRef.refersTo(null))) {
+            fail("MHP impl class cannot be cleared by GC");
+        }
     }
 }

@@ -29,9 +29,9 @@ import java.lang.invoke.MethodHandles.Lookup;
  */
 public interface Client {
     /**
-     * Leaks a lookup that has full privilege access in Client.class.
+     * Returns a lookup from Client.class.
      */
-    static Lookup leakLookup() {
+    static Lookup lookup() {
         return MethodHandles.lookup();
     }
 

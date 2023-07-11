@@ -25,19 +25,29 @@ import jdk.internal.classfile.ClassHierarchyResolver;
 import jdk.internal.classfile.Classfile;
 import org.junit.jupiter.api.Test;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.function.IntSupplier;
+import java.util.function.ToLongFunction;
 
 import static java.lang.constant.ConstantDescs.*;
-import static java.lang.invoke.MethodHandleProxies.asInterfaceInstance;
+import static java.lang.invoke.MethodHandleProxies.*;
 import static java.lang.invoke.MethodType.genericMethodType;
 import static java.lang.invoke.MethodType.methodType;
 import static jdk.internal.classfile.Classfile.*;
@@ -49,11 +59,71 @@ import static org.junit.jupiter.api.Assertions.*;
  * @modules java.base/jdk.internal.classfile
  *          java.base/jdk.internal.classfile.attribute
  *          java.base/jdk.internal.classfile.constantpool
- * @summary Tests MethodHandleProxies against various types of interfaces
- * @build ProxiesInterfaceTest Client
- * @run junit ProxiesInterfaceTest
+ * @summary Basic sanity tests for MethodHandleProxies
+ * @build BasicTest Client
+ * @run junit BasicTest
  */
-public class ProxiesInterfaceTest {
+public class BasicTest {
+
+    @Test
+    public void testUsual() throws Throwable {
+        AtomicInteger ai = new AtomicInteger(5);
+        var mh = MethodHandles.lookup().findVirtual(AtomicInteger.class, "getAndIncrement", methodType(int.class));
+        IntSupplier is = asInterfaceInstance(IntSupplier.class, mh.bindTo(ai));
+        assertEquals(5, is.getAsInt());
+        assertEquals(6, is.getAsInt());
+        assertEquals(7, is.getAsInt());
+    }
+
+    /**
+     * Established null behaviors of MHP API.
+     */
+    @Test
+    public void testNulls() {
+        assertThrows(NullPointerException.class, () ->
+                        asInterfaceInstance(null, MethodHandles.zero(void.class)),
+                "asInterfaceInstance - intfc");
+        assertThrows(NullPointerException.class, () ->
+                        asInterfaceInstance(Runnable.class, null),
+                "asInterfaceInstance - target");
+
+        assertFalse(isWrapperInstance(null), "isWrapperInstance");
+
+        assertThrows(IllegalArgumentException.class, () -> wrapperInstanceTarget(null),
+                "wrapperInstanceTarget");
+        assertThrows(IllegalArgumentException.class, () -> wrapperInstanceType(null),
+                "wrapperInstanceType");
+    }
+
+    @Test
+    public void testWrapperInstance() throws Throwable {
+        var mh = MethodHandles.publicLookup()
+                .findVirtual(Integer.class, "compareTo", methodType(int.class, Integer.class));
+        @SuppressWarnings("unchecked")
+        Comparator<Integer> proxy = (Comparator<Integer>) asInterfaceInstance(Comparator.class, mh);
+
+        assertTrue(isWrapperInstance(proxy));
+        assertSame(mh, wrapperInstanceTarget(proxy));
+        assertSame(Comparator.class, wrapperInstanceType(proxy));
+    }
+
+    /**
+     * Tests undeclared exceptions and declared exceptions in proxies.
+     */
+    @Test
+    public void testThrowables() {
+        // don't wrap
+        assertThrows(Error.class, throwing(Error.class, new Error())::close,
+                "Errors should be propagated");
+        assertThrows(RuntimeException.class, throwing(RuntimeException.class, new RuntimeException())::close,
+                "RuntimeException should be propagated");
+        assertThrows(IOException.class, throwing(IOException.class, new IOException())::close,
+                "Declared IOException should be propagated");
+        // wrap
+        assertThrows(UndeclaredThrowableException.class, throwing(IllegalAccessException.class,
+                        new IllegalAccessException())::close,
+                "Undeclared IllegalAccessException should be wrapped");
+    }
 
     /**
      * Tests that invalid interfaces are rejected.
@@ -140,7 +210,58 @@ public class ProxiesInterfaceTest {
         assertEquals(proxy.concat(), "concat");
     }
 
-    //<editor-fold desc="Infrastructure">
+    /**
+     * Tests primitive type conversions in proxies.
+     */
+    @Test
+    public void testPrimitiveConversion() throws Throwable {
+        var mh = MethodHandles.lookup().findStatic(BasicTest.class, "mul",
+                methodType(long.class, int.class));
+        @SuppressWarnings("unchecked")
+        Function<Integer, Long> func = (Function<Integer, Long>) asInterfaceInstance(Function.class, mh);
+        assertEquals(32423432L * 32423432L, func.apply(32423432));
+        @SuppressWarnings("unchecked")
+        ToLongFunction<Integer> func1 = (ToLongFunction<Integer>) asInterfaceInstance(ToLongFunction.class, mh);
+        assertEquals(32423432L * 32423432L, func1.applyAsLong(32423432));
+        @SuppressWarnings("unchecked")
+        IntFunction<Long> func2 = (IntFunction<Long>) asInterfaceInstance(IntFunction.class, mh);
+        assertEquals(32423432L * 32423432L, func2.apply(32423432));
+    }
+
+    /**
+     * Tests common type conversions in proxies.
+     */
+    @Test
+    public void testBasicConversion() {
+        var mh = MethodHandles.constant(String.class, "42");
+        asInterfaceInstance(Client.class, mh).exec(); // return value dropped, runs fine
+
+        var nullMh = MethodHandles.zero(String.class);
+        var badIterable = asInterfaceInstance(Iterable.class, nullMh);
+        assertNull(badIterable.iterator()); // null is convertible
+    }
+
+    /**
+     * Tests incompatible type conversions in proxy construction.
+     */
+    @Test
+    public void testWrongConversion() {
+        var mh = MethodHandles.constant(String.class, "42");
+        assertThrows(WrongMethodTypeException.class, () -> asInterfaceInstance(IntSupplier.class, mh),
+                "cannot convert String return to int under any circumstance");
+
+        var proxy = asInterfaceInstance(Iterable.class, mh);
+        assertThrows(ClassCastException.class, proxy::iterator);
+    }
+
+    private static <T extends Throwable> Closeable throwing(Class<T> clz, T value) {
+        return asInterfaceInstance(Closeable.class, MethodHandles.throwException(void.class, clz).bindTo(value));
+    }
+
+    private static long mul(int i) {
+        return (long) i * i;
+    }
+
     void checkMethods(Method[] methods) {
         assertTrue(methods.length > 1, () -> "Should have more than 1 declared methods, found only " + Arrays.toString(methods));
         for (Method method : methods) {
@@ -149,7 +270,7 @@ public class ProxiesInterfaceTest {
     }
 
     private Class<?> loadHidden() {
-        try (var is = ProxiesInterfaceTest.class.getResourceAsStream("Client.class")) {
+        try (var is = BasicTest.class.getResourceAsStream("Client.class")) {
             var bytes = Objects.requireNonNull(is).readAllBytes();
             var lookup = MethodHandles.lookup();
             return lookup.defineHiddenClass(bytes, true).lookupClass();
@@ -161,12 +282,12 @@ public class ProxiesInterfaceTest {
     // Base: Object value();
     // Child: Integer value(); int value();
     private List<Class<?>> loadBaseAndChild() throws IllegalAccessException {
-        ClassDesc baseCd = ClassDesc.of("ProxiesInterfaceTest$Base");
-        ClassDesc childCd = ClassDesc.of("ProxiesInterfaceTest$Child");
+        ClassDesc baseCd = ClassDesc.of("BasicTest$Base");
+        ClassDesc childCd = ClassDesc.of("BasicTest$Child");
         var objMtd = MethodTypeDesc.of(CD_Object);
         var integerMtd = MethodTypeDesc.of(CD_Integer);
         var intMtd = MethodTypeDesc.of(CD_int);
-        var classfile = Classfile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.defaultResolver().orElse(
+        var classfile = Classfile.of(Classfile.ClassHierarchyResolverOption.of(ClassHierarchyResolver.defaultResolver().orElse(
                 ClassHierarchyResolver.of(List.of(baseCd, childCd), Map.ofEntries(Map.entry(baseCd, CD_Object),
                         Map.entry(childCd, CD_Object))))));
 
@@ -254,6 +375,4 @@ public class ProxiesInterfaceTest {
 
     public non-sealed interface NonSealed extends Sealed {
     }
-    //</editor-fold>
 }
-
