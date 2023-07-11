@@ -94,6 +94,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     @Override
+    public Content getOutputInstance() {
+        return new ContentBuilder();
+    }
+
+    @Override
     public Content getHeader(String header) {
         HtmlTree body = getBody(getWindowTitle(utils.getSimpleName(typeElement)));
         var div = HtmlTree.DIV(HtmlStyle.header);

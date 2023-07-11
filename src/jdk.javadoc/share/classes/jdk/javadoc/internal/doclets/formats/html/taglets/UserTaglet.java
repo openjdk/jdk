@@ -34,8 +34,6 @@ import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 
 /**
  * A taglet wrapper, allows the public taglet {@link jdk.javadoc.doclet.Taglet}
@@ -79,8 +77,8 @@ public final class UserTaglet implements Taglet {
     @Override
     public Content getAllBlockTagOutput(Element holder, TagletWriter tagletWriter) {
         Content output = tagletWriter.getOutputInstance();
-        var utils = tagletWriter.configuration().utils;
-        List<? extends DocTree> tags = utils.getBlockTags(holder, this);
+        var utils = tagletWriter.utils;
+        List<? extends DocTree> tags = utils.getBlockTags(holder, getName());
         if (!tags.isEmpty()) {
             String tagString = userTaglet.toString(tags, holder);
             if (tagString != null) {

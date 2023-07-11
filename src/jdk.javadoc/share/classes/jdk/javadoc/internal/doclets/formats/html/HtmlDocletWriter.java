@@ -90,12 +90,11 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriterImpl;
+import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
+import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -368,7 +367,7 @@ public class HtmlDocletWriter {
         return !output.isEmpty();
     }
 
-    private Content getInlineTagOutput(Element element, DocTree tree, TagletWriterImpl.Context context) {
+    private Content getInlineTagOutput(Element element, DocTree tree, TagletWriter.Context context) {
         return getTagletWriterInstance(context).getInlineTagOutput(element, tree);
     }
 
@@ -379,7 +378,7 @@ public class HtmlDocletWriter {
      * @return a TagletWriter that knows how to write HTML.
      */
     public TagletWriter getTagletWriterInstance(boolean isFirstSentence) {
-        return new TagletWriterImpl(this, isFirstSentence);
+        return new TagletWriter(this, isFirstSentence);
     }
 
     /**
@@ -388,8 +387,8 @@ public class HtmlDocletWriter {
      * @param context  the enclosing context
      * @return a TagletWriter
      */
-    public TagletWriterImpl getTagletWriterInstance(TagletWriterImpl.Context context) {
-        return new TagletWriterImpl(this, context);
+    public TagletWriter getTagletWriterInstance(TagletWriter.Context context) {
+        return new TagletWriter(this, context);
     }
 
     /**
@@ -1170,7 +1169,7 @@ public class HtmlDocletWriter {
                                         boolean isFirstSentence,
                                         boolean inSummary) {
         return commentTagsToContent(element, trees,
-                new TagletWriterImpl.Context(isFirstSentence, inSummary));
+                new TagletWriter.Context(isFirstSentence, inSummary));
     }
 
     /**
@@ -1187,7 +1186,7 @@ public class HtmlDocletWriter {
      */
     public Content commentTagsToContent(Element element,
                                         List<? extends DocTree> trees,
-                                        TagletWriterImpl.Context context)
+                                        TagletWriter.Context context)
     {
         final Content result = new ContentBuilder() {
             @Override
@@ -1421,7 +1420,7 @@ public class HtmlDocletWriter {
     }
 
     private void createSectionIdAndIndex(StartElementTree node, List<? extends DocTree> trees, Content attrs,
-                                         Element element, TagletWriterImpl.Context context) {
+                                         Element element, TagletWriter.Context context) {
         // Use existing id attribute if available
         String id = getIdAttributeValue(node).orElse(null);
         StringBuilder sb = new StringBuilder();

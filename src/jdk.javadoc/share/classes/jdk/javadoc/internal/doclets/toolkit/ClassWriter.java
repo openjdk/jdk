@@ -33,6 +33,12 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
  * The interface for writing class output.
  */
 public interface ClassWriter {
+    /**
+     * Returns an instance of an output object.
+     *
+     * @return an instance of an output object
+     */
+    Content getOutputInstance();
 
     /**
      * Get the header of the page.
