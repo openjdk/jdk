@@ -1049,7 +1049,7 @@ public class Collections {
     /**
      * @serial include
      */
-    static class UnmodifiableCollection<E> implements Collection<E>, Serializable {
+    static class UnmodifiableCollection<E> extends AbstractCollection<E> implements Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 1820017752578914078L;
 
@@ -1251,6 +1251,46 @@ public class Collections {
         UnmodifiableSet(Set<? extends E> s)     {super(s);}
         public boolean equals(Object o) {return o == this || c.equals(o);}
         public int hashCode()           {return c.hashCode();}
+
+        @Override
+        boolean isRegularEnumSetCompatible() {
+            return getClass() == UnmodifiableSet.class
+                && c instanceof AbstractCollection<?> ac && ac.isRegularEnumSetCompatible();
+        }
+
+        @Override
+        boolean isJumboEnumSetCompatible() {
+            return getClass() == UnmodifiableSet.class
+                && c instanceof AbstractCollection<?> ac && ac.isJumboEnumSetCompatible();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        Class<E> enumElementType() {
+            if (getClass() == UnmodifiableSet.class && c instanceof AbstractCollection<?> ac) {
+                return (Class<E>)ac.enumElementType();
+            } else {
+                throw new InternalError("cannot be called");
+            }
+        }
+
+        @Override
+        long regularEnumElements() {
+            if (getClass() == UnmodifiableSet.class && c instanceof AbstractCollection<?> ac) {
+                return ac.regularEnumElements();
+            } else {
+                throw new InternalError("cannot be called");
+            }
+        }
+
+        @Override
+        long[] jumboEnumElements() {
+            if (getClass() == UnmodifiableSet.class && c instanceof AbstractCollection<?> ac) {
+                return ac.jumboEnumElements();
+            } else {
+                throw new InternalError("cannot be called");
+            }
+        }
     }
 
     /**
@@ -2278,7 +2318,7 @@ public class Collections {
     /**
      * @serial include
      */
-    static class SynchronizedCollection<E> implements Collection<E>, Serializable {
+    static class SynchronizedCollection<E> extends AbstractCollection<E> implements Serializable {
         @java.io.Serial
         private static final long serialVersionUID = 3053995032091335093L;
 
@@ -2430,6 +2470,50 @@ public class Collections {
         }
         public int hashCode() {
             synchronized (mutex) {return c.hashCode();}
+        }
+
+        @Override
+        boolean isRegularEnumSetCompatible() {
+            return getClass() == SynchronizedSet.class
+                && c instanceof AbstractCollection<?> ac && ac.isRegularEnumSetCompatible();
+        }
+
+        @Override
+        boolean isJumboEnumSetCompatible() {
+            return getClass() == SynchronizedSet.class
+                && c instanceof AbstractCollection<?> ac && ac.isJumboEnumSetCompatible();
+        }
+
+        @Override
+        @SuppressWarnings("unchecked")
+        Class<E> enumElementType() {
+            if (getClass() == SynchronizedSet.class && c instanceof AbstractCollection<?> ac) {
+                return (Class<E>)ac.enumElementType();
+            } else {
+                throw new InternalError("cannot be called");
+            }
+        }
+
+        @Override
+        long regularEnumElements() {
+            if (getClass() == SynchronizedSet.class && c instanceof AbstractCollection<?> ac) {
+                synchronized (mutex) {
+                    return ac.regularEnumElements();
+                }
+            } else {
+                throw new InternalError("cannot be called");
+            }
+        }
+
+        @Override
+        long[] jumboEnumElements() {
+            if (getClass() == SynchronizedSet.class && c instanceof AbstractCollection<?> ac) {
+                synchronized (mutex) {
+                    return ac.jumboEnumElements().clone();
+                }
+            } else {
+                throw new InternalError("cannot be called");
+            }
         }
     }
 

@@ -170,6 +170,7 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
      * @throws NullPointerException if {@code c} is null
      */
     public static <E extends Enum<E>> EnumSet<E> copyOf(Collection<E> c) {
+        // Only treat empty EnumSets specially for compatibility.
         if (c instanceof EnumSet) {
             return ((EnumSet<E>)c).clone();
         } else {
@@ -178,8 +179,7 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
             Iterator<E> i = c.iterator();
             E first = i.next();
             EnumSet<E> result = EnumSet.of(first);
-            while (i.hasNext())
-                result.add(i.next());
+            result.addAll(c);   // optimized for compatible sets
             return result;
         }
     }
@@ -408,6 +408,11 @@ public abstract sealed class EnumSet<E extends Enum<E>> extends AbstractSet<E>
     private static <E extends Enum<E>> E[] getUniverse(Class<E> elementType) {
         return SharedSecrets.getJavaLangAccess()
                                         .getEnumConstantsShared(elementType);
+    }
+
+    @Override
+    Class<E> enumElementType() {
+        return elementType;
     }
 
     /**

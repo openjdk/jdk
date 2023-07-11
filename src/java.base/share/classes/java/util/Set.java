@@ -502,7 +502,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3);
+        return ImmutableCollections.setFromArray(e1, e2, e3);
     }
 
     /**
@@ -521,7 +521,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4);
+        return ImmutableCollections.setFromArray(e1, e2, e3, e4);
     }
 
     /**
@@ -541,7 +541,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5);
+        return ImmutableCollections.setFromArray(e1, e2, e3, e4, e5);
     }
 
     /**
@@ -562,7 +562,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+        return ImmutableCollections.setFromArray(e1, e2, e3, e4, e5,
                                                e6);
     }
 
@@ -585,7 +585,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+        return ImmutableCollections.setFromArray(e1, e2, e3, e4, e5,
                                                e6, e7);
     }
 
@@ -609,7 +609,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+        return ImmutableCollections.setFromArray(e1, e2, e3, e4, e5,
                                                e6, e7, e8);
     }
 
@@ -634,7 +634,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+        return ImmutableCollections.setFromArray(e1, e2, e3, e4, e5,
                                                e6, e7, e8, e9);
     }
 
@@ -660,7 +660,7 @@ public interface Set<E> extends Collection<E> {
      * @since 9
      */
     static <E> Set<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10) {
-        return new ImmutableCollections.SetN<>(e1, e2, e3, e4, e5,
+        return ImmutableCollections.setFromArray(e1, e2, e3, e4, e5,
                                                e6, e7, e8, e9, e10);
     }
 
@@ -703,7 +703,7 @@ public interface Set<E> extends Collection<E> {
             case 2:
                 return new ImmutableCollections.Set12<>(elements[0], elements[1]);
             default:
-                return new ImmutableCollections.SetN<>(elements);
+                return ImmutableCollections.setFromArray(elements);
         }
     }
 
@@ -724,14 +724,24 @@ public interface Set<E> extends Collection<E> {
      * @throws NullPointerException if coll is null, or if it contains any nulls
      * @since 10
      */
-    @SuppressWarnings("unchecked")
+    @SuppressWarnings({"unchecked", "rawtypes"})
     static <E> Set<E> copyOf(Collection<? extends E> coll) {
         if (coll instanceof ImmutableCollections.AbstractImmutableSet) {
             return (Set<E>)coll;
-        } else if (coll.isEmpty()) { // Implicit nullcheck of coll
-            return Set.of();
-        } else {
-            return (Set<E>)Set.of(new HashSet<>(coll).toArray());
         }
+        if (coll.isEmpty()) {
+            return Set.of();
+        }
+        if (coll instanceof AbstractCollection<?> ac && ac.size() > 2) {
+            if (ac.isRegularEnumSetCompatible()) {
+                return (Set<E>)
+                    new ImmutableCollections.ImmutableRegularEnumSet(ac.regularEnumElements(), ac.enumElementType());
+            }
+            if (ac.isJumboEnumSetCompatible()) {
+                return (Set<E>)
+                    new ImmutableCollections.ImmutableJumboEnumSet(ac.jumboEnumElements().clone(), ac.enumElementType(), ac.size());
+            }
+        }
+        return (Set<E>)Set.of(new HashSet<>(coll).toArray());
     }
 }
