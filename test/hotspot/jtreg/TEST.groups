@@ -345,7 +345,6 @@ tier2_gc_shenandoah = \
   gc/logging/TestMetaSpaceLog.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
-  gc/startup_warnings/TestShenandoah.java \
   gc/TestFullGCALot.java \
   gc/logging/TestUnifiedLoggingSwitchStress.java \
   runtime/Metaspace/DefineClass.java \

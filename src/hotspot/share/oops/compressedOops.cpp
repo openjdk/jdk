@@ -186,6 +186,28 @@ NarrowPtrStruct CompressedKlassPointers::_narrow_klass = { nullptr, 0, true };
 //  are compiled for 32bit to LP64_ONLY).
 size_t CompressedKlassPointers::_range = 0;
 
+#ifdef _LP64
+
+// Given a klass range [addr, addr+len) and a given encoding scheme, assert that this scheme covers the range, then
+// set this encoding scheme. Used by CDS at runtime to re-instate the scheme used to pre-compute klass ids for
+// archived heap objects.
+void CompressedKlassPointers::initialize_for_given_encoding(address addr, size_t len, address requested_base, int requested_shift) {
+  assert(is_valid_base(requested_base), "Address must be a valid encoding base");
+  address const end = addr + len;
+
+  const int narrow_klasspointer_bits = sizeof(narrowKlass) * 8;
+  const size_t encoding_range_size = nth_bit(narrow_klasspointer_bits + requested_shift);
+  address encoding_range_end = requested_base + encoding_range_size;
+
+  // Note: it would be technically valid for the encoding base to precede the start of the Klass range. But we only call
+  // this function from CDS, and therefore know this to be true.
+  assert(requested_base == addr, "Invalid requested base");
+  assert(encoding_range_end >= end, "Encoding does not cover the full Klass range");
+
+  set_base(requested_base);
+  set_shift(requested_shift);
+  set_range(encoding_range_size);
+}
 
 // Given an address range [addr, addr+len) which the encoding is supposed to
 //  cover, choose base, shift and range.
@@ -193,7 +215,6 @@ size_t CompressedKlassPointers::_range = 0;
 //  will encounter (and the implicit promise that there will be no Klass
 //  structures outside this range).
 void CompressedKlassPointers::initialize(address addr, size_t len) {
-#ifdef _LP64
   assert(is_valid_base(addr), "Address must be a valid encoding base");
   address const end = addr + len;
 
@@ -201,68 +222,27 @@ void CompressedKlassPointers::initialize(address addr, size_t len) {
   int shift;
   size_t range;
 
-  if (UseSharedSpaces || DumpSharedSpaces) {
-
-    // Special requirements if CDS is active:
-    // Encoding base and shift must be the same between dump and run time.
-    //   CDS takes care that the SharedBaseAddress and CompressedClassSpaceSize
-    //   are the same. Archive size will be probably different at runtime, but
-    //   it can only be smaller than at, never larger, since archives get
-    //   shrunk at the end of the dump process.
-    //   From that it follows that the range [addr, len) we are handed in at
-    //   runtime will start at the same address then at dumptime, and its len
-    //   may be smaller at runtime then it was at dump time.
-    //
-    // To be very careful here, we avoid any optimizations and just keep using
-    //  the same address and shift value. Specifically we avoid using zero-based
-    //  encoding. We also set the expected value range to 4G (encoding range
-    //  cannot be larger than that).
-
-    base = addr;
-
-    // JDK-8265705
-    // This is a temporary fix for aarch64: there, if the range-to-be-encoded is located
-    //  below 32g, either encoding base should be zero or base should be aligned to 4G
-    //  and shift should be zero. The simplest way to fix this for now is to force
-    //  shift to zero for both runtime and dumptime.
-    // Note however that this is not a perfect solution. Ideally this whole function
-    //  should be CDS agnostic, that would simplify it - and testing - a lot. See JDK-8267141
-    //  for details.
-    shift = 0;
-
-    // This must be true since at dumptime cds+ccs is 4G, at runtime it can
-    //  only be smaller, see comment above.
-    assert(len <= 4 * G, "Encoding range cannot be larger than 4G");
-    range = 4 * G;
-
+  // Attempt to run with encoding base == zero
+  if (end <= (address)KlassEncodingMetaspaceMax) {
+    base = 0;
   } else {
+    base = addr;
+  }
 
-    // Otherwise we attempt to use a zero base if the range fits in lower 32G.
-    if (end <= (address)KlassEncodingMetaspaceMax) {
-      base = 0;
-    } else {
-      base = addr;
-    }
+  // Highest offset a Klass* can ever have in relation to base.
+  range = end - base;
 
-    // Highest offset a Klass* can ever have in relation to base.
-    range = end - base;
-
-    // We may not even need a shift if the range fits into 32bit:
-    const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
-    if (range < UnscaledClassSpaceMax) {
-      shift = 0;
-    } else {
-      shift = LogKlassAlignmentInBytes;
-    }
-
+  // We may not even need a shift if the range fits into 32bit:
+  const uint64_t UnscaledClassSpaceMax = (uint64_t(max_juint) + 1);
+  if (range < UnscaledClassSpaceMax) {
+    shift = 0;
+  } else {
+    shift = LogKlassAlignmentInBytes;
   }
 
   set_base(base);
   set_shift(shift);
   set_range(range);
-#else
-  fatal("64bit only.");
-#endif
 }
 
 // Given an address p, return true if p can be used as an encoding base.
@@ -300,3 +280,5 @@ void CompressedKlassPointers::set_range(size_t range) {
   assert(UseCompressedClassPointers, "no compressed klass ptrs?");
   _range = range;
 }
+
+#endif // _LP64

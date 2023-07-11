@@ -2076,9 +2076,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
   // Get the return PC for the passed caller PC.
   address return_pc = caller_pc + frame::pc_return_offset;
 
-  assert(!JavaThread::current()->is_interp_only_mode() || !nm->method()->is_continuation_enter_intrinsic()
-    || ContinuationEntry::is_interpreted_call(return_pc), "interp_only_mode but not in enterSpecial interpreted entry");
-
   // There is a benign race here. We could be attempting to patch to a compiled
   // entry point at the same time the callee is being deoptimized. If that is
   // the case then entry_point may in fact point to a c2i and we'd patch the
@@ -2116,8 +2113,6 @@ JRT_LEAF(void, SharedRuntime::fixup_callers_callsite(Method* method, address cal
         return;
       }
       if (nm->method()->is_continuation_enter_intrinsic()) {
-        assert(ContinuationEntry::is_interpreted_call(call->instruction_address()) == JavaThread::current()->is_interp_only_mode(),
-          "mode: %d", JavaThread::current()->is_interp_only_mode());
         if (ContinuationEntry::is_interpreted_call(call->instruction_address())) {
           return;
         }
@@ -2627,17 +2622,18 @@ class AdapterFingerPrint : public CHeapObj<mtCode> {
 };
 
 // A hashtable mapping from AdapterFingerPrints to AdapterHandlerEntries
-ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
+using AdapterHandlerTable = ResourceHashtable<AdapterFingerPrint*, AdapterHandlerEntry*, 293,
                   AnyObj::C_HEAP, mtCode,
                   AdapterFingerPrint::compute_hash,
-                  AdapterFingerPrint::equals> _adapter_handler_table;
+                  AdapterFingerPrint::equals>;
+static AdapterHandlerTable* _adapter_handler_table;
 
 // Find a entry with the same fingerprint if it exists
 static AdapterHandlerEntry* lookup(int total_args_passed, BasicType* sig_bt) {
   NOT_PRODUCT(_lookups++);
   assert_lock_strong(AdapterHandlerLibrary_lock);
   AdapterFingerPrint fp(total_args_passed, sig_bt);
-  AdapterHandlerEntry** entry = _adapter_handler_table.get(&fp);
+  AdapterHandlerEntry** entry = _adapter_handler_table->get(&fp);
   if (entry != nullptr) {
 #ifndef PRODUCT
     if (fp.is_compact()) _compact++;
@@ -2653,10 +2649,10 @@ static void print_table_statistics() {
   auto size = [&] (AdapterFingerPrint* key, AdapterHandlerEntry* a) {
     return sizeof(*key) + sizeof(*a);
   };
-  TableStatistics ts = _adapter_handler_table.statistics_calculate(size);
+  TableStatistics ts = _adapter_handler_table->statistics_calculate(size);
   ts.print(tty, "AdapterHandlerTable");
   tty->print_cr("AdapterHandlerTable (table_size=%d, entries=%d)",
-                _adapter_handler_table.table_size(), _adapter_handler_table.number_of_entries());
+                _adapter_handler_table->table_size(), _adapter_handler_table->number_of_entries());
   tty->print_cr("AdapterHandlerTable: lookups %d equals %d hits %d compact %d",
                 _lookups, _equals, _hits, _compact);
 }
@@ -2704,6 +2700,7 @@ void AdapterHandlerLibrary::initialize() {
   AdapterBlob* obj_int_arg_blob = nullptr;
   AdapterBlob* obj_obj_arg_blob = nullptr;
   {
+    _adapter_handler_table = new (mtCode) AdapterHandlerTable();
     MutexLocker mu(AdapterHandlerLibrary_lock);
 
     // Create a special handler for abstract methods.  Abstract methods
@@ -2945,7 +2942,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
     ttyLocker ttyl;
     entry->print_adapter_on(tty);
     tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
-                  _adapter_handler_table.number_of_entries(), fingerprint->as_basic_args_string(),
+                  _adapter_handler_table->number_of_entries(), fingerprint->as_basic_args_string(),
                   fingerprint->as_string(), insts_size);
     tty->print_cr("c2i argument handler starts at " INTPTR_FORMAT, p2i(entry->get_c2i_entry()));
     if (Verbose || PrintStubCode) {
@@ -2963,7 +2960,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::create_adapter(AdapterBlob*& new_ada
   // The checks are inserted only if -XX:+VerifyAdapterCalls is specified.
   if (contains_all_checks || !VerifyAdapterCalls) {
     assert_lock_strong(AdapterHandlerLibrary_lock);
-    _adapter_handler_table.put(fingerprint, entry);
+    _adapter_handler_table->put(fingerprint, entry);
   }
   return entry;
 }
@@ -3296,7 +3293,7 @@ bool AdapterHandlerLibrary::contains(const CodeBlob* b) {
     return (found = (b == CodeCache::find_blob(a->get_i2c_entry())));
   };
   assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
-  _adapter_handler_table.iterate(findblob);
+  _adapter_handler_table->iterate(findblob);
   return found;
 }
 
@@ -3313,7 +3310,7 @@ void AdapterHandlerLibrary::print_handler_on(outputStream* st, const CodeBlob* b
     }
   };
   assert_locked_or_safepoint(AdapterHandlerLibrary_lock);
-  _adapter_handler_table.iterate(findblob);
+  _adapter_handler_table->iterate(findblob);
   assert(found, "Should have found handler");
 }
 

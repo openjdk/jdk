@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -685,8 +685,8 @@ public class AccessibleObject implements AnnotatedElement {
      */
     private boolean isAccessChecked(Class<?> caller, Class<?> targetClass) {
         Object cache = accessCheckCache;  // read volatile
-        if (cache instanceof Cache) {
-            return ((Cache) cache).isCacheFor(caller, targetClass);
+        if (cache instanceof Cache c) {
+            return c.isCacheFor(caller, targetClass);
         }
         return false;
     }
