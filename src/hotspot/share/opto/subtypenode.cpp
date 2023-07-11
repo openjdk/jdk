@@ -232,10 +232,7 @@ uint SubTypeCheckNode::size_of() const {
 }
 
 uint SubTypeCheckNode::hash() const {
-  if (_method != nullptr) {
-    return NO_HASH;
-  }
-  return Node::hash();
+  return NO_HASH;
 }
 
 #ifndef PRODUCT
