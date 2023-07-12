@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,33 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8026766
- * @summary Confirm that LanguageRange.toString() returns an expected result.
- * @run main Bug8026766
- */
+#ifndef SHARE_GC_Z_ZNMT_HPP
+#define SHARE_GC_Z_ZNMT_HPP
 
-import java.util.Locale.LanguageRange;
+#include "gc/z/zAddress.hpp"
+#include "gc/z/zGlobals.hpp"
+#include "gc/z/zMemory.hpp"
+#include "gc/z/zVirtualMemory.hpp"
+#include "memory/allStatic.hpp"
+#include "utilities/globalDefinitions.hpp"
+#include "utilities/nativeCallStack.hpp"
 
-public class Bug8026766 {
+class ZNMT : public AllStatic {
+private:
+  struct Reservation {
+    zaddress_unsafe _start;
+    size_t          _size;
+  };
+  static Reservation _reservations[ZMaxVirtualReservations];
+  static size_t      _num_reservations;
 
-    public static void main(String[] args) {
-        LanguageRange lr1 = new LanguageRange("ja", 1.0);
-        LanguageRange lr2 = new LanguageRange("fr", 0.0);
+  static size_t reservation_index(zoffset offset, size_t* offset_in_reservation);
+  static void process_fake_mapping(zoffset offset, size_t size, bool commit);
 
-        if (!lr1.toString().equals("ja") ||
-            !lr2.toString().equals("fr;q=0.0")) {
-            throw new RuntimeException("LanguageRange.toString() returned an unexpected result.");
-        }
-    }
+public:
+  static void reserve(zaddress_unsafe start, size_t size);
+  static void commit(zoffset offset, size_t size);
+  static void uncommit(zoffset offset, size_t size);
+};
 
-}
+#endif // SHARE_GC_Z_ZNMT_HPP

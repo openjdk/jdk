@@ -118,5 +118,22 @@ public class ClassLoadUnloadTest {
         pb = exec("-Xlog:class+loader+data=trace");
         checkFor("[class,loader,data]", "create loader data");
 
+        //  -Xlog:class+load+cause
+        pb = exec("-Xlog:class+load+cause");
+        checkAbsent("[class,load,cause]");
+        checkFor("class load cause logging will not produce output without LogClassLoadingCauseFor");
+
+        //  -Xlog:class+load+cause -XX:LogClassLoadingCauseFor=java.lang.StringCoding
+        pb = exec("-Xlog:class+load+cause", "-XX:LogClassLoadingCauseFor=java.lang.StringCoding");
+        checkFor("[class,load,cause]", "Java stack when loading java.lang.StringCoding:");
+
+        //  -Xlog:class+load+cause -XX:LogClassLoadingCauseFor=java.lang.StringCoding
+        pb = exec("-Xlog:class+load+cause+native", "-XX:LogClassLoadingCauseFor=java.lang.StringCoding");
+        checkFor("[class,load,cause,native]", "Native stack when loading java.lang.StringCoding:");
+
+        //  -Xlog:class+load+cause* -XX:LogClassLoadingCauseFor=java.lang.StringCoding
+        pb = exec("-Xlog:class+load+cause*", "-XX:LogClassLoadingCauseFor=java.lang.StringCoding");
+        checkFor("[class,load,cause] Java stack when loading java.lang.StringCoding:");
+        checkFor("[class,load,cause,native] Native stack when loading java.lang.StringCoding:");
     }
 }
