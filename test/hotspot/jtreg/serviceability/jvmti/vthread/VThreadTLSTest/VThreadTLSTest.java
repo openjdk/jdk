@@ -26,7 +26,6 @@
  * @summary Verifies JVMTI GetLocalStorage/SetLocalStorage
  * @requires vm.continuations
  * @requires vm.jvmti
- * @compile VThreadTLSTest.java
  * @run main/othervm/native -agentlib:VThreadTLSTest VThreadTLSTest
  */
 
@@ -36,7 +35,6 @@
  * @summary Verifies JVMTI GetLocalStorage/SetLocalStorage
  * @requires vm.continuations
  * @requires vm.jvmti
- * @compile VThreadTLSTest.java
  * @run main/othervm/native -Djdk.attach.allowAttachSelf=true -XX:+EnableDynamicAgentLoading VThreadTLSTest attach
  */
 
