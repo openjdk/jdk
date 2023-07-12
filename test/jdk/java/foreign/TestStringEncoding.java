@@ -45,7 +45,7 @@ public class TestStringEncoding {
         for (Charset charset : Charset.availableCharsets().values()) {
             if (isStandard(charset)) {
                 try (Arena arena = Arena.ofConfined()) {
-                    MemorySegment text = arena.allocateString(testString, charset);
+                    MemorySegment text = arena.allocateFrom(testString, charset);
 
                     int terminatorSize = "\0".getBytes(charset).length;
                     if (charset == StandardCharsets.UTF_16) {
@@ -64,7 +64,7 @@ public class TestStringEncoding {
                     }
                 }
             } else {
-                assertThrows(UnsupportedOperationException.class, () -> Arena.global().allocateString(testString, charset));
+                assertThrows(UnsupportedOperationException.class, () -> Arena.global().allocateFrom(testString, charset));
             }
         }
     }

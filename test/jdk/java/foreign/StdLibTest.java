@@ -188,29 +188,29 @@ public class StdLibTest extends NativeTestHelper {
             try (var arena = Arena.ofConfined()) {
                 MemorySegment buf = arena.allocate(s1.length() + s2.length() + 1);
                 buf.setString(0, s1);
-                MemorySegment other = arena.allocateString(s2);
+                MemorySegment other = arena.allocateFrom(s2);
                 return ((MemorySegment)strcat.invokeExact(buf, other)).getString(0);
             }
         }
 
         int strcmp(String s1, String s2) throws Throwable {
             try (var arena = Arena.ofConfined()) {
-                MemorySegment ns1 = arena.allocateString(s1);
-                MemorySegment ns2 = arena.allocateString(s2);
+                MemorySegment ns1 = arena.allocateFrom(s1);
+                MemorySegment ns2 = arena.allocateFrom(s2);
                 return (int)strcmp.invokeExact(ns1, ns2);
             }
         }
 
         int puts(String msg) throws Throwable {
             try (var arena = Arena.ofConfined()) {
-                MemorySegment s = arena.allocateString(msg);
+                MemorySegment s = arena.allocateFrom(msg);
                 return (int)puts.invokeExact(s);
             }
         }
 
         int strlen(String msg) throws Throwable {
             try (var arena = Arena.ofConfined()) {
-                MemorySegment s = arena.allocateString(msg);
+                MemorySegment s = arena.allocateFrom(msg);
                 return (int)strlen.invokeExact(s);
             }
         }
@@ -277,7 +277,7 @@ public class StdLibTest extends NativeTestHelper {
         int[] qsort(int[] arr) throws Throwable {
             //init native array
             try (var arena = Arena.ofConfined()) {
-                MemorySegment nativeArr = arena.allocateArray(C_INT, arr);
+                MemorySegment nativeArr = arena.allocateFrom(C_INT, arr);
 
                 //call qsort
                 MemorySegment qsortUpcallStub = abi.upcallStub(qsortCompar, qsortComparFunction, arena);
@@ -300,7 +300,7 @@ public class StdLibTest extends NativeTestHelper {
 
         int printf(String format, List<PrintfArg> args) throws Throwable {
             try (var arena = Arena.ofConfined()) {
-                MemorySegment formatStr = arena.allocateString(format);
+                MemorySegment formatStr = arena.allocateFrom(format);
                 return (int)specializedPrintf(args).invokeExact(formatStr,
                         args.stream().map(a -> a.nativeValue(arena)).toArray());
             }
@@ -381,7 +381,7 @@ public class StdLibTest extends NativeTestHelper {
         INT(int.class, C_INT, "%d", arena -> 42, 42),
         LONG(long.class, C_LONG_LONG, "%d", arena -> 84L, 84L),
         DOUBLE(double.class, C_DOUBLE, "%.4f", arena -> 1.2345d, 1.2345d),
-        STRING(MemorySegment.class, C_POINTER, "%s", arena -> arena.allocateString("str"), "str");
+        STRING(MemorySegment.class, C_POINTER, "%s", arena -> arena.allocateFrom("str"), "str");
 
         final Class<?> carrier;
         final ValueLayout layout;

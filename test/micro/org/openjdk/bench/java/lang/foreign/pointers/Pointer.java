@@ -78,7 +78,7 @@ public class Pointer<X> {
     }
 
     public static <X> Pointer<X> allocate(NativeType<X> type, long size, SegmentAllocator allocator) {
-        MemorySegment segment = allocator.allocateArray(type.layout(), size);
+        MemorySegment segment = allocator.allocate(type.layout(), size);
         return new Pointer<>(segment);
     }
 

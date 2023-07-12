@@ -98,8 +98,8 @@ public class TestDereferencePath {
         try (Arena arena = Arena.ofConfined()) {
             // init structs
             MemorySegment a = arena.allocate(A);
-            MemorySegment b = arena.allocateArray(B, 2);
-            MemorySegment c = arena.allocateArray(C, 4);
+            MemorySegment b = arena.allocate(B, 2);
+            MemorySegment c = arena.allocate(C, 4);
             // init struct fields
             a.set(ValueLayout.ADDRESS, 0, b);
             b.set(ValueLayout.ADDRESS, 0, c);

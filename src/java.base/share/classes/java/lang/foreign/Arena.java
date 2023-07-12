@@ -184,7 +184,7 @@ import java.lang.foreign.MemorySegment.Scope;
  * {@snippet lang = java:
  * try (Arena slicingArena = new SlicingArena(1000)) {
  *     for (int i = 0; i < 10; i++) {
- *         MemorySegment s = slicingArena.allocateArray(JAVA_INT, 1, 2, 3, 4, 5);
+ *         MemorySegment s = slicingArena.allocateFrom(JAVA_INT, 1, 2, 3, 4, 5);
  *         ...
  *     }
  * } // all memory allocated is released here
