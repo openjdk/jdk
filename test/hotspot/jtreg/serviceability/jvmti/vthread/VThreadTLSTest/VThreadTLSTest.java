@@ -46,12 +46,10 @@ import java.util.concurrent.Executors;
 
 public class VThreadTLSTest {
     static final String AGENT_LIB = "VThreadTLSTest";
-
     static volatile boolean attached;
     static volatile boolean failed;
 
     static void log(String msg) { System.out.println(msg); }
-
     static native long getTLS();
     static native void setTLS(long value);
 

@@ -34,14 +34,14 @@ JNIEXPORT jlong JNICALL
 Java_VThreadTLSTest_getTLS(JNIEnv* jni, jclass clazz) {
   void* data;
   jvmtiError err = jvmti->GetThreadLocalStorage(nullptr, &data);
-  check_jvmti_status(jni, err, "getTLS: Failed in JVMTI GetThreadLocalStorage"); 
+  check_jvmti_status(jni, err, "getTLS: Failed in JVMTI GetThreadLocalStorage");
   return (jlong)data;
 }
 
 JNIEXPORT void JNICALL
 Java_VThreadTLSTest_setTLS(JNIEnv* jni, jclass clazz, jlong value) {
   jvmtiError err = jvmti->SetThreadLocalStorage(nullptr, (void*)value);
-  check_jvmti_status(jni, err, "setTLS: Failed in JVMTI SetThreadLocalStorage"); 
+  check_jvmti_status(jni, err, "setTLS: Failed in JVMTI SetThreadLocalStorage");
 }
 
 jint agent_init(JavaVM *jvm, char *options, void *reserved) {
