@@ -1207,7 +1207,8 @@ void LIRGenerator::do_Reference_get(Intrinsic* x) {
 
   LIR_Opr result = rlock_result(x, T_OBJECT);
   access_load_at(IN_HEAP | ON_WEAK_OOP_REF, T_OBJECT,
-                 reference, LIR_OprFact::intConst(referent_offset), result);
+                 reference, LIR_OprFact::intConst(referent_offset), result,
+                 nullptr, info);
 }
 
 // Example: clazz.isInstance(object)

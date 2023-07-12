@@ -29,10 +29,10 @@
 * @compile ClassUnloading.java
 * @run main/othervm -XX:-UseCompressedOops ClassUnloading
 * @run main/othervm -XX:+UseCompressedOops ClassUnloading
-* @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,ClassUnloading ClassUnloading
+* @run main/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk.internal.vm.Continuation::*,ClassUnloading::* ClassUnloading
 */
 
-// @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk/internal/vm/Continuation,Basic Basic
+// @run testng/othervm -Xcomp -XX:-TieredCompilation -XX:CompileOnly=jdk.internal.vm.Continuation::*,Basic::* Basic
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;

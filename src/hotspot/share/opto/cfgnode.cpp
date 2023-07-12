@@ -1940,28 +1940,32 @@ bool PhiNode::wait_for_region_igvn(PhaseGVN* phase) {
   for (uint j = 1; j < req(); j++) {
     Node* rc = r->in(j);
     Node* n = in(j);
-    if (rc != nullptr &&
-        rc->is_Proj()) {
-      if (worklist.member(rc)) {
-        delay = true;
-      } else if (rc->in(0) != nullptr &&
-                 rc->in(0)->is_If()) {
-        if (worklist.member(rc->in(0))) {
-          delay = true;
-        } else if (rc->in(0)->in(1) != nullptr &&
-                   rc->in(0)->in(1)->is_Bool()) {
-          if (worklist.member(rc->in(0)->in(1))) {
-            delay = true;
-          } else if (rc->in(0)->in(1)->in(1) != nullptr &&
-                     rc->in(0)->in(1)->in(1)->is_Cmp()) {
-            if (worklist.member(rc->in(0)->in(1)->in(1))) {
-              delay = true;
-            }
-          }
-        }
-      }
+
+    if (rc == nullptr || !rc->is_Proj()) { continue; }
+    if (worklist.member(rc)) {
+      delay = true;
+      break;
+    }
+
+    if (rc->in(0) == nullptr || !rc->in(0)->is_If()) { continue; }
+    if (worklist.member(rc->in(0))) {
+      delay = true;
+      break;
+    }
+
+    if (rc->in(0)->in(1) == nullptr || !rc->in(0)->in(1)->is_Bool()) { continue; }
+    if (worklist.member(rc->in(0)->in(1))) {
+      delay = true;
+      break;
+    }
+
+    if (rc->in(0)->in(1)->in(1) == nullptr || !rc->in(0)->in(1)->in(1)->is_Cmp()) { continue; }
+    if (worklist.member(rc->in(0)->in(1)->in(1))) {
+      delay = true;
+      break;
     }
   }
+
   if (delay) {
     worklist.push(this);
   }

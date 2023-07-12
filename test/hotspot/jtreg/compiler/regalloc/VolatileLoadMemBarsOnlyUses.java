@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * Copyright (c) 2018, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -26,7 +27,7 @@
  * @bug 8210389
  * @summary C2: assert(n->outcnt() != 0 || C->top() == n || n->is_Proj()) failed: No dead instructions after post-alloc
  *
- * @run main/othervm -Xcomp -XX:CompileOnly=VolatileLoadMemBarsOnlyUses VolatileLoadMemBarsOnlyUses
+ * @run main/othervm -Xcomp -XX:CompileOnly=VolatileLoadMemBarsOnlyUses::* VolatileLoadMemBarsOnlyUses
  *
  */
 

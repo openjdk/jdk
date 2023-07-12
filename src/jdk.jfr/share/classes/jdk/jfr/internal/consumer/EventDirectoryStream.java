@@ -40,7 +40,7 @@ import jdk.jfr.consumer.RecordedEvent;
 import jdk.jfr.internal.JVM;
 import jdk.jfr.internal.PlatformRecording;
 import jdk.jfr.internal.SecuritySupport;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 import jdk.jfr.internal.management.StreamBarrier;
 
 /**
@@ -113,20 +113,19 @@ public final class EventDirectoryStream extends AbstractEventStream {
 
     @Override
     protected void process() throws IOException {
-        JVM jvm = JVM.getJVM();
         Thread t = Thread.currentThread();
         try {
-            if (jvm.isExcluded(t)) {
+            if (JVM.isExcluded(t)) {
                 threadExclusionLevel++;
             } else {
-                jvm.exclude(t);
+                JVM.exclude(t);
             }
             processRecursionSafe();
         } finally {
             if (threadExclusionLevel > 0) {
                 threadExclusionLevel--;
             } else {
-                jvm.include(t);
+                JVM.include(t);
             }
         }
     }

@@ -145,7 +145,7 @@ JvmtiEnvBase::phase() {
 
 bool
 JvmtiEnvBase::is_valid() {
-  jint value = 0;
+  jlong value = 0;
 
   // This object might not be a JvmtiEnvBase so we can't assume
   // the _magic field is properly aligned. Get the value in a safe
@@ -616,7 +616,7 @@ JvmtiEnvBase::get_field_descriptor(Klass* k, jfieldID field, fieldDescriptor* fd
     found = id->find_local_field(fd);
   } else {
     // Non-static field. The fieldID is really the offset of the field within the object.
-    int offset = jfieldIDWorkaround::from_instance_jfieldID(k, field);
+    int offset = checked_cast<int>(jfieldIDWorkaround::from_instance_jfieldID(k, field));
     found = InstanceKlass::cast(k)->find_field_from_offset(offset, false, fd);
   }
   return found;
@@ -758,11 +758,22 @@ JvmtiEnvBase::get_thread_state_base(oop thread_oop, JavaThread* jt) {
 
 jint
 JvmtiEnvBase::get_thread_state(oop thread_oop, JavaThread* jt) {
-  jint state;
+  jint state = 0;
 
   if (is_thread_carrying_vthread(jt, thread_oop)) {
-    state = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_WAITING |
-            JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
+    state = (jint)java_lang_Thread::get_thread_status(thread_oop);
+
+    // This is for extra safety. Other bits are not expected nor needed.
+    state &= (JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_INTERRUPTED);
+
+    if (jt->is_carrier_thread_suspended()) {
+      state |= JVMTI_THREAD_STATE_SUSPENDED;
+    }
+    // It's okay for the JVMTI state to be reported as WAITING when waiting
+    // for something other than an Object.wait. So, we treat a thread carrying
+    // a virtual thread as waiting indefinitely which is not runnable.
+    // It is why the RUNNABLE bit is not needed and the WAITING bits are added.
+    state |= JVMTI_THREAD_STATE_WAITING | JVMTI_THREAD_STATE_WAITING_INDEFINITELY;
   } else {
     state = get_thread_state_base(thread_oop, jt);
   }
@@ -785,7 +796,7 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
     // This call can trigger a safepoint, so thread_oop must not be used after it.
     state = get_thread_state_base(ct_oop, java_thread) & ~filtered_bits;
   } else {
-    jshort vt_state = java_lang_VirtualThread::state(thread_oop);
+    int vt_state = java_lang_VirtualThread::state(thread_oop);
     state = (jint)java_lang_VirtualThread::map_state_to_thread_status(vt_state);
   }
   if (ext_suspended && ((state & JVMTI_THREAD_STATE_ALIVE) != 0)) {
@@ -1738,7 +1749,7 @@ JvmtiEnvBase::suspend_thread(oop thread_oop, JavaThread* java_thread, bool singl
           (is_virtual && JvmtiVTSuspender::is_vthread_suspended(thread_h())),
          "sanity check");
 
-  // An attempt to handshake-suspend a passive carrier thread will result in
+  // An attempt to handshake-suspend a thread carrying a virtual thread will result in
   // suspension of mounted virtual thread. So, we just mark it as suspended
   // and it will be actually suspended at virtual thread unmount transition.
   if (!is_thread_carrying) {
@@ -2538,7 +2549,7 @@ VirtualThreadGetFrameLocationClosure::do_thread(Thread *target) {
 void
 VirtualThreadGetThreadStateClosure::do_thread(Thread *target) {
   assert(target->is_Java_thread(), "just checking");
-  jshort vthread_state = java_lang_VirtualThread::state(_vthread_h());
+  int vthread_state = java_lang_VirtualThread::state(_vthread_h());
   oop carrier_thread_oop = java_lang_VirtualThread::carrier_thread(_vthread_h());
   jint state;
 

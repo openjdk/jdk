@@ -37,9 +37,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
 
+import jdk.jfr.internal.SecuritySupport;
 import jdk.jfr.internal.Type;
 import jdk.jfr.internal.TypeLibrary;
-import jdk.jfr.internal.Utils;
+import jdk.jfr.internal.util.Utils;
 
 /**
  * Describes event metadata, such as labels, descriptions and units.
@@ -114,7 +115,7 @@ public final class AnnotationElement {
     public AnnotationElement(Class<? extends Annotation> annotationType, Map<String, Object> values) {
         Objects.requireNonNull(annotationType, "annotationType");
         Objects.requireNonNull(values, "values");
-        Utils.checkRegisterPermission();
+        SecuritySupport.checkRegisterPermission();
         // copy values to avoid modification after validation
         HashMap<String, Object> map = new HashMap<>(values);
         for (Map.Entry<String, Object> entry : map.entrySet()) {

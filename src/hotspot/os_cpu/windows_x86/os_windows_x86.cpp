@@ -224,7 +224,7 @@ bool os::win32::register_code_area(char *low, char *high) {
  * loop in vmError.cpp. We need to roll our own loop.
  */
 bool os::win32::platform_print_native_stack(outputStream* st, const void* context,
-                                            char *buf, int buf_size)
+                                            char *buf, int buf_size, address& lastpc)
 {
   CONTEXT ctx;
   if (context != nullptr) {
@@ -245,14 +245,14 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
   stk.AddrPC.Mode         = AddrModeFlat;
 
   int count = 0;
-  address lastpc = 0;
+  address lastpc_internal = 0;
   while (count++ < StackPrintLimit) {
     intptr_t* sp = (intptr_t*)stk.AddrStack.Offset;
     intptr_t* fp = (intptr_t*)stk.AddrFrame.Offset; // NOT necessarily the same as ctx.Rbp!
     address pc = (address)stk.AddrPC.Offset;
 
     if (pc != nullptr) {
-      if (count == 2 && lastpc == pc) {
+      if (count == 2 && lastpc_internal == pc) {
         // Skip it -- StackWalk64() may return the same PC
         // (but different SP) on the first try.
       } else {
@@ -268,12 +268,13 @@ bool os::win32::platform_print_native_stack(outputStream* st, const void* contex
         }
         st->cr();
       }
-      lastpc = pc;
+      lastpc_internal = pc;
     }
 
     PVOID p = WindowsDbgHelp::symFunctionTableAccess64(GetCurrentProcess(), stk.AddrPC.Offset);
     if (!p) {
       // StackWalk64() can't handle this PC. Calling StackWalk64 again may cause crash.
+      lastpc = lastpc_internal;
       break;
     }
 

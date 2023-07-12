@@ -26,7 +26,7 @@
  * @bug 8305189
  * @summary C2 failed "assert(_outcnt==1) failed: not unique"
  * @library /test/lib
- * @run main/othervm -Xcomp -XX:CompileOnly=TestZeroTripGuardShared TestZeroTripGuardShared
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestZeroTripGuardShared::* TestZeroTripGuardShared
  */
 
 import jdk.test.lib.Utils;

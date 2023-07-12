@@ -625,10 +625,13 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     }
 
     /**
-     * Wait for all threads in this task scope to finish or the task scope to shut down.
-     * This method waits until all threads started in this task scope finish execution,
-     * the {@link #shutdown() shutdown} method is invoked to shut down the task scope,
-     * or the current thread is {@linkplain Thread#interrupt() interrupted}.
+     * Wait for all subtasks started in this task scope to finish or the task scope to
+     * shut down.
+     *
+     * <p> This method waits for all subtasks by waiting for all threads {@linkplain
+     * #fork(Callable) started} in this task scope to finish execution. It stops waiting
+     * when all threads finish, the task scope is {@linkplain #shutdown() shut down}, or
+     * the current thread is {@linkplain Thread#interrupt() interrupted}.
      *
      * <p> This method may only be invoked by the task scope owner.
      *
@@ -652,11 +655,14 @@ public class StructuredTaskScope<T> implements AutoCloseable {
     }
 
     /**
-     * Wait for all threads in this task scope to finish or the task scope to shut down,
-     * up to the given deadline. This method waits until all threads started in the task
-     * scope finish execution, the {@link #shutdown() shutdown} method is invoked to
-     * shut down the task scope, the current thread is {@linkplain Thread#interrupt()
-     * interrupted}, or the deadline is reached.
+     * Wait for all subtasks started in this task scope to finish or the task scope to
+     * shut down, up to the given deadline.
+     *
+     * <p> This method waits for all subtasks by waiting for all threads {@linkplain
+     * #fork(Callable) started} in this task scope to finish execution. It stops waiting
+     * when all threads finish, the task scope is {@linkplain #shutdown() shut down}, the
+     * deadline is reached, or the current thread is {@linkplain Thread#interrupt()
+     * interrupted}.
      *
      * <p> This method may only be invoked by the task scope owner.
      *
@@ -950,20 +956,24 @@ public class StructuredTaskScope<T> implements AutoCloseable {
                     yield "[Failed: " + ex + "]";
                 }
             };
-            return Objects.toIdentityString(this ) + stateAsString;
+            return Objects.toIdentityString(this) + stateAsString;
         }
     }
 
     /**
      * A {@code StructuredTaskScope} that captures the result of the first subtask to
      * complete {@linkplain Subtask.State#SUCCESS successfully}. Once captured, it
-     * invokes the {@linkplain #shutdown() shutdown} method to interrupt unfinished threads
+     * {@linkplain #shutdown() shuts down} the task scope to interrupt unfinished threads
      * and wakeup the task scope owner. The policy implemented by this class is intended
      * for cases where the result of any subtask will do ("invoke any") and where the
      * results of other unfinished subtasks are no longer needed.
      *
      * <p> Unless otherwise specified, passing a {@code null} argument to a method
      * in this class will cause a {@link NullPointerException} to be thrown.
+     *
+     * @apiNote This class implements a policy to shut down the task scope when a subtask
+     * completes successfully. There shouldn't be any need to directly shut down the task
+     * scope with the {@link #shutdown() shutdown} method.
      *
      * @param <T> the result type
      * @since 21
@@ -1017,8 +1027,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
         @Override
         protected void handleComplete(Subtask<? extends T> subtask) {
-            super.handleComplete(subtask);
-
             if (firstResult != null) {
                 // already captured a result
                 return;
@@ -1038,8 +1046,18 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * {@inheritDoc}
-         * @return this task scope
+         * Wait for a subtask started in this task scope to complete {@linkplain
+         * Subtask.State#SUCCESS successfully} or all subtasks to complete.
+         *
+         * <p> This method waits for all subtasks by waiting for all threads {@linkplain
+         * #fork(Callable) started} in this task scope to finish execution. It stops waiting
+         * when all threads finish, a subtask completes successfully, or the current
+         * thread is {@linkplain Thread#interrupt() interrupted}. It also stops waiting
+         * if the {@link #shutdown() shutdown} method is invoked directly to shut down
+         * this task scope.
+         *
+         * <p> This method may only be invoked by the task scope owner.
+         *
          * @throws IllegalStateException {@inheritDoc}
          * @throws WrongThreadException {@inheritDoc}
          */
@@ -1050,8 +1068,19 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * {@inheritDoc}
-         * @return this task scope
+         * Wait for a subtask started in this task scope to complete {@linkplain
+         * Subtask.State#SUCCESS successfully} or all subtasks to complete, up to the
+         * given deadline.
+         *
+         * <p> This method waits for all subtasks by waiting for all threads {@linkplain
+         * #fork(Callable) started} in this task scope to finish execution. It stops waiting
+         * when all threads finish, a subtask completes successfully, the deadline is
+         * reached, or the current thread is {@linkplain Thread#interrupt() interrupted}.
+         * It also stops waiting if the {@link #shutdown() shutdown} method is invoked
+         * directly to shut down this task scope.
+         *
+         * <p> This method may only be invoked by the task scope owner.
+         *
          * @throws IllegalStateException {@inheritDoc}
          * @throws WrongThreadException {@inheritDoc}
          */
@@ -1073,8 +1102,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          *
          * @throws ExecutionException if no subtasks completed successfully but at least
          * one subtask failed
-         * @throws IllegalStateException if the handleComplete method was not invoked with
-         * a completed subtask, or the task scope owner did not join after forking
+         * @throws IllegalStateException if no subtasks completed or the task scope owner
+         * did not join after forking
          * @throws WrongThreadException if the current thread is not the task scope owner
          */
         public T result() throws ExecutionException {
@@ -1095,8 +1124,8 @@ public class StructuredTaskScope<T> implements AutoCloseable {
          * @return the result of the first subtask that completed with a result
          *
          * @throws X if no subtasks completed successfully but at least one subtask failed
-         * @throws IllegalStateException if the handleComplete method was not invoked with
-         * a completed subtask, or the task scope owner did not join after forking
+         * @throws IllegalStateException if no subtasks completed or the task scope owner
+         * did not join after forking
          * @throws WrongThreadException if the current thread is not the task scope owner
          */
         public <X extends Throwable> T result(Function<Throwable, ? extends X> esf) throws X {
@@ -1125,14 +1154,18 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
     /**
      * A {@code StructuredTaskScope} that captures the exception of the first subtask to
-     * {@linkplain Subtask.State#FAILED fail}. Once captured, it invokes the {@linkplain
-     * #shutdown() shutdown} method to interrupt unfinished threads and wakeup the task
+     * {@linkplain Subtask.State#FAILED fail}. Once captured, it {@linkplain #shutdown()
+     * shuts down} the task scope to interrupt unfinished threads and wakeup the task
      * scope owner. The policy implemented by this class is intended for cases where the
      * results for all subtasks are required ("invoke all"); if any subtask fails then the
      * results of other unfinished subtasks are no longer needed.
      *
      * <p> Unless otherwise specified, passing a {@code null} argument to a method
      * in this class will cause a {@link NullPointerException} to be thrown.
+     *
+     * @apiNote This class implements a policy to shut down the task scope when a subtask
+     * fails. There shouldn't be any need to directly shut down the task scope with the
+     * {@link #shutdown() shutdown} method.
      *
      * @since 21
      */
@@ -1181,7 +1214,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
 
         @Override
         protected void handleComplete(Subtask<?> subtask) {
-            super.handleComplete(subtask);
             if (subtask.state() == Subtask.State.FAILED
                     && firstException == null
                     && FIRST_EXCEPTION.compareAndSet(this, null, subtask.exception())) {
@@ -1190,8 +1222,17 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * {@inheritDoc}
-         * @return this task scope
+         * Wait for all subtasks started in this task scope to complete or for a subtask
+         * to {@linkplain Subtask.State#FAILED fail}.
+         *
+         * <p> This method waits for all subtasks by waiting for all threads {@linkplain
+         * #fork(Callable) started} in this task scope to finish execution. It stops waiting
+         * when all threads finish, a subtask fails, or the current thread is {@linkplain
+         * Thread#interrupt() interrupted}. It also stops waiting if the {@link #shutdown()
+         * shutdown} method is invoked directly to shut down this task scope.
+         *
+         * <p> This method may only be invoked by the task scope owner.
+         *
          * @throws IllegalStateException {@inheritDoc}
          * @throws WrongThreadException {@inheritDoc}
          */
@@ -1202,8 +1243,18 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         /**
-         * {@inheritDoc}
-         * @return this task scope
+         * Wait for all subtasks started in this task scope to complete or for a subtask
+         * to {@linkplain Subtask.State#FAILED fail}, up to the given deadline.
+         *
+         * <p> This method waits for all subtasks by waiting for all threads {@linkplain
+         * #fork(Callable) started} in this task scope to finish execution. It stops waiting
+         * when all threads finish, a subtask fails, the deadline is reached, or the current
+         * thread is {@linkplain Thread#interrupt() interrupted}. It also stops waiting
+         * if the {@link #shutdown() shutdown} method is invoked directly to shut down
+         * this task scope.
+         *
+         * <p> This method may only be invoked by the task scope owner.
+         *
          * @throws IllegalStateException {@inheritDoc}
          * @throws WrongThreadException {@inheritDoc}
          */

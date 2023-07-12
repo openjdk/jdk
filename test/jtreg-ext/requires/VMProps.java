@@ -43,6 +43,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -294,12 +295,23 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected void vmGC(SafeMap map) {
         var isJVMCIEnabled = Compiler.isJVMCIEnabled();
+        Predicate<GC> vmGCProperty = (GC gc) -> (gc.isSupported()
+                                        && (!isJVMCIEnabled || gc.isSupportedByJVMCICompiler())
+                                        && (gc.isSelected() || GC.isSelectedErgonomically()));
         for (GC gc: GC.values()) {
-            map.put("vm.gc." + gc.name(),
-                    () -> "" + (gc.isSupported()
-                            && (!isJVMCIEnabled || gc.isSupportedByJVMCICompiler())
-                            && (gc.isSelected() || GC.isSelectedErgonomically())));
+            map.put("vm.gc." + gc.name(), () -> "" + vmGCProperty.test(gc));
         }
+
+        // Special handling for ZGC modes
+        var vmGCZ = vmGCProperty.test(GC.Z);
+        var genZ = WB.getBooleanVMFlag("ZGenerational");
+        var genZIsDefault = WB.isDefaultVMFlag("ZGenerational");
+        // vm.gc.ZGenerational=true means:
+        //    vm.gc.Z is true and ZGenerational is either explicitly true, or default
+        map.put("vm.gc.ZGenerational", () -> "" + (vmGCZ && (genZ || genZIsDefault)));
+        // vm.gc.ZSinglegen=true means:
+        //    vm.gc.Z is true and ZGenerational is either explicitly false, or default
+        map.put("vm.gc.ZSinglegen", () -> "" + (vmGCZ && (!genZ || genZIsDefault)));
     }
 
     /**

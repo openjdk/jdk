@@ -117,6 +117,9 @@ public final class ValueLayouts {
 
         public final VarHandle arrayElementVarHandle(int... shape) {
             Objects.requireNonNull(shape);
+            if (!Utils.isElementAligned((ValueLayout) this)) {
+                throw new UnsupportedOperationException("Layout alignment greater than its size");
+            }
             MemoryLayout layout = self();
             List<MemoryLayout.PathElement> path = new ArrayList<>();
             for (int i = shape.length; i > 0; i--) {

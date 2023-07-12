@@ -96,7 +96,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static jvmtiError check_thread_list(jint count, const jthread* list);
   static bool is_in_thread_list(jint count, const jthread* list, oop jt_oop);
 
-  // check if thread_oop represents a passive carrier thread
+  // check if thread_oop represents a thread carrying a virtual thread
   static bool is_thread_carrying_vthread(JavaThread* java_thread, oop thread_oop) {
     return java_thread != nullptr && java_thread->jvmti_vthread() != nullptr
                                && java_thread->jvmti_vthread() != thread_oop
@@ -180,7 +180,7 @@ class JvmtiEnvBase : public CHeapObj<mtInternal> {
   static oop current_thread_obj_or_resolve_external_guard(jthread thread);
 
   // Return true if the thread identified with a pair <jt,thr_obj> is current.
-  // A passive carrier thread is not treated as current.
+  // A thread carrying a virtual thread is not treated as current.
   static bool is_JavaThread_current(JavaThread* jt, oop thr_obj) {
     JavaThread* current = JavaThread::current();
     // jt can be null in case of a virtual thread
