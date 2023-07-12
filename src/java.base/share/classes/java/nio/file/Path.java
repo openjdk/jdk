@@ -517,7 +517,18 @@ public interface Path
     }
 
     /**
-     * Resolves a path, or a sequence of paths against this path.
+     * Resolves one or more {@code Path}s iteratively against this
+     * {@code Path}. If {@code more} does not specify any {@code Path}s,
+     * then the result is {@link #resolve(Path) resolve(first)}. If
+     * {@code more} specifies one or more {@code Path}s, then each non-empty
+     * {@code Path}, including {@code first}, is resolved iteratively against
+     * this {@code Path}.
+     *
+     * If {@code first} and {@code more} specify only empty paths, then this
+     * method returns this path. If any of the paths in {@code first} and
+     * {@code more} is absolute, then the result will be as if the paths
+     * after the last absolute path in the sequence were resolved iteratively
+     * against that last absolute path.
      *
      * <p> The result of this method is the same as would be obtained
      * by resolving the first parameter path against this path, and then
@@ -536,7 +547,7 @@ public interface Path
      *
      * @param first the first path to resolve against this path
      *
-     * @param more additional paths to be joined to form the path
+     * @param more additional paths to be iteratively resolved against this path
      *
      * @return the resulting path
      *
@@ -553,8 +564,14 @@ public interface Path
     }
 
     /**
-     * Resolves the path or paths converted from a path string, or a
-     * sequence of path strings, against this path.
+     * Resolves one or more {@code Path}s converted from the supplied path
+     * srings iteratively against this {@code Path}. If {@code more} does not
+     * specify any path strings, then the result is {@link #resolve(String)
+     * resolve(first)}. If {@code more} specifies one or more path strings,
+     * then each non-empty path string, including {@code first}, is iteratively
+     * converted to a {@code Path} and resolved against this {@code Path}.
+     * Path strings which convert to empty or absolute paths are handled as
+     * specified by {@link #resolve(Path,Path...)}.
      *
      * <p> The result of this method is the same as would be obtained by
      * resolving the path converted from the first path string against
@@ -571,9 +588,11 @@ public interface Path
      * }
      * }
      *
-     * @param first the first path string to resolve against this path
+     * @param first the first path string to convert to a path and
+     *        resolve against this path
      *
-     * @param more additional path strings to be joined to form the path
+     * @param more additional path strings to be iteratively converted to
+     *        paths and resolved against this path
      *
      * @return the resulting path
      *
