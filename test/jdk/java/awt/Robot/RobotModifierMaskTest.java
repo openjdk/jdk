@@ -74,7 +74,7 @@ public class RobotModifierMaskTest {
 
             In this mode when the Robot starts to type, the user is required to concurrently
             move the mouse (without clicking/dragging).
-            When ready click on the "Start" button to run the test.
+            When ready click on the "Start" button to run the test and start moving the mouse.
             """;
 
     public static void main(String[] args) throws Exception {
@@ -234,7 +234,7 @@ public class RobotModifierMaskTest {
         jButton.addActionListener(e -> startTest = true);
         jFrame.getContentPane().add(jButton, BorderLayout.PAGE_END);
 
-        jFrame.setSize(560,200);
+        jFrame.setSize(560, 200);
         jFrame.setLocation(200, 200);
         jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         jFrame.setVisible(true);
@@ -247,7 +247,7 @@ public class RobotModifierMaskTest {
         JScrollPane pane = new JScrollPane(jTextArea);
         jFrame.getContentPane().add(pane, BorderLayout.CENTER);
 
-        jFrame.setSize(450,100);
+        jFrame.setSize(450, 100);
         jFrame.setLocation(200, 200);
         jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
         jFrame.setVisible(true);

@@ -309,7 +309,7 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
             if (OSX_Undefined != flagMaskValue) {
                 if (keyCode == OSX_CapsLock) {
                     if (keyPressed) {
-                     initFlags ^= flagMaskValue;
+                        initFlags ^= flagMaskValue;
                     }
                 } else {
                     initFlags = keyPressed
@@ -319,7 +319,7 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
             }
 
             CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
-            flags  = (initFlags & allModifiersMask) | (flags & (!allModifiersMask));
+            flags  = (initFlags & allModifiersMask) | (flags & (~allModifiersMask));
             CGEventSetFlags(event, flags);
 
             CGEventPost(kCGHIDEventTap, event);
