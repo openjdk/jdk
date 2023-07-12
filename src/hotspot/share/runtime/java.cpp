@@ -527,7 +527,7 @@ void before_exit(JavaThread* thread, bool halt) {
   }
 
   if (VerifyStringTableAtExit) {
-    size_t fail_cnt = JavaClassFile::StringTable::verify_and_compare_entries();
+    size_t fail_cnt = StringTable::verify_and_compare_entries();
     if (fail_cnt != 0) {
       tty->print_cr("ERROR: fail_cnt=" SIZE_FORMAT, fail_cnt);
       guarantee(fail_cnt == 0, "unexpected StringTable verification failures");

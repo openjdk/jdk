@@ -63,7 +63,7 @@
 #include "gc/g1/g1CollectedHeap.hpp"
 #endif
 
-namespace JavaClassFile {
+namespace hotspot_jvm {
 
 // We prefer short chains of avg 2
 const double PREF_AVG_LIST_LEN = 2.0;
@@ -766,7 +766,7 @@ void StringTable::dump(outputStream* st, bool verbose) {
   }
 }
 
-} // namespace JavaClassFile
+} // namespace hotspot_jvm
 
 // Utility for dumping strings
 StringtableDCmd::StringtableDCmd(outputStream* output, bool heap) :
@@ -782,7 +782,7 @@ void StringtableDCmd::execute(DCmdSource source, TRAPS) {
   VMThread::execute(&dumper);
 }
 
-namespace JavaClassFile {
+namespace hotspot_jvm {
 
 // Sharing
 #if INCLUDE_CDS_JAVA_HEAP
@@ -942,4 +942,4 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
 }
 #endif //INCLUDE_CDS_JAVA_HEAP
 
-} // namespace JavaClassFile
+} // namespace hotspot_jvm

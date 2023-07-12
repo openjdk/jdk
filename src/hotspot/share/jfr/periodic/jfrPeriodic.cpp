@@ -638,7 +638,7 @@ TRACE_REQUEST_FUNC(SymbolTableStatistics) {
 }
 
 TRACE_REQUEST_FUNC(StringTableStatistics) {
-  TableStatistics statistics = JavaClassFile::StringTable::get_table_statistics();
+  TableStatistics statistics = StringTable::get_table_statistics();
   emit_table_statistics<EventStringTableStatistics>(statistics);
 }
 

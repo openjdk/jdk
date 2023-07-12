@@ -2058,7 +2058,7 @@ Method* SystemDictionary::find_method_handle_invoker(Klass* klass,
     SystemDictionary::find_method_handle_type(signature, accessing_klass, CHECK_NULL);
 
   int ref_kind = JVM_REF_invokeVirtual;
-  oop name_oop = JavaClassFile::StringTable::intern(name, CHECK_NULL);
+  oop name_oop = StringTable::intern(name, CHECK_NULL);
   Handle name_str (THREAD, name_oop);
   objArrayHandle appendix_box = oopFactory::new_objArray_handle(vmClasses::Object_klass(), 1, CHECK_NULL);
   assert(appendix_box->obj_at(0) == nullptr, "");

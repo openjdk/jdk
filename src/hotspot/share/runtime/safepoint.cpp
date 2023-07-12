@@ -514,7 +514,7 @@ void SafepointSynchronize::end() {
 bool SafepointSynchronize::is_cleanup_needed() {
   // Need a safepoint if some inline cache buffers is non-empty
   if (!InlineCacheBuffer::is_empty()) return true;
-  if (JavaClassFile::StringTable::needs_rehashing()) return true;
+  if (StringTable::needs_rehashing()) return true;
   if (SymbolTable::needs_rehashing()) return true;
   return false;
 }
@@ -554,7 +554,7 @@ public:
       workers++;
     }
 
-    if (JavaClassFile::StringTable::rehash_table_expects_safepoint_rehashing()) {
+    if (StringTable::rehash_table_expects_safepoint_rehashing()) {
       workers++;
     }
 
@@ -579,9 +579,9 @@ public:
     }
 
     if (_subtasks.try_claim_task(SafepointSynchronize::SAFEPOINT_CLEANUP_STRING_TABLE_REHASH)) {
-      if (JavaClassFile::StringTable::needs_rehashing()) {
+      if (StringTable::needs_rehashing()) {
         Tracer t("rehashing string table");
-        JavaClassFile::StringTable::rehash_table();
+        StringTable::rehash_table();
       }
     }
 

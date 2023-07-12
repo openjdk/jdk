@@ -779,7 +779,7 @@ public:
       SymbolTable::dump(_out, _verbose);
       break;
     case DumpStrings:
-      JavaClassFile::StringTable::dump(_out, _verbose);
+      StringTable::dump(_out, _verbose);
       break;
     case DumpSysDict:
       SystemDictionary::dump(_out, _verbose);

@@ -1238,8 +1238,7 @@ oop java_lang_Class::name(Handle java_class, TRAPS) {
   assert(_name_offset != 0, "must be set");
   oop o = java_class->obj_field(_name_offset);
   if (o == nullptr) {
-    o = JavaClassFile::StringTable::intern(as_external_name(java_class()),
-                                           THREAD);
+    o = StringTable::intern(as_external_name(java_class()), THREAD);
     java_class->obj_field_put(_name_offset, o);
   }
   return o;
@@ -2875,17 +2874,17 @@ void java_lang_StackTraceElement::fill_in(Handle element,
   }
 
   // Fill in method name
-  oop methodname = JavaClassFile::StringTable::intern(name, CHECK);
+  oop methodname = StringTable::intern(name, CHECK);
   java_lang_StackTraceElement::set_methodName(element(), methodname);
 
   // Fill in module name and version
   ModuleEntry* module = holder->module();
   if (module->is_named()) {
-    oop module_name = JavaClassFile::StringTable::intern(module->name(), CHECK);
+    oop module_name = StringTable::intern(module->name(), CHECK);
     java_lang_StackTraceElement::set_moduleName(element(), module_name);
     oop module_version;
     if (module->version() != nullptr) {
-      module_version = JavaClassFile::StringTable::intern(module->version(), CHECK);
+      module_version = StringTable::intern(module->version(), CHECK);
     } else {
       module_version = nullptr;
     }
@@ -2922,7 +2921,7 @@ void java_lang_StackTraceElement::decode_file_and_line(Handle java_class,
     // Class was not redefined. We can trust its cache if set,
     // else we have to initialize it.
     if (source_file == nullptr) {
-      source_file = JavaClassFile::StringTable::intern(source, CHECK);
+      source_file = StringTable::intern(source, CHECK);
       java_lang_Class::set_source_file(java_class(), source_file);
     }
   } else {
@@ -3393,7 +3392,7 @@ oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordCompo
   java_lang_reflect_RecordComponent::set_clazz(element(), decl_class());
 
   Symbol* name = holder->constants()->symbol_at(component->name_index()); // name_index is a utf8
-  oop component_name = JavaClassFile::StringTable::intern(name, CHECK_NULL);
+  oop component_name = StringTable::intern(name, CHECK_NULL);
   java_lang_reflect_RecordComponent::set_name(element(), component_name);
 
   Symbol* type = holder->constants()->symbol_at(component->descriptor_index());
@@ -3423,7 +3422,7 @@ oop java_lang_reflect_RecordComponent::create(InstanceKlass* holder, RecordCompo
   int sig_index = component->generic_signature_index();
   if (sig_index > 0) {
     Symbol* sig = holder->constants()->symbol_at(sig_index); // sig_index is a utf8
-    oop component_sig = JavaClassFile::StringTable::intern(sig, CHECK_NULL);
+    oop component_sig = StringTable::intern(sig, CHECK_NULL);
     java_lang_reflect_RecordComponent::set_signature(element(), component_sig);
   } else {
     java_lang_reflect_RecordComponent::set_signature(element(), nullptr);

@@ -37,7 +37,7 @@ class DumpedInternedStrings;
 class JavaThread;
 class SerializeClosure;
 
-namespace JavaClassFile {
+namespace hotspot_jvm {
 
 class StringTable;
 class StringTableConfig;
@@ -160,6 +160,6 @@ private:
   static void verify();
 };
 
-} // namespace JavaClassFile
+} // namespace hotspot_jvm
 
 #endif // SHARE_CLASSFILE_STRINGTABLE_HPP

@@ -3471,7 +3471,7 @@ JVM_ENTRY(jstring, JVM_InternString(JNIEnv *env, jstring str))
   JvmtiVMObjectAllocEventCollector oam;
   if (str == nullptr) return nullptr;
   oop string = JNIHandles::resolve_non_null(str);
-  oop result = JavaClassFile::StringTable::intern(string, CHECK_NULL);
+  oop result = StringTable::intern(string, CHECK_NULL);
   return (jstring) JNIHandles::make_local(THREAD, result);
 JVM_END
 

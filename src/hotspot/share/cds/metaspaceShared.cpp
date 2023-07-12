@@ -320,7 +320,7 @@ void MetaspaceShared::read_extra_data(JavaThread* current, const char* filename)
       assert(prefix_type == HashtableTextDump::StringPrefix, "Sanity");
       ExceptionMark em(current);
       JavaThread* THREAD = current; // For exception macros.
-      oop str = JavaClassFile::StringTable::intern(utf8_buffer, THREAD);
+      oop str = StringTable::intern(utf8_buffer, THREAD);
 
       if (HAS_PENDING_EXCEPTION) {
         log_warning(cds, heap)("[line %d] extra interned string allocation failed; size too large: %d",
@@ -375,7 +375,7 @@ void MetaspaceShared::serialize(SerializeClosure* soc) {
 
   // Dump/restore the symbol/string/subgraph_info tables
   SymbolTable::serialize_shared_table_header(soc);
-  JavaClassFile::StringTable::serialize_shared_table_header(soc);
+  StringTable::serialize_shared_table_header(soc);
   HeapShared::serialize_tables(soc);
   SystemDictionaryShared::serialize_dictionary_headers(soc);
 
@@ -778,7 +778,7 @@ void MetaspaceShared::preload_and_dump_impl(TRAPS) {
   log_info(cds)("Rewriting and linking classes: done");
 
 #if INCLUDE_CDS_JAVA_HEAP
-  JavaClassFile::StringTable::allocate_shared_strings_array(CHECK);
+  StringTable::allocate_shared_strings_array(CHECK);
   ArchiveHeapWriter::init();
   if (use_full_module_graph()) {
     HeapShared::reset_archived_object_states(CHECK);
@@ -1500,8 +1500,7 @@ void MetaspaceShared::initialize_shared_spaces() {
     CountSharedSymbols cl;
     SymbolTable::shared_symbols_do(&cl);
     tty->print_cr("Number of shared symbols: %d", cl.total());
-    tty->print_cr("Number of shared strings: %zu",
-                  JavaClassFile::StringTable::shared_entry_count());
+    tty->print_cr("Number of shared strings: %zu", StringTable::shared_entry_count());
     tty->print_cr("VM version: %s\r\n", static_mapinfo->vm_version());
     if (FileMapInfo::current_info() == nullptr || _archive_loading_failed) {
       tty->print_cr("archive is invalid");

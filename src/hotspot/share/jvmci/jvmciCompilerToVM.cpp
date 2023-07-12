@@ -1976,7 +1976,7 @@ C2V_VMENTRY_0(jboolean, isInternedString, (JNIEnv* env, jobject, jobject object)
   }
   int len;
   jchar* name = java_lang_String::as_unicode_string(str(), len, CHECK_false);
-  return (JavaClassFile::StringTable::lookup(name, len) != nullptr);
+  return (StringTable::lookup(name, len) != nullptr);
 C2V_END
 
 

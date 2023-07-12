@@ -25,6 +25,12 @@
 // Precompiled headers are turned off if the user passes
 // --disable-precompiled-headers to configure.
 
+// The hotspot_jvm namespace using directive must be placed outside
+// #ifndef DONT_USE_PRECOMPILED_HEADER. That ensures it works with and
+// without precompiled headers.
+namespace hotspot_jvm {}
+using namespace hotspot_jvm;
+
 #ifndef DONT_USE_PRECOMPILED_HEADER
 
 // These header files are included in at least 130 C++ files, as of
