@@ -60,6 +60,7 @@ address ArchiveHeapWriter::_requested_top;
 
 GrowableArrayCHeap<ArchiveHeapWriter::NativePointerInfo, mtClassShared>* ArchiveHeapWriter::_native_pointers;
 GrowableArrayCHeap<oop, mtClassShared>* ArchiveHeapWriter::_source_objs;
+GrowableArrayCHeap<int, mtClassShared>* ArchiveHeapWriter::_source_objs_order;
 
 ArchiveHeapWriter::BufferOffsetToSourceObjectTable*
   ArchiveHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
@@ -70,6 +71,7 @@ typedef ResourceHashtable<address, size_t,
       AnyObj::C_HEAP,
       mtClassShared> FillersTable;
 static FillersTable* _fillers;
+static int _num_native_ptrs = 0;
 
 void ArchiveHeapWriter::init() {
   if (HeapShared::can_write()) {
@@ -82,6 +84,7 @@ void ArchiveHeapWriter::init() {
 
     _native_pointers = new GrowableArrayCHeap<NativePointerInfo, mtClassShared>(2048);
     _source_objs = new GrowableArrayCHeap<oop, mtClassShared>(10000);
+    _source_objs_order = new GrowableArrayCHeap<int, mtClassShared>(10000);
 
     guarantee(UseG1GC, "implementation limitation");
     guarantee(MIN_GC_REGION_ALIGNMENT <= /*G1*/HeapRegion::min_region_size_in_words() * HeapWordSize, "must be");
@@ -89,6 +92,7 @@ void ArchiveHeapWriter::init() {
 }
 
 void ArchiveHeapWriter::add_source_obj(oop src_obj) {
+  _source_objs_order->append(_source_objs->length());
   _source_objs->append(src_obj);
 }
 
@@ -224,9 +228,80 @@ void ArchiveHeapWriter::copy_roots_to_buffer(GrowableArrayCHeap<oop, mtClassShar
   _buffer_used = new_used;
 }
 
+class ArchiveHeapWriter::CheckPointToOopsClosure : public BasicOopIterateClosure {
+  oop _to_obj;
+  PointToOops _point_to;
+
+  template <class T> void check(T *p) {
+    oop pointee = HeapAccess<>::oop_load(p);
+    if (pointee == _to_obj) {
+      _point_to = PointToSpecific;
+    } else if (pointee != nullptr && _point_to == PointToNone) {
+      _point_to = PointToSome;
+    }
+  }
+public:
+  CheckPointToOopsClosure(oop to_obj) : _to_obj(to_obj), _point_to(PointToNone) {}
+  void do_oop(narrowOop *p) { check(p); }
+  void do_oop(      oop *p) { check(p); }
+  PointToOops point_to() const { return _point_to; }
+};
+
+
+ArchiveHeapWriter::PointToOops ArchiveHeapWriter::check_point_to_oops(oop from_obj, oop to_obj) {
+  if (from_obj->is_typeArray()) {
+    return PointToNone;
+  }
+
+  CheckPointToOopsClosure checker(to_obj);
+  from_obj->oop_iterate(&checker);
+  return checker.point_to();
+}
+
+
+// The goal is to sort the objects in increasing order of:
+// - objects that have no pointers
+// - objects that only point to object(s) at a lower address, or themselves
+// - objects that have at least one pointer that point to a higher address
+int ArchiveHeapWriter::compare_objs_by_oop_fields(int* a, int* b) {
+  oop oa = _source_objs->at(*a);
+  oop ob = _source_objs->at(*b);
+
+  PointToOops pa = check_point_to_oops(oa, ob);
+  PointToOops pb = check_point_to_oops(ob, oa);
+
+  if (pa == PointToNone) {
+    if (pb == PointToNone) {
+      return a - b;
+    } else {
+      return -1;
+    }
+  } else if (pa == PointToSome) {
+    if (pb == PointToNone) {
+      return 1;
+    } else if (pb == PointToSome) {
+      return a - b;
+    } else {
+      return -1;
+    }
+  } else {
+    if (pb == PointToSpecific) { // they point to each other
+      return a - b;
+    } else {
+      return 1;
+    }
+  }
+}
+
+void ArchiveHeapWriter::sort_source_objs() {
+  _source_objs_order->sort(compare_objs_by_oop_fields);
+}
+
 void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtClassShared>* roots) {
-  for (int i = 0; i < _source_objs->length(); i++) {
-    oop src_obj = _source_objs->at(i);
+  sort_source_objs();
+  for (int i = 0; i < _source_objs_order->length(); i++) {
+    int src_obj_index = _source_objs_order->at(i);
+    oop src_obj = _source_objs->at(src_obj_index);
     HeapShared::CachedOopInfo* info = HeapShared::archived_object_cache()->get(src_obj);
     assert(info != nullptr, "must be");
     size_t buffer_offset = copy_one_source_obj_to_buffer(src_obj);
@@ -237,8 +312,8 @@ void ArchiveHeapWriter::copy_source_objs_to_buffer(GrowableArrayCHeap<oop, mtCla
 
   copy_roots_to_buffer(roots);
 
-  log_info(cds)("Size of heap region = " SIZE_FORMAT " bytes, %d objects, %d roots",
-                _buffer_used, _source_objs->length() + 1, roots->length());
+  log_info(cds)("Size of heap region = " SIZE_FORMAT " bytes, %d objects, %d roots, %d native ptrs",
+                _buffer_used, _source_objs->length() + 1, roots->length(), _num_native_ptrs);
 }
 
 size_t ArchiveHeapWriter::filler_array_byte_size(int length) {
@@ -418,12 +493,24 @@ oop ArchiveHeapWriter::load_oop_from_buffer(narrowOop* buffered_addr) {
   return CompressedOops::decode(*buffered_addr);
 }
 
-template <typename T> void ArchiveHeapWriter::relocate_field_in_buffer(T* field_addr_in_buffer, CHeapBitMap* oopmap) {
-  oop source_referent = load_source_oop_from_buffer<T>(field_addr_in_buffer);
-  if (!CompressedOops::is_null(source_referent)) {
-    oop request_referent = source_obj_to_requested_obj(source_referent);
-    store_requested_oop_in_buffer<T>(field_addr_in_buffer, request_referent);
+template <typename T> ArchiveHeapWriter::RelocType ArchiveHeapWriter::relocate_field_in_buffer(T* field_addr_in_buffer, CHeapBitMap* oopmap) {
+  oop source_pointee = load_source_oop_from_buffer<T>(field_addr_in_buffer);
+  if (CompressedOops::is_null(source_pointee)) {
+    return RelocNone;
+  } else {
+    HeapShared::CachedOopInfo* p = HeapShared::archived_object_cache()->get(source_pointee);
+    assert(p != nullptr, "must be");
+    size_t pointee_offset = p->buffer_offset();
+    oop pointee_request_addr = requested_obj_from_buffer_offset(pointee_offset);
+    store_requested_oop_in_buffer<T>(field_addr_in_buffer, pointee_request_addr);
     mark_oop_pointer<T>(field_addr_in_buffer, oopmap);
+
+    T* pointee_buffered_addr = offset_to_buffered_address<T*>(pointee_offset);
+    if (pointee_buffered_addr > field_addr_in_buffer) {
+      return RelocSlow;
+    } else {
+      return RelocQuick;
+    }
   }
 }
 
@@ -475,18 +562,23 @@ class ArchiveHeapWriter::EmbeddedOopRelocator: public BasicOopIterateClosure {
   oop _src_obj;
   address _buffered_obj;
   CHeapBitMap* _oopmap;
+  RelocType _reloc_type;
 
 public:
   EmbeddedOopRelocator(oop src_obj, address buffered_obj, CHeapBitMap* oopmap) :
-    _src_obj(src_obj), _buffered_obj(buffered_obj), _oopmap(oopmap) {}
+    _src_obj(src_obj), _buffered_obj(buffered_obj), _oopmap(oopmap), _reloc_type(RelocNone) {}
 
   void do_oop(narrowOop *p) { EmbeddedOopRelocator::do_oop_work(p); }
   void do_oop(      oop *p) { EmbeddedOopRelocator::do_oop_work(p); }
 
+  RelocType reloc_type() const { return _reloc_type; }
 private:
   template <class T> void do_oop_work(T *p) {
     size_t field_offset = pointer_delta(p, _src_obj, sizeof(char));
-    ArchiveHeapWriter::relocate_field_in_buffer<T>((T*)(_buffered_obj + field_offset), _oopmap);
+    RelocType t = ArchiveHeapWriter::relocate_field_in_buffer<T>((T*)(_buffered_obj + field_offset), _oopmap);
+    if (static_cast<int>(t) > static_cast<int>(_reloc_type)) {
+      _reloc_type = t;
+    }
   }
 };
 
@@ -497,14 +589,35 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
   size_t heap_region_byte_size = _buffer_used;
   heap_info->oopmap()->resize(heap_region_byte_size   / oopmap_unit);
 
-  auto iterator = [&] (oop src_obj, HeapShared::CachedOopInfo& info) {
-    oop requested_obj = requested_obj_from_buffer_offset(info.buffer_offset());
+  RelocType last_reloc = RelocNone;
+  address buffered_first_quick_reloc = nullptr;
+  address buffered_first_slow_reloc = nullptr;
+  address buffered_first_with_native = nullptr;
+
+  for (int i = 0; i < _source_objs_order->length(); i++) {
+    int src_obj_index = _source_objs_order->at(i);
+    oop src_obj = _source_objs->at(src_obj_index);
+    HeapShared::CachedOopInfo* info = HeapShared::archived_object_cache()->get(src_obj);
+    assert(info != nullptr, "must be");
+    oop requested_obj = requested_obj_from_buffer_offset(info->buffer_offset());
     update_header_for_requested_obj(requested_obj, src_obj, src_obj->klass());
-    address buffered_obj = offset_to_buffered_address<address>(info.buffer_offset());
+    address buffered_obj = offset_to_buffered_address<address>(info->buffer_offset());
     EmbeddedOopRelocator relocator(src_obj, buffered_obj, heap_info->oopmap());
     src_obj->oop_iterate(&relocator);
+
+    RelocType t = relocator.reloc_type();
+    assert(static_cast<int>(last_reloc) <= static_cast<int>(t), "archived objects must be sorted by RelocType");
+
+    if (buffered_first_quick_reloc == nullptr && t == RelocQuick) {
+      buffered_first_quick_reloc = buffered_obj;
+    }
+    if (buffered_first_slow_reloc == nullptr && t == RelocSlow) {
+      buffered_first_slow_reloc = buffered_obj;
+    }
+    if (buffered_first_with_native == nullptr && info->has_native_pointers()) {
+      buffered_first_with_native = buffered_obj;
+    }
   };
-  HeapShared::archived_object_cache()->iterate_all(iterator);
 
   // Relocate HeapShared::roots(), which is created in copy_roots_to_buffer() and
   // doesn't have a corresponding src_obj, so we can't use EmbeddedOopRelocator on it.
@@ -519,6 +632,25 @@ void ArchiveHeapWriter::relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassSh
     }
   }
 
+  size_t total = (size_t)_buffer->length();
+  size_t first_quick_reloc = total;
+  size_t first_slow_reloc = total;
+  size_t first_with_native = total;
+  if (buffered_first_quick_reloc != nullptr) {
+    first_quick_reloc = buffered_address_to_offset(buffered_first_quick_reloc);
+  }
+  if (buffered_first_slow_reloc != nullptr) {
+    first_slow_reloc = buffered_address_to_offset(buffered_first_slow_reloc);
+  }
+  if ( buffered_first_with_native != nullptr) {
+    first_with_native = buffered_address_to_offset(buffered_first_with_native);
+  }
+
+  log_info(cds)("first_quick_reloc = " SIZE_FORMAT " (%3d%%)", first_quick_reloc, (int)(first_quick_reloc * 100 / total));
+  log_info(cds)("first_slow_reloc  = " SIZE_FORMAT " (%3d%%)", first_slow_reloc,  (int)(first_slow_reloc  * 100 / total));
+  log_info(cds)("first_with_native = " SIZE_FORMAT " (%3d%%)", first_with_native, (int)(first_with_native * 100 / total));
+
+  heap_info->set_reloc_boundaries(first_quick_reloc, first_slow_reloc);
   compute_ptrmap(heap_info);
 }
 
@@ -529,6 +661,8 @@ void ArchiveHeapWriter::mark_native_pointer(oop src_obj, int field_offset) {
     info._src_obj = src_obj;
     info._field_offset = field_offset;
     _native_pointers->append(info);
+    HeapShared::set_has_native_pointers(src_obj);
+    _num_native_ptrs ++;
   }
 }
 

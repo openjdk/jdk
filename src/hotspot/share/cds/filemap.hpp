@@ -232,6 +232,9 @@ private:
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
   size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
                                         // of the archived heap objects, in bytes.
+  size_t _heap_first_quick_reloc;       // The first object in the archive that has relocatable oop fields.
+  size_t _heap_first_slow_reloc;        // The first object in the archive that has relocatable oop fields that point
+                                        // to a lower address.
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
@@ -272,6 +275,8 @@ public:
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
   size_t heap_roots_offset()               const { return _heap_roots_offset; }
+  size_t heap_first_quick_reloc()          const { return _heap_first_quick_reloc;}
+  size_t heap_first_slow_reloc()           const { return _heap_first_slow_reloc;}
   // FIXME: These should really return int
   jshort max_used_path_index()             const { return _max_used_path_index; }
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
@@ -284,6 +289,8 @@ public:
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
   void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
+  void set_heap_first_quick_reloc(size_t n)      { _heap_first_quick_reloc = n; }
+  void set_heap_first_slow_reloc(size_t n)       { _heap_first_slow_reloc = n; }
   void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
@@ -380,7 +387,9 @@ public:
   int     narrow_oop_shift()   const { return header()->narrow_oop_shift(); }
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
   size_t  heap_roots_offset()  const { return header()->heap_roots_offset(); }
-  size_t  core_region_alignment() const { return header()->core_region_alignment(); }
+  size_t  heap_first_quick_reloc() const { return header()->heap_first_quick_reloc(); }
+  size_t  heap_first_slow_reloc()  const { return header()->heap_first_slow_reloc(); }
+  size_t  core_region_alignment()  const { return header()->core_region_alignment(); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
   jshort app_module_paths_start_index()       const { return header()->app_module_paths_start_index(); }
