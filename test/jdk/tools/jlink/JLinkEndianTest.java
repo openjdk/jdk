@@ -1,9 +1,3 @@
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.nio.ByteOrder;
-import java.util.Arrays;
-import java.util.spi.ToolProvider;
-
 /*
  * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -26,6 +20,13 @@ import java.util.spi.ToolProvider;
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.ByteOrder;
+import java.util.Arrays;
+import java.util.spi.ToolProvider;
+
 /*
  * @test
  * @bug 8206890
