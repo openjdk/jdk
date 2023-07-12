@@ -295,15 +295,14 @@ class AbstractAssembler : public ResourceObj  {
   // that the range is correct.
   template <typename T>
   constexpr T narrow_cast(int x) const {
-   if (x < 0) {
-    using stype = std::make_signed_t<T>;
-    assert(x >= std::numeric_limits<stype>::min(), "too negative"); // >= -128 for 8 bits
-    return static_cast<T>(x);  // cut off sign bits
-   } else {
-     return checked_cast<T>(x);
-   }
+    if (x < 0) {
+      using stype = std::make_signed_t<T>;
+      assert(x >= std::numeric_limits<stype>::min(), "too negative"); // >= -128 for 8 bits
+      return static_cast<T>(x);  // cut off sign bits
+    } else {
+      return checked_cast<T>(x);
+    }
   }
-
 
  public:
 
