@@ -100,7 +100,7 @@ public class Compiler {
         if (!isGraalEnabled()) {
             return false;
         }
-        Boolean useJvmciNativeLibrary = WB.getBooleanVMFlag("UseJVMCICompiler");
+        Boolean useJvmciNativeLibrary = WB.getBooleanVMFlag("UseJVMCINativeLibrary");
         if (useJvmciNativeLibrary == null || !useJvmciNativeLibrary) {
             return false;
         }
