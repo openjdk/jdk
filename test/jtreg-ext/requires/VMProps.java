@@ -122,6 +122,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
+        // vm.libgraal.enabled is true if libgraal is used as JIT
+        map.put("vm.libgraal.enabled", this::isGraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
         map.put("vm.compiler2.enabled", this::isCompiler2Enabled);
         map.put("docker.support", this::dockerSupport);
@@ -694,6 +696,7 @@ public class VMProps implements Callable<Map<String, String>> {
         }
         List<String> lines = new ArrayList<>();
         map.forEach((k, v) -> lines.add(k + ":" + v));
+        Collections.sort(lines);
         try {
             Files.write(Paths.get(dumpFileName), lines,
                     StandardOpenOption.APPEND, StandardOpenOption.CREATE);
