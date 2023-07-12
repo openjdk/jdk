@@ -181,6 +181,10 @@ void C1_MacroAssembler::initialize_header(Register obj, Register klass, Register
 
   if (len->is_valid()) {
     sw(len, Address(obj, arrayOopDesc::length_offset_in_bytes()));
+    if (!is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerWord)) {
+      assert(is_aligned(arrayOopDesc::header_size_in_bytes(), BytesPerInt), "must be 4-byte aligned");
+      sw(zr, Address(obj, arrayOopDesc::header_size_in_bytes()));
+    }
   } else if (UseCompressedClassPointers) {
     store_klass_gap(obj, zr);
   }
@@ -195,22 +199,13 @@ void C1_MacroAssembler::initialize_body(Register obj, Register len_in_bytes, int
   sub(len_in_bytes, len_in_bytes, hdr_size_in_bytes);
   beqz(len_in_bytes, done);
 
-  // Zero first 4 bytes, if start offset is not word aligned.
-  int start_offset_in_bytes = hdr_size_in_bytes;
-  if (!is_aligned(start_offset_in_bytes, BytesPerWord)) {
-    assert(is_aligned(start_offset_in_bytes, BytesPerInt), "must be 4-byte aligned");
-    sw(zr, Address(obj, start_offset_in_bytes));
-    sub(len_in_bytes, len_in_bytes, BytesPerInt);
-    start_offset_in_bytes += BytesPerInt;
-  }
-
   // Preserve obj
-  if (start_offset_in_bytes) {
-    add(obj, obj, start_offset_in_bytes);
+  if (hdr_size_in_bytes) {
+    add(obj, obj, hdr_size_in_bytes);
   }
   zero_memory(obj, len_in_bytes, tmp);
-  if (start_offset_in_bytes) {
-    sub(obj, obj, start_offset_in_bytes);
+  if (hdr_size_in_bytes) {
+    sub(obj, obj, hdr_size_in_bytes);
   }
 
   bind(done);
@@ -228,7 +223,7 @@ void C1_MacroAssembler::allocate_object(Register obj, Register tmp1, Register tm
 void C1_MacroAssembler::initialize_object(Register obj, Register klass, Register var_size_in_bytes, int con_size_in_bytes, Register tmp1, Register tmp2, bool is_tlab_allocated) {
   assert((con_size_in_bytes & MinObjAlignmentInBytesMask) == 0,
          "con_size_in_bytes is not multiple of alignment");
-  const int hdr_size_in_bytes = instanceOopDesc::base_offset_in_bytes();
+  const int hdr_size_in_bytes = instanceOopDesc::header_size() * HeapWordSize;
 
   initialize_header(obj, klass, noreg, tmp1, tmp2);
 
@@ -311,7 +306,10 @@ void C1_MacroAssembler::allocate_array(Register obj, Register len, Register tmp1
 
   // clear rest of allocated space
   const Register len_zero = len;
-  initialize_body(obj, arr_size, base_offset_in_bytes, len_zero);
+  // We align-up the header size to word-size, because we clear the
+  // possible alignment gap in initialize_header().
+  int hdr_size = align_up(base_offset_in_bytes, BytesPerWord);
+  initialize_body(obj, arr_size, hdr_size, len_zero);
 
   membar(MacroAssembler::StoreStore);
 
