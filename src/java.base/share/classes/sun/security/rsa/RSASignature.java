@@ -189,9 +189,9 @@ abstract class RSASignature extends SignatureSpi {
         byte[] digest = getDigestValue();
         try {
             byte[] encoded = RSAUtil.encodeSignature(digestOID, digest);
-            RSAPadding.Output po = padding.pad(encoded);
-            if (po.status()) {
-                return RSACore.rsa(po.result(), privateKey, true);
+            byte[] padded = padding.pad(encoded);
+            if (padded != null) {
+                return RSACore.rsa(padded, privateKey, true);
             }
             throw new SignatureException("Could not sign data");
         } catch (GeneralSecurityException e) {
@@ -212,18 +212,28 @@ abstract class RSASignature extends SignatureSpi {
                     sigBytes.length + " but was expecting " +
                     RSACore.getByteLength(publicKey));
             }
-            byte[] digest = getDigestValue();
-            byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
-            RSAPadding.Output po = padding.unpad(decrypted);
-            // https://www.rfc-editor.org/rfc/rfc8017.html#section-8.2.2
-            // Step 4 suggests comparing the encoded message instead of the
-            byte[] encodedDigest = RSAUtil.encodeSignature(digestOID,
-                    digest);
 
-            return po.status() &&
-                    MessageDigest.isEqual(encodedDigest, po.result());
+            // https://www.rfc-editor.org/rfc/rfc8017.html#section-8.2.2
+            // Step 4 suggests comparing the encoded message
+            byte[] digest = getDigestValue();
+            byte[] encoded = RSAUtil.encodeSignature(digestOID, digest);
+            byte[] padded = padding.pad(encoded);
+            byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
+
+            boolean status = MessageDigest.isEqual(padded, decrypted);
+            if (!status) {
+                // fall back to the decode approach for max compatibility
+                byte[] unpadded = padding.unpad(decrypted);
+                if (unpadded != null) {
+                    status = MessageDigest.isEqual(digest,
+                            RSAUtil.decodeSignature(digestOID, unpadded));
+                }
+            }
+            return status;
         } catch (javax.crypto.BadPaddingException e) {
             return false;
+        } catch (IOException e) {
+            throw new SignatureException("Signature encoding error", e);
         } finally {
             resetDigest();
         }

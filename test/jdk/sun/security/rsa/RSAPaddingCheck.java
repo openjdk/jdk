@@ -23,8 +23,7 @@
 /*
  * @test
  * @bug 8302017
- * @summary Ensure that RSAPadding class refactoring w/ RSAPadding.Output
- *         works as expected
+ * @summary Ensure that RSAPadding class works as expected after refactoring
  * @modules java.base/sun.security.rsa
  */
 import java.util.Arrays;
@@ -47,17 +46,15 @@ public class RSAPaddingCheck {
                     Arrays.copyOf(testData, size) : testData);
             System.out.println("Testing PaddingType: " + type);
             RSAPadding padding = RSAPadding.getInstance(type, size);
-            RSAPadding.Output po = padding.pad(data);
-            if (!po.status()) {
+            byte[] paddedData = padding.pad(data);
+            if (paddedData == null) {
                 throw new RuntimeException("Unexpected padding op failure!");
             }
-            byte[] paddedData = po.result();
 
-            po = padding.unpad(paddedData);
-            if (!po.status()) {
+            byte[] data2 = padding.unpad(paddedData);
+            if (data2 == null) {
                 throw new RuntimeException("Unexpected unpadding op failure!");
             }
-            byte[] data2 = po.result();
             if (!Arrays.equals(data, data2)) {
                 throw new RuntimeException("diff check failure!");
             }

@@ -90,14 +90,6 @@ public final class RSAPadding {
     // PKCS#1 v2.1 OAEP padding
     public static final int PAD_OAEP_MGF1 = 4;
 
-    public record Output(boolean status, byte[] result) {
-        public static Output FAIL = new Output(false, null);
-        public static Output pass(byte[] result) {
-            return new Output(true, result);
-        };
-    }
-
-
     // type, one of PAD_*
     private final int type;
 
@@ -243,23 +235,23 @@ public final class RSAPadding {
     }
 
     /**
-     * Pad the data and return the result in an RSAPadding.Output record.
+     * Pad the data and return the result or null if error occurred.
      */
-    public Output pad(byte[] data) {
+    public byte[] pad(byte[] data) {
         return pad(data, 0, data.length);
     }
 
     /**
-     * Pad the data and return the result in an RSAPadding.Output record.
+     * Pad the data and return the result or null if error occurred.
      */
-    public Output pad(byte[] data, int ofs, int len) {
+    public byte[] pad(byte[] data, int ofs, int len) {
         if (len > maxDataSize) {
-            return Output.FAIL;
+            return null;
         }
         switch (type) {
         case PAD_NONE:
             // assert len == paddedSize and data.length - ofs > len?
-            return Output.pass(RSACore.convert(data, ofs, len));
+            return RSACore.convert(data, ofs, len);
         case PAD_BLOCKTYPE_1:
         case PAD_BLOCKTYPE_2:
             return padV15(data, ofs, len);
@@ -271,26 +263,25 @@ public final class RSAPadding {
     }
 
     /**
-     * Unpad the padded block and return the result in an RSAPadding.Output
-     * record.
+     * Unpad the padded block and return the result or null if error occurred.
      */
-    public Output unpad(byte[] padded) {
+    public byte[] unpad(byte[] padded) {
         if (padded.length == paddedSize) {
             return switch(type) {
-                case PAD_NONE -> Output.pass(padded);
+                case PAD_NONE -> padded;
                 case PAD_BLOCKTYPE_1, PAD_BLOCKTYPE_2 -> unpadV15(padded);
                 case PAD_OAEP_MGF1 -> unpadOAEP(padded);
                 default -> throw new AssertionError();
             };
         } else {
-            return Output.FAIL;
+            return null;
         }
     }
 
     /**
      * PKCS#1 v1.5 padding (blocktype 1 and 2).
      */
-    private Output padV15(byte[] data, int ofs, int len) {
+    private byte[] padV15(byte[] data, int ofs, int len) {
         byte[] padded = new byte[paddedSize];
         System.arraycopy(data, ofs, padded, paddedSize - len, len);
         int psSize = paddedSize - 3 - len;
@@ -322,15 +313,15 @@ public final class RSAPadding {
                 }
             }
         }
-        return Output.pass(padded);
+        return padded;
     }
 
     /**
      * PKCS#1 v1.5 unpadding (blocktype 1 (signature) and 2 (encryption)).
-     * Return the result in an RSAPadding.Output record.
+     * Return the result or null if error occurred.
      * Note that we want to make it a constant-time operation
      */
-    private Output unpadV15(byte[] padded) {
+    private byte[] unpadV15(byte[] padded) {
         int k = 0;
         boolean bp = false;
 
@@ -367,18 +358,18 @@ public final class RSAPadding {
         System.arraycopy(padded, p, data, 0, n);
 
         if (bp) {
-            return Output.FAIL;
+            return null;
         } else {
-            return Output.pass(data);
+            return data;
         }
     }
 
     /**
      * PKCS#1 v2.0 OAEP padding (MGF1).
      * Paragraph references refer to PKCS#1 v2.1 (June 14, 2002)
-     * Return the result in an RSAPadding.Output record.
+     * Return the result or null if error occurred.
      */
-    private Output padOAEP(byte[] M, int ofs, int len) {
+    private byte[] padOAEP(byte[] M, int ofs, int len) {
         if (random == null) {
             random = JCAUtil.getSecureRandom();
         }
@@ -422,13 +413,14 @@ public final class RSAPadding {
         // produce maskSeed
         mgf.generateAndXor(EM, dbStart, dbLen, seedLen, EM, seedStart);
 
-        return Output.pass(EM);
+        return EM;
     }
 
     /**
      * PKCS#1 v2.1 OAEP unpadding (MGF1).
+     * Return the result or null if error occurred.
      */
-    private Output unpadOAEP(byte[] padded) {
+    private byte[] unpadOAEP(byte[] padded) {
         byte[] EM = padded;
         boolean bp = false;
         int hLen = lHash.length;
@@ -484,6 +476,6 @@ public final class RSAPadding {
         byte [] m = new byte[EM.length - mStart];
         System.arraycopy(EM, mStart, m, 0, m.length);
 
-        return (bp? Output.FAIL : Output.pass(m));
+        return (bp? null : m);
     }
 }

@@ -348,9 +348,8 @@ public final class RSACipher extends CipherSpi {
         try {
             switch (mode) {
             case MODE_SIGN:
-                RSAPadding.Output po = padding.pad(buffer, 0, bufOfs);
-                if (po.status()) {
-                    paddingCopy = po.result();
+                paddingCopy = padding.pad(buffer, 0, bufOfs);
+                if (paddingCopy != null) {
                     result = RSACore.rsa(paddingCopy, privateKey, true);
                 } else {
                     throw new BadPaddingException("Padding error in signing");
@@ -359,18 +358,16 @@ public final class RSACipher extends CipherSpi {
             case MODE_VERIFY:
                 byte[] verifyBuffer = RSACore.convert(buffer, 0, bufOfs);
                 paddingCopy = RSACore.rsa(verifyBuffer, publicKey);
-                po = padding.unpad(paddingCopy);
-                if (po.status()) {
-                    result = po.result();
-                } else {
+                result = padding.unpad(paddingCopy);
+                if (result == null) {
                     throw new BadPaddingException
                             ("Padding error in verification");
                 }
                 break;
             case MODE_ENCRYPT:
-                po = padding.pad(buffer, 0, bufOfs);
-                if (po.status()) {
-                    result = RSACore.rsa(po.result(), publicKey);
+                paddingCopy = padding.pad(buffer, 0, bufOfs);
+                if (paddingCopy != null) {
+                    result = RSACore.rsa(paddingCopy, publicKey);
                 } else {
                     throw new BadPaddingException
                             ("Padding error in encryption");
@@ -379,10 +376,8 @@ public final class RSACipher extends CipherSpi {
             case MODE_DECRYPT:
                 byte[] decryptBuffer = RSACore.convert(buffer, 0, bufOfs);
                 paddingCopy = RSACore.rsa(decryptBuffer, privateKey, false);
-                po = padding.unpad(paddingCopy);
-                if (po.status()) {
-                    result = po.result();
-                } else {
+                result = padding.unpad(paddingCopy);
+                if (result == null) {
                     throw new BadPaddingException
                             ("Padding error in decryption");
                 }
