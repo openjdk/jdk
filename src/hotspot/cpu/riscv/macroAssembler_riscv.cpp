@@ -4339,7 +4339,7 @@ void MacroAssembler::slli_uw(Register Rd, Register Rs, int shamt) {
   if (UseZba) {
     _slli_uw(Rd, Rs, shamt);
   } else {
-    slli(Rd, Rs, shamt+32);
+    slli(Rd, Rs, shamt + 32);
     srli(Rd, Rd, 32);
   }
 }
