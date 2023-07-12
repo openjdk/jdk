@@ -1360,14 +1360,16 @@ public:
   bool loop_predication_impl(IdealLoopTree *loop);
   bool loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                     ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl, ConNode* zero,
-                                    Invariance& invar, Deoptimization::DeoptReason reason);
+                                    Invariance& invar, Deoptimization::DeoptReason reason, Node*& max_value);
   bool loop_predication_should_follow_branches(IdealLoopTree* loop, IfProjNode* predicate_proj, float& loop_trip_cnt);
   void loop_predication_follow_branches(Node *c, IdealLoopTree *loop, float loop_trip_cnt,
                                         PathFrequency& pf, Node_Stack& stack, VectorSet& seen,
                                         Node_List& if_proj_list);
-  IfProjNode* add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj, IfProjNode* predicate_proj,
-                                               IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
-                                               jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason);
+  IfProjNode*
+  add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj, IfProjNode* predicate_proj,
+                                   IfProjNode* upper_bound_proj, int scale, Node* offset, Node* init, Node* limit,
+                                   jint stride, Node* rng, bool& overflow, Deoptimization::DeoptReason reason,
+                                   Node*& max_value);
   Node* add_range_check_elimination_assertion_predicate(IdealLoopTree* loop, Node* predicate_proj, int scale_con,
                                                         Node* offset, Node* limit, jint stride_con, Node* value);
 
@@ -1717,6 +1719,14 @@ public:
   bool clone_cmp_loadklass_down(Node* n, const Node* blk1, const Node* blk2);
 
   bool at_relevant_ctrl(Node* n, const Node* blk1, const Node* blk2);
+
+  Node* add_assertion_predicate_test(IdealLoopTree* loop, Node* ctrl, bool overflow, BoolNode* bol);
+
+  IfProjNode* add_template_assertion_predicate_helper(IfProjNode* predicate_proj, Deoptimization::DeoptReason reason,
+                                                      IfProjNode* new_proj, BoolNode* bol, const int opcode);
+
+  BoolNode* iv_phi_assertion_predicate_condition(const CountedLoopNode* cl, Node* ctrl, Node* opaque_init,
+                                                 Node*& max_value);
 };
 
 

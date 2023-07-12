@@ -1360,7 +1360,8 @@ void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *lo
 
 bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNode* if_success_proj,
                                                   ParsePredicateSuccessProj* parse_predicate_proj, CountedLoopNode* cl,
-                                                  ConNode* zero, Invariance& invar, Deoptimization::DeoptReason reason) {
+                                                  ConNode* zero,
+                                                  Invariance& invar, Deoptimization::DeoptReason reason, Node*& max_value) {
   // Following are changed to nonnull when a predicate can be hoisted
   IfProjNode* new_predicate_proj = nullptr;
   IfNode*   iff  = if_success_proj->in(0)->as_If();
@@ -1457,8 +1458,10 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
     // Fall through into rest of the cleanup code which will move any dependent nodes to the skeleton predicates of the
     // upper bound test. We always need to create skeleton predicates in order to properly remove dead loops when later
     // splitting the predicated loop into (unreachable) sub-loops (i.e. done by unrolling, peeling, pre/main/post etc.).
-    new_predicate_proj = add_template_assertion_predicate(iff, loop, if_success_proj, parse_predicate_proj, upper_bound_proj, scale,
-                                                          offset, init, limit, stride, rng, overflow, reason);
+    new_predicate_proj = add_template_assertion_predicate(iff, loop, if_success_proj, parse_predicate_proj,
+                                                          upper_bound_proj, scale,
+                                                          offset, init, limit, stride, rng, overflow, reason,
+                                                          max_value);
 
 #ifndef PRODUCT
     if (TraceLoopOpts && !TraceLoopPredicate) {
@@ -1486,15 +1489,20 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
 // by making a copy of them when splitting a loop into sub loops. The Assertion Predicates ensure that dead sub loops
 // are removed properly.
 IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
-                                                             IfProjNode* predicate_proj, IfProjNode* upper_bound_proj,
-                                                             int scale, Node* offset, Node* init, Node* limit, jint stride,
-                                                             Node* rng, bool& overflow, Deoptimization::DeoptReason reason) {
+                                                             IfProjNode* predicate_proj,
+                                                             IfProjNode* upper_bound_proj, int scale, Node* offset,
+                                                             Node* init, Node* limit,
+                                                             jint stride, Node* rng, bool& overflow,
+                                                             Deoptimization::DeoptReason reason,
+                                                             Node*& max_value) {
   // First predicate for the initial value on first loop iteration
   Node* opaque_init = new OpaqueLoopInitNode(C, init);
   register_new_node(opaque_init, upper_bound_proj);
   bool negate = (if_proj->_con != predicate_proj->_con);
   BoolNode* bol = rc_predicate(loop, upper_bound_proj, scale, offset, opaque_init, limit, stride, rng,
                                (stride > 0) != (scale > 0), overflow);
+  add_template_assertion_predicate_helper(predicate_proj, reason, upper_bound_proj, bol,
+                                          overflow ? Op_If : iff->Opcode());
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1)); // This will go away once loop opts are over
   C->add_template_assertion_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, upper_bound_proj);
@@ -1505,27 +1513,28 @@ IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   // Second predicate for init + (current stride - initial stride)
   // This is identical to the previous predicate initially but as
   // unrolling proceeds current stride is updated.
-  Node* init_stride = loop->_head->as_CountedLoop()->stride();
-  Node* opaque_stride = new OpaqueLoopStrideNode(C, init_stride);
-  register_new_node(opaque_stride, new_proj);
-  Node* max_value = new SubINode(opaque_stride, init_stride);
-  register_new_node(max_value, new_proj);
-  max_value = new AddINode(opaque_init, max_value);
-  register_new_node(max_value, new_proj);
-  // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
-  max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
-  register_new_node(max_value, predicate_proj);
+  if (max_value == nullptr) {
+    // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
+    iv_phi_assertion_predicate_condition(loop->_head->as_CountedLoop(), new_proj, opaque_init, max_value);
+    new_proj = add_template_assertion_predicate_helper(predicate_proj, reason, new_proj, bol, Op_If);
+  }
 
   bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0),
                      overflow);
-  opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
-  C->add_template_assertion_predicate_opaq(opaque_bol);
-  register_new_node(opaque_bol, new_proj);
-  new_proj = create_new_if_for_predicate(predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode());
-  _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
+  add_template_assertion_predicate_helper(predicate_proj, reason, new_proj, bol, overflow ? Op_If : iff->Opcode());
   assert(max_value->outcnt() > 0, "should be used");
   assert(assertion_predicate_has_loop_opaque_node(new_proj->in(0)->as_If()), "unexpected");
 
+  return new_proj;
+}
+
+IfProjNode* PhaseIdealLoop::add_template_assertion_predicate_helper(IfProjNode* predicate_proj, Deoptimization::DeoptReason reason,
+                                                                    IfProjNode* new_proj, BoolNode* bol, const int opcode) {
+  Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1)); // This will go away once loop opts are over
+  C->add_template_assertion_predicate_opaq(opaque_bol);
+  register_new_node(opaque_bol, new_proj);
+  new_proj = create_new_if_for_predicate(predicate_proj, nullptr, reason, opcode);
+  _igvn.replace_input_of(new_proj->in(0), 1, opaque_bol);
   return new_proj;
 }
 
@@ -1625,6 +1634,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
 
   bool hoisted = false; // true if at least one proj is promoted
 
+  Node* max_value = nullptr;
   if (can_create_loop_predicates) {
     while (if_proj_list.size() > 0) {
       Node* n = if_proj_list.pop();
@@ -1656,7 +1666,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
 
       if (loop_predicate_proj != nullptr) {
         hoisted = loop_predication_impl_helper(loop, if_proj, loop_predicate_proj, cl, zero, invar,
-                                               Deoptimization::Reason_predicate) | hoisted;
+                                               Deoptimization::Reason_predicate, max_value) | hoisted;
       }
     } // end while
   }
@@ -1672,8 +1682,9 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       float f = pf.to(if_proj);
       if (if_proj->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none) &&
           f * loop_trip_cnt >= 1) {
-        hoisted = loop_predication_impl_helper(loop, if_proj->as_IfProj(), profiled_loop_predicate_proj, cl, zero, invar,
-                                               Deoptimization::Reason_profile_predicate) | hoisted;
+        hoisted = loop_predication_impl_helper(loop, if_proj->as_IfProj(), profiled_loop_predicate_proj, cl, zero,
+                                               invar,
+                                               Deoptimization::Reason_profile_predicate, max_value) | hoisted;
       }
     }
 
@@ -1688,7 +1699,8 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
 
     for (uint i = 0; i < if_proj_list_freq.size(); i++) {
       IfProjNode* if_proj = if_proj_list_freq.at(i)->as_IfProj();
-      hoisted = loop_predication_impl_helper(loop, if_proj, profiled_loop_predicate_proj, cl, zero, invar, Deoptimization::Reason_profile_predicate) | hoisted;
+      hoisted = loop_predication_impl_helper(loop, if_proj, profiled_loop_predicate_proj, cl, zero, invar,
+                                             Deoptimization::Reason_profile_predicate, max_value) | hoisted;
     }
   }
 

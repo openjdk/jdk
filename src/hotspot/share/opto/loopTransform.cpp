@@ -1332,11 +1332,20 @@ void PhaseIdealLoop::copy_assertion_predicates_to_main_loop_helper(Node* predica
     Node* opaque_stride = new OpaqueLoopStrideNode(C, stride);
     register_new_node(opaque_stride, outer_main_head->in(LoopNode::EntryControl));
 
+    // go through a temporary list to preserve predicate's order
+    Node_List predicates;
     while (predicate != nullptr && predicate->is_Proj() && predicate->in(0)->is_If()) {
       iff = predicate->in(0)->as_If();
       uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
       if (uncommon_proj->unique_ctrl_out() != rgn)
         break;
+      predicates.push(predicate);
+      predicate = predicate->in(0)->in(0);
+    }
+    while(predicates.size() > 0) {
+      predicate = predicates.pop();
+      iff = predicate->in(0)->as_If();
+      uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
       if (iff->in(1)->Opcode() == Op_Opaque4) {
         assert(assertion_predicate_has_loop_opaque_node(iff), "unexpected");
         // Clone the Assertion Predicate twice and initialize one with the initial
@@ -1375,7 +1384,6 @@ void PhaseIdealLoop::copy_assertion_predicates_to_main_loop_helper(Node* predica
         // Remove the Assertion Predicate from the pre-loop
         _igvn.replace_input_of(iff, 1, _igvn.intcon(1));
       }
-      predicate = predicate->in(0)->in(0);
     }
     _igvn.replace_input_of(outer_main_head, LoopNode::EntryControl, prev_proj);
     set_idom(outer_main_head, prev_proj, dd_main_head);
@@ -2005,12 +2013,21 @@ void PhaseIdealLoop::update_main_loop_assertion_predicates(Node* ctrl, CountedLo
   Node* max_value = _igvn.intcon(new_stride_con);
   set_ctrl(max_value, C->root());
 
+  // go through a temporary list to preserve predicate's order
+  Node_List predicates;
   while (entry != nullptr && entry->is_Proj() && entry->in(0)->is_If()) {
     IfNode* iff = entry->in(0)->as_If();
     ProjNode* proj = iff->proj_out(1 - entry->as_Proj()->_con);
     if (proj->unique_ctrl_out()->Opcode() != Op_Halt) {
       break;
     }
+    predicates.push(entry);
+    entry = entry->in(0)->in(0);
+  }
+  while (predicates.size() > 0) {
+    entry = predicates.pop();
+    IfNode* iff = entry->in(0)->as_If();
+    ProjNode* proj = iff->proj_out(1 - entry->as_Proj()->_con);
     if (iff->in(1)->Opcode() == Op_Opaque4) {
       if (!assertion_predicate_has_loop_opaque_node(iff)) {
         // No OpaqueLoop* node? Then it's one of the two Initialized Assertion Predicates:
@@ -2028,7 +2045,6 @@ void PhaseIdealLoop::update_main_loop_assertion_predicates(Node* ctrl, CountedLo
         assert(!assertion_predicate_has_loop_opaque_node(prev_proj->in(0)->as_If()), "unexpected");
       }
     }
-    entry = entry->in(0)->in(0);
   }
   if (prev_proj != ctrl) {
     _igvn.replace_input_of(outer_loop_head, LoopNode::EntryControl, prev_proj);
@@ -2046,18 +2062,26 @@ void PhaseIdealLoop::copy_assertion_predicates_to_post_loop(LoopNode* main_loop_
 
   Node* ctrl = main_loop_entry;
   Node* prev_proj = post_loop_entry;
+  // go through a temporary list to preserve predicate's order
+  Node_List predicates;
   while (ctrl != nullptr && ctrl->is_Proj() && ctrl->in(0)->is_If()) {
     IfNode* iff = ctrl->in(0)->as_If();
     ProjNode* proj = iff->proj_out(1 - ctrl->as_Proj()->_con);
     if (proj->unique_ctrl_out()->Opcode() != Op_Halt) {
       break;
     }
+    predicates.push(ctrl);
+    ctrl = ctrl->in(0)->in(0);
+  }
+  while (predicates.size() > 0) {
+    ctrl = predicates.pop();
+    IfNode* iff = ctrl->in(0)->as_If();
+    ProjNode* proj = iff->proj_out(1 - ctrl->as_Proj()->_con);
     if (iff->in(1)->Opcode() == Op_Opaque4 && assertion_predicate_has_loop_opaque_node(iff)) {
       prev_proj = clone_assertion_predicate_and_initialize(iff, init, stride, ctrl, proj, post_loop_entry,
                                                            post_loop, prev_proj);
       assert(!assertion_predicate_has_loop_opaque_node(prev_proj->in(0)->as_If()), "unexpected");
     }
-    ctrl = ctrl->in(0)->in(0);
   }
   if (prev_proj != post_loop_entry) {
     _igvn.replace_input_of(post_loop_head, LoopNode::EntryControl, prev_proj);
@@ -2804,6 +2828,10 @@ Node* PhaseIdealLoop::add_range_check_elimination_assertion_predicate(IdealLoopT
   bool overflow = false;
   BoolNode* bol = rc_predicate(loop, ctrl, scale_con, offset, value, nullptr, stride_con,
                                limit, (stride_con > 0) != (scale_con > 0), overflow);
+  return add_assertion_predicate_test(loop, ctrl, overflow, bol);
+}
+
+Node* PhaseIdealLoop::add_assertion_predicate_test(IdealLoopTree* loop, Node* ctrl, bool overflow, BoolNode* bol) {
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   register_new_node(opaque_bol, ctrl);
   IfNode* new_iff = nullptr;
@@ -2907,6 +2935,7 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   assert(loop_entry->is_Proj() && loop_entry->in(0)->is_If(), "if projection only");
 
   // Check loop body for tests of trip-counter plus loop-invariant vs loop-variant.
+  Node* max_value = nullptr;
   for (uint i = 0; i < loop->_body.size(); i++) {
     Node *iff = loop->_body[i];
     if (iff->Opcode() == Op_If ||
@@ -3014,15 +3043,11 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
                                                                        int_limit, stride_con, opaque_init);
           assert(assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
 
-          Node* opaque_stride = new OpaqueLoopStrideNode(C, cl->stride());
-          register_new_node(opaque_stride, loop_entry);
-          Node* max_value = new SubINode(opaque_stride, cl->stride());
-          register_new_node(max_value, loop_entry);
-          max_value = new AddINode(opaque_init, max_value);
-          register_new_node(max_value, loop_entry);
-          // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
-          max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
-          register_new_node(max_value, loop_entry);
+          if (max_value == nullptr) {
+            // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
+            BoolNode* bol = iv_phi_assertion_predicate_condition(cl, loop_entry, opaque_init, max_value);
+            loop_entry = add_assertion_predicate_test(loop, loop_entry, true, bol);
+          }
           loop_entry = add_range_check_elimination_assertion_predicate(loop, loop_entry, scale_con, int_offset,
                                                                        int_limit, stride_con, max_value);
           assert(assertion_predicate_has_loop_opaque_node(loop_entry->in(0)->as_If()), "unexpected");
@@ -3135,6 +3160,37 @@ void PhaseIdealLoop::do_range_check(IdealLoopTree *loop, Node_List &old_new) {
   _igvn.replace_input_of(opqzm, 1, main_limit);
 
   return;
+}
+
+BoolNode* PhaseIdealLoop::iv_phi_assertion_predicate_condition(const CountedLoopNode* cl, Node* ctrl,
+                                                               Node* opaque_init,
+                                                               Node*& max_value) {
+  const Type* phi_t = cl->phi()->bottom_type();
+  Node* opaque_stride = new OpaqueLoopStrideNode(C, cl->stride());
+  register_new_node(opaque_stride, ctrl);
+  max_value = new SubINode(opaque_stride, cl->stride());
+  register_new_node(max_value, ctrl);
+  max_value = new AddINode(opaque_init, max_value);
+  register_new_node(max_value, ctrl);
+  BoolNode* bol;
+  if (cl->stride_con() > 0) {
+    Node* lo = _igvn.intcon(phi_t->is_int()->_lo);
+    set_ctrl(lo, C->root());
+    Node* cmp = new CmpINode(max_value, lo);
+    register_new_node(cmp, ctrl);
+    bol = new BoolNode(cmp, BoolTest::ge);
+    register_new_node(bol, ctrl);
+  } else {
+    Node* hi = _igvn.intcon(phi_t->is_int()->_hi);
+    set_ctrl(hi, C->root());
+    Node* cmp = new CmpINode(max_value, hi);
+    register_new_node(cmp, ctrl);
+    bol = new BoolNode(cmp, BoolTest::le);
+    register_new_node(bol, ctrl);
+  }
+  max_value = new CastIINode(max_value, phi_t);
+  register_new_node(max_value, ctrl);
+  return bol;
 }
 
 bool IdealLoopTree::compute_has_range_checks() const {
