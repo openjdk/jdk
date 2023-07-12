@@ -87,7 +87,7 @@ static float[] test() {
 }
 ```
 
-However, the size does not have to be specified. In most cases, one either wants to have vectorization at the maximal possible vector width, or no vectorization at all. Hence, the default size is `IRNode.VECTOR_SIZE_MAX`, except when using `failOn` or `counts` with comparisons `<`, `<=` or `=0`, where we have a default of `IRNode.VECTOR_SIZE_ANY`.
+However, the size does not have to be specified. In most cases, one either wants to have vectorization at the maximal possible vector width, or no vectorization at all. Hence, for lower bound counts ('>' or '>=') the default size is `IRNode.VECTOR_SIZE_MAX`, and for upper bound counts ('<' or '<=' or '=0' or failOn) the default is `IRNode.VECTOR_SIZE_ANY`. Equal count comparisons with a strictly positive count (e.g. '=2') are not allowed for vector nodes. On machines with 'canTrustVectorSize == false' (cascade lake) the maximal vector width is not predictable currently. Hence, on such a machine we have to automatically weaken the IR rules. All lower bound counts are performed checking with `IRNode.VECTOR_SIZE_ANY`. Upper bound counts with no user specified size are performed with `IRNode.VECTOR_SIZE_ANY` but upper bound counts with a user specified size are not checked at all. Details and reasoning can be found in [RawIRNode](./driver/irmatching/irrule/checkattribute/parsing/RawIRNode.java).
 
 More examples can be found in [IRExample](../../../testlibrary_tests/ir_framework/examples/IRExample.java). You can also find many examples in the Vector API and SuperWord tests, when searching for `IRNode.VECTOR_SIZE` or `IRNode.LOAD_VECTOR`.
 

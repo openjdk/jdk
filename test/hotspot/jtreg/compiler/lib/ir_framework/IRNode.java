@@ -105,6 +105,8 @@ public class IRNode {
     private static final String STORE_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
     private static final String LOAD_OF_CLASS_POSTFIX = "(:|\\+)\\S* \\*" + END;
 
+    public static final String IMPOSSIBLE_NODE_REGEX = "impossible_node_regex";
+
     public static final String IS_REPLACED = "#IS_REPLACED#"; // Is replaced by an additional user-defined string.
 
     public static final String VECTOR_SIZE = "_@";

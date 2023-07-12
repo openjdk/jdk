@@ -25,7 +25,9 @@ package compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsin
 
 import compiler.lib.ir_framework.CompilePhase;
 import compiler.lib.ir_framework.IRNode;
+import compiler.lib.ir_framework.shared.Comparison;
 import compiler.lib.ir_framework.shared.TestFormat;
+import compiler.lib.ir_framework.shared.TestFrameworkException;
 import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 
 /**
@@ -53,12 +55,12 @@ public class RawIRNode {
         return IRNode.getDefaultPhase(node);
     }
 
-    public String regex(CompilePhase compilePhase, VMInfo vmInfo, String vectorSizeDefault) {
+    public String regex(CompilePhase compilePhase, VMInfo vmInfo, Comparison.Bound bound) {
         String nodeRegex = node;
         if (IRNode.isIRNode(node)) {
             nodeRegex = IRNode.getRegexForCompilePhase(node, compilePhase);
             if (IRNode.isVectorIRNode(node)) {
-                nodeRegex = regexForVectorIRNode(nodeRegex, vmInfo, vectorSizeDefault);
+                nodeRegex = regexForVectorIRNode(nodeRegex, vmInfo, bound);
             } else if (userPostfix.isValid()) {
                 nodeRegex = nodeRegex.replaceAll(IRNode.IS_REPLACED, userPostfix.value());
             }
@@ -66,18 +68,62 @@ public class RawIRNode {
         return nodeRegex;
     }
 
-    private String regexForVectorIRNode(String nodeRegex, VMInfo vmInfo, String vectorSizeDefault) {
+    private String regexForVectorIRNode(String nodeRegex, VMInfo vmInfo, Comparison.Bound bound) {
+        TestFormat.checkNoReport(bound != Comparison.Bound.EQUAL,
+                                 "IR Vector Nodes do not allow equal comparison with strictly positive number. Please use \"<=\" and \">=\"");
         String type = IRNode.getVectorNodeType(node);
         TestFormat.checkNoReport(IRNode.getTypeSizeInBytes(type) > 0,
                                  "Vector node's type must have valid type, got \"" + type + "\" for \"" + node + "\"");
-        String size;
+        String size = null;
         if (userPostfix.isValid()) {
             String value = userPostfix.value();
             TestFormat.checkNoReport(value.startsWith(IRNode.VECTOR_SIZE),
                                      "Vector node's vector size must start with IRNode.VECTOR_SIZE, got: \"" + value + "\"");
             size = value.substring(2);
-        } else {
-            size = vectorSizeDefault;
+
+            if (!vmInfo.canTrustVectorSize()) {
+                // Parse it already just to get errors before we overwrite size
+                IRNode.parseVectorNodeSize(size, type, vmInfo);
+            }
+        }
+
+        // Set default values in some cases:
+        if (!userPostfix.isValid() || !vmInfo.canTrustVectorSize()) {
+            switch (bound) {
+                case Comparison.Bound.LOWER -> {
+                    // For lower bound we check for the maximal size by default. But if we cannot trust the
+                    // vector size we at least check there are vectors of any size.
+                    if (vmInfo.canTrustVectorSize()) {
+                        size = IRNode.VECTOR_SIZE_TAG_MAX;
+                    } else {
+                        System.out.println("WARNING: you are on a system with \"canTrustVectorSize == false\" (cascade lake).");
+                        System.out.println("         The lower bound rule for \"" + node + "\" is now performed with");
+                        System.out.println("         \"IRNode.VECTOR_SIZE_TAG_ANY\" instead of \"IRNode.VECTOR_SIZE_TAG_MAX\".");
+                        size = IRNode.VECTOR_SIZE_TAG_ANY;
+                    }
+                }
+                case Comparison.Bound.UPPER -> {
+                    if (userPostfix.isValid()) {
+                        TestFormat.checkNoReport(!vmInfo.canTrustVectorSize(), "sanity");
+                        // If we have a size specified but cannot trust the size, and must check an upper
+                        // bound, this can be impossible to count correctly - if we have an incorrect size
+                        // we may count either too many nodes. We just create a impossible regex which will
+                        // always have count zero and make the upper bound rule pass.
+                        System.out.println("WARNING: you are on a system with \"canTrustVectorSize == false\" (cascade lake).");
+                        System.out.println("         The upper bound rule for \"" + node + "\" cannot be checked.");
+                        return IRNode.IMPOSSIBLE_NODE_REGEX;
+                    } else {
+                        // For upper bound we check for vectors of any size by default.
+                        size = IRNode.VECTOR_SIZE_TAG_ANY;
+                    }
+                }
+                case Comparison.Bound.EQUAL -> {
+                    // Equal comparison to a strictly positive number would lead us to an impossible
+                    // situation: we might have to know the exact vector size or else we count too many
+                    // or too few cases. Because of this we forbid this case in general.
+                    throw new TestFrameworkException("impossible");
+                }
+            }
         }
         String sizeRegex = IRNode.parseVectorNodeSize(size, type, vmInfo);
         return nodeRegex.replaceAll(IRNode.IS_REPLACED,

@@ -304,8 +304,12 @@ class FailingExamples {
     @IR(counts = {IRNode.LOAD_VECTOR_F, "> 0"},
         applyIf = {"MaxVectorSize", ">16"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
-    // By default, we look for IRNode.VECTOR_SIZE_ANY. But there is one of size 4.
+    // By default, we look for IRNode.VECTOR_SIZE_ANY. But there are some of size 4.
     @IR(failOn = {IRNode.LOAD_VECTOR_F},
+        applyIf = {"MaxVectorSize", ">=16"},
+        applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
+    // By default, we look for IRNode.VECTOR_SIZE_ANY. But there are at least two of size 4.
+    @IR(counts = {IRNode.LOAD_VECTOR_F, "<2"},
         applyIf = {"MaxVectorSize", ">=16"},
         applyIfCPUFeatureOr = {"sse2", "true", "asimd", "true"})
     static float[] badTestVectorNodeSize() {

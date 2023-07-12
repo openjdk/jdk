@@ -30,10 +30,10 @@ import compiler.lib.ir_framework.IRNode;
 import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.driver.irmatching.irrule.checkattribute.parsing.RawIRNode;
 import compiler.lib.ir_framework.driver.irmatching.irrule.constraint.Constraint;
+import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 import compiler.lib.ir_framework.shared.Comparison;
 import compiler.lib.ir_framework.shared.TestFormat;
 import compiler.lib.ir_framework.shared.TestFormatException;
-import compiler.lib.ir_framework.driver.irmatching.parser.VMInfo;
 
 /**
  * This class represents a raw constraint of a {@link IR#counts()} attribute.
@@ -56,35 +56,36 @@ public class RawCountsConstraint implements RawConstraint {
         return rawIRNode.defaultCompilePhase();
     }
 
-    private boolean expectMaxSizeForVectorNode() {
+    private Comparison.Bound getComparisonBound() {
         switch (comparison.getComparator()) {
             case "<" -> {
                 TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Node count comparison \"<" +
                                          comparison.getGivenValue() + "\" is not allowed: always false.");
                 TestFormat.checkNoReport(comparison.getGivenValue() > 1, "Node count comparison \"<" +
                                          comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
-                return false; // any
+                return Comparison.Bound.UPPER;
             }
             case "<=" -> {
                 TestFormat.checkNoReport(comparison.getGivenValue() >= 0, "Node count comparison \"<=" +
                                          comparison.getGivenValue() + "\" is not allowed: always false.");
                 TestFormat.checkNoReport(comparison.getGivenValue() >= 1, "Node count comparison \"<=" +
                                          comparison.getGivenValue() + "\" should be rewritten as \"=0\"");
-                return false; // any
+                return Comparison.Bound.UPPER;
             }
             case "=" -> {
-                // if 0, we expect none -> expect to not find any with any size
-                return comparison.getGivenValue() > 0;
+                // "=0" is same as setting upper bound - just like for failOn. But i we compare equals a
+                // strictly positive number it is like setting both and upper and lower bound (equal).
+                return comparison.getGivenValue() > 0 ? Comparison.Bound.EQUAL : Comparison.Bound.UPPER;
             }
             case ">" -> {
                 TestFormat.checkNoReport(comparison.getGivenValue() >= 0, "Node count comparison \">" +
                                          comparison.getGivenValue() + "\" is useless, please only use positive numbers.");
-                return true; // max
+                return Comparison.Bound.LOWER;
             }
             case ">=" -> {
                 TestFormat.checkNoReport(comparison.getGivenValue() > 0, "Node count comparison \">=" +
                                          comparison.getGivenValue() + "\" is useless, please only use strictly positive numbers with greater-equal.");
-                return true; // max
+                return Comparison.Bound.LOWER;
             }
             case "!=" -> throw new TestFormatException("Not-equal comparator not supported. Please rewrite the rule.");
             default -> throw new TestFormatException("Comparator not handled: " + comparison.getComparator());
@@ -94,7 +95,6 @@ public class RawCountsConstraint implements RawConstraint {
     @Override
     public Constraint parse(CompilePhase compilePhase, String compilationOutput, VMInfo vmInfo) {
         TestFramework.check(compilePhase != CompilePhase.DEFAULT, "must not be default");
-        String vectorSizeTag = expectMaxSizeForVectorNode() ? IRNode.VECTOR_SIZE_TAG_MAX : IRNode.VECTOR_SIZE_TAG_ANY;
-        return Constraint.createCounts(rawIRNode.regex(compilePhase, vmInfo, vectorSizeTag), constraintIndex, comparison, compilationOutput);
+        return Constraint.createCounts(rawIRNode.regex(compilePhase, vmInfo, getComparisonBound()), constraintIndex, comparison, compilationOutput);
     }
 }

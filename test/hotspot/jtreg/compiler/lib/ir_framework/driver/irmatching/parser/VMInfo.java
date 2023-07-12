@@ -27,6 +27,8 @@ import compiler.lib.ir_framework.TestFramework;
 import compiler.lib.ir_framework.shared.TestFrameworkException;
 
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * This class stores the key value mapping from the VMInfo.
@@ -39,6 +41,9 @@ public class VMInfo {
      */
     private final Map<String, String> keyValueMap;
 
+    private static final Pattern CPU_SKYLAKE_PATTERN =
+            Pattern.compile("family 6 model 85 stepping (\\d) ");
+
     public VMInfo(Map<String, String> map) {
         this.keyValueMap = map;
 
@@ -47,6 +52,10 @@ public class VMInfo {
         TestFramework.check(isKey("LoopMaxUnroll"), "VMInfo does not contain LoopMaxUnroll");
         System.err.println("--- VMInfo from Test VM ---");
         System.err.println("cpuFeatures:   " + getStringValue("cpuFeatures"));
+        if (!canTrustVectorSize()) {
+            System.err.println(" -> \"canTrustVectorSize == false\". Some vector node checks are weaker on this platform.");
+            System.err.println("   -> isCascadeLake: " + isCascadeLake());
+        }
         System.err.println("MaxVectorSize: " + getLongValue("MaxVectorSize"));
         System.err.println("LoopMaxUnroll: " + getLongValue("LoopMaxUnroll"));
     }
@@ -67,6 +76,26 @@ public class VMInfo {
     public boolean hasCPUFeature(String feature) {
         String features = getStringValue("cpuFeatures") + ",";
         return features.contains(" " + feature + ",");
+    }
+
+    public boolean isCascadeLake() {
+        Matcher matcher = CPU_SKYLAKE_PATTERN.matcher(getStringValue("cpuFeatures"));
+        if (!matcher.find()) {
+            return false; // skylake pattern not found
+        }
+        String stepping = matcher.group(1).trim();
+        return Long.parseLong(stepping) >= 5; // this makes it cascade lake
+    }
+
+    /**
+     * Some platforms do not behave as expected, and one cannot trust that the vectors
+     * make use of the full MaxVectorSize. For Cascade Lake we by default only use
+     * 32 bytes even though MaxVectorSize is 64. But if the flag is explicitly set to
+     * 64 then we use 64 bytes. Thus MaxVectorSize is not a reliable indicator for the
+     * expected maximal vector size on that platform.
+     */
+    public boolean canTrustVectorSize() {
+        return !isCascadeLake();
     }
 
     public boolean isKey(String key) {
