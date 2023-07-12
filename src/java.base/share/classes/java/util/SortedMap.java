@@ -316,8 +316,14 @@ public interface SortedMap<K,V> extends SequencedMap<K,V> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this interface returns an instance of a reverse-ordered
-     * SortedMap that delegates its operations to this SortedMap.
+     * The implementation in this interface returns a reverse-ordered SortedMap
+     * view. The {@code reversed()} method of the view returns a reference
+     * to this SortedMap. Other operations on the view are implemented via calls to
+     * public methods on this SortedMap. The exact relationship between calls on the
+     * view and calls on this SortedMap is unspecified. However, order-sensitive
+     * operations generally delegate to the appropriate method with the opposite
+     * orientation. For example, calling {@code firstEntry} on the view results in
+     * a call to {@code lastEntry} on this SortedMap.
      *
      * @return a reverse-ordered view of this map, as a {@code SortedMap}
      * @since 21

@@ -28,6 +28,7 @@ package gc.z;
  * @requires vm.gc.ZGenerational
  * @summary Test ZGC "High Usage" rule
  * @library /test/lib
+ * @ignore 8308843
  * @run main/othervm gc.z.TestHighUsage
  */
 

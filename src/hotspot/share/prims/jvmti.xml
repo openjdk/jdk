@@ -1416,7 +1416,7 @@ jvmtiEnv *jvmti;
         <example>
             JVMTI_THREAD_STATE_ALIVE + JVMTI_THREAD_STATE_WAITING +
                 JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT +
-                JVMTI_THREAD_STATE_MONITOR_WAITING
+                JVMTI_THREAD_STATE_IN_OBJECT_WAIT
         </example>
         The state of a thread suspended while runnable would be:
         <example>
