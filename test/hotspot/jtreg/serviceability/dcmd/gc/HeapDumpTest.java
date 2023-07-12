@@ -61,7 +61,7 @@ public class HeapDumpTest {
         String cmd = "GC.heap_dump " +
                     (overwrite ? "-overwrite " : " ") +
                     heapDumpArgs +
-                    "-parallel=" + parallelNum +
+                    " -parallel=" + parallelNum +
                     " " +
                     dump.getAbsolutePath();
         executor.execute(cmd);

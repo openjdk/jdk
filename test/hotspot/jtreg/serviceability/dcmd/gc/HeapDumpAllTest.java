@@ -42,11 +42,11 @@ public class HeapDumpAllTest extends HeapDumpTest {
     }
 
     @Override
-    public void run(CommandExecutor executor, boolean overwrite) throws IOException {
+    public void run(CommandExecutor executor, boolean overwrite, int parallelNum) throws IOException {
         // Trigger gc by hand, so the created heap dump isnt't too large and
         // takes too long to parse.
         System.gc();
-        super.run(executor, overwrite);
+        super.run(executor, overwrite, parallelNum);
     }
 
     /* See HeapDumpTest for test cases */
