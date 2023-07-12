@@ -101,11 +101,11 @@ public:
     }
   }
 
-  static Chunk* allocate_chunk(AllocFailType alloc_failmode, size_t length);
+  static Chunk* allocate_chunk(size_t length, AllocFailType alloc_failmode);
   static void deallocate_chunk(Chunk* p);
 };
 
-Chunk* ChunkPool::allocate_chunk(AllocFailType alloc_failmode, size_t length) {
+Chunk* ChunkPool::allocate_chunk(size_t length, AllocFailType alloc_failmode) {
   // - requested_size = sizeof(Chunk)
   // - length = payload size
   // We must ensure that the boundaries of the payload (C and D) are aligned to 64-bit:
@@ -203,7 +203,7 @@ void Chunk::next_chop(Chunk* k) {
 
 Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0)  {
   init_size = ARENA_ALIGN(init_size);
-  _first = _chunk = ChunkPool::allocate_chunk(AllocFailStrategy::EXIT_OOM, init_size);
+  _first = _chunk = ChunkPool::allocate_chunk(init_size, AllocFailStrategy::EXIT_OOM);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   MemTracker::record_new_arena(flag);
@@ -211,7 +211,7 @@ Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0) 
 }
 
 Arena::Arena(MEMFLAGS flag) : _flags(flag), _size_in_bytes(0) {
-  _first = _chunk = ChunkPool::allocate_chunk(AllocFailStrategy::EXIT_OOM, Chunk::init_size);
+  _first = _chunk = ChunkPool::allocate_chunk(Chunk::init_size, AllocFailStrategy::EXIT_OOM);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
   MemTracker::record_new_arena(flag);
@@ -266,7 +266,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   }
 
   Chunk *k = _chunk;            // Get filled-up chunk address
-  _chunk = ChunkPool::allocate_chunk(alloc_failmode, len);
+  _chunk = ChunkPool::allocate_chunk(len, alloc_failmode);
 
   if (_chunk == nullptr) {
     _chunk = k;                 // restore the previous value of _chunk
