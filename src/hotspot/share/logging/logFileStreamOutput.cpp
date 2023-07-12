@@ -23,6 +23,7 @@
  */
 #include "precompiled.hpp"
 #include "jvm.h"
+#include "logging/logAsyncWriter.hpp"
 #include "logging/logDecorators.hpp"
 #include "logging/logDecorations.hpp"
 #include "logging/logFileStreamOutput.hpp"
@@ -117,31 +118,47 @@ bool LogFileStreamOutput::flush() {
   total += result;                                            \
 }
 
-int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
+int LogFileStreamOutput::write_internal(const LogDecorations& decorations, const char* msg) {
+  int written = 0;
   const bool use_decorations = !_decorators.is_empty();
 
-  int written = 0;
-  FileLocker flocker(_stream);
   if (use_decorations) {
     WRITE_LOG_WITH_RESULT_CHECK(write_decorations(decorations), written);
     WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
   }
   WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg), written);
+  return written;
+}
+
+int LogFileStreamOutput::write_blocking(const LogDecorations& decorations, const char* msg) {
+  int written = write_internal(decorations, msg);
+  return flush() ? written : -1;
+}
+
+int LogFileStreamOutput::write(const LogDecorations& decorations, const char* msg) {
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, decorations, msg);
+    return 0;
+  }
+
+  FileLocker flocker(_stream);
+  int written = write_internal(decorations, msg);
 
   return flush() ? written : -1;
 }
 
 int LogFileStreamOutput::write(LogMessageBuffer::Iterator msg_iterator) {
-  const bool use_decorations = !_decorators.is_empty();
+  AsyncLogWriter* aio_writer = AsyncLogWriter::instance();
+  if (aio_writer != nullptr) {
+    aio_writer->enqueue(*this, msg_iterator);
+    return 0;
+  }
 
   int written = 0;
   FileLocker flocker(_stream);
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
-    if (use_decorations) {
-      WRITE_LOG_WITH_RESULT_CHECK(write_decorations(msg_iterator.decorations()), written);
-      WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, " "), written);
-    }
-    WRITE_LOG_WITH_RESULT_CHECK(jio_fprintf(_stream, "%s\n", msg_iterator.message()), written);
+    written += write_internal(msg_iterator.decorations(), msg_iterator.message());
   }
 
   return flush() ? written : -1;

@@ -25,6 +25,7 @@
 #include "logging/logAsyncWriter.hpp"
 #include "logging/logConfiguration.hpp"
 #include "logging/logFileOutput.hpp"
+#include "logging/logFileStreamOutput.hpp"
 #include "logging/logHandle.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
@@ -56,7 +57,7 @@ void AsyncLogWriter::enqueue_locked(const AsyncLogMessage& msg) {
   _lock.notify();
 }
 
-void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decorations, const char* msg) {
+void AsyncLogWriter::enqueue(LogFileStreamOutput& output, const LogDecorations& decorations, const char* msg) {
   AsyncLogMessage m(&output, decorations, os::strdup(msg));
 
   { // critical area
@@ -67,7 +68,7 @@ void AsyncLogWriter::enqueue(LogFileOutput& output, const LogDecorations& decora
 
 // LogMessageBuffer consists of a multiple-part/multiple-line messsage.
 // The lock here guarantees its integrity.
-void AsyncLogWriter::enqueue(LogFileOutput& output, LogMessageBuffer::Iterator msg_iterator) {
+void AsyncLogWriter::enqueue(LogFileStreamOutput& output, LogMessageBuffer::Iterator msg_iterator) {
   AsyncLogLocker locker;
 
   for (; !msg_iterator.is_at_end(); msg_iterator++) {
@@ -95,7 +96,7 @@ class AsyncLogMapIterator {
 
  public:
   AsyncLogMapIterator(AsyncLogBuffer& logs) :_logs(logs) {}
-  bool do_entry(LogFileOutput* output, uint32_t* counter) {
+  bool do_entry(LogFileStreamOutput* output, uint32_t* counter) {
     using none = LogTagSetMapping<LogTag::__NO_TAG>;
 
     if (*counter > 0) {

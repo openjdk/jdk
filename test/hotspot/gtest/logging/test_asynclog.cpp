@@ -66,6 +66,38 @@ LOG_LEVEL_LIST
     log_trace(logging)("log_trace-test");
     log_debug(logging)("log_debug-test");
   }
+
+  void test_asynclog_drop_messages() {
+    if (AsyncLogWriter::instance() != nullptr) {
+      const size_t sz = 100;
+
+      // shrink async buffer.
+      AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz * 1024 /*in byte*/);
+      LogMessage(logging) lm;
+
+      // write 100x more messages than its capacity in burst
+      for (size_t i = 0; i < sz * 100; ++i) {
+        lm.debug("a lot of log...");
+      }
+      lm.flush();
+    }
+  }
+
+  // stdout/stderr support
+  bool write_to_file(const std::string& output) {
+    FILE* f = fopen(TestLogFileName, "w");
+
+    if (f != NULL) {
+      size_t sz = output.size();
+      size_t written = fwrite(output.c_str(), sizeof(char), output.size(), f);
+
+      if (written == sz * sizeof(char)) {
+        return fclose(f) == 0;
+      }
+    }
+
+    return false;
+  }
 };
 
 TEST_VM(AsyncLogBufferTest, fifo) {
@@ -198,19 +230,48 @@ TEST_VM_F(AsyncLogTest, logMessage) {
 
 TEST_VM_F(AsyncLogTest, droppingMessage) {
   set_log_config(TestLogFileName, "logging=debug");
-  const size_t sz = 100;
+  test_asynclog_drop_messages();
+
+  AsyncLogWriter::flush();
+  if (AsyncLogWriter::instance() != nullptr) {
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+  }
+}
+
+TEST_VM_F(AsyncLogTest, stdoutOutput) {
+  testing::internal::CaptureStdout();
+  set_log_config("stdout", "logging=debug");
+
+  test_asynclog_ls();
+  test_asynclog_drop_messages();
+
+  AsyncLogWriter::flush();
+  EXPECT_TRUE(write_to_file(testing::internal::GetCapturedStdout()));
+
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
 
   if (AsyncLogWriter::instance() != nullptr) {
-    // shrink async buffer.
-    AutoModifyRestore<size_t> saver(AsyncLogBufferSize, sz * 1024 /*in byte*/);
-    LogMessage(logging) lm;
+    EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
+  }
+}
 
-    // write 100x more messages than its capacity in burst
-    for (size_t i = 0; i < sz * 100; ++i) {
-      lm.debug("a lot of log...");
-    }
-    lm.flush();
-    AsyncLogWriter::flush();
+TEST_VM_F(AsyncLogTest, stderrOutput) {
+  testing::internal::CaptureStderr();
+  set_log_config("stderr", "logging=debug");
+
+  test_asynclog_ls();
+  test_asynclog_drop_messages();
+
+  AsyncLogWriter::flush();
+  EXPECT_TRUE(write_to_file(testing::internal::GetCapturedStderr()));
+
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "LogStreamWithAsyncLogImpl"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream msg1-msg2-msg3"));
+  EXPECT_TRUE(file_contains_substring(TestLogFileName, "logStream newline"));
+
+  if (AsyncLogWriter::instance() != nullptr) {
     EXPECT_TRUE(file_contains_substring(TestLogFileName, "messages dropped due to async logging"));
   }
 }
