@@ -96,7 +96,7 @@ void *safe_Calloc(size_t num, size_t size) {
         throw std::bad_alloc();
     }
 
-    return nullptr;
+    return ptr;
 }
 
 void *safe_Realloc(void *memblock, size_t size) {
