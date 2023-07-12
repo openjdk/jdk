@@ -291,10 +291,13 @@ class AbstractAssembler : public ResourceObj  {
 #endif
 
   // sign-extended tolerant cast needed by callers of emit_int8 and emit_int16
+  // Some callers pass signed types that need to fit into the unsigned type so check
+  // that the range is correct.
   template <typename T>
   constexpr T narrow_cast(int x) const {
    if (x < 0) {
-    assert(x > -(std::numeric_limits<T>::max() - 1), "too negative");
+    using stype = std::make_signed_t<T>;
+    assert(x >= std::numeric_limits<stype>::min(), "too negative"); // >= -128 for 8 bits
     return static_cast<T>(x);  // cut off sign bits
    } else {
      return checked_cast<T>(x);

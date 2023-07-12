@@ -221,7 +221,7 @@ public:
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
     target &= ~mask;
-    target |= checked_cast<unsigned>(val);
+    target |= (unsigned)val;
     *(unsigned *)a = target;
   }
 
@@ -236,7 +236,7 @@ public:
     mask <<= lsb;
     unsigned target = *(unsigned *)a;
     target &= ~mask;
-    target |= checked_cast<unsigned>(uval);
+    target |= (unsigned)uval;
     *(unsigned *)a = target;
   }
 
@@ -265,7 +265,7 @@ public:
     uint64_t uval = val;
     unsigned mask = checked_cast<unsigned>(right_n_bits(nbits));
     uval &= mask;
-    f(checked_cast<unsigned>(uval), lsb + nbits - 1, lsb);
+    f((unsigned)uval, lsb + nbits - 1, lsb);
   }
 
   void rf(Register r, int lsb) {
