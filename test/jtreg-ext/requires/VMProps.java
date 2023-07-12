@@ -126,6 +126,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.cds.supports.aot.class.linking", this::vmCDSSupportsAOTClassLinking);
         map.put("vm.cds.supports.aot.code.caching", this::vmCDSSupportsAOTCodeCaching);
         map.put("vm.cds.write.archived.java.heap", this::vmCDSCanWriteArchivedJavaHeap);
+        map.put("vm.cds.write.mapped.java.heap", this::vmCDSCanWriteMappedArchivedJavaHeap);
+        map.put("vm.cds.write.streamed.java.heap", this::vmCDSCanWriteStreamedArchivedJavaHeap);
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
@@ -467,6 +469,26 @@ public class VMProps implements Callable<Map<String, String>> {
      */
     protected String vmCDSCanWriteArchivedJavaHeap() {
         return "" + ("true".equals(vmCDS()) && WB.canWriteJavaHeapArchive()
+                     && isCDSRuntimeOptionsCompatible());
+    }
+
+    /**
+     * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
+     *         with the current set of jtreg VM options. For example, false will be returned
+     *         if -XX:-UseCompressedClassPointers is specified or G1 is not used,
+     */
+    protected String vmCDSCanWriteMappedArchivedJavaHeap() {
+        return "" + ("true".equals(vmCDS()) && WB.canWriteMappedJavaHeapArchive()
+                     && isCDSRuntimeOptionsCompatible());
+    }
+
+    /**
+     * @return true if it's possible for "java -Xshare:dump" to write Java heap objects
+     *         with the current set of jtreg VM options. For example, false will be returned
+     *         if -XX:-UseCompressedClassPointers is specified,
+     */
+    protected String vmCDSCanWriteStreamedArchivedJavaHeap() {
+        return "" + ("true".equals(vmCDS()) && WB.canWriteStreamedJavaHeapArchive()
                      && isCDSRuntimeOptionsCompatible());
     }
 

@@ -633,6 +633,10 @@ void CollectedHeap::before_exit() {
   stop();
 }
 
+size_t CollectedHeap::bootstrap_max_memory() const {
+  return MaxNewSize;
+}
+
 #ifndef PRODUCT
 
 bool CollectedHeap::promotion_should_fail(volatile size_t* count) {

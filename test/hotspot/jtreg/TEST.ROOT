@@ -85,6 +85,8 @@ requires.properties= \
     vm.cds.supports.aot.class.linking \
     vm.cds.supports.aot.code.caching \
     vm.cds.write.archived.java.heap \
+    vm.cds.write.mapped.java.heap \
+    vm.cds.write.streamed.java.heap \
     vm.continuations \
     vm.jvmti \
     vm.graal.enabled \

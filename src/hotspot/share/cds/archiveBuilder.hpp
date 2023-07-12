@@ -39,7 +39,8 @@
 #include "utilities/hashTable.hpp"
 #include "utilities/resizableHashTable.hpp"
 
-class ArchiveHeapInfo;
+class ArchiveMappedHeapInfo;
+class ArchiveStreamedHeapInfo;
 class CHeapBitMap;
 class FileMapInfo;
 class Klass;
@@ -245,9 +246,11 @@ private:
     size_t _num_nulled_ptrs;
   } _relocated_ptr_info;
 
-  void print_region_stats(FileMapInfo *map_info, ArchiveHeapInfo* heap_info);
+  void print_region_stats(FileMapInfo *map_info,
+                          ArchiveMappedHeapInfo* mapped_heap_info,
+                          ArchiveStreamedHeapInfo* streamed_heap_info);
   void print_bitmap_region_stats(size_t size, size_t total_size);
-  void print_heap_region_stats(ArchiveHeapInfo* heap_info, size_t total_size);
+  void print_heap_region_stats(char* start, size_t size, size_t total_size);
 
   // For global access.
   static ArchiveBuilder* _current;
@@ -434,7 +437,9 @@ public:
   void make_klasses_shareable();
   void make_training_data_shareable();
   void relocate_to_requested();
-  void write_archive(FileMapInfo* mapinfo, ArchiveHeapInfo* heap_info);
+  void write_archive(FileMapInfo* mapinfo,
+                     ArchiveMappedHeapInfo* mapped_heap_info,
+                     ArchiveStreamedHeapInfo* streamed_heap_info);
   void write_region(FileMapInfo* mapinfo, int region_idx, DumpRegion* dump_region,
                     bool read_only,  bool allow_exec);
 
@@ -502,6 +507,7 @@ public:
     return (Symbol*)current()->get_buffered_addr((address)src_symbol);
   }
 
+  static void log_as_hex(address base, address top, address requested_base, bool is_heap = false);
   void print_stats();
   void report_out_of_space(const char* name, size_t needed_bytes);
 

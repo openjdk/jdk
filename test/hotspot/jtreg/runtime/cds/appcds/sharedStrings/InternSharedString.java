@@ -25,8 +25,7 @@
 /*
  * @test
  * @summary Test shared strings together with string intern operation
- * @requires vm.cds.write.archived.java.heap
- * @requires vm.gc == null
+ * @requires vm.cds.write.mapped.java.heap
  * @library /test/hotspot/jtreg/runtime/cds/appcds /test/lib
  * @compile InternStringTest.java
  * @build jdk.test.whitebox.WhiteBox

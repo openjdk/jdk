@@ -128,7 +128,7 @@ private:
   // [2] _is_two_dimensional_shared_strings_array = true: _shared_strings_array is an Object[][]
   //     This happens when there are too many elements in the shared table. We store them
   //     using two levels of objArrays, such that none of the arrays are too big for
-  //     ArchiveHeapWriter::is_too_large_to_archive(). In this case, the index is splited into two
+  //     AOTMappedHeapWriter::is_too_large_to_archive(). In this case, the index is splited into two
   //     parts. Each shared string is stored as _shared_strings_array[primary_index][secondary_index]:
   //
   //           [bits 31 .. 14][ bits 13 .. 0  ]
@@ -147,6 +147,7 @@ private:
   static oop lookup_shared(const jchar* name, int len) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static size_t shared_entry_count() NOT_CDS_JAVA_HEAP_RETURN_(0);
   static void allocate_shared_strings_array(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
+  static void load_shared_strings_array() NOT_CDS_JAVA_HEAP_RETURN;
   static oop init_shared_strings_array() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   static void write_shared_table() NOT_CDS_JAVA_HEAP_RETURN;
   static void set_shared_strings_array_index(int root_index) NOT_CDS_JAVA_HEAP_RETURN;

@@ -503,6 +503,9 @@ traceid JfrThreadLocal::assign_thread_id(const Thread* t, JfrThreadLocal* tl) {
     assert(can_assign(t), "invariant");
     if (t->is_Java_thread()) {
       tid = load_java_thread_id(t);
+      if (tid == 0) {
+        tid = JavaThread::cast(t)->monitor_owner_id();
+      }
       tl->_jvm_thread_id = tid;
       AtomicAccess::store(&tl->_vthread_id, tid);
       return tid;

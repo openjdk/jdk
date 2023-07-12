@@ -26,6 +26,7 @@
 
 #include "cds/aotLinkedClassBulkLoader.hpp"
 #include "cds/aotMetaspace.hpp"
+#include "cds/aotThread.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
@@ -378,6 +379,10 @@ void Threads::initialize_java_lang_classes(JavaThread* main_thread, TRAPS) {
   initialize_class(vmSymbols::java_lang_reflect_Method(), CHECK);
   initialize_class(vmSymbols::java_lang_ref_Finalizer(), CHECK);
 
+  if (HeapShared::is_loading_streaming_mode()) {
+    AOTThread::materialize_thread_object();
+  }
+
   // Phase 1 of the system initialization in the library, java.lang.System class initialization
   call_initPhase1(CHECK);
 
@@ -604,14 +609,6 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // of hangs during error reporting.
   WatcherThread::start();
 
-  // Add main_thread to threads list to finish barrier setup with
-  // on_thread_attach.  Should be before starting to build Java objects in
-  // init_globals2, which invokes barriers.
-  {
-    MutexLocker mu(Threads_lock);
-    Threads::add(main_thread);
-  }
-
   status = init_globals2();
   if (status != JNI_OK) {
     Threads::remove(main_thread, false);
@@ -694,6 +691,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
 
   // No more stub generation allowed after that point.
   StubCodeDesc::freeze();
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (HeapShared::is_archived_heap_in_use()) {
+    HeapShared::enable_gc();
+  }
+#endif
 
   // Set flag that basic initialization has completed. Used by exceptions and various
   // debug stuff, that does not work until all basic classes have been initialized.
@@ -881,6 +884,12 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   //   aren't, late joiners might appear to start slowly (we might
   //   take a while to process their first tick).
   WatcherThread::run_all_tasks();
+
+#if INCLUDE_CDS_JAVA_HEAP
+  if (HeapShared::is_archived_heap_in_use()) {
+    HeapShared::finish_materialize_objects();
+  }
+#endif
 
   create_vm_timer.end();
 #ifdef ASSERT
