@@ -624,6 +624,13 @@ void ClassLoaderData::unload() {
   // Clean up global class iterator for compiler
   ClassLoaderDataGraph::adjust_saved_class(this);
 
+  // Release C heap allocated hashtable for all the packages.
+  if (_packages != nullptr) {
+    // Destroy the table itself
+    delete _packages;
+    _packages = nullptr;
+  }
+
   // Release C heap allocated hashtable for all the modules.
   if (_modules != nullptr) {
     // Destroy the table itself
@@ -636,6 +643,11 @@ void ClassLoaderData::unload() {
     // Destroy the table itself
     delete _dictionary;
     _dictionary = nullptr;
+  }
+
+  if (_unnamed_module != nullptr) {
+    delete _unnamed_module;
+    _unnamed_module = nullptr;
   }
 }
 
@@ -740,18 +752,6 @@ ClassLoaderData::~ClassLoaderData() {
 
   // Release the WeakHandle
   _holder.release(Universe::vm_weak());
-
-  // Release C heap allocated hashtable for all the packages.
-  if (_packages != nullptr) {
-    // Destroy the table itself
-    delete _packages;
-    _packages = nullptr;
-  }
-
-  if (_unnamed_module != nullptr) {
-    delete _unnamed_module;
-    _unnamed_module = nullptr;
-  }
 
   // release the metaspace
   ClassLoaderMetaspace *m = _metaspace;
