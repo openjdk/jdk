@@ -629,17 +629,20 @@ public class ConstMethod extends Metadata {
     return (getFlags() & HAS_GENERIC_SIGNATURE) != 0;
   }
 
-  private Address getAddressAtOffset(int offsetInWords) {
+  private Address getAddressAtOffset(long offsetInWords) {
     return getAddress().getAddressAt(offsetInWords * VM.getVM().getAddressSize());
   }
 
-  // Pointers to annotations are stored towards the end of the ConstMethod in following format:
+  // Pointers to annotations are stored towards the end of the ConstMethod in following format.
+  // Each of the pointer may or may not be present.
   //
+  //            |<-------------- getSize() -----------------|
   //   start of ConstMethod                          end of ConstMethod
   //            |                                           |
   //            V                                           V
   //            | ... | default | type | parameter | method |
   //
+  // These methods return the offset of the pointer to the requested annotation from the end of ConstMethod.
   private int getMethodAnnotationsOffset() {
     return 1;
   }

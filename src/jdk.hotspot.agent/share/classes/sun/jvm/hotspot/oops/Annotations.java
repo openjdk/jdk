@@ -45,6 +45,9 @@ public class Annotations extends Metadata {
       });
   }
 
+  private ArrayOfU1Array fieldAnnotationsArray;
+  private ArrayOfU1Array fieldTypeAnnotationsArray;
+
   public Annotations(Address addr) {
     super(addr);
   }
@@ -70,10 +73,12 @@ public class Annotations extends Metadata {
   }
 
   public U1Array getFieldAnnotations(int fieldIndex) {
-    Address addr = fieldsAnnotations.getValue(getAddress());
-    ArrayOfU1Array annotationsArray = VMObjectFactory.newObject(ArrayOfU1Array.class, addr);
-    if (annotationsArray != null) {
-      addr = annotationsArray.at(fieldIndex);
+    if (fieldAnnotationsArray == null) {
+      Address addr = fieldsAnnotations.getValue(getAddress());
+      fieldAnnotationsArray = VMObjectFactory.newObject(ArrayOfU1Array.class, addr);
+    }
+    if (fieldAnnotationsArray != null) {
+      Address addr = fieldAnnotationsArray.at(fieldIndex);
       return VMObjectFactory.newObject(U1Array.class, addr);
     } else {
       return null;
@@ -86,10 +91,12 @@ public class Annotations extends Metadata {
   }
 
   public U1Array getFieldTypeAnnotations(int fieldIndex) {
-    Address addr = fieldsTypeAnnotations.getValue(getAddress());
-    ArrayOfU1Array annotationsArray = VMObjectFactory.newObject(ArrayOfU1Array.class, addr);
-    if (annotationsArray != null) {
-      addr = annotationsArray.at(fieldIndex);
+    if (fieldTypeAnnotationsArray == null) {
+      Address addr = fieldsTypeAnnotations.getValue(getAddress());
+      fieldTypeAnnotationsArray = VMObjectFactory.newObject(ArrayOfU1Array.class, addr);
+    }
+    if (fieldTypeAnnotationsArray != null) {
+      Address addr = fieldTypeAnnotationsArray.at(fieldIndex);
       return VMObjectFactory.newObject(U1Array.class, addr);
     } else {
       return null;
