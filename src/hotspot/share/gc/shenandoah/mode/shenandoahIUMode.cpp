@@ -72,7 +72,7 @@ ShenandoahHeuristics* ShenandoahIUMode::initialize_heuristics() const {
   } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
     return new ShenandoahStaticHeuristics();
   } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-    return new ShenandoahAdaptiveHeuristics();
+    return new ShenandoahAdaptiveHeuristics(ShenandoahHeap::heap());
   } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
     return new ShenandoahCompactHeuristics();
   }
