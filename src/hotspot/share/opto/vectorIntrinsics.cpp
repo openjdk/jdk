@@ -592,16 +592,12 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   const TypeInt*     step_val      = gvn().type(argument(5))->isa_int();
   const TypeInt*     wrap          = gvn().type(argument(6))->isa_int();
 
-  Node* start = argument(4);
-  Node* step  = argument(5);
-
-  if (shuffle_klass == nullptr || vlen == nullptr || start_val == nullptr || step_val == nullptr || wrap == nullptr) {
-    return false; // dead code
-  }
-  if (!vlen->is_con() || !is_power_of_2(vlen->get_con()) ||
-      shuffle_klass->const_oop() == nullptr || !wrap->is_con()) {
+  if (shuffle_klass == nullptr || shuffle_klass->const_oop() == nullptr ||
+      vlen == nullptr || !vlen->is_con() || start_val == nullptr || step_val == nullptr ||
+      wrap == nullptr || !wrap->is_con()) {
     return false; // not enough info for intrinsification
   }
+
   if (!is_klass_initialized(shuffle_klass)) {
     if (C->print_intrinsics()) {
       tty->print_cr("  ** klass argument not initialized");
@@ -613,33 +609,50 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
   int num_elem = vlen->get_con();
   BasicType elem_bt = T_BYTE;
 
-  if (!arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed)) {
+  bool effective_indices_in_range = false;
+  if (start_val->is_con() && step_val->is_con()) {
+    int effective_min_index = start_val->get_con();
+    int effective_max_index = start_val->get_con() + step_val->get_con() * (num_elem - 1);
+    effective_indices_in_range = effective_max_index >= effective_min_index && effective_min_index >= -128 && effective_max_index <= 127;
+  }
+
+  if (!do_wrap && !effective_indices_in_range) {
+    // Disable instrinsification for unwrapped shuffle iota if start/step
+    // values are non-constant OR if intermediate result overflows byte value range.
     return false;
   }
-  if (!arch_supports_vector(Op_AddVB, num_elem, elem_bt, VecMaskNotUsed)) {
+
+  if (!arch_supports_vector(Op_AddVB, num_elem, elem_bt, VecMaskNotUsed)           ||
+      !arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)            ||
+      !arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed) ||
+      !arch_supports_vector(VectorNode::replicate_opcode(elem_bt), num_elem, elem_bt, VecMaskNotUsed)) {
     return false;
   }
-  if (!arch_supports_vector(Op_AndV, num_elem, elem_bt, VecMaskNotUsed)) {
+
+  if (!do_wrap &&
+      (!arch_supports_vector(Op_SubVB, num_elem, elem_bt, VecMaskNotUsed)       ||
+      !arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskNotUsed)  ||
+      !arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskNotUsed))) {
     return false;
   }
-  if (!arch_supports_vector(Op_VectorLoadConst, num_elem, elem_bt, VecMaskNotUsed)) {
-    return false;
-  }
-  if (!arch_supports_vector(Op_VectorBlend, num_elem, elem_bt, VecMaskUseLoad)) {
-    return false;
-  }
-  if (!arch_supports_vector(Op_VectorMaskCmp, num_elem, elem_bt, VecMaskUseStore)) {
+
+  bool step_multiply = !step_val->is_con() || !is_power_of_2(step_val->get_con());
+  if ((step_multiply && !arch_supports_vector(Op_MulVB, num_elem, elem_bt, VecMaskNotUsed)) ||
+      (!step_multiply && !arch_supports_vector(Op_LShiftVB, num_elem, elem_bt, VecMaskNotUsed))) {
     return false;
   }
 
   const Type * type_bt = Type::get_const_basic_type(elem_bt);
   const TypeVect * vt  = TypeVect::make(type_bt, num_elem);
 
-  Node* res =  gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), vt));
+  Node* res = gvn().transform(new VectorLoadConstNode(gvn().makecon(TypeInt::ZERO), vt));
 
-  if(!step_val->is_con() || !is_power_of_2(step_val->get_con())) {
+  Node* start = argument(4);
+  Node* step  = argument(5);
+
+  if (step_multiply) {
     Node* bcast_step     = gvn().transform(VectorNode::scalar2vector(step, num_elem, type_bt));
-    res = gvn().transform(VectorNode::make(Op_MulI, res, bcast_step, num_elem, elem_bt));
+    res = gvn().transform(VectorNode::make(Op_MulVB, res, bcast_step, vt));
   } else if (step_val->get_con() > 1) {
     Node* cnt = gvn().makecon(TypeInt::make(log2i_exact(step_val->get_con())));
     Node* shift_cnt = vector_shift_count(cnt, Op_LShiftI, elem_bt, num_elem);
@@ -648,24 +661,25 @@ bool LibraryCallKit::inline_vector_shuffle_iota() {
 
   if (!start_val->is_con() || start_val->get_con() != 0) {
     Node* bcast_start    = gvn().transform(VectorNode::scalar2vector(start, num_elem, type_bt));
-    res = gvn().transform(VectorNode::make(Op_AddI, res, bcast_start, num_elem, elem_bt));
+    res = gvn().transform(VectorNode::make(Op_AddVB, res, bcast_start, vt));
   }
 
   Node * mod_val = gvn().makecon(TypeInt::make(num_elem-1));
   Node * bcast_mod  = gvn().transform(VectorNode::scalar2vector(mod_val, num_elem, type_bt));
-  if(do_wrap)  {
+
+  if (do_wrap)  {
     // Wrap the indices greater than lane count.
-    res = gvn().transform(VectorNode::make(Op_AndI, res, bcast_mod, num_elem, elem_bt));
+     res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
   } else {
-    ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(BoolTest::ge));
+    ConINode* pred_node = (ConINode*)gvn().makecon(TypeInt::make(BoolTest::ugt));
     Node * lane_cnt  = gvn().makecon(TypeInt::make(num_elem));
     Node * bcast_lane_cnt = gvn().transform(VectorNode::scalar2vector(lane_cnt, num_elem, type_bt));
     const TypeVect* vmask_type = TypeVect::makemask(elem_bt, num_elem);
-    Node* mask = gvn().transform(new VectorMaskCmpNode(BoolTest::ge, bcast_lane_cnt, res, pred_node, vmask_type));
+    Node* mask = gvn().transform(new VectorMaskCmpNode(BoolTest::ugt, bcast_lane_cnt, res, pred_node, vmask_type));
 
-    // Make the indices greater than lane count as -ve values. This matches the java side implementation.
-    res = gvn().transform(VectorNode::make(Op_AndI, res, bcast_mod, num_elem, elem_bt));
-    Node * biased_val = gvn().transform(VectorNode::make(Op_SubI, res, bcast_lane_cnt, num_elem, elem_bt));
+    // Make the indices greater than lane count as -ve values to match the java side implementation.
+    res = gvn().transform(VectorNode::make(Op_AndV, res, bcast_mod, vt));
+    Node * biased_val = gvn().transform(VectorNode::make(Op_SubVB, res, bcast_lane_cnt, vt));
     res = gvn().transform(new VectorBlendNode(biased_val, res, mask));
   }
 

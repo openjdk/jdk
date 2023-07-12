@@ -77,7 +77,19 @@
           "Use CPU_ALLOC code path in os::active_processor_count ")     \
                                                                         \
   product(bool, DumpPerfMapAtExit, false, DIAGNOSTIC,                   \
-          "Write map file for Linux perf tool at exit")
+          "Write map file for Linux perf tool at exit")                 \
+                                                                        \
+  product(intx, TimerSlack, -1, EXPERIMENTAL,                           \
+          "Overrides the timer slack value to the given number of "     \
+          "nanoseconds. Lower value provides more accurate "            \
+          "high-precision timers, at the expense of (possibly) worse "  \
+          "power efficiency. In current Linux, 0 means using the "      \
+          "system-wide default, which would disable the override, but " \
+          "VM would still print the current timer slack values. Use -1 "\
+          "to disable both the override and the printouts."             \
+          "See prctl(PR_SET_TIMERSLACK) for more info.")                \
+                                                                        \
+
 
 // end of RUNTIME_OS_FLAGS
 

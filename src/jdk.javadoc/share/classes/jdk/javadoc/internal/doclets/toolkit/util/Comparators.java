@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -238,17 +238,8 @@ public class Comparators {
                  */
                 @Override
                 public int compare(Element e1, Element e2) {
-                    int result;
                     // first, compare names as appropriate
-                    if ((utils.isModule(e1) || utils.isPackage(e1)) && (utils.isModule(e2) || utils.isPackage(e2))) {
-                        result = compareFullyQualifiedNames(e1, e2);
-                    } else if (utils.isModule(e1) || utils.isPackage(e1)) {
-                        result = utils.compareStrings(utils.getFullyQualifiedName(e1), utils.getSimpleName(e2));
-                    } else if (utils.isModule(e2) || utils.isPackage(e2)) {
-                        result = utils.compareStrings(utils.getSimpleName(e1), utils.getFullyQualifiedName(e2));
-                    } else {
-                        result = compareNames(e1, e2);
-                    }
+                    int result = utils.compareStrings(getIndexElementKey(e1), getIndexElementKey(e2));
                     if (result != 0) {
                         return result;
                     }
@@ -272,6 +263,20 @@ public class Comparators {
             };
         }
         return indexUseComparator;
+    }
+
+    /**
+     * {@return the element's primary key for use in the index comparator}
+     * This method can be used by other comparators which need to produce results
+     * that are consistent with the index comparator.
+     *
+     * @param element an element
+     */
+    public String getIndexElementKey(Element element) {
+        return switch (element.getKind()) {
+            case MODULE, PACKAGE -> utils.getFullyQualifiedName(element);
+            default -> utils.getSimpleName(element);
+        };
     }
 
     private Comparator<TypeMirror> typeMirrorClassUseComparator = null;
