@@ -160,7 +160,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      * @param tree the tree node
      * @return {@code true} if this taglet accepts this tree node
      */
-    public boolean accepts(BlockTagTree tree) {
+    private boolean accepts(BlockTagTree tree) {
         return (tree.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG && tagKind == DocTree.Kind.UNKNOWN_BLOCK_TAG)
                 ? tree.getTagName().equals(name)
                 : tree.getKind() == tagKind;

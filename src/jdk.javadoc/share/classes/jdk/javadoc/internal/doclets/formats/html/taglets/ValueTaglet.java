@@ -54,6 +54,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
  * in the following format:  [fully qualified class name]#[constant field name].
  */
 public class ValueTaglet extends BaseTaglet {
+
     ValueTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.VALUE, true, EnumSet.allOf(Taglet.Location.class));
     }

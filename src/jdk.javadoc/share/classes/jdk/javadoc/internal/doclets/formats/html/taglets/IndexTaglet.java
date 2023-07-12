@@ -43,6 +43,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * nested javadoc tags.
  */
 public class IndexTaglet extends BaseTaglet {
+
     IndexTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.INDEX, true, EnumSet.allOf(Taglet.Location.class));
     }

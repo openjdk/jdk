@@ -41,6 +41,7 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
  * A taglet that represents the {@code @systemProperty} tag.
  */
 public class SystemPropertyTaglet extends BaseTaglet {
+
     SystemPropertyTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.SYSTEM_PROPERTY, true, EnumSet.allOf(Taglet.Location.class));
     }

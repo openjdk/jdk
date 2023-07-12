@@ -44,6 +44,7 @@ import javax.lang.model.util.SimpleElementVisitor14;
 
 import com.sun.source.doctree.DocTree;
 
+import com.sun.source.doctree.InlineTagTree;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
 import jdk.javadoc.internal.doclets.formats.html.HtmlIds;
@@ -285,7 +286,7 @@ public class TagletWriter {
      * @return the content, or {@code null}
      */
     public Content getInlineTagOutput(Element holder,
-                                      DocTree inlineTag) {
+                                      InlineTagTree inlineTag) {
         var tagletManager = configuration.tagletManager;
         Map<String, Taglet> inlineTags = tagletManager.getInlineTaglets();
         CommentHelper ch = configuration.utils.getCommentHelper(holder);

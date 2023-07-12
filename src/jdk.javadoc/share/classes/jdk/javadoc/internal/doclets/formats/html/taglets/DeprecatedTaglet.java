@@ -45,6 +45,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
  * A taglet that represents the {@code @deprecated} tag.
  */
 public class DeprecatedTaglet extends BaseTaglet {
+
     DeprecatedTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.DEPRECATED, false,
                 EnumSet.of(Taglet.Location.MODULE, Taglet.Location.TYPE, Taglet.Location.CONSTRUCTOR, Taglet.Location.METHOD, Taglet.Location.FIELD));

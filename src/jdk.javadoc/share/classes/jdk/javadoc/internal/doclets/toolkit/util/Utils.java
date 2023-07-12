@@ -2100,7 +2100,7 @@ public class Utils {
 
     /**
      * Returns the "raw" list of block tags from a {@code DocCommentTree}, or an empty list
-     * if the doc-=comment tree is {@code null}.
+     * if the doc-comment tree is {@code null}.
      *
      * Note: The list may include {@code ErroneousTree} nodes.
      *
@@ -2119,7 +2119,7 @@ public class Utils {
      * @param filter  the filter
      * @return the list
      */
-    public List<? extends BlockTagTree> getBlockTags(Element element, Predicate<BlockTagTree> filter) {
+    public List<? extends BlockTagTree> getBlockTags(Element element, Predicate<? super BlockTagTree> filter) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .map(t -> (BlockTagTree) t)
@@ -2136,7 +2136,9 @@ public class Utils {
      * @param filter  the filter
      * @return the list
      */
-    public <T extends BlockTagTree> List<T> getBlockTags(Element element, Predicate<BlockTagTree> filter, Class<T> tClass) {
+    public <T extends BlockTagTree> List<T> getBlockTags(Element element,
+                                                         Predicate<? super BlockTagTree> filter,
+                                                         Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
                 .map(t -> (BlockTagTree) t)
