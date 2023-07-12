@@ -124,7 +124,7 @@ public class D3DScreenUpdateManager extends ScreenUpdateManager
      * Note that this method is called from a synchronized block in
      * WComponentPeer, so we don't need to synchronize
      *
-     * Note that we only create a substibute d3dw surface if certain conditions
+     * Note that we only create a substitute d3dw surface if certain conditions
      * are met
      * <ul>
      *  <li>the fake d3d rendering on screen is not disabled via flag

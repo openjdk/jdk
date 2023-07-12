@@ -61,7 +61,7 @@ public final class StateTrackableDelegate implements StateTrackable {
      * If the specified {@code State} is
      * {@link State#UNTRACKABLE UNTRACKABLE} or
      * {@link State#IMMUTABLE IMMUTABLE}
-     * then the approprirate static instance
+     * then the appropriate static instance
      * {@link #UNTRACKABLE_DELEGATE} or {@link #IMMUTABLE_DELEGATE}
      * is returned.
      */

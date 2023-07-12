@@ -268,7 +268,7 @@ public class Beans {
                     // massaging the URL.
 
                     // First find the "resource name" corresponding to the bean
-                    // itself.  So a serialzied bean "a.b.c" would imply a
+                    // itself.  So a serialized bean "a.b.c" would imply a
                     // resource name of "a/b/c.ser" and a classname of "x.y"
                     // would imply a resource name of "x/y.class".
 

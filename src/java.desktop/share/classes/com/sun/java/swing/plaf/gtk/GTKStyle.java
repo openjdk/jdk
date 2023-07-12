@@ -776,7 +776,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
             if (value != null) {
                 //This is a workaround as the "slider-length" property has been
                 //deprecated for GtkScale from gtk 3.20, so default value of 31
-                //is used and makes redering of slider wrong. Value 14 is being
+                //is used and makes rendering of slider wrong. Value 14 is being
                 //used as default value for Slider.thumbHeight is 14 and making
                 //width 14 as well makes slider thumb render in proper shape
                 if ("Slider.thumbWidth".equals(key) && value.equals(31)) {
@@ -1127,7 +1127,7 @@ class GTKStyle extends SynthStyle implements GTKConstants {
     }
 
     /**
-     * GTKLazyValue is a slimmed down version of <code>ProxyLaxyValue</code>.
+     * GTKLazyValue is a slimmed down version of <code>ProxyLazyValue</code>.
      * The code is duplicate so that it can get at the package private
      * classes in gtk.
      */

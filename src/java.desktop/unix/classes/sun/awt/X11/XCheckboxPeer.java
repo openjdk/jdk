@@ -258,7 +258,7 @@ class XCheckboxPeer extends XComponentPeer implements CheckboxPeer {
     }
 
     private int getCheckboxSize(FontMetrics fm) {
-        // the motif way of sizing is a bit inscutible, but this
+        // the motif way of sizing is a bit inscrutable, but this
         // is a fair approximation
         return (fm.getHeight() * 76 / 100) - 1;
     }

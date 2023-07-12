@@ -47,7 +47,7 @@ public interface  XMSelectionListener {
     * This method is for selection change notification
     *
     * This method will only get called if you use the default constructor
-    * or expilicitly specify PropertyChangeMask.
+    * or explicitly specify PropertyChangeMask.
     */
 
    public void selectionChanged(int screen, XMSelection sel, long owner, XPropertyEvent event);

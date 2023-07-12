@@ -78,7 +78,7 @@ public class DefaultLookup {
             }
             else if (lookup == null) {
                 // null was passed in, but someone has invoked setDefaultLookup
-                // with a non-null value, use an instance of DefautLookup
+                // with a non-null value, use an instance of DefaultLookup
                 // which will fallback to UIManager.
                 lookup = new DefaultLookup();
             }

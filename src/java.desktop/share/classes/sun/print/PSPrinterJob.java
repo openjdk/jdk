@@ -511,9 +511,9 @@ public class PSPrinterJob extends RasterPrinterJob {
 
         // A security check has been performed in the
         // java.awt.print.printerJob.getPrinterJob method.
-        // We use an inner class to execute the privilged open operations.
+        // We use an inner class to execute the privileged open operations.
         // Note that we only open a file if it has been nominated by
-        // the end-user in a dialog that we ouselves put up.
+        // the end-user in a dialog that we ourselves put up.
 
         OutputStream output = null;
 
@@ -885,7 +885,7 @@ public class PSPrinterJob extends RasterPrinterJob {
     }
 
     /**
-     * The RastePrintJob super class calls this method
+     * The RasterPrintJob super class calls this method
      * at the end of each page.
      */
     protected void endPage(PageFormat format, Printable painter,
@@ -1185,7 +1185,7 @@ public class PSPrinterJob extends RasterPrinterJob {
                         Integer.parseInt(mFontProps.getProperty(psName));
 
                 /* If there is no PostScript font for this font name,
-                 * then we want to termintate the loop and the method
+                 * then we want to terminate the loop and the method
                  * indicating our failure. Setting the array to null
                  * is used to indicate these failures.
                  */

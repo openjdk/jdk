@@ -146,7 +146,7 @@ public abstract class BufferedContext {
     }
 
     /**
-     * Fetches the BufferedContextassociated with the surface
+     * Fetches the BufferedContext associated with the surface
      * and disables all context state settings.
      *
      * Note: must be called while the RenderQueue lock is held.

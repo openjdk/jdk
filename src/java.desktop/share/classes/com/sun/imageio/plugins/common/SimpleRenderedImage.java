@@ -79,7 +79,7 @@ public abstract class SimpleRenderedImage implements RenderedImage {
     }
 
     /**
-     * Returns the X coordinate of the column immediatetely to the
+     * Returns the X coordinate of the column immediately to the
      * right of the rightmost column of the image.  getMaxX() is
      * implemented in terms of getMinX() and getWidth() and so does
      * not need to be implemented by subclasses.

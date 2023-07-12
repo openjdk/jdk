@@ -628,7 +628,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "Button.font", ControlFont,
             "Button.background", ControlBackgroundColor,
             // Button.foreground, Button.shadow, Button.darkShadow,
-            // Button.disabledForground, and Button.disabledShadow are only
+            // Button.disabledForeground, and Button.disabledShadow are only
             // used for Windows Classic. Windows XP will use colors
             // from the current visual style.
             "Button.foreground", ControlTextColor,

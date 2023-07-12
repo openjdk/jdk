@@ -1026,7 +1026,7 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         void removeItems() {
             if (lastFocused != null) {
                 if(!lastFocused.requestFocusInWindow()) {
-                    // Workarounr for 4810575.
+                    // Workaround for 4810575.
                     // If lastFocused is not in currently focused window
                     // requestFocusInWindow will fail. In this case we must
                     // request focus by requestFocus() if it was not

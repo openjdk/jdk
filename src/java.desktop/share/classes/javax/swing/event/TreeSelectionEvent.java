@@ -112,7 +112,7 @@ public class TreeSelectionEvent extends EventObject
     /**
       * Returns the paths that have been added or removed from the selection.
       *
-      * @return copy of the array of {@code TreePath} obects for this event.
+      * @return copy of the array of {@code TreePath} objects for this event.
       */
     public TreePath[] getPaths()
     {

@@ -36,7 +36,7 @@ public class XCreateWindowParams extends HashMap<Object, Object> {
     }
     private void init(Object[] map) {
         if (map.length % 2 != 0) {
-            throw new IllegalArgumentException("Map size should be devisible by two");
+            throw new IllegalArgumentException("Map size should be divisible by two");
         }
         for (int i = 0; i < map.length; i += 2) {
             put(map[i], map[i+1]);

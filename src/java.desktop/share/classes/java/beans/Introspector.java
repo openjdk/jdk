@@ -1242,7 +1242,7 @@ public class Introspector {
      */
     static  boolean isSubclass(Class<?> a, Class<?> b) {
         // We rely on the fact that for any given java class or
-        // primtitive type there is a unique Class object, so
+        // primitive type there is a unique Class object, so
         // we can use object equivalence in the comparisons.
         if (a == b) {
             return true;

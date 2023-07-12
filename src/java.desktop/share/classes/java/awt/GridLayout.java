@@ -437,7 +437,7 @@ public class GridLayout implements LayoutManager, java.io.Serializable {
         // 4370316. To position components in the center we should:
         // 1. get an amount of extra space within Container
         // 2. incorporate half of that value to the left/top position
-        // Note that we use trancating division for widthOnComponent
+        // Note that we use truncating division for widthOnComponent
         // The reminder goes to extraWidthAvailable
         int totalGapsWidth = (ncols - 1) * hgap;
         int widthWOInsets = parent.width - (insets.left + insets.right);

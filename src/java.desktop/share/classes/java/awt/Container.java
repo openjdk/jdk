@@ -1774,8 +1774,6 @@ public class Container extends Component {
      * @since 1.0
      */
     public void setFont(Font f) {
-        boolean shouldinvalidate = false;
-
         Font oldfont = getFont();
         super.setFont(f);
         Font newfont = getFont();
@@ -3737,7 +3735,7 @@ public class Container extends Component {
         if (tmpComponent == null) {
             tmpComponent = EMPTY_ARRAY;
         }
-        int ncomponents = (Integer) f.get("ncomponents", 0);
+        int ncomponents = f.get("ncomponents", 0);
         if (ncomponents < 0 || ncomponents > tmpComponent.length) {
             throw new InvalidObjectException("Incorrect number of components");
         }

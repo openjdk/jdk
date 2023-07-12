@@ -631,7 +631,7 @@ public class GIFImageWriter extends ImageWriter {
                     if (imageMetadata.transparentColorFlag) {
                         imageMetadata.transparentColorIndex = index;
                     }
-                    /* NB: transparentColorFlag might have not beed reset for
+                    /* NB: transparentColorFlag might have not been reset for
                        greyscale images but explicitly resetting it here
                        is potentially not right thing to do until we have way
                        to find whether current value was explicitly set by

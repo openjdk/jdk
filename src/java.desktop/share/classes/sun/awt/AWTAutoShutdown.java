@@ -276,7 +276,7 @@ public final class AWTAutoShutdown implements Runnable {
 
     /**
      * Implementation of the Runnable interface.
-     * Incapsulates the blocker thread functionality.
+     * Encapsulates the blocker thread functionality.
      *
      * @see     AWTAutoShutdown#isReadyToShutdown
      */

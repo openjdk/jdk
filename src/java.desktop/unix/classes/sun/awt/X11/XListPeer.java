@@ -443,7 +443,7 @@ class XListPeer extends XComponentPeer implements ListPeer, XScrollbarClient {
 
         if (hsbVis) {
             // do need a horizontal scrollbar, so recalculate height of
-            // vertical s crollbar
+            // vertical scrollbar
             listHeight = height - SCROLLBAR_AREA;
             vis = itemsInWindow(true);
             maximum = items.size() < vis ? vis : items.size();

@@ -4317,7 +4317,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
      * Action is returned, if not and the KeyStroke represents a
      * KeyTyped event and the Keymap has a defaultAction,
      * <code>DefaultActionKey</code> is returned.
-     * <p>KeymapActionMap is then able to transate the object passed in
+     * <p>KeymapActionMap is then able to translate the object passed in
      * to either message the Keymap, or message its default implementation.
      */
     static class KeymapWrapper extends InputMap {

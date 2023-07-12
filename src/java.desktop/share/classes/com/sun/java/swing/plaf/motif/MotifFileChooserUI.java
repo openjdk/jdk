@@ -762,7 +762,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
     }
 
     //
-    // DataModel for Types Comboxbox
+    // DataModel for Types Combobox
     //
     protected FilterComboBoxModel createFilterComboBoxModel() {
         return new FilterComboBoxModel();
@@ -826,7 +826,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
         public Object getSelectedItem() {
             // Ensure that the current filter is in the list.
-            // NOTE: we shouldnt' have to do this, since JFileChooser adds
+            // NOTE: we shouldn't have to do this, since JFileChooser adds
             // the filter to the choosable filters list when the filter
             // is set. Lets be paranoid just in case someone overrides
             // setFileFilter in JFileChooser.

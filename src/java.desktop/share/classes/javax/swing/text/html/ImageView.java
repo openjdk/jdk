@@ -893,7 +893,7 @@ public class ImageView extends View {
     }
 
     /**
-     * Invokes <code>preferenceChanged</code> on the event displatching
+     * Invokes <code>preferenceChanged</code> on the event dispatching
      * thread.
      */
     private void safePreferenceChanged() {

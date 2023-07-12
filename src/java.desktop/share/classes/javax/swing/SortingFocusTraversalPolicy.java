@@ -281,7 +281,7 @@ public class SortingFocusTraversalPolicy
             throw new IllegalArgumentException("aContainer is not a focus cycle root of aComponent");
         }
 
-        // Before all the ckecks below we first see if it's an FTP provider or a focus cycle root.
+        // Before all the checks below we first see if it's an FTP provider or a focus cycle root.
         // If it's the case just go down cycle (if it's set to "implicit").
         Component comp = getComponentDownCycle(aComponent, FORWARD_TRAVERSAL);
         if (comp != null) {

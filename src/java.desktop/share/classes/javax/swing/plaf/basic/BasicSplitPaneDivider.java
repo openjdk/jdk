@@ -970,7 +970,7 @@ public class BasicSplitPaneDivider extends Container
             newY = Math.min(maxX, Math.max(minX, newY - offset));
             return newY;
         }
-    } // End of BasicSplitPaneDividier.VerticalDragController
+    } // End of BasicSplitPaneDivider.VerticalDragController
 
 
     /**
@@ -1118,7 +1118,7 @@ public class BasicSplitPaneDivider extends Container
             int     newLoc;
 
             // We use the location from the UI directly, as the location the
-            // JSplitPane itself maintains is not necessarly correct.
+            // JSplitPane itself maintains is not necessary correct.
             if (toMinimum) {
                 if (orientation == JSplitPane.VERTICAL_SPLIT) {
                     if (currentLoc >= (splitPane.getHeight() -

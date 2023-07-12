@@ -243,7 +243,7 @@ public class StyledEditorKit extends DefaultEditorKit {
             currentParagraph = doc.getParagraphElement(start);
             if (currentParagraph.getStartOffset() == start || dot != mark) {
                 // Get the attributes from the character at the selection
-                // if in a different paragrah!
+                // if in a different paragraph!
                 run = doc.getCharacterElement(start);
             }
             else {

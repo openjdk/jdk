@@ -423,9 +423,9 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * and adds it to the frame.
      * Reverse process for the <code>currentPane</code>.
      *
-     * @param currentPane this {@code Jcomponent} is the current pane being
+     * @param currentPane this {@code JComponent} is the current pane being
      * viewed that has mouse handlers installed
-     * @param newPane this {@code Jcomponent} is the pane which will be added
+     * @param newPane this {@code JComponent} is the pane which will be added
      * and have mouse handlers installed
      */
     protected void replacePane(JComponent currentPane, JComponent newPane) {

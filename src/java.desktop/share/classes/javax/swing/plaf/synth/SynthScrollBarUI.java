@@ -109,7 +109,7 @@ public class SynthScrollBarUI extends BasicScrollBarUI
             incrGap = style.getInt(context, "ScrollBar.incrementButtonGap", 0);
             decrGap = style.getInt(context, "ScrollBar.decrementButtonGap", 0);
 
-            // handle scaling for sizeVarients for special case components. The
+            // handle scaling for sizeVariants for special case components. The
             // key "JComponent.sizeVariant" scales for large/small/mini
             // components are based on Apples LAF
             String scaleKey = (String)scrollbar.getClientProperty(

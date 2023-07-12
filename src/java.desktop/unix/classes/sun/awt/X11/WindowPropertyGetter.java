@@ -92,7 +92,7 @@ public class WindowPropertyGetter {
                 return XConstants.Success;
             }
 
-            // Fix for performance problem - IgnodeBadWindowHandler is
+            // Fix for performance problem - IgnoreBadWindowHandler is
             // used too much without reason, just ignore it
             if (errorHandler instanceof XErrorHandler.IgnoreBadWindowHandler) {
                 errorHandler = null;

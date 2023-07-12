@@ -297,7 +297,7 @@ public class DefaultPersistenceDelegate extends PersistenceDelegate {
 
 
             // The ComponentListener is added automatically, when
-            // Contatiner:add is called on the parent.
+            // Container:add is called on the parent.
             if (listenerType == java.awt.event.ComponentListener.class) {
                 continue;
             }

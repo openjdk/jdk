@@ -2192,7 +2192,7 @@ public abstract class AbstractDocument implements Document, Serializable {
         /**
          * Returns the number of children <code>TreeNode</code>'s
          * receiver contains.
-         * @return the number of children <code>TreeNodews</code>'s
+         * @return the number of children <code>TreeNode</code>'s
          * receiver contains
          */
         public int getChildCount() {

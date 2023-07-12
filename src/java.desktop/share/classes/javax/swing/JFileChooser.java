@@ -1665,7 +1665,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * @see FileSystemView
      */
     @BeanProperty(expert = true, description
-            = "Sets the FileSytemView used to get filesystem information.")
+            = "Sets the FileSystemView used to get filesystem information.")
     public void setFileSystemView(FileSystemView fsv) {
         FileSystemView oldValue = fileSystemView;
         fileSystemView = fsv;

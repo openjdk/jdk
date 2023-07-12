@@ -1602,7 +1602,7 @@ public class IndexColorModel extends ColorModel {
              * We are intentionally not calculating hashCode for validBits,
              * because it is only used for 8-bit indexed screens and they
              * are very rare. It is very unlikely for 2 IndexColorModels
-             * to have different valiBits and have same value for all
+             * to have different validBits and have same value for all
              * other properties.
              */
             result = 7;

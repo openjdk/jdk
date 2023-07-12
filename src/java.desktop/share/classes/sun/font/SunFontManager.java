@@ -2831,7 +2831,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      */
     protected abstract String[] getDefaultPlatformFont();
 
-    // Begin: Refactored from SunGraphicsEnviroment.
+    // Begin: Refactored from SunGraphicsEnvironment.
 
     /*
      * helper function for registerFonts

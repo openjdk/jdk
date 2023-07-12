@@ -1769,7 +1769,7 @@ public class JList<E> extends JComponent implements Scrollable, Accessible
      * during construction to initialize the list's selection model
      * property.
      *
-     * @return a {@code DefaultListSelecitonModel}, used to initialize
+     * @return a {@code DefaultListSelectionModel}, used to initialize
      *         the list's selection model property during construction
      * @see #setSelectionModel
      * @see DefaultListSelectionModel

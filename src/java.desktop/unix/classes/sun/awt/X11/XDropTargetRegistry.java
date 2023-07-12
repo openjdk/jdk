@@ -633,7 +633,7 @@ final class XDropTargetRegistry {
         unregisterEmbeddedDropSite(canvasWindow, clientWindow);
 
         if (logger.isLoggable(PlatformLogger.Level.FINE)) {
-            logger.fine("        XEmbed drop site has beed unregistered for " + Long.toHexString(clientWindow));
+            logger.fine("        XEmbed drop site has been unregistered for " + Long.toHexString(clientWindow));
         }
     }
 

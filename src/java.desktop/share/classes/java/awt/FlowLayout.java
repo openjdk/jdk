@@ -652,7 +652,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
     private static final int currentSerialVersion = 1;
     /**
      * This represent the {@code currentSerialVersion}
-     * which is bein used.  It will be one of two values:
+     * which is being used.  It will be one of two values:
      * {@code 0} versions before Java 2 platform v1.2,
      * {@code 1} versions after  Java 2 platform v1.2.
      *

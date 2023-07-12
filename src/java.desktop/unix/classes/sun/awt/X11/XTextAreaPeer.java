@@ -1270,7 +1270,7 @@ final class XTextAreaPeer extends XComponentPeer implements TextAreaPeer {
         //    is set to a scrollbar or to a scroll-button, then references to their
         //    'Component'-instances are "remembered". And events are dispatched to
         //    these remembered components, without checking, if XTextAreaPeer has
-        //    replaced these instances with another ones. This also aplies to
+        //    replaced these instances with another ones. This also applies to
         //    mouse-drags-from-outside (see comment in 'grabbed_update' method).
 
         void handle( MouseEvent event ) {

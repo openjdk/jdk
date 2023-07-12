@@ -467,7 +467,7 @@ public interface Document {
     /**
      * Inserts a string of content.  This will cause a DocumentEvent
      * of type DocumentEvent.EventType.INSERT to be sent to the
-     * registered DocumentListers, unless an exception is thrown.
+     * registered DocumentListeners, unless an exception is thrown.
      * The DocumentEvent will be delivered by calling the
      * insertUpdate method on the DocumentListener.
      * The offset and length of the generated DocumentEvent

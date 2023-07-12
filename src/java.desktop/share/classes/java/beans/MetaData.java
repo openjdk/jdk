@@ -56,12 +56,12 @@ import sun.swing.PrintColorUIResource;
 import static sun.reflect.misc.ReflectUtil.isPackageAccessible;
 
 /*
- * Like the {@code Intropector}, the {@code MetaData} class
+ * Like the {@code Introspector}, the {@code MetaData} class
  * contains <em>meta</em> objects that describe the way
  * classes should express their state in terms of their
  * own public APIs.
  *
- * @see java.beans.Intropector
+ * @see java.beans.Introspector
  *
  * @author Philip Milne
  * @author Steve Langley
@@ -304,7 +304,7 @@ static final class java_sql_Timestamp_PersistenceDelegate extends java_util_Date
     }
 
     /**
-     * Invoke Timstamp getNanos.
+     * Invoke Timestamp getNanos.
      */
     private static int getNanos(Object obj) {
         if (getNanosMethod == null)

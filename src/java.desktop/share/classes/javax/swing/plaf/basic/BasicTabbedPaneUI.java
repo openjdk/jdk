@@ -616,7 +616,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
     }
 
     /**
-     * Reloads the mnemonics. This should be invoked when a memonic changes,
+     * Reloads the mnemonics. This should be invoked when a mnemonic changes,
      * when the title of a mnemonic changes, or when tabs are added/removed.
      */
     private void updateMnemonics() {

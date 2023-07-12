@@ -44,7 +44,7 @@ import sun.util.logging.PlatformLogger;
 
 
 /**
- * Class incapsulating knowledge about window managers in general
+ * Class encapsulating knowledge about window managers in general
  * Descendants should provide some information about specific window manager.
  */
 final class XWM
@@ -1612,7 +1612,7 @@ final class XWM
                       /*
                        * Now get the actual dimensions of the parent window
                        * resolve the difference.  We can't rely on the left
-                       * to be equal to right or bottom...  Enlightment
+                       * to be equal to right or bottom...  Enlightenment
                        * breaks that assumption.
                        */
                       XlibWrapper.XGetWindowAttributes(XToolkit.getDisplay(),

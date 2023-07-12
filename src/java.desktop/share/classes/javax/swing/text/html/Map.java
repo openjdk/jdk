@@ -93,7 +93,7 @@ class Map implements Serializable {
     }
 
     /**
-     * Returns the AttributeSets representing the differet areas of the Map.
+     * Returns the AttributeSets representing the different areas of the Map.
      */
     public AttributeSet[] getAreas() {
         int numAttributes = (areaAttributes != null) ? areaAttributes.size() :

@@ -127,7 +127,7 @@ public class XMenuBarPeer extends XBaseMenuWindow implements MenuBarPeer {
 
     /*
      * Functions addMenu, delMenu, addHelpMenu
-     * need to have somewhat strange behaivour
+     * need to have somewhat strange behaviour
      * deduced from java.awt.MenuBar.
      * We can not get index of particular item in
      * MenuBar.menus array, because MenuBar firstly

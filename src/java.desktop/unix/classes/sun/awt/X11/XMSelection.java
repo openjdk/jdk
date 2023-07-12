@@ -42,7 +42,7 @@ public class  XMSelection {
      *
      * If owner changes, the ownerChanged of the XMSelectionListener
      * will be called with the screen
-     * number and the new owning window when onwership is established, or
+     * number and the new owning window when ownership is established, or
      * None if the owner is gone.
      *
      * Events in extra_mask are selected for on owning windows (existing

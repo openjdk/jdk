@@ -66,7 +66,7 @@ import javax.swing.SwingUtilities;
  * <p>
  * Say we want to implement addDirtyRegion(Rectangle rect)
  * which sends this region to the
- * {@code handleDirtyRegions(List<Rect> regiouns)} on the EDT.
+ * {@code handleDirtyRegions(List<Rect> regions)} on the EDT.
  * addDirtyRegions better be accumulated before handling on the EDT.
  *
  * <p>

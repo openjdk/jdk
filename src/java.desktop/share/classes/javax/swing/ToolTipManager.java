@@ -220,7 +220,7 @@ public final class ToolTipManager extends MouseAdapter implements MouseMotionLis
     /**
      * Returns the reshow delay property.
      *
-     * @return reshown delay property
+     * @return reshow delay property
      * @see #setReshowDelay
      */
     public int getReshowDelay() {

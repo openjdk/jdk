@@ -57,7 +57,7 @@ public class SortArrowIcon implements Icon, UIResource, Serializable {
     /**
      * Creates a <code>SortArrowIcon</code>.
      *
-     * @param ascending if true, icon respresenting ascending sort, otherwise
+     * @param ascending if true, icon representing ascending sort, otherwise
      *        descending
      * @param color the color to render the icon
      */
@@ -72,7 +72,7 @@ public class SortArrowIcon implements Icon, UIResource, Serializable {
     /**
      * Creates a <code>SortArrowIcon</code>.
      *
-     * @param ascending if true, icon respresenting ascending sort, otherwise
+     * @param ascending if true, icon representing ascending sort, otherwise
      *        descending
      * @param colorKey the key used to find color in UIManager
      */

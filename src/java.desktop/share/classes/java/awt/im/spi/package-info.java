@@ -47,7 +47,7 @@
  * comment character are ignored. The file must be encoded in UTF-8.
  * <p>
  * For example, if the fully-qualified name of the class that implements
- * {@code java.awt.im.spi.InputMethodDesciptor} for the <em>Foo</em> input
+ * {@code java.awt.im.spi.InputMethodDescriptor} for the <em>Foo</em> input
  * method is {@code com.sun.ime.FooInputMethodDescriptor}, the file
  * {@code META-INF/services/java.awt.im.spi.InputMethodDescriptor}
  * contains a line:

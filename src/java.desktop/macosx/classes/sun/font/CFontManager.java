@@ -273,7 +273,7 @@ public final class CFontManager extends SunFontManager {
             if (FontUtilities.debugFonts()) {
                 FontUtilities.logWarning(
                     "The font \"" + realName + "\" is not available, so \"" + fallbackName +
-                    "\" has been substituted, but may have unexpected appearance or behavor. Re-enable the \"" +
+                    "\" has been substituted, but may have unexpected appearance or behavior. Re-enable the \"" +
                     realName +"\" font to remove this warning.");
              }
             return family;

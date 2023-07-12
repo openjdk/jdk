@@ -54,7 +54,7 @@ import java.io.Serializable;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalCheckBoxUI extends MetalRadioButtonUI {
 
-    // NOTE: MetalCheckBoxUI inherts from MetalRadioButtonUI instead
+    // NOTE: MetalCheckBoxUI inherits from MetalRadioButtonUI instead
     // of BasicCheckBoxUI because we want to pick up all the
     // painting changes made in MetalRadioButtonUI.
 

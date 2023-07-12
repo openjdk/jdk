@@ -134,7 +134,7 @@ public abstract class PathGraphics extends ProxyGraphics2D {
     }
 
      /**
-      * Redraw a rectanglular area using a proxy graphics
+      * Redraw a rectangular area using a proxy graphics
       */
     public abstract void redrawRegion(Rectangle2D region,
                                       double scaleX, double scaleY,

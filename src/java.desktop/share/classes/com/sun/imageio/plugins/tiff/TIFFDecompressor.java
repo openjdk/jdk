@@ -1922,7 +1922,7 @@ public abstract class TIFFDecompressor {
 
                 dstOffset += scanlineStride;
             }
-        } else { // ByteOrder.LITLE_ENDIAN
+        } else { // ByteOrder.LITTLE_ENDIAN
             for (int j = 0; j < srcHeight; j++) {
                 for (int i = 0; i < shortsPerRow; i++) {
                     short loVal = b[bOffset++];
@@ -1982,7 +1982,7 @@ public abstract class TIFFDecompressor {
 
                 dstOffset += scanlineStride;
             }
-        } else { // ByteOrder.LITLE_ENDIAN
+        } else { // ByteOrder.LITTLE_ENDIAN
             for (int j = 0; j < srcHeight; j++) {
                 for (int k = 0; k < intsPerRow; k++) {
                     int v3 = b[bOffset++] & 0xff;
@@ -2045,7 +2045,7 @@ public abstract class TIFFDecompressor {
 
                 dstOffset += scanlineStride;
             }
-        } else { // ByteOrder.LITLE_ENDIAN
+        } else { // ByteOrder.LITTLE_ENDIAN
             for (int j = 0; j < srcHeight; j++) {
                 for (int i = 0; i < floatsPerRow; i++) {
                     int v3 = b[bOffset++] & 0xff;
@@ -2115,7 +2115,7 @@ public abstract class TIFFDecompressor {
 
                 dstOffset += scanlineStride;
             }
-        } else { // ByteOrder.LITLE_ENDIAN
+        } else { // ByteOrder.LITTLE_ENDIAN
             for (int j = 0; j < srcHeight; j++) {
                 for (int i = 0; i < doublesPerRow; i++) {
                     long v7 = b[bOffset++] & 0xff;
@@ -2532,7 +2532,7 @@ public abstract class TIFFDecompressor {
             SampleModel sm = ras.getSampleModel();
 
             // Branch based on whether data are bit-contiguous, i.e.,
-            // data are packaed as tightly as possible leaving no unused
+            // data are packed as tightly as possible leaving no unused
             // bits except at the end of a row.
             if(isDataBufferBitContiguous(sm, bitsPerSample)) {
                 // Use byte or float data directly.

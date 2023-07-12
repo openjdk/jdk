@@ -185,7 +185,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
     }
 
     /**
-     * Inititalizes the focusability of the <code>JMenuItem</code>.
+     * Initializes the focusability of the <code>JMenuItem</code>.
      * <code>JMenuItem</code>'s are focusable, but subclasses may
      * want to be, this provides them the opportunity to override this
      * and invoke something else, or nothing at all. Refer to
@@ -808,7 +808,7 @@ public class JMenuItem extends AbstractButton implements Accessible,MenuElement 
      * <code>JMenuItem</code>. For <code>JMenuItem</code>s,
      * the <code>AccessibleContext</code> takes the form of an
      * <code>AccessibleJMenuItem</code>.
-     * A new AccessibleJMenuItme instance is created if necessary.
+     * A new AccessibleJMenuItem instance is created if necessary.
      *
      * @return an <code>AccessibleJMenuItem</code> that serves as the
      *         <code>AccessibleContext</code> of this <code>JMenuItem</code>

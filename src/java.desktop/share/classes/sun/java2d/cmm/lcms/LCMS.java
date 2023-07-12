@@ -95,7 +95,7 @@ final class LCMS implements PCMM {
         }
     }
 
-    /* Helper method used from LCMSColorTransfrom */
+    /* Helper method used from LCMSColorTransform */
     static long createTransform(LCMSProfile[] profiles, int renderingIntent,
                                 int inFormatter, int outFormatter,
                                 Object disposerRef)

@@ -377,7 +377,7 @@ public class JTabbedPane extends JComponent
          * the code in BasicTabbedPaneUI still exists, for the purposes
          * of backward compatibility. Therefore, when making changes to
          * this code, ensure that the BasicTabbedPaneUI code is kept in
-         * synch.
+         * sync.
          */
 
         int selIndex = getSelectedIndex();

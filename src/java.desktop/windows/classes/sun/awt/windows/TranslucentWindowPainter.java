@@ -254,7 +254,7 @@ abstract class TranslucentWindowPainter {
         protected Graphics getGraphics(boolean clear) {
             Graphics g = getBackBuffer(clear).getGraphics();
             /*
-             * This graphics object returned by BuffereImage is not scaled to
+             * This graphics object returned by BufferedImage is not scaled to
              * graphics configuration, but this graphics object can be used by
              * components inside this TranslucentWindow. So need to scale this
              * before returning.

@@ -912,7 +912,7 @@ public class JSplitPane extends JComponent implements Accessible
 
     /**
      * Removes all the child components from the split pane. Resets the
-     * <code>leftComonent</code> and <code>rightComponent</code>
+     * <code>leftComponent</code> and <code>rightComponent</code>
      * instance variables.
      */
     public void removeAll() {

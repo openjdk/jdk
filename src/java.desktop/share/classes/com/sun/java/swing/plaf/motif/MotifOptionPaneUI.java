@@ -53,7 +53,7 @@ public class MotifOptionPaneUI extends BasicOptionPaneUI
     }
 
     /**
-     * Creates and returns a Container containin the buttons. The buttons
+     * Creates and returns a Container containing the buttons. The buttons
      * are created by calling <code>getButtons</code>.
      */
     protected Container createButtonArea() {

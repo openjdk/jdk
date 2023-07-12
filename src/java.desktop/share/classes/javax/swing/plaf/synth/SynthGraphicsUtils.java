@@ -546,7 +546,7 @@ public class SynthGraphicsUtils {
          }
 
          // if the width is even, bump it up one. This is critical
-         // for the focus dash lhne to draw properly
+         // for the focus dash line to draw properly
          if (result.width % 2 == 0) {
              result.width++;
          }

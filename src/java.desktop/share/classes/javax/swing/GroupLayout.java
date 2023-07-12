@@ -3521,7 +3521,7 @@ public class GroupLayout implements LayoutManager2 {
     }
 
 
-    // LinkInfo contains the set of ComponentInfosthat are linked along a
+    // LinkInfo contains the set of ComponentInfos that are linked along a
     // particular axis.
     private static class LinkInfo {
         private final int axis;

@@ -87,10 +87,10 @@ public class MetalToggleButtonUI extends BasicToggleButtonUI {
     public MetalToggleButtonUI() {}
 
     /**
-     * Constructs the {@code MetalToogleButtonUI}.
+     * Constructs the {@code MetalToggleButtonUI}.
      *
      * @param b a component
-     * @return the {@code MetalToogleButtonUI}.
+     * @return the {@code MetalToggleButtonUI}.
      */
     public static ComponentUI createUI(JComponent b) {
         AppContext appContext = AppContext.getAppContext();

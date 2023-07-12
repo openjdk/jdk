@@ -597,7 +597,7 @@ class HTMLCodec extends InputStream {
      *<!--StartFragment--><HTML>...<BODY>...</BODY><HTML><!--EndFragment-->
      * or
      *<HTML>...<!--StartFragment-->...<BODY>...</BODY><!--EndFragment--><HTML>
-     * are vailid too.
+     * are valid too.
      */
     public static byte[] convertToHTMLFormat(byte[] bytes) {
         // Calculate section offsets

@@ -64,7 +64,7 @@ public class DefaultFormatter extends JFormattedTextField.AbstractFormatter
     /** Indicates if the value being edited must match the mask. */
     private boolean allowsInvalid;
 
-    /** If true, editing mode is in overwrite (or strikethough). */
+    /** If true, editing mode is in overwrite (or strikethrough). */
     private boolean overwriteMode;
 
     /** If true, any time a valid edit happens commitEdit is invoked. */

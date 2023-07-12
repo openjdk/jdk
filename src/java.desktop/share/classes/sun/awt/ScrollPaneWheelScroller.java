@@ -33,7 +33,7 @@ import java.awt.event.MouseWheelEvent;
 import sun.util.logging.PlatformLogger;
 
 /*
- * ScrollPaneWheelScroller is a helper class for implmenenting mouse wheel
+ * ScrollPaneWheelScroller is a helper class for implementing mouse wheel
  * scrolling on a java.awt.ScrollPane.  It contains only static methods.
  * No objects of this class may be instantiated, thus it is declared abstract.
  */
@@ -109,7 +109,7 @@ public abstract class ScrollPaneWheelScroller {
                 }
                 else {
                     if (log.isLoggable(PlatformLogger.Level.FINER)) {
-                        log.finer("using NO scrollbar becsause neither is present");
+                        log.finer("using NO scrollbar because neither is present");
                     }
                     return null;
                 }

@@ -157,7 +157,7 @@ public class SynthSliderUI extends BasicSliderUI
             thumbHeight =
                 style.getInt(context, "Slider.thumbHeight", 14);
 
-            // handle scaling for sizeVarients for special case components. The
+            // handle scaling for sizeVariants for special case components. The
             // key "JComponent.sizeVariant" scales for large/small/mini
             // components are based on Apples LAF
             String scaleKey = (String)slider.getClientProperty(

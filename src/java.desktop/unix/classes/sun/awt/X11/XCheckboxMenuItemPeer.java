@@ -49,7 +49,7 @@ final class XCheckboxMenuItemPeer extends XMenuItemPeer
      *
      ************************************************/
 
-    //Prom CheckboxMenuItemtPeer
+    //Prom CheckboxMenuItemPeer
     @Override
     public void setState(boolean t) {
         repaintIfShowing();

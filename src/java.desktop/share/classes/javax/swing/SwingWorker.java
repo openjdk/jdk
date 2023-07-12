@@ -249,7 +249,7 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
 
     /**
      * everything is run inside this FutureTask. Also it is used as
-     * a delegatee for the Future API.
+     * a delegate for the Future API.
      */
     private final FutureTask<T> future;
 

@@ -228,7 +228,7 @@ public class XRCompositeManager {
             xorEnabled = true;
         } else {
             throw new InternalError(
-                    "Composite accaleration not implemented for: "
+                    "Composite acceleration not implemented for: "
                             + comp.getClass().getName());
         }
     }

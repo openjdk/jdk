@@ -75,7 +75,7 @@ public interface TreeNode
      * If the receiver does not contain <code>node</code>, -1 will be
      * returned.
      *
-     * @param   node        node to be loked for
+     * @param   node        node to be looked for
      * @return              index of specified node
      */
     int getIndex(TreeNode node);

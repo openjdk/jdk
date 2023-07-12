@@ -161,11 +161,11 @@ public final class XContentWindow extends XWindow {
 
     public void postPaintEvent(Component target, int x, int y, int w, int h) {
         // TODO: ?
-        // get rid of 'istanceof' by subclassing:
+        // get rid of 'instanceof' by subclassing:
         // XContentWindow -> XFrameContentWindow
 
         // Expose event(s) that result from deiconification
-        // come before a deicinofication notification.
+        // come before a deiconification notification.
         // We reorder these events by saving all expose events
         // that come when the frame is iconified. Then we
         // actually handle saved expose events on deiconification.

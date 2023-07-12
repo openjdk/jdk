@@ -833,7 +833,7 @@ public abstract class ColorModel implements Transparency{
      *  {@code inData} is not large enough to hold a pixel value
      *  for this {@code ColorModel}
      * @throws UnsupportedOperationException if this
-     *  {@code tranferType} is not supported by this
+     *  {@code transferType} is not supported by this
      *  {@code ColorModel}
      */
     public int getAlpha(Object inData) {

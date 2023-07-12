@@ -418,7 +418,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
             insets_corrected = false;
 
             /*
-             * We can be repareted to root for two reasons:
+             * We can be reparented to root for two reasons:
              *   . setVisible(false)
              *   . WM exited
              */
@@ -479,7 +479,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
          */
         Insets correction = difference(correctWM, currentInsets);
         if (insLog.isLoggable(PlatformLogger.Level.FINEST)) {
-            insLog.finest("Corrention {0}", correction);
+            insLog.finest("Correction {0}", correction);
         }
         if (!isNull(correction)) {
             currentInsets = copy(correctWM);
@@ -677,7 +677,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
     }
 
     /**
-     * @param x, y, width, heith - dimensions of the window with insets
+     * @param x, y, width, height - dimensions of the window with insets
      */
     private void reshape(int x, int y, int width, int height, int operation,
                          boolean userReshape)
@@ -782,7 +782,7 @@ abstract class XDecoratedPeer extends XWindowPeer {
 
         /*
          * Some window managers configure before we are reparented and
-         * the send event flag is set! ugh... (Enlighetenment for one,
+         * the send event flag is set! ugh... (Enlightenment for one,
          * possibly MWM as well).  If we haven't been reparented yet
          * this is just the WM shuffling us into position.  Ignore
          * it!!!! or we wind up in a bogus location.

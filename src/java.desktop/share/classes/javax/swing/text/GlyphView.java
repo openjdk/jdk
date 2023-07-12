@@ -973,7 +973,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
     }
 
     /**
-     * Class to hold data needed to justify this GlyphView in a PargraphView.Row
+     * Class to hold data needed to justify this GlyphView in a ParagraphView.Row
      */
     static class JustificationInfo {
         //justifiable content start

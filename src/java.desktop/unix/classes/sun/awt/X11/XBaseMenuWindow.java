@@ -1177,7 +1177,7 @@ public abstract class XBaseMenuWindow extends XWindow {
                   selectItem(getPrevSelectableItem(), true);
               } else {
                   //hide leaf moving focus to its parent
-                  //(equvivalent of pressing ESC)
+                  //(equivalent of pressing ESC)
                   XBaseMenuWindow pwnd = cwnd.getParentMenuWindow();
                   //Fix for 6272952: PIT: Pressing LEFT ARROW on a popup menu throws NullPointerException, XToolkit
                   if (pwnd != null) {

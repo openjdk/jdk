@@ -54,10 +54,9 @@ class PangoFonts {
      * Note that in an X11 multi-screen environment, the default screen
      * is the one used by the JRE so it is safe to use it here.
      */
-    private static double fontScale;
+    private static final double fontScale;
 
     static {
-        fontScale = 1.0d;
         GraphicsEnvironment ge =
            GraphicsEnvironment.getLocalGraphicsEnvironment();
 
@@ -66,6 +65,8 @@ class PangoFonts {
                 ge.getDefaultScreenDevice().getDefaultConfiguration();
             AffineTransform at = gc.getNormalizingTransform();
             fontScale = at.getScaleY();
+        } else {
+            fontScale = 1;
         }
     }
 

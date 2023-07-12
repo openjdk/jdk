@@ -382,7 +382,7 @@ public final class StringContent implements AbstractDocument.Content, Serializab
             rec.offset = undoLocation;
         }
 
-        /** Location to reset to when resetLocatino is invoked. */
+        /** Location to reset to when resetLocation is invoked. */
         protected int undoLocation;
         /** Position to reset offset. */
         protected PosRec rec;

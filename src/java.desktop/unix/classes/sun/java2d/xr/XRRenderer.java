@@ -43,7 +43,7 @@ import static sun.java2d.xr.XRUtils.clampToShort;
 import static sun.java2d.xr.XRUtils.clampToUShort;
 
 /**
- * XRender provides only accalerated rectangles. To emulate higher "order"
+ * XRender provides only accelerated rectangles. To emulate higher "order"
  *  geometry we have to pass everything else to DoPath/FillSpans.
  *
  * TODO: DrawRect could be instrified

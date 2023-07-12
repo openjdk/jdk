@@ -195,7 +195,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
     }
 
     /**
-     * Invalides the current value so that the next invocation of
+     * Invalidates the current value so that the next invocation of
      * <code>createValue</code> will ask for the property again.
      */
     public void invalidate() {

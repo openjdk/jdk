@@ -1570,7 +1570,7 @@ public class DefaultEditorKit extends EditorKit {
         }
 
         /**
-         * Returns adjustsed {@code y} position that indicates the location to scroll to
+         * Returns adjusted {@code y} position that indicates the location to scroll to
          * after selecting <code>index</code>.
          */
         @SuppressWarnings("deprecation")

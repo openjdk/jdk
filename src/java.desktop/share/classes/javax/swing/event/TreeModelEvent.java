@@ -81,7 +81,7 @@ public class TreeModelEvent extends EventObject {
      * starting at the lowest index and working towards the highest. Accumulate
      * a Vector of <code>Integer</code> objects that specify the
      * insert-locations as you go, then convert the Vector to an
-     * array of <code>int</code> to create the event. When the postition-index
+     * array of <code>int</code> to create the event. When the position-index
      * equals zero, the node is inserted at the beginning of the list. When the
      * position index equals the size of the list, the node is "inserted" at
      * (appended to) the end of the list.

@@ -108,7 +108,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
                 "ProgressBar.rotateText", false);
         tileWhenIndeterminate = style.getBoolean(context, "ProgressBar.tileWhenIndeterminate", false);
         tileWidth = style.getInt(context, "ProgressBar.tileWidth", 15);
-        // handle scaling for sizeVarients for special case components. The
+        // handle scaling for sizeVariants for special case components. The
         // key "JComponent.sizeVariant" scales for large/small/mini
         // components are based on Apples LAF
         String scaleKey = (String)progressBar.getClientProperty(
@@ -456,7 +456,7 @@ public class SynthProgressBarUI extends BasicProgressBarUI
             }
         }
 
-        // handle scaling for sizeVarients for special case components. The
+        // handle scaling for sizeVariants for special case components. The
         // key "JComponent.sizeVariant" scales for large/small/mini
         // components are based on Apples LAF
         String scaleKey = (String)progressBar.getClientProperty(

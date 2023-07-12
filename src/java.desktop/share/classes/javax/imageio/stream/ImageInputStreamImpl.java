@@ -613,7 +613,7 @@ public abstract class ImageInputStreamImpl implements ImageInputStream {
     public void setBitOffset(int bitOffset) throws IOException {
         checkClosed();
         if (bitOffset < 0 || bitOffset > 7) {
-            throw new IllegalArgumentException("bitOffset must be betwwen 0 and 7!");
+            throw new IllegalArgumentException("bitOffset must be between 0 and 7!");
         }
         this.bitOffset = bitOffset;
     }

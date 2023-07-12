@@ -2351,7 +2351,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
          * Recreates <code>toDuplicate</code>. This is called when an
          * element needs to be created as the result of an insertion. This
          * will recurse and create all the children. This is similar to
-         * <code>clone</code>, but deteremines the offsets differently.
+         * <code>clone</code>, but determines the offsets differently.
          */
         Element recreateFracturedElement(Element parent, Element toDuplicate) {
             if(toDuplicate.isLeaf()) {

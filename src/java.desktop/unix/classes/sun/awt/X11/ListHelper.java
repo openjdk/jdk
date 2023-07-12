@@ -193,7 +193,7 @@ final class ListHelper implements XScrollbarClient {
 
     /*
      * A getter method for XChoicePeer.
-     * Returns vsbVisiblityChanged value and sets it to false.
+     * Returns vsbVisibilityChanged value and sets it to false.
      */
     boolean checkVsbVisibilityChangedAndReset(){
         boolean returnVal = vsbVisibilityChanged;

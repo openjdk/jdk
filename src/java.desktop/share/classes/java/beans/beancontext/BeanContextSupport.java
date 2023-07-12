@@ -1286,7 +1286,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Fire a BeanContextshipEvent on the BeanContextMembershipListener interface
+     * Fire a BeanContextMembershipEvent on the BeanContextMembershipListener interface
      * @param bcme the event to fire
      */
 
@@ -1300,7 +1300,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
     }
 
     /**
-     * Fire a BeanContextshipEvent on the BeanContextMembershipListener interface
+     * Fire a BeanContextMembershipEvent on the BeanContextMembershipListener interface
      * @param bcme the event to fire
      */
 

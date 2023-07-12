@@ -34,7 +34,7 @@ import java.util.*;
  *
  * NOTE: current caching is disabled because of the big variate of
  * uncovered access to properties/changes of properties.  Once the
- * access to properites is rewritten using general mechanisms, caching
+ * access to properties is rewritten using general mechanisms, caching
  * will be enabled.
  */
 public class XPropertyCache {

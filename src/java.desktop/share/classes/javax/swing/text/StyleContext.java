@@ -496,7 +496,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * behavior of SmallAttributeSet.  This can be reimplemented
      * to return an AttributeSet that provides some sort of
      * attribute conversion.
-     * @param a The set of attributes to be represented in the
+     * @param a The set of attributes to be represented in
      *  the compact form.
      * @return a compact set of attributes that might be shared
      */
@@ -513,7 +513,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * to return a MutableAttributeSet that provides some sort of
      * attribute conversion.
      *
-     * @param a The set of attributes to be represented in the
+     * @param a The set of attributes to be represented in
      *  the larger form.
      * @return a large set of attributes that should trade off
      * space for time
@@ -535,7 +535,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
      * is not found, we create a new set and add it to the pool.
      */
     AttributeSet getImmutableUniqueSet() {
-        // PENDING(prinz) should consider finding a alternative to
+        // PENDING(prinz) should consider finding an alternative to
         // generating extra garbage on search key.
         SmallAttributeSet key = createSmallAttributeSet(search);
         WeakReference<SmallAttributeSet> reference = attributesPool.get(key);

@@ -234,7 +234,7 @@ public class SwingUtilities2 {
     // WARNING WARNING WARNING WARNING WARNING WARNING
     // Many of the following methods are invoked from older API.
     // As this older API was not passed a Component, a null Component may
-    // now be passsed in.  For example, SwingUtilities.computeStringWidth
+    // now be passed in.  For example, SwingUtilities.computeStringWidth
     // is implemented to call SwingUtilities2.stringWidth, the
     // SwingUtilities variant does not take a JComponent, as such
     // SwingUtilities2.stringWidth can be passed a null Component.
@@ -334,7 +334,7 @@ public class SwingUtilities2 {
      * painting.  If a Graphics is not available the JComponent method of
      * the same name should be used.
      * <p>
-     * Callers should pass in a non-null JComonent, the exception
+     * Callers should pass in a non-null JComponent, the exception
      * to this is if a JComponent is not readily available at the time of
      * painting.
      * <p>
@@ -342,7 +342,7 @@ public class SwingUtilities2 {
      * Graphics.
      *
      * @param c JComponent requesting FontMetrics, may be null
-     * @param c Graphics Graphics
+     * @param g Graphics Graphics
      * @param font Font to get FontMetrics for
      */
     @SuppressWarnings("deprecation")
@@ -2187,7 +2187,7 @@ public class SwingUtilities2 {
     /**
      * Sets the InputEvent.ALT_GRAPH mask on any modifier passed to the function
      * @param modifier the modifier passed
-     * @return the modifier retiurned with ALT_GRAPH flag set
+     * @return the modifier returned with ALT_GRAPH flag set
      */
     public static int setAltGraphMask(int modifier) {
         return (modifier | InputEvent.ALT_GRAPH_DOWN_MASK);

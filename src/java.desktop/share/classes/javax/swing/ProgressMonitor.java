@@ -432,7 +432,7 @@ public class ProgressMonitor implements Accessible
     /**
      * Returns the amount of time it will take for the popup to appear.
      *
-     * @return the amont of time in milliseconds it will take for the
+     * @return the amount of time in milliseconds it will take for the
      *         popup to appear
      * @see #setMillisToPopup
      */
@@ -527,7 +527,7 @@ public class ProgressMonitor implements Accessible
          *           JLabel
          *           JProgressBar
          *
-         * The AccessibleProgessMonitor accessibility hierarchy is:
+         * The AccessibleProgressMonitor accessibility hierarchy is:
          *   AccessibleJDialog
          *     AccessibleProgressMonitor
          *       AccessibleJLabel

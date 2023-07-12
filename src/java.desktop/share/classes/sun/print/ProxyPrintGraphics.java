@@ -93,7 +93,7 @@ public class ProxyPrintGraphics extends ProxyGraphics
    /* Spec implies dispose() should flush the page, but the implementation
     * has in fact always done this on the getGraphics() call, thereby
     * ensuring that multiple pages are cannot be rendered simultaneously.
-    * We will preserve that behaviour and there is consqeuently no need
+    * We will preserve that behaviour and there is consequently no need
     * to take any action in this dispose method.
     */
     public void dispose() {

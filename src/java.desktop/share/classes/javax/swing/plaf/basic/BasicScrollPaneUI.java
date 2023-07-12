@@ -370,7 +370,7 @@ public class BasicScrollPaneUI
                         } else {
                            /* The following line can't handle a small value of
                             * viewPosition.x like Integer.MIN_VALUE correctly
-                            * because (max - extent - viewPositoiin.x) causes
+                            * because (max - extent - viewPosition.x) causes
                             * an overflow. As a result, value becomes zero.
                             * (e.g. setViewPosition(Integer.MAX_VALUE, ...)
                             *       in a user program causes a overflow.

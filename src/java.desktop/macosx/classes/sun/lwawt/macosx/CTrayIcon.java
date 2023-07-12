@@ -312,7 +312,7 @@ public class CTrayIcon extends CFRetainedResource implements TrayIconPeer {
      *
      * @param icon        icon to scale
      * @param scaleFactor scale factor to use
-     * @return scaled icon as BuffedredImage
+     * @return scaled icon as BufferedImage
      */
     private static BufferedImage scaleIcon(Icon icon, double scaleFactor) {
         if (icon == null) {

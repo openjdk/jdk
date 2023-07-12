@@ -725,7 +725,7 @@ abstract class CMap {
 
         char[] subHeaderKey = new char[256];
          /* Store subheaders in individual arrays
-          * A SubHeader entry theortically looks like {
+          * A SubHeader entry theoretically looks like {
           *   char firstCode;
           *   char entryCount;
           *   short idDelta;

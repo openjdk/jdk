@@ -760,7 +760,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
                                                          MotifLookAndFeel.class,
                                                          "icons/DesktopIcon.gif"),
             "DesktopIcon.border", null,
-            // These are a little odd, MotifInternalFrameUI isntalls em!
+            // These are a little odd, MotifInternalFrameUI installs em!
             "DesktopIcon.windowBindings", new Object[]
               { "ESCAPE", "hideSystemMenu" },
 

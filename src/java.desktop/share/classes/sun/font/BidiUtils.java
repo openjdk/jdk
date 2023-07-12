@@ -195,7 +195,7 @@ public final class BidiUtils {
         }
 
         // now we'll sort result[], with the following comparison:
-        // result[i] lessthan result[j] iff values[result[i]] < values[result[j]]
+        // result[i] less than result[j] iff values[result[i]] < values[result[j]]
 
         // selection sort for now;  use more elaborate sorts if desired
         for (int i=0; i < result.length-1; i++) {
@@ -245,7 +245,7 @@ public final class BidiUtils {
      * @param levels the levels corresponding to the values
      * @param start the starting offset in the values and levels arrays
      * @param limit the limiting offset in the values and levels arrays
-     * @return the normlized map
+     * @return the normalized map
      */
     public static int[] createNormalizedMap(int[] values, byte[] levels,
                                            int start, int limit) {

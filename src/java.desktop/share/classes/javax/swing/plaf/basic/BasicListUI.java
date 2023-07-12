@@ -363,7 +363,7 @@ public class BasicListUI extends ListUI
 
         for (int colCounter = startColumn; colCounter <= endColumn;
              colCounter++) {
-            // And then how many rows in this columnn
+            // And then how many rows in this column
             int row = convertLocationToRowInColumn(paintBounds.y, colCounter);
             int rowCount = getRowCount(colCounter);
             int index = getModelIndex(colCounter, row);
@@ -2237,7 +2237,7 @@ public class BasicListUI extends ListUI
                         }
                         Rectangle cellBounds = list.getCellBounds(index, index);
                         // go one cell down if first visible cell doesn't fit
-                        // into adjasted visible rectangle
+                        // into adjusted visible rectangle
                         if (cellBounds != null && cellBounds.y < visRect.y) {
                             p.y = cellBounds.y + cellBounds.height;
                             index = list.locationToIndex(p);
@@ -2290,7 +2290,7 @@ public class BasicListUI extends ListUI
                         }
                         cellBounds = list.getCellBounds(index, index);
                         // go one cell up if last visible cell doesn't fit
-                        // into adjasted visible rectangle
+                        // into adjusted visible rectangle
                         if (cellBounds != null &&
                                 cellBounds.y + cellBounds.height >
                                 visRect.y + visRect.height)

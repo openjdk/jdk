@@ -95,7 +95,7 @@ public abstract class FocusManager extends DefaultKeyboardFocusManager {
      * <p>
      * If a <code>SecurityManager</code> is installed,
      * the calling thread must be granted the <code>AWTPermission</code>
-     * "replaceKeyboardFocusManager" in order to replace the
+     * "replaceKeyboardFocusManager" in order to replace
      * the current <code>KeyboardFocusManager</code>.
      * If this permission is not granted,
      * this method will throw a <code>SecurityException</code>,

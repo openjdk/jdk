@@ -42,7 +42,7 @@ class DropShadowEffect extends ShadowEffect {
 
     /**
      * Get the type of this effect, one of UNDER,BLENDED,OVER. UNDER means the result of apply effect should be painted
-     * under the src image. BLENDED means the result of apply sffect contains a modified src image so just it should be
+     * under the src image. BLENDED means the result of apply effect contains a modified src image so just it should be
      * painted. OVER means the result of apply effect should be painted over the src image.
      *
      * @return The effect type
@@ -78,7 +78,7 @@ class DropShadowEffect extends ShadowEffect {
         double trangleAngle = Math.toRadians(angle - 90);
         int offsetX = (int) (Math.sin(trangleAngle) * distance);
         int offsetY = (int) (Math.cos(trangleAngle) * distance);
-        // clac expanded size
+        // calc expanded size
         int tmpOffX = offsetX + size;
         int tmpOffY = offsetX + size;
         int tmpW = w + offsetX + size + size;

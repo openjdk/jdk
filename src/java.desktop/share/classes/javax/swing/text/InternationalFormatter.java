@@ -113,7 +113,7 @@ public class InternationalFormatter extends DefaultFormatter {
     private Comparable<?> min;
 
     /**
-     * <code>InternationalFormatter</code>'s behavior is dicatated by a
+     * <code>InternationalFormatter</code>'s behavior is dictated by a
      * <code>AttributedCharacterIterator</code> that is obtained from
      * the <code>Format</code>. On every edit, assuming
      * allows invalid is false, the <code>Format</code> instance is invoked

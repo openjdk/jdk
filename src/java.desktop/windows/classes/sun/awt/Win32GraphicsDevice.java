@@ -170,7 +170,7 @@ public class Win32GraphicsDevice extends GraphicsDevice implements
     }
 
     /**
-     * Returns whether this is a valid devicie. Device can become
+     * Returns whether this is a valid device. Device can become
      * invalid as a result of device removal event.
      */
     public boolean isValid() {

@@ -630,7 +630,7 @@ class PSPathGraphics extends PathGraphics {
         return true;
     }
 
-    /** Redraw a rectanglular area using a proxy graphics
+    /** Redraw a rectangular area using a proxy graphics
       * To do this we need to know the rectangular area to redraw and
       * the transform & clip in effect at the time of the original drawImage
       *

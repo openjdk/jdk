@@ -236,9 +236,9 @@ public class PrintingStatus {
     }
 
     /**
-     * Returns whether the printng was aborted using this PrintingStatus
+     * Returns whether the printing was aborted using this PrintingStatus
      *
-     * @return whether the printng was aborted using this PrintingStatus
+     * @return whether the printing was aborted using this PrintingStatus
      */
     public boolean isAborted() {
         return isAborted.get();

@@ -928,7 +928,7 @@ class Parser implements DTDConstants {
 
     /**
      * Parse identifier. Uppercase characters are folded
-     * to lowercase when lower is true. Returns falsed if
+     * to lowercase when lower is true. Returns false if
      * no identifier is found. [55] 346:17
      */
     boolean parseIdentifier(boolean lower) throws IOException {

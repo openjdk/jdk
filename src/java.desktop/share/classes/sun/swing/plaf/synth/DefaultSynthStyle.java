@@ -88,7 +88,7 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
 
     /**
      * Creates a new DefaultSynthStyle that is a copy of the passed in
-     * style. Any StateInfo's of the passed in style are clonsed as well.
+     * style. Any StateInfo's of the passed in style are cloned as well.
      *
      * @param style Style to duplicate
      */

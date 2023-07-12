@@ -140,7 +140,7 @@ public class Utilities {
     // In addition to the previous method it can extend spaces for
     // justification.
     //
-    // all params are the same as in the preious method except the last
+    // all params are the same as in the previous method except the last
     // one:
     // @param justificationData justificationData for the row.
     // if null not justification is needed
@@ -275,7 +275,7 @@ public class Utilities {
     // In addition to the previous method it can extend spaces for
     // justification.
     //
-    // all params are the same as in the preious method except the last
+    // all params are the same as in the previous method except the last
     // one:
     // @param justificationData justificationData for the row.
     // if null not justification is needed
@@ -475,7 +475,7 @@ public class Utilities {
     // In addition to the previous method it can extend spaces for
     // justification.
     //
-    // all params are the same as in the preious method except the last
+    // all params are the same as in the previous method except the last
     // one:
     // @param justificationData justificationData for the row.
     // if null not justification is needed

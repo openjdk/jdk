@@ -1372,8 +1372,8 @@ public class UIDefaults extends Hashtable<Object,Object>
             return value;
         }
 
-        String composeKey(String key, int reduce, String sufix) {
-            return key.substring(0, key.length() - reduce) + sufix;
+        String composeKey(String key, int reduce, String suffix) {
+            return key.substring(0, key.length() - reduce) + suffix;
         }
 
         String getTextFromProperty(String text) {

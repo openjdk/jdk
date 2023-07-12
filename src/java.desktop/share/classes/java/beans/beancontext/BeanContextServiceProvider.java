@@ -44,7 +44,7 @@ import java.util.Iterator;
  * the service is asked to provide an instance of that service.
  * </p>
  * <p>
- * The ServcieProvider may always return the same instance, or it may
+ * The ServiceProvider may always return the same instance, or it may
  * construct a new instance for each request.
  * </p>
  */
