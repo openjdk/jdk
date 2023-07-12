@@ -80,8 +80,8 @@ public class ProgressTest {
                         try {
                             EventQueue.invokeAndWait(() -> {
                                 pmis.getProgressMonitor().setNote(total/(1024*1024)+" MB Read");
-			    });
-			} catch (Exception e) {}
+                            });
+                        } catch (Exception e) {}
                     }
                 }
             }
