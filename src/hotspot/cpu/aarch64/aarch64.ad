@@ -2285,7 +2285,7 @@ int HandlerImpl::emit_deopt_handler(CodeBuffer& cbuf)
 
 //=============================================================================
 
-const bool Matcher::match_rule_supported(int opcode) {
+bool Matcher::match_rule_supported(int opcode) {
   if (!has_match_rule(opcode))
     return false;
 
@@ -2320,7 +2320,7 @@ const TypeVectMask* Matcher::predicate_reg_type(const Type* elemTy, int length) 
 }
 
 // Vector calling convention not yet implemented.
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   return false;
 }
 
@@ -2340,7 +2340,7 @@ bool Matcher::is_short_branch_offset(int rule, int br_size, int offset) {
 }
 
 // Vector width in bytes.
-const int Matcher::vector_width_in_bytes(BasicType bt) {
+int Matcher::vector_width_in_bytes(BasicType bt) {
   // The MaxVectorSize should have been set by detecting SVE max vector register size.
   int size = MIN2((UseSVE > 0) ? 256 : 16, (int)MaxVectorSize);
   // Minimum 2 values in vector
@@ -2351,11 +2351,11 @@ const int Matcher::vector_width_in_bytes(BasicType bt) {
 }
 
 // Limits on vector size (number of elements) loaded into vector.
-const int Matcher::max_vector_size(const BasicType bt) {
+int Matcher::max_vector_size(const BasicType bt) {
   return vector_width_in_bytes(bt)/type2aelembytes(bt);
 }
 
-const int Matcher::min_vector_size(const BasicType bt) {
+int Matcher::min_vector_size(const BasicType bt) {
   int max_size = max_vector_size(bt);
   // Limit the min vector size to 8 bytes.
   int size = 8 / type2aelembytes(bt);
@@ -2370,17 +2370,17 @@ const int Matcher::min_vector_size(const BasicType bt) {
   return MIN2(size, max_size);
 }
 
-const int Matcher::superword_max_vector_size(const BasicType bt) {
+int Matcher::superword_max_vector_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
 // Actual max scalable vector register length.
-const int Matcher::scalable_vector_reg_size(const BasicType bt) {
+int Matcher::scalable_vector_reg_size(const BasicType bt) {
   return Matcher::max_vector_size(bt);
 }
 
 // Vector ideal reg.
-const uint Matcher::vector_ideal_reg(int len) {
+uint Matcher::vector_ideal_reg(int len) {
   if (UseSVE > 0 && 16 < len && len <= 256) {
     return Op_VecA;
   }

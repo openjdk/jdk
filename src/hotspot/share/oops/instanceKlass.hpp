@@ -116,7 +116,7 @@ class OopMapBlock {
   }
 
   // sizeof(OopMapBlock) in words.
-  static const int size_in_words() {
+  static int size_in_words() {
     return align_up((int)sizeof(OopMapBlock), wordSize) >>
       LogBytesPerWord;
   }
@@ -1164,6 +1164,11 @@ public:
   void print_class_load_logging(ClassLoaderData* loader_data,
                                 const ModuleEntry* module_entry,
                                 const ClassFileStream* cfs) const;
+ private:
+  void print_class_load_cause_logging() const;
+  void print_class_load_helper(ClassLoaderData* loader_data,
+                               const ModuleEntry* module_entry,
+                               const ClassFileStream* cfs) const;
 };
 
 // for adding methods

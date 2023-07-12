@@ -168,37 +168,54 @@ import java.util.TreeMap;
  * <tr><th scope="row" style="vertical-align:top">{@code UTF-16}</th>
  *     <td>Sixteen-bit UCS Transformation Format,
  *         byte&nbsp;order identified by an optional byte-order mark</td></tr>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-32BE}</th>
+ *     <td>Thirty-two-bit UCS Transformation Format,
+ *         big-endian byte&nbsp;order</td></tr>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-32LE}</th>
+ *     <td>Thirty-two-bit UCS Transformation Format,
+ *         little-endian byte&nbsp;order</td></tr>
+ * <tr><th scope="row" style="vertical-align:top">{@code UTF-32}</th>
+ *     <td>Thirty-two-bit UCS Transformation Format,
+ *         byte&nbsp;order identified by an optional byte-order mark</td></tr>
  * </tbody>
  * </table></blockquote>
  *
  * <p> The {@code UTF-8} charset is specified by <a
  * href="http://www.ietf.org/rfc/rfc2279.txt"><i>RFC&nbsp;2279</i></a>; the
  * transformation format upon which it is based is specified in
- * Amendment&nbsp;2 of ISO&nbsp;10646-1 and is also described in the <a
+ * ISO&nbsp;10646-1 and is also described in the <a
  * href="http://www.unicode.org/standard/standard.html"><i>Unicode
  * Standard</i></a>.
  *
  * <p> The {@code UTF-16} charsets are specified by <a
  * href="http://www.ietf.org/rfc/rfc2781.txt"><i>RFC&nbsp;2781</i></a>; the
  * transformation formats upon which they are based are specified in
- * Amendment&nbsp;1 of ISO&nbsp;10646-1 and are also described in the <a
+ * ISO&nbsp;10646-1 and are also described in the <a
  * href="http://www.unicode.org/standard/standard.html"><i>Unicode
  * Standard</i></a>.
  *
- * <p> The {@code UTF-16} charsets use sixteen-bit quantities and are
+ * <p> The {@code UTF-32} charsets are based upon transformation formats
+ * which are specified in
+ * ISO&nbsp;10646-1 and are also described in the <a
+ * href="http://www.unicode.org/standard/standard.html"><i>Unicode
+ * Standard</i></a>.
+ *
+ * <p> The {@code UTF-16} and {@code UTF-32} charsets use sixteen-bit and thirty-two-bit
+ * quantities respectively, and are
  * therefore sensitive to byte order.  In these encodings the byte order of a
  * stream may be indicated by an initial <i>byte-order mark</i> represented by
- * the Unicode character <code>'&#92;uFEFF'</code>.  Byte-order marks are handled
+ * the Unicode character {@code U+FEFF}.  Byte-order marks are handled
  * as follows:
  *
  * <ul>
  *
- *   <li><p> When decoding, the {@code UTF-16BE} and {@code UTF-16LE}
+ *   <li><p> When decoding, the {@code UTF-16BE}, {@code UTF-16LE},
+ *   {@code UTF-32BE}, and {@code UTF-32LE}
  *   charsets interpret the initial byte-order marks as a <small>ZERO-WIDTH
  *   NON-BREAKING SPACE</small>; when encoding, they do not write
  *   byte-order marks. </p></li>
  *
- *   <li><p> When decoding, the {@code UTF-16} charset interprets the
+ *   <li><p> When decoding, the {@code UTF-16} and {@code UTF-32} charsets interpret the
  *   byte-order mark at the beginning of the input stream to indicate the
  *   byte-order of the stream but defaults to big-endian if there is no
  *   byte-order mark; when encoding, it uses big-endian byte order and writes
