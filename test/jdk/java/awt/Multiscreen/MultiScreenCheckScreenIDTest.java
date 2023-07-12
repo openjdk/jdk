@@ -76,8 +76,9 @@ public class MultiScreenCheckScreenIDTest extends MouseAdapter {
                 .getLocalGraphicsEnvironment()
                 .getScreenDevices();
 
-        if(screens.length < 2) {
-            System.out.println("Testing aborted. Required min of 2 screens. Found : " + screens.length );
+        if (screens.length < 2) {
+            System.out.println("Testing aborted. Required min of 2 screens. " +
+                    "Found : " + screens.length );
             return;
         }
 
@@ -112,17 +113,21 @@ public class MultiScreenCheckScreenIDTest extends MouseAdapter {
         window.setVisible(true);
         windowList.add(window);
 
-        window.addPropertyChangeListener("graphicsConfiguration", new PropertyChangeListener() {
+        window.addPropertyChangeListener("graphicsConfiguration",
+                new PropertyChangeListener() {
             @Override
             public void propertyChange(PropertyChangeEvent propertyChangeEvent) {
                 double windowXPos = window.getBounds().getX();
-                double screen1Width = screens[0].getDefaultConfiguration().getBounds().getWidth();
-                System.out.println("window x Position : " + windowXPos + ", screen[0] width : " + screen1Width);
+                double screen1Width = screens[0].getDefaultConfiguration()
+                        .getBounds().getWidth();
+                System.out.println("window x Position : " + windowXPos + "," +
+                        " screen[0] width : " + screen1Width);
 
                 //Check if GC is changed for windows positioned in screen 0.
 
                 if (windowXPos < screen1Width) {
-                    throw new RuntimeException("Graphics configuration changed for screen 1");
+                    throw new RuntimeException("Graphics configuration changed" +
+                            " for screen 1");
                 }
             }
         });
