@@ -1480,6 +1480,7 @@ public final class Subject implements java.io.Serializable {
             return elements.toArray(a);
         }
 
+        @Override
         public boolean equals(Object o) {
             if (o == this) {
                 return true;
@@ -1501,14 +1502,11 @@ public final class Subject implements java.io.Serializable {
             }
         }
 
+        @Override
         public int hashCode() {
             int h = 0;
-            Iterator<E> i = iterator();
-            while (i.hasNext()) {
-                E obj = i.next();
-                if (obj != null) {
-                    h += obj.hashCode();
-                }
+            for (E obj : this) {
+                h += Objects.hashCode(obj);
             }
             return h;
         }

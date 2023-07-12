@@ -1058,9 +1058,7 @@ public class PolicyParser {
         }
 
         /**
-         * Return a hashcode for this PrincipalEntry.
-         *
-         * @return a hashcode for this PrincipalEntry
+         * {@return a hashcode for this PrincipalEntry}
          */
         @Override
         public int hashCode() {
