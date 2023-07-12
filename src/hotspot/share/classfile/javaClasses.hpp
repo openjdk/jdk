@@ -25,6 +25,7 @@
 #ifndef SHARE_CLASSFILE_JAVACLASSES_HPP
 #define SHARE_CLASSFILE_JAVACLASSES_HPP
 
+#include "classfile/stringTable.hpp"
 #include "classfile/vmClasses.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
@@ -197,7 +198,7 @@ class java_lang_String : AllStatic {
   // Debugging
   static void print(oop java_string, outputStream* st);
   friend class JavaClasses;
-  friend class StringTable;
+  friend class hotspot_jvm::StringTable;
 };
 
 
