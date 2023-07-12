@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2022 Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import javax.swing.UIManager;
 
 import org.jtregext.GuiTestListener;
 import org.netbeans.jemmy.ClassReference;
+import org.netbeans.jemmy.JemmyProperties;
 import org.netbeans.jemmy.operators.JComponentOperator;
 import org.netbeans.jemmy.operators.JFrameOperator;
 import org.netbeans.jemmy.operators.JLabelOperator;
@@ -79,11 +80,19 @@ public class ToolTipDemoTest {
     @Test(dataProvider = "availableLookAndFeels", dataProviderClass = TestHelpers.class)
     public void test(String lookAndFeel) throws Exception {
         UIManager.setLookAndFeel(lookAndFeel);
+
+        JemmyProperties.setCurrentDispatchingModel(JemmyProperties.ROBOT_MODEL_MASK |
+                JemmyProperties.SMOOTH_ROBOT_MODEL_MASK);
+
         new ClassReference(ToolTipDemo.class.getCanonicalName()).startApplication();
         JFrameOperator frameOperator = new JFrameOperator(DEMO_TITLE);
         frameOperator.setComparator(EXACT_STRING_COMPARATOR);
         // Setting the tooltip dismiss delay
         ToolTipManager.sharedInstance().setDismissDelay(TOOLTIP_DISMISS_DELAY);
+
+        //activate window
+        frameOperator.clickMouse();
+        frameOperator.moveMouse(-1, -1);
 
         // Verifying the plain tooltip properties
         checkToolTip(frameOperator, PLAIN_TOOLTIP_COMP_TITLE,
@@ -116,18 +125,15 @@ public class ToolTipDemoTest {
      */
     private void checkToolTip(JFrameOperator frameOperator, String compTitle,
             String toolTipText) {
-
         JLabelOperator toolTipHostComp =
                 new JLabelOperator(frameOperator, compTitle);
         JToolTipOperator toolTipOperator =
                 new JToolTipOperator(toolTipHostComp.showToolTip());
         toolTipOperator.waitTipText(toolTipText);
         checkToolTipLocation(toolTipHostComp, toolTipOperator);
-
-        // Dismissing the tooltip by mouse click
-        toolTipHostComp.clickMouse();
+        // Dismissing the tooltip by moving the mouse out
+        toolTipHostComp.moveMouse(-1, -1);
         toolTipOperator.waitComponentShowing(false);
-
     }
 
     private void checkToolTipLocation(JComponentOperator componentOpertor,
