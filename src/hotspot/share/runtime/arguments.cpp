@@ -99,8 +99,6 @@ size_t Arguments::_default_SharedBaseAddress    = SharedBaseAddress;
 
 bool   Arguments::_enable_preview               = false;
 
-bool   Arguments::_non_default_modules_options_are_specified = false;
-
 char*  Arguments::_default_shared_archive_path  = nullptr;
 char*  Arguments::SharedArchivePath             = nullptr;
 char*  Arguments::SharedDynamicArchivePath      = nullptr;
@@ -1259,7 +1257,6 @@ bool Arguments::add_property(const char* prop, PropertyWriteable writeable, Prop
       strcmp(key, "jdk.module.main") == 0) {
     MetaspaceShared::disable_optimized_module_handling();
     log_info(cds)("optimized module handling: disabled due to incompatible property: %s=%s", key, value);
-    Arguments::_non_default_modules_options_are_specified = true;
   }
   if (strcmp(key, "jdk.module.showModuleResolution") == 0 ||
       strcmp(key, "jdk.module.validation") == 0 ||
@@ -1884,8 +1881,7 @@ bool Arguments::check_vm_args_consistency() {
   if (status && EnableJVMCI) {
     PropertyList_unique_add(&_system_properties, "jdk.internal.vm.ci.enabled", "true",
         AddProperty, UnwriteableProperty, InternalProperty);
-    if (ClassLoader::is_module_observable("jdk.internal.vm.ci")
-         && Arguments::_non_default_modules_options_are_specified) {
+    if (ClassLoader::is_module_observable("jdk.internal.vm.ci")) {
       if (!create_numbered_module_property("jdk.module.addmods", "jdk.internal.vm.ci", addmods_count++)) {
         return false;
       }

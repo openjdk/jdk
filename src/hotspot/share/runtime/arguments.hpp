@@ -264,9 +264,6 @@ class Arguments : AllStatic {
   static bool _BackgroundCompilation;
   static bool _ClipInlining;
 
-  // Set if an internal module property is set. See is_internal_module_property()
-  static bool _non_default_modules_options_are_specified;
-
   // GC ergonomics
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
