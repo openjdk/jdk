@@ -22,9 +22,10 @@
  *
  */
 
-#ifndef SHARE_CDS_ARCHIVEHEAPWRITER_HPP
-#define SHARE_CDS_ARCHIVEHEAPWRITER_HPP
+#ifndef SHARE_CDS_AOTMAPPEDHEAPWRITER_HPP
+#define SHARE_CDS_AOTMAPPEDHEAPWRITER_HPP
 
+#include "cds/aotMapLogger.hpp"
 #include "cds/heapShared.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
@@ -37,32 +38,25 @@
 
 class MemRegion;
 
-class ArchiveHeapInfo {
-  MemRegion _buffer_region;             // Contains the archived objects to be written into the CDS archive.
-  CHeapBitMap _oopmap;
-  CHeapBitMap _ptrmap;
-  HeapRootSegments _heap_root_segments;
-
+#if INCLUDE_CDS_JAVA_HEAP
+class DumpedInternedStrings :
+  public ResizeableHashTable<oop, bool,
+                           AnyObj::C_HEAP,
+                           mtClassShared,
+                           HeapShared::string_oop_hash>
+{
 public:
-  ArchiveHeapInfo() : _buffer_region(), _oopmap(128, mtClassShared), _ptrmap(128, mtClassShared) {}
-  bool is_used() { return !_buffer_region.is_empty(); }
-
-  MemRegion buffer_region() { return _buffer_region; }
-  void set_buffer_region(MemRegion r) { _buffer_region = r; }
-
-  char* buffer_start() { return (char*)_buffer_region.start(); }
-  size_t buffer_byte_size() { return _buffer_region.byte_size();    }
-
-  CHeapBitMap* oopmap() { return &_oopmap; }
-  CHeapBitMap* ptrmap() { return &_ptrmap; }
-
-  void set_heap_root_segments(HeapRootSegments segments) { _heap_root_segments = segments; };
-  HeapRootSegments heap_root_segments() { return _heap_root_segments; }
+  DumpedInternedStrings(unsigned size, unsigned max_size) :
+    ResizeableHashTable<oop, bool,
+                                AnyObj::C_HEAP,
+                                mtClassShared,
+                                HeapShared::string_oop_hash>(size, max_size) {}
 };
 
-#if INCLUDE_CDS_JAVA_HEAP
-class ArchiveHeapWriter : AllStatic {
-  // ArchiveHeapWriter manipulates three types of addresses:
+class AOTMappedHeapWriter : AllStatic {
+  friend class HeapShared;
+  friend class AOTMappedHeapLoader;
+  // AOTMappedHeapWriter manipulates three types of addresses:
   //
   //     "source" vs "buffered" vs "requested"
   //
@@ -117,6 +111,9 @@ public:
   // Shenandoah heap region size can never be smaller than 256K.
   static constexpr int MIN_GC_REGION_ALIGNMENT = 256 * K;
 
+  static const int INITIAL_TABLE_SIZE = 15889; // prime number
+  static const int MAX_TABLE_SIZE     = 1000000;
+
 private:
   class EmbeddedOopRelocator;
   struct NativePointerInfo {
@@ -138,6 +135,7 @@ private:
 
   static GrowableArrayCHeap<NativePointerInfo, mtClassShared>* _native_pointers;
   static GrowableArrayCHeap<oop, mtClassShared>* _source_objs;
+  static DumpedInternedStrings *_dumped_interned_strings;
 
   // We sort _source_objs_order to minimize the number of bits in ptrmap and oopmap.
   // See comments near the body of ArchiveHeapWriter::compare_objs_by_oop_fields().
@@ -202,9 +200,10 @@ private:
   static int filler_array_length(size_t fill_bytes);
   static HeapWord* init_filler_array_at_buffer_top(int array_length, size_t fill_bytes);
 
-  static void set_requested_address(ArchiveHeapInfo* info);
-  static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, ArchiveHeapInfo* info);
-  static void compute_ptrmap(ArchiveHeapInfo *info);
+  static void set_requested_address(ArchiveMappedHeapInfo* info);
+  static void mark_native_pointers(oop orig_obj);
+  static void relocate_embedded_oops(GrowableArrayCHeap<oop, mtClassShared>* roots, ArchiveMappedHeapInfo* info);
+  static void compute_ptrmap(ArchiveMappedHeapInfo *info);
   static bool is_in_requested_range(oop o);
   static oop requested_obj_from_buffer_offset(size_t offset);
 
@@ -217,7 +216,7 @@ private:
   template <typename T> static void store_requested_oop_in_buffer(T* buffered_addr, oop request_oop);
 
   template <typename T> static T* requested_addr_to_buffered_addr(T* p);
-  template <typename T> static void relocate_field_in_buffer(T* field_addr_in_buffer, CHeapBitMap* oopmap);
+  template <typename T> static void relocate_field_in_buffer(T* field_addr_in_buffer, oop source_referent, CHeapBitMap* oopmap);
   template <typename T> static void mark_oop_pointer(T* buffered_addr, CHeapBitMap* oopmap);
 
   static void update_header_for_requested_obj(oop requested_obj, oop src_obj, Klass* src_klass);
@@ -232,7 +231,9 @@ public:
   static bool is_too_large_to_archive(size_t size);
   static bool is_too_large_to_archive(oop obj);
   static bool is_string_too_large_to_archive(oop string);
-  static void write(GrowableArrayCHeap<oop, mtClassShared>*, ArchiveHeapInfo* heap_info);
+  static bool is_dumped_interned_string(oop o);
+  static void add_to_dumped_interned_strings(oop string);
+  static void write(GrowableArrayCHeap<oop, mtClassShared>*, ArchiveMappedHeapInfo* heap_info);
   static address requested_address();  // requested address of the lowest achived heap object
   static size_t get_filler_size_at(address buffered_addr);
 
@@ -242,6 +243,8 @@ public:
   static address buffered_addr_to_requested_addr(address buffered_addr);
   static Klass* real_klass_of_buffered_oop(address buffered_addr);
   static size_t size_of_buffered_oop(address buffered_addr);
+
+  static AOTMapLogger::OopDataIterator* oop_iterator(ArchiveMappedHeapInfo* heap_info);
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
-#endif // SHARE_CDS_ARCHIVEHEAPWRITER_HPP
+#endif // SHARE_CDS_AOTMAPPEDHEAPWRITER_HPP

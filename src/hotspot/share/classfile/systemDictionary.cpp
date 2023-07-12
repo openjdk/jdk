@@ -1185,6 +1185,7 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
   ClassLoaderData* loader_data = ClassLoaderData::class_loader_data(class_loader());
   oop java_mirror = ik->archived_java_mirror();
   precond(java_mirror != nullptr);
+  assert(java_lang_Class::module(java_mirror) != nullptr, "must have been archived");
 
   Handle pd(THREAD, java_lang_Class::protection_domain(java_mirror));
   PackageEntry* pkg_entry = ik->package();
@@ -1202,7 +1203,6 @@ void SystemDictionary::preload_class(Handle class_loader, InstanceKlass* ik, TRA
     update_dictionary(THREAD, ik, loader_data);
   }
 
-  assert(java_lang_Class::module(java_mirror) != nullptr, "must have been archived");
   assert(ik->is_loaded(), "Must be in at least loaded state");
 }
 

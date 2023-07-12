@@ -22,7 +22,6 @@
  *
  */
 
-#include "cds/archiveHeapLoader.hpp"
 #include "cds/cdsConfig.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classLoader.hpp"
@@ -896,7 +895,7 @@ void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protec
   if (this->has_archived_mirror_index()) {
     ResourceMark rm(THREAD);
     log_debug(aot, mirror)("%s has raw archived mirror", external_name());
-    if (ArchiveHeapLoader::is_in_use()) {
+    if (HeapShared::is_archived_heap_in_use()) {
       bool present = java_lang_Class::restore_archived_mirror(this, loader, module_handle,
                                                               protection_domain,
                                                               CHECK);

@@ -28,6 +28,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/javaClasses.inline.hpp"
 #include "classfile/moduleEntry.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "logging/log.hpp"
@@ -291,7 +292,7 @@ inline bool CDSHeapVerifier::do_entry(OopHandle& orig_obj_handle, HeapShared::Ca
   if (java_lang_String::is_instance(orig_obj) && HeapShared::is_dumped_interned_string(orig_obj)) {
     // It's quite often for static fields to have interned strings. These are most likely not
     // problematic (and are hard to filter). So we will ignore them.
-    return true; /* keep on iterating */
+    return true;
   }
 
   StaticFieldInfo* info = _table.get(orig_obj);

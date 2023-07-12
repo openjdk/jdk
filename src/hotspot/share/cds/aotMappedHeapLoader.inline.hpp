@@ -22,10 +22,10 @@
  *
  */
 
-#ifndef SHARE_CDS_ARCHIVEHEAPLOADER_INLINE_HPP
-#define SHARE_CDS_ARCHIVEHEAPLOADER_INLINE_HPP
+#ifndef SHARE_CDS_AOTMAPPEDHEAPLOADER_INLINE_HPP
+#define SHARE_CDS_AOTMAPPEDHEAPLOADER_INLINE_HPP
 
-#include "cds/archiveHeapLoader.hpp"
+#include "cds/aotMappedHeapLoader.hpp"
 
 #include "oops/compressedOops.inline.hpp"
 #include "utilities/align.hpp"
@@ -33,7 +33,7 @@
 #if INCLUDE_CDS_JAVA_HEAP
 
 template<bool IS_MAPPED>
-inline oop ArchiveHeapLoader::decode_from_archive_impl(narrowOop v) {
+inline oop AOTMappedHeapLoader::decode_from_archive_impl(narrowOop v) {
   assert(!CompressedOops::is_null(v), "narrow oop value can never be zero");
   assert(_narrow_oop_base_initialized, "relocation information must have been initialized");
   uintptr_t p = ((uintptr_t)_narrow_oop_base) + ((uintptr_t)v << _narrow_oop_shift);
@@ -49,14 +49,14 @@ inline oop ArchiveHeapLoader::decode_from_archive_impl(narrowOop v) {
   return result;
 }
 
-inline oop ArchiveHeapLoader::decode_from_archive(narrowOop v) {
+inline oop AOTMappedHeapLoader::decode_from_archive(narrowOop v) {
   return decode_from_archive_impl<false>(v);
 }
 
-inline oop ArchiveHeapLoader::decode_from_mapped_archive(narrowOop v) {
+inline oop AOTMappedHeapLoader::decode_from_mapped_archive(narrowOop v) {
   return decode_from_archive_impl<true>(v);
 }
 
 #endif
 
-#endif // SHARE_CDS_ARCHIVEHEAPLOADER_INLINE_HPP
+#endif // SHARE_CDS_AOTMAPPEDHEAPLOADER_INLINE_HPP
