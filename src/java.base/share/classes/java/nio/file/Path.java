@@ -517,13 +517,12 @@ public interface Path
     }
 
     /**
-     * Resolves a path or a sequence of paths against this path.
+     * Resolves a path, or a sequence of paths against this path.
      *
      * <p> The result of this method is the same as would be obtained
-     * by resolving the first parameter path against this path, then
-     * resolving the second parameter path against the derived path,
-     * and so on until all parameters have been processed. Each single
-     * resolution in the chain behaves as specified by {@linkplain
+     * by resolving the first parameter path against this path, and then
+     * repeating the same procedure for each path in the sequence. Each
+     * single resolution in the chain behaves as specified by {@link
      * #resolve(Path) resolve}.
      *
      * @implSpec
@@ -554,17 +553,14 @@ public interface Path
     }
 
     /**
-     * Converts a path string or a sequence of path strings into one or more
-     * {@code Path}s and resolves them against this {@code Path} in exactly
-     * the same manner specified by the {@link #resolve(Path,Path...) resolve}
-     * method.
+     * Resolves the path or paths converted from a path string, or a
+     * sequence of path strings, against this path.
      *
-     * <p> The result of this method is the same as would be obtained
-     * by resolving the first parameter path string against this path, then
-     * resolving the second parameter path string against the derived path,
-     * and so on until all parameters have been processed. Each single
-     * resolution in the chain behaves as specified by {@linkplain
-     * #resolve(String) resolve}.
+     * <p> The result of this method is the same as would be obtained by
+     * resolving the path converted from the first path string against
+     * this path, and then repeating the same procedure for each path
+     * string in the sequence. Each single resolution in the chain
+     * behaves as specified by {@link #resolve(String) resolve}.
      *
      * @implSpec
      * The default implementation is equivalent for this path to:
@@ -582,7 +578,7 @@ public interface Path
      * @return the resulting path
      *
      * @throws  InvalidPathException
-     *          if the path string cannot be converted to a Path.
+     *          if a path string cannot be converted to a Path.
      *
      * @see #resolve(String)
      *
