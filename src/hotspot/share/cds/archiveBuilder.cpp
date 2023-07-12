@@ -41,6 +41,7 @@
 #include "memory/allStatic.hpp"
 #include "memory/memRegion.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/objArrayKlass.hpp"
 #include "oops/objArrayOop.inline.hpp"
