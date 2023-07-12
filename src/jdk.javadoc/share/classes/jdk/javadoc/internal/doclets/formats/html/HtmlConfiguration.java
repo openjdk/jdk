@@ -438,7 +438,6 @@ public class HtmlConfiguration extends BaseConfiguration {
             }
         }
 
-
         String snippetPath = options.snippetPath();
         if (snippetPath != null) {
             Messages messages = getMessages();

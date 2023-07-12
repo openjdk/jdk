@@ -367,7 +367,7 @@ public class HtmlDocletWriter {
         return !output.isEmpty();
     }
 
-    private Content getInlineTagOutput(Element element, DocTree tree, TagletWriter.Context context) {
+    private Content getInlineTagOutput(Element element, InlineTagTree tree, TagletWriter.Context context) {
         return getTagletWriterInstance(context).getInlineTagOutput(element, tree);
     }
 
@@ -1388,8 +1388,8 @@ public class HtmlDocletWriter {
 
                 @Override
                 protected Boolean defaultAction(DocTree node, Content content) {
-                    if (node instanceof InlineTagTree) {
-                        var output = getInlineTagOutput(element, node, context);
+                    if (node instanceof InlineTagTree itt) {
+                        var output = getInlineTagOutput(element, itt, context);
                         if (output != null) {
                             content.add(output);
                         }

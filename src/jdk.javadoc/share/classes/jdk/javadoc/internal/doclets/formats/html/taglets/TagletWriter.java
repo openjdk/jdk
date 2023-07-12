@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -459,7 +459,6 @@ public class TagletWriter {
                 .forEach(item -> list.add(HtmlTree.LI(item)));
         return list;
     }
-
 
     // Threshold for length of list item for switching from inline to block layout.
     private static final int TAG_LIST_ITEM_MAX_INLINE_LENGTH = 30;

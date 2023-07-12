@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@
  * Inline tags are always processed individually, within the surrounding
  * context. In general, inline tags always generate some (non-empty) output,
  * even if the output is some form indicating an error. It is almost never
- * correct to not generate any output to fill the between the parts of the
+ * correct to not generate any output to place between the parts of the
  * comment that come before and after the tag in the underlying comment.
  *
  * Conversely, block tags of any given kind are always processed as a

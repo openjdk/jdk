@@ -62,7 +62,6 @@ public class SpecTaglet extends BaseTaglet implements InheritableTaglet {
         this.contents = config.contents;
     }
 
-
     @Override
     public Output inherit(Element dst, Element src, DocTree tag, boolean isFirstSentence) {
         CommentHelper ch = utils.getCommentHelper(dst);

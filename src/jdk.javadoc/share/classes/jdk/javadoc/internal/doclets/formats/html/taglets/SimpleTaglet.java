@@ -34,7 +34,9 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 
+import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocTree;
+import com.sun.source.doctree.UnknownBlockTagTree;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
@@ -148,6 +150,20 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      */
     boolean isEnabled() {
         return enabled;
+    }
+
+    /**
+     * Returns whether this taglet accepts a {@code BlockTagTree} node.
+     * The taglet accepts a tree node if it has the same kind, and
+     * if the kind is {@code UNKNOWN_BLOCK_TAG} the same tag name.
+     *
+     * @param tree the tree node
+     * @return {@code true} if this taglet accepts this tree node
+     */
+    public boolean accepts(BlockTagTree tree) {
+        return (tree.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG && tagKind == DocTree.Kind.UNKNOWN_BLOCK_TAG)
+                ? tree.getTagName().equals(name)
+                : tree.getKind() == tagKind;
     }
 
     record Documentation(DocTree tag, List<? extends DocTree> description, ExecutableElement method) { }

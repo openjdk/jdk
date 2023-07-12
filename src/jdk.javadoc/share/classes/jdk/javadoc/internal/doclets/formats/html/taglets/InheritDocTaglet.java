@@ -54,7 +54,7 @@ public class InheritDocTaglet extends BaseTaglet {
     /**
      * Construct a new InheritDocTaglet.
      */
-    public InheritDocTaglet(HtmlConfiguration config) {
+    InheritDocTaglet(HtmlConfiguration config) {
         super(config, DocTree.Kind.INHERIT_DOC, true, EnumSet.of(Location.METHOD));
     }
 

@@ -30,7 +30,6 @@ import java.util.Set;
 import javax.lang.model.element.Element;
 
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.UnknownBlockTagTree;
 
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
@@ -78,7 +77,6 @@ public class BaseTaglet implements Taglet {
         this.tagKind = tagKind;
         this.inline = inline;
         this.sites = sites;
-
     }
 
     @Override
@@ -103,21 +101,6 @@ public class BaseTaglet implements Taglet {
      */
     public DocTree.Kind getTagKind() {
         return tagKind;
-    }
-
-    /**
-     * Returns whether this taglet accepts a {@code DocTree} node.
-     * The taglet accepts a tree node if it has the same kind, and
-     * if the kind is {@code UNKNOWN_BLOCK_TAG} the same tag name.
-     *
-     * @param tree the tree node
-     * @return {@code true} if this taglet accepts this tree node
-     */
-    public boolean accepts(DocTree tree) {
-        return (tree.getKind() == DocTree.Kind.UNKNOWN_BLOCK_TAG
-                    && tagKind == DocTree.Kind.UNKNOWN_BLOCK_TAG)
-                ? ((UnknownBlockTagTree) tree).getTagName().equals(name)
-                : tree.getKind() == tagKind;
     }
 
     /**

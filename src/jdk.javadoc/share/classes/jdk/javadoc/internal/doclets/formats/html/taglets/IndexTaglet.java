@@ -65,7 +65,6 @@ public class IndexTaglet extends BaseTaglet {
         return tagletWriter.createAnchorAndSearchIndex(element, tagText, descText, tag);
     }
 
-
     // ugly but simple;
     // alternatives would be to walk the Content's tree structure, or to add new functionality to Content
     private String extractText(Content c) {

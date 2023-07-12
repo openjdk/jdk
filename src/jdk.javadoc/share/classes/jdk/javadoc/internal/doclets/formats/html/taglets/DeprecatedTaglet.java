@@ -50,6 +50,7 @@ public class DeprecatedTaglet extends BaseTaglet {
                 EnumSet.of(Taglet.Location.MODULE, Taglet.Location.TYPE, Taglet.Location.CONSTRUCTOR, Taglet.Location.METHOD, Taglet.Location.FIELD));
 
     }
+
     @Override
     public Content getAllBlockTagOutput(Element element, TagletWriter tagletWriter) {
         var htmlWriter = tagletWriter.htmlWriter;
