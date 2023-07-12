@@ -25,7 +25,6 @@
 
 package javax.swing.text.html.parser;
 
-import java.util.HashMap;
 import java.util.Hashtable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -119,7 +118,7 @@ class Entity implements DTDConstants {
     }
 
 
-    static final HashMap<String, Integer> entityTypes = new HashMap<String, Integer>();
+    static Hashtable<String, Integer> entityTypes = new Hashtable<String, Integer>();
 
     static {
         entityTypes.put("PUBLIC", Integer.valueOf(PUBLIC));
@@ -145,6 +144,7 @@ class Entity implements DTDConstants {
      *   to "CDATA", if none exists
      */
     public static int name2type(String nm) {
-        return entityTypes.getOrDefault(nm, CDATA);
+        Integer i = entityTypes.get(nm);
+        return (i == null) ? CDATA : i.intValue();
     }
 }
