@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -784,7 +784,7 @@ public abstract class Curve {
      * @param boundsOffset the index in boundsof the minimum value
      * @param x1 the starting value of the bezier curve where t = 0.0
      * @param ctrlX1 the first control value of the bezier curve
-     * @param ctrlX1 the second control value of the bezier curve
+     * @param ctrlX2 the second control value of the bezier curve
      * @param x2 the ending value of the bezier curve where t = 1.0
      * @param coeff an array of at least 3 elements that will be overwritten and reused
      * @param deriv_coeff an array of at least 2 elements that will be overwritten and reused
