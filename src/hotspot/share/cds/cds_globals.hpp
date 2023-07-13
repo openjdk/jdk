@@ -22,8 +22,8 @@
  *
  */
 
-#ifndef SHARED_CDS_CDS_GLOBALS_HPP
-#define SHARED_CDS_CDS_GLOBALS_HPP
+#ifndef SHARE_CDS_CDS_GLOBALS_HPP
+#define SHARE_CDS_CDS_GLOBALS_HPP
 
 #include "runtime/globals_shared.hpp"
 
@@ -57,7 +57,7 @@
           "Address to allocate shared memory region for class data")        \
           range(0, SIZE_MAX)                                                \
                                                                             \
-  product(ccstr, SharedArchiveConfigFile, nullptr,                             \
+  product(ccstr, SharedArchiveConfigFile, nullptr,                          \
           "Data to add to the CDS archive file")                            \
                                                                             \
   product(uint, SharedSymbolTableBucketSize, 4,                             \
@@ -67,25 +67,25 @@
   product(bool, AllowArchivingWithJavaAgent, false, DIAGNOSTIC,             \
           "Allow Java agent to be run with CDS dumping")                    \
                                                                             \
-  develop(ccstr, ArchiveHeapTestClass, nullptr,                                \
+  develop(ccstr, ArchiveHeapTestClass, nullptr,                             \
           "For JVM internal testing only. The static field named "          \
           "\"archivedObjects\" of the specified class is stored in the "    \
           "CDS archive heap")                                               \
                                                                             \
-  product(ccstr, DumpLoadedClassList, nullptr,                                 \
+  product(ccstr, DumpLoadedClassList, nullptr,                              \
           "Dump the names all loaded classes, that could be stored into "   \
           "the CDS archive, in the specified file")                         \
                                                                             \
-  product(ccstr, SharedClassListFile, nullptr,                                 \
+  product(ccstr, SharedClassListFile, nullptr,                              \
           "Override the default CDS class list")                            \
                                                                             \
-  product(ccstr, SharedArchiveFile, nullptr,                                   \
+  product(ccstr, SharedArchiveFile, nullptr,                                \
           "Override the default location of the CDS archive file")          \
                                                                             \
-  product(ccstr, ArchiveClassesAtExit, nullptr,                                \
+  product(ccstr, ArchiveClassesAtExit, nullptr,                             \
           "The path and name of the dynamic archive file")                  \
                                                                             \
-  product(ccstr, ExtraSharedClassListFile, nullptr,                            \
+  product(ccstr, ExtraSharedClassListFile, nullptr,                         \
           "Extra classlist for building the CDS archive file")              \
                                                                             \
   product(int, ArchiveRelocationMode, 0, DIAGNOSTIC,                        \
@@ -99,4 +99,4 @@
 
 DECLARE_FLAGS(CDS_FLAGS)
 
-#endif // SHARED_CDS_CDS_GLOBALS_HPP
+#endif // SHARE_CDS_CDS_GLOBALS_HPP

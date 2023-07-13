@@ -113,20 +113,19 @@ public final class EventDirectoryStream extends AbstractEventStream {
 
     @Override
     protected void process() throws IOException {
-        JVM jvm = JVM.getJVM();
         Thread t = Thread.currentThread();
         try {
-            if (jvm.isExcluded(t)) {
+            if (JVM.isExcluded(t)) {
                 threadExclusionLevel++;
             } else {
-                jvm.exclude(t);
+                JVM.exclude(t);
             }
             processRecursionSafe();
         } finally {
             if (threadExclusionLevel > 0) {
                 threadExclusionLevel--;
             } else {
-                jvm.include(t);
+                JVM.include(t);
             }
         }
     }

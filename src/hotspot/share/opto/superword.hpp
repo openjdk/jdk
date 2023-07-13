@@ -285,7 +285,6 @@ class SuperWord : public ResourceObj {
   GrowableArray<int> _bb_idx;            // Map from Node _idx to index within block
 
   GrowableArray<Node*> _block;           // Nodes in current block
-  GrowableArray<Node*> _post_block;      // Nodes in post loop block
   GrowableArray<Node*> _data_entry;      // Nodes with all inputs from outside
   GrowableArray<Node*> _mem_slice_head;  // Memory slice head nodes
   GrowableArray<Node*> _mem_slice_tail;  // Memory slice tail nodes
@@ -579,8 +578,6 @@ private:
 
   // Convert packs into vector node operations
   bool output();
-  // Create vector mask for post loop vectorization
-  Node* create_post_loop_vmask();
   // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
   Node* vector_opd(Node_List* p, int opd_idx);
   // Can code be generated for pack p?
@@ -724,8 +721,6 @@ class SWPointer : public ArenaObj {
   static bool not_equal(int cmp)  { return cmp <= NotEqual; }
   static bool equal(int cmp)      { return cmp == Equal; }
   static bool comparable(int cmp) { return cmp < NotComparable; }
-
-  static bool has_potential_dependence(GrowableArray<SWPointer*> swptrs);
 
   void print();
 

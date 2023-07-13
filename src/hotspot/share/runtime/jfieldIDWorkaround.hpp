@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ class jfieldIDWorkaround: AllStatic {
     if (VerifyJNIFields && is_checked_jfieldID(id)) {
       result &= small_offset_mask;  // cut off the hash bits
     }
-    return (intptr_t)result;
+    return result;
   }
   static intptr_t encode_klass_hash(Klass* k, intptr_t offset);
   static bool             klass_hash_ok(Klass* k, jfieldID id);
