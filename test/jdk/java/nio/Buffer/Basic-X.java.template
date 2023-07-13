@@ -42,9 +42,9 @@ import java.nio.file.Path;
 import java.util.Random;
 #end[byte]
 #if[char]
+import java.util.Random;
 import java.util.function.IntFunction;
 #end[char]
-
 
 public class Basic$Type$
     extends Basic
@@ -630,7 +630,10 @@ public class Basic$Type$
         absBulkGet(b);
 
 #if[char]
-        // 8306623 and 8306959
+        // 8306623, 8306959, and 4860681
+        long seed = System.nanoTime();
+        Random rnd = new Random(seed);
+
         String str = "in violet night walking beneath a reign of uncouth stars";
         char[] chars = str.toCharArray();
         int cslen = chars.length;
@@ -668,10 +671,10 @@ public class Basic$Type$
                 // append() should throw IndexOutOfBoundsException
                 final CharBuffer cbIOOBE = f.apply(cslen + 1);
                 for (int[] bds : bounds)
-                    tryCatch(cbIOOBE, IndexOutOfBoundsException.class, () ->
+                    catchIndexOutOfBounds(cbIOOBE, () ->
                         cbIOOBE.append(csq, bds[0], bds[1]));
 
-                tryCatch(cb, IndexOutOfBoundsException.class, () ->
+                catchIndexOutOfBounds(cb, () ->
                     cb.append(csq.subSequence(0, 8), 4, 12));
 
                 // should append nothing
@@ -681,6 +684,38 @@ public class Basic$Type$
                 // should fill the buffer
                 int start = (csq.length() - rem)/2;
                 ck(cb, cb.append(csq, start, start + rem).remaining(), 0);
+
+                // begin 4860681
+
+                // put() should throw NullPointerException
+                catchNullArgument(cb, () ->
+                    cb.put(7, (CharSequence)null, 0, 42));
+
+                // BufferOverflowException
+                // put() should throw BufferOverflowException
+                tryCatch(cbBOE, BufferOverflowException.class, () ->
+                    cbBOE.put(0, csq, cslen/4, cslen/2));
+
+                // put() should throw IndexOutOfBoundsException
+                for (int[] bds : bounds)
+                    tryCatch(cbIOOBE, IndexOutOfBoundsException.class, () ->
+                        cbIOOBE.put(0, csq, bds[0], bds[1]));
+
+                // Verify correct copying behavior
+                int cap = Math.max(1, rnd.nextInt(cslen));
+                CharBuffer cbTarget = f.apply(cap);
+                int index = rnd.nextInt(cap);
+                int afterLast = Math.max(1, rnd.nextInt(cslen));
+                int first = Math.max(0, afterLast - (cap - index));
+                cbTarget.put(index, csq, first, afterLast);
+                for (int j = index, i = first; i < afterLast; i++, j++) {
+                    if (cbTarget.get(j) != csq.charAt(i)) {
+                        String s = String.format("Unequal values (seed %d)%n");
+                        throw new RuntimeException(s);
+                    }
+                }
+
+                // end 4860681
             }
         }
         // end 8306623 and 8306959
@@ -1059,6 +1094,9 @@ public class Basic$Type$
         // 7199551
         catchReadOnlyBuffer(b, () -> rb.put(new String(new char[rb.remaining() + 1])));
         catchReadOnlyBuffer(b, () -> rb.append(new String(new char[rb.remaining() + 1])));
+
+        // 4860681
+        catchReadOnlyBuffer(b, () -> rb.put(0, "123", 1, 2));
 
 #end[char]
 

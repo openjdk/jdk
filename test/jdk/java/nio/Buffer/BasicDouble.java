@@ -719,6 +719,41 @@ public class BasicDouble
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         // Compact
 
         relPut(b);
@@ -1036,6 +1071,9 @@ public class BasicDouble
         ck(src, src.position(), 0);
 
         catchReadOnlyBuffer(b, () -> rb.compact());
+
+
+
 
 
 

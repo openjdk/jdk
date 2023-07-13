@@ -1544,7 +1544,7 @@ public abstract sealed class $Type$Buffer
      * @see #append(CharSequence, int, int)
      * @see #put(int, $type$[], int, int)
      * @see #put(int, $Type$Buffer, int, int)
-     * @since 21
+     * @since 22
      */
     public $Type$Buffer put(int index, CharSequence csq, int start, int end) {
         Objects.checkFromToIndex(start, end, csq.length());

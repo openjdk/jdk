@@ -719,6 +719,41 @@ public class BasicByte
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         // Compact
 
         relPut(b);
@@ -1051,6 +1086,9 @@ public class BasicByte
         catchReadOnlyBuffer(b, () -> rb.putFloat(0, (float)1));
         catchReadOnlyBuffer(b, () -> rb.putDouble((double)1));
         catchReadOnlyBuffer(b, () -> rb.putDouble(0, (double)1));
+
+
+
 
 
 
