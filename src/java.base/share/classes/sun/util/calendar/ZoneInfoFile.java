@@ -148,7 +148,7 @@ public final class ZoneInfoFile {
      * @return an unmodified alias mapping
      */
     public static Map<String, String> getAliasMap() {
-        return Collections.unmodifiableMap(aliases);
+        return aliases;
     }
 
     /**
@@ -208,18 +208,18 @@ public final class ZoneInfoFile {
     private ZoneInfoFile() {
     }
 
-    private static String versionId;
+    private static final String versionId;
     private static final Map<String, ZoneInfo> zones = new ConcurrentHashMap<>();
-    private static Map<String, String> aliases = new HashMap<>();
+    private static final Map<String, String> aliases;
 
-    private static byte[][] ruleArray;
-    private static String[] regions;
-    private static int[] indices;
+    private static final byte[][] ruleArray;
+    private static final String[] regions;
+    private static final int[] indices;
 
     // Flag for supporting JDK backward compatible IDs, such as "EST".
     private static final boolean USE_OLDMAPPING;
 
-    private static String[][] oldMappings = new String[][] {
+    private static final String[][] oldMappings = new String[][] {
         { "ACT", "Australia/Darwin" },
         { "AET", "Australia/Sydney" },
         { "AGT", "America/Argentina/Buenos_Aires" },
@@ -252,29 +252,40 @@ public final class ZoneInfoFile {
                 .privilegedGetProperty("sun.timezone.ids.oldmapping", "false")
                 .toLowerCase(Locale.ROOT);
         USE_OLDMAPPING = (oldmapping.equals("yes") || oldmapping.equals("true"));
-        loadTZDB();
+        ZoneInfoFileData fileData = loadTZDB();
+        versionId = fileData.versionId();
+        ruleArray = fileData.ruleArray();
+        regions = fileData.regions();
+        indices = fileData.indices();
+        aliases = Collections.unmodifiableMap(fileData.aliases());
+    }
+
+    private record ZoneInfoFileData(String versionId,
+                                    byte[][] ruleArray,
+                                    String[] regions,
+                                    int[] indices,
+                                    Map<String, String> aliases) {
     }
 
     @SuppressWarnings("removal")
-    private static void loadTZDB() {
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-            public Void run() {
+    private static ZoneInfoFileData loadTZDB() {
+        return AccessController.doPrivileged(new PrivilegedAction<>() {
+            public ZoneInfoFileData run() {
                 try {
                     String libDir = StaticProperty.javaHome() + File.separator + "lib";
                     try (DataInputStream dis = new DataInputStream(
                              new BufferedInputStream(new FileInputStream(
                                  new File(libDir, "tzdb.dat"))))) {
-                        load(dis);
+                        return load(dis);
                     }
                 } catch (Exception x) {
                     throw new Error(x);
                 }
-                return null;
             }
         });
     }
 
-    private static void addOldMapping() {
+    private static void addOldMapping(Map<String, String> aliases) {
         for (String[] alias : oldMappings) {
             aliases.put(alias[0], alias[1]);
         }
@@ -299,7 +310,7 @@ public final class ZoneInfoFile {
      * @param dis  the DateInputStream to load, not null
      * @throws IOException if an error occurs
      */
-    private static void load(DataInputStream dis) throws IOException {
+    private static ZoneInfoFileData load(DataInputStream dis) throws IOException {
         if (dis.readByte() != 1) {
             throw new StreamCorruptedException("File format not recognised");
         }
@@ -310,9 +321,9 @@ public final class ZoneInfoFile {
         }
         // versions, only keep the last one
         int versionCount = dis.readShort();
+        String versionId = null;
         for (int i = 0; i < versionCount; i++) {
             versionId = dis.readUTF();
-
         }
         // regions
         int regionCount = dis.readShort();
@@ -322,12 +333,14 @@ public final class ZoneInfoFile {
         }
         // rules
         int ruleCount = dis.readShort();
-        ruleArray = new byte[ruleCount][];
+        byte[][] ruleArray = new byte[ruleCount][];
         for (int i = 0; i < ruleCount; i++) {
             byte[] bytes = new byte[dis.readShort()];
             dis.readFully(bytes);
             ruleArray[i] = bytes;
         }
+        String[] regions = null;
+        int[] indices = null;
         // link version-region-rules, only keep the last version, if more than one
         for (int i = 0; i < versionCount; i++) {
             regionCount = dis.readShort();
@@ -341,6 +354,7 @@ public final class ZoneInfoFile {
         // remove the following ids from the map, they
         // are excluded from the "old" ZoneInfo
         zones.remove("ROC");
+        HashMap<String, String> aliases = new HashMap<>();
         for (int i = 0; i < versionCount; i++) {
             int aliasCount = dis.readShort();
             aliases.clear();
@@ -351,7 +365,8 @@ public final class ZoneInfoFile {
             }
         }
         // old us time-zone names
-        addOldMapping();
+        addOldMapping(aliases);
+        return new ZoneInfoFileData(versionId, ruleArray, regions, indices, aliases);
     }
 
     /////////////////////////Ser/////////////////////////////////
