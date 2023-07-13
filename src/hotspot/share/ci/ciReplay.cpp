@@ -850,6 +850,7 @@ class CompileReplay : public StackObj {
           value = oopFactory::new_longArray(length, CHECK);
         } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
                    field_signature[1] == JVM_SIGNATURE_CLASS) {
+          parse_klass(CHECK); // eat up the array class name
           Klass* kelem = resolve_klass(field_signature + 1, CHECK);
           value = oopFactory::new_objArray(kelem, length, CHECK);
         } else {
