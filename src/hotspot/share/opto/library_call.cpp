@@ -4016,9 +4016,9 @@ bool LibraryCallKit::inline_unsafe_newArray(bool uninitialized) {
     CallJavaNode* slow_call = nullptr;
     if (uninitialized) {
       // Generate optimized virtual call (holder class 'Unsafe' is final)
-      slow_call = generate_method_call(vmIntrinsics::_allocateUninitializedArray, false, false);
+      slow_call = generate_method_call(vmIntrinsics::_allocateUninitializedArray, false, false, true);
     } else {
-      slow_call = generate_method_call_static(vmIntrinsics::_newArray);
+      slow_call = generate_method_call_static(vmIntrinsics::_newArray, true);
     }
     Node* slow_result = set_results_for_java_call(slow_call);
     // this->control() comes from set_results_for_java_call
@@ -4263,7 +4263,7 @@ Node* LibraryCallKit::generate_virtual_guard(Node* obj_klass,
 // not another intrinsic.  (E.g., don't use this for making an
 // arraycopy call inside of the copyOf intrinsic.)
 CallJavaNode*
-LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual, bool is_static) {
+LibraryCallKit::generate_method_call(vmIntrinsicID method_id, bool is_virtual, bool is_static, bool res_not_null) {
   // When compiling the intrinsic method itself, do not use this technique.
   guarantee(callee() != C->method(), "cannot make slow-call to self");
 
@@ -4272,6 +4272,14 @@ LibraryCallKit::generate_method_call(vmIntrinsics::ID method_id, bool is_virtual
   guarantee(method_id == method->intrinsic_id(), "must match");
 
   const TypeFunc* tf = TypeFunc::make(method);
+  if (res_not_null) {
+    assert(tf->return_type() == T_OBJECT, "");
+    const TypeTuple* range = tf->range();
+    const Type** fields = TypeTuple::fields(range->cnt());
+    fields[TypeFunc::Parms] = range->field_at(TypeFunc::Parms)->filter_speculative(TypePtr::NOTNULL);
+    const TypeTuple* new_range = TypeTuple::make(range->cnt(), fields);
+    tf = TypeFunc::make(tf->domain(), new_range);
+  }
   CallJavaNode* slow_call;
   if (is_static) {
     assert(!is_virtual, "");
@@ -4421,7 +4429,7 @@ bool LibraryCallKit::inline_native_hashcode(bool is_virtual, bool is_static) {
     // No need for PreserveJVMState, because we're using up the present state.
     set_all_memory(init_mem);
     vmIntrinsics::ID hashCode_id = is_static ? vmIntrinsics::_identityHashCode : vmIntrinsics::_hashCode;
-    CallJavaNode* slow_call = generate_method_call(hashCode_id, is_virtual, is_static);
+    CallJavaNode* slow_call = generate_method_call(hashCode_id, is_virtual, is_static, false);
     Node* slow_result = set_results_for_java_call(slow_call);
     // this->control() comes from set_results_for_java_call
     result_reg->init_req(_slow_path, control());
@@ -4947,7 +4955,7 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
     set_control(_gvn.transform(slow_region));
     if (!stopped()) {
       PreserveJVMState pjvms(this);
-      CallJavaNode* slow_call = generate_method_call(vmIntrinsics::_clone, is_virtual);
+      CallJavaNode* slow_call = generate_method_call(vmIntrinsics::_clone, is_virtual, false, true);
       // We need to deoptimize on exception (see comment above)
       Node* slow_result = set_results_for_java_call(slow_call, false, /* deoptimize */ true);
       // this->control() comes from set_results_for_java_call
