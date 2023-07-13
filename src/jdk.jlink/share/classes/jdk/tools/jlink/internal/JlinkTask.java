@@ -565,8 +565,24 @@ public class JlinkTask {
 
         Map<String, Path> mods = cf.modules().stream()
             .collect(Collectors.toMap(ResolvedModule::name, JlinkTask::toPathLocation));
-        return new ImageHelper(cf, mods, endian, retainModulesPath, ignoreSigning,
-                verbose, log);
+        // determine the target platform of the image being created
+        Platform targetPlatform = targetPlatform(cf, mods);
+        // if the user specified any --endian, then it must match the target platform's native
+        // endianness
+        if (endian != null && endian != targetPlatform.arch().byteOrder()) {
+            // explicitly specified endianness doesn't match the determined endianness
+            // of the target platform
+            throw new IOException(
+                    taskHelper.getMessage("err.target.endianness.mismatch", endian, targetPlatform));
+        }
+        if (verbose && log != null) {
+            Platform runtime = Platform.runtime();
+            if (runtime.os() != targetPlatform.os() || runtime.arch() != targetPlatform.arch()) {
+                log.format("Cross-platform image generation, using %s for target platform %s%n",
+                        targetPlatform.arch().byteOrder(), targetPlatform);
+            }
+        }
+        return new ImageHelper(cf, mods, targetPlatform, retainModulesPath, ignoreSigning);
     }
 
     /*
@@ -610,6 +626,63 @@ public class JlinkTask {
                 return mrefs;
             }
         };
+    }
+
+    private static Platform targetPlatform(Configuration cf, Map<String, Path> modsPaths) throws IOException {
+        Path javaBasePath = modsPaths.get("java.base");
+        assert javaBasePath != null : "java.base module path is missing";
+        if (isJavaBaseFromDefaultModulePath(javaBasePath)) {
+            // this implies that the java.base module used for the target image
+            // will correspond to the current platform. So this isn't an attempt to
+            // build a cross-platform image. We use the current platform's endianness
+            // in this case
+            return Platform.runtime();
+        } else {
+            // this is an attempt to build a cross-platform image. We now attempt to
+            // find the target platform's arch and thus its endianness from the java.base
+            // module's ModuleTarget attribute
+            String targetPlatformVal = readJavaBaseTargetPlatform(cf);
+            try {
+                return Platform.parsePlatform(targetPlatformVal);
+            } catch (IllegalArgumentException iae) {
+                throw new IOException(
+                        taskHelper.getMessage("err.unknown.target.platform", targetPlatformVal));
+            }
+        }
+    }
+
+    // returns true if the default module-path is the parent of the passed javaBasePath
+    private static boolean isJavaBaseFromDefaultModulePath(Path javaBasePath) throws IOException {
+        Path defaultModulePath = getDefaultModulePath();
+        if (defaultModulePath == null) {
+            return false;
+        }
+        // resolve, against the default module-path dir, the java.base module file used
+        // for image creation
+        Path javaBaseInDefaultPath = defaultModulePath.resolve(javaBasePath.getFileName());
+        if (!Files.exists(javaBaseInDefaultPath)) {
+            // the java.base module used for image creation doesn't exist in the default
+            // module path
+            return false;
+        }
+        return Files.isSameFile(javaBasePath, javaBaseInDefaultPath);
+    }
+
+    // returns the targetPlatform value from the ModuleTarget attribute of the java.base module.
+    // throws IOException if the targetPlatform cannot be determined.
+    private static String readJavaBaseTargetPlatform(Configuration cf) throws IOException {
+        Optional<ResolvedModule> javaBase = cf.findModule("java.base");
+        assert javaBase.isPresent() : "java.base module is missing";
+        ModuleReference ref = javaBase.get().reference();
+        if (ref instanceof ModuleReferenceImpl modRefImpl
+                && modRefImpl.moduleTarget() != null) {
+            return modRefImpl.moduleTarget().targetPlatform();
+        }
+        // could not determine target platform
+        throw new IOException(
+                taskHelper.getMessage("err.cannot.determine.target.platform",
+                        ref.location().map(URI::toString)
+                                .orElse("java.base module")));
     }
 
     /*
@@ -775,41 +848,19 @@ public class JlinkTask {
     }
 
     private static class ImageHelper implements ImageProvider {
-        final ByteOrder order;
+        final Platform targetPlatform;
         final Path packagedModulesPath;
         final boolean ignoreSigning;
         final Runtime.Version version;
         final Set<Archive> archives;
-        final Platform targetPlatform;
 
         ImageHelper(Configuration cf,
                     Map<String, Path> modsPaths,
-                    ByteOrder order,
+                    Platform targetPlatform,
                     Path packagedModulesPath,
-                    boolean ignoreSigning,
-                    boolean verbose,
-                    PrintWriter log) throws IOException {
-            this.targetPlatform = targetPlatform(cf, modsPaths);
-            ByteOrder targetPlatformEndianness = targetPlatform.arch().byteOrder();
-            this.order = order != null ? order : targetPlatformEndianness;
-            if (this.order == null) {
-                throw new IOException(
-                        taskHelper.getMessage("err.unknown.target.endianness", targetPlatform));
-            }
-
-            if (this.order != targetPlatformEndianness && targetPlatformEndianness != null) {
-                // explicitly specified endianness doesn't match the determined endianness
-                // of the target platform
-                throw new IOException(
-                        taskHelper.getMessage("err.target.endianness.mismatch", order, targetPlatform));
-            }
-            if (verbose && log != null) {
-                Platform runtime = Platform.runtime();
-                if (runtime.os() != targetPlatform.os() || runtime.arch() != targetPlatform.arch()) {
-                    log.format("Cross-platform image generation, using %s for target platform %s%n",
-                            this.order, targetPlatform);
-                }
-            }
+                    boolean ignoreSigning) throws IOException {
+            Objects.requireNonNull(targetPlatform);
+            this.targetPlatform = targetPlatform;
             this.packagedModulesPath = packagedModulesPath;
             this.ignoreSigning = ignoreSigning;
 
@@ -826,63 +877,6 @@ public class JlinkTask {
             this.archives = modsPaths.entrySet().stream()
                                 .map(e -> newArchive(e.getKey(), e.getValue()))
                                 .collect(Collectors.toSet());
-        }
-
-        private static Platform targetPlatform(Configuration cf, Map<String, Path> modsPaths) throws IOException {
-            Path javaBasePath = modsPaths.get("java.base");
-            assert javaBasePath != null : "java.base module path is missing";
-            if (isJavaBaseFromDefaultModulePath(javaBasePath)) {
-                // this implies that the java.base module used for the target image
-                // will correspond to the current platform. So this isn't an attempt to
-                // build a cross-platform image. We use the current platform's endianness
-                // in this case
-                return Platform.runtime();
-            } else {
-                // this is an attempt to build a cross-platform image. We now attempt to
-                // find the target platform's arch and thus its endianness from the java.base
-                // module's ModuleTarget attribute
-                String targetPlatformVal = readJavaBaseTargetPlatform(cf);
-                try {
-                    return Platform.parsePlatform(targetPlatformVal);
-                } catch (IllegalArgumentException iae) {
-                    throw new IOException(
-                            taskHelper.getMessage("err.unknown.target.platform", targetPlatformVal));
-                }
-            }
-        }
-
-        // returns true if the default module-path is the parent of the passed javaBasePath
-        private static boolean isJavaBaseFromDefaultModulePath(Path javaBasePath) throws IOException {
-            Path defaultModulePath = getDefaultModulePath();
-            if (defaultModulePath == null) {
-                return false;
-            }
-            // resolve, against the default module-path dir, the java.base module file used
-            // for image creation
-            Path javaBaseInDefaultPath = defaultModulePath.resolve(javaBasePath.getFileName());
-            if (!Files.exists(javaBaseInDefaultPath)) {
-                // the java.base module used for image creation doesn't exist in the default
-                // module path
-                return false;
-            }
-            return Files.isSameFile(javaBasePath, javaBaseInDefaultPath);
-        }
-
-        // returns the targetPlatform value from the ModuleTarget attribute of the java.base module.
-        // throws IOException if the targetPlatform cannot be determined.
-        private static String readJavaBaseTargetPlatform(Configuration cf) throws IOException {
-            Optional<ResolvedModule> javaBase = cf.findModule("java.base");
-            assert javaBase.isPresent() : "java.base module is missing";
-            ModuleReference ref = javaBase.get().reference();
-            if (ref instanceof ModuleReferenceImpl modRefImpl
-                    && modRefImpl.moduleTarget() != null) {
-                return modRefImpl.moduleTarget().targetPlatform();
-            }
-            // could not determine target platform
-            throw new IOException(
-                    taskHelper.getMessage("err.cannot.determine.target.platform",
-                            ref.location().map(URI::toString)
-                                    .orElse("java.base module")));
         }
 
         private Archive newArchive(String module, Path path) {
@@ -940,7 +934,8 @@ public class JlinkTask {
 
         @Override
         public ExecutableImage retrieve(ImagePluginStack stack) throws IOException {
-            ExecutableImage image = ImageFileCreator.create(archives, order, stack);
+            ExecutableImage image = ImageFileCreator.create(archives,
+                    targetPlatform.arch().byteOrder(), stack);
             if (packagedModulesPath != null) {
                 // copy the packaged modules to the given path
                 Files.createDirectories(packagedModulesPath);

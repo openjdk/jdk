@@ -161,7 +161,7 @@ public class IntegrationTest {
         Set<String> limits = new HashSet<>();
         limits.add("java.management");
         JlinkConfiguration config = new Jlink.JlinkConfiguration(output,
-                mods, ByteOrder.nativeOrder(),
+                mods,
                 JlinkTask.newModuleFinder(modulePaths, limits, mods));
 
         List<Plugin> lst = new ArrayList<>();
