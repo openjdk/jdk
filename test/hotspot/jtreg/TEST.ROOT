@@ -78,6 +78,7 @@ requires.properties= \
     vm.continuations \
     vm.jvmti \
     vm.graal.enabled \
+    vm.libgraal \
     vm.libgraal.enabled \
     vm.compiler1.enabled \
     vm.compiler2.enabled \
