@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.awt.geom.AffineTransform;
 import javax.swing.plaf.FontUIResource;
 import java.util.StringTokenizer;
 
-import sun.font.FontConfigManager;
 import sun.font.FontUtilities;
 
 /**
@@ -54,10 +53,9 @@ class PangoFonts {
      * Note that in an X11 multi-screen environment, the default screen
      * is the one used by the JRE so it is safe to use it here.
      */
-    private static double fontScale;
+    private static final double fontScale;
 
     static {
-        fontScale = 1.0d;
         GraphicsEnvironment ge =
            GraphicsEnvironment.getLocalGraphicsEnvironment();
 
@@ -66,6 +64,8 @@ class PangoFonts {
                 ge.getDefaultScreenDevice().getDefaultConfiguration();
             AffineTransform at = gc.getNormalizingTransform();
             fontScale = at.getScaleY();
+        } else {
+            fontScale = 1;
         }
     }
 
