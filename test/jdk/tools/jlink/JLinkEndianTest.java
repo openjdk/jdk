@@ -24,13 +24,18 @@
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteOrder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.spi.ToolProvider;
+
+import jdk.internal.util.OperatingSystem;
 
 /*
  * @test
  * @bug 8206890
  * @summary verify that the image created through jlink uses the byte order of the target platform
+ * @modules java.base/jdk.internal.util
  * @comment the test asserts the presence of locale specific error message in the test's output,
  *          so we explicitly use en_US locale
  * @run main/othervm -Duser.language=en -Duser.country=US JLinkEndianTest
@@ -42,6 +47,7 @@ public class JLinkEndianTest {
 
     public static void main(final String[] args) throws Exception {
         testEndianMismatch();
+        testCorrectEndian();
     }
 
     /**
@@ -74,6 +80,42 @@ public class JLinkEndianTest {
         if (!jlinkStdout.toString().contains("does not match endianness of target platform")) {
             throw new AssertionError("jlink process' stderr didn't contain the expected" +
                     " error message");
+        }
+    }
+
+    /**
+     * Launches jlink with "--endian" option whose value matches the target platform's endianness.
+     * Asserts that the jlink process successfully creates the image.
+     */
+    private static void testCorrectEndian() throws Exception {
+        // we use a --endian value which matches the current platform
+        final String endianOptVal = ByteOrder.nativeOrder() == ByteOrder.LITTLE_ENDIAN
+                ? "little" : "big";
+        final Path imageOutDir = Path.of("correct-endian-image");
+        final String[] args = new String[]{
+                "-v",
+                "--endian", endianOptVal,
+                "--add-modules", "java.base",
+                "--output", imageOutDir.toString()
+        };
+        final StringWriter jlinkStdout = new StringWriter();
+        final StringWriter jlinkStderr = new StringWriter();
+        System.out.println("Launching jlink with args: " + Arrays.toString(args));
+        final int exitCode = JLINK_TOOL.run(new PrintWriter(jlinkStdout),
+                new PrintWriter(jlinkStderr), args);
+        System.out.println(jlinkStdout);
+        System.err.println(jlinkStderr);
+        if (exitCode != 0) {
+            throw new AssertionError("jlink command was expected to succeed but completed with" +
+                    " exit code: " + exitCode);
+        }
+        // trivially verify <image-dir>/bin/java exists
+        final Path javaBinary = OperatingSystem.isWindows()
+                ? Path.of(imageOutDir.toString(), "bin", "java.exe")
+                : Path.of(imageOutDir.toString(), "bin", "java");
+        if (!Files.exists(javaBinary)) {
+            throw new AssertionError("jlink image generation was expected to create "
+                    + javaBinary + ", but that file is missing");
         }
     }
 }
