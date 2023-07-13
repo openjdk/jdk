@@ -368,4 +368,3 @@ public class TestGCLogMessages {
     }
 
 }
-
