@@ -130,10 +130,10 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * use is deprecated</strong> because the same abbreviation is often used
  * for multiple time zones (for example, "CST" could be U.S. "Central Standard
  * Time" and "China Standard Time"), and the Java platform can then only
- * recognize one of them. The full list of the deprecated IDs can be viewed
- * at {@link java.time.ZoneId#SHORT_IDS}. It should be noted that not all
- * three-letter time zone IDs are deprecated, as some come from the IANA Time
- * Zone Database (TZDB).
+ * recognize one of them. The full list of the deprecated IDs and their mappings
+ * can be viewed at {@link java.time.ZoneId#SHORT_IDS}. It should be noted that
+ * not all three-letter time zone IDs are deprecated, as some come from the IANA
+ * Time Zone Database (TZDB).
  *
  *
  * @see          Calendar
