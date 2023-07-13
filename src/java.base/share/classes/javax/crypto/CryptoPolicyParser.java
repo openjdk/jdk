@@ -619,13 +619,12 @@ final class CryptoPolicyParser {
          */
         @Override
         public int hashCode() {
-            int retval = cryptoPermission.hashCode();
-            retval ^= Objects.hashCode(alg);
-            retval ^= Objects.hashCode(exemptionMechanism);
-            retval ^= maxKeySize;
-            retval ^= (checkParam ? 100 : 0);
-            retval ^= Objects.hashCode(algParamSpec);
-            return retval;
+            return cryptoPermission.hashCode()
+                    ^ Objects.hashCode(alg)
+                    ^ Objects.hashCode(exemptionMechanism)
+                    ^ maxKeySize
+                    ^ (checkParam ? 100 : 0)
+                    ^ Objects.hashCode(algParamSpec);
         }
 
         @Override

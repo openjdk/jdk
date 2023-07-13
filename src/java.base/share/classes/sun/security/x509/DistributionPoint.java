@@ -344,11 +344,10 @@ public class DistributionPoint implements DerEncoder {
     public int hashCode() {
         int hash = hashCode;
         if (hash == 0) {
-            hash = 1;
-            hash += Objects.hashCode(fullName);
-            hash += Objects.hashCode(relativeName);
-            hash += Objects.hash(crlIssuer);
-            hash += Arrays.hashCode(reasonFlags);
+            hash = 1 + Objects.hashCode(fullName)
+                    + Objects.hashCode(relativeName)
+                    + Objects.hash(crlIssuer)
+                    + Arrays.hashCode(reasonFlags);
             hashCode = hash;
         }
         return hash;

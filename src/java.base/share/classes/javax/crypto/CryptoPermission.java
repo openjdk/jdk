@@ -277,12 +277,11 @@ class CryptoPermission extends java.security.Permission {
      */
     @Override
     public int hashCode() {
-        int retval = alg.hashCode();
-        retval ^= maxKeySize;
-        retval ^= Objects.hashCode(exemptionMechanism);
-        retval ^= (checkParam ? 100 : 0);
-        retval ^= Objects.hashCode(algParamSpec);
-        return retval;
+        return alg.hashCode()
+                ^ maxKeySize
+                ^ Objects.hashCode(exemptionMechanism)
+                ^ (checkParam ? 100 : 0)
+                ^ Objects.hashCode(algParamSpec);
     }
 
     /**
