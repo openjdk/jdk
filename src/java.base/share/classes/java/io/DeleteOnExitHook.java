@@ -56,7 +56,7 @@ class DeleteOnExitHook {
     private DeleteOnExitHook() {}
 
     static synchronized void add(String file) {
-        if(files == null) {
+        if (files == null) {
             // DeleteOnExitHook is running. Too late to add a file
             throw new IllegalStateException("Shutdown in progress");
         }
@@ -72,12 +72,9 @@ class DeleteOnExitHook {
             files = null;
         }
 
-        ArrayList<String> toBeDeleted = new ArrayList<>(theFiles);
-
-        // reverse the list to maintain previous jdk deletion order.
+        // reverse the collection to maintain previous jdk deletion order.
         // Last in first deleted.
-        Collections.reverse(toBeDeleted);
-        for (String filename : toBeDeleted) {
+        for (String filename : theFiles.reversed()) {
             (new File(filename)).delete();
         }
     }
