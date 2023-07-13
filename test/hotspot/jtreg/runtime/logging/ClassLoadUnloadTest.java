@@ -118,5 +118,21 @@ public class ClassLoadUnloadTest {
         pb = exec("-Xlog:class+loader+data=trace");
         checkFor("[class,loader,data]", "create loader data");
 
+        //  -Xlog:class+load+cause
+        pb = exec("-Xlog:class+load+cause");
+        checkAbsent("[class,load,cause]");
+        checkFor("class load cause logging will not produce output without LogClassLoadingCauseFor");
+
+        String x = ClassUnloadTestMain.class.getName();
+
+        pb = exec("-Xlog:class+load+cause", "-XX:LogClassLoadingCauseFor=" + x);
+        checkFor("[class,load,cause]", "Java stack when loading " + x + ":");
+
+        pb = exec("-Xlog:class+load+cause+native", "-XX:LogClassLoadingCauseFor=" + x);
+        checkFor("[class,load,cause,native]", "Native stack when loading " + x + ":");
+
+        pb = exec("-Xlog:class+load+cause*", "-XX:LogClassLoadingCauseFor=" + x);
+        checkFor("[class,load,cause] Java stack when loading " + x + ":");
+        checkFor("[class,load,cause,native] Native stack when loading " + x + ":");
     }
 }
