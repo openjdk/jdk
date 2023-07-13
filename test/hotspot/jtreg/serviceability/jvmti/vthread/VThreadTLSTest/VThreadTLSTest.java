@@ -65,7 +65,7 @@ public class VThreadTLSTest {
                 failed = true;
                 return;
             }
-            for (int repetion = 0; repetion < 10; repetion++) {
+            for (int count = 0; count < 10; count++) {
                 Thread.sleep(1);
                 long tlsValue = getTLS();
                 if (tlsValue != threadId) {
