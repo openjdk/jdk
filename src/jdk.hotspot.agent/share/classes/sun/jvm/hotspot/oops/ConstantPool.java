@@ -130,7 +130,10 @@ public class ConstantPool extends Metadata implements ClassConstants {
   private static int INDY_ARGV_OFFSET;
 
   public U1Array           getTags()       { return new U1Array(tags.getValue(getAddress())); }
-  public U2Array           getOperands()   { return new U2Array(operands.getValue(getAddress())); }
+  public U2Array           getOperands()   {
+    Address addr = operands.getValue(getAddress());
+    return VMObjectFactory.newObject(U2Array.class, addr);
+  }
   public ConstantPoolCache getCache()      {
     Address addr = cache.getValue(getAddress());
     return VMObjectFactory.newObject(ConstantPoolCache.class, addr);
@@ -464,16 +467,50 @@ public class ConstantPool extends Metadata implements ClassConstants {
     return res;
   }
 
-  /** Lookup for multi-operand (InvokeDynamic, Dynamic) entries. */
-  public short[] getBootstrapSpecifierAt(int i) {
-    if (Assert.ASSERTS_ENABLED) {
-      Assert.that(getTagAt(i).isInvokeDynamic() || getTagAt(i).isDynamicConstant(), "Corrupted constant pool");
+  public int getBootstrapMethodsCount() {
+    U2Array operands = getOperands();
+    int count = 0;
+    if (operands != null) {
+      // Operands array consists of two parts. First part is an array of 32-bit values which denote
+      // index of the bootstrap method data in the operands array. Note that elements of operands array are of type short.
+      // So each element of first part occupies two slots in the array.
+      // Second part is the bootstrap methods data.
+      // This layout allows us to get BSM count by getting the index of first BSM and dividing it by 2.
+      //
+      // The example below shows layout of operands array with 3 bootstrap methods.
+      // First part has 3 32-bit values indicating the index of the respective bootstrap methods in
+      // the operands array.
+      // The first BSM is at index 6. So the count in this case is 6/2=3.
+      //
+      //            <-----first part----><-------second part------->
+      // index:     0     2      4      6        i2       i3
+      // operands:  |  6  |  i2  |  i3  |  bsm1  |  bsm2  |  bsm3  |
+      //
+      count = getOperandOffsetAt(operands, 0) / 2;
     }
-    int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
+    if (DEBUG) {
+      System.err.println("ConstantPool.getBootstrapMethodsCount: count = " + count);
+    }
+    return count;
+  }
+
+  public int getBootstrapMethodArgsCount(int bsmIndex) {
+    U2Array operands = getOperands();
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(operands != null, "Operands is not present");
+    }
+    int bsmOffset = getOperandOffsetAt(operands, bsmIndex);
+    int argc = operands.at(bsmOffset + INDY_ARGC_OFFSET);
+    if (DEBUG) {
+      System.err.println("ConstantPool.getBootstrapMethodArgsCount: bsm index = " + bsmIndex + ", args count = " + argc);
+    }
+    return argc;
+  }
+
+  public short[] getBootstrapMethodAt(int bsmIndex) {
     U2Array operands = getOperands();
     if (operands == null)  return null;  // safety first
-    int basePos = VM.getVM().buildIntFromShorts(operands.at(bsmSpec * 2 + 0),
-                                                operands.at(bsmSpec * 2 + 1));
+    int basePos = getOperandOffsetAt(operands, bsmIndex);
     int argv = basePos + INDY_ARGV_OFFSET;
     int argc = operands.at(basePos + INDY_ARGC_OFFSET);
     int endPos = argv + argc;
@@ -482,6 +519,15 @@ public class ConstantPool extends Metadata implements ClassConstants {
         values[j] = operands.at(basePos+j);
     }
     return values;
+  }
+
+  /** Lookup for multi-operand (InvokeDynamic, Dynamic) entries. */
+  public short[] getBootstrapSpecifierAt(int i) {
+    if (Assert.ASSERTS_ENABLED) {
+      Assert.that(getTagAt(i).isInvokeDynamic() || getTagAt(i).isDynamicConstant(), "Corrupted constant pool");
+    }
+    int bsmSpec = extractLowShortFromInt(this.getIntAt(i));
+    return getBootstrapMethodAt(bsmSpec);
   }
 
   private static final String[] nameForTag = new String[] {
@@ -756,4 +802,11 @@ public class ConstantPool extends Metadata implements ClassConstants {
     // must stay in sync with ConstantPool::name_and_type_at_put, method_at_put, etc.
     return val & 0xFFFF;
   }
+
+  // Return the offset of the requested Bootstrap Method in the operands array
+  private int getOperandOffsetAt(U2Array operands, int bsmIndex) {
+    return VM.getVM().buildIntFromShorts(operands.at(bsmIndex * 2),
+                                         operands.at(bsmIndex * 2 + 1));
+  }
+
 }

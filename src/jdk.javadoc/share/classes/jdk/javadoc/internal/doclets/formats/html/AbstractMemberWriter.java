@@ -46,7 +46,6 @@ import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.MemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.taglets.DeprecatedTaglet;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
@@ -257,8 +256,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param target the content to which the deprecated information will be added.
      */
     protected void addDeprecatedInfo(Element member, Content target) {
-        Content output = (new DeprecatedTaglet()).getAllBlockTagOutput(member,
-            writer.getTagletWriterInstance(false));
+        var t = configuration.tagletManager.getTaglet(DocTree.Kind.DEPRECATED);
+        Content output = t.getAllBlockTagOutput(member, writer.getTagletWriterInstance(false));
         if (!output.isEmpty()) {
             target.add(HtmlTree.DIV(HtmlStyle.deprecationBlock, output));
         }

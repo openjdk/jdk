@@ -29,11 +29,11 @@
 Edge::Edge(const Edge* parent, UnifiedOopRef reference) : _parent(parent),
                                                           _reference(reference) {}
 
-const oop Edge::pointee() const {
+oop Edge::pointee() const {
   return _reference.dereference();
 }
 
-const oop Edge::reference_owner() const {
+oop Edge::reference_owner() const {
   return is_root() ? (oop)nullptr : _parent->pointee();
 }
 
