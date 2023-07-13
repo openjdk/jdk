@@ -123,8 +123,8 @@ public class VMProps implements Callable<Map<String, String>> {
         map.put("vm.continuations", this::vmContinuations);
         // vm.graal.enabled is true if Graal is used as JIT
         map.put("vm.graal.enabled", this::isGraalEnabled);
-        // vm.libgraal is true if the libgraal shared library file is present
-        map.put("vm.libgraal", this::hasLibraal);
+        // vm.hasLibgraal is true if the libgraal shared library file is present
+        map.put("vm.hasLibgraal", this::hasLibraal);
         // vm.libgraal.enabled is true if libgraal is used as JIT
         map.put("vm.libgraal.enabled", this::isLibgraalEnabled);
         map.put("vm.compiler1.enabled", this::isCompiler1Enabled);
@@ -491,7 +491,7 @@ public class VMProps implements Callable<Map<String, String>> {
     }
 
     /**
-     * Check if libgraal shared library file is present.
+     * Check if the libgraal shared library file is present.
      *
      * @return true if the libgraal shared library file is present.
      */
