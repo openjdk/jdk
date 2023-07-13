@@ -800,8 +800,7 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
     state = (jint)java_lang_VirtualThread::map_state_to_thread_status(vt_state);
   }
   if (ext_suspended && ((state & JVMTI_THREAD_STATE_ALIVE) != 0)) {
-    state &= ~java_lang_VirtualThread::RUNNING;
-    state |= JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE | JVMTI_THREAD_STATE_SUSPENDED;
+    state |= JVMTI_THREAD_STATE_SUSPENDED;
   }
   if (interrupted) {
     state |= JVMTI_THREAD_STATE_INTERRUPTED;
