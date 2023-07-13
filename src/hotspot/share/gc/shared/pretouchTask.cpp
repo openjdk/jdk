@@ -81,17 +81,23 @@ void PretouchTask::pretouch(const char* task_name, char* start_address, char* en
     return;
   }
 
+  size_t num_chunks = ((total_bytes - 1) / chunk_size) + 1;
+  uint num_workers = 1;
   if (pretouch_workers != nullptr) {
-    size_t num_chunks = ((total_bytes - 1) / chunk_size) + 1;
+    num_workers = MIN2<uint>(num_chunks, pretouch_workers->max_workers());
+  }
 
-    uint num_workers = (uint)MIN2(num_chunks, (size_t)pretouch_workers->max_workers());
-    log_debug(gc, heap)("Running %s with %u workers for " SIZE_FORMAT " work units pre-touching " SIZE_FORMAT "B.",
-                        task.name(), num_workers, num_chunks, total_bytes);
+  bool use_workers = (num_workers > 1);
 
+  log_debug(gc, heap)("Running %s with %u %s for " SIZE_FORMAT " work units pre-touching " PROPERFMT,
+            task.name(), num_workers,
+            use_workers ? "parallel workers" : "worker",
+            num_chunks, PROPERFMTARGS(total_bytes));
+
+  if (use_workers) {
+    assert(pretouch_workers != nullptr, "Sanity");
     pretouch_workers->run_task(&task, num_workers);
   } else {
-    log_debug(gc, heap)("Running %s pre-touching " SIZE_FORMAT "B.",
-                        task.name(), total_bytes);
     task.work(0);
   }
 }
