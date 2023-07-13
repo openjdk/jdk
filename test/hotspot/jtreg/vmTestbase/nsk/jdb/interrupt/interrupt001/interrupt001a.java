@@ -56,8 +56,8 @@ public class interrupt001a {
                         lock.wait();
                     }
                 } catch (InterruptedException e) {
-                    notInterrupted.decrementAndGet();
                     synchronized (waitnotify) {
+                        notInterrupted--;
                         waitnotify.notify();
                     }
                 }
@@ -83,7 +83,7 @@ public class interrupt001a {
     private JdbArgumentHandler argumentHandler;
     private Log log;
 
-    public static final AtomicInteger notInterrupted = new AtomicInteger(numThreads);
+    public static volatile int notInterrupted = numThreads;
 
     public int runIt(String args[], PrintStream out) {
 
@@ -123,7 +123,7 @@ public class interrupt001a {
         long waitTime = argumentHandler.getWaitTime() * 60 * 1000;
         long startTime = System.currentTimeMillis();
         synchronized (waitnotify) {
-            while (notInterrupted.get() > 0 && System.currentTimeMillis() - startTime <= waitTime) {
+            while (notInterrupted > 0 && System.currentTimeMillis() - startTime <= waitTime) {
                 try {
                     waitnotify.wait(waitTime);
                 } catch (InterruptedException e) {
