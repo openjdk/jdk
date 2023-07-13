@@ -38,26 +38,81 @@
 class MemRegion;
 
 class ArchiveHeapInfo {
-  MemRegion _memregion;
+  MemRegion _buffer_region;             // Contains the archived objects to be written into the CDS archive.
   CHeapBitMap _oopmap;
   CHeapBitMap _ptrmap;
+  size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
+                                        // of the archived heap objects, in bytes.
 
 public:
-  ArchiveHeapInfo() : _memregion(), _oopmap(128, mtClassShared), _ptrmap(128, mtClassShared) {}
-  bool is_used() { return !_memregion.is_empty(); }
+  ArchiveHeapInfo() : _buffer_region(), _oopmap(128, mtClassShared), _ptrmap(128, mtClassShared) {}
+  bool is_used() { return !_buffer_region.is_empty(); }
 
-  MemRegion memregion() { return _memregion; }
-  void set_memregion(MemRegion r) { _memregion = r; }
+  MemRegion buffer_region() { return _buffer_region; }
+  void set_buffer_region(MemRegion r) { _buffer_region = r; }
 
-  char* start() { return (char*)_memregion.start(); }
-  size_t byte_size() { return _memregion.byte_size();    }
+  char* buffer_start() { return (char*)_buffer_region.start(); }
+  size_t buffer_byte_size() { return _buffer_region.byte_size();    }
 
   CHeapBitMap* oopmap() { return &_oopmap; }
   CHeapBitMap* ptrmap() { return &_ptrmap; }
+
+  void set_heap_roots_offset(size_t n) { _heap_roots_offset = n; }
+  size_t heap_roots_offset() const { return _heap_roots_offset; }
 };
 
 #if INCLUDE_CDS_JAVA_HEAP
 class ArchiveHeapWriter : AllStatic {
+  // ArchiveHeapWriter manipulates three types of addresses:
+  //
+  //     "source" vs "buffered" vs "requested"
+  //
+  // (Note: the design and convention is the same as for the archiving of Metaspace objects.
+  //  See archiveBuilder.hpp.)
+  //
+  // - "source objects" are regular Java objects allocated during the execution
+  //   of "java -Xshare:dump". They can be used as regular oops.
+  //
+  //   HeapShared::archive_objects() recursively searches for the oops that need to be
+  //   stored into the CDS archive. These are entered into HeapShared::archived_object_cache().
+  //
+  // - "buffered objects" are copies of the "source objects", and are stored in into
+  //   ArchiveHeapWriter::_buffer, which is a GrowableArray that sits outside of
+  //   the valid heap range. Therefore we avoid using the addresses of these copies
+  //   as oops. They are usually called "buffered_addr" in the code (of the type "address").
+  //
+  //   The buffered objects are stored contiguously, possibly with interleaving fillers
+  //   to make sure no objects span across boundaries of MIN_GC_REGION_ALIGNMENT.
+  //
+  // - Each archived object has a "requested address" -- at run time, if the object
+  //   can be mapped at this address, we can avoid relocation.
+  //
+  // The requested address is implemented differently depending on UseCompressedOops:
+  //
+  // UseCompressedOops == true:
+  //   The archived objects are stored assuming that the runtime COOPS compression
+  //   scheme is exactly the same as in dump time (or else a more expensive runtime relocation
+  //   would be needed.)
+  //
+  //   At dump time, we assume that the runtime heap range is exactly the same as
+  //   in dump time. The requested addresses of the archived objects are chosen such that
+  //   they would occupy the top end of a G1 heap (TBD when dumping is supported by other
+  //   collectors. See JDK-8298614).
+  //
+  // UseCompressedOops == false:
+  //   At runtime, the heap range is usually picked (randomly) by the OS, so we will almost always
+  //   need to perform relocation. Hence, the goal of the "requested address" is to ensure that
+  //   the contents of the archived objects are deterministic. I.e., the oop fields of archived
+  //   objects will always point to deterministic addresses.
+  //
+  //   For G1, the archived heap is written such that the lowest archived object is placed
+  //   at NOCOOPS_REQUESTED_BASE. (TBD after JDK-8298614).
+  // ----------------------------------------------------------------------
+
+public:
+  static const intptr_t NOCOOPS_REQUESTED_BASE = 0x10000000;
+
+private:
   class EmbeddedOopRelocator;
   struct NativePointerInfo {
     oop _src_obj;
@@ -70,30 +125,13 @@ class ArchiveHeapWriter : AllStatic {
   // (TODO: Perhaps change to 256K to be compatible with Shenandoah)
   static constexpr int MIN_GC_REGION_ALIGNMENT = 1 * M;
 
-  // "source" vs "buffered" vs "requested"
-  //
-  // [1] HeapShared::archive_objects() identifies all of the oops that need to be stored
-  //     into the CDS archive. These are entered into HeapShared::archived_object_cache().
-  //     These are called "source objects"
-  //
-  // [2] ArchiveHeapWriter::write() copies all source objects into ArchiveHeapWriter::_buffer,
-  //     which is a GrowableArray that sites outside of the valid heap range. Therefore
-  //     we avoid using the addresses of these copies as oops. They are usually
-  //     called "buffered_addr" in the code (of the type "address").
-  //
-  // [3] Each archived object has a "requested address" -- at run time, if the object
-  //     can be mapped at this address, we can avoid relocation.
-  //
-  // Note: the design and convention is the same as for the archiving of Metaspace objects.
-  // See archiveBuilder.hpp.
-
   static GrowableArrayCHeap<u1, mtClassShared>* _buffer;
 
   // The number of bytes that have written into _buffer (may be smaller than _buffer->length()).
   static size_t _buffer_used;
 
   // The bottom of the copy of Heap::roots() inside this->_buffer.
-  static size_t _heap_roots_bottom_offset;
+  static size_t _heap_roots_offset;
   static size_t _heap_roots_word_size;
 
   // The address range of the requested location of the archived heap objects.
@@ -160,8 +198,8 @@ class ArchiveHeapWriter : AllStatic {
 
   static oop load_oop_from_buffer(oop* buffered_addr);
   static oop load_oop_from_buffer(narrowOop* buffered_addr);
-  static void store_oop_in_buffer(oop* buffered_addr, oop requested_obj);
-  static void store_oop_in_buffer(narrowOop* buffered_addr, oop requested_obj);
+  inline static void store_oop_in_buffer(oop* buffered_addr, oop requested_obj);
+  inline static void store_oop_in_buffer(narrowOop* buffered_addr, oop requested_obj);
 
   template <typename T> static oop load_source_oop_from_buffer(T* buffered_addr);
   template <typename T> static void store_requested_oop_in_buffer(T* buffered_addr, oop request_oop);
@@ -182,7 +220,7 @@ public:
   static address requested_address();  // requested address of the lowest achived heap object
   static oop heap_roots_requested_address(); // requested address of HeapShared::roots()
   static address buffered_heap_roots_addr() {
-    return offset_to_buffered_address<address>(_heap_roots_bottom_offset);
+    return offset_to_buffered_address<address>(_heap_roots_offset);
   }
   static size_t heap_roots_word_size() {
     return _heap_roots_word_size;
@@ -192,6 +230,18 @@ public:
   static oop source_obj_to_requested_obj(oop src_obj);
   static oop buffered_addr_to_source_obj(address buffered_addr);
   static address buffered_addr_to_requested_addr(address buffered_addr);
+
+  // Archived heap object headers carry pre-computed narrow Klass ids calculated with the
+  // following scheme:
+  // 1) the encoding base must be the mapping start address.
+  // 2) shift must be large enough to result in an encoding range that covers the runtime Klass range.
+  //    That Klass range is defined by CDS archive size and runtime class space size. Luckily, the maximum
+  //    size can be predicted: archive size is assumed to be <1G, class space size capped at 3G, and at
+  //    runtime we put both regions adjacent to each other. Therefore, runtime Klass range size < 4G.
+  //    Since nKlass itself is 32 bit, our encoding range len is 4G, and since we set the base directly
+  //    at mapping start, these 4G are enough. Therefore, we don't need to shift at all (shift=0).
+  static constexpr int precomputed_narrow_klass_shift = 0;
+
 };
 #endif // INCLUDE_CDS_JAVA_HEAP
 #endif // SHARE_CDS_ARCHIVEHEAPWRITER_HPP

@@ -663,6 +663,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_StrIndexOfChar:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
+    case Op_VectorizedHashCode:
     case Op_EncodeISOArray: {
       add_local_var(n, PointsToNode::ArgEscape);
       delayed_worklist->push(n); // Process it later.
@@ -3576,7 +3577,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           memnode_worklist.append_if_missing(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
               op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
-              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
+              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy || op == Op_VectorizedHashCode ||
               op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
           n->dump();
           use->dump();

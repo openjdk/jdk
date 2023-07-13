@@ -910,7 +910,7 @@ class JvmtiClassFileLoadHookPoster : public StackObj {
     _data_ptr = data_ptr;
     _end_ptr = end_ptr;
     _thread = JavaThread::current();
-    _curr_len = *end_ptr - *data_ptr;
+    _curr_len = pointer_delta_as_int(*end_ptr, *data_ptr);
     _curr_data = *data_ptr;
     _curr_env = nullptr;
     _cached_class_file_ptr = cache_ptr;
