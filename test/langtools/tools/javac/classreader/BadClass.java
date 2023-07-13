@@ -25,18 +25,17 @@
  * @test
  * @bug 6898851
  * @summary Compiling against this corrupt class file causes a stacktrace from javac
- * @modules jdk.jdeps/com.sun.tools.classfile
  */
+
+import com.sun.tools.javac.Main;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
+import java.nio.file.Files;
 
-import com.sun.tools.classfile.ClassFile;
-import com.sun.tools.classfile.ClassWriter;
-import com.sun.tools.javac.Main;
 
 public class BadClass {
     // Create and compile file containing body; return compiler output
@@ -61,11 +60,10 @@ public class BadClass {
         // Step 1. build an empty class with an interface
         makeClass("d1", "Empty.java", "abstract class Empty implements Readable {}");
 
-        // Step 2. Modify classfile to have invalid constant pool index
-        ClassFile cf = ClassFile.read(new File("d1","Empty.class"));
-        cf.interfaces[0] = cf.constant_pool.size() + 10;
-        ClassWriter cw = new ClassWriter();
-        cw.write(cf, new File("d2","Empty.class"));
+        // Step 2. Modify file to have invalid constant pool index
+        var cf = Files.readAllBytes(new File("d1","Empty.class").toPath());
+        cf[9]--;
+        Files.write(new File("d2","Empty.class").toPath(), cf);
 
         // Step 3. Compile use of invalid class
         String result = makeClass("d2", "EmptyUse.java", "class EmptyUse { Empty e; }");
