@@ -202,7 +202,7 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-x64
-      xcode-toolset-version: '11.7'
+      xcode-toolset-version: '12.5.1'
     if: needs.select.outputs.macos-x64 == 'true'
 
   build-macos-aarch64:
@@ -211,7 +211,7 @@ jobs:
     uses: ./.github/workflows/build-macos.yml
     with:
       platform: macos-aarch64
-      xcode-toolset-version: '12.4'
+      xcode-toolset-version: '12.5.1'
       extra-conf-options: '--openjdk-target=aarch64-apple-darwin'
     if: needs.select.outputs.macos-aarch64 == 'true'
 
