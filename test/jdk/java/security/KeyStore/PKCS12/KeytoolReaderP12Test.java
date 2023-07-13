@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2018, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import java.util.List;
 
 /**
  * @test
- * @bug 8048830 8311081
+ * @bug 8048830
  * @summary Test for PKCS12 keystore list , export commands. Refer README for
  * keystore files information
  * @library ../
@@ -117,9 +117,8 @@ public class KeytoolReaderP12Test {
             List<String> expectedValues)
             throws IOException {
         convertToPFX(name);
-        final String[] command = new String[]{
-                "-J-Duser.language=en", "-J-Duser.country=US", "-debug", "-list",
-                "-v", "-keystore", WORKING_DIRECTORY + File.separator + name,
+        final String[] command = new String[]{"-debug", "-list", "-v",
+                "-keystore", WORKING_DIRECTORY + File.separator + name,
                 "-storetype", "pkcs12", "-storepass", password
         };
         runAndValidate(command, expectedValues);
@@ -129,9 +128,8 @@ public class KeytoolReaderP12Test {
             String password, List<String> expectedValues)
             throws IOException {
         convertToPFX(name);
-        final String[] command = new String[]{
-                "-J-Duser.language=en", "-J-Duser.country=US", "-debug", "-export",
-                "-alias", alias, "-keystore", WORKING_DIRECTORY + File.separator + name,
+        final String[] command = new String[]{"-debug", "-export", "-alias",
+                alias, "-keystore", WORKING_DIRECTORY + File.separator + name,
                 "-storepass", password, "-storetype", "pkcs12", "-rfc"
         };
         runAndValidate(command, expectedValues);
