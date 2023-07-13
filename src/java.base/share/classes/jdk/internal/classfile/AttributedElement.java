@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import jdk.internal.classfile.attribute.MatcherAttribute;
 import jdk.internal.classfile.attribute.RecordComponentInfo;
 import jdk.internal.classfile.impl.AbstractUnboundModel;
 
@@ -36,7 +37,7 @@ import jdk.internal.classfile.impl.AbstractUnboundModel;
  * as a class, field, method, code attribute, or record component.
  */
 public sealed interface AttributedElement extends ClassfileElement
-        permits ClassModel, CodeModel, FieldModel, MethodModel,
+        permits ClassModel, CodeModel, FieldModel, MethodModel, MatcherAttribute,
                 RecordComponentInfo, AbstractUnboundModel {
 
     /**

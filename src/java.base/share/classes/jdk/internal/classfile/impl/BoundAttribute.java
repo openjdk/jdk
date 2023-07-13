@@ -360,8 +360,8 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         }
 
         @Override
-        public AccessFlags matcherFlags() {
-            return AccessFlags.ofMatcher(classReader.readU2(payloadStart + 2));
+        public int matcherFlagsMask() {
+            return classReader.readU2(payloadStart + 2);
         }
 
         @Override

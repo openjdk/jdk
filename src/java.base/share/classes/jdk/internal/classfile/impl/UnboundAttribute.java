@@ -315,19 +315,21 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
     public static final class UnboundMatcherAttribute
             extends UnboundAttribute<MatcherAttribute>
             implements MatcherAttribute {
-        private final AccessFlags matcherFlags;
+        private final int matcherFlags;
         private final Utf8Entry matcherName;
         private final Utf8Entry matcherMethodType;
+        private final List<Attribute<?>> attributes;
 
-        public UnboundMatcherAttribute(AccessFlags matcherFlags, Utf8Entry matcherName, Utf8Entry matcherMethodType) {
+        public UnboundMatcherAttribute(Utf8Entry matcherName, int matcherFlags, Utf8Entry matcherMethodType, List<Attribute<?>> attributes) {
             super(Attributes.MATCHER);
-            this.matcherFlags = matcherFlags;
             this.matcherName = matcherName;
+            this.matcherFlags = matcherFlags;
             this.matcherMethodType = matcherMethodType;
+            this.attributes = List.copyOf(attributes);
         }
 
         @Override
-        public AccessFlags matcherFlags() {
+        public int matcherFlagsMask() {
             return matcherFlags;
         }
 
@@ -343,7 +345,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
         @Override
         public List<Attribute<?>> attributes() {
-            return null;
+            return attributes;
         }
     }
 

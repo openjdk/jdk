@@ -27,13 +27,18 @@ package jdk.internal.classfile.attribute;
 
 import jdk.internal.classfile.AccessFlags;
 import jdk.internal.classfile.Attribute;
+import jdk.internal.classfile.AttributedElement;
 import jdk.internal.classfile.MethodElement;
+import jdk.internal.classfile.constantpool.IntegerEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.BoundAttribute;
+import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
 import java.lang.constant.MethodTypeDesc;
+import java.lang.reflect.AccessFlag;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Models the {@code Matcher} attribute {@jvms X.X.XX}, which can
@@ -45,12 +50,21 @@ import java.util.List;
  * traversing the elements of a {@link jdk.internal.classfile.MethodModel}.
  */
 public sealed interface MatcherAttribute
-        extends Attribute<MatcherAttribute>, MethodElement
+        extends Attribute<MatcherAttribute>, MethodElement, AttributedElement
         permits BoundAttribute.BoundMatcherAttribute,
                 UnboundAttribute.UnboundMatcherAttribute {
 
-    /** {@return the access flags} */
-    AccessFlags matcherFlags();
+    /**
+     * {@return the the module flags of the module, as a bit mask}
+     */
+    int matcherFlagsMask();
+
+    /**
+     * {@return the the module flags of the module, as a set of enum constants}
+     */
+    default Set<AccessFlag> matcherFlags() {
+        return AccessFlag.maskToAccessFlags(matcherFlagsMask(), AccessFlag.Location.MATCHER);
+    }
 
     /** {@return the name of this method} */
     Utf8Entry matcherName();
@@ -63,5 +77,21 @@ public sealed interface MatcherAttribute
         return MethodTypeDesc.ofDescriptor(matcherMethodType().stringValue());
     }
 
-    List<Attribute<?>> attributes();
+    static MatcherAttribute of(String matcherName,
+                               int matcherFlags,
+                               MethodTypeDesc matcherDescriptor,
+                               List<Attribute<?>> matcherAttributes) {
+        return new UnboundAttribute.UnboundMatcherAttribute(
+                TemporaryConstantPool.INSTANCE.utf8Entry(matcherName),
+                matcherFlags,
+                TemporaryConstantPool.INSTANCE.utf8Entry(matcherDescriptor.descriptorString()),
+                matcherAttributes);
+    }
+
+    static MatcherAttribute of(Utf8Entry matcherName,
+                               int matcherFlags,
+                               Utf8Entry matcherDescriptor,
+                               List<Attribute<?>> matcherAttributes) {
+        return new UnboundAttribute.UnboundMatcherAttribute(matcherName, matcherFlags, matcherDescriptor, matcherAttributes);
+    }
 }
