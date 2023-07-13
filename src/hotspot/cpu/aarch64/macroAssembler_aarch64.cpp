@@ -6441,34 +6441,34 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
   // u64 u4 = r0*m4 +   r1*m3 +   r2*m2 +   r3*m1 +   r4*m0
 
   gen { umull(u[0], T2D, m[0], r[0], 0); };
-  gen { umull(u[1], T2D, m[1], r[0], 0); };
+  gen { umull2(u[1], T2D, m[0], r[0], 0); };
   gen { umull(u[2], T2D, m[2], r[0], 0); };
-  gen { umull(u[3], T2D, m[3], r[0], 0); };
+  gen { umull2(u[3], T2D, m[2], r[0], 0); };
   gen { umull(u[4], T2D, m[4], r[0], 0); };
 
   gen {
     asm("nop");
     umlal(u[0], T2D, m[4], rr[0], 1); };
   gen { umlal(u[1], T2D, m[0],  r[0], 1); };
-  gen { umlal(u[2], T2D, m[1],  r[0], 1); };
+  gen { umlal2(u[2], T2D, m[0],  r[0], 1); };
   gen { umlal(u[3], T2D, m[2],  r[0], 1); };
-  gen { umlal(u[4], T2D, m[3],  r[0], 1); };
+  gen { umlal2(u[4], T2D, m[2],  r[0], 1); };
 
-  gen { umlal(u[0], T2D, m[3], rr[0], 2); };
+  gen { umlal2(u[0], T2D, m[2], rr[0], 2); };
   gen { umlal(u[1], T2D, m[4], rr[0], 2); };
   gen { umlal(u[2], T2D, m[0],  r[0], 2); };
-  gen { umlal(u[3], T2D, m[1],  r[0], 2); };
+  gen { umlal2(u[3], T2D, m[0],  r[0], 2); };
   gen { umlal(u[4], T2D, m[2],  r[0], 2); };
 
   gen { umlal(u[0], T2D, m[2], rr[0], 3); };
-  gen { umlal(u[1], T2D, m[3], rr[0], 3); };
+  gen { umlal2(u[1], T2D, m[2], rr[0], 3); };
   gen { umlal(u[2], T2D, m[4], rr[0], 3); };
   gen { umlal(u[3], T2D, m[0],  r[0], 3); };
-  gen { umlal(u[4], T2D, m[1],  r[0], 3); };
+  gen { umlal2(u[4], T2D, m[0],  r[0], 3); };
 
-  gen { umlal(u[0], T2D, m[1], rr[1], 0); };
+  gen { umlal2(u[0], T2D, m[0], rr[1], 0); };
   gen { umlal(u[1], T2D, m[2], rr[1], 0); };
-  gen { umlal(u[2], T2D, m[3], rr[1], 0); };
+  gen { umlal2(u[2], T2D, m[2], rr[1], 0); };
   gen { umlal(u[3], T2D, m[4], rr[1], 0); };
   gen { umlal(u[4], T2D, m[0],  r[1], 0); };
 }
@@ -6594,10 +6594,16 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
   gen { addv(s[2], T4S, s[2], u[2]); };
   gen { addv(s[4], T4S, s[4], u[4]); };
 
-  gen {
-    m_print26(D, s[4], s[2], s[0], 0, "s[2]");
-    m_print26(D, s[4], s[2], s[0], 1, "s[3]");
-  };
+  for (int i = 0; i <= 4; i += 2)
+    gen {
+      ext(scratch1, T16B, s[i], s[i], 8);
+      uzp1(s[i], T4S, s[i], scratch1);
+    };
+
+  // gen {
+  //   m_print26(D, s[4], s[2], s[0], 0, "s[0]");
+  //   m_print26(D, s[4], s[2], s[0], 1, "s[1]");
+  // };
 }
 
 void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
