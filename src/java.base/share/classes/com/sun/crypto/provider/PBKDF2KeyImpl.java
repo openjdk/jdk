@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.io.ObjectStreamException;
+import java.lang.ref.Reference;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -205,7 +206,11 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     }
 
     public byte[] getEncoded() {
-        return key.clone();
+        // The key is zeroized by finalize()
+        // The reachability fence ensures finalize() isn't called early
+        byte[] result = key.clone();
+        Reference.reachabilityFence(this);
+        return result;
     }
 
     public String getAlgorithm() {
