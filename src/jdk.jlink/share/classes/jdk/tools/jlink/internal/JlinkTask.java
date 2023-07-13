@@ -570,8 +570,6 @@ public class JlinkTask {
         // if the user specified any --endian, then it must match the target platform's native
         // endianness
         if (endian != null && endian != targetPlatform.arch().byteOrder()) {
-            // explicitly specified endianness doesn't match the determined endianness
-            // of the target platform
             throw new IOException(
                     taskHelper.getMessage("err.target.endianness.mismatch", endian, targetPlatform));
         }
