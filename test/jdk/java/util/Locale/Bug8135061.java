@@ -50,14 +50,10 @@ public class Bug8135061 {
     public void lookupReturnNullTest() {
         List<LanguageRange> ranges = LanguageRange.parse("nv");
         Collection<Locale> locales = Collections.singleton(Locale.ENGLISH);
-        try {
-            Locale match = Locale.lookup(ranges, locales);
-            assertNull(match);
-        } catch (Exception ex) {
-            throw new RuntimeException("[Locale.lookup failed on language"
-                    + " range: " + ranges + " and language tags "
-                    + locales + "]", ex);
-        }
+        Locale match = Locale.lookup(ranges, locales);
+        assertNull(match, "[Locale.lookup failed on language"
+                + " range: " + ranges + " and language tags "
+                + locales + "]");
     }
 
     /**
