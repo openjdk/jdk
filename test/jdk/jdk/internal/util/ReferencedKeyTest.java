@@ -32,10 +32,14 @@
 
 package jdk.internal.util;
 
+import java.lang.ref.PhantomReference;
+import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BooleanSupplier;
 import java.util.function.Supplier;
 
 public class ReferencedKeyTest {
@@ -62,8 +66,11 @@ public class ReferencedKeyTest {
     static void mapTest(boolean isSoft, Supplier<Map<ReferenceKey<Long>, String>> supplier) {
         Map<Long, String> map = ReferencedKeyMap.create(isSoft, supplier);
         populate(map);
-        collect();
-        // assertTrue(map.isEmpty() || isSoft, "Weak not collecting");
+        if (!isSoft) {
+            if (!collect(() -> map.isEmpty())) {
+                throw new RuntimeException("WeakReference map not collecting!");
+            }
+        }
         populate(map);
         methods(map);
     }
@@ -71,8 +78,11 @@ public class ReferencedKeyTest {
     static void setTest(boolean isSoft, Supplier<Map<ReferenceKey<Long>, ReferenceKey<Long>>> supplier) {
         ReferencedKeySet<Long> set = ReferencedKeySet.create(isSoft, supplier);
         populate(set);
-        collect();
-        // assertTrue(set.isEmpty() || isSoft, "Weak not collecting");
+        if (!isSoft) {
+            if (!collect(() -> set.isEmpty())) {
+                throw new RuntimeException("WeakReference set not collecting!");
+            }
+        }
         populate(set);
         methods(set);
     }
@@ -116,17 +126,33 @@ public class ReferencedKeyTest {
         assertTrue(intern2 != null, "intern failed");
     }
 
-    static void collect() {
-        System.gc();
-        sleep();
-    }
+    // Borrowed from jdk.test.lib.util.ForceGC but couldn't use from java.base/jdk.internal.util
+    static boolean collect(BooleanSupplier booleanSupplier) {
+        ReferenceQueue<Object> queue = new ReferenceQueue<>();
+        Object obj = new Object();
+        PhantomReference<Object> ref = new PhantomReference<>(obj, queue);
+        obj = null;
+        Reference.reachabilityFence(obj);
+        Reference.reachabilityFence(ref);
+        long timeout = 1000L;
+        long quanta = 200L;
+        long retries = timeout / quanta;
 
-    static void sleep() {
-        try {
-            Thread.sleep(100L);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        for (; retries >= 0; retries--) {
+            if (booleanSupplier.getAsBoolean()) {
+                return true;
+            }
+
+            System.gc();
+
+            try {
+                queue.remove(quanta);
+            } catch (InterruptedException ie) {
+                // ignore, the loop will try again
+            }
         }
+
+        return booleanSupplier.getAsBoolean();
     }
 
     static void populate(Map<Long, String> map) {
