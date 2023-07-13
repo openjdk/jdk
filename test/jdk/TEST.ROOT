@@ -72,6 +72,7 @@ requires.properties= \
     vm.hasSA \
     vm.hasJFR \
     vm.jvmci \
+    vm.jvmci.enabled \
     vm.jvmti \
     docker.support \
     release.implementor \

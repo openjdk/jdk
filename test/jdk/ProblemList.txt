@@ -576,8 +576,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
 
-sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
-
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
 sun/security/smartcardio/TestConnectAgain.java                  8039280 generic-all
