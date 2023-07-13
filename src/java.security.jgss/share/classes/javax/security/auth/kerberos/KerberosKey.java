@@ -284,8 +284,16 @@ public class KerberosKey implements SecretKey {
      */
     @Override
     public int hashCode() {
-        return Arrays.deepHashCode(new Object[]{isDestroyed(), getEncoded(),
-                getKeyType(), principal, versionNum});
+        int result = 17;
+        if (isDestroyed()) {
+            return result;
+        }
+        result = 37 * result + Arrays.hashCode(getEncoded());
+        result = 37 * result + getKeyType();
+        if (principal != null) {
+            result = 37 * result + principal.hashCode();
+        }
+        return result * 37 + versionNum;
     }
 
     /**
