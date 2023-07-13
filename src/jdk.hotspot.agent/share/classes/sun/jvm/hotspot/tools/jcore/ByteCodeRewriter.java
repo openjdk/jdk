@@ -103,9 +103,7 @@ public class ByteCodeRewriter
           cpCacheIndex = ~cpCacheIndex;
           cpCacheIndex = bytes.swapInt(cpCacheIndex);
           short cpIndex = (short) cpCache.getIndyEntryAt(cpCacheIndex).getConstantPoolIndex();
-          if (!cpool.getTagAt(cpIndex).isInvokeDynamic()) {
-            throw new IllegalArgumentException("CP Entry should be InvokeDynamic");
-          }
+          Assert.that(cpool.getTagAt(cpIndex).isInvokeDynamic(), "CP Entry should be InvokeDynamic");
           return cpIndex;
        } else if (fmt.contains("JJ")) {
           // change byte-ordering and go via cache
