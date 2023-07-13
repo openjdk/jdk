@@ -23,6 +23,8 @@
 package jdk.internal.util;
 
 import jdk.internal.vm.annotation.ForceInline;
+
+import java.nio.ByteOrder;
 import java.util.Locale;
 
 /**
@@ -33,19 +35,81 @@ import java.util.Locale;
  * architecture values.
  */
 public enum Architecture {
-    OTHER,      // An unknown architecture not specifically named
-    X64,        // Represents AMD64 and X86_64
-    X86,
-    AARCH64,
-    ARM,
-    RISCV64,
-    LOONGARCH64,
-    S390,
-    PPC64,
-    MIPSEL,
-    MIPS64EL
+    /*
+     * An unknown architecture not specifically named.
+     * The addrSize and ByteOrder values are those of the current architecture.
+     */
+    OTHER(is64bit() ? 64 : 32, ByteOrder.nativeOrder()),
+    X64(64, ByteOrder.LITTLE_ENDIAN),  // Represents AMD64 and X86_64
+    X86(32, ByteOrder.LITTLE_ENDIAN),
+    AARCH64(64, ByteOrder.LITTLE_ENDIAN),
+    ARM(32, ByteOrder.LITTLE_ENDIAN),
+    RISCV64(64, ByteOrder.LITTLE_ENDIAN),
+    LOONGARCH64(64, ByteOrder.LITTLE_ENDIAN),
+    S390(64, ByteOrder.BIG_ENDIAN),
+    PPC64(64, ByteOrder.BIG_ENDIAN),
+    PPC64LE(64, ByteOrder.LITTLE_ENDIAN),
+    MIPSEL(32, ByteOrder.LITTLE_ENDIAN),
+    MIPS64EL(64, ByteOrder.LITTLE_ENDIAN)
     ;
 
+    private final int addrSize;
+    private final ByteOrder byteOrder;
+
+    /**
+     * Construct an Architecture with number of address bits and byte order.
+     * @param addrSize number of address bits, typically 64 or 32
+     * @param byteOrder the byte order, big-endian or little-endian
+     */
+    Architecture(int addrSize, ByteOrder byteOrder) {
+        this.addrSize = addrSize;
+        this.byteOrder = byteOrder;
+    }
+
+    /**
+     * {@return the number of address bits, typically 64 or 32}
+     */
+    public int addressSize() {
+        return addrSize;
+    }
+
+    /**
+     * {@return the byte order, {@link ByteOrder#BIG_ENDIAN} or {@link ByteOrder#LITTLE_ENDIAN}}
+     */
+    public ByteOrder byteOrder() {
+        return byteOrder;
+    }
+
+    /**
+     * {@return the Architecture by name or an alias for the architecture}
+     * The names are mapped to upper case before mapping to an Architecture.
+     * @param archName an Architecture name or alias for the architecture.
+     * @throws IllegalArgumentException if the name is not an alias or an Architecture name
+     */
+    public static Architecture lookupByName(String archName) {
+        archName = archName.toUpperCase(Locale.ROOT); // normalize to uppercase
+        return switch (archName) {
+            case "X86_64", "AMD64" -> X64;
+            case "I386" -> X86;
+            case "S390X" -> S390;
+            default -> Architecture.valueOf(archName);
+        };
+    }
+
+    /**
+     * Returns the Architecture of the built architecture.
+     * Build time names are mapped to respective uppercase enum values.
+     * Names not recognized are mapped to Architecture.OTHER.
+     */
+    private static Architecture initArch(String archName) {
+        try {
+            return lookupByName(archName);
+        } catch (IllegalArgumentException ile) {
+            return Architecture.OTHER;
+        }
+    }
+
+    // Initialize the architecture by mapping aliases and names to the enum values.
     private static Architecture CURRENT_ARCH = initArch(PlatformProps.CURRENT_ARCH_STRING);
 
     /**
@@ -89,12 +153,19 @@ public enum Architecture {
     }
 
     /**
-     * {@return {@code true} if the current architecture is PPC64}
-     * Use {@link #isLittleEndian()} to determine big or little endian.
+     * {@return {@code true} if the current architecture is PPC64, big-endian}
      */
     @ForceInline
     public static boolean isPPC64() {
         return PlatformProps.TARGET_ARCH_IS_PPC64;
+    }
+
+    /**
+     * {@return {@code true} if the current architecture is PPC64, little-endian}
+     */
+    @ForceInline
+    public static boolean isPPC64LE() {
+        return PlatformProps.TARGET_ARCH_IS_PPC64LE;
     }
 
     /**
@@ -150,19 +221,5 @@ public enum Architecture {
     @ForceInline
     public static boolean isLittleEndian() {
         return PlatformProps.TARGET_ARCH_LITTLE_ENDIAN;
-    }
-
-
-    /**
-     * Returns the Architecture of the built architecture.
-     * Build time names are mapped to respective uppercase enum values.
-     * Names not recognized are mapped to Architecture.OTHER.
-     */
-    private static Architecture initArch(String archName) {
-        try {
-            return Architecture.valueOf(archName.toUpperCase(Locale.ROOT));
-        } catch (IllegalArgumentException ile) {
-            return Architecture.OTHER;
-        }
     }
 }
