@@ -124,7 +124,7 @@ class UnixConstants {
 // fgetxattr error codes for absent attributes depend on the OS:
 #ifdef _ALLBSD_SOURCE
     static final int PREFIX_XATTR_NOT_FOUND = ENOATTR;
-#elif __linux__
+#elif defined(__linux__)
     static final int PREFIX_XATTR_NOT_FOUND = ENODATA;
 #else
     // not supported (dummy values will not be used at runtime).
