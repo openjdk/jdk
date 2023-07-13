@@ -3256,6 +3256,7 @@ public final class URI
 
             boolean serverChars;
             boolean regChars;
+            boolean skipParseException;
 
             if (scan(p, n, "]") > p) {
                 // contains a literal IPv6 address, therefore % is allowed
@@ -3271,15 +3272,28 @@ public final class URI
                 return n;
             }
 
+            // When parsing a URI, skip creating exception objects if the server-based
+            // authority is not required and the registry parse is successful.
+            //
+            skipParseException = (!requireServerAuthority && regChars);
             if (serverChars) {
                 // Might be (probably is) a server-based authority, so attempt
                 // to parse it as such.  If the attempt fails, try to treat it
                 // as a registry-based authority.
                 try {
-                    q = parseServer(p, n);
-                    if (q < n)
-                        failExpecting("end of authority", q);
-                    authority = input.substring(p, n);
+                    q = parseServer(p, n, skipParseException);
+                    if (q < n) {
+                        if (skipParseException) {
+                            userInfo = null;
+                            host = null;
+                            port = -1;
+                            q = p;
+                        } else {
+                            failExpecting("end of authority", q);
+                        }
+                    } else {
+                        authority = input.substring(p, n);
+                    }
                 } catch (URISyntaxException x) {
                     // Undo results of failed parse
                     userInfo = null;
@@ -3317,7 +3331,7 @@ public final class URI
 
         // [<userinfo>@]<host>[:<port>]
         //
-        private int parseServer(int start, int n)
+        private int parseServer(int start, int n, boolean skipParseException)
             throws URISyntaxException
         {
             int p = start;
@@ -3357,7 +3371,7 @@ public final class URI
             } else {
                 q = parseIPv4Address(p, n);
                 if (q <= p)
-                    q = parseHostname(p, n);
+                    q = parseHostname(p, n, skipParseException);
                 p = q;
             }
 
@@ -3374,7 +3388,10 @@ public final class URI
                     }
                     p = q;
                 }
+            } else if (p < n && skipParseException) {
+                return p;
             }
+
             if (p < n)
                 failExpecting("port number", p);
 
@@ -3479,7 +3496,7 @@ public final class URI
         // domainlabel   = alphanum | alphanum *( alphanum | "-" ) alphanum
         // toplabel      = alpha | alpha *( alphanum | "-" ) alphanum
         //
-        private int parseHostname(int start, int n)
+        private int parseHostname(int start, int n, boolean skipParseException)
             throws URISyntaxException
         {
             int p = start;
@@ -3507,9 +3524,12 @@ public final class URI
                 p = q;
             } while (p < n);
 
-            if ((p < n) && !at(p, n, ':'))
+            if ((p < n) && !at(p, n, ':')) {
+                if (skipParseException) {
+                    return p;
+                }
                 fail("Illegal character in hostname", p);
-
+            }
             if (l < 0)
                 failExpecting("hostname", start);
 
