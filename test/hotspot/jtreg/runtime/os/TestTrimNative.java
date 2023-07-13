@@ -31,7 +31,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative trimNative
+ * @run driver TestTrimNative trimNative
  */
 
 /*
@@ -42,7 +42,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative trimNativeHighInterval
+ * @run driver TestTrimNative trimNativeHighInterval
  */
 
 /*
@@ -53,7 +53,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative trimNativeLowInterval
+ * @run driver TestTrimNative trimNativeLowInterval
  */
 
 /*
@@ -64,7 +64,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative testOffByDefault
+ * @run driver TestTrimNative testOffByDefault
  */
 
 /*
@@ -75,7 +75,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative testOffExplicit
+ * @run driver TestTrimNative testOffExplicit
  */
 
 /*
@@ -86,7 +86,7 @@
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI TestTrimNative testOffOnNonCompliantPlatforms
+ * @run driver TestTrimNative testOffOnNonCompliantPlatforms
  */
 
 import jdk.test.lib.Platform;
@@ -148,8 +148,8 @@ public class TestTrimNative {
                                                  int expectedInterval) {
         if (expectEnabled) {
             output.shouldContain("Periodic native trim enabled (interval: " + expectedInterval + " ms");
-            output.shouldContain("NativeTrimmer start");
-            output.shouldContain("NativeTrimmer stop");
+            output.shouldContain("Native heap trimmer start");
+            output.shouldContain("Native heap trimmer stop");
         } else {
             output.shouldNotContain("Periodic native trim enabled");
         }

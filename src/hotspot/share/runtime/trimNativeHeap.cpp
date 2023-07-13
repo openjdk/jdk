@@ -37,14 +37,20 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-class NativeTrimmerThread : public NamedThread {
+class NativeHeapTrimmerThread : public NamedThread {
+
+  // Upper limit for the backoff during pending/in-progress safepoint.
+  // Chosen as reasonable value to balance the overheads of waking up
+  // during the safepoint, which might have undesired effects on latencies,
+  // and the accuracy in tracking the trimming interval.
+  static constexpr int64_t safepoint_poll_ms = 250;
 
   Monitor* const _lock;
   bool _stop;
   uint16_t _suspend_count;
 
   // Statistics
-  unsigned _num_trims_performed;
+  uint64_t _num_trims_performed;
 
   bool is_suspended() const {
     assert(_lock->is_locked(), "Must be");
@@ -70,16 +76,15 @@ class NativeTrimmerThread : public NamedThread {
 
   bool at_or_nearing_safepoint() const {
     return SafepointSynchronize::is_at_safepoint() ||
-        SafepointSynchronize::is_synchronizing();
+           SafepointSynchronize::is_synchronizing();
   }
-  static constexpr int64_t safepoint_poll_ms = 250;
 
   // in seconds
   static double now() { return os::elapsedTime(); }
   static double to_ms(double seconds) { return seconds * 1000.0; }
 
   struct LogStartStopMark {
-    void log(const char* s) { log_info(trimnative)("NativeTrimmer %s.", s); }
+    void log(const char* s) { log_info(trimnative)("Native heap trimmer %s", s); }
     LogStartStopMark()  { log("start"); }
     ~LogStartStopMark() { log("stop"); }
   };
@@ -87,11 +92,11 @@ class NativeTrimmerThread : public NamedThread {
   void run() override {
     assert(NativeHeapTrimmer::enabled(), "Only call if enabled");
 
-    LogStartStopMark logStartStop;
+    LogStartStopMark lssm;
 
     const double interval_secs = (double)TrimNativeHeapInterval / 1000;
 
-    for (;;) {
+    while (true) {
       double tnow = now();
       double next_trim_time = tnow + interval_secs;
 
@@ -99,27 +104,25 @@ class NativeTrimmerThread : public NamedThread {
         MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
         if (_stop) return;
 
-        do { // handle spurious wakeups
+        while (at_or_nearing_safepoint() || is_suspended() || next_trim_time > tnow) {
           if (is_suspended()) {
             ml.wait(0); // infinite
           } else if (next_trim_time > tnow) {
             const int64_t wait_ms = MAX2(1.0, to_ms(next_trim_time - tnow));
             ml.wait(wait_ms);
           } else if (at_or_nearing_safepoint()) {
-            const int64_t wait_ms = MIN2((int64_t)TrimNativeHeapInterval, safepoint_poll_ms);
-            ml.wait(safepoint_poll_ms);
+            const int64_t wait_ms = MIN2<int64_t>(TrimNativeHeapInterval, safepoint_poll_ms);
+            ml.wait(wait_ms);
           }
 
           if (_stop) return;
 
           tnow = now();
+        }
+      }
 
-        } while (at_or_nearing_safepoint() || is_suspended() || next_trim_time > tnow);
-      } // Lock scope
-
-      // 2 - Trim outside of lock protection.
       execute_trim_and_log(tnow);
-    } // end for(;;)
+    }
   }
 
   // Execute the native trim, log results.
@@ -138,12 +141,14 @@ class NativeTrimmerThread : public NamedThread {
         if (sc.after != SIZE_MAX) {
           const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
           const char sign = sc.after < sc.before ? '-' : '+';
-          log_info(trimnative)("Trim native heap (%u): RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %1.3fms",
+          log_info(trimnative)("Trim native heap (" UINT64_FORMAT "): RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %.3fms",
                                _num_trims_performed,
                                PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                                to_ms(t2 - t1));
         } else {
-          log_info(trimnative)("Trim native heap (%u): complete, no details, %1.3fms", _num_trims_performed, to_ms(t2 - t1));
+          log_info(trimnative)("Trim native heap (" UINT64_FORMAT "): complete, no details, %.3fms",
+                               _num_trims_performed,
+                               to_ms(t2 - t1));
         }
       }
     }
@@ -151,8 +156,8 @@ class NativeTrimmerThread : public NamedThread {
 
 public:
 
-  NativeTrimmerThread() :
-    _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeTrimmer_lock")),
+  NativeHeapTrimmerThread() :
+    _lock(new (std::nothrow) PaddedMonitor(Mutex::nosafepoint, "NativeHeapTrimmer_lock")),
     _stop(false),
     _suspend_count(0),
     _num_trims_performed(0)
@@ -171,7 +176,7 @@ public:
       n = inc_suspend_count();
       // No need to wakeup trimmer
     }
-    log_debug(trimnative)("NativeTrimmer pause for %s (%u suspend requests)", reason, n);
+    log_debug(trimnative)("Native heap trimmer suspended for %s (%u suspend requests)", reason, n);
   }
 
   void resume(const char* reason) {
@@ -184,7 +189,7 @@ public:
         ml.notify_all(); // pause end
       }
     }
-    log_debug(trimnative)("NativeTrimmer unpause for %s (%u suspend requests)", reason, n);
+    log_debug(trimnative)("Native heap trimmer resumed after %s (%u suspend requests)", reason, n);
   }
 
   void stop() {
@@ -193,19 +198,19 @@ public:
     ml.notify_all();
   }
 
-}; // NativeTrimmer
+}; // NativeHeapTrimmer
 
-static NativeTrimmerThread* g_trimmer_thread = nullptr;
+static NativeHeapTrimmerThread* g_trimmer_thread = nullptr;
 
 void NativeHeapTrimmer::initialize() {
   assert(g_trimmer_thread == nullptr, "Only once");
   if (TrimNativeHeapInterval > 0) {
     if (!os::can_trim_native_heap()) {
       FLAG_SET_ERGO(TrimNativeHeapInterval, 0);
-      log_info(trimnative)("Native trim not supported on this platform.");
+      log_info(trimnative)("Native heap trim is not supported on this platform");
       return;
     }
-    g_trimmer_thread = new NativeTrimmerThread();
+    g_trimmer_thread = new NativeHeapTrimmerThread();
     log_info(trimnative)("Periodic native trim enabled (interval: %u ms)", TrimNativeHeapInterval);
   }
 }

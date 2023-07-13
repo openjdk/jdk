@@ -43,8 +43,6 @@ public:
   static void initialize();
   static void cleanup();
 
-  static uint64_t num_trims_performed();
-
   static inline bool enabled() { return TrimNativeHeapInterval > 0; }
 
   // Pause periodic trimming while in scope; when leaving scope,
