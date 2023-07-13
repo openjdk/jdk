@@ -147,7 +147,6 @@ public final class Jlink {
 
         private final Path output;
         private final Set<String> modules;
-        private final ByteOrder endian;
         private final ModuleFinder finder;
 
         /**
@@ -155,26 +154,14 @@ public final class Jlink {
          *
          * @param output Output directory, must not exist.
          * @param modules The possibly-empty set of root modules to resolve
-         * @param endian Jimage byte order. Can be null, which implies the byte order for
-         *               the generated image will be determined during image generation
          * @param finder the ModuleFinder for this configuration
          */
         public JlinkConfiguration(Path output,
                                   Set<String> modules,
-                                  ByteOrder endian,
                                   ModuleFinder finder) {
             this.output = output;
             this.modules = Objects.requireNonNull(modules);
-            this.endian = endian;
             this.finder = finder;
-        }
-
-        /**
-         * @return the byte ordering, can be null which implies no specific ByteOrder has been
-         * explicitly set
-         */
-        public ByteOrder getByteOrder() {
-            return endian;
         }
 
         /**
@@ -231,7 +218,6 @@ public final class Jlink {
                 modsBuilder.append(p).append(",");
             }
             builder.append("modules=").append(modsBuilder).append("\n");
-            builder.append("endian=").append(endian).append("\n");
             return builder.toString();
         }
     }

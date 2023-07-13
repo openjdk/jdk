@@ -356,6 +356,7 @@ public class JlinkTask {
                                     null,
                                     IGNORE_SIGNING_DEFAULT,
                                     false,
+                                    null,
                                     false,
                                     null);
 
@@ -395,7 +396,6 @@ public class JlinkTask {
 
         return new JlinkConfiguration(options.output,
                                       roots,
-                                      options.endian,
                                       finder);
     }
 
@@ -413,6 +413,7 @@ public class JlinkTask {
                                                           options.packagedModulesPath,
                                                           options.ignoreSigning,
                                                           options.bindServices,
+                                                          options.endian,
                                                           options.verbose,
                                                           log);
 
@@ -517,6 +518,7 @@ public class JlinkTask {
                                                    Path retainModulesPath,
                                                    boolean ignoreSigning,
                                                    boolean bindService,
+                                                   ByteOrder endian,
                                                    boolean verbose,
                                                    PrintWriter log)
             throws IOException
@@ -565,7 +567,7 @@ public class JlinkTask {
 
         Map<String, Path> mods = cf.modules().stream()
             .collect(Collectors.toMap(ResolvedModule::name, JlinkTask::toPathLocation));
-        return new ImageHelper(cf, mods, config.getByteOrder(), retainModulesPath, ignoreSigning,
+        return new ImageHelper(cf, mods, endian, retainModulesPath, ignoreSigning,
                 verbose, log);
     }
 
