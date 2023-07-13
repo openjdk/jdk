@@ -115,4 +115,3 @@ public class TestEagerReclaimHumongousRegionsWithRefs {
         output.shouldHaveExitValue(0);
     }
 }
-

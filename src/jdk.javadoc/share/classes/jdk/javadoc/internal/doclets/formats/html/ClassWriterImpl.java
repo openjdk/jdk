@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ModuleElement;
@@ -41,6 +42,7 @@ import javax.lang.model.util.SimpleElementVisitor8;
 
 import com.sun.source.doctree.DeprecatedTree;
 import com.sun.source.doctree.DocTree;
+
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
@@ -51,7 +53,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
 import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.taglets.ParamTaglet;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -90,6 +91,11 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;
         this.classTree = classTree;
+    }
+
+    @Override
+    public Content getOutputInstance() {
+        return new ContentBuilder();
     }
 
     @Override
@@ -173,7 +179,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     }
 
     @Override
-    protected TypeElement getCurrentPageElement() {
+    public TypeElement getCurrentPageElement() {
         return typeElement;
     }
 
@@ -268,8 +274,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter implements ClassWrite
     @Override
     public void addParamInfo(Content target) {
         if (utils.hasBlockTag(typeElement, DocTree.Kind.PARAM)) {
-            Content paramInfo = (new ParamTaglet()).getAllBlockTagOutput(typeElement,
-                    getTagletWriterInstance(false));
+            var t = configuration.tagletManager.getTaglet(DocTree.Kind.PARAM);
+            Content paramInfo = t.getAllBlockTagOutput(typeElement, getTagletWriterInstance(false));
             if (!paramInfo.isEmpty()) {
                 target.add(HtmlTree.DL(HtmlStyle.notes, paramInfo));
             }
