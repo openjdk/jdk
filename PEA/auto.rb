@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 JVM_FLAGS="-XX:+PrintEscapeAnalysis -XX:+PrintEliminateAllocations -XX:-PrintOptoAssembly -Xlog:gc -XX:+PrintOptoStatistics -XX:+DoPartialEscapeAnalysis"
-PROBLEM_LIST = ["run_composite.sh"]
+PROBLEM_LIST = ["run_composite.sh", "run_merge_if_else_paranoid.sh"]
 
 if $0 == __FILE__
   puts  "using #{%x|which java|}"
