@@ -1472,17 +1472,17 @@ public abstract sealed class $Type$Buffer
     /**
      * Absolute bulk <i>put</i> method&nbsp;&nbsp;<i>(optional operation)</i>.
      *
-     * <p> This method transfers $type$s from the given
-     * {@linkplain CharSequence} into this buffer.  If there are more $type$s
+     * <p> This method transfers {@code $type$}s from the given
+     * {@link CharSequence} into this buffer.  If there are more {@code $type$}s
      * to be copied from the {@code CharSequence} than remain in this buffer,
      * that is, if
-     * <code>end&nbsp;-&nbsp;start</code>&nbsp;{@code >}&nbsp;
-     * {@code limit()}&nbsp;-&nbsp;{@code index},
-     * then no $type$s are transferred and a {@link BufferOverflowException}
-     * is thrown.
+     * <code>end&nbsp;-&nbsp;start&nbsp;>&nbsp;
+     * limit()&nbsp;-&nbsp;index</code>,
+     * then no {@code $type$}s are transferred and a
+     * {@link BufferOverflowException} is thrown.
      *
      * <p> Otherwise, this method copies
-     * <i>n</i>&nbsp;=&nbsp;{@code end}&nbsp;-&nbsp;{@code start} $type$s
+     * <code>n&nbsp;=&nbsp;end&nbsp;-&nbsp;start</code> {@code $type$}s
      * from the given {@code CharSequence} into this buffer, starting at the
      * given {@code start} index and at the given {@code index} in this buffer.
      * The position of this buffer is unchanged.
@@ -1504,12 +1504,11 @@ public abstract sealed class $Type$Buffer
      * this method:
      * <ul>
      * <li>defines the range of characters to be read from the source in terms
-     * of the half-open interval {@code [start,}&nbsp;{@code  end)} instead of
+     * of the half-open interval <code>[start,&nbsp;end)</code> instead of
      * an {@code offset} and a {@code length};</li>
      * <li>throws a {@code BufferOverflowException} instead of an
      * {@code IndexOutOfBoundsException} for the condition
-     * {@code index}&nbsp;{@code +}&nbsp;{@code end}&nbsp;{@code -}&nbsp;
-     * {@code start}&nbsp;{@code >}&nbsp;{@code limit()}.</li>
+     * <code>index&nbsp;+&nbsp;end&nbsp;-&nbsp;start&nbsp;>&nbsp;limit()</code>.
      * </ul>
      *
      * @param  index
@@ -1517,7 +1516,8 @@ public abstract sealed class $Type$Buffer
      *         must be non-negative and less than {@code limit()}
      *
      * @param  csq
-     *         The {@code CharSequence} from which $type$s are to be read
+     *         The {@code CharSequence} from which {@code $type$}s
+     *         are to be read
      *
      * @param  start
      *         The offset within the {@code CharSequence} of the first $type$
