@@ -129,7 +129,7 @@ class NativeHeapTrimmerThread : public NamedThread {
   void execute_trim_and_log(double t1) {
     assert(os::can_trim_native_heap(), "Unexpected");
 
-    os::size_change_t sc;
+    os::size_change_t sc = { 0, 0 };
     LogTarget(Info, trimnative) lt;
     const bool logging_enabled = lt.is_enabled();
 
