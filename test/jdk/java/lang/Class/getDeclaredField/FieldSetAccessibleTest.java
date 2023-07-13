@@ -228,8 +228,7 @@ public class FieldSetAccessibleTest {
             throw new RuntimeException("Test failed for the following classes: " + failed);
         }
         if (!classFound && startIndex == 0 && index < maxIndex) {
-            // this is just to verify that we have indeed parsed rt.jar
-            // (or the java.base module)
+            // this is just to verify that we have indeed parsed the java.base module
             throw  new RuntimeException("Test failed: Class.class not found...");
         }
         if (classCount.get() == 0 && startIndex == 0) {

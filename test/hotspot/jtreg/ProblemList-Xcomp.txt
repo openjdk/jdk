@@ -46,3 +46,5 @@ serviceability/sa/ClhsdbInspect.java 8283578 windows-x64
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manyDiff_a/TestDescription.java 8308367 windows-x64
 vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_a/TestDescription.java 8308367 windows-x64
 vmTestbase/vm/mlvm/indy/func/jvmti/redefineClassInTarget/TestDescription.java 8308367 windows-x64
+
+vmTestbase/nsk/jvmti/scenarios/capability/CM03/cm03t001/TestDescription.java 8299493 macosx-x64
