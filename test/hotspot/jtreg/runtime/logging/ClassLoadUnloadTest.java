@@ -123,17 +123,16 @@ public class ClassLoadUnloadTest {
         checkAbsent("[class,load,cause]");
         checkFor("class load cause logging will not produce output without LogClassLoadingCauseFor");
 
-        //  -Xlog:class+load+cause -XX:LogClassLoadingCauseFor=java.lang.StringCoding
-        pb = exec("-Xlog:class+load+cause", "-XX:LogClassLoadingCauseFor=java.lang.StringCoding");
-        checkFor("[class,load,cause]", "Java stack when loading java.lang.StringCoding:");
+        String x = ClassUnloadTestMain.class.getName();
 
-        //  -Xlog:class+load+cause -XX:LogClassLoadingCauseFor=java.lang.StringCoding
-        pb = exec("-Xlog:class+load+cause+native", "-XX:LogClassLoadingCauseFor=java.lang.StringCoding");
-        checkFor("[class,load,cause,native]", "Native stack when loading java.lang.StringCoding:");
+        pb = exec("-Xlog:class+load+cause", "-XX:LogClassLoadingCauseFor=" + x);
+        checkFor("[class,load,cause]", "Java stack when loading " + x + ":");
 
-        //  -Xlog:class+load+cause* -XX:LogClassLoadingCauseFor=java.lang.StringCoding
-        pb = exec("-Xlog:class+load+cause*", "-XX:LogClassLoadingCauseFor=java.lang.StringCoding");
-        checkFor("[class,load,cause] Java stack when loading java.lang.StringCoding:");
-        checkFor("[class,load,cause,native] Native stack when loading java.lang.StringCoding:");
+        pb = exec("-Xlog:class+load+cause+native", "-XX:LogClassLoadingCauseFor=" + x);
+        checkFor("[class,load,cause,native]", "Native stack when loading " + x + ":");
+
+        pb = exec("-Xlog:class+load+cause*", "-XX:LogClassLoadingCauseFor=" + x);
+        checkFor("[class,load,cause] Java stack when loading " + x + ":");
+        checkFor("[class,load,cause,native] Native stack when loading " + x + ":");
     }
 }
