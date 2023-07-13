@@ -3421,8 +3421,8 @@ public final class Math {
     }
 
     // Constants used in scalb
-    static double twoToTheDoubleScaleUp = powerOfTwoD(512);
-    static double twoToTheDoubleScaleDown = powerOfTwoD(-512);
+    private static final double twoToTheDoubleScaleUp = powerOfTwoD(512);
+    private static final double twoToTheDoubleScaleDown = powerOfTwoD(-512);
 
     /**
      * Returns a floating-point power of two in the normal range.
