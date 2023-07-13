@@ -33,6 +33,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/ostream.hpp"
+#include "testutils.hpp"
 #include "unittest.hpp"
 #ifdef _WIN32
 #include "os_windows.hpp"
@@ -924,3 +925,166 @@ TEST_VM(os, open_O_CLOEXEC) {
   ::close(fd);
 #endif
 }
+
+static bool test_attempt_reserve_memory_in_range(char* from, char* to, size_t size,
+                                                 size_t alignment, int tries) {
+  bool rc = false;
+  char* addr = os::attempt_reserve_memory_in_range(from, to, size, alignment, tries);
+  if (addr != nullptr) {
+#define ERRINFO "addr: " << ((void*)addr) << " from: " << ((void*)from) << " to: " << ((void*)to) \
+                 << " size: " << size << " alignment: " << alignment
+    EXPECT_TRUE(is_aligned(addr, alignment)) << ERRINFO;
+    EXPECT_LE(addr, to - size) << ERRINFO;
+    EXPECT_LE(addr, os::get_highest_attach_address()) << ERRINFO;
+    EXPECT_GE(addr, from) << ERRINFO;
+    EXPECT_GE(addr, os::get_lowest_attach_address()) << ERRINFO;
+#undef ERRINFO
+    os::release_memory(addr, size);
+    rc = true;
+  }
+  return rc;
+}
+
+static bool test_attempt_reserve_memory_below(char* limit, size_t size,
+                                              size_t alignment, int tries) {
+  bool rc = false;
+  char* addr = os::attempt_reserve_memory_below(limit, size, alignment, tries);
+  if (addr != nullptr) {
+#define ERRINFO "addr: " << ((void*)addr) << "limit: " << ((void*)limit) << " size: " << size << " alignment: " << alignment
+    EXPECT_TRUE(is_aligned(addr, alignment)) << ERRINFO;
+    EXPECT_LE(addr, limit - size) << ERRINFO;
+    EXPECT_LT(addr, os::get_highest_attach_address()) << ERRINFO;
+    EXPECT_GE(addr, os::get_lowest_attach_address()) << ERRINFO;
+#undef ERRINFO
+    os::release_memory(addr, size);
+    rc = true;
+  }
+  return rc;
+}
+
+TEST_VM(os, attempt_reserve_memory_in_below_or_in_range) {
+
+  const size_t pagesize = os::vm_page_size();
+  static const struct { uintptr_t from; uintptr_t to; } some_ranges [] = {
+      { 0, SIZE_MAX }, // everything
+      { G, 4 * G },
+      { G + 16, (4 * G) - 16 }, // not page aligned
+#ifdef _LP64
+      { nth_bit(32), nth_bit(48) },
+#endif
+      { 0, 0 } // last
+  };
+
+  int num_success = 0;
+
+  for (int n = 0; some_ranges[n].to != 0; n++) {
+    char* const from = (char*)(some_ranges[n].from);
+    char* const to = (char*)(some_ranges[n].to);
+    const size_t range_size = to - from;
+    for (size_t size = os::vm_page_size(); size < MIN2(range_size, 128 * M); size *= 13) {
+      for (size_t alignment = os::vm_page_size(); alignment < MIN2(range_size, 128 * M); alignment *= 8) {
+        for (int tries = 1; tries <= 64; tries *= 8) {
+          bool rc1 = test_attempt_reserve_memory_in_range(from, to, size, alignment, tries);
+          bool rc2 = test_attempt_reserve_memory_below(to, size, alignment, tries);
+          num_success += (rc1 && rc2) ? 1 : 0;
+        }
+      }
+    }
+  }
+  ASSERT_GE(num_success, 10);
+}
+
+TEST_VM(os, attempt_reserve_memory_in_range_cornercases) {
+  char* const min = (char*)(128 * M);
+  char* const max = min + M;
+
+  char* p = os::attempt_reserve_memory_at(min, M, false);
+  if (p != nullptr) {
+
+    // For the duration of the test, we optimistically assume this range stays reservable.
+
+    assert(p == min, "Sanity");
+    os::release_memory(p, M);
+
+    // 1) reservation of 1 M with 1 M alignment has exactly one fit in the range
+    p = os::attempt_reserve_memory_in_range(min, max, M, M, 1);
+    ASSERT_EQ(p, min);
+    os::release_memory(p, M);
+
+    // 2) reservation of just one page, but with 1 M alignment, still has exactly one fit in the range
+    p = os::attempt_reserve_memory_in_range(min, max, os::vm_page_size(), M, 1);
+    ASSERT_EQ(p, min);
+    os::release_memory(p, os::vm_page_size());
+
+    // 3) reservation of 1 M + page will not fit
+    p = os::attempt_reserve_memory_in_range(min, max, M + os::vm_page_size(), 1, 1);
+    ASSERT_NULL(p);
+
+    // 4) reservation of page with larger than 128M alignment will not fit
+    p = os::attempt_reserve_memory_in_range(min, max, os::vm_page_size(), 256 * M, 1);
+    ASSERT_NULL(p);
+
+  } else {
+    tty->print_cr("Failed to reserve block; skipping test");
+  }
+}
+
+#if defined(LINUX) || defined(_WIN32)
+TEST_VM(os, attempt_reserve_memory_in_below_2) {
+
+  // First find the lowest mapped block in the process' address space. The mechanism
+  // differs between Windows and Linux.
+  char* first_mapping_start = nullptr;
+
+#ifdef LINUX
+  // Do this test only if we have a large enough free area in lower address regions
+  {
+    FILE* f = os::fopen("/proc/self/maps", "r");
+    ASSERT_NOT_NULL(f);
+    ASSERT_EQ(::fscanf(f, "%p-", &first_mapping_start), 1);
+    ::fclose(f);
+  }
+#endif
+#ifdef _WIN32
+  {
+    char* p = os::get_lowest_attach_address();
+    MEMORY_BASIC_INFORMATION minfo;
+    memset(&minfo, 0, sizeof(minfo));
+    if (::VirtualQuery(p, &minfo, sizeof(minfo))) {
+      if (minfo.State == MEM_FREE) {
+        // Note: for free regions, most of MEMORY_BASIC_INFORMATION is undefined.
+        //  Only region dimensions are not: use those to jump to the end of
+        //  the free range.
+        first_mapping_start = (char*)minfo.BaseAddress + minfo.RegionSize;
+      }
+    }
+  }
+#endif
+
+  if (p2u(first_mapping_start) >= (128 * M)) {
+    // address space hole large enough, the following should work
+    char* const limit = first_mapping_start + os::vm_page_size(); // limit in the middle of the first mapping.
+    char* p1 = os::attempt_reserve_memory_below(limit, M, M, 8);
+    // it should have attempted first to allocate adjacent to the mapping
+    char* expected_mapping_address = align_down(first_mapping_start - M, M);
+    EXPECT_EQ(expected_mapping_address, p1);
+
+    // Attempt again, this time it should allocate adjacent to the last segment.
+    char* p2 = os::attempt_reserve_memory_below(limit, M, M, 8);
+    expected_mapping_address = p1 - M;
+    EXPECT_EQ(expected_mapping_address, p2);
+
+    // Attempt again, this time with a higher alignment.
+    char* p3 = os::attempt_reserve_memory_below(limit, M, 64 * M, 8);
+    expected_mapping_address = align_down(p2 - M, 64 * M);
+    EXPECT_EQ(expected_mapping_address, p3);
+
+    os::release_memory(p1, M);
+    os::release_memory(p2, M);
+    os::release_memory(p3, M);
+  } else {
+    tty->print_cr("Lower address range too populated (lowest mapping found "
+                  "at @" PTR_FORMAT "), skipping test", p2i(first_mapping_start));
+  }
+}
+#endif // LINUX || WINDOWS

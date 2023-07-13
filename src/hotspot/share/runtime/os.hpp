@@ -194,6 +194,9 @@ class os: AllStatic {
 
   static char*  pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool executable);
 
+  static char*  pd_attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment,
+                                                int max_attempts);
+
   static bool   pd_commit_memory(char* addr, size_t bytes, bool executable);
   static bool   pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
                                  bool executable);
@@ -420,6 +423,10 @@ class os: AllStatic {
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 
+  // Returns the minimal and maximal address one should use for reserving memory
+  static char* get_lowest_attach_address();
+  static char* get_highest_attach_address();
+
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
@@ -431,6 +438,15 @@ class os: AllStatic {
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
   static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
+
+  // Attempts to reserve memory below a given max address (for zero-based addressing needs) and
+  // aligned to a given alignment.
+  static char*  attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment, int max_attempts);
+
+  // Given an address range [min, max) attempt to reserve memory within this range by probing a number
+  // of attach points within this range. The maximum number of attempts is limited with max_attempts.
+  static char*  attempt_reserve_memory_in_range(char* min, char* max, size_t bytes,
+                                                size_t alignment, int max_attempts);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,

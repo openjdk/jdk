@@ -4226,6 +4226,90 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
+char* os::pd_attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment,
+                                          int max_attempts) {
+
+  assert(is_aligned(alignment, os::vm_allocation_granularity()), "alignment unaligned");
+  assert(is_aligned(bytes, os::vm_page_size()), "size unaligned");
+
+  // Scan /proc/self/maps for an address space hole that is suitable for our reservation. If found,
+  // attempt to map into that hole.
+
+  log_trace(os, map)("attempt_reserve_memory_below " PTR_FORMAT ", bytes: " SIZE_FORMAT_X
+                     ", alignment: " SIZE_FORMAT_X, p2i(max), bytes, alignment);
+
+// somewhat shorter
+#define ALGNUP(x) align_up(x, alignment)
+#define ALGNDWN(x) align_down(x, alignment)
+
+  FILE* f = os::fopen("/proc/self/maps", "r");
+  if (f == nullptr) {
+    return nullptr;
+  }
+
+  char* const min_address = ALGNUP(os::get_lowest_attach_address());
+  char* const max_address = MIN2(os::get_highest_attach_address(), max);
+
+  if (max_address < (min_address + bytes)) {
+    return nullptr;
+  }
+
+  char* result = nullptr;
+
+  char line[512];
+  size_t len = 0;
+  char* last_mapping_end = 0;
+  int stop_after = max_attempts;
+
+  while (stop_after-- > 0 && result == nullptr && fgets(line, sizeof(line), f) != nullptr) {
+
+    char* mapping_start, *mapping_end;
+    if (sscanf(line, "%p-%p", &mapping_start, &mapping_end) == 2) {
+
+      log_trace(os, map)("mapped block found [" PTR_FORMAT "-" PTR_FORMAT ")",
+                         p2i(mapping_start), p2i(mapping_end));
+
+      assert(mapping_start >= last_mapping_end && mapping_end >= mapping_start, "Sanity");
+
+      // The hole is preceding this mapping
+      char* const hole_start = ALGNUP(last_mapping_end);
+      char* const hole_end = mapping_start;
+
+      if ((hole_start + bytes) > max_address) {
+        break; // No need to continue
+      }
+
+      char* const intersected_start = MAX2(hole_start, min_address);
+      char* const intersected_end = MIN2(hole_end, max_address);
+
+      if ((intersected_start + bytes) < intersected_end) {
+        log_trace(os, map)("candidate address space hole [" PTR_FORMAT "-" PTR_FORMAT ")",
+                           p2i(intersected_start), p2i(intersected_end));
+        // Found a candidate hole.
+        // Attempt to allocate first at the end, failing that, at the start.
+        char* const candidate = ALGNDWN(intersected_end - bytes);
+        char* const candidate2 = intersected_start;
+        result = os::attempt_reserve_memory_at(candidate, bytes, false);
+        if (result == nullptr && candidate2 != candidate) {
+          result = pd_attempt_reserve_memory_at(candidate2, bytes, false);
+          if (result != nullptr) {
+            log_trace(os, map)("successfully reserved [" PTR_FORMAT "-" PTR_FORMAT ")",
+                               p2i(result), p2i(result + bytes));
+          }
+        };
+      }
+      last_mapping_end = mapping_end;
+    }
+  }
+
+  fclose(f);
+
+#undef ALGNUP
+#undef ALGNDOWN
+
+  return result;
+}
+
 // Used to convert frequent JVM_Yield() to nops
 bool os::dont_yield() {
   return DontYieldALot;

@@ -3389,6 +3389,58 @@ char* os::pd_attempt_reserve_memory_at(char* addr, size_t bytes, bool exec) {
   return res;
 }
 
+char* os::pd_attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment,
+                                          int max_attempts) {
+
+  assert(is_aligned(alignment, os::vm_allocation_granularity()), "alignment unaligned");
+  assert(is_aligned(bytes, os::vm_page_size()), "size unaligned");
+
+  // Use find_mapping (ultimately, VirtualQuery) to find an address hole large enough
+  // to hold bytes bytes. Give preference to higher addresses. Then attempt to map there.
+
+  log_trace(os, map)("attempt_reserve_memory_below " PTR_FORMAT ", bytes: " SIZE_FORMAT_X
+                     ", alignment: " SIZE_FORMAT_X, p2i(max), bytes, alignment);
+
+  // somewhat shorter
+#define ALGNUP(x) align_up(x, alignment)
+#define ALGNDWN(x) align_down(x, alignment)
+
+  char* const min_address = ALGNUP(os::get_lowest_attach_address());
+  char* const max_address = MIN2(os::get_highest_attach_address(), max);
+
+  if (max_address < (min_address + bytes)) {
+    return nullptr;
+  }
+
+  char* result = nullptr;
+  char* candidate = align_down(max_address - bytes, alignment);
+  int stop_after = max_attempts;
+
+  while (result == nullptr && stop_after-- > 0) {
+    os::win32::mapping_info_t mi;
+    if (os::win32::find_mapping((address)candidate, &mi)) {
+      // We found a mapping. Calculate a new candidate address bordering the lower
+      // boundary of that mapping, then retry.
+      log_trace(os, map)("mapped block found [" PTR_FORMAT "-" PTR_FORMAT ")",
+                         p2i(mi.base), p2i(mi.base + mi.size));
+      char* next_candidate = align_down((char*)mi.base - bytes, alignment);
+      assert(next_candidate < candidate, "odd result from VirtualQuery");
+      candidate = next_candidate;
+    } else {
+      result = pd_attempt_reserve_memory_at(candidate, bytes, false);
+      if (result != nullptr) {
+        log_trace(os, map)("successfully reserved [" PTR_FORMAT "-" PTR_FORMAT ")",
+                           p2i(result), p2i(result + bytes));
+      }
+    }
+  }
+
+#undef ALGNUP
+#undef ALGNDOWN
+
+  return result;
+}
+
 char* os::pd_attempt_map_memory_to_file_at(char* requested_addr, size_t bytes, int file_desc) {
   assert(file_desc >= 0, "file_desc is not valid");
   return map_memory_to_file(requested_addr, bytes, file_desc);

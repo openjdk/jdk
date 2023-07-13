@@ -589,8 +589,31 @@ bool Metaspace::class_space_is_initialized() {
 // On error, returns an unreserved space.
 ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size) {
 
+  ReservedSpace rs;
+
+  // First, attempt to reserve the class space such that zero-based addressing is possible.
+  // If the heap has also be allocated in low address regions, this will - with a high probability -
+  // cause the reserved range to nestle alongside the heap.
+  if (!rs.is_reserved()) {
+    // First try for zero-base zero-shift (lower 4G); failing that, try for zero-based with max shift (lower 32G)
+    constexpr uintptr_t upper_limits[2] = { UINT_MAX, KlassEncodingMetaspaceMax };
+    constexpr int num_tries = 8;
+    char* addr = nullptr;
+    for (int i = 0; i < 2 && addr == nullptr; i ++) {
+      addr = os::attempt_reserve_memory_below((char*)upper_limits[i], size,
+                                              Metaspace::reserve_alignment(), num_tries);
+    }
+    if (addr != nullptr && CompressedKlassPointers::is_valid_base((address)addr)) {
+      rs = ReservedSpace::space_for_range(addr, size, Metaspace::reserve_alignment(),
+                                          os::vm_page_size(), false, false);
+    }
+  }
+
+  if (rs.is_reserved()) {
+    return rs;
+  }
+
 #if defined(AARCH64) || defined(PPC64)
-  const size_t alignment = Metaspace::reserve_alignment();
 
   // AArch64: Try to align metaspace so that we can decode a compressed
   // klass with a single MOVK instruction. We can do this iff the
@@ -761,14 +784,13 @@ void Metaspace::global_initialize() {
     // case (b) (No CDS)
     ReservedSpace rs;
     const size_t size = align_up(CompressedClassSpaceSize, Metaspace::reserve_alignment());
-    address base = nullptr;
 
     // If CompressedClassSpaceBaseAddress is set, we attempt to force-map class space to
     // the given address. This is a debug-only feature aiding tests. Due to the ASLR lottery
     // this may fail, in which case the VM will exit after printing an appropriate message.
     // Tests using this switch should cope with that.
     if (CompressedClassSpaceBaseAddress != 0) {
-      base = (address)CompressedClassSpaceBaseAddress;
+      address base = (address)CompressedClassSpaceBaseAddress;
       if (!is_aligned(base, Metaspace::reserve_alignment())) {
         vm_exit_during_initialization(
             err_msg("CompressedClassSpaceBaseAddress=" PTR_FORMAT " invalid "
@@ -786,25 +808,7 @@ void Metaspace::global_initialize() {
       }
     }
 
-    if (!rs.is_reserved()) {
-      // If UseCompressedOops=1 and the java heap has been placed in coops-friendly
-      //  territory, i.e. its base is under 32G, then we attempt to place ccs
-      //  right above the java heap.
-      // Otherwise the lower 32G are still free. We try to place ccs at the lowest
-      // allowed mapping address.
-      base = (UseCompressedOops && (uint64_t)CompressedOops::base() < OopEncodingHeapMax) ?
-              CompressedOops::end() : (address)HeapBaseMinAddress;
-      base = align_up(base, Metaspace::reserve_alignment());
-
-      if (base != nullptr) {
-        if (CompressedKlassPointers::is_valid_base(base)) {
-          rs = ReservedSpace(size, Metaspace::reserve_alignment(),
-                             os::vm_page_size(), (char*)base);
-        }
-      }
-    }
-
-    // ...failing that, reserve anywhere, but let platform do optimized placement:
+    // ...otherwise let JVM chose the best placing:
     if (!rs.is_reserved()) {
       rs = Metaspace::reserve_address_space_for_compressed_classes(size);
     }
