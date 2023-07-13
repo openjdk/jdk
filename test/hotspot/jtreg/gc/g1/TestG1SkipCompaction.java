@@ -87,4 +87,3 @@ public class TestG1SkipCompaction {
         }
     }
 }
-
