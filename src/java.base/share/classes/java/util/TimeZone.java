@@ -132,7 +132,8 @@ import sun.util.locale.provider.TimeZoneNameUtility;
  * Time" and "China Standard Time"), and the Java platform can then only
  * recognize one of them. The full list of the deprecated IDs can be viewed
  * at {@link java.time.ZoneId#SHORT_IDS}. It should be noted that not all
- * three-letter time zone IDs are deprecated, as some come from the TZDB.
+ * three-letter time zone IDs are deprecated, as some come from the IANA Time
+ * Zone Database (TZDB).
  *
  *
  * @see          Calendar
