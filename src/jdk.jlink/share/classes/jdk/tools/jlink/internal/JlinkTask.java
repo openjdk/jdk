@@ -69,8 +69,6 @@ import jdk.tools.jlink.internal.TaskHelper.Option;
 import jdk.tools.jlink.internal.TaskHelper.OptionsHelper;
 import jdk.tools.jlink.internal.ImagePluginStack.ImageProvider;
 import jdk.tools.jlink.plugin.PluginException;
-import jdk.tools.jlink.builder.DefaultImageBuilder;
-import jdk.tools.jlink.plugin.Plugin;
 import jdk.internal.opt.CommandLine;
 import jdk.internal.module.ModulePath;
 import jdk.internal.module.ModuleResolution;
@@ -833,7 +831,7 @@ public class JlinkTask {
         private static Platform targetPlatform(Configuration cf, Map<String, Path> modsPaths) throws IOException {
             Path javaBasePath = modsPaths.get("java.base");
             assert javaBasePath != null : "java.base module path is missing";
-            if (isJavaBaseFromCurrentPlatform(javaBasePath)) {
+            if (isJavaBaseFromDefaultModulePath(javaBasePath)) {
                 // this implies that the java.base module used for the target image
                 // will correspond to the current platform. So this isn't an attempt to
                 // build a cross-platform image. We use the current platform's endianness
@@ -853,19 +851,18 @@ public class JlinkTask {
             }
         }
 
-        // returns true if the current platform's "jmods" directory is the parent of the
-        // passed javaBasePath
-        private static boolean isJavaBaseFromCurrentPlatform(Path javaBasePath) throws IOException {
-            Path currentPlatformJmods = getDefaultModulePath();
-            if (currentPlatformJmods == null) {
+        // returns true if the default module-path is the parent of the passed javaBasePath
+        private static boolean isJavaBaseFromDefaultModulePath(Path javaBasePath) throws IOException {
+            Path defaultModulePath = getDefaultModulePath();
+            if (defaultModulePath == null) {
                 return false;
             }
-            // resolve, against the current platform's jmods dir, the java.base module file used
+            // resolve, against the default module-path dir, the java.base module file used
             // for image creation
-            Path javaBaseInDefaultPath = currentPlatformJmods.resolve(javaBasePath.getFileName());
+            Path javaBaseInDefaultPath = defaultModulePath.resolve(javaBasePath.getFileName());
             if (!Files.exists(javaBaseInDefaultPath)) {
                 // the java.base module used for image creation doesn't exist in the default
-                // module path of current platform
+                // module path
                 return false;
             }
             return Files.isSameFile(javaBasePath, javaBaseInDefaultPath);
