@@ -118,9 +118,8 @@ public class KeytoolReaderP12Test {
             throws IOException {
         convertToPFX(name);
         final String[] command = new String[]{"-debug", "-list", "-v",
-                "-keystore", WORKING_DIRECTORY + File.separator + name,
-                "-storetype", "pkcs12", "-storepass", password
-        };
+            "-keystore", WORKING_DIRECTORY + File.separator + name,
+            "-storetype", "pkcs12", "-storepass", password};
         runAndValidate(command, expectedValues);
     }
 
@@ -129,9 +128,8 @@ public class KeytoolReaderP12Test {
             throws IOException {
         convertToPFX(name);
         final String[] command = new String[]{"-debug", "-export", "-alias",
-                alias, "-keystore", WORKING_DIRECTORY + File.separator + name,
-                "-storepass", password, "-storetype", "pkcs12", "-rfc"
-        };
+            alias, "-keystore", WORKING_DIRECTORY + File.separator + name,
+            "-storepass", password, "-storetype", "pkcs12", "-rfc"};
         runAndValidate(command, expectedValues);
     }
 
