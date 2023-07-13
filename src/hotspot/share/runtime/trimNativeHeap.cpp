@@ -141,12 +141,12 @@ class NativeHeapTrimmerThread : public NamedThread {
         if (sc.after != SIZE_MAX) {
           const size_t delta = sc.after < sc.before ? (sc.before - sc.after) : (sc.after - sc.before);
           const char sign = sc.after < sc.before ? '-' : '+';
-          log_info(trimnative)("Trim native heap (" UINT64_FORMAT "): RSS+Swap: " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT "), %.3fms",
+          log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): " PROPERFMT "->" PROPERFMT " (%c" PROPERFMT ") %.3fms",
                                _num_trims_performed,
                                PROPERFMTARGS(sc.before), PROPERFMTARGS(sc.after), sign, PROPERFMTARGS(delta),
                                to_ms(t2 - t1));
         } else {
-          log_info(trimnative)("Trim native heap (" UINT64_FORMAT "): complete, no details, %.3fms",
+          log_info(trimnative)("Periodic Trim (" UINT64_FORMAT "): complete (no details) %.3fms",
                                _num_trims_performed,
                                to_ms(t2 - t1));
         }
