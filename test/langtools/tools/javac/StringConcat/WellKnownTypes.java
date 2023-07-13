@@ -21,14 +21,15 @@
  * questions.
  */
 
-import com.sun.tools.classfile.*;
-import com.sun.tools.classfile.ConstantPool.*;
-
 /*
  * @test
  * @bug     8273914
  * @summary Indy string concat changes order of operations
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  *
  * @compile -XDstringConcat=indy              WellKnownTypes.java
  * @run main WellKnownTypes
@@ -74,8 +75,8 @@ public class WellKnownTypes {
 
     public static void test(String actual, int index, String expected) {
         if (!actual.equals(expected)) {
-      throw new IllegalStateException(
-          index + " Unexpected: expected = " + expected + ", actual = " + actual);
+            throw new IllegalStateException(
+                    index + " Unexpected: expected = " + expected + ", actual = " + actual);
         }
     }
 }

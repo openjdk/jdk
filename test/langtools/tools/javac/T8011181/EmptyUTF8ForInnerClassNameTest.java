@@ -25,7 +25,11 @@
  * @test
  * @bug 8011181
  * @summary javac, empty UTF8 entry generated for inner class
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
  *          jdk.compiler/com.sun.tools.javac.util
  */
 
@@ -35,11 +39,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.sun.tools.javac.util.Assert;
-import com.sun.tools.classfile.ClassFile;
-
-import static com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8;
-import static com.sun.tools.classfile.ConstantPool.CONSTANT_Utf8_info;
-import static com.sun.tools.classfile.ConstantPool.CPInfo;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.constantpool.*;
 
 public class EmptyUTF8ForInnerClassNameTest {
 
@@ -55,13 +56,13 @@ public class EmptyUTF8ForInnerClassNameTest {
     }
 
     void checkClassFile(final Path path) throws Exception {
-        ClassFile classFile = ClassFile.read(
-                new BufferedInputStream(Files.newInputStream(path)));
-        for (CPInfo cpInfo : classFile.constant_pool.entries()) {
-            if (cpInfo.getTag() == CONSTANT_Utf8) {
-                CONSTANT_Utf8_info utf8Info = (CONSTANT_Utf8_info)cpInfo;
-                Assert.check(utf8Info.value.length() > 0,
-                        "UTF8 with length 0 found at class " + classFile.getName());
+        ClassModel classFile = Classfile.of().parse(
+                new BufferedInputStream(Files.newInputStream(path)).readAllBytes());
+        for (int i = 1; i < classFile.constantPool().entryCount(); ++i) {
+            PoolEntry pe = classFile.constantPool().entryByIndex(i);
+            if (pe instanceof Utf8Entry utf8Info) {
+                Assert.check(utf8Info.stringValue().length() > 0,
+                        "UTF8 with length 0 found at class " + classFile.thisClass().name());
             }
         }
     }
