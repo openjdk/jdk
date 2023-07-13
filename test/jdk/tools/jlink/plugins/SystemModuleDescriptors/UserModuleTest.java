@@ -47,7 +47,7 @@ import static org.testng.Assert.*;
  * @library /test/lib
  * @modules jdk.compiler jdk.jlink
  * @modules java.base/jdk.internal.module
- * @modules java.base/jdk.internal.org.objectweb.asm
+ * @modules java.base/jdk.internal.classfile
  * @build jdk.test.lib.compiler.CompilerUtils
  *        jdk.test.lib.util.FileUtils
  *        jdk.test.lib.Platform
@@ -88,9 +88,9 @@ public class UserModuleTest {
         for (String mn : modules) {
             Path msrc = SRC_DIR.resolve(mn);
             assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
-                "--module-source-path", SRC_DIR.toString(),
-                "--add-exports", "java.base/jdk.internal.module=" + mn,
-                "--add-exports", "java.base/jdk.internal.org.objectweb.asm=" + mn));
+                    "--module-source-path", SRC_DIR.toString(),
+                    "--add-exports", "java.base/jdk.internal.module=" + mn,
+                    "--add-exports", "java.base/jdk.internal.classfile=" + mn));
         }
 
         if (Files.exists(IMAGE)) {
@@ -112,26 +112,26 @@ public class UserModuleTest {
 
         Path java = IMAGE.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
-                        "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
-                        "-m", MAIN_MID)
-                        .outputTo(System.out)
-                        .errorTo(System.out)
-                        .getExitValue() == 0);
+                "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                "--add-exports", "java.base/jdk.internal.classfile=m1,m4",
+                "-m", MAIN_MID)
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
     }
 
     /*
      * Test the image created when linking with an open module
-    */
+     */
     @Test
     public void testOpenModule() throws Throwable {
         if (!hasJmods()) return;
 
         Path java = IMAGE.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(), "-m", "m3/p3.Main")
-                        .outputTo(System.out)
-                        .errorTo(System.out)
-                        .getExitValue() == 0);
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
     }
 
     /*
@@ -144,13 +144,13 @@ public class UserModuleTest {
 
         Path java = IMAGE.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
-                                  "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                                  "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
-                                  "-Djdk.system.module.finder.disabledFastPath",
-                                  "-m", MAIN_MID)
-                        .outputTo(System.out)
-                        .errorTo(System.out)
-                        .getExitValue() == 0);
+                "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                "--add-exports", "java.base/jdk.internal.classfile=m1,m4",
+                "-Djdk.system.module.finder.disabledFastPath",
+                "-m", MAIN_MID)
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
     }
 
     /*
@@ -165,12 +165,12 @@ public class UserModuleTest {
         createImage(dir, "m1", "m2", "m3", "m4");
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
-                         "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                         "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
-                         "-m", MAIN_MID)
-                        .outputTo(System.out)
-                        .errorTo(System.out)
-                        .getExitValue() == 0);
+                "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                "--add-exports", "java.base/jdk.internal.classfile=m1,m4",
+                "-m", MAIN_MID)
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
     }
 
     @Test
@@ -181,18 +181,18 @@ public class UserModuleTest {
         createImage(dir, "m5");
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(), "-m", "m5/p5.Main")
-                        .outputTo(System.out)
-                        .errorTo(System.out)
-                        .getExitValue() == 0);
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
 
         // run with m3 present
         assertTrue(executeProcess(java.toString(),
-                                  "--module-path", MODS_DIR.toString(),
-                                  "--add-modules", "m3",
-                                  "-m", "m5/p5.Main")
-                        .outputTo(System.out)
-                        .errorTo(System.out)
-                        .getExitValue() == 0);
+                "--module-path", MODS_DIR.toString(),
+                "--add-modules", "m3",
+                "-m", "m5/p5.Main")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
     }
 
     @Test
@@ -204,17 +204,17 @@ public class UserModuleTest {
 
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(), "-m", "m5/p5.Main")
-                        .outputTo(System.out)
-                        .errorTo(System.out)
-                        .getExitValue() == 0);
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
 
         // boot layer with m3 and m5
         assertTrue(executeProcess(java.toString(),
-                                  "--add-modules", "m3",
-                                  "-m", "m5/p5.Main")
-                        .outputTo(System.out)
-                        .errorTo(System.out)
-                        .getExitValue() == 0);
+                "--add-modules", "m3",
+                "-m", "m5/p5.Main")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
     }
 
     private void createJmods(String... modules) throws IOException {
@@ -230,11 +230,11 @@ public class UserModuleTest {
         // create JMOD files
         Files.createDirectories(JMODS_DIR);
         Stream.of(modules).forEach(mn ->
-            assertTrue(jmod("create",
-                "--class-path", MODS_DIR.resolve(mn).toString(),
-                "--target-platform", mt.targetPlatform(),
-                "--main-class", mn.replace('m', 'p') + ".Main",
-                JMODS_DIR.resolve(mn + ".jmod").toString()) == 0)
+                assertTrue(jmod("create",
+                        "--class-path", MODS_DIR.resolve(mn).toString(),
+                        "--target-platform", mt.targetPlatform(),
+                        "--main-class", mn.replace('m', 'p') + ".Main",
+                        JMODS_DIR.resolve(mn + ".jmod").toString()) == 0)
         );
     }
 
@@ -249,24 +249,24 @@ public class UserModuleTest {
         // create an image using JMOD files
         Path dir = Paths.get("packagesTest");
         String mp = Paths.get(JAVA_HOME, "jmods").toString() +
-            File.pathSeparator + JMODS_DIR.toString();
+                File.pathSeparator + JMODS_DIR.toString();
 
         Set<String> modules = Set.of("m1", "m4");
         assertTrue(JLINK_TOOL.run(System.out, System.out,
-            "--output", dir.toString(),
-            "--exclude-resources", "m4/p4/dummy/*",
-            "--add-modules", modules.stream().collect(Collectors.joining(",")),
-            "--module-path", mp) == 0);
+                "--output", dir.toString(),
+                "--exclude-resources", "m4/p4/dummy/*",
+                "--add-modules", modules.stream().collect(Collectors.joining(",")),
+                "--module-path", mp) == 0);
 
         // verify ModuleDescriptor
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
-                        "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
-                        "--add-modules=m1", "-m", "m4")
-            .outputTo(System.out)
-            .errorTo(System.out)
-            .getExitValue() == 0);
+                "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                "--add-exports", "java.base/jdk.internal.classfile=m1,m4",
+                "--add-modules=m1", "-m", "m4")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
     }
 
     /**
@@ -279,44 +279,44 @@ public class UserModuleTest {
         // create an image using JMOD files
         Path dir = Paths.get("retainModuleTargetTest");
         String mp = Paths.get(JAVA_HOME, "jmods").toString() +
-            File.pathSeparator + JMODS_DIR.toString();
+                File.pathSeparator + JMODS_DIR.toString();
 
         Set<String> modules = Set.of("m1", "m4");
         assertTrue(JLINK_TOOL.run(System.out, System.out,
-            "--output", dir.toString(),
-            "--exclude-resources", "m4/p4/dummy/*",
-            "--add-modules", modules.stream().collect(Collectors.joining(",")),
-            "--module-path", mp) == 0);
+                "--output", dir.toString(),
+                "--exclude-resources", "m4/p4/dummy/*",
+                "--add-modules", modules.stream().collect(Collectors.joining(",")),
+                "--module-path", mp) == 0);
 
         // verify ModuleDescriptor
         Path java = dir.resolve("bin").resolve("java");
         assertTrue(executeProcess(java.toString(),
-                        "--add-exports", "java.base/jdk.internal.module=m1,m4",
-                        "--add-exports", "java.base/jdk.internal.org.objectweb.asm=m1,m4",
-                        "--add-modules=m1", "-m", "m4", "retainModuleTarget")
-            .outputTo(System.out)
-            .errorTo(System.out)
-            .getExitValue() == 0);
+                "--add-exports", "java.base/jdk.internal.module=m1,m4",
+                "--add-exports", "java.base/jdk.internal.classfile=m1,m4",
+                "--add-modules=m1", "-m", "m4", "retainModuleTarget")
+                .outputTo(System.out)
+                .errorTo(System.out)
+                .getExitValue() == 0);
     }
 
     static final ToolProvider JLINK_TOOL = ToolProvider.findFirst("jlink")
-        .orElseThrow(() ->
-            new RuntimeException("jlink tool not found")
-        );
+            .orElseThrow(() ->
+                    new RuntimeException("jlink tool not found")
+            );
 
     static final ToolProvider JMOD_TOOL = ToolProvider.findFirst("jmod")
-        .orElseThrow(() ->
-            new RuntimeException("jmod tool not found")
-        );
+            .orElseThrow(() ->
+                    new RuntimeException("jmod tool not found")
+            );
 
     static final String MODULE_PATH = Paths.get(JAVA_HOME, "jmods").toString()
-        + File.pathSeparator + MODS_DIR.toString();
+            + File.pathSeparator + MODS_DIR.toString();
 
     private void createImage(Path outputDir, String... modules) throws Throwable {
         assertTrue(JLINK_TOOL.run(System.out, System.out,
-            "--output", outputDir.toString(),
-            "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
-            "--module-path", MODULE_PATH) == 0);
+                "--output", outputDir.toString(),
+                "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
+                "--module-path", MODULE_PATH) == 0);
     }
 
     private static int jmod(String... options) {
