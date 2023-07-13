@@ -50,7 +50,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.TransferQueue;
-import static java.util.concurrent.LinkedTransferQueue.TransferNode;
 
 /**
  * A {@linkplain BlockingQueue blocking queue} in which each insert
@@ -105,12 +104,12 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * The queue is treated as a Lifo stack in non-fair mode, and a
      * Fifo queue in fair mode. In most contexts, transfer performance
      * is roughly comparable across them. Lifo is usually faster under
-     * low contention, but can be much slower under high contention.
-     * Performance of applications using them also varies. Lifo is
-     * generally preferable in resource management settings (for
-     * example cached thread pools) because of better temporal
-     * locality, but inappropriate for message-passing applications.
-
+     * low contention, but slower under high contention.  Performance
+     * of applications using them also varies. Lifo is generally
+     * preferable in resource management settings (for example cached
+     * thread pools) because of better temporal locality, but
+     * inappropriate for message-passing applications.
+     *
      * A dual queue is one that at any given time either holds "data"
      * -- items provided by put operations, or "requests" -- slots
      * representing take operations, or is empty. A "fulfill"
@@ -125,27 +124,26 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      * The algorithms here differ from the versions in the above paper
      * in ways including:
      *
-     *  1. The original algorithms used bit-marked pointers, but
+     *  *  For historical compatibility, Fifo mode directly uses
+     *     LinkedTransferQueue operations, but Lifo mode support is
+     *     added in subclass Transferer.
+     *  *  The original algorithms used bit-marked pointers, but
      *     the ones here use mode bits in nodes, and usually avoid
      *     creating nodes when fulfilling. They also use the
      *     compareAndExchange form of CAS for pointer updates to reduce
      *     memory traffic. The Fifo version accommodates lazy
      *     updates and slack as desxcribed in the LinkedTransferQueue
      *     internal documentation.
-     *  2. SynchronousQueues must block threads waiting to become
-     *     fulfilled, preceded by brief spins at/mear front positions
-     *     if not VirtualThreads.
-     *  3. Support for cancellation via timeout and interrupts,
+     *  *  SynchronousQueues must block threads waiting to become
+     *     fulfilled, sometimes preceded by brief spins.
+     *  *  Support for cancellation via timeout and interrupts,
      *     including cleaning out cancelled nodes/threads
      *     from lists to avoid garbage retention and memory depletion.
-     *  4. For compatibility and logistics reasons, Fifo mode directly
-     *     uses LinkedTransferQueue operations, but Lifo mode support is
-     *     added in subclass Transferer.
      */
 
     /**
      * Extension of LinkedTransferQueue to support Lifo (stack) mode.
-     * Methods use tha "tail" field as top of stack (versus tail of
+     * Methods use the "head" field as head (top) of stack (versus
      * queue). Note that popped nodes are not self-linked because thay
      * are not prone to unbounded garbage chains. Also note that
      * "async" mode is never used and not supported for synchronous
@@ -156,77 +154,74 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
         /**
          * Puts or takes an item with lifo ordering. Loops trying:
-         *
-         * * If top exists and is already matched, pop and continue
+         * * If top (p) exists and is already matched, pop and continue
          * * If top has complementary type, try to fulfill by CASing item,
-         *    and pop (which will succeed unless already helped).
+         *    On success pop (which will succeed unless already helped),
+         *    otherwise restart.
          * * If no possible match, unless immediate mode, push a
          *    node and wait, later unsplicing if cancelled.
          *
          * @param e the item or null for take
-         * @param nanos timeout: 0 for immediate, Long.MAX_VALUE for untimed
+         * @param nanos timeout or 0 for immediate, Long.MAX_VALUE for untimed
          * @return an item if matched, else e
          */
         final Object xferLifo(Object e, long nanos) {
             boolean haveData = (e != null);
-            for (TransferNode top = tail, s = null;;) {
-                boolean isData; Object match;
-                if (top != null) {
-                    if ((isData = top.isData) != ((match = top.item) != null)) {
-                        TransferNode n = top.next, u = cmpExTail(top, n);
-                        top = (top == u) ? n : u;     // collapse dead node
-                        continue;                     // retry with next top
+            for (DualNode s = null;;) {
+                for (DualNode p = head;;) {
+                    if (p != null) {
+                        Object item; DualNode n, u;
+                        boolean isData = p.isData;
+                        if (isData != ((item = p.item) != null)) {
+                            p = (p == (u = cmpExHead(p, (n = p.next)))) ? n : u;
+                            continue;                    // retry with next top
+                        } else if (isData != haveData) { // try to fulfill
+                            if (p.cmpExItem(item, e) != item)
+                                break;                   // lost race; restart
+                            Thread w = p.waiter;
+                            cmpExHead(p, p.next);
+                            LockSupport.unpark(w);
+                            return item;
+                        }
                     }
-                    if (isData != haveData) {         // try to fulfill
-                        if (top.cmpExItem(match, e) != match)
-                            continue;                 // lost race
-                        cmpExTail(top, top.next);
-                        LockSupport.unpark(top.waiter);
+                    if (nanos == 0L)                     // no match, no wait
+                        return e;
+                    if (s == null)                       // push new node; wait
+                        s = new DualNode(e, haveData);
+                    s.setNext(p);
+                    if (p == (p = cmpExHead(p, s))) {
+                        Object match = s.await(e, nanos, this, // spin near empty
+                                               p == null || p.waiter == null);
+                        if (match == e)
+                            unspliceLifo(s);             // cancelled
                         return match;
                     }
-                }
-                if (nanos == 0L)                     // no fulfillers, no wait
-                    return e;
-                if (s == null)                       // push new node and wait
-                    s = new TransferNode(e, haveData);
-                s.setNext(top);
-                if (top == (top = cmpExTail(top, s))) {
-                    boolean maySpin = (top == null || top.waiter == null);
-                    if ((match = s.await(e, nanos, this, maySpin)) == e)
-                        unspliceLifo(s);             // cancelled
-                    return match;
                 }
             }
         }
 
         /**
-         * Unlinks s, assuming lifo mode.
+         * Unlinks (non-live) node s from stack.  Unlike fifo lists,
+         * we don't have a known predecessor that usually suffices to
+         * unlink.  At worst we may need to traverse entire list, and
+         * we might not see s if already off-list or another unsplicer
+         * has removed it. But we can stop when we see any node known
+         * to follow s. We use s.next unless it is not live, in which
+         * case we try the node one past. We don't check any further
+         * because we don't want to doubly traverse just to find
+         * sentinel.
          */
-        private void unspliceLifo(TransferNode s) {
-            TransferNode past = null;
-            /*
-             * At worst we may need to traverse entire stack to unlink
-             * s, and we might not see s if already popped or another
-             * unsplicer has removed it. But we can stop when we see
-             * any node known to follow s. We use s.next unless it is
-             * not live, in which case we try the node one past. We
-             * don't check any further because we don't want to doubly
-             * traverse just to find sentinel.
-             */
+        private void unspliceLifo(DualNode s) {
+            DualNode past = null;
             if (s != null && (past = s.next) != null && !past.isLive())
                 past = past.next;
-
-            TransferNode p = tail;           // collapse top
-            while (p != null && p != past && !p.isLive()) {
-                TransferNode n = p.next, h = cmpExTail(p, n);
-                p = (h == p) ? n : h;
-            }
-
-            for (TransferNode n, f, u;;) {   // unsplice embedded nodes
-                if (p == null || p == past || (n = p.next) == null)
-                    break;
-                p = (n.isLive() ? n :
-                     n == (u = p.cmpExNext(n, f = n.next)) ? f : u);
+            DualNode p = head;      // collapse dead nodes at top
+            for (DualNode n, u; p != null && p != past && !p.isLive(); )
+                p = (p == (u = cmpExHead(p, (n = p.next)))) ? n : u;
+            for (DualNode f, n, u;  // unsplice embedded nodes
+                 p != null && p != past && (f = p.next) != null; ) {
+                p = (f.isLive() ? f :
+                     f == (u = p.cmpExNext(f, n = f.next)) ? n : u);
             }
         }
    }
@@ -239,7 +234,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     private transient final boolean fair;
 
     /** Invokes fair or lifo transfer */
-    private Object xfer(boolean fair, Object e, long nanos) {
+    private Object xfer(Object e, long nanos) {
         Transferer<E> x = transferer;
         return (fair) ? x.xfer(e, nanos) : x.xferLifo(e, nanos);
     }
@@ -272,7 +267,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     public void put(E e) throws InterruptedException {
         Objects.requireNonNull(e);
         if (!Thread.interrupted()) {
-            if (xfer(fair, e, Long.MAX_VALUE) == null)
+            if (xfer(e, Long.MAX_VALUE) == null)
                 return;
             Thread.interrupted(); // failure possible only due to interrupt
         }
@@ -292,7 +287,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
         throws InterruptedException {
         Objects.requireNonNull(e);
         long nanos = Math.max(unit.toNanos(timeout), 0L);
-        if (xfer(fair, e, nanos) == null)
+        if (xfer(e, nanos) == null)
             return true;
         if (!Thread.interrupted())
             return false;
@@ -310,7 +305,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      */
     public boolean offer(E e) {
         Objects.requireNonNull(e);
-        return xfer(fair, e, 0L) == null;
+        return xfer(e, 0L) == null;
     }
 
     /**
@@ -324,7 +319,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     public E take() throws InterruptedException {
         Object e;
         if (!Thread.interrupted()) {
-            if ((e = xfer(fair, null, Long.MAX_VALUE)) != null)
+            if ((e = xfer(null, Long.MAX_VALUE)) != null)
                 return (E) e;
             Thread.interrupted();
         }
@@ -344,7 +339,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     public E poll(long timeout, TimeUnit unit) throws InterruptedException {
         Object e;
         long nanos = Math.max(unit.toNanos(timeout), 0L);
-        if ((e = xfer(fair, null, nanos)) != null || !Thread.interrupted())
+        if ((e = xfer(null, nanos)) != null || !Thread.interrupted())
             return (E) e;
         throw new InterruptedException();
     }
@@ -358,7 +353,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      */
     @SuppressWarnings("unchecked")
     public E poll() {
-        return (E) xfer(fair, null, 0L);
+        return (E) xfer(null, 0L);
     }
 
     /**
@@ -591,7 +586,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
     /**
      * Replaces a deserialized SynchronousQueue with a fresh one with
-     * the associated type of Transferer.
+     * the associated fairness
      */
     private Object readResolve() {
         return new SynchronousQueue<E>(waitingProducers instanceof FifoWaitQueue);

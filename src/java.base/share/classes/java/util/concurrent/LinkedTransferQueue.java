@@ -150,12 +150,12 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * also enables lower cost variants of queue maintenance
      * mechanics.
      *
-     * Once a node is matched, its match status can never again
-     * change.  We may thus arrange that the linked list of them
-     * contain a prefix of zero or more matched nodes, followed by a
-     * suffix of zero or more unmatched nodes. Note that we allow both
-     * the prefix and suffix to be zero length, which in turn means
-     * that we do not require a dummy header.
+     * Once a node is matched, it is no longer live -- its match
+     * status can never again change.  We may thus arrange that the
+     * linked list of them contain a prefix of zero or more dead
+     * nodes, followed by a suffix of zero or more live nodes. Note
+     * that we allow both the prefix and suffix to be zero length,
+     * which in turn means that we do not require a dummy header.
      *
      * We use here an approach that lies between the extremes of
      * never versus always updating queue (head and tail) pointers.
@@ -174,16 +174,17 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * between the value of "head" and the first unmatched node, and
      * similarly for "tail") is an empirical matter. Larger values
      * introduce increasing costs of cache misses and risks of long
-     * traversal chains, while smaller values increase CAS contention
-     * and overhead. Using the smallest non-zero value of one is both
-     * simple and empirically a good choice in most applicatkions.
-     * The slack value is hard-wired: a path greater than one is
-     * usually implemented by checking equality of traversal pointers.
-     * Because CASes updating fields may fail and threads attempting
-     * to do so may stall, the actual slack may exceed targeted
-     * slack. To reduce the consequent staleness impact, threads may
-     * help update (method unslacken) when traversal lengths exceed an
-     * imposed limit of MAX_SLACK.
+     * traversal chains and out-of-order updates, while smaller values
+     * increase CAS contention and overhead. Using the smallest
+     * non-zero value of one is both simple and empirically a good
+     * choice in most applicatkions.  The slack value is hard-wired: a
+     * path greater than one is usually implemented by checking
+     * equality of traversal pointers.  Because CASes updating fields
+     * attempting to do so may stall, the writes may appear out of
+     * order (an older CAS from the same head or tail may execute
+     * after a newer one), the actual slack may exceed targeted
+     * slack. To reduce impact, other threads may help update by
+     * unsplicing dead nodes while traversing.
      *
      * These ideas must be further extended to avoid unbounded amounts
      * of costly-to-reclaim garbage caused by the sequential "next"
@@ -197,20 +198,18 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * set the "next" link of the previous head to point only to
      * itself; thus limiting the length of chains of dead nodes.  (We
      * also take similar care to wipe out possibly garbage retaining
-     * values held in other node fields.)  However, doing so adds some
-     * further complexity to traversal: If any "next" pointer links to
-     * itself, it indicates that the current thread has lagged behind
-     * a head-update, and so the traversal must continue from the
-     * "head".  Traversals trying to find the current tail starting
-     * from "tail" may also encounter self-links, in which case they
-     * also continue at "head".
+     * values held in other node fields.) This is easy to accommodate
+     * in the primary xfer method, but adds a lot of complexity to
+     * Collection operations including traversal; mainly because if
+     * any "next" pointer links to itself, the current thread has
+     * lagged behind a head-update, and so must restart from the
+     * "head".
      *
      * *** Blocking ***
      *
-     * The TransferNode class is shared with class SynchronousQueue
-     * (which adds Lifo-based matching methods). It houses method
-     * await, which is used for all blocking control, as described
-     * below in TransferNode internal documentation.
+     * The DualNode class is shared with class SynchronousQueue It
+     * houses method await, which is used for all blocking control, as
+     * described below in DualNode internal documentation.
      *
      * ** Unlinking removed interior nodes **
      *
@@ -271,7 +270,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * This version differs from previous releases as follows:
      *
-     * * Class TransferNode replaces Qnode, with fields and methods
+     * * Class DualNode replaces Qnode, with fields and methods
      *   that apply to any match-based dual data structure, and now
      *   used in other j.u.c classes. in particular, SynchronousQueue.
      * * Blocking control (in class TransferQueue) accommodates
@@ -279,24 +278,23 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * * All fields of this class (LinkedTransferQueue) are
      *   default-initializable (to null), allowing further
      *   extension (in particular, SynchronousQueue.Transferer)
-     * * Head and tail fields are lazily initialized rather than
-     *   set to a dummy node, requiring accommodation in many
-     *   places (as well as adjustments in WhiteBox tests).
-     * * Reduced retries under heavy contention using MAX_SLACK and
-     *   method unslacken.
+     * * Head and tail fields are lazily initialized rather than set
+     *   to a dummy node, also reducing retries under heavy contention
+     *   and misordering, requiring accommodation in many places (as
+     *   well as adjustments in WhiteBox tests),
      */
 
     /**
-     * Queue nodes. Uses type Object, not E, for items to allow
-     * cancellation and forgetting after use.
+     * Node for linked dual data structures. Uses type Object, not E,
+     * for items to allow cancellation and forgetting after use.
      */
-    static final class TransferNode implements ForkJoinPool.ManagedBlocker {
+    static final class DualNode implements ForkJoinPool.ManagedBlocker {
         volatile Object item;   // initially non-null if isData; CASed to match
-        volatile TransferNode next;
-        volatile Thread waiter; // null when not parked waiting for a match
+        volatile DualNode next;
+        Thread waiter;          // plain mode; order constrained by context
         final boolean isData;   // false if this is a request node
 
-        TransferNode(Object item, boolean isData) {
+        DualNode(Object item, boolean isData) {
             ITEM.set(this, item); // relaxed write before publication
             this.isData = isData;
         }
@@ -305,31 +303,21 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         final Object cmpExItem(Object cmp, Object val) { // try to match
             return ITEM.compareAndExchange(this, cmp, val);
         }
-        final TransferNode cmpExNext(TransferNode cmp, TransferNode val) {
-            return (TransferNode)NEXT.compareAndExchange(this, cmp, val);
+        final DualNode cmpExNext(DualNode cmp, DualNode val) {
+            return (DualNode)NEXT.compareAndExchange(this, cmp, val);
         }
 
         /**
-         * Returns true if this node has not been matched
+         * Returns true if this node has not been matched (or cancelled)
          */
         final boolean isLive() {
             return isData == (item != null);
         }
 
-        /**
-         * Tries to cancel by matching with self if initially null else null
-         * @param e the initial item value
-         * @return e if successful, else current item
-         */
-        final Object tryCancel(Object e) {
-            return cmpExItem(e, (e == null) ? this : null);
-        }
-
         // Relaxed writes when volatile is unnecessarily strong
-        final void clearWaiter()   { WAITER.setOpaque(this, null); }
-        final void forgetItem()    { ITEM.set(this, this); }
-        final void forgetNext()    { NEXT.set(this, this); }
-        final void setNext(TransferNode n) { NEXT.set(this, n);  }
+        final void forgetItem()        { ITEM.set(this, this); }
+        final void selfLink()          { NEXT.set(this, this); }
+        final void setNext(DualNode n) { NEXT.set(this, n);  }
 
         // ManagedBlocker support
         public final boolean isReleasable() {
@@ -383,7 +371,15 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
          * cost of park/unpark. This also avoids re-parks when timed
          * park returns just barely too soon.
          *
-         * 5. To make the above work, callers must precheck that
+         * 5. Park/unpark signalling otherwise relies on a Dekker-like
+         * scheme in which the caller advertises the need to unpark by
+         * setting its waiter field, followed by a full fence and
+         * recheck before actually parking. (An explicit fence in used
+         * in this one case rather than requiring volatile mode,
+         * rather than overconstraining waiter accesses that are
+         * otherwise already constrained by surrounding atomics.)
+         *
+         * 6. To make the above work, callers must precheck that
          * timeouts are not already elapsed, and that interruptible
          * operations were not already interrupted on call to the
          * corresponding queue operation.  Cancellation on timeout or
@@ -394,35 +390,34 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
          * @param e the comparison value for checking match
          * @param nanos timeout, or Long.MAX_VALUE if untimed
          * @param blocker the LockSupport.setCurrentBlocker argument
-         * @param spin true if eligible for spinning if enabled
+         * @param spin true if eligible for spinning when enabled
          * @return matched item, or e if unmatched on interrupt or timeout
          */
         final Object await(Object e, long nanos, Object blocker, boolean spin) {
             boolean timed = (nanos != Long.MAX_VALUE);
             long deadline = (timed) ? System.nanoTime() + nanos : 0L;
             Thread w = Thread.currentThread();
-            boolean canSpin = (!w.isVirtual() && spin), u;
+            boolean canSpin = (!w.isVirtual() && spin);
             int spins = (canSpin && !isUniprocessor) ? SPINS : 0;
             Object match;
             while ((match = item) == e && --spins >= 0)
                 Thread.onSpinWait();
             if (match == e) {
+                boolean uni;
                 if (canSpin && isUniprocessor !=
-                    (u = (Runtime.getRuntime().availableProcessors() <= 1)))
-                    isUniprocessor = u;         // reset for next time
+                    (uni = (Runtime.getRuntime().availableProcessors() <= 1)))
+                    isUniprocessor = uni; // reset for next time
                 LockSupport.setCurrentBlocker(blocker);
                 waiter = w;
+                VarHandle.fullFence(); // ensure ordering
                 while ((match = item) == e) {
-                    long ns;
-                    if (w.isInterrupted()) {
-                        match = tryCancel(e);
-                        break;
+                    long ns = 0L;
+                    if (w.isInterrupted() ||
+                        (timed && ((ns = deadline - System.nanoTime()) <= 0L))) {
+                        match = cmpExItem(e, (e == null) ? this : null);
+                        break;         // try to cancel with impossible match
                     }
                     if (timed) {
-                        if ((ns = deadline - System.nanoTime()) <= 0L) {
-                            match = tryCancel(e);
-                            break;
-                        }
                         if (ns < SPIN_FOR_TIMEOUT_THRESHOLD)
                             Thread.onSpinWait();
                         else
@@ -432,11 +427,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                             ForkJoinPool.managedBlock(this);
                         } catch (InterruptedException cannotHappen) { }
                     } else
-                        LockSupport.park(this);
+                        LockSupport.park();
                 }
-                clearWaiter();
                 LockSupport.setCurrentBlocker(null);
+                waiter = null;
             }
+            if (match != e && match != null)
+                forgetItem();
             return match;
         }
 
@@ -459,14 +456,12 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         // VarHandle mechanics
         static final VarHandle ITEM;
         static final VarHandle NEXT;
-        static final VarHandle WAITER;
         static {
             try {
-                Class<?> tn = TransferNode.class;
+                Class<?> tn = DualNode.class;
                 MethodHandles.Lookup l = MethodHandles.lookup();
                 ITEM = l.findVarHandle(tn, "item", Object.class);
                 NEXT = l.findVarHandle(tn, "next", tn);
-                WAITER = l.findVarHandle(tn, "waiter", Thread.class);
             } catch (ReflectiveOperationException e) {
                 throw new ExceptionInInitializerError(e);
             }
@@ -477,17 +472,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * The maximum number of dead nodes traversed before unslackening
-     * to reduce retries due to stalls in updating head and tail.  Must
-     * be at least 4.
-     */
-    private static final int MAX_SLACK = 1 << 7;
-
-    /**
      * The maximum number of estimated removal failures (sweepVotes)
      * to tolerate before sweeping through the queue unlinking
      * cancelled nodes that were initially pinned.  Must be a power of
-     * two, at least 2 and at most MAX_SLACK.
+     * two, at least 4.
      */
     private static final int SWEEP_THRESHOLD = 1 << 5;
 
@@ -498,8 +486,12 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * - head is never self-linked
      * Non-invariants:
      * - head may or may not be live
+     *
+     * This field is used by subclass SynchronousQueue.Transferer to
+     * record the top of a Lifo stack, with tail always null, but
+     * otherwise maintaining the same properties.
      */
-    transient volatile TransferNode head;
+    transient volatile DualNode head;
 
     /**
      * Unless empty, a node from which the last node on list (that is,
@@ -508,54 +500,34 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * Non-invariants:
      * - tail may or may not be live
      * - tail may be the same as head
+     * - tail may or may not be self-linked.
      * - tail may lag behind head, so need not be reachable from head
-     * - tail.next may or may not be self-linked.
-     *
-     * This field is used by subclass SynchronousQueue.Transferer to
-     * record the top of a Lifo stack, with head always null, but
-     * otherwise maintaining the same properties.
      */
-    transient volatile TransferNode tail;
+    transient volatile DualNode tail;
 
     /** The number of apparent failures to unsplice cancelled nodes */
     private transient volatile int sweepVotes;
 
-    /** increment sweepVotes and return true on trigger */
-    private boolean sweepNow() {
-        return (((int) SWEEPVOTES.getAndAdd(this, 1) + 1) &
-                (SWEEP_THRESHOLD - 1)) == 0;
-    }
-
     // Atomic updates
 
-    final TransferNode cmpExTail(TransferNode cmp, TransferNode val) {
-        return (TransferNode)TAIL.compareAndExchange(this, cmp, val);
+    final DualNode cmpExTail(DualNode cmp, DualNode val) {
+        return (DualNode)TAIL.compareAndExchange(this, cmp, val);
     }
-    final TransferNode cmpExHead(TransferNode cmp, TransferNode val) {
-        return (TransferNode)HEAD.compareAndExchange(this, cmp, val);
+    final DualNode cmpExHead(DualNode cmp, DualNode val) {
+        return (DualNode)HEAD.compareAndExchange(this, cmp, val);
     }
-
-    /**
-     * Tries to update to new head, forgetting links from previous
-     * head (if it exists) on success.
-     */
-    final TransferNode tryAdvanceHead(TransferNode h, TransferNode p) {
-        TransferNode u;
-        if ((u = cmpExHead(h, p)) == h && h != null)
-            h.forgetNext();
-        return u;
+    final int addSweepVote() {
+        return (int)SWEEPVOTES.getAndAdd(this, 1);
     }
 
     /**
      * Implements all queuing methods. Loops, trying:
      *
-     * * If head not initialized, try to add new node and exit (unless immediate)
-     * * If tail initialized and has same mode, and this is not a retry,
-     *   start traversing at tail (for an append), else start at head
-     *   (for a likely match, but if no live nodes, an append)
+     * * If not initialized, try to add new node (unless immediate) and exit
+     * * If tail has same mode, start traversing at tail for a likely
+     *   append, else at head for a likely match
      * * Traverse over dead or wrong-mode nodes until finding a spot
-     *   to match/append, or falling off the list because of self-links,
-     *   taking or too many steps, in which case help unslacken and restart.
+     *   to match/append, or falling off the list because of self-links.
      * * On success, update head or tail if slacked, and return or wait,
      *   depending on nanos argument
      *
@@ -566,125 +538,107 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      */
     final Object xfer(Object e, long nanos) {
         boolean haveData = (e != null);
-        TransferNode p;                     // current traversal node
-        TransferNode s = null;              // the enqueued npde, if needed
-        TransferNode prevTail = null;       // to avoid unbounded tail retries
-        restart: for (;;) {
-            TransferNode h, t;
-            if ((p = h = head) == null) {   // lazily initialize
-                if (nanos == 0L)            // unless immediate
+        DualNode s = null;                   // the enqueued node, if needed
+        DualNode pred;                       // s's predecessor if waiting
+        DualNode prevTail = null;            // to avoid self-linked paths
+        restart: for (;;) {                  // restart if fall off list
+            DualNode h, t, p;
+            if ((h = head) == null) {        // initialize
+                if (nanos == 0L)             // unless immediate
                     return e;
-                if (s == null)
-                    s = new TransferNode(e, haveData);
-                if (cmpExHead(null, s) != null)
-                    continue;               // lost initialization race
-                if (nanos < 0L)
-                    return e;               // async mode
-                break restart;              // wait below
+                s = new DualNode(e, haveData);
+                if ((h = cmpExHead(null, s)) == null) {
+                    if (nanos < 0L)
+                        return e;            // async mode
+                    pred = null;
+                    break;                   // wait below
+                }
             }
-            if ((t = tail) != null && haveData == t.isData && t != prevTail)
-                p = prevTail = t;           // start at tail
-            for (int slack = 0; slack < MAX_SLACK; ++slack) { // bound steps
-                TransferNode q, n; Object item;
-                if (haveData != p.isData && // try to match waiting node
+            p = ((t = tail) != null && t != prevTail && t.isData == haveData ?
+                 (prevTail = t) : h);        // start at tail if may be eligible
+            for (boolean slack = false; ; slack = true) {
+                DualNode q; Object item;
+                if (haveData != p.isData &&  // try to match existing node
                     haveData != ((item = p.item) != null) &&
                     p.cmpExItem(item, e) == item) {
-                    if (p != h)
-                        tryAdvanceHead(h, (n = p.next) == null ? p : n);
-                    LockSupport.unpark(p.waiter);
+                    Thread w = p.waiter;
+                    if (slack) {
+                        DualNode n = ((q = p.next) == null) ? p : q;
+                        if (h != n && h == cmpExHead(h, n))
+                            h.selfLink();    // advance by 2 if possible
+                    }
+                    LockSupport.unpark(w);
                     return item;
                 }
-                if ((q = p.next) == null) { // no matches
-                    if (nanos == 0L)
+                if ((q = p.next) == null) {  // try to append
+                    if (nanos == 0L)         // unless immediate
                         return e;
-                    if (s == null) {        // try to append node
-                        s = new TransferNode(e, haveData);
-                        q = p.next;         // recheck after allocation
+                    if (s == null) {
+                        s = new DualNode(e, haveData);
+                        q = p.next;          // recheck after allocation
                     }
                     if (q == null && (q = p.cmpExNext(null, s)) == null) {
-                        if (p != t)
-                            cmpExTail(tail, s);
+                        if (slack)
+                            cmpExTail(t, s);
                         if (nanos < 0L)
                             return e;
+                        pred = p;
                         break restart;
                     }
                 }
-                if (p == (p = q))            // stale; restart
+                if (p == (p = q))            // self-linked; restart
                     break;
             }
-            unslacken();                     // collapse before retrying
         }
-        Object match;                        // await match
-        boolean maySpin = (p == null || p.waiter == null); // at or near head
-        if ((match = s.await(e, nanos, this, maySpin)) == e)
-            unsplice(p, s);                  // cancelled
-        else if (match != null)
-            s.forgetItem();
+        Object match = s.await(e, nanos, this, // spin if at or near head
+                               pred == null || pred.waiter == null);
+        if (match == e)
+            unsplice(pred, s);               // cancelled
         return match;
     }
 
-    /**
-     * Incrementally advances head and tail if possible. Called before
-     * retraversals and during unsplices to reduce retries due to
-     * stalled head and tail updates.
-     */
-    private void unslacken() {
-        TransferNode h, t, s, n, u;
-        if ((h = head) != null && !h.isLive() &&
-            (s = h.next) != null && s != h) { // try to advance by 2
-            if (!s.isLive() && (n = s.next) != null && n != s &&
-                !(s = n).isLive() && (n = s.next) != null && n != s)
-                s = n;
-            tryAdvanceHead(h, s);
-        }
-        if ((t = tail) != null && (s = t.next) != null && s != t) {
-            if (!s.isLive() && (n = s.next) != null)
-                s = (s == (u = t.cmpExNext(s, n))) ? n : u;
-            cmpExTail(t, s); // advance by 2 if can unlink dead node
-        }
-    }
+    /* --------------  Removals -------------- */
 
-    /* --------------  Interior removals -------------- */
     /**
-     * Unsplices (now or later) the given deleted/cancelled node with
-     * the given predecessor.
+     * Unlinks (now or later) the given (non-live) node with given
+     * predecessor. See above for rationale.
      *
      * @param pred if nonnull, a node that was at one time known to be the
      * predecessor of s
      * @param s the node to be unspliced
      */
-    final void unsplice(TransferNode pred, TransferNode s) {
-        TransferNode n;
-        if (pred != null && s != null && pred.next == s && (n = s.next) != s &&
-            (n == null || pred.cmpExNext(s, n) != s) &&
-            sweepNow())    // occasionally sweep initially pinned nodes
-            sweep();
-        unslacken();       // help clean endpoints
+    private void unsplice(DualNode pred, DualNode s) {
+        DualNode sn;
+        if (pred != null && pred.next == s && s != null && (sn = s.next) != s) {
+            if (sn != null)
+                pred.cmpExNext(s, sn);
+            if ((sn == null || !pred.isLive()) &&
+                ((addSweepVote() + 1) & (SWEEP_THRESHOLD - 1)) == 0) {
+                for (DualNode p = head, f, n, u;  // occasionally sweep
+                     p != null && (f = p.next) != null && (n = f.next) != null;)
+                    p = (f.isLive()                   ? f :     // skip
+                         f == p                       ? head :  // stale
+                         f == (u = p.cmpExNext(f, n)) ? n : u); // unspliced
+            }
+        }
     }
 
     /**
-     * Unlinks dead nodes encountered in a traversal from head.
+     * Tries to update to new head, forgetting links from previous
+     * head (if it exists) on success.
      */
-    private void sweep() {
-        for (TransferNode p = head, s; p != null && (s = p.next) != null; ) {
-            TransferNode n, u, h;
-            if (s.isLive())
-                p = s;
-            else if ((n = s.next) == null)
-                break;
-            else if (s == n)               // stale
-                p = head;
-            else                           // unlink
-                p = ((u = p.cmpExNext(s, n)) == s) ? n : u;
-        }
+    final DualNode tryAdvanceHead(DualNode h, DualNode p) {
+        DualNode u;
+        if ((u = cmpExHead(h, p)) == h && h != null)
+            h.selfLink();
+        return u;
     }
 
     /**
      * Tries to CAS pred.next (or head, if pred is null) from c to p.
      * Caller must ensure that we're not unlinking the trailing node.
      */
-    final boolean tryCasSuccessor(TransferNode pred, TransferNode c,
-                                  TransferNode p) {
+    final boolean tryCasSuccessor(DualNode pred, DualNode c, DualNode p) {
         // assert p != null && !c.isLive() && c != p;
         return ((pred != null ?
                  pred.cmpExNext(c, p) :
@@ -699,8 +653,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * @param q p.next: the next live node, or null if at end
      * @return pred if pred still alive and CAS succeeded; else p
      */
-    final TransferNode skipDeadNodes(TransferNode pred, TransferNode c,
-                                     TransferNode p, TransferNode q) {
+    final DualNode skipDeadNodes(DualNode pred, DualNode c,
+                                 DualNode p, DualNode q) {
         // assert pred != c && p != q; && !c.isLive() && !p.isLive();
         if (q == null) { // Never unlink trailing node.
             if (c == p)
@@ -715,7 +669,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * Tries to match the given object only if p is a data
      * node. Signals waiter on success.
      */
-    final boolean tryMatchData(TransferNode p, Object x) {
+    final boolean tryMatchData(DualNode p, Object x) {
         if (p != null && p.isData &&
             x != null && p.cmpExItem(x, null) == x) {
             LockSupport.unpark(p.waiter);
@@ -731,8 +685,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * Callers must recheck if the returned node is unmatched
      * before using.
      */
-    final TransferNode firstDataNode() {
-        for (TransferNode h = head, p = h, q, u; p != null;) {
+    final DualNode firstDataNode() {
+        for (DualNode h = head, p = h, q, u; p != null;) {
             boolean isData = p.isData;
             Object item = p.item;
             if (isData && item != null)       // is live data
@@ -758,7 +712,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     final int countOfMode(boolean data) {
         restartFromHead: for (;;) {
             int count = 0;
-            for (TransferNode p = head; p != null;) {
+            for (DualNode p = head; p != null;) {
                 if (p.isLive()) {
                     if (p.isData != data)
                         return 0;
@@ -777,7 +731,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         restartFromHead: for (;;) {
             int charLength = 0;
             int size = 0;
-            for (TransferNode p = head; p != null;) {
+            for (DualNode p = head; p != null;) {
                 Object item = p.item;
                 if (p.isData) {
                     if (item != null) {
@@ -806,7 +760,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         Object[] x = a;
         restartFromHead: for (;;) {
             int size = 0;
-            for (TransferNode p = head; p != null;) {
+            for (DualNode p = head; p != null;) {
                 Object item = p.item;
                 if (p.isData) {
                     if (item != null) {
@@ -899,17 +853,17 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * but O(n) in the worst case, when lastRet is concurrently deleted.
      */
     final class Itr implements Iterator<E> {
-        private TransferNode nextNode;   // next node to return item for
-        private E nextItem;      // the corresponding item
-        private TransferNode lastRet;    // last returned node, to support remove
-        private TransferNode ancestor;   // Helps unlink lastRet on remove()
+        private DualNode nextNode;   // next node to return item for
+        private E nextItem;          // the corresponding item
+        private DualNode lastRet;    // last returned node, to support remove
+        private DualNode ancestor;   // Helps unlink lastRet on remove()
 
         /**
          * Moves to next node after pred, or first node if pred null.
          */
         @SuppressWarnings("unchecked")
-        private void advance(TransferNode pred) {
-            for (TransferNode p = (pred == null) ? head : pred.next, c = p;
+        private void advance(DualNode pred) {
+            for (DualNode p = (pred == null) ? head : pred.next, c = p;
                  p != null; ) {
                 final Object item;
                 if ((item = p.item) != null && p.isData) {
@@ -943,7 +897,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         }
 
         public final E next() {
-            final TransferNode p;
+            final DualNode p;
             if ((p = nextNode) == null) throw new NoSuchElementException();
             E e = nextItem;
             advance(lastRet = p);
@@ -952,23 +906,23 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
         public void forEachRemaining(Consumer<? super E> action) {
             Objects.requireNonNull(action);
-            TransferNode q = null;
-            for (TransferNode p; (p = nextNode) != null; advance(q = p))
+            DualNode q = null;
+            for (DualNode p; (p = nextNode) != null; advance(q = p))
                 action.accept(nextItem);
             if (q != null)
                 lastRet = q;
         }
 
         public final void remove() {
-            final TransferNode lastRet = this.lastRet;
+            final DualNode lastRet = this.lastRet;
             if (lastRet == null)
                 throw new IllegalStateException();
             this.lastRet = null;
             if (lastRet.item == null)   // already deleted?
                 return;
             // Advance ancestor, collapsing intervening dead nodes
-            TransferNode pred = ancestor;
-            for (TransferNode p = (pred == null) ? head : pred.next, c = p, q;
+            DualNode pred = ancestor;
+            for (DualNode p = (pred == null) ? head : pred.next, c = p, q;
                  p != null; ) {
                 if (p == lastRet) {
                     tryMatchData(p, p.item);
@@ -1003,13 +957,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     /** A customized variant of Spliterators.IteratorSpliterator */
     final class LTQSpliterator implements Spliterator<E> {
         static final int MAX_BATCH = 1 << 25;  // max batch array size;
-        TransferNode current;       // current node; null until initialized
+        DualNode current;   // current node; null until initialized
         int batch;          // batch size for splits
         boolean exhausted;  // true when no more nodes
         LTQSpliterator() {}
 
         public Spliterator<E> trySplit() {
-            TransferNode p, q;
+            DualNode p, q;
             if ((p = current()) == null || (q = p.next) == null)
                 return null;
             int i = 0, n = batch = Math.min(batch + 1, MAX_BATCH);
@@ -1038,7 +992,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
         public void forEachRemaining(Consumer<? super E> action) {
             Objects.requireNonNull(action);
-            final TransferNode p;
+            final DualNode p;
             if ((p = current()) != null) {
                 current = null;
                 exhausted = true;
@@ -1049,7 +1003,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         @SuppressWarnings("unchecked")
         public boolean tryAdvance(Consumer<? super E> action) {
             Objects.requireNonNull(action);
-            TransferNode p;
+            DualNode p;
             if ((p = current()) != null) {
                 E e = null;
                 do {
@@ -1075,13 +1029,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             return false;
         }
 
-        private void setCurrent(TransferNode p) {
+        private void setCurrent(DualNode p) {
             if ((current = p) == null)
                 exhausted = true;
         }
 
-        private TransferNode current() {
-            TransferNode p;
+        private DualNode current() {
+            DualNode p;
             if ((p = current) == null && !exhausted)
                 setCurrent(p = firstDataNode());
             return p;
@@ -1132,9 +1086,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *         of its elements are null
      */
     public LinkedTransferQueue(Collection<? extends E> c) {
-        TransferNode h = null, t = null;
+        DualNode h = null, t = null;
         for (E e : c) {
-            TransferNode newNode = new TransferNode(Objects.requireNonNull(e), true);
+            DualNode newNode = new DualNode(Objects.requireNonNull(e), true);
             if (t == null)
                 t = h = newNode;
             else
@@ -1321,7 +1275,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
     public E peek() {
         restartFromHead: for (;;) {
-            for (TransferNode p = head; p != null;) {
+            for (DualNode p = head; p != null;) {
                 Object item = p.item;
                 if (p.isData) {
                     if (item != null) {
@@ -1349,7 +1303,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
 
     public boolean hasWaitingConsumer() {
         restartFromHead: for (;;) {
-            for (TransferNode p = head; p != null;) {
+            for (DualNode p = head; p != null;) {
                 Object item = p.item;
                 if (p.isData) {
                     if (item != null)
@@ -1398,8 +1352,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     public boolean remove(Object o) {
         if (o == null) return false;
         restartFromHead: for (;;) {
-            for (TransferNode p = head, pred = null; p != null; ) {
-                TransferNode q = p.next;
+            for (DualNode p = head, pred = null; p != null; ) {
+                DualNode q = p.next;
                 final Object item;
                 if ((item = p.item) != null) {
                     if (p.isData) {
@@ -1412,7 +1366,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 }
                 else if (!p.isData)
                     break;
-                for (TransferNode c = p;; q = p.next) {
+                for (DualNode c = p;; q = p.next) {
                     if (q == null || q.isLive()) {
                         pred = skipDeadNodes(pred, c, p, q); p = q; break;
                     }
@@ -1434,8 +1388,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     public boolean contains(Object o) {
         if (o == null) return false;
         restartFromHead: for (;;) {
-            for (TransferNode p = head, pred = null; p != null; ) {
-                TransferNode q = p.next;
+            for (DualNode p = head, pred = null; p != null; ) {
+                DualNode q = p.next;
                 final Object item;
                 if ((item = p.item) != null) {
                     if (p.isData) {
@@ -1446,7 +1400,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 }
                 else if (!p.isData)
                     break;
-                for (TransferNode c = p;; q = p.next) {
+                for (DualNode c = p;; q = p.next) {
                     if (q == null || q.isLive()) {
                         pred = skipDeadNodes(pred, c, p, q); p = q; break;
                     }
@@ -1496,9 +1450,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         throws java.io.IOException, ClassNotFoundException {
 
         // Read in elements until trailing null sentinel found
-        TransferNode h = null, t = null;
+        DualNode h = null, t = null;
         for (Object item; (item = s.readObject()) != null; ) {
-            TransferNode newNode = new TransferNode(item, true);
+            DualNode newNode = new DualNode(item, true);
             if (t == null)
                 t = h = newNode;
             else
@@ -1542,6 +1496,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      */
     private static final int MAX_HOPS = 8;
 
+
     /** Implementation of bulk remove methods. */
     @SuppressWarnings("unchecked")
     private boolean bulkRemove(Predicate<? super E> filter) {
@@ -1550,7 +1505,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             int hops = MAX_HOPS;
             // c will be CASed to collapse intervening dead nodes between
             // pred (or head if null) and p.
-            for (TransferNode p = head, c = p, pred = null, q; p != null; p = q) {
+            for (DualNode p = head, c = p, pred = null, q; p != null; p = q) {
                 q = p.next;
                 final Object item; boolean pAlive;
                 if (pAlive = ((item = p.item) != null && p.isData)) {
@@ -1585,9 +1540,9 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * If p is null, the action is not run.
      */
     @SuppressWarnings("unchecked")
-    void forEachFrom(Consumer<? super E> action, TransferNode p) {
-        for (TransferNode pred = null; p != null; ) {
-            TransferNode q = p.next;
+    void forEachFrom(Consumer<? super E> action, DualNode p) {
+        for (DualNode pred = null; p != null; ) {
+            DualNode q = p.next;
             final Object item;
             if ((item = p.item) != null) {
                 if (p.isData) {
@@ -1597,7 +1552,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             }
             else if (!p.isData)
                 break;
-            for (TransferNode c = p;; q = p.next) {
+            for (DualNode c = p;; q = p.next) {
                 if (q == null || q.isLive()) {
                     pred = skipDeadNodes(pred, c, p, q); p = q; break;
                 }
@@ -1620,7 +1575,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     static final VarHandle SWEEPVOTES;
     static {
         try {
-            Class<?> ltq = LinkedTransferQueue.class, tn = TransferNode.class;
+            Class<?> ltq = LinkedTransferQueue.class, tn = DualNode.class;
             MethodHandles.Lookup l = MethodHandles.lookup();
             HEAD = l.findVarHandle(ltq, "head", tn);
             TAIL = l.findVarHandle(ltq, "tail", tn);
