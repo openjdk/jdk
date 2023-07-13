@@ -408,12 +408,12 @@ public class JlinkTask {
 
         // First create the image provider
         ImageHelper imageProvider = createImageProvider(config,
-                                                          options.packagedModulesPath,
-                                                          options.ignoreSigning,
-                                                          options.bindServices,
-                                                          options.endian,
-                                                          options.verbose,
-                                                          log);
+                                                        options.packagedModulesPath,
+                                                        options.ignoreSigning,
+                                                        options.bindServices,
+                                                        options.endian,
+                                                        options.verbose,
+                                                        log);
 
         // Then create the Plugin Stack
         ImagePluginStack stack = ImagePluginConfiguration.parseConfiguration(
