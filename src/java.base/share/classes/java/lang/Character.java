@@ -745,7 +745,7 @@ class Character implements java.io.Serializable, Comparable<Character>, Constabl
          * is upgraded.
          */
         private static final int NUM_ENTITIES = 756;
-        private static Map<String, UnicodeBlock> map = HashMap.newHashMap(NUM_ENTITIES);
+        private static final Map<String, UnicodeBlock> map = HashMap.newHashMap(NUM_ENTITIES);
 
         /**
          * Creates a UnicodeBlock with the given identifier name.
