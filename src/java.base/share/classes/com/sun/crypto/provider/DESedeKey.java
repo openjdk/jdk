@@ -113,19 +113,20 @@ final class DESedeKey implements SecretKey {
         return Arrays.hashCode(this.key) ^ "desede".hashCode();
     }
 
+    @Override
     public boolean equals(Object obj) {
         if (this == obj)
             return true;
 
-        if (!(obj instanceof SecretKey))
+        if (!(obj instanceof SecretKey that))
             return false;
 
-        String thatAlg = ((SecretKey)obj).getAlgorithm();
+        String thatAlg = that.getAlgorithm();
         if (!(thatAlg.equalsIgnoreCase("DESede"))
             && !(thatAlg.equalsIgnoreCase("TripleDES")))
             return false;
 
-        byte[] thatKey = ((SecretKey)obj).getEncoded();
+        byte[] thatKey = that.getEncoded();
         boolean ret = MessageDigest.isEqual(this.key, thatKey);
         java.util.Arrays.fill(thatKey, (byte)0x00);
         return ret;
