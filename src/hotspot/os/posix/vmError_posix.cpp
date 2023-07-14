@@ -26,7 +26,7 @@
 #include "precompiled.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "runtime/os.hpp"
-#include "runtime/stubRoutines.hpp"
+#include "runtime/safefetch.hpp"
 #include "runtime/thread.hpp"
 #include "signals_posix.hpp"
 #include "utilities/debug.hpp"
@@ -67,7 +67,6 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
 
   PosixSignals::unblock_error_signals();
 
-  // support safefetch faults in error handling
   ucontext_t* const uc = (ucontext_t*) ucVoid;
   address pc = (uc != NULL) ? os::Posix::ucontext_get_pc(uc) : NULL;
 
@@ -76,22 +75,19 @@ static void crash_handler(int sig, siginfo_t* info, void* ucVoid) {
     pc = (address) info->si_addr;
   }
 
-  // Needed to make it possible to call SafeFetch.. APIs in error handling.
-  if (sig == SIGSEGV || sig == SIGBUS) {
-    if (uc && pc && StubRoutines::is_safefetch_fault(pc)) {
-      os::Posix::ucontext_set_pc(uc, StubRoutines::continuation_for_safefetch_fault(pc));
+  // Handle safefetch here too, to be able to use SafeFetch() inside the error handler
+  if (handle_safefetch(sig, pc, uc)) {
+    return;
+  }
+
+  // Needed because asserts may happen in error handling too.
+#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
+  if ((sig == SIGSEGV || sig == SIGBUS) && info != NULL && info->si_addr == g_assert_poison) {
+    if (handle_assert_poison_fault(ucVoid, info->si_addr)) {
       return;
     }
-
-    // Needed because asserts may happen in error handling too.
-#ifdef CAN_SHOW_REGISTERS_ON_ASSERT
-    if (info != NULL && info->si_addr == g_assert_poison) {
-      if (handle_assert_poison_fault(ucVoid, info->si_addr)) {
-        return;
-      }
-    }
-#endif // CAN_SHOW_REGISTERS_ON_ASSERT
   }
+#endif // CAN_SHOW_REGISTERS_ON_ASSERT
 
   VMError::report_and_die(NULL, sig, pc, info, ucVoid);
 }
