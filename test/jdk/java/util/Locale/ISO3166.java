@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,9 @@
  * @summary Test obsolete ISO3166-1 alpha-2 country codes should not be retrieved.
  * ISO3166-1 alpha-2, ISO3166-1 alpha-3, ISO3166-3 country codes
  * from overloaded getISOCountries(Iso3166 type) are retrieved correctly.
+ * @run junit ISO3166
  */
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -35,7 +37,9 @@ import java.util.Locale.IsoCountryCode;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class Bug8071929 {
+import org.junit.jupiter.api.Test;
+
+public class ISO3166 {
 
     private static final List<String> ISO3166_1_ALPHA2_OBSOLETE_CODES = List.of("AN", "BU", "CS",
             "NT", "SF", "TP", "YU", "ZR");
@@ -78,7 +82,8 @@ public class Bug8071929 {
      * This method checks that obsolete ISO3166-1 alpha-2 country codes are not
      * retrieved in output of getISOCountries() method.
      */
-    private static void checkISO3166_1_Alpha2ObsoleteCodes() {
+    @Test
+    public void checkISO3166_1_Alpha2ObsoleteCodes() {
         Set<String> unexpectedCodes = ISO3166_1_ALPHA2_OBSOLETE_CODES.stream().
                 filter(Set.of(Locale.getISOCountries())::contains).collect(Collectors.toSet());
         if (!unexpectedCodes.isEmpty()) {
@@ -91,7 +96,8 @@ public class Bug8071929 {
      * This method checks that ISO3166-3 country codes which are PART3 of
      * IsoCountryCode enum, are retrieved correctly.
      */
-    private static void checkISO3166_3Codes() {
+    @Test
+    public void checkISO3166_3Codes() {
         Set<String> iso3166_3Codes = Locale.getISOCountries(IsoCountryCode.PART3);
         if (!iso3166_3Codes.equals(ISO3166_3EXPECTED)) {
             reportDifference(iso3166_3Codes, ISO3166_3EXPECTED);
@@ -102,7 +108,8 @@ public class Bug8071929 {
      * This method checks that ISO3166-1 alpha-3 country codes which are
      * PART1_ALPHA3 of IsoCountryCode enum, are retrieved correctly.
      */
-    private static void checkISO3166_1_Alpha3Codes() {
+    @Test
+    public void checkISO3166_1_Alpha3Codes() {
         Set<String> iso3166_1_Alpha3Codes = Locale.getISOCountries(IsoCountryCode.PART1_ALPHA3);
         if (!iso3166_1_Alpha3Codes.equals(ISO3166_1_ALPHA3_EXPECTED)) {
             reportDifference(iso3166_1_Alpha3Codes, ISO3166_1_ALPHA3_EXPECTED);
@@ -113,7 +120,8 @@ public class Bug8071929 {
      * This method checks that ISO3166-1 alpha-2 country codes, which are
      * PART1_ALPHA2 of IsoCountryCode enum, are retrieved correctly.
      */
-    private static void checkISO3166_1_Alpha2Codes() {
+    @Test
+    public void checkISO3166_1_Alpha2Codes() {
         Set<String> iso3166_1_Alpha2Codes = Locale.getISOCountries(IsoCountryCode.PART1_ALPHA2);
         Set<String> ISO3166_1_ALPHA2_EXPECTED = Set.of(Locale.getISOCountries());
         if (!iso3166_1_Alpha2Codes.equals(ISO3166_1_ALPHA2_EXPECTED)) {
@@ -138,12 +146,5 @@ public class Bug8071929 {
             throw new RuntimeException("Retrieved country codes set is missing codes "
                     + expectedSet);
         }
-    }
-
-    public static void main(String[] args) {
-        checkISO3166_1_Alpha2ObsoleteCodes();
-        checkISO3166_1_Alpha2Codes();
-        checkISO3166_1_Alpha3Codes();
-        checkISO3166_3Codes();
     }
 }

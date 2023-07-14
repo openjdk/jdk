@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,9 +25,9 @@
  * @test
  * @bug 8001562
  * @summary Verify that getAvailableLocales() in locale sensitive services
- *     classes return compatible set of locales as in JDK7.
+ * classes return compatible set of locales as in JDK7.
  * @modules jdk.localedata
- * @run main Bug8001562
+ * @run junit JDK7LocaleServiceDiffs
  */
 
 import java.text.BreakIterator;
@@ -40,8 +40,13 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class Bug8001562 {
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+public class JDK7LocaleServiceDiffs {
 
     static final List<String> jdk7availTags = List.of(
             "ar", "ar-AE", "ar-BH", "ar-DZ", "ar-EG", "ar-IQ", "ar-JO", "ar-KW",
@@ -72,27 +77,16 @@ public class Bug8001562 {
                 .collect(Collectors.toList());
     }
 
-    public static void main(String[] args) {
-        List<Locale> avail = Arrays.asList(BreakIterator.getAvailableLocales());
-        diffLocale(BreakIterator.class, avail);
-
-        avail = Arrays.asList(Collator.getAvailableLocales());
-        diffLocale(Collator.class, avail);
-
-        avail = Arrays.asList(DateFormat.getAvailableLocales());
-        diffLocale(DateFormat.class, avail);
-
-        avail = Arrays.asList(DateFormatSymbols.getAvailableLocales());
-        diffLocale(DateFormatSymbols.class, avail);
-
-        avail = Arrays.asList(DecimalFormatSymbols.getAvailableLocales());
-        diffLocale(DecimalFormatSymbols.class, avail);
-
-        avail = Arrays.asList(NumberFormat.getAvailableLocales());
-        diffLocale(NumberFormat.class, avail);
-
-        avail = Arrays.asList(Locale.getAvailableLocales());
-        diffLocale(Locale.class, avail);
+    /**
+     * This test compares the locales returned by getAvailableLocales() from a
+     * locale sensitive service to the available JDK7 locales. If the locales from
+     * a locale sensitive service are found to not contain a JDK7 available tag,
+     * the test will fail.
+     */
+    @ParameterizedTest
+    @MethodSource("serviceProvider")
+    public void compatibleLocalesTest(Class<?> c, List<Locale> locs) {
+        diffLocale(c, locs);
     }
 
     static void diffLocale(Class<?> c, List<Locale> locs) {
@@ -118,5 +112,17 @@ public class Bug8001562 {
         if (diff.length() > 0) {
             throw new RuntimeException("Above locale(s) were not included in the target available locales");
         }
+    }
+
+    private static Stream<Arguments> serviceProvider() {
+        return Stream.of(
+                Arguments.of(BreakIterator.class, Arrays.asList(BreakIterator.getAvailableLocales())),
+                Arguments.of(Collator.class, Arrays.asList(Collator.getAvailableLocales())),
+                Arguments.of(DateFormat.class, Arrays.asList(DateFormat.getAvailableLocales())),
+                Arguments.of(DateFormatSymbols.class, Arrays.asList(DateFormatSymbols.getAvailableLocales())),
+                Arguments.of(DecimalFormatSymbols.class, Arrays.asList(DecimalFormatSymbols.getAvailableLocales())),
+                Arguments.of(NumberFormat.class, Arrays.asList(NumberFormat.getAvailableLocales())),
+                Arguments.of(Locale.class, Arrays.asList(Locale.getAvailableLocales()))
+        );
     }
 }
