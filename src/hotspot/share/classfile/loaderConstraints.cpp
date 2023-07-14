@@ -468,15 +468,6 @@ void LoaderConstraintTable::verify() {
           // We found the class in the dictionary, so we should
           // make sure that the Klass* matches what we already have.
           guarantee(k == probe->klass(), "klass should be in dictionary");
-        } else {
-          // If we don't find the class in the dictionary, it
-          // has to be in the placeholders table.
-          PlaceholderEntry* entry = PlaceholderTable::get_entry(name, loader_data);
-
-          // The InstanceKlass might not be on the entry, so the only
-          // thing we can check here is whether we were successful in
-          // finding the class in the placeholders table.
-          guarantee(entry != nullptr, "klass should be in the placeholders");
         }
       }
       for (int n = 0; n< probe->num_loaders(); n++) {
