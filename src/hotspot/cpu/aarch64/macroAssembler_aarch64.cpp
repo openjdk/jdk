@@ -6593,15 +6593,19 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
                                        const FloatRegister s[], const FloatRegister u[],
                                        const FloatRegister zero, Register input_start,
                                        AbstractRegSet<FloatRegister> scratch) {
-  auto vregs = scratch.begin();
-
   gen {
-    sli(u[0], T2D, u[1], 32);
-    sli(u[2], T2D, u[3], 32);
-    // u[1] and u[3] are now free
+    m_print26(D, u[4], u[2], u[0], 0, "** ARGH ?");
   };
 
-  FloatRegister scratch1 = u[1], scratch2 = u[2];
+  gen {
+    trn1(u[0], T4S, u[0], u[1]);
+    trn1(u[1], T4S, u[2], u[3]);
+
+    // The incoming sum is packed into u[0], u[1], u[4]
+    // u[2] and u[3] are now free
+  };
+
+  FloatRegister scratch1 = u[2], scratch2 = u[3];
 
   gen {
     ld2(scratch1, scratch2, D, 0, post(input_start, 2 * wordSize));
@@ -6632,12 +6636,8 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
   gen { sli(s[2], T2D, zero, 32); };
 
   gen { addv(s[0], T4S, s[0], u[0]); };
-  gen { addv(s[1], T4S, s[1], u[2]); };
+  gen { addv(s[1], T4S, s[1], u[1]); };
   gen { addv(s[2], T4S, s[2], u[4]); };
-
-  gen {
-    m_print26(D, u[4], u[2], u[0], 0, "** ARGH ?");
-  };
 
   for (int i = 0; i <= 2; i++)
     gen {
