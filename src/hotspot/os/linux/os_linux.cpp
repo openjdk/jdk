@@ -4292,11 +4292,11 @@ char* os::pd_attempt_reserve_memory_below(char* max, size_t bytes, size_t alignm
         result = os::attempt_reserve_memory_at(candidate, bytes, false);
         if (result == nullptr && candidate2 != candidate) {
           result = pd_attempt_reserve_memory_at(candidate2, bytes, false);
-          if (result != nullptr) {
-            log_trace(os, map)("successfully reserved [" PTR_FORMAT "-" PTR_FORMAT ")",
-                               p2i(result), p2i(result + bytes));
-          }
         };
+        if (result != nullptr) {
+          log_trace(os, map)("successfully reserved [" PTR_FORMAT "-" PTR_FORMAT ")",
+                             p2i(result), p2i(result + bytes));
+        }
       }
       last_mapping_end = mapping_end;
     }

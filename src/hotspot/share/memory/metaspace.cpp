@@ -589,28 +589,23 @@ bool Metaspace::class_space_is_initialized() {
 // On error, returns an unreserved space.
 ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t size) {
 
-  ReservedSpace rs;
-
   // First, attempt to reserve the class space such that zero-based addressing is possible.
   // If the heap has also be allocated in low address regions, this will - with a high probability -
   // cause the reserved range to nestle alongside the heap.
-  if (!rs.is_reserved()) {
+  {
     // First try for zero-base zero-shift (lower 4G); failing that, try for zero-based with max shift (lower 32G)
-    constexpr uintptr_t upper_limits[2] = { UINT_MAX, KlassEncodingMetaspaceMax };
     constexpr int num_tries = 8;
-    char* addr = nullptr;
-    for (int i = 0; i < 2 && addr == nullptr; i ++) {
-      addr = os::attempt_reserve_memory_below((char*)upper_limits[i], size,
-                                              Metaspace::reserve_alignment(), num_tries);
+    char* addr = os::attempt_reserve_memory_below((char*)UINT_MAX + 1, size, Metaspace::reserve_alignment(), num_tries);
+    if (addr == nullptr) {
+      addr = os::attempt_reserve_memory_below((char*)KlassEncodingMetaspaceMax + 1, size, Metaspace::reserve_alignment(), num_tries);
     }
     if (addr != nullptr && CompressedKlassPointers::is_valid_base((address)addr)) {
-      rs = ReservedSpace::space_for_range(addr, size, Metaspace::reserve_alignment(),
-                                          os::vm_page_size(), false, false);
+      ReservedSpace rs = ReservedSpace::space_for_range(addr, size, Metaspace::reserve_alignment(),
+                                                        os::vm_page_size(), false, false);
+      if (rs.is_reserved()) {
+        return rs;
+      }
     }
-  }
-
-  if (rs.is_reserved()) {
-    return rs;
   }
 
 #if defined(AARCH64) || defined(PPC64)
