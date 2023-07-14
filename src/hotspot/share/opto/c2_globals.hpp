@@ -27,7 +27,6 @@
 
 #include "opto/c2_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
-#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 //
@@ -97,7 +96,7 @@
                                                                             \
   notproduct(intx, IndexSetWatch, 0,                                        \
           "Trace all operations on this IndexSet (-1 means all, 0 none)")   \
-          range(-1, MIN2(UINT_MAX, max_intx))                               \
+          range(-1, max_intx)                                               \
                                                                             \
   develop(intx, OptoNodeListSize, 4,                                        \
           "Starting allocation size of Node_List data structures")          \
