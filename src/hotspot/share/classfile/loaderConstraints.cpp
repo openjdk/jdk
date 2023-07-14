@@ -471,6 +471,7 @@ void LoaderConstraintTable::verify() {
         } else {
           // If we don't find the class in the dictionary, it
           // has to be in the placeholders table.
+          // This is true for parallel capable and non-parallel capable class_loaders.
           PlaceholderEntry* entry = PlaceholderTable::get_entry(name, loader_data);
 
           // The InstanceKlass might not be on the entry, so the only
