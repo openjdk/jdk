@@ -272,6 +272,8 @@ public final class String
      * characters currently contained in the character array argument. The
      * contents of the character array are copied; subsequent modification of
      * the character array does not affect the newly created string.
+     * The contents of the string are indeterminate if the character array
+     * is modified before the constructor returns.
      *
      * @param  value
      *         The initial value of the string
@@ -287,6 +289,8 @@ public final class String
      * argument specifies the length of the subarray. The contents of the
      * subarray are copied; subsequent modification of the character array does
      * not affect the newly created string.
+     * The contents of the string are indeterminate if the character array
+     * is modified before the constructor returns.
      *
      * @param  value
      *         Array that is the source of characters
@@ -318,6 +322,8 @@ public final class String
      * length of the subarray.  The contents of the subarray are converted to
      * {@code char}s; subsequent modification of the {@code int} array does not
      * affect the newly created string.
+     * The contents of the string are indeterminate if the array of codepoints
+     * is modified before the constructor returns.
      *
      * @param  codePoints
      *         Array that is the source of Unicode code points
@@ -346,12 +352,10 @@ public final class String
             return;
         }
         if (COMPACT_STRINGS) {
-            byte[] val = StringLatin1.toBytes(codePoints, offset, count);
-            if (val != null) {
-                this.coder = LATIN1;
-                this.value = val;
-                return;
-            }
+            byte[] val = StringUTF16.compress(codePoints, offset, count);
+            this.coder = (val.length == count) ? LATIN1 : UTF16;
+            this.value = val;
+            return;
         }
         this.coder = UTF16;
         this.value = StringUTF16.toBytes(codePoints, offset, count);
@@ -367,6 +371,9 @@ public final class String
      *
      * <p> Each {@code byte} in the subarray is converted to a {@code char} as
      * specified in the {@link #String(byte[],int) String(byte[],int)} constructor.
+     *
+     * <p> The contents of the string are indeterminate if the byte array
+     * is modified before the constructor returns.
      *
      * @deprecated This method does not properly convert bytes into characters.
      * As of JDK&nbsp;1.1, the preferred way to do this is via the
@@ -429,6 +436,9 @@ public final class String
      *                         | (<b><i>b</i></b> &amp; 0xff))
      * </pre></blockquote>
      *
+     * <p> The contents of the string are indeterminate if the byte array
+     * is modified before the constructor returns.
+     *
      * @deprecated  This method does not properly convert bytes into
      * characters.  As of JDK&nbsp;1.1, the preferred way to do this is via the
      * {@code String} constructors that take a {@link Charset}, charset name,
@@ -462,6 +472,9 @@ public final class String
      * in the given charset is unspecified.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     *
+     * <p> The contents of the string are indeterminate if the byte array
+     * is modified before the constructor returns.
      *
      * @param  bytes
      *         The bytes to be decoded into characters
@@ -500,6 +513,9 @@ public final class String
      * sequences with this charset's default replacement string.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     *
+     * <p> The contents of the string are indeterminate if the byte array
+     * is modified before the constructor returns.
      *
      * @param  bytes
      *         The bytes to be decoded into characters
@@ -543,48 +559,44 @@ public final class String
                     this.coder = LATIN1;
                     return;
                 }
-                int sl = offset + length;
-                byte[] dst = new byte[length];
-                if (dp > 0) {
-                    System.arraycopy(bytes, offset, dst, 0, dp);
-                    offset += dp;
-                }
-                while (offset < sl) {
-                    int b1 = bytes[offset++];
+                // Decode with a stable copy, to be the result if the decoded length is the same
+                byte[] latin1 = Arrays.copyOfRange(bytes, offset, offset + length);
+                int sp = dp;            // first dp bytes are already in the copy
+                while (sp < length) {
+                    int b1 = latin1[sp++];
                     if (b1 >= 0) {
-                        dst[dp++] = (byte)b1;
+                        latin1[dp++] = (byte)b1;
                         continue;
                     }
-                    if ((b1 & 0xfe) == 0xc2 && offset < sl) { // b1 either 0xc2 or 0xc3
-                        int b2 = bytes[offset];
+                    if ((b1 & 0xfe) == 0xc2 && sp < length) { // b1 either 0xc2 or 0xc3
+                        int b2 = latin1[sp];
                         if (b2 < -64) { // continuation bytes are always negative values in the range -128 to -65
-                            dst[dp++] = (byte)decode2(b1, b2);
-                            offset++;
+                            latin1[dp++] = (byte)decode2(b1, b2);
+                            sp++;
                             continue;
                         }
                     }
                     // anything not a latin1, including the REPL
                     // we have to go with the utf16
-                    offset--;
+                    sp--;
                     break;
                 }
-                if (offset == sl) {
-                    if (dp != dst.length) {
-                        dst = Arrays.copyOf(dst, dp);
+                if (sp == length) {
+                    if (dp != latin1.length) {
+                        latin1 = Arrays.copyOf(latin1, dp);
                     }
-                    this.value = dst;
+                    this.value = latin1;
                     this.coder = LATIN1;
                     return;
                 }
-                byte[] buf = new byte[length << 1];
-                StringLatin1.inflate(dst, 0, buf, 0, dp);
-                dst = buf;
-                dp = decodeUTF8_UTF16(bytes, offset, sl, dst, dp, true);
+                byte[] utf16 = new byte[length << 1];
+                StringLatin1.inflate(latin1, 0, utf16, 0, dp);
+                dp = decodeUTF8_UTF16(latin1, sp, length, utf16, dp, true);
                 if (dp != length) {
-                    dst = Arrays.copyOf(dst, dp << 1);
+                    utf16 = Arrays.copyOf(utf16, dp << 1);
                 }
-                this.value = dst;
-                this.coder = UTF16;
+                this.value = utf16;
+                this.coder = (utf16.length == dp) ? LATIN1 : UTF16;
             } else { // !COMPACT_STRINGS
                 byte[] dst = new byte[length << 1];
                 int dp = decodeUTF8_UTF16(bytes, offset, offset + length, dst, 0, true);
@@ -655,12 +667,9 @@ public final class String
                 char[] ca = new char[en];
                 int clen = ad.decode(bytes, offset, length, ca);
                 if (COMPACT_STRINGS) {
-                    byte[] bs = StringUTF16.compress(ca, 0, clen);
-                    if (bs != null) {
-                        value = bs;
-                        coder = LATIN1;
-                        return;
-                    }
+                    this.value = StringUTF16.compress(ca, 0, clen);
+                    this.coder = (this.value.length == clen) ? LATIN1 : UTF16;
+                    return;
                 }
                 coder = UTF16;
                 value = StringUTF16.toBytes(ca, 0, clen);
@@ -686,12 +695,9 @@ public final class String
                 throw new Error(x);
             }
             if (COMPACT_STRINGS) {
-                byte[] bs = StringUTF16.compress(ca, 0, caLen);
-                if (bs != null) {
-                    value = bs;
-                    coder = LATIN1;
-                    return;
-                }
+                this.value = StringUTF16.compress(ca, 0, caLen);
+                this.coder = (this.value.length == caLen) ? LATIN1 : UTF16;
+                return;
             }
             coder = UTF16;
             value = StringUTF16.toBytes(ca, 0, caLen);
@@ -829,10 +835,9 @@ public final class String
             throw new IllegalArgumentException(x);
         }
         if (COMPACT_STRINGS) {
-            byte[] bs = StringUTF16.compress(ca, 0, caLen);
-            if (bs != null) {
-                return new String(bs, LATIN1);
-            }
+            byte[] value = StringUTF16.compress(ca, 0, caLen);
+            int coder = (value.length == len) ? LATIN1 : UTF16;
+            return new String(value, coder);
         }
         return new String(StringUTF16.toBytes(ca, 0, caLen), UTF16);
     }
@@ -1385,6 +1390,8 @@ public final class String
      * in the given charset is unspecified.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     * The contents of the string are indeterminate if the byte array
+     * is modified before the constructor returns.
      *
      * @param  bytes
      *         The bytes to be decoded into characters
@@ -1413,6 +1420,8 @@ public final class String
      * sequences with this charset's default replacement string.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     * The contents of the string are indeterminate if the byte array
+     * is modified before the constructor returns.
      *
      * @param  bytes
      *         The bytes to be decoded into characters
@@ -1437,6 +1446,8 @@ public final class String
      * in the default charset is unspecified.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     * The contents of the string are indeterminate if the byte array
+     * is modified before the constructor returns.
      *
      * @param  bytes
      *         The bytes to be decoded into characters
@@ -1467,6 +1478,8 @@ public final class String
      * in the default charset is unspecified.  The {@link
      * java.nio.charset.CharsetDecoder} class should be used when more control
      * over the decoding process is required.
+     * The contents of the string are indeterminate if the byte array
+     * is modified before the constructor returns.
      *
      * @param  bytes
      *         The bytes to be decoded into characters
@@ -1495,6 +1508,8 @@ public final class String
      * currently contained in the string builder argument. The contents of the
      * string builder are copied; subsequent modification of the string builder
      * does not affect the newly created string.
+     * The contents of the string are indeterminate if the {@code StringBuilder}
+     * is modified before the constructor returns.
      *
      * <p> This constructor is provided to ease migration to {@code
      * StringBuilder}. Obtaining a string from a string builder via the {@code
@@ -4487,6 +4502,8 @@ public final class String
      * argument. The contents of the character array are copied; subsequent
      * modification of the character array does not affect the returned
      * string.
+     * The contents of the string are indeterminate if the character array
+     * is modified before the constructor returns.
      *
      * @param   data     the character array.
      * @return  a {@code String} that contains the characters of the
@@ -4505,6 +4522,8 @@ public final class String
      * specifies the length of the subarray. The contents of the subarray
      * are copied; subsequent modification of the character array does not
      * affect the returned string.
+     * The contents of the string are indeterminate if the character array
+     * is modified before the constructor returns.
      *
      * @param   data     the character array.
      * @param   offset   initial offset of the subarray.
@@ -4767,15 +4786,18 @@ public final class String
     }
 
     /*
-     * Package private constructor. Trailing Void argument is there for
+     * Private constructor. Trailing Void argument is there for
      * disambiguating it against other (public) constructors.
      *
      * Stores the char[] value into a byte[] that each byte represents
      * the8 low-order bits of the corresponding character, if the char[]
      * contains only latin1 character. Or a byte[] that stores all
      * characters in their byte sequences defined by the {@code StringUTF16}.
+     * <p>
+     * The contents of the string are indeterminate if the character array
+     * is modified before the constructor returns.
      */
-    String(char[] value, int off, int len, Void sig) {
+    private String(char[] value, int off, int len, Void sig) {
         if (len == 0) {
             this.value = "".value;
             this.coder = "".coder;
@@ -4783,11 +4805,9 @@ public final class String
         }
         if (COMPACT_STRINGS) {
             byte[] val = StringUTF16.compress(value, off, len);
-            if (val != null) {
-                this.value = val;
-                this.coder = LATIN1;
-                return;
-            }
+            this.coder = (val.length == len) ? LATIN1 : UTF16;
+            this.value = val;
+            return;
         }
         this.coder = UTF16;
         this.value = StringUTF16.toBytes(value, off, len);
@@ -4796,6 +4816,9 @@ public final class String
     /*
      * Package private constructor. Trailing Void argument is there for
      * disambiguating it against other (public) constructors.
+     *
+     * <p> The contents of the string are indeterminate if the {@code StringBuilder}
+     * is modified before the constructor returns.
      */
     String(AbstractStringBuilder asb, Void sig) {
         byte[] val = asb.getValue();
@@ -4806,12 +4829,9 @@ public final class String
         } else {
             // only try to compress val if some characters were deleted.
             if (COMPACT_STRINGS && asb.maybeLatin1) {
-                byte[] buf = StringUTF16.compress(val, 0, length);
-                if (buf != null) {
-                    this.coder = LATIN1;
-                    this.value = buf;
-                    return;
-                }
+                this.value = StringUTF16.compress(val, 0, length);
+                this.coder = (this.value.length == length) ? LATIN1 : UTF16;
+                return;
             }
             this.coder = UTF16;
             this.value = Arrays.copyOfRange(val, 0, length << 1);

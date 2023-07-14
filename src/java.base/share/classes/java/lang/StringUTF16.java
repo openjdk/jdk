@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import jdk.internal.util.ArraysSupport;
 import jdk.internal.util.DecimalDigits;
-import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
 import jdk.internal.vm.annotation.IntrinsicCandidate;
 
@@ -70,6 +69,11 @@ final class StringUTF16 {
         index <<= 1;
         return (char)(((val[index++] & 0xff) << HI_BYTE_SHIFT) |
                       ((val[index]   & 0xff) << LO_BYTE_SHIFT));
+    }
+
+    // Like StringLatin1.isLatin1At, determine if a compact string UTF16-encoded bytes are latin1
+    private static boolean isLatin1At(byte[] val, int index) {
+        return val[index * 2 + HI_BYTE_OFFSET] == 0;
     }
 
     public static int length(byte[] value) {
@@ -148,6 +152,14 @@ final class StringUTF16 {
         return dst;
     }
 
+    /**
+     * {@return an encoded byte[] for the UTF16 characters in char[]}
+     * **Only** use this if it is known that at least one character is UTF16.
+     * Otherwise, an untrusted char array may have racy contents and really be latin1.
+     * @param value a char array
+     * @param off an offset
+     * @param len a length
+     */
     @IntrinsicCandidate
     public static byte[] toBytes(char[] value, int off, int len) {
         byte[] val = newBytesFor(len);
@@ -158,20 +170,194 @@ final class StringUTF16 {
         return val;
     }
 
-    public static byte[] compress(char[] val, int off, int len) {
-        byte[] ret = new byte[len];
-        if (compress(val, off, ret, 0, len) == len) {
-            return ret;
+    /**
+     * {@return Compress the char array (containing UTF16) into a compact strings byte array}
+     * If all the chars are LATIN1, it returns an array with len == count,
+     * otherwise, it contains UTF16 characters.
+     * <p>
+     * A UTF16 array is returned *only* if at least 1 non-latin1 character is present.
+     * This must be true even if the input array is modified while this method is executing.
+     * This is assured by copying the characters while checking for latin1.
+     * If all characters are latin1, a byte array with length equals count is returned,
+     * indicating all latin1 chars. The scan may be implemented as an intrinsic,
+     * which returns the index of the first non-latin1 character.
+     * When the first non-latin1 character is found, it switches to creating a new
+     * buffer; the saved prefix of latin1 characters is copied to the new buffer;
+     * and the remaining input characters are copied to the buffer.
+     * The index of the known non-latin1 character is checked, if it is latin1,
+     * the input has been changed. In this case, a second attempt is made to compress to
+     * latin1 from the copy made in the first pass to the originally allocated latin1 buffer.
+     * If it succeeds the return value is latin1, otherwise, the utf16 value is returned.
+     * In this unusual case, the result is correct for the snapshot of the value.
+     * The resulting string may be indeterminate if the input array is modified during this
+     * operation, but it is ensured that at least 1 non-latin1 character is present in
+     * the non-latin1 buffer.
+     *
+     * @param val   a char array
+     * @param off   starting offset
+     * @param count length of chars to be compressed, length > 0
+     */
+    @ForceInline
+    public static byte[] compress(final char[] val, final int off, final int count) {
+        byte[] latin1 = new byte[count];
+        int ndx = compress(val, off, latin1, 0, count);
+        if (ndx != count) {
+            // Switch to UTF16
+            byte[] utf16 = toBytes(val, off, count);
+            // If the original character that was found to be non-latin1 is latin1 in the copy
+            // try to make a latin1 string from the copy
+            if (!isLatin1At(utf16, ndx)
+                    || compress(utf16, 0, latin1, 0, count) != count) {
+                return utf16;
+            }
         }
-        return null;
+        return latin1;     // latin1 success
     }
 
-    public static byte[] compress(byte[] val, int off, int len) {
-        byte[] ret = new byte[len];
-        if (compress(val, off, ret, 0, len) == len) {
-            return ret;
+    /**
+     * {@return Compress the internal byte array (containing UTF16) into a compact strings byte array}
+     * If all the chars are LATIN1, it returns an array with len == count,
+     * otherwise, it contains UTF16 characters.
+     * <p>
+     * Refer to the description of the algorithm in {@link #compress(char[], int, int)}.
+     *
+     * @param val   a byte array with UTF16 coding
+     * @param off   starting offset
+     * @param count length of chars to be compressed, length > 0
+     */
+    public static byte[] compress(final byte[] val, final int off, final int count) {
+        byte[] latin1 = new byte[count];
+        int ndx = compress(val, off, latin1, 0, count);
+        if (ndx != count) {// Switch to UTF16
+            byte[] utf16 = Arrays.copyOfRange(val, off << 1, (off + count) << 1);
+            // If the original character that was found to be non-latin1 is latin1 in the copy
+            // try to make a latin1 string from the copy
+            if (!isLatin1At(utf16, ndx)
+                    || compress(utf16, 0, latin1, 0, count) != count) {
+                return utf16;
+            }
         }
-        return null;
+        return latin1;     // latin1 success
+    }
+
+    /**
+     * {@return compress the code points into a compact strings byte array}
+     * If all the chars are LATIN1, returns an array with len == count.
+     * If not, a new byte array is allocated and code points converted to UTF16.
+     * The algorithm is similar to that of {@link #compress(char[], int, int)}.
+     * <p>
+     * The resulting encoding is attempted in several steps:
+     * <UL>
+     *     <LI>If no non-latin1 characters are found, the encoding is latin1</LI>
+     *     <LI>If an estimate of the number of characters needed to represent the codepoints is
+     *         equal to the string length, they are all BMP with at least 1 UTF16 character
+     *         and are copied to the result. </LI>
+     *     <LI>The extractCodePoints method is called to carefully expand surrogates. </LI>
+     * </UL>
+     *
+     * @param val   an int array of code points
+     * @param off   starting offset
+     * @param count length of code points to be compressed, length > 0
+     */
+    public static byte[] compress(final int[] val, int off, final int count) {
+        // Optimistically copy all latin1 code points to the destination
+        byte[] latin1 = new byte[count];
+        final int end = off + count;
+        for (int ndx = 0; ndx < count; ndx++, off++) {
+            int cp = val[off];
+            if (cp >= 0 && cp <= 0xff) {
+                latin1[ndx] = (byte)cp;
+            } else {
+                // Pass 1: Compute precise size of char[]; see extractCodePoints for caveat
+                int estSize = ndx + computeCodePointSize(val, off, end);
+
+                // Pass 2: Switch to UTF16
+                // cp = val[ndx] is at least one code point known to be UTF16
+                byte[] utf16 = newBytesFor(estSize);
+                if (ndx > 0) {
+                    StringLatin1.inflate(latin1, 0, utf16, 0, ndx); // inflate latin1 bytes
+                }
+
+                if (estSize == count) {
+                    // Based on the computed size, all remaining code points are BMP and
+                    // can be copied without checking again
+                    putChar(utf16, ndx, cp);        // ensure utf16 has a UTF16 char
+                    off++;
+                    for (int i = ndx + 1; i < count; i++, off++) {
+                        putChar(utf16, i, val[off]);
+                    }
+                } else {
+                    // Some codepoint is a surrogate pair
+                    extractCodepoints(val, off, end, utf16, ndx);
+
+                    // The original character that was found to be UTF16 is not UTF16 in the copy
+                    // Try to make a latin1 string from the copy
+                    if (isLatin1At(utf16, ndx) &&
+                            compress(utf16, 0, latin1, 0, count) == count) {
+                        return latin1;     // latin1 success
+                    }
+                }
+                return utf16;
+            }
+        }
+        return latin1;     // Latin1 success
+    }
+
+    // Extract code points into chars in the byte array
+    //
+    // Guard against possible races with the input array changing between the previous
+    // computation of the required output size and storing the bmp or surrogates.
+    // If a BMP code point is changed to a supplementary code point it would require 2 chars
+    // in the output. Changing a supplementary char to BMP would reduce the size.
+    // The destination is resized as needed or truncated to the exact size.
+    private static byte[] extractCodepoints(int[] val, int off, int end, byte[] dst, int dstOff) {
+        while (off < end) {
+            // Compute a minimum estimate on the number of characters can be put into the dst
+            // given the current codepoint and the number of remaining codepoints
+            int codePoint = val[off];           // read each codepoint from val only once
+            int dstLimit = dstOff
+                    + (Character.isBmpCodePoint(codePoint) ? 1 : 2)
+                    + (end - off - 1);
+            if (dstLimit > (dst.length >> 1)) {
+                // Resize to hold at least the estimated number of chars
+                dst = Arrays.copyOf(dst, dstLimit << 1);
+            }
+            // Efficiently copy as many codepoints as fit within the current estimated limit
+            while (true) {
+                if (Character.isBmpCodePoint(codePoint)) {
+                    putChar(dst, dstOff++, codePoint);
+                } else {
+                    putChar(dst, dstOff++, Character.highSurrogate(codePoint));
+                    putChar(dst, dstOff++, Character.lowSurrogate(codePoint));
+                }
+                off++;
+                if (dstOff + 2 > dstLimit)
+                    break;      // no space for another surrogate; recompute limit
+                codePoint = val[off];
+            }
+        }
+        if (dstOff != (dst.length >> 1)) {
+            // Truncate to actual length; should only occur if a codepoint was racily
+            // changed from a surrogate to a BMP character.
+            return Arrays.copyOf(dst, dstOff << 1);
+        }
+        return dst;
+    }
+
+    // Compute the number of chars needed to represent the code points from off to end-1
+    private static int computeCodePointSize(int[] val, int off, int end) {
+        int n = end - off;
+        while (off < end) {
+            int codePoint = val[off++];
+            if (Character.isBmpCodePoint(codePoint)) {
+                continue;
+            } else if (Character.isValidCodePoint(codePoint)) {
+                n++;
+            } else {
+                throw new IllegalArgumentException(Integer.toString(codePoint));
+            }
+        }
+        return n;
     }
 
     // compressedCopy char[] -> byte[]
@@ -179,9 +365,8 @@ final class StringUTF16 {
     public static int compress(char[] src, int srcOff, byte[] dst, int dstOff, int len) {
         for (int i = 0; i < len; i++) {
             char c = src[srcOff];
-            if (c > 0xFF) {
-                len = 0;
-                break;
+            if (c > 0xff) {
+                return i;  // return index of non-latin1 char
             }
             dst[dstOff] = (byte)c;
             srcOff++;
@@ -197,9 +382,8 @@ final class StringUTF16 {
         checkBoundsOffCount(srcOff, len, src);
         for (int i = 0; i < len; i++) {
             char c = getChar(src, srcOff);
-            if (c > 0xFF) {
-                len = 0;
-                break;
+            if (c > 0xff) {
+                return i;  // return index of non-latin1 char
             }
             dst[dstOff] = (byte)c;
             srcOff++;
@@ -208,30 +392,23 @@ final class StringUTF16 {
         return len;
     }
 
+    // Create the UTF16 buffer for !COMPACT_STRINGS
     public static byte[] toBytes(int[] val, int index, int len) {
         final int end = index + len;
-        // Pass 1: Compute precise size of char[]
-        int n = len;
-        for (int i = index; i < end; i++) {
-            int cp = val[i];
-            if (Character.isBmpCodePoint(cp))
-                continue;
-            else if (Character.isValidCodePoint(cp))
-                n++;
-            else throw new IllegalArgumentException(Integer.toString(cp));
-        }
-        // Pass 2: Allocate and fill in <high, low> pair
+        int n = computeCodePointSize(val, index, end);
+
         byte[] buf = newBytesFor(n);
-        for (int i = index, j = 0; i < end; i++, j++) {
-            int cp = val[i];
-            if (Character.isBmpCodePoint(cp)) {
-                putChar(buf, j, cp);
-            } else {
-                putChar(buf, j++, Character.highSurrogate(cp));
-                putChar(buf, j, Character.lowSurrogate(cp));
-            }
-        }
-        return buf;
+        return extractCodepoints(val, index, len, buf, 0);
+     }
+
+    // Return the number of chars needed to store the code point.
+    private static int charsPerCodePoint(int codePoint) {
+        if (Character.isBmpCodePoint(codePoint)) {
+            return 1;
+        } else if (Character.isValidCodePoint(codePoint)) {
+            return 2;
+        } else
+            throw new IllegalArgumentException(Integer.toString(codePoint));
     }
 
     public static byte[] toBytes(char c) {
@@ -653,10 +830,9 @@ final class StringUTF16 {
             if (String.COMPACT_STRINGS &&
                 !StringLatin1.canEncode(oldChar) &&
                 StringLatin1.canEncode(newChar)) {
-                byte[] val = compress(buf, 0, len);
-                if (val != null) {
-                    return new String(val, LATIN1);
-                }
+                byte[] res = StringUTF16.compress(buf, 0, len);
+                byte coder = (res.length == len) ? LATIN1 : UTF16;
+                return new String(res, coder);
             }
             return new String(buf, UTF16);
         }
@@ -771,10 +947,9 @@ final class StringUTF16 {
 
         if (String.COMPACT_STRINGS && replLat1 && !targLat1) {
             // combination 6
-            byte[] lat1Result = compress(result, 0, resultLen);
-            if (lat1Result != null) {
-                return new String(lat1Result, LATIN1);
-            }
+            byte[] res = StringUTF16.compress(result, 0, resultLen);
+            byte coder = (res.length == resultLen) ? LATIN1 : UTF16;
+            return new String(res, coder);    // combination 6
         }
         return new String(result, UTF16);
     }
@@ -838,7 +1013,7 @@ final class StringUTF16 {
             bits |= cp;
             putChar(result, i, cp);
         }
-        if (bits > 0xFF) {
+        if (bits < 0 || bits > 0xff) {
             return new String(result, UTF16);
         } else {
             return newString(result, 0, len);
@@ -939,7 +1114,7 @@ final class StringUTF16 {
             bits |= cp;
             putChar(result, i, cp);
         }
-        if (bits > 0xFF) {
+        if (bits < 0 || bits > 0xff) {
             return new String(result, UTF16);
         } else {
             return newString(result, 0, len);
@@ -1168,10 +1343,9 @@ final class StringUTF16 {
             return "";
         }
         if (String.COMPACT_STRINGS) {
-            byte[] buf = compress(val, index, len);
-            if (buf != null) {
-                return new String(buf, LATIN1);
-            }
+            byte[] res = StringUTF16.compress(val, index, len);
+            byte coder = (res.length == len) ? LATIN1 : UTF16;
+            return new String(res, coder);
         }
         int last = index + len;
         return new String(Arrays.copyOfRange(val, index << 1, last << 1), UTF16);
@@ -1502,15 +1676,18 @@ final class StringUTF16 {
 
     private static native boolean isBigEndian();
 
-    static final int HI_BYTE_SHIFT;
-    static final int LO_BYTE_SHIFT;
+    private static final int HI_BYTE_SHIFT;
+    private static final int LO_BYTE_SHIFT;
+    private static final int HI_BYTE_OFFSET;
     static {
         if (isBigEndian()) {
             HI_BYTE_SHIFT = 8;
             LO_BYTE_SHIFT = 0;
+            HI_BYTE_OFFSET = 0;
         } else {
             HI_BYTE_SHIFT = 0;
             LO_BYTE_SHIFT = 8;
+            HI_BYTE_OFFSET = 1;
         }
     }
 
