@@ -135,7 +135,7 @@ address generate_poly1305_processBlocks2() {
   }
 
   const FloatRegister v_u0[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
-  const FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++, *vregs++, *vregs++};
+  const FloatRegister s_v[] = {*vregs++, *vregs++, *vregs++};
 
   const FloatRegister zero = *vregs++;
   const FloatRegister r_v[] = {*vregs++, *vregs++};

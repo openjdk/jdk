@@ -6446,7 +6446,7 @@ void MacroAssembler::poly1305_multiply(LambdaAccumulator &acc,
 // Widening multiply s * r -> u
 void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
                                            const FloatRegister u[],
-                                           const FloatRegister m[],
+                                           const FloatRegister s[],
                                            const FloatRegister r[], const FloatRegister rr[]) {
 
   // Five limbs of r and rr (5·r) are packed as 32-bit integers into
@@ -6459,11 +6459,11 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
   // u64 u3 = r0*m3 +   r1*m2 +   r2*m1 +   r3*m0 + 5·r4*m4
   // u64 u4 = r0*m4 +   r1*m3 +   r2*m2 +   r3*m1 +   r4*m0
 
-  gen { umull(u[0], T2D, m[0], r[0], 0); };
-  gen { umull2(u[1], T2D, m[0], r[0], 0); };
-  gen { umull(u[2], T2D, m[2], r[0], 0); };
-  gen { umull2(u[3], T2D, m[2], r[0], 0); };
-  gen { umull(u[4], T2D, m[4], r[0], 0); };
+  gen { umull(u[0], T2D, s[0], r[0], 0); };
+  gen { umull2(u[1], T2D, s[0], r[0], 0); };
+  gen { umull(u[2], T2D, s[1], r[0], 0); };
+  gen { umull2(u[3], T2D, s[1], r[0], 0); };
+  gen { umull(u[4], T2D, s[2], r[0], 0); };
 
   gen {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u0[2]");
@@ -6472,42 +6472,42 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
 
   gen {
     asm("nop");
-    umlal(u[0], T2D, m[4], rr[0], 1); };
-  gen { umlal(u[1], T2D, m[0],  r[0], 1); };
-  gen { umlal2(u[2], T2D, m[0],  r[0], 1); };
-  gen { umlal(u[3], T2D, m[2],  r[0], 1); };
-  gen { umlal2(u[4], T2D, m[2],  r[0], 1); };
+    umlal(u[0], T2D, s[2], rr[0], 1); };
+  gen { umlal(u[1], T2D, s[0],  r[0], 1); };
+  gen { umlal2(u[2], T2D, s[0],  r[0], 1); };
+  gen { umlal(u[3], T2D, s[1],  r[0], 1); };
+  gen { umlal2(u[4], T2D, s[1],  r[0], 1); };
   gen {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u1[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u1[3]");
   };
 
-  gen { umlal2(u[0], T2D, m[2], rr[0], 2); };
-  gen { umlal(u[1], T2D, m[4], rr[0], 2); };
-  gen { umlal(u[2], T2D, m[0],  r[0], 2); };
-  gen { umlal2(u[3], T2D, m[0],  r[0], 2); };
-  gen { umlal(u[4], T2D, m[2],  r[0], 2); };
+  gen { umlal2(u[0], T2D, s[1], rr[0], 2); };
+  gen { umlal(u[1], T2D, s[2], rr[0], 2); };
+  gen { umlal(u[2], T2D, s[0],  r[0], 2); };
+  gen { umlal2(u[3], T2D, s[0],  r[0], 2); };
+  gen { umlal(u[4], T2D, s[1],  r[0], 2); };
   gen {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u2[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u2[3]");
   };
 
 
-  gen { umlal(u[0], T2D, m[2], rr[0], 3); };
-  gen { umlal2(u[1], T2D, m[2], rr[0], 3); };
-  gen { umlal(u[2], T2D, m[4], rr[0], 3); };
-  gen { umlal(u[3], T2D, m[0],  r[0], 3); };
-  gen { umlal2(u[4], T2D, m[0],  r[0], 3); };
+  gen { umlal(u[0], T2D, s[1], rr[0], 3); };
+  gen { umlal2(u[1], T2D, s[1], rr[0], 3); };
+  gen { umlal(u[2], T2D, s[2], rr[0], 3); };
+  gen { umlal(u[3], T2D, s[0],  r[0], 3); };
+  gen { umlal2(u[4], T2D, s[0],  r[0], 3); };
   gen {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u3[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u3[3]");
   };
 
-  gen { umlal2(u[0], T2D, m[0], rr[1], 0); };
-  gen { umlal(u[1], T2D, m[2], rr[1], 0); };
-  gen { umlal2(u[2], T2D, m[2], rr[1], 0); };
-  gen { umlal(u[3], T2D, m[4], rr[1], 0); };
-  gen { umlal(u[4], T2D, m[0],  r[1], 0); };
+  gen { umlal2(u[0], T2D, s[0], rr[1], 0); };
+  gen { umlal(u[1], T2D, s[1], rr[1], 0); };
+  gen { umlal2(u[2], T2D, s[1], rr[1], 0); };
+  gen { umlal(u[3], T2D, s[2], rr[1], 0); };
+  gen { umlal(u[4], T2D, s[0],  r[1], 0); };
   gen {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u4[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u4[3]");
@@ -6608,17 +6608,17 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
     ld2(scratch1, scratch2, D, 1, post(input_start, 2 * wordSize)); };
 
   gen {
-    ushr(s[4], T2D, scratch2, 14+26);
+    ushr(s[2], T2D, scratch2, 14+26);
   };
 
   gen {
-    ushr(s[2], T2D, scratch1, 26+26);
-    sli(s[2], T2D, scratch2, 12);
+    ushr(s[1], T2D, scratch1, 26+26);
+    sli(s[1], T2D, scratch2, 12);
   };
   gen {
     ushr(scratch2, T2D, scratch2, 14);
-    sli(s[2], T2D, scratch2, 32);
-    sli(s[2], T4S, zero, 26);
+    sli(s[1], T2D, scratch2, 32);
+    sli(s[1], T4S, zero, 26);
   };
   gen { mov(s[0], T16B, scratch1); };
   gen {
@@ -6628,18 +6628,18 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
   };
 
   gen { mov(scratch1, T2D, 1 << 24); };
-  gen { addv(s[4], T2D, s[4], scratch1); };
-  gen { sli(s[4], T2D, zero, 32); };
+  gen { addv(s[2], T2D, s[2], scratch1); };
+  gen { sli(s[2], T2D, zero, 32); };
 
   gen { addv(s[0], T4S, s[0], u[0]); };
-  gen { addv(s[2], T4S, s[2], u[2]); };
-  gen { addv(s[4], T4S, s[4], u[4]); };
+  gen { addv(s[1], T4S, s[1], u[2]); };
+  gen { addv(s[2], T4S, s[2], u[4]); };
 
   gen {
     m_print26(D, u[4], u[2], u[0], 0, "** ARGH ?");
   };
 
-  for (int i = 0; i <= 4; i += 2)
+  for (int i = 0; i <= 2; i++)
     gen {
       ext(scratch1, T16B, s[i], s[i], 8);
       zip1(s[i], T4S, s[i], scratch1);
@@ -6647,7 +6647,7 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
 
   gen {
     int indexes1[] = { 0, 1, 0, 1, 0 };
-    FloatRegister v[] = { s[4], s[2], s[2], s[0], s[0] };
+    FloatRegister v[] = { s[2], s[1], s[1], s[0], s[0] };
     m_print26(S, v, indexes1, "s[2]");
     int indexes2[] = { 2, 3, 2, 3, 2 };
     m_print26(S, v, indexes2, "s[3]");
