@@ -22,48 +22,8 @@
  */
 package jdk.internal.classfile.impl;
 
-import jdk.internal.classfile.Annotation;
-import jdk.internal.classfile.AnnotationElement;
-import jdk.internal.classfile.AnnotationValue;
-import jdk.internal.classfile.ClassBuilder;
-import jdk.internal.classfile.ClassElement;
-import jdk.internal.classfile.ClassSignature;
-import jdk.internal.classfile.CodeBuilder;
-import jdk.internal.classfile.CodeElement;
-import jdk.internal.classfile.CodeModel;
-import jdk.internal.classfile.CodeTransform;
-import jdk.internal.classfile.FieldBuilder;
-import jdk.internal.classfile.FieldElement;
-import jdk.internal.classfile.FieldModel;
-import jdk.internal.classfile.FieldTransform;
-import jdk.internal.classfile.Interfaces;
-import jdk.internal.classfile.MethodBuilder;
-import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MethodModel;
-import jdk.internal.classfile.MethodSignature;
-import jdk.internal.classfile.MethodTransform;
-import jdk.internal.classfile.Signature;
-import jdk.internal.classfile.Superclass;
-import jdk.internal.classfile.TypeAnnotation;
-import jdk.internal.classfile.attribute.AnnotationDefaultAttribute;
-import jdk.internal.classfile.attribute.EnclosingMethodAttribute;
-import jdk.internal.classfile.attribute.ExceptionsAttribute;
-import jdk.internal.classfile.attribute.InnerClassInfo;
-import jdk.internal.classfile.attribute.InnerClassesAttribute;
-import jdk.internal.classfile.attribute.ModuleAttribute;
-import jdk.internal.classfile.attribute.ModuleProvideInfo;
-import jdk.internal.classfile.attribute.NestHostAttribute;
-import jdk.internal.classfile.attribute.NestMembersAttribute;
-import jdk.internal.classfile.attribute.PermittedSubclassesAttribute;
-import jdk.internal.classfile.attribute.RecordAttribute;
-import jdk.internal.classfile.attribute.RecordComponentInfo;
-import jdk.internal.classfile.attribute.RuntimeInvisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeInvisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleParameterAnnotationsAttribute;
-import jdk.internal.classfile.attribute.RuntimeVisibleTypeAnnotationsAttribute;
-import jdk.internal.classfile.attribute.SignatureAttribute;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 import jdk.internal.classfile.components.ClassRemapper;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.instruction.ConstantInstruction.LoadConstantInstruction;
@@ -218,6 +178,14 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                 case RuntimeInvisibleTypeAnnotationsAttribute aa ->
                     mb.with(RuntimeInvisibleTypeAnnotationsAttribute.of(
                             mapTypeAnnotations(aa.annotations())));
+                case MatcherAttribute ma -> {
+                    List<Attribute<?>> matcherAttrs = ma.attributes().stream().<Attribute<?>>map(this::mapMatcherAttributes).toList();
+                    mb.with(MatcherAttribute.of(
+                                    ma.matcherName().stringValue(),
+                                    ma.matcherFlagsMask(),
+                                    ma.matcherTypeSymbol(),
+                                    matcherAttrs));
+                }
                 default ->
                     mb.with(me);
             }
@@ -322,6 +290,26 @@ public record ClassRemapperImpl(Function<ClassDesc, ClassDesc> mapFunction) impl
                                     mapTypeAnnotations(aa.annotations()));
                         default -> atr;
                     }).toList());
+    }
+
+    Attribute<?> mapMatcherAttributes(Attribute<?> matcherAnnotation) {
+        return switch (matcherAnnotation) {
+            case SignatureAttribute sa ->
+                    SignatureAttribute.of(
+                            mapSignature(sa.asTypeSignature()));
+            case RuntimeVisibleParameterAnnotationsAttribute aa ->
+                    RuntimeVisibleParameterAnnotationsAttribute.of(
+                            aa.parameterAnnotations().stream().map(this::mapAnnotations).toList());
+            case RuntimeInvisibleParameterAnnotationsAttribute aa ->
+                    RuntimeInvisibleParameterAnnotationsAttribute.of(
+                            aa.parameterAnnotations().stream().map(this::mapAnnotations).toList());
+            case DeprecatedAttribute a ->
+                    DeprecatedAttribute.of();
+            case MethodParametersAttribute a ->
+                    MethodParametersAttribute.of(a.parameters().stream().map(mp ->
+                            MethodParameterInfo.ofParameter(mp.name().map(Utf8Entry::stringValue), mp.flagsMask())).toArray(MethodParameterInfo[]::new));
+            default -> matcherAnnotation;
+        };
     }
 
     DirectMethodHandleDesc mapDirectMethodHandle(DirectMethodHandleDesc dmhd) {

@@ -47,7 +47,7 @@ public sealed interface MethodElement
         extends ClassfileElement
         permits AccessFlags, CodeModel, CustomAttribute,
                 AnnotationDefaultAttribute, DeprecatedAttribute,
-                ExceptionsAttribute, MatcherElement, MatcherAttribute, MethodParametersAttribute,
+                ExceptionsAttribute, MatcherAttribute, MethodParametersAttribute,
                 RuntimeInvisibleAnnotationsAttribute, RuntimeInvisibleParameterAnnotationsAttribute,
                 RuntimeInvisibleTypeAnnotationsAttribute, RuntimeVisibleAnnotationsAttribute,
                 RuntimeVisibleParameterAnnotationsAttribute, RuntimeVisibleTypeAnnotationsAttribute,

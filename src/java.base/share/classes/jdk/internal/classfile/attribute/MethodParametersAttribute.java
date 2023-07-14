@@ -29,7 +29,6 @@ import java.util.List;
 
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.MethodElement;
-import jdk.internal.classfile.MatcherElement;
 import jdk.internal.classfile.impl.BoundAttribute;
 import jdk.internal.classfile.impl.UnboundAttribute;
 
@@ -40,7 +39,7 @@ import jdk.internal.classfile.impl.UnboundAttribute;
  * traversing the elements of a {@link jdk.internal.classfile.MethodModel}.
  */
 public sealed interface MethodParametersAttribute
-        extends Attribute<MethodParametersAttribute>, MethodElement, MatcherElement
+        extends Attribute<MethodParametersAttribute>, MethodElement
         permits BoundAttribute.BoundMethodParametersAttribute,
                 UnboundAttribute.UnboundMethodParametersAttribute {
 

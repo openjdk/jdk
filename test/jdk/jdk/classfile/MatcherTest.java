@@ -31,6 +31,8 @@
 
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.MatcherAttribute;
+
+import java.io.IOException;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -44,6 +46,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
+
+import jdk.internal.classfile.components.ClassPrinter;
 import org.junit.jupiter.api.Test;
 
 class MatcherTest {
@@ -76,6 +80,18 @@ class MatcherTest {
         assertEquals(extractedInfo.toString(), "[Points, true, MethodTypeDesc[(Collection,Collection)void], [Attribute[name=MethodParameters], Attribute[name=Signature], Attribute[name=RuntimeVisibleParameterAnnotations]]]");
     }
 
+    @Test
+    void testPrintJsonTraceAll() throws IOException {
+        var out = new StringBuilder();
+        ClassModel classModel = Classfile.parse(Files.readAllBytes(testClassPath));
+        ClassPrinter.toJson(classModel, ClassPrinter.Verbosity.TRACE_ALL, out::append);
+        System.out.println(out);
+        assertOut(out,
+                """
+                
+                """);
+    }
+
 //    @Test
 //    void testWriteMatcher() throws Exception {
 //        ClassModel classModel = Classfile.parse(Files.readAllBytes(testClassPath));
@@ -99,6 +115,13 @@ class MatcherTest {
 //        Classfile.parse(classModel.transform(xform));
 //        assertEquals(extractedInfo.toString(), "[Points, true, MethodTypeDesc[(Collection,Collection)void], [Attribute[name=MethodParameters], Attribute[name=Signature], Attribute[name=RuntimeVisibleParameterAnnotations]]]");
 //    }
+
+    private static void assertOut(StringBuilder out, String expected) {
+//        System.out.println("-----------------");
+//        System.out.println(out.toString());
+//        System.out.println("-----------------");
+        assertArrayEquals(out.toString().trim().split(" *\r?\n"), expected.trim().split("\n"));
+    }
 
     public record Points(Collection<Integer> xs, Collection<Integer> ys) {
         @MatcherAnnot

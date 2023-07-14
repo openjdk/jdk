@@ -35,7 +35,7 @@ import java.lang.reflect.AccessFlag;
  *  the corresponding model type.
  */
 public sealed interface AccessFlags
-        extends ClassElement, MethodElement, FieldElement, MatcherElement
+        extends ClassElement, MethodElement, FieldElement
         permits AccessFlagsImpl {
 
     /**
