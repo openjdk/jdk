@@ -1216,9 +1216,6 @@ public:
   // shift left by shamt and add
   void shadd(Register Rd, Register Rs1, Register Rs2, Register tmp, int shamt);
 
-  // 32-bit shift left by shamt and zero extend
-  void slli_uw(Register Rd, Register Rs, int shamt);
-
   // test single bit in Rs, result is set to Rd
   void test_bit(Register Rd, Register Rs, uint32_t bit_pos, Register tmp = t0);
 

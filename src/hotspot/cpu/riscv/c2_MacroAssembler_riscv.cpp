@@ -688,7 +688,8 @@ void C2_MacroAssembler::string_indexof_linearscan(Register haystack, Register ne
       (this->*load_4chr)(ch2, Address(tmp3), noreg);
       if (isLL) {
         // need to erase 1 most significant byte in 32-bit value of ch2
-        slli_uw(ch2, ch2, 8);
+        slli(ch2, ch2, 40);
+        srli(ch2, ch2, 32);
       } else {
         slli(ch2, ch2, 16); // 2 most significant bytes will be erased by this operation
       }

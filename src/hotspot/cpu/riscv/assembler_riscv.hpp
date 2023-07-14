@@ -1867,9 +1867,9 @@ enum Nf {
     emit(insn);                                         \
   }
 
-  INSN(rori,     0b0010011, 0b101, 0b011000);
-  INSN(_slli_uw, 0b0011011, 0b001, 0b000010);
-  INSN(bexti,    0b0010011, 0b101, 0b010010);
+  INSN(rori,    0b0010011, 0b101, 0b011000);
+  INSN(slli_uw, 0b0011011, 0b001, 0b000010);
+  INSN(bexti,   0b0010011, 0b101, 0b010010);
 
 #undef INSN
 
