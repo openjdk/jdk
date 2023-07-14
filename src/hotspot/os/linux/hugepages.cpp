@@ -88,9 +88,9 @@ static size_t scan_default_hugepagesize() {
   return pagesize;
 }
 
-// Given a file that contains a single (integral) number, return that number, 0 and false if failed.
+// Given a file that contains a single (integral) number, return that number in (*out) and true;
+// in case of an error, return false.
 static bool read_number_file(const char* file, size_t* out) {
-  (*out) = 0;
   FILE* f = ::fopen(file, "r");
   bool rc = false;
   if (f != nullptr) {
@@ -191,8 +191,9 @@ void THPSupport::scan_os() {
 
   // Scan large page size for THP from hpage_pmd_size
   _pagesize = 0;
-  read_number_file("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", &_pagesize);
-  assert(_pagesize > 0, "Expected");
+  if (read_number_file("/sys/kernel/mm/transparent_hugepage/hpage_pmd_size", &_pagesize)) {
+    assert(_pagesize > 0, "Expected");
+  }
   _initialized = true;
 
   LogTarget(Info, pagesize) lt;

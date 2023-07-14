@@ -62,7 +62,7 @@ class HugePageConfiguration {
         this._thpPageSize = _thpPageSize;
     }
 
-    @java.lang.Override
+    @Override
     public String toString() {
         return "Configuration{" +
                 "_staticHugePageSizes=" + _staticHugePageSizes +
@@ -72,7 +72,7 @@ class HugePageConfiguration {
                 '}';
     }
 
-    @java.lang.Override
+    @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
@@ -80,7 +80,7 @@ class HugePageConfiguration {
         return _staticDefaultHugePageSize == that._staticDefaultHugePageSize && _thpPageSize == that._thpPageSize && Objects.equals(_staticHugePageSizes, that._staticHugePageSizes) && _thpMode == that._thpMode;
     }
 
-    @java.lang.Override
+    @Override
     public int hashCode() {
         return Objects.hash(_staticHugePageSizes, _staticDefaultHugePageSize, _thpMode, _thpPageSize);
     }
