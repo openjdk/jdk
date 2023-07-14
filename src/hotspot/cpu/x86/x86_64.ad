@@ -1718,7 +1718,7 @@ uint MachUEPNode::size(PhaseRegAlloc* ra_) const
 
 //=============================================================================
 
-const bool Matcher::supports_vector_calling_convention(void) {
+bool Matcher::supports_vector_calling_convention(void) {
   if (EnableVectorSupport && UseVectorStubs) {
     return true;
   }
@@ -3235,7 +3235,7 @@ operand immL_32bits()
 operand immI_Pow2M1()
 %{
   predicate((n->get_int() > 0)
-            && is_power_of_2(n->get_int() + 1));
+            && is_power_of_2((juint)n->get_int() + 1));
   match(ConI);
 
   op_cost(20);
@@ -5374,7 +5374,7 @@ instruct loadD(regD dst, memory mem)
 
 // max = java.lang.Math.max(float a, float b)
 instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !n->is_reduction());
+  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{
@@ -5396,7 +5396,7 @@ instruct maxF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && n->is_reduction());
+  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
   match(Set dst (MaxF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -5410,7 +5410,7 @@ instruct maxF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // max = java.lang.Math.max(double a, double b)
 instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !n->is_reduction());
+  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP atmp, TEMP btmp, TEMP tmp);
   format %{
@@ -5432,7 +5432,7 @@ instruct maxD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && n->is_reduction());
+  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
   match(Set dst (MaxD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -5446,7 +5446,7 @@ instruct maxD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRe
 
 // min = java.lang.Math.min(float a, float b)
 instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, legRegF btmp) %{
-  predicate(UseAVX > 0 && !n->is_reduction());
+  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{
@@ -5468,7 +5468,7 @@ instruct minF_reg(legRegF dst, legRegF a, legRegF b, legRegF tmp, legRegF atmp, 
 %}
 
 instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRegI tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && n->is_reduction());
+  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
   match(Set dst (MinF a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -5482,7 +5482,7 @@ instruct minF_reduction_reg(legRegF dst, legRegF a, legRegF b, legRegF xmmt, rRe
 
 // min = java.lang.Math.min(double a, double b)
 instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, legRegD btmp) %{
-  predicate(UseAVX > 0 && !n->is_reduction());
+  predicate(UseAVX > 0 && !SuperWord::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP tmp, TEMP atmp, TEMP btmp);
   format %{
@@ -5504,7 +5504,7 @@ instruct minD_reg(legRegD dst, legRegD a, legRegD b, legRegD tmp, legRegD atmp, 
 %}
 
 instruct minD_reduction_reg(legRegD dst, legRegD a, legRegD b, legRegD xmmt, rRegL tmp, rFlagsReg cr) %{
-  predicate(UseAVX > 0 && n->is_reduction());
+  predicate(UseAVX > 0 && SuperWord::is_reduction(n));
   match(Set dst (MinD a b));
   effect(USE a, USE b, TEMP xmmt, TEMP tmp, KILL cr);
 
@@ -8093,7 +8093,7 @@ instruct compareAndSwapP(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8116,7 +8116,7 @@ instruct compareAndSwapL(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgq($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8138,7 +8138,7 @@ instruct compareAndSwapI(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8160,7 +8160,7 @@ instruct compareAndSwapB(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgb($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8182,7 +8182,7 @@ instruct compareAndSwapS(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgw($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8203,7 +8203,7 @@ instruct compareAndSwapN(rRegI res,
   ins_encode %{
     __ lock();
     __ cmpxchgl($newval$$Register, $mem_ptr$$Address);
-    __ sete($res$$Register);
+    __ setb(Assembler::equal, $res$$Register);
     __ movzbl($res$$Register, $res$$Register);
   %}
   ins_pipe( pipe_cmpxchg );
@@ -8312,96 +8312,148 @@ instruct compareAndExchangeP(
   ins_pipe( pipe_cmpxchg );
 %}
 
-instruct xaddB_no_res( memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+instruct xaddB_reg_no_res(memory mem, Universe dummy, rRegI add, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddB mem add));
   effect(KILL cr);
-  format %{ "ADDB  [$mem],$add" %}
+  format %{ "addb_lock   $mem, $add" %}
+  ins_encode %{
+    __ lock();
+    __ addb($mem$$Address, $add$$Register);
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct xaddB_imm_no_res(memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddB mem add));
+  effect(KILL cr);
+  format %{ "addb_lock   $mem, $add" %}
   ins_encode %{
     __ lock();
     __ addb($mem$$Address, $add$$constant);
   %}
-  ins_pipe( pipe_cmpxchg );
+  ins_pipe(pipe_cmpxchg);
 %}
 
-instruct xaddB( memory mem, rRegI newval, rFlagsReg cr) %{
+instruct xaddB(memory mem, rRegI newval, rFlagsReg cr) %{
+  predicate(!n->as_LoadStore()->result_not_used());
   match(Set newval (GetAndAddB mem newval));
   effect(KILL cr);
-  format %{ "XADDB  [$mem],$newval" %}
+  format %{ "xaddb_lock  $mem, $newval" %}
   ins_encode %{
     __ lock();
     __ xaddb($mem$$Address, $newval$$Register);
   %}
-  ins_pipe( pipe_cmpxchg );
+  ins_pipe(pipe_cmpxchg);
 %}
 
-instruct xaddS_no_res( memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+instruct xaddS_reg_no_res(memory mem, Universe dummy, rRegI add, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddS mem add));
   effect(KILL cr);
-  format %{ "ADDW  [$mem],$add" %}
+  format %{ "addw_lock   $mem, $add" %}
+  ins_encode %{
+    __ lock();
+    __ addw($mem$$Address, $add$$Register);
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct xaddS_imm_no_res(memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+  predicate(UseStoreImmI16 && n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddS mem add));
+  effect(KILL cr);
+  format %{ "addw_lock   $mem, $add" %}
   ins_encode %{
     __ lock();
     __ addw($mem$$Address, $add$$constant);
   %}
-  ins_pipe( pipe_cmpxchg );
+  ins_pipe(pipe_cmpxchg);
 %}
 
-instruct xaddS( memory mem, rRegI newval, rFlagsReg cr) %{
+instruct xaddS(memory mem, rRegI newval, rFlagsReg cr) %{
+  predicate(!n->as_LoadStore()->result_not_used());
   match(Set newval (GetAndAddS mem newval));
   effect(KILL cr);
-  format %{ "XADDW  [$mem],$newval" %}
+  format %{ "xaddw_lock  $mem, $newval" %}
   ins_encode %{
     __ lock();
     __ xaddw($mem$$Address, $newval$$Register);
   %}
-  ins_pipe( pipe_cmpxchg );
+  ins_pipe(pipe_cmpxchg);
 %}
 
-instruct xaddI_no_res( memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+instruct xaddI_reg_no_res(memory mem, Universe dummy, rRegI add, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddI mem add));
   effect(KILL cr);
-  format %{ "ADDL  [$mem],$add" %}
+  format %{ "addl_lock   $mem, $add" %}
+  ins_encode %{
+    __ lock();
+    __ addl($mem$$Address, $add$$Register);
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct xaddI_imm_no_res(memory mem, Universe dummy, immI add, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddI mem add));
+  effect(KILL cr);
+  format %{ "addl_lock   $mem, $add" %}
   ins_encode %{
     __ lock();
     __ addl($mem$$Address, $add$$constant);
   %}
-  ins_pipe( pipe_cmpxchg );
+  ins_pipe(pipe_cmpxchg);
 %}
 
-instruct xaddI( memory mem, rRegI newval, rFlagsReg cr) %{
+instruct xaddI(memory mem, rRegI newval, rFlagsReg cr) %{
+  predicate(!n->as_LoadStore()->result_not_used());
   match(Set newval (GetAndAddI mem newval));
   effect(KILL cr);
-  format %{ "XADDL  [$mem],$newval" %}
+  format %{ "xaddl_lock  $mem, $newval" %}
   ins_encode %{
     __ lock();
     __ xaddl($mem$$Address, $newval$$Register);
   %}
-  ins_pipe( pipe_cmpxchg );
+  ins_pipe(pipe_cmpxchg);
 %}
 
-instruct xaddL_no_res( memory mem, Universe dummy, immL32 add, rFlagsReg cr) %{
+instruct xaddL_reg_no_res(memory mem, Universe dummy, rRegL add, rFlagsReg cr) %{
   predicate(n->as_LoadStore()->result_not_used());
   match(Set dummy (GetAndAddL mem add));
   effect(KILL cr);
-  format %{ "ADDQ  [$mem],$add" %}
+  format %{ "addq_lock   $mem, $add" %}
+  ins_encode %{
+    __ lock();
+    __ addq($mem$$Address, $add$$Register);
+  %}
+  ins_pipe(pipe_cmpxchg);
+%}
+
+instruct xaddL_imm_no_res(memory mem, Universe dummy, immL32 add, rFlagsReg cr) %{
+  predicate(n->as_LoadStore()->result_not_used());
+  match(Set dummy (GetAndAddL mem add));
+  effect(KILL cr);
+  format %{ "addq_lock   $mem, $add" %}
   ins_encode %{
     __ lock();
     __ addq($mem$$Address, $add$$constant);
   %}
-  ins_pipe( pipe_cmpxchg );
+  ins_pipe(pipe_cmpxchg);
 %}
 
-instruct xaddL( memory mem, rRegL newval, rFlagsReg cr) %{
+instruct xaddL(memory mem, rRegL newval, rFlagsReg cr) %{
+  predicate(!n->as_LoadStore()->result_not_used());
   match(Set newval (GetAndAddL mem newval));
   effect(KILL cr);
-  format %{ "XADDQ  [$mem],$newval" %}
+  format %{ "xaddq_lock  $mem, $newval" %}
   ins_encode %{
     __ lock();
     __ xaddq($mem$$Address, $newval$$Register);
   %}
-  ins_pipe( pipe_cmpxchg );
+  ins_pipe(pipe_cmpxchg);
 %}
 
 instruct xchgB( memory mem, rRegI newval) %{
@@ -10626,40 +10678,6 @@ instruct xorL_mem_imm(memory dst, immL32 src, rFlagsReg cr)
   ins_pipe(ialu_mem_imm);
 %}
 
-// Convert Int to Boolean
-instruct convI2B(rRegI dst, rRegI src, rFlagsReg cr)
-%{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-
-  format %{ "testl   $src, $src\t# ci2b\n\t"
-            "setnz   $dst\n\t"
-            "movzbl  $dst, $dst" %}
-  ins_encode %{
-    __ testl($src$$Register, $src$$Register);
-    __ set_byte_if_not_zero($dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow); // XXX
-%}
-
-// Convert Pointer to Boolean
-instruct convP2B(rRegI dst, rRegP src, rFlagsReg cr)
-%{
-  match(Set dst (Conv2B src));
-  effect(KILL cr);
-
-  format %{ "testq   $src, $src\t# cp2b\n\t"
-            "setnz   $dst\n\t"
-            "movzbl  $dst, $dst" %}
-  ins_encode %{
-    __ testq($src$$Register, $src$$Register);
-    __ set_byte_if_not_zero($dst$$Register);
-    __ movzbl($dst$$Register, $dst$$Register);
-  %}
-  ins_pipe(pipe_slow); // XXX
-%}
-
 instruct cmpLTMask(rRegI dst, rRegI p, rRegI q, rFlagsReg cr)
 %{
   match(Set dst (CmpLTMask p q));
@@ -10672,7 +10690,7 @@ instruct cmpLTMask(rRegI dst, rRegI p, rRegI q, rFlagsReg cr)
             "negl    $dst" %}
   ins_encode %{
     __ cmpl($p$$Register, $q$$Register);
-    __ setl($dst$$Register);
+    __ setb(Assembler::less, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ negl($dst$$Register);
   %}
@@ -11020,9 +11038,9 @@ instruct convF2I_reg_reg(rRegI dst, regF src, rFlagsReg cr)
 %{
   match(Set dst (ConvF2I src));
   effect(KILL cr);
-  format %{ "convert_f2i $dst,$src" %}
+  format %{ "convert_f2i $dst, $src" %}
   ins_encode %{
-    __ convert_f2i($dst$$Register, $src$$XMMRegister);
+    __ convertF2I(T_INT, T_FLOAT, $dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -11031,9 +11049,9 @@ instruct convF2L_reg_reg(rRegL dst, regF src, rFlagsReg cr)
 %{
   match(Set dst (ConvF2L src));
   effect(KILL cr);
-  format %{ "convert_f2l $dst,$src"%}
+  format %{ "convert_f2l $dst, $src"%}
   ins_encode %{
-    __ convert_f2l($dst$$Register, $src$$XMMRegister);
+    __ convertF2I(T_LONG, T_FLOAT, $dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -11042,9 +11060,9 @@ instruct convD2I_reg_reg(rRegI dst, regD src, rFlagsReg cr)
 %{
   match(Set dst (ConvD2I src));
   effect(KILL cr);
-  format %{ "convert_d2i $dst,$src"%}
+  format %{ "convert_d2i $dst, $src"%}
   ins_encode %{
-    __ convert_d2i($dst$$Register, $src$$XMMRegister);
+    __ convertF2I(T_INT, T_DOUBLE, $dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -11053,9 +11071,9 @@ instruct convD2L_reg_reg(rRegL dst, regD src, rFlagsReg cr)
 %{
   match(Set dst (ConvD2L src));
   effect(KILL cr);
-  format %{ "convert_d2l $dst,$src"%}
+  format %{ "convert_d2l $dst, $src"%}
   ins_encode %{
-    __ convert_d2l($dst$$Register, $src$$XMMRegister);
+    __ convertF2I(T_LONG, T_DOUBLE, $dst$$Register, $src$$XMMRegister);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -12449,6 +12467,17 @@ instruct testI_reg_imm(rFlagsReg cr, rRegI src, immI con, immI_0 zero)
   ins_pipe(ialu_cr_reg_imm);
 %}
 
+instruct testI_reg_reg(rFlagsReg cr, rRegI src1, rRegI src2, immI_0 zero)
+%{
+  match(Set cr (CmpI (AndI src1 src2) zero));
+
+  format %{ "testl   $src1, $src2" %}
+  ins_encode %{
+    __ testl($src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(ialu_cr_reg_imm);
+%}
+
 instruct testI_reg_mem(rFlagsReg cr, rRegI src, memory mem, immI_0 zero)
 %{
   match(Set cr (CmpI (AndI src (LoadI mem)) zero));
@@ -12765,6 +12794,17 @@ instruct testL_reg_imm(rFlagsReg cr, rRegL src, immL32 con, immL0 zero)
   ins_pipe(ialu_cr_reg_imm);
 %}
 
+instruct testL_reg_reg(rFlagsReg cr, rRegL src1, rRegL src2, immL0 zero)
+%{
+  match(Set cr (CmpL (AndL src1 src2) zero));
+
+  format %{ "testq   $src1, $src2\t# long" %}
+  ins_encode %{
+    __ testq($src1$$Register, $src2$$Register);
+  %}
+  ins_pipe(ialu_cr_reg_imm);
+%}
+
 instruct testL_reg_mem(rFlagsReg cr, rRegL src, memory mem, immL0 zero)
 %{
   match(Set cr (CmpL (AndL src (LoadL mem)) zero));
@@ -12806,7 +12846,7 @@ instruct cmpU3_reg_reg(rRegI dst, rRegI src1, rRegI src2, rFlagsReg flags)
     __ cmpl($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::below, done);
-    __ setne($dst$$Register);
+    __ setb(Assembler::notZero, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ bind(done);
   %}
@@ -12832,7 +12872,7 @@ instruct cmpL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::less, done);
-    __ setne($dst$$Register);
+    __ setb(Assembler::notZero, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ bind(done);
   %}
@@ -12858,7 +12898,7 @@ instruct cmpUL3_reg_reg(rRegI dst, rRegL src1, rRegL src2, rFlagsReg flags)
     __ cmpq($src1$$Register, $src2$$Register);
     __ movl($dst$$Register, -1);
     __ jccb(Assembler::below, done);
-    __ setne($dst$$Register);
+    __ setb(Assembler::notZero, $dst$$Register);
     __ movzbl($dst$$Register, $dst$$Register);
     __ bind(done);
   %}
@@ -13291,7 +13331,7 @@ instruct cmpFastLockRTM(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, 
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr,$cx1,$cx2" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, $cx1$$Register, $cx2$$Register,
+                 $scr$$Register, $cx1$$Register, $cx2$$Register, r15_thread,
                  _rtm_counters, _stack_rtm_counters,
                  ((Method*)(ra_->C->method()->constant_encoding()))->method_data(),
                  true, ra_->C->profile_rtm());
@@ -13307,7 +13347,7 @@ instruct cmpFastLock(rFlagsReg cr, rRegP object, rbx_RegP box, rax_RegI tmp, rRe
   format %{ "fastlock $object,$box\t! kills $box,$tmp,$scr" %}
   ins_encode %{
     __ fast_lock($object$$Register, $box$$Register, $tmp$$Register,
-                 $scr$$Register, noreg, noreg, NULL, NULL, NULL, false, false);
+                 $scr$$Register, noreg, noreg, r15_thread, nullptr, nullptr, nullptr, false, false);
   %}
   ins_pipe(pipe_slow);
 %}
@@ -13732,6 +13772,13 @@ instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
   ins_pipe(ialu_reg_reg);
 %}
 
+// These peephole rules replace mov + I pairs (where I is one of {add, inc, dec,
+// sal}) with lea instructions. The {add, sal} rules are beneficial in
+// processors with at least partial ALU support for lea
+// (supports_fast_2op_lea()), whereas the {inc, dec} rules are only generally
+// beneficial for processors with full ALU support
+// (VM_Version::supports_fast_3op_lea()) and Intel Cascade Lake.
+
 peephole
 %{
   peeppredicate(VM_Version::supports_fast_2op_lea());
@@ -13750,7 +13797,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (incI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
@@ -13758,7 +13806,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (decI_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaI_rReg_immI_peep());
@@ -13790,7 +13839,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (incL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());
@@ -13798,7 +13848,8 @@ peephole
 
 peephole
 %{
-  peeppredicate(VM_Version::supports_fast_2op_lea());
+  peeppredicate(VM_Version::supports_fast_3op_lea() ||
+                VM_Version::is_intel_cascade_lake());
   peepmatch (decL_rReg);
   peepprocedure (lea_coalesce_imm);
   peepreplace (leaL_rReg_immL32_peep());

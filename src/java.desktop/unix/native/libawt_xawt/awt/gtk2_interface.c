@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1092,8 +1092,8 @@ static void init_toggle_widget(WidgetType widget_type, gint synth_state)
         ((GtkObject*)gtk2_widget)->flags &= ~GTK_HAS_FOCUS;
     }
 
-    if ((synth_state & MOUSE_OVER) != 0 && (synth_state & PRESSED) == 0 ||
-           (synth_state & FOCUSED) != 0 && (synth_state & PRESSED) != 0) {
+    if ((((synth_state & MOUSE_OVER) != 0) && ((synth_state & PRESSED) == 0)) ||
+           (((synth_state & FOCUSED) != 0) && ((synth_state & PRESSED) != 0))) {
         gtk2_widget->state = GTK_STATE_PRELIGHT;
     } else if ((synth_state & DISABLED) != 0) {
         gtk2_widget->state = GTK_STATE_INSENSITIVE;

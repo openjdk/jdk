@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@
 #include "runtime/globals.hpp"
 #include "utilities/debug.hpp"
 
-uintptr_t** G1FromCardCache::_cache = NULL;
+uintptr_t** G1FromCardCache::_cache = nullptr;
 uint        G1FromCardCache::_max_reserved_regions = 0;
 size_t      G1FromCardCache::_static_mem_size = 0;
 #ifdef ASSERT
@@ -40,7 +40,7 @@ uint   G1FromCardCache::_max_workers = 0;
 
 void G1FromCardCache::initialize(uint max_reserved_regions) {
   guarantee(max_reserved_regions > 0, "Heap size must be valid");
-  guarantee(_cache == NULL, "Should not call this multiple times");
+  guarantee(_cache == nullptr, "Should not call this multiple times");
 
   _max_reserved_regions = max_reserved_regions;
 #ifdef ASSERT

@@ -2079,10 +2079,13 @@ bool VM_Version::is_default_intel_cascade_lake() {
   return FLAG_IS_DEFAULT(UseAVX) &&
          FLAG_IS_DEFAULT(MaxVectorSize) &&
          UseAVX > 2 &&
-         is_intel_skylake() &&
-         _stepping >= 5;
+         is_intel_cascade_lake();
 }
 #endif
+
+bool VM_Version::is_intel_cascade_lake() {
+  return is_intel_skylake() && _stepping >= 5;
+}
 
 // avx3_threshold() sets the threshold at which 64-byte instructions are used
 // for implementing the array copy and clear operations.
@@ -3134,8 +3137,8 @@ uint VM_Version::threads_per_core() {
   return (result == 0 ? 1 : result);
 }
 
-intx VM_Version::L1_line_size() {
-  intx result = 0;
+uint VM_Version::L1_line_size() {
+  uint result = 0;
   if (is_intel()) {
     result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
   } else if (is_amd_family()) {

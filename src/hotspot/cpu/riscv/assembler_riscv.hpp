@@ -270,7 +270,7 @@ class Address {
     return _mode != literal && base() == reg;
   }
 
-  const address target() const {
+  address target() const {
     assert_is_literal();
     return _literal._target;
   }
@@ -364,6 +364,22 @@ public:
     rdy = 0b111,     // in instruction's rm field, selects dynamic rounding mode.In Rounding Mode register, Invalid.
   };
 
+  // handle unaligned access
+  static inline uint16_t ld_c_instr(address addr) {
+    return Bytes::get_native_u2(addr);
+  }
+  static inline void sd_c_instr(address addr, uint16_t c_instr) {
+    Bytes::put_native_u2(addr, c_instr);
+  }
+
+  // handle unaligned access
+  static inline uint32_t ld_instr(address addr) {
+    return Bytes::get_native_u4(addr);
+  }
+  static inline void sd_instr(address addr, uint32_t instr) {
+    Bytes::put_native_u4(addr, instr);
+  }
+
   static inline uint32_t extract(uint32_t val, unsigned msb, unsigned lsb) {
     assert_cond(msb >= lsb && msb <= 31);
     unsigned nbits = msb - lsb + 1;
@@ -388,10 +404,10 @@ public:
     unsigned mask = (1U << nbits) - 1;
     val <<= lsb;
     mask <<= lsb;
-    unsigned target = *(unsigned *)a;
+    unsigned target = ld_instr(a);
     target &= ~mask;
     target |= val;
-    *(unsigned *)a = target;
+    sd_instr(a, target);
   }
 
   static void patch(address a, unsigned bit, unsigned val) {
@@ -1230,12 +1246,18 @@ enum VectorMask {
   INSN(viota_m,   0b1010111, 0b010, 0b10000, 0b010100);
 
   // Vector Single-Width Floating-Point/Integer Type-Convert Instructions
-  INSN(vfcvt_xu_f_v, 0b1010111, 0b001, 0b00000, 0b010010);
-  INSN(vfcvt_x_f_v,  0b1010111, 0b001, 0b00001, 0b010010);
-  INSN(vfcvt_f_xu_v, 0b1010111, 0b001, 0b00010, 0b010010);
-  INSN(vfcvt_f_x_v,  0b1010111, 0b001, 0b00011, 0b010010);
-  INSN(vfcvt_rtz_xu_f_v, 0b1010111, 0b001, 0b00110, 0b010010);
+  INSN(vfcvt_f_x_v,      0b1010111, 0b001, 0b00011, 0b010010);
   INSN(vfcvt_rtz_x_f_v,  0b1010111, 0b001, 0b00111, 0b010010);
+
+  // Vector Widening Floating-Point/Integer Type-Convert Instructions
+  INSN(vfwcvt_f_x_v,      0b1010111, 0b001, 0b01011, 0b010010);
+  INSN(vfwcvt_f_f_v,      0b1010111, 0b001, 0b01100, 0b010010);
+  INSN(vfwcvt_rtz_x_f_v,  0b1010111, 0b001, 0b01111, 0b010010);
+
+  // Vector Narrowing Floating-Point/Integer Type-Convert Instructions
+  INSN(vfncvt_f_x_w,      0b1010111, 0b001, 0b10011, 0b010010);
+  INSN(vfncvt_f_f_w,      0b1010111, 0b001, 0b10100, 0b010010);
+  INSN(vfncvt_rtz_x_f_w,  0b1010111, 0b001, 0b10111, 0b010010);
 
   // Vector Floating-Point Instruction
   INSN(vfsqrt_v,  0b1010111, 0b001, 0b00000, 0b010011);
@@ -1288,6 +1310,9 @@ enum VectorMask {
   INSN(vsra_vi,    0b1010111, 0b011, 0b101001);
   INSN(vsrl_vi,    0b1010111, 0b011, 0b101000);
   INSN(vsll_vi,    0b1010111, 0b011, 0b100101);
+
+  // Vector Slide Instructions
+  INSN(vslidedown_vi, 0b1010111, 0b011, 0b001111);
 
 #undef INSN
 
@@ -1374,7 +1399,6 @@ enum VectorMask {
   // Vector Floating-Point Sign-Injection Instructions
   INSN(vfsgnjx_vv, 0b1010111, 0b001, 0b001010);
   INSN(vfsgnjn_vv, 0b1010111, 0b001, 0b001001);
-  INSN(vfsgnj_vv,  0b1010111, 0b001, 0b001000);
 
   // Vector Floating-Point MIN/MAX Instructions
   INSN(vfmax_vv,   0b1010111, 0b001, 0b000110);
@@ -1431,6 +1455,9 @@ enum VectorMask {
   INSN(vsub_vv, 0b1010111, 0b000, 0b000010);
   INSN(vadd_vv, 0b1010111, 0b000, 0b000000);
 
+  // Vector Register Gather Instructions
+  INSN(vrgather_vv,     0b1010111, 0b000, 0b001100);
+
 #undef INSN
 
 
@@ -1486,6 +1513,29 @@ enum VectorMask {
   INSN(vadd_vx,  0b1010111, 0b100, 0b000000);
   INSN(vrsub_vx, 0b1010111, 0b100, 0b000011);
 
+  // Vector Slide Instructions
+  INSN(vslidedown_vx, 0b1010111, 0b100, 0b001111);
+
+#undef INSN
+
+#define INSN(NAME, op, funct3, vm, funct6)                                                         \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, Register Rs1) {                                 \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);                            \
+  }
+
+  // Vector Integer Merge Instructions
+  INSN(vmerge_vxm,  0b1010111, 0b100, 0b0, 0b010111);
+
+#undef INSN
+
+#define INSN(NAME, op, funct3, vm, funct6)                                                         \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, FloatRegister Rs1) {                            \
+    patch_VArith(op, Vd, funct3, Rs1->raw_encoding(), Vs2, vm, funct6);                            \
+  }
+
+  // Vector Floating-Point Merge Instruction
+  INSN(vfmerge_vfm,  0b1010111, 0b101, 0b0, 0b010111);
+
 #undef INSN
 
 #define INSN(NAME, op, funct3, funct6)                                                             \
@@ -1500,11 +1550,6 @@ enum VectorMask {
   INSN(vmflt_vf, 0b1010111, 0b101, 0b011011);
   INSN(vmfne_vf, 0b1010111, 0b101, 0b011100);
   INSN(vmfeq_vf, 0b1010111, 0b101, 0b011000);
-
-  // Vector Floating-Point Sign-Injection Instructions
-  INSN(vfsgnjx_vf, 0b1010111, 0b101, 0b001010);
-  INSN(vfsgnjn_vf, 0b1010111, 0b101, 0b001001);
-  INSN(vfsgnj_vf,  0b1010111, 0b101, 0b001000);
 
   // Vector Floating-Point MIN/MAX Instructions
   INSN(vfmax_vf, 0b1010111, 0b101, 0b000110);
@@ -1542,6 +1587,17 @@ enum VectorMask {
 
 #undef INSN
 
+#define INSN(NAME, op, funct3, vm, funct6)                                    \
+  void NAME(VectorRegister Vd, VectorRegister Vs2, int32_t imm) {             \
+    guarantee(is_simm5(imm), "imm is invalid");                               \
+    patch_VArith(op, Vd, funct3, (uint32_t)(imm & 0x1f), Vs2, vm, funct6);    \
+  }
+
+  // Vector Integer Merge Instructions
+  INSN(vmerge_vim,  0b1010111, 0b011, 0b0, 0b010111);
+
+#undef INSN
+
 #define INSN(NAME, op, funct3, vm, funct6)                                   \
   void NAME(VectorRegister Vd, VectorRegister Vs2, VectorRegister Vs1) {     \
     patch_VArith(op, Vd, funct3, Vs1->raw_encoding(), Vs2, vm, funct6);      \
@@ -1559,6 +1615,9 @@ enum VectorMask {
   INSN(vmandn_mm,   0b1010111, 0b010, 0b1, 0b011000);
   INSN(vmnand_mm,   0b1010111, 0b010, 0b1, 0b011101);
   INSN(vmand_mm,    0b1010111, 0b010, 0b1, 0b011001);
+
+  // Vector Integer Merge Instructions
+  INSN(vmerge_vvm,  0b1010111, 0b000, 0b0, 0b010111);
 
 #undef INSN
 
@@ -1712,16 +1771,11 @@ enum Nf {
   }
 
   // Vector unordered indexed load instructions
-  INSN(vluxei8_v,  0b0000111, 0b000, 0b01, 0b0);
-  INSN(vluxei16_v, 0b0000111, 0b101, 0b01, 0b0);
   INSN(vluxei32_v, 0b0000111, 0b110, 0b01, 0b0);
-  INSN(vluxei64_v, 0b0000111, 0b111, 0b01, 0b0);
 
-  // Vector ordered indexed load instructions
-  INSN(vloxei8_v,  0b0000111, 0b000, 0b11, 0b0);
-  INSN(vloxei16_v, 0b0000111, 0b101, 0b11, 0b0);
-  INSN(vloxei32_v, 0b0000111, 0b110, 0b11, 0b0);
-  INSN(vloxei64_v, 0b0000111, 0b111, 0b11, 0b0);
+  // Vector unordered indexed store instructions
+  INSN(vsuxei32_v, 0b0100111, 0b110, 0b01, 0b0);
+
 #undef INSN
 
 #define INSN(NAME, op, width, mop, mew)                                                                  \
@@ -1933,10 +1987,10 @@ public:
     uint16_t mask = (1U << nbits) - 1;
     val <<= lsb;
     mask <<= lsb;
-    uint16_t target = *(uint16_t *)a;
+    uint16_t target = ld_c_instr(a);
     target &= ~mask;
     target |= val;
-    *(uint16_t *)a = target;
+    sd_c_instr(a, target);
   }
 
   static void c_patch(address a, unsigned bit, uint16_t val) {
@@ -2733,7 +2787,13 @@ public:
       c_slli(Rd, shamt);                                                                     \
       return;                                                                                \
     }                                                                                        \
-    _slli(Rd, Rs1, shamt);                                                                   \
+    if (shamt != 0) {                                                                        \
+      _slli(Rd, Rs1, shamt);                                                                 \
+    } else {                                                                                 \
+      if (Rd != Rs1) {                                                                        \
+        addi(Rd, Rs1, 0);                                                                    \
+      }                                                                                      \
+    }                                                                                        \
   }
 
   INSN(slli);
@@ -2748,7 +2808,13 @@ public:
       C_NAME(Rd, shamt);                                                                     \
       return;                                                                                \
     }                                                                                        \
-    NORMAL_NAME(Rd, Rs1, shamt);                                                             \
+    if (shamt != 0) {                                                                        \
+      NORMAL_NAME(Rd, Rs1, shamt);                                                           \
+    } else {                                                                                 \
+      if (Rd != Rs1) {                                                                        \
+        addi(Rd, Rs1, 0);                                                                    \
+      }                                                                                      \
+    }                                                                                        \
   }
 
   INSN(srai, c_srai, _srai);

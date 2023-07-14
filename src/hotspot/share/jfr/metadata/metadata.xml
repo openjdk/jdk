@@ -73,6 +73,11 @@
     <Field type="string" name="name" label="Name" />
   </Event>
 
+  <Event name="ResidentSetSize" category="Java Virtual Machine, Memory" label="Resident Set Size" description="Resident set size of the process" thread="false" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="size" label="Resident Set Size" description="Resident set size of the process" />
+    <Field type="ulong" contentType="bytes" name="peak" label="Resident Set Size Peak Value" description="Resident set size peak value of the process" />
+  </Event>
+
   <!-- Ordinary and experimental events !-->
 
   <Event name="ThreadStart" category="Java Application" label="Java Thread Start" thread="true" startTime="false" stackTrace="true">
@@ -260,6 +265,19 @@
     <Field type="ulong" contentType="bytes" name="heapUsed" label="Heap Used" description="Bytes allocated by objects in the heap" />
   </Event>
 
+  <Event name="GCHeapMemoryUsage" category="Java Virtual Machine, Heap" label="GC Heap Memory Usage" period="everyChunk">
+    <Field type="ulong" contentType="bytes" name="used" label="Heap Used" description="Bytes allocated for storing objects on the heap" />
+    <Field type="ulong" contentType="bytes" name="committed" label="Heap Committed" description="Bytes committed for storing objects on the heap" />
+    <Field type="ulong" contentType="bytes" name="max" label="Heap Max" description="Max size for the heap" />
+  </Event>
+
+  <Event name="GCHeapMemoryPoolUsage" category="Java Virtual Machine, Heap" label="GC Heap Memory Pool Usage" period="everyChunk">
+    <Field type="string" name="name" label="Name" description="GC Heap Memory Pool Name" />
+    <Field type="ulong" contentType="bytes" name="used" label="GC Heap Memory Pool Used" description="Bytes used for storing objects in this memory pool" />
+    <Field type="ulong" contentType="bytes" name="committed" label="GC Heap Memory Pool Committed" description="Bytes committed for storing objects in this memory pool" />
+    <Field type="ulong" contentType="bytes" name="max" label="GC Heap Memory Pool Max" description="Max size for storing objects in this memory pool" />
+  </Event>
+
   <Type name="MetaspaceSizes">
     <Field type="ulong" contentType="bytes" name="committed" label="Committed" description="Committed memory for this space" />
     <Field type="ulong" contentType="bytes" name="used" label="Used" description="Bytes allocated by objects in the space" />
@@ -333,7 +351,7 @@
     <Field type="uint" name="numberOfRegions" label="Number of Regions" />
   </Event>
 
-  <Event name="GarbageCollection" category="Java Virtual Machine, GC, Collector" label="Garbage Collection" description="Garbage collection performed by the JVM">
+  <Event name="GarbageCollection" category="Java Virtual Machine, GC, Collector" label="Garbage Collection" description="Garbage collection performed by the JVM" thread="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="GCName" name="name" label="Name" description="The name of the Garbage Collector" />
     <Field type="GCCause" name="cause" label="Cause" description="The reason for triggering this Garbage Collection" />
@@ -535,6 +553,11 @@
   </Event>
 
   <Event name="GCPhaseConcurrentLevel1" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 1" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="string" name="name" label="Name" />
+  </Event>
+
+  <Event name="GCPhaseConcurrentLevel2" category="Java Virtual Machine, GC, Phases" label="GC Phase Concurrent Level 2" thread="true">
     <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
     <Field type="string" name="name" label="Name" />
   </Event>
@@ -909,10 +932,11 @@
     <Field type="string" name="result" label="Thread Dump" />
   </Event>
 
-  <Event name="NativeLibrary" category="Java Virtual Machine, Runtime" label="Native Library" period="everyChunk">
+  <Event name="NativeLibrary" category="Java Virtual Machine, Runtime" label="Native Library" period="everyChunk"
+    description="Information about a dynamic library or other native image loaded by the JVM process">
     <Field type="string" name="name" label="Name" />
     <Field type="ulong" contentType="address" name="baseAddress" label="Base Address" description="Starting address of the module" />
-    <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module" />
+    <Field type="ulong" contentType="address" name="topAddress" label="Top Address" description="Ending address of the module, if available" />
   </Event>
 
   <Event name="ModuleRequire" category="Java Virtual Machine, Runtime, Modules" label="Module Require" thread="false" period="everyChunk"
@@ -1071,6 +1095,15 @@
     <Field type="uint" name="newRatio" label="New Ratio" description="The size of the young generation relative to the tenured generation" />
   </Event>
 
+  <Event name="ZYoungGarbageCollection" category="Java Virtual Machine, GC, Collector" label="ZGC Young Garbage Collection" description="Extra information specific to ZGC Young Garbage Collections" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+    <Field type="uint" name="tenuringThreshold" label="Tenuring Threshold" />
+  </Event>
+
+  <Event name="ZOldGarbageCollection" category="Java Virtual Machine, GC, Collector" label="ZGC Old Garbage Collection" description="Extra information specific to ZGC Old Garbage Collections" thread="true">
+    <Field type="uint" name="gcId" label="GC Identifier" relation="GcId" />
+  </Event>
+
   <Event name="ZAllocationStall" category="Java Virtual Machine, GC, Detailed" label="ZGC Allocation Stall" description="Time spent waiting for memory to become available" thread="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
     <Field type="ulong" contentType="bytes" name="size" label="Size" />
@@ -1093,9 +1126,10 @@
 
   <Event name="ZRelocationSetGroup" category="Java Virtual Machine, GC, Detailed" label="ZGC Relocation Set Group" thread="true">
     <Field type="ZPageTypeType" name="type" label="Type" />
-    <Field type="ulong" name="pages" label="Pages" />
+    <Field type="ulong" name="candidatePages" label="Candidate Pages" />
     <Field type="ulong" contentType="bytes" name="total" label="Total" />
     <Field type="ulong" contentType="bytes" name="empty" label="Empty" />
+    <Field type="ulong" name="selectedPages" label="Selected Pages" />
     <Field type="ulong" contentType="bytes" name="relocate" label="Relocate" />
   </Event>
 

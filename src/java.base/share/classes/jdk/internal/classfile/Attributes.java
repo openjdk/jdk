@@ -653,7 +653,7 @@ public class Attributes {
                 }
             };
 
-    /** Attribute mapper for the {@code SourceDebug} attribute */
+    /** Attribute mapper for the {@code SourceDebugExtension} attribute */
     public static final AttributeMapper<SourceDebugExtensionAttribute>
             SOURCE_DEBUG_EXTENSION = new AbstractAttributeMapper<>(NAME_SOURCE_DEBUG_EXTENSION, Classfile.JAVA_5_VERSION) {
                 @Override

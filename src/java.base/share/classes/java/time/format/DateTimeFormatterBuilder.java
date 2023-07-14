@@ -2612,9 +2612,15 @@ public final class DateTimeFormatterBuilder {
                 throw new DateTimeException(
                     "Cannot print as output of " + len + " characters exceeds pad width of " + padWidth);
             }
-            for (int i = 0; i < padWidth - len; i++) {
-                buf.insert(preLen, padChar);
+            var count = padWidth - len;
+            if (count == 0) {
+                return true;
             }
+            if (count == 1) {
+                buf.insert(preLen, padChar);
+                return true;
+            }
+            buf.insert(preLen, String.valueOf(padChar).repeat(count));
             return true;
         }
 

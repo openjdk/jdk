@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,9 +27,7 @@ package java.lang.invoke;
 
 import java.security.*;
 import java.lang.reflect.*;
-import java.lang.invoke.MethodHandleNatives.Constants;
 import java.lang.invoke.MethodHandles.Lookup;
-import static java.lang.invoke.MethodHandleStatics.*;
 
 /*
  * Auxiliary to MethodHandleInfo, wants to nest in MethodHandleInfo but must be non-public.
@@ -132,11 +130,11 @@ final class InfoFromMemberName implements MethodHandleInfo {
     }
 
     private static MemberName convertToMemberName(byte refKind, Member mem) throws IllegalAccessException {
-        if (mem instanceof Method) {
+        if (mem instanceof Method mth) {
             boolean wantSpecial = (refKind == REF_invokeSpecial);
-            return new MemberName((Method) mem, wantSpecial);
-        } else if (mem instanceof Constructor) {
-            return new MemberName((Constructor) mem);
+            return new MemberName(mth, wantSpecial);
+        } else if (mem instanceof Constructor<?> ctor) {
+            return new MemberName(ctor);
         } else if (mem instanceof Field) {
             boolean isSetter = (refKind == REF_putField || refKind == REF_putStatic);
             return new MemberName((Field) mem, isSetter);

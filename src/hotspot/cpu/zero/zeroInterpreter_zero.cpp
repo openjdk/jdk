@@ -333,7 +333,7 @@ int ZeroInterpreter::native_entry(Method* method, intptr_t UNUSED, TRAPS) {
     oop lockee = monitor->obj();
     markWord disp = lockee->mark().set_unlocked();
     monitor->lock()->set_displaced_header(disp);
-    bool call_vm = UseHeavyMonitors;
+    bool call_vm = (LockingMode == LM_MONITOR);
     bool inc_monitor_count = true;
     if (call_vm || lockee->cas_set_mark(markWord::from_pointer(monitor), disp) != disp) {
       // Is it simple recursive case?

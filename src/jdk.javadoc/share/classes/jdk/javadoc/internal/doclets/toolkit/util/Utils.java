@@ -35,6 +35,7 @@ import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashMap;
@@ -46,12 +47,14 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.SourceVersion;
@@ -64,6 +67,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.ModuleElement.RequiresDirective;
 import javax.lang.model.element.PackageElement;
+import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.RecordComponentElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
@@ -111,14 +115,12 @@ import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
-import jdk.javadoc.internal.tool.DocEnvImpl;
 
 import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
@@ -138,12 +140,14 @@ public class Utils {
     public final Comparators comparators;
     private final JavaScriptScanner javaScriptScanner;
     private final DocFinder docFinder = newDocFinder();
+    private final TypeElement JAVA_LANG_OBJECT;
 
     public Utils(BaseConfiguration c) {
         configuration = c;
         options = configuration.getOptions();
         resources = configuration.getDocResources();
         elementUtils = c.docEnv.getElementUtils();
+        JAVA_LANG_OBJECT = elementUtils.getTypeElement("java.lang.Object");
         typeUtils = c.docEnv.getTypeUtils();
         docTrees = c.docEnv.getDocTrees();
         javaScriptScanner = c.isAllowScriptInComments() ? null : new JavaScriptScanner();
@@ -985,7 +989,7 @@ public class Utils {
     /**
      * Return the type's dimension information, as a string.
      * <p>
-     * For example, a two dimensional array of String returns "{@code [][]}".
+     * For example, a two-dimensional array of String returns "{@code [][]}".
      *
      * @return the type's dimension information as a string.
      */
@@ -2081,47 +2085,102 @@ public class Utils {
         commentHelperCache.remove(element);
     }
 
+    /**
+     * Returns the "raw" list of block tags from the doc-comment tree for an element,
+     * or an empty list if there is no such comment.
+     *
+     * Note: The list may include {@code ErroneousTree} nodes.
+     *
+     * @param element the element
+     * @return the list
+     */
     public List<? extends DocTree> getBlockTags(Element element) {
         return getBlockTags(getDocCommentTree(element));
     }
 
+    /**
+     * Returns the "raw" list of block tags from a {@code DocCommentTree}, or an empty list
+     * if the doc-comment tree is {@code null}.
+     *
+     * Note: The list may include {@code ErroneousTree} nodes.
+     *
+     * @param dcTree the doc-comment tree
+     * @return the list
+     */
     public List<? extends DocTree> getBlockTags(DocCommentTree dcTree) {
         return dcTree == null ? List.of() : dcTree.getBlockTags();
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, Predicate<DocTree> filter) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match
+     * a given filter, or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @param filter  the filter
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, Predicate<? super BlockTagTree> filter) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
+                .map(t -> (BlockTagTree) t)
                 .filter(filter)
                 .toList();
     }
 
-    public <T extends DocTree> List<T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match
+     * a given filter, or an empty list if there is no such doc-comment.
+     *
+     * @param <T> the type of the required block tags
+     * @param element the element
+     * @param filter  the filter
+     * @return the list
+     */
+    public <T extends BlockTagTree> List<T> getBlockTags(Element element,
+                                                         Predicate<? super BlockTagTree> filter,
+                                                         Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
+                .map(t -> (BlockTagTree) t)
                 .filter(filter)
                 .map(tClass::cast)
                 .toList();
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, DocTree.Kind kind) {
         return getBlockTags(element, t -> t.getKind() == kind);
     }
 
-    public <T extends DocTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match a given kind,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param <T> the type of the required block tags
+     * @param element the element
+     * @param kind the kind for the required block tags
+     * @return the list
+     */
+    public <T extends BlockTagTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
         return getBlockTags(element, t -> t.getKind() == kind, tClass);
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
-        return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet baseTaglet) {
-                return baseTaglet.accepts(t);
-            } else if (t instanceof BlockTagTree blockTagTree) {
-                return blockTagTree.getTagName().equals(taglet.getName());
-            } else {
-                return false;
-            }
-        });
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match a given name,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @param tagName the name of the required block tags
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, String tagName) {
+        return getBlockTags(element, t -> t.getTagName().equals(tagName));
     }
 
     public boolean hasBlockTag(Element element, DocTree.Kind kind) {
@@ -2178,8 +2237,14 @@ public class Utils {
         if (path != null || elementToTreePath.containsKey(e)) {
             // expedite the path and one that is a null
             return path;
+        } else {
+            var p = docTrees.getPath(e);
+            // if docTrees.getPath itself has put a path for e into elementToTreePath
+            // (see 8304878), we assume that the path already in the map is equivalent
+            // to the path we are about to put: hence, no harm if replaced
+            elementToTreePath.put(e, p);
+            return p;
         }
-        return elementToTreePath.computeIfAbsent(e, docTrees::getPath);
     }
 
     /**
@@ -2742,14 +2807,125 @@ public class Utils {
     }
 
     private DocFinder newDocFinder() {
-        return new DocFinder(e -> {
-            var i = overriddenMethod(e);
-            return i == null ? null : i.overriddenMethod();
-        }, this::implementedMethods);
+        return new DocFinder(this::overriddenMethods);
     }
 
-    private Iterable<ExecutableElement> implementedMethods(ExecutableElement originalMethod, ExecutableElement m) {
-        var type = configuration.utils.getEnclosingTypeElement(m);
-        return configuration.getVisibleMemberTable(type).getImplementedMethods(originalMethod);
+    /*
+     * Returns an iterable over all unique methods overridden by the given
+     * method from its enclosing type element. The methods encounter order
+     * is that of described in the "Automatic Supertype Search" section of
+     * the Documentation Comment Specification for the Standard Doclet.
+     */
+    private Iterable<? extends ExecutableElement> overriddenMethods(ExecutableElement method) {
+        return () -> new Overrides(method);
+    }
+
+    private class Overrides implements Iterator<ExecutableElement> {
+
+        // prefer java.util.Deque to java.util.Stack API for stacks
+        final Deque<TypeElement> searchStack = new ArrayDeque<>();
+        final Set<TypeElement> visited = new HashSet<>();
+
+        final ExecutableElement overrider;
+        ExecutableElement next;
+
+        public Overrides(ExecutableElement method) {
+            if (method.getKind() != ElementKind.METHOD) {
+                throw new IllegalArgumentException(diagnosticDescriptionOf(method));
+            }
+            overrider = method;
+            // java.lang.Object is to be searched for overrides last
+            searchStack.push(JAVA_LANG_OBJECT);
+            searchStack.push((TypeElement) method.getEnclosingElement());
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (next != null) {
+                return true;
+            }
+            updateNext();
+            return next != null;
+        }
+
+        @Override
+        public ExecutableElement next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            var n = next;
+            updateNext();
+            return n;
+        }
+
+        private void updateNext() {
+            while (!searchStack.isEmpty()) {
+                // replace the top class or interface with its supertypes
+                var t = searchStack.pop();
+
+                // <TODO refactor once java.util.List.reversed() from
+                //   SequencedCollection is available>
+                var filteredSupertypes = typeUtils.directSupertypes(t.asType()).stream()
+                        .map(t_ -> (TypeElement) ((DeclaredType) t_).asElement())
+                        // filter out java.lang.Object using the fact that at
+                        // most one class type comes first in the stream of
+                        // direct supertypes
+                        .dropWhile(JAVA_LANG_OBJECT::equals)
+                        .filter(visited::add) // idempotent side effect
+                        .collect(Collectors.toCollection(ArrayList::new));
+                // push supertypes in reverse order, so that they are popped
+                // back in the initial order
+                Collections.reverse(filteredSupertypes);
+                filteredSupertypes.forEach(searchStack::push);
+                // </TODO>
+
+                // consider only the declared methods for consistency with
+                // the existing facilities, such as Utils.overriddenMethod
+                // and VisibleMemberTable.getImplementedMethods
+                TypeElement peek = searchStack.peek();
+                if (peek == null) {
+                    next = null; // end-of-hierarchy
+                    break;
+                }
+                if (isPlainInterface(peek) && !isPublic(peek) && !isLinkable(peek)) {
+                    // we don't consider such interfaces directly, but may consider
+                    // their supertypes (subject to this check for each of them)
+                    continue;
+                }
+                List<Element> declaredMethods = configuration.getVisibleMemberTable(peek)
+                        .getMembers(VisibleMemberTable.Kind.METHODS);
+                var overridden = declaredMethods.stream()
+                        .filter(candidate -> elementUtils.overrides(overrider, (ExecutableElement) candidate,
+                                (TypeElement) overrider.getEnclosingElement()))
+                        .findFirst();
+                // assume a method may override at most one method in any
+                // given class or interface; hence findFirst
+                assert declaredMethods.stream()
+                        .filter(candidate -> elementUtils.overrides(overrider, (ExecutableElement) candidate,
+                                (TypeElement) overrider.getEnclosingElement()))
+                        .count() <= 1 : diagnosticDescriptionOf(overrider);
+
+                if (overridden.isPresent()) {
+                    next = (ExecutableElement) overridden.get();
+                    break;
+                }
+
+                // TODO we're currently ignoring simpleOverride
+                //  (it's unavailable in this data structure)
+            }
+
+            // if the stack is empty, there's no unconsumed override:
+            // if that ever fails, an iterator's client will be stuck
+            // in an infinite loop
+            assert !searchStack.isEmpty() || next == null
+                    : diagnosticDescriptionOf(overrider);
+        }
+    }
+
+    public static String diagnosticDescriptionOf(Element e) {
+        if (e == null) // shouldn't NPE if passed null
+            return "null";
+        return e + ", " + (e instanceof QualifiedNameable q ? q.getQualifiedName() : e.getSimpleName())
+                + ", " + e.getKind() + ", " + Objects.toIdentityString(e);
     }
 }

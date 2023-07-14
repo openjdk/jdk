@@ -54,7 +54,7 @@ public:
   static EpsilonHeap* heap();
 
   EpsilonHeap() :
-          _memory_manager("Epsilon Heap", ""),
+          _memory_manager("Epsilon Heap"),
           _space(nullptr) {};
 
   Name kind() const override {

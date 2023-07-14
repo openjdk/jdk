@@ -30,7 +30,6 @@
 #include <signal.h>
 
 void OSThread::pd_initialize() {
-  assert(this != nullptr, "check");
   _thread_id        = 0;
   _pthread_id       = 0;
   _siginfo = nullptr;

@@ -24,12 +24,12 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveBuilder.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/archiveUtils.inline.hpp"
 #include "cds/cds_globals.hpp"
 #include "cds/classPrelinker.hpp"
 #include "cds/dynamicArchive.hpp"
-#include "cds/lambdaFormInvokers.hpp"
-#include "cds/metaspaceShared.hpp"
+#include "cds/regeneratedClasses.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionaryShared.hpp"
@@ -116,9 +116,6 @@ public:
       return;
     }
 
-    // save dumptime tables
-    SystemDictionaryShared::clone_dumptime_tables();
-
     init_header();
     gather_source_objs();
     reserve_buffer();
@@ -128,7 +125,6 @@ public:
     dump_rw_metadata();
     dump_ro_metadata();
     relocate_metaspaceobj_embedded_pointers();
-    relocate_roots();
 
     verify_estimate_size(_estimated_metaspaceobj_bytes, "MetaspaceObjs");
 
@@ -167,14 +163,11 @@ public:
 
     post_dump();
 
-    // Restore dumptime tables
-    SystemDictionaryShared::restore_dumptime_tables();
-
     assert(_num_dump_regions_used == _total_dump_regions, "must be");
     verify_universe("After CDS dynamic dump");
   }
 
-  virtual void iterate_roots(MetaspaceClosure* it, bool is_relocating_pointers) {
+  virtual void iterate_roots(MetaspaceClosure* it) {
     FileMapInfo::metaspace_pointers_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
   }
@@ -215,7 +208,7 @@ void DynamicArchiveBuilder::post_dump() {
 void DynamicArchiveBuilder::sort_methods() {
   InstanceKlass::disable_method_binary_search();
   for (int i = 0; i < klasses()->length(); i++) {
-    Klass* k = klasses()->at(i);
+    Klass* k = get_buffered_addr(klasses()->at(i));
     if (k->is_instance_klass()) {
       sort_methods(InstanceKlass::cast(k));
     }
@@ -230,7 +223,7 @@ void DynamicArchiveBuilder::sort_methods(InstanceKlass* ik) const {
     // We have reached a supertype that's already in the base archive
     return;
   }
-
+  assert(is_in_buffer_space(ik), "method sorting must be done on buffered class, not original class");
   if (ik->java_mirror() == nullptr) {
     // null mirror means this class has already been visited and methods are already sorted
     return;
@@ -314,16 +307,15 @@ void DynamicArchiveBuilder::remark_pointers_for_instance_klass(InstanceKlass* k,
 }
 
 void DynamicArchiveBuilder::write_archive(char* serialized_data) {
-  Array<u8>* table = FileMapInfo::saved_shared_path_table().table();
-  SharedPathTable runtime_table(table, FileMapInfo::shared_path_table().size());
-  _header->set_shared_path_table(runtime_table);
+  _header->set_shared_path_table(FileMapInfo::shared_path_table().table());
   _header->set_serialized_data(serialized_data);
 
   FileMapInfo* dynamic_info = FileMapInfo::dynamic_info();
   assert(dynamic_info != nullptr, "Sanity");
 
   dynamic_info->open_for_write();
-  ArchiveBuilder::write_archive(dynamic_info, nullptr, nullptr, nullptr, nullptr);
+  ArchiveHeapInfo no_heap_for_dynamic_dump;
+  ArchiveBuilder::write_archive(dynamic_info, &no_heap_for_dynamic_dump);
 
   address base = _requested_dynamic_archive_bottom;
   address top  = _requested_dynamic_archive_top;
@@ -353,7 +345,7 @@ public:
     _builder.doit();
   }
   ~VM_PopulateDynamicDumpSharedSpace() {
-    LambdaFormInvokers::cleanup_regenerated_classes();
+    RegeneratedClasses::cleanup();
   }
 };
 
@@ -367,7 +359,8 @@ void DynamicArchive::check_for_dynamic_dump() {
 
 #define __THEMSG " is unsupported when base CDS archive is not loaded. Run with -Xlog:cds for more info."
     if (RecordDynamicDumpInfo) {
-      vm_exit_during_initialization("-XX:+RecordDynamicDumpInfo" __THEMSG, nullptr);
+      log_error(cds)("-XX:+RecordDynamicDumpInfo%s", __THEMSG);
+      MetaspaceShared::unrecoverable_loading_error();
     } else {
       assert(ArchiveClassesAtExit != nullptr, "sanity");
       log_warning(cds)("-XX:ArchiveClassesAtExit" __THEMSG);
@@ -391,7 +384,6 @@ void DynamicArchive::dump_at_exit(JavaThread* current, const char* archive_name)
   MetaspaceShared::link_shared_classes(false/*not from jcmd*/, THREAD);
   if (!HAS_PENDING_EXCEPTION) {
     // copy shared path table to saved.
-    FileMapInfo::clone_shared_path_table(current);
     if (!HAS_PENDING_EXCEPTION) {
       VM_PopulateDynamicDumpSharedSpace op(archive_name);
       VMThread::execute(&op);
@@ -415,7 +407,6 @@ void DynamicArchive::dump_for_jcmd(const char* archive_name, TRAPS) {
   assert(DynamicDumpSharedSpaces, "already checked by check_for_dynamic_dump() during VM startup");
   MetaspaceShared::link_shared_classes(true/*from jcmd*/, CHECK);
   // copy shared path table to saved.
-  FileMapInfo::clone_shared_path_table(CHECK);
   VM_PopulateDynamicDumpSharedSpace op(archive_name);
   VMThread::execute(&op);
 }
@@ -441,4 +432,13 @@ bool DynamicArchive::validate(FileMapInfo* dynamic_info) {
   }
 
   return true;
+}
+
+void DynamicArchiveHeader::print(outputStream* st) {
+  ResourceMark rm;
+
+  st->print_cr("- base_header_crc:                0x%08x", base_header_crc());
+  for (int i = 0; i < NUM_CDS_REGIONS; i++) {
+    st->print_cr("- base_region_crc[%d]:             0x%08x", i, base_region_crc(i));
+  }
 }

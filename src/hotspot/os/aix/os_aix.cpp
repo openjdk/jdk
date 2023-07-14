@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright (c) 2012, 2021 SAP SE. All rights reserved.
+ * Copyright (c) 2012, 2023 SAP SE. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,9 @@
 #include "utilities/vmError.hpp"
 
 // put OS-includes here (sorted alphabetically)
+#ifdef AIX_XLC_GE_17
+#include <alloca.h>
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <inttypes.h>
@@ -245,6 +248,10 @@ static bool is_close_to_brk(address a) {
   return false;
 }
 
+julong os::free_memory() {
+  return Aix::available_memory();
+}
+
 julong os::available_memory() {
   return Aix::available_memory();
 }
@@ -282,7 +289,7 @@ static bool my_disclaim64(char* addr, size_t size) {
 
   char* p = addr;
 
-  for (int i = 0; i < numFullDisclaimsNeeded; i ++) {
+  for (unsigned int i = 0; i < numFullDisclaimsNeeded; i ++) {
     if (::disclaim(p, maxDisclaimSize, DISCLAIM_ZEROMEM) != 0) {
       trcVerbose("Cannot disclaim %p - %p (errno %d)\n", p, p + maxDisclaimSize, errno);
       return false;
@@ -367,7 +374,7 @@ static const char* describe_pagesize(size_t pagesize) {
 // Must be called before calling os::large_page_init().
 static void query_multipage_support() {
 
-  guarantee(g_multipage_support.pagesize == -1,
+  guarantee(g_multipage_support.pagesize == (size_t)-1,
             "do not call twice");
 
   g_multipage_support.pagesize = ::sysconf(_SC_PAGESIZE);
@@ -457,7 +464,7 @@ static void query_multipage_support() {
         IPC_CREAT | S_IRUSR | S_IWUSR);
       guarantee0(shmid != -1); // Should always work.
       // Try to set pagesize.
-      struct shmid_ds shm_buf = { 0 };
+      struct shmid_ds shm_buf = { };
       shm_buf.shm_pagesize = pagesize;
       if (::shmctl(shmid, SHM_PAGESIZE, &shm_buf) != 0) {
         const int en = errno;
@@ -743,7 +750,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   assert(thread->osthread() == nullptr, "caller responsible");
 
   // Allocate the OSThread object.
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
   if (osthread == nullptr) {
     return false;
   }
@@ -821,7 +828,8 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     log_warning(os, thread)("Failed to start thread \"%s\" - pthread_create failed (%d=%s) for attributes: %s.",
                             thread->name(), ret, os::errno_name(ret), os::Posix::describe_pthread_attr(buf, sizeof(buf), &attr));
     // Log some OS information which might explain why creating the thread failed.
-    log_info(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
+    log_warning(os, thread)("Number of threads approx. running in the VM: %d", Threads::number_of_threads());
+    log_warning(os, thread)("Checking JVM parameter MaxExpectedDataSegmentSize (currently " SIZE_FORMAT "k)  might be helpful", MaxExpectedDataSegmentSize/K);
     LogStream st(Log(os, thread)::info());
     os::Posix::print_rlimit_info(&st);
     os::print_memory_info(&st);
@@ -857,7 +865,7 @@ bool os::create_attached_thread(JavaThread* thread) {
 #endif
 
   // Allocate the OSThread object
-  OSThread* osthread = new OSThread();
+  OSThread* osthread = new (std::nothrow) OSThread();
 
   if (osthread == nullptr) {
     return false;
@@ -892,9 +900,9 @@ bool os::create_attached_thread(JavaThread* thread) {
   PosixSignals::hotspot_sigmask(thread);
 
   log_info(os, thread)("Thread attached (tid: " UINTX_FORMAT ", kernel thread  id: " UINTX_FORMAT
-                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "k) ).",
+                       ", stack: " PTR_FORMAT " - " PTR_FORMAT " (" SIZE_FORMAT "K) ).",
                        os::current_thread_id(), (uintx) kernel_thread_id,
-                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size());
+                       p2i(thread->stack_base()), p2i(thread->stack_end()), thread->stack_size() / K);
 
   return true;
 }
@@ -1077,7 +1085,17 @@ bool os::dll_address_to_library_name(address addr, char* buf,
     return false;
   }
 
-  return AixSymbols::get_module_name(addr, buf, buflen);
+  address  base = nullptr;
+  if (!AixSymbols::get_module_name_and_base(addr, buf, buflen, &base)
+      || base == nullptr) {
+    return false;
+  }
+  assert(addr >= base && addr <= base + INT_MAX, "address not in library text range");
+  if (offset != nullptr) {
+    *offset = addr - base;
+  }
+
+  return true;
 }
 
 // Loads .dll/.so and in case of error it checks if .dll/.so was built
@@ -1564,7 +1582,7 @@ static char* reserve_shmated_memory (size_t bytes, char* requested_addr) {
   // Just for info: query the real page size. In case setting the page size did not
   // work (see above), the system may have given us something other then 4K (LDR_CNTRL).
   const size_t real_pagesize = os::Aix::query_pagesize(addr);
-  if (real_pagesize != shmbuf.shm_pagesize) {
+  if (real_pagesize != (size_t)shmbuf.shm_pagesize) {
     trcVerbose("pagesize is, surprisingly, " SIZE_FORMAT, real_pagesize);
   }
 
@@ -2985,3 +3003,9 @@ bool os::supports_map_sync() {
 }
 
 void os::print_memory_mappings(char* addr, size_t bytes, outputStream* st) {}
+
+#if INCLUDE_JFR
+
+void os::jfr_report_memory_info() {}
+
+#endif // INCLUDE_JFR

@@ -120,12 +120,7 @@ ifeq ($(call isTargetOs, windows), true)
   LIBAWT_VERSIONINFO_RESOURCE := $(TOPDIR)/src/$(MODULE)/windows/native/libawt/windows/awt.rc
 endif
 
-# Turn off all warnings for debug_mem.c This is needed because the specific warning
-# about initializing a declared 'extern' cannot be turned off individually. Only
-# applies to debug builds. This limitation in gcc is tracked in
-# https://gcc.gnu.org/bugzilla/show_bug.cgi?id=45977
 ifeq ($(TOOLCHAIN_TYPE), gcc)
-  BUILD_LIBAWT_debug_mem.c_CFLAGS := -w
   # This option improves performance of MaskFill in Java2D by 20% for some gcc
   LIBAWT_CFLAGS += -fgcse-after-reload
 endif
@@ -138,24 +133,18 @@ $(eval $(call SetupJdkLibrary, BUILD_LIBAWT, \
     OPTIMIZATION := HIGHEST, \
     CFLAGS := $(CFLAGS_JDKLIB) $(LIBAWT_CFLAGS), \
     EXTRA_HEADER_DIRS := $(LIBAWT_EXTRA_HEADER_DIRS), \
-    DISABLED_WARNINGS_gcc_awt_ImagingLib.c := unused-function sign-compare, \
     DISABLED_WARNINGS_gcc_awt_LoadLibrary.c := unused-result, \
-    DISABLED_WARNINGS_gcc_awt_Mlib.c := unused-function, \
-    DISABLED_WARNINGS_gcc_awt_parseImage.c := sign-compare unused-function, \
-    DISABLED_WARNINGS_gcc_debug_trace.c := unused-function, \
+    DISABLED_WARNINGS_gcc_debug_mem.c := format-nonliteral, \
     DISABLED_WARNINGS_gcc_ProcessPath.c := maybe-uninitialized, \
     DISABLED_WARNINGS_gcc_Region.c := maybe-uninitialized, \
     DISABLED_WARNINGS_gcc_SurfaceData.c := unused-value, \
     DISABLED_WARNINGS_gcc_TransformHelper.c := sign-compare, \
-    DISABLED_WARNINGS_clang_awt_ImagingLib.c := sign-compare deprecated-non-prototype, \
-    DISABLED_WARNINGS_clang_awt_parseImage.c := sign-compare, \
-    DISABLED_WARNINGS_clang_debug_mem.c := extern-initializer format-nonliteral, \
+    DISABLED_WARNINGS_clang_awt_ImagingLib.c := deprecated-non-prototype, \
     DISABLED_WARNINGS_clang_debug_trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_Trace.c := format-nonliteral, \
     DISABLED_WARNINGS_clang_TransformHelper.c := sign-compare, \
     DISABLED_WARNINGS_microsoft := 4244 4996, \
     DISABLED_WARNINGS_microsoft_awt_Toolkit.cpp := 4267, \
-    DISABLED_WARNINGS_microsoft_OGLContext.c := 4267, \
     LDFLAGS := $(LDFLAGS_JDKLIB) $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_macosx := -L$(INSTALL_LIBRARIES_HERE), \
     LDFLAGS_windows := -delayload:user32.dll -delayload:gdi32.dll \
@@ -202,6 +191,9 @@ ifeq ($(call isTargetOs, windows macosx), false)
 
     LIBAWT_XAWT_EXCLUDES := medialib debug
 
+    LIBPIPEWIRE_HEADER_DIRS := \
+        $(TOPDIR)/src/$(MODULE)/unix/native/libpipewire/include
+
     LIBAWT_XAWT_EXTRA_HEADER_DIRS := \
         $(LIBAWT_DEFAULT_HEADER_DIRS) \
         libawt_xawt/awt \
@@ -211,7 +203,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
         common/font \
         common/java2d/opengl \
         common/java2d/x11 \
-        #
+        $(LIBPIPEWIRE_HEADER_DIRS)
 
     LIBAWT_XAWT_CFLAGS += -DXAWT -DXAWT_HACK \
         $(FONTCONFIG_CFLAGS) \
@@ -228,6 +220,14 @@ ifeq ($(call isTargetOs, windows macosx), false)
     ifeq ($(call isTargetOs, linux), true)
       LIBAWT_XAWT_LIBS += -lpthread
     endif
+
+    # These are the object files provided by the awt native
+    # library. Do not include these external (non-awt_xawt library)
+    # objects in the static library. When statically linking the java
+    # launcher with all JDK and VM static libraries, we use the
+    # --whole-archive linker option. The duplicate objects in different
+    # static libraries cause linking errors due to duplicate symbols.
+    LIBAWT_XAWT_STATIC_EXCLUDE_OBJS := systemScale.o
 
     $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_XAWT, \
         NAME := awt_xawt, \
@@ -251,10 +251,26 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_gcc_XRBackendNative.c := maybe-uninitialized, \
         DISABLED_WARNINGS_gcc_XToolkit.c := unused-result, \
         DISABLED_WARNINGS_gcc_XWindow.c := unused-function, \
+        DISABLED_WARNINGS_clang_awt_Taskbar.c := parentheses, \
+        DISABLED_WARNINGS_clang_gtk2_interface.c := parentheses, \
+        DISABLED_WARNINGS_clang_gtk3_interface.c := parentheses, \
+        DISABLED_WARNINGS_clang_OGLBufImgOps.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_screencast_pipewire.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+        DISABLED_WARNINGS_clang_aix := deprecated-non-prototype, \
+        DISABLED_WARNINGS_clang_aix_awt_Taskbar.c := parentheses, \
+        DISABLED_WARNINGS_clang_aix_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_aix_OGLBufImgOps.c := format-nonliteral, \
+        DISABLED_WARNINGS_clang_aix_gtk2_interface.c := parentheses logical-op-parentheses, \
+        DISABLED_WARNINGS_clang_aix_gtk3_interface.c := parentheses logical-op-parentheses, \
+        DISABLED_WARNINGS_clang_aix_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
+        DISABLED_WARNINGS_clang_aix_awt_InputMethod.c := sign-compare, \
         LDFLAGS := $(LDFLAGS_JDKLIB) \
             $(call SET_SHARED_LIBRARY_ORIGIN) \
             -L$(INSTALL_LIBRARIES_HERE), \
         LIBS :=  $(X_LIBS) $(LIBAWT_XAWT_LIBS), \
+        STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_XAWT_STATIC_EXCLUDE_OBJS), \
     ))
 
     $(BUILD_LIBAWT_XAWT): $(call FindLib, java.base, java)
@@ -378,6 +394,14 @@ ifeq ($(call isTargetOs, windows macosx), false)
   LIBAWT_HEADLESS_CFLAGS := $(CUPS_CFLAGS) $(FONTCONFIG_CFLAGS) $(X_CFLAGS) \
       -DHEADLESS=true
 
+  # These are the object files provided by the awt native
+  # library. Do not include these external (non-awt_headless library)
+  # objects in the static library. When statically linking the java
+  # launcher with all JDK and VM static libraries, we use the
+  # --whole-archive linker option. The duplicate objects in different
+  # static libraries cause linking errors due to duplicate symbols.
+  LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS := systemScale.o
+
   $(eval $(call SetupJdkLibrary, BUILD_LIBAWT_HEADLESS, \
       NAME := awt_headless, \
       EXTRA_SRC := $(LIBAWT_HEADLESS_EXTRA_SRC), \
@@ -393,6 +417,7 @@ ifeq ($(call isTargetOs, windows macosx), false)
       LDFLAGS_unix := -L$(INSTALL_LIBRARIES_HERE), \
       LIBS_unix := -lawt -ljvm -ljava, \
       LIBS_linux := $(LIBM) $(LIBDL), \
+      STATIC_LIB_EXCLUDE_OBJS := $(LIBAWT_HEADLESS_STATIC_EXCLUDE_OBJS), \
   ))
 
   $(BUILD_LIBAWT_HEADLESS): $(BUILD_LIBAWT)
@@ -457,16 +482,19 @@ else
    # Early re-canonizing has to be disabled to workaround an internal XlC compiler error
    # when building libharfbuzz
    ifeq ($(call isTargetOs, aix), true)
+    ifneq ($(TOOLCHAIN_TYPE), clang)
      HARFBUZZ_CFLAGS += -qdebug=necan
+    endif
    endif
 
    # hb-ft.cc is not presently needed, and requires freetype 2.4.2 or later.
    LIBFONTMANAGER_EXCLUDE_FILES += libharfbuzz/hb-ft.cc
 
    HARFBUZZ_DISABLED_WARNINGS_gcc := missing-field-initializers strict-aliasing \
-       unused-result
+       unused-result array-bounds
    # noexcept-type required for GCC 7 builds. Not required for GCC 8+.
-   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type
+   # expansion-to-defined required for GCC 9 builds. Not required for GCC 10+.
+   HARFBUZZ_DISABLED_WARNINGS_CXX_gcc := class-memaccess noexcept-type expansion-to-defined dangling-reference
    HARFBUZZ_DISABLED_WARNINGS_clang := missing-field-initializers range-loop-analysis
    HARFBUZZ_DISABLED_WARNINGS_microsoft := 4267 4244
 
@@ -699,6 +727,20 @@ ifeq ($(ENABLE_HEADLESS_ONLY), false)
 
   ifeq ($(call isTargetOs, linux), true)
     ifeq ($(call isTargetCpuArch, ppc), true)
+      LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
+    endif
+  endif
+
+  # The external libpng submitted in the jdk is a reduced version
+  # which does not contain .png_init_filter_functions_vsx.
+  # Therefore we need to disable PNG_POWERPC_VSX_OPT explicitly by setting
+  # it to 0. If this define is not set, it would be automatically set to 2,
+  # because
+  #   "#if defined(__PPC64__) && defined(__ALTIVEC__) && defined(__VSX__)"
+  # expands to true. This would results in the fact that
+  # .png_init_filter_functions_vsx is needed in libpng.
+  ifeq ($(call isTargetOs, aix), true)
+    ifeq ($(TOOLCHAIN_TYPE), clang)
       LIBSPLASHSCREEN_CFLAGS += -DPNG_POWERPC_VSX_OPT=0
     endif
   endif

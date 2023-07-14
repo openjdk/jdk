@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,13 +29,13 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-ZNMethodTableIteration::ZNMethodTableIteration() :
-    _table(NULL),
+ZNMethodTableIteration::ZNMethodTableIteration()
+  : _table(nullptr),
     _size(0),
     _claimed(0) {}
 
 bool ZNMethodTableIteration::in_progress() const {
-  return _table != NULL;
+  return _table != nullptr;
 }
 
 void ZNMethodTableIteration::nmethods_do_begin(ZNMethodTableEntry* table, size_t size) {
@@ -50,7 +50,7 @@ void ZNMethodTableIteration::nmethods_do_end() {
   assert(_claimed >= _size, "Failed to claim all table entries");
 
   // Finish iteration
-  _table = NULL;
+  _table = nullptr;
 }
 
 void ZNMethodTableIteration::nmethods_do(NMethodClosure* cl) {
@@ -58,7 +58,7 @@ void ZNMethodTableIteration::nmethods_do(NMethodClosure* cl) {
     // Claim table partition. Each partition is currently sized to span
     // two cache lines. This number is just a guess, but seems to work well.
     const size_t partition_size = (ZCacheLineSize * 2) / sizeof(ZNMethodTableEntry);
-    const size_t partition_start = MIN2(Atomic::fetch_and_add(&_claimed, partition_size), _size);
+    const size_t partition_start = MIN2(Atomic::fetch_then_add(&_claimed, partition_size), _size);
     const size_t partition_end = MIN2(partition_start + partition_size, _size);
     if (partition_start == partition_end) {
       // End of table

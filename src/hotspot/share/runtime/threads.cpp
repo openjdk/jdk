@@ -69,6 +69,7 @@
 #include "runtime/javaThread.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/jniPeriodicChecker.hpp"
+#include "runtime/lockStack.inline.hpp"
 #include "runtime/monitorDeflationThread.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/nonJavaThread.hpp"
@@ -552,14 +553,35 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
+  // Create WatcherThread as soon as we can since we need it in case
+  // of hangs during error reporting.
+  WatcherThread::start();
+
+  // Add main_thread to threads list to finish barrier setup with
+  // on_thread_attach.  Should be before starting to build Java objects in
+  // init_globals2, which invokes barriers.
+  {
+    MutexLocker mu(Threads_lock);
+    Threads::add(main_thread);
+  }
+
+  status = init_globals2();
+  if (status != JNI_OK) {
+    Threads::remove(main_thread, false);
+    // It is possible that we managed to fully initialize Universe but have then
+    // failed by throwing an exception. In that case our caller JNI_CreateJavaVM
+    // will want to report it, so we can't delete the main thread.
+    if (!main_thread->has_pending_exception()) {
+      main_thread->smr_delete();
+    }
+    *canTryAgain = false; // don't let caller call JNI_CreateJavaVM again
+    return status;
+  }
+
   JFR_ONLY(Jfr::on_create_vm_1();)
 
   // Should be done after the heap is fully created
   main_thread->cache_global_variables();
-
-  { MutexLocker mu(Threads_lock);
-    Threads::add(main_thread);
-  }
 
   // Any JVMTI raw monitors entered in onload will transition into
   // real raw monitor. VM is setup enough here for raw monitor enter.
@@ -691,6 +713,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   }
 #endif
 
+  // Start string deduplication thread if requested.
+  if (StringDedup::is_enabled()) {
+    StringDedup::start();
+  }
+
   // Pre-initialize some JSR292 core classes to avoid deadlock during class loading.
   // It is done after compilers are initialized, because otherwise compilations of
   // signature polymorphic MH intrinsics can be missed
@@ -769,19 +796,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     CLEAR_PENDING_EXCEPTION;
   }
 
-  {
-    MutexLocker ml(PeriodicTask_lock);
-    // Make sure the WatcherThread can be started by WatcherThread::start()
-    // or by dynamic enrollment.
-    WatcherThread::make_startable();
-    // Start up the WatcherThread if there are any periodic tasks
-    // NOTE:  All PeriodicTasks should be registered by now. If they
-    //   aren't, late joiners might appear to start slowly (we might
-    //   take a while to process their first tick).
-    if (PeriodicTask::num_tasks() > 0) {
-      WatcherThread::start();
-    }
-  }
+  // Let WatcherThread run all registered periodic tasks now.
+  // NOTE:  All PeriodicTasks should be registered by now. If they
+  //   aren't, late joiners might appear to start slowly (we might
+  //   take a while to process their first tick).
+  WatcherThread::run_all_tasks();
 
   create_vm_timer.end();
 #ifdef ASSERT
@@ -1172,6 +1191,7 @@ GrowableArray<JavaThread*>* Threads::get_pending_threads(ThreadsList * t_list,
 
 JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
                                                       address owner) {
+  assert(LockingMode != LM_LIGHTWEIGHT, "Not with new lightweight locking");
   // null owner means not locked so we can skip the search
   if (owner == nullptr) return nullptr;
 
@@ -1183,7 +1203,7 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   // Cannot assert on lack of success here since this function may be
   // used by code that is trying to report useful problem information
   // like deadlock detection.
-  if (UseHeavyMonitors) return nullptr;
+  if (LockingMode == LM_MONITOR) return nullptr;
 
   // If we didn't find a matching Java thread and we didn't force use of
   // heavyweight monitors, then the owner is the stack address of the
@@ -1201,9 +1221,29 @@ JavaThread *Threads::owning_thread_from_monitor_owner(ThreadsList * t_list,
   return the_owner;
 }
 
+JavaThread* Threads::owning_thread_from_object(ThreadsList * t_list, oop obj) {
+  assert(LockingMode == LM_LIGHTWEIGHT, "Only with new lightweight locking");
+  for (JavaThread* q : *t_list) {
+    if (q->lock_stack().contains(obj)) {
+      return q;
+    }
+  }
+  return nullptr;
+}
+
 JavaThread* Threads::owning_thread_from_monitor(ThreadsList* t_list, ObjectMonitor* monitor) {
-  address owner = (address)monitor->owner();
-  return owning_thread_from_monitor_owner(t_list, owner);
+  if (LockingMode == LM_LIGHTWEIGHT) {
+    if (monitor->is_owner_anonymous()) {
+      return owning_thread_from_object(t_list, monitor->object());
+    } else {
+      Thread* owner = reinterpret_cast<Thread*>(monitor->owner());
+      assert(owner == nullptr || owner->is_Java_thread(), "only JavaThreads own monitors");
+      return reinterpret_cast<JavaThread*>(owner);
+    }
+  } else {
+    address owner = (address)monitor->owner();
+    return owning_thread_from_monitor_owner(t_list, owner);
+  }
 }
 
 class PrintOnClosure : public ThreadClosure {
@@ -1267,9 +1307,6 @@ void Threads::print_on(outputStream* st, bool print_stacks,
   PrintOnClosure cl(st);
   cl.do_thread(VMThread::vm_thread());
   Universe::heap()->gc_threads_do(&cl);
-  if (StringDedup::is_enabled()) {
-    StringDedup::threads_do(&cl);
-  }
   cl.do_thread(WatcherThread::watcher_thread());
   cl.do_thread(AsyncLogWriter::instance());
 
@@ -1296,14 +1333,19 @@ class PrintOnErrorClosure : public ThreadClosure {
   char* _buf;
   int _buflen;
   bool* _found_current;
+  unsigned _num_printed;
  public:
   PrintOnErrorClosure(outputStream* st, Thread* current, char* buf,
                       int buflen, bool* found_current) :
-   _st(st), _current(current), _buf(buf), _buflen(buflen), _found_current(found_current) {}
+   _st(st), _current(current), _buf(buf), _buflen(buflen), _found_current(found_current),
+   _num_printed(0) {}
 
   virtual void do_thread(Thread* thread) {
+    _num_printed++;
     Threads::print_on_error(thread, _st, _current, _buf, _buflen, _found_current);
   }
+
+  unsigned num_printed() const { return _num_printed; }
 };
 
 // Threads::print_on_error() is called by fatal error handler. It's possible
@@ -1317,12 +1359,18 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
 
   bool found_current = false;
   st->print_cr("Java Threads: ( => current thread )");
+  unsigned num_java = 0;
   ALL_JAVA_THREADS(thread) {
     print_on_error(thread, st, current, buf, buflen, &found_current);
+    num_java++;
   }
+  st->print_cr("Total: %u", num_java);
   st->cr();
 
   st->print_cr("Other Threads:");
+  unsigned num_other = ((VMThread::vm_thread() != nullptr) ? 1 : 0) +
+      ((WatcherThread::watcher_thread() != nullptr) ? 1 : 0) +
+      ((AsyncLogWriter::instance() != nullptr)  ? 1 : 0);
   print_on_error(VMThread::vm_thread(), st, current, buf, buflen, &found_current);
   print_on_error(WatcherThread::watcher_thread(), st, current, buf, buflen, &found_current);
   print_on_error(AsyncLogWriter::instance(), st, current, buf, buflen, &found_current);
@@ -1330,26 +1378,26 @@ void Threads::print_on_error(outputStream* st, Thread* current, char* buf,
   if (Universe::heap() != nullptr) {
     PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
     Universe::heap()->gc_threads_do(&print_closure);
-  }
-
-  if (StringDedup::is_enabled()) {
-    PrintOnErrorClosure print_closure(st, current, buf, buflen, &found_current);
-    StringDedup::threads_do(&print_closure);
+    num_other += print_closure.num_printed();
   }
 
   if (!found_current) {
     st->cr();
     st->print("=>" PTR_FORMAT " (exited) ", p2i(current));
     current->print_on_error(st, buf, buflen);
+    num_other++;
     st->cr();
   }
+  st->print_cr("Total: %u", num_other);
   st->cr();
 
   st->print_cr("Threads with active compile tasks:");
-  print_threads_compiling(st, buf, buflen);
+  unsigned num = print_threads_compiling(st, buf, buflen);
+  st->print_cr("Total: %u", num);
 }
 
-void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form) {
+unsigned Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, bool short_form) {
+  unsigned num = 0;
   ALL_JAVA_THREADS(thread) {
     if (thread->is_Compiler_thread()) {
       CompilerThread* ct = (CompilerThread*) thread;
@@ -1363,9 +1411,11 @@ void Threads::print_threads_compiling(outputStream* st, char* buf, int buflen, b
         thread->print_name_on_error(st, buf, buflen);
         st->print("  ");
         task->print(st, nullptr, short_form, true);
+        num++;
       }
     }
   }
+  return num;
 }
 
 void Threads::verify() {

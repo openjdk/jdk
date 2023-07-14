@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,7 +84,7 @@ G1ConcurrentRefineThreadControl::~G1ConcurrentRefineThreadControl() {
 }
 
 jint G1ConcurrentRefineThreadControl::initialize(G1ConcurrentRefine* cr, uint max_num_threads) {
-  assert(cr != NULL, "G1ConcurrentRefine must not be NULL");
+  assert(cr != nullptr, "G1ConcurrentRefine must not be null");
   _cr = cr;
   _max_num_threads = max_num_threads;
 
@@ -138,7 +138,7 @@ bool G1ConcurrentRefineThreadControl::activate(uint worker_id) {
 
 void G1ConcurrentRefineThreadControl::worker_threads_do(ThreadClosure* tc) {
   for (uint i = 0; i < _max_num_threads; i++) {
-    if (_threads[i] != NULL) {
+    if (_threads[i] != nullptr) {
       tc->do_thread(_threads[i]);
     }
   }
@@ -146,7 +146,7 @@ void G1ConcurrentRefineThreadControl::worker_threads_do(ThreadClosure* tc) {
 
 void G1ConcurrentRefineThreadControl::stop() {
   for (uint i = 0; i < _max_num_threads; i++) {
-    if (_threads[i] != NULL) {
+    if (_threads[i] != nullptr) {
       _threads[i]->stop();
     }
   }

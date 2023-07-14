@@ -75,6 +75,9 @@ class PathString : public CHeapObj<mtArguments> {
 
   PathString(const char* value);
   ~PathString();
+
+  // for JVM_ReadSystemPropertiesInfo
+  static int value_offset_in_bytes()  { return (int)offset_of(PathString, _value);  }
 };
 
 // ModulePatchPath records the module/path pair as specified to --patch-module.
@@ -136,6 +139,10 @@ class SystemProperty : public PathString {
 
   // Constructor
   SystemProperty(const char* key, const char* value, bool writeable, bool internal = false);
+
+  // for JVM_ReadSystemPropertiesInfo
+  static int key_offset_in_bytes()  { return (int)offset_of(SystemProperty, _key);  }
+  static int next_offset_in_bytes() { return (int)offset_of(SystemProperty, _next); }
 };
 
 // Helper class for controlling the lifetime of JavaVMInitArgs objects.
@@ -242,9 +249,6 @@ class Arguments : AllStatic {
   // Operation modi
   static Mode _mode;
   static void set_mode_flags(Mode mode);
-  static bool _java_compiler;
-  static void set_java_compiler(bool arg) { _java_compiler = arg; }
-  static bool java_compiler()   { return _java_compiler; }
 
   // -Xdebug flag
   static bool _xdebug_mode;
@@ -302,7 +306,6 @@ class Arguments : AllStatic {
   static bool parse_argument(const char* arg, JVMFlagOrigin origin);
   static bool process_argument(const char* arg, jboolean ignore_unrecognized, JVMFlagOrigin origin);
   static void process_java_launcher_argument(const char*, void*);
-  static void process_java_compiler_argument(const char* arg);
   static jint parse_options_environment_variable(const char* name, ScopedVMInitArgs* vm_args);
   static jint parse_java_tool_options_environment_variable(ScopedVMInitArgs* vm_args);
   static jint parse_java_options_environment_variable(ScopedVMInitArgs* vm_args);

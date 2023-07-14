@@ -45,6 +45,7 @@ class outputStream;
   LOG_TAG(bot) \
   LOG_TAG(breakpoint) \
   LOG_TAG(bytecode) \
+  LOG_TAG(cause) \
   LOG_TAG(cds) \
   LOG_TAG(census) \
   LOG_TAG(class) \
@@ -77,6 +78,7 @@ class outputStream;
   LOG_TAG(event) \
   LOG_TAG(exceptions) \
   LOG_TAG(exit) \
+  LOG_TAG(fastlock) \
   LOG_TAG(finalizer) \
   LOG_TAG(fingerprint) \
   NOT_PRODUCT(LOG_TAG(foreign)) \
@@ -123,6 +125,7 @@ class outputStream;
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(native) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
   LOG_TAG(nmt) \
@@ -137,6 +140,7 @@ class outputStream;
   LOG_TAG(oopstorage) \
   LOG_TAG(os) \
   LOG_TAG(owner) \
+  LOG_TAG(page) \
   LOG_TAG(pagesize) \
   LOG_TAG(parser) \
   LOG_TAG(patch) \
@@ -195,6 +199,7 @@ class outputStream;
   LOG_TAG(tlab) \
   LOG_TAG(tracking) \
   LOG_TAG(unload) /* Trace unloading of classes */ \
+  LOG_TAG(unmap) \
   LOG_TAG(unshareable) \
   NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \

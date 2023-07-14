@@ -15,7 +15,7 @@ keys=intermittent randomness needs-src needs-src-jdk_javadoc
 groups=TEST.groups
 
 # Minimum jtreg version
-requiredVersion=7.1.1+1
+requiredVersion=7.2+1
 
 # Use new module options
 useNewOptions=true
@@ -37,6 +37,9 @@ requires.extraPropDefns.bootlibs = ../lib/jdk/test/whitebox
 requires.extraPropDefns.libs = \
     ../lib/jdk/test/lib/Platform.java \
     ../lib/jdk/test/lib/Container.java
-requires.extraPropDefns.vmOpts = -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
+requires.extraPropDefns.javacOpts = --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
+requires.extraPropDefns.vmOpts = \
+    -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI \
+    --add-exports java.base/jdk.internal.foreign=ALL-UNNAMED
 requires.properties= \
     vm.continuations

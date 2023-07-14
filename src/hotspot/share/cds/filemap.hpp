@@ -28,6 +28,7 @@
 #include "cds/metaspaceShared.hpp"
 #include "include/cds.h"
 #include "logging/logLevel.hpp"
+#include "memory/allocation.hpp"
 #include "oops/array.hpp"
 #include "oops/compressedOops.hpp"
 #include "utilities/align.hpp"
@@ -40,6 +41,7 @@
 
 static const int JVM_IDENT_MAX = 256;
 
+class ArchiveHeapInfo;
 class BitMapView;
 class CHeapBitMap;
 class ClassFileStream;
@@ -47,7 +49,7 @@ class ClassLoaderData;
 class ClassPathEntry;
 class outputStream;
 
-class SharedClassPathEntry {
+class SharedClassPathEntry : public MetaspaceObj {
   enum {
     modules_image_entry,
     jar_entry,
@@ -68,9 +70,17 @@ class SharedClassPathEntry {
   Array<u1>*   _manifest;
 
 public:
+  SharedClassPathEntry() : _type(0), _is_module_path(false),
+                           _from_class_path_attr(false), _timestamp(0),
+                           _filesize(0), _name(nullptr), _manifest(nullptr) {}
+  static int size() {
+    static_assert(is_aligned(sizeof(SharedClassPathEntry), wordSize), "must be");
+    return (int)(sizeof(SharedClassPathEntry) / wordSize);
+  }
   void init(bool is_modules_image, bool is_module_path, ClassPathEntry* cpe, TRAPS);
   void init_as_non_existent(const char* path, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
+  MetaspaceObj::Type type() const { return SharedClassPathEntryType; }
   bool validate(bool is_class_path = true) const;
 
   // The _timestamp only gets set for jar files.
@@ -104,37 +114,23 @@ public:
   }
 };
 
-struct ArchiveHeapBitmapInfo {
-  address _map;               // bitmap for relocating embedded oops
-  size_t  _bm_region_offset;  // this bitmap is stored at this offset from the bottom of the BM region
-  size_t  _size_in_bits;
-  size_t  _size_in_bytes;
-};
-
 class SharedPathTable {
-  Array<u8>* _table;
-  int _size;
+  Array<SharedClassPathEntry*>* _entries;
 public:
-  SharedPathTable() : _table(nullptr), _size(0) {}
-  SharedPathTable(Array<u8>* table, int size) : _table(table), _size(size) {}
+  SharedPathTable() : _entries(nullptr) {}
+  SharedPathTable(Array<SharedClassPathEntry*>* entries) : _entries(entries) {}
 
   void dumptime_init(ClassLoaderData* loader_data, TRAPS);
   void metaspace_pointers_do(MetaspaceClosure* it);
 
   int size() {
-    return _size;
+    return _entries == nullptr ? 0 : _entries->length();
   }
   SharedClassPathEntry* path_at(int index) {
-    if (index < 0) {
-      return nullptr;
-    }
-    assert(index < _size, "sanity");
-    char* p = (char*)_table->data();
-    p += sizeof(SharedClassPathEntry) * index;
-    return (SharedClassPathEntry*)p;
+    return _entries->at(index);
   }
-  Array<u8>* table() {return _table;}
-  void set_table(Array<u8>* table) {_table = table;}
+  Array<SharedClassPathEntry*>* table() {return _entries;}
+  void set_table(Array<SharedClassPathEntry*>* table) {_entries = table;}
 };
 
 
@@ -173,7 +169,8 @@ public:
   void set_mapped_from_file(bool v)  { _mapped_from_file = v; }
   void init(int region_index, size_t mapping_offset, size_t size, bool read_only,
             bool allow_exec, int crc);
-  void init_bitmaps(ArchiveHeapBitmapInfo oopmap, ArchiveHeapBitmapInfo ptrmap);
+  void init_oopmap(size_t offset, size_t size_in_bits);
+  void init_ptrmap(size_t offset, size_t size_in_bits);
   BitMapView oopmap_view();
   BitMapView ptrmap_view();
   bool has_ptrmap()                  { return _ptrmap_size_in_bits != 0; }
@@ -197,13 +194,10 @@ private:
   bool   _compact_strings;                        // value of CompactStrings
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
-  int     _narrow_klass_shift;                    // save narrow klass base and shift
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
-  address _heap_begin;                            // heap begin at dump time.
-  address _heap_end;                              // heap end at dump time.
   bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
   unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
                                                   //    0 if no common prefix exists
@@ -220,7 +214,6 @@ private:
   //      validate_shared_path_table()
   //      validate_non_existent_class_paths()
   size_t _shared_path_table_offset;
-  int    _shared_path_table_size;
 
   jshort _app_class_paths_start_index;  // Index of first app classpath entry
   jshort _app_module_paths_start_index; // Index of first module path entry
@@ -237,6 +230,8 @@ private:
                                         // some expensive operations.
   bool   _use_full_module_graph;        // Can we use the full archived module graph?
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
+  size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
+                                        // of the archived heap objects, in bytes.
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
@@ -266,12 +261,8 @@ public:
   bool compact_strings()                   const { return _compact_strings; }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
-  int narrow_klass_shift()                 const { return _narrow_klass_shift; }
-  address narrow_klass_base()              const { return (address)mapped_base_address(); }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
-  address heap_begin()                     const { return _heap_begin; }
-  address heap_end()                       const { return _heap_end; }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
@@ -280,6 +271,7 @@ public:
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
+  size_t heap_roots_offset()               const { return _heap_roots_offset; }
   // FIXME: These should really return int
   jshort max_used_path_index()             const { return _max_used_path_index; }
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
@@ -291,11 +283,11 @@ public:
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
+  void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
   void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
     set_as_offset((char*)table.table(), &_shared_path_table_offset);
-    _shared_path_table_size = table.size();
   }
 
   void set_requested_base(char* b) {
@@ -304,8 +296,8 @@ public:
   }
 
   SharedPathTable shared_path_table() const {
-    return SharedPathTable((Array<u8>*)from_mapped_offset(_shared_path_table_offset),
-                           _shared_path_table_size);
+    return SharedPathTable((Array<SharedClassPathEntry*>*)
+                           from_mapped_offset(_shared_path_table_offset));
   }
 
   bool validate();
@@ -343,10 +335,7 @@ private:
   const char*    _base_archive_name;
   FileMapHeader* _header;
 
-  // TODO: Probably change the following to be non-static
   static SharedPathTable       _shared_path_table;
-  static SharedPathTable       _saved_shared_path_table;
-  static Array<u8>*            _saved_shared_path_table_array;  // remember the table array for cleanup
   static bool                  _validating_shared_path_table;
 
   // FileMapHeader describes the shared space data in the file to be
@@ -366,13 +355,11 @@ public:
   static SharedPathTable shared_path_table() {
     return _shared_path_table;
   }
-  static SharedPathTable saved_shared_path_table() {
-    assert(_saved_shared_path_table.size() >= 0, "Sanity check");
-    return _saved_shared_path_table;
-  }
 
   bool init_from_file(int fd);
-  static void metaspace_pointers_do(MetaspaceClosure* it, bool use_copy = true);
+  static void metaspace_pointers_do(MetaspaceClosure* it) {
+    _shared_path_table.metaspace_pointers_do(it);
+  }
 
   void log_paths(const char* msg, int start_idx, int end_idx);
 
@@ -392,8 +379,7 @@ public:
   address narrow_oop_base()    const { return header()->narrow_oop_base(); }
   int     narrow_oop_shift()   const { return header()->narrow_oop_shift(); }
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
-  address narrow_klass_base()  const { return header()->narrow_klass_base(); }
-  int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
+  size_t  heap_roots_offset()  const { return header()->heap_roots_offset(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }
@@ -451,26 +437,20 @@ public:
   void  write_header();
   void  write_region(int region, char* base, size_t size,
                      bool read_only, bool allow_exec);
-  char* write_bitmap_region(const CHeapBitMap* ptrmap,
-                            GrowableArray<ArchiveHeapBitmapInfo>* closed_bitmaps,
-                            GrowableArray<ArchiveHeapBitmapInfo>* open_bitmaps,
+  char* write_bitmap_region(const CHeapBitMap* ptrmap, ArchiveHeapInfo* heap_info,
                             size_t &size_in_bytes);
-  size_t write_heap_regions(GrowableArray<MemRegion>* regions,
-                            GrowableArray<ArchiveHeapBitmapInfo>* bitmaps,
-                            int first_region_id, int max_num_regions);
+  size_t write_heap_region(ArchiveHeapInfo* heap_info);
   void  write_bytes(const void* buffer, size_t count);
   void  write_bytes_aligned(const void* buffer, size_t count);
   size_t  read_bytes(void* buffer, size_t count);
   static size_t readonly_total();
   MapArchiveResult map_regions(int regions[], int num_regions, char* mapped_base_address, ReservedSpace rs);
   void  unmap_regions(int regions[], int num_regions);
-  void  map_or_load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
-  void  fixup_mapped_heap_regions() NOT_CDS_JAVA_HEAP_RETURN;
+  void  map_or_load_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
+  void  fixup_mapped_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
   void  patch_heap_embedded_pointers() NOT_CDS_JAVA_HEAP_RETURN;
-  void  patch_heap_embedded_pointers(MemRegion* regions, int num_regions,
-                                     int first_region_idx) NOT_CDS_JAVA_HEAP_RETURN;
-  bool  has_heap_regions()  NOT_CDS_JAVA_HEAP_RETURN_(false);
-  MemRegion get_heap_regions_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
+  bool  has_heap_region()  NOT_CDS_JAVA_HEAP_RETURN_(false);
+  MemRegion get_heap_region_requested_range() NOT_CDS_JAVA_HEAP_RETURN_(MemRegion());
   bool  read_region(int i, char* base, size_t size, bool do_commit);
   char* map_bitmap_region();
   void  unmap_region(int i);
@@ -482,16 +462,12 @@ public:
   // Remap the shared readonly space to shared readwrite, private.
   bool  remap_shared_readonly_as_readwrite();
 
-  // Errors.
-  static void fail_stop(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
   static bool memory_mapping_failed() {
     CDS_ONLY(return _memory_mapping_failed;)
     NOT_CDS(return false;)
   }
 
   static void allocate_shared_path_table(TRAPS);
-  static void copy_shared_path_table(ClassLoaderData* loader_data, TRAPS);
-  static void clone_shared_path_table(TRAPS);
   static int add_shared_classpaths(int i, const char* which, ClassPathEntry *cpe, TRAPS);
   static void check_nonempty_dir_in_shared_path_table();
   bool check_module_paths();
@@ -505,6 +481,7 @@ public:
   static void record_non_existent_class_path_entry(const char* path);
 
 #if INCLUDE_JVMTI
+  // Caller needs a ResourceMark because parts of the returned cfs are resource-allocated.
   static ClassFileStream* open_stream_for_jvmti(InstanceKlass* ik, Handle class_loader, TRAPS);
 #endif
 
@@ -543,9 +520,7 @@ public:
     return header()->region_at(i);
   }
 
-  void print(outputStream* st) {
-    header()->print(st);
-  }
+  void print(outputStream* st) const;
 
   const char* vm_version() {
     return header()->jvm_ident();
@@ -568,23 +543,21 @@ public:
                     unsigned int runtime_prefix_len) NOT_CDS_RETURN_(false);
   bool  validate_boot_class_paths() NOT_CDS_RETURN_(false);
   bool  validate_app_class_paths(int shared_app_paths_len) NOT_CDS_RETURN_(false);
-  bool  map_heap_regions(int first, int max, bool is_open_archive,
-                         MemRegion** regions_ret, int* num_regions_ret) NOT_CDS_JAVA_HEAP_RETURN_(false);
-  void  dealloc_heap_regions(MemRegion* regions, int num) NOT_CDS_JAVA_HEAP_RETURN;
-  bool  can_use_heap_regions();
-  bool  load_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  bool  map_heap_regions() NOT_CDS_JAVA_HEAP_RETURN_(false);
-  void  map_heap_regions_impl() NOT_CDS_JAVA_HEAP_RETURN;
+  bool  map_heap_region_impl() NOT_CDS_JAVA_HEAP_RETURN_(false);
+  void  dealloc_heap_region() NOT_CDS_JAVA_HEAP_RETURN;
+  bool  can_use_heap_region();
+  bool  load_heap_region() NOT_CDS_JAVA_HEAP_RETURN_(false);
+  bool  map_heap_region() NOT_CDS_JAVA_HEAP_RETURN_(false);
+  void  init_heap_region_relocation();
   MapArchiveResult map_region(int i, intx addr_delta, char* mapped_base_address, ReservedSpace rs);
   bool  relocate_pointers_in_core_regions(intx addr_delta);
-  static size_t set_bitmaps_offset(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_size);
-  static size_t write_bitmaps(GrowableArray<ArchiveHeapBitmapInfo> *bitmaps, size_t curr_offset, char* buffer);
+
+  static MemRegion _mapped_heap_memregion;
 
 public:
-  address heap_region_dumptime_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  address heap_region_requested_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  address heap_region_mapped_address(FileMapRegion* r) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
-  narrowOop encoded_heap_region_dumptime_address(FileMapRegion* r);
+  address heap_region_dumptime_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  address heap_region_requested_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  narrowOop encoded_heap_region_dumptime_address();
 
 private:
 

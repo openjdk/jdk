@@ -357,6 +357,17 @@ ssl.TrustManagerFactory.algorithm=PKIX
 #
 #networkaddress.cache.ttl=-1
 
+#
+# The Java-level namelookup cache stale policy:
+#
+# any positive value: the number of seconds to use the stale names
+# zero: do not use stale names
+# negative values are ignored
+#
+# default value is 0 (NEVER).
+#
+#networkaddress.cache.stale.ttl=0
+
 # The Java-level namelookup cache policy for failed lookups:
 #
 # any negative value: cache forever
@@ -1001,6 +1012,23 @@ jdk.xml.dsig.secureValidationPolicy=\
     noDuplicateIds,\
     noRetrievalMethodLoops
 
+#
+# Support for the here() function
+#
+# This security property determines whether the here() XPath function is
+# supported in XML Signature generation and verification.
+#
+# If this property is set to false, the here() function is not supported.
+# Generating an XML Signature that uses the here() function will throw an
+# XMLSignatureException. Validating an existing XML Signature that uses the
+# here() function will also throw an XMLSignatureException.
+#
+# The default value for this property is true.
+#
+# Note: This property is currently used by the JDK Reference implementation.
+# It is not guaranteed to be examined and used by other implementations.
+#
+#jdk.xml.dsig.hereFunctionSupported=true
 
 #
 # Deserialization JVM-wide filter factory

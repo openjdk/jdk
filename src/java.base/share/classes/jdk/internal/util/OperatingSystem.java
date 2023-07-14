@@ -22,7 +22,8 @@
  */
 package jdk.internal.util;
 
-import jdk.internal.util.OperatingSystemProps;
+import java.util.Locale;
+import jdk.internal.util.PlatformProps;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -80,15 +81,15 @@ public enum OperatingSystem {
     AIX,
     ;
 
-    // Cache a copy of the array for lightweight indexing
-    private static final OperatingSystem[] osValues = OperatingSystem.values();
+    // The current OperatingSystem
+    private static final OperatingSystem CURRENT_OS = initOS();
 
     /**
      * {@return {@code true} if built for the Linux operating system}
      */
     @ForceInline
     public static boolean isLinux() {
-        return OperatingSystemProps.TARGET_OS_IS_LINUX;
+        return PlatformProps.TARGET_OS_IS_LINUX;
     }
 
     /**
@@ -96,7 +97,7 @@ public enum OperatingSystem {
      */
     @ForceInline
     public static boolean isMacOS() {
-        return OperatingSystemProps.TARGET_OS_IS_MACOSX;
+        return PlatformProps.TARGET_OS_IS_MACOS;
     }
 
     /**
@@ -104,7 +105,7 @@ public enum OperatingSystem {
      */
     @ForceInline
     public static boolean isWindows() {
-        return OperatingSystemProps.TARGET_OS_IS_WINDOWS;
+        return PlatformProps.TARGET_OS_IS_WINDOWS;
     }
 
     /**
@@ -112,13 +113,22 @@ public enum OperatingSystem {
      */
     @ForceInline
     public static boolean isAix() {
-        return OperatingSystemProps.TARGET_OS_IS_AIX;
+        return PlatformProps.TARGET_OS_IS_AIX;
     }
 
     /**
      * {@return the current operating system}
      */
     public static OperatingSystem current() {
-        return osValues[OperatingSystemProps.CURRENT_OS_ORDINAL];
+        return CURRENT_OS;
+    }
+
+    /**
+     * Returns the OperatingSystem of the build.
+     * Build time names are mapped to respective uppercase enum values.
+     * Names not recognized throw ExceptionInInitializerError with IllegalArgumentException.
+     */
+    private static OperatingSystem initOS() {
+        return OperatingSystem.valueOf(PlatformProps.CURRENT_OS_STRING.toUpperCase(Locale.ROOT));
     }
 }

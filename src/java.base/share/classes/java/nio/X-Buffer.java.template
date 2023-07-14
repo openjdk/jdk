@@ -149,12 +149,16 @@ import jdk.internal.util.ArraysSupport;
  * <i>get</i> and <i>put</i> methods for each type.  For 32-bit floating-point
  * values, for example, this class defines:
  *
- * <blockquote><pre>
- * float      {@link #getFloat()}
- * float      {@link #getFloat(int) getFloat(int index)}
- * ByteBuffer {@link #putFloat(float) putFloat(float f)}
- * ByteBuffer {@link #putFloat(int,float) putFloat(int index, float f)}
- * </pre></blockquote>
+ * {@snippet lang=java :
+ *     // @link substring="getFloat()" target="#getFloat" :
+ *     float      getFloat()
+ *     // @link substring="getFloat(int index)" target="#getFloat(int)" :
+ *     float      getFloat(int index)
+ *     // @link substring="putFloat(float f)" target="#putFloat(float)" :
+ *     ByteBuffer putFloat(float f)
+ *     // @link substring="putFloat(int index, float f)" target="#putFloat(int,float)" :
+ *     ByteBuffer putFloat(int index, float f)
+ * }
  *
  * <p> Corresponding methods are defined for the types {@code char,
  * short, int, long}, and {@code double}.  The index
@@ -231,31 +235,35 @@ import jdk.internal.util.ArraysSupport;
  *
  * The sequence of statements
  *
- * <blockquote><pre>
- * bb.putInt(0xCAFEBABE);
- * bb.putShort(3);
- * bb.putShort(45);</pre></blockquote>
+ * {@snippet lang=java :
+ *     bb.putInt(0xCAFEBABE);
+ *     bb.putShort(3);
+ *     bb.putShort(45);
+ * }
  *
  * can, for example, be replaced by the single statement
  *
- * <blockquote><pre>
- * bb.putInt(0xCAFEBABE).putShort(3).putShort(45);</pre></blockquote>
+ * {@snippet lang=java :
+ *     bb.putInt(0xCAFEBABE).putShort(3).putShort(45);
+ * }
  *
 #end[byte]
 #if[char]
  *
  * The sequence of statements
  *
- * <blockquote><pre>
- * cb.put("text/");
- * cb.put(subtype);
- * cb.put("; charset=");
- * cb.put(enc);</pre></blockquote>
+ * {@snippet lang=java :
+ *     cb.put("text/");
+ *     cb.put(subtype);
+ *     cb.put("; charset=");
+ *     cb.put(enc);
+ * }
  *
  * can, for example, be replaced by the single statement
  *
- * <blockquote><pre>
- * cb.put("text/").put(subtype).put("; charset=").put(enc);</pre></blockquote>
+ * {@snippet lang=java :
+ *     cb.put("text/").put(subtype).put("; charset=").put(enc);
+ * }
  *
 #end[char]
  * <h2> Optional operations </h2>
@@ -463,13 +471,16 @@ public abstract sealed class $Type$Buffer
      * Attempts to read characters into the specified character buffer.
      * The buffer is used as a repository of characters as-is: the only
      * changes made are the results of a put operation. No flipping or
-     * rewinding of the buffer is performed.
+     * rewinding of the buffer is performed. If the {@linkplain #length
+     * length} of the specified character buffer is zero, then no characters
+     * will be read and zero will be returned.
      *
      * @param target the buffer to read characters into
-     * @return The number of characters added to the buffer, or
-     *         -1 if this source of characters is at its end
+     * @return The number of characters added to the buffer,
+     *         possibly zero, or -1 if this source of characters is at its end
      * @throws IOException if an I/O error occurs
-     * @throws ReadOnlyBufferException if target is a read only buffer
+     * @throws ReadOnlyBufferException if target is a read only buffer,
+     *         even if its length is zero
      * @since 1.5
      */
     public int read(CharBuffer target) throws IOException {
@@ -780,10 +791,10 @@ public abstract sealed class $Type$Buffer
      * <code>src.get(dst,&nbsp;off,&nbsp;len)</code> has exactly the same effect as
      * the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = off; i < off + len; i++)
      *         dst[i] = src.get();
-     * }</pre>
+     * }
      *
      * except that it first checks that there are sufficient $type$s in
      * this buffer and it is potentially much more efficient.
@@ -830,8 +841,9 @@ public abstract sealed class $Type$Buffer
      * destination array.  An invocation of this method of the form
      * {@code src.get(a)} behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     src.get(a, 0, a.length) </pre>
+     * {@snippet lang=java :
+     *     src.get(a, 0, a.length)
+     * }
      *
      * @param   dst
      *          The destination array
@@ -860,10 +872,10 @@ public abstract sealed class $Type$Buffer
      * checks the consistency of the supplied parameters and it is potentially
      * much more efficient:
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = offset, j = index; i < offset + length; i++, j++)
      *         dst[i] = src.get(j);
-     * }</pre>
+     * }
      *
      * @param  index
      *         The index in this buffer from which the first $type$ will be
@@ -908,8 +920,9 @@ public abstract sealed class $Type$Buffer
      * <code>src.get(index,&nbsp;dst)</code> behaves in exactly the same
      * way as the invocation:
      *
-     * <pre>
-     *     src.get(index, dst, 0, dst.length) </pre>
+     * {@snippet lang=java :
+     *     src.get(index, dst, 0, dst.length)
+     * }
      *
      * @param  index
      *         The index in this buffer from which the first $type$ will be
@@ -984,9 +997,10 @@ public abstract sealed class $Type$Buffer
      * <p> In other words, an invocation of this method of the form
      * {@code dst.put(src)} has exactly the same effect as the loop
      *
-     * <pre>
+     * {@snippet lang=java :
      *     while (src.hasRemaining())
-     *         dst.put(src.get()); </pre>
+     *         dst.put(src.get());
+     * }
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient.  If this buffer and
@@ -1046,10 +1060,10 @@ public abstract sealed class $Type$Buffer
      * <code>dst.put(index,&nbsp;src,&nbsp;offset,&nbsp;length)</code>
      * has exactly the same effect as the loop
      *
-     * <pre>{@code
-     * for (int i = offset, j = index; i < offset + length; i++, j++)
-     *     dst.put(j, src.get(i));
-     * }</pre>
+     * {@snippet lang=java :
+     *     for (int i = offset, j = index; i < offset + length; i++, j++)
+     *         dst.put(j, src.get(i));
+     * }
      *
      * except that it first checks the consistency of the supplied parameters
      * and it is potentially much more efficient.  If this buffer and
@@ -1158,10 +1172,10 @@ public abstract sealed class $Type$Buffer
      * <code>dst.put(src,&nbsp;off,&nbsp;len)</code> has exactly the same effect as
      * the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = off; i < off + len; i++)
      *         dst.put(src[i]);
-     * }</pre>
+     * }
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient.
@@ -1212,8 +1226,9 @@ public abstract sealed class $Type$Buffer
      * form {@code dst.put(a)} behaves in exactly the same way as the
      * invocation
      *
-     * <pre>
-     *     dst.put(a, 0, a.length) </pre>
+     * {@snippet lang=java :
+     *     dst.put(a, 0, a.length)
+     * }
      *
      * @param   src
      *          The source array
@@ -1243,10 +1258,10 @@ public abstract sealed class $Type$Buffer
      * checks the consistency of the supplied parameters and it is potentially
      * much more efficient:
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = offset, j = index; i < offset + length; i++, j++)
      *         dst.put(j, src[i]);
-     * }</pre>
+     * }
      *
      * @param  index
      *         The index in this buffer at which the first $type$ will be
@@ -1294,8 +1309,9 @@ public abstract sealed class $Type$Buffer
      * method of the form <code>dst.put(index,&nbsp;src)</code>
      * behaves in exactly the same way as the invocation:
      *
-     * <pre>
-     *     dst.put(index, src, 0, src.length); </pre>
+     * {@snippet lang=java :
+     *     dst.put(index, src, 0, src.length);
+     * }
      *
      * @param  index
      *         The index in this buffer at which the first $type$ will be
@@ -1319,7 +1335,7 @@ public abstract sealed class $Type$Buffer
         return put(index, src, 0, src.length);
     }
 
-    private $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
+    $Type$Buffer putArray(int index, $type$[] src, int offset, int length) {
 #if[rw]
         if (
 #if[char]
@@ -1378,10 +1394,10 @@ public abstract sealed class $Type$Buffer
      * <code>dst.put(src,&nbsp;start,&nbsp;end)</code> has exactly the same effect
      * as the loop
      *
-     * <pre>{@code
+     * {@snippet lang=java :
      *     for (int i = start; i < end; i++)
      *         dst.put(src.charAt(i));
-     * }</pre>
+     * }
      *
      * except that it first checks that there is sufficient space in this
      * buffer and it is potentially much more efficient.
@@ -1429,8 +1445,9 @@ public abstract sealed class $Type$Buffer
      * into this buffer.  An invocation of this method of the form
      * {@code dst.put(s)} behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     dst.put(s, 0, s.length()) </pre>
+     * {@snippet lang=java :
+     *     dst.put(s, 0, s.length())
+     * }
      *
      * @param   src
      *          The source string
@@ -1646,14 +1663,14 @@ public abstract sealed class $Type$Buffer
      * write was incomplete.  The following loop, for example, copies bytes
      * from one channel to another via the buffer {@code buf}:
      *
-     * <blockquote><pre>{@code
-     *   buf.clear();          // Prepare buffer for use
-     *   while (in.read(buf) >= 0 || buf.position != 0) {
-     *       buf.flip();
-     *       out.write(buf);
-     *       buf.compact();    // In case of partial write
-     *   }
-     * }</pre></blockquote>
+     * {@snippet lang=java :
+     *     buf.clear();          // Prepare buffer for use
+     *     while (in.read(buf) >= 0 || buf.position != 0) {
+     *         buf.flip();
+     *         out.write(buf);
+     *         buf.compact();    // In case of partial write
+     *     }
+     * }
      *
 #end[byte]
      *
@@ -1978,8 +1995,9 @@ public abstract sealed class $Type$Buffer
      * <p> An invocation of this method of the form {@code dst.append(csq)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     dst.put(csq.toString()) </pre>
+     * {@snippet lang=java :
+     *     dst.put(csq.toString())
+     * }
      *
      * <p> Depending on the specification of {@code toString} for the
      * character sequence {@code csq}, the entire sequence may not be
@@ -2019,8 +2037,9 @@ public abstract sealed class $Type$Buffer
      * end)} when {@code csq} is not {@code null}, behaves in exactly the
      * same way as the invocation
      *
-     * <pre>
-     *     dst.put(csq.subSequence(start, end).toString()) </pre>
+     * {@snippet lang=java :
+     *     dst.put(csq.subSequence(start, end).toString())
+     * }
      *
      * @param  csq
      *         The character sequence from which a subsequence will be
@@ -2045,8 +2064,19 @@ public abstract sealed class $Type$Buffer
      */
     public $Type$Buffer append(CharSequence csq, int start, int end) {
         if (csq instanceof CharBuffer cb) {
-            int pos = position();
+            Objects.checkFromToIndex(start, end, csq.length());
+
+            //
+            // the append method throws BufferOverflowException when
+            // there is insufficient space in the buffer
+            //
             int length = end - start;
+            int pos = position();
+            int lim = limit();
+            int rem = (pos <= lim) ? lim - pos : 0;
+            if (length > rem)
+                throw new BufferOverflowException();
+
             put(pos, cb, start, length);
             position(pos + length);
             return this;
@@ -2062,8 +2092,9 @@ public abstract sealed class $Type$Buffer
      * <p> An invocation of this method of the form {@code dst.append($x$)}
      * behaves in exactly the same way as the invocation
      *
-     * <pre>
-     *     dst.put($x$) </pre>
+     * {@snippet lang=java :
+     *     dst.put($x$)
+     * }
      *
      * @param  $x$
      *         The 16-bit $type$ to append
@@ -2162,14 +2193,17 @@ public abstract sealed class $Type$Buffer
      * aligned address.  Specifically, the index should either be decremented by
      * the return value if the latter is not greater than {@code index}, or be
      * incremented by the unit size minus the return value.  Therefore given
-     * <blockquote><pre>
-     * int value = alignmentOffset(index, unitSize)</pre></blockquote>
+     * {@snippet lang=java :
+     *     int value = alignmentOffset(index, unitSize)
+     * }
      * then the identities
-     * <blockquote><pre>
-     * alignmentOffset(index - value, unitSize) == 0, value &le; index</pre></blockquote>
+     * {@snippet lang=java :
+     *     alignmentOffset(index - value, unitSize) == 0, value <= index
+     * }
      * and
-     * <blockquote><pre>
-     * alignmentOffset(index + (unitSize - value), unitSize) == 0</pre></blockquote>
+     * {@snippet lang=java :
+     *     alignmentOffset(index + (unitSize - value), unitSize) == 0
+     * }
      * must hold.
      * 
      * @apiNote
@@ -2228,10 +2262,10 @@ public abstract sealed class $Type$Buffer
      * and limit will be zero.  If rounding is within bounds the following
      * expressions will be true for a new buffer {@code nb} and unit size
      * {@code unitSize}:
-     * <pre>{@code
-     * nb.alignmentOffset(0, unitSize) == 0
-     * nb.alignmentOffset(nb.limit(), unitSize) == 0
-     * }</pre>
+     * {@snippet lang=java :
+     *     nb.alignmentOffset(0, unitSize) == 0
+     *     nb.alignmentOffset(nb.limit(), unitSize) == 0
+     * }
      *
      * <p> Changes to this buffer's content will be visible in the new
      * buffer, and vice versa; the two buffers' position, limit, and mark

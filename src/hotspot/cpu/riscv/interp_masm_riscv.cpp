@@ -36,6 +36,7 @@
 #include "oops/markWord.hpp"
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -79,9 +80,8 @@ void InterpreterMacroAssembler::narrow(Register result) {
   bind(notChar);
   sign_extend(result, result, 16);
 
-  // Nothing to do for T_INT
   bind(done);
-  addw(result, result, zr);
+  sign_extend(result, result, 32);
 }
 
 void InterpreterMacroAssembler::jump_to_entry(address entry) {
@@ -177,8 +177,15 @@ void InterpreterMacroAssembler::check_and_handle_earlyret(Register java_thread) 
 
 void InterpreterMacroAssembler::get_unsigned_2_byte_index_at_bcp(Register reg, int bcp_offset) {
   assert(bcp_offset >= 0, "bcp is still pointing to start of bytecode");
-  lhu(reg, Address(xbcp, bcp_offset));
-  revb_h(reg, reg);
+  if (AvoidUnalignedAccesses && (bcp_offset % 2)) {
+    lbu(t1, Address(xbcp, bcp_offset));
+    lbu(reg, Address(xbcp, bcp_offset + 1));
+    slli(t1, t1, 8);
+    add(reg, reg, t1);
+  } else {
+    lhu(reg, Address(xbcp, bcp_offset));
+    revb_h_h_u(reg, reg);
+  }
 }
 
 void InterpreterMacroAssembler::get_dispatch() {
@@ -191,19 +198,29 @@ void InterpreterMacroAssembler::get_dispatch() {
 }
 
 void InterpreterMacroAssembler::get_cache_index_at_bcp(Register index,
+                                                       Register tmp,
                                                        int bcp_offset,
                                                        size_t index_size) {
   assert(bcp_offset > 0, "bcp is still pointing to start of bytecode");
   if (index_size == sizeof(u2)) {
-    load_unsigned_short(index, Address(xbcp, bcp_offset));
+    if (AvoidUnalignedAccesses) {
+      assert_different_registers(index, tmp);
+      load_unsigned_byte(index, Address(xbcp, bcp_offset));
+      load_unsigned_byte(tmp, Address(xbcp, bcp_offset + 1));
+      slli(tmp, tmp, 8);
+      add(index, index, tmp);
+    } else {
+      load_unsigned_short(index, Address(xbcp, bcp_offset));
+    }
   } else if (index_size == sizeof(u4)) {
-    lwu(index, Address(xbcp, bcp_offset));
+    load_int_misaligned(index, Address(xbcp, bcp_offset), tmp, false);
+
     // Check if the secondary index definition is still ~x, otherwise
     // we have to change the following assembler code to calculate the
     // plain index.
     assert(ConstantPool::decode_invokedynamic_index(~123) == 123, "else change next line");
     xori(index, index, -1);
-    addw(index, index, zr);
+    sign_extend(index, index, 32);
   } else if (index_size == sizeof(u1)) {
     load_unsigned_byte(index, Address(xbcp, bcp_offset));
   } else {
@@ -224,7 +241,8 @@ void InterpreterMacroAssembler::get_cache_and_index_at_bcp(Register cache,
                                                            size_t index_size) {
   assert_different_registers(cache, index);
   assert_different_registers(cache, xcpool);
-  get_cache_index_at_bcp(index, bcp_offset, index_size);
+  // register "cache" is trashed in next shadd, so lets use it as a temporary register
+  get_cache_index_at_bcp(index, cache, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry
   // riscv already has the cache in xcpool so there is no need to
@@ -261,7 +279,8 @@ void InterpreterMacroAssembler::get_cache_entry_pointer_at_bcp(Register cache,
                                                                int bcp_offset,
                                                                size_t index_size) {
   assert_different_registers(cache, tmp);
-  get_cache_index_at_bcp(tmp, bcp_offset, index_size);
+  // register "cache" is trashed in next ld, so lets use it as a temporary register
+  get_cache_index_at_bcp(tmp, cache, bcp_offset, index_size);
   assert(sizeof(ConstantPoolCacheEntry) == 4 * wordSize, "adjust code below");
   // Convert from field index to ConstantPoolCacheEntry index
   // and from word offset to byte offset
@@ -281,8 +300,8 @@ void InterpreterMacroAssembler::load_resolved_reference_at_index(
 
   get_constant_pool(result);
   // Load pointer for resolved_references[] objArray
-  ld(result, Address(result, ConstantPool::cache_offset_in_bytes()));
-  ld(result, Address(result, ConstantPoolCache::resolved_references_offset_in_bytes()));
+  ld(result, Address(result, ConstantPool::cache_offset()));
+  ld(result, Address(result, ConstantPoolCache::resolved_references_offset()));
   resolve_oop_handle(result, tmp, t1);
   // Add in the index
   addi(index, index, arrayOopDesc::base_offset_in_bytes(T_OBJECT) >> LogBytesPerHeapOop);
@@ -294,7 +313,7 @@ void InterpreterMacroAssembler::load_resolved_klass_at_offset(
                                 Register cpool, Register index, Register klass, Register temp) {
   shadd(temp, index, cpool, temp, LogBytesPerWord);
   lhu(temp, Address(temp, sizeof(ConstantPool))); // temp = resolved_klass_index
-  ld(klass, Address(cpool, ConstantPool::resolved_klasses_offset_in_bytes())); // klass = cpool->_resolved_klasses
+  ld(klass, Address(cpool, ConstantPool::resolved_klasses_offset())); // klass = cpool->_resolved_klasses
   shadd(klass, temp, klass, temp, LogBytesPerWord);
   ld(klass, Address(klass, Array<Klass*>::base_offset_in_bytes()));
 }
@@ -360,7 +379,7 @@ void InterpreterMacroAssembler::push_ptr(Register r) {
 
 void InterpreterMacroAssembler::push_i(Register r) {
   addi(esp, esp, -wordSize);
-  addw(r, r, zr); // signed extended
+  sign_extend(r, r, 32);
   sd(r, Address(esp, 0));
 }
 
@@ -639,7 +658,7 @@ void InterpreterMacroAssembler::remove_activation(
   // register for unlock_object to pass to VM directly
   la(c_rarg1, monitor); // address of first monitor
 
-  ld(x10, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+  ld(x10, Address(c_rarg1, BasicObjectLock::obj_offset()));
   bnez(x10, unlock);
 
   pop(state);
@@ -718,7 +737,7 @@ void InterpreterMacroAssembler::remove_activation(
 
     bind(loop);
     // check if current entry is used
-    add(t0, c_rarg1, BasicObjectLock::obj_offset_in_bytes());
+    add(t0, c_rarg1, in_bytes(BasicObjectLock::obj_offset()));
     ld(t0, Address(t0, 0));
     bnez(t0, exception);
 
@@ -744,6 +763,12 @@ void InterpreterMacroAssembler::remove_activation(
   if (StackReservedPages > 0) {
     // testing if reserved zone needs to be re-enabled
     Label no_reserved_zone_enabling;
+
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    lw(t0, Address(xthread, JavaThread::stack_guard_state_offset()));
+    subw(t0, t0, StackOverflow::stack_guard_enabled);
+    beqz(t0, no_reserved_zone_enabling);
 
     ld(t0, Address(xthread, JavaThread::reserved_stack_activation_offset()));
     ble(t1, t0, no_reserved_zone_enabling);
@@ -781,7 +806,7 @@ void InterpreterMacroAssembler::remove_activation(
 void InterpreterMacroAssembler::lock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be c_rarg1");
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM(noreg,
             CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
             lock_reg);
@@ -792,8 +817,8 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
     const Register tmp = c_rarg2;
     const Register obj_reg = c_rarg3; // Will contain the oop
 
-    const int obj_offset = BasicObjectLock::obj_offset_in_bytes();
-    const int lock_offset = BasicObjectLock::lock_offset_in_bytes ();
+    const int obj_offset = in_bytes(BasicObjectLock::obj_offset());
+    const int lock_offset = in_bytes(BasicObjectLock::lock_offset());
     const int mark_offset = lock_offset +
                             BasicLock::displaced_header_offset_in_bytes();
 
@@ -809,42 +834,53 @@ void InterpreterMacroAssembler::lock_object(Register lock_reg)
       bnez(tmp, slow_case);
     }
 
-    // Load (object->mark() | 1) into swap_reg
-    ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
-    ori(swap_reg, t0, 1);
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      ld(tmp, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      fast_lock(obj_reg, tmp, t0, t1, slow_case);
+      j(count);
+    } else if (LockingMode == LM_LEGACY) {
+      // Load (object->mark() | 1) into swap_reg
+      ld(t0, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      ori(swap_reg, t0, 1);
 
-    // Save (object->mark() | 1) into BasicLock's displaced header
-    sd(swap_reg, Address(lock_reg, mark_offset));
+      // Save (object->mark() | 1) into BasicLock's displaced header
+      sd(swap_reg, Address(lock_reg, mark_offset));
 
-    assert(lock_offset == 0,
-           "displached header must be first word in BasicObjectLock");
+      assert(lock_offset == 0,
+             "displached header must be first word in BasicObjectLock");
 
-    cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
+      cmpxchg_obj_header(swap_reg, lock_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
 
-    // Test if the oopMark is an obvious stack pointer, i.e.,
-    //  1) (mark & 7) == 0, and
-    //  2) sp <= mark < mark + os::pagesize()
-    //
-    // These 3 tests can be done by evaluating the following
-    // expression: ((mark - sp) & (7 - os::vm_page_size())),
-    // assuming both stack pointer and pagesize have their
-    // least significant 3 bits clear.
-    // NOTE: the oopMark is in swap_reg x10 as the result of cmpxchg
-    sub(swap_reg, swap_reg, sp);
-    mv(t0, (int64_t)(7 - (int)os::vm_page_size()));
-    andr(swap_reg, swap_reg, t0);
+      // Test if the oopMark is an obvious stack pointer, i.e.,
+      //  1) (mark & 7) == 0, and
+      //  2) sp <= mark < mark + os::pagesize()
+      //
+      // These 3 tests can be done by evaluating the following
+      // expression: ((mark - sp) & (7 - os::vm_page_size())),
+      // assuming both stack pointer and pagesize have their
+      // least significant 3 bits clear.
+      // NOTE: the oopMark is in swap_reg x10 as the result of cmpxchg
+      sub(swap_reg, swap_reg, sp);
+      mv(t0, (int64_t)(7 - (int)os::vm_page_size()));
+      andr(swap_reg, swap_reg, t0);
 
-    // Save the test result, for recursive case, the result is zero
-    sd(swap_reg, Address(lock_reg, mark_offset));
-    beqz(swap_reg, count);
+      // Save the test result, for recursive case, the result is zero
+      sd(swap_reg, Address(lock_reg, mark_offset));
+      beqz(swap_reg, count);
+    }
 
     bind(slow_case);
 
     // Call the runtime routine for slow case
-    call_VM(noreg,
-            CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
-            lock_reg);
-
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      call_VM(noreg,
+              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter_obj),
+              obj_reg);
+    } else {
+      call_VM(noreg,
+              CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorenter),
+              lock_reg);
+    }
     j(done);
 
     bind(count);
@@ -870,7 +906,7 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 {
   assert(lock_reg == c_rarg1, "The argument is only for looks. It must be rarg1");
 
-  if (UseHeavyMonitors) {
+  if (LockingMode == LM_MONITOR) {
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
   } else {
     Label count, done;
@@ -881,28 +917,56 @@ void InterpreterMacroAssembler::unlock_object(Register lock_reg)
 
     save_bcp(); // Save in case of exception
 
-    // Convert from BasicObjectLock structure to object and BasicLock
-    // structure Store the BasicLock address into x10
-    la(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset_in_bytes()));
+    if (LockingMode != LM_LIGHTWEIGHT) {
+      // Convert from BasicObjectLock structure to object and BasicLock
+      // structure Store the BasicLock address into x10
+      la(swap_reg, Address(lock_reg, BasicObjectLock::lock_offset()));
+    }
 
     // Load oop into obj_reg(c_rarg3)
-    ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
+    ld(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset()));
 
     // Free entry
-    sd(zr, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes()));
+    sd(zr, Address(lock_reg, BasicObjectLock::obj_offset()));
 
-    // Load the old header from BasicLock structure
-    ld(header_reg, Address(swap_reg,
-                           BasicLock::displaced_header_offset_in_bytes()));
+    if (LockingMode == LM_LIGHTWEIGHT) {
+      Label slow_case;
 
-    // Test for recursion
-    beqz(header_reg, count);
+      // Check for non-symmetric locking. This is allowed by the spec and the interpreter
+      // must handle it.
+      Register tmp1 = t0;
+      Register tmp2 = header_reg;
+      // First check for lock-stack underflow.
+      lwu(tmp1, Address(xthread, JavaThread::lock_stack_top_offset()));
+      mv(tmp2, (unsigned)LockStack::start_offset());
+      ble(tmp1, tmp2, slow_case);
+      // Then check if the top of the lock-stack matches the unlocked object.
+      subw(tmp1, tmp1, oopSize);
+      add(tmp1, xthread, tmp1);
+      ld(tmp1, Address(tmp1, 0));
+      bne(tmp1, obj_reg, slow_case);
 
-    // Atomic swap back the old header
-    cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
+      ld(header_reg, Address(obj_reg, oopDesc::mark_offset_in_bytes()));
+      test_bit(t0, header_reg, exact_log2(markWord::monitor_value));
+      bnez(t0, slow_case);
+      fast_unlock(obj_reg, header_reg, swap_reg, t0, slow_case);
+      j(count);
+
+      bind(slow_case);
+    } else if (LockingMode == LM_LEGACY) {
+      // Load the old header from BasicLock structure
+      ld(header_reg, Address(swap_reg,
+                             BasicLock::displaced_header_offset_in_bytes()));
+
+      // Test for recursion
+      beqz(header_reg, count);
+
+      // Atomic swap back the old header
+      cmpxchg_obj_header(swap_reg, header_reg, obj_reg, t0, count, /*fallthrough*/nullptr);
+    }
 
     // Call the runtime routine for slow case.
-    sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset_in_bytes())); // restore obj
+    sd(obj_reg, Address(lock_reg, BasicObjectLock::obj_offset())); // restore obj
     call_VM_leaf(CAST_FROM_FN_PTR(address, InterpreterRuntime::monitorexit), lock_reg);
 
     j(done);
@@ -1850,7 +1914,7 @@ void InterpreterMacroAssembler::profile_return_type(Register mdp, Register ret, 
       mv(tmp, (u1)Bytecodes::_invokehandle);
       beq(t0, tmp, do_profile);
       get_method(tmp);
-      lhu(t0, Address(tmp, Method::intrinsic_id_offset_in_bytes()));
+      lhu(t0, Address(tmp, Method::intrinsic_id_offset()));
       mv(t1, static_cast<int>(vmIntrinsics::_compiledLambdaForm));
       bne(t0, t1, profile_continue);
       bind(do_profile);
@@ -1918,7 +1982,8 @@ void InterpreterMacroAssembler::profile_parameters_type(Register mdp, Register t
 
 void InterpreterMacroAssembler::load_resolved_indy_entry(Register cache, Register index) {
   // Get index out of bytecode pointer, get_cache_entry_pointer_at_bcp
-  get_cache_index_at_bcp(index, 1, sizeof(u4));
+  // register "cache" is trashed in next ld, so lets use it as a temporary register
+  get_cache_index_at_bcp(index, cache, 1, sizeof(u4));
   // Get address of invokedynamic array
   ld(cache, Address(xcpool, in_bytes(ConstantPoolCache::invokedynamic_entries_offset())));
   // Scale the index to be the entry index * sizeof(ResolvedInvokeDynamicInfo)

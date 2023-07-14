@@ -84,7 +84,7 @@ void vmStructs_init() NOT_DEBUG_RETURN;
 
 void vtableStubs_init();
 void InlineCacheBuffer_init();
-void compilerOracle_init();
+bool compilerOracle_init();
 bool compileBroker_init();
 void dependencyContext_init();
 void dependencies_init();
@@ -143,6 +143,10 @@ jint init_globals() {
   InterfaceSupport_init();
   VMRegImpl::set_regName();  // need this before generate_stubs (for printing oop maps).
   SharedRuntime::generate_stubs();
+  return JNI_OK;
+}
+
+jint init_globals2() {
   universe2_init();          // dependent on codeCache_init and initial_stubs_init
   javaClasses_init();        // must happen after vtable initialization, before referenceProcessor_init
   interpreter_init_code();   // after javaClasses_init and before any method gets linked
@@ -154,7 +158,9 @@ jint init_globals() {
 
   vtableStubs_init();
   InlineCacheBuffer_init();
-  compilerOracle_init();
+  if (!compilerOracle_init()) {
+    return JNI_EINVAL;
+  }
   dependencyContext_init();
   dependencies_init();
 

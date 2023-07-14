@@ -36,6 +36,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.locks.ReentrantLock;
+
 import jdk.internal.net.http.common.Log;
 import jdk.internal.net.http.common.Logger;
 import jdk.internal.net.http.common.MinimalFuture;
@@ -57,8 +59,7 @@ class Http2ClientImpl {
 
     private final HttpClientImpl client;
 
-    // only accessed from within synchronized blocks
-    private boolean stopping;
+    private volatile boolean stopping;
 
     Http2ClientImpl(HttpClientImpl client) {
         this.client = client;
@@ -67,8 +68,10 @@ class Http2ClientImpl {
     /* Map key is "scheme:host:port" */
     private final Map<String,Http2Connection> connections = new ConcurrentHashMap<>();
 
-    // only accessed from within synchronized blocks
+    // only accessed from within lock protected blocks
     private final Set<String> failures = new HashSet<>();
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     /**
      * When HTTP/2 requested only. The following describes the aggregate behavior including the
@@ -95,11 +98,10 @@ class Http2ClientImpl {
      */
     CompletableFuture<Http2Connection> getConnectionFor(HttpRequestImpl req,
                                                         Exchange<?> exchange) {
-        URI uri = req.uri();
-        InetSocketAddress proxy = req.proxy();
-        String key = Http2Connection.keyFor(uri, proxy);
+        String key = Http2Connection.keyFor(req);
 
-        synchronized (this) {
+        lock.lock();
+        try {
             Http2Connection connection = connections.get(key);
             if (connection != null) {
                 try {
@@ -125,11 +127,14 @@ class Http2ClientImpl {
                 if (debug.on()) debug.log("not found in connection pool");
                 return MinimalFuture.completedFuture(null);
             }
+        } finally {
+            lock.unlock();
         }
         return Http2Connection
                 .createAsync(req, this, exchange)
                 .whenComplete((conn, t) -> {
-                    synchronized (Http2ClientImpl.this) {
+                    lock.lock();
+                    try {
                         if (conn != null) {
                             try {
                                 conn.reserveStream(true);
@@ -142,6 +147,8 @@ class Http2ClientImpl {
                             if (cause instanceof Http2Connection.ALPNException)
                                 failures.add(key);
                         }
+                    } finally {
+                        lock.unlock();
                     }
                 });
     }
@@ -162,7 +169,8 @@ class Http2ClientImpl {
         }
 
         String key = c.key();
-        synchronized(this) {
+        lock.lock();
+        try {
             if (stopping) {
                 if (debug.on()) debug.log("stopping - closing connection: %s", c);
                 close(c);
@@ -183,17 +191,22 @@ class Http2ClientImpl {
             if (debug.on())
                 debug.log("put in the connection pool: %s", c);
             return true;
+        } finally {
+            lock.unlock();
         }
     }
 
     void deleteConnection(Http2Connection c) {
         if (debug.on())
             debug.log("removing from the connection pool: %s", c);
-        synchronized (this) {
+        lock.lock();
+        try {
             if (connections.remove(c.key(), c)) {
                 if (debug.on())
                     debug.log("removed from the connection pool: %s", c);
             }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -202,7 +215,12 @@ class Http2ClientImpl {
         if (debug.on()) debug.log("stopping");
         STOPPED = new EOFException("HTTP/2 client stopped");
         STOPPED.setStackTrace(new StackTraceElement[0]);
-        synchronized (this) {stopping = true;}
+        lock.lock();
+        try {
+            stopping = true;
+        } finally {
+            lock.unlock();
+        }
         do {
             connections.values().forEach(this::close);
         } while (!connections.isEmpty());
@@ -292,5 +310,9 @@ class Http2ClientImpl {
                 "jdk.httpclient.maxframesize",
                 16 * K, 16 * K * K -1, 16 * K));
         return frame;
+    }
+
+    public boolean stopping() {
+        return stopping;
     }
 }

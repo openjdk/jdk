@@ -133,7 +133,7 @@
   notproduct(bool, OptoBreakpointOSR, false,                                \
           "insert breakpoint at osr method entry")                          \
                                                                             \
-  notproduct(intx, BreakAtNode, 0,                                          \
+  notproduct(uint64_t, BreakAtNode, 0,                                      \
           "Break at construction of this Node (either _idx or _debug_idx)") \
                                                                             \
   notproduct(bool, OptoBreakpointC2R, false,                                \
@@ -181,9 +181,6 @@
   product_pd(bool,  SuperWordLoopUnrollAnalysis,                            \
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
-                                                                            \
-  product(bool, PostLoopMultiversioning, false, EXPERIMENTAL,               \
-           "Multi versioned post loops to eliminate range checks")          \
                                                                             \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \

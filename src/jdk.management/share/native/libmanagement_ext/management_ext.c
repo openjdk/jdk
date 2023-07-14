@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2017, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,13 @@ const JmmInterface* jmm_interface_management_ext = NULL;
 static JavaVM* jvm = NULL;
 jint jmm_version_management_ext = 0;
 
+void throw_internal_error(JNIEnv* env, const char* msg) {
+    char errmsg[128];
+
+    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
+    JNU_ThrowInternalError(env, errmsg);
+}
+
 JNIEXPORT jint JNICALL
    DEF_JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv* env;
@@ -52,11 +59,4 @@ JNIEXPORT jint JNICALL
 
     jmm_version_management_ext = jmm_interface_management_ext->GetVersion(env);
     return (*env)->GetVersion(env);
-}
-
-void throw_internal_error(JNIEnv* env, const char* msg) {
-    char errmsg[128];
-
-    snprintf(errmsg, sizeof(errmsg), "errno: %d error: %s\n", errno, msg);
-    JNU_ThrowInternalError(env, errmsg);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2018, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary tests memory barrier correctly inserted for stable fields
  * @modules java.base/jdk.internal.vm.annotation
  *
- * @run main/bootclasspath/othervm -Xcomp -XX:CompileOnly=::testCompile
+ * @run main/bootclasspath/othervm -Xcomp -XX:CompileOnly=*NotDominate::testCompile
  *                                 compiler.stable.TestStableMemoryBarrier
  *
  * @author hui.shi@linaro.org
@@ -65,4 +65,3 @@ public class TestStableMemoryBarrier {
 
     }
 }
-

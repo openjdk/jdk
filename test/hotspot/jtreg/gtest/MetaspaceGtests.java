@@ -37,36 +37,8 @@
  *          java.xml
  * @requires vm.debug
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=3
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:VerifyMetaspaceInterval=1
  */
-
-
-
-
-/* @test id=reclaim-aggressive-debug
- * @bug 8251158
- * @summary Run metaspace-related gtests for reclaim policy aggressive (with verifications)
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.debug
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:MetaspaceReclaimPolicy=aggressive -XX:VerifyMetaspaceInterval=3
- */
-
-/* @test id=reclaim-aggressive-ndebug
- * @bug 8251158
- * @summary Run metaspace-related gtests for reclaim policy aggressive
- * @library /test/lib
- * @modules java.base/jdk.internal.misc
- *          java.xml
- * @requires vm.debug == false
- * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:MetaspaceReclaimPolicy=aggressive
- */
-
-
-
 
 /* @test id=balanced-with-guards
  * @summary Run metaspace-related gtests with allocation guards enabled
@@ -75,11 +47,8 @@
  *          java.xml
  * @requires vm.debug
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:VerifyMetaspaceInterval=3 -XX:+MetaspaceGuardAllocations
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:VerifyMetaspaceInterval=1 -XX:+MetaspaceGuardAllocations
  */
-
-
-
 
 /* @test id=balanced-no-ccs
  * @summary Run metaspace-related gtests with compressed class pointers off
@@ -88,5 +57,5 @@
  *          java.xml
  * @requires vm.bits == 64
  * @requires vm.flagless
- * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:MetaspaceReclaimPolicy=balanced -XX:-UseCompressedClassPointers
+ * @run main/native GTestWrapper --gtest_filter=metaspace* -XX:+UnlockDiagnosticVMOptions -XX:-UseCompressedClassPointers
  */

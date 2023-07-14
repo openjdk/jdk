@@ -99,6 +99,10 @@ struct post
     post *post_prime = c->serializer->start_embed<post> ();
     if (unlikely (!post_prime)) return_trace (false);
 
+    bool glyph_names = c->plan->flags & HB_SUBSET_FLAGS_GLYPH_NAMES;
+    if (!serialize (c->serializer, glyph_names))
+      return_trace (false);
+
 #ifndef HB_NO_VAR
     if (c->plan->normalized_coords)
     {
@@ -109,10 +113,6 @@ struct post
       HB_ADD_MVAR_VAR (HB_OT_METRICS_TAG_UNDERLINE_OFFSET, underlinePosition);
     }
 #endif
-
-    bool glyph_names = c->plan->flags & HB_SUBSET_FLAGS_GLYPH_NAMES;
-    if (!serialize (c->serializer, glyph_names))
-      return_trace (false);
 
     if (c->plan->user_axes_location.has (HB_TAG ('s','l','n','t')) &&
         !c->plan->pinned_at_default)

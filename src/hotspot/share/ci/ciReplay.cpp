@@ -39,12 +39,13 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/resourceArea.hpp"
-#include "oops/constantPool.hpp"
+#include "oops/constantPool.inline.hpp"
 #include "oops/cpCache.inline.hpp"
 #include "oops/fieldStreams.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/method.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -428,8 +429,8 @@ class CompileReplay : public StackObj {
         pool_index = cp->resolved_indy_entry_at(index)->constant_pool_index();
       } else if (bytecode.is_invokehandle()) {
 #ifdef ASSERT
-        Klass* holder = cp->klass_ref_at(index, CHECK_NULL);
-        Symbol* name = cp->name_ref_at(index);
+        Klass* holder = cp->klass_ref_at(index, bytecode.code(), CHECK_NULL);
+        Symbol* name = cp->name_ref_at(index, bytecode.code());
         assert(MethodHandles::is_signature_polymorphic_name(holder, name), "");
 #endif
         cp_cache_entry = cp->cache()->entry_at(cp->decode_cpcache_index(index));
@@ -636,7 +637,7 @@ class CompileReplay : public StackObj {
     int c = getc(_stream);
     while(c != EOF) {
       c = get_line(c);
-      process_command(THREAD);
+      process_command(false, THREAD);
       if (had_error()) {
         int pos = _bufptr - _buffer + 1;
         tty->print_cr("Error while parsing line %d at position %d: %s\n", line_no, pos, _error_message);
@@ -652,7 +653,7 @@ class CompileReplay : public StackObj {
     reset();
   }
 
-  void process_command(TRAPS) {
+  void process_command(bool is_replay_inline, TRAPS) {
     char* cmd = parse_string();
     if (cmd == nullptr) {
       return;
@@ -670,20 +671,24 @@ class CompileReplay : public StackObj {
       }
     } else if (strcmp("compile", cmd) == 0) {
       process_compile(CHECK);
-    } else if (strcmp("ciMethod", cmd) == 0) {
-      process_ciMethod(CHECK);
-    } else if (strcmp("ciMethodData", cmd) == 0) {
-      process_ciMethodData(CHECK);
-    } else if (strcmp("staticfield", cmd) == 0) {
-      process_staticfield(CHECK);
-    } else if (strcmp("ciInstanceKlass", cmd) == 0) {
-      process_ciInstanceKlass(CHECK);
-    } else if (strcmp("instanceKlass", cmd) == 0) {
-      process_instanceKlass(CHECK);
+    } else if (!is_replay_inline) {
+      if (strcmp("ciMethod", cmd) == 0) {
+        process_ciMethod(CHECK);
+      } else if (strcmp("ciMethodData", cmd) == 0) {
+        process_ciMethodData(CHECK);
+      } else if (strcmp("staticfield", cmd) == 0) {
+        process_staticfield(CHECK);
+      } else if (strcmp("ciInstanceKlass", cmd) == 0) {
+        process_ciInstanceKlass(CHECK);
+      } else if (strcmp("instanceKlass", cmd) == 0) {
+        process_instanceKlass(CHECK);
 #if INCLUDE_JVMTI
-    } else if (strcmp("JvmtiExport", cmd) == 0) {
-      process_JvmtiExport(CHECK);
+      } else if (strcmp("JvmtiExport", cmd) == 0) {
+        process_JvmtiExport(CHECK);
 #endif // INCLUDE_JVMTI
+      } else {
+        report_error("unknown command");
+      }
     } else {
       report_error("unknown command");
     }
@@ -723,12 +728,7 @@ class CompileReplay : public StackObj {
     int c = getc(_stream);
     while(c != EOF) {
       c = get_line(c);
-      // Expecting only lines with "compile" command in inline replay file.
-      char* cmd = parse_string();
-      if (cmd == nullptr || strcmp("compile", cmd) != 0) {
-        return nullptr;
-      }
-      process_compile(CHECK_NULL);
+      process_command(true, CHECK_NULL);
       if (had_error()) {
         tty->print_cr("Error while parsing line %d: %s\n", line_no, _error_message);
         tty->print_cr("%s", _buffer);
@@ -1101,6 +1101,7 @@ class CompileReplay : public StackObj {
           value = oopFactory::new_longArray(length, CHECK);
         } else if (field_signature[0] == JVM_SIGNATURE_ARRAY &&
                    field_signature[1] == JVM_SIGNATURE_CLASS) {
+          parse_klass(CHECK); // eat up the array class name
           Klass* kelem = resolve_klass(field_signature + 1, CHECK);
           value = oopFactory::new_objArray(kelem, length, CHECK);
         } else {

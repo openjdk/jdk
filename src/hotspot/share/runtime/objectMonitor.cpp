@@ -276,7 +276,10 @@ ObjectMonitor::ObjectMonitor(oop object) :
 { }
 
 ObjectMonitor::~ObjectMonitor() {
-  _object.release(_oop_storage);
+  if (!_object.is_null()) {
+    // Release object's oop storage if it hasn't already been done.
+    release_object();
+  }
 }
 
 oop ObjectMonitor::object() const {
@@ -334,7 +337,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     return true;
   }
 
-  if (current->is_lock_owned((address)cur)) {
+  if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
     assert(_recursions == 0, "internal state error");
     _recursions = 1;
     set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
@@ -383,7 +386,7 @@ bool ObjectMonitor::enter(JavaThread* current) {
     return false;
   }
 
-  JFR_ONLY(JfrConditionalFlushWithStacktrace<EventJavaMonitorEnter> flush(current);)
+  JFR_ONLY(JfrConditionalFlush<EventJavaMonitorEnter> flush(current);)
   EventJavaMonitorEnter event;
   if (event.is_started()) {
     event.set_monitorClass(object()->klass());
@@ -536,7 +539,7 @@ bool ObjectMonitor::deflate_monitor() {
   } else {
     // Attempt async deflation protocol.
 
-    // Set a nullptr owner to DEFLATER_MARKER to force any contending thread
+    // Set a null owner to DEFLATER_MARKER to force any contending thread
     // through the slow path. This is just the first part of the async
     // deflation dance.
     if (try_set_owner_from(nullptr, DEFLATER_MARKER) != nullptr) {
@@ -561,7 +564,7 @@ bool ObjectMonitor::deflate_monitor() {
     // to retry. This is the second part of the async deflation dance.
     if (Atomic::cmpxchg(&_contentions, 0, INT_MIN) != 0) {
       // Contentions was no longer 0 so we lost the race since the
-      // ObjectMonitor is now busy. Restore owner to nullptr if it is
+      // ObjectMonitor is now busy. Restore owner to null if it is
       // still DEFLATER_MARKER:
       if (try_set_owner_from(DEFLATER_MARKER, nullptr) != DEFLATER_MARKER) {
         // Deferred decrement for the JT EnterI() that cancelled the async deflation.
@@ -594,6 +597,9 @@ bool ObjectMonitor::deflate_monitor() {
     // Install the old mark word if nobody else has already done it.
     install_displaced_markword_in_object(obj);
   }
+
+  // Release object's oop storage since the ObjectMonitor has been deflated:
+  release_object();
 
   // We leave owner == DEFLATER_MARKER and contentions < 0
   // to force any racing threads to retry.
@@ -666,7 +672,7 @@ const char* ObjectMonitor::is_busy_to_string(stringStream* ss) {
   if (!owner_is_DEFLATER_MARKER()) {
     ss->print("owner=" INTPTR_FORMAT, p2i(owner_raw()));
   } else {
-    // We report nullptr instead of DEFLATER_MARKER here because is_busy()
+    // We report null instead of DEFLATER_MARKER here because is_busy()
     // ignores DEFLATER_MARKER values.
     ss->print("owner=" INTPTR_FORMAT, NULL_WORD);
   }
@@ -1135,7 +1141,7 @@ void ObjectMonitor::UnlinkAfterAcquire(JavaThread* current, ObjectWaiter* curren
 void ObjectMonitor::exit(JavaThread* current, bool not_suspended) {
   void* cur = owner_raw();
   if (current != cur) {
-    if (current->is_lock_owned((address)cur)) {
+    if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "invariant");
       set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
       _recursions = 0;
@@ -1350,7 +1356,7 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
 
   void* cur = owner_raw();
   if (current != cur) {
-    if (current->is_lock_owned((address)cur)) {
+    if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
       assert(_recursions == 0, "internal state error");
       set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
       _recursions = 0;
@@ -1385,10 +1391,11 @@ intx ObjectMonitor::complete_exit(JavaThread* current) {
 bool ObjectMonitor::check_owner(TRAPS) {
   JavaThread* current = THREAD;
   void* cur = owner_raw();
+  assert(cur != anon_owner_ptr(), "no anon owner here");
   if (cur == current) {
     return true;
   }
-  if (current->is_lock_owned((address)cur)) {
+  if (LockingMode != LM_LIGHTWEIGHT && current->is_lock_owned((address)cur)) {
     set_owner_from_BasicLock(cur, current);  // Convert from BasicLock* to Thread*.
     _recursions = 0;
     return true;

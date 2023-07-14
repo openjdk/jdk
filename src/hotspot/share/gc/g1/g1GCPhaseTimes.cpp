@@ -188,7 +188,7 @@ void G1GCPhaseTimes::reset() {
   _cur_verify_after_time_ms = 0.0;
 
   for (int i = 0; i < GCParPhasesSentinel; i++) {
-    if (_gc_par_phases[i] != NULL) {
+    if (_gc_par_phases[i] != nullptr) {
       _gc_par_phases[i]->reset();
     }
   }
@@ -203,10 +203,10 @@ void G1GCPhaseTimes::record_gc_pause_start() {
 }
 
 #define ASSERT_PHASE_UNINITIALIZED(phase) \
-    assert(_gc_par_phases[phase] == NULL || _gc_par_phases[phase]->get(i) == uninitialized, "Phase " #phase " reported for thread that was not started");
+    assert(_gc_par_phases[phase] == nullptr || _gc_par_phases[phase]->get(i) == uninitialized, "Phase " #phase " reported for thread that was not started");
 
 double G1GCPhaseTimes::worker_time(GCParPhases phase, uint worker) {
-  if (_gc_par_phases[phase] == NULL) {
+  if (_gc_par_phases[phase] == nullptr) {
     return 0.0;
   }
   double value = _gc_par_phases[phase]->get(worker);
@@ -287,17 +287,17 @@ size_t G1GCPhaseTimes::get_thread_work_item(GCParPhases phase, uint worker_id, u
 
 // return the average time for a phase in milliseconds
 double G1GCPhaseTimes::average_time_ms(GCParPhases phase) const {
-  if (_gc_par_phases[phase] == NULL) {
+  if (_gc_par_phases[phase] == nullptr) {
     return 0.0;
   }
   return _gc_par_phases[phase]->average() * 1000.0;
 }
 
 size_t G1GCPhaseTimes::sum_thread_work_items(GCParPhases phase, uint index) {
-  if (_gc_par_phases[phase] == NULL) {
+  if (_gc_par_phases[phase] == nullptr) {
     return 0;
   }
-  assert(_gc_par_phases[phase]->thread_work_items(index) != NULL, "No sub count");
+  assert(_gc_par_phases[phase]->thread_work_items(index) != nullptr, "No sub count");
   return _gc_par_phases[phase]->thread_work_items(index)->sum();
 }
 
@@ -314,7 +314,7 @@ void G1GCPhaseTimes::details(T* phase, uint indent_level) const {
 void G1GCPhaseTimes::print_thread_work_items(WorkerDataArray<double>* phase, uint indent_level, outputStream* out) const {
   for (uint i = 0; i < phase->MaxThreadWorkItems; i++) {
     WorkerDataArray<size_t>* work_items = phase->thread_work_items(i);
-    if (work_items != NULL) {
+    if (work_items != nullptr) {
       out->sp((indent_level + 1) * 2);
       work_items->print_summary_on(out, true);
       details(work_items, indent_level + 1);
@@ -356,7 +356,6 @@ void G1GCPhaseTimes::log_phase(WorkerDataArray<double>* phase, uint indent_level
 void G1GCPhaseTimes::debug_phase(WorkerDataArray<double>* phase, uint extra_indent) const {
   LogTarget(Debug, gc, phases) lt;
   if (lt.is_enabled()) {
-    ResourceMark rm;
     LogStream ls(lt);
     log_phase(phase, 2 + extra_indent, &ls, true);
   }
@@ -370,7 +369,7 @@ void G1GCPhaseTimes::trace_phase(WorkerDataArray<double>* phase, bool print_sum,
   }
 }
 
-#define TIME_FORMAT "%.1lfms"
+#define TIME_FORMAT "%.2lfms"
 
 void G1GCPhaseTimes::info_time(const char* name, double value) const {
   log_info(gc, phases)("  %s: " TIME_FORMAT, name, value);
@@ -602,13 +601,13 @@ void G1EvacPhaseWithTrimTimeTracker::stop() {
 
 G1GCParPhaseTimesTracker::G1GCParPhaseTimesTracker(G1GCPhaseTimes* phase_times, G1GCPhaseTimes::GCParPhases phase, uint worker_id, bool allow_multiple_record) :
   _start_time(), _phase(phase), _phase_times(phase_times), _worker_id(worker_id), _event(), _allow_multiple_record(allow_multiple_record) {
-  if (_phase_times != NULL) {
+  if (_phase_times != nullptr) {
     _start_time = Ticks::now();
   }
 }
 
 G1GCParPhaseTimesTracker::~G1GCParPhaseTimesTracker() {
-  if (_phase_times != NULL) {
+  if (_phase_times != nullptr) {
     if (_allow_multiple_record) {
       _phase_times->record_or_add_time_secs(_phase, _worker_id, (Ticks::now() - _start_time).seconds());
     } else {
@@ -629,7 +628,7 @@ G1EvacPhaseTimesTracker::G1EvacPhaseTimesTracker(G1GCPhaseTimes* phase_times,
 }
 
 G1EvacPhaseTimesTracker::~G1EvacPhaseTimesTracker() {
-  if (_phase_times != NULL) {
+  if (_phase_times != nullptr) {
     // Explicitly stop the trim tracker since it's not yet destructed.
     _trim_tracker.stop();
     // Exclude trim time by increasing the start time.
@@ -637,4 +636,3 @@ G1EvacPhaseTimesTracker::~G1EvacPhaseTimesTracker() {
     _phase_times->record_or_add_time_secs(G1GCPhaseTimes::ObjCopy, _worker_id, _trim_time.seconds());
   }
 }
-

@@ -28,7 +28,6 @@
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
 #include "runtime/os.inline.hpp"
-#include "utilities/growableArray.hpp"
 
 JvmtiAgent* JvmtiAgentList::_list = nullptr;
 
@@ -80,10 +79,6 @@ JvmtiAgentList::Iterator::Iterator(JvmtiAgent** list, Filter filter) :
       next = next->next();
     }
   }
-}
-
-JvmtiAgentList::Iterator::~Iterator() {
-  delete _stack;
 }
 
 bool JvmtiAgentList::Iterator::has_next() const {
@@ -225,6 +220,30 @@ void JvmtiAgentList::unload_agents() {
   }
 }
 
+// Return true if a statically linked agent is on the list
+bool JvmtiAgentList::is_static_lib_loaded(const char* name) {
+  JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
+  while (it.has_next()) {
+    JvmtiAgent* const agent = it.next();
+    if (agent->is_static_lib() && strcmp(agent->name(), name) == 0) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// Return true if a agent library on the list
+bool JvmtiAgentList::is_dynamic_lib_loaded(void* os_lib) {
+  JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
+  while (it.has_next()) {
+    JvmtiAgent* const agent = it.next();
+    if (!agent->is_static_lib() && agent->os_lib() == os_lib) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static bool match(JvmtiEnv* env, const JvmtiAgent* agent, const void* os_module_address) {
   assert(env != nullptr, "invariant");
   assert(agent != nullptr, "invariant");
@@ -250,7 +269,6 @@ JvmtiAgent* JvmtiAgentList::lookup(JvmtiEnv* env, void* f_ptr) {
     return nullptr;
   }
   assert(buffer[0] != '\0', "invariant");
-  assert(offset >= 0, "invariant");
   const void* const os_module_address = reinterpret_cast<address>(f_ptr) - offset;
 
   JvmtiAgentList::Iterator it = JvmtiAgentList::agents();
