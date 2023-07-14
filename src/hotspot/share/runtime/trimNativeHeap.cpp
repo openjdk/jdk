@@ -130,7 +130,7 @@ class NativeHeapTrimmerThread : public NamedThread {
         }
       }
 
-      log_trace(trimnative)("Times %u suspended, %u timed, %u safepoint",
+      log_trace(trimnative)("Times: %u suspended, %u timed, %u safepoint",
                             times_suspended, times_waited, times_safepoint);
 
       execute_trim_and_log(tnow);
@@ -201,7 +201,11 @@ public:
         ml.notify_all(); // pause end
       }
     }
-    log_debug(trimnative)("Trim resumed after %s (%u suspend requests)", reason, n);
+    if (n == 0) {
+      log_debug(trimnative)("Trim resumed after %s", reason);
+    } else {
+      log_debug(trimnative)("Trim still suspended after %s (%u suspend requests)", reason, n);
+    }
   }
 
   void stop() {
