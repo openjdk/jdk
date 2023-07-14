@@ -554,6 +554,8 @@ void JfrThreadSampler::run() {
       os::naked_sleep(sleep_to_next);
     }
 
+    // Note, this code used to check (next_j - sleep_to_next) <= 0,
+    // but that can overflow (UB) and cause a spurious sample.
     if (next_j <= sleep_to_next) {
       task_stacktrace(JAVA_SAMPLE, &_last_thread_java);
       last_java_ms = get_monotonic_ms();
