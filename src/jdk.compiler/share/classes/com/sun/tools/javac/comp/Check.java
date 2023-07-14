@@ -4815,6 +4815,9 @@ public class Check {
                    "readObject",  "readObjectNoData",
                    "readResolve");
 
+        private static final Set<String> externMethodNames =
+            Set.of("writeExternal", "readExternal");
+
         private static final Set<String> serialFieldNames =
             Set.of("serialVersionUID", "serialPersistentFields");
 
@@ -5208,6 +5211,12 @@ public class Check {
                             log.warning(LintCategory.SERIAL,
                                         TreeInfo.diagnosticPositionFor(method, tree),
                                         Warnings.IneffectualSerialMethodEnum(name));
+                        }
+
+                        if (isExternalizable((Type)e.asType()) && externMethodNames.contains(name)) {
+                            log.warning(LintCategory.SERIAL,
+                                        TreeInfo.diagnosticPositionFor(method, tree),
+                                        Warnings.IneffectualExternMethodEnum(name));
                         }
                     }
                     }
