@@ -181,6 +181,8 @@ address StubRoutines::_cont_returnBarrierExc = nullptr;
 
 JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = nullptr;)
 JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
+JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
+JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
 
 // Initialization
 //

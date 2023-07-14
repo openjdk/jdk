@@ -121,8 +121,11 @@ jobject JNICALL jfr_new_event_writer(JNIEnv* env, jclass cls);
 
 jboolean JNICALL jfr_event_writer_flush(JNIEnv* env, jclass cls, jobject writer, jint used_size, jint requested_size);
 
-void JNICALL jfr_flush(JNIEnv* env, jobject jvm);
-void JNICALL jfr_abort(JNIEnv* env, jobject jvm, jstring errorMsg);
+jlong JNICALL jfr_commit(JNIEnv* env, jclass cls, jlong next_position);
+
+void JNICALL jfr_flush(JNIEnv* env, jclass jvm);
+
+void JNICALL jfr_abort(JNIEnv* env, jclass jvm, jstring errorMsg);
 
 jboolean JNICALL jfr_add_string_constant(JNIEnv* env, jclass jvm, jlong id, jstring string);
 

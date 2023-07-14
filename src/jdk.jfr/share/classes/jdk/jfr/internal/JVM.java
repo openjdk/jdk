@@ -457,7 +457,17 @@ public final class JVM {
     /**
      * Flushes the EventWriter for this thread.
      */
-    public static native boolean flush(EventWriter writer, int uncommittedSize, int requestedSize);
+    public static native void flush(EventWriter writer, int uncommittedSize, int requestedSize);
+
+    /**
+     * Commits an event to the underlying buffer by setting the nextPosition.
+     *
+     * @param nextPosition
+     *
+     * @return the next startPosition
+     */
+    @IntrinsicCandidate
+    public static native long commit(long nextPosition);
 
     /**
      * Flushes all thread buffers to disk and the constant pool data needed to read
