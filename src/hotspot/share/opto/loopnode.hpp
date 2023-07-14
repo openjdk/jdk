@@ -737,7 +737,9 @@ public:
   bool policy_range_check( PhaseIdealLoop *phase ) const;
 
   // Return TRUE if "iff" is a range check.
-  bool is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const;
+  bool is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const;
+  // GLGL bool is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoop* phase, BasicType bt, Node* iv, Node*& range, Node*& offset,
+  // GLGL                        jlong& scale) const;
 
   // Estimate the number of nodes required when cloning a loop (body).
   uint est_loop_clone_sz(uint factor) const;
@@ -1306,15 +1308,12 @@ public:
   // Find a predicate
   static Node* find_predicate(Node* entry);
   // Construct a range check for a predicate if
-  BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl,
-                         int scale, Node* offset,
-                         Node* init, Node* limit, jint stride,
-                         Node* range, bool upper, bool &overflow,
-                         bool negate);
+  BoolNode* rc_predicate(IdealLoopTree *loop, Node* ctrl, int scale, Node* offset,Node* init, Node* limit,
+                         jint stride, Node* range, bool upper, bool &overflow/* GLGL, bool negate*/);
 
   // Implementation of the loop predication to promote checks outside the loop
   bool loop_predication_impl(IdealLoopTree *loop);
-  bool loop_predication_impl_helper(IdealLoopTree *loop, ProjNode* proj, ProjNode *predicate_proj,
+  bool loop_predication_impl_helper(IdealLoopTree *loop, ProjNode* if_success_proj, ProjNode *predicate_proj,
                                     CountedLoopNode *cl, ConNode* zero, Invariance& invar,
                                     Deoptimization::DeoptReason reason);
   bool loop_predication_should_follow_branches(IdealLoopTree *loop, ProjNode *predicate_proj, float& loop_trip_cnt);

@@ -741,7 +741,8 @@ class Invariance : public StackObj {
 // Returns true if the predicate of iff is in "scale*iv + offset u< load_range(ptr)" format
 // Note: this function is particularly designed for loop predication. We require load_range
 //       and offset to be loop invariant computed on the fly by "invar"
-bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
+bool IdealLoopTree::is_range_check_if(IfProjNode *if_success_proj, PhaseIdealLoop *phase, Invariance& invar DEBUG_ONLY(COMMA ProjNode *predicate_proj)) const {
+  IfNode* iff = if_success_proj->in(0)->as_If();
   if (!is_loop_exit(iff)) {
     return false;
   }
@@ -749,7 +750,43 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
     return false;
   }
   const BoolNode *bol = iff->in(1)->as_Bool();
-  if (bol->_test._test != BoolTest::lt) {
+  if (bol->_test._test != BoolTest::lt || if_success_proj->is_IfFalse()) {
+    // We don't have the required range check pattern:
+    // if (scale*iv + offset <u limit) {
+    //
+    // } else {
+    //   trap();
+    // }
+    //
+    // Having the trap on the true projection:
+    // if (scale*iv + offset <u limit) {
+    //   trap();
+    // }
+    //
+    // is not correct. We would need to flip the test to get the expected "trap on false path" pattern:
+    // if (scale*iv + offset >=u limit) {
+    //
+    // } else {
+    //   trap();
+    // }
+    //
+    // If we create a Hoisted Range Check Predicate for this wrong pattern, it could succeed at runtime (i.e. true
+    // for the value of "scale*iv + offset" in the first loop iteration and true for the value of "scale*iv + offset"
+    // in the last loop iteration) while the check to be hoisted could fail in other loop iterations.
+    //
+    // Example:
+    // Loop: "for (int i = -1; i < 1000; i++)"
+    // init = "scale*iv + offset" in the first loop iteration = 1*-1 + 0 = -1
+    // last = "scale*iv + offset" in the last loop iteration = 1*999 + 0 = 999
+    // limit = 100
+    //
+    // Hoisted Range Check Predicate is always true:
+    // init >=u limit && last >=u limit  <=>
+    // -1 >=u 100 && 999 >= u 100
+    //
+    // But for 0 <= x < 100: x >=u 100 is false.
+    // We would wrongly skip the branch with the trap() and possibly miss to execute some other statements inside that
+    // trap() branch.
     return false;
   }
   if (!bol->in(1)->is_Cmp()) {
@@ -829,10 +866,8 @@ bool IdealLoopTree::is_range_check_if(IfNode *iff, PhaseIdealLoop *phase, Invari
 //   max(scale*i + offset) = scale*(limit-stride) + offset
 // (2) stride*scale < 0
 //   max(scale*i + offset) = scale*init + offset
-BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
-                                       int scale, Node* offset,
-                                       Node* init, Node* limit, jint stride,
-                                       Node* range, bool upper, bool &overflow, bool negate) {
+BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree* loop, Node* ctrl, int scale, Node* offset, Node* init,
+                                       Node* limit, jint stride, Node* range, bool upper, bool& overflow) {
   jint con_limit  = (limit != nullptr && limit->is_Con())  ? limit->get_int()  : 0;
   jint con_init   = init->is_Con()   ? init->get_int()   : 0;
   jint con_offset = offset->is_Con() ? offset->get_int() : 0;
@@ -958,7 +993,7 @@ BoolNode* PhaseIdealLoop::rc_predicate(IdealLoopTree *loop, Node* ctrl,
     cmp = new CmpUNode(max_idx_expr, range);
   }
   register_new_node(cmp, ctrl);
-  BoolNode* bol = new BoolNode(cmp, negate ? BoolTest::ge : BoolTest::lt);
+  BoolNode* bol = new BoolNode(cmp, BoolTest::lt);
   register_new_node(bol, ctrl);
 
   if (TraceLoopPredicate) {
@@ -1249,12 +1284,14 @@ void PhaseIdealLoop::loop_predication_follow_branches(Node *n, IdealLoopTree *lo
 }
 
 
-bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode* proj, ProjNode *predicate_proj,
+bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode* success_proj, ProjNode *predicate_proj,
                                                   CountedLoopNode *cl, ConNode* zero, Invariance& invar,
                                                   Deoptimization::DeoptReason reason) {
   // Following are changed to nonnull when a predicate can be hoisted
   ProjNode* new_predicate_proj = nullptr;
-  IfNode*   iff  = proj->in(0)->as_If();
+  assert(success_proj->is_IfProj(), "Expectiong IfProj. Else predecessor might not be an iff.");
+  IfProjNode* if_success_proj = success_proj->as_IfProj();
+  IfNode*   iff  = if_success_proj->in(0)->as_If();
   Node*     test = iff->in(1);
   if (!test->is_Bool()){ //Conv2B, ...
     return false;
@@ -1270,7 +1307,7 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
 
     // Negate test if necessary
     bool negated = false;
-    if (proj->_con != predicate_proj->_con) {
+    if (if_success_proj->_con != predicate_proj->_con) {
       new_predicate_bol = new BoolNode(new_predicate_bol->in(1), new_predicate_bol->_test.negate());
       register_new_node(new_predicate_bol, ctrl);
       negated = true;
@@ -1287,8 +1324,9 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
       loop->dump_head();
     }
 #endif
-  } else if (cl != nullptr && loop->is_range_check_if(iff, this, invar DEBUG_ONLY(COMMA predicate_proj))) {
+  } else if (cl != nullptr && loop->is_range_check_if(if_success_proj, this, invar DEBUG_ONLY(COMMA predicate_proj))) {
     // Range check for counted loops
+    assert(if_success_proj->is_IfTrue(), "trap must be on false projection for a range check");
     const Node*    cmp    = bol->in(1)->as_Cmp();
     Node*          idx    = cmp->in(1);
     assert(!invar.is_invariant(idx), "index is variant");
@@ -1322,33 +1360,33 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
     }
     // If predicate expressions may overflow in the integer range, longs are used.
     bool overflow = false;
-    bool negate = (proj->_con != predicate_proj->_con);
 
     // Test the lower bound
-    BoolNode* lower_bound_bol = rc_predicate(loop, ctrl, scale, offset, init, limit, stride, rng, false, overflow, negate);
+    BoolNode* lower_bound_bol = rc_predicate(loop, ctrl, scale, offset, init, limit, stride, rng, false, overflow);
 
     ProjNode* lower_bound_proj = create_new_if_for_predicate(predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode());
     IfNode* lower_bound_iff = lower_bound_proj->in(0)->as_If();
     _igvn.hash_delete(lower_bound_iff);
     lower_bound_iff->set_req(1, lower_bound_bol);
-    if (TraceLoopPredicate) tty->print_cr("lower bound check if: %s %d ", negate ? " negated" : "", lower_bound_iff->_idx);
+    if (TraceLoopPredicate) tty->print_cr("lower bound check if: %d ", lower_bound_iff->_idx);
 
     // Test the upper bound
-    BoolNode* upper_bound_bol = rc_predicate(loop, lower_bound_proj, scale, offset, init, limit, stride, rng, true, overflow, negate);
+    BoolNode* upper_bound_bol = rc_predicate(loop, lower_bound_proj, scale, offset, init, limit, stride, rng, true,
+                                             overflow);
 
     ProjNode* upper_bound_proj = create_new_if_for_predicate(predicate_proj, nullptr, reason, overflow ? Op_If : iff->Opcode());
     assert(upper_bound_proj->in(0)->as_If()->in(0) == lower_bound_proj, "should dominate");
     IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
     _igvn.hash_delete(upper_bound_iff);
     upper_bound_iff->set_req(1, upper_bound_bol);
-    if (TraceLoopPredicate) tty->print_cr("upper bound check if: %s %d ", negate ? " negated" : "", lower_bound_iff->_idx);
+    if (TraceLoopPredicate) tty->print_cr("upper bound check if: %d ", lower_bound_iff->_idx);
 
     // Fall through into rest of the clean up code which will move
     // any dependent nodes onto the upper bound test.
     new_predicate_proj = upper_bound_proj;
 
     if (iff->is_RangeCheck()) {
-      new_predicate_proj = insert_initial_skeleton_predicate(iff, loop, proj, predicate_proj, upper_bound_proj, scale, offset, init, limit, stride, rng, overflow, reason);
+      new_predicate_proj = insert_initial_skeleton_predicate(iff, loop, if_success_proj, predicate_proj, upper_bound_proj, scale, offset, init, limit, stride, rng, overflow, reason);
     }
 
 #ifndef PRODUCT
@@ -1364,10 +1402,10 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree *loop, ProjNode*
   }
   assert(new_predicate_proj != nullptr, "sanity");
   // Success - attach condition (new_predicate_bol) to predicate if
-  invar.map_ctrl(proj, new_predicate_proj); // so that invariance test can be appropriate
+  invar.map_ctrl(if_success_proj, new_predicate_proj); // so that invariance test can be appropriate
 
   // Eliminate the old If in the loop body
-  dominated_by( new_predicate_proj, iff, proj->_con != new_predicate_proj->_con );
+  dominated_by( new_predicate_proj, iff, if_success_proj->_con != new_predicate_proj->_con );
 
   C->set_major_progress();
   return true;
@@ -1390,7 +1428,8 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   Node* opaque_init = new OpaqueLoopInitNode(C, init);
   register_new_node(opaque_init, upper_bound_proj);
   bool negate = (proj->_con != predicate_proj->_con);
-  BoolNode* bol = rc_predicate(loop, upper_bound_proj, scale, offset, opaque_init, limit, stride, rng, (stride > 0) != (scale > 0), overflow, negate);
+  BoolNode* bol = rc_predicate(loop, upper_bound_proj, scale, offset, opaque_init, limit, stride, rng,
+                               (stride > 0) != (scale > 0), overflow);
   Node* opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1)); // This will go away once loop opts are over
   C->add_skeleton_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, upper_bound_proj);
@@ -1412,7 +1451,8 @@ ProjNode* PhaseIdealLoop::insert_initial_skeleton_predicate(IfNode* iff, IdealLo
   max_value = new CastIINode(max_value, loop->_head->as_CountedLoop()->phi()->bottom_type());
   register_new_node(max_value, predicate_proj);
 
-  bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0), overflow, negate);
+  bol = rc_predicate(loop, new_proj, scale, offset, max_value, limit, stride, rng, (stride > 0) != (scale > 0),
+                     overflow);
   opaque_bol = new Opaque4Node(C, bol, _igvn.intcon(1));
   C->add_skeleton_predicate_opaq(opaque_bol);
   register_new_node(opaque_bol, new_proj);
