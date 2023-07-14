@@ -26,6 +26,7 @@
     .globl SafeFetch32_impl
     .globl _SafeFetch32_fault
     .globl _SafeFetch32_continuation
+    .type SafeFetch32_impl, %function
 
     # Support for int SafeFetch32(int* address, int defaultval);
     #
