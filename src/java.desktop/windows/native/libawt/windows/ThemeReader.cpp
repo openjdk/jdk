@@ -23,12 +23,12 @@
  * questions.
  */
 
+#include <cmath>
+
 #include "sun_awt_windows_ThemeReader.h"
 
 #include "awt.h"
 #include "awt_Toolkit.h"
-
-#include "math.h"
 
 #include <uxtheme.h>
 

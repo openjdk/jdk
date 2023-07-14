@@ -576,6 +576,11 @@ bool SymbolEngine::recalc_search_path(bool* p_search_path_was_updated) {
 
 }
 
+bool SymbolEngine::refreshModuleList() {
+  SymbolEngineEntry entry_guard;
+  return WindowsDbgHelp::symRefreshModuleList(::GetCurrentProcess());
+}
+
 bool SymbolEngine::get_source_info(const void* addr, char* buf, size_t buflen,
                                    int* line_no)
 {
