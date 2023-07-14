@@ -239,7 +239,7 @@ void NativeHeapTrimmer::initialize() {
   if (TrimNativeHeapInterval > 0) {
     if (!os::can_trim_native_heap()) {
       FLAG_SET_ERGO(TrimNativeHeapInterval, 0);
-      log_info(trimnative)("Native heap trim is not supported on this platform");
+      log_warning(trimnative)("Native heap trim is not supported on this platform");
       return;
     }
     g_trimmer_thread = new NativeHeapTrimmerThread();

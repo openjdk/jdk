@@ -282,7 +282,8 @@ public class TestTrimNative {
                 );
                 checkExpectedLogMessages(output, false, 0);
                 parseOutputAndLookForNegativeTrim(output, 0, 0);
-                output.shouldContain("Native heap trim is not supported on this platform");
+                // The following output is expected to be printed with warning level, so it should not need -Xlog
+                output.shouldContain("[warning][trimnative] Native heap trim is not supported on this platform");
             } break;
 
             case "testOffExplicit": {
