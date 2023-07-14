@@ -51,7 +51,7 @@
  * @library /test/lib
  * @build jdk.test.lib.Platform
  * @requires os.family == "linux"
- * @requires vm.gc != "Z" & vm.gc != "Shenandoah"
+ * @requires vm.gc != "Shenandoah"
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseLargePages TestTracePageSizes
  * @run main/othervm -XX:+AlwaysPreTouch -Xmx128m -Xlog:pagesize:ps-%p.log -XX:-SegmentedCodeCache -XX:+UseTransparentHugePages TestTracePageSizes
