@@ -438,8 +438,9 @@ public final class Class<T> implements java.io.Serializable,
      * If {@code name} denotes a primitive type or void, for example {@code I},
      * an attempt will be made to locate a user-defined class in the unnamed package
      * whose name is {@code I} instead.
-     * To obtain a {@code Class} object for a named primitive type, use
-     * {@link #forPrimitiveName(String)}.
+     * To obtain a {@code Class} object for a named primitive type
+     * such as {@code int} or {@code long} use {@link
+     * #forPrimitiveName(String)}.
      *
      * <p> To obtain the {@code Class} object associated with an array class,
      * the name consists of one or more {@code '['} representing the depth
