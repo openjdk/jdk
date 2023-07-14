@@ -984,7 +984,7 @@ public abstract class Charset
     }
 
     /**
-     * {@return the string describing this charset}
+     * {@return a string describing this charset}
      */
     @Override
     public final String toString() {

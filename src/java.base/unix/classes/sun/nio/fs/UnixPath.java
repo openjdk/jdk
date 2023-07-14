@@ -708,9 +708,7 @@ class UnixPath implements Path {
         // compare bytes
         int thisPos = offsets[thisOffsetCount - thatOffsetCount];
         int thatPos = that.offsets[0];
-
-        return Arrays.equals(this.path, thisPos, thisLen, that.path, thatPos,
-                thatLen);
+        return Arrays.equals(this.path, thisPos, thisLen, that.path, thatPos, thatLen);
     }
 
     @Override
