@@ -73,7 +73,7 @@ public class TableHeaderBorderPositionTest {
         String[] columnNames = { "Number", "Size", "Color"};
 
         table = new JTable(data, columnNames);
-        table.setSize(WIDTH,HEIGHT);
+        table.setSize(WIDTH, HEIGHT);
 
         final JTableHeader header = table.getTableHeader();
         TableCellRenderer renderer = header.getDefaultRenderer();
@@ -84,7 +84,7 @@ public class TableHeaderBorderPositionTest {
         header.setSize(size);
         w = SCALE * size.width;
         h = SCALE * size.height;
-        imgHeader = new BufferedImage((int)(w),(int)(h),BufferedImage.TYPE_INT_RGB);
+        imgHeader = new BufferedImage((int)(w), (int)(h), BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = imgHeader.createGraphics();
         g2d.scale(SCALE, SCALE);
         try {
@@ -107,19 +107,19 @@ public class TableHeaderBorderPositionTest {
 
         verticalLineCol = (int)(table.getTableHeader().
                 getColumnModel().getColumn(0).getWidth() * SCALE) - 2;
-        expectedRGB = imgData.getRGB(verticalLineCol,0);
+        expectedRGB = imgData.getRGB(verticalLineCol, 0);
 
-        for(int i = 0; i < imgHeader.getHeight(); i++) {
-            for(int j = verticalLineCol; j < verticalLineCol + 3; j++) {
-                if(expectedRGB != imgHeader.getRGB(j, i)) {
+        for (int i = 0; i < imgHeader.getHeight(); i++) {
+            for (int j = verticalLineCol; j < verticalLineCol + 3; j++) {
+                if (expectedRGB != imgHeader.getRGB(j, i)) {
                     throw new RuntimeException("Test Failed");
                 }
             }
         }
 
-        for(int i = 0; i < table.getRowCount() * table.getRowHeight() * SCALE; i++) {
-            for(int j = verticalLineCol; j < verticalLineCol + 3; j++) {
-                if(expectedRGB != imgData.getRGB(j, i)) {
+        for (int i = 0; i < table.getRowCount() * table.getRowHeight() * SCALE; i++) {
+            for (int j = verticalLineCol; j < verticalLineCol + 3; j++) {
+                if (expectedRGB != imgData.getRGB(j, i)) {
                     throw new RuntimeException("Test Failed");
                 }
             }
