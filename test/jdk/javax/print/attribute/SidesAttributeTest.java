@@ -57,8 +57,6 @@ public class SidesAttributeTest {
     private static volatile int testCount;
     private static volatile int testTotalCount;
 
-    private static Set<Attribute> supportedSides = new HashSet<>();
-
     public static void main(String[] args) throws Exception {
 
         SwingUtilities.invokeLater(() -> {
