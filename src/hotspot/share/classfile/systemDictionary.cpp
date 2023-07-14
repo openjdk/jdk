@@ -600,7 +600,7 @@ InstanceKlass* SystemDictionary::resolve_instance_class_or_null(Symbol* name,
   // defining the class in parallel by accident.
   // This lock must be acquired here so the waiter will find
   // any successful result in the SystemDictionary and not attempt
-  // the define.
+  // the define, if the define lock happens to be taken before this one.
   // ParallelCapable class loaders and the bootstrap classloader
   // do not acquire lock here.
   Handle lockObject = get_loader_lock_or_null(class_loader);
@@ -895,21 +895,10 @@ InstanceKlass* SystemDictionary::resolve_class_from_stream(
   assert(class_name == nullptr || class_name == h_name, "name mismatch");
 
   // Add class just loaded
-  // If a class loader supports parallel classloading, handle parallel define requests.
-  // find_or_define_instance_class may return a different InstanceKlass,
-  // in which case the old k would be deallocated
-  if (is_parallelCapable(class_loader)) {
-    k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
-  } else {
-    define_instance_class(k, class_loader, THREAD);
-
-    // If defining the class throws an exception register 'k' for cleanup.
-    if (HAS_PENDING_EXCEPTION) {
-      assert(k != nullptr, "Must have an instance klass here!");
-      loader_data->add_to_deallocate_list(k);
-      return nullptr;
-    }
-  }
+  // If a class loader supports parallel classloading with AllowParallelDefineClass for parallel-capable class non-boot
+  // class loaders, handle parallel define requests. In this case, find_or_define_instance_class may return a different
+  // InstanceKlass, in which case the old k would be deallocated
+  k = find_or_define_instance_class(h_name, class_loader, k, CHECK_NULL);
 
   // Make sure we have an entry in the SystemDictionary on success
   DEBUG_ONLY(verify_dictionary_entry(h_name, k));
@@ -1380,26 +1369,18 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   ClassLoaderData* loader_data = k->class_loader_data();
   assert(loader_data->class_loader() == class_loader(), "they must be the same");
 
-  // Bootstrap and other parallel classloaders don't acquire a lock,
-  // they use placeholder token.
-  // If a parallelCapable class loader calls define_instance_class instead of
+  // Class loaders do not acquire a lock, they use placeholder token.
+  // If a class loader calls define_instance_class instead of
   // find_or_define_instance_class to get here, we have a timing
   // hole with systemDictionary updates and check_constraints
-  if (!is_parallelCapable(class_loader)) {
-    assert(ObjectSynchronizer::current_thread_holds_lock(THREAD,
-           get_loader_lock_or_null(class_loader)),
-           "define called without lock");
-  }
+  assert(PlaceholderTable::is_definer(THREAD, k->name(), loader_data),
+         "define called without a placeholder entry");
 
   // Check class-loading constraints. Throw exception if violation is detected.
   // Grabs and releases SystemDictionary_lock
   // The check_constraints/find_class call and update_dictionary sequence
   // must be "atomic" for a specific class/classloader pair so we never
   // define two different instanceKlasses for that class/classloader pair.
-  // Existing classloaders will call define_instance_class with the
-  // classloader lock held
-  // Parallel classloaders will call find_or_define_instance_class
-  // which will require a token to perform the define class
   check_constraints(k, loader_data, true, CHECK);
 
   // Register class just loaded with class loader (placed in ArrayList)
@@ -1474,7 +1455,7 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     // All threads wait - even those that will throw duplicate class: otherwise
     // caller is surprised by LinkageError: duplicate, but findLoadedClass fails
     // if other thread has not finished updating dictionary
-    while (probe->definer() != nullptr) {
+    while (probe->definer_acquire() != nullptr) {
       SystemDictionary_lock->wait();
     }
     // Only special cases allow parallel defines and can use other thread's results
@@ -1491,7 +1472,7 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
       return ik;
     } else {
       // This thread will define the class (even if earlier thread tried and had an error)
-      probe->set_definer(THREAD);
+      probe->release_set_definer(THREAD);
     }
   }
 
@@ -1505,7 +1486,7 @@ InstanceKlass* SystemDictionary::find_or_define_helper(Symbol* class_name, Handl
     if (!HAS_PENDING_EXCEPTION) {
       probe->set_instance_klass(k);
     }
-    probe->set_definer(nullptr);
+    probe->release_set_definer(nullptr);
     PlaceholderTable::find_and_remove(name_h, loader_data, PlaceholderTable::DEFINE_CLASS, THREAD);
     SystemDictionary_lock->notify_all();
   }

@@ -228,6 +228,14 @@ PlaceholderEntry* PlaceholderTable::get_entry(Symbol* class_name, ClassLoaderDat
   return _placeholders->get(key);
 }
 
+#ifdef ASSERT
+bool PlaceholderTable::is_definer(JavaThread* thread, Symbol* name, ClassLoaderData* loader_data) {
+  MutexLocker ml(thread, SystemDictionary_lock);
+  PlaceholderEntry* entry = get_entry(name, loader_data);
+  return entry != nullptr && entry->definer_acquire() == thread;
+}
+#endif
+
 static const char* action_to_string(PlaceholderTable::classloadAction action) {
   switch (action) {
   case PlaceholderTable::LOAD_INSTANCE: return "LOAD_INSTANCE";
@@ -280,7 +288,7 @@ void PlaceholderTable::initialize(){
 // placeholder is used to track class loading internal states
 // superthreadQ tracks class circularity, while loading superclass/superinterface
 // loadInstanceThreadQ tracks load_instance_class calls
-// definer() tracks the single thread that owns define token
+// definer_acquire() tracks the single thread that owns define token
 // defineThreadQ tracks waiters on defining thread's results
 // 1st claimant creates placeholder
 // find_and_add adds SeenThread entry for appropriate queue
@@ -301,7 +309,7 @@ void PlaceholderTable::find_and_remove(Symbol* name, ClassLoaderData* loader_dat
   }
   // If no other threads using this entry, and this thread is not using this entry for other states
   if ((probe->superThreadQ() == nullptr) && (probe->loadInstanceThreadQ() == nullptr)
-      && (probe->defineThreadQ() == nullptr) && (probe->definer() == nullptr)) {
+      && (probe->defineThreadQ() == nullptr) && (probe->definer_acquire() == nullptr)) {
     remove_entry(name, loader_data);
   }
 }
@@ -317,9 +325,9 @@ void PlaceholderEntry::print_on(outputStream* st) const {
     st->print(", supername ");
     supername()->print_value_on(st);
   }
-  if (definer() != nullptr) {
+  if (definer_acquire() != nullptr) {
     st->print(", definer ");
-    definer()->print_value_on(st);
+    definer_acquire()->print_value_on(st);
   }
   if (instance_klass() != nullptr) {
     st->print(", InstanceKlass ");

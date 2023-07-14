@@ -26,6 +26,7 @@
 #define SHARE_CLASSFILE_PLACEHOLDERS_HPP
 
 #include "oops/symbolHandle.hpp"
+#include "runtime/atomic.hpp"
 
 class PlaceholderEntry;
 class Thread;
@@ -54,6 +55,7 @@ class PlaceholderTable : public AllStatic {
   };
   static void initialize();
   static PlaceholderEntry* get_entry(Symbol* name, ClassLoaderData* loader_data);
+  DEBUG_ONLY(static bool is_definer(JavaThread* thread, Symbol* name, ClassLoaderData* loader_data));
 
   // find_and_add returns probe pointer - old or new
   // If no entry exists, add a placeholder entry and push SeenThread for classloadAction
@@ -115,10 +117,10 @@ class PlaceholderEntry {
   Symbol*            supername()           const { return _supername; }
   void               set_supername(Symbol* supername);
 
-  JavaThread*        definer()             const {return _definer; }
-  void               set_definer(JavaThread* definer) { _definer = definer; }
+  JavaThread*        definer_acquire()     const { return Atomic::load_acquire(&_definer); }
+  void               release_set_definer(JavaThread* definer) { Atomic::release_store(&_definer, definer); }
 
-  InstanceKlass*     instance_klass()      const {return _instanceKlass; }
+  InstanceKlass*     instance_klass()      const { return _instanceKlass; }
   void               set_instance_klass(InstanceKlass* ik) { _instanceKlass = ik; }
 
   bool super_load_in_progress() {
@@ -127,10 +129,6 @@ class PlaceholderEntry {
 
   bool instance_load_in_progress() {
     return (_loadInstanceThreadQ != nullptr);
-  }
-
-  bool define_class_in_progress() {
-    return (_defineThreadQ != nullptr);
   }
 
   // Used for ClassCircularityError checking
