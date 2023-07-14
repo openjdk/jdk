@@ -29,6 +29,7 @@
  * @run main/manual SidesAttributeTest
  */
 
+import javax.print.PrintService;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -42,6 +43,10 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 public class SidesAttributeTest {
 
     private static final long TIMEOUT = 10 * 60_000;
@@ -50,13 +55,21 @@ public class SidesAttributeTest {
     private static volatile boolean timeout = false;
 
     private static volatile int testCount;
+    private static volatile int testTotalCount;
+
+    private static Set<Attribute> supportedSides = new HashSet<>();
 
     public static void main(String[] args) throws Exception {
 
         SwingUtilities.invokeLater(() -> {
-            testPrint(Sides.ONE_SIDED);
-            testPrint(Sides.DUPLEX);
-            testPrint(Sides.TUMBLE);
+
+            Set<Attribute> supportedSides = getSupportedSidesAttributes();
+            if (supportedSides.size() > 1) {
+                testTotalCount = supportedSides.size();
+                testPrint(Sides.ONE_SIDED, supportedSides);
+                testPrint(Sides.DUPLEX, supportedSides);
+                testPrint(Sides.TUMBLE, supportedSides);
+            }
             testFinished = true;
         });
 
@@ -77,8 +90,9 @@ public class SidesAttributeTest {
             throw new Exception("Test failed!");
         }
 
-        if (testCount < 3) {
-            throw new Exception("Timeout: less than 3 tests were running!");
+        if (testCount != testTotalCount) {
+            throw new Exception(
+                    "Timeout: " + testCount + " tests passed out from " + testTotalCount);
         }
     }
 
@@ -122,10 +136,10 @@ public class SidesAttributeTest {
     }
 
     private static String getPageText(Sides sides, int page) {
-        return String.format("Page: %d - %s", page, getSidesDescription(sides));
+        return String.format("Page: %d - %s", page, getSidesText(sides));
     }
 
-    private static String getSidesDescription(Sides sides) {
+    private static String getSidesText(Sides sides) {
         if (Sides.ONE_SIDED.equals(sides)) {
             return "ONE_SIDED";
         } else if (Sides.TWO_SIDED_SHORT_EDGE.equals(sides)) {
@@ -136,11 +150,38 @@ public class SidesAttributeTest {
         throw new RuntimeException("Unknown sides attribute: " + sides);
     }
 
+    private static String getSidesDescription(Sides sides) {
+        if (Sides.ONE_SIDED.equals(sides)) {
+            return "a one-sided document";
+        } else if (Sides.TWO_SIDED_SHORT_EDGE.equals(sides)) {
+            return "double-sided document along the short edge of the paper";
+        } else if (Sides.TWO_SIDED_LONG_EDGE.equals(sides)) {
+            return "double-sided document along the long edge of the paper";
+        }
+        throw new RuntimeException("Unknown sides attribute: " + sides);
+    }
+
+    private static Set<Attribute> getSupportedSidesAttributes() {
+        Set<Attribute> supportedSides = new HashSet<>();
+
+        PrinterJob printerJob = PrinterJob.getPrinterJob();
+        PrintService service = printerJob.getPrintService();
+
+        Object obj = service.getSupportedAttributeValues(Sides.class, null, null);
+        if (obj instanceof Attribute[]) {
+            Attribute[] attr = (Attribute[]) obj;
+            Collections.addAll(supportedSides, attr);
+        }
+
+        return supportedSides;
+    }
+
     private static void pass() {
         testCount++;
     }
 
-    private static void fail() {
+    private static void fail(Sides sides) {
+        System.out.printf("Failed test: %s%n", getSidesText(sides));
         testPassed = false;
     }
 
@@ -148,18 +189,23 @@ public class SidesAttributeTest {
         try {
             print(sides);
         } catch (PrinterException e) {
-            fail();
+            fail(sides);
             e.printStackTrace();
         }
     }
 
-    private static void testPrint(Sides sides) {
+    private static void testPrint(Sides sides, Set<Attribute> supportedSides) {
 
-        if (!testPassed || timeout) {
+        if (!supportedSides.contains(sides) || !testPassed || timeout) {
             return;
         }
 
         String[] instructions = {
+                "Up to " + testTotalCount + " tests will run and it will test all the cases",
+                "supported by the printer.",
+                "",
+                "The test is " + (testCount + 1) + " from " + testTotalCount + ".",
+                "",
                 "On-screen inspection is not possible for this printing-specific",
                 "test therefore its only output is two printed pages (one or two sided).",
                 "To be able to run this test it is required to have a default",
@@ -169,12 +215,15 @@ public class SidesAttributeTest {
                 "A passing test will print 2 pages:",
                 "  - the first page with the text: " + getPageText(sides, 1),
                 "  - the second page with the text: " + getPageText(sides, 2),
-                "The test fails only if the text on the pages is not printed",
-                "or pages are not printed according to the sides attribute",
-                getSidesDescription(sides)
+                "",
+                "The test fails if the pages are not printed according to the tested",
+                getSidesText(sides) + " attribute where " + getSidesDescription(sides),
+                "needs to be printed.",
+                "",
         };
 
-        String title = "Print sides test: " + getSidesDescription(sides);
+        String title = String.format("Print %s sides test: %d from %d",
+                getSidesText(sides), testCount + 1, testTotalCount);
         final JDialog dialog = new JDialog((Frame) null, title, Dialog.ModalityType.DOCUMENT_MODAL);
         JTextArea textArea = new JTextArea(String.join("\n", instructions));
         textArea.setEditable(false);
@@ -188,7 +237,7 @@ public class SidesAttributeTest {
         final JButton failButton = new JButton("FAIL");
         failButton.setEnabled(false);
         failButton.addActionListener((e) -> {
-            fail();
+            fail(sides);
             dialog.dispose();
         });
         testButton.addActionListener((e) -> {
@@ -212,7 +261,7 @@ public class SidesAttributeTest {
             @Override
             public void windowClosing(WindowEvent e) {
                 System.out.println("Dialog closing");
-                fail();
+                fail(sides);
             }
         });
     }
