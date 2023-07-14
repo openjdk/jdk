@@ -635,8 +635,8 @@ final class VarHandles {
             } else {
                 throw new AssertionError("Cannot get here");
             }
-        } else if (handle instanceof DelegatingMethodHandle) {
-            return exceptionTypes(((DelegatingMethodHandle)handle).getTarget());
+        } else if (handle instanceof DelegatingMethodHandle delegatingMh) {
+            return exceptionTypes(delegatingMh.getTarget());
         } else if (handle instanceof NativeMethodHandle) {
             return new Class<?>[0];
         }

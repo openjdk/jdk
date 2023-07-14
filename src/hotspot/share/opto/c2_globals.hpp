@@ -182,9 +182,6 @@
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
                                                                             \
-  product(bool, PostLoopMultiversioning, false, EXPERIMENTAL,               \
-           "Multi versioned post loops to eliminate range checks")          \
-                                                                            \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \
                                                                             \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,7 +58,6 @@ public final class EventWriter {
     // Event may not exceed size for a padded integer
     private static final long MAX_EVENT_SIZE = (1 << 28) -1;
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static final JVM jvm = JVM.getJVM();
 
     // The JVM needs access to these values. Don't remove
     private final long threadID;
@@ -178,7 +177,7 @@ public final class EventWriter {
         if (athread == null) {
             putLong(0L);
         } else {
-            putLong(jvm.getThreadId(athread));
+            putLong(JVM.getThreadId(athread));
         }
     }
 
@@ -192,7 +191,7 @@ public final class EventWriter {
 
     public void putStackTrace() {
         if (eventType.getStackTraceEnabled()) {
-            putLong(jvm.getStackTraceId(eventType.getStackTraceOffset()));
+            putLong(JVM.getStackTraceId(eventType.getStackTraceOffset()));
         } else {
             putLong(0L);
         }

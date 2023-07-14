@@ -223,7 +223,7 @@ int RetTableEntry::_init_nof_jsrs = 5;
 
 RetTableEntry::RetTableEntry(int target, RetTableEntry *next) {
   _target_bci = target;
-  _jsrs = new GrowableArray<intptr_t>(_init_nof_jsrs);
+  _jsrs = new GrowableArray<int>(_init_nof_jsrs);
   _next = next;
 }
 
@@ -660,7 +660,7 @@ void GenerateOopMap::restore_state(BasicBlock *bb)
 }
 
 int GenerateOopMap::next_bb_start_pc(BasicBlock *bb) {
- int bbNum = bb - _basic_blocks + 1;
+ intptr_t bbNum = bb - _basic_blocks + 1;
  if (bbNum == _bb_count)
     return method()->code_size();
 
@@ -2057,7 +2057,7 @@ void GenerateOopMap::print_time() {
   tty->print_cr ("---------------------------");
   tty->print_cr ("  Total : %3.3f sec.", GenerateOopMap::_total_oopmap_time.seconds());
   tty->print_cr ("  (%3.0f bytecodes per sec) ",
-  GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
+  (double)GenerateOopMap::_total_byte_count / GenerateOopMap::_total_oopmap_time.seconds());
 }
 
 //
@@ -2101,7 +2101,7 @@ bool GenerateOopMap::compute_map(Thread* current) {
   _report_result  = false;
   _report_result_for_send = false;
   _new_var_map    = nullptr;
-  _ret_adr_tos    = new GrowableArray<intptr_t>(5);  // 5 seems like a good number;
+  _ret_adr_tos    = new GrowableArray<int>(5);  // 5 seems like a good number;
   _did_rewriting  = false;
   _did_relocation = false;
 
@@ -2401,16 +2401,16 @@ bool GenerateOopMap::rewrite_load_or_store(BytecodeStream *bcs, Bytecodes::Code 
   // Patch either directly in Method* or in temp. buffer
   if (newIlen == 1) {
     assert(varNo < 4, "varNo too large");
-    *bcp = bc0 + varNo;
+    *bcp = (u1)(bc0 + varNo);
   } else if (newIlen == 2) {
     assert(varNo < 256, "2-byte index needed!");
     *(bcp + 0) = bcN;
-    *(bcp + 1) = varNo;
+    *(bcp + 1) = (u1)varNo;
   } else {
     assert(newIlen == 4, "Wrong instruction length");
     *(bcp + 0) = Bytecodes::_wide;
     *(bcp + 1) = bcN;
-    Bytes::put_Java_u2(bcp+2, varNo);
+    Bytes::put_Java_u2(bcp+2, (u2)varNo);
   }
 
   if (newIlen != ilen) {

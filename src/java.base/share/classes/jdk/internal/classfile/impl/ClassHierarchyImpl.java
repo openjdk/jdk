@@ -32,14 +32,13 @@ import java.lang.constant.ClassDesc;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import jdk.internal.classfile.ClassHierarchyResolver;
 
 import static java.lang.constant.ConstantDescs.CD_Object;
 import static jdk.internal.classfile.Classfile.*;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Class hierarchy resolution framework is answering questions about classes assignability, common classes ancestor and whether the class represents an interface.
@@ -52,15 +51,8 @@ public final class ClassHierarchyImpl {
         static final ClassHierarchyResolver.ClassHierarchyInfo OBJECT_INFO = new ClassHierarchyInfoImpl(null, false);
     }
 
-    public static final ClassHierarchyResolver DEFAULT_RESOLVER = ClassHierarchyResolver
-            .ofResourceParsing(ResourceParsingClassHierarchyResolver.SYSTEM_STREAM_PROVIDER)
-            .orElse(new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER))
-            .cached(new Supplier<>() {
-                @Override
-                public Map<ClassDesc, ClassHierarchyResolver.ClassHierarchyInfo> get() {
-                    return new ConcurrentHashMap<>();
-                }
-            });
+    public static final ClassHierarchyResolver DEFAULT_RESOLVER =
+            new ClassLoadingClassHierarchyResolver(ClassLoadingClassHierarchyResolver.SYSTEM_CLASS_PROVIDER);
 
     private final ClassHierarchyResolver resolver;
 
@@ -69,7 +61,10 @@ public final class ClassHierarchyImpl {
      * @param classHierarchyResolver <code>ClassHierarchyInfoResolver</code> instance
      */
     public ClassHierarchyImpl(ClassHierarchyResolver classHierarchyResolver) {
-        this.resolver = classHierarchyResolver;
+        requireNonNull(classHierarchyResolver);
+        this.resolver = classHierarchyResolver instanceof CachedClassHierarchyResolver
+                ? classHierarchyResolver
+                : classHierarchyResolver.cached();
     }
 
     private ClassHierarchyInfoImpl resolve(ClassDesc classDesc) {
@@ -108,14 +103,14 @@ public final class ClassHierarchyImpl {
     }
 
     public boolean isAssignableFrom(ClassDesc thisClass, ClassDesc fromClass) {
-        //extra check if fromClass is an interface is necessay to handle situation when thisClass might not been fully resolved and so it is potentially an unidentified interface
-        //this special corner-case handling has been added based on better success rate of constructing stack maps with simulated broken resulution of classes and interfaces
+        //extra check if fromClass is an interface is necessary to handle situation when thisClass might not been fully resolved and so it is potentially an unidentified interface
+        //this special corner-case handling has been added based on better success rate of constructing stack maps with simulated broken resolution of classes and interfaces
         if (isInterface(fromClass)) return resolve(thisClass).superClass() == null;
         //regular calculation of assignability is based on common ancestor calculation
         var anc = commonAncestor(thisClass, fromClass);
         //if common ancestor does not exist (as the class hierarchy could not be fully resolved) we optimistically assume the classes might be accessible
         //if common ancestor is equal to thisClass then the classes are clearly accessible
-        //if other common ancestor is calculated (which works even when their grand-parents could not be resolved) then it is clear that thisClass could not be asigned from fromClass
+        //if other common ancestor is calculated (which works even when their grandparents could not be resolved) then it is clear that thisClass could not be assigned from fromClass
         return anc == null || thisClass.equals(anc);
     }
 
