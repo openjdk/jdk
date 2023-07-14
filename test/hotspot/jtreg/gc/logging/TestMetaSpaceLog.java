@@ -58,7 +58,13 @@ public class TestMetaSpaceLog {
     // Do this once here.
     // Scan for Metaspace update notices as part of the GC log, e.g. in this form:
     // [gc,metaspace   ] GC(0) Metaspace: 11895K(14208K)->11895K(14208K) NonClass: 10552K(12544K)->10552K(12544K) Class: 1343K(1664K)->1343K(1664K)
-    metaSpaceRegexp = Pattern.compile(".*Metaspace: ([0-9]+).*->([0-9]+).*");
+    // This regex has to be up-to-date with the format used in hotspot to print metaspace change.
+    final String NUM_K = "\\d+K";
+    final String GP_NUM_K = "(\\d+)K";
+    final String BR_NUM_K = "\\(" + NUM_K + "\\)";
+    final String SIZE_CHG = NUM_K + BR_NUM_K + "->" + NUM_K + BR_NUM_K;
+    metaSpaceRegexp = Pattern.compile(".* Metaspace: " + GP_NUM_K + BR_NUM_K + "->" + GP_NUM_K + BR_NUM_K
+                                      + "( NonClass: " + SIZE_CHG + " Class: " + SIZE_CHG + ")?$");
   }
 
   public static void main(String[] args) throws Exception {
