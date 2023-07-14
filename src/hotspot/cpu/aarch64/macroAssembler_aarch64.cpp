@@ -6594,13 +6594,14 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
                                        const FloatRegister zero, Register input_start,
                                        AbstractRegSet<FloatRegister> scratch) {
   auto vregs = scratch.begin();
-  FloatRegister scratch1 = *vregs++, scratch2 = *vregs++;
 
   gen {
     sli(u[0], T2D, u[1], 32);
     sli(u[2], T2D, u[3], 32);
     // u[1] and u[3] are now free
   };
+
+  FloatRegister scratch1 = u[1], scratch2 = u[2];
 
   gen {
     ld2(scratch1, scratch2, D, 0, post(input_start, 2 * wordSize));
