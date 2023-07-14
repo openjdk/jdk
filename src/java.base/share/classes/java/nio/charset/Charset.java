@@ -960,7 +960,7 @@ public abstract class Charset
     }
 
     /**
-     * {@return Computes a hashcode for this charset}
+     * {@return a hashcode for this charset}
      */
     @Override
     public final int hashCode() {
