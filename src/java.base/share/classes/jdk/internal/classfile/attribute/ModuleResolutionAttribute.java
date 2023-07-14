@@ -77,7 +77,7 @@ public sealed interface ModuleResolutionAttribute
 
     /**
      * {@return a {@code ModuleResolution} attribute}
-     * @param resolutionFlags the resolution falgs
+     * @param resolutionFlags the resolution flags
      */
     static ModuleResolutionAttribute of(int resolutionFlags) {
         return new UnboundAttribute.UnboundModuleResolutionAttribute(resolutionFlags);

@@ -79,7 +79,7 @@ void VM_Version::initialize() {
   int dcache_line = VM_Version::dcache_line_size();
 
   // Limit AllocatePrefetchDistance so that it does not exceed the
-  // constraint in AllocatePrefetchDistanceConstraintFunc.
+  // static constraint of 512 defined in runtime/globals.hpp.
   if (FLAG_IS_DEFAULT(AllocatePrefetchDistance))
     FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3*dcache_line));
 

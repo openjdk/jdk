@@ -150,7 +150,7 @@ public sealed interface ClassDesc
      * @param descriptor a field descriptor string
      * @return a {@linkplain ClassDesc} describing the desired class
      * @throws NullPointerException if the argument is {@code null}
-     * @throws IllegalArgumentException if the name string is not in the
+     * @throws IllegalArgumentException if the descriptor string is not in the
      * correct format
      * @jvms 4.3.2 Field Descriptors
      * @jvms 4.4.1 The CONSTANT_Class_info Structure
