@@ -6314,6 +6314,7 @@ void MacroAssembler::fast_unlock(Register obj, Register hdr, Register t1, Regist
 // Poly1305:
 
 void MacroAssembler::m_print52(FloatRegister v0, FloatRegister v1, FloatRegister v2, bool hi, const char *s) {
+#ifdef DEBUG_POLY1305
   enter();
   push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
   umov(c_rarg0, v0, D, hi);
@@ -6323,10 +6324,12 @@ void MacroAssembler::m_print52(FloatRegister v0, FloatRegister v1, FloatRegister
   blr(rscratch1);
   pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
   leave();
+#endif // DEBUG_POLY1305
 }
 
 
 void MacroAssembler::m_print52(Register t0, Register t1, Register t2, const char *s) {
+#ifdef DEBUG_POLY1305
   enter();
   push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
 
@@ -6344,6 +6347,7 @@ void MacroAssembler::m_print52(Register t0, Register t1, Register t2, const char
   blr(rscratch1);
   pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
   leave();
+#endif // DEBUG_POLY1305
 }
 
 
@@ -6351,6 +6355,7 @@ void MacroAssembler::m_print26(SIMD_RegVariant variant,
                                FloatRegister v0, FloatRegister v1, FloatRegister v2,
                                FloatRegister v3, FloatRegister v4,
                                int index, const char *s) {
+#ifdef DEBUG_POLY1305
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
   enter();
@@ -6365,11 +6370,13 @@ void MacroAssembler::m_print26(SIMD_RegVariant variant,
   blr(rscratch1);
   pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
   leave();
+#endif // DEBUG_POLY1305
 }
 
 void MacroAssembler::m_print26(SIMD_RegVariant variant,
                                const FloatRegister v[],
                                const int indexes[], const char *s) {
+#ifdef DEBUG_POLY1305
   setbuf(stdout, NULL);
   setbuf(stderr, NULL);
   enter();
@@ -6382,11 +6389,13 @@ void MacroAssembler::m_print26(SIMD_RegVariant variant,
   blr(rscratch1);
   pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
   leave();
+#endif // DEBUG_POLY1305
 }
 
 void MacroAssembler::m_print26(SIMD_RegVariant variant,
                                FloatRegister v0, FloatRegister v1, FloatRegister v2,
                                int index, const char *s) {
+#ifdef DEBUG_POLY1305
   enter();
   push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
   umov(c_rarg0, v0, variant, index);
@@ -6397,6 +6406,7 @@ void MacroAssembler::m_print26(SIMD_RegVariant variant,
   blr(rscratch1);
   pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
   leave();
+#endif // DEBUG_POLY1305
 }
 
 void MacroAssembler::pack_26(Register dest0, Register dest1, Register dest2, Register src) {
