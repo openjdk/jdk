@@ -960,7 +960,7 @@ public abstract class Charset
     }
 
     /**
-     * {@return a hashcode for this charset}
+     * {@return the hashcode for this charset}
      */
     @Override
     public final int hashCode() {
@@ -984,10 +984,9 @@ public abstract class Charset
     }
 
     /**
-     * Returns a string describing this charset.
-     *
-     * @return  A string describing this charset
+     * {@return the string describing this charset}
      */
+    @Override
     public final String toString() {
         return name();
     }

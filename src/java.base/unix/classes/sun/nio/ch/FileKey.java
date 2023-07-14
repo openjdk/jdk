@@ -54,9 +54,9 @@ public class FileKey {
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        if (!(obj instanceof FileKey other))
-            return false;
-        return (this.st_dev == other.st_dev) && (this.st_ino == other.st_ino);
+        return obj instanceof FileKey other
+                && (this.st_dev == other.st_dev)
+                && (this.st_ino == other.st_ino);
     }
 
     private native void init(FileDescriptor fd) throws IOException;

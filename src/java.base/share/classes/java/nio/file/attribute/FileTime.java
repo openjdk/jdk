@@ -361,11 +361,10 @@ public final class FileTime
             // saturate during calculation.
             long days = toDays();
             long daysOther = other.toDays();
-            cmp = Long.compare(days, daysOther);
-            if (cmp != 0) {
-                return cmp;
+            if (days == daysOther) {
+                return Long.compare(toExcessNanos(days), other.toExcessNanos(daysOther));
             }
-            return Long.compare(toExcessNanos(days), other.toExcessNanos(daysOther));
+            return Long.compare(days, daysOther);
         }
     }
 

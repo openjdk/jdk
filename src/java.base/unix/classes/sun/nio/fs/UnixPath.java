@@ -708,6 +708,7 @@ class UnixPath implements Path {
         // compare bytes
         int thisPos = offsets[thisOffsetCount - thatOffsetCount];
         int thatPos = that.offsets[0];
+
         return Arrays.equals(this.path, thisPos, thisLen, that.path, thatPos,
                 thatLen);
     }
@@ -728,7 +729,7 @@ class UnixPath implements Path {
         int h = hash;
         if (h == 0) {
             h = ArraysSupport.vectorizedHashCode(path, 0, path.length, 0,
-                    ArraysSupport.T_BOOLEAN);
+                    /* unsigned bytes */ ArraysSupport.T_BOOLEAN);
             hash = h;
         }
         return h;

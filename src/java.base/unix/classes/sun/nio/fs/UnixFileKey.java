@@ -48,9 +48,9 @@ class UnixFileKey {
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
-        if (!(obj instanceof UnixFileKey other))
-            return false;
-        return (this.st_dev == other.st_dev) && (this.st_ino == other.st_ino);
+        return obj instanceof UnixFileKey other
+                && (this.st_dev == other.st_dev)
+                && (this.st_ino == other.st_ino);
     }
 
     @Override
