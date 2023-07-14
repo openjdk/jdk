@@ -207,21 +207,21 @@ address generate_poly1305_processBlocks2() {
         err[col] = 0;
       }
 
-      // for (int i = 0; i < l_max; i++) {
-      //   for (int col = 0; col < COLS; col++) {
-      //     err[col] -= len[col];
-      //     if (err[col] < 0) {
-      //       err[col] += l_max;
-      //       (it[col]++)();
-      //     }
-      //   }
-      // }
-
-      for (int col = 0; col < COLS; col++) {
-        for (int i = 0; i < len[col]; i++) {
-          (it[col]++)();
+      for (int i = 0; i < l_max; i++) {
+        for (int col = 0; col < COLS; col++) {
+          err[col] -= len[col];
+          if (err[col] < 0) {
+            err[col] += l_max;
+            (it[col]++)();
+          }
         }
       }
+
+      // for (int col = 0; col < COLS; col++) {
+      //   for (int i = 0; i < len[col]; i++) {
+      //     (it[col]++)();
+      //   }
+      // }
 
       __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "  u0");
       __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
