@@ -3159,7 +3159,7 @@ class StubGenerator: public StubCodeGenerator {
     JFR_ONLY(generate_jfr_stubs();)
   }
 
-#ifdef INCLUDE_JFR
+#if INCLUDE_JFR
   void generate_jfr_stubs() {
     StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
     StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
