@@ -352,6 +352,38 @@ class Heap$Type$Buffer$RW$
 #end[rw]
     }
 
+    public $Type$Buffer put(int index, CharSequence csq, int start, int end) {
+#if[rw]
+        Objects.checkFromToIndex(start, end, csq.length());
+        Objects.checkIndex(index, limit());
+        if (end - start > limit() - index)
+            throw new BufferOverflowException();
+
+        //
+        // Cannot delegate to put(int,CharBuffer,int,int) until after the check
+        // for BufferOverflowException as that method would instead throw an
+        // IndexOutOfBoundsException for the same condition
+        //
+        if (csq instanceof CharBuffer cb)
+            return put(index, cb, start, end - start);
+
+        if (csq instanceof String str) {
+            str.getChars(start, end, hb, ix(index)); 
+            return this;
+        } else if (csq instanceof StringBuffer strbuf) {
+            strbuf.getChars(start, end, hb, ix(index));
+            return this;
+        } else if (csq instanceof StringBuilder strbld) {
+            strbld.getChars(start, end, hb, ix(index));
+            return this;
+        }
+
+        return super.put(index, csq, start, end);
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
+
 #end[char]
 
     public $Type$Buffer compact() {

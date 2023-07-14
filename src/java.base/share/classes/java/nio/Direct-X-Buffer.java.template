@@ -525,8 +525,55 @@ class Direct$Type$Buffer$RW$$BO$
                                             offset, segment);
     }
 
-#end[char]
+    public $Type$Buffer put(int index, CharSequence csq, int start, int end) {
+#if[rw]
+        Objects.checkFromToIndex(start, end, csq.length());
+        Objects.checkIndex(index, limit());
+        if (end - start > limit() - index)
+            throw new BufferOverflowException();
 
+        //
+        // Cannot delegate to put(int,CharBuffer,int,int) until after the check
+        // for BufferOverflowException as that method would instead throw an
+        // IndexOutOfBoundsException for the same condition
+        //
+        if (csq instanceof CharBuffer cb)
+            return put(index, cb, start, end - start);
+
+        if (csq instanceof String ||
+            csq instanceof StringBuilder ||
+            csq instanceof StringBuffer) {
+
+            char[] buf = new char[Math.min(APPEND_BUF_SIZE, end - start)];
+            while (start < end) {
+                int count = end - start;
+                if (count > buf.length)
+                    count = buf.length;
+
+                if (csq instanceof String str) {
+                    str.getChars(start, start + count, buf, 0);
+                } else if (csq instanceof StringBuilder sb) {
+                    sb.getChars(start, start + count, buf, 0);
+                } else if (csq instanceof StringBuffer sb) {
+                    sb.getChars(start, start + count, buf, 0);
+                }
+
+                putArray(index, buf, 0, count);
+
+                start += count;
+                index += count;
+            }
+
+            return this;
+        }
+
+        return super.put(index, csq, start, end);
+#else[rw]
+        throw new ReadOnlyBufferException();
+#end[rw]
+    }
+
+#end[char]
 
 
 #if[!byte]
