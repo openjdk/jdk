@@ -13772,28 +13772,6 @@ instruct leaL_rReg_immI2_peep(rRegL dst, rRegL src, immI2 shift)
   ins_pipe(ialu_reg_reg);
 %}
 
-instruct testI_reg_empty_peep(rFlagsReg cr, rRegI src, immI_0 zero)
-%{
-  predicate(false);
-  match(Set cr (CmpI src zero));
-
-  format %{ "# noop testI - cr set by and" %}
-  ins_encode %{
-  %}
-  ins_pipe(ialu_reg);
-%}
-
-instruct testL_reg_empty_peep(rFlagsReg cr, rRegL src, immL0 zero)
-%{
-  predicate(false);
-  match(Set cr (CmpL src zero));
-
-  format %{ "# noop testL - cr set by and" %}
-  ins_encode %{
-  %}
-  ins_pipe(ialu_reg);
-%}
-
 // These peephole rules replace mov + I pairs (where I is one of {add, inc, dec,
 // sal}) with lea instructions. The {add, sal} rules are beneficial in
 // processors with at least partial ALU support for lea
@@ -13896,21 +13874,18 @@ peephole
 %{
   peepmatch (testI_reg andI_rReg andI_rReg_imm andI_rReg_mem andI_mem_rReg andI_mem_imm);
   peepprocedure (test_may_remove_5);
-  peepreplace (testI_reg_empty_peep());
 %}
 
 peephole
 %{
   peepmatch (testI_reg orI_rReg orI_rReg_imm orI_rReg_mem orI_mem_rReg orI_mem_imm);
   peepprocedure (test_may_remove_5);
-  peepreplace (testI_reg_empty_peep());
 %}
 
 peephole
 %{
   peepmatch (testI_reg xorI_rReg xorI_rReg_imm xorI_rReg_mem xorI_mem_rReg xorI_mem_imm);
   peepprocedure (test_may_remove_5);
-  peepreplace (testI_reg_empty_peep());
 %}
 
 //long variants
@@ -13918,21 +13893,18 @@ peephole
 %{
   peepmatch (testL_reg andL_rReg andL_rReg_imm andL_rReg_mem andL_mem_rReg andL_mem_imm);
   peepprocedure (test_may_remove_5);
-  peepreplace (testL_reg_empty_peep());
 %}
 
 peephole
 %{
   peepmatch (testL_reg orL_rReg orL_rReg_imm orL_rReg_mem orL_mem_rReg orL_mem_imm);
   peepprocedure (test_may_remove_5);
-  peepreplace (testL_reg_empty_peep());
 %}
 
 peephole
 %{
   peepmatch (testL_reg xorL_rReg xorL_rReg_imm xorL_rReg_mem xorL_mem_rReg xorL_mem_imm);
   peepprocedure (test_may_remove_5);
-  peepreplace (testL_reg_empty_peep());
 %}
 
 

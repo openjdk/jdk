@@ -1469,10 +1469,14 @@ void ArchDesc::definePeephole(FILE *fp, InstructForm *node) {
       // End of scope for this peephole's constraints
       fprintf(fp, "    }\n");
     } else {
-      const char* replace_inst = nullptr;
-      preplace->next_instruction(replace_inst);
-      // Generate the target instruction
-      fprintf(fp, "    auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
+      if (preplace != nullptr) {
+        const char *replace_inst = nullptr;
+        preplace->next_instruction(replace_inst);
+        // Generate the target instruction
+        fprintf(fp, "    auto replacing = [](){ return static_cast<MachNode*>(new %sNode()); };\n", replace_inst);
+      } else {
+        fprintf(fp, "    auto replacing = nullptr;\n");
+      }
 
       // Call the precedure
       fprintf(fp, "    bool replacement = Peephole::%s(block, block_index, cfg_, ra_, replacing", pprocedure->name());
