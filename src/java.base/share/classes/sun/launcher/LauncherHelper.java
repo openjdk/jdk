@@ -286,7 +286,7 @@ public final class LauncherHelper {
             ostream.println(LOCALE_SETTINGS);
         } else {
             ostream.println("Locale settings summary:");
-            ostream.println(INDENT + "Use \":locale\" " +
+            ostream.println(INDENT + "Use \"-XshowSettings:locale\" " +
                     "option for verbose locale settings options");
         }
         ostream.println(INDENT + "default locale = " +

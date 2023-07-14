@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753 7123582 8305950 8281658
+ * @bug 6994753 7123582 8305950 8281658 8310201
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
