@@ -77,7 +77,8 @@ public class JTableHeaderLabelRightAlignTest {
 
         table = new JTable(data, columnNames);
         table.setSize(WIDTH,HEIGHT);
-        ((JLabel)table.getTableHeader().getDefaultRenderer()).setHorizontalAlignment( JLabel.RIGHT );
+        ((JLabel)table.getTableHeader().getDefaultRenderer())
+                .setHorizontalAlignment( JLabel.RIGHT );
 
         final JTableHeader header = table.getTableHeader();
         TableCellRenderer renderer = header.getDefaultRenderer();
@@ -88,7 +89,8 @@ public class JTableHeaderLabelRightAlignTest {
         header.setSize(size);
         w = SCALE * size.width;
         h = SCALE * size.height;
-        imgHeader = new BufferedImage((int)(w),(int)(h),BufferedImage.TYPE_INT_RGB);
+        imgHeader = new BufferedImage((int)(w), (int)(h),
+                BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = imgHeader.createGraphics();
         g2d.scale(SCALE, SCALE);
         try {
@@ -99,12 +101,13 @@ public class JTableHeaderLabelRightAlignTest {
 
         verticalLineCol = (int)(table.getTableHeader().
                 getColumnModel().getColumn(0).getWidth() * SCALE);
-        expectedRGB = imgHeader.getRGB(verticalLineCol,1);
+        expectedRGB = imgHeader.getRGB(verticalLineCol, 1);
 
-        for(int i = 1; i < imgHeader.getHeight()-3; i++) {
-            for(int j = verticalLineCol; j < verticalLineCol + 1; j++) {
-                if(expectedRGB != imgHeader.getRGB(j, i)) {
-                    ImageIO.write(imgHeader, "png",new File("FailureImage.png"));
+        for (int i = 1; i < imgHeader.getHeight()-3; i++) {
+            for (int j = verticalLineCol; j < verticalLineCol + 1; j++) {
+                if (expectedRGB != imgHeader.getRGB(j, i)) {
+                    ImageIO.write(imgHeader, "png",
+                            new File("FailureImage.png"));
                     throw new RuntimeException("Test Failed");
                 }
             }
