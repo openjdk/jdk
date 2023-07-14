@@ -30,6 +30,8 @@
 #include "memory/allStatic.hpp"
 #include "runtime/globals.hpp"
 
+class outputStream;
+
 class NativeHeapTrimmer : public AllStatic {
 
   // Pause periodic trim (if enabled).
@@ -44,6 +46,8 @@ public:
   static void cleanup();
 
   static inline bool enabled() { return TrimNativeHeapInterval > 0; }
+
+  static void print_state(outputStream* st);
 
   // Pause periodic trimming while in scope; when leaving scope,
   // resume periodic trimming.

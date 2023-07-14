@@ -36,6 +36,8 @@
 #include "runtime/trimNativeHeap.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
+#include "utilities/vmError.hpp"
 
 class NativeHeapTrimmerThread : public NamedThread {
 
@@ -100,17 +102,24 @@ class NativeHeapTrimmerThread : public NamedThread {
       double tnow = now();
       double next_trim_time = tnow + interval_secs;
 
+      unsigned times_suspended = 0;
+      unsigned times_waited = 0;
+      unsigned times_safepoint = 0;
+
       {
         MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
         if (_stop) return;
 
         while (at_or_nearing_safepoint() || is_suspended() || next_trim_time > tnow) {
           if (is_suspended()) {
+            times_suspended ++;
             ml.wait(0); // infinite
           } else if (next_trim_time > tnow) {
+            times_waited ++;
             const int64_t wait_ms = MAX2(1.0, to_ms(next_trim_time - tnow));
             ml.wait(wait_ms);
           } else if (at_or_nearing_safepoint()) {
+            times_safepoint ++;
             const int64_t wait_ms = MIN2<int64_t>(TrimNativeHeapInterval, safepoint_poll_ms);
             ml.wait(wait_ms);
           }
@@ -120,6 +129,9 @@ class NativeHeapTrimmerThread : public NamedThread {
           tnow = now();
         }
       }
+
+      log_trace(trimnative)("Times %u suspended, %u timed, %u safepoint",
+                            times_suspended, times_waited, times_safepoint);
 
       execute_trim_and_log(tnow);
     }
@@ -176,7 +188,7 @@ public:
       n = inc_suspend_count();
       // No need to wakeup trimmer
     }
-    log_debug(trimnative)("Native heap trimmer suspended for %s (%u suspend requests)", reason, n);
+    log_debug(trimnative)("Trim suspended for %s (%u suspend requests)", reason, n);
   }
 
   void resume(const char* reason) {
@@ -189,13 +201,29 @@ public:
         ml.notify_all(); // pause end
       }
     }
-    log_debug(trimnative)("Native heap trimmer resumed after %s (%u suspend requests)", reason, n);
+    log_debug(trimnative)("Trim resumed after %s (%u suspend requests)", reason, n);
   }
 
   void stop() {
     MonitorLocker ml(_lock, Mutex::_no_safepoint_check_flag);
     _stop = true;
     ml.notify_all();
+  }
+
+  void print_state(outputStream* st) const {
+    // Don't pull lock during error reporting
+    Mutex* const lock = VMError::is_error_reported() ? nullptr : _lock;
+    int64_t num_trims = 0;
+    bool stopped = false;
+    uint16_t suspenders = 0;
+    {
+      MutexLocker ml(lock, Mutex::_no_safepoint_check_flag);
+      num_trims = _num_trims_performed;
+      stopped = _stop;
+      suspenders = _suspend_count;
+    }
+    st->print_cr("Trims performed: " UINT64_FORMAT ", current suspend count: %d, stopped: %d",
+                 num_trims, suspenders, stopped);
   }
 
 }; // NativeHeapTrimmer
@@ -230,5 +258,14 @@ void NativeHeapTrimmer::suspend_periodic_trim(const char* reason) {
 void NativeHeapTrimmer::resume_periodic_trim(const char* reason) {
   if (g_trimmer_thread != nullptr) {
     g_trimmer_thread->resume(reason);
+  }
+}
+
+void NativeHeapTrimmer::print_state(outputStream* st) {
+  if (g_trimmer_thread != nullptr) {
+    st->print_cr("Periodic native trim enabled (interval: %u ms)", TrimNativeHeapInterval);
+    g_trimmer_thread->print_state(st);
+  } else {
+    st->print_cr("Periodic native trim disabled");
   }
 }
