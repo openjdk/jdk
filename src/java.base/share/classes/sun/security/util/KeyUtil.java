@@ -39,12 +39,16 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
+import sun.security.ec.SunEC;
 import sun.security.jca.JCAUtil;
 
 /**
  * A utility class to get key length, validate keys, etc.
  */
 public final class KeyUtil {
+
+
+    final private static String sunec = "SunEC";
 
     /**
      * Returns the key size of the given key object in bits.
@@ -131,14 +135,17 @@ public final class KeyUtil {
         String algorithm = parameters.getAlgorithm();
         switch (algorithm) {
             case "EC":
-                try {
-                    ECKeySizeParameterSpec ps = parameters.getParameterSpec(
+                // We can use equals() because it cannot be unicode
+                if (parameters.getProvider().toString().equals(sunec)) {
+                    try {
+                        ECKeySizeParameterSpec ps = parameters.getParameterSpec(
                             ECKeySizeParameterSpec.class);
-                    if (ps != null) {
-                        return ps.getKeySize();
+                        if (ps != null) {
+                            return ps.getKeySize();
+                        }
+                    } catch (InvalidParameterSpecException ipse) {
+                        // ignore
                     }
-                } catch (InvalidParameterSpecException ipse) {
-                    // ignore
                 }
 
                 try {
