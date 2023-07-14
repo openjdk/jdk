@@ -1000,7 +1000,7 @@ public interface Path
     int hashCode();
 
     /**
-     * Returns the string representation of this path.
+     * {@return the string representation of this path}
      *
      * <p> If this path was created by converting a path string using the
      * {@link FileSystem#getPath getPath} method then the path string returned
@@ -1008,8 +1008,7 @@ public interface Path
      *
      * <p> The returned path string uses the default name {@link
      * FileSystem#getSeparator separator} to separate names in the path.
-     *
-     * @return  the string representation of this path
      */
+    @Override
     String toString();
 }
