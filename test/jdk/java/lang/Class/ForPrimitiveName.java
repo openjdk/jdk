@@ -69,6 +69,18 @@ public class ForPrimitiveName {
             List.of("java.lang.Object",
                     "java.lang.String",
 
+                    // descriptor string names for primitive types
+                    "Z", // boolean
+                    "B", // byte
+                    "C", // char
+                    "D", // double
+                    "F", // float
+                    "I", // int
+                    "L", // long
+                    "S", // short
+                    "V", // void
+
+                    // Wrapper classes
                     "java.lang.Byte",
                     "java.lang.Boolean",
                     "java.lang.Character",
