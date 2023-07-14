@@ -401,7 +401,7 @@ private:
 
  public:
   static void init_scratch_references() NOT_CDS_JAVA_HEAP_RETURN;
-  static OopHandle scratch_resolved_references(intptr_t src) NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
+  static OopHandle scratch_resolved_references(intptr_t src);
   static void add_scratch_resolved_reference(intptr_t src, int index, oop new_result) NOT_CDS_JAVA_HEAP_RETURN;
   static void add_scratch_resolved_references(intptr_t src, OopHandle dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
