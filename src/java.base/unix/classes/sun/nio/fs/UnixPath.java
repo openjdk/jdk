@@ -395,58 +395,57 @@ class UnixPath implements Path {
         return resolve(new UnixPath(getFileSystem(), other));
     }
 
-   private static final byte[] resolve(byte[] base, byte[]... descendants) {
+   private static final byte[] resolve(byte[] base, byte[]... children) {
        // 'start' is either zero, indicating the base, or indicates which
-       // descendant is that last one which is an absolute path
+       // child is that last one which is an absolute path
        int start = 0;
-       int length = base.length;
+       int resultLength = base.length;
 
-       // Locate the last descendant which is an absolute path and calculate
+       // Locate the last child which is an absolute path and calculate
        // the total number of bytes in the resolved path
-       final int count = descendants.length;
+       final int count = children.length;
        if (count > 0) {
            for (int i = 0; i < count; i++) {
-               byte[] b = descendants[i];
+               byte[] b = children[i];
                if (b.length > 0) {
                    if (b[0] == '/') {
                        start = i + 1;
-                       length = b.length;
+                       resultLength = b.length;
                    } else {
-                       if (length > 0)
-                           length++;
-                       length += b.length;
+                       if (resultLength > 0)
+                           resultLength++;
+                       resultLength += b.length;
                    }
                }
            }
        }
 
-       // If the base is not being superseded by a descendant which is an
-       // absolute path, then if at least one descendant is non-empty and
-       // the base consists only of a '/', then decrement the length to
-       // account for an extra '/' added in the length computation.
-       if (start == 0 && length > base.length &&
-           base.length == 1 && base[0] == '/')
-           length--;
+       // If the base is not being superseded by a child which is an
+       // absolute path, then if at least one child is non-empty and
+       // the base consists only of a '/', then decrement resultLength to
+       // account for an extra '/' added in the resultLength computation.
+       if (start == 0 && resultLength > base.length && base.length == 1 && base[0] == '/')
+           resultLength--;
 
        // Allocate the result array and return if empty.
-       byte[] result = new byte[length];
+       byte[] result = new byte[resultLength];
        if (result.length == 0)
            return result;
 
        // Prepend the base if it is non-empty and would not later be
-       // overwritten by an absolute descendant
+       // overwritten by an absolute child
        int offset = 0;
        if (start == 0 && base.length > 0) {
            System.arraycopy(base, 0, result, 0, base.length);
            offset += base.length;
        }
 
-       // Append descendants starting with the last one which is an
+       // Append children starting with the last one which is an
        // absolute path
        if (count > 0) {
            int idx = Math.max(0, start - 1);
            for (int i = idx; i < count; i++) {
-               byte[] b = descendants[i];
+               byte[] b = children[i];
                if (b.length > 0) {
                    if (offset > 0 && result[offset - 1] != '/')
                        result[offset++] = '/';
@@ -464,12 +463,12 @@ class UnixPath implements Path {
         if (more.length == 0)
             return resolve(first);
 
-        byte[][] descendants = new byte[1 + more.length][];
-        descendants[0] = toUnixPath(first).path;
+        byte[][] children = new byte[1 + more.length][];
+        children[0] = toUnixPath(first).path;
         for (int i = 0; i < more.length; i++)
-            descendants[i + 1] = toUnixPath(more[i]).path;
+            children[i + 1] = toUnixPath(more[i]).path;
 
-        byte[] result = resolve(path, descendants);
+        byte[] result = resolve(path, children);
         return new UnixPath(getFileSystem(), result);
     }
 

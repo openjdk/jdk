@@ -517,8 +517,10 @@ public interface Path
     }
 
     /**
-     * Resolves one or more {@code Path}s iteratively against this
-     * {@code Path}. If {@code more} does not specify any {@code Path}s,
+     * Resolves a path against this path, and then iteratively resolves any
+     * additional paths.
+     *
+     * <p> If {@code more} does not specify any {@code Path}s,
      * then the result is {@link #resolve(Path) resolve(first)}. If
      * {@code more} specifies one or more {@code Path}s, then each non-empty
      * {@code Path}, including {@code first}, is resolved iteratively against
@@ -545,11 +547,13 @@ public interface Path
      * }
      * }
      *
-     * @param first the first path to resolve against this path
+     * @param   first
+     *          the first path to resolve against this path
      *
-     * @param more additional paths to be iteratively resolved against this path
+     * @param   more
+     *          additional paths to be iteratively resolved against this path
      *
-     * @return the resulting path
+     * @return  the resulting path
      *
      * @see #resolve(Path)
      *
@@ -564,8 +568,10 @@ public interface Path
     }
 
     /**
-     * Resolves one or more {@code Path}s converted from the supplied path
-     * srings iteratively against this {@code Path}. If {@code more} does not
+     * Converts a path string to a path, resolves it against this path, and
+     * then iteratively converts and resolves any additional path strings.
+     *
+     * <p> If {@code more} does not
      * specify any path strings, then the result is {@link #resolve(String)
      * resolve(first)}. If {@code more} specifies one or more path strings,
      * then each non-empty path string, including {@code first}, is iteratively
@@ -588,17 +594,20 @@ public interface Path
      * }
      * }
      *
-     * @param first the first path string to convert to a path and
-     *        resolve against this path
+     * @param   first
+     *          the first path string to convert to a path and
+     *          resolve against this path
      *
-     * @param more additional path strings to be iteratively converted to
-     *        paths and resolved against this path
+     * @param   more
+     *          additional path strings to be iteratively converted to
+     *          paths and resolved against this path
      *
-     * @return the resulting path
+     * @return  the resulting path
      *
      * @throws  InvalidPathException
      *          if a path string cannot be converted to a Path.
      *
+     * @see #resolve(Path,Path...)
      * @see #resolve(String)
      *
      * @since 22
