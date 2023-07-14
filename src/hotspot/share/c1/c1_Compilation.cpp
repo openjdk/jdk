@@ -73,7 +73,7 @@ static const char * timer_name[] = {
 };
 
 static elapsedTimer timers[max_phase_timers];
-static int totalInstructionNodes = 0;
+static uint totalInstructionNodes = 0;
 
 class PhaseTraceTime: public TraceTime {
  private:
