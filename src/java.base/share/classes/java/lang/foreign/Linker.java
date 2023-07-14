@@ -405,15 +405,11 @@ import java.util.stream.Stream;
  *
  * <h3 id="variadic-funcs">Variadic functions</h3>
  *
- * Variadic functions are C functions which can accept a variable number and type of arguments. They are declared:
- * <ol>
- * <li>With a trailing ellipsis ({@code ...}) at the end of the formal parameter list, such as: {@code void foo(int x, ...);}</li>
- * <li>With an empty formal parameter list, called a prototype-less function, such as: {@code void foo();}</li>
- * </ol>
- * The arguments passed in place of the ellipsis, or the arguments passed to a prototype-less function are called
- * <em>variadic arguments</em>. Variadic functions are, essentially, templates that can be <em>specialized</em> into multiple
- * non-variadic functions by replacing the {@code ...} or empty formal parameter list with a list of <em>variadic parameters</em>
- * of a fixed number and type.
+ * Variadic functions are C functions which can accept a variable number and type of arguments. They are declared with a
+ * trailing ellipsis ({@code ...}) at the end of the formal parameter list, such as: {@code void foo(int x, ...);}.
+ * The arguments passed in place of the ellipsis are called <em>variadic arguments</em>. Variadic functions are,
+ * essentially, templates that can be <em>specialized</em> into multiple non-variadic functions by replacing the
+ * {@code ...} with a list of <em>variadic parameters</em> of a fixed number and type.
  * <p>
  * It should be noted that values passed as variadic arguments undergo default argument promotion in C. For instance, the
  * following argument promotions are applied:
@@ -425,21 +421,22 @@ import java.util.stream.Stream;
  * </ul>
  * whereby the signed-ness of the source type corresponds to the signed-ness of the promoted type. The complete process
  * of default argument promotion is described in the C specification. In effect these promotions place limits on the
- * specialized form of a variadic function, as the variadic parameters of the specialized form will always have a promoted
- * type.
+ * types that can be used to replace the {@code ...}, as the variadic parameters of the specialized form of a variadic
+ * function will always have a promoted type.
  * <p>
  * The native linker only supports linking the specialized form of a variadic function. A variadic function in its specialized
  * form can be linked using a function descriptor describing the specialized form. Additionally, the
  * {@link Linker.Option#firstVariadicArg(int)} linker option must be provided to indicate the first variadic parameter in
  * the parameter list. The corresponding argument layout (if any), and all following argument layouts in the specialized
- * function descriptor, are called <em>variadic argument layouts</em>. For a prototype-less function, the index passed to
- * {@link Linker.Option#firstVariadicArg(int)} should always be {@code 0}.
+ * function descriptor, are called <em>variadic argument layouts</em>.
  * <p>
- * The native linker will reject an attempt to link a specialized function descriptor with any variadic argument layouts
- * corresponding to a C type that would be subject to default argument promotion (as described above). Exactly which layouts
- * will be rejected is platform specific, but as an example: on Linux/x64 the layouts {@link ValueLayout#JAVA_BOOLEAN},
- * {@link ValueLayout#JAVA_BYTE}, {@link ValueLayout#JAVA_CHAR}, {@link ValueLayout#JAVA_SHORT}, and
- * {@link ValueLayout#JAVA_FLOAT} will be rejected.
+ * The native linker does not automatically perform default argument promotions. However, since passing an argument of a
+ * non-promoted type as a variadic argument is not supported in C, the native linker will reject an attempt to link a
+ * specialized function descriptor with any variadic argument value layouts corresponding to a non-promoted C type.
+ * Since the size of the C {@code int} type is platform-specific, exactly which layouts will be rejected is
+ * platform-specific as well. As an example: on Linux/x64 the layouts corresponding to the C types {@code _Bool},
+ * {@code (unsigned) char}, {@code (unsigned) short}, and {@code float} (among others), will be rejected by the linker.
+ * The {@link #canonicalLayouts()} method can be used to find which layout corresponds to a particular C type.
  * <p>
  * A well-known variadic function is the {@code printf} function, defined in the C standard library:
  *
