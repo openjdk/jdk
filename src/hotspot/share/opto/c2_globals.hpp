@@ -27,6 +27,7 @@
 
 #include "opto/c2_globals_pd.hpp"
 #include "runtime/globals_shared.hpp"
+#include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
 //
