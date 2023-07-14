@@ -116,8 +116,10 @@ class JfrEvents {
                         Thread.sleep(10);
                     }
                     try {
-                        while (thread.getState() != Thread.State.WAITING) {
+                        Thread.State state = thread.getState();
+                        while (state != Thread.State.WAITING && state != Thread.State.TIMED_WAITING) {
                             Thread.sleep(10);
+                            state = thread.getState();
                         }
                     } finally {
                         LockSupport.unpark(thread);
