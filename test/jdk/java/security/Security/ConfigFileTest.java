@@ -147,7 +147,7 @@ public class ConfigFileTest {
         oa.shouldHaveExitValue(0)
                 .shouldContain("Security properties:")
                 .shouldContain("Security provider static configuration:")
-                .shouldContain("Security TLS configuration:");
+                .shouldContain("Security TLS configuration");
     }
 
     private static void copyJDK(Path src, Path dst) throws Exception {
