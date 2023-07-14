@@ -650,8 +650,10 @@ public final class SSLSocketImpl
             // Use user_canceled alert regardless the protocol versions.
             useUserCanceled = true;
 
-            // The protocol version may have been negotiated.
-            ProtocolVersion pv = conContext.getNegotiatedProtocol();
+            // The protocol version may have been negotiated.  The
+            // conContext.handshakeContext.negotiatedProtocol is not used as there
+            // may be a race to set it to null.
+            ProtocolVersion pv = conContext.protocolVersion;
             if (pv == null || (!pv.useTLS13PlusSpec())) {
                 hasCloseReceipt = true;
             }
@@ -1378,7 +1380,15 @@ public final class SSLSocketImpl
 
     @Override
     public String getHandshakeApplicationProtocol() {
-        return conContext.getHandshakeApplicationProtocol();
+        socketLock.lock();
+        try {
+            if (conContext.handshakeContext != null) {
+                return conContext.handshakeContext.applicationProtocol;
+            }
+        } finally {
+            socketLock.unlock();
+        }
+        return null;
     }
 
     @Override

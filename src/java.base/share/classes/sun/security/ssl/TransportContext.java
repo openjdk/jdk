@@ -35,10 +35,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import javax.net.ssl.*;
+import javax.net.ssl.HandshakeCompletedEvent;
+import javax.net.ssl.HandshakeCompletedListener;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLSocket;
 
 /**
  * SSL/(D)TLS transportation context.
@@ -88,7 +89,6 @@ final class TransportContext implements ConnectionContext {
 
     // handshake context
     HandshakeContext                handshakeContext = null;
-    final Lock                      handshakeCtxLock = new ReentrantLock();
 
     // connection reserved status for handshake.
     boolean                         secureRenegotiation = false;
@@ -433,7 +433,10 @@ final class TransportContext implements ConnectionContext {
             closeReason.addSuppressed(ioe);
         }
 
-        terminateHandshakeContext();
+        // terminate the handshake context
+        if (handshakeContext != null) {
+            handshakeContext = null;
+        }
 
         // terminate the transport
         try {
@@ -452,15 +455,6 @@ final class TransportContext implements ConnectionContext {
             throw (SSLException)closeReason;
         } else {
             throw (RuntimeException)closeReason;
-        }
-    }
-
-    private void terminateHandshakeContext() {
-        handshakeCtxLock.lock();
-        try {
-            handshakeContext = null;
-        } finally {
-            handshakeCtxLock.unlock();
         }
     }
 
@@ -642,7 +636,7 @@ final class TransportContext implements ConnectionContext {
                     handshakeContext.baseWriteSecret;
         }
 
-        terminateHandshakeContext();
+        handshakeContext = null;
         outputRecord.handshakeHash.finish();
         inputRecord.finishHandshake();
         outputRecord.finishHandshake();
@@ -667,54 +661,12 @@ final class TransportContext implements ConnectionContext {
     }
 
     HandshakeStatus finishPostHandshake() {
-        terminateHandshakeContext();
+        handshakeContext = null;
 
         // Note: May need trigger handshake completion even for post-handshake
         // authentication in the future.
 
         return HandshakeStatus.FINISHED;
-    }
-
-    public ProtocolVersion getNegotiatedProtocol() {
-        handshakeCtxLock.lock();
-        try {
-            return handshakeContext != null
-                    ? handshakeContext.negotiatedProtocol
-                    : null;
-        } finally {
-            handshakeCtxLock.unlock();
-        }
-    }
-
-    public String getHandshakeApplicationProtocol() {
-        handshakeCtxLock.lock();
-        try {
-            return handshakeContext != null
-                    ? handshakeContext.applicationProtocol
-                    : null;
-        } finally {
-            handshakeCtxLock.unlock();
-        }
-    }
-
-    public SSLSession getHandshakeSession() {
-        handshakeCtxLock.lock();
-        try {
-            return handshakeContext != null
-                    ? handshakeContext.handshakeSession
-                    : null;
-        } finally {
-            handshakeCtxLock.unlock();
-        }
-    }
-
-    public boolean isHandshakeFinished() {
-        handshakeCtxLock.lock();
-        try {
-            return handshakeContext == null || handshakeContext.handshakeFinished;
-        } finally {
-            handshakeCtxLock.unlock();
-        }
     }
 
     // A separate thread is allocated to deliver handshake completion
