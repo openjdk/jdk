@@ -1989,7 +1989,7 @@ const int ObjectAlignmentInBytes = 8;
           "Interval, in ms, at which the JVM will trim the native heap if " \
           "the platform supports that. Lower values will reclaim memory "   \
           "more eagerly at the cost of higher overhead. A value of 0 "      \
-          "(default) disables the native heap trimming.")                   \
+          "(default) disables native heap trimming.")                       \
           range(0, UINT_MAX)                                                \
 
 // end of RUNTIME_FLAGS
