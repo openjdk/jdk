@@ -5426,7 +5426,7 @@ public class Check {
                                                  Element enclosing,
                                                  MethodSymbol method,
                                                  Type expectedType) {
-            var parameters= method.getParameters();
+            var parameters = method.getParameters();
             return (parameters.size() == 1) &&
                 types.isSameType(parameters.get(0).asType(), expectedType);
         }
