@@ -47,8 +47,8 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
@@ -78,7 +78,6 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.util.OperatingSystem;
 import jdk.internal.misc.MainMethodFinder;
 import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
@@ -86,6 +85,7 @@ import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
+import jdk.internal.util.OperatingSystem;
 import sun.util.calendar.ZoneInfoFile;
 
 /**
@@ -172,6 +172,10 @@ public final class LauncherHelper {
             case "locale":
                 printLocale();
                 break;
+            case "security":
+                var opt = opts.length > 2 ? opts[2].trim() : "all";
+                SecuritySettings.printSecuritySettings(opt, ostream);
+                break;
             case "system":
                 if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
@@ -181,6 +185,7 @@ public final class LauncherHelper {
                 printVmSettings(initialHeapSize, maxHeapSize, stackSize);
                 printProperties();
                 printLocale();
+                SecuritySettings.printSecuritySummarySettings(ostream);
                 if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
                 }
@@ -318,9 +323,10 @@ public final class LauncherHelper {
                 ostream.print(INDENT + INDENT);
             }
         }
+        ostream.println();
     }
 
-    public static void printSystemMetrics() {
+    private static void printSystemMetrics() {
         Metrics c = Container.metrics();
 
         ostream.println("Operating System Metrics:");

@@ -844,6 +844,8 @@ public class Flow {
                     for (Type sup : types.directSupertypes(bpOne.type)) {
                         ClassSymbol clazz = (ClassSymbol) sup.tsym;
 
+                        clazz.complete();
+
                         if (clazz.isSealed() && clazz.isAbstract() &&
                             //if a binding pattern for clazz already exists, no need to analyze it again:
                             !existingBindings.contains(clazz)) {
@@ -891,7 +893,9 @@ public class Flow {
                                     }
 
                                     if (reduces) {
-                                        bindings.append(pdOther);
+                                        if (!types.isSubtype(types.erasure(clazz.type), types.erasure(bpOther.type))) {
+                                            bindings.append(pdOther);
+                                        }
                                     }
                                 }
                             }
@@ -925,6 +929,8 @@ public class Flow {
                 ClassSymbol current = permittedSubtypesClosure.head;
 
                 permittedSubtypesClosure = permittedSubtypesClosure.tail;
+
+                current.complete();
 
                 if (current.isSealed() && current.isAbstract()) {
                     for (Symbol sym : current.permitted) {

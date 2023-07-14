@@ -226,4 +226,3 @@ public:
 };
 
 #endif /* SHARE_GC_G1_G1COLLECTIONSETCANDIDATES_HPP */
-
