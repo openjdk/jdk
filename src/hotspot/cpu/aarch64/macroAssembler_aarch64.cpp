@@ -6351,6 +6351,8 @@ void MacroAssembler::m_print26(SIMD_RegVariant variant,
                                FloatRegister v0, FloatRegister v1, FloatRegister v2,
                                FloatRegister v3, FloatRegister v4,
                                int index, const char *s) {
+  setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
   enter();
   push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
   umov(c_rarg0, v0, variant, index);
@@ -6358,6 +6360,23 @@ void MacroAssembler::m_print26(SIMD_RegVariant variant,
   umov(c_rarg2, v2, variant, index);
   umov(c_rarg3, v3, variant, index);
   umov(c_rarg4, v4, variant, index);
+  mov(c_rarg5, (uintptr_t)s);
+  mov(rscratch1, ExternalAddress((address)::print26));
+  blr(rscratch1);
+  pop_CPU_state(/*save_vectors*/true, /*use_sve*/false);
+  leave();
+}
+
+void MacroAssembler::m_print26(SIMD_RegVariant variant,
+                               const FloatRegister v[],
+                               const int indexes[], const char *s) {
+  setbuf(stdout, NULL);
+  setbuf(stderr, NULL);
+  enter();
+  push_CPU_state(/*save_vectors*/true, /*use_sve*/false);
+  for (int i = 0; i < 5; i++) {
+    umov(as_Register(c_rarg0->encoding() + i), v[i], variant, indexes[i]);
+  }
   mov(c_rarg5, (uintptr_t)s);
   mov(rscratch1, ExternalAddress((address)::print26));
   blr(rscratch1);
@@ -6566,7 +6585,7 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
     ld2(scratch1, scratch2, D, 1, post(input_start, 2 * wordSize)); };
 
   gen {
-    m_print26(D, u[4], u[2], u[0], 0, "** ARGH ?");
+    // m_print26(D, u[4], u[2], u[0], 0, "** ARGH ?");
     ushr(s[4], T2D, scratch2, 14+26);
   };
 
@@ -6600,10 +6619,13 @@ void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
       uzp1(s[i], T4S, s[i], scratch1);
     };
 
-  // gen {
-  //   m_print26(D, s[4], s[2], s[0], 0, "s[0]");
-  //   m_print26(D, s[4], s[2], s[0], 1, "s[1]");
-  // };
+  gen {
+    int indexes1[] = { 0, 1, 0, 1, 0 };
+    FloatRegister v[] = { s[4], s[2], s[2], s[0], s[0] };
+    m_print26(S, v, indexes1, "s[2]");
+    int indexes2[] = { 2, 3, 2, 3, 2 };
+    m_print26(S, v, indexes2, "s[3]");
+  };
 }
 
 void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,

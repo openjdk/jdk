@@ -225,8 +225,8 @@ address generate_poly1305_processBlocks2() {
 
       __ m_print52(u0[2]._lo, u0[1]._lo, u0[0]._lo, "  u0");
       __ m_print52(u1[2]._lo, u1[1]._lo, u1[0]._lo, "  u1");
-      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "v[2]");
-      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "v[3]");
+      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 0, "u[2]");
+      __ m_print26(__ D, v_u0[4], v_u0[3], v_u0[2], v_u0[1], v_u0[0], 1, "u[3]");
 
       for (int col = 0; col < COLS; col++) {
         assert(*(it[col]) == nullptr, "Make sure all generators are exhausted");
