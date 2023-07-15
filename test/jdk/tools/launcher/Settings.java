@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753 7123582 8305950
+ * @bug 6994753 7123582 8305950 8281658
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -67,6 +67,13 @@ public class Settings extends TestHelper {
     private static final String VM_SETTINGS = "VM settings:";
     private static final String PROP_SETTINGS = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
+    private static final String SEC_PROPS_SETTINGS = "Security properties:";
+    private static final String SEC_SUMMARY_PROPS_SETTINGS =
+                "Security settings summary:";
+    private static final String SEC_PROVIDER_SETTINGS =
+                "Security provider static configuration:";
+    private static final String SEC_TLS_SETTINGS = "Security TLS configuration";
+    private static final String BAD_SEC_OPTION_MSG = "Unrecognized security subcommand";
     private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
     private static final String STACKSIZE_SETTINGS = "Stack Size:";
     private static final String TZDATA_SETTINGS = "tzdata version";
@@ -75,6 +82,11 @@ public class Settings extends TestHelper {
         checkContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
+        // no verbose security settings unless "security" used
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkContains(tr, SEC_SUMMARY_PROPS_SETTINGS);
+        checkContains(tr, SEC_PROVIDER_SETTINGS);
+        checkContains(tr, SEC_TLS_SETTINGS);
         checkContains(tr, TZDATA_SETTINGS);
         if (System.getProperty("os.name").contains("Linux")) {
             checkContains(tr, SYSTEM_SETTINGS);
@@ -144,6 +156,54 @@ public class Settings extends TestHelper {
         checkContains(tr, TZDATA_SETTINGS);
     }
 
+    static void runTestOptionSecurity() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security");
+        checkNotContains(tr, VM_SETTINGS);
+        checkNotContains(tr, PROP_SETTINGS);
+        checkContains(tr, SEC_PROPS_SETTINGS);
+        checkContains(tr, SEC_PROVIDER_SETTINGS);
+        checkContains(tr, SEC_TLS_SETTINGS);
+    }
+
+    static void runTestOptionSecurityProps() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:properties");
+        checkContains(tr, SEC_PROPS_SETTINGS);
+        checkNotContains(tr, SEC_PROVIDER_SETTINGS);
+        checkNotContains(tr, SEC_TLS_SETTINGS);
+        // test a well known property for sanity
+        checkContains(tr, "keystore.type=pkcs12");
+    }
+
+    static void runTestOptionSecurityProv() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:providers");
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkContains(tr, SEC_PROVIDER_SETTINGS);
+        checkNotContains(tr, SEC_TLS_SETTINGS);
+        // test a well known Provider for sanity
+        checkContains(tr, "Provider name: SUN");
+        // test for a well known alias (SunJCE: AlgorithmParameterGenerator.DiffieHellman)
+        checkContains(tr, "aliases: [1.2.840.113549.1.3.1, " +
+                "DH, OID.1.2.840.113549.1.3.1]");
+    }
+
+    static void runTestOptionSecurityTLS() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:tls");
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkNotContains(tr, SEC_PROVIDER_SETTINGS);
+        checkContains(tr, SEC_TLS_SETTINGS);
+        // test a well known TLS config for sanity
+        checkContains(tr, "TLSv1.2");
+    }
+
+    // ensure error message is printed when unrecognized option used
+    static void runTestOptionBadSecurityOption() throws IOException {
+        TestResult tr = doExec(javaCmd, "-XshowSettings:security:bad");
+        checkContains(tr, BAD_SEC_OPTION_MSG);
+        // we print all security settings in such scenario
+        checkNotContains(tr, SEC_PROPS_SETTINGS);
+        checkNotContains(tr, SEC_PROVIDER_SETTINGS);
+        checkNotContains(tr, SEC_TLS_SETTINGS);
+    }
     static void runTestOptionSystem() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:system");
         if (System.getProperty("os.name").contains("Linux")) {
@@ -181,6 +241,11 @@ public class Settings extends TestHelper {
         runTestOptionVM();
         runTestOptionProperty();
         runTestOptionLocale();
+        runTestOptionSecurity();
+        runTestOptionSecurityProps();
+        runTestOptionSecurityProv();
+        runTestOptionSecurityTLS();
+        runTestOptionBadSecurityOption();
         runTestOptionSystem();
         runTestBadOptions();
         runTest7123582();

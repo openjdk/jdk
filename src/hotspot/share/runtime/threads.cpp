@@ -553,6 +553,10 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     return status;
   }
 
+  // Create WatcherThread as soon as we can since we need it in case
+  // of hangs during error reporting.
+  WatcherThread::start();
+
   // Add main_thread to threads list to finish barrier setup with
   // on_thread_attach.  Should be before starting to build Java objects in
   // init_globals2, which invokes barriers.
@@ -792,19 +796,11 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
     CLEAR_PENDING_EXCEPTION;
   }
 
-  {
-    MutexLocker ml(PeriodicTask_lock);
-    // Make sure the WatcherThread can be started by WatcherThread::start()
-    // or by dynamic enrollment.
-    WatcherThread::make_startable();
-    // Start up the WatcherThread if there are any periodic tasks
-    // NOTE:  All PeriodicTasks should be registered by now. If they
-    //   aren't, late joiners might appear to start slowly (we might
-    //   take a while to process their first tick).
-    if (PeriodicTask::num_tasks() > 0) {
-      WatcherThread::start();
-    }
-  }
+  // Let WatcherThread run all registered periodic tasks now.
+  // NOTE:  All PeriodicTasks should be registered by now. If they
+  //   aren't, late joiners might appear to start slowly (we might
+  //   take a while to process their first tick).
+  WatcherThread::run_all_tasks();
 
   create_vm_timer.end();
 #ifdef ASSERT

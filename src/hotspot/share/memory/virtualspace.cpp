@@ -26,6 +26,7 @@
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/virtualspace.hpp"
+#include "oops/compressedKlass.hpp"
 #include "oops/compressedOops.hpp"
 #include "oops/markWord.hpp"
 #include "oops/oop.inline.hpp"

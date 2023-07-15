@@ -78,7 +78,7 @@ class StreamedVsListTest {
 
     private class Vs {
         boolean failed;
-        ClassModel cm = Classfile.parse(fileBytes);
+        ClassModel cm = Classfile.of().parse(fileBytes);
         String meth;
         CodeElement iim;
         CodeElement mim;
