@@ -29,11 +29,9 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
-import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletManager;
 
 
@@ -41,20 +39,17 @@ import jdk.javadoc.internal.doclets.formats.html.taglets.TagletManager;
  * Generate serialized form for Serializable/Externalizable methods.
  * Documentation denoted by the <code>serialData</code> tag is processed.
  */
-public class HtmlSerialMethodWriter extends MethodWriterImpl implements
-        SerializedFormWriter.SerialMethodWriter {
+public class HtmlSerialMethodWriter extends MethodWriterImpl {
 
-    public HtmlSerialMethodWriter(SubWriterHolderWriter writer, TypeElement  typeElement) {
+    public HtmlSerialMethodWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
     }
 
-    @Override
-    public Content getSerializableMethodsHeader() {
+    protected Content getSerializableMethodsHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
     }
 
-    @Override
-    public Content getMethodsContentHeader(boolean isLastContent) {
+    protected Content getMethodsContentHeader(boolean isLastContent) {
         return new HtmlTree(TagName.LI);
     }
 
@@ -66,8 +61,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      *        content
      * @return a content for the serializable methods content
      */
-    @Override
-    public Content getSerializableMethods(String heading, Content source) {
+    protected Content getSerializableMethods(String heading, Content source) {
         Content headingContent = Text.of(heading);
         var serialHeading = HtmlTree.HEADING(Headings.SerializedForm.CLASS_SUBHEADING, headingContent);
         var section = HtmlTree.SECTION(HtmlStyle.detail, serialHeading);
@@ -81,8 +75,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      * @param msg the message to be displayed
      * @return no customization message content
      */
-    @Override
-    public Content getNoCustomizationMsg(String msg) {
+    protected Content getNoCustomizationMsg(String msg) {
         return Text.of(msg);
     }
 
@@ -92,8 +85,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      * @param member the method document to be listed
      * @param methodsContent the content to which the member header will be added
      */
-    @Override
-    public void addMemberHeader(ExecutableElement member, Content methodsContent) {
+    protected void addMemberHeader(ExecutableElement member, Content methodsContent) {
         Content memberContent = Text.of(name(member));
         var heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, memberContent);
         methodsContent.add(heading);
@@ -106,8 +98,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      * @param member the method to document.
      * @param methodsContent the content to which the deprecated info will be added
      */
-    @Override
-    public void addDeprecatedMemberInfo(ExecutableElement member, Content methodsContent) {
+    protected void addDeprecatedMemberInfo(ExecutableElement member, Content methodsContent) {
         addDeprecatedInfo(member, methodsContent);
     }
 
@@ -117,8 +108,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      * @param member the method to document.
      * @param methodsContent the content to which the deprecated info will be added
      */
-    @Override
-    public void addMemberDescription(ExecutableElement member, Content methodsContent) {
+    protected void addMemberDescription(ExecutableElement member, Content methodsContent) {
         addComment(member, methodsContent);
     }
 
@@ -128,8 +118,7 @@ public class HtmlSerialMethodWriter extends MethodWriterImpl implements
      * @param member the method to document.
      * @param methodsContent the content to which the member tags info will be added
      */
-    @Override
-    public void addMemberTags(ExecutableElement member, Content methodsContent) {
+    protected void addMemberTags(ExecutableElement member, Content methodsContent) {
         TagletManager tagletManager = configuration.tagletManager;
         Content tagContent = writer.getBlockTagOutput(member, tagletManager.getSerializedFormTaglets());
         var dl = HtmlTree.DL(HtmlStyle.notes);

@@ -36,14 +36,11 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
 
 /**
  * Writes nested class documentation in HTML format.
  */
-public class NestedClassWriterImpl extends AbstractMemberWriter
-    implements MemberSummaryWriter {
+public class NestedClassWriterImpl extends AbstractMemberWriter {
 
     public NestedClassWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);

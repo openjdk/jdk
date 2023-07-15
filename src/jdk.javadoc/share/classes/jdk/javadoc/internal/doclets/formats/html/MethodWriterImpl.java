@@ -26,6 +26,7 @@
 package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.Collection;
+import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -40,23 +41,37 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
-import jdk.javadoc.internal.doclets.toolkit.MethodWriter;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Writes method documentation in HTML format.
  */
-public class MethodWriterImpl extends AbstractExecutableMemberWriter
-        implements MethodWriter, MemberSummaryWriter {
+public class MethodWriterImpl extends AbstractExecutableMemberWriter {
+
+    /**
+     * The index of the current field that is being documented at this point
+     * in time.
+     */
+    private ExecutableElement currentMethod;
+
+    /**
+     * Construct a new MethodWriterImpl.
+     *
+     * @param writer the writer for the class that the methods belong to.\
+     */
+    public MethodWriterImpl(ClassWriterImpl writer) {
+        super(writer, writer.typeElement);
+    }
 
     /**
      * Construct a new MethodWriterImpl.
      *
      * @param writer the writer for the class that the methods belong to.
-     * @param typeElement the class being documented.
+     * @param typeElement the class
      */
     public MethodWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
@@ -67,8 +82,95 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
      *
      * @param writer The writer for the class that the methods belong to.
      */
+    // used in ClassUseWriter and SummaryUseWriter
     public MethodWriterImpl(SubWriterHolderWriter writer) {
         super(writer);
+    }
+
+    public void build(Content target) throws DocletException {
+        buildMethodDoc(target);
+    }
+
+    /**
+     * Build the method documentation.
+     *
+     * @param detailsList the content to which the documentation will be added
+     */
+    protected void buildMethodDoc(Content detailsList) {
+        var methods = getVisibleMembers(VisibleMemberTable.Kind.METHODS);
+        if (!methods.isEmpty()) {
+            Content methodDetailsHeader = getMethodDetailsHeader(detailsList);
+            Content memberList = writer.getMemberList();
+
+            for (Element method : methods) {
+                currentMethod = (ExecutableElement)method;
+                Content methodContent = getMethodHeader(currentMethod);
+
+                buildSignature(methodContent);
+                buildDeprecationInfo(methodContent);
+                buildPreviewInfo(methodContent);
+                buildMethodComments(methodContent);
+                buildTagInfo(methodContent);
+
+                memberList.add(writer.getMemberListItem(methodContent));
+            }
+            Content methodDetails = getMethodDetails(methodDetailsHeader, memberList);
+            detailsList.add(methodDetails);
+        }
+    }
+
+    /**
+     * Build the signature.
+     *
+     * @param methodContent the content to which the documentation will be added
+     */
+    protected void buildSignature(Content methodContent) {
+        methodContent.add(getSignature(currentMethod));
+    }
+
+    /**
+     * Build the deprecation information.
+     *
+     * @param methodContent the content to which the documentation will be added
+     */
+    protected void buildDeprecationInfo(Content methodContent) {
+        addDeprecated(currentMethod, methodContent);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param methodContent the content to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content methodContent) {
+        addPreview(currentMethod, methodContent);
+    }
+
+    /**
+     * Build the comments for the method.  Do nothing if
+     * {@link BaseOptions#noComment()} is set to true.
+     *
+     * @param methodContent the content to which the documentation will be added
+     */
+    protected void buildMethodComments(Content methodContent) {
+        if (!options.noComment()) {
+            assert utils.isMethod(currentMethod); // not all executables are methods
+            var docFinder = utils.docFinder();
+            Optional<ExecutableElement> r = docFinder.search(currentMethod,
+                    m -> DocFinder.Result.fromOptional(utils.getFullBody(m).isEmpty() ? Optional.empty() : Optional.of(m))).toOptional();
+            ExecutableElement method = r.orElse(currentMethod);
+            TypeMirror containingType = method.getEnclosingElement().asType();
+            addComments(containingType, method, methodContent);
+        }
+    }
+
+    /**
+     * Build the tag information.
+     *
+     * @param methodContent the content to which the documentation will be added
+     */
+    protected void buildTagInfo(Content methodContent) {
+        addTags(currentMethod, methodContent);
     }
 
     @Override
@@ -85,8 +187,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 HtmlIds.METHOD_SUMMARY, summariesList, content);
     }
 
-    @Override
-    public Content getMethodDetailsHeader(Content content) {
+    protected Content getMethodDetailsHeader(Content content) {
         content.add(MarkerComments.START_OF_METHOD_DETAILS);
         Content methodDetailsContent = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
@@ -95,8 +196,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         return methodDetailsContent;
     }
 
-    @Override
-    public Content getMethodHeader(ExecutableElement method) {
+    protected Content getMethodHeader(ExecutableElement method) {
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(method)));
@@ -109,8 +209,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 .setId(htmlIds.forMember(method));
     }
 
-    @Override
-    public Content getSignature(ExecutableElement method) {
+    protected Content getSignature(ExecutableElement method) {
         return new Signatures.MemberSignature(method, this)
                 .setTypeParameters(getTypeParameters(method))
                 .setReturnType(getReturnType(method))
@@ -120,18 +219,15 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
                 .toContent();
     }
 
-    @Override
-    public void addDeprecated(ExecutableElement method, Content methodContent) {
+    protected void addDeprecated(ExecutableElement method, Content methodContent) {
         addDeprecatedInfo(method, methodContent);
     }
 
-    @Override
-    public void addPreview(ExecutableElement method, Content content) {
+    protected void addPreview(ExecutableElement method, Content content) {
         addPreviewInfo(method, content);
     }
 
-    @Override
-    public void addComments(TypeMirror holderType, ExecutableElement method, Content methodContent) {
+    protected void addComments(TypeMirror holderType, ExecutableElement method, Content methodContent) {
         TypeElement holder = utils.asTypeElement(holderType);
         if (!utils.getFullBody(method).isEmpty()) {
             if (holder.equals(typeElement) ||
@@ -160,13 +256,11 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         }
     }
 
-    @Override
-    public void addTags(ExecutableElement method, Content methodContent) {
+    protected void addTags(ExecutableElement method, Content methodContent) {
         writer.addTagsInfo(method, methodContent);
     }
 
-    @Override
-    public Content getMethodDetails(Content methodDetailsHeader, Content methodDetails) {
+    protected Content getMethodDetails(Content methodDetailsHeader, Content methodDetails) {
         Content c = new ContentBuilder(methodDetailsHeader, methodDetails);
         return getMember(HtmlTree.SECTION(HtmlStyle.methodDetails, c)
                 .setId(HtmlIds.METHOD_DETAIL));
@@ -264,15 +358,9 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         Contents contents = writer.contents;
         Content label;
         HtmlLinkInfo.Kind context;
-        if (utils.isAbstract(holder) && utils.isAbstract(method)) {
-            //Abstract method is implemented from abstract class,
-            //not overridden
-            label = contents.specifiedByLabel;
-            context = HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
-        } else {
-            label = contents.overridesLabel;
-            context = HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
-        }
+        // Abstract method is implemented from abstract class, not overridden
+        label = utils.isAbstract(holder) && utils.isAbstract(method) ? contents.specifiedByLabel : contents.overridesLabel;
+        context = HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
         dl.add(HtmlTree.DT(label));
         Content overriddenTypeLink =
                 writer.getLink(new HtmlLinkInfo(writer.configuration, context, overriddenType));
@@ -347,8 +435,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         return new ContentBuilder();
     }
 
-    @Override
-    public Content getMemberHeader(){
+    protected Content getMemberHeader(){
         return writer.getMemberHeader();
     }
 }

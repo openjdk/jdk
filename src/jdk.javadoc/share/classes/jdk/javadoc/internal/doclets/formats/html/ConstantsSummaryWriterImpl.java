@@ -25,8 +25,15 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
+import javax.lang.model.element.Element;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
@@ -41,18 +48,24 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
 import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 
 /**
  * Write the Constants Summary Page in HTML format.
  */
-public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements ConstantsSummaryWriter {
+public class ConstantsSummaryWriterImpl extends HtmlDocletWriter {
+
+    /**
+     * The maximum number of package directories shown in the headings of
+     * the constant values contents list and headings.
+     */
+    private static final int MAX_CONSTANT_VALUE_INDEX_LENGTH = 2;
 
     /**
      * The current class being documented.
@@ -70,33 +83,255 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
 
     private boolean hasConstants = false;
 
+
+    /**
+     * The set of type elements that have constant fields.
+     */
+    protected final Set<TypeElement> typeElementsWithConstFields;
+
+    /**
+     * The set of package-group headings.
+     */
+    protected final Set<String> packageGroupHeadings;
+
+    private PackageElement currentPackage;
+    private TypeElement currentClass; // FIXME: dup of currentTypeElement
+
+
     /**
      * Construct a ConstantsSummaryWriter.
      * @param configuration the configuration used in this run
      *        of the standard doclet.
      */
     public ConstantsSummaryWriterImpl(HtmlConfiguration configuration) {
-        super(configuration, DocPaths.CONSTANT_VALUES);
+        super(configuration, DocPaths.CONSTANT_VALUES, false);
         constantsTableHeader = new TableHeader(
                 contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);
-        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.CONSTANT_VALUES);
+
+        this.typeElementsWithConstFields = new HashSet<>();
+        this.packageGroupHeadings = new TreeSet<>(utils::compareStrings);
     }
 
-    @Override
-    public Content getHeader() {
+    public void build() throws DocletException {
+        boolean anyConstants = configuration.packages.stream().anyMatch(this::hasConstantField);
+        if (!anyConstants) {
+            return;
+        }
+
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.CONSTANT_VALUES);
+        writeGenerating();
+
+        buildConstantSummary();
+    }
+
+    /**
+     * Builds the constant summary page.
+     *
+     * @throws DocletException if there is a problem while building the documentation
+     */
+    protected void buildConstantSummary() throws DocletException {
+        Content content = getHeader();
+
+        buildContents();
+        buildConstantSummaries();
+
+        addFooter();
+        printDocument(content);
+    }
+
+    /**
+     * Builds the list of contents for the groups of packages appearing in the constants summary page.
+     */
+    protected void buildContents() {
+        Content contentList = getContentsHeader();
+        packageGroupHeadings.clear();
+        for (PackageElement pkg : configuration.packages) {
+            String abbrevPackageName = getAbbrevPackageName(pkg);
+            if (hasConstantField(pkg) && !packageGroupHeadings.contains(abbrevPackageName)) {
+                addLinkToPackageContent(abbrevPackageName, contentList);
+                packageGroupHeadings.add(abbrevPackageName);
+            }
+        }
+        addContentsList(contentList);
+    }
+
+    /**
+     * Builds the summary for each documented package.
+     */
+    protected void buildConstantSummaries() {
+        packageGroupHeadings.clear();
+        Content summaries = getConstantSummaries();
+        for (PackageElement aPackage : configuration.packages) {
+            if (hasConstantField(aPackage)) {
+                currentPackage = aPackage;
+                //Build the documentation for the current package.
+                buildPackageHeader(summaries);
+                buildClassConstantSummary();
+            }
+        }
+        addConstantSummaries(summaries);
+    }
+
+    /**
+     * Builds the header for the given package.
+     *
+     * @param target the content to which the package header will be added
+     */
+    protected void buildPackageHeader(Content target) {
+        String abbrevPkgName = getAbbrevPackageName(currentPackage);
+        if (!packageGroupHeadings.contains(abbrevPkgName)) {
+            addPackageGroup(abbrevPkgName, target);
+            packageGroupHeadings.add(abbrevPkgName);
+        }
+    }
+
+    /**
+     * Builds the summary for the current class.
+     */
+    protected void buildClassConstantSummary() {
+        SortedSet<TypeElement> classes = !currentPackage.isUnnamed()
+                ? utils.getAllClasses(currentPackage)
+                : configuration.typeElementCatalog.allUnnamedClasses();
+        Content classConstantHeader = getClassConstantHeader();
+        for (TypeElement te : classes) {
+            if (!typeElementsWithConstFields.contains(te) ||
+                    !utils.isIncluded(te)) {
+                continue;
+            }
+            currentClass = te;
+            //Build the documentation for the current class.
+
+            buildConstantMembers(classConstantHeader);
+
+        }
+        addClassConstant(classConstantHeader);
+    }
+
+    /**
+     * Builds the summary of constant members in the class.
+     *
+     * @param target the content to which the table of constant members will be added
+     */
+    protected void buildConstantMembers(Content target) {
+        new ConstantFieldBuilder(currentClass).buildMembersSummary(target);
+    }
+
+    /**
+     * {@return true if the given package has constant fields to document}
+     *
+     * @param pkg   the package to be checked
+     */
+    private boolean hasConstantField(PackageElement pkg) {
+        SortedSet<TypeElement> classes = !pkg.isUnnamed()
+                ? utils.getAllClasses(pkg)
+                : configuration.typeElementCatalog.allUnnamedClasses();
+        boolean found = false;
+        for (TypeElement te : classes) {
+            if (utils.isIncluded(te) && hasConstantField(te)) {
+                found = true;
+            }
+        }
+        return found;
+    }
+
+    /**
+     * {@return true if the given class has constant fields to document}
+     *
+     * @param typeElement the class to be checked
+     */
+    private boolean hasConstantField(TypeElement typeElement) {
+        VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
+        List<? extends Element> fields = vmt.getVisibleMembers(VisibleMemberTable.Kind.FIELDS);
+        for (Element f : fields) {
+            VariableElement field = (VariableElement)f;
+            if (field.getConstantValue() != null) {
+                typeElementsWithConstFields.add(typeElement);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * {@return the abbreviated name for a package, containing the leading segments of the name}
+     *
+     * @param pkg the package
+     */
+    public String getAbbrevPackageName(PackageElement pkg) {
+        if (pkg.isUnnamed()) {
+            return "";
+        }
+
+        String packageName = utils.getPackageName(pkg);
+        int index = -1;
+        for (int j = 0; j < MAX_CONSTANT_VALUE_INDEX_LENGTH; j++) {
+            index = packageName.indexOf(".", index + 1);
+        }
+        return index == -1 ? packageName : packageName.substring(0, index);
+    }
+
+    /**
+     * Builder for the table of fields with constant values.
+     */
+    private class ConstantFieldBuilder {
+
+        /**
+         * The type element that we are examining constants for.
+         */
+        protected TypeElement typeElement;
+
+        /**
+         * Constructs a {@code ConstantFieldBuilder}.
+         * @param typeElement the type element that we are examining constants for
+         */
+        public ConstantFieldBuilder(TypeElement typeElement) {
+            this.typeElement = typeElement;
+        }
+
+        /**
+         * Builds the table of constants for a given class.
+         *
+         * @param target the content to which the table of class constants will be added
+         */
+        protected void buildMembersSummary(Content target) {
+            SortedSet<VariableElement> members = members();
+            if (!members.isEmpty()) {
+                addConstantMembers(typeElement, members, target);
+            }
+        }
+
+        /**
+         * {@return a set of visible constant fields for the given type}
+         */
+        protected SortedSet<VariableElement> members() {
+            VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
+            List<Element> members = new ArrayList<>();
+            members.addAll(vmt.getVisibleMembers(VisibleMemberTable.Kind.FIELDS));
+            members.addAll(vmt.getVisibleMembers(VisibleMemberTable.Kind.ENUM_CONSTANTS));
+            SortedSet<VariableElement> includes =
+                    new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
+            for (Element element : members) {
+                VariableElement member = (VariableElement)element;
+                if (member.getConstantValue() != null) {
+                    includes.add(member);
+                }
+            }
+            return includes;
+        }
+    }
+
+     Content getHeader() {
         String label = resources.getText("doclet.Constants_Summary");
         HtmlTree body = getBody(getWindowTitle(label));
         bodyContents.setHeader(getHeader(PageMode.CONSTANT_VALUES));
         return body;
     }
 
-    @Override
-    public Content getContentsHeader() {
+     Content getContentsHeader() {
         return HtmlTree.UL(HtmlStyle.contentsList);
     }
 
-    @Override
-    public void addLinkToPackageContent(String abbrevPackageName, Content content) {
+     void addLinkToPackageContent(String abbrevPackageName, Content content) {
         //add link to summary
         Content link;
         if (abbrevPackageName.isEmpty()) {
@@ -110,8 +345,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         content.add(HtmlTree.LI(link));
     }
 
-    @Override
-    public void addContentsList(Content content) {
+     void addContentsList(Content content) {
         Content titleContent = contents.constantsSummaryTitle;
         var pHeading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
                 HtmlStyle.title, titleContent);
@@ -125,13 +359,13 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         bodyContents.addMainContent(section);
     }
 
-    @Override
+    //@Override
+    // TODO: inline?
     public Content getConstantSummaries() {
         return new ContentBuilder();
     }
 
-    @Override
-    public void addPackageGroup(String abbrevPackageName, Content toContent) {
+     void addPackageGroup(String abbrevPackageName, Content toContent) {
         Content headingContent;
         HtmlId anchorName;
         if (abbrevPackageName.isEmpty()) {
@@ -152,19 +386,16 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         toContent.add(summarySection);
     }
 
-    @Override
-    public Content getClassConstantHeader() {
+     Content getClassConstantHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
     }
 
-    @Override
-    public void addClassConstant(Content fromClassConstant) {
+     void addClassConstant(Content fromClassConstant) {
         summarySection.add(fromClassConstant);
         hasConstants = true;
     }
 
-    @Override
-    public void addConstantMembers(TypeElement typeElement, Collection<VariableElement> fields,
+     void addConstantMembers(TypeElement typeElement, Collection<VariableElement> fields,
             Content target) {
         currentTypeElement = typeElement;
 
@@ -237,18 +468,15 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter implements Cons
         return HtmlTree.CODE(Text.of(value));
     }
 
-    @Override
-    public void addConstantSummaries(Content content) {
+     void addConstantSummaries(Content content) {
         bodyContents.addMainContent(content);
     }
 
-    @Override
-    public void addFooter() {
+     void addFooter() {
         bodyContents.setFooter(getFooter());
     }
 
-    @Override
-    public void printDocument(Content content) throws DocFileIOException {
+     void printDocument(Content content) throws DocFileIOException {
         content.add(bodyContents);
         printHtmlDocument(null, "summary of constants", content);
 

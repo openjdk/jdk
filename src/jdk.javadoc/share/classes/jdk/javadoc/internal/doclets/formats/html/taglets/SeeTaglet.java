@@ -43,11 +43,11 @@ import jdk.javadoc.internal.doclets.formats.html.ClassWriterImpl;
 import jdk.javadoc.internal.doclets.formats.html.Contents;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlDocletWriter;
+import jdk.javadoc.internal.doclets.formats.html.SerializedFormWriterImpl;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.builders.SerializedFormBuilder;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
@@ -120,8 +120,8 @@ public class SeeTaglet extends BaseTaglet implements InheritableTaglet {
         }
         if (utils.isClass(holder) && utils.isSerializable((TypeElement)holder)) {
             //Automatically add link to serialized form page for serializable classes.
-            if (SerializedFormBuilder.serialInclude(utils, holder) &&
-                    SerializedFormBuilder.serialInclude(utils, utils.containingPackage(holder))) {
+            if (SerializedFormWriterImpl.serialInclude(utils, holder) &&
+                    SerializedFormWriterImpl.serialInclude(utils, utils.containingPackage(holder))) {
                 DocPath serialPath = htmlWriter.pathToRoot.resolve(DocPaths.SERIALIZED_FORM);
                 DocLink link = serialPath.fragment(utils.getFullyQualifiedName(holder));
                 links.add(htmlWriter.links.createLink(link,

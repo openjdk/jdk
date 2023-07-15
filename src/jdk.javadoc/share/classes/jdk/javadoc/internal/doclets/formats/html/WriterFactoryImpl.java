@@ -31,101 +31,76 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.toolkit.ClassWriter;
-import jdk.javadoc.internal.doclets.toolkit.ConstantsSummaryWriter;
 import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
-import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
-import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
-import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
-import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
-import jdk.javadoc.internal.doclets.toolkit.WriterFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * The factory that returns HTML writers.
  */
-public class WriterFactoryImpl implements WriterFactory {
+// TODO: be more consistent about using this factory
+public class WriterFactoryImpl {
 
     private final HtmlConfiguration configuration;
     public WriterFactoryImpl(HtmlConfiguration configuration) {
         this.configuration = configuration;
     }
 
-    @Override
-    public ConstantsSummaryWriter getConstantsSummaryWriter() {
+    public ConstantsSummaryWriterImpl getConstantsSummaryWriter() {
         return new ConstantsSummaryWriterImpl(configuration);
     }
 
-    @Override
-    public PackageSummaryWriter getPackageSummaryWriter(PackageElement packageElement) {
+    public PackageWriterImpl getPackageSummaryWriter(PackageElement packageElement) {
         return new PackageWriterImpl(configuration, packageElement);
     }
 
-    @Override
-    public ModuleSummaryWriter getModuleSummaryWriter(ModuleElement mdle) {
+    public ModuleWriterImpl getModuleSummaryWriter(ModuleElement mdle) {
         return new ModuleWriterImpl(configuration, mdle);
     }
 
-    @Override
-    public ClassWriter getClassWriter(TypeElement typeElement, ClassTree classTree) {
+    public ClassWriterImpl getClassWriter(TypeElement typeElement, ClassTree classTree) {
         return new ClassWriterImpl(configuration, typeElement, classTree);
     }
 
-    @Override
     public AnnotationTypeMemberWriterImpl getAnnotationTypeMemberWriter(
-            ClassWriter classWriter) {
+            ClassWriterImpl classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriterImpl(
-                (ClassWriterImpl) classWriter, te, AnnotationTypeMemberWriterImpl.Kind.ANY);
+        return new AnnotationTypeMemberWriterImpl(classWriter, te, AnnotationTypeMemberWriterImpl.Kind.ANY);
     }
 
-    @Override
     public AnnotationTypeMemberWriterImpl getAnnotationTypeOptionalMemberWriter(
-            ClassWriter classWriter) {
+            ClassWriterImpl classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriterImpl(
-                (ClassWriterImpl) classWriter, te, AnnotationTypeMemberWriterImpl.Kind.OPTIONAL);
+        return new AnnotationTypeMemberWriterImpl(classWriter, te, AnnotationTypeMemberWriterImpl.Kind.OPTIONAL);
     }
 
-    @Override
     public AnnotationTypeMemberWriterImpl getAnnotationTypeRequiredMemberWriter(
-            ClassWriter classWriter) {
+            ClassWriterImpl classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriterImpl(
-            (ClassWriterImpl) classWriter, te, AnnotationTypeMemberWriterImpl.Kind.REQUIRED);
+        return new AnnotationTypeMemberWriterImpl(classWriter, te, AnnotationTypeMemberWriterImpl.Kind.REQUIRED);
     }
 
-    @Override
-    public EnumConstantWriterImpl getEnumConstantWriter(ClassWriter classWriter) {
-        return new EnumConstantWriterImpl((ClassWriterImpl) classWriter,
-                classWriter.getTypeElement());
+    public EnumConstantWriterImpl getEnumConstantWriter(ClassWriterImpl classWriter) {
+        return new EnumConstantWriterImpl(classWriter);
     }
 
-    @Override
-    public FieldWriterImpl getFieldWriter(ClassWriter classWriter) {
-        return new FieldWriterImpl((ClassWriterImpl) classWriter, classWriter.getTypeElement());
+    public FieldWriterImpl getFieldWriter(ClassWriterImpl classWriter) {
+        return new FieldWriterImpl(classWriter);
     }
 
-    @Override
-    public PropertyWriterImpl getPropertyWriter(ClassWriter classWriter) {
-        return new PropertyWriterImpl((ClassWriterImpl) classWriter,
-                classWriter.getTypeElement());
+    public PropertyWriterImpl getPropertyWriter(ClassWriterImpl classWriter) {
+        return new PropertyWriterImpl(classWriter);
     }
 
-    @Override
-    public MethodWriterImpl getMethodWriter(ClassWriter classWriter) {
-        return new MethodWriterImpl((ClassWriterImpl) classWriter, classWriter.getTypeElement());
+    public MethodWriterImpl getMethodWriter(ClassWriterImpl classWriter) {
+        return new MethodWriterImpl(classWriter);
     }
 
-    @Override
-    public ConstructorWriterImpl getConstructorWriter(ClassWriter classWriter) {
-        return new ConstructorWriterImpl((ClassWriterImpl) classWriter,
-                classWriter.getTypeElement());
+    public ConstructorWriterImpl getConstructorWriter(ClassWriterImpl classWriter) {
+        return new ConstructorWriterImpl(classWriter);
     }
 
-    @Override
-    public MemberSummaryWriter getMemberSummaryWriter(ClassWriter classWriter,
+    public AbstractMemberWriter getMemberSummaryWriter(ClassWriterImpl classWriter,
             VisibleMemberTable.Kind memberType) {
         switch (memberType) {
             case CONSTRUCTORS:
@@ -141,8 +116,7 @@ public class WriterFactoryImpl implements WriterFactory {
             case PROPERTIES:
                 return getPropertyWriter(classWriter);
             case NESTED_CLASSES:
-                return new NestedClassWriterImpl((SubWriterHolderWriter)
-                    classWriter, classWriter.getTypeElement());
+                return new NestedClassWriterImpl(classWriter, classWriter.getTypeElement());
             case METHODS:
                 return getMethodWriter(classWriter);
             default:
@@ -150,12 +124,10 @@ public class WriterFactoryImpl implements WriterFactory {
         }
     }
 
-    @Override
-    public SerializedFormWriter getSerializedFormWriter() {
+    public SerializedFormWriterImpl getSerializedFormWriter() {
         return new SerializedFormWriterImpl(configuration);
     }
 
-    @Override
     public DocFilesHandler getDocFilesHandler(Element element) {
         return new DocFilesHandlerImpl(configuration, element);
     }

@@ -59,7 +59,7 @@ import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.ParseException;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Parser;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.Style;
 import jdk.javadoc.internal.doclets.formats.html.taglets.snippet.StyledText;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;

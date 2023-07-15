@@ -92,7 +92,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -199,6 +198,16 @@ public class HtmlDocletWriter {
      * @param path the file to be generated.
      */
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
+        this(configuration, path, true);
+    }
+    /**
+     * Creates an {@code HtmlDocletWriter}.
+     *
+     * @param configuration the configuration for this doclet
+     * @param path the file to be generated.
+     * @param generating whether to write a "Geneterating ..." message to the console
+     */
+    public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path, boolean generating) {
         this.configuration = configuration;
         this.options = configuration.getOptions();
         this.contents = configuration.getContents();
@@ -214,8 +223,17 @@ public class HtmlDocletWriter {
         this.docPaths = configuration.docPaths;
         this.mainBodyScript = new Script();
 
+        if (generating) {
+            writeGenerating();
+        }
+    }
+
+    /**
+     * Writes a "Generating _file_" message to the console
+     */
+    protected final void writeGenerating() {
         messages.notice("doclet.Generating_0",
-            DocFile.createFileForOutput(configuration, path).getPath());
+                DocFile.createFileForOutput(configuration, path).getPath());
     }
 
     /**

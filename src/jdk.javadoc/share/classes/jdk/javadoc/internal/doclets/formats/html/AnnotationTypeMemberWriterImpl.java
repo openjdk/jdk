@@ -37,16 +37,15 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.AnnotationTypeMemberWriter;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 
 /**
  * Writes annotation interface member documentation in HTML format.
  */
-public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
-    implements AnnotationTypeMemberWriter, MemberSummaryWriter {
+public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter {
 
     /**
      * We generate separate summaries for required and optional annotation interface members,
@@ -60,6 +59,12 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
     }
 
     private final Kind kind;
+
+    /**
+     * The index of the current member that is being documented at this point
+     * in time.
+     */
+    protected Element currentMember;
 
     /**
      * Constructs a new AnnotationTypeMemberWriterImpl for any kind of member.
@@ -85,6 +90,103 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
         this.kind = kind;
     }
 
+    public void build(Content target) throws DocletException {
+        buildAnnotationTypeMember(target);
+    }
+
+    /**
+     * Build the member documentation.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildAnnotationTypeMember(Content target) {
+        // In contrast to the annotation interface member summaries the details generated
+        // by this builder share a single list for both required and optional members.
+        var members = getVisibleMembers(VisibleMemberTable.Kind.ANNOTATION_TYPE_MEMBER);
+        if (!members.isEmpty()) {
+            addAnnotationDetailsMarker(target);
+            Content annotationDetailsHeader = getAnnotationDetailsHeader();
+            Content memberList = getMemberList();
+
+            for (Element member : members) {
+                currentMember = member;
+                Content annotationContent = getAnnotationHeaderContent(currentMember);
+
+                buildAnnotationTypeMemberChildren(annotationContent);
+
+                memberList.add(writer.getMemberListItem(annotationContent));
+            }
+            Content annotationDetails = getAnnotationDetails(annotationDetailsHeader, memberList);
+            target.add(annotationDetails);
+        }
+    }
+
+    protected void buildAnnotationTypeMemberChildren(Content annotationContent) {
+        buildSignature(annotationContent);
+        buildDeprecationInfo(annotationContent);
+        buildPreviewInfo(annotationContent);
+        buildMemberComments(annotationContent);
+        buildTagInfo(annotationContent);
+        buildDefaultValueInfo(annotationContent);
+    }
+
+    /**
+     * Build the signature.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildSignature(Content target) {
+        target.add(getSignature(currentMember));
+    }
+
+    /**
+     * Build the deprecation information.
+     *
+     * @param annotationContent the content to which the documentation will be added
+     */
+    protected void buildDeprecationInfo(Content annotationContent) {
+        addDeprecated(currentMember, annotationContent);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param annotationContent the content to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content annotationContent) {
+        addPreview(currentMember, annotationContent);
+    }
+
+    /**
+     * Build the comments for the member.  Do nothing if
+     * {@link BaseOptions#noComment()} is set to true.
+     *
+     * @param annotationContent the content to which the documentation will be added
+     */
+    protected void buildMemberComments(Content annotationContent) {
+        if (!options.noComment()) {
+            addComments(currentMember, annotationContent);
+        }
+    }
+
+    /**
+     * Build the tag information.
+     *
+     * @param annotationContent the content to which the documentation will be added
+     */
+    protected void buildTagInfo(Content annotationContent) {
+        addTags(currentMember, annotationContent);
+    }
+
+    /**
+     * Build the default value for this optional member.
+     *
+     * @param annotationContent the content to which the documentation will be added
+     */
+    protected void buildDefaultValueInfo(Content annotationContent) {
+        addDefaultValueInfo(currentMember, annotationContent);
+    }
+
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
             Content content) {
@@ -102,8 +204,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
         return c;
     }
 
-    @Override
-    public Content getMemberHeader() {
+    protected Content getMemberHeader() {
         return writer.getMemberHeader();
     }
 
@@ -118,15 +219,13 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
                 summariesList, content);
     }
 
-    @Override
-    public void addAnnotationDetailsMarker(Content memberDetails) {
+    protected void addAnnotationDetailsMarker(Content memberDetails) {
         memberDetails.add(selectComment(
                 MarkerComments.START_OF_ANNOTATION_TYPE_DETAILS,
                 MarkerComments.START_OF_ANNOTATION_INTERFACE_DETAILS));
     }
 
-    @Override
-    public Content getAnnotationDetailsHeader() {
+    protected Content getAnnotationDetailsHeader() {
         Content memberDetails = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
                 contents.annotationTypeDetailsLabel);
@@ -134,8 +233,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
         return memberDetails;
     }
 
-    @Override
-    public Content getAnnotationHeaderContent(Element member) {
+    protected Content getAnnotationHeaderContent(Element member) {
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(member)));
@@ -144,36 +242,30 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter
                 .setId(htmlIds.forMember(typeElement, (ExecutableElement) member));
     }
 
-    @Override
-    public Content getSignature(Element member) {
+    protected Content getSignature(Element member) {
         return new Signatures.MemberSignature(member, this)
                 .setType(getType(member))
                 .setAnnotations(writer.getAnnotationInfo(member, true))
                 .toContent();
     }
 
-    @Override
-    public void addDeprecated(Element member, Content target) {
+    protected void addDeprecated(Element member, Content target) {
         addDeprecatedInfo(member, target);
     }
 
-    @Override
-    public void addPreview(Element member, Content content) {
+    protected void addPreview(Element member, Content content) {
         addPreviewInfo(member, content);
     }
 
-    @Override
-    public void addComments(Element member, Content annotationContent) {
+    protected void addComments(Element member, Content annotationContent) {
         addComment(member, annotationContent);
     }
 
-    @Override
-    public void addTags(Element member, Content annotationContent) {
+    protected void addTags(Element member, Content annotationContent) {
         writer.addTagsInfo(member, annotationContent);
     }
 
-    @Override
-    public Content getAnnotationDetails(Content annotationDetailsHeader, Content annotationDetails) {
+    protected Content getAnnotationDetails(Content annotationDetailsHeader, Content annotationDetails) {
         Content c = new ContentBuilder(annotationDetailsHeader, annotationDetails);
         return getMember(HtmlTree.SECTION(HtmlStyle.memberDetails, c));
     }

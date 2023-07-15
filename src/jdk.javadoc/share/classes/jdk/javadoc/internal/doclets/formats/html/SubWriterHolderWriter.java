@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
@@ -60,6 +59,10 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
     public SubWriterHolderWriter(HtmlConfiguration configuration, DocPath filename) {
         super(configuration, filename);
+    }
+
+    public SubWriterHolderWriter(HtmlConfiguration configuration, DocPath filename, boolean generating) {
+        super(configuration, filename, generating);
     }
 
     /**

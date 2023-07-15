@@ -25,28 +25,136 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
+import java.util.ArrayList;
+import java.util.stream.Collectors;
+
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+
+import com.sun.source.doctree.DocCommentTree;
+import com.sun.source.doctree.DocTree;
 
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
-import jdk.javadoc.internal.doclets.toolkit.PropertyWriter;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Writes property documentation in HTML format.
  */
-public class PropertyWriterImpl extends AbstractMemberWriter
-    implements PropertyWriter, MemberSummaryWriter {
+public class PropertyWriterImpl extends AbstractMemberWriter {
 
-    public PropertyWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+    /**
+     * The index of the current property that is being documented at this point
+     * in time.
+     */
+    private ExecutableElement currentProperty;
+
+    public PropertyWriterImpl(ClassWriterImpl writer) {
+        super(writer, writer.typeElement);
     }
+
+    public void build(Content target) {
+        buildPropertyDoc(target);
+    }
+
+    /**
+     * Build the property documentation.
+     *
+     * @param detailsList the content to which the documentation will be added
+     */
+    protected void buildPropertyDoc(Content detailsList) {
+        var properties  = getVisibleMembers(VisibleMemberTable.Kind.PROPERTIES);
+        if (!properties.isEmpty()) {
+            Content propertyDetailsHeader = getPropertyDetailsHeader(detailsList);
+            Content memberList = getMemberList();
+
+            for (Element property : properties) {
+                currentProperty = (ExecutableElement)property;
+                Content propertyContent = getPropertyHeaderContent(currentProperty);
+
+                buildSignature(propertyContent);
+                buildPropertyComments(propertyContent);
+                buildTagInfo(propertyContent);
+
+                memberList.add(getMemberListItem(propertyContent));
+            }
+            Content propertyDetails = getPropertyDetails(propertyDetailsHeader, memberList);
+            detailsList.add(propertyDetails);
+        }
+    }
+
+    /**
+     * Build the signature.
+     *
+     * @param propertyContent the content to which the documentation will be added
+     */
+    protected void buildSignature(Content propertyContent) {
+        propertyContent.add(getSignature(currentProperty));
+    }
+
+    /**
+     * Build the deprecation information.
+     *
+     * @param propertyContent the content to which the documentation will be added
+     */
+    protected void buildDeprecationInfo(Content propertyContent) {
+        addDeprecated(currentProperty, propertyContent);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param propertyContent the content to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content propertyContent) {
+        addPreview(currentProperty, propertyContent);
+    }
+
+    /**
+     * Build the comments for the property.  Do nothing if
+     * {@link BaseOptions#noComment()} is set to true.
+     *
+     * @param propertyContent the content to which the documentation will be added
+     */
+    protected void buildPropertyComments(Content propertyContent) {
+        if (!options.noComment()) {
+            addComments(currentProperty, propertyContent);
+        }
+    }
+
+    /**
+     * Build the tag information.
+     *
+     * @param propertyContent the content to which the documentation will be added
+     */
+    protected void buildTagInfo(Content propertyContent) {
+        CommentUtils cmtUtils = configuration.cmtUtils;
+        DocCommentTree dct = utils.getDocCommentTree(currentProperty);
+        var fullBody = dct.getFullBody();
+        ArrayList<DocTree> blockTags = dct.getBlockTags().stream()
+                .filter(t -> t.getKind() != DocTree.Kind.RETURN)
+                .collect(Collectors.toCollection(ArrayList::new));
+        String sig = "#" + currentProperty.getSimpleName() + "()";
+        blockTags.add(cmtUtils.makeSeeTree(sig, currentProperty));
+        // The property method is used as a proxy for the property
+        // (which does not have an explicit element of its own.)
+        // Temporarily override the doc comment for the property method
+        // by removing the `@return` tag, which should not be displayed for
+        // the property.
+        CommentUtils.DocCommentInfo prev = cmtUtils.setDocCommentTree(currentProperty, fullBody, blockTags);
+        try {
+            addTags(currentProperty, propertyContent);
+        } finally {
+            cmtUtils.setDocCommentInfo(currentProperty, prev);
+        }
+    }
+
 
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement, Content content) {
@@ -62,8 +170,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                 HtmlIds.PROPERTY_SUMMARY, summariesList, content);
     }
 
-    @Override
-    public Content getPropertyDetailsHeader(Content memberDetails) {
+    protected Content getPropertyDetailsHeader(Content memberDetails) {
         memberDetails.add(MarkerComments.START_OF_PROPERTY_DETAILS);
         Content propertyDetailsContent = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
@@ -72,8 +179,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter
         return propertyDetailsContent;
     }
 
-    @Override
-    public Content getPropertyHeaderContent(ExecutableElement property) {
+    protected Content getPropertyHeaderContent(ExecutableElement property) {
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(utils.getPropertyLabel(name(property))));
@@ -82,24 +188,20 @@ public class PropertyWriterImpl extends AbstractMemberWriter
                 .setId(htmlIds.forProperty(property));
     }
 
-    @Override
-    public Content getSignature(ExecutableElement property) {
+    protected Content getSignature(ExecutableElement property) {
         return new Signatures.MemberSignature(property, this)
                 .setType(utils.getReturnType(typeElement, property))
                 .setAnnotations(writer.getAnnotationInfo(property, true))
                 .toContent();
     }
 
-    @Override
-    public void addDeprecated(ExecutableElement property, Content propertyContent) {
+    protected void addDeprecated(ExecutableElement property, Content propertyContent) {
     }
 
-    @Override
-    public void addPreview(ExecutableElement property, Content content) {
+    protected void addPreview(ExecutableElement property, Content content) {
     }
 
-    @Override
-    public void addComments(ExecutableElement property, Content propertyContent) {
+    protected void addComments(ExecutableElement property, Content propertyContent) {
         TypeElement holder = (TypeElement)property.getEnclosingElement();
         if (!utils.getFullBody(property).isEmpty()) {
             if (holder.equals(typeElement) ||
@@ -126,13 +228,11 @@ public class PropertyWriterImpl extends AbstractMemberWriter
         }
     }
 
-    @Override
-    public void addTags(ExecutableElement property, Content propertyContent) {
+    protected void addTags(ExecutableElement property, Content propertyContent) {
         writer.addTagsInfo(property, propertyContent);
     }
 
-    @Override
-    public Content getPropertyDetails(Content memberDetailsHeader, Content memberDetails) {
+    protected Content getPropertyDetails(Content memberDetailsHeader, Content memberDetails) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.propertyDetails)
                         .setId(HtmlIds.PROPERTY_DETAIL)
