@@ -5192,6 +5192,7 @@ public class Check {
         @Override
         public Void visitTypeAsEnum(TypeElement e,
                                     JCClassDecl p) {
+            boolean isExtern = isExternalizable((Type)e.asType());
             for(Element el : e.getEnclosedElements()) {
                 runUnderLint(el, p, (enclosed, tree) -> {
                     String name = enclosed.getSimpleName().toString();
@@ -5213,7 +5214,7 @@ public class Check {
                                         Warnings.IneffectualSerialMethodEnum(name));
                         }
 
-                        if (isExternalizable((Type)e.asType()) && externMethodNames.contains(name)) {
+                        if (isExtern && externMethodNames.contains(name)) {
                             log.warning(LintCategory.SERIAL,
                                         TreeInfo.diagnosticPositionFor(method, tree),
                                         Warnings.IneffectualExternMethodEnum(name));
