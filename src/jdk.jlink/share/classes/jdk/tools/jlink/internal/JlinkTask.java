@@ -658,12 +658,12 @@ public class JlinkTask {
         // resolve, against the default module-path dir, the java.base module file used
         // for image creation
         Path javaBaseInDefaultPath = defaultModulePath.resolve(javaBasePath.getFileName());
-        if (!Files.exists(javaBaseInDefaultPath)) {
+        if (Files.notExists(javaBaseInDefaultPath)) {
             // the java.base module used for image creation doesn't exist in the default
             // module path
             return false;
         }
-        return Files.isSameFile(javaBasePath, javaBaseInDefaultPath);
+        return javaBasePath.toRealPath().equals(javaBaseInDefaultPath.toRealPath()) ;
     }
 
     // returns the targetPlatform value from the ModuleTarget attribute of the java.base module.
