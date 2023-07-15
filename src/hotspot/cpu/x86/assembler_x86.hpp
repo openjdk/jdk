@@ -678,7 +678,8 @@ private:
   bool _legacy_mode_vlbw;
   NOT_LP64(bool _is_managed;)
 
-  class InstructionAttr *_attributes;
+  InstructionAttr *_attributes;
+  void set_attributes(InstructionAttr* attributes);
 
   // 64bit prefixes
   void prefix(Register reg);
@@ -896,8 +897,6 @@ private:
   // belong in macro assembler but there is no need for both varieties to exist
 
   void init_attributes(void);
-
-  void set_attributes(InstructionAttr *attributes) { _attributes = attributes; }
   void clear_attributes(void) { _attributes = NULL; }
 
   void set_managed(void) { NOT_LP64(_is_managed = true;) }
@@ -2587,7 +2586,6 @@ public:
     if (_current_assembler != NULL) {
       _current_assembler->clear_attributes();
     }
-    _current_assembler = NULL;
   }
 
 private:

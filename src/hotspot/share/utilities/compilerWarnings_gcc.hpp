@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,11 @@
 #define PRAGMA_DISABLE_GCC_WARNING_AUX(x) _Pragma(#x)
 #define PRAGMA_DISABLE_GCC_WARNING(option_string) \
   PRAGMA_DISABLE_GCC_WARNING_AUX(GCC diagnostic ignored option_string)
+
+// Disable -Wdangling-pointer which is introduced in GCC 12.
+#if !defined(__clang_major__) && (__GNUC__ >= 12)
+#define PRAGMA_DANGLING_POINTER_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wdangling-pointer")
+#endif
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
   PRAGMA_DISABLE_GCC_WARNING("-Wformat-nonliteral")     \
