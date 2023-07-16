@@ -663,7 +663,7 @@ public class JlinkTask {
             // module path
             return false;
         }
-        return javaBasePath.toRealPath().equals(javaBaseInDefaultPath.toRealPath()) ;
+        return Files.isSameFile(javaBasePath, javaBaseInDefaultPath);
     }
 
     // returns the targetPlatform value from the ModuleTarget attribute of the java.base module.
