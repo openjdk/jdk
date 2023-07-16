@@ -1642,7 +1642,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size, bool exec) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  char* res = os::reserve_memory_at(addr, size, !ExecMem);
+  char* res = os::attempt_reserve_memory_at(addr, size, !ExecMem);
   return res != nullptr;
 }
 
