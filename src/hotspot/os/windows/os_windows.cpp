@@ -3673,7 +3673,8 @@ bool os::pd_release_memory(char* addr, size_t bytes) {
 }
 
 bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
-  return os::commit_memory(addr, size, !ExecMem);
+  char* res = os::attempt_reserve_memory_at(addr, size, !ExecMem);
+  return res != nullptr;
 }
 
 bool os::remove_stack_guard_pages(char* addr, size_t size) {

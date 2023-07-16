@@ -3402,7 +3402,8 @@ bool os::pd_create_stack_guard_pages(char* addr, size_t size) {
     }
   }
 
-  return os::commit_memory(addr, size, !ExecMem);
+  char* res = os::attempt_reserve_memory_at(addr, size, !ExecMem);
+  return res != nullptr;
 }
 
 // If this is a growable mapping, remove the guard pages entirely by
