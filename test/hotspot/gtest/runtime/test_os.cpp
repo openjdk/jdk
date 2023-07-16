@@ -170,8 +170,8 @@ static void do_test_print_hex_dump(address addr, size_t len, int unitsize, const
   buf[0] = '\0';
   stringStream ss(buf, sizeof(buf));
   os::print_hex_dump(&ss, addr, addr + len, unitsize);
-  tty->print_cr("expected: %s", expected);
-  tty->print_cr("result: %s", buf);
+  // tty->print_cr("expected: %s", expected);
+  // tty->print_cr("result: %s", buf);
   EXPECT_THAT(buf, testing::HasSubstr(expected));
 }
 
