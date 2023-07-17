@@ -106,3 +106,10 @@ Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
         JNU_ThrowIOExceptionWithLastError(env, "Flush failed");
     }
 }
+
+JNIEXPORT jint JNICALL
+Java_java_nio_MappedMemoryUtils_pageSize0()
+{
+    // Not required on Windows.
+    return -1;
+}

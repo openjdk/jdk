@@ -130,7 +130,7 @@ import jdk.internal.misc.Unsafe;
     // the mapping less than or equal to the element address. Computed
     // each time to avoid storing in every direct buffer.
     private static long mappingOffset(long address, long index) {
-        int ps = Bits.pageSize();
+        int ps = pageSize();
         long indexAddress = address + index;
         long baseAddress = alignDown(indexAddress, ps);
         return indexAddress - baseAddress;
@@ -164,4 +164,17 @@ import jdk.internal.misc.Unsafe;
         // pageSize must be a power of 2
         return address & ~(pageSize - 1);
     }
+
+    // Returns the platform defined page size, which could be different from the one Bits.pageSize
+    // is aware of. If no implementation is provided, return Bits.pageSize instead.
+    private static ing pageSize() {
+        int ps = pageSize0();
+        if (ps > 0) {
+            return ps;
+        } else {
+            return Bits.pageSize();
+        }
+    }
+
+    private static native int pageSize0();
 }
