@@ -363,12 +363,10 @@ public class Attributes {
 
         @Override
         protected void writeBody(BufWriter buf, MatcherAttribute attr) {
-//            List<MethodParameterInfo> parameters = attr.parameters();
-//            buf.writeU1(parameters.size());
-//            for (MethodParameterInfo info : parameters) {
-//                buf.writeIndexOrZero(info.name().orElse(null));
-//                buf.writeU2(info.flagsMask());
-//            }
+            buf.writeIndex(attr.matcherName());
+            buf.writeU2(attr.matcherFlagsMask());
+            buf.writeIndex(attr.matcherMethodType());
+            buf.writeList(attr.attributes());
         }
     };
 

@@ -26,9 +26,12 @@
 /*
  * @test
  * @summary Testing parsing of a matcher method.
+ * @enablePreview
+ * @build testdata.*
  * @run junit MatcherTest
  */
 
+import helpers.ClassRecord;
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.MatcherAttribute;
 
@@ -45,6 +48,9 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
+import static helpers.ClassRecord.assertEqualsDeep;
+import static helpers.TestUtil.assertEmpty;
 import static org.junit.jupiter.api.Assertions.*;
 
 import jdk.internal.classfile.components.ClassPrinter;
@@ -52,13 +58,10 @@ import org.junit.jupiter.api.Test;
 
 class MatcherTest {
 
-    static final String testClassName = "MatcherTest$Points";
-    static final Path testClassPath = Paths.get(URI.create(ArrayTest.class.getResource(testClassName + ".class").toString()));
-
     @Test
-    void testReadMatcher() throws Exception {
+    void testReadDeconstructor() throws Exception {
         List<String> extractedInfo = new ArrayList<>();
-        ClassModel classModel = Classfile.parse(Files.readAllBytes(testClassPath));
+        ClassModel classModel = Classfile.parse(MatcherTest.class.getResourceAsStream("/testdata/Points.class").readAllBytes());
         ClassTransform xform = (clb, cle) -> {
             if (cle instanceof MethodModel mm) {
                 clb.transformMethod(mm, (mb, me) -> {
@@ -81,40 +84,16 @@ class MatcherTest {
     }
 
     @Test
-    void testPrintJsonTraceAll() throws IOException {
-        var out = new StringBuilder();
-        ClassModel classModel = Classfile.parse(Files.readAllBytes(testClassPath));
-        ClassPrinter.toJson(classModel, ClassPrinter.Verbosity.TRACE_ALL, out::append);
-        System.out.println(out);
-        assertOut(out,
-                """
-                
-                """);
-    }
+    void testReadAndVerifyDeconstructor() throws IOException {
+        ClassModel classModel = Classfile.parse(MatcherTest.class.getResourceAsStream("/testdata/Points.class").readAllBytes());
 
-//    @Test
-//    void testWriteMatcher() throws Exception {
-//        ClassModel classModel = Classfile.parse(Files.readAllBytes(testClassPath));
-//        ClassTransform xform = (clb, cle) -> {
-//            if (cle instanceof MethodModel mm) {
-//                clb.transformMethod(mm, (mb, me) -> {
-//                    if (me instanceof MatcherAttribute ma) {
-//                        extractedInfo.add(ma.matcherName().toString());
-//                        extractedInfo.add(String.valueOf(ma.matcherFlags().has(AccessFlag.DECONSTRUCTOR)));
-//                        extractedInfo.add(ma.matcherTypeSymbol().toString());
-//                        extractedInfo.add(ma.attributes().toString());
-//                        mb.with(me);
-//                    } else {
-//                        mb.with(me);
-//                    }
-//                });
-//            }
-//            else
-//                clb.with(cle);
-//        };
-//        Classfile.parse(classModel.transform(xform));
-//        assertEquals(extractedInfo.toString(), "[Points, true, MethodTypeDesc[(Collection,Collection)void], [Attribute[name=MethodParameters], Attribute[name=Signature], Attribute[name=RuntimeVisibleParameterAnnotations]]]");
-//    }
+        var verres = classModel.verify(null);
+
+        if (!verres.isEmpty()) {
+            ClassPrinter.toYaml(classModel, ClassPrinter.Verbosity.TRACE_ALL, System.out::print);
+            assertEmpty(verres);
+        }
+    }
 
     private static void assertOut(StringBuilder out, String expected) {
 //        System.out.println("-----------------");
@@ -122,20 +101,4 @@ class MatcherTest {
 //        System.out.println("-----------------");
         assertArrayEquals(out.toString().trim().split(" *\r?\n"), expected.trim().split("\n"));
     }
-
-    public record Points(Collection<Integer> xs, Collection<Integer> ys) {
-        @MatcherAnnot
-        public __matcher Points(@BindingAnnot Collection<Integer> xs, @BindingAnnot Collection<Integer> ys) {
-            xs = this.xs;
-            ys = this.ys;
-        }
-    }
-
-    @Target(ElementType.METHOD)
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface MatcherAnnot { }
-
-    @Target(ElementType.PARAMETER)
-    @Retention(RetentionPolicy.RUNTIME)
-    public @interface BindingAnnot { }
 }

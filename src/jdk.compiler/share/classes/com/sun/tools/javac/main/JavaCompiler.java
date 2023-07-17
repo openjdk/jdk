@@ -1493,6 +1493,7 @@ public class JavaCompiler {
             Set<Env<AttrContext>> dependencies = new LinkedHashSet<>();
             protected boolean hasLambdas;
             protected boolean hasPatterns;
+            protected boolean hasMatchers;
             @Override
             public void visitClassDef(JCClassDecl node) {
                 Type st = types.supertype(node.sym.type);
@@ -1504,6 +1505,7 @@ public class JavaCompiler {
                         if (dependencies.add(stEnv)) {
                             boolean prevHasLambdas = hasLambdas;
                             boolean prevHasPatterns = hasPatterns;
+                            boolean prevHasMatchers = hasMatchers;
                             try {
                                 scan(stEnv.tree);
                             } finally {
@@ -1516,6 +1518,7 @@ public class JavaCompiler {
                                  */
                                 hasLambdas = prevHasLambdas;
                                 hasPatterns = prevHasPatterns;
+                                hasMatchers = prevHasMatchers;
                             }
                         }
                         envForSuperTypeFound = true;
@@ -1553,6 +1556,11 @@ public class JavaCompiler {
             public void visitSwitchExpression(JCSwitchExpression tree) {
                 hasPatterns |= tree.patternSwitch;
                 super.visitSwitchExpression(tree);
+            }
+            @Override
+            public void visitMethodDef(JCMethodDecl tree) {
+                hasMatchers |= tree.sym.isMatcher();
+                super.visitMethodDef(tree);
             }
         }
         ScanNested scanner = new ScanNested();
@@ -1608,7 +1616,7 @@ public class JavaCompiler {
             if (shouldStop(CompileState.TRANSPATTERNS))
                 return;
 
-            if (scanner.hasPatterns) {
+            if (scanner.hasPatterns | scanner.hasMatchers) {
                 env.tree = TransPatterns.instance(context).translateTopLevelClass(env, env.tree, localMake);
             }
 

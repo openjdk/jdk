@@ -1105,54 +1105,38 @@ public class TransPatterns extends TreeTranslator {
             variableIndex = 0;
             deconstructorCalls = null;
             if (tree.sym.isDeconstructor()) {
-                List<JCStatement> stats = tree.body.stats;
+                // Generate (without the bindings)
+                //     1. calculate the returnType MethodType as Constant_MethodType_info
+                //     2. generate factory code on carrier for the types we want (e.g., Object carrier = Carriers.factory(returnType);)
+                //     3. generate invoke call to pass the bindings (e.g, return carrier.invoke(x, y);)
 
-                // this is not needed since DA will ensure that a matcher method with bindings will need to gen carriers for all every time
-                boolean genCarrier = false;
-                for (int i = 0; i < stats.size(); i++) {
-                    var statement = stats.get(i);
-                    if (statement instanceof JCExpressionStatement eStat &&
-                            eStat.expr instanceof JCAssign assignment &&
-                            assignment.lhs.hasTag(Tag.IDENT) &&
-                            ((JCIdent) assignment.lhs).sym.owner.isDeconstructor()) {
-                        genCarrier = true;
-                    }
+                List<Type> params = List.nil();
+                List<JCExpression> invokeMethodParam = List.nil();
+
+                for (int i = 0; i < tree.params.length(); i++) {
+                    params = params.append(types.boxedTypeOrType(tree.params.get(i).type));
+                    invokeMethodParam = invokeMethodParam.append(make.Ident(tree.params.get(i)));
                 }
 
-                if (genCarrier) {
-                    // Generate (without the bindings)
-                    //     1. calculate the returnType MethodType as Constant_MethodType_info
-                    //     2. generate factory code on carrier for the types we want (e.g., Object carrier = Carriers.factory(returnType);)
-                    //     3. generate invoke call to pass the bindings (e.g, return carrier.invoke(x, y);)
+                MethodSymbol factoryMethodSym =
+                        rs.resolveInternalMethod(tree.pos(),
+                                env,
+                                syms.carriersType,
+                                names.fromString("factory"),
+                                List.of(syms.methodTypeType),
+                                List.nil());
 
-                    List<Type> params = List.nil();
-                    List<JCExpression> invokeMethodParam = List.nil();
+                DynamicVarSymbol factoryMethodDynamicVar =
+                        (DynamicVarSymbol) invokeMethodWrapper(tree.pos(),
+                                factoryMethodSym.asHandle(),
+                                new MethodType(params, syms.objectType, List.nil(), syms.methodClass));
 
-                    for (int i = 0; i < tree.params.length(); i++) {
-                        params = params.append(types.boxedTypeOrType(tree.params.get(i).type));
-                        invokeMethodParam = invokeMethodParam.append(make.Ident(tree.params.get(i)));
-                    }
+                JCIdent factoryMethodCall = make.Ident(factoryMethodDynamicVar);
 
-                    MethodSymbol factoryMethodSym =
-                            rs.resolveInternalMethod(tree.pos(),
-                                    env,
-                                    syms.carriersType,
-                                    names.fromString("factory"),
-                                    List.of(syms.methodTypeType),
-                                    List.nil());
+                JCMethodInvocation invokeMethodCall =
+                        makeApply(factoryMethodCall, names.fromString("invoke"), invokeMethodParam);
 
-                    DynamicVarSymbol factoryMethodDynamicVar =
-                            (DynamicVarSymbol) invokeMethodWrapper(tree.pos(),
-                                    factoryMethodSym.asHandle(),
-                                    new MethodType(params, syms.objectType, List.nil(), syms.methodClass));
-
-                    JCIdent factoryMethodCall = make.Ident(factoryMethodDynamicVar);
-
-                    JCMethodInvocation invokeMethodCall =
-                            makeApply(factoryMethodCall, names.fromString("invoke"), invokeMethodParam);
-
-                    tree.body.stats = tree.body.stats.append(make.Return(invokeMethodCall));
-                }
+                tree.body.stats = tree.body.stats.append(make.Return(invokeMethodCall));
             }
             super.visitMethodDef(tree);
             preparePatternMatchingCatchIfNeeded(tree.body);
