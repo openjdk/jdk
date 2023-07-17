@@ -4734,7 +4734,7 @@ public class Check {
                 }
             }
             if (currentPattern instanceof JCBindingPattern) {
-                return existingPattern instanceof JCBindingPattern;
+                return existingPattern instanceof JCBindingPattern || existingPattern instanceof JCAnyPattern;
             } else if (currentPattern instanceof JCRecordPattern currentRecordPattern) {
                 if (existingPattern instanceof JCBindingPattern) {
                     return true;
@@ -4752,10 +4752,19 @@ public class Check {
                         currentNested = currentNested.tail;
                     }
                     return true;
-                } else {
+                } else if (existingPattern instanceof JCAnyPattern) {
+                    return true;
+                }
+                else {
                     Assert.error("Unknown pattern: " + existingPattern.getTag());
                 }
-            } else {
+            } else if (currentPattern instanceof JCAnyPattern) {
+                if(existingPattern instanceof JCAnyPattern) {
+                    return true;
+                } else {
+                    return existingPattern instanceof JCBindingPattern;
+                }
+            } {
                 Assert.error("Unknown pattern: " + currentPattern.getTag());
             }
             return false;
