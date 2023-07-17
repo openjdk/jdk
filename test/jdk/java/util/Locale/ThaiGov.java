@@ -48,7 +48,7 @@ public class ThaiGov {
 
     // Test number formatting for thai
     @Test
-    public void numberTest() throws RuntimeException {
+    public void numberTest() {
         final String strExpected = "\u0E51\u0E52\u002C\u0E53\u0E54\u0E55\u002C\u0E56\u0E57\u0E58\u002E\u0E52\u0E53\u0E54";
         NumberFormat nf = NumberFormat.getInstance(TH);
         String str = nf.format(VALUE);
@@ -57,7 +57,7 @@ public class ThaiGov {
 
     // Test currency formatting for Thai
     @Test
-    public void currencyTest() throws RuntimeException {
+    public void currencyTest() {
         final String strExpected = "\u0E3F\u0E51\u0E52\u002C\u0E53\u0E54\u0E55\u002C\u0E56\u0E57\u0E58\u002E\u0E52\u0E53";
         NumberFormat nf = NumberFormat.getCurrencyInstance(TH);
         String str = nf.format(VALUE);
@@ -66,7 +66,7 @@ public class ThaiGov {
 
     // Test date formatting for Thai
     @Test
-    public void dateTest() throws RuntimeException {
+    public void dateTest() {
         TimeZone tz = TimeZone.getTimeZone("America/Los_Angeles");
         Calendar calGregorian = Calendar.getInstance(tz, Locale.US);
         calGregorian.clear();
