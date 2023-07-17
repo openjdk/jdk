@@ -479,7 +479,7 @@ DS_StartBufferHelper::Data::~Data() {
 
 DWORD WINAPI __stdcall DS_StartBufferHelper::ThreadProc(void *param)
 {
-    ::CoInitialize(NULL);
+    ::CoInitializeEx(NULL, COINIT_MULTITHREADED);
     while (1) {
         // wait for something to do
         ::WaitForSingleObject(data.startEvent, INFINITE);
