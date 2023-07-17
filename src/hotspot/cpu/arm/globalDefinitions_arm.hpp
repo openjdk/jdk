@@ -26,6 +26,7 @@
 #define CPU_ARM_GLOBALDEFINITIONS_ARM_HPP
 
 const int StackAlignmentInBytes = 8;
+const size_t Pdsegfault_address = 1024;
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.

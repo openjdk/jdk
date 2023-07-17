@@ -68,7 +68,9 @@ public class TestSigInfoInHsErrFile {
     patterns.add(Pattern.compile("# .*VMError::controlled_crash.*"));
 
     // Crash address: see VMError::_segfault_address
-    String crashAddress = Platform.isAix() ? "0xffffffffffffffff" : "0x0*1000";
+    //All faults on s390x give the address only on page granularity.
+    //Hence fault address is first page address.
+    String crashAddress = Platform.isAix() ? "0xffffffffffffffff" : Platform.isS390x() ? "0x0*1000" : "0x0*400";
     patterns.add(Pattern.compile("siginfo: si_signo: \\d+ \\(SIGSEGV\\), si_code: \\d+ \\(SEGV_.*\\), si_addr: " + crashAddress + ".*"));
 
     HsErrFileUtils.checkHsErrFileContent(f, patterns.toArray(new Pattern[] {}), true);

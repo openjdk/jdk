@@ -30,6 +30,10 @@
 
 const int StackAlignmentInBytes = 16;
 
+//All faults on s390x give the address only on page granularity.
+//Set Pdsegfault_address to minumum one page address.
+const size_t Pdsegfault_address = 4096;
+
 #define SUPPORTS_NATIVE_CX8
 
 #define CPU_MULTI_COPY_ATOMIC
