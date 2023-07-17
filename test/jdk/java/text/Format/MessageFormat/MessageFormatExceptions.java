@@ -34,6 +34,7 @@ import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -49,16 +50,23 @@ public class MessageFormatExceptions {
     }
 
     // 8039165: When MessageFormat is constructed with a null locale a NPE
-    // can potentially be thrown depending on the subformat created. The following
-    // are some examples.
+    // can potentially be thrown depending on the subformat created. Either
+    // during the creation of the object itself, or later when format() is called.
+    // The following are some examples.
     @Test
     public void nullLocaleTest() {
         // Fail in applyPattern()
-        assertThrows(NullPointerException.class, () -> new MessageFormat("{0, date}", null));
+        assertThrows(NullPointerException.class,
+                () -> new MessageFormat("{0, date}", null));
         // Fail in applyPattern()
-        assertThrows(NullPointerException.class, () -> new MessageFormat("{0, number}", null));
+        assertThrows(NullPointerException.class,
+                () -> new MessageFormat("{0, number}", null));
         // Fail in format()
-        assertThrows(NullPointerException.class, () -> new MessageFormat("{0}", null).format(new Object[]{42}));
+        assertThrows(NullPointerException.class,
+                () -> new MessageFormat("{0}", null).format(new Object[]{42}));
+        // Does not always fail if locale is null
+        assertDoesNotThrow(() ->
+                new MessageFormat("{0}", null).format(new Object[]{"hello"}));
     }
 
     // 6481179: Invalid format type should be provided in error message of IAE
