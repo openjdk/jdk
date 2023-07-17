@@ -522,9 +522,9 @@ public interface Path
      *
      * <p> If {@code more} does not specify any {@code Path}s,
      * then the result is {@link #resolve(Path) resolve(first)}. If
-     * {@code more} specifies one or more {@code Path}s, then each non-empty
-     * {@code Path}, including {@code first}, is resolved iteratively against
-     * this {@code Path}.
+     * {@code more} specifies one or more {@code Path}s, then {@code first}
+     * is resolved against this path and then the additional paths in
+     * {@code more} are iteratively resolved.
      *
      * If {@code first} and {@code more} specify only empty paths, then this
      * method returns this path. If any of the paths in {@code first} and
@@ -551,7 +551,7 @@ public interface Path
      *          the first path to resolve against this path
      *
      * @param   more
-     *          additional paths to be iteratively resolved against this path
+     *          additional paths to be iteratively resolved
      *
      * @return  the resulting path
      *
@@ -574,10 +574,11 @@ public interface Path
      * <p> If {@code more} does not
      * specify any path strings, then the result is {@link #resolve(String)
      * resolve(first)}. If {@code more} specifies one or more path strings,
-     * then each non-empty path string, including {@code first}, is iteratively
-     * converted to a {@code Path} and resolved against this {@code Path}.
-     * Path strings which convert to empty or absolute paths are handled as
-     * specified by {@link #resolve(Path,Path...)}.
+     * then {@code first} is converted to a {@code Path}, resolved against
+     * this path, and then the additional path strings in {@code more} are
+     * iteratively converted to {@code Path}s and resolved. Path strings which
+     * convert to empty or absolute paths are handled as specified by
+     * {@link #resolve(Path,Path...)}.
      *
      * <p> The result of this method is the same as would be obtained by
      * resolving the path converted from the first path string against
@@ -600,7 +601,7 @@ public interface Path
      *
      * @param   more
      *          additional path strings to be iteratively converted to
-     *          paths and resolved against this path
+     *          paths and resolved
      *
      * @return  the resulting path
      *
