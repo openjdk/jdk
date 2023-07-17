@@ -3508,9 +3508,6 @@ public class Flow {
 
         public RecordPattern(Type recordType, Type[] fullComponentTypes, PatternDescription[] nested) {
             this(recordType, hashCode(-1, recordType, nested), fullComponentTypes, nested);
-            if ("test.Test.R(test.Test.C _, test.Test.R(test.Test.C _, test.Test.R(test.Test.C _, test.Test.C _, test.Test.C _), test.Test.I _), test.Test.I _)".equals(toString())) {
-                System.err.println("jaslkdfj");
-            }
         }
 
         @Override
