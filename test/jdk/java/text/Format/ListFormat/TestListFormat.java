@@ -43,9 +43,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestListFormat {
-    private static final Object[] SAMPLE2 = {"afo", "ika"};
-    private static final Object[] SAMPLE3 = {"afo", "ika", "uni"};
-    private static final Object[] SAMPLE4 = {"afo", "ika", "uni", "tako"};
+    private static final Object[] SAMPLE2 = {"foo", "bar"};
+    private static final Object[] SAMPLE3 = {"foo", "bar", "baz"};
+    private static final Object[] SAMPLE4 = {"foo", "bar", "baz", "qux"};
     private static final String[] CUSTOM_PATTERNS = {
             "sbef {0} sbet {1}",
             "{0} mid {1}",
@@ -56,51 +56,51 @@ public class TestListFormat {
 
     static Arguments[] getInstance_1Arg() {
         return new Arguments[] {
-                arguments(SAMPLE2, "afo two ika"),
-                arguments(SAMPLE3, "afo three ika three uni"),
-                arguments(SAMPLE4, "sbef afo sbet ika mid uni ebet tako eaft"),
+                arguments(SAMPLE2, "foo two bar"),
+                arguments(SAMPLE3, "foo three bar three baz"),
+                arguments(SAMPLE4, "sbef foo sbet bar mid baz ebet qux eaft"),
         };
     }
 
     static Arguments[] getInstance_3Arg() {
         return new Arguments[] {
                 arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL,
-                        "afo, ika, and uni", false),
+                        "foo, bar, and baz", false),
                 arguments(Locale.US, ListFormat.Type.OR, ListFormat.Style.FULL,
-                        "afo, ika, or uni", false),
+                        "foo, bar, or baz", false),
                 arguments(Locale.US, ListFormat.Type.UNIT, ListFormat.Style.FULL,
-                        "afo, ika, uni", false),
+                        "foo, bar, baz", false),
                 arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.SHORT,
-                        "afo, ika, & uni", false),
+                        "foo, bar, & baz", false),
                 arguments(Locale.US, ListFormat.Type.OR, ListFormat.Style.SHORT,
-                        "afo, ika, or uni", false),
+                        "foo, bar, or baz", false),
                 arguments(Locale.US, ListFormat.Type.UNIT, ListFormat.Style.SHORT,
-                        "afo, ika, uni", false),
+                        "foo, bar, baz", false),
                 arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.NARROW,
-                        "afo, ika, uni", false),
+                        "foo, bar, baz", false),
                 arguments(Locale.US, ListFormat.Type.OR, ListFormat.Style.NARROW,
-                        "afo, ika, or uni", false),
+                        "foo, bar, or baz", false),
                 arguments(Locale.US, ListFormat.Type.UNIT, ListFormat.Style.NARROW,
-                        "afo ika uni", false),
+                        "foo bar baz", false),
 
                 arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.FULL,
-                        "afo\u3001ika\u3001uni", false),
+                        "foo\u3001bar\u3001baz", false),
                 arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.FULL,
-                        "afo\u3001ika\u3001\u307e\u305f\u306funi", false),
+                        "foo\u3001bar\u3001\u307e\u305f\u306fbaz", false),
                 arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.FULL,
-                        "afo ika uni", false),
+                        "foo bar baz", false),
                 arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.SHORT,
-                        "afo\u3001ika\u3001uni", false),
+                        "foo\u3001bar\u3001baz", false),
                 arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.SHORT,
-                        "afo\u3001ika\u3001\u307e\u305f\u306funi", false),
+                        "foo\u3001bar\u3001\u307e\u305f\u306fbaz", false),
                 arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.SHORT,
-                        "afo ika uni", false),
+                        "foo bar baz", false),
                 arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.NARROW,
-                        "afo\u3001ika\u3001uni", false),
+                        "foo\u3001bar\u3001baz", false),
                 arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.NARROW,
-                        "afo\u3001ika\u3001\u307e\u305f\u306funi", false),
+                        "foo\u3001bar\u3001\u307e\u305f\u306fbaz", false),
                 arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.NARROW,
-                        "afoikauni", true), // no delimiter
+                        "foobarbaz", true), // no delimiter
         };
     }
 
