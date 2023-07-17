@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753 7123582 8305950 8281658
+ * @bug 6994753 7123582 8305950 8281658 8310201
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -67,6 +67,9 @@ public class Settings extends TestHelper {
     private static final String VM_SETTINGS = "VM settings:";
     private static final String PROP_SETTINGS = "Property settings:";
     private static final String LOCALE_SETTINGS = "Locale settings:";
+    private static final String LOCALE_SUMMARY_SETTINGS =
+                "Locale settings summary:";
+    private static final String AVAILABLE_LOCALES = "available locales";
     private static final String SEC_PROPS_SETTINGS = "Security properties:";
     private static final String SEC_SUMMARY_PROPS_SETTINGS =
                 "Security settings summary:";
@@ -81,7 +84,9 @@ public class Settings extends TestHelper {
     static void containsAllOptions(TestResult tr) {
         checkContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
-        checkContains(tr, LOCALE_SETTINGS);
+        checkNotContains(tr, LOCALE_SETTINGS);
+        checkNotContains(tr, AVAILABLE_LOCALES);
+        checkContains(tr, LOCALE_SUMMARY_SETTINGS);
         // no verbose security settings unless "security" used
         checkNotContains(tr, SEC_PROPS_SETTINGS);
         checkContains(tr, SEC_SUMMARY_PROPS_SETTINGS);
@@ -153,6 +158,8 @@ public class Settings extends TestHelper {
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkContains(tr, LOCALE_SETTINGS);
+        checkContains(tr, AVAILABLE_LOCALES);
+        checkNotContains(tr, LOCALE_SUMMARY_SETTINGS);
         checkContains(tr, TZDATA_SETTINGS);
     }
 
