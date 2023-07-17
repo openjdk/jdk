@@ -202,4 +202,7 @@
 
   void set_sp_is_trusted() { _sp_is_trusted = true; }
 
+  // Additional interface for interpreter frames:
+  static int interpreter_frame_monitor_size_in_bytes();
+
 #endif // CPU_AARCH64_FRAME_AARCH64_HPP
