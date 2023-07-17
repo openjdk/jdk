@@ -43,15 +43,38 @@ import java.util.stream.IntStream;
  * <a href="https://www.unicode.org/reports/tr35/tr35-general.html#ListPatterns">
  * List Patterns</a>.
  * <p>
- * Three types of concatenation are provided; {@link Type#STANDARD},
- * {@link Type#OR}, and {@link Type#UNIT}, also three styles for each
- * type are provided; {@link Style#FULL}, {@link Style#SHORT}, and
- * {@link Style#NARROW}.
- * </p>
+ * Three types of concatenation are provided; {@link Type#STANDARD STANDARD},
+ * {@link Type#OR OR}, and {@link Type#UNIT UNIT}, also two styles for each
+ * type are provided; {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
+ * {@link Style#NARROW NARROW}. For example, an array of Strings
+ * {@code ["Foo", "Bar", "Baz"]} may be formatted as follows in US English:
+ * <table class="striped">
+ * <caption style="display:none">Formatting examples</caption>
+ * <thead>
+ * <tr><th scope="col"></th>
+ *     <th scope="col">FULL</th>
+ *     <th scope="col">SHORT</th>
+ *     <th scope="col">NARROW</th></tr>
+ * </thead>
+ * <tbody>
+ * <tr><th scope="row" style="text-align:left">STANDARD</th>
+ *     <td>Foo, Bar, and Baz</td>
+ *     <td>Foo, Bar, &amp; Baz</td>
+ *     <td>Foo, Bar, Baz</td>
+ * <tr><th scope="row" style="text-align:left">OR</th>
+ *     <td>Foo, Bar, or Baz</td>
+ *     <td>Foo, Bar, or Baz</td>
+ *     <td>Foo, Bar, or Baz</td>
+ * <tr><th scope="row" style="text-align:left">UNIT</th>
+ *     <td>Foo, Bar, Baz</td>
+ *     <td>Foo, Bar, Baz</td>
+ *     <td>Foo Bar Baz</td>
+ * </tbody>
+ * </table>
  * @implNote The default implementation utilizes {@link MessageFormat}
  * for formatting and parsing.
  *
- * @since 21
+ * @since 22
  */
 public class ListFormat extends Format {
 
@@ -65,22 +88,24 @@ public class ListFormat extends Format {
     private static final int PATTERN_ARRAY_LENGTH = THREE + 1;
 
     /**
+     * The locale to use for formatting list patterns.
      * @serial
      */
     private final Locale locale;
 
     /**
+     * The patterns array. Each element corresponds to the Unicode LDML's `listPatternsPart` type.
      * @serial
      */
     private final String[] patterns;
 
-    private String startBefore;
-    private String startBetween;
-    private String middleBetween;
-    private String endBetween;
-    private String endAfter;
-    private Pattern startPattern;
-    private Pattern endPattern;
+    private transient String startBefore;
+    private transient String startBetween;
+    private transient String middleBetween;
+    private transient String endBetween;
+    private transient String endAfter;
+    private transient Pattern startPattern;
+    private transient Pattern endPattern;
 
     private ListFormat(Locale l, String[] patterns) {
         locale = l;
@@ -118,14 +143,6 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the list format object for the default {@code Locale}, {@link Type#STANDARD},
-     * and {@link Style#FULL}}
-     */
-    public static ListFormat getInstance() {
-        return getInstance(Locale.getDefault(Locale.Category.FORMAT), Type.STANDARD, Style.FULL);
-    }
-
-    /**
      * {@return the list format object for the specified {@code Locale}, {@link Type},
      * and {@link Style}}
      * @param locale Locale to be used, not null
@@ -143,6 +160,46 @@ public class ListFormat extends Format {
 
     /**
      * {@return the list format object for the specified patterns array}
+     * <p>
+     * This factory produces a customized instance based on passed patterns array,
+     * instead of letting the runtime provide appropriate patterns for the locale/type/style.
+     * <p>
+     * Patterns array consists of strings of patterns that correspond to Unicode LDML's
+     * {@code listPatternPart}, i.e., "start", "middle", "end", "2", and
+     * "3" patterns. Each pattern contains "{0}" and "{1}" (and "{2}" for pattern "3")
+     * placeholders that are substituted with the passed input strings on formatting. For example,
+     * the following Patterns array is equivalent to {@code STANDARD} type,
+     * {@code FULL} style in US English:
+     * <table class="striped">
+     * <caption style="display:none">Patterns</caption>
+     * <tbody>
+     * <tr><th scope="row" style="text-align:left">start</th>
+     *     <td>"{0}, {1}"</td>
+     * <tr><th scope="row" style="text-align:left">middle</th>
+     *     <td>"{0}, {1}"</td>
+     * <tr><th scope="row" style="text-align:left">end</th>
+     *     <td>"{0}, and {1}"</td>
+     * <tr><th scope="row" style="text-align:left">2</th>
+     *     <td>"{0} and {1}"</td>
+     * <tr><th scope="row" style="text-align:left">3</th>
+     *     <td>""</td>
+     * </tbody>
+     * </table>
+     * Here are the resulting formatted strings with the above pattern array:), it will be
+     * formatted as:
+     * <table class="striped">
+     * <caption style="display:none">Formatting examples</caption>
+     * <tbody>
+     * <tr><th scope="row" style="text-align:left">["Foo", "Bar", "Baz", "Qux"]</th>
+     *     <td>"Foo, Bar, Baz, and Qux"</td>
+     * <tr><th scope="row" style="text-align:left">["Foo", "Bar", "Baz"]</th>
+     *     <td>"Foo, Bar, and Baz"</td>
+     * <tr><th scope="row" style="text-align:left">["Foo", "Bar"]</th>
+     *     <td>"Foo and Bar"</td>
+     *     <td>""</td>
+     * </tbody>
+     * </table>
+     *
      * @param patterns array of patterns, not null
      */
     public static ListFormat getInstance(String[] patterns) {
@@ -151,6 +208,20 @@ public class ListFormat extends Format {
             throw new IllegalArgumentException("Pattern array length should be " + PATTERN_ARRAY_LENGTH);
         }
         return new ListFormat(Locale.ROOT, patterns);
+    }
+
+    /**
+     * Formats the input strings. The input is an array of Strings that are formatted
+     * into a concatenated string.
+     * @param input The array of input strings to format. There should be at least two
+     *              elements in the array, otherwise {@code IllegalArgumentException} is
+     *              thrown
+     * @throws IllegalArgumentException if the length of the input array is less than two
+     * @return the formatted string
+     */
+    public String format(String[] input) {
+        return format(input, new StringBuffer(),
+                DontCareFieldPosition.INSTANCE).toString();
     }
 
     @Override
