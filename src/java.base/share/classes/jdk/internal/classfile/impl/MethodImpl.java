@@ -30,6 +30,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 
 public final class MethodImpl
@@ -112,6 +113,11 @@ public final class MethodImpl
             buf.writeIndex(methodType());
             buf.writeList(attributes());
         }
+    }
+
+    @Override
+    public OptionalInt payloadLen() {
+        return OptionalInt.of(endPos - startPos);
     }
 
     // MethodModel

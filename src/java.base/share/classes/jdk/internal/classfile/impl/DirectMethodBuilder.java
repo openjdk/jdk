@@ -26,6 +26,7 @@
 package jdk.internal.classfile.impl;
 
 import java.lang.constant.MethodTypeDesc;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 
 import jdk.internal.classfile.BufWriter;
@@ -149,5 +150,11 @@ public final class DirectMethodBuilder
         buf.writeIndex(name);
         buf.writeIndex(desc);
         attributes.writeTo(buf);
+    }
+
+    @Override
+    public OptionalInt payloadLen() {
+        var al = attributes.payloadLen();
+        return al.isPresent() ? OptionalInt.of(6 + al.getAsInt()) : OptionalInt.empty();
     }
 }

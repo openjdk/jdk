@@ -299,8 +299,11 @@ public final class ClassReaderImpl
     }
 
     void writeConstantPoolEntries(BufWriter buf) {
-        copyBytesTo(buf, ClassReaderImpl.CP_ITEM_START,
-                    metadataStart - ClassReaderImpl.CP_ITEM_START);
+        copyBytesTo(buf, ClassReaderImpl.CP_ITEM_START, constantPoolLen());
+    }
+
+    int constantPoolLen() {
+        return metadataStart - ClassReaderImpl.CP_ITEM_START;
     }
 
     // Constantpool

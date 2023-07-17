@@ -28,6 +28,7 @@ import java.lang.constant.MethodTypeDesc;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 
 import jdk.internal.classfile.AccessFlags;
@@ -203,6 +204,11 @@ public final class BufferedMethodBuilder
                     forEachElement(mb);
                 }
             });
+        }
+
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.empty();
         }
 
         @Override

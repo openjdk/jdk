@@ -24,6 +24,7 @@
  */
 package jdk.internal.classfile;
 
+import java.util.OptionalInt;
 import jdk.internal.classfile.constantpool.ConstantPoolBuilder;
 import jdk.internal.classfile.constantpool.PoolEntry;
 import jdk.internal.classfile.impl.DirectFieldBuilder;
@@ -45,4 +46,9 @@ public sealed interface WritableElement<T> extends ClassfileElement
      * @param buf the writer
      */
     void writeTo(BufWriter buf);
+
+    /**
+     * {@return payload length of the element}
+     */
+    OptionalInt payloadLen();
 }

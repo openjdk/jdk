@@ -29,6 +29,7 @@ import jdk.internal.classfile.constantpool.*;
 
 import java.lang.constant.ConstantDesc;
 import java.util.List;
+import java.util.OptionalInt;
 
 import static jdk.internal.classfile.Classfile.*;
 
@@ -56,6 +57,14 @@ public final class AnnotationImpl implements Annotation {
     public void writeTo(BufWriter buf) {
         buf.writeIndex(className());
         buf.writeList(elements());
+    }
+
+    @Override
+    public OptionalInt payloadLen() {
+        return OptionalInt.of(4 + elements.stream()
+                .map(AnnotationElement::payloadLen)
+                .mapToInt(OptionalInt::getAsInt)
+                .sum());
     }
 
     @Override
@@ -88,6 +97,11 @@ public final class AnnotationImpl implements Annotation {
             buf.writeIndex(name());
             value().writeTo(buf);
         }
+
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(2 + value().payloadLen().getAsInt());
+        }
     }
 
     public sealed interface OfConstantImpl extends AnnotationValue.OfConstant
@@ -108,6 +122,10 @@ public final class AnnotationImpl implements Annotation {
             return constant().constantValue();
         }
 
+        @Override
+        default OptionalInt payloadLen() {
+            return OptionalInt.of(3);
+        }
     }
 
     public record OfStringImpl(Utf8Entry constant)
@@ -254,6 +272,13 @@ public final class AnnotationImpl implements Annotation {
             buf.writeList(values);
         }
 
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(3 + values.stream()
+                    .map(AnnotationValue::payloadLen)
+                    .mapToInt(OptionalInt::getAsInt)
+                    .sum());
+        }
     }
 
     public record OfEnumImpl(Utf8Entry className, Utf8Entry constantName)
@@ -270,6 +295,10 @@ public final class AnnotationImpl implements Annotation {
             buf.writeIndex(constantName);
         }
 
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(5);
+        }
     }
 
     public record OfAnnotationImpl(Annotation annotation)
@@ -285,6 +314,10 @@ public final class AnnotationImpl implements Annotation {
             annotation.writeTo(buf);
         }
 
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(1 + annotation.payloadLen().getAsInt());
+        }
     }
 
     public record OfClassImpl(Utf8Entry className)
@@ -300,5 +333,9 @@ public final class AnnotationImpl implements Annotation {
             buf.writeIndex(className);
         }
 
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(3);
+        }
     }
 }

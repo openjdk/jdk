@@ -54,6 +54,7 @@ import jdk.internal.classfile.constantpool.StringEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import java.lang.constant.ModuleDesc;
 import java.lang.constant.PackageDesc;
+import java.util.OptionalInt;
 
 public abstract sealed class AbstractPoolEntry {
     /*
@@ -479,6 +480,15 @@ public abstract sealed class AbstractPoolEntry {
                 }
             }
         }
+
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(3 + (rawBytes == null
+                    ? stringValue.chars()
+                            .map(ch -> (ch >= '\001' && ch <= '\177') ? 1 : ch > '\u07FF' ? 3 : 2)
+                            .sum()
+                    : rawLen));
+        }
     }
 
     static abstract sealed class AbstractRefEntry<T extends PoolEntry> extends AbstractPoolEntry {
@@ -496,6 +506,10 @@ public abstract sealed class AbstractPoolEntry {
         public void writeTo(BufWriter pool) {
             pool.writeU1(tag);
             pool.writeU2(ref1.index());
+        }
+
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(3);
         }
 
         @Override
@@ -527,6 +541,10 @@ public abstract sealed class AbstractPoolEntry {
             pool.writeU1(tag);
             pool.writeU2(ref1.index());
             pool.writeU2(ref2.index());
+        }
+
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(5);
         }
 
         @Override
@@ -828,6 +846,10 @@ public abstract sealed class AbstractPoolEntry {
             pool.writeU2(nameAndType.index());
         }
 
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(5);
+        }
+
         @Override
         public String toString() {
             return tag() + " " + bootstrap() + "." + nameAndType().name().stringValue()
@@ -931,6 +953,11 @@ public abstract sealed class AbstractPoolEntry {
             pool.writeU1(tag);
             pool.writeU1(refKind);
             pool.writeU2(reference.index());
+        }
+
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(4);
         }
 
         @Override
@@ -1083,6 +1110,11 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(5);
+        }
+
+        @Override
         public IntegerEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.intEntry(val);
         }
@@ -1113,6 +1145,11 @@ public abstract sealed class AbstractPoolEntry {
         public void writeTo(BufWriter pool) {
             pool.writeU1(tag);
             pool.writeFloat(val);
+        }
+
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(5);
         }
 
         @Override
@@ -1148,6 +1185,11 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(9);
+        }
+
+        @Override
         public LongEntry clone(ConstantPoolBuilder cp) {
             return cp.canWriteDirect(constantPool) ? this : cp.longEntry(val);
         }
@@ -1177,6 +1219,11 @@ public abstract sealed class AbstractPoolEntry {
         public void writeTo(BufWriter pool) {
             pool.writeU1(tag);
             pool.writeDouble(val);
+        }
+
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(9);
         }
 
         @Override

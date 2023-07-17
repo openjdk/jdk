@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.OptionalInt;
 import java.util.Set;
 
 import jdk.internal.classfile.attribute.AnnotationDefaultAttribute;
@@ -143,6 +144,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, AnnotationDefaultAttribute attr) {
                     attr.defaultValue().writeTo(buf);
                 }
+
+                @Override
+                public OptionalInt payloadLen(AnnotationDefaultAttribute attr) {
+                    return attr.defaultValue().payloadLen();
+                }
             };
 
     /** Attribute mapper for the {@code BootstrapMethods} attribute */
@@ -156,6 +162,14 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, BootstrapMethodsAttribute attr) {
                     buf.writeList(attr.bootstrapMethods());
+                }
+
+                @Override
+                public OptionalInt payloadLen(BootstrapMethodsAttribute attr) {
+                    return OptionalInt.of(2 + attr.bootstrapMethods()
+                            .stream()
+                            .mapToInt(bm -> 4 + 2 * bm.arguments().size())
+                            .sum());
                 }
             };
 
@@ -179,6 +193,11 @@ public class Attributes {
                         buf.writeU2(info.flags());
                     }
                 }
+
+                @Override
+                public OptionalInt payloadLen(CharacterRangeTableAttribute attr) {
+                    return OptionalInt.of(2 + 14 * attr.characterRangeTable().size());
+                }
             };
 
     /** Attribute mapper for the {@code Code} attribute */
@@ -192,6 +211,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, CodeAttribute attr) {
                     throw new UnsupportedOperationException("Code attribute does not support direct write");
+                }
+
+                @Override
+                public OptionalInt payloadLen(CodeAttribute attr) {
+                    return OptionalInt.empty();
                 }
             };
 
@@ -208,6 +232,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, CompilationIDAttribute attr) {
                     buf.writeIndex(attr.compilationId());
                 }
+
+                @Override
+                public OptionalInt payloadLen(CompilationIDAttribute attr) {
+                    return OptionalInt.of(2);
+                }
             };
 
     /** Attribute mapper for the {@code ConstantValue} attribute */
@@ -222,6 +251,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, ConstantValueAttribute attr) {
                     buf.writeIndex(attr.constant());
                 }
+
+                @Override
+                public OptionalInt payloadLen(ConstantValueAttribute attr) {
+                    return OptionalInt.of(2);
+                }
             };
 
     /** Attribute mapper for the {@code Deprecated} attribute */
@@ -235,6 +269,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, DeprecatedAttribute attr) {
                     // empty
+                }
+
+                @Override
+                public OptionalInt payloadLen(DeprecatedAttribute attr) {
+                    return OptionalInt.of(0);
                 }
             };
 
@@ -251,6 +290,11 @@ public class Attributes {
                     buf.writeIndex(attr.enclosingClass());
                     buf.writeIndexOrZero(attr.enclosingMethod().orElse(null));
                 }
+
+                @Override
+                public OptionalInt payloadLen(EnclosingMethodAttribute attr) {
+                    return OptionalInt.of(4);
+                }
             };
 
     /** Attribute mapper for the {@code Exceptions} attribute */
@@ -264,6 +308,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, ExceptionsAttribute attr) {
                     buf.writeListIndices(attr.exceptions());
+                }
+
+                @Override
+                public OptionalInt payloadLen(ExceptionsAttribute attr) {
+                    return OptionalInt.of(2 + 2 * attr.exceptions().size());
                 }
             };
 
@@ -286,6 +335,11 @@ public class Attributes {
                         buf.writeU2(ic.flagsMask());
                     }
                 }
+
+                @Override
+                public OptionalInt payloadLen(InnerClassesAttribute attr) {
+                    return OptionalInt.of(2 + 8 * attr.classes().size());
+                }
             };
 
     /** Attribute mapper for the {@code LineNumberTable} attribute */
@@ -304,6 +358,11 @@ public class Attributes {
                         buf.writeU2(line.startPc());
                         buf.writeU2(line.lineNumber());
                     }
+                }
+
+                @Override
+                public OptionalInt payloadLen(LineNumberTableAttribute attr) {
+                    return OptionalInt.of(2 + 4 * attr.lineNumbers().size());
                 }
             };
 
@@ -327,6 +386,11 @@ public class Attributes {
                         buf.writeU2(info.slot());
                     }
                 }
+
+                @Override
+                public OptionalInt payloadLen(LocalVariableTableAttribute attr) {
+                    return OptionalInt.of(2 + 14 * attr.localVariables().size());
+                }
             };
 
     /** Attribute mapper for the {@code LocalVariableTypeTable} attribute */
@@ -349,6 +413,11 @@ public class Attributes {
                         buf.writeU2(info.slot());
                     }
                 }
+
+                @Override
+                public OptionalInt payloadLen(LocalVariableTypeTableAttribute attr) {
+                    return OptionalInt.of(2 + 14 * attr.localVariableTypes().size());
+                }
             };
 
     /** Attribute mapper for the {@code MethodParameters} attribute */
@@ -368,46 +437,69 @@ public class Attributes {
                         buf.writeU2(info.flagsMask());
                     }
                 }
+
+                @Override
+                public OptionalInt payloadLen(MethodParametersAttribute attr) {
+                    return OptionalInt.of(1 + 4 * attr.parameters().size());
+                }
             };
 
     /** Attribute mapper for the {@code Module} attribute */
     public static final AttributeMapper<ModuleAttribute>
             MODULE = new AbstractAttributeMapper<>(NAME_MODULE, Classfile.JAVA_9_VERSION) {
-        @Override
-        public ModuleAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
-            return new BoundAttribute.BoundModuleAttribute(cf, this, p);
-        }
+                @Override
+                public ModuleAttribute readAttribute(AttributedElement e, ClassReader cf, int p) {
+                    return new BoundAttribute.BoundModuleAttribute(cf, this, p);
+                }
 
-        @Override
-        protected void writeBody(BufWriter buf, ModuleAttribute attr) {
-            buf.writeIndex(attr.moduleName());
-            buf.writeU2(attr.moduleFlagsMask());
-            buf.writeIndexOrZero(attr.moduleVersion().orElse(null));
-            buf.writeU2(attr.requires().size());
-            for (ModuleRequireInfo require : attr.requires()) {
-                buf.writeIndex(require.requires());
-                buf.writeU2(require.requiresFlagsMask());
-                buf.writeIndexOrZero(require.requiresVersion().orElse(null));
-            }
-            buf.writeU2(attr.exports().size());
-            for (ModuleExportInfo export : attr.exports()) {
-                buf.writeIndex(export.exportedPackage());
-                buf.writeU2(export.exportsFlagsMask());
-                buf.writeListIndices(export.exportsTo());
-            }
-            buf.writeU2(attr.opens().size());
-            for (ModuleOpenInfo open : attr.opens()) {
-                buf.writeIndex(open.openedPackage());
-                buf.writeU2(open.opensFlagsMask());
-                buf.writeListIndices(open.opensTo());
-            }
-            buf.writeListIndices(attr.uses());
-            buf.writeU2(attr.provides().size());
-            for (ModuleProvideInfo provide : attr.provides()) {
-                buf.writeIndex(provide.provides());
-                buf.writeListIndices(provide.providesWith());
-            }
-        }
+                @Override
+                protected void writeBody(BufWriter buf, ModuleAttribute attr) {
+                    buf.writeIndex(attr.moduleName());
+                    buf.writeU2(attr.moduleFlagsMask());
+                    buf.writeIndexOrZero(attr.moduleVersion().orElse(null));
+                    buf.writeU2(attr.requires().size());
+                    for (ModuleRequireInfo require : attr.requires()) {
+                        buf.writeIndex(require.requires());
+                        buf.writeU2(require.requiresFlagsMask());
+                        buf.writeIndexOrZero(require.requiresVersion().orElse(null));
+                    }
+                    buf.writeU2(attr.exports().size());
+                    for (ModuleExportInfo export : attr.exports()) {
+                        buf.writeIndex(export.exportedPackage());
+                        buf.writeU2(export.exportsFlagsMask());
+                        buf.writeListIndices(export.exportsTo());
+                    }
+                    buf.writeU2(attr.opens().size());
+                    for (ModuleOpenInfo open : attr.opens()) {
+                        buf.writeIndex(open.openedPackage());
+                        buf.writeU2(open.opensFlagsMask());
+                        buf.writeListIndices(open.opensTo());
+                    }
+                    buf.writeListIndices(attr.uses());
+                    buf.writeU2(attr.provides().size());
+                    for (ModuleProvideInfo provide : attr.provides()) {
+                        buf.writeIndex(provide.provides());
+                        buf.writeListIndices(provide.providesWith());
+                    }
+                }
+
+                @Override
+                public OptionalInt payloadLen(ModuleAttribute attr) {
+                    return OptionalInt.of(16 + 6 * attr.requires().size()
+                              + attr.exports()
+                                      .stream()
+                                      .mapToInt(e -> 6 + 2 * e.exportsTo().size())
+                                      .sum()
+                              + attr.opens()
+                                      .stream()
+                                      .mapToInt(e -> 6 + 2 * e.opensTo().size())
+                                      .sum()
+                              + 2 * attr.uses().size()
+                              + attr.provides()
+                                      .stream()
+                                      .mapToInt(e -> 4 + 2 * e.providesWith().size())
+                                      .sum());
+                }
     };
 
     /** Attribute mapper for the {@code ModuleHashes} attribute */
@@ -429,6 +521,14 @@ public class Attributes {
                         buf.writeBytes(hash.hash());
                     }
                 }
+
+                @Override
+                public OptionalInt payloadLen(ModuleHashesAttribute attr) {
+                    return OptionalInt.of(2 + attr.hashes()
+                            .stream()
+                            .mapToInt(h -> 4 + h.hash().length)
+                            .sum());
+                }
             };
 
     /** Attribute mapper for the {@code ModuleMainClass} attribute */
@@ -442,6 +542,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, ModuleMainClassAttribute attr) {
                     buf.writeIndex(attr.mainClass());
+                }
+
+                @Override
+                public OptionalInt payloadLen(ModuleMainClassAttribute attr) {
+                    return OptionalInt.of(2);
                 }
             };
 
@@ -457,6 +562,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, ModulePackagesAttribute attr) {
                     buf.writeListIndices(attr.packages());
                 }
+
+                @Override
+                public OptionalInt payloadLen(ModulePackagesAttribute attr) {
+                    return OptionalInt.of(2 + 2 * attr.packages().size());
+                }
             };
 
     /** Attribute mapper for the {@code ModuleResolution} attribute */
@@ -470,6 +580,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, ModuleResolutionAttribute attr) {
                     buf.writeU2(attr.resolutionFlags());
+                }
+
+                @Override
+                public OptionalInt payloadLen(ModuleResolutionAttribute attr) {
+                    return OptionalInt.of(2);
                 }
             };
 
@@ -485,6 +600,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, ModuleTargetAttribute attr) {
                     buf.writeIndex(attr.targetPlatform());
                 }
+
+                @Override
+                public OptionalInt payloadLen(ModuleTargetAttribute attr) {
+                    return OptionalInt.of(2);
+                }
             };
 
     /** Attribute mapper for the {@code NestHost} attribute */
@@ -498,6 +618,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, NestHostAttribute attr) {
                     buf.writeIndex(attr.nestHost());
+                }
+
+                @Override
+                public OptionalInt payloadLen(NestHostAttribute attr) {
+                    return OptionalInt.of(2);
                 }
             };
 
@@ -513,6 +638,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, NestMembersAttribute attr) {
                     buf.writeListIndices(attr.nestMembers());
                 }
+
+                @Override
+                public OptionalInt payloadLen(NestMembersAttribute attr) {
+                    return OptionalInt.of(2 + 2 * attr.nestMembers().size());
+                }
             };
 
     /** Attribute mapper for the {@code PermittedSubclasses} attribute */
@@ -526,6 +656,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, PermittedSubclassesAttribute attr) {
                     buf.writeListIndices(attr.permittedSubclasses());
+                }
+
+                @Override
+                public OptionalInt payloadLen(PermittedSubclassesAttribute attr) {
+                    return OptionalInt.of(2 + 2 * attr.permittedSubclasses().size());
                 }
             };
 
@@ -547,6 +682,20 @@ public class Attributes {
                         buf.writeList(info.attributes());
                     }
                 }
+
+                @Override
+                public OptionalInt payloadLen(RecordAttribute attr) {
+                    int len = 2;
+                    for (var info : attr.components()) {
+                        len += 6;
+                        for (var a : info.attributes()) {
+                            var alen = a.payloadLen();
+                            if (alen.isEmpty()) return OptionalInt.empty();
+                            len += 6 + alen.getAsInt();
+                        }
+                    }
+                    return OptionalInt.of(len);
+                }
             };
 
     /** Attribute mapper for the {@code RuntimeInvisibleAnnotations} attribute */
@@ -561,7 +710,16 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, RuntimeInvisibleAnnotationsAttribute attr) {
                     buf.writeList(attr.annotations());
                 }
-    };
+
+                @Override
+                public OptionalInt payloadLen(RuntimeInvisibleAnnotationsAttribute attr) {
+                    return OptionalInt.of(2 + attr.annotations()
+                            .stream()
+                            .map(Annotation::payloadLen)
+                            .mapToInt(OptionalInt::getAsInt)
+                            .sum());
+                }
+            };
 
     /** Attribute mapper for the {@code RuntimeInvisibleParameterAnnotations} attribute */
     public static final AttributeMapper<RuntimeInvisibleParameterAnnotationsAttribute>
@@ -578,6 +736,18 @@ public class Attributes {
                     for (List<Annotation> list : lists)
                         buf.writeList(list);
                 }
+
+                @Override
+                public OptionalInt payloadLen(RuntimeInvisibleParameterAnnotationsAttribute attr) {
+                    return OptionalInt.of(1 + attr.parameterAnnotations()
+                            .stream()
+                            .mapToInt(pa -> 2 + pa
+                                    .stream()
+                                    .map(Annotation::payloadLen)
+                                    .mapToInt(OptionalInt::getAsInt)
+                                    .sum())
+                            .sum());
+                }
             };
 
     /** Attribute mapper for the {@code RuntimeInvisibleTypeAnnotations} attribute */
@@ -592,20 +762,38 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, RuntimeInvisibleTypeAnnotationsAttribute attr) {
                     buf.writeList(attr.annotations());
                 }
+
+                @Override
+                public OptionalInt payloadLen(RuntimeInvisibleTypeAnnotationsAttribute attr) {
+                    return OptionalInt.of(2 + attr.annotations()
+                            .stream()
+                            .map(TypeAnnotation::payloadLen)
+                            .mapToInt(OptionalInt::getAsInt)
+                            .sum());
+                }
             };
 
     /** Attribute mapper for the {@code RuntimeVisibleAnnotations} attribute */
     public static final AttributeMapper<RuntimeVisibleAnnotationsAttribute>
             RUNTIME_VISIBLE_ANNOTATIONS = new AbstractAttributeMapper<>(NAME_RUNTIME_VISIBLE_ANNOTATIONS, Classfile.JAVA_5_VERSION) {
-        @Override
-        public RuntimeVisibleAnnotationsAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
-            return new BoundAttribute.BoundRuntimeVisibleAnnotationsAttribute(cf, pos);
-        }
+                @Override
+                public RuntimeVisibleAnnotationsAttribute readAttribute(AttributedElement enclosing, ClassReader cf, int pos) {
+                    return new BoundAttribute.BoundRuntimeVisibleAnnotationsAttribute(cf, pos);
+                }
 
-        @Override
-        protected void writeBody(BufWriter buf, RuntimeVisibleAnnotationsAttribute attr) {
-            buf.writeList(attr.annotations());
-        }
+                @Override
+                protected void writeBody(BufWriter buf, RuntimeVisibleAnnotationsAttribute attr) {
+                    buf.writeList(attr.annotations());
+                }
+
+                @Override
+                public OptionalInt payloadLen(RuntimeVisibleAnnotationsAttribute attr) {
+                    return OptionalInt.of(2 + attr.annotations()
+                            .stream()
+                            .map(Annotation::payloadLen)
+                            .mapToInt(OptionalInt::getAsInt)
+                            .sum());
+                }
     };
 
     /** Attribute mapper for the {@code RuntimeVisibleParameterAnnotations} attribute */
@@ -623,6 +811,18 @@ public class Attributes {
                     for (List<Annotation> list : lists)
                         buf.writeList(list);
                 }
+
+                @Override
+                public OptionalInt payloadLen(RuntimeVisibleParameterAnnotationsAttribute attr) {
+                    return OptionalInt.of(1 + attr.parameterAnnotations()
+                            .stream()
+                            .mapToInt(pa -> 2 + pa
+                                    .stream()
+                                    .map(Annotation::payloadLen)
+                                    .mapToInt(OptionalInt::getAsInt)
+                                    .sum())
+                            .sum());
+                }
             };
 
     /** Attribute mapper for the {@code RuntimeVisibleTypeAnnotations} attribute */
@@ -636,6 +836,15 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, RuntimeVisibleTypeAnnotationsAttribute attr) {
                     buf.writeList(attr.annotations());
+                }
+
+                @Override
+                public OptionalInt payloadLen(RuntimeVisibleTypeAnnotationsAttribute attr) {
+                    return OptionalInt.of(2 + attr.annotations()
+                            .stream()
+                            .map(TypeAnnotation::payloadLen)
+                            .mapToInt(OptionalInt::getAsInt)
+                            .sum());
                 }
             };
 
@@ -651,6 +860,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, SignatureAttribute attr) {
                     buf.writeIndex(attr.signature());
                 }
+
+                @Override
+                public OptionalInt payloadLen(SignatureAttribute attr) {
+                    return OptionalInt.of(2);
+                }
             };
 
     /** Attribute mapper for the {@code SourceDebugExtension} attribute */
@@ -664,6 +878,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, SourceDebugExtensionAttribute attr) {
                     buf.writeBytes(attr.contents());
+                }
+
+                @Override
+                public OptionalInt payloadLen(SourceDebugExtensionAttribute attr) {
+                    return OptionalInt.of(attr.contents().length);
                 }
             };
 
@@ -679,6 +898,11 @@ public class Attributes {
                 protected void writeBody(BufWriter buf, SourceFileAttribute attr) {
                     buf.writeIndex(attr.sourceFile());
                 }
+
+                @Override
+                public OptionalInt payloadLen(SourceFileAttribute attr) {
+                    return OptionalInt.of(2);
+                }
             };
 
     /** Attribute mapper for the {@code SourceID} attribute */
@@ -692,6 +916,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, SourceIDAttribute attr) {
                     buf.writeIndex(attr.sourceId());
+                }
+
+                @Override
+                public OptionalInt payloadLen(SourceIDAttribute attr) {
+                    return OptionalInt.of(2);
                 }
             };
 
@@ -707,6 +936,11 @@ public class Attributes {
                 protected void writeBody(BufWriter b, StackMapTableAttribute attr) {
                     StackMapDecoder.writeFrames(b, attr.entries());
                 }
+
+                @Override
+                public OptionalInt payloadLen(StackMapTableAttribute attr) {
+                    return OptionalInt.empty();
+                }
             };
 
 
@@ -721,6 +955,11 @@ public class Attributes {
                 @Override
                 protected void writeBody(BufWriter buf, SyntheticAttribute attr) {
                     // empty
+                }
+
+                @Override
+                public OptionalInt payloadLen(SyntheticAttribute attr) {
+                    return OptionalInt.of(0);
                 }
             };
 

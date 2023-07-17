@@ -25,6 +25,7 @@
 package jdk.internal.classfile.impl;
 
 import java.util.List;
+import java.util.OptionalInt;
 
 import jdk.internal.classfile.constantpool.ConstantPool;
 import jdk.internal.classfile.BootstrapMethodEntry;
@@ -93,5 +94,10 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
     public void writeTo(BufWriter writer) {
         writer.writeIndex(bootstrapMethod());
         writer.writeListIndices(arguments());
+    }
+
+    @Override
+    public OptionalInt payloadLen() {
+        return OptionalInt.of(4 + 2 * arguments().size());
     }
 }

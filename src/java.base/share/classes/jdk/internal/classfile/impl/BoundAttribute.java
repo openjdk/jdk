@@ -28,6 +28,7 @@ package jdk.internal.classfile.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Function;
 
 import jdk.internal.classfile.*;
@@ -57,7 +58,12 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         this.payloadStart = payloadStart;
     }
 
-    public int payloadLen() {
+    @Override
+    public OptionalInt payloadLen() {
+        return OptionalInt.of(_payloadLen());
+    }
+
+    private int _payloadLen() {
         return classReader.readInt(payloadStart - 4);
     }
 
@@ -72,7 +78,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     }
 
     public byte[] contents() {
-        return classReader.readBytes(payloadStart, payloadLen());
+        return classReader.readBytes(payloadStart, _payloadLen());
     }
 
     @Override
@@ -101,7 +107,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         if (!buf.canWriteDirect(classReader))
             attributeMapper().writeAttribute(buf, (T) this);
         else
-            classReader.copyBytesTo(buf, payloadStart - NAME_AND_LENGTH_PREFIX, payloadLen() + NAME_AND_LENGTH_PREFIX);
+            classReader.copyBytesTo(buf, payloadStart - NAME_AND_LENGTH_PREFIX, _payloadLen() + NAME_AND_LENGTH_PREFIX);
     }
 
     public ConstantPool constantPool() {
@@ -165,6 +171,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                     @Override
                     public boolean allowMultiple() {
                         return true;
+                    }
+
+                    @Override
+                    public OptionalInt payloadLen(UnknownAttribute attr) {
+                        throw new UnsupportedOperationException("Payload calculation of unknown attribute " + name() + " not supported");
                     }
                 };
                 filled[i] = new BoundUnknownAttribute(reader, fakeMapper, p);

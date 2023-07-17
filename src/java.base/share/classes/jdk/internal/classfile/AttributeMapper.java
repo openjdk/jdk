@@ -24,6 +24,8 @@
  */
 package jdk.internal.classfile;
 
+import java.util.OptionalInt;
+
 /**
  * Bidirectional mapper between the classfile representation of an attribute and
  * how that attribute is modeled in the API.  The attribute mapper is used
@@ -59,6 +61,12 @@ public interface AttributeMapper<A> {
      * @param attr The attribute to write
      */
     void writeAttribute(BufWriter buf, A attr);
+
+    /**
+     * {@return payload length of the attribute}
+     * @param attr attribute to calculate payload of
+     */
+    OptionalInt payloadLen(A attr);
 
     /**
      * {@return The earliest classfile version for which this attribute is

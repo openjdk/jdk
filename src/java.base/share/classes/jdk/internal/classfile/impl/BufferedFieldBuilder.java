@@ -27,6 +27,7 @@ package jdk.internal.classfile.impl;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 
 import jdk.internal.classfile.*;
@@ -118,6 +119,11 @@ public final class BufferedFieldBuilder
                     elements.forEach(fieldBuilder);
                 }
             });
+        }
+
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.empty();
         }
 
         @Override

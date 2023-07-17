@@ -28,6 +28,7 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.util.Arrays;
 import java.util.List;
+import java.util.OptionalInt;
 
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.Attributes;
@@ -183,6 +184,22 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
             info.writeTo(buf);
             i += info.width();
         }
+    }
+
+    @Override
+    public OptionalInt payloadLen() {
+        int writeFrom = 1;
+        int len = 2;
+        if (parent != null) {
+            len += parent.constantPoolLen();
+            writeFrom = parent.entryCount();
+        }
+        for (int i = writeFrom; i < entryCount(); ) {
+            PoolEntry info = entryByIndex(i);
+            len += info.payloadLen().getAsInt();
+            i += info.width();
+        }
+        return OptionalInt.of(len);
     }
 
     private EntryMap<PoolEntry> map() {

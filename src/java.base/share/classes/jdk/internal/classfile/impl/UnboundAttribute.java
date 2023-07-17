@@ -27,6 +27,7 @@ package jdk.internal.classfile.impl;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 import jdk.internal.classfile.Annotation;
 import jdk.internal.classfile.AnnotationElement;
@@ -119,6 +120,12 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public final OptionalInt payloadLen() {
+        return mapper.payloadLen((T) this);
+    }
+
+    @Override
     public void writeTo(DirectClassBuilder builder) {
         builder.writeAttribute(this);
     }
@@ -157,7 +164,6 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         public ConstantValueEntry constant() {
             return entry;
         }
-
     }
 
     public static final class UnboundDeprecatedAttribute
@@ -237,7 +243,6 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         public Utf8Entry sourceFile() {
             return sourceFile;
         }
-
     }
 
     public static final class UnboundStackMapTableAttribute extends UnboundAttribute<StackMapTableAttribute>
@@ -820,6 +825,25 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
                 buf.writeIndex(pair.name());
                 pair.value().writeTo(buf);
             }
+        }
+
+        @Override
+        public OptionalInt payloadLen() {
+            return OptionalInt.of(6 + switch (targetInfo) {
+                case TypeParameterTarget tpt -> 1;
+                case SupertypeTarget st -> 2;
+                case TypeParameterBoundTarget tpbt -> 2;
+                case EmptyTarget et -> 0;
+                case FormalParameterTarget fpt -> 1;
+                case ThrowsTarget tt -> 2;
+                case LocalVarTarget lvt -> 2 + 6 * lvt.table().size();
+                case CatchTarget ct -> 2;
+                case OffsetTarget ot -> 2;
+                case TypeArgumentTarget tat -> 3;
+            } + 2 * targetPath.size()
+              + elements.stream()
+                        .mapToInt(e -> 2 + e.value().payloadLen().getAsInt())
+                        .sum());
         }
     }
 

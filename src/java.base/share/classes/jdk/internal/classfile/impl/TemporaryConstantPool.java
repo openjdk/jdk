@@ -50,6 +50,7 @@ import jdk.internal.classfile.constantpool.Utf8Entry;
 
 import java.lang.constant.MethodTypeDesc;
 import java.util.List;
+import java.util.OptionalInt;
 
 public final class TemporaryConstantPool implements ConstantPoolBuilder {
 
@@ -193,5 +194,10 @@ public final class TemporaryConstantPool implements ConstantPoolBuilder {
     @Override
     public void writeTo(BufWriter buf) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public OptionalInt payloadLen() {
+        return OptionalInt.empty();
     }
 }

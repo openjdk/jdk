@@ -26,6 +26,7 @@ package jdk.internal.classfile.impl;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalInt;
 
 import jdk.internal.classfile.Attribute;
 import jdk.internal.classfile.AttributeMapper;
@@ -54,6 +55,16 @@ public class AttributeHolder {
         buf.writeU2(attributes.size());
         for (Attribute<?> a : attributes)
             a.writeTo(buf);
+    }
+
+    OptionalInt payloadLen() {
+        int len = 2;
+        for (var a : attributes) {
+            var al = a.payloadLen();
+            if (al.isEmpty()) return OptionalInt.empty();
+            len += al.getAsInt();
+        }
+        return OptionalInt.of(len);
     }
 
     boolean isPresent(AttributeMapper<?> am) {
