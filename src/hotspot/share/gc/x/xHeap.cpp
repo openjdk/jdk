@@ -55,7 +55,7 @@
 static const XStatCounter XCounterUndoPageAllocation("Memory", "Undo Page Allocation", XStatUnitOpsPerSecond);
 static const XStatCounter XCounterOutOfMemory("Memory", "Out Of Memory", XStatUnitOpsPerSecond);
 
-XHeap* XHeap::_heap = NULL;
+XHeap* XHeap::_heap = nullptr;
 
 XHeap::XHeap() :
     _workers(),
@@ -71,7 +71,7 @@ XHeap::XHeap() :
     _unload(&_workers),
     _serviceability(min_capacity(), max_capacity()) {
   // Install global heap instance
-  assert(_heap == NULL, "Already initialized");
+  assert(_heap == nullptr, "Already initialized");
   _heap = this;
 
   // Update statistics
@@ -142,7 +142,7 @@ bool XHeap::is_in(uintptr_t addr) const {
 
   if (XAddress::is_in(addr)) {
     const XPage* const page = _page_table.get(addr);
-    if (page != NULL) {
+    if (page != nullptr) {
       return page->is_in(addr);
     }
   }
@@ -172,7 +172,7 @@ void XHeap::out_of_memory() {
 
 XPage* XHeap::alloc_page(uint8_t type, size_t size, XAllocationFlags flags) {
   XPage* const page = _page_allocator.alloc_page(type, size, flags);
-  if (page != NULL) {
+  if (page != nullptr) {
     // Insert page table entry
     _page_table.insert(page);
   }

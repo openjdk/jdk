@@ -34,7 +34,7 @@ inline uint32_t XCPU::count() {
 }
 
 inline uint32_t XCPU::id() {
-  assert(_affinity != NULL, "Not initialized");
+  assert(_affinity != nullptr, "Not initialized");
 
   // Fast path
   if (_affinity[_cpu]._thread == _self) {

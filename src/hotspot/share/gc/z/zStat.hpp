@@ -305,19 +305,19 @@ private:
   const Ticks              _start;
 
 public:
-  ZStatTimer(const ZStatPhase& phase, ConcurrentGCTimer* gc_timer) :
-      _gc_timer(gc_timer),
+  ZStatTimer(const ZStatPhase& phase, ConcurrentGCTimer* gc_timer)
+    : _gc_timer(gc_timer),
       _phase(phase),
       _start(Ticks::now()) {
     _phase.register_start(_gc_timer, _start);
   }
 
-  ZStatTimer(const ZStatSubPhase& phase) :
-      ZStatTimer(phase, nullptr /* timer */) {
+  ZStatTimer(const ZStatSubPhase& phase)
+    : ZStatTimer(phase, nullptr /* timer */) {
   }
 
-  ZStatTimer(const ZStatCriticalPhase& phase) :
-      ZStatTimer(phase, nullptr /* timer */) {
+  ZStatTimer(const ZStatCriticalPhase& phase)
+    : ZStatTimer(phase, nullptr /* timer */) {
   }
 
   ~ZStatTimer() {

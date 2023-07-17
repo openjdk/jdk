@@ -74,8 +74,8 @@ static ZErrno mremap(uintptr_t from_addr, uintptr_t to_addr, size_t size) {
   return (res == KERN_SUCCESS) ? ZErrno(0) : ZErrno(EINVAL);
 }
 
-ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
-    _base(0),
+ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
+  : _base(0),
     _initialized(false) {
 
   // Reserve address space for backing memory

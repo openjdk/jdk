@@ -341,8 +341,8 @@ private:
   }
 
 public:
-  ZNMethodUnlinkClosure(bool unloading_occurred) :
-      _unloading_occurred(unloading_occurred),
+  ZNMethodUnlinkClosure(bool unloading_occurred)
+    : _unloading_occurred(unloading_occurred),
       _failed(false) {}
 
   virtual void do_nmethod(nmethod* nm) {
@@ -401,8 +401,8 @@ private:
   ICRefillVerifier*     _verifier;
 
 public:
-  ZNMethodUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier) :
-      ZTask("ZNMethodUnlinkTask"),
+  ZNMethodUnlinkTask(bool unloading_occurred, ICRefillVerifier* verifier)
+    : ZTask("ZNMethodUnlinkTask"),
       _cl(unloading_occurred),
       _verifier(verifier) {
     ZNMethodTable::nmethods_do_begin(false /* secondary */);

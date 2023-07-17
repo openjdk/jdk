@@ -31,8 +31,8 @@
 #include <type_traits>
 
 template <typename T>
-ZSafeDelete<T>::ZSafeDelete(bool locked) :
-    _deferred(locked) {}
+ZSafeDelete<T>::ZSafeDelete(bool locked)
+  : _deferred(locked) {}
 
 template <typename T>
 void ZSafeDelete<T>::immediate_delete(ItemT* item) {

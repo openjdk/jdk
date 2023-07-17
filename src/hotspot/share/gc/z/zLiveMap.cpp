@@ -40,8 +40,8 @@ static size_t bitmap_size(uint32_t size, size_t nsegments) {
   return MAX2<size_t>(size, nsegments) * 2;
 }
 
-ZLiveMap::ZLiveMap(uint32_t size) :
-    _seqnum(0),
+ZLiveMap::ZLiveMap(uint32_t size)
+  : _seqnum(0),
     _live_objects(0),
     _live_bytes(0),
     _segment_live_bits(0),

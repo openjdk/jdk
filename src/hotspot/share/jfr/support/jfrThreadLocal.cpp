@@ -64,6 +64,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _data_lost(0),
   _stack_trace_id(max_julong),
   _parent_trace_id(0),
+  _last_allocated_bytes(0),
   _user_time(0),
   _cpu_time(0),
   _wallclock_time(os::javaTimeNanos()),
@@ -75,6 +76,7 @@ JfrThreadLocal::JfrThreadLocal() :
   _vthread_excluded(false),
   _jvm_thread_excluded(false),
   _vthread(false),
+  _notified(false),
   _dead(false) {
   Thread* thread = Thread::current_or_null();
   _parent_trace_id = thread != nullptr ? jvm_thread_id(thread) : (traceid)0;
@@ -243,23 +245,31 @@ JfrStackFrame* JfrThreadLocal::install_stackframes() const {
 }
 
 ByteSize JfrThreadLocal::java_event_writer_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _java_event_writer));
+  return byte_offset_of(JfrThreadLocal, _java_event_writer);
+}
+
+ByteSize JfrThreadLocal::java_buffer_offset() {
+  return byte_offset_of(JfrThreadLocal, _java_buffer);
 }
 
 ByteSize JfrThreadLocal::vthread_id_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _vthread_id));
+  return byte_offset_of(JfrThreadLocal, _vthread_id);
 }
 
 ByteSize JfrThreadLocal::vthread_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _vthread));
+  return byte_offset_of(JfrThreadLocal, _vthread);
 }
 
 ByteSize JfrThreadLocal::vthread_epoch_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _vthread_epoch));
+  return byte_offset_of(JfrThreadLocal, _vthread_epoch);
 }
 
 ByteSize JfrThreadLocal::vthread_excluded_offset() {
-  return in_ByteSize(offset_of(JfrThreadLocal, _vthread_excluded));
+  return byte_offset_of(JfrThreadLocal, _vthread_excluded);
+}
+
+ByteSize JfrThreadLocal::notified_offset() {
+  return byte_offset_of(JfrThreadLocal, _notified);
 }
 
 void JfrThreadLocal::set(bool* exclusion_field, bool state) {

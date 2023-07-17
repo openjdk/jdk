@@ -56,8 +56,8 @@ size_t ZGCIdPrinter::print_gc_id(uint gc_id, char* buf, size_t len) {
   return (size_t)ret;
 }
 
-ZGCIdPrinter::ZGCIdPrinter() :
-    _minor_gc_id(GCId::undefined()),
+ZGCIdPrinter::ZGCIdPrinter()
+  : _minor_gc_id(GCId::undefined()),
     _major_gc_id(GCId::undefined()),
     _major_tag('-') { }
 

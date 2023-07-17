@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2022, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -657,6 +657,21 @@ AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_AND_TARGET],
   PLATFORM_SET_MODULE_TARGET_OS_VALUES
   PLATFORM_SET_RELEASE_FILE_OS_VALUES
   PLATFORM_SETUP_LEGACY_VARS
+  PLATFORM_CHECK_DEPRECATION
+])
+
+AC_DEFUN([PLATFORM_CHECK_DEPRECATION],
+[
+  AC_ARG_ENABLE(deprecated-ports, [AS_HELP_STRING([--enable-deprecated-ports@<:@=yes/no@:>@],
+       [Suppress the error when configuring for a deprecated port @<:@no@:>@])])
+  if test "x$OPENJDK_TARGET_OS" = xwindows && test "x$OPENJDK_TARGET_CPU" = xx86; then
+    if test "x$enable_deprecated_ports" = "xyes"; then
+      AC_MSG_WARN([The Windows 32-bit x86 port is deprecated and may be removed in a future release.])
+    else
+      AC_MSG_ERROR(m4_normalize([The Windows 32-bit x86 port is deprecated and may be removed in a future release.
+        Use --enable-deprecated-ports=yes to suppress this error.]))
+    fi
+  fi
 ])
 
 AC_DEFUN_ONCE([PLATFORM_SETUP_OPENJDK_BUILD_OS_VERSION],

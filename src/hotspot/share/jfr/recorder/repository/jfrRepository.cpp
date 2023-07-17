@@ -144,7 +144,7 @@ void JfrRepository::set_chunk_path(jstring path, JavaThread* jt) {
   ResourceMark rm(jt);
   const char* const canonical_chunk_path = JfrJavaSupport::c_str(path, jt);
   if (nullptr == canonical_chunk_path && !_chunkwriter->is_valid()) {
-    // new output is nullptr and current output is null
+    // new output is null and current output is null
     return;
   }
   instance().set_chunk_path(canonical_chunk_path);

@@ -31,8 +31,8 @@
 #include "utilities/debug.hpp"
 
 template <typename T, size_t S>
-inline ZStack<T, S>::ZStack() :
-    _top(0),
+inline ZStack<T, S>::ZStack()
+  : _top(0),
     _next(nullptr) {}
 
 template <typename T, size_t S>
@@ -76,8 +76,8 @@ inline ZStack<T, S>** ZStack<T, S>::next_addr() {
 }
 
 template <typename T>
-inline ZStackList<T>::ZStackList(uintptr_t base) :
-    _base(base),
+inline ZStackList<T>::ZStackList(uintptr_t base)
+  : _base(base),
     _head(encode_versioned_pointer(nullptr, 0)) {}
 
 template <typename T>

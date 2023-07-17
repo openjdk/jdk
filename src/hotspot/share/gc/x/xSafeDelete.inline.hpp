@@ -95,6 +95,6 @@ XSafeDelete<T>::XSafeDelete() :
 
 template <typename T>
 XSafeDeleteNoLock<T>::XSafeDeleteNoLock() :
-    XSafeDeleteImpl<T>(NULL) {}
+    XSafeDeleteImpl<T>(nullptr) {}
 
 #endif // SHARE_GC_X_XSAFEDELETE_INLINE_HPP

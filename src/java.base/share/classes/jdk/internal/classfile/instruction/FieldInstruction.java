@@ -35,6 +35,7 @@ import jdk.internal.classfile.constantpool.FieldRefEntry;
 import jdk.internal.classfile.constantpool.NameAndTypeEntry;
 import jdk.internal.classfile.constantpool.Utf8Entry;
 import jdk.internal.classfile.impl.AbstractInstruction;
+import jdk.internal.classfile.impl.AbstractPoolEntry;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 import jdk.internal.classfile.impl.Util;
 
@@ -76,7 +77,7 @@ public sealed interface FieldInstruction extends Instruction
      * {@return a symbolic descriptor for the type of the field}
      */
     default ClassDesc typeSymbol() {
-        return ClassDesc.ofDescriptor(type().stringValue());
+        return Util.fieldTypeSymbol(field().nameAndType());
     }
 
     /**

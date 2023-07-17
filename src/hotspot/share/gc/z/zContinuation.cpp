@@ -82,9 +82,8 @@ oop ZContinuation::load_oop(stackChunkOop chunk, void* addr) {
   return to_oop(ZBarrier::load_barrier_on_oop_field_preloaded(nullptr /* p */, zptr));
 }
 
-ZContinuation::ZColorStackOopClosure::ZColorStackOopClosure(stackChunkOop chunk) :
-    _color(ZStackChunkGCData::color(chunk)) {
-}
+ZContinuation::ZColorStackOopClosure::ZColorStackOopClosure(stackChunkOop chunk)
+  : _color(ZStackChunkGCData::color(chunk)) {}
 
 void ZContinuation::ZColorStackOopClosure::do_oop(oop* p) {
   // Convert zaddress to zpointer

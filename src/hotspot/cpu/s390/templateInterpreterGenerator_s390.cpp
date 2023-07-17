@@ -38,6 +38,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -920,7 +921,7 @@ void TemplateInterpreterGenerator::lock_method(void) {
   __ add_monitor_to_stack(true, Z_ARG3, Z_ARG4, Z_ARG5); // Allocate monitor elem.
   // Store object and lock it.
   __ get_monitors(Z_tmp_1);
-  __ reg2mem_opt(object, Address(Z_tmp_1, BasicObjectLock::obj_offset_in_bytes()));
+  __ reg2mem_opt(object, Address(Z_tmp_1, BasicObjectLock::obj_offset()));
   __ lock_object(Z_tmp_1, object);
 
   BLOCK_COMMENT("} lock_method");
@@ -1118,7 +1119,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   // Load cp cache and save it at the end of this block.
   __ z_lg(Z_R1_scratch, Address(const_method, ConstMethod::constants_offset()));
-  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch, ConstantPool::cache_offset_in_bytes()));
+  __ z_lg(Z_R1_scratch, Address(Z_R1_scratch, ConstantPool::cache_offset()));
 
   // z_ijava_state->method = method;
   __ z_stg(Z_method, _z_ijava_state_neg(method), fp);
@@ -1601,7 +1602,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // Reset handle block.
   __ z_lg(Z_R1/*active_handles*/, thread_(active_handles));
-  __ clear_mem(Address(Z_R1, JNIHandleBlock::top_offset_in_bytes()), 4);
+  __ clear_mem(Address(Z_R1, JNIHandleBlock::top_offset()), 4);
 
   // Handle exceptions (exception handling will handle unlocking!).
   {

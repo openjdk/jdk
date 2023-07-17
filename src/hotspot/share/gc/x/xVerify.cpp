@@ -53,7 +53,7 @@
 
 static void z_verify_oop(oop* p) {
   const oop o = RawAccess<>::oop_load(p);
-  if (o != NULL) {
+  if (o != nullptr) {
     const uintptr_t addr = XOop::to_address(o);
     guarantee(XAddress::is_good(addr), BAD_OOP_ARG(o, p));
     guarantee(oopDesc::is_oop(XOop::from_address(addr)), BAD_OOP_ARG(o, p));
@@ -62,7 +62,7 @@ static void z_verify_oop(oop* p) {
 
 static void z_verify_possibly_weak_oop(oop* p) {
   const oop o = RawAccess<>::oop_load(p);
-  if (o != NULL) {
+  if (o != nullptr) {
     const uintptr_t addr = XOop::to_address(o);
     guarantee(XAddress::is_good(addr) || XAddress::is_finalizable_good(addr), BAD_OOP_ARG(o, p));
     guarantee(oopDesc::is_oop(XOop::from_address(XAddress::good(addr))), BAD_OOP_ARG(o, p));
@@ -220,7 +220,7 @@ public:
       _cl(cl) {}
 
   virtual void do_thread(Thread* thread) {
-    thread->oops_do_no_frames(_cl, NULL);
+    thread->oops_do_no_frames(_cl, nullptr);
 
     JavaThread* const jt = JavaThread::cast(thread);
     if (!jt->has_last_Java_frame()) {
@@ -393,12 +393,12 @@ public:
 
 void XVerify::verify_frame_bad(const frame& fr, RegisterMap& register_map) {
   XVerifyBadOopClosure verify_cl;
-  fr.oops_do(&verify_cl, NULL, &register_map, DerivedPointerIterationMode::_ignore);
+  fr.oops_do(&verify_cl, nullptr, &register_map, DerivedPointerIterationMode::_ignore);
 }
 
 void XVerify::verify_thread_head_bad(JavaThread* jt) {
   XVerifyBadOopClosure verify_cl;
-  jt->oops_do_no_frames(&verify_cl, NULL);
+  jt->oops_do_no_frames(&verify_cl, nullptr);
 }
 
 void XVerify::verify_thread_frames_bad(JavaThread* jt) {
@@ -407,7 +407,7 @@ void XVerify::verify_thread_frames_bad(JavaThread* jt) {
     StackWatermarkProcessingMark swpm(Thread::current());
     // Traverse the execution stack
     for (StackFrameStream fst(jt, true /* update */, false /* process_frames */); !fst.is_done(); fst.next()) {
-      fst.current()->oops_do(&verify_cl, NULL /* code_cl */, fst.register_map(), DerivedPointerIterationMode::_ignore);
+      fst.current()->oops_do(&verify_cl, nullptr /* code_cl */, fst.register_map(), DerivedPointerIterationMode::_ignore);
     }
   }
 }

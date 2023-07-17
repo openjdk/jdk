@@ -69,8 +69,8 @@ private:
   }
 
 public:
-  ZPhysicalMemoryBackingSmallPages(size_t max_capacity) :
-      ZPhysicalMemoryBackingImpl(),
+  ZPhysicalMemoryBackingSmallPages(size_t max_capacity)
+    : ZPhysicalMemoryBackingImpl(),
       _handles(max_capacity) {}
 
   size_t commit(zoffset offset, size_t size) {
@@ -146,8 +146,8 @@ private:
   }
 
 public:
-  ZPhysicalMemoryBackingLargePages(size_t max_capacity) :
-      ZPhysicalMemoryBackingImpl(),
+  ZPhysicalMemoryBackingLargePages(size_t max_capacity)
+    : ZPhysicalMemoryBackingImpl(),
       _page_array(alloc_page_array(max_capacity)) {}
 
   size_t commit(zoffset offset, size_t size) {
@@ -212,8 +212,8 @@ static ZPhysicalMemoryBackingImpl* select_impl(size_t max_capacity) {
   return new ZPhysicalMemoryBackingSmallPages(max_capacity);
 }
 
-ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
-    _impl(select_impl(max_capacity)) {}
+ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
+  : _impl(select_impl(max_capacity)) {}
 
 bool ZPhysicalMemoryBacking::is_initialized() const {
   return true;

@@ -45,7 +45,7 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-XNMethodTableEntry* XNMethodTable::_table = NULL;
+XNMethodTableEntry* XNMethodTable::_table = nullptr;
 size_t XNMethodTable::_size = 0;
 size_t XNMethodTable::_nregistered = 0;
 size_t XNMethodTable::_nunregistered = 0;

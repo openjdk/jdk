@@ -104,7 +104,7 @@ public class StopThreadTest {
             } else {
                 testTaskThread = Thread.ofPlatform().name("TestTaskThread").start(testTask);
             }
-            testTask.ensureStarted();
+            TestTask.ensureAtPointA();
 
             if (is_virtual) { // this check is for virtual target thread only
                 log("\nMain #A.1: unsuspended");
@@ -153,7 +153,7 @@ public class StopThreadTest {
         {
             // StopThread is called from the test task (own thread) and expected to succeed.
             // No suspension of the test task thread is required or can be done in this case.
-            testTask.ensureFinished();
+            TestTask.ensureFinished();
         }
 
         try {
@@ -168,10 +168,10 @@ public class StopThreadTest {
         static Object lock = new Object();
         static void log(String str) { System.out.println(str); }
 
-        private volatile boolean started = false;
-        private volatile boolean finished = false;
+        static volatile boolean atPointA = false;
+        static volatile boolean finished = false;
 
-        static public void sleep(long millis) {
+        static void sleep(long millis) {
             try {
                 Thread.sleep(millis);
             } catch (InterruptedException e) {
@@ -179,15 +179,14 @@ public class StopThreadTest {
             }
         }
 
-        // Ensure thread is ready.
-        public void ensureStarted() {
-            while (!started) {
+        static void ensureAtPointA() {
+            while (!atPointA) {
                 sleep(1);
             }
         }
 
         // Ensure thread is finished.
-        public void ensureFinished() {
+        static void ensureFinished() {
             while (!finished) {
                 sleep(1);
             }
@@ -195,7 +194,6 @@ public class StopThreadTest {
 
         public void run() {
             log("TestTask.run: started");
-            started = true;
 
             boolean seenExceptionFromA = false;
             try {
@@ -203,11 +201,8 @@ public class StopThreadTest {
             } catch (AssertionError ex) {
                 log("TestTask.run: caught expected AssertionError from method A()");
                 seenExceptionFromA = true;
-                if (!Thread.currentThread().isVirtual()) { // platform thread
-                    // clear the interrupt status
-                    Thread.interrupted();
-                }
             }
+            Thread.interrupted();
             if (!seenExceptionFromA) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method A()");
             }
@@ -219,11 +214,8 @@ public class StopThreadTest {
             } catch (AssertionError ex) {
                 log("TestTask.run: caught expected AssertionError from method B()");
                 seenExceptionFromB = true;
-                if (!Thread.currentThread().isVirtual()) { // platform thread
-                    // clear the interrupt status
-                    Thread.interrupted();
-                }
             }
+            Thread.interrupted();
             if (!seenExceptionFromB) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method B()");
             }
@@ -236,6 +228,7 @@ public class StopThreadTest {
                 log("TestTask.run: caught expected AssertionError from method C()");
                 seenExceptionFromC = true;
             }
+            Thread.interrupted();
             if (!seenExceptionFromC) {
                 StopThreadTest.setFailed("TestTask.run: expected AssertionError from method C()");
             }
@@ -248,6 +241,7 @@ public class StopThreadTest {
         //  - when suspended: JVMTI_ERROR_NONE is expected
         static void A() {
             log("TestTask.A: started");
+            atPointA = true;
             synchronized (lock) {
             }
             log("TestTask.A: finished");

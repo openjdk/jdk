@@ -34,8 +34,8 @@
 #include "gc/z/zThreadLocalData.hpp"
 #include "utilities/macros.hpp"
 
-ZLoadBarrierStubC1::ZLoadBarrierStubC1(LIRAccess& access, LIR_Opr ref, address runtime_stub) :
-    _decorators(access.decorators()),
+ZLoadBarrierStubC1::ZLoadBarrierStubC1(LIRAccess& access, LIR_Opr ref, address runtime_stub)
+  : _decorators(access.decorators()),
     _ref_addr(access.resolved_addr()),
     _ref(ref),
     _tmp(LIR_OprFact::illegalOpr),
@@ -100,8 +100,8 @@ ZStoreBarrierStubC1::ZStoreBarrierStubC1(LIRAccess& access,
                                          LIR_Opr new_zpointer,
                                          LIR_Opr tmp,
                                          bool is_atomic,
-                                         address runtime_stub) :
-    _ref_addr(access.resolved_addr()),
+                                         address runtime_stub)
+  : _ref_addr(access.resolved_addr()),
     _new_zaddress(new_zaddress),
     _new_zpointer(new_zpointer),
     _tmp(tmp),
@@ -156,8 +156,8 @@ private:
   LIR_Opr _opr;
 
 public:
-  LIR_OpZUncolor(LIR_Opr opr) :
-      LIR_Op(),
+  LIR_OpZUncolor(LIR_Opr opr)
+    : LIR_Op(),
       _opr(opr) {}
 
   virtual void visit(LIR_OpVisitState* state) {
@@ -188,8 +188,8 @@ private:
   const bool                _on_non_strong;
 
 public:
-  LIR_OpZLoadBarrier(LIR_Opr opr, ZLoadBarrierStubC1* stub, bool on_non_strong) :
-      LIR_Op(),
+  LIR_OpZLoadBarrier(LIR_Opr opr, ZLoadBarrierStubC1* stub, bool on_non_strong)
+    : LIR_Op(),
       _opr(opr),
       _stub(stub),
       _on_non_strong(on_non_strong) {
@@ -223,8 +223,8 @@ static bool barrier_needed(LIRAccess& access) {
   return ZBarrierSet::barrier_needed(access.decorators(), access.type());
 }
 
-ZBarrierSetC1::ZBarrierSetC1() :
-    _load_barrier_on_oop_field_preloaded_runtime_stub(nullptr),
+ZBarrierSetC1::ZBarrierSetC1()
+  : _load_barrier_on_oop_field_preloaded_runtime_stub(nullptr),
     _load_barrier_on_weak_oop_field_preloaded_runtime_stub(nullptr),
     _store_barrier_on_oop_field_with_healing(nullptr),
     _store_barrier_on_oop_field_without_healing(nullptr) {}
@@ -255,8 +255,8 @@ private:
   LIR_Opr _opr;
 
 public:
-  LIR_OpZColor(LIR_Opr opr) :
-      LIR_Op(lir_none, opr, nullptr /* info */),
+  LIR_OpZColor(LIR_Opr opr)
+    : LIR_Op(lir_none, opr, nullptr /* info */),
       _opr(opr) {}
 
   virtual void visit(LIR_OpVisitState* state) {
@@ -294,8 +294,8 @@ public:
                       LIR_Opr new_zaddress,
                       LIR_Opr new_zpointer,
                       CodeStub* stub,
-                      CodeEmitInfo* info) :
-      LIR_Op(lir_none, new_zpointer, nullptr /* info */),
+                      CodeEmitInfo* info)
+    : LIR_Op(lir_none, new_zpointer, nullptr /* info */),
       _addr(addr),
       _new_zaddress(new_zaddress),
       _new_zpointer(new_zpointer),
@@ -498,8 +498,8 @@ private:
   const DecoratorSet _decorators;
 
 public:
-  ZLoadBarrierRuntimeStubCodeGenClosure(DecoratorSet decorators) :
-      _decorators(decorators) {}
+  ZLoadBarrierRuntimeStubCodeGenClosure(DecoratorSet decorators)
+    : _decorators(decorators) {}
 
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ZBarrierSet::assembler()->generate_c1_load_barrier_runtime_stub(sasm, _decorators);
@@ -518,8 +518,8 @@ private:
   const bool _self_healing;
 
 public:
-  ZStoreBarrierRuntimeStubCodeGenClosure(bool self_healing) :
-      _self_healing(self_healing) {}
+  ZStoreBarrierRuntimeStubCodeGenClosure(bool self_healing)
+    : _self_healing(self_healing) {}
 
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     ZBarrierSet::assembler()->generate_c1_store_barrier_runtime_stub(sasm, _self_healing);

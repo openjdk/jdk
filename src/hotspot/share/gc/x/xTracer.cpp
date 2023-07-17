@@ -53,7 +53,7 @@ class XStatisticsCounterTypeConstant : public JfrSerializer {
 public:
   virtual void serialize(JfrCheckpointWriter& writer) {
     writer.write_count(XStatCounter::count());
-    for (XStatCounter* counter = XStatCounter::first(); counter != NULL; counter = counter->next()) {
+    for (XStatCounter* counter = XStatCounter::first(); counter != nullptr; counter = counter->next()) {
       writer.write_key(counter->id());
       writer.write(counter->name());
     }
@@ -64,7 +64,7 @@ class XStatisticsSamplerTypeConstant : public JfrSerializer {
 public:
   virtual void serialize(JfrCheckpointWriter& writer) {
     writer.write_count(XStatSampler::count());
-    for (XStatSampler* sampler = XStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+    for (XStatSampler* sampler = XStatSampler::first(); sampler != nullptr; sampler = sampler->next()) {
       writer.write_key(sampler->id());
       writer.write(sampler->name());
     }
@@ -85,13 +85,13 @@ static void register_jfr_type_serializers() {
 
 #endif // INCLUDE_JFR
 
-XTracer* XTracer::_tracer = NULL;
+XTracer* XTracer::_tracer = nullptr;
 
 XTracer::XTracer() :
     GCTracer(Z) {}
 
 void XTracer::initialize() {
-  assert(_tracer == NULL, "Already initialized");
+  assert(_tracer == nullptr, "Already initialized");
   _tracer = new XTracer();
   JFR_ONLY(register_jfr_type_serializers());
 }

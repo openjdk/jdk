@@ -101,8 +101,8 @@ bool PhaseIdealLoop::split_up( Node *n, Node *blk1, Node *blk2 ) {
     for (uint i = 0; i < wq.size(); i++) {
       Node* m = wq.at(i);
       if (m->is_If()) {
-        assert(skeleton_predicate_has_opaque(m->as_If()), "opaque node not reachable from if?");
-        Node* bol = clone_skeleton_predicate_bool(m, nullptr, nullptr, m->in(0));
+        assert(assertion_predicate_has_loop_opaque_node(m->as_If()), "opaque node not reachable from if?");
+        Node* bol = create_bool_from_template_assertion_predicate(m, nullptr, nullptr, m->in(0));
         _igvn.replace_input_of(m, 1, bol);
       } else {
         assert(!m->is_CFG(), "not CFG expected");
@@ -628,7 +628,7 @@ void PhaseIdealLoop::do_split_if(Node* iff, RegionNode** new_false_region, Regio
       for (j = n->outs(); n->has_out(j); j++) {
         Node* m = n->out(j);
         // If m is dead, throw it away, and declare progress
-        if (_nodes[m->_idx] == nullptr) {
+        if (_loop_or_ctrl[m->_idx] == nullptr) {
           _igvn.remove_dead_node(m);
           // fall through
         }

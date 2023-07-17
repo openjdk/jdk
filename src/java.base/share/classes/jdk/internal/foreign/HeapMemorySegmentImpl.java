@@ -27,6 +27,7 @@
 package jdk.internal.foreign;
 
 import java.lang.foreign.MemorySegment;
+import java.lang.foreign.ValueLayout;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.Optional;
@@ -52,10 +53,10 @@ public abstract sealed class HeapMemorySegmentImpl extends AbstractMemorySegment
     private static final Unsafe UNSAFE = Unsafe.getUnsafe();
     private static final int BYTE_ARR_BASE = UNSAFE.arrayBaseOffset(byte[].class);
 
-    private static final long MAX_ALIGN_1 = 1;
-    private static final long MAX_ALIGN_2 = 2;
-    private static final long MAX_ALIGN_4 = 4;
-    private static final long MAX_ALIGN_8 = 8;
+    private static final long MAX_ALIGN_1 = ValueLayout.JAVA_BYTE.byteAlignment();
+    private static final long MAX_ALIGN_2 = ValueLayout.JAVA_SHORT.byteAlignment();
+    private static final long MAX_ALIGN_4 = ValueLayout.JAVA_INT.byteAlignment();
+    private static final long MAX_ALIGN_8 = ValueLayout.JAVA_LONG.byteAlignment();
 
     final long offset;
     final Object base;

@@ -397,16 +397,16 @@ T* XStatIterableValue<T>::insert() const {
 template <typename T>
 void XStatIterableValue<T>::sort() {
   T* first_unsorted = _first;
-  _first = NULL;
+  _first = nullptr;
 
-  while (first_unsorted != NULL) {
+  while (first_unsorted != nullptr) {
     T* const value = first_unsorted;
     first_unsorted = value->_next;
-    value->_next = NULL;
+    value->_next = nullptr;
 
     T** current = &_first;
 
-    while (*current != NULL) {
+    while (*current != nullptr) {
       // First sort by group, then by name
       const int group_cmp = strcmp((*current)->group(), value->group());
       if ((group_cmp > 0) || (group_cmp == 0 && strcmp((*current)->name(), value->name()) > 0)) {
@@ -881,12 +881,12 @@ XStat::XStat() :
 
 void XStat::sample_and_collect(XStatSamplerHistory* history) const {
   // Sample counters
-  for (const XStatCounter* counter = XStatCounter::first(); counter != NULL; counter = counter->next()) {
+  for (const XStatCounter* counter = XStatCounter::first(); counter != nullptr; counter = counter->next()) {
     counter->sample_and_reset();
   }
 
   // Collect samples
-  for (const XStatSampler* sampler = XStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+  for (const XStatSampler* sampler = XStatSampler::first(); sampler != nullptr; sampler = sampler->next()) {
     XStatSamplerHistory& sampler_history = history[sampler->id()];
     sampler_history.add(sampler->collect_and_reset());
   }
@@ -911,7 +911,7 @@ void XStat::print(LogTargetHandle log, const XStatSamplerHistory* history) const
   log.print("                                                             Last 10s              Last 10m              Last 10h                Total");
   log.print("                                                             Avg / Max             Avg / Max             Avg / Max             Avg / Max");
 
-  for (const XStatSampler* sampler = XStatSampler::first(); sampler != NULL; sampler = sampler->next()) {
+  for (const XStatSampler* sampler = XStatSampler::first(); sampler != nullptr; sampler = sampler->next()) {
     const XStatSamplerHistory& sampler_history = history[sampler->id()];
     const XStatUnitPrinter printer = sampler->printer();
     printer(log, *sampler, sampler_history);

@@ -83,8 +83,8 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _max_spills(0)
  , _unused_spill_slot(-1)
  , _intervals(0)   // initialized later with correct length
- , _new_intervals_from_allocation(NULL)
- , _sorted_intervals(NULL)
+ , _new_intervals_from_allocation(nullptr)
+ , _sorted_intervals(nullptr)
  , _needs_full_resort(false)
  , _lir_ops(0)     // initialized later with correct length
  , _block_of_op(0) // initialized later with correct length
@@ -93,13 +93,13 @@ LinearScan::LinearScan(IR* ir, LIRGenerator* gen, FrameMap* frame_map)
  , _interval_in_loop(0)  // initialized later with correct length
  , _scope_value_cache(0) // initialized later with correct length
 #ifdef IA32
- , _fpu_stack_allocator(NULL)
+ , _fpu_stack_allocator(nullptr)
 #endif
 {
-  assert(this->ir() != NULL,          "check if valid");
-  assert(this->compilation() != NULL, "check if valid");
-  assert(this->gen() != NULL,         "check if valid");
-  assert(this->frame_map() != NULL,   "check if valid");
+  assert(this->ir() != nullptr,          "check if valid");
+  assert(this->compilation() != nullptr, "check if valid");
+  assert(this->gen() != nullptr,         "check if valid");
+  assert(this->frame_map() != nullptr,   "check if valid");
 }
 
 
@@ -268,7 +268,7 @@ void LinearScan::propagate_spill_slots() {
 // create a new interval with a predefined reg_num
 // (only used for parent intervals that are created during the building phase)
 Interval* LinearScan::create_interval(int reg_num) {
-  assert(_intervals.at(reg_num) == NULL, "overwriting existing interval");
+  assert(_intervals.at(reg_num) == nullptr, "overwriting existing interval");
 
   Interval* interval = new Interval(reg_num);
   _intervals.at_put(reg_num, interval);
@@ -286,7 +286,7 @@ void LinearScan::append_interval(Interval* it) {
   it->set_reg_num(_intervals.length());
   _intervals.append(it);
   IntervalList* new_intervals = _new_intervals_from_allocation;
-  if (new_intervals == NULL) {
+  if (new_intervals == nullptr) {
     new_intervals = _new_intervals_from_allocation = new IntervalList();
   }
   new_intervals->append(it);
@@ -393,14 +393,14 @@ void LinearScan::eliminate_spill_moves() {
   // the list is sorted by Interval::spill_definition_pos
   Interval* interval;
   Interval* temp_list;
-  create_unhandled_lists(&interval, &temp_list, must_store_at_definition, NULL);
+  create_unhandled_lists(&interval, &temp_list, must_store_at_definition, nullptr);
 
 #ifdef ASSERT
-  Interval* prev = NULL;
+  Interval* prev = nullptr;
   Interval* temp = interval;
   while (temp != Interval::end()) {
     assert(temp->spill_definition_pos() > 0, "invalid spill definition pos");
-    if (prev != NULL) {
+    if (prev != nullptr) {
       assert(temp->from() >= prev->from(), "intervals not sorted");
       assert(temp->spill_definition_pos() >= prev->spill_definition_pos(), "when intervals are sorted by from, then they must also be sorted by spill_definition_pos");
     }
@@ -432,7 +432,7 @@ void LinearScan::eliminate_spill_moves() {
         // remove move from register to stack if the stack slot is guaranteed to be correct.
         // only moves that have been inserted by LinearScan can be removed.
         assert(op->code() == lir_move, "only moves can have a op_id of -1");
-        assert(op->as_Op1() != NULL, "move must be LIR_Op1");
+        assert(op->as_Op1() != nullptr, "move must be LIR_Op1");
         assert(op->as_Op1()->result_opr()->is_virtual(), "LinearScan inserts only moves to virtual registers");
 
         LIR_Op1* op1 = (LIR_Op1*)op;
@@ -441,7 +441,7 @@ void LinearScan::eliminate_spill_moves() {
         if (interval->assigned_reg() >= LinearScan::nof_regs && interval->always_in_memory()) {
           // move target is a stack slot that is always correct, so eliminate instruction
           TRACE_LINEAR_SCAN(4, tty->print_cr("eliminating move from interval %d to %d", op1->in_opr()->vreg_number(), op1->result_opr()->vreg_number()));
-          instructions->at_put(j, NULL); // NULL-instructions are deleted by assign_reg_num
+          instructions->at_put(j, nullptr); // null-instructions are deleted by assign_reg_num
         }
 
       } else {
@@ -498,8 +498,8 @@ void LinearScan::number_instructions() {
   }
 
   // initialize with correct length
-  _lir_ops = LIR_OpArray(num_instructions, num_instructions, NULL);
-  _block_of_op = BlockBeginArray(num_instructions, num_instructions, NULL);
+  _lir_ops = LIR_OpArray(num_instructions, num_instructions, nullptr);
+  _block_of_op = BlockBeginArray(num_instructions, num_instructions, nullptr);
 
   int op_id = 0;
   int idx = 0;
@@ -540,10 +540,10 @@ void LinearScan::set_live_gen_kill(Value value, LIR_Op* op, BitMap& live_gen, Bi
 
   // check some asumptions about debug information
   assert(!value->type()->is_illegal(), "if this local is used by the interpreter it shouldn't be of indeterminate type");
-  assert(con == NULL || opr->is_virtual() || opr->is_constant() || opr->is_illegal(), "assumption: Constant instructions have only constant operands");
-  assert(con != NULL || opr->is_virtual(), "assumption: non-Constant instructions have only virtual operands");
+  assert(con == nullptr || opr->is_virtual() || opr->is_constant() || opr->is_illegal(), "assumption: Constant instructions have only constant operands");
+  assert(con != nullptr || opr->is_virtual(), "assumption: non-Constant instructions have only virtual operands");
 
-  if ((con == NULL || con->is_pinned()) && opr->is_register()) {
+  if ((con == nullptr || con->is_pinned()) && opr->is_register()) {
     assert(reg_num(opr) == opr->vreg_number() && !is_valid_reg_num(reg_numHi(opr)), "invalid optimization below");
     int reg = opr->vreg_number();
     if (!live_kill.at(reg)) {
@@ -839,7 +839,7 @@ void LinearScan::compute_global_live_sets() {
     for (unsigned int i = 0; i < ir()->start()->live_in().size(); i++) {
       if (ir()->start()->live_in().at(i)) {
         Instruction* instr = gen()->instruction_for_vreg(i);
-        tty->print_cr("* vreg %d (HIR instruction %c%d)", i, instr == NULL ? ' ' : instr->type()->tchar(), instr == NULL ? 0 : instr->id());
+        tty->print_cr("* vreg %d (HIR instruction %c%d)", i, instr == nullptr ? ' ' : instr->type()->tchar(), instr == nullptr ? 0 : instr->id());
 
         for (int j = 0; j < num_blocks; j++) {
           BlockBegin* block = block_at(j);
@@ -870,7 +870,7 @@ void LinearScan::add_use(Value value, int from, int to, IntervalUseKind use_kind
   LIR_Opr opr = value->operand();
   Constant* con = value->as_Constant();
 
-  if ((con == NULL || con->is_pinned()) && opr->is_register()) {
+  if ((con == nullptr || con->is_pinned()) && opr->is_register()) {
     assert(reg_num(opr) == opr->vreg_number() && !is_valid_reg_num(reg_numHi(opr)), "invalid optimization below");
     add_use(opr, from, to, use_kind);
   }
@@ -940,7 +940,7 @@ void LinearScan::add_temp(LIR_Opr opr, int temp_pos, IntervalUseKind use_kind) {
 
 void LinearScan::add_def(int reg_num, int def_pos, IntervalUseKind use_kind, BasicType type) {
   Interval* interval = interval_at(reg_num);
-  if (interval != NULL) {
+  if (interval != nullptr) {
     assert(interval->reg_num() == reg_num, "wrong interval");
 
     if (type != T_ILLEGAL) {
@@ -985,7 +985,7 @@ void LinearScan::add_def(int reg_num, int def_pos, IntervalUseKind use_kind, Bas
 
 void LinearScan::add_use(int reg_num, int from, int to, IntervalUseKind use_kind, BasicType type) {
   Interval* interval = interval_at(reg_num);
-  if (interval == NULL) {
+  if (interval == nullptr) {
     interval = create_interval(reg_num);
   }
   assert(interval->reg_num() == reg_num, "wrong interval");
@@ -1000,7 +1000,7 @@ void LinearScan::add_use(int reg_num, int from, int to, IntervalUseKind use_kind
 
 void LinearScan::add_temp(int reg_num, int temp_pos, IntervalUseKind use_kind, BasicType type) {
   Interval* interval = interval_at(reg_num);
-  if (interval == NULL) {
+  if (interval == nullptr) {
     interval = create_interval(reg_num);
   }
   assert(interval->reg_num() == reg_num, "wrong interval");
@@ -1019,7 +1019,7 @@ void LinearScan::add_temp(int reg_num, int temp_pos, IntervalUseKind use_kind, B
 // it is not reloaded to a register.
 IntervalUseKind LinearScan::use_kind_of_output_operand(LIR_Op* op, LIR_Opr opr) {
   if (op->code() == lir_move) {
-    assert(op->as_Op1() != NULL, "lir_move must be LIR_Op1");
+    assert(op->as_Op1() != nullptr, "lir_move must be LIR_Op1");
     LIR_Op1* move = (LIR_Op1*)op;
     LIR_Opr res = move->result_opr();
     bool result_in_memory = res->is_virtual() && gen()->is_vreg_flag_set(res->vreg_number(), LIRGenerator::must_start_in_memory);
@@ -1055,7 +1055,7 @@ IntervalUseKind LinearScan::use_kind_of_output_operand(LIR_Op* op, LIR_Opr opr) 
 
 IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
   if (op->code() == lir_move) {
-    assert(op->as_Op1() != NULL, "lir_move must be LIR_Op1");
+    assert(op->as_Op1() != nullptr, "lir_move must be LIR_Op1");
     LIR_Op1* move = (LIR_Op1*)op;
     LIR_Opr res = move->result_opr();
     bool result_in_memory = res->is_virtual() && gen()->is_vreg_flag_set(res->vreg_number(), LIRGenerator::must_start_in_memory);
@@ -1100,7 +1100,7 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
         case lir_mul:
         case lir_div:
         {
-          assert(op->as_Op2() != NULL, "must be LIR_Op2");
+          assert(op->as_Op2() != nullptr, "must be LIR_Op2");
           LIR_Op2* op2 = (LIR_Op2*)op;
           if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
             assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
@@ -1118,7 +1118,7 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
         case lir_mul:
         case lir_div:
         {
-          assert(op->as_Op2() != NULL, "must be LIR_Op2");
+          assert(op->as_Op2() != nullptr, "must be LIR_Op2");
           LIR_Op2* op2 = (LIR_Op2*)op;
           if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
             assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
@@ -1142,7 +1142,7 @@ IntervalUseKind LinearScan::use_kind_of_input_operand(LIR_Op* op, LIR_Opr opr) {
       case lir_logic_or:
       case lir_logic_xor:
       {
-        assert(op->as_Op2() != NULL, "must be LIR_Op2");
+        assert(op->as_Op2() != nullptr, "must be LIR_Op2");
         LIR_Op2* op2 = (LIR_Op2*)op;
         if (op2->in_opr1() != op2->in_opr2() && op2->in_opr2() == opr) {
           assert((op2->result_opr()->is_register() || op->code() == lir_cmp) && op2->in_opr1()->is_register(), "cannot mark second operand as stack if others are not in register");
@@ -1166,7 +1166,7 @@ void LinearScan::handle_method_arguments(LIR_Op* op) {
   // it is split before the first use by the register allocator.
 
   if (op->code() == lir_move) {
-    assert(op->as_Op1() != NULL, "must be LIR_Op1");
+    assert(op->as_Op1() != nullptr, "must be LIR_Op1");
     LIR_Op1* move = (LIR_Op1*)op;
 
     if (move->in_opr()->is_stack()) {
@@ -1202,12 +1202,12 @@ void LinearScan::handle_doubleword_moves(LIR_Op* op) {
   // in this case the registers of the input address and the result
   // registers must not overlap -> add a temp range for the input registers
   if (op->code() == lir_move) {
-    assert(op->as_Op1() != NULL, "must be LIR_Op1");
+    assert(op->as_Op1() != nullptr, "must be LIR_Op1");
     LIR_Op1* move = (LIR_Op1*)op;
 
     if (move->result_opr()->is_double_cpu() && move->in_opr()->is_pointer()) {
       LIR_Address* address = move->in_opr()->as_address_ptr();
-      if (address != NULL) {
+      if (address != nullptr) {
         if (address->base()->is_valid()) {
           add_temp(address->base(), op->id(), noUse);
         }
@@ -1223,7 +1223,7 @@ void LinearScan::add_register_hints(LIR_Op* op) {
   switch (op->code()) {
     case lir_move:      // fall through
     case lir_convert: {
-      assert(op->as_Op1() != NULL, "lir_move, lir_convert must be LIR_Op1");
+      assert(op->as_Op1() != nullptr, "lir_move, lir_convert must be LIR_Op1");
       LIR_Op1* move = (LIR_Op1*)op;
 
       LIR_Opr move_from = move->in_opr();
@@ -1232,7 +1232,7 @@ void LinearScan::add_register_hints(LIR_Op* op) {
       if (move_to->is_register() && move_from->is_register()) {
         Interval* from = interval_at(reg_num(move_from));
         Interval* to = interval_at(reg_num(move_to));
-        if (from != NULL && to != NULL) {
+        if (from != nullptr && to != nullptr) {
           to->set_register_hint(from);
           TRACE_LINEAR_SCAN(4, tty->print_cr("operation at op_id %d: added hint from interval %d to %d", move->id(), from->reg_num(), to->reg_num()));
         }
@@ -1240,7 +1240,7 @@ void LinearScan::add_register_hints(LIR_Op* op) {
       break;
     }
     case lir_cmove: {
-      assert(op->as_Op4() != NULL, "lir_cmove must be LIR_Op4");
+      assert(op->as_Op4() != nullptr, "lir_cmove must be LIR_Op4");
       LIR_Op4* cmove = (LIR_Op4*)op;
 
       LIR_Opr move_from = cmove->in_opr1();
@@ -1249,7 +1249,7 @@ void LinearScan::add_register_hints(LIR_Op* op) {
       if (move_to->is_register() && move_from->is_register()) {
         Interval* from = interval_at(reg_num(move_from));
         Interval* to = interval_at(reg_num(move_to));
-        if (from != NULL && to != NULL) {
+        if (from != nullptr && to != nullptr) {
           to->set_register_hint(from);
           TRACE_LINEAR_SCAN(4, tty->print_cr("operation at op_id %d: added hint from interval %d to %d", cmove->id(), from->reg_num(), to->reg_num()));
         }
@@ -1269,7 +1269,7 @@ void LinearScan::build_intervals() {
   // (32 is added to have some space for split children without having to resize the list)
   _intervals = IntervalList(num_virtual_regs() + 32);
   // initialize all slots that are used by build_intervals
-  _intervals.at_put_grow(num_virtual_regs() - 1, NULL, NULL);
+  _intervals.at_put_grow(num_virtual_regs() - 1, nullptr, nullptr);
 
   // create a list with all caller-save registers (cpu, fpu, xmm)
   // when an instruction is a call, a temp range is created for all these registers
@@ -1421,7 +1421,7 @@ void LinearScan::build_intervals() {
   // -> the register allocator need not handle unhandled fixed intervals
   for (int n = 0; n < LinearScan::nof_regs; n++) {
     Interval* interval = interval_at(n);
-    if (interval != NULL) {
+    if (interval != nullptr) {
       interval->add_range(0, 1);
     }
   }
@@ -1431,14 +1431,14 @@ void LinearScan::build_intervals() {
 // ********** Phase 5: actual register allocation
 
 int LinearScan::interval_cmp(Interval** a, Interval** b) {
-  if (*a != NULL) {
-    if (*b != NULL) {
+  if (*a != nullptr) {
+    if (*b != nullptr) {
       return (*a)->from() - (*b)->from();
     } else {
       return -1;
     }
   } else {
-    if (*b != NULL) {
+    if (*b != nullptr) {
       return 1;
     } else {
       return 0;
@@ -1491,7 +1491,7 @@ bool LinearScan::is_sorted(IntervalArray* intervals) {
 
   for (int i = 0; i < intervals->length(); i++) {
     Interval* it = intervals->at(i);
-    if (it != NULL) {
+    if (it != nullptr) {
       assert(from <= it->from(), "Intervals are unordered");
       from = it->from();
     } else {
@@ -1505,7 +1505,7 @@ bool LinearScan::is_sorted(IntervalArray* intervals) {
 
   for (int i = 0; i < interval_count(); i++) {
     Interval* interval = interval_at(i);
-    if (interval != NULL) {
+    if (interval != nullptr) {
       assert(find_interval(interval, intervals), "Lists do not contain same intervals");
     } else {
       null_count++;
@@ -1513,14 +1513,14 @@ bool LinearScan::is_sorted(IntervalArray* intervals) {
   }
 
   assert(interval_count() - null_count == intervals->length(),
-      "Sorted list should contain the same amount of non-NULL intervals as unsorted list");
+      "Sorted list should contain the same amount of non-null intervals as unsorted list");
 
   return true;
 }
 #endif
 
 void LinearScan::add_to_list(Interval** first, Interval** prev, Interval* interval) {
-  if (*prev != NULL) {
+  if (*prev != nullptr) {
     (*prev)->set_next(interval);
   } else {
     *first = interval;
@@ -1533,27 +1533,27 @@ void LinearScan::create_unhandled_lists(Interval** list1, Interval** list2, bool
 
   *list1 = *list2 = Interval::end();
 
-  Interval* list1_prev = NULL;
-  Interval* list2_prev = NULL;
+  Interval* list1_prev = nullptr;
+  Interval* list2_prev = nullptr;
   Interval* v;
 
   const int n = _sorted_intervals->length();
   for (int i = 0; i < n; i++) {
     v = _sorted_intervals->at(i);
-    if (v == NULL) continue;
+    if (v == nullptr) continue;
 
     if (is_list1(v)) {
       add_to_list(list1, &list1_prev, v);
-    } else if (is_list2 == NULL || is_list2(v)) {
+    } else if (is_list2 == nullptr || is_list2(v)) {
       add_to_list(list2, &list2_prev, v);
     }
   }
 
-  if (list1_prev != NULL) list1_prev->set_next(Interval::end());
-  if (list2_prev != NULL) list2_prev->set_next(Interval::end());
+  if (list1_prev != nullptr) list1_prev->set_next(Interval::end());
+  if (list2_prev != nullptr) list2_prev->set_next(Interval::end());
 
-  assert(list1_prev == NULL || list1_prev->next() == Interval::end(), "linear list ends not with sentinel");
-  assert(list2_prev == NULL || list2_prev->next() == Interval::end(), "linear list ends not with sentinel");
+  assert(list1_prev == nullptr || list1_prev->next() == Interval::end(), "linear list ends not with sentinel");
+  assert(list2_prev == nullptr || list2_prev->next() == Interval::end(), "linear list ends not with sentinel");
 }
 
 
@@ -1575,20 +1575,20 @@ void LinearScan::sort_intervals_before_allocation() {
   int sorted_idx = 0;
   int sorted_from_max = -1;
 
-  // calc number of items for sorted list (sorted list must not contain NULL values)
+  // calc number of items for sorted list (sorted list must not contain null values)
   for (unsorted_idx = 0; unsorted_idx < unsorted_len; unsorted_idx++) {
-    if (unsorted_list->at(unsorted_idx) != NULL) {
+    if (unsorted_list->at(unsorted_idx) != nullptr) {
       sorted_len++;
     }
   }
-  IntervalArray* sorted_list = new IntervalArray(sorted_len, sorted_len, NULL);
+  IntervalArray* sorted_list = new IntervalArray(sorted_len, sorted_len, nullptr);
 
   // special sorting algorithm: the original interval-list is almost sorted,
   // only some intervals are swapped. So this is much faster than a complete QuickSort
   for (unsorted_idx = 0; unsorted_idx < unsorted_len; unsorted_idx++) {
     Interval* cur_interval = unsorted_list->at(unsorted_idx);
 
-    if (cur_interval != NULL) {
+    if (cur_interval != nullptr) {
       int cur_from = cur_interval->from();
 
       if (sorted_from_max <= cur_from) {
@@ -1622,7 +1622,7 @@ void LinearScan::sort_intervals_after_allocation() {
   IntervalArray* old_list = _sorted_intervals;
   IntervalList* new_list = _new_intervals_from_allocation;
   int old_len = old_list->length();
-  int new_len = new_list == NULL ? 0 : new_list->length();
+  int new_len = new_list == nullptr ? 0 : new_list->length();
 
   if (new_len == 0) {
     // no intervals have been added during allocation, so sorted list is already up to date
@@ -1635,7 +1635,7 @@ void LinearScan::sort_intervals_after_allocation() {
 
   // merge old and new list (both already sorted) into one combined list
   int combined_list_len = old_len + new_len;
-  IntervalArray* combined_list = new IntervalArray(combined_list_len, combined_list_len, NULL);
+  IntervalArray* combined_list = new IntervalArray(combined_list_len, combined_list_len, nullptr);
   int old_idx = 0;
   int new_idx = 0;
 
@@ -1698,10 +1698,10 @@ void LinearScan::allocate_registers() {
 // (insert moves at edges between blocks if intervals have been split)
 
 // wrapper for Interval::split_child_at_op_id that performs a bailout in product mode
-// instead of returning NULL
+// instead of returning null
 Interval* LinearScan::split_child_at_op_id(Interval* interval, int op_id, LIR_OpVisitState::OprMode mode) {
   Interval* result = interval->split_child_at_op_id(op_id, mode);
-  if (result != NULL) {
+  if (result != nullptr) {
     return result;
   }
 
@@ -1709,27 +1709,27 @@ Interval* LinearScan::split_child_at_op_id(Interval* interval, int op_id, LIR_Op
   result = new Interval(LIR_Opr::vreg_base);
   result->assign_reg(0);
   result->set_type(T_INT);
-  BAILOUT_("LinearScan: interval is NULL", result);
+  BAILOUT_("LinearScan: interval is null", result);
 }
 
 
 Interval* LinearScan::interval_at_block_begin(BlockBegin* block, int reg_num) {
   assert(LinearScan::nof_regs <= reg_num && reg_num < num_virtual_regs(), "register number out of bounds");
-  assert(interval_at(reg_num) != NULL, "no interval found");
+  assert(interval_at(reg_num) != nullptr, "no interval found");
 
   return split_child_at_op_id(interval_at(reg_num), block->first_lir_instruction_id(), LIR_OpVisitState::outputMode);
 }
 
 Interval* LinearScan::interval_at_block_end(BlockBegin* block, int reg_num) {
   assert(LinearScan::nof_regs <= reg_num && reg_num < num_virtual_regs(), "register number out of bounds");
-  assert(interval_at(reg_num) != NULL, "no interval found");
+  assert(interval_at(reg_num) != nullptr, "no interval found");
 
   return split_child_at_op_id(interval_at(reg_num), block->last_lir_instruction_id() + 1, LIR_OpVisitState::outputMode);
 }
 
 Interval* LinearScan::interval_at_op_id(int reg_num, int op_id) {
   assert(LinearScan::nof_regs <= reg_num && reg_num < num_virtual_regs(), "register number out of bounds");
-  assert(interval_at(reg_num) != NULL, "no interval found");
+  assert(interval_at(reg_num) != nullptr, "no interval found");
 
   return split_child_at_op_id(interval_at(reg_num), op_id, LIR_OpVisitState::inputMode);
 }
@@ -1763,7 +1763,7 @@ void LinearScan::resolve_find_insert_pos(BlockBegin* from_block, BlockBegin* to_
 
     LIR_OpList* instructions = from_block->lir()->instructions_list();
     LIR_OpBranch* branch = instructions->last()->as_OpBranch();
-    if (branch != NULL) {
+    if (branch != nullptr) {
       // insert moves before branch
       assert(branch->cond() == lir_cond_always, "block does not end with an unconditional jump");
       move_resolver.set_insert_position(from_block->lir(), instructions->length() - 2);
@@ -1774,7 +1774,7 @@ void LinearScan::resolve_find_insert_pos(BlockBegin* from_block, BlockBegin* to_
   } else {
     TRACE_LINEAR_SCAN(4, tty->print_cr("inserting moves at beginning of to_block B%d", to_block->block_id()));
 #ifdef ASSERT
-    assert(from_block->lir()->instructions_list()->at(0)->as_OpLabel() != NULL, "block does not start with a label");
+    assert(from_block->lir()->instructions_list()->at(0)->as_OpLabel() != nullptr, "block does not start with a label");
 
     // because the number of predecessor edges matches the number of
     // successor edges, blocks which are reached by switch statements
@@ -1860,7 +1860,7 @@ void LinearScan::resolve_data_flow() {
 
 
 void LinearScan::resolve_exception_entry(BlockBegin* block, int reg_num, MoveResolver &move_resolver) {
-  if (interval_at(reg_num) == NULL) {
+  if (interval_at(reg_num) == nullptr) {
     // if a phi function is never used, no interval is created -> ignore this
     return;
   }
@@ -1933,7 +1933,7 @@ void LinearScan::resolve_exception_entry(BlockBegin* block, MoveResolver &move_r
 
 
 void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, int reg_num, Phi* phi, MoveResolver &move_resolver) {
-  if (interval_at(reg_num) == NULL) {
+  if (interval_at(reg_num) == nullptr) {
     // if a phi function is never used, no interval is created -> ignore this
     return;
   }
@@ -1943,7 +1943,7 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, i
   BlockBegin* to_block = handler->entry_block();
   Interval* to_interval = interval_at_block_begin(to_block, reg_num);
 
-  if (phi != NULL) {
+  if (phi != nullptr) {
     // phi function of the exception entry block
     // no moves are created for this phi function in the LIR_Generator, so the
     // interval at the throwing instruction must be searched using the operands
@@ -1955,7 +1955,7 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, i
     move_resolver.set_multiple_reads_allowed();
 
     Constant* con = from_value->as_Constant();
-    if (con != NULL && (!con->is_pinned() || con->operand()->is_constant())) {
+    if (con != nullptr && (!con->is_pinned() || con->operand()->is_constant())) {
       // Need a mapping from constant to interval if unpinned (may have no register) or if the operand is a constant (no register).
       move_resolver.add_mapping(LIR_OprFact::value_type(con->type()), to_interval);
     } else {
@@ -1983,13 +1983,13 @@ void LinearScan::resolve_exception_edge(XHandler* handler, int throwing_op_id, M
   DEBUG_ONLY(move_resolver.check_empty());
   assert(handler->lir_op_id() == -1, "already processed this xhandler");
   DEBUG_ONLY(handler->set_lir_op_id(throwing_op_id));
-  assert(handler->entry_code() == NULL, "code already present");
+  assert(handler->entry_code() == nullptr, "code already present");
 
   // visit all registers where the live_in bit is set
   BlockBegin* block = handler->entry_block();
   auto resolver = [&](BitMap::idx_t index) {
     int r = static_cast<int>(index);
-    resolve_exception_edge(handler, throwing_op_id, r, NULL, move_resolver);
+    resolve_exception_edge(handler, throwing_op_id, r, nullptr, move_resolver);
   };
   block->live_in().iterate(resolver, 0, live_set_size());
 
@@ -2215,7 +2215,7 @@ LIR_Opr LinearScan::color_lir_opr(LIR_Opr opr, int op_id, LIR_OpVisitState::OprM
   assert(opr->is_virtual(), "should not call this otherwise");
 
   Interval* interval = interval_at(opr->vreg_number());
-  assert(interval != NULL, "interval must exist");
+  assert(interval != nullptr, "interval must exist");
 
   if (op_id != -1) {
 #ifdef ASSERT
@@ -2225,7 +2225,7 @@ LIR_Opr LinearScan::color_lir_opr(LIR_Opr opr, int op_id, LIR_OpVisitState::OprM
       // before the branch instruction. So the split child information for this branch would
       // be incorrect.
       LIR_OpBranch* branch = block->lir()->instructions_list()->last()->as_OpBranch();
-      if (branch != NULL) {
+      if (branch != nullptr) {
         if (block->live_out().at(opr->vreg_number())) {
           assert(branch->cond() == lir_cond_always, "block does not end with an unconditional jump");
           assert(false, "can't get split child for the last branch of a block because the information would be incorrect (moves are inserted before the branch in resolve_data_flow)");
@@ -2265,7 +2265,7 @@ LIR_Opr LinearScan::color_lir_opr(LIR_Opr opr, int op_id, LIR_OpVisitState::OprM
 // some methods used to check correctness of debug information
 
 void assert_no_register_values(GrowableArray<ScopeValue*>* values) {
-  if (values == NULL) {
+  if (values == nullptr) {
     return;
   }
 
@@ -2280,7 +2280,7 @@ void assert_no_register_values(GrowableArray<ScopeValue*>* values) {
 }
 
 void assert_no_register_values(GrowableArray<MonitorValue*>* values) {
-  if (values == NULL) {
+  if (values == nullptr) {
     return;
   }
 
@@ -2329,41 +2329,41 @@ void assert_equal(IRScopeDebugInfo* d1, IRScopeDebugInfo* d2) {
   assert(d1->scope() == d2->scope(), "not equal");
   assert(d1->bci() == d2->bci(), "not equal");
 
-  if (d1->locals() != NULL) {
-    assert(d1->locals() != NULL && d2->locals() != NULL, "not equal");
+  if (d1->locals() != nullptr) {
+    assert(d1->locals() != nullptr && d2->locals() != nullptr, "not equal");
     assert(d1->locals()->length() == d2->locals()->length(), "not equal");
     for (int i = 0; i < d1->locals()->length(); i++) {
       assert_equal(d1->locals()->at(i), d2->locals()->at(i));
     }
   } else {
-    assert(d1->locals() == NULL && d2->locals() == NULL, "not equal");
+    assert(d1->locals() == nullptr && d2->locals() == nullptr, "not equal");
   }
 
-  if (d1->expressions() != NULL) {
-    assert(d1->expressions() != NULL && d2->expressions() != NULL, "not equal");
+  if (d1->expressions() != nullptr) {
+    assert(d1->expressions() != nullptr && d2->expressions() != nullptr, "not equal");
     assert(d1->expressions()->length() == d2->expressions()->length(), "not equal");
     for (int i = 0; i < d1->expressions()->length(); i++) {
       assert_equal(d1->expressions()->at(i), d2->expressions()->at(i));
     }
   } else {
-    assert(d1->expressions() == NULL && d2->expressions() == NULL, "not equal");
+    assert(d1->expressions() == nullptr && d2->expressions() == nullptr, "not equal");
   }
 
-  if (d1->monitors() != NULL) {
-    assert(d1->monitors() != NULL && d2->monitors() != NULL, "not equal");
+  if (d1->monitors() != nullptr) {
+    assert(d1->monitors() != nullptr && d2->monitors() != nullptr, "not equal");
     assert(d1->monitors()->length() == d2->monitors()->length(), "not equal");
     for (int i = 0; i < d1->monitors()->length(); i++) {
       assert_equal(d1->monitors()->at(i), d2->monitors()->at(i));
     }
   } else {
-    assert(d1->monitors() == NULL && d2->monitors() == NULL, "not equal");
+    assert(d1->monitors() == nullptr && d2->monitors() == nullptr, "not equal");
   }
 
-  if (d1->caller() != NULL) {
-    assert(d1->caller() != NULL && d2->caller() != NULL, "not equal");
+  if (d1->caller() != nullptr) {
+    assert(d1->caller() != nullptr && d2->caller() != nullptr, "not equal");
     assert_equal(d1->caller(), d2->caller());
   } else {
-    assert(d1->caller() == NULL && d2->caller() == NULL, "not equal");
+    assert(d1->caller() == nullptr && d2->caller() == nullptr, "not equal");
   }
 }
 
@@ -2403,7 +2403,7 @@ IntervalWalker* LinearScan::init_compute_oop_maps() {
   Interval* oop_intervals;
   Interval* non_oop_intervals;
 
-  create_unhandled_lists(&oop_intervals, &non_oop_intervals, is_oop_interval, NULL);
+  create_unhandled_lists(&oop_intervals, &non_oop_intervals, is_oop_interval, nullptr);
 
   // intervals that have no oops inside need not to be processed
   // to ensure a walking until the last instruction id, add a dummy interval
@@ -2464,7 +2464,7 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
   }
 
   // add oops from lock stack
-  assert(info->stack() != NULL, "CodeEmitInfo must always have a stack");
+  assert(info->stack() != nullptr, "CodeEmitInfo must always have a stack");
   int locks_count = info->stack()->total_locks_size();
   for (int i = 0; i < locks_count; i++) {
     set_oop(map, frame_map()->monitor_object_regname(i));
@@ -2496,7 +2496,7 @@ void LinearScan::compute_oop_map(IntervalWalker* iw, const LIR_OpVisitState &vis
       oop_map = compute_oop_map(iw, op, info, visitor.has_call());
     }
 
-    if (info->_oop_map == NULL) {
+    if (info->_oop_map == nullptr) {
       info->_oop_map = oop_map;
     } else {
       // a CodeEmitInfo can not be shared between different LIR-instructions
@@ -2513,7 +2513,7 @@ void LinearScan::compute_oop_map(IntervalWalker* iw, const LIR_OpVisitState &vis
 // Allocate them with new so they are never destroyed (otherwise, a
 // forced exit could destroy these objects while they are still in
 // use).
-ConstantOopWriteValue* LinearScan::_oop_null_scope_value = new (mtCompiler) ConstantOopWriteValue(NULL);
+ConstantOopWriteValue* LinearScan::_oop_null_scope_value = new (mtCompiler) ConstantOopWriteValue(nullptr);
 ConstantIntValue*      LinearScan::_int_m1_scope_value = new (mtCompiler) ConstantIntValue(-1);
 ConstantIntValue*      LinearScan::_int_0_scope_value =  new (mtCompiler) ConstantIntValue((jint)0);
 ConstantIntValue*      LinearScan::_int_1_scope_value =  new (mtCompiler) ConstantIntValue(1);
@@ -2524,7 +2524,7 @@ void LinearScan::init_compute_debug_info() {
   // cache for frequently used scope values
   // (cpu registers and stack slots)
   int cache_size = (LinearScan::nof_cpu_regs + frame_map()->argcount() + max_spills()) * 2;
-  _scope_value_cache = ScopeValueArray(cache_size, cache_size, NULL);
+  _scope_value_cache = ScopeValueArray(cache_size, cache_size, nullptr);
 }
 
 MonitorValue* LinearScan::location_for_monitor_index(int monitor_index) {
@@ -2557,7 +2557,7 @@ int LinearScan::append_scope_value_for_constant(LIR_Opr opr, GrowableArray<Scope
   switch (t) {
     case T_OBJECT: {
       jobject value = c->as_jobject();
-      if (value == NULL) {
+      if (value == nullptr) {
         scope_values->append(_oop_null_scope_value);
       } else {
         scope_values->append(new ConstantOopWriteValue(c->as_jobject()));
@@ -2617,7 +2617,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
     int cache_idx = (stack_idx + LinearScan::nof_cpu_regs) * 2 + (is_oop ? 1 : 0);
 
     ScopeValue* sv = _scope_value_cache.at(cache_idx);
-    if (sv == NULL) {
+    if (sv == nullptr) {
       Location::Type loc_type = is_oop ? Location::oop : Location::normal;
       sv = location_for_name(stack_idx, loc_type);
       _scope_value_cache.at_put(cache_idx, sv);
@@ -2635,7 +2635,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
     Location::Type int_loc_type = NOT_LP64(Location::normal) LP64_ONLY(Location::int_in_long);
 
     ScopeValue* sv = _scope_value_cache.at(cache_idx);
-    if (sv == NULL) {
+    if (sv == nullptr) {
       Location::Type loc_type = is_oop ? Location::oop : int_loc_type;
       VMReg rname = frame_map()->regname(opr);
       sv = new LocationValue(Location::new_reg_loc(loc_type, rname));
@@ -2663,7 +2663,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
     // during fpu stack allocation, so the stack allocator object
     // must be present
     assert(use_fpu_stack_allocation(), "should not have float stack values without fpu stack allocation (all floats must be SSE2)");
-    assert(_fpu_stack_allocator != NULL, "must be present");
+    assert(_fpu_stack_allocator != nullptr, "must be present");
     opr = _fpu_stack_allocator->to_fpu_stack(opr);
 #elif defined(AMD64)
     assert(false, "FPU not used on x86-64");
@@ -2710,7 +2710,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 #ifdef _LP64
       Location loc1;
       Location::Type loc_type = opr->type() == T_LONG ? Location::lng : Location::dbl;
-      if (!frame_map()->locations_for_slot(opr->double_stack_ix(), loc_type, &loc1, NULL)) {
+      if (!frame_map()->locations_for_slot(opr->double_stack_ix(), loc_type, &loc1, nullptr)) {
         bailout("too large frame");
       }
 
@@ -2776,7 +2776,7 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
       // during fpu stack allocation, so the stack allocator object
       // must be present
       assert(use_fpu_stack_allocation(), "should not have float stack values without fpu stack allocation (all floats must be SSE2)");
-      assert(_fpu_stack_allocator != NULL, "must be present");
+      assert(_fpu_stack_allocator != nullptr, "must be present");
       opr = _fpu_stack_allocator->to_fpu_stack(opr);
 
       assert(opr->fpu_regnrLo() == opr->fpu_regnrHi(), "assumed in calculation (only fpu_regnrLo is used)");
@@ -2808,11 +2808,11 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 
     } else {
       ShouldNotReachHere();
-      first = NULL;
-      second = NULL;
+      first = nullptr;
+      second = nullptr;
     }
 
-    assert(first != NULL && second != NULL, "must be set");
+    assert(first != nullptr && second != nullptr, "must be set");
     // The convention the interpreter uses is that the second local
     // holds the first raw word of the native double representation.
     // This is actually reasonable, since locals and stack arrays
@@ -2827,14 +2827,14 @@ int LinearScan::append_scope_value_for_operand(LIR_Opr opr, GrowableArray<ScopeV
 
 
 int LinearScan::append_scope_value(int op_id, Value value, GrowableArray<ScopeValue*>* scope_values) {
-  if (value != NULL) {
+  if (value != nullptr) {
     LIR_Opr opr = value->operand();
     Constant* con = value->as_Constant();
 
-    assert(con == NULL || opr->is_virtual() || opr->is_constant() || opr->is_illegal(), "assumption: Constant instructions have only constant operands (or illegal if constant is optimized away)");
-    assert(con != NULL || opr->is_virtual(), "assumption: non-Constant instructions have only virtual operands");
+    assert(con == nullptr || opr->is_virtual() || opr->is_constant() || opr->is_illegal(), "assumption: Constant instructions have only constant operands (or illegal if constant is optimized away)");
+    assert(con != nullptr || opr->is_virtual(), "assumption: non-Constant instructions have only virtual operands");
 
-    if (con != NULL && !con->is_pinned() && !opr->is_constant()) {
+    if (con != nullptr && !con->is_pinned() && !opr->is_constant()) {
       // Unpinned constants may have a virtual operand for a part of the lifetime
       // or may be illegal when it was optimized away,
       // so always use a constant operand
@@ -2852,7 +2852,7 @@ int LinearScan::append_scope_value(int op_id, Value value, GrowableArray<ScopeVa
         // and so the wrong operand would be returned (spill moves at block boundaries are not
         // considered in the live ranges of intervals)
         // Solution: use the first op_id of the branch target block instead.
-        if (block->lir()->instructions_list()->last()->as_OpBranch() != NULL) {
+        if (block->lir()->instructions_list()->last()->as_OpBranch() != nullptr) {
           if (block->live_out().at(opr->vreg_number())) {
             op_id = block->sux_at(0)->first_lir_instruction_id();
             mode = LIR_OpVisitState::outputMode;
@@ -2870,7 +2870,7 @@ int LinearScan::append_scope_value(int op_id, Value value, GrowableArray<ScopeVa
       return append_scope_value_for_operand(opr, scope_values);
 
     } else {
-      assert(value->as_Constant() != NULL, "all other instructions have only virtual operands");
+      assert(value->as_Constant() != nullptr, "all other instructions have only virtual operands");
       assert(opr->is_constant(), "operand must be constant");
 
       return append_scope_value_for_constant(opr, scope_values);
@@ -2884,10 +2884,10 @@ int LinearScan::append_scope_value(int op_id, Value value, GrowableArray<ScopeVa
 
 
 IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* cur_scope, ValueStack* cur_state, ValueStack* innermost_state) {
-  IRScopeDebugInfo* caller_debug_info = NULL;
+  IRScopeDebugInfo* caller_debug_info = nullptr;
 
   ValueStack* caller_state = cur_state->caller_state();
-  if (caller_state != NULL) {
+  if (caller_state != nullptr) {
     // process recursively to compute outermost scope first
     caller_debug_info = compute_debug_info_for_scope(op_id, cur_scope->caller(), caller_state, innermost_state);
   }
@@ -2895,9 +2895,9 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
   // initialize these to null.
   // If we don't need deopt info or there are no locals, expressions or monitors,
   // then these get recorded as no information and avoids the allocation of 0 length arrays.
-  GrowableArray<ScopeValue*>*   locals      = NULL;
-  GrowableArray<ScopeValue*>*   expressions = NULL;
-  GrowableArray<MonitorValue*>* monitors    = NULL;
+  GrowableArray<ScopeValue*>*   locals      = nullptr;
+  GrowableArray<ScopeValue*>*   expressions = nullptr;
+  GrowableArray<MonitorValue*>* monitors    = nullptr;
 
   // describe local variable values
   int nof_locals = cur_state->locals_size();
@@ -2942,7 +2942,7 @@ IRScopeDebugInfo* LinearScan::compute_debug_info_for_scope(int op_id, IRScope* c
   // describe monitors
   int nof_locks = cur_state->locks_size();
   if (nof_locks > 0) {
-    int lock_offset = cur_state->caller_state() != NULL ? cur_state->caller_state()->total_locks_size() : 0;
+    int lock_offset = cur_state->caller_state() != nullptr ? cur_state->caller_state()->total_locks_size() : 0;
     monitors = new GrowableArray<MonitorValue*>(nof_locks);
     for (int i = 0; i < nof_locks; i++) {
       monitors->append(location_for_monitor_index(lock_offset + i));
@@ -2959,11 +2959,11 @@ void LinearScan::compute_debug_info(CodeEmitInfo* info, int op_id) {
   IRScope* innermost_scope = info->scope();
   ValueStack* innermost_state = info->stack();
 
-  assert(innermost_scope != NULL && innermost_state != NULL, "why is it missing?");
+  assert(innermost_scope != nullptr && innermost_state != nullptr, "why is it missing?");
 
   DEBUG_ONLY(check_stack_depth(info, innermost_state->stack_size()));
 
-  if (info->_scope_debug_info == NULL) {
+  if (info->_scope_debug_info == nullptr) {
     // compute debug information
     info->_scope_debug_info = compute_debug_info_for_scope(op_id, innermost_scope, innermost_state, innermost_state);
   } else {
@@ -2980,7 +2980,7 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
 
   for (int j = 0; j < num_inst; j++) {
     LIR_Op* op = instructions->at(j);
-    if (op == NULL) {  // this can happen when spill-moves are removed in eliminate_spill_moves
+    if (op == nullptr) { // this can happen when spill-moves are removed in eliminate_spill_moves
       has_dead = true;
       continue;
     }
@@ -3007,8 +3007,8 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
         int n = xhandlers->length();
         for (int k = 0; k < n; k++) {
           XHandler* handler = xhandlers->handler_at(k);
-          if (handler->entry_code() != NULL) {
-            assign_reg_num(handler->entry_code()->instructions_list(), NULL);
+          if (handler->entry_code() != nullptr) {
+            assign_reg_num(handler->entry_code()->instructions_list(), nullptr);
           }
         }
       } else {
@@ -3016,7 +3016,7 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
       }
 
       // compute oop map
-      assert(iw != NULL, "needed for compute_oop_map");
+      assert(iw != nullptr, "needed for compute_oop_map");
       compute_oop_map(iw, visitor, op);
 
       // compute debug information
@@ -3039,14 +3039,14 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
 
     // remove useless moves
     if (op->code() == lir_move) {
-      assert(op->as_Op1() != NULL, "move must be LIR_Op1");
+      assert(op->as_Op1() != nullptr, "move must be LIR_Op1");
       LIR_Op1* move = (LIR_Op1*)op;
       LIR_Opr src = move->in_opr();
       LIR_Opr dst = move->result_opr();
       if (dst == src ||
           (!dst->is_pointer() && !src->is_pointer() &&
            src->is_same_register(dst))) {
-        instructions->at_put(j, NULL);
+        instructions->at_put(j, nullptr);
         has_dead = true;
       }
     }
@@ -3057,7 +3057,7 @@ void LinearScan::assign_reg_num(LIR_OpList* instructions, IntervalWalker* iw) {
     int insert_point = 0;
     for (int j = 0; j < num_inst; j++) {
       LIR_Op* op = instructions->at(j);
-      if (op != NULL) {
+      if (op != nullptr) {
         if (insert_point != j) {
           instructions->at_put(insert_point, op);
         }
@@ -3180,7 +3180,7 @@ void LinearScan::print_intervals(const char* label) {
 
     for (i = 0; i < interval_count(); i++) {
       Interval* interval = interval_at(i);
-      if (interval != NULL) {
+      if (interval != nullptr) {
         interval->print();
       }
     }
@@ -3254,7 +3254,7 @@ LIR_Opr LinearScan::get_operand(int reg_num) {
 
 Interval* LinearScan::find_interval_at(int reg_num) const {
   if (reg_num < 0 || reg_num >= _intervals.length()) {
-    return NULL;
+    return nullptr;
   }
   return interval_at(reg_num);
 }
@@ -3288,7 +3288,7 @@ void LinearScan::verify_intervals() {
 
   for (int i = 0; i < len; i++) {
     Interval* i1 = interval_at(i);
-    if (i1 == NULL) continue;
+    if (i1 == nullptr) continue;
 
     i1->check_split_children();
 
@@ -3335,7 +3335,7 @@ void LinearScan::verify_intervals() {
 
     for (int j = i + 1; j < len; j++) {
       Interval* i2 = interval_at(j);
-      if (i2 == NULL || (i2->from() == 1 && i2->to() == 2)) continue;
+      if (i2 == nullptr || (i2->from() == 1 && i2->to() == 2)) continue;
 
       int r1 = i1->assigned_reg();
       int r1Hi = i1->assigned_regHi();
@@ -3357,7 +3357,7 @@ void LinearScan::verify_intervals() {
 void LinearScan::verify_no_oops_in_fixed_intervals() {
   Interval* fixed_intervals;
   Interval* other_intervals;
-  create_unhandled_lists(&fixed_intervals, &other_intervals, is_precolored_cpu_interval, NULL);
+  create_unhandled_lists(&fixed_intervals, &other_intervals, is_precolored_cpu_interval, nullptr);
 
   // to ensure a walking until the last instruction id, add a dummy interval
   // with a high operation id
@@ -3385,7 +3385,7 @@ void LinearScan::verify_no_oops_in_fixed_intervals() {
           check_live = (move->patch_code() == lir_patch_none);
         }
         LIR_OpBranch* branch = op->as_OpBranch();
-        if (branch != NULL && branch->stub() != NULL && branch->stub()->is_exception_throw_stub()) {
+        if (branch != nullptr && branch->stub() != nullptr && branch->stub()->is_exception_throw_stub()) {
           // Don't bother checking the stub in this case since the
           // exception stub will never return to normal control flow.
           check_live = false;
@@ -3438,7 +3438,7 @@ void LinearScan::verify_no_oops_in_fixed_intervals() {
               TRACE_LINEAR_SCAN(4, op->print_on(tty); tty->print("checking operand "); opr->print(); tty->cr());
 
               Interval* interval = interval_at(reg_num(opr));
-              assert(interval != NULL, "no interval");
+              assert(interval != nullptr, "no interval");
 
               if (mode == LIR_OpVisitState::inputMode) {
                 if (interval->to() >= op_id + 1) {
@@ -3477,10 +3477,10 @@ void LinearScan::verify_constants() {
 
       Value value = gen()->instruction_for_vreg(r);
 
-      assert(value != NULL, "all intervals live across block boundaries must have Value");
+      assert(value != nullptr, "all intervals live across block boundaries must have Value");
       assert(value->operand()->is_register() && value->operand()->is_virtual(), "value must have virtual operand");
       assert(value->operand()->vreg_number() == r, "register number must match");
-      // TKR assert(value->as_Constant() == NULL || value->is_pinned(), "only pinned constants can be alive across block boundaries");
+      // TKR assert(value->as_Constant() == nullptr || value->is_pinned(), "only pinned constants can be alive across block boundaries");
     };
     live_at_edge.iterate(visitor, 0, size);
   }
@@ -3520,7 +3520,7 @@ class RegisterVerifier: public StackObj {
   RegisterVerifier(LinearScan* allocator)
     : _allocator(allocator)
     , _work_list(16)
-    , _saved_states(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), NULL)
+    , _saved_states(BlockBegin::number_of_blocks(), BlockBegin::number_of_blocks(), nullptr)
   { }
 
   void verify(BlockBegin* start);
@@ -3537,7 +3537,7 @@ void LinearScan::verify_registers() {
 void RegisterVerifier::verify(BlockBegin* start) {
   // setup input registers (method arguments) for first block
   int input_state_len = state_size();
-  IntervalList* input_state = new IntervalList(input_state_len, input_state_len, NULL);
+  IntervalList* input_state = new IntervalList(input_state_len, input_state_len, nullptr);
   CallingConvention* args = compilation()->frame_map()->incoming_arguments();
   for (int n = 0; n < args->length(); n++) {
     LIR_Opr opr = args->at(n);
@@ -3575,7 +3575,7 @@ void RegisterVerifier::process_block(BlockBegin* block) {
     tty->print_cr("Input-State of intervals:");
     tty->print("    ");
     for (int i = 0; i < state_size(); i++) {
-      if (input_state->at(i) != NULL) {
+      if (input_state->at(i) != nullptr) {
         tty->print(" %4d", input_state->at(i)->reg_num());
       } else {
         tty->print("   __");
@@ -3600,7 +3600,7 @@ void RegisterVerifier::process_xhandler(XHandler* xhandler, IntervalList* input_
   // must copy state because it is modified
   input_state = copy(input_state);
 
-  if (xhandler->entry_code() != NULL) {
+  if (xhandler->entry_code() != nullptr) {
     process_operations(xhandler->entry_code(), input_state);
   }
   process_successor(xhandler->entry_block(), input_state);
@@ -3609,7 +3609,7 @@ void RegisterVerifier::process_xhandler(XHandler* xhandler, IntervalList* input_
 void RegisterVerifier::process_successor(BlockBegin* block, IntervalList* input_state) {
   IntervalList* saved_state = state_for_block(block);
 
-  if (saved_state != NULL) {
+  if (saved_state != nullptr) {
     // this block was already processed before.
     // check if new input_state is consistent with saved_state
 
@@ -3618,12 +3618,12 @@ void RegisterVerifier::process_successor(BlockBegin* block, IntervalList* input_
       if (input_state->at(i) != saved_state->at(i)) {
         // current input_state and previous saved_state assume a different
         // interval in this register -> assume that this register is invalid
-        if (saved_state->at(i) != NULL) {
+        if (saved_state->at(i) != nullptr) {
           // invalidate old calculation only if it assumed that
           // register was valid. when the register was already invalid,
           // then the old calculation was correct.
           saved_state_correct = false;
-          saved_state->at_put(i, NULL);
+          saved_state->at_put(i, nullptr);
 
           TRACE_LINEAR_SCAN(4, tty->print_cr("process_successor B%d: invalidating slot %d", block->block_id(), i));
         }
@@ -3657,10 +3657,10 @@ IntervalList* RegisterVerifier::copy(IntervalList* input_state) {
 
 void RegisterVerifier::state_put(IntervalList* input_state, int reg, Interval* interval) {
   if (reg != LinearScan::any_reg && reg < state_size()) {
-    if (interval != NULL) {
+    if (interval != nullptr) {
       TRACE_LINEAR_SCAN(4, tty->print_cr("        reg[%d] = %d", reg, interval->reg_num()));
-    } else if (input_state->at(reg) != NULL) {
-      TRACE_LINEAR_SCAN(4, tty->print_cr("        reg[%d] = NULL", reg));
+    } else if (input_state->at(reg) != nullptr) {
+      TRACE_LINEAR_SCAN(4, tty->print_cr("        reg[%d] = null", reg));
     }
 
     input_state->at_put(reg, interval);
@@ -3705,8 +3705,8 @@ void RegisterVerifier::process_operations(LIR_List* ops, IntervalList* input_sta
         // When an operand is marked with is_last_use, then the fpu stack allocator
         // removes the register from the fpu stack -> the register contains no value
         if (opr->is_last_use()) {
-          state_put(input_state, interval->assigned_reg(),   NULL);
-          state_put(input_state, interval->assigned_regHi(), NULL);
+          state_put(input_state, interval->assigned_reg(),   nullptr);
+          state_put(input_state, interval->assigned_regHi(), nullptr);
         }
       }
     }
@@ -3714,16 +3714,16 @@ void RegisterVerifier::process_operations(LIR_List* ops, IntervalList* input_sta
     // invalidate all caller save registers at calls
     if (visitor.has_call()) {
       for (j = 0; j < FrameMap::nof_caller_save_cpu_regs(); j++) {
-        state_put(input_state, reg_num(FrameMap::caller_save_cpu_reg_at(j)), NULL);
+        state_put(input_state, reg_num(FrameMap::caller_save_cpu_reg_at(j)), nullptr);
       }
       for (j = 0; j < FrameMap::nof_caller_save_fpu_regs; j++) {
-        state_put(input_state, reg_num(FrameMap::caller_save_fpu_reg_at(j)), NULL);
+        state_put(input_state, reg_num(FrameMap::caller_save_fpu_reg_at(j)), nullptr);
       }
 
 #ifdef X86
       int num_caller_save_xmm_regs = FrameMap::get_num_caller_save_xmms();
       for (j = 0; j < num_caller_save_xmm_regs; j++) {
-        state_put(input_state, reg_num(FrameMap::caller_save_xmm_reg_at(j)), NULL);
+        state_put(input_state, reg_num(FrameMap::caller_save_xmm_reg_at(j)), nullptr);
       }
 #endif
     }
@@ -3735,7 +3735,7 @@ void RegisterVerifier::process_operations(LIR_List* ops, IntervalList* input_sta
       process_xhandler(xhandlers->handler_at(k), input_state);
     }
 
-    // set temp operands (some operations use temp operands also as output operands, so can't set them NULL)
+    // set temp operands (some operations use temp operands also as output operands, so can't set them null)
     n = visitor.opr_count(LIR_OpVisitState::tempMode);
     for (j = 0; j < n; j++) {
       LIR_Opr opr = visitor.opr_at(LIR_OpVisitState::tempMode, j);
@@ -3776,7 +3776,7 @@ void RegisterVerifier::process_operations(LIR_List* ops, IntervalList* input_sta
 
 MoveResolver::MoveResolver(LinearScan* allocator) :
   _allocator(allocator),
-  _insert_list(NULL),
+  _insert_list(nullptr),
   _insert_idx(-1),
   _insertion_buffer(),
   _mapping_from(8),
@@ -3804,13 +3804,13 @@ void MoveResolver::check_empty() {
 void MoveResolver::verify_before_resolve() {
   assert(_mapping_from.length() == _mapping_from_opr.length(), "length must be equal");
   assert(_mapping_from.length() == _mapping_to.length(), "length must be equal");
-  assert(_insert_list != NULL && _insert_idx != -1, "insert position not set");
+  assert(_insert_list != nullptr && _insert_idx != -1, "insert position not set");
 
   int i, j;
   if (!_multiple_reads_allowed) {
     for (i = 0; i < _mapping_from.length(); i++) {
       for (j = i + 1; j < _mapping_from.length(); j++) {
-        assert(_mapping_from.at(i) == NULL || _mapping_from.at(i) != _mapping_from.at(j), "cannot read from same interval twice");
+        assert(_mapping_from.at(i) == nullptr || _mapping_from.at(i) != _mapping_from.at(j), "cannot read from same interval twice");
       }
     }
   }
@@ -3826,7 +3826,7 @@ void MoveResolver::verify_before_resolve() {
   if (!_multiple_reads_allowed) {
     for (i = 0; i < _mapping_from.length(); i++) {
       Interval* it = _mapping_from.at(i);
-      if (it != NULL) {
+      if (it != nullptr) {
         assert(!used_regs.at(it->assigned_reg()), "cannot read from same register twice");
         used_regs.set_bit(it->assigned_reg());
 
@@ -3853,7 +3853,7 @@ void MoveResolver::verify_before_resolve() {
   used_regs.clear();
   for (i = 0; i < _mapping_from.length(); i++) {
     Interval* it = _mapping_from.at(i);
-    if (it != NULL && it->assigned_reg() >= LinearScan::nof_regs) {
+    if (it != nullptr && it->assigned_reg() >= LinearScan::nof_regs) {
       used_regs.set_bit(it->assigned_reg());
     }
   }
@@ -3898,7 +3898,7 @@ void MoveResolver::unblock_registers(Interval* it) {
 bool MoveResolver::save_to_process_move(Interval* from, Interval* to) {
   int from_reg = -1;
   int from_regHi = -1;
-  if (from != NULL) {
+  if (from != nullptr) {
     from_reg = from->assigned_reg();
     from_regHi = from->assigned_regHi();
   }
@@ -3931,14 +3931,14 @@ void MoveResolver::append_insertion_buffer() {
   }
   assert(!_insertion_buffer.initialized(), "must be uninitialized now");
 
-  _insert_list = NULL;
+  _insert_list = nullptr;
   _insert_idx = -1;
 }
 
 void MoveResolver::insert_move(Interval* from_interval, Interval* to_interval) {
   assert(from_interval->reg_num() != to_interval->reg_num(), "from and to interval equal");
   assert(from_interval->type() == to_interval->type(), "move between different types");
-  assert(_insert_list != NULL && _insert_idx != -1, "must setup insert position first");
+  assert(_insert_list != nullptr && _insert_idx != -1, "must setup insert position first");
   assert(_insertion_buffer.lir_list() == _insert_list, "wrong insertion buffer");
 
   LIR_Opr from_opr = get_virtual_register(from_interval);
@@ -3957,7 +3957,7 @@ void MoveResolver::insert_move(Interval* from_interval, Interval* to_interval) {
 
 void MoveResolver::insert_move(LIR_Opr from_opr, Interval* to_interval) {
   assert(from_opr->type() == to_interval->type(), "move between different types");
-  assert(_insert_list != NULL && _insert_idx != -1, "must setup insert position first");
+  assert(_insert_list != nullptr && _insert_idx != -1, "must setup insert position first");
   assert(_insertion_buffer.lir_list() == _insert_list, "wrong insertion buffer");
 
   LIR_Opr to_opr = get_virtual_register(to_interval);
@@ -3983,7 +3983,7 @@ LIR_Opr MoveResolver::get_virtual_register(Interval* interval) {
 }
 
 void MoveResolver::resolve_mappings() {
-  TRACE_LINEAR_SCAN(4, tty->print_cr("MoveResolver: resolving mappings for Block B%d, index %d", _insert_list->block() != NULL ? _insert_list->block()->block_id() : -1, _insert_idx));
+  TRACE_LINEAR_SCAN(4, tty->print_cr("MoveResolver: resolving mappings for Block B%d, index %d", _insert_list->block() != nullptr ? _insert_list->block()->block_id() : -1, _insert_idx));
   DEBUG_ONLY(verify_before_resolve());
 
   // Block all registers that are used as input operands of a move.
@@ -3992,7 +3992,7 @@ void MoveResolver::resolve_mappings() {
   int i;
   for (i = _mapping_from.length() - 1; i >= 0; i--) {
     Interval* from_interval = _mapping_from.at(i);
-    if (from_interval != NULL) {
+    if (from_interval != nullptr) {
       block_registers(from_interval);
     }
   }
@@ -4007,7 +4007,7 @@ void MoveResolver::resolve_mappings() {
 
       if (save_to_process_move(from_interval, to_interval)) {
         // this interval can be processed because target is free
-        if (from_interval != NULL) {
+        if (from_interval != nullptr) {
           insert_move(from_interval, to_interval);
           unblock_registers(from_interval);
         } else {
@@ -4018,7 +4018,7 @@ void MoveResolver::resolve_mappings() {
         _mapping_to.remove_at(i);
 
         processed_interval = true;
-      } else if (from_interval != NULL && from_interval->assigned_reg() < LinearScan::nof_regs) {
+      } else if (from_interval != nullptr && from_interval->assigned_reg() < LinearScan::nof_regs) {
         // this interval cannot be processed now because target is not free
         // it starts in a register, so it is a possible candidate for spilling
         spill_candidate = i;
@@ -4068,8 +4068,8 @@ void MoveResolver::resolve_mappings() {
 
 
 void MoveResolver::set_insert_position(LIR_List* insert_list, int insert_idx) {
-  TRACE_LINEAR_SCAN(4, tty->print_cr("MoveResolver: setting insert position to Block B%d, index %d", insert_list->block() != NULL ? insert_list->block()->block_id() : -1, insert_idx));
-  assert(_insert_list == NULL && _insert_idx == -1, "use move_insert_position instead of set_insert_position when data already set");
+  TRACE_LINEAR_SCAN(4, tty->print_cr("MoveResolver: setting insert position to Block B%d, index %d", insert_list->block() != nullptr ? insert_list->block()->block_id() : -1, insert_idx));
+  assert(_insert_list == nullptr && _insert_idx == -1, "use move_insert_position instead of set_insert_position when data already set");
 
   create_insertion_buffer(insert_list);
   _insert_list = insert_list;
@@ -4077,9 +4077,9 @@ void MoveResolver::set_insert_position(LIR_List* insert_list, int insert_idx) {
 }
 
 void MoveResolver::move_insert_position(LIR_List* insert_list, int insert_idx) {
-  TRACE_LINEAR_SCAN(4, tty->print_cr("MoveResolver: moving insert position to Block B%d, index %d", insert_list->block() != NULL ? insert_list->block()->block_id() : -1, insert_idx));
+  TRACE_LINEAR_SCAN(4, tty->print_cr("MoveResolver: moving insert position to Block B%d, index %d", insert_list->block() != nullptr ? insert_list->block()->block_id() : -1, insert_idx));
 
-  if (_insert_list != NULL && (insert_list != _insert_list || insert_idx != _insert_idx)) {
+  if (_insert_list != nullptr && (insert_list != _insert_list || insert_idx != _insert_idx)) {
     // insert position changed -> resolve current mappings
     resolve_mappings();
   }
@@ -4108,7 +4108,7 @@ void MoveResolver::add_mapping(LIR_Opr from_opr, Interval* to_interval) {
   TRACE_LINEAR_SCAN(4, tty->print("MoveResolver: adding mapping from "); from_opr->print(); tty->print_cr(" to %d (%d, %d)", to_interval->reg_num(), to_interval->assigned_reg(), to_interval->assigned_regHi()));
   assert(from_opr->is_constant(), "only for constants");
 
-  _mapping_from.append(NULL);
+  _mapping_from.append(nullptr);
   _mapping_from_opr.append(from_opr);
   _mapping_to.append(to_interval);
 }
@@ -4132,17 +4132,17 @@ Range::Range(int from, int to, Range* next) :
 }
 
 // initialize sentinel
-Range* Range::_end = NULL;
+Range* Range::_end = nullptr;
 void Range::initialize() {
   assert(_end == nullptr, "Range initialized more than once");
   alignas(Range) static uint8_t end_storage[sizeof(Range)];
-  _end = ::new(static_cast<void*>(end_storage)) Range(max_jint, max_jint, NULL);
+  _end = ::new(static_cast<void*>(end_storage)) Range(max_jint, max_jint, nullptr);
 }
 
 int Range::intersects_at(Range* r2) const {
   const Range* r1 = this;
 
-  assert(r1 != NULL && r2 != NULL, "null ranges not allowed");
+  assert(r1 != nullptr && r2 != nullptr, "null ranges not allowed");
   assert(r1 != _end && r2 != _end, "empty ranges not allowed");
 
   do {
@@ -4181,7 +4181,7 @@ void Range::print(outputStream* out) const {
 // **** Implementation of Interval **********************************
 
 // initialize sentinel
-Interval* Interval::_end = NULL;
+Interval* Interval::_end = nullptr;
 void Interval::initialize() {
   Range::initialize();
   assert(_end == nullptr, "Interval initialized more than once");
@@ -4202,12 +4202,12 @@ Interval::Interval(int reg_num) :
   _cached_to(-1),
   _cached_opr(LIR_OprFact::illegalOpr),
   _cached_vm_reg(VMRegImpl::Bad()),
-  _split_children(NULL),
+  _split_children(nullptr),
   _canonical_spill_slot(-1),
   _insert_move_when_activated(false),
   _spill_state(noDefinitionFound),
   _spill_definition_pos(-1),
-  _register_hint(NULL)
+  _register_hint(nullptr)
 {
   _split_parent = this;
   _current_split_child = this;
@@ -4227,7 +4227,7 @@ int Interval::calc_to() {
 #ifdef ASSERT
 // consistency check of split-children
 void Interval::check_split_children() {
-  if (_split_children != NULL && _split_children->length() > 0) {
+  if (_split_children != nullptr && _split_children->length() > 0) {
     assert(is_split_parent(), "only split parents can have children");
 
     for (int i = 0; i < _split_children->length(); i++) {
@@ -4259,13 +4259,13 @@ Interval* Interval::register_hint(bool search_split_child) const {
     return _register_hint;
   }
 
-  if (_register_hint != NULL) {
+  if (_register_hint != nullptr) {
     assert(_register_hint->is_split_parent(), "only split parents are valid hint registers");
 
     if (_register_hint->assigned_reg() >= 0 && _register_hint->assigned_reg() < LinearScan::nof_regs) {
       return _register_hint;
 
-    } else if (_register_hint->_split_children != NULL && _register_hint->_split_children->length() > 0) {
+    } else if (_register_hint->_split_children != nullptr && _register_hint->_split_children->length() > 0) {
       // search the first split child that has a register assigned
       int len = _register_hint->_split_children->length();
       for (int i = 0; i < len; i++) {
@@ -4279,7 +4279,7 @@ Interval* Interval::register_hint(bool search_split_child) const {
   }
 
   // no hint interval found that has a register assigned
-  return NULL;
+  return nullptr;
 }
 
 
@@ -4288,10 +4288,10 @@ Interval* Interval::split_child_at_op_id(int op_id, LIR_OpVisitState::OprMode mo
   assert(op_id >= 0, "invalid op_id (method can not be called for spill moves)");
 
   Interval* result;
-  if (_split_children == NULL || _split_children->length() == 0) {
+  if (_split_children == nullptr || _split_children->length() == 0) {
     result = this;
   } else {
-    result = NULL;
+    result = nullptr;
     int len = _split_children->length();
 
     // in outputMode, the end of the interval (op_id == cur->to()) is not valid
@@ -4326,7 +4326,7 @@ Interval* Interval::split_child_at_op_id(int op_id, LIR_OpVisitState::OprMode mo
 #endif
   }
 
-  assert(result != NULL, "no matching interval found");
+  assert(result != nullptr, "no matching interval found");
   assert(result->covers(op_id, mode), "op_id not covered by interval");
 
   return result;
@@ -4338,20 +4338,20 @@ Interval* Interval::split_child_before_op_id(int op_id) {
   assert(op_id >= 0, "invalid op_id");
 
   Interval* parent = split_parent();
-  Interval* result = NULL;
+  Interval* result = nullptr;
 
-  assert(parent->_split_children != NULL, "no split children available");
+  assert(parent->_split_children != nullptr, "no split children available");
   int len = parent->_split_children->length();
   assert(len > 0, "no split children available");
 
   for (int i = len - 1; i >= 0; i--) {
     Interval* cur = parent->_split_children->at(i);
-    if (cur->to() <= op_id && (result == NULL || result->to() < cur->to())) {
+    if (cur->to() <= op_id && (result == nullptr || result->to() < cur->to())) {
       result = cur;
     }
   }
 
-  assert(result != NULL, "no split child found");
+  assert(result != nullptr, "no split child found");
   return result;
 }
 
@@ -4460,7 +4460,7 @@ Interval* Interval::new_split_child() {
   result->set_register_hint(parent);
 
   // insert new interval in children-list of parent
-  if (parent->_split_children == NULL) {
+  if (parent->_split_children == nullptr) {
     assert(is_split_parent(), "list must be initialized at first split");
 
     parent->_split_children = new IntervalList(4);
@@ -4488,7 +4488,7 @@ Interval* Interval::split(int split_pos) {
   Interval* result = new_split_child();
 
   // split the ranges
-  Range* prev = NULL;
+  Range* prev = nullptr;
   Range* cur = _first;
   while (cur != Range::end() && cur->to() <= split_pos) {
     prev = cur;
@@ -4502,7 +4502,7 @@ Interval* Interval::split(int split_pos) {
     cur->set_next(Range::end());
 
   } else {
-    assert(prev != NULL, "split before start of first range");
+    assert(prev != nullptr, "split before start of first range");
     result->_first = cur;
     prev->set_next(Range::end());
   }
@@ -4623,7 +4623,7 @@ bool Interval::has_hole_between(int hole_from, int hole_to) {
 
 // Check if there is an intersection with any of the split children of 'interval'
 bool Interval::intersects_any_children_of(Interval* interval) const {
-  if (interval->_split_children != NULL) {
+  if (interval->_split_children != nullptr) {
     for (int i = 0; i < interval->_split_children->length(); i++) {
       if (intersects(interval->_split_children->at(i))) {
         return true;
@@ -4667,14 +4667,14 @@ void Interval::print_on(outputStream* out, bool is_cfg_printer) const {
     }
     out->print(" ");
   }
-  out->print("%d %d ", split_parent()->reg_num(), (register_hint(false) != NULL ? register_hint(false)->reg_num() : -1));
+  out->print("%d %d ", split_parent()->reg_num(), (register_hint(false) != nullptr ? register_hint(false)->reg_num() : -1));
 
   // print ranges
   Range* cur = _first;
   while (cur != Range::end()) {
     cur->print(out);
     cur = cur->next();
-    assert(cur != NULL, "range list not closed with range sentinel");
+    assert(cur != nullptr, "range list not closed with range sentinel");
   }
 
   // print use positions
@@ -4701,7 +4701,7 @@ void Interval::print_parent() const {
 }
 
 void Interval::print_children() const {
-  if (_split_children == NULL) {
+  if (_split_children == nullptr) {
     tty->print_cr("Children: []");
   } else {
     tty->print_cr("Children:");
@@ -4729,19 +4729,19 @@ IntervalWalker::IntervalWalker(LinearScan* allocator, Interval* unhandled_fixed_
   _active_first[anyKind]      = Interval::end();
   _inactive_first[anyKind]    = Interval::end();
   _current_position = -1;
-  _current = NULL;
+  _current = nullptr;
   next_interval();
 }
 
 
 // append interval in order of current range from()
 void IntervalWalker::append_sorted(Interval** list, Interval* interval) {
-  Interval* prev = NULL;
+  Interval* prev = nullptr;
   Interval* cur  = *list;
   while (cur->current_from() < interval->current_from()) {
     prev = cur; cur = cur->next();
   }
-  if (prev == NULL) {
+  if (prev == nullptr) {
     *list = interval;
   } else {
     prev->set_next(interval);
@@ -4752,12 +4752,12 @@ void IntervalWalker::append_sorted(Interval** list, Interval* interval) {
 void IntervalWalker::append_to_unhandled(Interval** list, Interval* interval) {
   assert(interval->from() >= current()->current_from(), "cannot append new interval before current walk position");
 
-  Interval* prev = NULL;
+  Interval* prev = nullptr;
   Interval* cur  = *list;
   while (cur->from() < interval->from() || (cur->from() == interval->from() && cur->first_usage(noUse) < interval->first_usage(noUse))) {
     prev = cur; cur = cur->next();
   }
-  if (prev == NULL) {
+  if (prev == nullptr) {
     *list = interval;
   } else {
     prev->set_next(interval);
@@ -4862,7 +4862,7 @@ void IntervalWalker::next_interval() {
   } else if (fixed != Interval::end()) {
     kind = fixedKind;
   } else {
-    _current = NULL; return;
+    _current = nullptr; return;
   }
   _current_kind = kind;
   _current = _unhandled_first[kind];
@@ -4874,7 +4874,7 @@ void IntervalWalker::next_interval() {
 
 void IntervalWalker::walk_to(int lir_op_id) {
   assert(_current_position <= lir_op_id, "can not walk backwards");
-  while (current() != NULL) {
+  while (current() != nullptr) {
     bool is_active = current()->from() <= lir_op_id;
     int id = is_active ? current()->from() : lir_op_id;
 
@@ -5300,7 +5300,7 @@ void LinearScanWalker::split_for_spilling(Interval* it) {
     // position. This avoids short interval in register surrounded by intervals in
     // memory -> avoid useless moves from memory to register and back
     Interval* parent = it;
-    while (parent != NULL && parent->is_split_child()) {
+    while (parent != nullptr && parent->is_split_child()) {
       parent = parent->split_child_before_op_id(parent->from());
 
       if (parent->assigned_reg() < LinearScan::nof_regs) {
@@ -5310,7 +5310,7 @@ void LinearScanWalker::split_for_spilling(Interval* it) {
           allocator()->assign_spill_slot(parent);
         } else {
           // do not go further back because the register is actually used by the interval
-          parent = NULL;
+          parent = nullptr;
         }
       }
     }
@@ -5480,7 +5480,7 @@ bool LinearScanWalker::alloc_free_reg(Interval* cur) {
 
   int hint_reg, hint_regHi;
   Interval* register_hint = cur->register_hint();
-  if (register_hint != NULL) {
+  if (register_hint != nullptr) {
     hint_reg = register_hint->assigned_reg();
     hint_regHi = register_hint->assigned_regHi();
 
@@ -5796,7 +5796,7 @@ bool LinearScanWalker::is_move(LIR_Op* op, Interval* from, Interval* to) {
   if (op->code() != lir_move) {
     return false;
   }
-  assert(op->as_Op1() != NULL, "move must be LIR_Op1");
+  assert(op->as_Op1() != nullptr, "move must be LIR_Op1");
 
   LIR_Opr in = ((LIR_Op1*)op)->in_opr();
   LIR_Opr res = ((LIR_Op1*)op)->result_opr();
@@ -5812,7 +5812,7 @@ void LinearScanWalker::combine_spilled_intervals(Interval* cur) {
   }
 
   Interval* register_hint = cur->register_hint(false);
-  if (register_hint == NULL) {
+  if (register_hint == nullptr) {
     // cur is not the target of a move, otherwise register_hint would be set
     return;
   }
@@ -5919,7 +5919,7 @@ bool LinearScanWalker::activate_current() {
   // load spilled values that become active from stack slot to register
   if (cur->insert_move_when_activated()) {
     assert(cur->is_split_child(), "must be");
-    assert(cur->current_split_child() != NULL, "must be");
+    assert(cur->current_split_child() != nullptr, "must be");
     assert(cur->current_split_child()->reg_num() != cur->reg_num(), "cannot insert move between same interval");
     TRACE_LINEAR_SCAN(4, tty->print_cr("Inserting move from interval %d to %d because insert_move_when_activated is set", cur->current_split_child()->reg_num(), cur->reg_num()));
 
@@ -5976,7 +5976,7 @@ LIR_Op* EdgeMoveOptimizer::instruction_at(int edge) {
   if (idx < instructions->length()) {
     return instructions->at(idx);
   } else {
-    return NULL;
+    return nullptr;
   }
 }
 
@@ -5993,14 +5993,14 @@ void EdgeMoveOptimizer::remove_cur_instruction(int edge, bool decrement_index) {
 
 
 bool EdgeMoveOptimizer::operations_different(LIR_Op* op1, LIR_Op* op2) {
-  if (op1 == NULL || op2 == NULL) {
+  if (op1 == nullptr || op2 == nullptr) {
     // at least one block is already empty -> no optimization possible
     return true;
   }
 
   if (op1->code() == lir_move && op2->code() == lir_move) {
-    assert(op1->as_Op1() != NULL, "move must be LIR_Op1");
-    assert(op2->as_Op1() != NULL, "move must be LIR_Op1");
+    assert(op1->as_Op1() != nullptr, "move must be LIR_Op1");
+    assert(op2->as_Op1() != nullptr, "move must be LIR_Op1");
     LIR_Op1* move1 = (LIR_Op1*)op1;
     LIR_Op1* move2 = (LIR_Op1*)op2;
     if (move1->info() == move2->info() && move1->in_opr() == move2->in_opr() && move1->result_opr() == move2->result_opr()) {
@@ -6009,8 +6009,8 @@ bool EdgeMoveOptimizer::operations_different(LIR_Op* op1, LIR_Op* op2) {
     }
 
   } else if (op1->code() == lir_fxch && op2->code() == lir_fxch) {
-    assert(op1->as_Op1() != NULL, "fxch must be LIR_Op1");
-    assert(op2->as_Op1() != NULL, "fxch must be LIR_Op1");
+    assert(op1->as_Op1() != nullptr, "fxch must be LIR_Op1");
+    assert(op2->as_Op1() != nullptr, "fxch must be LIR_Op1");
     LIR_Op1* fxch1 = (LIR_Op1*)op1;
     LIR_Op1* fxch2 = (LIR_Op1*)op2;
     if (fxch1->in_opr()->as_jint() == fxch2->in_opr()->as_jint()) {
@@ -6055,10 +6055,10 @@ void EdgeMoveOptimizer::optimize_moves_at_block_end(BlockBegin* block) {
     assert(pred->number_of_sux() == 1, "can handle only one successor");
     assert(pred->sux_at(0) == block, "invalid control flow");
     assert(pred_instructions->last()->code() == lir_branch, "block with successor must end with branch");
-    assert(pred_instructions->last()->as_OpBranch() != NULL, "branch must be LIR_OpBranch");
+    assert(pred_instructions->last()->as_OpBranch() != nullptr, "branch must be LIR_OpBranch");
     assert(pred_instructions->last()->as_OpBranch()->cond() == lir_cond_always, "block must end with unconditional branch");
 
-    if (pred_instructions->last()->info() != NULL) {
+    if (pred_instructions->last()->info() != nullptr) {
       // can not optimize instructions when debug info is needed
       return;
     }
@@ -6102,16 +6102,16 @@ void EdgeMoveOptimizer::optimize_moves_at_block_begin(BlockBegin* block) {
 
   assert(num_sux == 2, "method should not be called otherwise");
   assert(cur_instructions->last()->code() == lir_branch, "block with successor must end with branch");
-  assert(cur_instructions->last()->as_OpBranch() != NULL, "branch must be LIR_OpBranch");
+  assert(cur_instructions->last()->as_OpBranch() != nullptr, "branch must be LIR_OpBranch");
   assert(cur_instructions->last()->as_OpBranch()->cond() == lir_cond_always, "block must end with unconditional branch");
 
-  if (cur_instructions->last()->info() != NULL) {
+  if (cur_instructions->last()->info() != nullptr) {
     // can no optimize instructions when debug info is needed
     return;
   }
 
   LIR_Op* branch = cur_instructions->at(cur_instructions->length() - 2);
-  if (branch->info() != NULL || (branch->code() != lir_branch && branch->code() != lir_cond_float_branch)) {
+  if (branch->info() != nullptr || (branch->code() != lir_branch && branch->code() != lir_cond_float_branch)) {
     // not a valid case for optimization
     // currently, only blocks that end with two branches (conditional branch followed
     // by unconditional branch) are optimized
@@ -6126,7 +6126,7 @@ void EdgeMoveOptimizer::optimize_moves_at_block_begin(BlockBegin* block) {
 #ifdef ASSERT
   for (i = insert_idx - 1; i >= 0; i--) {
     LIR_Op* op = cur_instructions->at(i);
-    if ((op->code() == lir_branch || op->code() == lir_cond_float_branch) && ((LIR_OpBranch*)op)->block() != NULL) {
+    if ((op->code() == lir_branch || op->code() == lir_cond_float_branch) && ((LIR_OpBranch*)op)->block() != nullptr) {
       assert(false, "block with two successors can have only two branch instructions");
     }
   }
@@ -6255,13 +6255,13 @@ bool ControlFlowOptimizer::can_delete_block(BlockBegin* block) {
 
   assert(instructions->length() >= 2, "block must have label and branch");
   assert(instructions->at(0)->code() == lir_label, "first instruction must always be a label");
-  assert(instructions->last()->as_OpBranch() != NULL, "last instruction must always be a branch");
+  assert(instructions->last()->as_OpBranch() != nullptr, "last instruction must always be a branch");
   assert(instructions->last()->as_OpBranch()->cond() == lir_cond_always, "branch must be unconditional");
   assert(instructions->last()->as_OpBranch()->block() == block->sux_at(0), "branch target must be the successor");
 
   // block must have exactly one successor
 
-  if (instructions->length() == 2 && instructions->last()->info() == NULL) {
+  if (instructions->length() == 2 && instructions->last()->info() == nullptr) {
     return true;
   }
   return false;
@@ -6278,7 +6278,7 @@ void ControlFlowOptimizer::substitute_branch_target(BlockBegin* block, BlockBegi
     LIR_Op* op = instructions->at(i);
 
     if (op->code() == lir_branch || op->code() == lir_cond_float_branch) {
-      assert(op->as_OpBranch() != NULL, "branch must be of type LIR_OpBranch");
+      assert(op->as_OpBranch() != nullptr, "branch must be of type LIR_OpBranch");
       LIR_OpBranch* branch = (LIR_OpBranch*)op;
 
       if (branch->block() == target_from) {
@@ -6347,13 +6347,13 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
 
     LIR_Op* last_op = instructions->last();
     if (last_op->code() == lir_branch) {
-      assert(last_op->as_OpBranch() != NULL, "branch must be of type LIR_OpBranch");
+      assert(last_op->as_OpBranch() != nullptr, "branch must be of type LIR_OpBranch");
       LIR_OpBranch* last_branch = (LIR_OpBranch*)last_op;
 
-      assert(last_branch->block() != NULL, "last branch must always have a block as target");
+      assert(last_branch->block() != nullptr, "last branch must always have a block as target");
       assert(last_branch->label() == last_branch->block()->label(), "must be equal");
 
-      if (last_branch->info() == NULL) {
+      if (last_branch->info() == nullptr) {
         if (last_branch->block() == code->at(i + 1)) {
 
           TRACE_LINEAR_SCAN(3, tty->print_cr("Deleting unconditional branch at end of block B%d", block->block_id()));
@@ -6364,34 +6364,34 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
         } else {
           LIR_Op* prev_op = instructions->at(instructions->length() - 2);
           if (prev_op->code() == lir_branch || prev_op->code() == lir_cond_float_branch) {
-            assert(prev_op->as_OpBranch() != NULL, "branch must be of type LIR_OpBranch");
+            assert(prev_op->as_OpBranch() != nullptr, "branch must be of type LIR_OpBranch");
             LIR_OpBranch* prev_branch = (LIR_OpBranch*)prev_op;
 
-            if (prev_branch->stub() == NULL) {
+            if (prev_branch->stub() == nullptr) {
 
-              LIR_Op2* prev_cmp = NULL;
+              LIR_Op2* prev_cmp = nullptr;
               // There might be a cmove inserted for profiling which depends on the same
               // compare. If we change the condition of the respective compare, we have
               // to take care of this cmove as well.
-              LIR_Op4* prev_cmove = NULL;
+              LIR_Op4* prev_cmove = nullptr;
 
-              for(int j = instructions->length() - 3; j >= 0 && prev_cmp == NULL; j--) {
+              for(int j = instructions->length() - 3; j >= 0 && prev_cmp == nullptr; j--) {
                 prev_op = instructions->at(j);
                 // check for the cmove
                 if (prev_op->code() == lir_cmove) {
-                  assert(prev_op->as_Op4() != NULL, "cmove must be of type LIR_Op4");
+                  assert(prev_op->as_Op4() != nullptr, "cmove must be of type LIR_Op4");
                   prev_cmove = (LIR_Op4*)prev_op;
                   assert(prev_branch->cond() == prev_cmove->condition(), "should be the same");
                 }
                 if (prev_op->code() == lir_cmp) {
-                  assert(prev_op->as_Op2() != NULL, "branch must be of type LIR_Op2");
+                  assert(prev_op->as_Op2() != nullptr, "branch must be of type LIR_Op2");
                   prev_cmp = (LIR_Op2*)prev_op;
                   assert(prev_branch->cond() == prev_cmp->condition(), "should be the same");
                 }
               }
               // Guarantee because it is dereferenced below.
-              guarantee(prev_cmp != NULL, "should have found comp instruction for branch");
-              if (prev_branch->block() == code->at(i + 1) && prev_branch->info() == NULL) {
+              guarantee(prev_cmp != nullptr, "should have found comp instruction for branch");
+              if (prev_branch->block() == code->at(i + 1) && prev_branch->info() == nullptr) {
 
                 TRACE_LINEAR_SCAN(3, tty->print_cr("Negating conditional branch and deleting unconditional branch at end of block B%d", block->block_id()));
 
@@ -6401,7 +6401,7 @@ void ControlFlowOptimizer::delete_unnecessary_jumps(BlockList* code) {
                 prev_cmp->set_condition(prev_branch->cond());
                 instructions->trunc_to(instructions->length() - 1);
                 // if we do change the condition, we have to change the cmove as well
-                if (prev_cmove != NULL) {
+                if (prev_cmove != nullptr) {
                   prev_cmove->set_condition(prev_branch->cond());
                   LIR_Opr t = prev_cmove->in_opr1();
                   prev_cmove->set_in_opr1(prev_cmove->in_opr2());
@@ -6438,12 +6438,12 @@ void ControlFlowOptimizer::delete_jumps_to_return(BlockList* code) {
       //       because the predecessors might have other (conditional) jumps to this block
       //       -> this may lead to unnecessary return instructions in the final code
 
-      assert(cur_last_op->info() == NULL, "return instructions do not have debug information");
+      assert(cur_last_op->info() == nullptr, "return instructions do not have debug information");
       assert(block->number_of_sux() == 0 ||
              (return_converted.at(block->block_id()) && block->number_of_sux() == 1),
              "blocks that end with return must not have successors");
 
-      assert(cur_last_op->as_Op1() != NULL, "return must be LIR_Op1");
+      assert(cur_last_op->as_Op1() != nullptr, "return must be LIR_Op1");
       LIR_Opr return_opr = ((LIR_Op1*)cur_last_op)->in_opr();
 
       for (int j = block->number_of_preds() - 1; j >= 0; j--) {
@@ -6452,10 +6452,10 @@ void ControlFlowOptimizer::delete_jumps_to_return(BlockList* code) {
         LIR_Op*     pred_last_op = pred_instructions->last();
 
         if (pred_last_op->code() == lir_branch) {
-          assert(pred_last_op->as_OpBranch() != NULL, "branch must be LIR_OpBranch");
+          assert(pred_last_op->as_OpBranch() != nullptr, "branch must be LIR_OpBranch");
           LIR_OpBranch* pred_last_branch = (LIR_OpBranch*)pred_last_op;
 
-          if (pred_last_branch->block() == block && pred_last_branch->cond() == lir_cond_always && pred_last_branch->info() == NULL) {
+          if (pred_last_branch->block() == block && pred_last_branch->cond() == lir_cond_always && pred_last_branch->info() == nullptr) {
             // replace the jump to a return with a direct return
             // Note: currently the edge between the blocks is not deleted
             pred_instructions->at_put(pred_instructions->length() - 1, new LIR_OpReturn(return_opr));
@@ -6480,9 +6480,9 @@ void ControlFlowOptimizer::verify(BlockList* code) {
     for (j = 0; j < instructions->length(); j++) {
       LIR_OpBranch* op_branch = instructions->at(j)->as_OpBranch();
 
-      if (op_branch != NULL) {
-        assert(op_branch->block() == NULL || code->find(op_branch->block()) != -1, "branch target not valid");
-        assert(op_branch->ublock() == NULL || code->find(op_branch->ublock()) != -1, "branch target not valid");
+      if (op_branch != nullptr) {
+        assert(op_branch->block() == nullptr || code->find(op_branch->block()) != -1, "branch target not valid");
+        assert(op_branch->ublock() == nullptr || code->find(op_branch->ublock()) != -1, "branch target not valid");
       }
     }
 
@@ -6630,7 +6630,7 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
   for (i = 0; i < allocator->interval_count(); i++) {
     Interval* cur = allocator->interval_at(i);
 
-    if (cur != NULL) {
+    if (cur != nullptr) {
       inc_counter(counter_interval);
       inc_counter(counter_use_pos, cur->num_use_positions());
       if (LinearScan::is_precolored_interval(cur)) {
@@ -6717,7 +6717,7 @@ void LinearScanStatistic::collect(LinearScan* allocator) {
         case lir_branch:
         case lir_cond_float_branch: {
           LIR_OpBranch* branch = op->as_OpBranch();
-          if (branch->block() == NULL) {
+          if (branch->block() == nullptr) {
             inc_counter(counter_stub_branch);
           } else if (branch->cond() == lir_cond_always) {
             inc_counter(counter_uncond_branch);

@@ -30,20 +30,20 @@
 #include "utilities/bitMap.inline.hpp"
 #include "utilities/debug.hpp"
 
-inline ZMovableBitMap::ZMovableBitMap() :
-    CHeapBitMap(mtGC) {}
+inline ZMovableBitMap::ZMovableBitMap()
+  : CHeapBitMap(mtGC) {}
 
-inline ZMovableBitMap::ZMovableBitMap(ZMovableBitMap&& bitmap) :
-    CHeapBitMap(mtGC) {
+inline ZMovableBitMap::ZMovableBitMap(ZMovableBitMap&& bitmap)
+  : CHeapBitMap(mtGC) {
   update(bitmap.map(), bitmap.size());
   bitmap.update(nullptr, 0);
 }
 
-inline ZBitMap::ZBitMap(idx_t size_in_bits) :
-    CHeapBitMap(size_in_bits, mtGC, false /* clear */) {}
+inline ZBitMap::ZBitMap(idx_t size_in_bits)
+  : CHeapBitMap(size_in_bits, mtGC, false /* clear */) {}
 
-inline ZBitMap::ZBitMap(const ZBitMap& other) :
-    CHeapBitMap(other.size(), mtGC, false /* clear */) {
+inline ZBitMap::ZBitMap(const ZBitMap& other)
+  : CHeapBitMap(other.size(), mtGC, false /* clear */) {
   memcpy(map(), other.map(), size_in_bytes());
 }
 
@@ -91,11 +91,11 @@ inline bool ZBitMap::par_set_bit_pair(idx_t bit, bool finalizable, bool& inc_liv
   }
 }
 
-inline ZBitMap::ReverseIterator::ReverseIterator(BitMap* bitmap) :
-    ZBitMap::ReverseIterator(bitmap, 0, bitmap->size()) {}
+inline ZBitMap::ReverseIterator::ReverseIterator(BitMap* bitmap)
+  : ZBitMap::ReverseIterator(bitmap, 0, bitmap->size()) {}
 
-inline ZBitMap::ReverseIterator::ReverseIterator(BitMap* bitmap, BitMap::idx_t beg, BitMap::idx_t end) :
-    _bitmap(bitmap),
+inline ZBitMap::ReverseIterator::ReverseIterator(BitMap* bitmap, BitMap::idx_t beg, BitMap::idx_t end)
+  : _bitmap(bitmap),
     _beg(beg),
     _end(end) {}
 

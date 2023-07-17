@@ -50,12 +50,12 @@ public:
   virtual bool do_page(const ZPage* page) = 0;
 };
 
-ZPageCacheFlushClosure::ZPageCacheFlushClosure(size_t requested) :
-    _requested(requested),
+ZPageCacheFlushClosure::ZPageCacheFlushClosure(size_t requested)
+  : _requested(requested),
     _flushed(0) {}
 
-ZPageCache::ZPageCache() :
-    _small(),
+ZPageCache::ZPageCache()
+  : _small(),
     _medium(),
     _large(),
     _last_commit(0) {}
@@ -254,8 +254,8 @@ void ZPageCache::flush(ZPageCacheFlushClosure* cl, ZList<ZPage>* to) {
 
 class ZPageCacheFlushForAllocationClosure : public ZPageCacheFlushClosure {
 public:
-  ZPageCacheFlushForAllocationClosure(size_t requested) :
-      ZPageCacheFlushClosure(requested) {}
+  ZPageCacheFlushForAllocationClosure(size_t requested)
+    : ZPageCacheFlushClosure(requested) {}
 
   virtual bool do_page(const ZPage* page) {
     if (_flushed < _requested) {
@@ -280,8 +280,8 @@ private:
   uint64_t*      _timeout;
 
 public:
-  ZPageCacheFlushForUncommitClosure(size_t requested, uint64_t now, uint64_t* timeout) :
-      ZPageCacheFlushClosure(requested),
+  ZPageCacheFlushForUncommitClosure(size_t requested, uint64_t now, uint64_t* timeout)
+    : ZPageCacheFlushClosure(requested),
       _now(now),
       _timeout(timeout) {
     // Set initial timeout

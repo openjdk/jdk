@@ -115,36 +115,36 @@ inline zaddress_unsafe* ZUncoloredRoot::cast(oop* p) {
   return root;
 }
 
-inline ZUncoloredRootMarkOopClosure::ZUncoloredRootMarkOopClosure(uintptr_t color) :
-    _color(color) {}
+inline ZUncoloredRootMarkOopClosure::ZUncoloredRootMarkOopClosure(uintptr_t color)
+  : _color(color) {}
 
 inline void ZUncoloredRootMarkOopClosure::do_root(zaddress_unsafe* p) {
   ZUncoloredRoot::mark(p, _color);
 }
 
-inline ZUncoloredRootMarkYoungOopClosure::ZUncoloredRootMarkYoungOopClosure(uintptr_t color) :
-    _color(color) {}
+inline ZUncoloredRootMarkYoungOopClosure::ZUncoloredRootMarkYoungOopClosure(uintptr_t color)
+  : _color(color) {}
 
 inline void ZUncoloredRootMarkYoungOopClosure::do_root(zaddress_unsafe* p) {
   ZUncoloredRoot::mark_young(p, _color);
 }
 
-inline ZUncoloredRootProcessOopClosure::ZUncoloredRootProcessOopClosure(uintptr_t color) :
-    _color(color) {}
+inline ZUncoloredRootProcessOopClosure::ZUncoloredRootProcessOopClosure(uintptr_t color)
+  : _color(color) {}
 
 inline void ZUncoloredRootProcessOopClosure::do_root(zaddress_unsafe* p) {
   ZUncoloredRoot::process(p, _color);
 }
 
-inline ZUncoloredRootProcessWeakOopClosure::ZUncoloredRootProcessWeakOopClosure(uintptr_t color) :
-  _color(color) {}
+inline ZUncoloredRootProcessWeakOopClosure::ZUncoloredRootProcessWeakOopClosure(uintptr_t color)
+  : _color(color) {}
 
 inline void ZUncoloredRootProcessWeakOopClosure::do_root(zaddress_unsafe* p) {
   ZUncoloredRoot::process_weak(p, _color);
 }
 
-inline ZUncoloredRootProcessNoKeepaliveOopClosure::ZUncoloredRootProcessNoKeepaliveOopClosure(uintptr_t color) :
-    _color(color) {}
+inline ZUncoloredRootProcessNoKeepaliveOopClosure::ZUncoloredRootProcessNoKeepaliveOopClosure(uintptr_t color)
+  : _color(color) {}
 
 inline void ZUncoloredRootProcessNoKeepaliveOopClosure::do_root(zaddress_unsafe* p) {
   ZUncoloredRoot::process_no_keepalive(p, _color);

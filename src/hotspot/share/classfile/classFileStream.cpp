@@ -54,7 +54,7 @@ const u1* ClassFileStream::clone_buffer() const {
   return new_buffer_start;
 }
 
-const char* const ClassFileStream::clone_source() const {
+const char* ClassFileStream::clone_source() const {
   const char* const src = source();
   char* source_copy = nullptr;
   if (src != nullptr) {

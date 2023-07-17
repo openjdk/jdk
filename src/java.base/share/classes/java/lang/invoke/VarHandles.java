@@ -563,14 +563,14 @@ final class VarHandles {
         List<Class<?>> targetCoordinates = target.coordinateTypes();
         if (pos < 0 || pos >= targetCoordinates.size()) {
             throw newIllegalArgumentException("Invalid position " + pos + " for coordinate types", targetCoordinates);
-        } else if (filter.type().returnType() == void.class) {
-            throw newIllegalArgumentException("Invalid filter type " + filter.type() + " ; filter cannot be void");
-        } else if (filter.type().returnType() != targetCoordinates.get(pos)) {
+        } else if (filter.type().returnType() != void.class && filter.type().returnType() != targetCoordinates.get(pos)) {
             throw newIllegalArgumentException("Invalid filter type " + filter.type() + " for coordinate type " + targetCoordinates.get(pos));
         }
 
         List<Class<?>> newCoordinates = new ArrayList<>(targetCoordinates);
-        newCoordinates.remove(pos);
+        if (filter.type().returnType() != void.class) {
+            newCoordinates.remove(pos);
+        }
         newCoordinates.addAll(pos, filter.type().parameterList());
 
         return new IndirectVarHandle(target, target.varType(), newCoordinates.toArray(new Class<?>[0]),
@@ -635,8 +635,8 @@ final class VarHandles {
             } else {
                 throw new AssertionError("Cannot get here");
             }
-        } else if (handle instanceof DelegatingMethodHandle) {
-            return exceptionTypes(((DelegatingMethodHandle)handle).getTarget());
+        } else if (handle instanceof DelegatingMethodHandle delegatingMh) {
+            return exceptionTypes(delegatingMh.getTarget());
         } else if (handle instanceof NativeMethodHandle) {
             return new Class<?>[0];
         }

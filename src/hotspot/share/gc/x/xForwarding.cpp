@@ -157,7 +157,7 @@ XPage* XForwarding::detach_page() {
 
   // Detach and return page
   XPage* const page = _page;
-  _page = NULL;
+  _page = nullptr;
   return page;
 }
 
@@ -171,7 +171,7 @@ void XForwarding::abort_page() {
 
 void XForwarding::verify() const {
   guarantee(_ref_count != 0, "Invalid reference count");
-  guarantee(_page != NULL, "Invalid page");
+  guarantee(_page != nullptr, "Invalid page");
 
   uint32_t live_objects = 0;
   size_t live_bytes = 0;

@@ -40,6 +40,7 @@
 #include "oops/method.hpp"
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/arguments.hpp"
@@ -709,7 +710,7 @@ void TemplateInterpreterGenerator::lock_method() {
   __ sd(sp, Address(fp, frame::interpreter_frame_extended_sp_offset * wordSize));
   __ sd(esp, monitor_block_top);  // set new monitor block top
   // store object
-  __ sd(x10, Address(esp, BasicObjectLock::obj_offset_in_bytes()));
+  __ sd(x10, Address(esp, BasicObjectLock::obj_offset()));
   __ mv(c_rarg1, esp); // object address
   __ lock_object(c_rarg1);
 }
@@ -758,7 +759,7 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
   __ ld(xcpool, Address(xmethod, Method::const_offset()));
   __ ld(xcpool, Address(xcpool, ConstMethod::constants_offset()));
-  __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset_in_bytes()));
+  __ ld(xcpool, Address(xcpool, ConstantPool::cache_offset()));
   __ sd(xcpool, Address(sp, 3 * wordSize));
   __ sub(t0, xlocals, fp);
   __ srai(t0, t0, Interpreter::logStackElementSize);   // t0 = xlocals - fp();
@@ -1211,7 +1212,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
 
   // reset handle block
   __ ld(t, Address(xthread, JavaThread::active_handles_offset()));
-  __ sd(zr, Address(t, JNIHandleBlock::top_offset_in_bytes()));
+  __ sd(zr, Address(t, JNIHandleBlock::top_offset()));
 
   // If result is an oop unbox and store it in frame where gc will see it
   // and result handler will pick it up
@@ -1286,7 +1287,7 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
                              (intptr_t)(frame::interpreter_frame_initial_sp_offset *
                                         wordSize - sizeof(BasicObjectLock))));
 
-      __ ld(t, Address(c_rarg1, BasicObjectLock::obj_offset_in_bytes()));
+      __ ld(t, Address(c_rarg1, BasicObjectLock::obj_offset()));
       __ bnez(t, unlock);
 
       // Entry already unlocked, need to throw exception
@@ -1786,8 +1787,7 @@ void TemplateInterpreterGenerator::histogram_bytecode_pair(Template* t) {
   //   _counters[_index] ++;
   Register counter_addr = t1;
   __ mv(x7, (address) &BytecodePairHistogram::_counters);
-  __ slli(index, index, LogBytesPerInt);
-  __ add(counter_addr, x7, index);
+  __ shadd(counter_addr, index, x7, counter_addr, LogBytesPerInt);
   __ atomic_addw(noreg, 1, counter_addr);
  }
 

@@ -110,7 +110,7 @@ VtableStub* VtableStubs::create_vtable_stub(int vtable_index) {
 
   int entry_offset = in_bytes(Klass::vtable_start_offset()) +
                      vtable_index * vtableEntry::size_in_bytes();
-  int v_off        = entry_offset + vtableEntry::method_offset_in_bytes();
+  int v_off        = entry_offset + in_bytes(vtableEntry::method_offset());
 
   // Set method (in case of interpreted method), and destination address.
   // Duplicate safety code from enc_class Java_Dynamic_Call_dynTOC.

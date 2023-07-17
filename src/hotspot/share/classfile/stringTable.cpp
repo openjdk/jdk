@@ -932,6 +932,6 @@ void StringTable::serialize_shared_table_header(SerializeClosure* soc) {
   }
 
   soc->do_bool(&_is_two_dimensional_shared_strings_array);
-  soc->do_u4((u4*)(&_shared_strings_array_root_index));
+  soc->do_int(&_shared_strings_array_root_index);
 }
 #endif //INCLUDE_CDS_JAVA_HEAP

@@ -32,8 +32,8 @@ private:
   const size_t _old_mask;
 
 public:
-  ZAddressOffsetMaxSetter() :
-      _old_max(ZAddressOffsetMax),
+  ZAddressOffsetMaxSetter()
+    : _old_max(ZAddressOffsetMax),
       _old_mask(ZAddressOffsetMask) {
     ZAddressOffsetMax = size_t(16) * G * 1024;
     ZAddressOffsetMask = ZAddressOffsetMax - 1;

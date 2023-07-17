@@ -41,9 +41,9 @@ private:
   ZStatSubPhase _old;
 
 public:
-  ZRootStatSubPhase(const char* name) :
-     _young(name, ZGenerationId::young),
-     _old(name, ZGenerationId::old) {}
+  ZRootStatSubPhase(const char* name)
+    : _young(name, ZGenerationId::young),
+      _old(name, ZGenerationId::old) {}
 
   const ZStatSubPhase& young() const { return _young; }
   const ZStatSubPhase& old() const { return _old; }
@@ -60,8 +60,8 @@ private:
   const ZStatPhase*  _phase;
   const Ticks        _start;
 
-  ZRootStatTimer(const ZStatPhase* phase) :
-      _phase(phase),
+  ZRootStatTimer(const ZStatPhase* phase)
+    : _phase(phase),
       _start(Ticks::now()) {
     if (phase != nullptr) {
       _phase->register_start(nullptr /* timer */, _start);
@@ -85,8 +85,8 @@ public:
   }
 
 public:
-  ZRootStatTimer(const ZRootStatSubPhase& subphase, const ZGenerationIdOptional generation) :
-      ZRootStatTimer(calculate_subphase(generation, subphase)) {}
+  ZRootStatTimer(const ZRootStatSubPhase& subphase, const ZGenerationIdOptional generation)
+    : ZRootStatTimer(calculate_subphase(generation, subphase)) {}
 };
 
 template <typename Iterator>
@@ -137,8 +137,8 @@ void ZJavaThreadsIterator::apply(ThreadClosure* cl) {
   }
 }
 
-ZNMethodsIteratorImpl::ZNMethodsIteratorImpl(ZGenerationIdOptional generation, bool enabled, bool secondary) :
-    _enabled(enabled),
+ZNMethodsIteratorImpl::ZNMethodsIteratorImpl(ZGenerationIdOptional generation, bool enabled, bool secondary)
+  : _enabled(enabled),
     _secondary(secondary),
     _generation(generation) {
   if (_enabled) {

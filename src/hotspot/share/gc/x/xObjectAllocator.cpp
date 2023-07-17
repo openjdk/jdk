@@ -46,8 +46,8 @@ XObjectAllocator::XObjectAllocator() :
     _undone(0),
     _alloc_for_relocation(0),
     _undo_alloc_for_relocation(0),
-    _shared_medium_page(NULL),
-    _shared_small_page(NULL) {}
+    _shared_medium_page(nullptr),
+    _shared_small_page(nullptr) {}
 
 XPage** XObjectAllocator::shared_small_page_addr() {
   return _use_per_cpu_shared_small_pages ? _shared_small_page.addr() : _shared_small_page.addr(0);
@@ -70,7 +70,7 @@ void XObjectAllocator::register_undo_alloc_for_relocation(const XPage* page, siz
 
 XPage* XObjectAllocator::alloc_page(uint8_t type, size_t size, XAllocationFlags flags) {
   XPage* const page = XHeap::heap()->alloc_page(type, size, flags);
-  if (page != NULL) {
+  if (page != nullptr) {
     // Increment used bytes
     Atomic::add(_used.addr(), size);
   }
@@ -93,14 +93,14 @@ uintptr_t XObjectAllocator::alloc_object_in_shared_page(XPage** shared_page,
   uintptr_t addr = 0;
   XPage* page = Atomic::load_acquire(shared_page);
 
-  if (page != NULL) {
+  if (page != nullptr) {
     addr = page->alloc_object_atomic(size);
   }
 
   if (addr == 0) {
     // Allocate new page
     XPage* const new_page = alloc_page(page_type, page_size, flags);
-    if (new_page != NULL) {
+    if (new_page != nullptr) {
       // Allocate object before installing the new page
       addr = new_page->alloc_object(size);
 
@@ -108,7 +108,7 @@ uintptr_t XObjectAllocator::alloc_object_in_shared_page(XPage** shared_page,
       // Install new page
       XPage* const prev_page = Atomic::cmpxchg(shared_page, page, new_page);
       if (prev_page != page) {
-        if (prev_page == NULL) {
+        if (prev_page == nullptr) {
           // Previous page was retired, retry installing the new page
           page = prev_page;
           goto retry;
@@ -140,7 +140,7 @@ uintptr_t XObjectAllocator::alloc_large_object(size_t size, XAllocationFlags fla
   // Allocate new large page
   const size_t page_size = align_up(size, XGranuleSize);
   XPage* const page = alloc_page(XPageTypeLarge, page_size, flags);
-  if (page != NULL) {
+  if (page != nullptr) {
     // Allocate the object
     addr = page->alloc_object(size);
   }
@@ -224,7 +224,7 @@ size_t XObjectAllocator::remaining() const {
   assert(XThread::is_java(), "Should be a Java thread");
 
   const XPage* const page = Atomic::load_acquire(shared_small_page_addr());
-  if (page != NULL) {
+  if (page != nullptr) {
     return page->remaining();
   }
 
@@ -262,6 +262,6 @@ void XObjectAllocator::retire_pages() {
   _undo_alloc_for_relocation.set_all(0);
 
   // Reset allocation pages
-  _shared_medium_page.set(NULL);
-  _shared_small_page.set_all(NULL);
+  _shared_medium_page.set(nullptr);
+  _shared_small_page.set_all(nullptr);
 }

@@ -59,7 +59,7 @@ public:
 
   virtual void do_oop(oop* p) {
     const oop o = RawAccess<>::oop_load(p);
-    if (o != NULL && !_is_alive.do_object_b(o)) {
+    if (o != nullptr && !_is_alive.do_object_b(o)) {
       _is_unloading = true;
     }
   }

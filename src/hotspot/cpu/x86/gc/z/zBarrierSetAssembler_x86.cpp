@@ -59,8 +59,7 @@
 ZBarrierSetAssembler::ZBarrierSetAssembler()
   : _load_bad_relocations(),
     _store_bad_relocations(),
-    _store_good_relocations() {
-}
+    _store_good_relocations() {}
 
 enum class ZXMMSpillMode {
   none,
@@ -1354,8 +1353,8 @@ private:
   }
 
 public:
-  ZSaveLiveRegisters(MacroAssembler* masm, ZBarrierStubC2* stub) :
-      _masm(masm),
+  ZSaveLiveRegisters(MacroAssembler* masm, ZBarrierStubC2* stub)
+    : _masm(masm),
       _gp_registers(),
       _opmask_registers(),
       _xmm_registers(),
@@ -1446,8 +1445,8 @@ private:
   const Address         _ref_addr;
 
 public:
-  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
-      _masm(masm),
+  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub)
+    : _masm(masm),
       _ref(stub->ref()),
       _ref_addr(stub->ref_addr()) {
 

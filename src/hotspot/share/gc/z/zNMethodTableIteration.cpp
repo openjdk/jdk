@@ -29,8 +29,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/globalDefinitions.hpp"
 
-ZNMethodTableIteration::ZNMethodTableIteration() :
-    _table(nullptr),
+ZNMethodTableIteration::ZNMethodTableIteration()
+  : _table(nullptr),
     _size(0),
     _claimed(0) {}
 

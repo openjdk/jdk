@@ -45,14 +45,14 @@ public class TestLayouts {
 
     @Test(dataProvider = "badAlignments", expectedExceptions = IllegalArgumentException.class)
     public void testBadLayoutAlignment(MemoryLayout layout, long alignment) {
-        layout.withBitAlignment(alignment);
+        layout.withByteAlignment(alignment);
     }
 
     @Test(dataProvider = "basicLayoutsAndAddressAndGroups")
     public void testEqualities(MemoryLayout layout) {
 
         // Use another Type
-        MemoryLayout differentType = MemoryLayout.paddingLayout(8);
+        MemoryLayout differentType = MemoryLayout.paddingLayout(1);
         assertFalse(layout.equals(differentType));
 
         // Use another name
@@ -60,7 +60,7 @@ public class TestLayouts {
         assertFalse(layout.equals(differentName));
 
         // Use another alignment
-        MemoryLayout differentAlignment = layout.withBitAlignment(layout.bitAlignment() * 2);
+        MemoryLayout differentAlignment = layout.withByteAlignment(layout.byteAlignment() * 2);
         assertFalse(layout.equals(differentAlignment));
 
         // Swap endian
@@ -78,7 +78,7 @@ public class TestLayouts {
 
         assertFalse(layout.equals(MemoryLayout.sequenceLayout(13, JAVA_LONG)));
 
-        MemoryLayout other = layout.withBitAlignment(128).withBitAlignment(layout.bitAlignment());
+        MemoryLayout other = layout.withByteAlignment(16).withByteAlignment(layout.byteAlignment());
         assertTrue(layout.equals(other));
 
     }
@@ -124,63 +124,63 @@ public class TestLayouts {
 
     @Test(dataProvider = "basicLayoutsAndAddressAndGroups", expectedExceptions = IllegalArgumentException.class)
     public void testGroupIllegalAlignmentNotPowerOfTwo(MemoryLayout layout) {
-        layout.withBitAlignment(3);
+        layout.withByteAlignment(9);
     }
 
     @Test(dataProvider = "basicLayoutsAndAddressAndGroups", expectedExceptions = IllegalArgumentException.class)
-    public void testGroupIllegalAlignmentNotGreaterOrEqualTo8(MemoryLayout layout) {
-        layout.withBitAlignment(4);
+    public void testGroupIllegalAlignmentNotGreaterOrEqualTo1(MemoryLayout layout) {
+        layout.withByteAlignment(0);
     }
 
     @Test
     public void testEqualsPadding() {
-        PaddingLayout paddingLayout = MemoryLayout.paddingLayout(16);
+        PaddingLayout paddingLayout = MemoryLayout.paddingLayout(2);
         testEqualities(paddingLayout);
-        PaddingLayout paddingLayout2 = MemoryLayout.paddingLayout(32);
+        PaddingLayout paddingLayout2 = MemoryLayout.paddingLayout(4);
         assertNotEquals(paddingLayout, paddingLayout2);
     }
 
     @Test
     public void testEmptyGroup() {
         MemoryLayout struct = MemoryLayout.structLayout();
-        assertEquals(struct.bitSize(), 0);
-        assertEquals(struct.bitAlignment(), 8);
+        assertEquals(struct.byteSize(), 0);
+        assertEquals(struct.byteAlignment(), 1);
 
         MemoryLayout union = MemoryLayout.unionLayout();
-        assertEquals(union.bitSize(), 0);
-        assertEquals(union.bitAlignment(), 8);
+        assertEquals(union.byteSize(), 0);
+        assertEquals(union.byteAlignment(), 1);
     }
 
     @Test
     public void testStructSizeAndAlign() {
         MemoryLayout struct = MemoryLayout.structLayout(
-                MemoryLayout.paddingLayout(8),
+                MemoryLayout.paddingLayout(1),
                 ValueLayout.JAVA_BYTE,
                 ValueLayout.JAVA_CHAR,
                 ValueLayout.JAVA_INT,
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 1 + 1 + 2 + 4 + 8);
-        assertEquals(struct.byteAlignment(), 8);
+        assertEquals(struct.byteAlignment(), ADDRESS.byteSize());
     }
 
     @Test(dataProvider="basicLayouts")
     public void testPaddingNoAlign(MemoryLayout layout) {
-        assertEquals(MemoryLayout.paddingLayout(layout.bitSize()).bitAlignment(), 8);
+        assertEquals(MemoryLayout.paddingLayout(layout.byteSize()).byteAlignment(), 1);
     }
 
     @Test(dataProvider="basicLayouts")
     public void testStructPaddingAndAlign(MemoryLayout layout) {
         MemoryLayout struct = MemoryLayout.structLayout(
-                layout, MemoryLayout.paddingLayout(128 - layout.bitSize()));
-        assertEquals(struct.bitAlignment(), layout.bitAlignment());
+                layout, MemoryLayout.paddingLayout(16 - layout.byteSize()));
+        assertEquals(struct.byteAlignment(), layout.byteAlignment());
     }
 
     @Test(dataProvider="basicLayouts")
     public void testUnionPaddingAndAlign(MemoryLayout layout) {
         MemoryLayout struct = MemoryLayout.unionLayout(
-                layout, MemoryLayout.paddingLayout(128 - layout.bitSize()));
-        assertEquals(struct.bitAlignment(), layout.bitAlignment());
+                layout, MemoryLayout.paddingLayout(16 - layout.byteSize()));
+        assertEquals(struct.byteAlignment(), layout.byteAlignment());
     }
 
     @Test
@@ -192,7 +192,7 @@ public class TestLayouts {
                 ValueLayout.JAVA_LONG
         );
         assertEquals(struct.byteSize(), 8);
-        assertEquals(struct.byteAlignment(), 8);
+        assertEquals(struct.byteAlignment(), ADDRESS.byteSize());
     }
 
     @Test
@@ -204,7 +204,7 @@ public class TestLayouts {
     @Test(dataProvider = "basicLayouts")
     public void testSequenceInferredCount(MemoryLayout layout) {
         assertEquals(MemoryLayout.sequenceLayout(layout),
-                     MemoryLayout.sequenceLayout(Long.MAX_VALUE / layout.bitSize(), layout));
+                     MemoryLayout.sequenceLayout(Long.MAX_VALUE / layout.byteSize(), layout));
     }
 
     public void testSequenceNegativeElementCount() {
@@ -218,6 +218,8 @@ public class TestLayouts {
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_SHORT));
         assertThrows(IllegalArgumentException.class, // flip back to positive
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE/3, JAVA_LONG));
+        assertThrows(IllegalArgumentException.class, // flip back to positive
+                () -> MemoryLayout.sequenceLayout(0, JAVA_LONG).withElementCount(Long.MAX_VALUE));
     }
 
     @Test
@@ -233,23 +235,23 @@ public class TestLayouts {
 
     @Test
     public void testPadding() {
-        var padding = MemoryLayout.paddingLayout(8);
+        var padding = MemoryLayout.paddingLayout(1);
         assertEquals(padding.byteAlignment(), 1);
     }
 
     @Test
     public void testPaddingInStruct() {
-        var padding = MemoryLayout.paddingLayout(8);
+        var padding = MemoryLayout.paddingLayout(1);
         var struct = MemoryLayout.structLayout(padding);
         assertEquals(struct.byteAlignment(), 1);
     }
 
     @Test
-    public void testPaddingIllegalBitSize() {
-        for (long bitSize : List.of(-8L, -1L, 0L, 1L, 7L)) {
+    public void testPaddingIllegalByteSize() {
+        for (long byteSize : List.of(-1L, 0L)) {
             try {
-                MemoryLayout.paddingLayout(bitSize);
-                fail("bitSize cannot be " + bitSize);
+                MemoryLayout.paddingLayout(byteSize);
+                fail("byte size cannot be " + byteSize);
             } catch (IllegalArgumentException ignore) {
                 // Happy path
             }
@@ -259,9 +261,9 @@ public class TestLayouts {
     @Test
     public void testStructToString() {
         StructLayout padding = MemoryLayout.structLayout(JAVA_INT).withName("struct");
-        assertEquals(padding.toString(), "[i32](struct)");
-        var toStringUnaligned = padding.withBitAlignment(64).toString();
-        assertEquals(toStringUnaligned, "64%[i32](struct)");
+        assertEquals(padding.toString(), "[i4](struct)");
+        var toStringUnaligned = padding.withByteAlignment(8).toString();
+        assertEquals(toStringUnaligned, "8%[i4](struct)");
     }
 
     @Test(dataProvider = "layoutKinds")
@@ -270,36 +272,36 @@ public class TestLayouts {
     }
 
     @Test(dataProvider="layoutsAndAlignments")
-    public void testAlignmentString(MemoryLayout layout, long bitAlign) {
-        long[] alignments = { 8, 16, 32, 64, 128 };
+    public void testAlignmentString(MemoryLayout layout, long byteAlign) {
+        long[] alignments = { 1, 2, 4, 8, 16 };
         for (long a : alignments) {
-            if (layout.bitAlignment() == bitAlign) {
+            if (layout.byteAlignment() == byteAlign) {
                 assertFalse(layout.toString().contains("%"));
-                if (a >= layout.bitAlignment()) {
-                    assertEquals(layout.withBitAlignment(a).toString().contains("%"), a != bitAlign);
+                if (a >= layout.byteAlignment()) {
+                    assertEquals(layout.withByteAlignment(a).toString().contains("%"), a != byteAlign);
                 }
             }
         }
     }
 
     @Test(dataProvider="layoutsAndAlignments")
-    public void testBadBitAlignment(MemoryLayout layout, long bitAlign) {
-        long[] alignments = { 8, 16, 32, 64, 128 };
+    public void testBadByteAlignment(MemoryLayout layout, long byteAlign) {
+        long[] alignments = { 1, 2, 4, 8, 16 };
         for (long a : alignments) {
-            if (a < bitAlign && !(layout instanceof ValueLayout)) {
-                assertThrows(IllegalArgumentException.class, () -> layout.withBitAlignment(a));
+            if (a < byteAlign && !(layout instanceof ValueLayout)) {
+                assertThrows(IllegalArgumentException.class, () -> layout.withByteAlignment(a));
             }
         }
     }
 
     @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
-    public void testBadSequenceElementAlignmentTooBig(MemoryLayout layout, long bitAlign) {
-        layout = layout.withBitAlignment(layout.bitSize() * 2); // hyper-align
+    public void testBadSequenceElementAlignmentTooBig(MemoryLayout layout, long byteAlign) {
+        layout = layout.withByteAlignment(layout.byteSize() * 2); // hyper-align
         MemoryLayout.sequenceLayout(layout);
     }
 
     @Test(dataProvider="layoutsAndAlignments")
-    public void testBadSequenceElementSizeNotMultipleOfAlignment(MemoryLayout layout, long bitAlign) {
+    public void testBadSequenceElementSizeNotMultipleOfAlignment(MemoryLayout layout, long byteAlign) {
         boolean shouldFail = layout.byteSize() % layout.byteAlignment() != 0;
         try {
             MemoryLayout.sequenceLayout(layout);
@@ -310,7 +312,7 @@ public class TestLayouts {
     }
 
     @Test(dataProvider="layoutsAndAlignments")
-    public void testBadSpliteratorElementSizeNotMultipleOfAlignment(MemoryLayout layout, long bitAlign) {
+    public void testBadSpliteratorElementSizeNotMultipleOfAlignment(MemoryLayout layout, long byteAlign) {
         boolean shouldFail = layout.byteSize() % layout.byteAlignment() != 0;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(layout);
@@ -322,7 +324,7 @@ public class TestLayouts {
     }
 
     @Test(dataProvider="layoutsAndAlignments")
-    public void testBadElementsElementSizeNotMultipleOfAlignment(MemoryLayout layout, long bitAlign) {
+    public void testBadElementsElementSizeNotMultipleOfAlignment(MemoryLayout layout, long byteAlign) {
         boolean shouldFail = layout.byteSize() % layout.byteAlignment() != 0;
         try (Arena arena = Arena.ofConfined()) {
             MemorySegment segment = arena.allocate(layout);
@@ -333,9 +335,17 @@ public class TestLayouts {
         }
     }
 
+    @Test(dataProvider="layoutsAndAlignments")
+    public void testArrayElementVarHandleBadAlignment(MemoryLayout layout, long byteAlign) {
+        if (layout instanceof ValueLayout) {
+            assertThrows(UnsupportedOperationException.class, () ->
+                    ((ValueLayout) layout).withByteAlignment(byteAlign * 2).arrayElementVarHandle());
+        }
+    }
+
     @Test(dataProvider="layoutsAndAlignments", expectedExceptions = IllegalArgumentException.class)
-    public void testBadStruct(MemoryLayout layout, long bitAlign) {
-        layout = layout.withBitAlignment(layout.bitSize() * 2); // hyper-align
+    public void testBadStruct(MemoryLayout layout, long byteAlign) {
+        layout = layout.withByteAlignment(layout.byteSize() * 2); // hyper-align
         MemoryLayout.structLayout(layout, layout);
     }
 
@@ -351,8 +361,8 @@ public class TestLayouts {
         LayoutKind[] layoutKinds = LayoutKind.values();
         Object[][] values = new Object[layoutKinds.length * 2][2];
         for (int i = 0; i < layoutKinds.length ; i++) {
-            values[i * 2] = new Object[] { layoutKinds[i].layout, 3 }; // smaller than 8
-            values[(i * 2) + 1] = new Object[] { layoutKinds[i].layout, 18 }; // not a power of 2
+            values[i * 2] = new Object[] { layoutKinds[i].layout, 0 }; // smaller than 1
+            values[(i * 2) + 1] = new Object[] { layoutKinds[i].layout, 5 }; // not a power of 2
         }
         return values;
     }
@@ -368,7 +378,7 @@ public class TestLayouts {
         VALUE_LE(size -> valueLayoutForSize((int)size).withOrder(ByteOrder.LITTLE_ENDIAN)),
         VALUE_BE(size -> valueLayoutForSize((int)size).withOrder(ByteOrder.BIG_ENDIAN)),
         PADDING(MemoryLayout::paddingLayout),
-        SEQUENCE(size -> MemoryLayout.sequenceLayout(size, MemoryLayout.paddingLayout(8)));
+        SEQUENCE(size -> MemoryLayout.sequenceLayout(size, MemoryLayout.paddingLayout(1)));
 
         private final LongFunction<MemoryLayout> factory;
 
@@ -393,10 +403,10 @@ public class TestLayouts {
 
     enum LayoutKind {
         VALUE(ValueLayout.JAVA_BYTE),
-        PADDING(MemoryLayout.paddingLayout(8)),
-        SEQUENCE(MemoryLayout.sequenceLayout(1, MemoryLayout.paddingLayout(8))),
-        STRUCT(MemoryLayout.structLayout(MemoryLayout.paddingLayout(8), MemoryLayout.paddingLayout(8))),
-        UNION(MemoryLayout.unionLayout(MemoryLayout.paddingLayout(8), MemoryLayout.paddingLayout(8)));
+        PADDING(MemoryLayout.paddingLayout(1)),
+        SEQUENCE(MemoryLayout.sequenceLayout(1, MemoryLayout.paddingLayout(1))),
+        STRUCT(MemoryLayout.structLayout(MemoryLayout.paddingLayout(1), MemoryLayout.paddingLayout(1))),
+        UNION(MemoryLayout.unionLayout(MemoryLayout.paddingLayout(1), MemoryLayout.paddingLayout(1)));
 
         final MemoryLayout layout;
 
@@ -431,25 +441,25 @@ public class TestLayouts {
         List<Object[]> layoutsAndAlignments = new ArrayList<>();
         int i = 0;
         //add basic layouts
-        for (MemoryLayout l : basicLayouts) {
-            layoutsAndAlignments.add(new Object[] { l, l.bitAlignment() });
+        for (MemoryLayout l : basicLayoutsNoLongDouble) {
+            layoutsAndAlignments.add(new Object[] { l, l.byteAlignment() });
         }
         //add basic layouts wrapped in a sequence with given size
-        for (MemoryLayout l : basicLayouts) {
-            layoutsAndAlignments.add(new Object[] { MemoryLayout.sequenceLayout(4, l), l.bitAlignment() });
+        for (MemoryLayout l : basicLayoutsNoLongDouble) {
+            layoutsAndAlignments.add(new Object[] { MemoryLayout.sequenceLayout(4, l), l.byteAlignment() });
         }
         //add basic layouts wrapped in a struct
-        for (MemoryLayout l1 : basicLayouts) {
-            for (MemoryLayout l2 : basicLayouts) {
+        for (MemoryLayout l1 : basicLayoutsNoLongDouble) {
+            for (MemoryLayout l2 : basicLayoutsNoLongDouble) {
                 if (l1.byteSize() % l2.byteAlignment() != 0) continue; // second element is not aligned, skip
-                long align = Math.max(l1.bitAlignment(), l2.bitAlignment());
+                long align = Math.max(l1.byteAlignment(), l2.byteAlignment());
                 layoutsAndAlignments.add(new Object[]{MemoryLayout.structLayout(l1, l2), align});
             }
         }
         //add basic layouts wrapped in a union
-        for (MemoryLayout l1 : basicLayouts) {
-            for (MemoryLayout l2 : basicLayouts) {
-                long align = Math.max(l1.bitAlignment(), l2.bitAlignment());
+        for (MemoryLayout l1 : basicLayoutsNoLongDouble) {
+            for (MemoryLayout l2 : basicLayoutsNoLongDouble) {
+                long align = Math.max(l1.byteAlignment(), l2.byteAlignment());
                 layoutsAndAlignments.add(new Object[]{MemoryLayout.unionLayout(l1, l2), align});
             }
         }
@@ -484,12 +494,12 @@ public class TestLayouts {
         return Stream.of(
                 MemoryLayout.sequenceLayout(10, JAVA_INT),
                 MemoryLayout.sequenceLayout(JAVA_INT),
-                MemoryLayout.structLayout(JAVA_INT, MemoryLayout.paddingLayout(32), JAVA_LONG),
+                MemoryLayout.structLayout(JAVA_INT, MemoryLayout.paddingLayout(4), JAVA_LONG),
                 MemoryLayout.unionLayout(JAVA_LONG, JAVA_DOUBLE)
         );
     }
 
-    static MemoryLayout[] basicLayouts = {
+    static ValueLayout[] basicLayouts = {
             ValueLayout.JAVA_BYTE,
             ValueLayout.JAVA_CHAR,
             ValueLayout.JAVA_SHORT,
@@ -498,4 +508,8 @@ public class TestLayouts {
             ValueLayout.JAVA_LONG,
             ValueLayout.JAVA_DOUBLE,
     };
+
+    static MemoryLayout[] basicLayoutsNoLongDouble = Stream.of(basicLayouts)
+            .filter(l -> l.carrier() != long.class && l.carrier() != double.class)
+            .toArray(MemoryLayout[]::new);
 }

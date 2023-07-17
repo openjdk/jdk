@@ -28,15 +28,15 @@
 ZAllocatorEden*          ZAllocator::_eden;
 ZAllocatorForRelocation* ZAllocator::_relocation[ZAllocator::_relocation_allocators];
 
-ZAllocator::ZAllocator(ZPageAge age) :
-    _object_allocator(age) {}
+ZAllocator::ZAllocator(ZPageAge age)
+  : _object_allocator(age) {}
 
 void ZAllocator::retire_pages() {
   _object_allocator.retire_pages();
 }
 
-ZAllocatorEden::ZAllocatorEden() :
-    ZAllocator(ZPageAge::eden) {
+ZAllocatorEden::ZAllocatorEden()
+  : ZAllocator(ZPageAge::eden) {
   ZAllocator::_eden = this;
 }
 
@@ -60,9 +60,8 @@ ZPageAge ZAllocatorForRelocation::install() {
   return ZPageAge::eden;
 }
 
-ZAllocatorForRelocation::ZAllocatorForRelocation() :
-    ZAllocator(install()) {
-}
+ZAllocatorForRelocation::ZAllocatorForRelocation()
+  : ZAllocator(install()) {}
 
 zaddress ZAllocatorForRelocation::alloc_object(size_t size) {
   return _object_allocator.alloc_object_for_relocation(size);

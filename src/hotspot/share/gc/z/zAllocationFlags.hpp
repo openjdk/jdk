@@ -54,8 +54,8 @@ private:
   uint8_t _flags;
 
 public:
-  ZAllocationFlags() :
-      _flags(0) {}
+  ZAllocationFlags()
+    : _flags(0) {}
 
   void set_non_blocking() {
     _flags |= field_non_blocking::encode(true);

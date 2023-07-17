@@ -28,8 +28,8 @@
 
 inline ZMarkContext::ZMarkContext(size_t nstripes,
                                   ZMarkStripe* stripe,
-                                  ZMarkThreadLocalStacks* stacks) :
-    _cache(nstripes),
+                                  ZMarkThreadLocalStacks* stacks)
+  : _cache(nstripes),
     _stripe(stripe),
     _stacks(stacks),
     _nstripes(nstripes),

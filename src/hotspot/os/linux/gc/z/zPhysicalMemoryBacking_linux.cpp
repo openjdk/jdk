@@ -118,8 +118,8 @@ static const char* z_preferred_hugetlbfs_mountpoints[] = {
 static int z_fallocate_hugetlbfs_attempts = 3;
 static bool z_fallocate_supported = true;
 
-ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity) :
-    _fd(-1),
+ZPhysicalMemoryBacking::ZPhysicalMemoryBacking(size_t max_capacity)
+  : _fd(-1),
     _filesystem(0),
     _block_size(0),
     _available(0),

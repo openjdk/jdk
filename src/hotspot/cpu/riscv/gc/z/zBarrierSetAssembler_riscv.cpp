@@ -420,8 +420,7 @@ void ZBarrierSetAssembler::arraycopy_prologue(MacroAssembler* masm,
                                               Register src,
                                               Register dst,
                                               Register count,
-                                              RegSet saved_regs) {
-}
+                                              RegSet saved_regs) {}
 
 static void copy_load_barrier(MacroAssembler* masm,
                               Register ref,
@@ -695,8 +694,8 @@ public:
     }
   }
 
-  ZSaveLiveRegisters(MacroAssembler* masm, ZBarrierStubC2* stub) :
-      _masm(masm),
+  ZSaveLiveRegisters(MacroAssembler* masm, ZBarrierStubC2* stub)
+    : _masm(masm),
       _gp_regs(),
       _fp_regs(),
       _vp_regs() {
@@ -724,8 +723,8 @@ private:
   const Address         _ref_addr;
 
 public:
-  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
-      _masm(masm),
+  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub)
+    : _masm(masm),
       _ref(stub->ref()),
       _ref_addr(stub->ref_addr()) {
 

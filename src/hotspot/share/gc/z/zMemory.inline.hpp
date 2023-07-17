@@ -30,8 +30,8 @@
 #include "gc/z/zList.inline.hpp"
 #include "utilities/debug.hpp"
 
-inline ZMemory::ZMemory(zoffset start, size_t size) :
-    _start(start),
+inline ZMemory::ZMemory(zoffset start, size_t size)
+  : _start(start),
     _end(to_zoffset_end(start, size)) {}
 
 inline zoffset ZMemory::start() const {

@@ -87,12 +87,11 @@ static void register_jfr_type_serializers() {
 
 #endif // INCLUDE_JFR
 
-ZMinorTracer::ZMinorTracer() :
-    GCTracer(ZMinor) {
-}
+ZMinorTracer::ZMinorTracer()
+  : GCTracer(ZMinor) {}
 
-ZMajorTracer::ZMajorTracer() :
-    GCTracer(ZMajor) {}
+ZMajorTracer::ZMajorTracer()
+  : GCTracer(ZMajor) {}
 
 void ZGenerationTracer::report_start(const Ticks& timestamp) {
   _start = timestamp;

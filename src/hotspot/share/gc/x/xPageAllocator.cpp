@@ -219,7 +219,7 @@ bool XPageAllocator::prime_cache(XWorkers* workers, size_t size) {
   flags.set_low_address();
 
   XPage* const page = alloc_page(XPageTypeLarge, size, flags);
-  if (page == NULL) {
+  if (page == nullptr) {
     return false;
   }
 
@@ -400,7 +400,7 @@ bool XPageAllocator::alloc_page_common_inner(uint8_t type, size_t size, XList<XP
 
   // Try allocate from the page cache
   XPage* const page = _cache.alloc_page(type, size);
-  if (page != NULL) {
+  if (page != nullptr) {
     // Success
     pages->insert_last(page);
     return true;
@@ -519,7 +519,7 @@ XPage* XPageAllocator::alloc_page_create(XPageAllocation* allocation) {
   const XVirtualMemory vmem = _virtual.alloc(size, allocation->flags().low_address());
   if (vmem.is_null()) {
     log_error(gc)("Out of address space");
-    return NULL;
+    return nullptr;
   }
 
   XPhysicalMemory pmem;
@@ -607,9 +607,9 @@ XPage* XPageAllocator::alloc_page_finalize(XPageAllocation* allocation) {
 
   // Slow path
   XPage* const page = alloc_page_create(allocation);
-  if (page == NULL) {
+  if (page == nullptr) {
     // Out of address space
-    return NULL;
+    return nullptr;
   }
 
   // Commit page
@@ -625,12 +625,12 @@ XPage* XPageAllocator::alloc_page_finalize(XPageAllocation* allocation) {
   XPage* const committed_page = page->split_committed();
   destroy_page(page);
 
-  if (committed_page != NULL) {
+  if (committed_page != nullptr) {
     map_page(committed_page);
     allocation->pages()->insert_last(committed_page);
   }
 
-  return NULL;
+  return nullptr;
 }
 
 void XPageAllocator::alloc_page_failed(XPageAllocation* allocation) {
@@ -667,11 +667,11 @@ retry:
   // block in a safepoint if the non-blocking flag is not set.
   if (!alloc_page_or_stall(&allocation)) {
     // Out of memory
-    return NULL;
+    return nullptr;
   }
 
   XPage* const page = alloc_page_finalize(&allocation);
-  if (page == NULL) {
+  if (page == nullptr) {
     // Failed to commit or map. Clean up and retry, in the hope that
     // we can still allocate by flushing the page cache (more aggressively).
     alloc_page_failed(&allocation);
@@ -703,7 +703,7 @@ retry:
 void XPageAllocator::satisfy_stalled() {
   for (;;) {
     XPageAllocation* const allocation = _stalled.first();
-    if (allocation == NULL) {
+    if (allocation == nullptr) {
       // Allocation queue is empty
       return;
     }
@@ -850,7 +850,7 @@ void XPageAllocator::check_out_of_memory() {
 
   // Fail allocation requests that were enqueued before the
   // last GC cycle started, otherwise start a new GC cycle.
-  for (XPageAllocation* allocation = _stalled.first(); allocation != NULL; allocation = _stalled.first()) {
+  for (XPageAllocation* allocation = _stalled.first(); allocation != nullptr; allocation = _stalled.first()) {
     if (allocation->seqnum() == XGlobalSeqNum) {
       // Start a new GC cycle, keep allocation requests enqueued
       allocation->satisfy(XPageAllocationStallStartGC);

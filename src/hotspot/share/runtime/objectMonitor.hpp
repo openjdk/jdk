@@ -217,13 +217,11 @@ private:
 
   static int Knob_SpinLimit;
 
-  // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
-  // ByteSize would also be an appropriate type.
-  static int owner_offset_in_bytes()       { return offset_of(ObjectMonitor, _owner); }
-  static int recursions_offset_in_bytes()  { return offset_of(ObjectMonitor, _recursions); }
-  static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq); }
-  static int succ_offset_in_bytes()        { return offset_of(ObjectMonitor, _succ); }
-  static int EntryList_offset_in_bytes()   { return offset_of(ObjectMonitor, _EntryList); }
+  static ByteSize owner_offset()       { return byte_offset_of(ObjectMonitor, _owner); }
+  static ByteSize recursions_offset()  { return byte_offset_of(ObjectMonitor, _recursions); }
+  static ByteSize cxq_offset()         { return byte_offset_of(ObjectMonitor, _cxq); }
+  static ByteSize succ_offset()        { return byte_offset_of(ObjectMonitor, _succ); }
+  static ByteSize EntryList_offset()   { return byte_offset_of(ObjectMonitor, _EntryList); }
 
   // ObjectMonitor references can be ORed with markWord::monitor_value
   // as part of the ObjectMonitor tagging mechanism. When we combine an
@@ -237,7 +235,7 @@ private:
   // to the ObjectMonitor reference manipulation code:
   //
   #define OM_OFFSET_NO_MONITOR_VALUE_TAG(f) \
-    ((ObjectMonitor::f ## _offset_in_bytes()) - markWord::monitor_value)
+    ((in_bytes(ObjectMonitor::f ## _offset())) - markWord::monitor_value)
 
   markWord           header() const;
   volatile markWord* header_addr();
@@ -365,6 +363,7 @@ private:
   // Deflation support
   bool      deflate_monitor();
   void      install_displaced_markword_in_object(const oop obj);
+  void      release_object() { _object.release(_oop_storage); _object.set_null(); }
 };
 
 #endif // SHARE_RUNTIME_OBJECTMONITOR_HPP

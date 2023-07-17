@@ -898,7 +898,7 @@ Node *LShiftINode::Ideal(PhaseGVN *phase, bool can_reshape) {
           if (con > add1Con) {
             // Creates "(x << (C2 - C1)) & -(1 << C2)"
             Node* lshift = phase->transform(new LShiftINode(add1->in(1), phase->intcon(con - add1Con)));
-            return new AndINode(lshift, phase->intcon(-(1 << con)));
+            return new AndINode(lshift, phase->intcon(java_negate((jint)(1 << con))));
           } else {
             assert(con < add1Con, "must be (%d < %d)", con, add1Con);
             // Creates "(x >> (C1 - C2)) & -(1 << C2)"
@@ -1923,13 +1923,15 @@ bool MulNode::AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, 
   if (mask == nullptr || shift == nullptr) {
     return false;
   }
+  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
+  if (mask_t == nullptr || phase->type(shift)->isa_integer(bt) == nullptr) {
+    return false;
+  }
   shift = shift->uncast();
   if (shift == nullptr) {
     return false;
   }
-  const TypeInteger* mask_t = phase->type(mask)->isa_integer(bt);
-  const TypeInteger* shift_t = phase->type(shift)->isa_integer(bt);
-  if (mask_t == nullptr || shift_t == nullptr) {
+  if (phase->type(shift)->isa_integer(bt) == nullptr) {
     return false;
   }
   BasicType shift_bt = bt;
@@ -1946,6 +1948,9 @@ bool MulNode::AndIL_shift_and_mask_is_always_zero(PhaseGVN* phase, Node* shift, 
     if (val->Opcode() == Op_LShiftI) {
       shift_bt = T_INT;
       shift = val;
+      if (phase->type(shift)->isa_integer(bt) == nullptr) {
+        return false;
+      }
     }
   }
   if (shift->Opcode() != Op_LShift(shift_bt)) {

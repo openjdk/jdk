@@ -38,7 +38,7 @@ XOnStackCodeBlobClosure::XOnStackCodeBlobClosure() :
 
 void XOnStackCodeBlobClosure::do_code_blob(CodeBlob* cb) {
   nmethod* const nm = cb->as_nmethod_or_null();
-  if (nm != NULL) {
+  if (nm != nullptr) {
     const bool result = _bs_nm->nmethod_entry_barrier(nm);
     assert(result, "NMethod on-stack must be alive");
   }
@@ -59,7 +59,7 @@ XStackWatermark::XStackWatermark(JavaThread* jt) :
     _stats() {}
 
 OopClosure* XStackWatermark::closure_from_context(void* context) {
-  if (context != NULL) {
+  if (context != nullptr) {
     assert(XThread::is_worker(), "Unexpected thread passing in context: " PTR_FORMAT, p2i(context));
     return reinterpret_cast<OopClosure*>(context);
   } else {

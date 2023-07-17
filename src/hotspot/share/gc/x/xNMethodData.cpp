@@ -66,7 +66,7 @@ bool XNMethodDataOops::has_non_immediates() const {
 
 XNMethodData::XNMethodData() :
     _lock(),
-    _oops(NULL) {}
+    _oops(nullptr) {}
 
 XNMethodData::~XNMethodData() {
   XNMethodDataOops::destroy(_oops);

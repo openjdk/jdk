@@ -42,7 +42,7 @@ public:
       // oop here again (the object would be strongly live and we would
       // not consider clearing such oops), so therefore we don't have an
       // ABA problem here.
-      Atomic::cmpxchg(p, obj, oop(NULL));
+      Atomic::cmpxchg(p, obj, oop(nullptr));
     }
   }
 

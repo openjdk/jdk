@@ -70,8 +70,8 @@ struct ZDirectorStats {
   ZDirectorGenerationStats   _old_stats;
 };
 
-ZDirector::ZDirector() :
-    _monitor(),
+ZDirector::ZDirector()
+  : _monitor(),
     _stopped(false) {
   _director = this;
   set_name("ZDirector");

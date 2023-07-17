@@ -126,6 +126,8 @@ space is required.
 Even for 32-bit builds, it is recommended to use a 64-bit build machine, and
 instead create a 32-bit target using `--with-target-bits=32`.
 
+Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.
+
 ### Building on aarch64
 
 At a minimum, a machine with 8 cores is advisable, as well as 8 GB of RAM.
@@ -198,6 +200,8 @@ rule also applies to input to the build system, e.g. in arguments to
 `configure`. So, use `--with-msvcr-dll=/cygdrive/c/msvcr100.dll` rather than
 `--with-msvcr-dll=c:\msvcr100.dll`. For details on this conversion, see the section
 on [Fixpath](#fixpath).
+
+Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.
 
 #### Cygwin
 
@@ -470,6 +474,19 @@ rather than bundling the JDK's own copy.
 
 Use `--with-freetype-include=<path>` and `--with-freetype-lib=<path>`
 if `configure` does not automatically locate the platform FreeType files.
+
+### Fontconfig
+
+Fontconfig from [freedesktop.org Fontconfig](http://fontconfig.org) is required
+on all platforms except Windows and macOS.
+
+  * To install on an apt-based Linux, try running `sudo apt-get install
+    libfontconfig-dev`.
+  * To install on an rpm-based Linux, try running `sudo yum install
+    fontconfig-devel`.
+
+Use `--with-fontconfig-include=<path>` and `--with-fontconfig=<path>`
+if `configure` does not automatically locate the platform Fontconfig files.
 
 ### CUPS
 

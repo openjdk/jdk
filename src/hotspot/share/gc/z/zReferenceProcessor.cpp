@@ -110,8 +110,8 @@ static void list_append(zaddress& head, zaddress& tail, zaddress reference) {
   tail = reference;
 }
 
-ZReferenceProcessor::ZReferenceProcessor(ZWorkers* workers) :
-    _workers(workers),
+ZReferenceProcessor::ZReferenceProcessor(ZWorkers* workers)
+  : _workers(workers),
     _soft_reference_policy(nullptr),
     _encountered_count(),
     _discovered_count(),
@@ -426,8 +426,8 @@ private:
   ZReferenceProcessor* const _reference_processor;
 
 public:
-  ZReferenceProcessorTask(ZReferenceProcessor* reference_processor) :
-      ZTask("ZReferenceProcessorTask"),
+  ZReferenceProcessorTask(ZReferenceProcessor* reference_processor)
+    : ZTask("ZReferenceProcessorTask"),
       _reference_processor(reference_processor) {}
 
   virtual void work() {

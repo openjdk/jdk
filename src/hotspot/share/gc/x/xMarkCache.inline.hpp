@@ -43,10 +43,10 @@ inline void XMarkCacheEntry::inc_live(XPage* page, size_t bytes) {
 }
 
 inline void XMarkCacheEntry::evict() {
-  if (_page != NULL) {
+  if (_page != nullptr) {
     // Write cached data out to page
     _page->inc_live(_objects, _bytes);
-    _page = NULL;
+    _page = nullptr;
   }
 }
 

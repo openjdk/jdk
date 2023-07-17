@@ -85,7 +85,7 @@ The [@IR](./IR.java) annotation provides two kinds of checks:
  - `counts`: A list of one or more "IR node/user-defined regex - counter" pairs which specify how often each IR node/user-defined regex should be matched on the compilation output of each compile phase.
 
 #### Disable/Enable IR Rules based on VM Flags
-One might also want to restrict the application of certain `@IR` rules depending on the used flags in the test VM. These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in `JTREG_WHITE_LIST_FLAGS` in [TestFramework](./TestFramework.java) (i.e. have no unexpected impact on the IR except if the flag simulates a specific machine setup like `UseAVX={1,2,3}` etc.) to enable an IR verification by the framework. The `@IR` rules thus have an option to restrict their application:
+One might also want to restrict the application of certain `@IR` rules depending on the used flags in the test VM. These could be flags defined by the user or by JTreg. In the latter case, the flags must be whitelisted in `JTREG_WHITELIST_FLAGS` in [TestFramework](./TestFramework.java) (i.e. have no unexpected impact on the IR except if the flag simulates a specific machine setup like `UseAVX={1,2,3}` etc.) to enable an IR verification by the framework. The `@IR` rules thus have an option to restrict their application:
 
 - `applyIf`: Only apply a rule if a flag has the specified value/range of values.
 - `applyIfNot`: Only apply a rule if a flag has **not** a specified value/range of values
@@ -94,8 +94,9 @@ One might also want to restrict the application of certain `@IR` rules depending
 - `applyIfOr`:  Only apply a rule if **at least one** flag has the specified value/range of values.
 
 #### Disable/Enable IR Rules based on available CPU Features
-Sometimes, an `@IR` rule should only be applied if a certain CPU feature is present. This can be done with
-the attributes `applyIfCPUFeatureXXX` in [@IR](./IR.java) which follow the same logic as the `applyIfXXX` methods for flags in the previous section. If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction. An example with `applyIfCPUFeatureXXX` can be found in [TestCPUFeatureCheck](../../../testlibrary_tests/ir_framework/tests/TestCPUFeatureCheck.java) (internal framework test).
+Sometimes, an `@IR` rule should only be applied if a certain CPU feature is present. This can be done with the attributes `applyIfCPUFeatureXXX` in [@IR](./IR.java) which follow the same logic as the `applyIfXXX` methods for flags in the previous section. An example with `applyIfCPUFeatureXXX` can be found in [TestCPUFeatureCheck](../../../testlibrary_tests/ir_framework/tests/TestCPUFeatureCheck.java) (internal framework test).
+
+If a `@Test` annotated method has multiple preconditions (for example `applyIf` and `applyIfCPUFeature`), they are evaluated as a logical conjunction. It's worth noting that flags in `applyIf` are checked only if the CPU features in `applyIfCPUFeature` are matched when they are both specified. This avoids the VM flag being evaluated on hardware that does not support it. An example with both `applyIfCPUFeatureXXX` and `applyIfXXX` can be found in [TestPreconditions](../../../testlibrary_tests/ir_framework/tests/TestPreconditions.java) (internal framework test).
 
 #### Implicitly Skipping IR Verification
 An IR verification cannot always be performed. Certain VM flags explicitly disable IR verification, change the IR shape in unexpected ways letting IR rules fail or even make IR verification impossible:
@@ -118,7 +119,7 @@ The framework allows the use of additional compiler control annotations for help
 - [@DontInline](./DontInline.java)
 - [@ForceInline](./ForceInline.java)
 - [@DontCompile](./DontCompile.java)
-- [@ForceCompile](./DontCompile.java)
+- [@ForceCompile](./ForceCompile.java)
 - [@ForceCompileClassInitializer](./ForceCompileClassInitializer.java)
 
 ### 2.5 Framework Debug and Stress Flags

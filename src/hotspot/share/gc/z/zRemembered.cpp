@@ -41,12 +41,11 @@
 
 ZRemembered::ZRemembered(ZPageTable* page_table,
                          const ZForwardingTable* old_forwarding_table,
-                         ZPageAllocator* page_allocator) :
-    _page_table(page_table),
+                         ZPageAllocator* page_allocator)
+  : _page_table(page_table),
     _old_forwarding_table(old_forwarding_table),
     _page_allocator(page_allocator),
-    _found_old() {
-}
+    _found_old() {}
 
 template <typename Function>
 void ZRemembered::oops_do_forwarded_via_containing(GrowableArrayView<ZRememberedSetContaining>* array, Function function) const {
@@ -176,8 +175,8 @@ struct ZRememberedScanForwardingContext {
     Tickspan _max_durations[NumRecords];
     int      _max_count;
 
-    Where() :
-        _duration(),
+    Where()
+      : _duration(),
         _count(),
         _max_durations(),
         _max_count() {}
@@ -215,8 +214,8 @@ struct ZRememberedScanForwardingContext {
 
   Where _where[2];
 
-  ZRememberedScanForwardingContext() :
-      _containing_array(),
+  ZRememberedScanForwardingContext()
+    : _containing_array(),
       _where() {}
 
   ~ZRememberedScanForwardingContext() {
@@ -241,8 +240,8 @@ struct ZRememberedScanForwardingMeasureRetained {
   ZRememberedScanForwardingContext* _context;
   Ticks                             _start;
 
-  ZRememberedScanForwardingMeasureRetained(ZRememberedScanForwardingContext* context) :
-      _context(context),
+  ZRememberedScanForwardingMeasureRetained(ZRememberedScanForwardingContext* context)
+    : _context(context),
       _start(Ticks::now()) {
   }
 
@@ -257,8 +256,8 @@ struct ZRememberedScanForwardingMeasureReleased {
   ZRememberedScanForwardingContext* _context;
   Ticks                             _start;
 
-  ZRememberedScanForwardingMeasureReleased(ZRememberedScanForwardingContext* context) :
-      _context(context),
+  ZRememberedScanForwardingMeasureReleased(ZRememberedScanForwardingContext* context)
+    : _context(context),
       _start(Ticks::now()) {
   }
 
@@ -332,11 +331,11 @@ bool ZRemembered::scan_forwarding(ZForwarding* forwarding, void* context_void) c
 // slots that were found to actually contain old pages are registered in the
 // active set.
 
-ZRemembered::FoundOld::FoundOld() :
+ZRemembered::FoundOld::FoundOld()
     // Array initialization requires copy constructors, which CHeapBitMap
     // doesn't provide. Instantiate two instances, and populate an array
     // with pointers to the two instances.
-    _allocated_bitmap_0{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
+  : _allocated_bitmap_0{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
     _allocated_bitmap_1{ZAddressOffsetMax >> ZGranuleSizeShift, mtGC, true /* clear */},
     _bitmaps{&_allocated_bitmap_0, &_allocated_bitmap_1},
     _current{0} {}
@@ -388,8 +387,8 @@ private:
   volatile BitMap::idx_t        _claimed;
 
 public:
-  ZRemsetTableIterator(ZRemembered* remembered) :
-      _remembered(remembered),
+  ZRemsetTableIterator(ZRemembered* remembered)
+    : _remembered(remembered),
       _page_table(remembered->_page_table),
       _old_forwarding_table(remembered->_old_forwarding_table),
       _claimed(0) {}
@@ -454,8 +453,8 @@ private:
   ZRemsetTableIterator _remset_table_iterator;
 
 public:
-  ZRememberedScanMarkFollowTask(ZRemembered* remembered, ZMark* mark) :
-      ZRestartableTask("ZRememberedScanMarkFollowTask"),
+  ZRememberedScanMarkFollowTask(ZRemembered* remembered, ZMark* mark)
+    : ZRestartableTask("ZRememberedScanMarkFollowTask"),
       _remembered(remembered),
       _mark(mark),
       _remset_table_iterator(remembered)  {

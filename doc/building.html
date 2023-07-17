@@ -80,6 +80,7 @@ id="toc-getting-jdk-binaries">Getting JDK binaries</a></li>
 id="toc-external-library-requirements">External Library Requirements</a>
 <ul>
 <li><a href="#freetype" id="toc-freetype">FreeType</a></li>
+<li><a href="#fontconfig" id="toc-fontconfig">Fontconfig</a></li>
 <li><a href="#cups" id="toc-cups">CUPS</a></li>
 <li><a href="#x11" id="toc-x11">X11</a></li>
 <li><a href="#alsa" id="toc-alsa">ALSA</a></li>
@@ -323,6 +324,7 @@ GB of free disk space is required.</p>
 <p>Even for 32-bit builds, it is recommended to use a 64-bit build
 machine, and instead create a 32-bit target using
 <code>--with-target-bits=32</code>.</p>
+<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.</p>
 <h3 id="building-on-aarch64">Building on aarch64</h3>
 <p>At a minimum, a machine with 8 cores is advisable, as well as 8 GB of
 RAM. (The more cores to use, the more memory you need.) At least 6 GB of
@@ -399,6 +401,7 @@ to the build system, e.g. in arguments to <code>configure</code>. So,
 use <code>--with-msvcr-dll=/cygdrive/c/msvcr100.dll</code> rather than
 <code>--with-msvcr-dll=c:\msvcr100.dll</code>. For details on this
 conversion, see the section on <a href="#fixpath">Fixpath</a>.</p>
+<p>Note: The Windows 32-bit x86 port is deprecated and may be removed in a future release.</p>
 <h4 id="cygwin">Cygwin</h4>
 <p>A functioning <a href="http://www.cygwin.com/">Cygwin</a> environment
 is required for building the JDK on Windows. If you have a 64-bit OS, we
@@ -677,6 +680,19 @@ copy.</p>
 <p>Use <code>--with-freetype-include=&lt;path&gt;</code> and
 <code>--with-freetype-lib=&lt;path&gt;</code> if <code>configure</code>
 does not automatically locate the platform FreeType files.</p>
+<h3 id="fontconfig">Fontconfig</h3>
+<p>Fontconfig from <a href="http://fontconfig.org">freedesktop.org
+Fontconfig</a> is required on all platforms except Windows and
+macOS.</p>
+<ul>
+<li>To install on an apt-based Linux, try running
+<code>sudo apt-get install     libfontconfig-dev</code>.</li>
+<li>To install on an rpm-based Linux, try running
+<code>sudo yum install     fontconfig-devel</code>.</li>
+</ul>
+<p>Use <code>--with-fontconfig-include=&lt;path&gt;</code> and
+<code>--with-fontconfig=&lt;path&gt;</code> if <code>configure</code>
+does not automatically locate the platform Fontconfig files.</p>
 <h3 id="cups">CUPS</h3>
 <p>CUPS, <a href="http://www.cups.org">Common UNIX Printing System</a>
 header files are required on all platforms, except Windows. Often these

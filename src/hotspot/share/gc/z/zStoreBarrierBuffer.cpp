@@ -49,14 +49,13 @@ ByteSize ZStoreBarrierBuffer::current_offset() {
   return byte_offset_of(ZStoreBarrierBuffer, _current);
 }
 
-ZStoreBarrierBuffer::ZStoreBarrierBuffer() :
-    _buffer(),
+ZStoreBarrierBuffer::ZStoreBarrierBuffer()
+  : _buffer(),
     _last_processed_color(),
     _last_installed_color(),
     _base_pointer_lock(),
     _base_pointers(),
-    _current(ZBufferStoreBarriers ? _buffer_size_bytes : 0) {
-}
+    _current(ZBufferStoreBarriers ? _buffer_size_bytes : 0) {}
 
 void ZStoreBarrierBuffer::initialize() {
   _last_processed_color = ZPointerStoreGoodMask;
@@ -247,8 +246,8 @@ private:
   ZStoreBarrierBuffer* _buffer;
 
 public:
-  OnError(ZStoreBarrierBuffer* buffer) :
-      _buffer(buffer) {}
+  OnError(ZStoreBarrierBuffer* buffer)
+    : _buffer(buffer) {}
 
   virtual void call(outputStream* st) {
     _buffer->on_error(st);

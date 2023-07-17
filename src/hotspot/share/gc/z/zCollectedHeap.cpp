@@ -58,8 +58,8 @@ ZCollectedHeap* ZCollectedHeap::heap() {
   return named_heap<ZCollectedHeap>(CollectedHeap::Z);
 }
 
-ZCollectedHeap::ZCollectedHeap() :
-    _soft_ref_policy(),
+ZCollectedHeap::ZCollectedHeap()
+  : _soft_ref_policy(),
     _barrier_set(),
     _initialize(&_barrier_set),
     _heap(),

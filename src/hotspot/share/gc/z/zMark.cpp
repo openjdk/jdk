@@ -79,8 +79,8 @@ static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredYoung("Concurrent M
 static const ZStatSubPhase ZSubPhaseConcurrentMarkRootUncoloredOld("Concurrent Mark Root Uncolored", ZGenerationId::old);
 static const ZStatSubPhase ZSubPhaseConcurrentMarkRootColoredOld("Concurrent Mark Root Colored", ZGenerationId::old);
 
-ZMark::ZMark(ZGeneration* generation, ZPageTable* page_table) :
-    _generation(generation),
+ZMark::ZMark(ZGeneration* generation, ZPageTable* page_table)
+  : _generation(generation),
     _page_table(page_table),
     _allocator(),
     _stripes(_allocator.start()),
@@ -298,8 +298,8 @@ private:
   const bool _visit_metadata;
 
 public:
-  ZMarkBarrierFollowOopClosure() :
-      OopIterateClosure(discoverer()),
+  ZMarkBarrierFollowOopClosure()
+    : OopIterateClosure(discoverer()),
       _visit_metadata(visit_metadata()) {}
 
   virtual void do_oop(oop* p) {
@@ -375,16 +375,17 @@ void ZMark::follow_array_object(objArrayOop obj, bool finalizable) {
 
 void ZMark::follow_object(oop obj, bool finalizable) {
   if (_generation->is_old()) {
-    if (ZHeap::heap()->is_old(to_zaddress(obj))) {
-      if (finalizable) {
-        ZMarkBarrierFollowOopClosure<true /* finalizable */, ZGenerationIdOptional::old> cl;
-        ZIterator::oop_iterate(obj, &cl);
-      } else {
-        ZMarkBarrierFollowOopClosure<false /* finalizable */, ZGenerationIdOptional::old> cl;
-        ZIterator::oop_iterate(obj, &cl);
-      }
+    assert(ZHeap::heap()->is_old(to_zaddress(obj)), "Should only follow objects from old gen");
+    if (obj->is_stackChunk()) {
+      // No support for tracing through stack chunks as finalizably reachable
+      ZMarkBarrierFollowOopClosure<false /* finalizable */, ZGenerationIdOptional::old> cl;
+      ZIterator::oop_iterate(obj, &cl);
+    } else if (finalizable) {
+      ZMarkBarrierFollowOopClosure<true /* finalizable */, ZGenerationIdOptional::old> cl;
+      ZIterator::oop_iterate(obj, &cl);
     } else {
-      fatal("Catch me!");
+      ZMarkBarrierFollowOopClosure<false /* finalizable */, ZGenerationIdOptional::old> cl;
+      ZIterator::oop_iterate(obj, &cl);
     }
   } else {
     // Young gen must help out with old marking
@@ -561,8 +562,8 @@ private:
   bool         _flushed;
 
 public:
-  ZMarkFlushAndFreeStacksClosure(ZMark* mark) :
-      HandshakeClosure("ZMarkFlushAndFreeStacks"),
+  ZMarkFlushAndFreeStacksClosure(ZMark* mark)
+    : HandshakeClosure("ZMarkFlushAndFreeStacks"),
       _mark(mark),
       _flushed(false) {}
 
@@ -585,8 +586,8 @@ private:
   ThreadClosure* _cl;
 
 public:
-  VM_ZMarkFlushOperation(ThreadClosure* cl) :
-      _cl(cl) {}
+  VM_ZMarkFlushOperation(ThreadClosure* cl)
+    : _cl(cl) {}
 
   virtual bool evaluate_at_safepoint() const {
     return false;
@@ -733,8 +734,8 @@ private:
   ZBarrierSetNMethod* const _bs_nm;
 
 public:
-  ZMarkNMethodClosure() :
-      _bs_nm(static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())) {}
+  ZMarkNMethodClosure()
+    : _bs_nm(static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())) {}
 
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
@@ -762,8 +763,8 @@ private:
   ZBarrierSetNMethod* const _bs_nm;
 
 public:
-  ZMarkYoungNMethodClosure() :
-      _bs_nm(static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())) {}
+  ZMarkYoungNMethodClosure()
+    : _bs_nm(static_cast<ZBarrierSetNMethod*>(BarrierSet::barrier_set()->barrier_set_nmethod())) {}
 
   virtual void do_nmethod(nmethod* nm) {
     ZLocker<ZReentrantLock> locker(ZNMethod::lock_for_nmethod(nm));
@@ -821,21 +822,15 @@ private:
   ZMarkNMethodClosure           _nm_cl;
 
 public:
-  ZMarkOldRootsTask(ZMark* mark) :
-      ZTask("ZMarkOldRootsTask"),
+  ZMarkOldRootsTask(ZMark* mark)
+    : ZTask("ZMarkOldRootsTask"),
       _mark(mark),
       _roots_colored(ZGenerationIdOptional::old),
       _roots_uncolored(ZGenerationIdOptional::old),
       _cl_colored(),
       _cld_cl(&_cl_colored),
       _thread_cl(),
-      _nm_cl() {
-    ClassLoaderDataGraph_lock->lock();
-  }
-
-  ~ZMarkOldRootsTask() {
-    ClassLoaderDataGraph_lock->unlock();
-  }
+      _nm_cl() {}
 
   virtual void work() {
     {
@@ -868,8 +863,8 @@ public:
     ClaimingCLDToOopClosure<ClassLoaderData::_claim_none>::do_cld(cld);
   }
 
-  ZMarkYoungCLDClosure(OopClosure* cl) :
-      ClaimingCLDToOopClosure<ClassLoaderData::_claim_none>(cl) {}
+  ZMarkYoungCLDClosure(OopClosure* cl)
+    : ClaimingCLDToOopClosure<ClassLoaderData::_claim_none>(cl) {}
 };
 
 class ZMarkYoungRootsTask : public ZTask {
@@ -885,8 +880,8 @@ private:
   ZMarkYoungNMethodClosure   _nm_cl;
 
 public:
-  ZMarkYoungRootsTask(ZMark* mark) :
-      ZTask("ZMarkYoungRootsTask"),
+  ZMarkYoungRootsTask(ZMark* mark)
+    : ZTask("ZMarkYoungRootsTask"),
       _mark(mark),
       _roots_colored(ZGenerationIdOptional::young),
       _roots_uncolored(ZGenerationIdOptional::young),
@@ -921,8 +916,8 @@ private:
   ZMark* const _mark;
 
 public:
-  ZMarkTask(ZMark* mark) :
-      ZRestartableTask("ZMarkTask"),
+  ZMarkTask(ZMark* mark)
+    : ZRestartableTask("ZMarkTask"),
       _mark(mark) {
     _mark->prepare_work();
   }
@@ -1043,8 +1038,8 @@ private:
   const ZGenerationId _generation_id;
 
 public:
-  ZVerifyMarkStacksEmptyClosure(const ZMarkStripeSet* stripes, ZGenerationId id) :
-      _stripes(stripes),
+  ZVerifyMarkStacksEmptyClosure(const ZMarkStripeSet* stripes, ZGenerationId id)
+    : _stripes(stripes),
       _generation_id(id) {}
 
   void do_thread(Thread* thread) {

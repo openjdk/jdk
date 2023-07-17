@@ -204,25 +204,6 @@ function copySnippet(button) {
     copyToClipboard(button.nextElementSibling.innerText);
     switchCopyLabel(button, button.firstElementChild);
 }
-// Copy the link to the adjacent header to the clipboard
-function copyUrl(button) {
-    var id;
-    var header = button.parentElement;
-    if (header.hasAttribute("id")) {
-        id = header.getAttribute("id");
-    } else if (header.parentElement.tagName === 'SECTION' && header.parentElement.hasAttribute("id")) {
-        id = header.parentElement.getAttribute("id");
-    } else if (header.firstElementChild && header.firstElementChild.tagName === "A"
-                                        && header.firstElementChild.hasAttribute("id")) {
-        id = header.firstElementChild.getAttribute("id");
-    }
-    var url = document.location.href;
-    if (url.indexOf("#") > -1) {
-        url = url.substring(0, url.indexOf("#"));
-    }
-    copyToClipboard(url + "#" + id);
-    switchCopyLabel(button, button.lastElementChild);
-}
 function copyToClipboard(content) {
     var textarea = document.createElement("textarea");
     textarea.style.height = 0;

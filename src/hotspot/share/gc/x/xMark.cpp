@@ -254,7 +254,7 @@ public:
                                                  ? ClassLoaderData::_claim_finalizable
                                                  : ClassLoaderData::_claim_strong,
                                              finalizable
-                                                 ? NULL
+                                                 ? nullptr
                                                  : XHeap::heap()->reference_discoverer()) {}
 
   virtual void do_oop(oop* p) {
@@ -403,7 +403,7 @@ bool XMark::try_steal_local(XMarkContext* context) {
        victim_stripe != stripe;
        victim_stripe = _stripes.stripe_next(victim_stripe)) {
     XMarkStack* const stack = stacks->steal(&_stripes, victim_stripe);
-    if (stack != NULL) {
+    if (stack != nullptr) {
       // Success, install the stolen stack
       stacks->install(&_stripes, stripe, stack);
       return true;
@@ -423,7 +423,7 @@ bool XMark::try_steal_global(XMarkContext* context) {
        victim_stripe != stripe;
        victim_stripe = _stripes.stripe_next(victim_stripe)) {
     XMarkStack* const stack = victim_stripe->steal_stack();
-    if (stack != NULL) {
+    if (stack != nullptr) {
       // Success, install the stolen stack
       stacks->install(&_stripes, stripe, stack);
       return true;

@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "cds/cds_globals.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "classfile/classFileParser.hpp"
@@ -60,13 +61,17 @@ void ClassLoaderExt::append_boot_classpath(ClassPathEntry* new_entry) {
   if (UseSharedSpaces) {
     warning("Sharing is only supported for boot loader classes because bootstrap classpath has been appended");
     FileMapInfo::current_info()->set_has_platform_or_app_classes(false);
+    if (DynamicArchive::is_mapped()) {
+      FileMapInfo::dynamic_info()->set_has_platform_or_app_classes(false);
+    }
   }
   ClassLoader::add_to_boot_append_entries(new_entry);
 }
 
 void ClassLoaderExt::setup_app_search_path(JavaThread* current) {
   Arguments::assert_is_dumping_archive();
-  _app_class_paths_start_index = ClassLoader::num_boot_classpath_entries();
+  int start_index = ClassLoader::num_boot_classpath_entries();
+  _app_class_paths_start_index = checked_cast<jshort>(start_index);
   char* app_class_path = os::strdup_check_oom(Arguments::get_appclasspath(), mtClass);
 
   if (strcmp(app_class_path, ".") == 0) {
@@ -116,8 +121,9 @@ void ClassLoaderExt::process_module_table(JavaThread* current, ModuleEntryTable*
 
 void ClassLoaderExt::setup_module_paths(JavaThread* current) {
   Arguments::assert_is_dumping_archive();
-  _app_module_paths_start_index = ClassLoader::num_boot_classpath_entries() +
-                              ClassLoader::num_app_classpath_entries();
+  int start_index = ClassLoader::num_boot_classpath_entries() +
+                    ClassLoader::num_app_classpath_entries();
+  _app_module_paths_start_index = checked_cast<jshort>(start_index);
   Handle system_class_loader (current, SystemDictionary::java_system_loader());
   ModuleEntryTable* met = Modules::get_module_entry_table(system_class_loader);
   process_module_table(current, met);

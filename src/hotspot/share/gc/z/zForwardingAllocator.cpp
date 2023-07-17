@@ -25,8 +25,8 @@
 #include "gc/z/zForwardingAllocator.hpp"
 #include "memory/allocation.inline.hpp"
 
-ZForwardingAllocator::ZForwardingAllocator() :
-    _start(nullptr),
+ZForwardingAllocator::ZForwardingAllocator()
+  : _start(nullptr),
     _end(nullptr),
     _top(nullptr) {}
 

@@ -24,29 +24,7 @@
 
 #include "precompiled.hpp"
 #include "oops/methodFlags.hpp"
-#include "runtime/atomic.hpp"
 #include "utilities/ostream.hpp"
-
-// This can be removed for the atomic bitset functions, when available.
-void MethodFlags::atomic_set_bits(u4 bits) {
-  // Atomically update the status with the bits given
-  u4 old_status, new_status, f;
-  do {
-    old_status = _status;
-    new_status = old_status | bits;
-    f = Atomic::cmpxchg(&_status, old_status, new_status);
-  } while(f != old_status);
-}
-
-void MethodFlags::atomic_clear_bits(u4 bits) {
-  // Atomically update the status with the bits given
-  u4 old_status, new_status, f;
-  do {
-    old_status = _status;
-    new_status = old_status & ~bits;
-    f = Atomic::cmpxchg(&_status, old_status, new_status);
-  } while(f != old_status);
-}
 
 void MethodFlags::print_on(outputStream* st) const {
 #define M_PRINT(name, ignore)          \

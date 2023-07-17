@@ -36,6 +36,7 @@ import org.testng.annotations.Test;
 import java.lang.invoke.VarHandle;
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -350,6 +351,20 @@ public class TestSegments {
         assertEquals(segment.address(), 0); // base address should be zero (no leaking of impl details)
         MemorySegment end = segment.asSlice(segment.byteSize(), 0);
         assertEquals(end.address(), segment.byteSize()); // end address should be equal to segment byte size
+    }
+
+    @Test
+    void testReinterpret() {
+        AtomicInteger counter = new AtomicInteger();
+        try (Arena arena = Arena.ofConfined()){
+            // check size
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(100).byteSize(), 100);
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(100, Arena.ofAuto(), null).byteSize(), 100);
+            // check scope and cleanup
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(100, arena, s -> counter.incrementAndGet()).scope(), arena.scope());
+            assertEquals(MemorySegment.ofAddress(42).reinterpret(arena, s -> counter.incrementAndGet()).scope(), arena.scope());
+        }
+        assertEquals(counter.get(), 2);
     }
 
     @DataProvider(name = "badSizeAndAlignments")

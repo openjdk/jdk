@@ -118,7 +118,7 @@ public:
 };
 
 template <typename T> uint32_t XStatIterableValue<T>::_count = 0;
-template <typename T> T*       XStatIterableValue<T>::_first = NULL;
+template <typename T> T*       XStatIterableValue<T>::_first = nullptr;
 
 //
 // Stat sampler

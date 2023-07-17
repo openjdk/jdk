@@ -161,6 +161,7 @@ address StubRoutines::_vectorizedMismatch = nullptr;
 address StubRoutines::_dexp = nullptr;
 address StubRoutines::_dlog = nullptr;
 address StubRoutines::_dlog10 = nullptr;
+address StubRoutines::_fmod = nullptr;
 address StubRoutines::_dpow = nullptr;
 address StubRoutines::_dsin = nullptr;
 address StubRoutines::_dcos = nullptr;
@@ -181,6 +182,8 @@ address StubRoutines::_cont_returnBarrierExc = nullptr;
 
 JFR_ONLY(RuntimeStub* StubRoutines::_jfr_write_checkpoint_stub = nullptr;)
 JFR_ONLY(address StubRoutines::_jfr_write_checkpoint = nullptr;)
+JFR_ONLY(RuntimeStub* StubRoutines::_jfr_return_lease_stub = nullptr;)
+JFR_ONLY(address StubRoutines::_jfr_return_lease = nullptr;)
 
 // Initialization
 //

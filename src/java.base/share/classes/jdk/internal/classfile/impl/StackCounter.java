@@ -44,7 +44,7 @@ public final class StackCounter {
                 dcb,
                 buf.thisClass().asSymbol(),
                 dcb.methodInfo.methodName().stringValue(),
-                MethodTypeDesc.ofDescriptor(dcb.methodInfo.methodType().stringValue()),
+                dcb.methodInfo.methodTypeSymbol(),
                 (dcb.methodInfo.methodFlags() & ACC_STATIC) != 0,
                 dcb.bytecodesBufWriter.asByteBuffer().slice(0, dcb.bytecodesBufWriter.size()),
                 dcb.constantPool,
@@ -106,7 +106,7 @@ public final class StackCounter {
         for (var h : handlers) map.put(labelContext.labelToBci(h.handler), 1);
         maxLocals = isStatic ? 0 : 1;
         for (var cd : methodDesc.parameterList()) {
-            maxLocals += TypeKind.from(cd).slotSize();
+            maxLocals += Util.slotSize(cd);
         }
         bcs = new RawBytecodeHelper(bytecode);
         visited = new BitSet(bcs.endBci);

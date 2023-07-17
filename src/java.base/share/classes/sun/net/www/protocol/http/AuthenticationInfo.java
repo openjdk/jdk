@@ -30,6 +30,7 @@ import java.io.ObjectInputStream;
 import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
@@ -219,7 +220,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         this.type = type;
         this.authScheme = authScheme;
         this.protocol = "";
-        this.host = host.toLowerCase();
+        this.host = host.toLowerCase(Locale.ROOT);
         this.port = port;
         this.realm = realm;
         this.path = null;
@@ -241,8 +242,8 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
     public AuthenticationInfo(char type, AuthScheme authScheme, URL url, String realm) {
         this.type = type;
         this.authScheme = authScheme;
-        this.protocol = url.getProtocol().toLowerCase();
-        this.host = url.getHost().toLowerCase();
+        this.protocol = url.getProtocol().toLowerCase(Locale.ROOT);
+        this.host = url.getHost().toLowerCase(Locale.ROOT);
         this.port = url.getPort();
         if (this.port == -1) {
             this.port = url.getDefaultPort();
@@ -284,8 +285,8 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
         if (port == -1) {
             port = url.getDefaultPort();
         }
-        String key = SERVER_AUTHENTICATION + ":" + url.getProtocol().toLowerCase()
-                + ":" + url.getHost().toLowerCase() + ":" + port;
+        String key = SERVER_AUTHENTICATION + ":" + url.getProtocol().toLowerCase(Locale.ROOT)
+                + ":" + url.getHost().toLowerCase(Locale.ROOT) + ":" + port;
         return getAuth(key, url, cache);
     }
 
@@ -301,8 +302,8 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
             port = url.getDefaultPort();
         }
         String key = SERVER_AUTHENTICATION + ":" + scheme + ":"
-                     + url.getProtocol().toLowerCase()
-                     + ":" + url.getHost().toLowerCase()
+                     + url.getProtocol().toLowerCase(Locale.ROOT)
+                     + ":" + url.getHost().toLowerCase(Locale.ROOT)
                      + ":" + port + ":" + realm;
         return key;
     }
@@ -336,7 +337,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      */
     static AuthenticationInfo getProxyAuth(String host, int port, AuthCacheImpl acache) {
         Objects.requireNonNull(acache);
-        String key = PROXY_AUTHENTICATION + "::" + host.toLowerCase() + ":" + port;
+        String key = PROXY_AUTHENTICATION + "::" + host.toLowerCase(Locale.ROOT) + ":" + port;
         AuthenticationInfo result = (AuthenticationInfo) acache.get(key, null);
         return result;
     }
@@ -348,7 +349,7 @@ public abstract class AuthenticationInfo extends AuthCacheValue implements Clone
      */
     static String getProxyAuthKey(String host, int port, String realm, AuthScheme scheme) {
         String key = PROXY_AUTHENTICATION + ":" + scheme
-                        + "::" + host.toLowerCase()
+                        + "::" + host.toLowerCase(Locale.ROOT)
                         + ":" + port + ":" + realm;
         return key;
     }

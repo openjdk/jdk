@@ -28,12 +28,12 @@
 
 #include "gc/z/zMemory.inline.hpp"
 
-inline ZVirtualMemory::ZVirtualMemory() :
-    _start(zoffset(UINTPTR_MAX)),
+inline ZVirtualMemory::ZVirtualMemory()
+  : _start(zoffset(UINTPTR_MAX)),
     _end(zoffset_end(UINTPTR_MAX)) {}
 
-inline ZVirtualMemory::ZVirtualMemory(zoffset start, size_t size) :
-    _start(start),
+inline ZVirtualMemory::ZVirtualMemory(zoffset start, size_t size)
+  : _start(start),
     _end(to_zoffset_end(start, size)) {}
 
 inline bool ZVirtualMemory::is_null() const {

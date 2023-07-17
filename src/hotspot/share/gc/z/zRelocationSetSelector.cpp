@@ -33,8 +33,8 @@
 #include "utilities/debug.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-ZRelocationSetSelectorGroupStats::ZRelocationSetSelectorGroupStats() :
-    _npages_candidates(0),
+ZRelocationSetSelectorGroupStats::ZRelocationSetSelectorGroupStats()
+  : _npages_candidates(0),
     _total(0),
     _live(0),
     _empty(0),
@@ -45,8 +45,8 @@ ZRelocationSetSelectorGroup::ZRelocationSetSelectorGroup(const char* name,
                                                          ZPageType page_type,
                                                          size_t page_size,
                                                          size_t object_size_limit,
-                                                         double fragmentation_limit) :
-    _name(name),
+                                                         double fragmentation_limit)
+  : _name(name),
     _page_type(page_type),
     _page_size(page_size),
     _object_size_limit(object_size_limit),
@@ -210,8 +210,8 @@ void ZRelocationSetSelectorGroup::select() {
   event.commit((u8)_page_type, s._npages_candidates, s._total, s._empty, s._npages_selected, s._relocate);
 }
 
-ZRelocationSetSelector::ZRelocationSetSelector(double fragmentation_limit) :
-    _small("Small", ZPageType::small, ZPageSizeSmall, ZObjectSizeLimitSmall, fragmentation_limit),
+ZRelocationSetSelector::ZRelocationSetSelector(double fragmentation_limit)
+  : _small("Small", ZPageType::small, ZPageSizeSmall, ZObjectSizeLimitSmall, fragmentation_limit),
     _medium("Medium", ZPageType::medium, ZPageSizeMedium, ZObjectSizeLimitMedium, fragmentation_limit),
     _large("Large", ZPageType::large, 0 /* page_size */, 0 /* object_size_limit */, fragmentation_limit),
     _empty_pages() {}

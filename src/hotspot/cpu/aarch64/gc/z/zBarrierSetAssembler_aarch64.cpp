@@ -601,8 +601,8 @@ private:
   }
 
 public:
-  ZAdjustAddress(MacroAssembler* masm, Address addr) :
-      _masm(masm),
+  ZAdjustAddress(MacroAssembler* masm, Address addr)
+    : _masm(masm),
       _addr(addr),
       _pre_adjustment(addr.getMode() == Address::pre ? addr.offset() : 0),
       _post_adjustment(addr.getMode() == Address::post ? addr.offset() : 0) {
@@ -1132,8 +1132,8 @@ public:
     }
   }
 
-  ZSaveLiveRegisters(MacroAssembler* masm, ZBarrierStubC2* stub) :
-      _masm(masm),
+  ZSaveLiveRegisters(MacroAssembler* masm, ZBarrierStubC2* stub)
+    : _masm(masm),
       _gp_regs(),
       _fp_regs(),
       _p_regs() {
@@ -1169,8 +1169,8 @@ private:
   const Address         _ref_addr;
 
 public:
-  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub) :
-      _masm(masm),
+  ZSetupArguments(MacroAssembler* masm, ZLoadBarrierStubC2* stub)
+    : _masm(masm),
       _ref(stub->ref()),
       _ref_addr(stub->ref_addr()) {
 

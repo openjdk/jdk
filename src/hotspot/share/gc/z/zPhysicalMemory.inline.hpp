@@ -29,13 +29,13 @@
 #include "gc/z/zAddress.inline.hpp"
 #include "utilities/debug.hpp"
 
-inline ZPhysicalMemorySegment::ZPhysicalMemorySegment() :
-    _start(zoffset(UINTPTR_MAX)),
+inline ZPhysicalMemorySegment::ZPhysicalMemorySegment()
+  : _start(zoffset(UINTPTR_MAX)),
     _end(zoffset(UINTPTR_MAX)),
     _committed(false) {}
 
-inline ZPhysicalMemorySegment::ZPhysicalMemorySegment(zoffset start, size_t size, bool committed) :
-    _start(start),
+inline ZPhysicalMemorySegment::ZPhysicalMemorySegment(zoffset start, size_t size, bool committed)
+  : _start(start),
     _end(start + size),
     _committed(committed) {}
 

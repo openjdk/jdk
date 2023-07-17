@@ -663,6 +663,7 @@ void ConnectionGraph::add_node_to_connection_graph(Node *n, Unique_Node_List *de
     case Op_StrIndexOfChar:
     case Op_StrInflatedCopy:
     case Op_StrCompressedCopy:
+    case Op_VectorizedHashCode:
     case Op_EncodeISOArray: {
       add_local_var(n, PointsToNode::ArgEscape);
       delayed_worklist->push(n); // Process it later.
@@ -1736,7 +1737,7 @@ int ConnectionGraph::find_init_values_phantom(JavaObjectNode* pta) {
 }
 
 // Find fields initializing values for allocations.
-int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseTransform* phase) {
+int ConnectionGraph::find_init_values_null(JavaObjectNode* pta, PhaseValues* phase) {
   assert(pta->escape_state() == PointsToNode::NoEscape, "Not escaped Allocate nodes only");
   Node* alloc = pta->ideal_node();
   // Do nothing for Call nodes since its fields values are unknown.
@@ -2498,7 +2499,7 @@ bool ConnectionGraph::is_captured_store_address(Node* addp) {
   return false;
 }
 
-int ConnectionGraph::address_offset(Node* adr, PhaseTransform *phase) {
+int ConnectionGraph::address_offset(Node* adr, PhaseValues* phase) {
   const Type *adr_type = phase->type(adr);
   if (adr->is_AddP() && adr_type->isa_oopptr() == nullptr && is_captured_store_address(adr)) {
     // We are computing a raw address for a store captured by an Initialize
@@ -3576,7 +3577,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
           memnode_worklist.append_if_missing(use);
         } else if (!(BarrierSet::barrier_set()->barrier_set_c2()->is_gc_barrier_node(use) ||
               op == Op_AryEq || op == Op_StrComp || op == Op_CountPositives ||
-              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy ||
+              op == Op_StrCompressedCopy || op == Op_StrInflatedCopy || op == Op_VectorizedHashCode ||
               op == Op_StrEquals || op == Op_StrIndexOf || op == Op_StrIndexOfChar)) {
           n->dump();
           use->dump();

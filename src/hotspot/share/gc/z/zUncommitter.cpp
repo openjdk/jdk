@@ -32,8 +32,8 @@
 
 static const ZStatCounter ZCounterUncommit("Memory", "Uncommit", ZStatUnitBytesPerSecond);
 
-ZUncommitter::ZUncommitter(ZPageAllocator* page_allocator) :
-    _page_allocator(page_allocator),
+ZUncommitter::ZUncommitter(ZPageAllocator* page_allocator)
+  : _page_allocator(page_allocator),
     _lock(),
     _stop(false) {
   set_name("ZUncommitter");

@@ -1986,7 +1986,7 @@ nmethod *SharedRuntime::generate_native_wrapper(MacroAssembler *masm,
 
   // Reset handle block.
   __ z_lg(Z_R1_scratch, Address(Z_thread, JavaThread::active_handles_offset()));
-  __ clear_mem(Address(Z_R1_scratch, JNIHandleBlock::top_offset_in_bytes()), 4);
+  __ clear_mem(Address(Z_R1_scratch, JNIHandleBlock::top_offset()), 4);
 
   // Check for pending exceptions.
   __ load_and_test_long(Z_R0, Address(Z_thread, Thread::pending_exception_offset()));
@@ -2318,8 +2318,8 @@ AdapterHandlerEntry* SharedRuntime::generate_i2c2i_adapters(MacroAssembler *masm
   {
     Label ic_miss;
     const int klass_offset           = oopDesc::klass_offset_in_bytes();
-    const int holder_klass_offset    = CompiledICHolder::holder_klass_offset();
-    const int holder_metadata_offset = CompiledICHolder::holder_metadata_offset();
+    const int holder_klass_offset    = in_bytes(CompiledICHolder::holder_klass_offset());
+    const int holder_metadata_offset = in_bytes(CompiledICHolder::holder_metadata_offset());
 
     // Out-of-line call to ic_miss handler.
     __ call_ic_miss_handler(ic_miss, 0x11, 0, Z_R1_scratch);
@@ -2451,11 +2451,11 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   BLOCK_COMMENT("push_skeleton_frames {");
   // _number_of_frames is of type int (deoptimization.hpp).
   __ z_lgf(number_of_frames_reg,
-           Address(unroll_block_reg, Deoptimization::UnrollBlock::number_of_frames_offset_in_bytes()));
+           Address(unroll_block_reg, Deoptimization::UnrollBlock::number_of_frames_offset()));
   __ z_lg(pcs_reg,
-          Address(unroll_block_reg, Deoptimization::UnrollBlock::frame_pcs_offset_in_bytes()));
+          Address(unroll_block_reg, Deoptimization::UnrollBlock::frame_pcs_offset()));
   __ z_lg(frame_sizes_reg,
-          Address(unroll_block_reg, Deoptimization::UnrollBlock::frame_sizes_offset_in_bytes()));
+          Address(unroll_block_reg, Deoptimization::UnrollBlock::frame_sizes_offset()));
 
   // stack: (caller_of_deoptee, ...).
 
@@ -2465,7 +2465,7 @@ static void push_skeleton_frames(MacroAssembler* masm, bool deopt,
   // Note: entry and interpreted frames are adjusted, too. But this doesn't harm.
 
   __ z_lgf(Z_R1_scratch,
-           Address(unroll_block_reg, Deoptimization::UnrollBlock::caller_adjustment_offset_in_bytes()));
+           Address(unroll_block_reg, Deoptimization::UnrollBlock::caller_adjustment_offset()));
   __ z_lgr(tmp1, Z_SP);  // Save the sender sp before extending the frame.
   __ resize_frame_sub(Z_R1_scratch, tmp2/*tmp*/);
   // The oldest skeletal frame requires a valid sender_sp to make it walkable
@@ -2645,7 +2645,7 @@ void SharedRuntime::generate_deopt_blob() {
   RegisterSaver::restore_result_registers(masm);
 
   // reload the exec mode from the UnrollBlock (it might have changed)
-  __ z_llgf(exec_mode_reg, Address(unroll_block_reg, Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()));
+  __ z_llgf(exec_mode_reg, Address(unroll_block_reg, Deoptimization::UnrollBlock::unpack_kind_offset()));
 
   // In excp_deopt_mode, restore and clear exception oop which we
   // stored in the thread during exception entry above. The exception
@@ -2778,7 +2778,7 @@ void SharedRuntime::generate_uncommon_trap_blob() {
 #ifdef ASSERT
   assert(Immediate::is_uimm8(Deoptimization::Unpack_LIMIT), "Code not fit for larger immediates");
   assert(Immediate::is_uimm8(Deoptimization::Unpack_uncommon_trap), "Code not fit for larger immediates");
-  const int unpack_kind_byte_offset = Deoptimization::UnrollBlock::unpack_kind_offset_in_bytes()
+  const int unpack_kind_byte_offset = in_bytes(Deoptimization::UnrollBlock::unpack_kind_offset())
 #ifndef VM_LITTLE_ENDIAN
   + 3
 #endif

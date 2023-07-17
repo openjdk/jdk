@@ -53,10 +53,18 @@ static ZMemoryUsageInfo compute_memory_usage_info() {
 
 class ZGenerationCounters : public GenerationCounters {
 public:
-  ZGenerationCounters(const char* name, int ordinal, int spaces,
-                      size_t min_capacity, size_t max_capacity, size_t curr_capacity) :
-      GenerationCounters(name, ordinal, spaces,
-                         min_capacity, max_capacity, curr_capacity) {}
+  ZGenerationCounters(const char* name,
+                      int ordinal,
+                      int spaces,
+                      size_t min_capacity,
+                      size_t max_capacity,
+                      size_t curr_capacity)
+    : GenerationCounters(name,
+                         ordinal,
+                         spaces,
+                         min_capacity,
+                         max_capacity,
+                         curr_capacity) {}
 
   void update_capacity(size_t capacity) {
     _current_size->set_value(capacity);
@@ -81,8 +89,8 @@ public:
   void update_sizes();
 };
 
-ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t min_capacity, size_t max_capacity) :
-    // generation.0
+ZServiceabilityCounters::ZServiceabilityCounters(size_t initial_capacity, size_t min_capacity, size_t max_capacity)
+  : // generation.0
     _generation_young_counters(
         "young"          /* name */,
         0                /* ordinal */,
@@ -141,8 +149,8 @@ void ZServiceabilityCounters::update_sizes() {
   }
 }
 
-ZServiceabilityMemoryPool::ZServiceabilityMemoryPool(const char* name, ZGenerationId id, size_t min_capacity, size_t max_capacity) :
-    CollectedMemoryPool(name,
+ZServiceabilityMemoryPool::ZServiceabilityMemoryPool(const char* name, ZGenerationId id, size_t min_capacity, size_t max_capacity)
+  : CollectedMemoryPool(name,
                         min_capacity,
                         max_capacity,
                         id == ZGenerationId::old /* support_usage_threshold */),
@@ -164,16 +172,16 @@ MemoryUsage ZServiceabilityMemoryPool::get_memory_usage() {
 
 ZServiceabilityMemoryManager::ZServiceabilityMemoryManager(const char* name,
                                                            MemoryPool* young_memory_pool,
-                                                           MemoryPool* old_memory_pool) :
-    GCMemoryManager(name) {
+                                                           MemoryPool* old_memory_pool)
+  : GCMemoryManager(name) {
   add_pool(young_memory_pool);
   add_pool(old_memory_pool);
 }
 
 ZServiceability::ZServiceability(size_t initial_capacity,
                                  size_t min_capacity,
-                                 size_t max_capacity) :
-    _initial_capacity(initial_capacity),
+                                 size_t max_capacity)
+  : _initial_capacity(initial_capacity),
     _min_capacity(min_capacity),
     _max_capacity(max_capacity),
     _young_memory_pool("ZGC Young Generation", ZGenerationId::young, _min_capacity, _max_capacity),
@@ -182,8 +190,7 @@ ZServiceability::ZServiceability(size_t initial_capacity,
     _major_cycle_memory_manager("ZGC Major Cycles", &_young_memory_pool, &_old_memory_pool),
     _minor_pause_memory_manager("ZGC Minor Pauses", &_young_memory_pool, &_old_memory_pool),
     _major_pause_memory_manager("ZGC Major Pauses", &_young_memory_pool, &_old_memory_pool),
-    _counters(nullptr) {
-}
+    _counters(nullptr) {}
 
 void ZServiceability::initialize() {
   _counters = new ZServiceabilityCounters(_initial_capacity, _min_capacity, _max_capacity);
@@ -213,8 +220,8 @@ ZServiceabilityCounters* ZServiceability::counters() {
 
 bool ZServiceabilityCycleTracer::_minor_is_active;
 
-ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(bool minor) :
-    _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(minor),
+ZServiceabilityCycleTracer::ZServiceabilityCycleTracer(bool minor)
+  : _memory_manager_stats(ZHeap::heap()->serviceability_cycle_memory_manager(minor),
                           minor ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause(),
                           "end of GC cycle",
                           true /* allMemoryPoolsAffected */,
@@ -244,8 +251,8 @@ bool ZServiceabilityPauseTracer::minor_is_active() const {
   return ZServiceabilityCycleTracer::minor_is_active();
 }
 
-ZServiceabilityPauseTracer::ZServiceabilityPauseTracer() :
-    _svc_gc_marker(SvcGCMarker::CONCURRENT),
+ZServiceabilityPauseTracer::ZServiceabilityPauseTracer()
+  : _svc_gc_marker(SvcGCMarker::CONCURRENT),
     _counters_stats(ZHeap::heap()->serviceability_counters()->collector_counters(minor_is_active())),
     _memory_manager_stats(ZHeap::heap()->serviceability_pause_memory_manager(minor_is_active()),
                           minor_is_active() ? ZDriver::minor()->gc_cause() : ZDriver::major()->gc_cause(),

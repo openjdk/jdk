@@ -97,7 +97,7 @@ private:
 
 public:
   LIR_OpXLoadBarrierTest(LIR_Opr opr) :
-      LIR_Op(lir_xloadbarrier_test, LIR_OprFact::illegalOpr, NULL),
+      LIR_Op(lir_xloadbarrier_test, LIR_OprFact::illegalOpr, nullptr),
       _opr(opr) {}
 
   virtual void visit(LIR_OpVisitState* state) {
@@ -125,8 +125,8 @@ static bool barrier_needed(LIRAccess& access) {
 }
 
 XBarrierSetC1::XBarrierSetC1() :
-    _load_barrier_on_oop_field_preloaded_runtime_stub(NULL),
-    _load_barrier_on_weak_oop_field_preloaded_runtime_stub(NULL) {}
+    _load_barrier_on_oop_field_preloaded_runtime_stub(nullptr),
+    _load_barrier_on_weak_oop_field_preloaded_runtime_stub(nullptr) {}
 
 address XBarrierSetC1::load_barrier_on_oop_field_preloaded_runtime_stub(DecoratorSet decorators) const {
   assert((decorators & ON_PHANTOM_OOP_REF) == 0, "Unsupported decorator");
@@ -189,8 +189,8 @@ static void pre_load_barrier(LIRAccess& access) {
                                access.base().item(),
                                access.offset().opr(),
                                access.gen()->new_register(access.type()),
-                               NULL /* patch_emit_info */,
-                               NULL /* load_emit_info */);
+                               nullptr /* patch_emit_info */,
+                               nullptr /* load_emit_info */);
 }
 
 LIR_Opr XBarrierSetC1::atomic_xchg_at_resolved(LIRAccess& access, LIRItem& value) {
@@ -219,7 +219,7 @@ public:
 
   virtual OopMapSet* generate_code(StubAssembler* sasm) {
     XBarrierSet::assembler()->generate_c1_load_barrier_runtime_stub(sasm, _decorators);
-    return NULL;
+    return nullptr;
   }
 };
 

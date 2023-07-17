@@ -69,6 +69,7 @@
 #include "prims/jvmtiExport.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
@@ -112,9 +113,11 @@ class InvokeMethodKey : public StackObj {
 
 };
 
-ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
-                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison> _invoke_method_intrinsic_table;
-ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _invoke_method_type_table;
+using InvokeMethodIntrinsicTable = ResourceHashtable<InvokeMethodKey, Method*, 139, AnyObj::C_HEAP, mtClass,
+                  InvokeMethodKey::compute_hash, InvokeMethodKey::key_comparison>;
+static InvokeMethodIntrinsicTable* _invoke_method_intrinsic_table;
+using InvokeMethodTypeTable = ResourceHashtable<SymbolHandle, OopHandle, 139, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
+static InvokeMethodTypeTable* _invoke_method_type_table;
 
 OopHandle   SystemDictionary::_java_system_loader;
 OopHandle   SystemDictionary::_java_platform_loader;
@@ -1125,7 +1128,8 @@ InstanceKlass* SystemDictionary::load_shared_class(InstanceKlass* ik,
                                                    PackageEntry* pkg_entry,
                                                    TRAPS) {
   assert(ik != nullptr, "sanity");
-  assert(!ik->is_unshareable_info_restored(), "shared class can be loaded only once");
+  assert(!ik->is_unshareable_info_restored(), "shared class can be restored only once");
+  assert(Atomic::add(&ik->_shared_class_load_count, 1) == 1, "shared class loaded more than once");
   Symbol* class_name = ik->name();
 
   if (!is_shared_class_visible(class_name, ik, pkg_entry, class_loader)) {
@@ -1180,7 +1184,7 @@ void SystemDictionary::load_shared_class_misc(InstanceKlass* ik, ClassLoaderData
   // For boot loader, ensure that GetSystemPackage knows that a class in this
   // package was loaded.
   if (loader_data->is_the_null_class_loader_data()) {
-    int path_index = ik->shared_classpath_index();
+    s2 path_index = ik->shared_classpath_index();
     ik->set_classpath_index(path_index);
   }
 
@@ -1590,7 +1594,7 @@ void SystemDictionary::methods_do(void f(Method*)) {
 
   {
     MutexLocker ml(InvokeMethodIntrinsicTable_lock);
-    _invoke_method_intrinsic_table.iterate_all(doit);
+    _invoke_method_intrinsic_table->iterate_all(doit);
   }
 
 }
@@ -1599,10 +1603,15 @@ void SystemDictionary::methods_do(void f(Method*)) {
 // Initialization
 
 void SystemDictionary::initialize(TRAPS) {
+  _invoke_method_intrinsic_table = new (mtClass) InvokeMethodIntrinsicTable();
+  _invoke_method_type_table = new (mtClass) InvokeMethodTypeTable();
+  ResolutionErrorTable::initialize();
+  LoaderConstraintTable::initialize();
+  PlaceholderTable::initialize();
+  ProtectionDomainCacheTable::initialize();
 #if INCLUDE_CDS
   SystemDictionaryShared::initialize();
 #endif
-
   // Resolve basic classes
   vmClasses::resolve_all(CHECK);
   // Resolve classes used by archived heap objects
@@ -1952,7 +1961,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
     while (true) {
       bool created;
-      met = _invoke_method_intrinsic_table.put_if_absent(key, &created);
+      met = _invoke_method_intrinsic_table->put_if_absent(key, &created);
       assert(met != nullptr, "either created or found");
       if (*met != nullptr) {
         return *met;
@@ -1983,7 +1992,7 @@ Method* SystemDictionary::find_method_handle_intrinsic(vmIntrinsicID iid,
     MonitorLocker ml(THREAD, InvokeMethodIntrinsicTable_lock);
     if (throw_error) {
       // Remove the entry and let another thread try, or get the same exception.
-      bool removed = _invoke_method_intrinsic_table.remove(key);
+      bool removed = _invoke_method_intrinsic_table->remove(key);
       assert(removed, "must be the owner");
       ml.notify_all();
     } else {
@@ -2146,7 +2155,7 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
   OopHandle* o;
   {
     MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
-    o = _invoke_method_type_table.get(signature);
+    o = _invoke_method_type_table->get(signature);
   }
 
   if (o != nullptr) {
@@ -2217,11 +2226,11 @@ Handle SystemDictionary::find_method_handle_type(Symbol* signature,
     MutexLocker ml(THREAD, InvokeMethodTypeTable_lock);
     bool created = false;
     assert(method_type != nullptr, "unexpected null");
-    OopHandle* h = _invoke_method_type_table.get(signature);
+    OopHandle* h = _invoke_method_type_table->get(signature);
     if (h == nullptr) {
       signature->make_permanent(); // The signature is never unloaded.
       OopHandle elem = OopHandle(Universe::vm_global(), method_type());
-      bool created = _invoke_method_type_table.put(signature, elem);
+      bool created = _invoke_method_type_table->put(signature, elem);
       assert(created, "better be created");
     }
   }
