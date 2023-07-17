@@ -4013,7 +4013,6 @@ void IdealLoopTree::dump_head() {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_vectorized_loop()) tty->print(" vector");
     if (range_checks_present()) tty->print(" rc ");
-    if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
@@ -4653,29 +4652,7 @@ void PhaseIdealLoop::build_and_optimize() {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_counted()) {
         CountedLoopNode *cl = lpt->_head->as_CountedLoop();
-
-        if (cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
-          assert(PostLoopMultiversioning, "multiversioning must be enabled");
-          // Check that the rce'd post loop is encountered first, multiversion after all
-          // major main loop optimization are concluded
-          if (!C->major_progress()) {
-            IdealLoopTree *lpt_next = lpt->_next;
-            if (lpt_next && lpt_next->is_counted()) {
-              CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              if (cl->is_post_loop() && lpt_next->range_checks_present()) {
-                if (!cl->is_multiversioned()) {
-                  if (multi_version_post_loops(lpt, lpt_next) == false) {
-                    // Cause the rce loop to be optimized away if we fail
-                    cl->mark_is_multiversioned();
-                    cl->set_slp_max_unroll(0);
-                    poison_rce_post_loop(lpt);
-                  }
-                }
-              }
-            }
-            sw.transform_loop(lpt, true);
-          }
-        } else if (cl->is_main_loop()) {
+        if (cl->is_main_loop()) {
           if (!sw.transform_loop(lpt, true)) {
             // Instigate more unrolling for optimization when vectorization fails.
             if (cl->has_passed_slp()) {

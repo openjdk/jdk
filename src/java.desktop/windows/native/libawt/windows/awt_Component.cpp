@@ -23,6 +23,8 @@
  * questions.
  */
 
+#include <cmath>
+
 #include "awt.h"
 
 #include <windowsx.h>
@@ -47,7 +49,6 @@
 #include "awt_Win32GraphicsDevice.h"
 #include "Hashtable.h"
 #include "ComCtl32Util.h"
-#include "math.h"
 
 #include <Region.h>
 
