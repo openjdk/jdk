@@ -393,7 +393,7 @@ public class MessageFormat extends Format {
      * @implSpec The default implementation may throw a
      * {@code NullPointerException} if {@code locale} is {@code null}
      * either during the creation of the {@code MessageFormat} object or later
-     * when {@code format()} is invoked by the constructed {@code MessageFormat} object.
+     * when {@code format()} is called by the constructed {@code MessageFormat} object.
      * @param pattern the pattern for this message format
      * @param locale the locale for this message format
      * @throws    IllegalArgumentException if the pattern is invalid

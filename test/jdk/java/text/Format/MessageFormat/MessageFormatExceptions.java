@@ -55,13 +55,13 @@ public class MessageFormatExceptions {
     // The following are some examples.
     @Test
     public void nullLocaleTest() {
-        // Fail in applyPattern()
+        // Fails when constructor invokes applyPattern()
         assertThrows(NullPointerException.class,
                 () -> new MessageFormat("{0, date}", null));
-        // Fail in applyPattern()
+        // Fail when constructor invokes applyPattern()
         assertThrows(NullPointerException.class,
                 () -> new MessageFormat("{0, number}", null));
-        // Fail in format()
+        // Fail when object calls format()
         assertThrows(NullPointerException.class,
                 () -> new MessageFormat("{0}", null).format(new Object[]{42}));
         // Does not always fail if locale is null
