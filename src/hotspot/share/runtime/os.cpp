@@ -941,42 +941,46 @@ ATTRIBUTE_NO_ASAN static bool read_safely_from(intptr_t* p, intptr_t* result) {
   return true;
 }
 
-static bool print_hex_location(outputStream* st, address p, int unitsize) {
-  intptr_t i = 0;
-  const intptr_t errval = 0x1717;
+static void print_hex_location(outputStream* st, address p, int unitsize) {
   address pa = align_down(p, sizeof(intptr_t));
-  if (!read_safely_from((intptr_t*)pa, &i)) {
-    return false;
-  }
 #ifndef _LP64
   // Special handling for printing qwords on 32-bit platforms
   if (unitsize == 8) {
-    intptr_t i2 = 0;
-    assert(sizeof(intptr_t) == 4, "Sanity");
-    if (!read_safely_from((intptr_t*)pa + 1, &i2)) {
-      return false;
+    intptr_t i1, i2;
+    if (read_safely_from((intptr_t*)pa, &i1) &&
+        read_safely_from((intptr_t*)pa + 1, &i2)) {
+      const uint64_t value =
+        LITTLE_ENDIAN_ONLY((((uint64_t)i2) << 32) | i1)
+        BIG_ENDIAN_ONLY((((uint64_t)i1) << 32) | i2);
+      st->print("%016" FORMAT64_MODIFIER "x", value);
+    } else {
+      st->print_raw("????????????????");
     }
-    uint64_t value = (((uint64_t)i2) << 32) | i;
-    st->print("%016" FORMAT64_MODIFIER "x", value);
-    return true;
+    return;
   }
-#endif // 32-bit, 64-bit unitsize
-  const int offset = (int)(p - (address)pa);
-  const int bitoffset =
-    LITTLE_ENDIAN_ONLY(offset * BitsPerByte)
-    BIG_ENDIAN_ONLY((int)(sizeof(intptr_t) - 1 - offset) * BitsPerByte);
-  const int bitfieldsize = unitsize * BitsPerByte;
-  intptr_t value = bitfield(i, bitoffset, bitfieldsize);
-  switch (unitsize) {
-    case 1: st->print("%02x", (u1)value); break;
-    case 2: st->print("%04x", (u2)value); break;
-    case 4: st->print("%08x", (u4)value); break;
-  #ifdef _LP64
-    case 8: st->print("%016" FORMAT64_MODIFIER "x", (u8)value); break;
-  #endif
-    default: ShouldNotReachHere();
+#endif // 32-bit, qwords
+  intptr_t i = 0;
+  if (read_safely_from((intptr_t*)pa, &i)) {
+    const int offset = (int)(p - (address)pa);
+    const int bitoffset =
+      LITTLE_ENDIAN_ONLY(offset * BitsPerByte)
+      BIG_ENDIAN_ONLY((int)(sizeof(intptr_t) - 1 - offset) * BitsPerByte);
+    const int bitfieldsize = unitsize * BitsPerByte;
+    intptr_t value = bitfield(i, bitoffset, bitfieldsize);
+    switch (unitsize) {
+      case 1: st->print("%02x", (u1)value); break;
+      case 2: st->print("%04x", (u2)value); break;
+      case 4: st->print("%08x", (u4)value); break;
+      case 8: st->print("%016" FORMAT64_MODIFIER "x", (u8)value); break;
+    }
+  } else {
+    switch (unitsize) {
+      case 1: st->print_raw("??"); break;
+      case 2: st->print_raw("????"); break;
+      case 4: st->print_raw("????????"); break;
+      case 8: st->print_raw("????????????????"); break;
+    }
   }
-  return true;
 }
 
 void os::print_hex_dump(outputStream* st, address start, address end, int unitsize,
@@ -996,9 +1000,7 @@ void os::print_hex_dump(outputStream* st, address start, address end, int unitsi
   // Print out the addresses as if we were starting from logical_start.
   st->print(PTR_FORMAT ":   ", p2i(logical_p));
   while (p < end) {
-    if (!print_hex_location(st, p, unitsize)) {
-      st->print("%*.*s", 2*unitsize, 2*unitsize, "????????????????");
-    }
+    print_hex_location(st, p, unitsize);
     p += unitsize;
     logical_p += unitsize;
     cols++;
