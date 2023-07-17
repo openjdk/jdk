@@ -307,6 +307,9 @@ inline int frame::interpreter_frame_monitor_size() {
   return BasicObjectLock::size();
 }
 
+inline int frame::interpreter_frame_monitor_size_in_bytes() {
+  return frame::interpreter_frame_monitor_size() * wordSize;
+}
 
 // expression stack
 // (the max_stack arguments are used by the GC; see class FrameClosure)
