@@ -53,12 +53,12 @@ import static org.testng.Assert.*;
 
 public class SystemModulesTest {
     private static final JavaLangModuleAccess JLMA =
-            SharedSecrets.getJavaLangModuleAccess();
+        SharedSecrets.getJavaLangModuleAccess();
     private static final String OS_NAME = System.getProperty("os.name");
     private static final String OS_ARCH = System.getProperty("os.arch");
     //  system modules containing no package
     private static final Set<String> EMPTY_MODULES =
-            Set.of("java.se", "jdk.jdwp.agent", "jdk.pack");
+        Set.of("java.se", "jdk.jdwp.agent", "jdk.pack");
 
     @Test
     public void testSystemModules() {
@@ -67,7 +67,7 @@ public class SystemModulesTest {
             return;
 
         ModuleFinder.ofSystem().findAll().stream()
-                .forEach(this::checkAttributes);
+                    .forEach(this::checkAttributes);
     }
 
     // JMOD files are created with OS name and arch matching the bundle name
@@ -123,16 +123,16 @@ public class SystemModulesTest {
     @Test
     public void testUnmodifableDescriptors() throws Exception {
         ModuleFinder.ofSystem().findAll()
-                .stream()
-                .map(ModuleReference::descriptor)
-                .forEach(this::testModuleDescriptor);
+                    .stream()
+                    .map(ModuleReference::descriptor)
+                    .forEach(this::testModuleDescriptor);
     }
 
     private void testModuleDescriptor(ModuleDescriptor md) {
         assertUnmodifiable(md.packages(), "package");
         assertUnmodifiable(md.requires(),
-                JLMA.newRequires(Set.of(Requires.Modifier.TRANSITIVE),
-                        "require", null));
+                           JLMA.newRequires(Set.of(Requires.Modifier.TRANSITIVE),
+                                            "require", null));
         for (Requires req : md.requires()) {
             assertUnmodifiable(req.modifiers(), Requires.Modifier.TRANSITIVE);
         }
@@ -152,7 +152,7 @@ public class SystemModulesTest {
         assertUnmodifiable(md.uses(), "use");
 
         assertUnmodifiable(md.provides(),
-                JLMA.newProvides("provide", List.of("provide")));
+                           JLMA.newProvides("provide", List.of("provide")));
         for (Provides provides : md.provides()) {
             assertUnmodifiable(provides.providers(), "provide");
         }

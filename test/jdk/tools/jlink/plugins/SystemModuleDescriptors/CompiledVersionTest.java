@@ -85,15 +85,15 @@ public class CompiledVersionTest {
             Path msrc = SRC_DIR.resolve(mn);
             if (version.equals("0")) {
                 assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
-                        "--add-exports", "java.base/jdk.internal.module=m1",
-                        "--add-exports", "java.base/jdk.internal.classfile=m1",
-                        "--module-source-path", SRC_DIR.toString()));
+                    "--add-exports", "java.base/jdk.internal.module=m1",
+                    "--add-exports", "java.base/jdk.internal.classfile=m1",
+                    "--module-source-path", SRC_DIR.toString()));
             } else {
                 assertTrue(CompilerUtils.compile(msrc, MODS_DIR,
-                        "--add-exports", "java.base/jdk.internal.module=m1",
-                        "--add-exports", "java.base/jdk.internal.classfile=m1",
-                        "--module-source-path", SRC_DIR.toString(),
-                        "--module-version", version));
+                    "--add-exports", "java.base/jdk.internal.module=m1",
+                    "--add-exports", "java.base/jdk.internal.classfile=m1",
+                    "--module-source-path", SRC_DIR.toString(),
+                    "--module-version", version));
             }
         }
 
@@ -108,11 +108,11 @@ public class CompiledVersionTest {
         Path jlink = Paths.get(JAVA_HOME, "bin", "jlink");
         String mp = JMODS.toString() + File.pathSeparator + MODS_DIR.toString();
         assertTrue(executeProcess(jlink.toString(), "--output", outputDir.toString(),
-                "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
-                "--module-path", mp)
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue() == 0);
+                        "--add-modules", Arrays.stream(modules).collect(Collectors.joining(",")),
+                        "--module-path", mp)
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
     }
 
     /*
@@ -125,13 +125,13 @@ public class CompiledVersionTest {
 
         Path java = IMAGE.resolve("bin").resolve("java");
         Stream<String> options = Stream.concat(
-                Stream.of(java.toString(), "-m", MAIN_MID, String.valueOf(modules.length)),
-                Stream.concat(Arrays.stream(modules), Arrays.stream(versions))
+            Stream.of(java.toString(), "-m", MAIN_MID, String.valueOf(modules.length)),
+            Stream.concat(Arrays.stream(modules), Arrays.stream(versions))
         );
 
         assertTrue(executeProcess(options.toArray(String[]::new))
-                .outputTo(System.out)
-                .errorTo(System.out)
-                .getExitValue() == 0);
+                        .outputTo(System.out)
+                        .errorTo(System.out)
+                        .getExitValue() == 0);
     }
 }
