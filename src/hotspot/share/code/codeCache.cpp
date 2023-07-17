@@ -324,7 +324,13 @@ void CodeCache::initialize_heaps() {
         align_up(profiled_size, ps) +
         align_up(non_profiled_size, ps) > cache_size) {
       ps = os::page_sizes().next_smaller(ps);
-      log_warning(codecache)("Failed to reserve large page memory for segmented code cache");
+      char msg[256];
+      jio_snprintf(msg, sizeof(msg), "Failed to reserve large page memory for segmented code cache (" SIZE_FORMAT "%s). "
+                                     "Reverting to smaller page size (" SIZE_FORMAT "%s).",
+                   byte_size_in_exact_unit(page_size()), exact_unit_for_byte_size(page_size()),
+                   byte_size_in_exact_unit(ps), exact_unit_for_byte_size(ps));
+      log_warning(codecache)("%s", msg);
+      warning("%s", msg);
     }
   }
 
