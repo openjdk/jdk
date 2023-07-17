@@ -352,6 +352,9 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * character devices are available to the {@code Console}. Otherwise it could
      * mean that the implementation of the {@code Console} may simulate those
      * devices within.
+     * @implNote The default implementation returns the value equivalent to calling
+     * `isatty(stdin/stdout)` on Unix platforms, or whether standard in/out file
+     * descriptors are character devices or not on Windows.
      *
      * @since 22
      */
