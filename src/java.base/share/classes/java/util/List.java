@@ -888,8 +888,14 @@ public interface List<E> extends SequencedCollection<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this interface returns an instance of a reverse-ordered
-     * List that delegates its operations to this List.
+     * The implementation in this interface returns a reverse-ordered List
+     * view. The {@code reversed()} method of the view returns a reference
+     * to this List. Other operations on the view are implemented via calls to
+     * public methods on this List. The exact relationship between calls on the
+     * view and calls on this List is unspecified. However, order-sensitive
+     * operations generally delegate to the appropriate method with the opposite
+     * orientation. For example, calling {@code getFirst} on the view results in
+     * a call to {@code getLast} on this List.
      *
      * @return a reverse-ordered view of this collection, as a {@code List}
      * @since 21

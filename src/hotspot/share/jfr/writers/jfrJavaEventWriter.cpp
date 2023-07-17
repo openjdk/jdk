@@ -37,6 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/interfaceSupport.inline.hpp"
 #include "runtime/jniHandles.inline.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/threads.hpp"
@@ -45,7 +46,6 @@ static int start_pos_offset = invalid_offset;
 static int start_pos_address_offset = invalid_offset;
 static int current_pos_offset = invalid_offset;
 static int max_pos_offset = invalid_offset;
-static int notified_offset = invalid_offset;
 static int excluded_offset = invalid_offset;
 static int thread_id_offset = invalid_offset;
 static int valid_offset = invalid_offset;
@@ -64,13 +64,6 @@ static bool setup_event_writer_offsets(TRAPS) {
   JfrJavaSupport::compute_field_offset(start_pos_offset, klass, start_pos_sym, vmSymbols::long_signature());
   assert(start_pos_offset != invalid_offset, "invariant");
 
-  const char start_pos_address_name[] = "startPositionAddress";
-  Symbol* const start_pos_address_sym = SymbolTable::new_symbol(start_pos_address_name);
-  assert(start_pos_address_sym != nullptr, "invariant");
-  assert(invalid_offset == start_pos_address_offset, "invariant");
-  JfrJavaSupport::compute_field_offset(start_pos_address_offset, klass, start_pos_address_sym, vmSymbols::long_signature());
-  assert(start_pos_address_offset != invalid_offset, "invariant");
-
   const char event_pos_name[] = "currentPosition";
   Symbol* const event_pos_sym = SymbolTable::new_symbol(event_pos_name);
   assert(event_pos_sym != nullptr, "invariant");
@@ -84,13 +77,6 @@ static bool setup_event_writer_offsets(TRAPS) {
   assert(invalid_offset == max_pos_offset, "invariant");
   JfrJavaSupport::compute_field_offset(max_pos_offset, klass, max_pos_sym, vmSymbols::long_signature());
   assert(max_pos_offset != invalid_offset, "invariant");
-
-  const char notified_name[] = "notified";
-  Symbol* const notified_sym = SymbolTable::new_symbol(notified_name);
-  assert (notified_sym != nullptr, "invariant");
-  assert(invalid_offset == notified_offset, "invariant");
-  JfrJavaSupport::compute_field_offset(notified_offset, klass, notified_sym, vmSymbols::bool_signature());
-  assert(notified_offset != invalid_offset, "invariant");
 
   const char excluded_name[] = "excluded";
   Symbol* const excluded_sym = SymbolTable::new_symbol(excluded_name);
@@ -123,11 +109,9 @@ bool JfrJavaEventWriter::initialize() {
   return initialized;
 }
 
-jboolean JfrJavaEventWriter::flush(jobject writer, jint used, jint requested, JavaThread* jt) {
-  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
+void JfrJavaEventWriter::flush(jobject writer, jint used, jint requested, JavaThread* jt) {
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
   assert(writer != nullptr, "invariant");
-  oop const w = JNIHandles::resolve_non_null(writer);
-  assert(w != nullptr, "invariant");
   JfrBuffer* const current = jt->jfr_thread_local()->java_buffer();
   assert(current != nullptr, "invariant");
   JfrBuffer* const buffer = JfrStorage::flush(current, used, requested, false, jt);
@@ -138,23 +122,48 @@ jboolean JfrJavaEventWriter::flush(jobject writer, jint used, jint requested, Ja
   const bool is_valid = buffer->free_size() >= (size_t)(used + requested);
   u1* const new_current_position = is_valid ? buffer->pos() + used : buffer->pos();
   assert(start_pos_offset != invalid_offset, "invariant");
+  // can safepoint here
+  ThreadInVMfromNative transition(jt);
+  oop const w = JNIHandles::resolve_non_null(writer);
+  assert(w != nullptr, "invariant");
   w->long_field_put(start_pos_offset, (jlong)buffer->pos());
   w->long_field_put(current_pos_offset, (jlong)new_current_position);
   // only update java writer if underlying memory changed
   if (buffer != current) {
-    w->long_field_put(start_pos_address_offset, (jlong)buffer->pos_address());
     w->long_field_put(max_pos_offset, (jlong)buffer->end());
   }
   if (!is_valid) {
     // mark writer as invalid for this write attempt
     w->release_bool_field_put(valid_offset, JNI_FALSE);
-    return JNI_FALSE;
   }
-  // An exclusive use of a leased buffer is treated equivalent to
-  // holding a system resource. As such, it should be released as soon as possible.
-  // Returning true here signals that the thread will need to call flush again
-  // on EventWriter.endEvent() and that flush will return the lease.
-  return buffer->lease() ? JNI_TRUE : JNI_FALSE;
+}
+
+jlong JfrJavaEventWriter::commit(jlong next_position) {
+  assert(next_position != 0, "invariant");
+  JavaThread* const jt = JavaThread::current();
+  assert(jt != nullptr, "invariant");
+  DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_native(jt));
+  JfrThreadLocal* const tl = jt->jfr_thread_local();
+  assert(tl != nullptr, "invariant");
+  assert(tl->has_java_event_writer(), "invariant");
+  assert(tl->has_java_buffer(), "invariant");
+  JfrBuffer* const current = tl->java_buffer();
+  assert(current != nullptr, "invariant");
+  u1* const next = reinterpret_cast<u1*>(next_position);
+  assert(next >= current->start(), "invariant");
+  assert(next <= current->end(), "invariant");
+  if (tl->is_notified()) {
+    tl->clear_notification();
+    return reinterpret_cast<jlong>(current->pos());
+  }
+  // set_pos() has release semantics
+  current->set_pos(next);
+  if (!current->lease()) {
+    return next_position;
+  }
+  assert(current->lease(), "invariant");
+  flush(tl->java_event_writer(), 0, 0, jt);
+  return 0; // signals that the buffer lease was returned.
 }
 
 class JfrJavaEventWriterNotificationClosure : public ThreadClosure {
@@ -198,9 +207,14 @@ void JfrJavaEventWriter::notify(JavaThread* jt) {
   assert(jt != nullptr, "invariant");
   assert(SafepointSynchronize::is_at_safepoint(), "invariant");
   if (jt->jfr_thread_local()->has_java_event_writer()) {
-    oop buffer_writer = JNIHandles::resolve_non_null(jt->jfr_thread_local()->java_event_writer());
-    assert(buffer_writer != nullptr, "invariant");
-    buffer_writer->release_bool_field_put(notified_offset, JNI_TRUE);
+    JfrThreadLocal* const tl = jt->jfr_thread_local();
+    assert(tl != nullptr, "invariant");
+    oop event_writer = JNIHandles::resolve_non_null(tl->java_event_writer());
+    assert(event_writer != nullptr, "invariant");
+    const jlong start_pos = event_writer->long_field(start_pos_offset);
+    if (event_writer->long_field(current_pos_offset) > start_pos) {
+      tl->notify();
+    }
   }
 }
 
@@ -210,14 +224,13 @@ static jobject create_new_event_writer(JfrBuffer* buffer, JfrThreadLocal* tl, TR
   HandleMark hm(THREAD);
   static const char klass[] = "jdk/jfr/internal/event/EventWriter";
   static const char method[] = "<init>";
-  static const char signature[] = "(JJJJZZ)V";
+  static const char signature[] = "(JJJZZ)V";
   JavaValue result(T_OBJECT);
   JfrJavaArguments args(&result, klass, method, signature, CHECK_NULL);
 
   // parameters
   args.push_long((jlong)buffer->pos());
   args.push_long((jlong)buffer->end());
-  args.push_long((jlong)buffer->pos_address());
   args.push_long((jlong)JfrThreadLocal::thread_id(THREAD));
   args.push_int((jint)JNI_TRUE); // valid
   args.push_int(tl->is_excluded() ? (jint)JNI_TRUE : (jint)JNI_FALSE); // excluded
@@ -228,7 +241,6 @@ static jobject create_new_event_writer(JfrBuffer* buffer, JfrThreadLocal* tl, TR
 jobject JfrJavaEventWriter::event_writer(JavaThread* jt) {
   DEBUG_ONLY(JfrJavaSupport::check_java_thread_in_vm(jt));
   JfrThreadLocal* const tl = jt->jfr_thread_local();
-  assert(tl->shelved_buffer() == nullptr, "invariant");
   jobject h_writer = tl->java_event_writer();
   if (h_writer != nullptr) {
     oop writer = JNIHandles::resolve_non_null(h_writer);

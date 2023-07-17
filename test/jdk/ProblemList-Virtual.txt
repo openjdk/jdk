@@ -44,7 +44,9 @@ javax/management/remote/mandatory/loading/RMIDownloadTest.java 8308366 windows-x
 
 java/lang/instrument/NativeMethodPrefixAgent.java 8307169 generic-all
 
-java/lang/ScopedValue/StressStackOverflow.java#default 8309646 linux-all
+java/lang/ScopedValue/StressStackOverflow.java#default 8309646 generic-all
+java/lang/ScopedValue/StressStackOverflow.java#no-TieredCompilation 8309646 generic-all
+java/lang/ScopedValue/StressStackOverflow.java#TieredStopAtLevel1 8309646 generic-all
 
 javax/management/remote/mandatory/connection/DeadLockTest.java 8309069 windows-x64
 

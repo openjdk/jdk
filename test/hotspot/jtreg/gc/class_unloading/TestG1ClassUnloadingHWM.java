@@ -126,4 +126,3 @@ public class TestG1ClassUnloadingHWM {
     }
   }
 }
-

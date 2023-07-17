@@ -1988,7 +1988,7 @@ void AwtToolkit::SetHeapCheck(long flag) {
     }
 }
 
-void throw_if_shutdown(void) throw (awt_toolkit_shutdown)
+void throw_if_shutdown(void)
 {
     AwtToolkit::GetInstance().VerifyActive();
 }
