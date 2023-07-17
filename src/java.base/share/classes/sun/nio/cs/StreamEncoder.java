@@ -430,15 +430,8 @@ public final class StreamEncoder extends Writer {
 
             if (bb.position() > 0)
                 writeBytes();
-            if (ch != null)
-                ch.close();
-            else {
-                try {
-                    out.flush();
-                } finally {
-                    out.close();
-                }
-            }
+            if (out != null)
+                out.flush();
         } catch (IOException x) {
             encoder.reset();
             throw x;
