@@ -167,7 +167,7 @@ import jdk.internal.misc.Unsafe;
 
     // Returns the platform defined page size, which could be different from the one Bits.pageSize
     // is aware of. If no implementation is provided, return Bits.pageSize instead.
-    private static ing pageSize() {
+    private static int pageSize() {
         int ps = pageSize0();
         if (ps > 0) {
             return ps;
