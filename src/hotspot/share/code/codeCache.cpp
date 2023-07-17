@@ -317,6 +317,17 @@ void CodeCache::initialize_heaps() {
   profiled_size    = align_down(profiled_size, alignment);
   non_profiled_size = align_down(non_profiled_size, alignment);
 
+  // Check that code heap segments fit in cache when using large pages
+  size_t ps = page_size();
+  if (UseLargePages) {
+    if (align_up(non_nmethod_size, ps) +
+        align_up(profiled_size, ps) +
+        align_up(non_profiled_size, ps) > cache_size) {
+      ps = os::page_sizes().next_smaller(ps);
+      log_warning(codecache)("Failed to reserve large page memory for segmented code cache");
+    }
+  }
+
   // Reserve one continuous chunk of memory for CodeHeaps and split it into
   // parts for the individual heaps. The memory layout looks like this:
   // ---------- high -----------
@@ -324,7 +335,7 @@ void CodeCache::initialize_heaps() {
   //         Non-nmethods
   //      Profiled nmethods
   // ---------- low ------------
-  ReservedCodeSpace rs = reserve_heap_memory(cache_size);
+  ReservedCodeSpace rs = reserve_heap_memory(cache_size, ps);
   ReservedSpace profiled_space      = rs.first_part(profiled_size);
   ReservedSpace rest                = rs.last_part(profiled_size);
   ReservedSpace non_method_space    = rest.first_part(non_nmethod_size);
@@ -354,12 +365,11 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
   }
 }
 
-ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
+ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t page_size) {
   // Align and reserve space for code cache
-  const size_t rs_ps = page_size();
-  const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
+  const size_t rs_align = MAX2(page_size, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
-  ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
+  ReservedCodeSpace rs(rs_size, rs_align, page_size);
   if (!rs.is_reserved()) {
     vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache (" SIZE_FORMAT "K)",
                                           rs_size/K));

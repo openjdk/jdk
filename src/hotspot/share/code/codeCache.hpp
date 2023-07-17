@@ -121,7 +121,10 @@ class CodeCache : AllStatic {
   static CodeHeap* get_code_heap(CodeBlobType code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
   // Returns the name of the VM option to set the size of the corresponding CodeHeap
   static const char* get_code_heap_flag_name(CodeBlobType code_blob_type);
-  static ReservedCodeSpace reserve_heap_memory(size_t size);  // Reserves one continuous chunk of memory for the CodeHeaps
+  static ReservedCodeSpace reserve_heap_memory(size_t size, size_t page_size);  // Reserves one continuous chunk of memory for the CodeHeaps
+  static ReservedCodeSpace reserve_heap_memory(size_t size) { // Calls the above with current page size
+    return reserve_heap_memory(size, page_size());
+  };
 
   // Iteration
   static CodeBlob* first_blob(CodeHeap* heap);                // Returns the first CodeBlob on the given CodeHeap
