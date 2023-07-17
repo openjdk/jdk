@@ -618,7 +618,7 @@ public class AttributedString {
                 int currIndex = runIndex;
                 int runStart = runStarts[currIndex];
                 while (runStart >= beginIndex &&
-                        valuesMatch(value, getAttribute(attribute, currIndex - 1))) {
+                        Objects.equals(value, getAttribute(attribute, currIndex - 1))) {
                     currIndex--;
                     runStart = runStarts[currIndex];
                 }
@@ -632,7 +632,7 @@ public class AttributedString {
                 int currIndex = runIndex;
                 int runLimit = (currIndex < runCount - 1) ? runStarts[currIndex + 1] : textLength;
                 while (runLimit <= endIndex &&
-                        valuesMatch(value, getAttribute(attribute, currIndex + 1))) {
+                        Objects.equals(value, getAttribute(attribute, currIndex + 1))) {
                     currIndex++;
                     runLimit = (currIndex < runCount - 1) ? runStarts[currIndex + 1] : textLength;
                 }
@@ -650,16 +650,11 @@ public class AttributedString {
     // returns whether all specified attributes have equal values in the runs with the given indices
     private boolean attributeValuesMatch(Set<? extends Attribute> attributes, int runIndex1, int runIndex2) {
         for (Attribute key : attributes) {
-            if (!valuesMatch(getAttribute(key, runIndex1), getAttribute(key, runIndex2))) {
+            if (!Objects.equals(getAttribute(key, runIndex1), getAttribute(key, runIndex2))) {
                 return false;
             }
         }
         return true;
-    }
-
-    // returns whether the two objects are either both null or equal
-    private static boolean valuesMatch(Object value1, Object value2) {
-        return Objects.equals(value1, value2);
     }
 
     /**
@@ -859,7 +854,7 @@ public class AttributedString {
                 int runStart = currentRunStart;
                 int runIndex = currentRunIndex;
                 while (runStart > beginIndex &&
-                        valuesMatch(value, AttributedString.this.getAttribute(attribute, runIndex - 1))) {
+                        Objects.equals(value, AttributedString.this.getAttribute(attribute, runIndex - 1))) {
                     runIndex--;
                     runStart = runStarts[runIndex];
                 }
@@ -900,7 +895,7 @@ public class AttributedString {
                 int runLimit = currentRunLimit;
                 int runIndex = currentRunIndex;
                 while (runLimit < endIndex &&
-                        valuesMatch(value, AttributedString.this.getAttribute(attribute, runIndex + 1))) {
+                        Objects.equals(value, AttributedString.this.getAttribute(attribute, runIndex + 1))) {
                     runIndex++;
                     runLimit = runIndex < runCount - 1 ? runStarts[runIndex + 1] : endIndex;
                 }
