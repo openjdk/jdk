@@ -354,7 +354,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
      * devices within.
      *
      * @implNote The default implementation returns the value equivalent to calling
-     * {@code isatty(stdin/stdout)} on Unix platforms, or whether standard in/out file
+     * {@code isatty(stdin/stdout)} on POSIX platforms, or whether standard in/out file
      * descriptors are character devices or not on Windows.
      *
      * @since 22
