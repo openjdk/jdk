@@ -26,12 +26,12 @@
 package jdk.internal.foreign;
 
 import java.lang.foreign.MemorySegment;
-import java.lang.foreign.ValueLayout;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 import static java.lang.foreign.ValueLayout.JAVA_SHORT;
+import static java.lang.foreign.ValueLayout.JAVA_INT;
 
 /**
  * Miscellaneous functions to read and write strings, in various charsets.
@@ -41,6 +41,7 @@ public class StringSupport {
         return switch (CharsetKind.of(charset)) {
             case SINGLE_BYTE -> readFast_byte(segment, offset, charset);
             case DOUBLE_BYTE -> readFast_short(segment, offset, charset);
+            case QUAD_BYTE -> readFast_int(segment, offset, charset);
             default -> throw new UnsupportedOperationException("Unsupported charset: " + charset);
         };
     }
@@ -49,26 +50,27 @@ public class StringSupport {
         switch (CharsetKind.of(charset)) {
             case SINGLE_BYTE -> writeFast_byte(segment, offset, charset, string);
             case DOUBLE_BYTE -> writeFast_short(segment, offset, charset, string);
+            case QUAD_BYTE -> writeFast_int(segment, offset, charset, string);
             default -> throw new UnsupportedOperationException("Unsupported charset: " + charset);
         }
     }
     private static String readFast_byte(MemorySegment segment, long offset, Charset charset) {
         long len = strlen_byte(segment, offset);
         byte[] bytes = new byte[(int)len];
-        MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, offset, bytes, 0, (int)len);
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, (int)len);
         return new String(bytes, charset);
     }
 
     private static void writeFast_byte(MemorySegment segment, long offset, Charset charset, String string) {
         byte[] bytes = string.getBytes(charset);
-        MemorySegment.copy(bytes, 0, segment, ValueLayout.JAVA_BYTE, offset, bytes.length);
-        segment.set(ValueLayout.JAVA_BYTE, offset + bytes.length, (byte)0);
+        MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
+        segment.set(JAVA_BYTE, offset + bytes.length, (byte)0);
     }
 
     private static String readFast_short(MemorySegment segment, long offset, Charset charset) {
         long len = strlen_short(segment, offset);
         byte[] bytes = new byte[(int)len];
-        MemorySegment.copy(segment, ValueLayout.JAVA_BYTE, offset, bytes, 0, (int)len);
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, (int)len);
         return new String(bytes, charset);
     }
 
@@ -76,6 +78,19 @@ public class StringSupport {
         byte[] bytes = string.getBytes(charset);
         MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
         segment.set(JAVA_SHORT, offset + bytes.length, (short)0);
+    }
+
+    private static String readFast_int(MemorySegment segment, long offset, Charset charset) {
+        long len = strlen_int(segment, offset);
+        byte[] bytes = new byte[(int)len];
+        MemorySegment.copy(segment, JAVA_BYTE, offset, bytes, 0, (int)len);
+        return new String(bytes, charset);
+    }
+
+    private static void writeFast_int(MemorySegment segment, long offset, Charset charset, String string) {
+        byte[] bytes = string.getBytes(charset);
+        MemorySegment.copy(bytes, 0, segment, JAVA_BYTE, offset, bytes.length);
+        segment.set(JAVA_INT, offset + bytes.length, 0);
     }
 
     private static int strlen_byte(MemorySegment segment, long start) {
@@ -100,9 +115,21 @@ public class StringSupport {
         throw new IllegalArgumentException("String too large");
     }
 
+    private static int strlen_int(MemorySegment segment, long start) {
+        // iterate until overflow (String can only hold a byte[], whose length can be expressed as an int)
+        for (int offset = 0; offset >= 0; offset += 4) {
+            int curr = segment.get(JAVA_INT, start + offset);
+            if (curr == 0) {
+                return offset;
+            }
+        }
+        throw new IllegalArgumentException("String too large");
+    }
+
     public enum CharsetKind {
         SINGLE_BYTE(1),
-        DOUBLE_BYTE(2);
+        DOUBLE_BYTE(2),
+        QUAD_BYTE(4);
 
         final int terminatorCharSize;
 
@@ -119,6 +146,8 @@ public class StringSupport {
                 return CharsetKind.SINGLE_BYTE;
             } else if (charset == StandardCharsets.UTF_16LE || charset == StandardCharsets.UTF_16BE || charset == StandardCharsets.UTF_16) {
                 return CharsetKind.DOUBLE_BYTE;
+            } else if (charset == StandardCharsets.UTF_32LE || charset == StandardCharsets.UTF_32BE || charset == StandardCharsets.UTF_32) {
+                return CharsetKind.QUAD_BYTE;
             } else {
                 throw new UnsupportedOperationException("Unsupported charset: " + charset);
             }

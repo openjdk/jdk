@@ -51,6 +51,9 @@ public class TestStringEncoding {
                     if (charset == StandardCharsets.UTF_16) {
                         terminatorSize -= 2; // drop BOM
                     }
+                    // Note that the JDK's UTF_32 encoder doesn't add a BOM.
+                    // This is legal under the Unicode standard, and means the byte order is BE.
+                    // See: https://unicode.org/faq/utf_bom.html#gen7
 
                     int expectedByteLength =
                             testString.getBytes(charset).length +
