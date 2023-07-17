@@ -109,6 +109,7 @@
 #include "runtime/vframeArray.hpp"
 #include "runtime/vmStructs.hpp"
 #include "runtime/vm_version.hpp"
+#include "services/attachListener.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/vmError.hpp"
@@ -1248,6 +1249,7 @@
         declare_type(NotificationThread, JavaThread)                      \
         declare_type(CompilerThread, JavaThread)                          \
         declare_type(StringDedupThread, JavaThread)                       \
+        declare_type(AttachListenerThread, JavaThread)                    \
   declare_toplevel_type(OSThread)                                         \
   declare_toplevel_type(JavaFrameAnchor)                                  \
                                                                           \
