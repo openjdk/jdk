@@ -32,7 +32,7 @@
  *          "hı-deva", where 'ı' is the LATIN SMALL LETTER DOTLESS I character
  *          which is not allowed in the language ranges/tags.
  * @compile -encoding utf-8 Bug8159420.java
- * @run junit Bug8159420
+ * @run junit/othervm -Duser.language=tr -Duser.country=TR Bug8159420
  */
 
 import java.util.ArrayList;
@@ -48,7 +48,6 @@ import java.util.stream.Stream;
 import static java.util.Locale.FilteringMode.EXTENDED_FILTERING;
 import static java.util.Locale.FilteringMode.AUTOSELECT_FILTERING;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -60,12 +59,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class Bug8159420 {
-
-    // Ensure all tests run with a Turkish Locale
-    @BeforeAll
-    static void setTurkishLocale() {
-        Locale.setDefault(Locale.of("tr", "TR"));
-    }
 
     /*
      * Ensure parse() does not throw IllegalArgumentException for the Turkish Locale
