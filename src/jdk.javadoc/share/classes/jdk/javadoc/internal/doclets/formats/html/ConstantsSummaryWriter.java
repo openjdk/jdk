@@ -59,7 +59,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 /**
  * Write the Constants Summary Page in HTML format.
  */
-public class ConstantsSummaryWriterImpl extends HtmlDocletWriter {
+public class ConstantsSummaryWriter extends HtmlDocletWriter {
 
     /**
      * The maximum number of package directories shown in the headings of
@@ -103,7 +103,7 @@ public class ConstantsSummaryWriterImpl extends HtmlDocletWriter {
      * @param configuration the configuration used in this run
      *        of the standard doclet.
      */
-    public ConstantsSummaryWriterImpl(HtmlConfiguration configuration) {
+    public ConstantsSummaryWriter(HtmlConfiguration configuration) {
         super(configuration, DocPaths.CONSTANT_VALUES, false);
         constantsTableHeader = new TableHeader(
                 contents.modifierAndTypeLabel, contents.constantFieldLabel, contents.valueLabel);

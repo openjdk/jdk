@@ -50,7 +50,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 /**
  * Writes method documentation in HTML format.
  */
-public class MethodWriterImpl extends AbstractExecutableMemberWriter {
+public class MethodWriter extends AbstractExecutableMemberWriter {
 
     /**
      * The index of the current field that is being documented at this point
@@ -63,7 +63,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter {
      *
      * @param writer the writer for the class that the methods belong to.\
      */
-    public MethodWriterImpl(ClassWriterImpl writer) {
+    public MethodWriter(ClassWriter writer) {
         super(writer, writer.typeElement);
     }
 
@@ -73,7 +73,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter {
      * @param writer the writer for the class that the methods belong to.
      * @param typeElement the class
      */
-    public MethodWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
+    public MethodWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
     }
 
@@ -83,7 +83,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter {
      * @param writer The writer for the class that the methods belong to.
      */
     // used in ClassUseWriter and SummaryUseWriter
-    public MethodWriterImpl(SubWriterHolderWriter writer) {
+    public MethodWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
 

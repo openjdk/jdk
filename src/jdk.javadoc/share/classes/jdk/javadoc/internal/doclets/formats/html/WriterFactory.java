@@ -31,7 +31,6 @@ import javax.lang.model.element.ModuleElement;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 
-import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
@@ -39,69 +38,69 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
  * The factory that returns HTML writers.
  */
 // TODO: be more consistent about using this factory
-public class WriterFactoryImpl {
+public class WriterFactory {
 
     private final HtmlConfiguration configuration;
-    public WriterFactoryImpl(HtmlConfiguration configuration) {
+    public WriterFactory(HtmlConfiguration configuration) {
         this.configuration = configuration;
     }
 
-    public ConstantsSummaryWriterImpl getConstantsSummaryWriter() {
-        return new ConstantsSummaryWriterImpl(configuration);
+    public ConstantsSummaryWriter getConstantsSummaryWriter() {
+        return new ConstantsSummaryWriter(configuration);
     }
 
-    public PackageWriterImpl getPackageSummaryWriter(PackageElement packageElement) {
-        return new PackageWriterImpl(configuration, packageElement);
+    public PackageWriter getPackageSummaryWriter(PackageElement packageElement) {
+        return new PackageWriter(configuration, packageElement);
     }
 
-    public ModuleWriterImpl getModuleSummaryWriter(ModuleElement mdle) {
-        return new ModuleWriterImpl(configuration, mdle);
+    public ModuleWriter getModuleSummaryWriter(ModuleElement mdle) {
+        return new ModuleWriter(configuration, mdle);
     }
 
-    public ClassWriterImpl getClassWriter(TypeElement typeElement, ClassTree classTree) {
-        return new ClassWriterImpl(configuration, typeElement, classTree);
+    public ClassWriter getClassWriter(TypeElement typeElement, ClassTree classTree) {
+        return new ClassWriter(configuration, typeElement, classTree);
     }
 
-    public AnnotationTypeMemberWriterImpl getAnnotationTypeMemberWriter(
-            ClassWriterImpl classWriter) {
+    public AnnotationTypeMemberWriter getAnnotationTypeMemberWriter(
+            ClassWriter classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriterImpl(classWriter, te, AnnotationTypeMemberWriterImpl.Kind.ANY);
+        return new AnnotationTypeMemberWriter(classWriter, te, AnnotationTypeMemberWriter.Kind.ANY);
     }
 
-    public AnnotationTypeMemberWriterImpl getAnnotationTypeOptionalMemberWriter(
-            ClassWriterImpl classWriter) {
+    public AnnotationTypeMemberWriter getAnnotationTypeOptionalMemberWriter(
+            ClassWriter classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriterImpl(classWriter, te, AnnotationTypeMemberWriterImpl.Kind.OPTIONAL);
+        return new AnnotationTypeMemberWriter(classWriter, te, AnnotationTypeMemberWriter.Kind.OPTIONAL);
     }
 
-    public AnnotationTypeMemberWriterImpl getAnnotationTypeRequiredMemberWriter(
-            ClassWriterImpl classWriter) {
+    public AnnotationTypeMemberWriter getAnnotationTypeRequiredMemberWriter(
+            ClassWriter classWriter) {
         TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriterImpl(classWriter, te, AnnotationTypeMemberWriterImpl.Kind.REQUIRED);
+        return new AnnotationTypeMemberWriter(classWriter, te, AnnotationTypeMemberWriter.Kind.REQUIRED);
     }
 
-    public EnumConstantWriterImpl getEnumConstantWriter(ClassWriterImpl classWriter) {
-        return new EnumConstantWriterImpl(classWriter);
+    public EnumConstantWriter getEnumConstantWriter(ClassWriter classWriter) {
+        return new EnumConstantWriter(classWriter);
     }
 
-    public FieldWriterImpl getFieldWriter(ClassWriterImpl classWriter) {
-        return new FieldWriterImpl(classWriter);
+    public FieldWriter getFieldWriter(ClassWriter classWriter) {
+        return new FieldWriter(classWriter);
     }
 
-    public PropertyWriterImpl getPropertyWriter(ClassWriterImpl classWriter) {
-        return new PropertyWriterImpl(classWriter);
+    public PropertyWriter getPropertyWriter(ClassWriter classWriter) {
+        return new PropertyWriter(classWriter);
     }
 
-    public MethodWriterImpl getMethodWriter(ClassWriterImpl classWriter) {
-        return new MethodWriterImpl(classWriter);
+    public MethodWriter getMethodWriter(ClassWriter classWriter) {
+        return new MethodWriter(classWriter);
     }
 
-    public ConstructorWriterImpl getConstructorWriter(ClassWriterImpl classWriter) {
-        return new ConstructorWriterImpl(classWriter);
+    public ConstructorWriter getConstructorWriter(ClassWriter classWriter) {
+        return new ConstructorWriter(classWriter);
     }
 
-    public AbstractMemberWriter getMemberSummaryWriter(ClassWriterImpl classWriter,
-            VisibleMemberTable.Kind memberType) {
+    public AbstractMemberWriter getMemberSummaryWriter(ClassWriter classWriter,
+                                                       VisibleMemberTable.Kind memberType) {
         switch (memberType) {
             case CONSTRUCTORS:
                 return getConstructorWriter(classWriter);
@@ -116,7 +115,7 @@ public class WriterFactoryImpl {
             case PROPERTIES:
                 return getPropertyWriter(classWriter);
             case NESTED_CLASSES:
-                return new NestedClassWriterImpl(classWriter, classWriter.getTypeElement());
+                return new NestedClassWriter(classWriter, classWriter.getTypeElement());
             case METHODS:
                 return getMethodWriter(classWriter);
             default:
@@ -124,11 +123,11 @@ public class WriterFactoryImpl {
         }
     }
 
-    public SerializedFormWriterImpl getSerializedFormWriter() {
-        return new SerializedFormWriterImpl(configuration);
+    public SerializedFormWriter getSerializedFormWriter() {
+        return new SerializedFormWriter(configuration);
     }
 
     public DocFilesHandler getDocFilesHandler(Element element) {
-        return new DocFilesHandlerImpl(configuration, element);
+        return new DocFilesHandler(configuration, element);
     }
 }

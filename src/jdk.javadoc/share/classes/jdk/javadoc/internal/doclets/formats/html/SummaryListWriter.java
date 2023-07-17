@@ -254,11 +254,11 @@ public abstract class SummaryListWriter<B extends SummaryAPIListBuilder> extends
         //       also maybe notable that annotation type members are not handled as such
         AbstractMemberWriter writer = switch (e.getKind()) {
             case INTERFACE, CLASS, ENUM,
-                 ANNOTATION_TYPE, RECORD -> new NestedClassWriterImpl(this);
-            case FIELD -> new FieldWriterImpl(this);
-            case METHOD -> new MethodWriterImpl(this);
-            case CONSTRUCTOR -> new ConstructorWriterImpl(this);
-            case ENUM_CONSTANT -> new EnumConstantWriterImpl(this);
+                 ANNOTATION_TYPE, RECORD -> new NestedClassWriter(this);
+            case FIELD -> new FieldWriter(this);
+            case METHOD -> new MethodWriter(this);
+            case CONSTRUCTOR -> new ConstructorWriter(this);
+            case ENUM_CONSTANT -> new EnumConstantWriter(this);
             case RECORD_COMPONENT ->
                 throw new AssertionError("Record components are not supported by SummaryListWriter!");
             default ->

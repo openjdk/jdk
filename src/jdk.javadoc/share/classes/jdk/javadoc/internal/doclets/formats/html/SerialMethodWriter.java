@@ -39,9 +39,9 @@ import jdk.javadoc.internal.doclets.formats.html.taglets.TagletManager;
  * Generate serialized form for Serializable/Externalizable methods.
  * Documentation denoted by the <code>serialData</code> tag is processed.
  */
-public class HtmlSerialMethodWriter extends MethodWriterImpl {
+public class SerialMethodWriter extends MethodWriter {
 
-    public HtmlSerialMethodWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
+    public SerialMethodWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
     }
 

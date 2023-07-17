@@ -48,7 +48,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -60,7 +59,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * frame. This will list all the Class Kinds in the package. A click on any
  * class-kind will update the frame with the clicked class-kind page.
  */
-public class PackageWriterImpl extends HtmlDocletWriter {
+public class PackageWriter extends HtmlDocletWriter {
 
     /**
      * The package being documented.
@@ -93,7 +92,7 @@ public class PackageWriterImpl extends HtmlDocletWriter {
      * @param configuration the configuration of the doclet.
      * @param packageElement    PackageElement under consideration.
      */
-    public PackageWriterImpl(HtmlConfiguration configuration, PackageElement packageElement) {
+    public PackageWriter(HtmlConfiguration configuration, PackageElement packageElement) {
         super(configuration,
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
@@ -122,7 +121,7 @@ public class PackageWriterImpl extends HtmlDocletWriter {
 
         addPackageFooter();
         printDocument(content);
-        DocFilesHandler docFilesHandler = configuration
+        var docFilesHandler = configuration
                 .getWriterFactory()
                 .getDocFilesHandler(packageElement);
         docFilesHandler.copyDocFiles();

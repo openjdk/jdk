@@ -318,10 +318,10 @@ public class HtmlDocletWriter {
             //   for these methods:
             //     * ForkJoinPool.execute(java.lang.Runnable)
             //  This is a long-standing bug, which must be fixed separately: JDK-8302316
-            MethodWriterImpl.addImplementsInfo(this, method, implementedMethods, dl);
+            MethodWriter.addImplementsInfo(this, method, implementedMethods, dl);
         }
         if (overrideInfo != null) {
-            MethodWriterImpl.addOverridden(this,
+            MethodWriter.addOverridden(this,
                     overrideInfo.overriddenMethodOwner(),
                     overrideInfo.overriddenMethod(),
                     dl);
@@ -1494,9 +1494,9 @@ public class HtmlDocletWriter {
         // in their respective writers, but other uses of the method are only interested in TypeElements.
         Element currentPageElement = getCurrentPageElement();
         if (currentPageElement == null) {
-            if (this instanceof PackageWriterImpl packageWriter) {
+            if (this instanceof PackageWriter packageWriter) {
                 currentPageElement = packageWriter.packageElement;
-            } else if (this instanceof ModuleWriterImpl moduleWriter) {
+            } else if (this instanceof ModuleWriter moduleWriter) {
                 currentPageElement = moduleWriter.mdle;
             }
         }
@@ -1529,7 +1529,7 @@ public class HtmlDocletWriter {
      * element of this writer.
      */
     private boolean inSamePackage(Element element) {
-        Element currentPageElement = (this instanceof PackageWriterImpl packageWriter)
+        Element currentPageElement = (this instanceof PackageWriter packageWriter)
                 ? packageWriter.packageElement : getCurrentPageElement();
         return currentPageElement != null && !utils.isModule(element)
                 && Objects.equals(utils.containingPackage(currentPageElement),
@@ -2036,7 +2036,7 @@ public class HtmlDocletWriter {
     private List<DocPath> getStylesheets(Element element) throws DocFileIOException {
         List<DocPath> localStylesheets = configuration.localStylesheetMap.get(element);
         if (localStylesheets == null) {
-            DocFilesHandlerImpl docFilesHandler = (DocFilesHandlerImpl)configuration
+            DocFilesHandler docFilesHandler = (DocFilesHandler)configuration
                     .getWriterFactory().getDocFilesHandler(element);
             localStylesheets = docFilesHandler.getStylesheets();
             configuration.localStylesheetMap.put(element, localStylesheets);

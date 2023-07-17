@@ -47,7 +47,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 /**
  * Writes property documentation in HTML format.
  */
-public class PropertyWriterImpl extends AbstractMemberWriter {
+public class PropertyWriter extends AbstractMemberWriter {
 
     /**
      * The index of the current property that is being documented at this point
@@ -55,7 +55,7 @@ public class PropertyWriterImpl extends AbstractMemberWriter {
      */
     private ExecutableElement currentProperty;
 
-    public PropertyWriterImpl(ClassWriterImpl writer) {
+    public PropertyWriter(ClassWriter writer) {
         super(writer, writer.typeElement);
     }
 

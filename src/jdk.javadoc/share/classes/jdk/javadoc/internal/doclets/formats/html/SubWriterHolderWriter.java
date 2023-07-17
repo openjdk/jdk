@@ -48,7 +48,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
  * class subclass of this class can be subclassed to change formatting.
  *
  * @see AbstractMemberWriter
- * @see ClassWriterImpl
+ * @see ClassWriter
  */
 public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 

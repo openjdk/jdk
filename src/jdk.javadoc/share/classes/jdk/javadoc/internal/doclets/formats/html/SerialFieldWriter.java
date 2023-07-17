@@ -47,9 +47,9 @@ import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
  * Documentation denoted by the tags <code>serial</code> and
  * <code>serialField</code> is processed.
  */
-public class HtmlSerialFieldWriter extends FieldWriterImpl {
+public class SerialFieldWriter extends FieldWriter {
 
-    public HtmlSerialFieldWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
+    public SerialFieldWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
     }
 

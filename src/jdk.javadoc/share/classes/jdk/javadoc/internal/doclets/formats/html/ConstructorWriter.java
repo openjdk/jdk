@@ -47,7 +47,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 /**
  * Writes constructor documentation.
  */
-public class ConstructorWriterImpl extends AbstractExecutableMemberWriter {
+public class ConstructorWriter extends AbstractExecutableMemberWriter {
 
     /**
      * The current constructor that is being documented at this point in time.
@@ -61,7 +61,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter {
      *
      * @param writer The writer for the class that the constructors belong to.
      */
-    public ConstructorWriterImpl(ClassWriterImpl writer) {
+    public ConstructorWriter(ClassWriter writer) {
         super(writer, writer.getTypeElement());
 
         // the following must be done before the summary table is generated
@@ -78,7 +78,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter {
      *
      * @param writer The writer for the class that the constructors belong to.
      */
-    public ConstructorWriterImpl(SubWriterHolderWriter writer) {
+    public ConstructorWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
 

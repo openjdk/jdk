@@ -50,7 +50,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -60,7 +59,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
  * required modules, packages and service types for the module. A click on any of the links will update
  * the frame with the clicked element page.
  */
-public class ModuleWriterImpl extends HtmlDocletWriter {
+public class ModuleWriter extends HtmlDocletWriter {
 
     /**
      * The module being documented.
@@ -159,7 +158,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter {
      * @param configuration the configuration of the doclet.
      * @param mdle        Module under consideration.
      */
-    public ModuleWriterImpl(HtmlConfiguration configuration, ModuleElement mdle) {
+    public ModuleWriter(HtmlConfiguration configuration, ModuleElement mdle) {
         super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
@@ -187,16 +186,14 @@ public class ModuleWriterImpl extends HtmlDocletWriter {
 
         addModuleFooter();
         printDocument(content);
-        DocFilesHandler docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(mdle);
+        var docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(mdle);
         docFilesHandler.copyDocFiles();
     }
 
     /**
      * Build the content for the module doc.
-     *
-     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildContent() throws DocletException {
+    protected void buildContent() {
         Content moduleContent = getContentHeader();
 
         addModuleSignature(moduleContent);

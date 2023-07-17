@@ -44,7 +44,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 /**
  * Writes field documentation in HTML format.
  */
-public class FieldWriterImpl extends AbstractMemberWriter {
+public class FieldWriter extends AbstractMemberWriter {
 
     /**
      * The index of the current field that is being documented at this point
@@ -52,16 +52,16 @@ public class FieldWriterImpl extends AbstractMemberWriter {
      */
     private VariableElement currentElement;
 
-    public FieldWriterImpl(ClassWriterImpl writer) {
+    public FieldWriter(ClassWriter writer) {
         super(writer, writer.typeElement);
     }
 
-    public FieldWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
+    public FieldWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
     }
 
     // used in ClassUseWriter and SummaryUseWriter
-    public FieldWriterImpl(SubWriterHolderWriter writer) {
+    public FieldWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
 

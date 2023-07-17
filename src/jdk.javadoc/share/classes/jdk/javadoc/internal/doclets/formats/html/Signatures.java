@@ -62,7 +62,7 @@ import static javax.lang.model.element.Modifier.SYNCHRONIZED;
 
 public class Signatures {
 
-    public static Content getModuleSignature(ModuleElement mdle, ModuleWriterImpl moduleWriter) {
+    public static Content getModuleSignature(ModuleElement mdle, ModuleWriter moduleWriter) {
         var signature = HtmlTree.DIV(HtmlStyle.moduleSignature);
         Content annotations = moduleWriter.getAnnotationInfo(mdle, true);
         if (!annotations.isEmpty()) {
@@ -79,7 +79,7 @@ public class Signatures {
         return signature;
     }
 
-    public static Content getPackageSignature(PackageElement pkg, PackageWriterImpl pkgWriter) {
+    public static Content getPackageSignature(PackageElement pkg, PackageWriter pkgWriter) {
         if (pkg.isUnnamed()) {
             return Text.EMPTY;
         }

@@ -212,8 +212,8 @@ public class HtmlDoclet extends AbstractDoclet {
             throws DocletException {
         super.generateOtherFiles(classTree);
 
-        new ConstantsSummaryWriterImpl(configuration).build();
-        new SerializedFormWriterImpl(configuration).build();
+        new ConstantsSummaryWriter(configuration).build();
+        new SerializedFormWriter(configuration).build();
 
         var options = configuration.getOptions();
         if (options.linkSource()) {
@@ -395,7 +395,7 @@ public class HtmlDoclet extends AbstractDoclet {
                     !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }
-            new ClassWriterImpl(configuration, te, classTree).build();
+            new ClassWriter(configuration, te, classTree).build();
         }
     }
 
@@ -404,7 +404,7 @@ public class HtmlDoclet extends AbstractDoclet {
         if (configuration.showModules) {
             List<ModuleElement> mdles = new ArrayList<>(configuration.modulePackages.keySet());
             for (ModuleElement mdle : mdles) {
-                new ModuleWriterImpl(configuration, mdle).build();
+                new ModuleWriter(configuration, mdle).build();
             }
         }
     }
@@ -419,7 +419,7 @@ public class HtmlDoclet extends AbstractDoclet {
             // deprecated, do not generate the package-summary.html, package-frame.html
             // and package-tree.html pages for that package.
             if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                new PackageWriterImpl(configuration, pkg).build();
+                new PackageWriter(configuration, pkg).build();
                 if (options.createTree()) {
                     PackageTreeWriter.generate(configuration, pkg, options.noDeprecated());
                 }

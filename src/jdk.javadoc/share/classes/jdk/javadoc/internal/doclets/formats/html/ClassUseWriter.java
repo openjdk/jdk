@@ -80,10 +80,10 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     final Map<PackageElement, List<Element>> pkgToConstructorArgTypeParameter;
     final Map<PackageElement, List<Element>> pkgToConstructorThrows;
     final SortedSet<PackageElement> pkgSet;
-    final MethodWriterImpl methodSubWriter;
-    final ConstructorWriterImpl constrSubWriter;
-    final FieldWriterImpl fieldSubWriter;
-    final NestedClassWriterImpl classSubWriter;
+    final MethodWriter methodSubWriter;
+    final ConstructorWriter constrSubWriter;
+    final FieldWriter fieldSubWriter;
+    final NestedClassWriter classSubWriter;
 
     /**
      * Constructor.
@@ -131,11 +131,11 @@ public class ClassUseWriter extends SubWriterHolderWriter {
                     + pkgSet + " with: " + mapper.classToPackage.get(this.typeElement));
         }
 
-        methodSubWriter = new MethodWriterImpl(this);
-        constrSubWriter = new ConstructorWriterImpl(this);
+        methodSubWriter = new MethodWriter(this);
+        constrSubWriter = new ConstructorWriter(this);
         constrSubWriter.setFoundNonPubConstructor(true);
-        fieldSubWriter = new FieldWriterImpl(this);
-        classSubWriter = new NestedClassWriterImpl(this);
+        fieldSubWriter = new FieldWriter(this);
+        classSubWriter = new NestedClassWriter(this);
     }
 
     /**

@@ -57,17 +57,17 @@ import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 /**
  * Generates the Serialized Form Information Page, <i>serialized-form.html</i>.
  */
-public class SerializedFormWriterImpl extends SubWriterHolderWriter {
+public class SerializedFormWriter extends SubWriterHolderWriter {
 
     /**
      * The writer for serializable fields.
      */
-    private HtmlSerialFieldWriter fieldWriter;
+    private SerialFieldWriter fieldWriter;
 
     /**
      * The writer for serializable method documentation.
      */
-    private HtmlSerialMethodWriter methodWriter;
+    private SerialMethodWriter methodWriter;
 
     /**
      * The header for the serial version UID.  Save the string
@@ -97,7 +97,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter {
     /**
      * @param configuration the configuration data for the doclet
      */
-    public SerializedFormWriterImpl(HtmlConfiguration configuration) {
+    public SerializedFormWriter(HtmlConfiguration configuration) {
         super(configuration, DocPaths.SERIALIZED_FORM, false);
         visibleClasses = configuration.getIncludedTypeElements();
         configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SERIALIZED_FORM);
@@ -711,8 +711,8 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter {
      *
      * @return an instance of a SerialFieldWriter.
      */
-     HtmlSerialFieldWriter getSerialFieldWriter(TypeElement typeElement) {
-        return new HtmlSerialFieldWriter(this, typeElement);
+     SerialFieldWriter getSerialFieldWriter(TypeElement typeElement) {
+        return new SerialFieldWriter(this, typeElement);
     }
 
     /**
@@ -720,7 +720,7 @@ public class SerializedFormWriterImpl extends SubWriterHolderWriter {
      *
      * @return an instance of a SerialMethodWriter.
      */
-     HtmlSerialMethodWriter getSerialMethodWriter(TypeElement typeElement) {
-        return new HtmlSerialMethodWriter(this, typeElement);
+     SerialMethodWriter getSerialMethodWriter(TypeElement typeElement) {
+        return new SerialMethodWriter(this, typeElement);
     }
 }

@@ -45,7 +45,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 /**
  * Writes annotation interface member documentation in HTML format.
  */
-public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter {
+public class AnnotationTypeMemberWriter extends AbstractMemberWriter {
 
     /**
      * We generate separate summaries for required and optional annotation interface members,
@@ -71,7 +71,7 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter {
      *
      * @param writer The writer for the class that the member belongs to.
      */
-    public AnnotationTypeMemberWriterImpl(SubWriterHolderWriter writer) {
+    public AnnotationTypeMemberWriter(SubWriterHolderWriter writer) {
         super(writer);
         this.kind = Kind.ANY;
     }
@@ -83,9 +83,9 @@ public class AnnotationTypeMemberWriterImpl extends AbstractMemberWriter {
      * @param annotationType the AnnotationType that holds this member.
      * @param kind           the kind of annotation interface members to handle.
      */
-    public AnnotationTypeMemberWriterImpl(SubWriterHolderWriter writer,
-                                          TypeElement annotationType,
-                                          Kind kind) {
+    public AnnotationTypeMemberWriter(SubWriterHolderWriter writer,
+                                      TypeElement annotationType,
+                                      Kind kind) {
         super(writer, annotationType);
         this.kind = kind;
     }

@@ -39,18 +39,18 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 /**
  * Writes enum constant documentation in HTML format.
  */
-public class EnumConstantWriterImpl extends AbstractMemberWriter {
+public class EnumConstantWriter extends AbstractMemberWriter {
 
     /**
      * The current enum constant that is being documented.
      */
     private VariableElement currentElement;
 
-    public EnumConstantWriterImpl(ClassWriterImpl classWriter) {
+    public EnumConstantWriter(ClassWriter classWriter) {
         super(classWriter, classWriter.typeElement);
     }
 
-    public EnumConstantWriterImpl(SubWriterHolderWriter writer) {
+    public EnumConstantWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
 

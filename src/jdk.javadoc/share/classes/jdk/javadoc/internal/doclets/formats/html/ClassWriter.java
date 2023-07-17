@@ -60,7 +60,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
-import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
@@ -84,7 +83,7 @@ import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.
  *
  * @see javax.lang.model.element.TypeElement
  */
-public class ClassWriterImpl extends SubWriterHolderWriter {
+public class ClassWriter extends SubWriterHolderWriter {
 
     private static final Set<String> suppressSubtypesSet
             = Set.of("java.lang.Object",
@@ -109,8 +108,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter {
      * @param typeElement the class being documented.
      * @param classTree the class tree for the given class.
      */
-    public ClassWriterImpl(HtmlConfiguration configuration, TypeElement typeElement,
-                           ClassTree classTree) {
+    public ClassWriter(HtmlConfiguration configuration, TypeElement typeElement,
+                       ClassTree classTree) {
         super(configuration, configuration.docPaths.forClass(typeElement));
         this.typeElement = typeElement;
         configuration.currentTypeElement = typeElement;
@@ -285,7 +284,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter {
             //Only copy doc files dir if the containing package is not
             //documented AND if we have not documented a class from the same
             //package already. Otherwise, we are making duplicate copies.
-            DocFilesHandler docFilesHandler = configuration
+            var docFilesHandler = configuration
                     .getWriterFactory()
                     .getDocFilesHandler(containingPackage);
             docFilesHandler.copyDocFiles();
@@ -410,7 +409,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter {
     protected void buildNestedClassesSummary(Content summariesList) {
 //        MemberSummaryWriter writer = memberSummaryWriters.get(NESTED_CLASSES);
         var writerFactory = configuration.getWriterFactory();
-        var writer = new NestedClassWriterImpl(this, typeElement); // TODO: surprising omission from WriterFactory
+        var writer = new NestedClassWriter(this, typeElement); // TODO: surprising omission from WriterFactory
         addSummary(writer, NESTED_CLASSES, true, summariesList);
     }
 

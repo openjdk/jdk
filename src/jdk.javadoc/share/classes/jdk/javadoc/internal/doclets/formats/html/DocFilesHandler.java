@@ -32,7 +32,6 @@ import com.sun.source.util.DocTreeFactory;
 import jdk.javadoc.internal.doclets.formats.html.markup.BodyContents;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.toolkit.DocFileElement;
-import jdk.javadoc.internal.doclets.toolkit.DocFilesHandler;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -53,7 +52,7 @@ import java.util.List;
 
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 
-public class DocFilesHandlerImpl implements DocFilesHandler {
+public class DocFilesHandler {
 
     public final Element element;
     public final Location location;
@@ -68,7 +67,7 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
      * @param element the containing element of the doc-files.
      *
      */
-    public DocFilesHandlerImpl(HtmlConfiguration configuration, Element element) {
+    public DocFilesHandler(HtmlConfiguration configuration, Element element) {
         this.configuration = configuration;
         this.options = configuration.getOptions();
         this.element = element;
@@ -101,7 +100,6 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
      * @throws DocFileIOException if there is a problem while copying
      *         the documentation files
      */
-    @Override
     public void copyDocFiles()  throws DocFileIOException {
         boolean first = true;
         for (DocFile srcdir : DocFile.list(configuration, location, source)) {
@@ -118,7 +116,6 @@ public class DocFilesHandlerImpl implements DocFilesHandler {
         }
     }
 
-    @Override
     public List<DocPath> getStylesheets() throws DocFileIOException {
         var stylesheets = new ArrayList<DocPath>();
         for (DocFile srcdir : DocFile.list(configuration, location, source)) {

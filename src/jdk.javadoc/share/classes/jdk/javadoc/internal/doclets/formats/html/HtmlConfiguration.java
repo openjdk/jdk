@@ -280,7 +280,7 @@ public class HtmlConfiguration extends BaseConfiguration {
     /**
      * {@return the packages for which we have copied the doc files}
      *
-     * @see {@link ClassWriterImpl#copyDocFiles()}
+     * @see {@link ClassWriter#copyDocFiles()}
      */
     public Set<PackageElement> getContainingPackagesSeen() {
         return containingPackagesSeen;
@@ -380,9 +380,9 @@ public class HtmlConfiguration extends BaseConfiguration {
         }
     }
 
-    public WriterFactoryImpl getWriterFactory() {
+    public WriterFactory getWriterFactory() {
         // TODO: this is called many times: why not create and use a single instance?
-        return new WriterFactoryImpl(this);
+        return new WriterFactory(this);
     }
 
     @Override
