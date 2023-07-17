@@ -186,22 +186,6 @@ Java_java_nio_MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
         }
         fclose(proc_file);
     }
-
-    // AIX P6+ supports Dynamic Variable Page Sizes as an optimization
-    // A larger page size is used as an allocation size, and a smaller page size is used when fine-
-    // grained control is needed. However, this presents some complexity. The vm Bits.pageSize method
-    // does not necessarily return the size required by the call to msync, which specifically requires
-    // the one returned by sysconf(_SC_PAGE[_]SIZE).
-    //
-    // More info at:
-    // - https://www.ibm.com/docs/en/aix/7.2?topic=support-dynamic-variable-page-size
-    // - https://www.ibm.com/docs/en/aix/7.2?topic=m-msync-subroutine (see the note in the 'len' parameter)
-    int fix_address_aix(void* end_address)
-    {
-        prmap_t* map_entry = (prmap_t*) malloc(sizeof(prmap_t));
-        free(map_entry);
-        return -1;
-    }
 #endif // AIX
 
 JNIEXPORT void JNICALL
@@ -209,7 +193,7 @@ Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
                                       jlong address, jlong len)
 {
     void* a = (void *)jlong_to_ptr(address);
-    int result = msync(a, len, MS_SYNC);
+    int result = msync(a, (size_t)len, MS_SYNC);
     if (result == -1) {
         #ifdef AIX
             void* end_address = (void*)jlong_to_ptr(address + len);
