@@ -157,7 +157,7 @@ public class Threads {
         virtualConstructor.addMapping("MonitorDeflationThread", MonitorDeflationThread.class);
         virtualConstructor.addMapping("NotificationThread", NotificationThread.class);
         virtualConstructor.addMapping("StringDedupThread", StringDedupThread.class);
-        virtualConstructor.addMapping("StringDedupThread", AttachListenerThread.class);
+        virtualConstructor.addMapping("AttachListenerThread", AttachListenerThread.class);
     }
 
     public Threads() {
