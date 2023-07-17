@@ -111,7 +111,7 @@ class ReverseOrderSortedSetView<E> implements SortedSet<E> {
     }
 
     public Spliterator<E> spliterator() {
-        return Spliterators.spliteratorUnknownSize(descendingIterator(base), 0);
+        return Spliterators.spliterator(this, Spliterator.ORDERED);
     }
 
     // ========== Collection ==========

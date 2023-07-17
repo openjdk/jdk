@@ -471,9 +471,7 @@ void before_exit(JavaThread* thread, bool halt) {
 
   // Stop the WatcherThread. We do this before disenrolling various
   // PeriodicTasks to reduce the likelihood of races.
-  if (PeriodicTask::num_tasks() > 0) {
-    WatcherThread::stop();
-  }
+  WatcherThread::stop();
 
   // shut down the StatSampler task
   StatSampler::disengage();

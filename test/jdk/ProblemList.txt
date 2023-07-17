@@ -520,6 +520,8 @@ javax/management/remote/mandatory/connection/RMIConnector_NPETest.java 8267887 g
 
 javax/management/remote/mandatory/connection/BrokenConnectionTest.java 8262312 linux-all
 
+javax/management/remote/mandatory/subjectDelegation/SubjectDelegation1Test.java 8149084 linux-aarch64
+
 ############################################################################
 
 # jdk_net
@@ -573,8 +575,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 # jdk_security
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
-
-sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all

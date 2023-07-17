@@ -343,10 +343,6 @@ public class ChoiceFormat extends NumberFormat {
      * If the limit array is not in ascending order, the results of formatting
      * will be incorrect.
      * @param formats are the formats you want to use for each limit.
-     * They can be either Format objects or Strings.
-     * When formatting with object Y,
-     * if the object is a NumberFormat, then ((NumberFormat) Y).format(X)
-     * is called. Otherwise Y.toString() is called.
      * @throws    NullPointerException if {@code limits} or
      *            {@code formats} is {@code null}
      */
