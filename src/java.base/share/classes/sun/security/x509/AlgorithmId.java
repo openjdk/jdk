@@ -544,8 +544,8 @@ public class AlgorithmId implements Serializable, DerEncoder {
         if (pn != null && mn != null) {
             return ((mn.equals("java.base") &&
                     (pn.equals("SUN") || pn.equals("SunRsaSign") ||
-                    pn.equals("SunJCE") || pn.equals("SunJSSE"))) ||
-                (mn.equals("jdk.crypto.ec") && pn.equals("SunEC")) ||
+                    pn.equals("SunJCE") || pn.equals("SunJSSE") ||
+                    pn.equals("SunEC"))) ||
                 (mn.equals("jdk.crypto.mscapi") && pn.equals("SunMSCAPI")) ||
                 (mn.equals("jdk.crypto.cryptoki") &&
                     pn.startsWith("SunPKCS11")));
