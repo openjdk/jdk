@@ -47,6 +47,7 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Bug8179071 {
 
@@ -91,7 +92,7 @@ public class Bug8179071 {
         Arrays.stream(Locale.getAvailableLocales())
                 .map(Locale::toLanguageTag)
                 .forEach(tag -> {if(LegacyAliases.contains(tag)) {invalidTags.add(tag);}});
-        assertEquals(true, invalidTags.isEmpty(),
+        assertTrue(invalidTags.isEmpty(),
                 "Deprecated and Legacy tags found  " + invalidTags  + " in AvailableLocales ");
     }
 }
