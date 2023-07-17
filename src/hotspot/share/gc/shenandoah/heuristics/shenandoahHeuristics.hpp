@@ -25,6 +25,8 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 
+#include "gc/shenandoah/heuristics/shenandoahHeapStats.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
@@ -69,6 +71,9 @@ protected:
     size_t _garbage;
   } RegionData;
 
+  // Source of information about the heap
+  ShenandoahHeapStats* _heap_stats;
+
   RegionData* _region_data;
 
   uint _degenerated_cycles_in_a_row;
@@ -93,7 +98,7 @@ protected:
   void adjust_penalty(intx step);
 
 public:
-  ShenandoahHeuristics();
+  ShenandoahHeuristics(ShenandoahHeapStats* heap_stats);
   virtual ~ShenandoahHeuristics();
 
   void record_metaspace_oom()     { _metaspace_oom.set(); }

@@ -29,6 +29,8 @@
 
 class ShenandoahPassiveHeuristics : public ShenandoahHeuristics {
 public:
+  ShenandoahPassiveHeuristics(ShenandoahHeapStats* heap_stats);
+
   virtual bool should_start_gc();
 
   virtual bool should_unload_classes();

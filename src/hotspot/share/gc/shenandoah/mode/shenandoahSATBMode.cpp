@@ -56,14 +56,15 @@ ShenandoahHeuristics* ShenandoahSATBMode::initialize_heuristics() const {
   if (ShenandoahGCHeuristics == nullptr) {
     vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
   }
+  ShenandoahHeap* heap = ShenandoahHeap::heap();
   if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
-    return new ShenandoahAggressiveHeuristics();
+    return new ShenandoahAggressiveHeuristics(heap);
   } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
-    return new ShenandoahStaticHeuristics();
+    return new ShenandoahStaticHeuristics(heap);
   } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-    return new ShenandoahAdaptiveHeuristics(ShenandoahHeap::heap());
+    return new ShenandoahAdaptiveHeuristics(heap);
   } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
-    return new ShenandoahCompactHeuristics();
+    return new ShenandoahCompactHeuristics(heap);
   }
   vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
   return nullptr;

@@ -101,8 +101,6 @@ public:
   void adjust_spike_threshold(double amount);
 
 protected:
-  ShenandoahHeapStats* _heap_stats;
-
   ShenandoahAllocationRate _allocation_rate;
 
   // The margin of error expressed in standard deviations to add to our

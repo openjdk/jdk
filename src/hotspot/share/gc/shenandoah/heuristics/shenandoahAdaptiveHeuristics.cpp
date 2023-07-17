@@ -55,8 +55,7 @@ const double ShenandoahAdaptiveHeuristics::MINIMUM_CONFIDENCE = 0.319; // 25%
 const double ShenandoahAdaptiveHeuristics::MAXIMUM_CONFIDENCE = 3.291; // 99.9%
 
 ShenandoahAdaptiveHeuristics::ShenandoahAdaptiveHeuristics(ShenandoahHeapStats* heap_stats) :
-  ShenandoahHeuristics(),
-  _heap_stats(heap_stats),
+  ShenandoahHeuristics(heap_stats),
   _margin_of_error_sd(ShenandoahAdaptiveInitialConfidence),
   _spike_threshold_sd(ShenandoahAdaptiveInitialSpikeThreshold),
   _last_trigger(OTHER) { }
@@ -85,7 +84,7 @@ void ShenandoahAdaptiveHeuristics::choose_collection_set_from_regiondata(Shenand
   // we hit max_cset. When max_cset is hit, we terminate the cset selection. Note that in this scheme,
   // ShenandoahGarbageThreshold is the soft threshold which would be ignored until min_garbage is hit.
 
-  size_t capacity    = ShenandoahHeap::heap()->soft_max_capacity();
+  size_t capacity    = _heap_stats->soft_max_capacity();
   size_t max_cset    = (size_t)((1.0 * capacity / 100 * ShenandoahEvacReserve) / ShenandoahEvacWaste);
   size_t free_target = (capacity / 100 * ShenandoahMinFreeThreshold) + max_cset;
   size_t min_garbage = (free_target > actual_free ? (free_target - actual_free) : 0);
@@ -129,7 +128,7 @@ void ShenandoahAdaptiveHeuristics::record_cycle_start() {
 void ShenandoahAdaptiveHeuristics::record_success_concurrent() {
   ShenandoahHeuristics::record_success_concurrent();
 
-  size_t available = ShenandoahHeap::heap()->free_set()->available();
+  size_t available = _heap_stats->available();
 
   _available.add(available);
   double z_score = 0.0;
