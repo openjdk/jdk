@@ -562,6 +562,12 @@ public class PathOps {
             .resolve("C:\\tmp\\foo\\bar\\gus", "foo", "bar", "gus")
             .resolve("C:\\gus", "\\foo", "bar", "\\gus")
             .resolve("C:\\tmp\\baz", "", "", "baz");
+        test("C:\\tmp\\foo")
+            .resolve("C:\\tmp\\foo\\bar\\gus", "", "bar\\gus", "")
+            .resolve("C:\\tmp\\foo\\bar\\gus\\foo\\baz",
+                     "", "bar\\gus", "foo\\baz")
+            .resolve("C:\\bar\\gus\\baz", "", "C::\\bar\\gus", "baz")
+            .resolve("C:\\tmp\\bar", "C:\\bar\\gus", "baz", "C:\\tmp\\bar");
         test("tmp")
             .resolve("tmp\\foo\\bar\\gus", "foo", "bar", "gus")
             .resolve("\\gus", "\\foo", "bar", "\\gus")
@@ -1711,6 +1717,11 @@ public class PathOps {
             .resolve("/tmp/foo/bar/gus", "foo", "bar", "gus")
             .resolve("/gus", "/foo", "bar", "/gus")
             .resolve("/tmp/baz", "", "", "baz");
+        test("/tmp/foo")
+            .resolve("/tmp/foo/bar/gus", "", "bar/gus", "")
+            .resolve("/tmp/foo/bar/gus/foo/baz", "", "bar/gus", "foo/baz")
+            .resolve("/bar/gus/baz", "", "/bar/gus", "baz")
+            .resolve("/tmp/bar", "/bar/gus", "baz", "/tmp/bar");
         test("tmp")
             .resolve("tmp/foo/bar/gus", "foo", "bar", "gus")
             .resolve("/gus", "/foo", "bar", "/gus")
@@ -2134,7 +2145,7 @@ public class PathOps {
         }
 
         try {
-            Path.of("foo", null);
+            Path.of("foo", (String[])null);
             throw new RuntimeException("NullPointerException not thrown");
         } catch (NullPointerException npe) {
         }
