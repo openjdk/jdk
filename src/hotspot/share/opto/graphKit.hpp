@@ -139,6 +139,7 @@ class GraphKit : public Phase {
   Bytecodes::Code    java_bc()  const;
   ciMethod*          method()   const { return _method; }
 
+  PartialEscapeAnalysis* PEA() const { return C->PEA(); }
   void set_jvms(JVMState* jvms)       { set_map(jvms->map());
                                         assert(jvms == this->jvms(), "sanity");
                                         _sp = jvms->sp();

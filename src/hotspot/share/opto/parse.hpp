@@ -433,14 +433,9 @@ class Parse : public GraphKit {
   Node*    alloc_with_final() const   { return _alloc_with_final; }
   void set_alloc_with_final(Node* n)  {
     if (DoPartialEscapeAnalysis) {
-      assert((_alloc_with_final == nullptr) || (_alloc_with_final == jvms()->alloc_state().is_alias(n))
-         || _alloc_with_final == AllocateNode::Ideal_allocation(n) , "different init objects?");
-
-      if (jvms()->alloc_state().is_alias(n)) {
-       _alloc_with_final = jvms()->alloc_state().is_alias(n);
-      } else {
-        _alloc_with_final = AllocateNode::Ideal_allocation(n);
-      }
+      assert((_alloc_with_final == nullptr) || (_alloc_with_final == PEA()->is_alias(n)), 
+             "different init objects?");
+      _alloc_with_final = PEA()->is_alias(n);
     } else {
       assert((_alloc_with_final == nullptr) || (_alloc_with_final == n), "different init objects?");
       _alloc_with_final = n;
@@ -519,8 +514,6 @@ class Parse : public GraphKit {
   // Helper functions for merging individual cells.
   PhiNode *ensure_phi(       int idx, bool nocreate = false);
   PhiNode *ensure_memory_phi(int idx, bool nocreate = false);
-  // materialize object ID
-  Node* ensure_object_materialized(Node* var, PEAState& state, SafePointNode* map, RegionNode* r, int pnum);
 
   // Helper to merge the current memory state into the given basic block
   void merge_memory_edges(MergeMemNode* n, int pnum, bool nophi);

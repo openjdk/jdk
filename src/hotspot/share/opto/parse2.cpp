@@ -101,9 +101,10 @@ void Parse::array_store(BasicType bt) {
   }
 
   if (DoPartialEscapeAnalysis && bt == T_OBJECT) {
+    PartialEscapeAnalysis* pea = PEA();
     PEAState& as = jvms()->alloc_state();
-    VirtualState* obj_vs = as.as_virtual(val);    // obj is tracked and Virtual
-    VirtualState* ary_vs = as.as_virtual(array);  // array is not-tracked or Escaped
+    VirtualState* obj_vs = as.as_virtual(pea, val);    // obj is tracked and Virtual
+    VirtualState* ary_vs = as.as_virtual(pea, array);  // array is not-tracked or Escaped
 
     if (ary_vs == nullptr && obj_vs != nullptr) {
       val = as.materialize(this, val);

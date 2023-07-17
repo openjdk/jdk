@@ -631,7 +631,7 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
                   _for_post_loop_igvn(comp_arena(), 8, 0, nullptr),
                   _unstable_if_traps (comp_arena(), 8, 0, nullptr),
                   _coarsened_locks   (comp_arena(), 8, 0, nullptr),
-                  _pea_objects       (comp_arena(), 8, 0, nullptr),
+                  _pea(nullptr),
                   _congraph(nullptr),
                   NOT_PRODUCT(_igv_printer(nullptr) COMMA)
                   _unique(0),
@@ -727,6 +727,10 @@ Compile::Compile( ciEnv* ci_env, ciMethod* target, int osr_bci,
   _node_hash = new (comp_arena()) NodeHash(comp_arena(), estimated_size);
   PhaseGVN gvn;
   set_initial_gvn(&gvn);
+
+  if (DoPartialEscapeAnalysis) {
+    _pea = new (mtCompiler) PartialEscapeAnalysis(comp_arena());
+  }
 
   print_inlining_init();
   { // Scope for timing the parser

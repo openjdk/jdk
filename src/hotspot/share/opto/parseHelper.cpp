@@ -462,9 +462,20 @@ void VirtualState::print_on(outputStream* os) const {
     }
   }
 }
+
+void EscapedState::print_on(outputStream* os) const {
+  os->print_cr("Escaped = %p %d", this, _materialized);
+  if (_merged_value == nullptr) {
+    os->print_cr(" null");
+  } else {
+    _merged_value->dump();
+  }
+}
+
 #endif
 
 void PEAState::add_new_allocation(GraphKit* kit, Node* obj) {
+  PartialEscapeAnalysis* pea = kit->PEA();
   int nfields;
   const TypeOopPtr* oop_type = obj->as_Type()->type()->is_oopptr();
 
@@ -484,7 +495,7 @@ void PEAState::add_new_allocation(GraphKit* kit, Node* obj) {
 
   if (nfields >= 0) {
     AllocateNode* alloc = obj->in(1)->in(0)->as_Allocate();
-    int idx = Compile::current()->add_pea_object(alloc);
+    int idx = pea->add_object(alloc);
 #ifndef PRODUCT
     // node_idx_t is unsigned. Use static_cast<> here to avoid comparison between signed and unsigned.
     if (PEA_debug_idx > 0 && alloc->_idx != static_cast<node_idx_t>(PEA_debug_idx)) {         // only allow PEA_debug_idx
@@ -524,7 +535,7 @@ void PEAState::add_new_allocation(GraphKit* kit, Node* obj) {
 #endif
       bool result = _state.put(alloc, new VirtualState(oop_type));
       assert(result, "the key existed in _state");
-      add_alias(alloc, obj);
+      pea->add_alias(alloc, obj);
     }
   }
 }
@@ -537,11 +548,6 @@ PEAState& PEAState::operator=(const PEAState& init) {
       _state.put(key, value->clone());
       return true;
     });
-
-    init._alias.iterate([&](Node* key, ObjID id) {
-      add_alias(id, key);
-      return true;
-    });
   }
 
 #ifdef ASSERT
@@ -550,21 +556,10 @@ PEAState& PEAState::operator=(const PEAState& init) {
   return *this;
 }
 
-void PEAState::remove_alias(ObjID id, Node* var) {
-  assert(contains(id), "sanity check");
-  assert(_alias.contains(var) && (*_alias.get(var)) == id, "sanity check");
-  _alias.remove(var);
-
-  if (!get_object_state(id)->ref_dec()) {
-    _state.remove(id);
-  }
-}
-
 // Inspired by GraphKit::replace_in_map. Besides the replacement of old object
 // we also need to scout map() and find loaded fields of old object. they may
 // lay in stack, locals or even argument section.
 static void replace_in_map(GraphKit* kit, Node* old, Node* neww) {
-  PhaseGVN& gvn = kit->gvn();
   SafePointNode* map = kit->jvms()->map();
 
   for (uint i = 0; i < map->req(); ++i) {
@@ -578,12 +573,14 @@ static void replace_in_map(GraphKit* kit, Node* old, Node* neww) {
 }
 
 Node* PEAState::materialize(GraphKit* kit, Node* var) {
-  ObjID alloc = is_alias(var);
   Compile* C = kit->C;
+  PartialEscapeAnalysis* pea = C->PEA();
+  ObjID alloc = pea->is_alias(var);
+
   assert(alloc != nullptr && get_object_state(alloc)->is_virtual(), "sanity check");
 #ifndef PRODUCT
   if (PEAVerbose) {
-    tty->print_cr("PEA materializes a virtual %d obj%d ", C->get_pea_object(alloc), alloc->_idx);
+    tty->print_cr("PEA materializes a virtual %d obj%d ", pea->object_idx(alloc), alloc->_idx);
   }
   Atomic::inc(&peaNumMaterializations);
 #endif
@@ -669,8 +666,7 @@ Node* PEAState::materialize(GraphKit* kit, Node* var) {
 
   // replace obj with objx
   replace_in_map(kit, var, objx);
-  _alias.put(objx, alloc);
-  _alias.remove(var);
+  pea->add_alias(alloc, objx);
 
 #ifdef ASSERT
   validate();
@@ -686,49 +682,27 @@ void PEAState::print_on(outputStream* os) const {
 
   _state.iterate([&](ObjID obj, ObjectState* state) {
     bool is_virt = state->is_virtual();
-    os->print("Obj#%d(%s) ref = %d aliases = [", obj->_idx, is_virt ? "Virt" : "Mat", state->ref_cnt());
-
-    _alias.iterate([&](Node* node, ObjID obj2) {
-      if (obj == obj2){
-        os->print("%d, ", node->_idx);
-      }
-      return true;
-    });
-
-    os->print_cr("]");
+    os->print("Obj#%d(%s) ref = %d\n", obj->_idx, is_virt ? "Virt" : "Mat", state->ref_cnt());
 
     if (is_virt) {
       VirtualState* vs = static_cast<VirtualState*>(state);
       vs->print_on(os);
+    } else {
+      EscapedState* es = static_cast<EscapedState*>(state);
+      es->print_on(tty);
     }
     return true;
   });
 }
+
 #endif
 
 #ifdef ASSERT
 void PEAState::validate() const {
-  _state.iterate([&](ObjID obj, ObjectState* state) {
-    int cnt = 0;
-    _alias.iterate([&](Node* node, ObjID obj2) {
-      if (obj == obj2){
-        cnt++;
-      }
-      return true;
-    });
-    assert(cnt == state->ref_cnt(), "refcount is broken");
-    return true;
-  });
-
-
-  _alias.iterate([&](Node* var, ObjID obj) {
-    assert(contains(obj), "id must exist");
-    return true;
-  });
 }
 #endif
 
-void PEAState::materialize_all() {
+void PEAState::mark_all_escaped() {
   Unique_Node_List objs;
   int sz = objects(objs);
 
@@ -737,7 +711,7 @@ void PEAState::materialize_all() {
     ObjectState* os = get_object_state(id);
 
     if (os->is_virtual()) {
-      escape(id, get_java_oop(id, false), false);
+      escape(id, get_java_oop(id), false);
     }
   }
 }
@@ -750,41 +724,48 @@ int PEAState::objects(Unique_Node_List& nodes) const {
   return nodes.size();
 }
 
-Node* PEAState::get_java_oop(ObjID id, bool materialized) const {
-  if (!contains(id)) {
-    return nullptr;
-  }
-
+// We track '_merged_value' along with control-flow but only return it if _materialized = true;
+// GraphKit::backfill_materialized() replaces the original CheckCastPP with it at do_exits() or at safepoints.
+// If materialization doesn't take place, replacement shouldn't happen either.
+//
+// @return: nullptr if id has not been materialized, or the SSA java_oop that denotes the original object.
+Node* PEAState::get_materialized_value(ObjID id) const {
+  assert(contains(id), "must exists in allocation");
   ObjectState* os = get_object_state(id);
-  if (!os->is_virtual() && materialized) {
-    return static_cast<EscapedState*>(os)->materialized_value();
+
+  if (os->is_virtual()) {
+    return nullptr;
   } else {
-    // slow-path: we don't store the cooked object for a virtual, but we can find
-    // it among its aliases. The IR is SSA, so there is only one definition.
-    // CastPP and LoadP are aliases. Only CheckCastPP or Phi are definitions.
-    //
-    Node* obj = nullptr;
-    _alias.iterate([&](Node* alias, ObjID alloc) {
-                     if (alloc == id && (alias->is_CheckCastPP() || alias->is_Phi())) {
-                       assert(obj == nullptr, "multiple definition?");
-                       obj = alias;
-                     }
-                     return true;
-                   });
-    assert(os->is_virtual() || static_cast<EscapedState*>(os)->materialized_value() == nullptr ||
-           static_cast<EscapedState*>(os)->materialized_value() == obj,
-           "the java_oop of an Escaped Object resolved from aliases must be same as EscapedState.");
+    return static_cast<EscapedState*>(os)->materialized_value();
+  }
+}
+
+Node* PEAState::get_java_oop(ObjID id) const {
+  if (!contains(id)) return nullptr;
+
+  Node* obj = get_materialized_value(id);
+  if (obj != nullptr) {
     return obj;
   }
+
+  ProjNode* resproj = id->proj_out_or_null(TypeFunc::Parms);
+  if (resproj != nullptr) {
+    for (DUIterator_Fast imax, i = resproj->fast_outs(imax); i < imax; i++) {
+      Node* p = resproj->fast_out(i);
+      if (p->is_CheckCastPP()) {
+        assert(obj == nullptr, "multiple CheckCastPP?");
+        obj = p;
+      }
+    }
+  }
+  assert(obj == nullptr || AllocateNode::Ideal_allocation(obj) == id, "sanity check");
+  return obj;
 }
 
 AllocationStateMerger::AllocationStateMerger(PEAState& target) : _state(target) {}
 
-static bool as_virtual(ObjectState* os) {
-  return os != nullptr && os->is_virtual();
-}
-
-void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNode* region, int pnum) {
+void AllocationStateMerger::merge(PEAState& newin, GraphKit* kit, RegionNode* region, int pnum) {
+  PartialEscapeAnalysis* pea = kit->PEA();
   Unique_Node_List set1, set2;
 
   _state.objects(set1);
@@ -797,28 +778,43 @@ void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNo
     ObjID obj = static_cast<ObjID>(set1.at(i));
     ObjectState* os1 = _state.get_object_state(obj);
     ObjectState* os2 = newin.get_object_state(obj);
-    if (as_virtual(os1) && as_virtual(os2)) {
+    if (os1->is_virtual() && os2->is_virtual()) {
       os1->merge(os2, kit, region, pnum);
     } else {
       assert(os1 != nullptr && os2 != nullptr, "sanity check");
-      Node* m = _state.get_java_oop(obj, false);
-      Node* n = newin.get_java_oop(obj, false);
-      EscapedState* es;
+      Node* m;
+      Node* n;
       bool materialized;
+      EscapedState* es;
+
       if (os1->is_virtual()) {
-        materialized = static_cast<EscapedState*>(os2)->materialized_value() != nullptr;
+        // If obj is virtual in current state,  it must be escaped in newin.
+        // Mark it escaped in current state.
+        EscapedState* es2 = static_cast<EscapedState*>(os2);
+        materialized = es2->has_materialized();
+        m = _state.get_java_oop(obj);
+        n = es2->merged_value();
         es = _state.escape(obj, m, materialized);
-      } else {
+      } else if (os2->is_virtual()) {
+        // If obj is virtual in newin,  it must be escaped in current state.
+        // Mark it escaped  in newin
         es = static_cast<EscapedState*>(os1);
-        materialized = es->materialized_value() != nullptr;
-        if (!os2->is_virtual()) {
-          materialized |= static_cast<EscapedState*>(os2)->materialized_value() != nullptr;
-        }
+        materialized = es->has_materialized();
+        m = es->merged_value();
+        n = newin.get_java_oop(obj);
+        os2 = newin.escape(obj, n, false);
+      } else {
+        // obj is escaped in both newin and current state.
+        es = static_cast<EscapedState*>(os1);
+        EscapedState* es2 = static_cast<EscapedState*>(os2);
+        m = es->merged_value();
+        n = es2->merged_value();
+        materialized = es->has_materialized() || es2->has_materialized();
       }
 
       if (m->is_Phi() && m->in(0) == region) {
         ensure_phi(m->as_Phi(), pnum);
-        // only update the pnum that we have never seen before.
+        // only update the pnum if we have never seen it before.
         if (m->in(pnum) == nullptr) {
           m->set_req(pnum, n);
         }
@@ -827,24 +823,132 @@ void AllocationStateMerger::merge(const PEAState& newin, GraphKit* kit, RegionNo
         Node* phi = PhiNode::make(region, m, type);
         phi->set_req(pnum, n);
         kit->gvn().set_type(phi, type);
-
-        if (materialized) {
-          es->set_materialized_value(phi);
-        }
-        _state.add_alias(obj, phi);
-        _state.remove_alias(obj, m);
+        es->update(materialized, phi);
       }
     }
   }
+
+  // process individual phi
+  SafePointNode* map = kit->map();
+  for (uint i = 0; i < map->req(); ++i) {
+    Node* node = map->in(i);
+
+    if (node != nullptr && node->is_Phi() && node->as_Phi()->region() == region) {
+      process_phi(node->as_Phi(), kit, region, pnum);
+    }
+  }
+
 #ifdef ASSERT
   _state.validate();
 #endif
 }
 
-AllocationStateMerger::~AllocationStateMerger() {
+// Passive Materialization
+// ------------------------
+// Materialize an object at the phi node because at least one of its predecessors has materialized the object.
+// Since C2 PEA does not eliminate the original allocation, we skip passive materializaiton and keep using it.
+// The only problem is partial redudancy. JDK-8287061 should address this issue.
+//
+// PEA split a object based on its escapement. At the merging point, the original object is NonEscape, or it has already
+// been materialized before. the phi is 'reducible Object-Phi' in JDK-828706 and the original object is scalar replaceable!
+//
+// obj' = PHI(Region, OriginalObj, ClonedObj)
+// and OriginalObj is NonEscape but NSR; CloendObj is Global/ArgEscape
+//
+// JDK-8287061 transforms it to =>
+// obj' = PHI(Region, null, ClonedObj)
+// selector = PHI(Region, 0, 1)
+//
+// since OriginalObj is NonEscape, it is replaced by scalars.
+//
+static Node* ensure_object_materialized(Node* var, PEAState& state, SafePointNode* from_map, RegionNode* r, int pnum) {
+  // skip passive materialize for time being.
+  // if JDK-8287061 can guarantee to replace the orignial allocation, we don't need to worry about partial redundancy.
+  return var;
 }
 
-void AllocationStateMerger::process_phi(PhiNode* phi, Node* old) {
+// Merge phi node incrementally.
+// we check all merged inputs in _state.
+// 1. all inputs refer to the same ObjID, then phi is created as alias of ObjID
+// 2. otherwise, any input is alias with a 'virtual' object needs to convert to 'Escaped'. replace input with merged_value.
+// 3. otherwise, if any input is aliased with an Escaped object. replace input with merged value.
+void AllocationStateMerger::process_phi(PhiNode* phi, GraphKit* kit, RegionNode* region, int pnum) {
+  ObjID unique = nullptr;
+  bool materialized = false;
+  bool same_obj = true;
+  PartialEscapeAnalysis* pea = kit->PEA();
+
+  if (pea == nullptr) return;
+
+  for (uint i = 1; i < phi->req(); ++i) {
+    if (region->in(i) == nullptr || region->in(i)->is_top())
+      continue;
+
+    Node* node = phi->in(i);
+    ObjID obj = pea->is_alias(node);
+    if (obj != nullptr) {
+      if (unique == nullptr) {
+        unique = obj;
+      } else if (unique != obj) {
+        same_obj = false;
+      }
+      EscapedState* es = _state.as_escaped(pea, node);
+      if (es != nullptr) {
+        materialized |= es->has_materialized();
+      }
+    } else {
+      same_obj = false;
+    }
+  }
+
+  if (same_obj) {
+    //xliu: should I also check pnum == 1?
+    // phi nodes for exception handler may have leave normal paths vacant.
+    pea->add_alias(unique, phi);
+  } else {
+    bool printed = false;
+
+    for (uint i = 1; i < phi->req(); ++i) {
+      if (region->in(i) == nullptr || region->in(i)->is_top())
+        continue;
+
+      Node* node = phi->in(i);
+      ObjID obj = pea->is_alias(node);
+      if (obj != nullptr && _state.contains(obj)) {
+        ObjectState* os = _state.get_object_state(obj);
+        if (os->is_virtual()) {
+          Node* n = ensure_object_materialized(node, _state, kit->map(), region, pnum);
+          os = _state.escape(obj, n, materialized);
+        }
+        EscapedState* es = static_cast<EscapedState*>(os);
+        Node* value = es->merged_value();
+        if (value->is_Phi() && value->in(0) == region) {
+          value = value->in(i);
+        }
+
+        if (node != value) {
+          assert(value != phi, "sanity");
+#ifndef PRODUCT
+          if (PEAVerbose) {
+            if (!printed) {
+              phi->dump();
+              printed = true;
+            }
+            tty->print_cr("[PEA] replace %dth input with node %d", i, value->_idx);
+          }
+#endif
+          phi->replace_edge(node, value);
+        }
+      }
+    }
+
+    if (pea->is_alias(phi)) {
+      pea->remove_alias(unique, phi);
+    }
+  }
+}
+
+AllocationStateMerger::~AllocationStateMerger() {
 }
 
 bool PEAContext::match(ciMethod* method) const {
@@ -859,27 +963,20 @@ bool PEAContext::match(ciMethod* method) const {
 EscapedState* PEAState::escape(ObjID id, Node* p, bool materialized) {
   assert(p != nullptr, "the new alias must be non-null");
   Node* old = nullptr;
-
   EscapedState* es;
+
   if (contains(id)) {
     ObjectState* os = get_object_state(id);
     // if os is EscapedState and its materialized_value is not-null,
     if (!os->is_virtual()) {
-      materialized |= static_cast<EscapedState*>(os)->materialized_value() != nullptr;
+      materialized |= static_cast<EscapedState*>(os)->has_materialized();
     }
-    es = new EscapedState(materialized ? p : nullptr);
+    es = new EscapedState(materialized, p);
     es->ref_cnt(os->ref_cnt()); // copy the refcnt from the original ObjectState.
-    old = get_java_oop(id, false);
   } else {
-    es = new EscapedState(materialized ? p : nullptr);
+    es = new EscapedState(materialized, p);
   }
   _state.put(id, es);
-  // if p == old, no-op
-  add_alias(id, p);
-  if (old != nullptr && old != p) {
-    remove_alias(id, old);
-  }
-
   if (materialized) {
     static_cast<AllocateNode*>(id)->inc_materialized();
   }

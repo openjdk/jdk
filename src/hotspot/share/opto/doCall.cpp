@@ -668,7 +668,7 @@ void Parse::do_call() {
       for (uint i=0; i < nargs; ++i) {
         Node* arg = argument(i);
 
-        if (state.as_virtual(arg)) {
+        if (state.as_virtual(PEA(), arg)) {
           Node* objx = state.materialize(this, arg);
           set_argument(i, objx);
         }

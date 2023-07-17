@@ -4268,7 +4268,7 @@ void GraphKit::backfill_materialized(SafePointNode* map, uint begin, uint end, P
       AllocateNode* alloc = AllocateNode::Ideal_allocation(t);
 
       if (as.contains(alloc)) {
-        Node* neww = as.get_java_oop(alloc, true);
+        Node* neww = as.get_materialized_value(alloc);
         if (neww != nullptr && neww != t) {
 #ifndef PRODUCT
           if (PEAVerbose) {
