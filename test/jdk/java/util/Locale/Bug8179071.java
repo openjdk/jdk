@@ -76,7 +76,7 @@ public class Bug8179071 {
     private static Stream<Arguments> shortJanuaryNames() {
         return Stream.of(
                 Arguments.of("pa-PK", "\u0a1c\u0a28"),
-                Arguments.of("uz-AF" , "yan"),
+                Arguments.of("uz-AF", "yan"),
                 Arguments.of("sr-ME", "\u0458\u0430\u043d"),
                 Arguments.of("scc", "\u0458\u0430\u043d"),
                 Arguments.of("sh", "jan"),
@@ -93,6 +93,6 @@ public class Bug8179071 {
                 .map(Locale::toLanguageTag)
                 .forEach(tag -> {if(LegacyAliases.contains(tag)) {invalidTags.add(tag);}});
         assertTrue(invalidTags.isEmpty(),
-                "Deprecated and Legacy tags found  " + invalidTags  + " in AvailableLocales ");
+                "Deprecated and Legacy tags found  " + invalidTags + " in AvailableLocales ");
     }
 }
