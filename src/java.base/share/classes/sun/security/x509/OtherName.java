@@ -209,7 +209,7 @@ public class OtherName implements GeneralNameInterface {
     @Override
     public int hashCode() {
         if (myhash == -1) {
-            myhash = 37 + oid.hashCode() + Arrays.hashCode(nameValue);
+            myhash = oid.hashCode() + Arrays.hashCode(nameValue);
         }
         return myhash;
     }
