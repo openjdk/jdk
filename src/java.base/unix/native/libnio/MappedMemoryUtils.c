@@ -135,3 +135,9 @@ Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
         JNU_ThrowIOExceptionWithMessageAndLastError(env, "msync with parameter MS_SYNC failed");
     }
 }
+
+JNIEXPORT jint JNICALL
+Java_java_nio_MappedMemoryUtils_pageSize0()
+{
+    return (jint)sysconf(_SC_PAGESIZE);
+}
