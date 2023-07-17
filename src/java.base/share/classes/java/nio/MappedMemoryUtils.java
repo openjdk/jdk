@@ -176,5 +176,5 @@ import jdk.internal.misc.Unsafe;
         }
     }
 
-    private static native int pageSize0();
+    private static native int pageSize0(Object changeToReGenerateHeaderfile);
 }
