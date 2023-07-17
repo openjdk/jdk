@@ -34,12 +34,13 @@
  * @run main DontGenerateLVTForGNoneOpTest
  */
 
-import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
 import java.io.File;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Target;
 import java.nio.file.Paths;
+
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.CodeAttribute;
 
 public class DontGenerateLVTForGNoneOpTest {
 

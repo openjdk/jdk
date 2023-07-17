@@ -34,9 +34,9 @@
  * @run main NoObjectToString
  */
 
+import java.io.*;
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.constantpool.*;
-import java.io.*;
 
 public class NoObjectToString {
     public static void main(String... args) throws Exception {
@@ -45,7 +45,7 @@ public class NoObjectToString {
     }
 
     void run(String... args) throws Exception {
-        //Verify there are no references to Object.toString() in a Test:
+         //Verify there are no references to Object.toString() in a Test:
         try (InputStream in = NoObjectToString.class.getResourceAsStream("NoObjectToString$Test.class")) {
             assert in != null;
             ClassModel cm = Classfile.of().parse(in.readAllBytes());

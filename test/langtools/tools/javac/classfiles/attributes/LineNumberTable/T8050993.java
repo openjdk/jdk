@@ -38,8 +38,8 @@ public class T8050993 {
                                 .collect(Collectors.toSet());
                         if (!Objects.equals(expectedLineNumbers, actualLinesNumbers)) {
                             throw new AssertionError("Expected LineNumber entries not found;" +
-                                    "wactual=" + actualLinesNumbers + ";" +
-                                    "expected=" + expectedLineNumbers);
+                                                     "actual=" + actualLinesNumbers + ";" +
+                                                     "expected=" + expectedLineNumbers);
                         }
                     }
                 }
@@ -52,8 +52,8 @@ public class T8050993 {
     public static String method() {
         String s =
                 field % 2 == 0 ?
-                        "true" + field :
-                        "false" + field;
+                "true" + field :
+                "false" + field;
         return s;
     }
 

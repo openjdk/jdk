@@ -74,9 +74,9 @@ public class ConditionalLineNumberTest {
     // in the method body.
     public static String method(int field) {
         String s = field % 2 == 0 ?
-                (field == 0 ? "false"
-                        : "true" + field) : //Breakpoint
-                "false" + field; //Breakpoint
+            (field == 0 ? "false"
+             : "true" + field) : //Breakpoint
+            "false" + field; //Breakpoint
         return s;
     }
 }

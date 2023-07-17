@@ -40,10 +40,11 @@
 
 import java.io.File;
 import java.nio.file.Paths;
-import com.sun.tools.javac.util.Assert;
 
 import jdk.internal.classfile.*;
-import jdk.internal.classfile.attribute.CodeAttribute;
+import jdk.internal.classfile.attribute.*;
+import com.sun.tools.javac.util.Assert;
+
 import toolbox.JavacTask;
 import toolbox.ToolBox;
 
@@ -51,11 +52,11 @@ public class NoLocalsMustBeReservedForDCEedVarsTest {
 
     static final String source =
             "class Test {\n" +
-                    "    static String foo() {\n" +
-                    "        final String hello = \"Hello!\";\n" +
-                    "        return hello;\n" +
-                    "    }\n" +
-                    "} ";
+            "    static String foo() {\n" +
+            "        final String hello = \"Hello!\";\n" +
+            "        return hello;\n" +
+            "    }\n" +
+            "} ";
 
     public static void main(String[] args) throws Exception {
         new NoLocalsMustBeReservedForDCEedVarsTest().run();

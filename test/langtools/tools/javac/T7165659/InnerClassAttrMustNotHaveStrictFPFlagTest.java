@@ -35,9 +35,9 @@
 
 import java.io.File;
 
-import com.sun.tools.javac.util.Assert;
 import jdk.internal.classfile.*;
 import jdk.internal.classfile.attribute.*;
+import com.sun.tools.javac.util.Assert;
 
 public class InnerClassAttrMustNotHaveStrictFPFlagTest {
 
@@ -55,7 +55,7 @@ public class InnerClassAttrMustNotHaveStrictFPFlagTest {
         InnerClassesAttribute innerClasses = classFile.findAttribute(Attributes.INNER_CLASSES).orElse(null);
         assert innerClasses != null;
         for (InnerClassInfo classInfo : innerClasses.classes()) {
-            Assert.check(!(classInfo.flagsMask() == Classfile.ACC_STRICT),
+            Assert.check(!classInfo.inner_class_access_flags.is(AccessFlags.ACC_STRICT),
                     "Inner classes attribute must not have the ACC_STRICT flag set");
         }
     }

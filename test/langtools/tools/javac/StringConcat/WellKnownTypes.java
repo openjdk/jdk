@@ -75,8 +75,8 @@ public class WellKnownTypes {
 
     public static void test(String actual, int index, String expected) {
         if (!actual.equals(expected)) {
-            throw new IllegalStateException(
-                    index + " Unexpected: expected = " + expected + ", actual = " + actual);
+      throw new IllegalStateException(
+          index + " Unexpected: expected = " + expected + ", actual = " + actual);
         }
     }
 }

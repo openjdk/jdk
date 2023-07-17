@@ -34,9 +34,9 @@
  * @run main LambdaTestStrictFPFlag
  */
 
-import jdk.internal.classfile.*;
 import java.io.*;
 import java.net.URL;
+import jdk.internal.classfile.*;
 
 public class LambdaTestStrictFPFlag {
     public static void main(String[] args) throws Exception {

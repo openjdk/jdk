@@ -46,7 +46,7 @@ public class ConstDebugTest {
         for (MethodModel method: classModel.methods()) {
             if (method.methodName().equalsString("<clinit>")) {
                 throw new AssertionError(
-                        "javac should not create a <clinit> method for ConstDebugTest class");
+                    "javac should not create a <clinit> method for ConstDebugTest class");
             }
         }
     }

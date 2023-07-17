@@ -45,7 +45,7 @@ public class RedundantByteCodeInArrayTest {
             throws IOException {
         new RedundantByteCodeInArrayTest()
                 .checkClassFile(new File(System.getProperty("test.classes", "."),
-                        RedundantByteCodeInArrayTest.class.getName() + ".class"));
+                    RedundantByteCodeInArrayTest.class.getName() + ".class"));
     }
 
     void arrMethod(int[] array, int p, int inc) {
