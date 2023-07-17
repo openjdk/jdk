@@ -345,7 +345,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     }
 
     /**
-     * {@return if the {@code Console} instance is a terminal}
+     * {@return {@code true} if the {@code Console} instance is a terminal}
      * <p>
      * If it is {@code true}, the {@code Console} instance is attached to a terminal
      * provided by the underlying platform, typically its input and output
