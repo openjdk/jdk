@@ -104,6 +104,7 @@ runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
 
 applications/jcstress/copy.java 8229852 linux-all
+applications/ctw/modules/jdk_crypto_ec.java 8312194 generic-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestMemoryAwareness.java 8303470 linux-x64
