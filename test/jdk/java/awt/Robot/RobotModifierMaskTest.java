@@ -27,11 +27,14 @@ import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
-import javax.swing.WindowConstants;
 
 import jtreg.SkippedException;
 import sun.awt.OSInfo;
@@ -57,8 +60,9 @@ public class RobotModifierMaskTest {
     private static Robot robot;
     private static JFrame jFrame;
     private static JTextArea jTextArea;
-    private static boolean startTest = false;
     private static boolean isManual = false;
+    private static boolean testStarted = false;
+    private static volatile CountDownLatch countDownLatch;
 
     private static StringBuffer errorLog = new StringBuffer();
     private static final String EXPECTED_RESULT_SHIFT = "AAAAA";
@@ -84,6 +88,7 @@ public class RobotModifierMaskTest {
 
         try {
             isManual = args.length != 0;
+            testStarted = !isManual;
 
             robot = new Robot();
             robot.setAutoWaitForIdle(true);
@@ -91,22 +96,14 @@ public class RobotModifierMaskTest {
 
             // create instruction frame when running in manual mode
             if (isManual) {
-                try {
-                    invokeAndWait(RobotModifierMaskTest::createInstructionsUI);
-                    robot.waitForIdle();
-                    while (!startTest) {
-                        robot.delay(200);
-                        if (!jFrame.isVisible()) {
-                            throw new RuntimeException("Test instruction frame closed");
-                        }
-                    }
-                } finally {
-                    invokeAndWait(() -> {
-                        if (jFrame != null) {
-                            jFrame.dispose();
-                        }
-                    });
-                }
+                countDownLatch = new CountDownLatch(1);
+                invokeAndWait(RobotModifierMaskTest::createInstructionsUI);
+                robot.waitForIdle();
+                countDownLatch.await(2, TimeUnit.MINUTES);
+            }
+
+            if (!testStarted) {
+                throw new RuntimeException("Test Failed: Manual test timed out!!");
             }
 
             invokeAndWait(RobotModifierMaskTest::createTestUI);
@@ -231,12 +228,15 @@ public class RobotModifierMaskTest {
         jFrame.getContentPane().add(pane, BorderLayout.CENTER);
 
         JButton jButton = new JButton("Start");
-        jButton.addActionListener(e -> startTest = true);
+        jButton.addActionListener(e -> {
+            testStarted = true;
+            countDownLatch.countDown();
+        });
         jFrame.getContentPane().add(jButton, BorderLayout.PAGE_END);
 
         jFrame.setSize(560, 200);
         jFrame.setLocation(200, 200);
-        jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+        jFrame.addWindowListener(new CustomWindowAdapter());
         jFrame.setVisible(true);
     }
 
@@ -249,7 +249,8 @@ public class RobotModifierMaskTest {
 
         jFrame.setSize(450, 100);
         jFrame.setLocation(200, 200);
-        jFrame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
+
+        jFrame.addWindowListener(new CustomWindowAdapter());
         jFrame.setVisible(true);
     }
 
@@ -271,5 +272,15 @@ public class RobotModifierMaskTest {
                         + " Actual : " + actualResult + "\n");
             }
         });
+    }
+
+    private static class CustomWindowAdapter extends WindowAdapter {
+        @Override
+        public void windowClosing(WindowEvent e) {
+            if (isManual) {
+                countDownLatch.countDown();
+            }
+            throw new RuntimeException("Instruction/Test window closed abruptly");
+        }
     }
 }
