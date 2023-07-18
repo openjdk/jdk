@@ -21,6 +21,7 @@
  * questions.
  */
 
+import javax.imageio.ImageIO;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
@@ -31,11 +32,12 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
+import java.io.File;
+import java.io.IOException;
+
 /*
  * @test
  * @bug 8311031
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
  * @summary Test to validate JTable header border vertical line is
  * aligned with data grid lines (Metal L&F).
  * @run main TableHeaderBorderPositionTest
@@ -50,15 +52,11 @@ public class TableHeaderBorderPositionTest {
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         SwingUtilities.invokeAndWait(() -> {
-            try {
-                TableHeaderBorderPositionTest.Test();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            TableHeaderBorderPositionTest.Test();
         });
     }
 
-    public static void Test() throws Exception {
+    public static void Test() {
         int verticalLineCol;
         int expectedRGB;
         BufferedImage imgData;
@@ -112,6 +110,11 @@ public class TableHeaderBorderPositionTest {
         for (int i = 0; i < imgHeader.getHeight(); i++) {
             for (int j = verticalLineCol; j < verticalLineCol + 3; j++) {
                 if (expectedRGB != imgHeader.getRGB(j, i)) {
+                    try {
+                        ImageIO.write(imgHeader, "png",new File("FailureImageHeader.png"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     throw new RuntimeException("Test Failed");
                 }
             }
@@ -120,6 +123,11 @@ public class TableHeaderBorderPositionTest {
         for (int i = 0; i < table.getRowCount() * table.getRowHeight() * SCALE; i++) {
             for (int j = verticalLineCol; j < verticalLineCol + 3; j++) {
                 if (expectedRGB != imgData.getRGB(j, i)) {
+                    try {
+                        ImageIO.write(imgData, "png", new File("FailureImageData.png"));
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
                     throw new RuntimeException("Test Failed");
                 }
             }
