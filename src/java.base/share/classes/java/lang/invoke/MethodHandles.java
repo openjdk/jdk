@@ -4201,7 +4201,7 @@ return mh1;
                 }
                 refc = lookupClass();
             }
-            return VarHandles.makeFieldHandle(getField, refc, getField.getFieldType(),
+            return VarHandles.makeFieldHandle(getField, refc,
                                               this.allowedModes == TRUSTED && !getField.isTrustedFinalField());
         }
         /** Check access and get the requested constructor. */
