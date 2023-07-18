@@ -162,8 +162,10 @@ public class WrapperHiddenClassTest {
         assertTrue(implModule.getName().startsWith("jdk.MHProxy"),
                 () -> "incorrect dynamic module name: " + implModule.getName());
 
+        assertSame(ifaceClass.getClassLoader(), implClass.getClassLoader(),
+                "wrapper class should use the interface's loader ");
         assertSame(implClass.getClassLoader(), implModule.getClassLoader(),
-                "module class loader should be proxy class's loader");
+                "module class loader should be wrapper class's loader");
     }
 
     /**

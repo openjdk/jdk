@@ -86,7 +86,8 @@ public class MethodHandleProxies {
      * even though it re-declares the {@code Object.equals} method and also
      * declares default methods, such as {@code Comparator.reverse}.
      * <p>
-     * The interface must be public and not {@linkplain Class#isSealed() sealed}.
+     * The interface must be public, not {@linkplain Class#isHidden() hidden},
+     * and not {@linkplain Class#isSealed() sealed}.
      * No additional access checks are performed.
      * <p>
      * The resulting instance of the required type will respond to
