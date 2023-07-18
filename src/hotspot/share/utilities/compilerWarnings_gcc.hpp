@@ -38,9 +38,12 @@
 #define PRAGMA_DISABLE_GCC_WARNING(option_string) \
   PRAGMA_DISABLE_GCC_WARNING_AUX(GCC diagnostic ignored option_string)
 
-// Disable -Wdangling-pointer which is introduced in GCC 12.
 #if !defined(__clang_major__) && (__GNUC__ >= 12)
+// Disable -Wdangling-pointer which is introduced in GCC 12.
 #define PRAGMA_DANGLING_POINTER_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Wdangling-pointer")
+
+// Disable -Winfinite-recursion which is introduced in GCC 12.
+#define PRAGMA_INFINITE_RECURSION_IGNORED PRAGMA_DISABLE_GCC_WARNING("-Winfinite-recursion")
 #endif
 
 #define PRAGMA_FORMAT_NONLITERAL_IGNORED                \
