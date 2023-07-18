@@ -43,7 +43,7 @@
 #endif // COMPILER2
 
 #ifdef COMPILER2
-const char* VectorSupport::svmlname[VectorSupport::NUM_SVML_OP] = {
+const char* VectorSupport::mathname[VectorSupport::NUM_VECTOR_OP_MATH] = {
     "tan",
     "tanh",
     "sin",
