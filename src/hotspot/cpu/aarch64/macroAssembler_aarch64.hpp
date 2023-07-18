@@ -1713,6 +1713,11 @@ public:
   void poly1305_multiply(LambdaAccumulator &acc,
                          const RegPair u[], const Register s[], const Register r[],
                          Register RR2, RegSetIterator<Register> scratch);
+  // Multiply mod 2**130-5
+  void poly1305_field_multiply(LambdaAccumulator &acc,
+                         const RegPair u[], const Register s[], const Register r[],
+                         Register RR2, RegSetIterator<Register> scratch);
+
   void poly1305_multiply_vec(LambdaAccumulator &acc,
                              const FloatRegister u[], const FloatRegister m[],
                              const FloatRegister r[], const FloatRegister rr[]);

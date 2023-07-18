@@ -6429,17 +6429,17 @@ void MacroAssembler::wide_madd(RegPair sum, Register n, Register m) {
   adc(sum._hi, sum._hi, rscratch2);
 }
 
-#define gen acc << [=]()
+#define _ acc << [=]()
 // Widening multiply s * r -> u
 void MacroAssembler::poly1305_multiply(LambdaAccumulator &acc,
                                        const RegPair u[], const Register s[], const Register r[],
                                        Register RR2, RegSetIterator<Register> scratch) {
-  gen { wide_mul(u[0], s[0], r[0]); };
-  gen { wide_mul(u[2], s[0], r[2]); };
-  gen { wide_madd(u[0], s[1], RR2); };
+  _ { wide_mul(u[0], s[0], r[0]); };
+  _ { wide_mul(u[2], s[0], r[2]); };
+  _ { wide_madd(u[0], s[1], RR2); };
   {
     Register RS2 = *++scratch;
-    gen {
+    _ {
       // Compute (S2 << 26) * 5.
       lsl(RS2, s[2], 26);
       add(RS2, RS2, RS2, LSL, 2);
@@ -6447,10 +6447,62 @@ void MacroAssembler::poly1305_multiply(LambdaAccumulator &acc,
       wide_madd(u[0], RS2, r[1]);
     };
   }
-  gen { wide_madd(u[1], s[0], r[1]); };
-  gen { wide_madd(u[2], s[1], r[1]); };
-  gen { wide_madd(u[1], s[1], r[0]); };
-  gen { wide_madd(u[2], s[2], r[0]); };
+  _ { wide_madd(u[1], s[0], r[1]); };
+  _ { wide_madd(u[2], s[1], r[1]); };
+  _ { wide_madd(u[1], s[1], r[0]); };
+  _ { wide_madd(u[2], s[2], r[0]); };
+}
+
+void MacroAssembler::poly1305_reduce(LambdaAccumulator &acc, const RegPair u[], const char *s) {
+#define _ acc << [=]()
+  // Partial reduction mod 2**130 - 5
+
+  // Assume:
+  // u[2] < 0x200000000000_0000000000000000 (i.e. 109 bits)
+  // u[1] < 0x200000000000_0000000000000000 (i.e. 109 bits)
+  // u[0] < 0x200000000000_0000000000000000 (i.e. 109 bits)
+
+  // This follows from the inputs to the 3x3 multiplication all being
+  // < 54 bits long.
+
+  // Add the high part (i.e. everything from bits 52 up) of u1 to u2
+  _ { shifted_add128(u[2], u[1], 52); };
+  _ { clear_above(u[1], 52); };                             // u[1] < 0x10000000000000 (i.e. 52 bits)
+
+  // Add the high part of u0 to u1
+  _ { shifted_add128(u[1], u[0], 52); };
+  _ { clear_above(u[0], 52); };                             // u[0] < 0x10000000000000 (i.e. 52 bits)
+                                                     // u[1] < 0x200000000000000 (i.e. 57 bits)
+
+  // Then multiply the high part of u2 by 5 and add it back to u1:u0
+  _ { extr(rscratch1, u[2]._hi, u[2]._lo, 26);
+        ubfx(rscratch1, rscratch1, 0, 52);
+        add(rscratch1, rscratch1, rscratch1, LSL, 2);         // rscratch1 *= 5
+        add(u[0]._lo, u[0]._lo, rscratch1); };
+
+  _ { lsr(rscratch1, u[2]._hi, (26+52) % 64);
+        add(rscratch1, rscratch1, rscratch1, LSL, 2);         // rscratch1 *= 5
+        add(u[1]._lo, u[1]._lo, rscratch1); };
+  _ { clear_above(u[2], 26); };                             // u[2] < 0x4000000 (i.e. 26 bits)
+                                                     // u[1] < 0x200000000000000 (i.e. 57 bits)
+                                                     // u[0] < 0x20000000000000 (i.e. 53 bits)
+
+  // u[1] -> u[2]
+  _ { add(u[2]._lo, u[2]._lo, u[1]._lo, LSR, 52); };        // u[2] < 0x8000000 (i.e. 27 bits)
+  _ { bfc(u[1]._lo, 52, 64-52); };                          // u[1] < 0x10000000000000 (i.e. 52 bits)
+
+  // u[0] -> u1
+  _ { add(u[1]._lo, u[1]._lo, u[0]._lo, LSR, 52); };
+  _ { bfc(u[0]._lo, 52, 64-52); };                          // u[0] < 0x10000000000000 (i.e. 52 bits)
+                                                     // u[1] < 0x20000000000000 (i.e. 53 bits)
+                                                     // u[2] < 0x4000000 (i.e. 27 bits)
+}
+
+void MacroAssembler::poly1305_field_multiply(LambdaAccumulator &acc,
+                                             const RegPair u[], const Register s[], const Register r[],
+                                             Register RR2, RegSetIterator<Register> scratch) {
+  poly1305_multiply(acc, u, s, r, RR2, scratch);
+  poly1305_reduce(acc, u, NULL);
 }
 
 // Widening multiply s * r -> u
@@ -6469,56 +6521,54 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
   // u64 u3 = r0*m3 +   r1*m2 +   r2*m1 +   r3*m0 + 5·r4*m4
   // u64 u4 = r0*m4 +   r1*m3 +   r2*m2 +   r3*m1 +   r4*m0
 
-  gen { umull(u[0], T2D, s[0], r[0], 0); };
-  gen { umull2(u[1], T2D, s[0], r[0], 0); };
-  gen { umull(u[2], T2D, s[1], r[0], 0); };
-  gen { umull2(u[3], T2D, s[1], r[0], 0); };
-  gen { umull(u[4], T2D, s[2], r[0], 0); };
+  _ { umull(u[0], T2D, s[0], r[0], 0); };
+  _ { umull2(u[1], T2D, s[0], r[0], 0); };
+  _ { umull(u[2], T2D, s[1], r[0], 0); };
+  _ { umull2(u[3], T2D, s[1], r[0], 0); };
+  _ { umull(u[4], T2D, s[2], r[0], 0); };
 
-  gen {
+  _ {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u0[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u0[3]");
   };
 
-  gen {
-    asm("nop");
-    umlal(u[0], T2D, s[2], rr[0], 1); };
-  gen { umlal(u[1], T2D, s[0],  r[0], 1); };
-  gen { umlal2(u[2], T2D, s[0],  r[0], 1); };
-  gen { umlal(u[3], T2D, s[1],  r[0], 1); };
-  gen { umlal2(u[4], T2D, s[1],  r[0], 1); };
-  gen {
+  _ { umlal(u[0], T2D, s[2], rr[0], 1); };
+  _ { umlal(u[1], T2D, s[0],  r[0], 1); };
+  _ { umlal2(u[2], T2D, s[0],  r[0], 1); };
+  _ { umlal(u[3], T2D, s[1],  r[0], 1); };
+  _ { umlal2(u[4], T2D, s[1],  r[0], 1); };
+  _ {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u1[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u1[3]");
   };
 
-  gen { umlal2(u[0], T2D, s[1], rr[0], 2); };
-  gen { umlal(u[1], T2D, s[2], rr[0], 2); };
-  gen { umlal(u[2], T2D, s[0],  r[0], 2); };
-  gen { umlal2(u[3], T2D, s[0],  r[0], 2); };
-  gen { umlal(u[4], T2D, s[1],  r[0], 2); };
-  gen {
+  _ { umlal2(u[0], T2D, s[1], rr[0], 2); };
+  _ { umlal(u[1], T2D, s[2], rr[0], 2); };
+  _ { umlal(u[2], T2D, s[0],  r[0], 2); };
+  _ { umlal2(u[3], T2D, s[0],  r[0], 2); };
+  _ { umlal(u[4], T2D, s[1],  r[0], 2); };
+  _ {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u2[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u2[3]");
   };
 
 
-  gen { umlal(u[0], T2D, s[1], rr[0], 3); };
-  gen { umlal2(u[1], T2D, s[1], rr[0], 3); };
-  gen { umlal(u[2], T2D, s[2], rr[0], 3); };
-  gen { umlal(u[3], T2D, s[0],  r[0], 3); };
-  gen { umlal2(u[4], T2D, s[0],  r[0], 3); };
-  gen {
+  _ { umlal(u[0], T2D, s[1], rr[0], 3); };
+  _ { umlal2(u[1], T2D, s[1], rr[0], 3); };
+  _ { umlal(u[2], T2D, s[2], rr[0], 3); };
+  _ { umlal(u[3], T2D, s[0],  r[0], 3); };
+  _ { umlal2(u[4], T2D, s[0],  r[0], 3); };
+  _ {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u3[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u3[3]");
   };
 
-  gen { umlal2(u[0], T2D, s[0], rr[1], 0); };
-  gen { umlal(u[1], T2D, s[1], rr[1], 0); };
-  gen { umlal2(u[2], T2D, s[1], rr[1], 0); };
-  gen { umlal(u[3], T2D, s[2], rr[1], 0); };
-  gen { umlal(u[4], T2D, s[0],  r[1], 0); };
-  gen {
+  _ { umlal2(u[0], T2D, s[0], rr[1], 0); };
+  _ { umlal(u[1], T2D, s[1], rr[1], 0); };
+  _ { umlal2(u[2], T2D, s[1], rr[1], 0); };
+  _ { umlal(u[3], T2D, s[2], rr[1], 0); };
+  _ { umlal(u[4], T2D, s[0],  r[1], 0); };
+  _ {
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 0, "u4[2]");
     m_print26(D, u[4], u[3], u[2], u[1], u[0], 1, "u4[3]");
   };
@@ -6557,105 +6607,58 @@ void MacroAssembler::copy_3_regs_to_5_elements(const FloatRegister d[],
   mov(d[1], D, 0, s2);
 }
 
-// void MacroAssembler::poly1305_step_vec1(LambdaAccumulator &acc,
-//                                        const FloatRegister s[], const FloatRegister u[],
-//                                        const FloatRegister zero, Register input_start,
-//                                        AbstractRegSet<FloatRegister> scratch) {
-//   auto vregs = scratch.begin();
-//   FloatRegister scratch1 = *vregs++, scratch2 = *vregs++;
-//   gen {
-//     ld2(scratch1, scratch2, D, 0, post(input_start, 2 * wordSize));
-//     ld2(scratch1, scratch2, D, 1, post(input_start, 2 * wordSize)); };
-
-//   gen { mov(s[0], T16B, scratch1); };
-//   gen {
-//     sli(s[0], T2D, zero, 26);
-//   };
-
-//   gen { ushr(s[1], T2D, scratch1, 26); };
-//   gen { sli(s[1], T2D, zero, 26); };
-
-//   gen { ushr(s[2], T2D, scratch1, 52); };
-//   gen { shl(scratch1, T2D, scratch2, 64-14); };
-//   gen { ushr(scratch1, T2D, scratch1, 64-26); };
-//   gen { addv(s[2], T2D, s[2], scratch1); };
-
-//   gen { ushr(s[3], T2D, scratch2, 14); };
-//   gen { sli(s[3], T2D, zero, 26); };
-
-//   gen { ushr(s[4], T2D, scratch2, 14+26); };
-
-//   for (int i = 0; i < 5; i++) {
-//     gen {   addv(s[i], T2D, u[i], s[i]); };
-//     gen {   uzp1(s[i], T4S, s[i], s[i]); };
-//   }
-
-//   gen { mov(scratch1, T4S, 1 << 24); };
-//   gen { addv(s[4], T4S, s[4], scratch1); };
-
-//   gen {
-//     m_print26(S, s[4], s[3], s[2], s[1], s[0], 0, "s[2]");
-//     m_print26(S, s[4], s[3], s[2], s[1], s[0], 1, "s[3]");
-//   };
-// }
-
 void MacroAssembler::poly1305_step_vec(LambdaAccumulator &acc,
                                        const FloatRegister s[], const FloatRegister u[],
                                        const FloatRegister zero, Register input_start,
                                        AbstractRegSet<FloatRegister> scratch) {
-  gen {
+  _ {
     m_print26(D, u[4], u[2], u[0], 0, "** ARGH ?");
   };
 
-  gen {
+  FloatRegister scratch1 = u[2], scratch2 = u[3];
+
+  _ {
     trn1(u[0], T4S, u[0], u[1]);
     trn1(u[1], T4S, u[2], u[3]);
 
     // The incoming sum is packed into u[0], u[1], u[4]
     // u[2] and u[3] are now free
-  };
 
-  FloatRegister scratch1 = u[2], scratch2 = u[3];
-
-  gen {
     ld2(scratch1, scratch2, D, 0, post(input_start, 2 * wordSize));
-    ld2(scratch1, scratch2, D, 1, post(input_start, 2 * wordSize)); };
-
-  gen {
-    ushr(s[2], T2D, scratch2, 14+26);
+    ld2(scratch1, scratch2, D, 1, post(input_start, 2 * wordSize));
   };
 
-  gen {
-    ushr(s[1], T2D, scratch1, 26+26);
-    sli(s[1], T2D, scratch2, 12);
-  };
-  gen {
+  _ { ushr(s[2], T2D, scratch2, 14+26); };
+  _ { ushr(s[1], T2D, scratch1, 26+26); };
+  _ { sli(s[1], T2D, scratch2, 12); };
+  _ {
     ushr(scratch2, T2D, scratch2, 14);
     sli(s[1], T2D, scratch2, 32);
     sli(s[1], T4S, zero, 26);
   };
-  gen { mov(s[0], T16B, scratch1); };
-  gen {
+  _ { mov(s[0], T16B, scratch1); };
+
+  _ {
     ushr(scratch1, T2D, scratch1, 26);
     sli(s[0], T2D, scratch1, 32);
     sli(s[0], T4S, zero, 26);
   };
 
-  gen { mov(scratch1, T2D, 1 << 24); };
-  gen { addv(s[2], T2D, s[2], scratch1); };
-  gen { sli(s[2], T2D, zero, 32); };
+  _ { mov(scratch1, T2D, 1 << 24); };
+  _ { addv(s[2], T2D, s[2], scratch1); };
+  _ { sli(s[2], T2D, zero, 32); };
 
-  gen { addv(s[0], T4S, s[0], u[0]); };
-  gen { addv(s[1], T4S, s[1], u[1]); };
-  gen { addv(s[2], T4S, s[2], u[4]); };
+  _ { addv(s[0], T4S, s[0], u[0]); };
+  _ { addv(s[1], T4S, s[1], u[1]); };
+  _ { addv(s[2], T4S, s[2], u[4]); };
 
   for (int i = 0; i <= 2; i++)
-    gen {
+    _ {
       ext(scratch1, T16B, s[i], s[i], 8);
       zip1(s[i], T4S, s[i], scratch1);
     };
 
-  gen {
+  _ {
     int indexes1[] = { 0, 1, 0, 1, 0 };
     FloatRegister v[] = { s[2], s[1], s[1], s[0], s[0] };
     m_print26(S, v, indexes1, "s[2]");
@@ -6676,10 +6679,10 @@ void MacroAssembler::poly1305_multiply_vec(LambdaAccumulator &acc,
 void MacroAssembler::poly1305_reduce_step(LambdaAccumulator &acc,
                                           FloatRegister d, FloatRegister s,
                                           FloatRegister zero, FloatRegister scratch) {
-  gen {
+  _ {
     ushr(scratch, T2D, s, 26);
     Assembler::add(d, T2D, d, scratch); };
-  gen { sli(s, T2D, zero, 26); };
+  _ { sli(s, T2D, zero, 26); };
 }
 void MacroAssembler::poly1305_reduce_vec(LambdaAccumulator &acc,
                                          const FloatRegister u[],
@@ -6696,7 +6699,7 @@ void MacroAssembler::poly1305_reduce_vec(LambdaAccumulator &acc,
   poly1305_reduce_step(acc, u[1], u[0], zero, vtmp2);
   poly1305_reduce_step(acc, u[4], u[3], zero, vtmp2);
   poly1305_reduce_step(acc, u[2], u[1], zero, vtmp2);
-  gen {
+  _ {
     ushr(vtmp2, T2D, u[4], 26);
     shl(vtmp3, T2D, vtmp2, 2);
     Assembler::add(vtmp2, T2D, vtmp2, vtmp3); // vtmp2 == 5 * (u[4] >> 26)
@@ -6736,51 +6739,6 @@ void MacroAssembler::clear_above(const RegPair d, int shift) {
   mov(d._hi, 0);
 }
 
-void MacroAssembler::poly1305_reduce(LambdaAccumulator &acc, const RegPair u[], const char *s) {
-#define gen acc << [=]()
-  // Partial reduction mod 2**130 - 5
-
-  // Assume:
-  // u[2] < 0x200000000000_0000000000000000 (i.e. 109 bits)
-  // u[1] < 0x200000000000_0000000000000000 (i.e. 109 bits)
-  // u[0] < 0x200000000000_0000000000000000 (i.e. 109 bits)
-
-  // This follows from the inputs to the 3x3 multiplication all being
-  // < 54 bits long.
-
-  // Add the high part (i.e. everything from bits 52 up) of u1 to u2
-  gen { shifted_add128(u[2], u[1], 52); };
-  gen { clear_above(u[1], 52); };                             // u[1] < 0x10000000000000 (i.e. 52 bits)
-
-  // Add the high part of u0 to u1
-  gen { shifted_add128(u[1], u[0], 52); };
-  gen { clear_above(u[0], 52); };                             // u[0] < 0x10000000000000 (i.e. 52 bits)
-                                                     // u[1] < 0x200000000000000 (i.e. 57 bits)
-
-  // Then multiply the high part of u2 by 5 and add it back to u1:u0
-  gen { extr(rscratch1, u[2]._hi, u[2]._lo, 26);
-        ubfx(rscratch1, rscratch1, 0, 52);
-        add(rscratch1, rscratch1, rscratch1, LSL, 2);         // rscratch1 *= 5
-        add(u[0]._lo, u[0]._lo, rscratch1); };
-
-  gen { lsr(rscratch1, u[2]._hi, (26+52) % 64);
-        add(rscratch1, rscratch1, rscratch1, LSL, 2);         // rscratch1 *= 5
-        add(u[1]._lo, u[1]._lo, rscratch1); };
-  gen { clear_above(u[2], 26); };                             // u[2] < 0x4000000 (i.e. 26 bits)
-                                                     // u[1] < 0x200000000000000 (i.e. 57 bits)
-                                                     // u[0] < 0x20000000000000 (i.e. 53 bits)
-
-  // u[1] -> u[2]
-  gen { add(u[2]._lo, u[2]._lo, u[1]._lo, LSR, 52); };        // u[2] < 0x8000000 (i.e. 27 bits)
-  gen { bfc(u[1]._lo, 52, 64-52); };                          // u[1] < 0x10000000000000 (i.e. 52 bits)
-
-  // u[0] -> u1
-  gen { add(u[1]._lo, u[1]._lo, u[0]._lo, LSR, 52); };
-  gen { bfc(u[0]._lo, 52, 64-52); };                          // u[0] < 0x10000000000000 (i.e. 52 bits)
-                                                     // u[1] < 0x20000000000000 (i.e. 53 bits)
-                                                     // u[2] < 0x4000000 (i.e. 27 bits)
-}
-
 void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
   // Fully reduce modulo 2^130 - 5
   adds(u[0]._lo, u[0]._lo, u[1]._lo, LSL, 52);
@@ -6802,7 +6760,7 @@ void MacroAssembler::poly1305_fully_reduce(Register dest[], const RegPair u[]) {
 
 void MacroAssembler::poly1305_load(LambdaAccumulator &acc,
                                    const Register s[], const Register input_start) {
-  gen {
+  _ {
     ldp(rscratch1, rscratch2, post(input_start, 2 * wordSize));
     ubfx(s[0], rscratch1, 0, 52);
     extr(s[1], rscratch2, rscratch1, 52);
@@ -6815,7 +6773,7 @@ void MacroAssembler::poly1305_load(LambdaAccumulator &acc,
 void MacroAssembler::poly1305_step(LambdaAccumulator &acc,
                                    const Register s[], const RegPair u[], Register input_start) {
   poly1305_load(acc, s, input_start);
-  gen { poly1305_add(s, u); };
+  _ { poly1305_add(s, u); };
 }
 
 void MacroAssembler::copy_3_regs(const Register dest[], const Register src[]) {
@@ -6839,5 +6797,5 @@ void MacroAssembler::poly1305_add(const Register dest[], const RegPair src[]) {
 
 void MacroAssembler::poly1305_add(LambdaAccumulator &acc,
                                   const Register dest[], const RegPair src[]) {
-  gen { poly1305_add(dest, src); };
+  _ { poly1305_add(dest, src); };
 }
