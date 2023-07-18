@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,6 +130,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @param  profile the specified {@code ICC_Profile} object
      * @throws IllegalArgumentException if profile is inappropriate for
      *         representing a {@code ColorSpace}
+     * @throws NullPointerException if {@code profile} is {@code null}
      */
     public ICC_ColorSpace(ICC_Profile profile) {
         super(profile.getColorSpaceType(), profile.getNumComponents());
@@ -157,6 +158,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @throws ClassNotFoundException if the class of a serialized object could
      *         not be found
      * @throws IOException if an I/O error occurs
+     * @throws NullPointerException if {@code s} is {@code null}
      */
     @Serial
     private void readObject(ObjectInputStream s)
@@ -195,6 +197,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @return a float array of length 3
      * @throws ArrayIndexOutOfBoundsException if array length is not at least
      *         the number of components in this {@code ColorSpace}
+     * @throws NullPointerException if {@code colorvalue} is {@code null}
      */
     public float[] toRGB(float[] colorvalue) {
         if (this2srgb == null) {
@@ -243,6 +246,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @return a float array with length equal to the number of components in
      *         this {@code ColorSpace}
      * @throws ArrayIndexOutOfBoundsException if array length is not at least 3
+     * @throws NullPointerException if {@code rgbvalue} is {@code null}
      */
     public float[] fromRGB(float[] rgbvalue) {
         if (srgb2this == null) {
@@ -371,6 +375,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @return a float array of length 3
      * @throws ArrayIndexOutOfBoundsException if array length is not at least
      *         the number of components in this {@code ColorSpace}
+     * @throws NullPointerException if {@code colorvalue} is {@code null}
      */
     public float[] toCIEXYZ(float[] colorvalue) {
         if (this2xyz == null) {
@@ -502,6 +507,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * @return a float array with length equal to the number of components in
      *         this {@code ColorSpace}
      * @throws ArrayIndexOutOfBoundsException if array length is not at least 3
+     * @throws NullPointerException if {@code colorvalue} is {@code null}
      */
     public float[] fromCIEXYZ(float[] colorvalue) {
         if (xyz2this == null) {
