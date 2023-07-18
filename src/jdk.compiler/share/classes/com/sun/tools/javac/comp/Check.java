@@ -4733,10 +4733,13 @@ public class Check {
                     return false;
                 }
             }
-            if (currentPattern instanceof JCBindingPattern) {
-                return existingPattern instanceof JCBindingPattern || existingPattern instanceof JCAnyPattern;
+            if (currentPattern instanceof JCBindingPattern ||
+                currentPattern instanceof JCAnyPattern) {
+                return existingPattern instanceof JCBindingPattern ||
+                       existingPattern instanceof JCAnyPattern;
             } else if (currentPattern instanceof JCRecordPattern currentRecordPattern) {
-                if (existingPattern instanceof JCBindingPattern) {
+                if (existingPattern instanceof JCBindingPattern ||
+                    existingPattern instanceof JCAnyPattern) {
                     return true;
                 } else if (existingPattern instanceof JCRecordPattern existingRecordPattern) {
                     List<JCPattern> existingNested = existingRecordPattern.nested;
@@ -4752,19 +4755,10 @@ public class Check {
                         currentNested = currentNested.tail;
                     }
                     return true;
-                } else if (existingPattern instanceof JCAnyPattern) {
-                    return true;
-                }
-                else {
+                } else {
                     Assert.error("Unknown pattern: " + existingPattern.getTag());
                 }
-            } else if (currentPattern instanceof JCAnyPattern) {
-                if(existingPattern instanceof JCAnyPattern) {
-                    return true;
-                } else {
-                    return existingPattern instanceof JCBindingPattern;
-                }
-            } {
+            } else {
                 Assert.error("Unknown pattern: " + currentPattern.getTag());
             }
             return false;
