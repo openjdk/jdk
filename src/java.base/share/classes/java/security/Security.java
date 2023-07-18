@@ -322,8 +322,6 @@ public final class Security {
      * @param position the preference position that the caller would
      * like for this provider.
      *
-     *
-     *
      * @return the actual preference position in which the provider was
      * added, or -1 if the provider was not added because it is
      * already installed.
