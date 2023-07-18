@@ -347,7 +347,7 @@ public sealed class Console implements Flushable permits ProxyingConsole {
     /**
      * {@return {@code true} if the {@code Console} instance is a terminal}
      * <p>
-     * This method returns true if the console device, associated with the current
+     * This method returns {@code true} if the console device, associated with the current
      * Java virtual machine, is a terminal, typically an interactive command line
      * connected to a keyboard and display.
      *
