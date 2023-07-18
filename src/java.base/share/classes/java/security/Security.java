@@ -313,10 +313,16 @@ public final class Security {
      * {@code "insertProvider."+provider.getName()} permission target name. If
      * both checks are denied, a {@code SecurityException} is thrown.
      *
+     * @implNote If the position is less than 1 or greater than n, where n is
+     * the number of providers, the JDK implementation inserts the provider
+     * (if not already installed) at the end of the list, or at the n + 1 position.
+     *
      * @param provider the provider to be added.
      *
      * @param position the preference position that the caller would
      * like for this provider.
+     *
+     *
      *
      * @return the actual preference position in which the provider was
      * added, or -1 if the provider was not added because it is
