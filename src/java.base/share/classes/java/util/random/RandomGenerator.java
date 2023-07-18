@@ -337,6 +337,11 @@ public interface RandomGenerator {
              *
              * delta is the distance from left to the next double in the
              * direction of positive infinity.
+             * Most of the time, this is equivalent to the ulp of left, but not
+             * always.
+             * For example, Math.ulp(-1.0) == 2.220446049250313E-16, whereas
+             * delta == 1.1102230246251565E-16.
+             * 
              * Every product k delta lying in [left, -left] is an exact double.
              * Thus, every product k delta lying in I is an exact double, too.
              * Any other positive eps < delta does not meet this property:
