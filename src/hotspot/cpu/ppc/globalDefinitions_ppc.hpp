@@ -31,7 +31,7 @@ const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = 16;
 
-#ifdef defined(AIX)
+#ifdef AIX
 const size_t pd_segfault_address = -1;
 #else
 const size_t pd_segfault_address = 1024;
