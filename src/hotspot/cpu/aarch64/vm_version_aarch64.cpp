@@ -187,7 +187,7 @@ void VM_Version::initialize() {
   }
 
   // Cortex A53
-  if (_cpu == CPU_ARM && (_model == 0xd03 || _model2 == 0xd03)) {
+  if (_cpu == CPU_ARM && model_is(0xd03)) {
     _features |= CPU_A53MAC;
     if (FLAG_IS_DEFAULT(UseSIMDForArrayEquals)) {
       FLAG_SET_DEFAULT(UseSIMDForArrayEquals, false);
@@ -195,7 +195,7 @@ void VM_Version::initialize() {
   }
 
   // Cortex A73
-  if (_cpu == CPU_ARM && (_model == 0xd09 || _model2 == 0xd09)) {
+  if (_cpu == CPU_ARM && model_is(0xd09)) {
     if (FLAG_IS_DEFAULT(SoftwarePrefetchHintDistance)) {
       FLAG_SET_DEFAULT(SoftwarePrefetchHintDistance, -1);
     }
@@ -206,9 +206,7 @@ void VM_Version::initialize() {
   }
 
   // Neoverse N1, N2 and V1
-  if (_cpu == CPU_ARM && ((_model == 0xd0c || _model2 == 0xd0c) ||
-                          (_model == 0xd49 || _model2 == 0xd49) ||
-                          (_model == 0xd40 || _model2 == 0xd40))) {
+  if (_cpu == CPU_ARM && (model_is(0xd0c) || model_is(0xd49) || model_is(0xd40))) {
     if (FLAG_IS_DEFAULT(UseSIMDForMemoryOps)) {
       FLAG_SET_DEFAULT(UseSIMDForMemoryOps, true);
     }
@@ -238,7 +236,7 @@ void VM_Version::initialize() {
   }
 
   // Neoverse V1
-  if (_cpu == CPU_ARM && (_model == 0xd40 || _model2 == 0xd40)) {
+  if (_cpu == CPU_ARM && model_is(0xd40)) {
     if (FLAG_IS_DEFAULT(UseCryptoPmullForCRC32)) {
       FLAG_SET_DEFAULT(UseCryptoPmullForCRC32, true);
     }
