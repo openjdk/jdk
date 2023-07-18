@@ -1088,6 +1088,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
   public:
     ArchivedFieldPrinter(ArchiveHeapInfo* heap_info, outputStream* st, oop src_obj) :
       _heap_info(heap_info), _st(st), _source_obj(src_obj) {}
+
     void do_field(fieldDescriptor* fd) {
       _st->print(" - ");
       BasicType ft = fd->field_type();
@@ -1099,31 +1100,35 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
         break;
       default:
         if (ArchiveHeapWriter::is_marked_as_native_pointer(_heap_info, _source_obj, fd->offset())) {
-          LP64_ONLY(assert(ft == T_LONG, "must be"));
-          NOT_LP64 (assert(ft == T_INT, "must be"));
-
-          // We have a field that looks like an integer, but it's actually a pointer to a MetaspaceObj.
-          address source_native_ptr = (address)
-            LP64_ONLY(_source_obj->long_field(fd->offset()))
-            NOT_LP64( _source_obj->int_field (fd->offset()));
-          ArchiveBuilder* builder = ArchiveBuilder::current();
-
-          // The value of the native pointer at runtime.
-          address requested_native_ptr = builder->to_requested(builder->get_buffered_addr(source_native_ptr));
-
-          // The address of _source_obj at runtime
-          oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(_source_obj);
-          // The address of this field in the requested space
-          address requested_field_addr = cast_from_oop<address>(requested_obj) + fd->offset();
-
-          fd->print_on(_st);
-          _st->print_cr(PTR_FORMAT " (marked metadata pointer @" PTR_FORMAT " )",
-                        p2i(requested_native_ptr), p2i(requested_field_addr));
+          print_as_native_pointer(fd);
         } else {
           fd->print_on_for(_st, _source_obj); // name, offset, value
           _st->cr();
         }
       }
+    }
+
+    void print_as_native_pointer(fieldDescriptor* fd) {
+      LP64_ONLY(assert(fd->field_type() == T_LONG, "must be"));
+      NOT_LP64 (assert(fd->field_type() == T_INT,  "must be"));
+
+      // We have a field that looks like an integer, but it's actually a pointer to a MetaspaceObj.
+      address source_native_ptr = (address)
+          LP64_ONLY(_source_obj->long_field(fd->offset()))
+          NOT_LP64( _source_obj->int_field (fd->offset()));
+      ArchiveBuilder* builder = ArchiveBuilder::current();
+
+      // The value of the native pointer at runtime.
+      address requested_native_ptr = builder->to_requested(builder->get_buffered_addr(source_native_ptr));
+
+      // The address of _source_obj at runtime
+      oop requested_obj = ArchiveHeapWriter::source_obj_to_requested_obj(_source_obj);
+      // The address of this field in the requested space
+      address requested_field_addr = cast_from_oop<address>(requested_obj) + fd->offset();
+
+      fd->print_on(_st);
+      _st->print_cr(PTR_FORMAT " (marked metadata pointer @" PTR_FORMAT " )",
+                    p2i(requested_native_ptr), p2i(requested_field_addr));
     }
   };
 
@@ -1149,7 +1154,7 @@ class ArchiveBuilder::CDSMapLogger : AllStatic {
           print_oop_with_requested_addr_cr(&st, source_obj_array->obj_at(i));
         }
       } else {
-        st.print_cr(" - ---- fields (total size " SIZE_FORMAT " words):", source_oop->size());
+        st.print_cr(" - fields (" SIZE_FORMAT " words):", source_oop->size());
         ArchivedFieldPrinter print_field(heap_info, &st, source_oop);
         InstanceKlass::cast(source_klass)->print_nonstatic_fields(&print_field);
       }

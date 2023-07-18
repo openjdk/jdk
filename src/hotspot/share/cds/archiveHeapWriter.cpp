@@ -543,7 +543,7 @@ bool ArchiveHeapWriter::is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, 
   assert((Metadata**)_requested_bottom <= requested_field_addr && requested_field_addr < (Metadata**) _requested_top, "range check");
 
   BitMap::idx_t idx = requested_field_addr - (Metadata**) _requested_bottom;
-  return idx < heap_info->ptrmap()->size() && heap_info->ptrmap()->at(idx);
+  return (idx < heap_info->ptrmap()->size()) && (heap_info->ptrmap()->at(idx) == true);
 }
 
 void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
