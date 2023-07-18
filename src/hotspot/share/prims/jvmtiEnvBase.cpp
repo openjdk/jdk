@@ -1602,13 +1602,8 @@ JvmtiEnvBase::is_in_thread_list(jint count, const jthread* list, oop jt_oop) {
 
 class VM_SetNotifyJvmtiEventsMode : public VM_Operation {
 private:
-  static bool _whitebox_used;
   bool _enable;
 
-  // This function is needed only for testing purposes to support multiple
-  // enable&disable notifyJvmti events. Otherwise, there can be only one call
-  // to enable_virtual_threads_notify_jvmti() for late binding agents. There
-  // have to be no JvmtiThreadState's and need to correct them in such a case.
   static void correct_jvmti_thread_state(JavaThread* jt) {
     oop  ct_oop = jt->threadObj();
     oop  vt_oop = jt->vthread();
@@ -1618,8 +1613,7 @@ private:
     bool virt = vt_oop != nullptr && java_lang_VirtualThread::is_instance(vt_oop);
 
     // Correct jt->jvmti_thread_state() and jt->jvmti_vthread().
-    // It was not maintained while notifyJvmti was disabled but there can be
-    // a leftover from previous cycle when notification were enabled.
+    // It was not maintained while notifyJvmti was disabled.
     if (virt) {
       jt->set_jvmti_thread_state(nullptr);  // reset jt->jvmti_thread_state()
       jt->set_jvmti_vthread(vt_oop);        // restore jt->jvmti_vthread()
@@ -1640,9 +1634,7 @@ private:
         count++;
         continue; // no need in JvmtiThreadState correction below if in transition
       }
-      if (_whitebox_used) {
-        correct_jvmti_thread_state(jt); // needed in testing environment only
-      }
+      correct_jvmti_thread_state(jt);
     }
     return count;
   }
@@ -1651,9 +1643,6 @@ public:
   VMOp_Type type() const { return VMOp_SetNotifyJvmtiEventsMode; }
   bool allow_nested_vm_operations() const { return false; }
   VM_SetNotifyJvmtiEventsMode(bool enable) : _enable(enable) {
-    if (!enable) {
-      _whitebox_used = true; // disabling is available via WhiteBox only
-    }
   }
 
   void doit() {
@@ -1663,8 +1652,6 @@ public:
     JvmtiVTMSTransitionDisabler::set_VTMS_notify_jvmti_events(_enable);
   }
 };
-
-bool VM_SetNotifyJvmtiEventsMode::_whitebox_used = false;
 
 // This function is to support agents loaded into running VM.
 // Must be called in thread-in-native mode.
