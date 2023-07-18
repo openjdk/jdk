@@ -339,9 +339,9 @@ public interface RandomGenerator {
              * direction of positive infinity.
              * Most of the time, this is equivalent to the ulp of left, but not
              * always.
-             * For example, Math.ulp(-1.0) == 2.220446049250313E-16, whereas
-             * delta == 1.1102230246251565E-16.
-             * 
+             * For example, for left == -1.0, Math.ulp(left) == 2.220446049250313E-16,
+             * whereas delta as computed here is 1.1102230246251565E-16.
+             *
              * Every product k delta lying in [left, -left] is an exact double.
              * Thus, every product k delta lying in I is an exact double, too.
              * Any other positive eps < delta does not meet this property:
