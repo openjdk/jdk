@@ -1671,14 +1671,6 @@ bool VM_RedefineClasses::merge_constant_pools(const constantPoolHandle& old_cp,
       if (match) {
         // found a match at the same index so nothing more to do
         continue;
-      } else if (scratch_cp->is_unresolved_class_mismatch(scratch_i, *merge_cp_p,
-        scratch_i)) {
-        // The mismatch in compare_entry_to() above is because of a
-        // resolved versus unresolved class entry at the same index
-        // with the same string value. Since Pass 0 reverted any
-        // class entries to unresolved class entries in *merge_cp_p,
-        // we go with the unresolved class entry.
-        continue;
       }
 
       int found_i = scratch_cp->find_matching_entry(scratch_i, *merge_cp_p);

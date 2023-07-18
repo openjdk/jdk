@@ -853,7 +853,6 @@ class ConstantPool : public Metadata {
   static void throw_resolution_error(const constantPoolHandle& this_cp, int which, TRAPS);
 
   // Merging ConstantPool* support:
-  bool is_unresolved_class_mismatch(int index1, const constantPoolHandle& cp2, int index2);
   bool compare_entry_to(int index1, const constantPoolHandle& cp2, int index2);
   void copy_cp_to(int start_i, int end_i, const constantPoolHandle& to_cp, int to_i, TRAPS) {
     constantPoolHandle h_this(THREAD, this);

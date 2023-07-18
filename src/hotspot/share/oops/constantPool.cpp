@@ -1276,33 +1276,6 @@ void ConstantPool::unreference_symbols() {
   }
 }
 
-// Returns true if the current mismatch is due to a resolved/unresolved
-// class pair. Otherwise, returns false.
-bool ConstantPool::is_unresolved_class_mismatch(int index1,
-  const constantPoolHandle& cp2, int index2) {
-
-  jbyte t1 = tag_at(index1).value();
-  if (t1 != JVM_CONSTANT_Class && t1 != JVM_CONSTANT_UnresolvedClass) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  jbyte t2 = cp2->tag_at(index2).value();
-  if (t2 != JVM_CONSTANT_Class && t2 != JVM_CONSTANT_UnresolvedClass) {
-    return false;  // wrong entry type; not our special case
-  }
-
-  if (t1 == t2) {
-    return false;  // not a mismatch; not our special case
-  }
-
-  char *s1 = klass_name_at(index1)->as_C_string();
-  char *s2 = cp2->klass_name_at(index2)->as_C_string();
-  if (strcmp(s1, s2) != 0) {
-    return false;  // strings don't match; not our special case
-  }
-
-  return true;  // made it through the gauntlet; this is our special case
-} // end is_unresolved_class_mismatch()
 
 // Compare this constant pool's entry at index1 to the constant pool
 // cp2's entry at index2.
@@ -1312,6 +1285,13 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
   // The error tags are equivalent to non-error tags when comparing
   jbyte t1 = tag_at(index1).non_error_value();
   jbyte t2 = cp2->tag_at(index2).non_error_value();
+
+  if (t1 == JVM_CONSTANT_Class) {
+    // Some classes are pre-resolved (like Throwable) which may lead to
+    // consider it as a different entry. we then revert them back temporarily
+    // to ensure proper comparison.
+    t1 = JVM_CONSTANT_UnresolvedClass;
+  }
 
   if (t1 != t2) {
     // Not the same entry type so there is nothing else to check. Note
@@ -1358,7 +1338,6 @@ bool ConstantPool::compare_entry_to(int index1, const constantPoolHandle& cp2,
     int recur1 = uncached_klass_ref_index_at(index1);
     int recur2 = cp2->uncached_klass_ref_index_at(index2);
     bool match = compare_entry_to(recur1, cp2, recur2);
-    match |= is_unresolved_class_mismatch(recur1, cp2, recur2);
     if (match) {
       recur1 = uncached_name_and_type_ref_index_at(index1);
       recur2 = cp2->uncached_name_and_type_ref_index_at(index2);
