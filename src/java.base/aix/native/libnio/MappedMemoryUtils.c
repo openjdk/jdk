@@ -99,7 +99,7 @@ void check_aix_einval(JNIEnv* env, void* end_address)
 
 // Normally we would just let msync handle this, but since we'll be (potentially) ignoring
 // the error code returned by msync, we check the args before the call instead.
-int validate_msync_address(size_t addresss) {
+int validate_msync_address(size_t address) {
     size_t pagesize = (size_t)sysconf(_SC_PAGESIZE);
     if (address % pagesize != 0) {
         errno = EINVAL;
