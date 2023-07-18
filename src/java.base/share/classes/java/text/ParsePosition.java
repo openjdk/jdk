@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,18 +122,17 @@ public class ParsePosition {
     /**
      * Overrides equals
      */
+    @Override
     public boolean equals(Object obj)
     {
-        if (obj == null) return false;
-        if (!(obj instanceof ParsePosition other))
-            return false;
-        return (index == other.index && errorIndex == other.errorIndex);
+        return obj instanceof ParsePosition other
+                && index == other.index && errorIndex == other.errorIndex;
     }
 
     /**
-     * Returns a hash code for this ParsePosition.
-     * @return a hash code value for this object
+     * {@return a hash code for this ParsePosition}
      */
+    @Override
     public int hashCode() {
         return (errorIndex << 16) | index;
     }
