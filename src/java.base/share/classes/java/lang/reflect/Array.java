@@ -49,13 +49,11 @@ class Array {
     /**
      * Creates a new array with the specified component type and
      * length.
+     * @implSpec
      * Invoking this method is equivalent to creating an array
      * as follows:
      * <blockquote>
-     * <pre>
-     * int[] x = {length};
-     * Array.newInstance(componentType, x);
-     * </pre>
+     * {@code Array.newInstance(componentType, new int[]{length});}
      * </blockquote>
      *
      * <p>The number of dimensions of the new array must not
