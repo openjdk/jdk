@@ -530,10 +530,7 @@ public abstract class Collator
         if (this == that) {
             return true;
         }
-        if (that == null) {
-            return false;
-        }
-        if (getClass() != that.getClass()) {
+        if (that == null || getClass() != that.getClass()) {
             return false;
         }
         Collator other = (Collator) that;
