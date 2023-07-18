@@ -854,7 +854,7 @@ public class MessageFormat extends Format {
      *            {@code arguments} array is not of the type
      *            expected by the format element(s) that use it.
      * @throws    NullPointerException if {@code result} is {@code null}
-     * @throws    NullPointerException If the {@code MessageFormat} instance
+     * @throws    NullPointerException if the {@code MessageFormat} instance
      *            that calls this method was created with a null locale,
      *            and the implementation uses a localized subformat.
      */
@@ -903,9 +903,9 @@ public class MessageFormat extends Format {
      *            {@code arguments} array is not of the type
      *            expected by the format element(s) that use it.
      * @throws    NullPointerException if {@code result} is {@code null}
-     * @throws    NullPointerException If the {@code MessageFormat} object
+     * @throws    NullPointerException if the {@code MessageFormat} instance
      *            that calls this method was created with a null locale,
-     *            and a localized subformat is used by the instance.
+     *            and the implementation uses a localized subformat.
      */
     public final StringBuffer format(Object arguments, StringBuffer result,
                                      FieldPosition pos)
