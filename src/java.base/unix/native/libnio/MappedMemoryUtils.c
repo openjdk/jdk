@@ -34,8 +34,6 @@
 #include <stdlib.h>
 
 #ifdef _AIX
-#include <string.h>
-#include <sys/procfs.h>
 #include <unistd.h>
 #endif
 
@@ -126,104 +124,19 @@ Java_java_nio_MappedMemoryUtils_unload0(JNIEnv *env, jobject obj, jlong address,
         JNU_ThrowIOExceptionWithMessageAndLastError(env, "madvise with advise MADV_DONTNEED failed");
     }
 }
-#ifdef AIX
-    void set_error_if_shared(JNIEnv* env, prmap_t* map_entry)
+
+#ifndef AIX
+    JNIEXPORT void JNICALL
+    Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
+                                          jlong address, jlong len)
     {
-        if (map_entry->pr_mflags & MA_SHARED) {
-            // MA_SHARED => MAP_SHARED => !MAP_PRIVATE. This error is valid and should be thrown.
-            JNU_ThrowIOExceptionWithMessageAndLastError(env, "msync with parameter MS_SYNC failed (MAP_SHARED)");
-            return;
-        } else {
-            // O.W. MAP_PRIVATE or no flag was specified and EINVAL is the expected behaviour.
-            return;
+        void* a = (void *)jlong_to_ptr(address);
+        int result = msync(a, (size_t)len, MS_SYNC);
+        if (result == -1) {
+            JNU_ThrowIOExceptionWithMessageAndLastError(env, "msync with parameter MS_SYNC failed");
         }
     }
-
-    void check_proc_map_array(JNIEnv* env, FILE* proc_file, prmap_t* map_entry, void* end_address)
-    {
-        while (!feof(proc_file)) {
-            memset(map_entry, '\0', sizeof(prmap_t));
-            fread((char*)map_entry, sizeof(prmap_t), 1, proc_file);
-            if (ferror(proc_file)) {
-                JNU_ThrowIOExceptionWithMessageAndLastError(env,
-                            "msync with parameter MS_SYNC failed (could not read /proc/<pid>/map)");
-                return;
-            } else if (map_entry->pr_vaddr <= end_address &&
-                       end_address <= map_entry->pr_vaddr + map_entry->pr_size) {
-                set_error_if_shared(env, map_entry);
-                return;
-            }
-        }
-        JNU_ThrowIOExceptionWithMessageAndLastError(env,
-                                        "msync with parameter MS_SYNC failed (address not found)");
-    }
-
-    // '/proc/' + <pid> + '/map' + '\0'
-    #define PFNAME_LEN 32
-    void check_aix_einval(JNIEnv* env, void* end_address)
-    {
-        // If EINVAL is set for a mmap address on AIX, additional validation is required.
-        // AIX will set EINVAL when msync is called on a mmap address that didn't receive MAP_SHARED
-        // as a flag (since MAP_PRIVATE is the default).
-        // https://www.ibm.com/docs/en/aix/7.2?topic=m-msync-subroutine
-
-        FILE* proc_file;
-        {
-            char* fname = (char*) malloc(sizeof(char) * PFNAME_LEN);
-            pid_t the_pid = getpid();
-            jio_snprintf(fname, PFNAME_LEN, "/proc/%d/map", the_pid);
-            proc_file = fopen(fname, "r");
-            free(fname);
-        }
-        if (!proc_file) {
-            JNU_ThrowIOExceptionWithMessageAndLastError(env,
-                            "msync with parameter MS_SYNC failed (could not open /proc/<pid>/map)");
-            return;
-        }
-        {
-            prmap_t* map_entry = (prmap_t*) malloc(sizeof(prmap_t));
-            check_proc_map_array(env, proc_file, map_entry, end_address);
-            free(map_entry);
-        }
-        fclose(proc_file);
-    }
-
-    // Normally we would just let msync handle this, but since we'll be (potentially) ignoring
-    // the error code returned by msync, we check the args before the call instead.
-    int validate_msync_address(size_t addresss) {
-        size_t pagesize = (size_t)sysconf(_SC_PAGESIZE);
-        if (address % pagesize != 0) {
-            errno = EINVAL;
-            return -1;
-        }
-        return 0;
-    }
-#endif // AIX
-
-JNIEXPORT void JNICALL
-Java_java_nio_MappedMemoryUtils_force0(JNIEnv *env, jobject obj, jobject fdo,
-                                      jlong address, jlong len)
-{
-    void* a = (void *)jlong_to_ptr(address);
-    #ifdef AIX
-        if (validate_msync_address((size_t)a) > 0) {
-            JNU_ThrowIOExceptionWithMessageAndLastError(env,
-                "msync with parameter MS_SYNC failed (arguments invalid)");
-            return;
-        }
-    #endif
-    int result = msync(a, (size_t)len, MS_SYNC);
-    if (result == -1) {
-        #ifdef AIX
-            void* end_address = (void*)jlong_to_ptr(address + len);
-            if (errno == EINVAL) {
-                check_aix_einval(env, end_address);
-                return;
-            }
-        #endif
-        JNU_ThrowIOExceptionWithMessageAndLastError(env, "msync with parameter MS_SYNC failed");
-    }
-}
+#endif
 
 JNIEXPORT jint JNICALL
 Java_java_nio_MappedMemoryUtils_pageSize0()
