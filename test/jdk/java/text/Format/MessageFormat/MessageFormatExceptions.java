@@ -29,7 +29,6 @@
  */
 
 import java.text.MessageFormat;
-import java.util.Date;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
