@@ -39,6 +39,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 
@@ -75,12 +76,12 @@ class JfrEvents {
             }
 
             Map<String, Integer> events = sumEvents(recording);
-            System.out.println(events);
+            System.err.println(events);
 
             int startCount = events.getOrDefault("jdk.VirtualThreadStart", 0);
             int endCount = events.getOrDefault("jdk.VirtualThreadEnd", 0);
-            assertTrue(startCount == 100);
-            assertTrue(endCount == 100);
+            assertEquals(100, startCount);
+            assertEquals(100, endCount);
         }
     }
 
@@ -89,35 +90,51 @@ class JfrEvents {
      */
     @Test
     void testVirtualThreadPinned() throws Exception {
+        Runnable[] parkers = new Runnable[] {
+            () -> LockSupport.park(),
+            () -> LockSupport.parkNanos(Duration.ofDays(1).toNanos())
+        };
+
         try (Recording recording = new Recording()) {
-            recording.enable("jdk.VirtualThreadPinned")
-                     .withThreshold(Duration.ofMillis(500));
+            recording.enable("jdk.VirtualThreadPinned");
 
-            // execute task in a virtual thread, carrier thread is pinned 3 times.
             recording.start();
-            ThreadFactory factory = Thread.ofVirtual().factory();
-            try (var executor = Executors.newThreadPerTaskExecutor(factory)) {
-                executor.submit(() -> {
-                    synchronized (lock) {
-                        // pinned, duration < 500ms
-                        Thread.sleep(1);
+            try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
+                for (Runnable parker : parkers) {
+                    // execute parking task in virtual thread
+                    var threadRef = new AtomicReference<Thread>();
+                    executor.submit(() -> {
+                        threadRef.set(Thread.currentThread());
+                        synchronized (lock) {
+                            parker.run();   // should pin carrier
+                        }
+                    });
 
-                        // pinned, duration > 500ms
-                        Thread.sleep(Duration.ofSeconds(3));
-                        Thread.sleep(Duration.ofSeconds(3));
+                    // wait for the task to start and the virtual thread to park
+                    Thread thread;
+                    while ((thread = threadRef.get()) == null) {
+                        Thread.sleep(10);
                     }
-                    return null;
-                });
+                    try {
+                        Thread.State state = thread.getState();
+                        while (state != Thread.State.WAITING && state != Thread.State.TIMED_WAITING) {
+                            Thread.sleep(10);
+                            state = thread.getState();
+                        }
+                    } finally {
+                        LockSupport.unpark(thread);
+                    }
+                }
             } finally {
                 recording.stop();
             }
 
             Map<String, Integer> events = sumEvents(recording);
-            System.out.println(events);
+            System.err.println(events);
 
-            // should have two pinned events recorded
+            // should have a pinned event for each park
             int pinnedCount = events.getOrDefault("jdk.VirtualThreadPinned", 0);
-            assertTrue(pinnedCount == 2);
+            assertEquals(parkers.length, pinnedCount);
         }
     }
 
@@ -164,10 +181,10 @@ class JfrEvents {
             }
 
             Map<String, Integer> events = sumEvents(recording);
-            System.out.println(events);
+            System.err.println(events);
 
             int count = events.getOrDefault("jdk.VirtualThreadSubmitFailed", 0);
-            assertTrue(count == 2);
+            assertEquals(2, count);
         }
     }
 

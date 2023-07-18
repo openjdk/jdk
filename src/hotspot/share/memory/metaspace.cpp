@@ -47,6 +47,7 @@
 #include "memory/metaspaceUtils.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "runtime/atomic.hpp"
