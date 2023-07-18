@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,16 +39,12 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.DHPublicKeySpec;
 
-import sun.security.ec.SunEC;
 import sun.security.jca.JCAUtil;
 
 /**
  * A utility class to get key length, validate keys, etc.
  */
 public final class KeyUtil {
-
-
-    final private static String sunec = "SunEC";
 
     /**
      * Returns the key size of the given key object in bits.
@@ -132,11 +128,10 @@ public final class KeyUtil {
      */
     public static final int getKeySize(AlgorithmParameters parameters) {
 
-        String algorithm = parameters.getAlgorithm();
-        switch (algorithm) {
+        switch (parameters.getAlgorithm()) {
             case "EC":
-                // We can use equals() because it cannot be unicode
-                if (parameters.getProvider().toString().equals(sunec)) {
+                // ECKeySizeParameterSpec is SunEC internal only
+                if (parameters.getProvider().getName().equals("SunEC")) {
                     try {
                         ECKeySizeParameterSpec ps = parameters.getParameterSpec(
                             ECKeySizeParameterSpec.class);
