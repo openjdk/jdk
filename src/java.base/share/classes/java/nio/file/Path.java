@@ -984,6 +984,7 @@ public interface Path
      * @return  {@code true} if, and only if, the given object is a {@code Path}
      *          that is identical to this {@code Path}
      */
+    @Override
     boolean equals(Object other);
 
     /**
@@ -995,10 +996,11 @@ public interface Path
      *
      * @return  the hash-code value for this path
      */
+    @Override
     int hashCode();
 
     /**
-     * Returns the string representation of this path.
+     * {@return the string representation of this path}
      *
      * <p> If this path was created by converting a path string using the
      * {@link FileSystem#getPath getPath} method then the path string returned
@@ -1006,8 +1008,7 @@ public interface Path
      *
      * <p> The returned path string uses the default name {@link
      * FileSystem#getSeparator separator} to separate names in the path.
-     *
-     * @return  the string representation of this path
      */
+    @Override
     String toString();
 }

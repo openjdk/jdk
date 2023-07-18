@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2014, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,14 +21,26 @@
  * questions.
  */
 
-/**
- * Provides the implementation of the SunEC security provider.
- *
- * @provides java.security.Provider
- *
- * @moduleGraph
- * @since 9
+import java.lang.module.ModuleFinder;
+import static jdk.test.lib.Asserts.*;
+
+/*
+ * @test
+ * @bug 8308398
+ * @library /test/lib
+ * @summary Verify jdk.crypto.ec empty module
+ * @run main ecModuleCheck
  */
-@Deprecated(since="22", forRemoval = true)
-module jdk.crypto.ec {
+
+/* This test verifies jdk.crypto.ec is in the image, but not resolvable.
+ */
+public class ecModuleCheck {
+    public static void main(String[] args) throws Exception {
+        // True if module is found in the image.
+        assertTrue(ModuleFinder.ofSystem().find("jdk.crypto.ec").isPresent(),
+            "jdk.crypto.ec was not found in image.");
+        // Since the module empty, isPresent() should be false.
+        assertFalse(ModuleLayer.boot().findModule("jdk.crypto.ec").
+            isPresent(), "jdk.crypto.ec shouldn't be resolvable.");
+    }
 }
