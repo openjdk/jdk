@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -305,6 +305,8 @@ public abstract class ColorSpace implements Serializable {
      *         class constants (e.g. {@code CS_sRGB}, {@code CS_LINEAR_RGB},
      *         {@code CS_CIEXYZ}, {@code CS_GRAY}, or {@code CS_PYCC})
      * @return the requested {@code ColorSpace} object
+     * @throws IllegalArgumentException if {@code cspace} is not one of the
+     *         predefined color space types
      */
     // NOTE: This method may be called by privileged threads.
     //       DO NOT INVOKE CLIENT CODE ON THIS THREAD!
