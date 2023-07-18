@@ -520,43 +520,29 @@ public interface Path
      * Resolves a path against this path, and then iteratively resolves any
      * additional paths.
      *
-     * <p> If {@code more} does not specify any {@code Path}s,
-     * then the result is {@link #resolve(Path) resolve(first)}. If
-     * {@code more} specifies one or more {@code Path}s, then {@code first}
-     * is resolved against this path and then the additional paths in
-     * {@code more} are iteratively resolved.
-     *
-     * If {@code first} and {@code more} specify only empty paths, then this
-     * method returns this path. If any of the paths in {@code first} and
-     * {@code more} is absolute, then the result will be as if the paths
-     * after the last absolute path in the sequence were resolved iteratively
-     * against that last absolute path.
-     *
-     * <p> The result of this method is the same as would be obtained
-     * by resolving the first parameter path against this path, and then
-     * repeating the same procedure for each path in the sequence. Each
-     * single resolution in the chain behaves as specified by {@link
-     * #resolve(Path) resolve}.
+     * <p> This method resolves {@code first} against this {@code Path} as if
+     * by calling {@link #resolve(Path)}. If {@code more} has one or more
+     * elements then it resolves the first element against the result, then
+     * iteratively resolves all subsequent elements. This method returns the
+     * result from the final resolve.
      *
      * @implSpec
-     * The default implementation is equivalent for this path to:
+     * The default implementation is equivalent to the result obtained with:
      * {@snippet lang=java :
-     * Path result = resolve(first);
-     * for (Path p : more) {
-     *     result = result.resolve(p);
-     * }
+     *     Path result = resolve(first);
+     *     for (Path p : more) {
+     *         result = result.resolve(p);
+     *     }
      * }
      *
      * @param   first
      *          the first path to resolve against this path
-     *
      * @param   more
-     *          additional paths to be iteratively resolved
+     *          additional paths to iteratively resolve
      *
      * @return  the resulting path
      *
      * @see #resolve(Path)
-     *
      * @since 22
      */
     default Path resolve(Path first, Path... more) {
@@ -568,26 +554,19 @@ public interface Path
     }
 
     /**
-     * Converts a path string to a path, resolves it against this path, and
-     * then iteratively converts and resolves any additional path strings.
+     * Converts a path string to a path, resolves that path against this path,
+     * and then iteratively performs the same procedure for any additional
+     * path strings.
      *
-     * <p> If {@code more} does not
-     * specify any path strings, then the result is {@link #resolve(String)
-     * resolve(first)}. If {@code more} specifies one or more path strings,
-     * then {@code first} is converted to a {@code Path}, resolved against
-     * this path, and then the additional path strings in {@code more} are
-     * iteratively converted to {@code Path}s and resolved. Path strings which
-     * convert to empty or absolute paths are handled as specified by
-     * {@link #resolve(Path,Path...)}.
-     *
-     * <p> The result of this method is the same as would be obtained by
-     * resolving the path converted from the first path string against
-     * this path, and then repeating the same procedure for each path
-     * string in the sequence. Each single resolution in the chain
-     * behaves as specified by {@link #resolve(String) resolve}.
+     * <p> This method converts {@code first} to a {@code Path} and resolves
+     * that {@code Path} against this {@code Path} as if by calling
+     * {@link #resolve(String)}. If {@code more} has one or more elements
+     * then it converts the first element to a path, resolves that path against
+     * the result, then iteratively converts and resolves all subsequent
+     * elements. This method returns the result from the final resolve.
      *
      * @implSpec
-     * The default implementation is equivalent for this path to:
+     * The default implementation is equivalent to the result obtained with:
      * {@snippet lang=java :
      * Path result = resolve(first);
      * for (String s : more) {
