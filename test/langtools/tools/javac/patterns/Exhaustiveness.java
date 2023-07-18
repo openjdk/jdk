@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug 8262891 8268871 8274363 8281100 8294670
+ * @bug 8262891 8268871 8274363 8281100 8294670 8311038
  * @summary Check exhaustiveness of switches over sealed types.
  * @library /tools/lib
  * @modules jdk.compiler/com.sun.tools.javac.api
@@ -1944,6 +1944,26 @@ public class Exhaustiveness extends TestRunner {
                                System.out.println("C2");
                        }
                    }
+               }
+               """);
+    }
+
+    @Test //JDK-8311038
+    public void testReducesTooMuch(Path base) throws Exception {
+        doTest(base,
+               new String[0],
+               """
+               package test;
+               public class Test {
+                   void test(Rec r) {
+                       switch (r) {
+                           case Rec(String s) ->
+                               System.out.println("I2" + s.toString());
+                           case Rec(Object o) ->
+                               System.out.println("I2");
+                       }
+                   }
+                   record Rec(Object o) {}
                }
                """);
     }
