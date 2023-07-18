@@ -525,12 +525,14 @@ public final class Integer extends Number
             r = (q * 100) - i;
             i = q;
             charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, PACKED_DIGITS[r], false);
         }
 
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putShortUnaligned(buf, Unsafe.ARRAY_BYTE_BASE_OFFSET + charPos, PACKED_DIGITS[-i], false);
         } else {
             buf[--charPos] = (byte)('0' - i);

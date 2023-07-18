@@ -1578,6 +1578,7 @@ final class StringUTF16 {
             i = q;
 
             charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
@@ -1587,6 +1588,7 @@ final class StringUTF16 {
         // We know there are at most two digits left at this point.
         if (i < -9) {
             charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
@@ -1623,6 +1625,7 @@ final class StringUTF16 {
         while (i <= Integer.MIN_VALUE) {
             q = i / 100;
             charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
@@ -1636,6 +1639,7 @@ final class StringUTF16 {
         while (i2 <= -100) {
             q2 = i2 / 100;
             charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
@@ -1646,6 +1650,7 @@ final class StringUTF16 {
         // We know there are at most two digits left at this point.
         if (i2 < -9) {
             charPos -= 2;
+            assert charPos >= 0 && charPos < buf.length : "Trusted caller missed bounds check";
             UNSAFE.putIntUnaligned(
                     buf,
                     Unsafe.ARRAY_BYTE_BASE_OFFSET + (charPos << 1),
