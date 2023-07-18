@@ -37,5 +37,6 @@
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.
 const bool CCallingConventionRequiresIntsAsLongs = false;
+const size_t pd_segfault_address = 4096;
 
 #endif // CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP

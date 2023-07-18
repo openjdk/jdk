@@ -30,10 +30,11 @@
 const int BytesPerInstWord = 4;
 
 const int StackAlignmentInBytes = 16;
-#if define(AIX)
-const size_t Pdsegfault_address = -1;
+
+#ifdef defined(AIX)
+const size_t pd_segfault_address = -1;
 #else
-const size_t Pdsegfault_address = 1024;
+const size_t pd_segfault_address = 1024;
 #endif
 
 // Indicates whether the C calling conventions require that
