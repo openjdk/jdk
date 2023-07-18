@@ -799,11 +799,14 @@ JvmtiEnvBase::get_vthread_state(oop thread_oop, JavaThread* java_thread) {
     int vt_state = java_lang_VirtualThread::state(thread_oop);
     state = (jint)java_lang_VirtualThread::map_state_to_thread_status(vt_state);
   }
-  if (ext_suspended && ((state & JVMTI_THREAD_STATE_ALIVE) != 0)) {
-    state |= JVMTI_THREAD_STATE_SUSPENDED;
-  }
-  if (interrupted) {
-    state |= JVMTI_THREAD_STATE_INTERRUPTED;
+  // Ensure the thread has not exited after retrieving suspended/interrupted values.
+  if ((state & JVMTI_THREAD_STATE_ALIVE) != 0) {
+    if (ext_suspended) {
+      state |= JVMTI_THREAD_STATE_SUSPENDED;
+    }
+    if (interrupted) {
+      state |= JVMTI_THREAD_STATE_INTERRUPTED;
+    }
   }
   return state;
 }
