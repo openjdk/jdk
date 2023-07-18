@@ -651,4 +651,11 @@ public final class JVM {
      * JVM runs in a container.
      */
     public native long hostTotalMemory();
+
+    /**
+     * Emit a jdk.DataLoss event for the specified amount of bytes.
+     *
+     * @param bytes number of bytes that were lost
+     */
+    public static native void emitDataLoss(long bytes);
 }
