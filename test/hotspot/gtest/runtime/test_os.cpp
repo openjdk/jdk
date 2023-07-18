@@ -1061,7 +1061,7 @@ TEST_VM(os, attempt_reserve_memory_in_below_2) {
   }
 #endif
 
-  if (p2u(first_mapping_start) >= (128 * M)) {
+  if ((uintptr_t)(first_mapping_start) >= (128 * M)) {
     // address space hole large enough, the following should work
     char* const limit = first_mapping_start + os::vm_page_size(); // limit in the middle of the first mapping.
     char* p1 = os::attempt_reserve_memory_below(limit, M, M, 8);

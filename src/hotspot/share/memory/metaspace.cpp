@@ -805,7 +805,7 @@ void Metaspace::global_initialize() {
       }
     }
 
-    // ...otherwise let JVM chose the best placing:
+    // ...otherwise let JVM choose the best placing:
     if (!rs.is_reserved()) {
       rs = Metaspace::reserve_address_space_for_compressed_classes(size);
     }
