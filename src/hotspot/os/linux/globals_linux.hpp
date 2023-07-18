@@ -89,6 +89,13 @@
           "to disable both the override and the printouts."             \
           "See prctl(PR_SET_TIMERSLACK) for more info.")                \
                                                                         \
+  product(bool, PreventTHPsForThreadStacks, true, EXPERIMENTAL,         \
+          "If true, the JVM will attempt to prevent formation of "      \
+          "transparent huge pages in thread stacks.")                   \
+                                                                        \
+  develop(bool, DelayThreadStartALot, false,                            \
+          "Artificially delay thread starts randomly for testing.")     \
+                                                                        \
 
 
 // end of RUNTIME_OS_FLAGS

@@ -775,6 +775,10 @@ static void *thread_native_entry(Thread *thread) {
 
   assert(osthread->pthread_id() != 0, "pthread_id was not set as expected");
 
+  if (DelayThreadStartALot) {
+    os::naked_short_sleep(100);
+  }
+
   // call one more level start routine
   thread->call_run();
 
@@ -911,6 +915,29 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   // Calculate stack size if it's not specified by caller.
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
   size_t guard_size = os::Linux::default_guard_size(thr_type);
+
+  // If THPs are unconditionally enabled, the following scenario can lead to huge RSS:
+  // - parent thread spawns, in quick succession, multiple child threads
+  // - child threads are slow to start
+  // - thread stacks of future child threads are adjacent and get merged into one large VMA
+  //   by the kernel, and subsequently transformed into huge pages by khugepaged
+  // - child threads come up, place JVM guard pages, thus splinter the large VMA, splinter
+  //   the huge pages into many (still paged-in) small pages.
+  // The result of that sequence are thread stacks that are fully paged-in even though the
+  // threads did not even start yet.
+  // We prevent that by letting the glibc allocate a guard page, which causes a VMA with different
+  // permission bits to separate two ajacent thread stacks and therefore prevent merging stacks
+  // into one VMA.
+  if (PreventTHPsForThreadStacks) {
+    guard_size = MAX2(guard_size, os::vm_page_size());
+    // Add an additional page to the stack size to reduce its chances of getting huge page aligned
+    // so that the stack does not get backed by a transparent huge page.
+    if (HugePages::thp_pagesize() > 0 &&
+        is_aligned(stack_size, HugePages::thp_pagesize())) {
+      stack_size += os::vm_page_size();
+    }
+  }
+
   // Configure glibc guard page. Must happen before calling
   // get_static_tls_area_size(), which uses the guard_size.
   pthread_attr_setguardsize(&attr, guard_size);
@@ -930,15 +957,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     stack_size += stack_adjust_size;
   }
   assert(is_aligned(stack_size, os::vm_page_size()), "stack_size not aligned");
-
-  // Add an additional page to the stack size to reduce its chances of getting large page aligned
-  // so that the stack does not get backed by a transparent huge page.
-  size_t default_large_page_size = HugePages::default_static_hugepage_size();
-  if (default_large_page_size != 0 &&
-      stack_size >= default_large_page_size &&
-      is_aligned(stack_size, default_large_page_size)) {
-    stack_size += os::vm_page_size();
-  }
 
   int status = pthread_attr_setstacksize(&attr, stack_size);
   if (status != 0) {
@@ -3739,6 +3757,21 @@ void os::large_page_init() {
 
   // Query OS information first.
   HugePages::initialize();
+
+  // If THPs are unconditionally enabled (THP mode "always"), khugepaged may attempt to
+  // coalesce small pages in thread stacks to huge pages. That costs a lot of memory and
+  // is usually unwanted for thread stacks. Therefore we attempt to prevent THP formation in
+  // thread stacks unless the user explicitly allowed THP formation by manually disabling
+  // -XX:-PreventTHPsForThreadStacks.
+  if (HugePages::thp_mode() == THPMode::always) {
+    if (PreventTHPsForThreadStacks) {
+      log_info(pagesize)("JVM will attempt to prevent THPs in thread stacks.");
+    } else if (!FLAG_IS_DEFAULT(PreventTHPsForThreadStacks)) {
+      log_info(pagesize)("JVM will *not* prevent THPs in thread stacks. This may cause high RSS.");
+    }
+  } else {
+    FLAG_SET_ERGO(PreventTHPsForThreadStacks, false); // not needed
+  }
 
   // 1) Handle the case where we do not want to use huge pages
   if (!UseLargePages &&
