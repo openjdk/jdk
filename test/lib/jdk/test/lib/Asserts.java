@@ -552,6 +552,26 @@ public class Asserts {
         }
     }
 
+    public interface TestMethod {
+        void execute() throws Exception;
+    }
+
+    public static Exception assertThrownException(Class<? extends Exception> expected, TestMethod testMethod) {
+        try {
+            testMethod.execute();
+            fail("No exception was thrown. Expected: " + expected.getName());
+        } catch (Exception exc) {
+            if (expected.isAssignableFrom(exc.getClass())) {
+                return exc;
+            } else {
+                fail("An unexpected exception was thrown. Expected: "
+                        + expected.getName() + " Got: " + exc.getClass().getName());
+            }
+        }
+        // fail() throws a RuntimeException so this is unreachable.
+        return null;
+    }
+
     /**
      * Returns a string formatted with a message and expected and actual values.
      * @param lhs the actual value
