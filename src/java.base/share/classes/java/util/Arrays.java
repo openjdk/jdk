@@ -4495,7 +4495,7 @@ public final class Arrays {
 
         int result = 1;
         for (float element : a)
-            result = 31 * result + Float.floatToIntBits(element);
+            result = 31 * result + Float.hashCode(element);
 
         return result;
     }
