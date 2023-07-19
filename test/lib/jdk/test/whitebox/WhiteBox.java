@@ -303,6 +303,9 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
+
+  // Determines if the libgraal shared library file is present.
+  public native boolean hasLibgraal();
   public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 

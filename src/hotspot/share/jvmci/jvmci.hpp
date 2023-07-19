@@ -101,6 +101,12 @@ class JVMCI : public AllStatic {
   // Gets the Thread* value for the current thread or null if it's not available.
   static Thread* current_thread_or_null();
 
+  // Writes into `pathbuf` the path to the existing JVMCI shared library file.
+  // If the file cannot be found and `fail_is_fatal` is true, then
+  // a fatal error occurs.
+  // Returns whether the path to an existing file was written into `pathbuf`.
+  static bool get_shared_library_path(char* pathbuf, size_t pathlen, bool fail_is_fatal);
+
  public:
 
   enum CodeInstallResult {
@@ -121,6 +127,11 @@ class JVMCI : public AllStatic {
   static bool one_shared_library_javavm_per_compilation() {
     return JVMCIThreadsPerNativeLibraryRuntime == 1 && JVMCICompilerIdleDelay == 0;
   }
+
+  // Determines if the JVMCI shared library exists. This does not
+  // take into account whether loading the library would succeed
+  // if it's not already loaded.
+  static bool shared_library_exists();
 
   // Gets the handle to the loaded JVMCI shared library, loading it
   // first if not yet loaded and `load` is true. The path from
