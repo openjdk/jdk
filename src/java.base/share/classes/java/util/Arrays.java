@@ -4523,7 +4523,7 @@ public final class Arrays {
         int result = 1;
         for (double element : a) {
             long bits = Double.doubleToLongBits(element);
-            result = 31 * result + (int)(bits ^ (bits >>> 32));
+            result = 31 * result + Long.hashCode(bits);
         }
         return result;
     }
