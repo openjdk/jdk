@@ -739,6 +739,22 @@ public interface Elements {
     }
 
     /**
+     * {@return the class body of an {@code enum} constant if the
+     * argument is an {@code enum} constant declared with an optional
+     * class body, {@code null} otherwise}
+     *
+     * @implSpec
+     * The default implementation of this method returns {@code null}.
+     *
+     * @param enumConstant an enum constant
+     * @jls 8.9.1 Enum Constants
+     * @since 22
+     */
+    default TypeElement getEnumClassBody(VariableElement enumConstant) {
+        return null;
+    }
+
+    /**
      * Returns the record component for the given accessor. Returns
      * {@code null} if the given method is not a record component
      * accessor.
