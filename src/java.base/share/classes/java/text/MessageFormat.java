@@ -400,10 +400,8 @@ public class MessageFormat extends Format {
      * @param locale the locale for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
      * @throws    NullPointerException if {@code pattern} is
-     *            {@code null}
-     * @throws    NullPointerException This method throws a
-     *            {@code NullPointerException} if {@code locale} is {@code null}
-     *            and a localized subformat is used.
+     *            {@code null} or {@code locale} is {@code null} and the
+     *            implementation uses a locale-dependent subformat.
      * @since 1.4
      */
     public MessageFormat(String pattern, Locale locale) {
