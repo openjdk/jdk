@@ -25,6 +25,7 @@ package compiler.c2.irTests;
 
 import compiler.lib.ir_framework.*;
 import jdk.test.lib.Platform;
+import jdk.test.whitebox.gc.GC;
 import java.util.ArrayList;
 
 /*
@@ -32,20 +33,28 @@ import java.util.ArrayList;
  * bug 8308869
  * @summary C2: use profile data in subtype checks when profile has more than one class
  * @library /test/lib /
+ * @build jdk.test.whitebox.WhiteBox
  * @requires vm.compiler2.enabled
- * @run driver compiler.c2.irTests.ProfileAtTypeCheck
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI compiler.c2.irTests.ProfileAtTypeCheck
  */
 
 public class ProfileAtTypeCheck {
     public static void main(String[] args) {
-        ArrayList<String> flags = new ArrayList<>();
-        flags.add("-XX:TypeProfileSubTypeCheckCommonThreshold=90");
-        if (!Platform.is32bit()) {
-            flags.add("-XX:-UseCompressedClassPointers");
+        ArrayList<String> flags1 = new ArrayList<>();
+        ArrayList<String> flags2 = new ArrayList<>();
+        flags1.add("-XX:TypeProfileSubTypeCheckCommonThreshold=90");
+        if (GC.isSelectedErgonomically() && GC.Parallel.isSupported()) {
+            flags1.add("-XX:+UseParallelGC");
         }
-        flags.add("-XX:+IgnoreUnrecognizedVMOptions");
-        flags.add("-XX:+UseParallelGC");
-        TestFramework.runWithFlags(flags.toArray(new String[0]));
+        flags2.addAll(flags1);
+        flags1.add("-XX:-TieredCompilation");
+        flags2.add("-XX:-ProfileInterpreter");
+
+        // Only interpreter collects profile
+        TestFramework.runWithFlags(flags1.toArray(new String[0]));
+        // Only c1 collects profile
+        TestFramework.runWithFlags(flags2.toArray(new String[0]));
     }
 
     @DontInline
@@ -64,7 +73,10 @@ public class ProfileAtTypeCheck {
 
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "2" })
+    @IR(applyIf = { "UseCompressedClassPointers", "false" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "2" })
+    @IR(applyIf = { "UseCompressedClassPointers", "true" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "1", IRNode.LOAD_NKLASS, "1" })
     public static void test1(Object o) {
         dummyA((A)o);
     }
@@ -82,7 +94,10 @@ public class ProfileAtTypeCheck {
 
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, failOn = { IRNode.SUBTYPE_CHECK })
-    @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "false" }, phase = { CompilePhase.AFTER_PARSING },
+        counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "true" }, phase = { CompilePhase.AFTER_PARSING },
+        counts = { IRNode.CMP_P, "2", IRNode.LOAD_NKLASS, "1" })
     public static void test2(Object o) {
         dummyA((A)o);
     }
@@ -97,7 +112,10 @@ public class ProfileAtTypeCheck {
 
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "false" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "true" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "2", IRNode.LOAD_NKLASS, "1" })
     public static void test3(Object o) {
         if (o instanceof B) {
             dummyB((B)o);
@@ -115,7 +133,10 @@ public class ProfileAtTypeCheck {
     // full subtype check
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "3", IRNode.LOAD_KLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "false" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "3", IRNode.LOAD_KLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "true" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "3", IRNode.LOAD_KLASS, "1", IRNode.LOAD_NKLASS, "1", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
     public static void test4(Object o) {
         dummyI((I)o);
     }
@@ -132,7 +153,10 @@ public class ProfileAtTypeCheck {
     // full subtype check + profile use for success path
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "false" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "true" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "1", IRNode.LOAD_NKLASS, "1", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
     public static void test5(Object o) {
         dummyI((I)o);
     }
@@ -147,7 +171,10 @@ public class ProfileAtTypeCheck {
     // Check primary super
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "2" }, failOn = { IRNode.PARTIAL_SUBTYPE_CHECK })
+    @IR(applyIf = { "UseCompressedClassPointers", "false" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "2" }, failOn = { IRNode.PARTIAL_SUBTYPE_CHECK })
+    @IR(applyIf = { "UseCompressedClassPointers", "true" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "2", IRNode.LOAD_KLASS, "1", IRNode.LOAD_NKLASS, "1" }, failOn = { IRNode.PARTIAL_SUBTYPE_CHECK })
     public static void test6(Object o) {
         dummyA((A)o);
     }
@@ -163,7 +190,10 @@ public class ProfileAtTypeCheck {
     // full subtype check + profile use for both success and failure paths
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "false" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "true" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "1", IRNode.LOAD_NKLASS, "1", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
     public static boolean test7(Object o) {
         return o instanceof I;
     }
@@ -178,7 +208,10 @@ public class ProfileAtTypeCheck {
     // full subtype check + profile use for success path (profile has unrecorded entries)
     @Test
     @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
-    @IR(phase = { CompilePhase.MACRO_EXPANSION }, counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "false" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(applyIf = { "UseCompressedClassPointers", "true" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "1", IRNode.LOAD_NKLASS, "1", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
     public static void test8(Object o) {
         dummyI((I)o);
     }
@@ -385,6 +418,24 @@ public class ProfileAtTypeCheck {
         test14(false, false, d, d, d);
     }
 
+    // full subtype check + profile use for success path
+    @Test
+    @IR(phase = { CompilePhase.AFTER_PARSING }, counts = { IRNode.SUBTYPE_CHECK, "1" })
+    @IR(applyIfAnd = { "UseCompressedClassPointers", "false", "UseParallelGC", "true" }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "2", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    @IR(applyIfAnd = { "UseCompressedClassPointers", "true", "UseParallelGC", "true"  }, phase = { CompilePhase.MACRO_EXPANSION },
+        counts = { IRNode.CMP_P, "5", IRNode.LOAD_KLASS, "1", IRNode.LOAD_NKLASS, "1", IRNode.PARTIAL_SUBTYPE_CHECK, "1" })
+    public static void test15(Object o) {
+        array[0] = o;
+    }
+
+    @Run(test = "test15")
+    @Warmup(10000)
+    private void test15Runner() {
+        test15(a);
+        test15(b);
+    }
+
     interface I {
     }
 
@@ -394,6 +445,7 @@ public class ProfileAtTypeCheck {
     static C c = new C();
     static D d = new D();
     static E e = new E();
+    static final Object[] array = new I[1];
 
     static class A implements I {
     }
