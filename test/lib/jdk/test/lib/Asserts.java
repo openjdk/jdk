@@ -552,10 +552,26 @@ public class Asserts {
         }
     }
 
+    /**
+     * A functional interface for executing tests in assertThrownException
+     */
+    @FunctionalInterface
     public interface TestMethod {
         void execute() throws Exception;
     }
 
+    /**
+     * Asserts that the given exception (or a subclass of it) is thrown when
+     * executing the test method.
+     *
+     * If the test method throws the correct exception, the exception is returned
+     * to the caller for additional validation e.g., comparing the exception
+     * message.
+     *
+     * @param expected The expected exception
+     * @param testMethod The code to execute that should throw the exception
+     * @return The thrown exception.
+     */
     public static Exception assertThrownException(Class<? extends Exception> expected, TestMethod testMethod) {
         try {
             testMethod.execute();
