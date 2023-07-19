@@ -2768,7 +2768,6 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   // Now create the message from the original exception and thread name.
   Symbol* message = java_lang_Throwable::detail_message(throwable());
   ResourceMark rm(current);
-
   stringStream st;
   st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
              message == nullptr ? "" : ":");
