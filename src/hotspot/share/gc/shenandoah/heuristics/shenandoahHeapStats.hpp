@@ -27,6 +27,13 @@
 
 #include "utilities/globalDefinitions.hpp"
 
+/*
+ * The purpose of this interface is to decouple the heuristics from a
+ * direct dependency on the ShenandoahHeap singleton instance. This is
+ * done to facilitate future unit testing of the heuristics and to support
+ * future operational modes of Shenandoah in which the heap may be split
+ * into generations.
+ */
 class ShenandoahHeapStats {
 public:
   virtual size_t soft_max_capacity() const = 0;

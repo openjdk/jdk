@@ -60,6 +60,11 @@
 class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;
 
+/*
+ * Shenandoah heuristics are primarily responsible for deciding when to start
+ * a collection cycle and choosing which regions will be evacuated during the
+ * cycle.
+ */
 class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Concurrent_Adjust   = -1; // recover from penalties
   static const intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC

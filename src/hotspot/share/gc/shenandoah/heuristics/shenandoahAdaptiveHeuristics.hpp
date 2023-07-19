@@ -52,6 +52,17 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   TruncatedSeq _rate_avg;
 };
 
+/*
+ * The adaptive heuristic tracks the allocation behavior and average cycle
+ * time of the application. It attempts to start a cycle with enough time
+ * to complete before the available memory is exhausted. It errors on the
+ * side of starting cycles early to avoid allocation failures (degenerated
+ * cycles).
+ *
+ * This heuristic limits the number of regions for evacuation such that the
+ * evacuation reserve is respected. This helps it avoid allocation failures
+ * during evacuation. It preferentially selects regions with the most garbage.
+ */
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
 public:
   ShenandoahAdaptiveHeuristics(ShenandoahHeapStats* heap_stats);

@@ -27,6 +27,11 @@
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 
+/*
+ * The static heuristic will trigger cycles if the available memory falls
+ * below ShenandoahMinFreeThreshold percentage of total capacity. This
+ * heuristic will attempt to evacuation any region with any garbage.
+ */
 class ShenandoahStaticHeuristics : public ShenandoahHeuristics {
 public:
   ShenandoahStaticHeuristics(ShenandoahHeapStats* heap_stats);
