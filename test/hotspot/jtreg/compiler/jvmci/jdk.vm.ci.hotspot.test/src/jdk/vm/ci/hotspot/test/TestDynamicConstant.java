@@ -266,8 +266,22 @@ public class TestDynamicConstant implements Opcodes {
                 Object lastConstant = null;
                 for (int cpi = 1; cpi < cp.length(); cpi++) {
                     String tag = String.valueOf(getTagAt.invoke(cp, cpi));
-                    if (tag.equals("Dynamic")) {
-                        lastConstant = cp.lookupConstant(cpi);
+                    switch (tag) {
+                        case "MethodHandle":
+                        case "MethodType":
+                        case "Dynamic": {
+                            Object con = cp.lookupConstant(cpi, false);
+                            Assert.assertNull(con, "Unexpected eager resolution");
+
+                            con = cp.lookupConstant(cpi, true);
+                            Assert.assertNotNull(con, "Eager resolution failed");
+
+                            if (tag.equals("Dynamic")) {
+                                lastConstant = cp.lookupConstant(cpi);
+                                Assert.assertEquals(con, lastConstant);
+                            }
+                            break;
+                        }
                     }
                 }
                 Assert.assertTrue(lastConstant != null, "No Dynamic entries in constant pool of " + testClass.getName());
