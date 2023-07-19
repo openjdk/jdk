@@ -69,6 +69,7 @@ import jdk.internal.ref.CleanerFactory;
 import jdk.internal.vm.annotation.Stable;
 import sun.nio.cs.UTF_8;
 import sun.nio.fs.DefaultFileSystemProvider;
+import sun.security.action.GetBooleanAction;
 import sun.security.util.SignatureFileVerifier;
 
 import static java.util.zip.ZipConstants64.*;
@@ -121,6 +122,12 @@ public class ZipFile implements ZipConstants, Closeable {
      */
     public static final int OPEN_DELETE = 0x4;
 
+    /**
+     * Flag which specifies whether the validation of the Zip64 extra
+     * fields should be disabled
+     */
+    private static final boolean disableZip64ExtraFieldValidation =
+            GetBooleanAction.privilegedGetProperty("jdk.util.zip.disableZip64ExtraFieldValidation");
     /**
      * Opens a zip file for reading.
      *
@@ -1199,6 +1206,16 @@ public class ZipFile implements ZipConstants, Closeable {
             if (entryPos + nlen > cen.length - ENDHDR) {
                 zerror("invalid CEN header (bad header size)");
             }
+
+            int elen = CENEXT(cen, pos);
+            if (elen > 0 && !disableZip64ExtraFieldValidation) {
+                long extraStartingOffset = pos + CENHDR + nlen;
+                if ((int)extraStartingOffset != extraStartingOffset) {
+                    zerror("invalid CEN header (bad extra offset)");
+                }
+                checkExtraFields(pos, (int)extraStartingOffset, elen);
+            }
+
             try {
                 ZipCoder zcp = zipCoderForPos(pos);
                 int hash = zcp.checkedHash(cen, entryPos, nlen);
@@ -1214,7 +1231,6 @@ public class ZipFile implements ZipConstants, Closeable {
                 // a String via zcp.toString, an Exception will be thrown
                 int clen = CENCOM(cen, pos);
                 if (clen > 0) {
-                    int elen = CENEXT(cen, pos);
                     int start = entryPos + nlen + elen;
                     zcp.toString(cen, start, clen);
                 }
@@ -1224,6 +1240,119 @@ public class ZipFile implements ZipConstants, Closeable {
             return nlen;
         }
 
+        /**
+         * Validate the Zip64 Extra block fields
+         * @param startingOffset Extra Field starting offset within the CEN
+         * @param extraFieldLen Length of this Extra field
+         * @throws ZipException  If an error occurs validating the Zip64 Extra
+         * block
+         */
+        private void checkExtraFields(int cenPos, int startingOffset,
+                                      int extraFieldLen) throws ZipException {
+            // Extra field Length cannot exceed 65,535 bytes per the PKWare
+            // APP.note 4.4.11
+            if (extraFieldLen > 0xFFFF) {
+                zerror("invalid extra field length");
+            }
+            // CEN Offset where this Extra field ends
+            int extraEndOffset = startingOffset + extraFieldLen;
+            if (extraEndOffset > cen.length) {
+                zerror("Invalid CEN header (extra data field size too long)");
+            }
+            int currentOffset = startingOffset;
+            while (currentOffset < extraEndOffset) {
+                int tag = get16(cen, currentOffset);
+                currentOffset += Short.BYTES;
+
+                int tagBlockSize = get16(cen, currentOffset);
+                int tagBlockEndingOffset = currentOffset + tagBlockSize;
+
+                //  The ending offset for this tag block should not go past the
+                //  offset for the end of the extra field
+                if (tagBlockEndingOffset > extraEndOffset) {
+                    zerror("Invalid CEN header (invalid zip64 extra data field size)");
+                }
+                currentOffset += Short.BYTES;
+
+                if (tag == ZIP64_EXTID) {
+                    // Get the compressed size;
+                    long csize = CENSIZ(cen, cenPos);
+                    // Get the uncompressed size;
+                    long size = CENLEN(cen, cenPos);
+                    checkZip64ExtraFieldValues(currentOffset, tagBlockSize,
+                            csize, size);
+                }
+                currentOffset += tagBlockSize;
+            }
+        }
+
+        /**
+         * Validate the Zip64 Extended Information Extra Field (0x0001) block
+         * size and that the uncompressed size and compressed size field
+         * values are not negative.
+         * Note:  As we do not use the LOC offset or Starting disk number
+         * field value we will not validate them
+         * @param off the starting offset for the Zip64 field value
+         * @param blockSize the size of the Zip64 Extended Extra Field
+         * @param csize CEN header compressed size value
+         * @param size CEN header uncompressed size value
+         * @throws ZipException if an error occurs
+         */
+        private void checkZip64ExtraFieldValues(int off, int blockSize, long csize,
+                                                long size)
+                throws ZipException {
+            byte[] cen = this.cen;
+            // Validate the Zip64 Extended Information Extra Field (0x0001)
+            // length.
+            if (!isZip64ExtBlockSizeValid(blockSize)) {
+                zerror("Invalid CEN header (invalid zip64 extra data field size)");
+            }
+            // Check the uncompressed size is not negative
+            // Note we do not need to check blockSize is >= 8 as
+            // we know its length is at least 8 from the call to
+            // isZip64ExtBlockSizeValid()
+            if ((size == ZIP64_MAGICVAL)) {
+                if(get64(cen, off) < 0) {
+                    zerror("Invalid zip64 extra block size value");
+                }
+            }
+            // Check the compressed size is not negative
+            if ((csize == ZIP64_MAGICVAL) && (blockSize >= 16)) {
+                if (get64(cen, off + 8) < 0) {
+                    zerror("Invalid zip64 extra block compressed size value");
+                }
+            }
+        }
+
+        /**
+         * Validate the size and contents of a Zip64 extended information field
+         * The order of the Zip64 fields is fixed, but the fields MUST
+         * only appear if the corresponding LOC or CEN field is set to 0xFFFF:
+         * or 0xFFFFFFFF:
+         * Uncompressed Size - 8 bytes
+         * Compressed Size   - 8 bytes
+         * LOC Header offset - 8 bytes
+         * Disk Start Number - 4 bytes
+         * See PKWare APP.Note Section 4.5.3 for more details
+         *
+         * @param blockSize the Zip64 Extended Information Extra Field size
+         * @return true if the extra block size is valid; false otherwise
+         */
+        private static boolean isZip64ExtBlockSizeValid(int blockSize) {
+            /*
+             * As the fields must appear in order, the block size indicates which
+             * fields to expect:
+             *  8 - uncompressed size
+             * 16 - uncompressed size, compressed size
+             * 24 - uncompressed size, compressed sise, LOC Header offset
+             * 28 - uncompressed size, compressed sise, LOC Header offset,
+             * and Disk start number
+             */
+            return switch(blockSize) {
+                case 8, 16, 24, 28 -> true;
+                default -> false;
+            };
+        }
         private int getEntryHash(int index) { return entries[index]; }
         private int getEntryNext(int index) { return entries[index + 1]; }
         private int getEntryPos(int index)  { return entries[index + 2]; }

@@ -790,46 +790,47 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
   Node* i_o = this->i_o();
 
   // Add a CatchNode.
-  GrowableArray<int>* bcis = new (C->node_arena()) GrowableArray<int>(C->node_arena(), 8, 0, -1);
-  GrowableArray<const Type*>* extypes = new (C->node_arena()) GrowableArray<const Type*>(C->node_arena(), 8, 0, nullptr);
-  GrowableArray<int>* saw_unloaded = new (C->node_arena()) GrowableArray<int>(C->node_arena(), 8, 0, 0);
+  Arena tmp_mem{mtCompiler};
+  GrowableArray<int> bcis(&tmp_mem, 8, 0, -1);
+  GrowableArray<const Type*> extypes(&tmp_mem, 8, 0, nullptr);
+  GrowableArray<int> saw_unloaded(&tmp_mem, 8, 0, -1);
 
   bool default_handler = false;
   for (; !handlers.is_done(); handlers.next()) {
-    ciExceptionHandler* h        = handlers.handler();
-    int                 h_bci    = h->handler_bci();
-    ciInstanceKlass*    h_klass  = h->is_catch_all() ? env()->Throwable_klass() : h->catch_klass();
+    ciExceptionHandler* h       = handlers.handler();
+    int                 h_bci   = h->handler_bci();
+    ciInstanceKlass*    h_klass = h->is_catch_all() ? env()->Throwable_klass() : h->catch_klass();
     // Do not introduce unloaded exception types into the graph:
     if (!h_klass->is_loaded()) {
-      if (saw_unloaded->contains(h_bci)) {
+      if (saw_unloaded.contains(h_bci)) {
         /* We've already seen an unloaded exception with h_bci,
            so don't duplicate. Duplication will cause the CatchNode to be
            unnecessarily large. See 4713716. */
         continue;
       } else {
-        saw_unloaded->append(h_bci);
+        saw_unloaded.append(h_bci);
       }
     }
-    const Type*         h_extype = TypeOopPtr::make_from_klass(h_klass);
+    const Type* h_extype = TypeOopPtr::make_from_klass(h_klass);
     // (We use make_from_klass because it respects UseUniqueSubclasses.)
     h_extype = h_extype->join(TypeInstPtr::NOTNULL);
     assert(!h_extype->empty(), "sanity");
-    // Note:  It's OK if the BCIs repeat themselves.
-    bcis->append(h_bci);
-    extypes->append(h_extype);
+    // Note: It's OK if the BCIs repeat themselves.
+    bcis.append(h_bci);
+    extypes.append(h_extype);
     if (h_bci == -1) {
       default_handler = true;
     }
   }
 
   if (!default_handler) {
-    bcis->append(-1);
+    bcis.append(-1);
     const Type* extype = TypeOopPtr::make_from_klass(env()->Throwable_klass())->is_instptr();
     extype = extype->join(TypeInstPtr::NOTNULL);
-    extypes->append(extype);
+    extypes.append(extype);
   }
 
-  int len = bcis->length();
+  int len = bcis.length();
   CatchNode *cn = new CatchNode(control(), i_o, len+1);
   Node *catch_ = _gvn.transform(cn);
 
@@ -840,18 +841,18 @@ void Parse::catch_call_exceptions(ciExceptionHandlerStream& handlers) {
     PreserveJVMState pjvms(this);
     // Locals are just copied from before the call.
     // Get control from the CatchNode.
-    int handler_bci = bcis->at(i);
+    int handler_bci = bcis.at(i);
     Node* ctrl = _gvn.transform( new CatchProjNode(catch_, i+1,handler_bci));
     // This handler cannot happen?
     if (ctrl == top())  continue;
     set_control(ctrl);
 
     // Create exception oop
-    const TypeInstPtr* extype = extypes->at(i)->is_instptr();
-    Node *ex_oop = _gvn.transform(new CreateExNode(extypes->at(i), ctrl, i_o));
+    const TypeInstPtr* extype = extypes.at(i)->is_instptr();
+    Node* ex_oop = _gvn.transform(new CreateExNode(extypes.at(i), ctrl, i_o));
 
     // Handle unloaded exception classes.
-    if (saw_unloaded->contains(handler_bci)) {
+    if (saw_unloaded.contains(handler_bci)) {
       // An unloaded exception type is coming here.  Do an uncommon trap.
 #ifndef PRODUCT
       // We do not expect the same handler bci to take both cold unloaded
