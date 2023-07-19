@@ -73,6 +73,7 @@
 #include "runtime/lockStack.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/osThread.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/safepointMechanism.inline.hpp"
