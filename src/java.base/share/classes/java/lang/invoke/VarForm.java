@@ -115,7 +115,7 @@ final class VarForm {
         if (mn == null) {
             mn = resolveMemberName(mode);
             if (mn == null) {
-                throw new UnsupportedOperationException();
+                throw new UnsupportedOperationException(AccessMode.valueFromOrdinal(mode).methodName());
             }
         }
         return mn;
