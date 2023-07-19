@@ -422,8 +422,7 @@ public final class ServiceLoader<S>
     // Incremented when reload is called
     private int reloadCount;
 
-    private static final JavaLangAccess LANG_ACCESS =
-            SharedSecrets.getJavaLangAccess();
+    private static final JavaLangAccess LANG_ACCESS = SharedSecrets.getJavaLangAccess();
 
     /**
      * Represents a service provider located by {@code ServiceLoader}.
