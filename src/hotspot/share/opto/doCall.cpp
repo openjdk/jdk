@@ -651,9 +651,7 @@ void Parse::do_call() {
 
   PEAState* caller_state = nullptr;
   if (DoPartialEscapeAnalysis) {
-    if (cg->is_inline()) {
-      static_cast<InlineCallGenerator* >(cg)->set_caller_state(&block()->state());
-    } else {
+    if (!cg->is_inline() || cg->is_intrinsic()) {
       PEAState& state = jvms->alloc_state();
       // Materialize all inputs to non-inline and late inline calls.
       // TODO: we can support late inline calls if we can pass the right JVM

@@ -23,7 +23,7 @@ set_jdk:
 	fi
 
 all: set_jdk
-	javac *.java
+	javac --add-exports java.base/jdk.internal.misc=ALL-UNNAMED *.java
 
 run: set_jdk
 	./auto.rb

@@ -194,14 +194,10 @@ class CallGenerator : public ArenaObj {
 //------------------------InlineCallGenerator----------------------------------
 class InlineCallGenerator : public CallGenerator {
  protected:
-  PEAState* _caller_state;
-  InlineCallGenerator(ciMethod* method) : CallGenerator(method), _caller_state(nullptr) {}
+  InlineCallGenerator(ciMethod* method) : CallGenerator(method) {}
 
  public:
   virtual bool      is_inline() const           { return true; }
-  void set_caller_state(PEAState* state) {
-    _caller_state = state;
-  }
 };
 
 #endif // SHARE_OPTO_CALLGENERATOR_HPP

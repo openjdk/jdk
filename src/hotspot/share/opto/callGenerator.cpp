@@ -96,7 +96,7 @@ JVMState* ParseGenerator::generate(JVMState* jvms) {
     return nullptr;  // bailing out of the compile; do not try to parse
   }
 
-  Parse parser(jvms, method(), _expected_uses, _caller_state);
+  Parse parser(jvms, method(), _expected_uses);
   // Grab signature for matching/allocation
   GraphKit& exits = parser.exits();
 
@@ -914,9 +914,6 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
 
   // Fall through if the instance matches the desired type.
   kit.replace_in_map(receiver, casted_receiver);
-  if (_if_hit->is_inline() && _caller_state != nullptr) {
-    static_cast<InlineCallGenerator*>(_if_hit)->set_caller_state(_caller_state);
-  }
   // Make the hot call:
   JVMState* new_jvms = _if_hit->generate(kit.sync_jvms());
   if (new_jvms == nullptr) {
@@ -1242,9 +1239,6 @@ JVMState* PredicatedIntrinsicGenerator::generate(JVMState* jvms) {
       PreserveJVMState pjvms(&kit);
       // Generate intrinsic code:
       assert(_intrinsic->is_inline(), "LibraryIntrinsic");
-      if (_caller_state != nullptr) {
-        static_cast<InlineCallGenerator*>(_intrinsic)->set_caller_state(_caller_state);
-      }
       JVMState* new_jvms = _intrinsic->generate(kit.sync_jvms());
       if (new_jvms == nullptr) {
         // Intrinsic failed, use normal compilation path for this predicate.
@@ -1270,9 +1264,6 @@ JVMState* PredicatedIntrinsicGenerator::generate(JVMState* jvms) {
     PreserveJVMState pjvms(&kit);
     // Generate normal compilation code:
     kit.set_control(gvn.transform(slow_region));
-    if (_cg->is_inline() && _caller_state != nullptr) {
-      static_cast<InlineCallGenerator*>(_cg)->set_caller_state(_caller_state);
-    }
     JVMState* new_jvms = _cg->generate(kit.sync_jvms());
     if (kit.failing())
       return nullptr;  // might happen because of NodeCountInliningCutoff
