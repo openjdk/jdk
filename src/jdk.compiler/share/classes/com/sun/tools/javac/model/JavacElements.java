@@ -726,8 +726,12 @@ public class JavacElements implements Elements {
     }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
-    public TypeElement getEnumClassBody(VariableElement enumConstant) {
-        return null;
+    public TypeElement getEnumConstantBody(VariableElement enumConstant) {
+        if (enumConstant.getKind() == ElementKind.ENUM_CONSTANT) {
+            return null;
+        } else {
+            throw new IllegalArgumentException("Argument not an enum constant");
+        }
     }
 
 
