@@ -2006,18 +2006,9 @@ public abstract sealed class VarHandle implements Constable
             };
         }
 
-        // Mapping from the ordinal to AccessMode
-        private static final Map<Integer, AccessMode> modeToAccessMode = initOrdinalToAccessModeMap();
-        private static Map<Integer, AccessMode> initOrdinalToAccessModeMap() {
-            Map<Integer, AccessMode> map = new HashMap<>();
-            for (AccessMode am : AccessMode.values()) {
-                map.put(am.ordinal(), am);
-            }
-            return map;
-        }
-
+        private static final @Stable AccessMode[] VALUES = values();
         static AccessMode valueFromOrdinal(int mode) {
-            return modeToAccessMode.get(mode);
+            return VALUES[mode];
         }
     }
 
@@ -2110,7 +2101,7 @@ public abstract sealed class VarHandle implements Constable
      */
     @ForceInline
     boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
-        if (vform.getMemberNameOrNull(ad.mode) == null) {
+        if (!isAccessModeSupported(AccessMode.valueFromOrdinal(ad.mode))) {
             throwUnsupportedOperationException(ad.mode);
         }
         if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
