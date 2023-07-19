@@ -111,20 +111,22 @@ static os::PageSizes scan_hugepages() {
 
   os::PageSizes pagesizes;
 
-  DIR *dir = opendir(sys_hugepages);
+  DIR* dir = opendir(sys_hugepages);
 
-  struct dirent *entry;
-  size_t pagesize;
-  while ((entry = readdir(dir)) != nullptr) {
-    if (entry->d_type == DT_DIR &&
-        sscanf(entry->d_name, "hugepages-%zukB", &pagesize) == 1) {
-      // The kernel is using kB, hotspot uses bytes
-      // Add each found Large Page Size to page_sizes
-      pagesize *= K;
-      pagesizes.add(pagesize);
+  if (dir != nullptr) {
+    struct dirent *entry;
+    size_t pagesize;
+    while ((entry = readdir(dir)) != nullptr) {
+      if (entry->d_type == DT_DIR &&
+          sscanf(entry->d_name, "hugepages-%zukB", &pagesize) == 1) {
+        // The kernel is using kB, hotspot uses bytes
+        // Add each found Large Page Size to page_sizes
+        pagesize *= K;
+        pagesizes.add(pagesize);
+      }
     }
+    closedir(dir);
   }
-  closedir(dir);
 
   return pagesizes;
 }
@@ -142,11 +144,13 @@ void StaticHugePageSupport::print_on(outputStream* os) {
 }
 
 void StaticHugePageSupport::scan_os() {
-  _pagesizes = scan_hugepages();
   _default_hugepage_size = scan_default_hugepagesize();
-  assert(_pagesizes.contains(_default_hugepage_size),
-         "Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
-         "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
+  if (_default_hugepage_size > 0) {
+    _pagesizes = scan_hugepages();
+    assert(_pagesizes.contains(_default_hugepage_size),
+           "Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
+           "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
+  }
   _initialized = true;
   LogTarget(Info, pagesize) lt;
   if (lt.is_enabled()) {
