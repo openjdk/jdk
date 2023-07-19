@@ -48,7 +48,7 @@ public class TimeoutWithSM {
 
             // start sender to send datagrams to us
             var done = new AtomicBoolean();
-            SocketAddress sender = startSender(socket.getLocalSocketAddress(), done);
+            startSender(socket.getLocalSocketAddress(), done);
 
             // set a SecurityManager that blocks datagrams from sender
             System.setSecurityManager(new SecurityManager() {
@@ -59,9 +59,7 @@ public class TimeoutWithSM {
                 public void checkAccept(String host, int port) {
                     var isa = new InetSocketAddress(host, port);
                     System.out.println("checkAccept " + isa);
-                    if (isa.equals(sender)) {
-                        throw new SecurityException();
-                    }
+                    throw new SecurityException();
                 }
             });
 
@@ -86,9 +84,8 @@ public class TimeoutWithSM {
     /**
      * Start a thread to send datagrams to the given target address at intervals of
      * one second. The sender stops when done is set to true.
-     * @return the socket address of the sender
      */
-    static SocketAddress startSender(SocketAddress target, AtomicBoolean done) throws Exception {
+    static void startSender(SocketAddress target, AtomicBoolean done) throws Exception {
         assert target instanceof InetSocketAddress isa && isa.getAddress().isLoopbackAddress();
         var sender = new DatagramSocket(null);
         boolean started = false;
@@ -117,6 +114,5 @@ public class TimeoutWithSM {
                 sender.close();
             }
         }
-        return sender.getLocalSocketAddress();
     }
 }
