@@ -64,7 +64,7 @@ static void print_and_check_table(NMTPreInitAllocationTable& table, int expected
 
 TEST_VM(NMTPreInit, stress_test_map) {
   NMTPreInitAllocationTable table;
-  const int num_allocs = 32 * K; // about factor 100 more than normally expected
+  const int num_allocs = 56 * 30; // about 30 more than normally expected
   NMTPreInitAllocation** allocations = NEW_C_HEAP_ARRAY(NMTPreInitAllocation*, num_allocs, mtTest);
 
   // Fill table with allocations
@@ -80,17 +80,6 @@ TEST_VM(NMTPreInit, stress_test_map) {
   for (int i = 0; i < num_allocs; i++) {
     const NMTPreInitAllocation* a = table.find(allocations[i]->payload);
     ASSERT_EQ(a, allocations[i]);
-  }
-
-  // Randomly realloc
-  for (int j = 0; j < num_allocs/2; j++) {
-    int pos = os::random() % num_allocs;
-    NMTPreInitAllocation* a1 = allocations[pos];
-    NMTPreInitAllocation* a2 = table.find_and_remove(a1->payload);
-    ASSERT_EQ(a1, a2);
-    NMTPreInitAllocation* a3 = NMTPreInitAllocation::do_reallocate(a2, small_random_nonzero_size());
-    table.add(a3);
-    allocations[pos] = a3;
   }
 
   print_and_check_table(table, num_allocs);
@@ -113,20 +102,3 @@ TEST_VM(NMTPreInit, stress_test_map) {
 
   FREE_C_HEAP_ARRAY(NMTPreInitAllocation*, allocations);
 }
-
-#ifdef ASSERT
-// Test that we will assert if the lookup table is seriously over-booked.
-TEST_VM_ASSERT_MSG(NMTPreInit, assert_on_lu_table_overflow, ".*NMT preinit lookup table degenerated.*") {
-  NMTPreInitAllocationTable table;
-  const int num_allocs = 400 * 1000; // anything above ~250K entries should trigger the assert (note: normal number of entries is ~500)
-  for (int i = 0; i < num_allocs; i++) {
-    NMTPreInitAllocation* a = NMTPreInitAllocation::do_alloc(1);
-    table.add(a);
-  }
-#ifdef VERBOSE
-  table.print_state(tty);
-  tty->cr();
-#endif
-  table.verify();
-}
-#endif // ASSERT

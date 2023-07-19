@@ -39,13 +39,10 @@
 // This tests the ability of the NMT pre-init system to deal with various combinations
 // of pre- and post-init-allocations.
 
-// The tests consist of two phases:
-// 1) before NMT initialization (pre-NMT-init) we allocate and reallocate a bunch of
-//    blocks via os::malloc() and os::realloc(), and free some of them via os::free()
-// 2) after NMT initialization, we reallocate some more, then free all of them.
+// Before NMT initialization (pre-NMT-init) we allocate a bunch of
+// blocks via os::malloc(), and free some of them via os::free()
 //
-// The intent is to check that blocks allocated in pre-init phase and potentially realloced
-// in pre-init phase are handled correctly if further realloc'ed or free'd post-init.
+// The intent is to check that blocks allocated in pre-init phase are handled correctly if free'd post-init.
 
 // We manage to run tests in different phases with this technique:
 // - for the pre-init phase, we start the tests in the constructor of a global object; that constructor will
@@ -57,7 +54,6 @@
 
 // Some shorts to save writing out the flags every time
 static void* os_malloc(size_t s)              { return os::malloc(s, mtTest); }
-static void* os_realloc(void* old, size_t s)  { return os::realloc(old, s, mtTest); }
 
 static void log_state() {
   // Don't use tty! the only safe thing to use at all times is stringStream.
@@ -82,12 +78,7 @@ public:
 
     p1 = os_malloc(100);                 // normal allocation
     os::free(os_malloc(0));              // 0-sized allocation, should be free-able
-    p2 = os_realloc(os_malloc(10), 20);  // realloc, growing
-    p3 = os_realloc(os_malloc(20), 10);  // realloc, shrinking
-    p4 = os_realloc(NULL, 10);           // realloc with NULL pointer
-    os_realloc(os_realloc(os_malloc(20), 0), 30);  // realloc to size 0 and back up again
     os::free(os_malloc(20));             // malloc, free
-    os::free(os_realloc(os_malloc(20), 30));  // malloc, realloc, free
     os::free(NULL);                      // free(null)
     DEBUG_ONLY(NMTPreInit::verify();)
 
@@ -102,14 +93,6 @@ public:
     // case 2: failing malloc
     // os_malloc(SIZE_MAX - M);
 
-    // case 3: overflow in realloc
-    // void* p = os_malloc(10);
-    // p = os_realloc(p, SIZE_MAX);
-
-    // case 4: failing realloc
-    // void* p = os_malloc(10);
-    // p = os_realloc(p, SIZE_MAX - M);
-
     log_state();
   }
   void test_post() {
@@ -118,10 +101,6 @@ public:
     LOG("corner cases, post-init (%d)", os::current_process_id());
     log_state();
 
-    p1 = os_realloc(p1, 140);  // realloc from pre-init-phase, growing
-    p2 = os_realloc(p2, 150);  // realloc from pre-init-phase, growing
-    p3 = os_realloc(p3, 50);   // realloc from pre-init-phase, growing
-    p4 = os_realloc(p4, 8);    // realloc from pre-init-phase, shrinking
     DEBUG_ONLY(NMTPreInit::verify();)
 
     log_state();

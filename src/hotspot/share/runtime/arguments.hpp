@@ -449,6 +449,9 @@ class Arguments : AllStatic {
   static const char* GetSharedArchivePath() { return SharedArchivePath; }
   static const char* GetSharedDynamicArchivePath() { return SharedDynamicArchivePath; }
   static size_t default_SharedBaseAddress() { return _default_SharedBaseAddress; }
+
+  static ccstr process_nmt_property(JavaVMInitArgs* args);
+
   // Java launcher properties
   static void process_sun_java_launcher_properties(JavaVMInitArgs* args);
 

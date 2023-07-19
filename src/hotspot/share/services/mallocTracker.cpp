@@ -83,7 +83,6 @@ void MallocMemorySummary::initialize() {
   assert(sizeof(_snapshot) >= sizeof(MallocMemorySnapshot), "Sanity Check");
   // Uses placement new operator to initialize static area.
   ::new ((void*)_snapshot)MallocMemorySnapshot();
-  MallocLimitHandler::initialize(MallocLimit);
 }
 
 bool MallocMemorySummary::total_limit_reached(size_t s, size_t so_far, const malloclimit* limit) {

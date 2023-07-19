@@ -58,6 +58,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/management.hpp"
+#include "services/memTracker.hpp"
 #include "services/nmtCommon.hpp"
 #include "utilities/align.hpp"
 #include "utilities/debug.hpp"
@@ -331,6 +332,29 @@ bool Arguments::is_internal_module_property(const char* property) {
     }
   }
   return false;
+}
+
+ccstr Arguments::process_nmt_property(JavaVMInitArgs* args) {
+  ccstr nmt = NativeMemoryTracking;
+
+  // Find out user NMT setting
+  for (int index = 0; index < args->nOptions; index++) {
+    const JavaVMOption* option = args->options + index;
+    const char* tail;
+    if (match_option(option, "-XX:NativeMemoryTracking=", &tail)) {
+      nmt = tail;
+    }
+  }
+
+  // Verify NMT arguments
+  const NMT_TrackingLevel level = NMTUtil::parse_tracking_level(nmt);
+  if (level == NMT_unknown) {
+    jio_fprintf(defaultStream::error_stream(),
+                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", nullptr);
+    return nullptr;
+  }
+
+  return nmt;
 }
 
 // Process java launcher properties.

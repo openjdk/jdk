@@ -81,28 +81,16 @@ class outputStream;
 //-> launcher starts new thread (maybe)          NMT pre-init phase : store allocated pointers in lookup table
 //                                                      |
 //-> launcher invokes CreateJavaVM                      |
-//   -> VM initialization before arg parsing            |
-//   -> VM argument parsing                             v
+//   -> VM_Version::early_initialize()                  |
+//   -> is_supported_jni_version()                      v
 //   -> NMT initialization  -------------------------------------
 //                                                      ^
 //   ...                                                |
-//   -> VM life...                               NMT post-init phase : lookup table is read-only; use it in os::free() and os::realloc().
+//   -> VM life...                               NMT post-init phase : lookup table is read-only; use it in os::free().
 //   ...                                                |
 //                                                      v
 //----------------------------------------------------------------
 //
-//////////////////////////////////////////////////////////////////////////
-//
-// Notes:
-// - The VM will malloc() and realloc() several thousand times before NMT initialization.
-//   Starting with a lot of arguments increases this number since argument parsing strdups
-//   around a lot.
-// - However, *surviving* allocations (allocations not freed immediately) are much rarer:
-//   typically only about 300-500. Again, mainly depending on the number of VM args.
-// - There are a few cases of pre-to-post-init reallocs where pre-init allocations get
-//   reallocated after NMT initialization. Those we need to handle with special care (see
-//   NMTPreInit::handle_realloc()). Because of them we need to store allocation size with
-//   every pre-init allocation.
 
 // For the lookup table, design considerations are:
 //   - lookup speed is paramount since lookup is done for every os::free() call.
@@ -112,7 +100,7 @@ class outputStream;
 //   - Obviously, nothing here can use *os::malloc*. Any dynamic allocations - if they cannot
 //     be avoided - should use raw malloc(3).
 //
-// We use a basic open hashmap, dimensioned generously - hash collisions should be very rare.
+// We use a basic open hashmap using mersenne prime and mod operator - hash collisions should be very rare.
 //   The table is customized for holding malloced pointers. One main point of this map is that we do
 //   not allocate memory for the nodes themselves. Instead we piggy-back on the user allocation:
 //   the hashmap entry structure precedes, as a header, the malloced block. That way we avoid extra
@@ -125,10 +113,9 @@ struct NMTPreInitAllocation {
 
   NMTPreInitAllocation(size_t s, void* p) : next(nullptr), size(s), payload(p) {}
 
-  // These functions do raw-malloc/realloc/free a C-heap block of given payload size,
+  // These functions do raw-malloc/free a C-heap block of given payload size,
   //  preceded with a NMTPreInitAllocation header.
   static NMTPreInitAllocation* do_alloc(size_t payload_size);
-  static NMTPreInitAllocation* do_reallocate(NMTPreInitAllocation* a, size_t new_payload_size);
   static void do_free(NMTPreInitAllocation* a);
 
   void* operator new(size_t l);
@@ -139,14 +126,10 @@ class NMTPreInitAllocationTable {
 
   // Table_size: keep table size a prime and the hash function simple; this
   //  seems to give a good distribution for malloced pointers on all our libc variants.
-  // 8000ish is really plenty: normal VM runs have ~500 pre-init allocations to hold,
-  //  VMs with insanely long command lines maybe ~700-1000. Which gives us an expected
-  //  load factor of ~.1. Hash collisions should be very rare.
-  // ~8000 entries cost us ~64K for this table (64-bit), which is acceptable.
-  // We chose 8191, as this is a Mersenne prime (2^x - 1), which for a random
+  // We chose 127, as this is a Mersenne prime (2^x - 1), which for a random
   //  polynomial modulo p = (2^x - 1) is uniformily distributed in [p], so each
   //  bit has the same distribution.
-  static const int table_size = 8191; // i.e. 8191==(2^13 - 1);
+  static const int table_size = 127; // i.e. 127==(2^7 - 1);
 
   NMTPreInitAllocation* _entries[table_size];
 
@@ -227,7 +210,6 @@ class NMTPreInit : public AllStatic {
 
   // Some statistics
   static unsigned _num_mallocs_pre;           // Number of pre-init mallocs
-  static unsigned _num_reallocs_pre;          // Number of pre-init reallocs
   static unsigned _num_frees_pre;             // Number of pre-init frees
 
   static void create_table();
@@ -280,58 +262,6 @@ public:
     return false;
   }
 
-  // Called from os::realloc.
-  // Returns true if reallocation was handled here; in that case,
-  // *rc contains the return address.
-  static bool handle_realloc(void** rc, void* old_p, size_t new_size, MEMFLAGS memflags) {
-    if (old_p == nullptr) {                  // realloc(null, n)
-      return handle_malloc(rc, new_size);
-    }
-    new_size = MAX2((size_t)1, new_size); // realloc(.., 0)
-    switch (MemTracker::tracking_level()) {
-      case NMT_unknown: {
-        // pre-NMT-init:
-        // - the address must already be in the lookup table
-        // - find the old entry, remove from table, reallocate, add to table
-        NMTPreInitAllocation* a = find_and_remove_in_map(old_p);
-        a = NMTPreInitAllocation::do_reallocate(a, new_size);
-        add_to_map(a);
-        (*rc) = a->payload;
-        _num_reallocs_pre++;
-        return true;
-      }
-      break;
-      case NMT_off: {
-        // post-NMT-init, NMT *disabled*:
-        // Neither pre- nor post-init-allocation use malloc headers, therefore we can just
-        // relegate the realloc to os::realloc.
-        return false;
-      }
-      break;
-      default: {
-        // post-NMT-init, NMT *enabled*:
-        // Pre-init allocation does not use malloc header, but from here on we need malloc headers.
-        // Therefore, the new block must be allocated with os::malloc.
-        // We do this by:
-        // - look up (but don't remove! lu table is read-only here.) the old entry
-        // - allocate new memory via os::malloc()
-        // - manually copy the old content over
-        // - return the new memory
-        // - The lu table is readonly, so we keep the old address in the table. And we leave
-        //   the old block allocated too, to prevent the libc from returning the same address
-        //   and confusing us.
-        const NMTPreInitAllocation* a = find_in_map(old_p);
-        if (a != nullptr) { // this was originally a pre-init allocation
-          void* p_new = do_os_malloc(new_size, memflags);
-          ::memcpy(p_new, a->payload, MIN2(a->size, new_size));
-          (*rc) = p_new;
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   // Called from os::free.
   // Returns true if free was handled here.
   static bool handle_free(void* p) {
@@ -353,7 +283,7 @@ public:
       case NMT_off: {
         // post-NMT-init, NMT *disabled*:
         // Neither pre- nor post-init-allocation use malloc headers, therefore we can just
-        // relegate the realloc to os::realloc.
+        // relegate the free to os::free.
         return false;
       }
       break;
@@ -364,7 +294,8 @@ public:
         //   in the table. We leave the block allocated to prevent the libc from returning
         //   the same address and confusing us.
         // - if not found, we let regular os::free() handle this pointer
-        if (find_in_map(p) != nullptr) {
+        const NMTPreInitAllocation* a = find_in_map(p);
+        if (a != nullptr) {
           return true;
         }
       }
