@@ -2654,7 +2654,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args, bool* patch_m
       }
     // -Xdebug
     } else if (match_option(option, "-Xdebug")) {
-      warning("Options -Xdebug and -debug were deprecated in JDK 22 and will likely be removed in a future release.");
+      warning("Option -Xdebug was deprecated in JDK 22 and will likely be removed in a future release.");
     // -Xnoagent
     } else if (match_option(option, "-Xnoagent")) {
       warning("Option -Xnoagent was deprecated in JDK 22 and will likely be removed in a future release.");
