@@ -581,7 +581,7 @@ final class StatusResponseManager {
 
     }
 
-    static StaplingParameters processStapling(
+    static final StaplingParameters processStapling(
             ServerHandshakeContext shc) {
         StaplingParameters params = null;
         SSLExtension ext = null;
