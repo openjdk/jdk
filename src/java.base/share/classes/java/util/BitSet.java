@@ -33,6 +33,8 @@ import java.util.function.IntConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.StreamSupport;
 
+import jdk.internal.util.ArraysSupport;
+
 /**
  * This class implements a vector of bits that grows as needed. Each
  * component of the bit set has a {@code boolean} value. The
@@ -1076,8 +1078,11 @@ public class BitSet implements Cloneable, java.io.Serializable {
         checkInvariants();
         set.checkInvariants();
 
+        if (wordsInUse != set.wordsInUse)
+            return false;
+
         // Check words in use by both BitSets
-        return Arrays.equals(words, 0, wordsInUse, set.words, 0, set.wordsInUse);
+        return ArraysSupport.mismatch(words, 0, set.words, 0, wordsInUse) == -1;
     }
 
     /**
