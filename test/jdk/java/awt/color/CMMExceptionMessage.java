@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,29 +21,28 @@
  * questions.
  */
 
-package java.awt.color;
-
-import java.io.Serial;
+import java.awt.color.CMMException;
+import java.util.Objects;
 
 /**
- * This exception is thrown when an error occurs in accessing or processing an
- * {@code ICC_Profile} object.
+ * @test
+ * @bug 6211126
+ * @summary Checks basic functionality of java.awt.color.CMMException
  */
-public class ProfileDataException extends RuntimeException {
+public final class CMMExceptionMessage {
 
-    /**
-     * Use serialVersionUID from JDK 1.2 for interoperability.
-     */
-    @Serial
-    private static final long serialVersionUID = 7286140888240322498L;
+    public static void main(String[] args) {
+        test(null);
+        test("");
+        test("CMMExceptionMessage");
+    }
 
-    /**
-     * Constructs a {@code ProfileDataException} with the specified detail
-     * message.
-     *
-     * @param  message the specified detail message, or {@code null}
-     */
-    public ProfileDataException(String message) {
-        super(message);
+    private static void test(String expected) {
+        CMMException e = new CMMException(expected);
+        if (!Objects.equals(e.getMessage(), expected)) {
+            System.err.println("Expected message: " + expected);
+            System.err.println("Actual message: " + e.getMessage());
+            throw new RuntimeException();
+        }
     }
 }
