@@ -319,6 +319,16 @@ public class HtmlDoclet extends AbstractDoclet {
         copyLegalFiles(options.createIndex());
     }
 
+    @Override
+    protected void generateFiles() throws DocletException {
+        super.generateFiles();
+
+        if (configuration.tagletManager != null) { // may be null, if no files generated, perhaps because of errros
+            configuration.tagletManager.printReport();
+        }
+
+    }
+
     private void copyJqueryFiles() throws DocletException {
         List<String> files = Arrays.asList(
                 DocPaths.JQUERY_JS.getPath(),

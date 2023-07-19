@@ -104,6 +104,7 @@ runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
 
 applications/jcstress/copy.java 8229852 linux-all
+applications/ctw/modules/jdk_crypto_ec.java 8312194 generic-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestMemoryAwareness.java 8303470 linux-x64
@@ -117,6 +118,7 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
+serviceability/jvmti/vthread/VThreadTLSTest/VThreadTLSTest.java#id1 8300051 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
 serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
@@ -171,5 +173,3 @@ vmTestbase/vm/mlvm/indy/func/jvmti/mergeCP_indy2manySame_b/TestDescription.java 
 vmTestbase/nsk/jdwp/ThreadReference/ForceEarlyReturn/forceEarlyReturn001/forceEarlyReturn001.java 7199837 generic-all
 
 vmTestbase/nsk/monitoring/ThreadMXBean/ThreadInfo/Multi/Multi005/TestDescription.java 8076494 windows-x64
-
-vmTestbase/nsk/jdb/interrupt/interrupt001/interrupt001.java 8310551 linux-all

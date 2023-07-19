@@ -60,8 +60,7 @@ public class CheckSecurityProvider {
         // NOTE: the ordering must match what's defined inside java.security
         expected.add("sun.security.provider.Sun");
         expected.add("sun.security.rsa.SunRsaSign");
-        layer.findModule("jdk.crypto.ec")
-            .ifPresent(m -> expected.add("sun.security.ec.SunEC"));
+        expected.add("sun.security.ec.SunEC");
         expected.add("sun.security.ssl.SunJSSE");
         expected.add("com.sun.crypto.provider.SunJCE");
         layer.findModule("jdk.security.jgss")
