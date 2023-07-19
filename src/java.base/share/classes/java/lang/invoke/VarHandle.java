@@ -31,9 +31,7 @@ import java.lang.constant.ConstantDesc;
 import java.lang.constant.ConstantDescs;
 import java.lang.constant.DirectMethodHandleDesc;
 import java.lang.constant.DynamicConstantDesc;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -2094,16 +2092,11 @@ public abstract sealed class VarHandle implements Constable
      *
      * @return true if this is a direct VarHandle, false if it's an indirect
      *         VarHandle.
-     * @throws UnsupportedOperationException if this VarHandle does not support
-     *         the given access mode
      * @throws WrongMethodTypeException if there's an access type mismatch
      * @see #asDirect()
      */
     @ForceInline
     boolean checkAccessModeThenIsDirect(VarHandle.AccessDescriptor ad) {
-        if (!isAccessModeSupported(AccessMode.valueFromOrdinal(ad.mode))) {
-            throwUnsupportedOperationException(ad.mode);
-        }
         if (exact && accessModeType(ad.type) != ad.symbolicMethodTypeExact) {
             throwWrongMethodTypeException(ad);
         }
@@ -2112,15 +2105,9 @@ public abstract sealed class VarHandle implements Constable
     }
 
     @DontInline
-    final void throwWrongMethodTypeException(VarHandle.AccessDescriptor ad) {
+    private final void throwWrongMethodTypeException(VarHandle.AccessDescriptor ad) {
         throw new WrongMethodTypeException("handle's method type " + accessModeType(ad.type)
                 + " but found " + ad.symbolicMethodTypeExact);
-    }
-
-    @DontInline
-    final void throwUnsupportedOperationException(int mode) {
-        throw new UnsupportedOperationException(AccessMode.valueFromOrdinal(mode).methodName()
-                + " is not supported for " + this);
     }
 
     @ForceInline
@@ -2235,9 +2222,7 @@ public abstract sealed class VarHandle implements Constable
     MethodHandle getMethodHandleUncached(int mode) {
         MethodType mt = accessModeType(AccessMode.values()[mode]).
                 insertParameterTypes(0, VarHandle.class);
-        MemberName mn = vform.getMemberNameOrNull(mode);
-        if (mn == null)
-            throwUnsupportedOperationException(mode);
+        MemberName mn = vform.getMemberName(mode);
         DirectMethodHandle dmh = DirectMethodHandle.make(mn);
         // Such a method handle must not be publicly exposed directly
         // otherwise it can be cracked, it must be transformed or rebound

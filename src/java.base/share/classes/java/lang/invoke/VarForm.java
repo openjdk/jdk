@@ -26,6 +26,7 @@ package java.lang.invoke;
 
 import jdk.internal.vm.annotation.DontInline;
 import jdk.internal.vm.annotation.ForceInline;
+import jdk.internal.vm.annotation.Hidden;
 import jdk.internal.vm.annotation.Stable;
 
 import java.lang.invoke.VarHandle.AccessMode;
@@ -108,6 +109,7 @@ final class VarForm {
     }
 
     @ForceInline
+    @Hidden
     final MemberName getMemberName(int mode) {
         // Can be simplified by calling getMemberNameOrNull, but written in this
         // form to improve interpreter/coldpath performance.
