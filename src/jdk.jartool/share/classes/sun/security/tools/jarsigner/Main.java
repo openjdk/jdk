@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -728,6 +728,13 @@ public class Main {
                             && SignatureFileVerifier.isBlockOrSF(name)) {
                         String alias = name.substring(name.lastIndexOf('/') + 1,
                                 name.lastIndexOf('.'));
+                        long uncompressedSize = je.getSize();
+                        if (uncompressedSize > SignatureFileVerifier.MAX_SIG_FILE_SIZE) {
+                            unparsableSignatures.putIfAbsent(alias, String.format(
+                                    rb.getString("history.unparsable"), name));
+                            continue;
+                        }
+
                         try {
                             if (name.endsWith(".SF")) {
                                 Manifest sf = new Manifest(is);

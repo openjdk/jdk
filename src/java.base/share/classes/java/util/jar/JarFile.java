@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaUtilZipFileAccess;
 import sun.security.action.GetPropertyAction;
 import sun.security.util.ManifestEntryVerifier;
+import sun.security.util.SignatureFileVerifier;
 
 import java.io.ByteArrayInputStream;
 import java.io.EOFException;
@@ -151,8 +152,6 @@ public class JarFile extends ZipFile {
     private static final boolean MULTI_RELEASE_ENABLED;
     private static final boolean MULTI_RELEASE_FORCED;
     private static final ThreadLocal<Boolean> isInitializing = new ThreadLocal<>();
-    // The maximum size of array to allocate. Some VMs reserve some header words in an array.
-    private static final int MAX_ARRAY_SIZE = Integer.MAX_VALUE - 8;
 
     private SoftReference<Manifest> manRef;
     private JarEntry manEntry;
@@ -800,8 +799,11 @@ public class JarFile extends ZipFile {
     private byte[] getBytes(ZipEntry ze) throws IOException {
         try (InputStream is = super.getInputStream(ze)) {
             long uncompressedSize = ze.getSize();
-            if (uncompressedSize > MAX_ARRAY_SIZE) {
-                throw new IOException("Unsupported size: " + uncompressedSize);
+            if (uncompressedSize > SignatureFileVerifier.MAX_SIG_FILE_SIZE) {
+                throw new IOException("Unsupported size: " + uncompressedSize +
+                        " for JarEntry " + ze.getName() +
+                        ". Allowed max size: " +
+                        SignatureFileVerifier.MAX_SIG_FILE_SIZE + " bytes");
             }
             int len = (int)uncompressedSize;
             int bytesRead;

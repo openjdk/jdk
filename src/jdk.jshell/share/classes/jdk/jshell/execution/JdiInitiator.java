@@ -79,7 +79,8 @@ public class JdiInitiator {
      * @param timeout the start-up time-out in milliseconds. If zero or negative,
      * will not wait thus will timeout immediately if not already started.
      * @param customConnectorArgs custom arguments passed to the connector.
-     * These are JDI com.sun.jdi.connect.Connector arguments.
+     * These are JDI com.sun.jdi.connect.Connector arguments. The {@code vmexec}
+     * argument is not supported.
      */
     public JdiInitiator(int port, List<String> remoteVMOptions, String remoteAgent,
             boolean isLaunch, String host, int timeout,
@@ -104,7 +105,10 @@ public class JdiInitiator {
                 argumentName2Value.put("localAddress", host);
             }
         }
-        argumentName2Value.putAll(customConnectorArgs);
+        customConnectorArgs.entrySet()
+                           .stream()
+                           .filter(e -> !"vmexec".equals(e.getKey()))
+                           .forEach(e -> argumentName2Value.put(e.getKey(), e.getValue()));
         this.connectorArgs = mergeConnectorArgs(connector, argumentName2Value);
         this.vm = isLaunch
                 ? launchTarget()

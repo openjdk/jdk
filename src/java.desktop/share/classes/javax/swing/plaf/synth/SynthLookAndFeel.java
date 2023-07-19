@@ -615,6 +615,18 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * <code>new URL(synthFile, path)</code>. Refer to
      * <a href="doc-files/synthFileFormat.html">Synth File Format</a> for more
      * information.
+     * <p>
+     * Whilst this API may be safe for loading local resources that are
+     * delivered with a {@code LookAndFeel} or application, and so have an
+     * equal level of trust with application code, using it to load from
+     * remote resources, particularly any which may have a lower level of
+     * trust, is strongly discouraged.
+     * The alternative mechanisms to load styles from an {@code InputStream}
+     * {@linkplain #load(InputStream, Class)}
+     * using resources co-located with the application or by providing a
+     * {@code SynthStyleFactory} to
+     * {@linkplain #setStyleFactory setStyleFactory(SynthStyleFactory)}
+     * are preferred.
      *
      * @param url the <code>URL</code> to load the set of
      *     <code>SynthStyle</code> from

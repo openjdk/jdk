@@ -184,6 +184,7 @@ class x86 {
   // byte flip mask for sha512
   static address _pshuffle_byte_flip_mask_addr_sha512;
   static address _counter_mask_addr;
+  static address _counter_mask_ones_addr;
   // Masks for base64
   static address _encoding_table_base64;
   static address _shuffle_base64;
@@ -343,6 +344,7 @@ class x86 {
   static address base64_avx2_input_mask_addr() { return _avx2_input_mask_base64; }
   static address base64_avx2_lut_addr() { return _avx2_lut_base64; }
   static address counter_mask_addr() { return _counter_mask_addr; }
+  static address counter_mask_ones_addr() { return _counter_mask_ones_addr; }
   static address base64_vbmi_lookup_lo_addr() { return _lookup_lo_base64; }
   static address base64_vbmi_lookup_hi_addr() { return _lookup_hi_base64; }
   static address base64_vbmi_lookup_lo_url_addr() { return _lookup_lo_base64url; }

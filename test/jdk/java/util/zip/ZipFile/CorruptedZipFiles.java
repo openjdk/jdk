@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -114,13 +114,13 @@ public class CorruptedZipFiles {
         err.println("corrupted CENEXT 1");
         bad = good.clone();
         bad[cenpos+CENEXT]++;
-        checkZipException(bad, ".*bad header size.*");
+        checkZipException(bad, ".*invalid zip64 extra data field size.*");
 
         err.println("corrupted CENEXT 2");
         bad = good.clone();
         bad[cenpos+CENEXT]   = (byte)0xfd;
         bad[cenpos+CENEXT+1] = (byte)0xfd;
-        checkZipException(bad, ".*bad header size.*");
+        checkZipException(bad, ".*extra data field size too long.*");
 
         err.println("corrupted CENCOM");
         bad = good.clone();

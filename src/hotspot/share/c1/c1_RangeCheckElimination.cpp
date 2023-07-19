@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,24 +228,23 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
     Bound* y_bound = _rce->get_bound(y);
     if (x_bound->lower() >= 0 && x_bound->lower_instr() == NULL && y->as_ArrayLength() != NULL) {
       _bound = new Bound(0, NULL, -1, y);
-    } else if (y->type()->as_IntConstant() && y->type()->as_IntConstant()->value() != 0) {
+    } else if (x_bound->has_lower() && x_bound->lower() >= 0 && y->type()->as_IntConstant() &&
+               y->type()->as_IntConstant()->value() != 0 && y->type()->as_IntConstant()->value() != min_jint) {
       // The binary % operator is said to yield the remainder of its operands from an implied division; the
       // left-hand operand is the dividend and the right-hand operand is the divisor.
       //
-      // % operator follows from this rule that the result of the remainder operation can be negative only
+      // It follows from this rule that the result of the remainder operation can be negative only
       // if the dividend is negative, and can be positive only if the dividend is positive. Moreover, the
-      // magnitude of the result is always less than the magnitude of the divisor(See JLS 15.17.3).
+      // magnitude of the result is always less than the magnitude of the divisor (see JLS 15.17.3).
       //
       // So if y is a constant integer and not equal to 0, then we can deduce the bound of remainder operation:
       // x % -y  ==> [0, y - 1] Apply RCE
       // x % y   ==> [0, y - 1] Apply RCE
       // -x % y  ==> [-y + 1, 0]
       // -x % -y ==> [-y + 1, 0]
-      if (x_bound->has_lower() && x_bound->lower() >= 0) {
-        _bound = new Bound(0, NULL, y->type()->as_IntConstant()->value() - 1, NULL);
-      } else {
-        _bound = new Bound();
-      }
+      //
+      // Use the absolute value of y as an upper bound. Skip min_jint because abs(min_jint) is undefined.
+      _bound = new Bound(0, NULL, abs(y->type()->as_IntConstant()->value()) - 1, NULL);
     } else {
       _bound = new Bound();
     }
@@ -270,17 +269,16 @@ void RangeCheckEliminator::Visitor::do_ArithmeticOp(ArithmeticOp *ao) {
 
         Bound * bound = _rce->get_bound(y);
         if (bound->has_upper() && bound->has_lower()) {
-          int new_lower = bound->lower() + const_value;
-          jlong new_lowerl = ((jlong)bound->lower()) + const_value;
-          int new_upper = bound->upper() + const_value;
-          jlong new_upperl = ((jlong)bound->upper()) + const_value;
-
-          if (((jlong)new_lower) == new_lowerl && ((jlong)new_upper == new_upperl)) {
-            Bound *newBound = new Bound(new_lower, bound->lower_instr(), new_upper, bound->upper_instr());
-            _bound = newBound;
-          } else {
-            // overflow
+          jint t_lo = bound->lower();
+          jint t_hi = bound->upper();
+          jint new_lower = java_add(t_lo, const_value);
+          jint new_upper = java_add(t_hi, const_value);
+          bool overflow = ((const_value < 0 && (new_lower > t_lo)) ||
+                           (const_value > 0 && (new_upper < t_hi)));
+          if (overflow) {
             _bound = new Bound();
+          } else {
+            _bound = new Bound(new_lower, bound->lower_instr(), new_upper, bound->upper_instr());
           }
         } else {
           _bound = new Bound();
@@ -1558,7 +1556,6 @@ void RangeCheckEliminator::Bound::add_assertion(Instruction *instruction, Instru
       NOT_PRODUCT(ao->set_printable_bci(position->printable_bci()));
       result = result->insert_after(ao);
       compare_with = ao;
-      // TODO: Check that add operation does not overflow!
     }
   }
   assert(compare_with != NULL, "You have to compare with something!");

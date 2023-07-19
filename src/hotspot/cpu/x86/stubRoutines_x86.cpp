@@ -71,6 +71,7 @@ address StubRoutines::x86::_avx2_shuffle_base64 = NULL;
 address StubRoutines::x86::_avx2_input_mask_base64 = NULL;
 address StubRoutines::x86::_avx2_lut_base64 = NULL;
 address StubRoutines::x86::_counter_mask_addr = NULL;
+address StubRoutines::x86::_counter_mask_ones_addr = NULL;
 address StubRoutines::x86::_lookup_lo_base64 = NULL;
 address StubRoutines::x86::_lookup_hi_base64 = NULL;
 address StubRoutines::x86::_lookup_lo_base64url = NULL;
