@@ -801,10 +801,10 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
   // Looks like a live JavaThread at this point.
 
   if (java_thread != JavaThread::current()) {
-    // jthread is not for the current JavaThread so have to verify
-    // the JavaThread * against the ThreadsList.
-    if (EnableThreadSMRExtraValidityChecks && !includes(java_thread)) {
-      // Not on the JavaThreads list so it is not alive.
+    // java_thread is not the current JavaThread so we have to verify it
+    // against the ThreadsList.
+    if (!includes(java_thread)) {
+      // Not on this ThreadsList so it is not protected.
       return false;
     }
   }

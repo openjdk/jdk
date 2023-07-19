@@ -808,8 +808,6 @@ JvmtiExport::cv_external_thread_to_JavaThread(ThreadsList * t_list,
   }
   // Looks like a live JavaThread at this point.
 
-  // We do not check the EnableThreadSMRExtraValidityChecks option
-  // for this includes() call because JVM/TI's spec is tighter.
   if (!t_list->includes(java_thread)) {
     // Not on the JavaThreads list so it is not alive.
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
@@ -851,8 +849,6 @@ JvmtiExport::cv_oop_to_JavaThread(ThreadsList * t_list, oop thread_oop,
   }
   // Looks like a live JavaThread at this point.
 
-  // We do not check the EnableThreadSMRExtraValidityChecks option
-  // for this includes() call because JVM/TI's spec is tighter.
   if (!t_list->includes(java_thread)) {
     // Not on the JavaThreads list so it is not alive.
     return JVMTI_ERROR_THREAD_NOT_ALIVE;
