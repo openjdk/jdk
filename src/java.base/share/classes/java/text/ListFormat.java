@@ -211,13 +211,12 @@ public class ListFormat extends Format {
     }
 
     /**
-     * Formats the input strings. The input is an array of Strings that are formatted
-     * into a concatenated string.
+     * {@return the string that consists of the input strings, concatenated with the
+     * specified {@code Type} and {@code Style}}
      * @param input The array of input strings to format. There should be at least two
      *              elements in the array, otherwise {@code IllegalArgumentException} is
      *              thrown
      * @throws IllegalArgumentException if the length of the input array is less than two
-     * @return the formatted string
      */
     public String format(String[] input) {
         return format(input, new StringBuffer(),
@@ -230,6 +229,20 @@ public class ListFormat extends Format {
             return generateMessageFormat(objs).format(objs, toAppendTo, pos);
         } else {
             throw new IllegalArgumentException("The object to format should be an Object array");
+        }
+    }
+
+    /**
+     * {@return the parsed array of Strings from the {@code source} String}
+     * @param source the String to parse
+     * @param position the position to parse
+     * @throws ParseException if parse failed
+     */
+    public String[] parse(String source, ParsePosition position) throws ParseException {
+        if (parseObject(source, position) instanceof Object[] orig) {
+            return Arrays.copyOf(orig, orig.length, String[].class);
+        } else {
+            throw new ParseException("Parse failed", position.getErrorIndex());
         }
     }
 

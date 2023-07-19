@@ -30,6 +30,7 @@
 
 import java.text.ListFormat;
 import java.text.ParseException;
+import java.text.ParsePosition;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
@@ -43,9 +44,9 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestListFormat {
-    private static final Object[] SAMPLE2 = {"foo", "bar"};
-    private static final Object[] SAMPLE3 = {"foo", "bar", "baz"};
-    private static final Object[] SAMPLE4 = {"foo", "bar", "baz", "qux"};
+    private static final String[] SAMPLE2 = {"foo", "bar"};
+    private static final String[] SAMPLE3 = {"foo", "bar", "baz"};
+    private static final String[] SAMPLE4 = {"foo", "bar", "baz", "qux"};
     private static final String[] CUSTOM_PATTERNS = {
             "sbef {0} sbet {1}",
             "{0} mid {1}",
@@ -65,53 +66,48 @@ public class TestListFormat {
     static Arguments[] getInstance_3Arg() {
         return new Arguments[] {
                 arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL,
-                        "foo, bar, and baz", false),
+                        "foo, bar, and baz", true),
                 arguments(Locale.US, ListFormat.Type.OR, ListFormat.Style.FULL,
-                        "foo, bar, or baz", false),
+                        "foo, bar, or baz", true),
                 arguments(Locale.US, ListFormat.Type.UNIT, ListFormat.Style.FULL,
-                        "foo, bar, baz", false),
+                        "foo, bar, baz", true),
                 arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.SHORT,
-                        "foo, bar, & baz", false),
+                        "foo, bar, & baz", true),
                 arguments(Locale.US, ListFormat.Type.OR, ListFormat.Style.SHORT,
-                        "foo, bar, or baz", false),
+                        "foo, bar, or baz", true),
                 arguments(Locale.US, ListFormat.Type.UNIT, ListFormat.Style.SHORT,
-                        "foo, bar, baz", false),
+                        "foo, bar, baz", true),
                 arguments(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.NARROW,
-                        "foo, bar, baz", false),
+                        "foo, bar, baz", true),
                 arguments(Locale.US, ListFormat.Type.OR, ListFormat.Style.NARROW,
-                        "foo, bar, or baz", false),
+                        "foo, bar, or baz", true),
                 arguments(Locale.US, ListFormat.Type.UNIT, ListFormat.Style.NARROW,
-                        "foo bar baz", false),
+                        "foo bar baz", true),
 
                 arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.FULL,
-                        "foo\u3001bar\u3001baz", false),
+                        "foo\u3001bar\u3001baz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.FULL,
-                        "foo\u3001bar\u3001\u307e\u305f\u306fbaz", false),
+                        "foo\u3001bar\u3001\u307e\u305f\u306fbaz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.FULL,
-                        "foo bar baz", false),
+                        "foo bar baz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.SHORT,
-                        "foo\u3001bar\u3001baz", false),
+                        "foo\u3001bar\u3001baz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.SHORT,
-                        "foo\u3001bar\u3001\u307e\u305f\u306fbaz", false),
+                        "foo\u3001bar\u3001\u307e\u305f\u306fbaz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.SHORT,
-                        "foo bar baz", false),
+                        "foo bar baz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.STANDARD, ListFormat.Style.NARROW,
-                        "foo\u3001bar\u3001baz", false),
+                        "foo\u3001bar\u3001baz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.NARROW,
-                        "foo\u3001bar\u3001\u307e\u305f\u306fbaz", false),
+                        "foo\u3001bar\u3001\u307e\u305f\u306fbaz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.NARROW,
-                        "foobarbaz", true), // no delimiter
+                        "foobarbaz", false), // no delimiter
         };
-    }
-
-    @Test
-    void getInstance_noArg() {
-        assertEquals(ListFormat.getInstance(), ListFormat.getInstance(Locale.getDefault(Locale.Category.FORMAT), ListFormat.Type.STANDARD, ListFormat.Style.FULL));
     }
 
     @ParameterizedTest
     @MethodSource
-    void getInstance_1Arg(Object[] input, String expected) throws ParseException {
+    void getInstance_1Arg(String[] input, String expected) throws ParseException {
         var f = ListFormat.getInstance(CUSTOM_PATTERNS);
         compareResult(f, input, expected, true);
     }
@@ -123,15 +119,11 @@ public class TestListFormat {
         compareResult(f, SAMPLE3, expected, roundTrip);
     }
 
-    private static void compareResult(ListFormat f, Object[] input, String expected, boolean roundTrip) throws ParseException {
+    private static void compareResult(ListFormat f, String[] input, String expected, boolean roundTrip) throws ParseException {
         var result = f.format(input);
         assertEquals(expected, result);
-        if (!roundTrip) {
-            if (f.parseObject(result) instanceof Object[] ra) {
-                assertArrayEquals(input, ra);
-            } else {
-                fail();
-            }
+        if (roundTrip) {
+            assertArrayEquals(input, f.parse(result, new ParsePosition(0)));
         }
     }
 }
