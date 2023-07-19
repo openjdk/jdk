@@ -169,10 +169,10 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Encrypt
                                     (CK_BYTE_PTR)(outBufP + jOutOfs),
                                     &ckEncryptedLen);
 
-    if (directIn == 0 && inBufP != NULL) {
+    if (directIn == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
-    if (directOut == 0 && outBufP != NULL) {
+    if (directOut == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
     ckAssertReturnValueOK(env, rv);
@@ -236,10 +236,10 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1EncryptUpdate
                                           (CK_BYTE_PTR)(outBufP + jOutOfs),
                                           &ckEncryptedPartLen);
 
-    if (directIn == 0 && inBufP != NULL) {
+    if (directIn == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
-    if (directOut == 0 && outBufP != NULL) {
+    if (directOut == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
     ckAssertReturnValueOK(env, rv);
@@ -406,10 +406,10 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1Decrypt
                                     (CK_BYTE_PTR)(outBufP + jOutOfs),
                                     &ckOutLen);
 
-    if (directIn == 0 && inBufP != NULL) {
+    if (directIn == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
-    if (directOut == 0 && outBufP != NULL) {
+    if (directOut == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
     ckAssertReturnValueOK(env, rv);
@@ -472,10 +472,10 @@ Java_sun_security_pkcs11_wrapper_PKCS11_C_1DecryptUpdate
                                           (CK_BYTE_PTR)(outBufP + jOutOfs),
                                           &ckDecryptedPartLen);
 
-    if (directIn == 0 && inBufP != NULL) {
+    if (directIn == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jIn, inBufP, JNI_ABORT);
     }
-    if (directOut == 0 && outBufP != NULL) {
+    if (directOut == 0) {
         (*env)->ReleasePrimitiveArrayCritical(env, jOut, outBufP, 0);
     }
     ckAssertReturnValueOK(env, rv);
