@@ -118,12 +118,15 @@ public class ReferencedKeyTest {
         assertTrue(!set.contains(BASE_KEY + 3), "not removed");
         Long element1 = set.get(BASE_KEY + 2);
         Long element2 = set.get(BASE_KEY + 3);
+        Long element3 = set.get(BASE_KEY + 4);
         Long intern1 = set.intern(BASE_KEY + 2);
         Long intern2 = set.intern(BASE_KEY + 3);
+        Long intern3 = set.intern(BASE_KEY + 4, e -> e);
         assertTrue(element1 != null, "missing key");
         assertTrue(element2 == null, "not removed");
         assertTrue(element1 == intern1, "intern failed"); // must be same object
         assertTrue(intern2 != null, "intern failed");
+        assertTrue(element3 == intern3, "intern failed");
     }
 
     // Borrowed from jdk.test.lib.util.ForceGC but couldn't use from java.base/jdk.internal.util

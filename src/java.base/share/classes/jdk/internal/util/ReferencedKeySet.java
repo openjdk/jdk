@@ -32,6 +32,7 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 /**
  * This class provides management of {@link Set set} where it is desirable to
@@ -68,7 +69,7 @@ import java.util.function.Supplier;
  *
  * @param <T> the type of elements maintained by this set
  */
-public class ReferencedKeySet<T> extends AbstractSet<T> {
+public final class ReferencedKeySet<T> extends AbstractSet<T> {
     /**
      * Backing {@link ReferencedKeySet} map.
      */
@@ -94,7 +95,7 @@ public class ReferencedKeySet<T> extends AbstractSet<T> {
      *
      * @param <E> the type of elements maintained by this set
      */
-    public static <E> jdk.internal.util.ReferencedKeySet<E>
+    public static <E> ReferencedKeySet<E>
     create(boolean isSoft, Supplier<Map<ReferenceKey<E>, ReferenceKey<E>>> supplier) {
         return create(isSoft, false, supplier);
     }
@@ -147,7 +148,7 @@ public class ReferencedKeySet<T> extends AbstractSet<T> {
 
     @Override
     public boolean add(T e) {
-        return map.intern(e) == null;
+        return intern(e) == null;
     }
 
     @Override
@@ -183,6 +184,22 @@ public class ReferencedKeySet<T> extends AbstractSet<T> {
      * @return the old element if present, otherwise, the new element
      */
     public T intern(T e) {
-        return map.intern(e);
+        return ReferencedKeyMap.intern(map, e);
+    }
+
+    /**
+     * Intern an element to the set, returning the element if newly added or the
+     * old element if previously added.
+     *
+     * @param e         element to add
+     * @param interner  operation to apply to key before adding to set
+     *
+     * @return the old element if present, otherwise, the new element
+     *
+     * @implNote This version of intern should not be called during phase1
+     * due to bootstrapping of interner lambda.
+     */
+    public T intern(T e, UnaryOperator<T> interner) {
+        return ReferencedKeyMap.intern(map, e, interner);
     }
 }
