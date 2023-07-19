@@ -21,7 +21,7 @@ record RecordExtern(int foo) implements Externalizable {
         ;
     }
 
-    // *Not* Externalizable methods
+    // *Not* Externalizable methods; shouldn't generate a warning
     public void writeExternal() {
         ;
     }

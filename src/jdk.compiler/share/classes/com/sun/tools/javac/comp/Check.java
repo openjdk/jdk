@@ -4818,9 +4818,6 @@ public class Check {
                    "readObject",  "readObjectNoData",
                    "readResolve");
 
-        private static final Set<String> externMethodNames =
-            Set.of("writeExternal", "readExternal");
-
         private static final Set<String> serialFieldNames =
             Set.of("serialVersionUID", "serialPersistentFields");
 
@@ -5142,30 +5139,22 @@ public class Check {
             checkExceptions(tree, e, method, syms.objectStreamExceptionType);
         }
 
-        private void checkWriteExternalRecord(JCClassDecl tree, Element e, MethodSymbol method) {
+        private void checkWriteExternalRecord(JCClassDecl tree, Element e, MethodSymbol method, boolean isExtern) {
             //public void writeExternal(ObjectOutput) throws IOException
-            checkExternMethodRecord(tree, e, method, syms.objectOutputType);
+            checkExternMethodRecord(tree, e, method, syms.objectOutputType, isExtern);
         }
 
-        private void checkReadExternalRecord(JCClassDecl tree, Element e, MethodSymbol method) {
-             // public void readExternal(ObjectInput) throws IOException
-            checkExternMethodRecord(tree, e, method, syms.objectInputType);
+        private void checkReadExternalRecord(JCClassDecl tree, Element e, MethodSymbol method, boolean isExtern) {
+            // public void readExternal(ObjectInput) throws IOException
+            checkExternMethodRecord(tree, e, method, syms.objectInputType, isExtern);
          }
 
-        private void checkExternMethodRecord(JCClassDecl tree, Element e, MethodSymbol method, Type argType) {
-            long flags = method.flags();
-
-            if (isExternalizable((Type)(e.asType()))) {
-                Type rtype = method.getReturnType();
-                if ( ((flags & PUBLIC) != 0) &&
-                     ((flags & STATIC) == 0) &&
-                     types.isSameType(syms.voidType, rtype) &&
-                     hasExactlyOneArgWithType(tree, e, method, argType)) {
-                    // Not necessary to check throws clause in this context
-                    log.warning(LintCategory.SERIAL,
-                                TreeInfo.diagnosticPositionFor(method, tree),
-                                Warnings.IneffectualExternalizableMethodRecord(method.getSimpleName().toString()));
-                }
+        private void checkExternMethodRecord(JCClassDecl tree, Element e, MethodSymbol method, Type argType,
+                                             boolean isExtern) {
+            if (isExtern && isExternMethod(tree, e, method, argType)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.IneffectualExternalizableMethodRecord(method.getSimpleName().toString()));
             }
         }
 
@@ -5217,16 +5206,44 @@ public class Check {
                                         Warnings.IneffectualSerialMethodEnum(name));
                         }
 
-                        if (isExtern && externMethodNames.contains(name)) {
-                            log.warning(LintCategory.SERIAL,
-                                        TreeInfo.diagnosticPositionFor(method, tree),
-                                        Warnings.IneffectualExternMethodEnum(name));
+                        if (isExtern) {
+                            switch(name) {
+                            case "writeExternal" -> checkWriteExternalEnum(tree, e, method);
+                            case "readExternal"  -> checkReadExternalEnum(tree, e, method);
+                            }
                         }
                     }
-                    }
-                });
+                    }});
             }
             return null;
+        }
+
+        private void checkWriteExternalEnum(JCClassDecl tree, Element e, MethodSymbol method) {
+            //public void writeExternal(ObjectOutput) throws IOException
+            checkExternMethodEnum(tree, e, method, syms.objectOutputType);
+        }
+
+        private void checkReadExternalEnum(JCClassDecl tree, Element e, MethodSymbol method) {
+             // public void readExternal(ObjectInput) throws IOException
+            checkExternMethodEnum(tree, e, method, syms.objectInputType);
+         }
+
+        private void checkExternMethodEnum(JCClassDecl tree, Element e, MethodSymbol method, Type argType) {
+            if (isExternMethod(tree, e, method, argType)) {
+                log.warning(LintCategory.SERIAL,
+                            TreeInfo.diagnosticPositionFor(method, tree),
+                            Warnings.IneffectualExternMethodEnum(method.getSimpleName().toString()));
+            }
+        }
+
+        private boolean isExternMethod(JCClassDecl tree, Element e, MethodSymbol method, Type argType) {
+            long flags = method.flags();
+            Type rtype = method.getReturnType();
+
+            // Not necessary to check throws clause in this context
+            return (flags & PUBLIC) != 0 && (flags & STATIC) == 0 &&
+                types.isSameType(syms.voidType, rtype) &&
+                hasExactlyOneArgWithType(tree, e, method, argType);
         }
 
         /**
@@ -5274,8 +5291,7 @@ public class Check {
                             }
 
                         }
-                    }
-                    }
+                    }}
                 });
             }
 
@@ -5334,6 +5350,7 @@ public class Check {
         @Override
         public Void visitTypeAsRecord(TypeElement e,
                                       JCClassDecl p) {
+            boolean isExtern = isExternalizable((Type)e.asType());
             for(Element el : e.getEnclosedElements()) {
                 runUnderLint(el, p, (enclosed, tree) -> {
                     String name = enclosed.getSimpleName().toString();
@@ -5352,9 +5369,7 @@ public class Check {
                             // svuid value is not checked to match for
                             // records.
                             checkSerialVersionUID(tree, e, field);
-                        }
-
-                        }
+                        }}
                     }
 
                     case METHOD -> {
@@ -5363,8 +5378,8 @@ public class Check {
                         case "writeReplace" -> checkWriteReplace(tree, e, method);
                         case "readResolve"  -> checkReadResolve(tree, e, method);
 
-                        case "writeExternal" -> checkWriteExternalRecord(tree, e, method);
-                        case "readExternal"  -> checkReadExternalRecord(tree, e, method);
+                        case "writeExternal" -> checkWriteExternalRecord(tree, e, method, isExtern);
+                        case "readExternal"  -> checkReadExternalRecord(tree, e, method, isExtern);
 
                         default -> {
                             if (serialMethodNames.contains(name)) {
@@ -5372,12 +5387,8 @@ public class Check {
                                             TreeInfo.diagnosticPositionFor(method, tree),
                                             Warnings.IneffectualSerialMethodRecord(name));
                             }
-                        }
-                        }
-
-                    }
-                    }
-                });
+                        }}
+                    }}});
             }
             return null;
         }

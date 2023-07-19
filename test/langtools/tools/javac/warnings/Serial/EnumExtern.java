@@ -47,4 +47,13 @@ enum EnumExtern implements Externalizable {
     public void readExternal(ObjectInput oi) {
         ;
     }
+
+    // _Not_ Externalizable methods; shouldn't generate a warning
+    public void writeExternal() {
+        ;
+    }
+
+    public void readExternal() {
+        ;
+    }
 }
