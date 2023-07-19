@@ -35,7 +35,7 @@ static size_t get_committed() {
   return snapshot.by_type(mtThreadStack)->committed();
 }
 
-TEST_VM(VirtualMemoryTracker, missing_remove_released_region) {
+TEST_VM(VirtualMemoryTracker, MissingRemoveReleasedRegion) {
   if (!MemTracker::enabled()) {
     return;
   }
