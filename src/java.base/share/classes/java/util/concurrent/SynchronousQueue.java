@@ -112,39 +112,38 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
      *
      * A dual queue is one that at any given time either holds "data"
      * -- items provided by put operations, or "requests" -- slots
-     * representing take operations, or is empty. A "fulfill"
+     * representing take operations, or is empty. A fulfilling
      * operation (i.e., a call requesting an item from a queue holding
-     * data or vice versa) dequeues a complementary node.  Any
-     * operation can figure out which mode the queue is in, and act
-     * accordingly without needing locks.  So put and take operations
-     * are symmetrical, and all transfer methods invoke a single
-     * method "xfer" that does a put or a take in either fifo or lifo
-     * mode.
+     * data or vice versa) "matches" the item of and then dequeues a
+     * complementary node.  Any operation can figure out which mode
+     * the queue is in, and act accordingly without needing locks.  So
+     * put and take operations are symmetrical, and all transfer
+     * methods invoke a single "xfer" method that does a put or a take
+     * in either fifo or lifo mode.
      *
      * The algorithms here differ from the versions in the above paper
      * in ways including:
      *
-     *  *  For historical compatibility, Fifo mode directly uses
-     *     LinkedTransferQueue operations, but Lifo mode support is
-     *     added in subclass Transferer.
-     *  *  The original algorithms used bit-marked pointers, but
-     *     the ones here use mode bits in nodes, and usually avoid
+     *  * The original algorithms used bit-marked pointers, but the
+     *     ones here use a bit (isData) in nodes, and usually avoid
      *     creating nodes when fulfilling. They also use the
-     *     compareAndExchange form of CAS for pointer updates to reduce
-     *     memory traffic. The Fifo version accommodates lazy
-     *     updates and slack as desxcribed in the LinkedTransferQueue
-     *     internal documentation.
-     *  *  SynchronousQueues must block threads waiting to become
-     *     fulfilled, sometimes preceded by brief spins.
-     *  *  Support for cancellation via timeout and interrupts,
-     *     including cleaning out cancelled nodes/threads
-     *     from lists to avoid garbage retention and memory depletion.
+     *     compareAndExchange form of CAS for pointer updates to
+     *     reduce memory traffic.
+     *  * Fifo mode is based on LinkedTransferQueue operations, but
+     *     Lifo mode support is added in subclass Transferer.
+     *  * The Fifo version accommodates lazy updates and slack as
+     *     described in LinkedTransferQueue internal documentation.
+     *  * Threads may block when waiting to become fulfilled,
+     *     sometimes preceded by brief spins.
+     *  * Support for cancellation via timeout and interrupts,
+     *     including cleaning out cancelled nodes/threads from lists
+     *     to avoid garbage retention and memory depletion.
      */
 
     /**
      * Extension of LinkedTransferQueue to support Lifo (stack) mode.
      * Methods use the "head" field as head (top) of stack (versus
-     * queue). Note that popped nodes are not self-linked because thay
+     * queue). Note that popped nodes are not self-linked because they
      * are not prone to unbounded garbage chains. Also note that
      * "async" mode is never used and not supported for synchronous
      * transfers.
@@ -154,7 +153,7 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
 
         /**
          * Puts or takes an item with lifo ordering. Loops trying:
-         * * If top (p) exists and is already matched, pop and continue
+         * * If top (var p) exists and is already matched, pop and continue
          * * If top has complementary type, try to fulfill by CASing item,
          *    On success pop (which will succeed unless already helped),
          *    otherwise restart.
@@ -162,69 +161,64 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
          *    node and wait, later unsplicing if cancelled.
          *
          * @param e the item or null for take
-         * @param nanos timeout or 0 for immediate, Long.MAX_VALUE for untimed
+         * @param ns timeout or 0 if immediate, Long.MAX_VALUE if untimed
          * @return an item if matched, else e
          */
-        final Object xferLifo(Object e, long nanos) {
+        final Object xferLifo(Object e, long ns) {
             boolean haveData = (e != null);
-            for (DualNode s = null;;) {
-                for (DualNode p = head;;) {
-                    if (p != null) {
-                        Object item; DualNode n, u;
-                        boolean isData = p.isData;
-                        if (isData != ((item = p.item) != null)) {
-                            p = (p == (u = cmpExHead(p, (n = p.next)))) ? n : u;
-                            continue;                    // retry with next top
-                        } else if (isData != haveData) { // try to fulfill
-                            if (p.cmpExItem(item, e) != item)
-                                break;                   // lost race; restart
-                            Thread w = p.waiter;
-                            cmpExHead(p, p.next);
-                            LockSupport.unpark(w);
-                            return item;
-                        }
-                    }
-                    if (nanos == 0L)                     // no match, no wait
-                        return e;
-                    if (s == null)                       // push new node; wait
-                        s = new DualNode(e, haveData);
-                    s.setNext(p);
-                    if (p == (p = cmpExHead(p, s))) {
-                        Object match = s.await(e, nanos, this, // spin near empty
-                                               p == null || p.waiter == null);
-                        if (match == e)
-                            unspliceLifo(s);             // cancelled
-                        return match;
+            Object m;                              // the match or e if none
+            outer: for (DualNode s = null, p = head;;) {
+                while (p != null) {
+                    boolean isData; DualNode n, u; // help collapse
+                    if ((isData = p.isData) != ((m = p.item) != null))
+                        p = (p == (u = cmpExHead(p, (n = p.next)))) ? n : u;
+                    else if (isData == haveData)   // same mode; push below
+                        break;
+                    else if (p.cmpExItem(m, e) != m)
+                        p = head;                  // missed; restart
+                    else {                         // matched complementary node
+                        Thread w = p.waiter;
+                        cmpExHead(p, p.next);
+                        LockSupport.unpark(w);
+                        break outer;
                     }
                 }
+                if (ns == 0L) {                    // no match, no wait
+                    m = e;
+                    break;
+                }
+                if (s == null)                     // try to push node and wait
+                    s = new DualNode(e, haveData);
+                s.next = p;
+                if (p == (p = cmpExHead(p, s))) {
+                    if ((m = s.await(e, ns, this,  // spin if (nearly) empty
+                                     p == null || p.waiter == null)) == e)
+                        unspliceLifo(s);           // cancelled
+                    break;
+                }
             }
+            return m;
         }
 
         /**
-         * Unlinks (non-live) node s from stack.  Unlike fifo lists,
-         * we don't have a known predecessor that usually suffices to
-         * unlink.  At worst we may need to traverse entire list, and
-         * we might not see s if already off-list or another unsplicer
-         * has removed it. But we can stop when we see any node known
-         * to follow s. We use s.next unless it is not live, in which
-         * case we try the node one past. We don't check any further
-         * because we don't want to doubly traverse just to find
-         * sentinel.
+         * Unlinks node s. Same idea as Fifo version.
          */
         private void unspliceLifo(DualNode s) {
-            DualNode past = null;
-            if (s != null && (past = s.next) != null && !past.isLive())
-                past = past.next;
-            DualNode p = head;      // collapse dead nodes at top
-            for (DualNode n, u; p != null && p != past && !p.isLive(); )
-                p = (p == (u = cmpExHead(p, (n = p.next)))) ? n : u;
-            for (DualNode f, n, u;  // unsplice embedded nodes
-                 p != null && p != past && (f = p.next) != null; ) {
-                p = (f.isLive() ? f :
-                     f == (u = p.cmpExNext(f, n = f.next)) ? n : u);
+            boolean seen = false; // try removing by collapsing head
+            DualNode p = head;
+            for (DualNode f, u; p != null && p.matched();) {
+                if (p == s)
+                    seen = true;
+                p = (p == (u = cmpExHead(p, (f = p.next)))) ? f : u;
+            }
+            if (p != null && !seen && sweepNow()) { // occasionally sweep
+                for (DualNode f, n, u; p != null && (f = p.next) != null; ) {
+                    p = (!f.matched() ? f :
+                         f == (u = p.cmpExNext(f, n = f.next)) ? n : u);
+                }
             }
         }
-   }
+    }
 
     /**
      * The transferer. (See below about serialization.)

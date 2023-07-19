@@ -141,7 +141,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * data value to null upon match, and vice-versa for request
      * nodes, CASing from null to a data value.  (To reduce the need
      * for re-reads, we use the compareAndExchange forms of CAS for
-     * pointer updates, that provide the current value to comtinue
+     * pointer updates, that provide the current value to continue
      * with on failure.)  Note that the linearization properties of
      * this style of queue are easy to verify -- elements are made
      * available by linking, and unavailable by matching. Compared to
@@ -202,8 +202,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * in the primary xfer method, but adds a lot of complexity to
      * Collection operations including traversal; mainly because if
      * any "next" pointer links to itself, the current thread has
-     * lagged behind a head-update, and so must restart from the
-     * "head".
+     * lagged behind a head-update, and so must restart.
      *
      * *** Blocking ***
      *
@@ -225,12 +224,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * unreachable in this way: (1) If s is the trailing node of list
      * (i.e., with null next), then it is pinned as the target node
      * for appends, so can only be removed later after other nodes are
-     * appended. (2) We cannot necessarily unlink s given a
-     * predecessor node that is matched (including the case of being
-     * cancelled): the predecessor may already be unspliced, in which
-     * case some previous reachable node may still point to s.
-     * (For further explanation see Herlihy & Shavit "The Art of
-     * Multiprocessor Programming" chapter 9).
+     * appended. (2) Unless we know it is already off-list, we cannot
+     * necessarily unlink s given a predecessor node that is matched
+     * (including the case of being cancelled): the predecessor may
+     * already be unspliced, in which case some previous reachable
+     * node may still point to s.  (For further explanation see
+     * Herlihy & Shavit "The Art of Multiprocessor Programming"
+     * chapter 9).
      *
      * Without taking these into account, it would be possible for an
      * unbounded number of supposedly removed nodes to remain reachable.
@@ -272,26 +272,87 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * * Class DualNode replaces Qnode, with fields and methods
      *   that apply to any match-based dual data structure, and now
-     *   used in other j.u.c classes. in particular, SynchronousQueue.
-     * * Blocking control (in class TransferQueue) accommodates
+     *   usable in other j.u.c classes. in particular, SynchronousQueue.
+     * * Blocking control (in class DualNode) accommodates
      *   VirtualThreads and (perhaps virtualized) uniprocessors.
      * * All fields of this class (LinkedTransferQueue) are
-     *   default-initializable (to null), allowing further
-     *   extension (in particular, SynchronousQueue.Transferer)
+     *   default-initializable (to null), allowing further extension
+     *   (in particular, SynchronousQueue.Transferer)
      * * Head and tail fields are lazily initialized rather than set
-     *   to a dummy node, also reducing retries under heavy contention
-     *   and misordering, requiring accommodation in many places (as
-     *   well as adjustments in WhiteBox tests),
+     *   to a dummy node, while also reducing retries under heavy
+     *   contention and misorderings, and relaxing some accesses,
+     *   requiring accommodation in many places (as well as
+     *   adjustments in WhiteBox tests).
      */
 
     /**
      * Node for linked dual data structures. Uses type Object, not E,
-     * for items to allow cancellation and forgetting after use.
+     * for items to allow cancellation and forgetting after use. Only
+     * field "item" is declared volatile (with bypasses for
+     * pre-publication and post-match writes), although field "next"
+     * is also CAS-able. Other accesses are constrained by context
+     * (including dependent chains of next's headed by a volatile
+     * read).
+     *
+     * This class also arranges blocking while awaiting matches.
+     * Control of blocking (and thread scheduling in general) for
+     * possibly-synchronous queues (and channels etc constructed
+     * from them) must straddle two extremes: If there are too few
+     * underlying cores for a fulfilling party to continue, then
+     * the caller must park to cause a context switch. On the
+     * other hand, if the queue is busy with approximately the
+     * same number of independent producers and consumers, then
+     * that context switch may cause an order-of-magnitude
+     * slowdown. Many cases are somewhere in-between, in which
+     * case threads should try spinning and then give up and
+     * block. We deal with this as follows:
+     *
+     * 1. Callers to method await indicate eligibility for
+     * spinning when the node is either the only waiting node, or
+     * the next matchable node is still spinning.  Otherwise, the
+     * caller may block (almost) immediately.
+     *
+     * 2. Even if eligible to spin, a caller blocks anyway in two
+     * cases where it is normally best: If the thread isVirtual,
+     * or the system is a uniprocessor. Uniprocessor status can
+     * vary over time (due to virtualization at other system
+     * levels), but checking Runtime availableProcessors can be
+     * slow and may itself acquire blocking locks, so we only
+     * occasionally (using ThreadLocalRandom) update when an
+     * otherwise-eligible spin elapses.
+     *
+     * 3. When enabled, spins should be long enough to cover
+     * bookeeping overhead of almost-immediate fulfillments, but
+     * much less than the expected time of a (non-virtual)
+     * park/unpark context switch.  The optimal value is
+     * unknowable, in part because the relative costs of
+     * Thread.onSpinWait versus park/unpark vary across platforms.
+     * The current value is an empirical compromise across tested
+     * platforms.
+     *
+     * 4. When using timed waits, callers spin instead of invoking
+     * timed park if the remaining time is less than the likely
+     * cost of park/unpark. This also avoids re-parks when timed
+     * park returns just barely too soon.
+     *
+     * 5. Park/unpark signalling otherwise relies on a Dekker-like
+     * scheme in which the caller advertises the need to unpark by
+     * setting its waiter field, followed by a full fence and recheck
+     * before actually parking. An explicit fence in used here rather
+     * than unnecessarily requiring volatile accesses elsewhere.
+     *
+     * 6. To make the above work, callers must precheck that
+     * timeouts are not already elapsed, and that interruptible
+     * operations were not already interrupted on call to the
+     * corresponding queue operation.  Cancellation on timeout or
+     * interrupt otherwise proceeds by trying to fulfill with an
+     * impossible value (which is one reason that we use Object
+     * types here rather than typed fields).
      */
     static final class DualNode implements ForkJoinPool.ManagedBlocker {
         volatile Object item;   // initially non-null if isData; CASed to match
-        volatile DualNode next;
-        Thread waiter;          // plain mode; order constrained by context
+        DualNode next;          // accessed only in chains of volatile ops
+        Thread waiter;          // access order constrained by context
         final boolean isData;   // false if this is a request node
 
         DualNode(Object item, boolean isData) {
@@ -307,139 +368,21 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             return (DualNode)NEXT.compareAndExchange(this, cmp, val);
         }
 
-        /**
-         * Returns true if this node has not been matched (or cancelled)
-         */
-        final boolean isLive() {
-            return isData == (item != null);
-        }
-
-        // Relaxed writes when volatile is unnecessarily strong
-        final void forgetItem()        { ITEM.set(this, this); }
-        final void selfLink()          { NEXT.set(this, this); }
-        final void setNext(DualNode n) { NEXT.set(this, n);  }
-
-        // ManagedBlocker support
-        public final boolean isReleasable() {
-            return (!isLive() || Thread.currentThread().isInterrupted());
-        }
-        public final boolean block() {
-            while (!isReleasable()) LockSupport.park();
-            return true;
+        /** Returns true if this node has been matched or cancelled  */
+        final boolean matched() {
+            return isData != (item != null);
         }
 
         /**
-         * Possibly blocks until matched or caller gives up.
-         *
-         * Control of blocking (and thread scheduling in general) for
-         * possibly-synchronous queues (and channels etc constructed
-         * from them) must straddle two extremes: If there are too few
-         * underlying cores for a fulfilling party to continue, then
-         * the caller must park to cause a context switch. On the
-         * other hand, if the queue is busy with approximately the
-         * same number of independent producers and consumers, then
-         * that context switch causes a huge slowdown (often more than
-         * 20X). Many cases are somewhere in-between, in which case
-         * threads should try spinning and then give up and block. We
-         * deal with this as follows:
-         *
-         * 1. Callers to method await indicate eligibility for
-         * spinning when the node is either the only waiting node, or
-         * the next eligible node is still spinning.  Otherwise, the
-         * caller normally blocks (almost) immediately.
-         *
-         * 2. Even if eligible to spin, a caller blocks anyway in two
-         * cases where it is normally best: If the thread is Virtual,
-         * or the system is a uniprocessor. Because uniprocessor
-         * status can vary over time (due to virtualization at other
-         * system levels), we update it whenever an otherwise-eligible
-         * spin elapses. (Updates to static field isUniprocessor are
-         * allowed to be racy -- if status is dynamically varying,
-         * tracking is at best approximate.)
-         *
-         * 3. When enabled, spins should be long enough to cover
-         * bookeeping overhead of almost-immediate fulfillments, but
-         * much less than the expected time of a (non-virtual)
-         * park/unpark context switch.  The optimal value is
-         * unknowable, in part because the relative costs of
-         * Thread.onSpinWait versus park/unpark vary across platforms.
-         * The current value is an empirical compromise across tested
-         * platforms.
-         *
-         * 4. When using timed waits, callers spin instead of invoking
-         * timed park if the remaining time is less than the likely
-         * cost of park/unpark. This also avoids re-parks when timed
-         * park returns just barely too soon.
-         *
-         * 5. Park/unpark signalling otherwise relies on a Dekker-like
-         * scheme in which the caller advertises the need to unpark by
-         * setting its waiter field, followed by a full fence and
-         * recheck before actually parking. (An explicit fence in used
-         * in this one case rather than requiring volatile mode,
-         * rather than overconstraining waiter accesses that are
-         * otherwise already constrained by surrounding atomics.)
-         *
-         * 6. To make the above work, callers must precheck that
-         * timeouts are not already elapsed, and that interruptible
-         * operations were not already interrupted on call to the
-         * corresponding queue operation.  Cancellation on timeout or
-         * interrupt otherwise proceeds by trying to fulfill with an
-         * impossible value (which is one reason that we use Object
-         * types here rather than tyoed results).
-         *
-         * @param e the comparison value for checking match
-         * @param nanos timeout, or Long.MAX_VALUE if untimed
-         * @param blocker the LockSupport.setCurrentBlocker argument
-         * @param spin true if eligible for spinning when enabled
-         * @return matched item, or e if unmatched on interrupt or timeout
+         * Relaxed write to replace reference to user data with
+         * self-link. Can be used only if not already null after
+         * match.
          */
-        final Object await(Object e, long nanos, Object blocker, boolean spin) {
-            boolean timed = (nanos != Long.MAX_VALUE);
-            long deadline = (timed) ? System.nanoTime() + nanos : 0L;
-            Thread w = Thread.currentThread();
-            boolean canSpin = (!w.isVirtual() && spin);
-            int spins = (canSpin && !isUniprocessor) ? SPINS : 0;
-            Object match;
-            while ((match = item) == e && --spins >= 0)
-                Thread.onSpinWait();
-            if (match == e) {
-                boolean uni;
-                if (canSpin && isUniprocessor !=
-                    (uni = (Runtime.getRuntime().availableProcessors() <= 1)))
-                    isUniprocessor = uni; // reset for next time
-                LockSupport.setCurrentBlocker(blocker);
-                waiter = w;
-                VarHandle.fullFence(); // ensure ordering
-                while ((match = item) == e) {
-                    long ns = 0L;
-                    if (w.isInterrupted() ||
-                        (timed && ((ns = deadline - System.nanoTime()) <= 0L))) {
-                        match = cmpExItem(e, (e == null) ? this : null);
-                        break;         // try to cancel with impossible match
-                    }
-                    if (timed) {
-                        if (ns < SPIN_FOR_TIMEOUT_THRESHOLD)
-                            Thread.onSpinWait();
-                        else
-                            LockSupport.parkNanos(ns);
-                    } else if (w instanceof ForkJoinWorkerThread) {
-                        try {
-                            ForkJoinPool.managedBlock(this);
-                        } catch (InterruptedException cannotHappen) { }
-                    } else
-                        LockSupport.park();
-                }
-                LockSupport.setCurrentBlocker(null);
-                waiter = null;
-            }
-            if (match != e && match != null)
-                forgetItem();
-            return match;
+        final void selfLinkItem() {
+            ITEM.set(this, this);
         }
 
-        /**
-         * The number of times to spin when eligible.
-         */
+        /** The number of times to spin when eligible */
         private static final int SPINS = 1 << 7;
 
         /**
@@ -449,9 +392,90 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         private static final long SPIN_FOR_TIMEOUT_THRESHOLD = 1L << 10;
 
         /**
-         * True if system is a uniprocessor. Initially assumed false.
+         * True if system is a uniprocessor, occasionally rechecked.
          */
-        private static boolean isUniprocessor;
+        private static boolean isUniprocessor =
+            (Runtime.getRuntime().availableProcessors() == 1);
+
+        /**
+         * Refresh rate (probablility) for updating isUniprocessor
+         * field, to reduce the likeihood that multiple calls to await
+         * will contend invoking Runtime.availableProcessors.  Must be
+         * a power of two minus one.
+         */
+        private static final int UNIPROCESSOR_REFRESH_RATE = (1 << 5) - 1;
+
+        /**
+         * Possibly blocks until matched or caller gives up.
+         *
+         * @param e the comparison value for checking match
+         * @param ns timeout, or Long.MAX_VALUE if untimed
+         * @param blocker the LockSupport.setCurrentBlocker argument
+         * @param spin true if should spin when enabled
+         * @return matched item, or e if unmatched on interrupt or timeout
+         */
+        final Object await(Object e, long ns, Object blocker, boolean spin) {
+            Object m;                      // the match or e if none
+            boolean timed = (ns != Long.MAX_VALUE);
+            long deadline = (timed) ? System.nanoTime() + ns : 0L;
+            boolean upc = isUniprocessor;  // don't spin but later recheck
+            Thread w = Thread.currentThread();
+            if (w.isVirtual())             // don't spin
+                spin = false;
+            int spins = (spin & !upc) ? SPINS : 0; // negative when may park
+            while ((m = item) == e) {
+                if (spins >= 0) {
+                    if (--spins >= 0)
+                        Thread.onSpinWait();
+                    else {                 // prepare to park
+                        if (spin)          // occasionally recheck
+                            checkForUniprocessor(upc);
+                        LockSupport.setCurrentBlocker(blocker);
+                        waiter = w;        // ensure ordering
+                        VarHandle.fullFence();
+                    }
+                } else if (w.isInterrupted() ||
+                           (timed &&       // try to cancel with impossible match
+                            ((ns = deadline - System.nanoTime()) <= 0L))) {
+                    m = cmpExItem(e, (e == null) ? this : null);
+                    break;
+                } else if (timed) {
+                    if (ns < SPIN_FOR_TIMEOUT_THRESHOLD)
+                        Thread.onSpinWait();
+                    else
+                        LockSupport.parkNanos(ns);
+                } else if (w instanceof ForkJoinWorkerThread) {
+                    try {
+                        ForkJoinPool.managedBlock(this);
+                    } catch (InterruptedException cannotHappen) { }
+                } else
+                    LockSupport.park();
+            }
+            if (spins < 0) {
+                LockSupport.setCurrentBlocker(null);
+                waiter = null;
+            }
+            return m;
+        }
+
+        /** Occasionally updates isUniprocessor field */
+        private void checkForUniprocessor(boolean prev) {
+            int r = ThreadLocalRandom.nextSecondarySeed();
+            if ((r & UNIPROCESSOR_REFRESH_RATE) == 0) {
+                boolean u = (Runtime.getRuntime().availableProcessors() == 1);
+                if (u != prev)
+                    isUniprocessor = u;
+            }
+        }
+
+        // ManagedBlocker support
+        public final boolean isReleasable() {
+            return (matched() || Thread.currentThread().isInterrupted());
+        }
+        public final boolean block() {
+            while (!isReleasable()) LockSupport.park();
+            return true;
+        }
 
         // VarHandle mechanics
         static final VarHandle ITEM;
@@ -472,14 +496,6 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     }
 
     /**
-     * The maximum number of estimated removal failures (sweepVotes)
-     * to tolerate before sweeping through the queue unlinking
-     * cancelled nodes that were initially pinned.  Must be a power of
-     * two, at least 4.
-     */
-    private static final int SWEEP_THRESHOLD = 1 << 5;
-
-    /**
      * Unless empty (in which case possibly null), a node from which
      * all live nodes are reachable.
      * Invariants:
@@ -494,7 +510,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     transient volatile DualNode head;
 
     /**
-     * Unless empty, a node from which the last node on list (that is,
+     * Unless null, a node from which the last node on list (that is,
      * the unique node with node.next == null), if one exists, can be
      * reached.
      * Non-invariants:
@@ -506,7 +522,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     transient volatile DualNode tail;
 
     /** The number of apparent failures to unsplice cancelled nodes */
-    private transient volatile int sweepVotes;
+    transient volatile int sweepVotes;
 
     // Atomic updates
 
@@ -516,8 +532,21 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     final DualNode cmpExHead(DualNode cmp, DualNode val) {
         return (DualNode)HEAD.compareAndExchange(this, cmp, val);
     }
-    final int addSweepVote() {
-        return (int)SWEEPVOTES.getAndAdd(this, 1);
+
+    /**
+     * The maximum number of estimated removal failures (sweepVotes)
+     * to tolerate before sweeping through the queue unlinking
+     * dead nodes that were initially pinned.  Must be a power of
+     * two minus one, at least 3.
+     */
+    static final int SWEEP_THRESHOLD = (1 << 4) - 1;
+
+    /**
+     * Adds a sweepVote and returns true if triggered threshold.
+     */
+    final boolean sweepNow() {
+        return (SWEEP_THRESHOLD ==
+                ((int)SWEEPVOTES.getAndAdd(this, 1) & (SWEEP_THRESHOLD)));
     }
 
     /**
@@ -528,73 +557,59 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *   append, else at head for a likely match
      * * Traverse over dead or wrong-mode nodes until finding a spot
      *   to match/append, or falling off the list because of self-links.
-     * * On success, update head or tail if slacked, and return or wait,
-     *   depending on nanos argument
+     * * On success, update head or tail if slacked, and possibly wait,
+     *   depending on ns argument
      *
      * @param e the item or null for take
-     * @param nanos timeout, or negative for async, 0 for immediate,
-     *        Long.MAX_VALUE for untimed
+     * @param ns timeout or negative if async, 0 if immediate,
+     *        Long.MAX_VALUE if untimed
      * @return an item if matched, else e
      */
-    final Object xfer(Object e, long nanos) {
+    final Object xfer(Object e, long ns) {
         boolean haveData = (e != null);
-        DualNode s = null;                   // the enqueued node, if needed
-        DualNode pred;                       // s's predecessor if waiting
-        DualNode prevTail = null;            // to avoid self-linked paths
-        restart: for (;;) {                  // restart if fall off list
-            DualNode h, t, p;
-            if ((h = head) == null) {        // initialize
-                if (nanos == 0L)             // unless immediate
-                    return e;
-                s = new DualNode(e, haveData);
-                if ((h = cmpExHead(null, s)) == null) {
-                    if (nanos < 0L)
-                        return e;            // async mode
-                    pred = null;
-                    break;                   // wait below
-                }
+        Object m;                           // the match or e if none
+        DualNode s = null, p;               // enqueued node and its predecessor
+        restart: for (DualNode prevp = null;;) {
+            DualNode h, t, q;
+            if ((h = head) == null &&       // initialize unless immediate
+                (ns == 0L ||
+                 (h = cmpExHead(null, s = new DualNode(e, haveData))) == null)) {
+                p = null;                   // no predecessor
+                break;                      // else lost init race
             }
-            p = ((t = tail) != null && t != prevTail && t.isData == haveData ?
-                 (prevTail = t) : h);        // start at tail if may be eligible
-            for (boolean slack = false; ; slack = true) {
-                DualNode q; Object item;
-                if (haveData != p.isData &&  // try to match existing node
-                    haveData != ((item = p.item) != null) &&
-                    p.cmpExItem(item, e) == item) {
-                    Thread w = p.waiter;
-                    if (slack) {
-                        DualNode n = ((q = p.next) == null) ? p : q;
-                        if (h != n && h == cmpExHead(h, n))
-                            h.selfLink();    // advance by 2 if possible
-                    }
+            p = (t = tail) != null && t.isData == haveData && t != prevp ? t : h;
+            prevp = p;                      // avoid known self-linked tail path
+            do {
+                m = p.item;
+                q = p.next;
+                if (p.isData != haveData && haveData != (m != null) &&
+                    p.cmpExItem(m, e) == m) {
+                    Thread w = p.waiter;    // matched complementary node
+                    if (p != h && h == cmpExHead(h, (q == null) ? p : q))
+                        h.next = h;         // advance head; self-link old
                     LockSupport.unpark(w);
-                    return item;
-                }
-                if ((q = p.next) == null) {  // try to append
-                    if (nanos == 0L)         // unless immediate
-                        return e;
-                    if (s == null) {
+                    return m;
+                } else if (q == null) {
+                    if (ns == 0L)           // try to append unless immediate
+                        break restart;
+                    if (s == null)
                         s = new DualNode(e, haveData);
-                        q = p.next;          // recheck after allocation
-                    }
-                    if (q == null && (q = p.cmpExNext(null, s)) == null) {
-                        if (slack)
+                    if ((q = p.cmpExNext(null, s)) == null) {
+                        if (p != t)
                             cmpExTail(t, s);
-                        if (nanos < 0L)
-                            return e;
-                        pred = p;
                         break restart;
                     }
                 }
-                if (p == (p = q))            // self-linked; restart
-                    break;
-            }
+            } while (p != (p = q));         // restart if self-linked
         }
-        Object match = s.await(e, nanos, this, // spin if at or near head
-                               pred == null || pred.waiter == null);
-        if (match == e)
-            unsplice(pred, s);               // cancelled
-        return match;
+        if (s == null || ns <= 0L)
+            m = e;                          // don't wait
+        else if ((m = s.await(e, ns, this,  // spin if at or near head
+                              p == null || p.waiter == null)) == e)
+            unsplice(p, s);                 // cancelled
+        else if (m != null)
+            s.selfLinkItem();
+        return m;
     }
 
     /* --------------  Removals -------------- */
@@ -604,34 +619,39 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * predecessor. See above for rationale.
      *
      * @param pred if nonnull, a node that was at one time known to be the
-     * predecessor of s
+     * predecessor of s (else s may have been head)
      * @param s the node to be unspliced
      */
     private void unsplice(DualNode pred, DualNode s) {
-        DualNode sn;
-        if (pred != null && pred.next == s && s != null && (sn = s.next) != s) {
-            if (sn != null)
-                pred.cmpExNext(s, sn);
-            if ((sn == null || !pred.isLive()) &&
-                ((addSweepVote() + 1) & (SWEEP_THRESHOLD - 1)) == 0) {
-                for (DualNode p = head, f, n, u;  // occasionally sweep
-                     p != null && (f = p.next) != null && (n = f.next) != null;)
-                    p = (f.isLive()                   ? f :     // skip
-                         f == p                       ? head :  // stale
-                         f == (u = p.cmpExNext(f, n)) ? n : u); // unspliced
+        boolean seen = false; // try removing by collapsing head
+        for (DualNode h = head, p = h, f; p != null;) {
+            boolean matched;
+            if (p == s)
+                matched = seen = true;
+            else
+                matched = p.matched();
+            if ((f = p.next) == p)
+                p = h = head;
+            else if (f != null && matched)
+                p = f;
+            else {
+                if (p != h && cmpExHead(h, p) == h)
+                    h.next = h; // h.selfLink();
+                break;
             }
         }
-    }
-
-    /**
-     * Tries to update to new head, forgetting links from previous
-     * head (if it exists) on success.
-     */
-    final DualNode tryAdvanceHead(DualNode h, DualNode p) {
-        DualNode u;
-        if ((u = cmpExHead(h, p)) == h && h != null)
-            h.selfLink();
-        return u;
+        DualNode sn;      // try to unsplice if not pinned
+        if (!seen &&
+            pred != null && pred.next == s && s != null && (sn = s.next) != s &&
+            (sn == null || pred.cmpExNext(s, sn) != s || pred.matched()) &&
+            sweepNow()) { // occasionally sweep if might not have been removed
+            for (DualNode p = head, f, n, u;
+                 p != null && (f = p.next) != null && (n = f.next) != null;) {
+                p = (f == p                       ? head :  // stale
+                     !f.matched()                 ? f :     // skip
+                     f == (u = p.cmpExNext(f, n)) ? n : u); // unspliced
+            }
+        }
     }
 
     /**
@@ -639,10 +659,14 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * Caller must ensure that we're not unlinking the trailing node.
      */
     final boolean tryCasSuccessor(DualNode pred, DualNode c, DualNode p) {
-        // assert p != null && !c.isLive() && c != p;
-        return ((pred != null ?
-                 pred.cmpExNext(c, p) :
-                 tryAdvanceHead(c, p))) == c;
+        // assert p != null && c.matched() && c != p;
+        if (pred != null)
+            return pred.cmpExNext(c, p) == c;
+        else if (cmpExHead(c, p) != c)
+            return false;
+        if (c != null)
+            c.next = c;
+        return true;
     }
 
     /**
@@ -655,13 +679,13 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      */
     final DualNode skipDeadNodes(DualNode pred, DualNode c,
                                  DualNode p, DualNode q) {
-        // assert pred != c && p != q; && !c.isLive() && !p.isLive();
+        // assert pred != c && p != q; && c.matched() && p.matched();
         if (q == null) { // Never unlink trailing node.
             if (c == p)
                 return pred;
             q = p;
         }
-        return (tryCasSuccessor(pred, c, q) && (pred == null || pred.isLive()))
+        return (tryCasSuccessor(pred, c, q) && (pred == null || !pred.matched()))
             ? pred : p;
     }
 
@@ -697,10 +721,14 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 break;
             else if (p == q)                  // self-link; restart
                 p = h = head;
-            else if (p != h)                  // collapse
-                p = h = ((u = tryAdvanceHead(h, q)) == h) ? q : u;
-            else                              // traverse past header
+            else if (p == h)                  // traverse past header
                 p = q;
+            else if ((u = cmpExHead(h, q)) != h)
+                p = h = u;                    // lost update race
+            else {
+                h.next = h;                   // collapse; self-link
+                p = h = q;
+            }
         }
         return null;
     }
@@ -713,7 +741,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         restartFromHead: for (;;) {
             int count = 0;
             for (DualNode p = head; p != null;) {
-                if (p.isLive()) {
+                if (!p.matched()) {
                     if (p.isData != data)
                         return 0;
                     if (++count == Integer.MAX_VALUE)
@@ -865,15 +893,16 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         private void advance(DualNode pred) {
             for (DualNode p = (pred == null) ? head : pred.next, c = p;
                  p != null; ) {
-                final Object item;
-                if ((item = p.item) != null && p.isData) {
+                boolean isData = p.isData;
+                Object item = p.item;
+                if (isData && item != null) {
                     nextNode = p;
                     nextItem = (E) item;
                     if (c != p)
                         tryCasSuccessor(pred, c, p);
                     return;
                 }
-                else if (!p.isData && item == null)
+                else if (!isData && item == null)
                     break;
                 if (c != p && !tryCasSuccessor(pred, c, c = p)) {
                     pred = p;
@@ -897,7 +926,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         }
 
         public final E next() {
-            final DualNode p;
+            DualNode p;
             if ((p = nextNode) == null) throw new NoSuchElementException();
             E e = nextItem;
             advance(lastRet = p);
@@ -950,7 +979,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             // leave ancestor at original location to avoid overshoot;
             // better luck next time!
 
-            // assert !lastRet.isLive();
+            // assert lastRet.matched();
         }
     }
 
@@ -1007,8 +1036,8 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             if ((p = current()) != null) {
                 E e = null;
                 do {
-                    final boolean isData = p.isData;
-                    final Object item = p.item;
+                    boolean isData = p.isData;
+                    Object item = p.item;
                     if (p == (p = p.next))
                         p = head;
                     if (isData) {
@@ -1090,9 +1119,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         for (E e : c) {
             DualNode newNode = new DualNode(Objects.requireNonNull(e), true);
             if (t == null)
-                t = h = newNode;
+                h = newNode;
             else
-                t.setNext(t = newNode);
+                t.next = newNode;
+            t = newNode;
         }
         head = h;
         tail = t;
@@ -1353,10 +1383,11 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         if (o == null) return false;
         restartFromHead: for (;;) {
             for (DualNode p = head, pred = null; p != null; ) {
+                boolean isData = p.isData;
+                Object item = p.item;
                 DualNode q = p.next;
-                final Object item;
-                if ((item = p.item) != null) {
-                    if (p.isData) {
+                if (item != null) {
+                    if (isData) {
                         if (o.equals(item) && tryMatchData(p, item)) {
                             skipDeadNodes(pred, p, p, q);
                             return true;
@@ -1364,10 +1395,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                         pred = p; p = q; continue;
                     }
                 }
-                else if (!p.isData)
+                else if (!isData)
                     break;
                 for (DualNode c = p;; q = p.next) {
-                    if (q == null || q.isLive()) {
+                    if (q == null || !q.matched()) {
                         pred = skipDeadNodes(pred, c, p, q); p = q; break;
                     }
                     if (p == (p = q)) continue restartFromHead;
@@ -1389,19 +1420,20 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         if (o == null) return false;
         restartFromHead: for (;;) {
             for (DualNode p = head, pred = null; p != null; ) {
+                boolean isData = p.isData;
+                Object item = p.item;
                 DualNode q = p.next;
-                final Object item;
-                if ((item = p.item) != null) {
-                    if (p.isData) {
+                if (item != null) {
+                    if (isData) {
                         if (o.equals(item))
                             return true;
                         pred = p; p = q; continue;
                     }
                 }
-                else if (!p.isData)
+                else if (!isData)
                     break;
                 for (DualNode c = p;; q = p.next) {
-                    if (q == null || q.isLive()) {
+                    if (q == null || !q.matched()) {
                         pred = skipDeadNodes(pred, c, p, q); p = q; break;
                     }
                     if (p == (p = q)) continue restartFromHead;
@@ -1454,9 +1486,10 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
         for (Object item; (item = s.readObject()) != null; ) {
             DualNode newNode = new DualNode(item, true);
             if (t == null)
-                t = h = newNode;
+                h = newNode;
             else
-                t.setNext(t = newNode);
+                t.next = newNode;
+            t = newNode;
         }
         head = h;
         tail = t;
@@ -1506,23 +1539,23 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             // c will be CASed to collapse intervening dead nodes between
             // pred (or head if null) and p.
             for (DualNode p = head, c = p, pred = null, q; p != null; p = q) {
+                boolean isData = p.isData, pAlive;
+                Object item = p.item;
                 q = p.next;
-                final Object item; boolean pAlive;
-                if (pAlive = ((item = p.item) != null && p.isData)) {
+                if (pAlive = (item != null && isData)) {
                     if (filter.test((E) item)) {
                         if (tryMatchData(p, item))
                             removed = true;
                         pAlive = false;
                     }
                 }
-                else if (!p.isData && item == null)
+                else if (!isData && item == null)
                     break;
                 if (pAlive || q == null || --hops == 0) {
                     // p might already be self-linked here, but if so:
                     // - CASing head will surely fail
                     // - CASing pred's next will be useless but harmless.
-                    if ((c != p && !tryCasSuccessor(pred, c, c = p))
-                        || pAlive) {
+                    if ((c != p && !tryCasSuccessor(pred, c, c = p)) || pAlive) {
                         // if CAS failed or alive, abandon old pred
                         hops = MAX_HOPS;
                         pred = p;
@@ -1542,18 +1575,19 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
     @SuppressWarnings("unchecked")
     void forEachFrom(Consumer<? super E> action, DualNode p) {
         for (DualNode pred = null; p != null; ) {
+            boolean isData = p.isData;
+            Object item = p.item;
             DualNode q = p.next;
-            final Object item;
-            if ((item = p.item) != null) {
-                if (p.isData) {
+            if (item != null) {
+                if (isData) {
                     action.accept((E) item);
                     pred = p; p = q; continue;
                 }
             }
-            else if (!p.isData)
+            else if (!isData)
                 break;
             for (DualNode c = p;; q = p.next) {
-                if (q == null || q.isLive()) {
+                if (q == null || !q.matched()) {
                     pred = skipDeadNodes(pred, c, p, q); p = q; break;
                 }
                 if (p == (p = q)) { pred = null; p = head; break; }
