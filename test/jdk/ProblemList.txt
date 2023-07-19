@@ -733,8 +733,6 @@ sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aa
 
 # jdk_other
 
-javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
-
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64
 
