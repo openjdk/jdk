@@ -205,7 +205,7 @@ class AssertionPredicatesWithHalt : public StackObj {
  public:
   AssertionPredicatesWithHalt(Node* assertion_predicate_proj) : _entry(find_entry(assertion_predicate_proj)) {}
 
-  // Returns the control input node into the first assertion predicate If. If there are no assertion predicates, it.
+  // Returns the control input node into the first assertion predicate If. If there are no assertion predicates, it
   // returns the same node initially passed to the constructor.
   Node* entry() const {
     return _entry;
