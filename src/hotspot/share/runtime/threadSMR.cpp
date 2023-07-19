@@ -792,10 +792,11 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
     *thread_oop_p = thread_oop;
   }
 
-  JavaThread *java_thread = java_lang_Thread::thread(thread_oop);
+  JavaThread *java_thread = java_lang_Thread::thread_acquire(thread_oop);
   if (java_thread == NULL) {
-    // The java.lang.Thread does not contain a JavaThread * so it has
-    // not yet run or it has died.
+    // The java.lang.Thread does not contain a JavaThread* so it has not
+    // run enough to be put on a ThreadsList or it has exited enough to
+    // make it past ensure_join() where the JavaThread* is cleared.
     return false;
   }
   // Looks like a live JavaThread at this point.
