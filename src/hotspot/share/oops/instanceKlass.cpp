@@ -3857,7 +3857,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
 
     // Class hierarchy info
     debug_stream.print(" klass: " PTR_FORMAT " super: " PTR_FORMAT,
-                      p2i(this),  p2i(superklass()));
+                       p2i(this),  p2i(superklass()));
 
     // Interfaces
     if (local_interfaces() != nullptr && local_interfaces()->length() > 0) {
@@ -3865,7 +3865,7 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
       int length = local_interfaces()->length();
       for (int i = 0; i < length; i++) {
         debug_stream.print(" " PTR_FORMAT,
-                          p2i(InstanceKlass::cast(local_interfaces()->at(i))));
+                           p2i(InstanceKlass::cast(local_interfaces()->at(i))));
       }
     }
 
@@ -3877,9 +3877,9 @@ void InstanceKlass::print_class_load_helper(ClassLoaderData* loader_data,
     // Classfile checksum
     if (cfs) {
       debug_stream.print(" bytes: %d checksum: %08x",
-                        cfs->length(),
-                        ClassLoader::crc32(0, (const char*)cfs->buffer(),
-                        cfs->length()));
+                         cfs->length(),
+                         ClassLoader::crc32(0, (const char*)cfs->buffer(),
+                         cfs->length()));
     }
 
     msg.debug("%s", debug_stream.as_string());
