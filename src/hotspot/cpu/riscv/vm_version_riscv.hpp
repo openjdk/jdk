@@ -201,7 +201,6 @@ class VM_Version : public Abstract_VM_Version {
   constexpr static bool supports_stack_watermark_barrier() { return true; }
 
   static bool supports_on_spin_wait() { return UseZihintpause; }
-  static bool profile_all_receivers_at_type_check() { return false; }
 };
 
 #endif // CPU_RISCV_VM_VERSION_RISCV_HPP
