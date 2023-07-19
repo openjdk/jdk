@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,8 @@ package sun.net;
 
 import jdk.internal.util.StaticProperty;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileInputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Properties;
@@ -42,7 +43,7 @@ import java.util.Properties;
 
 @SuppressWarnings("removal")
 public class NetProperties {
-    private static Properties props = new Properties();
+    private static final Properties props = new Properties();
     static {
         AccessController.doPrivileged(
             new PrivilegedAction<Void>() {
@@ -107,7 +108,7 @@ public class NetProperties {
      *          <code>checkPropertiesAccess</code> method doesn't allow access
      *          to the system properties.
      * @return the <code>Integer</code> value for the property,
-     *         or <code>null</code>
+     *         or <code>defval</code>
      */
     public static Integer getInteger(String key, int defval) {
         String val = null;
