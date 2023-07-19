@@ -278,6 +278,9 @@ public class CDSMapReader {
                     HeapAddress referentAddress = field.referentAddress;
                     long oop = referentAddress.oop;
                     long narrowOop = referentAddress.narrowOop;
+                    // Is this test actually doing something?
+                    //     To see how an invalidate pointer may be found, change oop in the
+                    //     following line to oop+1
                     mustContain(mapFile.oopToObject, field, oop, false);
                     count ++;
                     if (narrowOop != 0) {
