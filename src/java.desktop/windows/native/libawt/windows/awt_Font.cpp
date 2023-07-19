@@ -23,8 +23,8 @@
  * questions.
  */
 
+#include <cmath>
 #include "awt.h"
-#include <math.h>
 #include <strsafe.h>
 #include "jlong.h"
 #include "awt_Font.h"

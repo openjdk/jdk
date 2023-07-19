@@ -23,9 +23,9 @@
  * questions.
  */
 
+#include <cmath>
 #include "awt.h"
 #include <strsafe.h>
-#include <math.h>
 #include <windef.h>
 #include <wtypes.h>
 #include <winuser.h>
