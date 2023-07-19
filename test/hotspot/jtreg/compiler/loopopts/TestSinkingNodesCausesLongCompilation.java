@@ -25,7 +25,8 @@
  * @test
  * @bug 8308103
  * @summary Massive (up to ~30x) increase in C2 compilation time since JDK 17
- * @run main/othervm -Xcomp -XX:CompileOnly=TestSinkingNodesCausesLongCompilation::mainTest -XX:RepeatCompilation=30 TestSinkingNodesCausesLongCompilation
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestSinkingNodesCausesLongCompilation::mainTest -XX:+UnlockDiagnosticVMOptions
+ *                   -XX:RepeatCompilation=30 TestSinkingNodesCausesLongCompilation
  */
 
 public class TestSinkingNodesCausesLongCompilation {
@@ -55,7 +56,7 @@ public class TestSinkingNodesCausesLongCompilation {
 
     public static void main(String[] strArr) {
         TestSinkingNodesCausesLongCompilation _instance = new TestSinkingNodesCausesLongCompilation();
-        for (int i = 0; i < 10; i++ ) {
+        for (int i = 0; i < 10; i++) {
             _instance.mainTest(strArr);
         }
     }
