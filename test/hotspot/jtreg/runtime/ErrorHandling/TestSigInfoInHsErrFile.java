@@ -71,7 +71,7 @@ public class TestSigInfoInHsErrFile {
     String crashAddress = "0x0*400";
     if (Platform.isAix()) {
         crashAddress = "0xffffffffffffffff";
-    } else if  (Platform.isS390x()) {
+    } else if (Platform.isS390x()) {
         // All faults on s390x give the address only on page granularity.
         // Hence fault address is first page address.
         crashAddress = "0x0*1000";
