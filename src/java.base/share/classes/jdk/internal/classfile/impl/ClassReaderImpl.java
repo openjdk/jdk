@@ -77,7 +77,7 @@ public final class ClassReaderImpl
     private final int constantPoolCount;
     private final int[] cpOffset;
 
-    final Options options;
+    final ClassfileImpl context;
     final int interfacesPos;
     final PoolEntry[] cp;
 
@@ -86,11 +86,11 @@ public final class ClassReaderImpl
     private BootstrapMethodsAttribute bootstrapMethodsAttribute;
 
     ClassReaderImpl(byte[] classfileBytes,
-                    Collection<Classfile.Option> options) {
+                    ClassfileImpl context) {
         this.buffer = classfileBytes;
         this.classfileLength = classfileBytes.length;
-        this.options = new Options(options);
-        this.attributeMapper = this.options.attributeMapper;
+        this.context = context;
+        this.attributeMapper = this.context.attributeMapperOption().attributeMapper();
         if (classfileLength < 4 || readInt(0) != 0xCAFEBABE) {
             throw new IllegalArgumentException("Bad magic number");
         }
@@ -134,8 +134,8 @@ public final class ClassReaderImpl
         this.interfacesPos = p;
     }
 
-    public Options options() {
-        return options;
+    public ClassfileImpl context() {
+        return context;
     }
 
     @Override

@@ -54,10 +54,9 @@ public class DeterministicDump {
         baseArgs.add("-Xmx128M");
 
         if (Platform.is64bit()) {
-            // These options are available only on 64-bit.
+            // This option is available only on 64-bit.
             String sign = (compressed) ?  "+" : "-";
             baseArgs.add("-XX:" + sign + "UseCompressedOops");
-            baseArgs.add("-XX:" + sign + "UseCompressedClassPointers");
         }
 
         String baseArchive = dump(baseArgs);

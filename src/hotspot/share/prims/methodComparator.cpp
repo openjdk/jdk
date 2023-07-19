@@ -75,8 +75,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   case Bytecodes::_multianewarray : // fall through
   case Bytecodes::_checkcast      : // fall through
   case Bytecodes::_instanceof     : {
-    u2 cpi_old = s_old->get_index_u2();
-    u2 cpi_new = s_new->get_index_u2();
+    int cpi_old = s_old->get_index_u2();
+    int cpi_new = s_new->get_index_u2();
     if (old_cp->klass_at_noresolve(cpi_old) != new_cp->klass_at_noresolve(cpi_new))
         return false;
     if (c_old == Bytecodes::_multianewarray &&
@@ -155,8 +155,8 @@ bool MethodComparator::args_same(Bytecodes::Code const c_old,  Bytecodes::Code c
   }
 
   case Bytecodes::_ldc2_w : {
-    u2 cpi_old = s_old->get_index_u2();
-    u2 cpi_new = s_new->get_index_u2();
+    int cpi_old = s_old->get_index_u2();
+    int cpi_new = s_new->get_index_u2();
     constantTag tag_old = old_cp->tag_at(cpi_old);
     constantTag tag_new = new_cp->tag_at(cpi_new);
     if (tag_old.value() != tag_new.value())

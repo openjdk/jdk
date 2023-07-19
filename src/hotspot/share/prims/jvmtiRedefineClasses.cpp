@@ -622,7 +622,7 @@ void VM_RedefineClasses::append_entry(const constantPoolHandle& scratch_cp,
 } // end append_entry()
 
 
-int VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& scratch_cp,
+u2 VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& scratch_cp,
       int ref_i, constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
   int new_ref_i = ref_i;
@@ -647,7 +647,9 @@ int VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& 
     }
   }
 
-  return new_ref_i;
+  // constant pool indices are u2, unless the merged constant pool overflows which
+  // we don't check for.
+  return checked_cast<u2>(new_ref_i);
 } // end find_or_append_indirect_entry()
 
 
@@ -657,9 +659,9 @@ int VM_RedefineClasses::find_or_append_indirect_entry(const constantPoolHandle& 
 void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, int old_bs_i,
        constantPoolHandle *merge_cp_p, int *merge_cp_length_p) {
 
-  int old_ref_i = scratch_cp->operand_bootstrap_method_ref_index_at(old_bs_i);
-  int new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
-                                                merge_cp_length_p);
+  u2 old_ref_i = scratch_cp->operand_bootstrap_method_ref_index_at(old_bs_i);
+  u2 new_ref_i = find_or_append_indirect_entry(scratch_cp, old_ref_i, merge_cp_p,
+                                               merge_cp_length_p);
   if (new_ref_i != old_ref_i) {
     log_trace(redefine, class, constantpool)
       ("operands entry@%d bootstrap method ref_index change: %d to %d", _operands_cur_length, old_ref_i, new_ref_i);
@@ -671,16 +673,16 @@ void VM_RedefineClasses::append_operand(const constantPoolHandle& scratch_cp, in
   // However, the operand_offset_at(0) was set in the extend_operands() call.
   int new_base = (new_bs_i == 0) ? (*merge_cp_p)->operand_offset_at(0)
                                  : (*merge_cp_p)->operand_next_offset_at(new_bs_i - 1);
-  int argc     = scratch_cp->operand_argument_count_at(old_bs_i);
+  u2 argc      = scratch_cp->operand_argument_count_at(old_bs_i);
 
   ConstantPool::operand_offset_at_put(merge_ops, _operands_cur_length, new_base);
   merge_ops->at_put(new_base++, new_ref_i);
   merge_ops->at_put(new_base++, argc);
 
   for (int i = 0; i < argc; i++) {
-    int old_arg_ref_i = scratch_cp->operand_argument_index_at(old_bs_i, i);
-    int new_arg_ref_i = find_or_append_indirect_entry(scratch_cp, old_arg_ref_i, merge_cp_p,
-                                                      merge_cp_length_p);
+    u2 old_arg_ref_i = scratch_cp->operand_argument_index_at(old_bs_i, i);
+    u2 new_arg_ref_i = find_or_append_indirect_entry(scratch_cp, old_arg_ref_i, merge_cp_p,
+                                                     merge_cp_length_p);
     merge_ops->at_put(new_base++, new_arg_ref_i);
     if (new_arg_ref_i != old_arg_ref_i) {
       log_trace(redefine, class, constantpool)
@@ -1234,7 +1236,7 @@ jvmtiError VM_RedefineClasses::compare_and_normalize_class_versions(
 // Find new constant pool index value for old constant pool index value
 // by searching the index map. Returns zero (0) if there is no mapped
 // value for the old constant pool index.
-int VM_RedefineClasses::find_new_index(int old_index) {
+u2 VM_RedefineClasses::find_new_index(int old_index) {
   if (_index_map_count == 0) {
     // map is empty so nothing can be found
     return 0;
@@ -1253,7 +1255,9 @@ int VM_RedefineClasses::find_new_index(int old_index) {
     return 0;
   }
 
-  return value;
+  // constant pool indices are u2, unless the merged constant pool overflows which
+  // we don't check for.
+  return checked_cast<u2>(value);
 } // end find_new_index()
 
 
@@ -2188,8 +2192,8 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
     switch (c) {
       case Bytecodes::_ldc:
       {
-        int cp_index = *(bcp + 1);
-        int new_index = find_new_index(cp_index);
+        u1 cp_index = *(bcp + 1);
+        u2 new_index = find_new_index(cp_index);
 
         if (StressLdcRewrite && new_index == 0) {
           // If we are stressing ldc -> ldc_w rewriting, then we
@@ -2203,7 +2207,8 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
             // unless we are trying to stress ldc -> ldc_w rewriting
             log_trace(redefine, class, constantpool)
               ("%s@" INTPTR_FORMAT " old=%d, new=%d", Bytecodes::name(c), p2i(bcp), cp_index, new_index);
-            *(bcp + 1) = new_index;
+            // We checked that new_index fits in a u1 so this cast is safe
+            *(bcp + 1) = (u1)new_index;
           } else {
             log_trace(redefine, class, constantpool)
               ("%s->ldc_w@" INTPTR_FORMAT " old=%d, new=%d", Bytecodes::name(c), p2i(bcp), cp_index, new_index);
@@ -2262,7 +2267,7 @@ void VM_RedefineClasses::rewrite_cp_refs_in_method(methodHandle method,
       {
         address p = bcp + 1;
         int cp_index = Bytes::get_Java_u2(p);
-        int new_index = find_new_index(cp_index);
+        u2 new_index = find_new_index(cp_index);
         if (new_index != 0) {
           // the original index is mapped so update w/ new value
           log_trace(redefine, class, constantpool)
@@ -3600,7 +3605,7 @@ void VM_RedefineClasses::set_new_constant_pool(
     if (cur_index == 0) {
       continue;  // JVM spec. allows null inner class refs so skip it
     }
-    int new_index = find_new_index(cur_index);
+    u2 new_index = find_new_index(cur_index);
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)("inner_class_info change: %d to %d", cur_index, new_index);
       iter.set_inner_class_info_index(new_index);
@@ -3626,7 +3631,7 @@ void VM_RedefineClasses::set_new_constant_pool(
     methodHandle method(THREAD, methods->at(i));
     method->set_constants(scratch_cp());
 
-    int new_index = find_new_index(method->name_index());
+    u2 new_index = find_new_index(method->name_index());
     if (new_index != 0) {
       log_trace(redefine, class, constantpool)
         ("method-name_index change: %d to %d", method->name_index(), new_index);
@@ -3671,7 +3676,7 @@ void VM_RedefineClasses::set_new_constant_pool(
 
     for (int j = 0; j < ext_length; j ++) {
       int cur_index = ex_table.catch_type_index(j);
-      int new_index = find_new_index(cur_index);
+      u2 new_index = find_new_index(cur_index);
       if (new_index != 0) {
         log_trace(redefine, class, constantpool)("ext-klass_index change: %d to %d", cur_index, new_index);
         ex_table.set_catch_type_index(j, new_index);

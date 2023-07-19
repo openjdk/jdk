@@ -480,7 +480,7 @@ address RetData::fixup_ret(int return_bci, MethodData* h_mdo) {
   // Now check to see if any of the cache slots are open.
   for (uint row = 0; row < row_limit(); row++) {
     if (bci(row) == no_bci) {
-      set_bci_displacement(row, mdp - dp());
+      set_bci_displacement(row, checked_cast<int>(mdp - dp()));
       set_bci_count(row, DataLayout::counter_increment);
       // Barrier to ensure displacement is written before the bci; allows
       // the interpreter to read displacement without fear of race condition.
@@ -987,7 +987,7 @@ int MethodData::initialize_data(BytecodeStream* stream,
     return 0;
   }
   int cell_count = -1;
-  int tag = DataLayout::no_tag;
+  u1 tag = DataLayout::no_tag;
   DataLayout* data_layout = data_layout_at(data_index);
   Bytecodes::Code c = stream->code();
   switch (c) {
@@ -1098,7 +1098,7 @@ int MethodData::initialize_data(BytecodeStream* stream,
   if (cell_count >= 0) {
     assert(tag != DataLayout::no_tag, "bad tag");
     assert(bytecode_has_profile(c), "agree w/ BHP");
-    data_layout->initialize(tag, stream->bci(), cell_count);
+    data_layout->initialize(tag, checked_cast<u2>(stream->bci()), cell_count);
     return DataLayout::compute_size_in_bytes(cell_count);
   } else {
     assert(!bytecode_has_profile(c), "agree w/ !BHP");
@@ -1310,8 +1310,8 @@ void MethodData::init() {
   double scale = 1.0;
   methodHandle mh(Thread::current(), _method);
   CompilerOracle::has_option_value(mh, CompileCommand::CompileThresholdScaling, scale);
-  _invoke_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
-  _backedge_mask = right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _invoke_mask = (int)right_n_bits(CompilerConfig::scaled_freq_log(Tier0InvokeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
+  _backedge_mask = (int)right_n_bits(CompilerConfig::scaled_freq_log(Tier0BackedgeNotifyFreqLog, scale)) << InvocationCounter::count_shift;
 
   _tenure_traps = 0;
   _num_loops = 0;
@@ -1479,7 +1479,7 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
       return nullptr;
     }
     DataLayout temp;
-    temp.initialize(tag, bci, 0);
+    temp.initialize(tag, checked_cast<u2>(bci), 0);
 
     dp->set_header(temp.header());
     assert(dp->tag() == tag, "sane");

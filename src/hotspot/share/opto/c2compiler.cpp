@@ -52,8 +52,8 @@ const char* C2Compiler::retry_no_locks_coarsening() {
 const char* C2Compiler::retry_no_iterative_escape_analysis() {
   return "retry without iterative escape analysis";
 }
-const char* C2Compiler::retry_class_loading_during_parsing() {
-  return "retry class loading during parsing";
+const char* C2Compiler::retry_no_reduce_allocation_merges() {
+  return "retry without reducing allocation merges";
 }
 
 void compiler_stubs_init(bool in_compiler_thread);
@@ -109,20 +109,17 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
   bool subsume_loads = SubsumeLoads;
   bool do_escape_analysis = DoEscapeAnalysis;
   bool do_iterative_escape_analysis = DoEscapeAnalysis;
+  bool do_reduce_allocation_merges = ReduceAllocationMerges;
   bool eliminate_boxing = EliminateAutoBox;
   bool do_locks_coarsening = EliminateLocks;
 
   while (!env->failing()) {
     // Attempt to compile while subsuming loads into machine instructions.
-    Options options(subsume_loads, do_escape_analysis, do_iterative_escape_analysis, eliminate_boxing, do_locks_coarsening, install_code);
+    Options options(subsume_loads, do_escape_analysis, do_iterative_escape_analysis, do_reduce_allocation_merges, eliminate_boxing, do_locks_coarsening, install_code);
     Compile C(env, target, entry_bci, options, directive);
 
     // Check result and retry if appropriate.
     if (C.failure_reason() != nullptr) {
-      if (C.failure_reason_is(retry_class_loading_during_parsing())) {
-        env->report_failure(C.failure_reason());
-        continue;  // retry
-      }
       if (C.failure_reason_is(retry_no_subsuming_loads())) {
         assert(subsume_loads, "must make progress");
         subsume_loads = false;
@@ -138,6 +135,12 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci, boo
       if (C.failure_reason_is(retry_no_iterative_escape_analysis())) {
         assert(do_iterative_escape_analysis, "must make progress");
         do_iterative_escape_analysis = false;
+        env->report_failure(C.failure_reason());
+        continue;  // retry
+      }
+      if (C.failure_reason_is(retry_no_reduce_allocation_merges())) {
+        assert(do_reduce_allocation_merges, "must make progress");
+        do_reduce_allocation_merges = false;
         env->report_failure(C.failure_reason());
         continue;  // retry
       }
@@ -679,6 +682,7 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
 #ifdef JFR_HAVE_INTRINSICS
   case vmIntrinsics::_counterTime:
   case vmIntrinsics::_getEventWriter:
+  case vmIntrinsics::_jvm_commit:
 #endif
   case vmIntrinsics::_currentTimeMillis:
   case vmIntrinsics::_nanoTime:
@@ -754,6 +758,8 @@ bool C2Compiler::is_intrinsic_supported(const methodHandle& method) {
   case vmIntrinsics::_VectorBinaryOp:
   case vmIntrinsics::_VectorTernaryOp:
   case vmIntrinsics::_VectorFromBitsCoerced:
+  case vmIntrinsics::_VectorShuffleIota:
+  case vmIntrinsics::_VectorShuffleToVector:
   case vmIntrinsics::_VectorLoadOp:
   case vmIntrinsics::_VectorLoadMaskedOp:
   case vmIntrinsics::_VectorStoreOp:

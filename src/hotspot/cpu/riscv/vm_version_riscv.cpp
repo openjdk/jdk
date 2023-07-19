@@ -204,6 +204,13 @@ void VM_Version::initialize() {
     }
   }
 
+  // See JDK-8026049
+  // This machine has fast unaligned memory accesses
+  if (FLAG_IS_DEFAULT(UseUnalignedAccesses)) {
+    FLAG_SET_DEFAULT(UseUnalignedAccesses,
+      unaligned_access.value() == MISALIGNED_FAST);
+  }
+
   if (UseZbb) {
     if (FLAG_IS_DEFAULT(UsePopCountInstruction)) {
       FLAG_SET_DEFAULT(UsePopCountInstruction, true);
@@ -275,7 +282,7 @@ void VM_Version::c2_initialize() {
     FLAG_SET_DEFAULT(AllocatePrefetchStyle, 0);
   } else {
     // Limit AllocatePrefetchDistance so that it does not exceed the
-    // constraint in AllocatePrefetchDistanceConstraintFunc.
+    // static constraint of 512 defined in runtime/globals.hpp.
     if (FLAG_IS_DEFAULT(AllocatePrefetchDistance)) {
       FLAG_SET_DEFAULT(AllocatePrefetchDistance, MIN2(512, 3 * (int)CacheLineSize));
     }

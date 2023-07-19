@@ -360,8 +360,14 @@ public interface SortedSet<E> extends Set<E>, SequencedSet<E> {
      * {@inheritDoc}
      *
      * @implSpec
-     * The implementation in this interface returns an instance of a reverse-ordered
-     * SortedSet that delegates its operations to this SortedSet.
+     * The implementation in this interface returns a reverse-ordered SortedSet
+     * view. The {@code reversed()} method of the view returns a reference
+     * to this SortedSet. Other operations on the view are implemented via calls to
+     * public methods on this SortedSet. The exact relationship between calls on the
+     * view and calls on this SortedSet is unspecified. However, order-sensitive
+     * operations generally delegate to the appropriate method with the opposite
+     * orientation. For example, calling {@code getFirst} on the view results in
+     * a call to {@code getLast} on this SortedSet.
      *
      * @return a reverse-ordered view of this collection, as a {@code SortedSet}
      * @since 21
