@@ -682,12 +682,14 @@ class DatagramChannelImpl
                 bufLength = DatagramPackets.getBufLength(p);
             }
 
+            long startNanos = System.nanoTime();
             SocketAddress sender = null;
             try {
                 SocketAddress remote = beginRead(true, false);
                 boolean connected = (remote != null);
                 do {
-                    ByteBuffer dst = tryBlockingReceive(connected, bufLength, nanos);
+                    long remainingNanos = nanos - (System.nanoTime() - startNanos);
+                    ByteBuffer dst = tryBlockingReceive(connected, bufLength, remainingNanos);
 
                     // if datagram received then get sender and copy to DatagramPacket
                     if (dst != null) {
