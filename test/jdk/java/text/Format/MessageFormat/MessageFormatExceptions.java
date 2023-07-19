@@ -63,9 +63,14 @@ public class MessageFormatExceptions {
         // Fail when object calls format()
         assertThrows(NullPointerException.class,
                 () -> new MessageFormat("{0}", null).format(new Object[]{42}));
+        // Fail when object calls format(), but locale is set via .setLocale()
+        MessageFormat msgFmt = new MessageFormat("{0}");
+        msgFmt.setLocale(null);
+        assertThrows(NullPointerException.class, () -> msgFmt.format(new Object[]{42}));
         // Does not always fail if locale is null
         assertDoesNotThrow(() ->
                 new MessageFormat("{0}", null).format(new Object[]{"hello"}));
+
     }
 
     // 6481179: Invalid format type should be provided in error message of IAE
