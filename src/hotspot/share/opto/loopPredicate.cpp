@@ -41,10 +41,10 @@
 #include <math.h>
 
 /*
- * The general idea of Loop Predication is to hoist a check inside a loop body by inserting a Hoisted Predicate with an
- * uncommon trap on the entry path to the loop. The old check inside the loop can be eliminated. If the condition of the
- * Hoisted Predicate fails at runtime, we'll execute the uncommon trap to avoid entering the loop which misses the check.
- * Loop Predication can currently remove array range checks and loop invariant checks (such as null checks).
+ * The general idea of Loop Predication is to hoist a check inside a loop body by inserting a Hoisted Check Predicate with
+ * an uncommon trap on the entry path to the loop. The old check inside the loop can be eliminated. If the condition of
+ * the Hoisted Check Predicate fails at runtime, we'll execute the uncommon trap to avoid entering the loop which misses
+ * the check. Loop Predication can currently remove array range checks and loop invariant checks (such as null checks).
  *
  * On top of these predicates added by Loop Predication, there are other kinds of predicates. A detailed description
  * about all predicates can be found in predicates.hpp.
@@ -684,9 +684,9 @@ bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoo
     //   trap();
     // }
     //
-    // If we create a Hoisted Range Check Predicate for this wrong pattern, it could succeed at runtime (i.e. true
-    // for the value of "scale*iv + offset" in the first loop iteration and true for the value of "scale*iv + offset"
-    // in the last loop iteration) while the check to be hoisted could fail in other loop iterations.
+    // If we create a Range Check Predicate for this wrong pattern, it could succeed at runtime (i.e. true for the
+    // value of "scale*iv + offset" in the first loop iteration and true for the value of "scale*iv + offset" in the
+    // last loop iteration) while the check to be hoisted could fail in other loop iterations.
     //
     // Example:
     // Loop: "for (int i = -1; i < 1000; i++)"
@@ -694,7 +694,7 @@ bool IdealLoopTree::is_range_check_if(IfProjNode* if_success_proj, PhaseIdealLoo
     // last = "scale*iv + offset" in the last loop iteration = 1*999 + 0 = 999
     // limit = 100
     //
-    // Hoisted Range Check Predicate is always true:
+    // Range Check Predicate is always true:
     // init >=u limit && last >=u limit  <=>
     // -1 >=u 100 && 999 >= u 100
     //
@@ -1301,9 +1301,9 @@ bool PhaseIdealLoop::loop_predication_impl_helper(IdealLoopTree* loop, IfProjNod
   return true;
 }
 
-// Each newly created Hoisted Predicate is accompanied by two Template Assertion Predicates. Later, we initialize them
-// by making a copy of them when splitting a loop into sub loops. The Assertion Predicates ensure that dead sub loops
-// are removed properly.
+// Each newly created Hoisted Check Predicate is accompanied by two Template Assertion Predicates. Later, we initialize
+// them by making a copy of them when splitting a loop into sub loops. The Assertion Predicates ensure that dead sub
+// loops are removed properly.
 IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealLoopTree* loop, IfProjNode* if_proj,
                                                              IfProjNode* predicate_proj, IfProjNode* upper_bound_proj,
                                                              int scale, Node* offset, Node* init, Node* limit, jint stride,
@@ -1348,7 +1348,8 @@ IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   return new_proj;
 }
 
-// Insert Hoisted Predicates for null checks and range checks and additional Template Assertion Predicates for range checks.
+// Insert Hoisted Check Predicates for null checks and range checks and additional Template Assertion Predicates for
+// range checks.
 bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
   if (!UseLoopPredicate) return false;
 

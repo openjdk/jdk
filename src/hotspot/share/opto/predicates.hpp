@@ -39,21 +39,18 @@
  *                    - Loop Parse Predicate:             The Parse Predicate added for Loop Predicates.
  *                    - Profiled Loop Parse Predicate:    The Parse Predicate added for Profiled Loop Predicates.
  *                    - Loop Limit Check Parse Predicate: The Parse Predicate added for a Loop Limit Check Predicate.
- * - Runtime Predicate: This term is used to refer to a Hoisted Predicate (either a Loop Predicate or a Profiled Loop
- *                      Predicate) or a Loop Limit Check Predicate. These predicates will be checked at runtime while the
- *                      Parse and Assertion Predicates are always removed before code generation (except for Initialized
- *                      Assertion Predicates which are kept in debug builds while being removed in product builds).
- *     - Hoisted Predicate: Either a Loop Predicate or a Profiled Loop Predicate that is created during Loop Predication
- *                          to hoist a check out of a loop.
- *         - Hoisted Invariant Check Predicate: A Hoisted Predicate to hoist a loop-invariant check out of a loop.
- *         - Hoisted Range Check Predicate:     A Hoisted Predicate to hoist a range check of the form
- *                                              "a[i*scale + offset]", where scale and offset are loop-invariant, out of
- *                                              a counted loop. Each Hoisted Range Check Predicate is accompanied by
- *                                              additional Assertion Predicates.
- *         - Loop Predicate:     This Hoisted Predicate is created to hoist a loop-invariant check a range check of the
+ * - Runtime Predicate: This term is used to refer to a Hoisted Check Predicate (either a Loop Predicate or a Profiled
+ *                      Loop Predicate) or a Loop Limit Check Predicate. These predicates will be checked at runtime while
+ *                      the Parse and Assertion Predicates are always removed before code generation (except for
+ *                      Initialized Assertion Predicates which are kept in debug builds while being removed in product
+ *                      builds).
+ *     - Hoisted Check Predicate: Either a Loop Predicate or a Profiled Loop Predicate that is created during Loop
+ *                                Predication to hoist a check out of a loop.
+ *         - Loop Predicate:     This predicate is created to hoist a loop-invariant check or a range check of the
  *                               form "a[i*scale + offset]", where scale and offset are loop-invariant, out of a
  *                               counted loop. The hoisted check must be executed in each loop iteration. This predicate
- *                               is created during Loop Predication and is inserted above the Loop Parse Predicate.
+ *                               is created during Loop Predication and is inserted above the Loop Parse Predicate. Each
+ *                               predicate for a range check is accompanied by additional Assertion Predicates (see below).
  *         - Profiled Loop:      This predicate is very similar to a Loop Predicate but the check to be hoisted does not
  *           Predicate           need to be executed in each loop iteration. By using profiling information, only checks
  *                               with a high execution frequency are chosen to be replaced by a Profiled Loop Predicate.
@@ -68,8 +65,8 @@
  *                           The predicate does not replace an actual check inside the loop. This predicate can only
  *                           be added once above the Loop Limit Check Parse Predicate for a loop.
  * - Assertion Predicate: An always true predicate which will never fail (its range is already covered by an earlier
- *                        Hoisted Predicate or the main-loop entry guard) but is required in order to fold away a dead
- *                        sub loop inside which some data could be proven to be dead (by the type system) and replaced
+ *                        Hoisted Check Predicate or the main-loop entry guard) but is required in order to fold away a
+ *                        dead sub loop in which some data could be proven to be dead (by the type system) and replaced
  *                        by top. Without such Assertion Predicates, we could find that type ranges in Cast and ConvX2Y
  *                        data nodes become impossible and are replaced by top. This is an indicator that the sub loop
  *                        is never executed and must be dead. But there is no way for C2 to prove that the sub loop is
@@ -88,14 +85,14 @@
  *                        - Initialized Assertion Predicate: An Assertion Predicate that represents an actual check for a
  *                                                           (sub) loop that was initialized by cloning a Template
  *                                                           Assertion Predicate. The check is always true and is covered
- *                                                           by an earlier check (a Hoisted Predicate or the main-loop
- *                                                           entry guard).
+ *                                                           by an earlier check (a Hoisted Check Predicate or the
+ *                                                           main-loop entry guard).
  *
  *                        Assertion Predicates are required when removing a range check from a loop. These are inserted
  *                        either at Loop Predication or at Range Check Elimination:
- *                        - Loop Predication:        A range check inside a loop is replaced by a Hoisted Predicate before
- *                                                   the loop. We add two additional Template Assertion Predicates from
- *                                                   which we can later create Initialized Assertion Predicates. One
+ *                        - Loop Predication:        A range check inside a loop is replaced by a Hoisted Check Predicate
+ *                                                   before the loop. We add two additional Template Assertion Predicates
+ *                                                   from which we can later create Initialized Assertion Predicates. One
  *                                                   would have been enough if the number of array accesses inside a sub
  *                                                   loop does not change. But when unrolling the sub loop, we are
  *                                                   doubling the number of array accesses - we need to cover them all.
@@ -119,7 +116,7 @@
  *                                                   Assertion Predicates by replacing the OpaqueLoop* nodes by actual
  *                                                   values. Initially (before unrolling), both Assertion Predicates are
  *                                                   equal. The Initialized Assertion Predicates are always true because
- *                                                   their range is covered by a corresponding Hoisted Predicate.
+ *                                                   their range is covered by a corresponding Hoisted Check Predicate.
  *                        - Range Check Elimination: A range check is removed from the main-loop by changing the pre
  *                                                   and main-loop iterations. We add two additional Template Assertion
  *                                                   Predicates (see explanation in section above) and one Initialized
@@ -133,16 +130,16 @@
  *                                                   (because we adjusted the main-loop exit condition), and during all
  *                                                   other iterations of the main-loop in-between by implication.
  *                                                   Note that Range Check Elimination could remove additional range
- *                                                   checks which we were not possible to remove with Loop Predication
+ *                                                   checks which were not possible to remove with Loop Predication
  *                                                   before (for example, because no Parse Predicates were available
- *                                                   before the loop to create Hoisted Predicates with).
+ *                                                   before the loop to create Hoisted Check Predicates with).
  *
  *
  * In order to group predicates and refer to them throughout the code, we introduce the following additional term:
- * - Predicate Block: A block containing all Runtime Predicates, including the Assertion Predicates for Hoisted
- *                    Range Check Predicates, and the associated Parse Predicate which all share the same uncommon trap.
- *                    This block could be empty if there were no Runtime Predicates created and the Parse Predicate was
- *                    already removed.
+ * - Predicate Block: A block containing all Runtime Predicates, including the Assertion Predicates for Range Check
+ *                    Predicates, and the associated Parse Predicate which all share the same uncommon trap. This block
+ *                    could be empty if there were no Runtime Predicates created and the Parse Predicate was already
+ *                    removed.
  *                    There are three different Predicate Blocks:
  *                    - Loop Predicate Block: Groups the Loop Predicates (if any), including the Assertion Predicates,
  *                                            and the Loop Parse Predicate (if not removed, yet) together.
@@ -156,20 +153,20 @@
  * Initially, before applying any loop-splitting optimizations, we find the following structure after Loop Predication
  * (predicates inside square brackets [] do not need to exist if there are no checks to hoist):
  *
- *   [Loop Hoisted Predicate 1 + two Template Assertion Predicates]            \
- *   [Loop Hoisted Predicate 2 + two Template Assertion Predicates]            |
- *   ...                                                                       | Loop Predicate Block
- *   [Loop Hoisted Predicate n + two Template Assertion Predicates]            |
- * Loop Parse Predicate                                                        /
+ *   [Loop Predicate 1 + two Template Assertion Predicates]            \
+ *   [Loop Predicate 2 + two Template Assertion Predicates]            |
+ *   ...                                                               | Loop Predicate Block
+ *   [Loop Predicate n + two Template Assertion Predicates]            |
+ * Loop Parse Predicate                                                /
  *
- *   [Profiled Loop Hoisted Predicate 1 + two Template Assertion Predicates]   \
- *   [Profiled Loop Hoisted Predicate 2 + two Template Assertion Predicates]   | Profiled Loop
- *   ...                                                                       | Predicate Block
- *   [Profiled Loop Hoisted Predicate m + two Template Assertion Predicates]   |
- * Profiled Loop Parse Predicate                                               /
+ *   [Profiled Loop Predicate 1 + two Template Assertion Predicates]   \
+ *   [Profiled Loop Predicate 2 + two Template Assertion Predicates]   | Profiled Loop
+ *   ...                                                               | Predicate Block
+ *   [Profiled Loop Predicate m + two Template Assertion Predicates]   |
+ * Profiled Loop Parse Predicate                                       /
  *
- *   [Loop Limit Check Predicate] (at most one)                                \ Loop Limit Check
- * Loop Limit Check Parse Predicate                                            / Predicate Block
+ *   [Loop Limit Check Predicate] (at most one)                        \ Loop Limit Check
+ * Loop Limit Check Parse Predicate                                    / Predicate Block
  * Loop Head
  *
  * As an example, let's look at how the predicate structure looks for the main-loop after creating pre/main/post loops
