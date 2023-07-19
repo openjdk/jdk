@@ -1357,8 +1357,8 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
       _humongous_regions_removed(0) { }
 
     size_t freed_bytes() { return _freed_bytes; }
-    const uint old_regions_removed() { return _old_regions_removed; }
-    const uint humongous_regions_removed() { return _humongous_regions_removed; }
+    uint old_regions_removed() { return _old_regions_removed; }
+    uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
       if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young()) {
@@ -2308,7 +2308,7 @@ void G1CMTask::drain_local_queue(bool partially) {
   // of things to do) or totally (at the very end).
   size_t target_size;
   if (partially) {
-    target_size = MIN2((size_t)_task_queue->max_elems()/3, (size_t)GCDrainStackTargetSize);
+    target_size = MIN2((size_t)_task_queue->max_elems()/3, GCDrainStackTargetSize);
   } else {
     target_size = 0;
   }

@@ -387,6 +387,7 @@ void MethodHandles::generate_method_handle_dispatch(MacroAssembler* _masm,
   } else if (iid == vmIntrinsics::_linkToNative) {
     assert(for_compiler_entry, "only compiler entry is supported");
     jump_to_native_invoker(_masm, member_reg, temp1);
+    return;
   }
 
   // The method is a member invoker used by direct method handles.

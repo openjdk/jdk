@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "cds/serializeClosure.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compilerDirectives.hpp"

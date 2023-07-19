@@ -1679,10 +1679,10 @@ void C2_MacroAssembler::string_indexof_char_v(Register str1, Register cnt1,
 
 // Set dst to NaN if any NaN input.
 void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
-                                    bool is_double, bool is_min, int vector_length) {
+                                    BasicType bt, bool is_min, int vector_length) {
   assert_different_registers(dst, src1, src2);
 
-  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+  vsetvli_helper(bt, vector_length);
 
   is_min ? vfmin_vv(dst, src1, src2)
          : vfmax_vv(dst, src1, src2);
@@ -1698,9 +1698,9 @@ void C2_MacroAssembler::minmax_fp_v(VectorRegister dst, VectorRegister src1, Vec
 // are handled with a mask-undisturbed policy.
 void C2_MacroAssembler::minmax_fp_masked_v(VectorRegister dst, VectorRegister src1, VectorRegister src2,
                                            VectorRegister vmask, VectorRegister tmp1, VectorRegister tmp2,
-                                           bool is_double, bool is_min, int vector_length) {
+                                           BasicType bt, bool is_min, int vector_length) {
   assert_different_registers(src1, src2, tmp1, tmp2);
-  vsetvli_helper(is_double ? T_DOUBLE : T_FLOAT, vector_length);
+  vsetvli_helper(bt, vector_length);
 
   // Check vector elements of src1 and src2 for NaN.
   vmfeq_vv(tmp1, src1, src1);
