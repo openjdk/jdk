@@ -1252,10 +1252,12 @@ char* MetaspaceShared::reserve_address_space_for_archives(FileMapInfo* static_ma
   if (base_address != nullptr) {
     assert(is_aligned(base_address, archive_space_alignment),
            "Archive base address invalid: " PTR_FORMAT ".", p2i(base_address));
+#ifdef _LP64
     if (Metaspace::using_class_space()) {
       assert(CompressedKlassPointers::is_valid_base(base_address),
              "Archive base address invalid: " PTR_FORMAT ".", p2i(base_address));
     }
+#endif
   }
 
   if (!Metaspace::using_class_space()) {

@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2009, 2021, Red Hat, Inc.
+ * Copyright (c) 2021, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,29 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP
-#define CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP
+// key: compiler.warn.ineffectual.extern.method.enum
 
-#ifdef _LP64
-#define SUPPORTS_NATIVE_CX8
-#endif
+// options: -Xlint:serial
 
-#define SUPPORT_MONITOR_COUNT
+import java.io.*;
 
-#include <ffi.h>
+enum IneffectualExternEnum implements Externalizable {
+    INSTANCE;
 
-// Indicates whether the C calling conventions require that
-// 32-bit integer argument values are extended to 64 bits.
-const bool CCallingConventionRequiresIntsAsLongs = false;
-#if defined(AIX)
-const size_t pd_segfault_address = -1;
-#elif defined(S390)
-const size_t pd_segfault_address = 4096;
-#else
-const size_t pd_segfault_address = 1024;
-#endif
+    @Override
+    public void writeExternal(ObjectOutput oo) {
+        ;
+    }
 
-#endif // CPU_ZERO_GLOBALDEFINITIONS_ZERO_HPP
+    @Override
+    public void readExternal(ObjectInput oi) {
+        ;
+    }
+}
