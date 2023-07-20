@@ -70,6 +70,7 @@ class JfrThreadLocal {
   bool _vthread_excluded;
   bool _jvm_thread_excluded;
   bool _vthread;
+  bool _notified;
   bool _dead;
 
   JfrBuffer* install_native_buffer() const;
@@ -250,6 +251,18 @@ class JfrThreadLocal {
     _wallclock_time = wallclock_time;
   }
 
+  bool is_notified() {
+    return _notified;
+  }
+
+  void notify() {
+    _notified = true;
+  }
+
+  void clear_notification() {
+    _notified = false;
+  }
+
   bool is_dead() const {
     return _dead;
   }
@@ -273,10 +286,12 @@ class JfrThreadLocal {
 
   // Code generation
   static ByteSize java_event_writer_offset();
+  static ByteSize java_buffer_offset();
   static ByteSize vthread_id_offset();
   static ByteSize vthread_offset();
   static ByteSize vthread_epoch_offset();
   static ByteSize vthread_excluded_offset();
+  static ByteSize notified_offset();
 
   friend class JfrJavaThread;
   friend class JfrCheckpointManager;

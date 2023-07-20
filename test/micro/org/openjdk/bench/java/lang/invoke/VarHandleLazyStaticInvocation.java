@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,7 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package org.openjdk.bench.java.util;
+package org.openjdk.bench.java.lang.invoke;
 
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.BenchmarkMode;
@@ -29,43 +29,54 @@ import org.openjdk.jmh.annotations.Measurement;
 import org.openjdk.jmh.annotations.Mode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.Scope;
-import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
 
-import java.util.Random;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Tests java.util.Random's different flavours of next-methods.
+ * A benchmark testing lazy static var handle vs regular static var handle,
+ * to ensure the lazy static var handle doesn't have too much post-initialization
+ * invocation penalties.
  */
 @BenchmarkMode(Mode.AverageTime)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Warmup(iterations = 5, time = 500, timeUnit = TimeUnit.MILLISECONDS)
+@Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 4, time = 2)
-@Measurement(iterations = 4, time = 2)
-@Fork(value = 3)
-public class RandomNext {
+@OutputTimeUnit(TimeUnit.NANOSECONDS)
+@Fork(3)
+public class VarHandleLazyStaticInvocation {
 
-    public Random rnd;
+    static final VarHandle initialized;
+    static final VarHandle lazy;
+    static long longField;
 
-    @Setup
-    public void setup() {
-        rnd = new Random();
+    static {
+        try {
+            lazy = MethodHandles.lookup().findStaticVarHandle(Data.class, "longField", long.class);
+            initialized = MethodHandles.lookup().findStaticVarHandle(VarHandleLazyStaticInvocation.class, "longField", long.class);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+
+    static class Data {
+        static long longField;
     }
 
     @Benchmark
-    public int testNextInt() {
-        return rnd.nextInt();
+    public long lazyInvocation() {
+        lazy.set((long) ThreadLocalRandom.current().nextLong());
+        return (long) lazy.get();
     }
 
     @Benchmark
-    public int testNextInt100() {
-        return rnd.nextInt(100);
-    }
-
-    @Benchmark
-    public int testNextInt128() {
-        return rnd.nextInt(128);
+    public long initializedInvocation() {
+        initialized.set((long) ThreadLocalRandom.current().nextLong());
+        return (long) initialized.get();
     }
 }
