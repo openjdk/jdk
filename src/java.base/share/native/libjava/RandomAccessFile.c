@@ -83,10 +83,10 @@ Java_java_io_RandomAccessFile_write0(JNIEnv *env, jobject this, jint byte) {
     writeSingle(env, this, byte, JNI_FALSE, raf_fd);
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT int JNICALL
 Java_java_io_RandomAccessFile_writeBytes0(JNIEnv *env,
     jobject this, jbyteArray bytes, jint off, jint len) {
-    writeBytes(env, this, bytes, off, len, JNI_FALSE, raf_fd);
+    return writeBytes(env, this, bytes, off, len, JNI_FALSE, raf_fd);
 }
 
 JNIEXPORT jlong JNICALL

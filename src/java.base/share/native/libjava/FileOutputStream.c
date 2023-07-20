@@ -64,9 +64,9 @@ Java_java_io_FileOutputStream_write(JNIEnv *env, jobject this, jint byte, jboole
     writeSingle(env, this, byte, append, fos_fd);
 }
 
-JNIEXPORT void JNICALL
+JNIEXPORT int JNICALL
 Java_java_io_FileOutputStream_writeBytes(JNIEnv *env,
     jobject this, jbyteArray bytes, jint off, jint len, jboolean append) {
-    writeBytes(env, this, bytes, off, len, append, fos_fd);
+    return writeBytes(env, this, bytes, off, len, append, fos_fd);
 }
 

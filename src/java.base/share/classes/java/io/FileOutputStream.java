@@ -26,6 +26,7 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
+import java.util.Objects;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.access.JavaIOFileDescriptorAccess;
 import jdk.internal.misc.Blocker;
@@ -328,7 +329,7 @@ public class FileOutputStream extends OutputStream
      *     end of file
      * @throws    IOException If an I/O error has occurred.
      */
-    private native void writeBytes(byte[] b, int off, int len, boolean append)
+    private native int writeBytes(byte[] b, int off, int len, boolean append)
         throws IOException;
 
     /**
@@ -340,13 +341,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(byte[] b) throws IOException {
-        boolean append = FD_ACCESS.getAppend(fd);
-        long comp = Blocker.begin();
-        try {
-            writeBytes(b, 0, b.length, append);
-        } finally {
-            Blocker.end(comp);
-        }
+        write(b, 0, b.length);
     }
 
     /**
@@ -361,10 +356,17 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
         boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
-            writeBytes(b, off, len, append);
+            while (len > 0) {
+                int n = writeBytes(b, off, len, append);
+                if (n == -1)
+                    break;
+                off += n;
+                len -= n;
+            }
         } finally {
             Blocker.end(comp);
         }

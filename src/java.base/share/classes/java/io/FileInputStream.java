@@ -27,6 +27,7 @@ package java.io;
 
 import java.nio.channels.FileChannel;
 import java.util.Arrays;
+import java.util.Objects;
 import jdk.internal.misc.Blocker;
 import jdk.internal.util.ArraysSupport;
 import sun.nio.ch.FileChannelImpl;
@@ -282,6 +283,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
         long comp = Blocker.begin();
         try {
             return readBytes(b, off, len);

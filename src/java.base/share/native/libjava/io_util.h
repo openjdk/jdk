@@ -51,7 +51,7 @@ jint readSingle(JNIEnv *env, jobject this, jfieldID fid);
 jint readBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off,
                jint len, jfieldID fid);
 void writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid);
-void writeBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off,
+int writeBytes(JNIEnv *env, jobject this, jbyteArray bytes, jint off,
                 jint len, jboolean append, jfieldID fid);
 void fileOpen(JNIEnv *env, jobject this, jstring path, jfieldID fid, int flags);
 void throwFileNotFoundException(JNIEnv *env, jstring path);

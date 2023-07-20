@@ -26,6 +26,7 @@
 package java.io;
 
 import java.nio.channels.FileChannel;
+import java.util.Objects;
 
 import jdk.internal.access.JavaIORandomAccessFileAccess;
 import jdk.internal.access.SharedSecrets;
@@ -395,6 +396,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private int readBytes(byte[] b, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
         long comp = Blocker.begin();
         try {
             return readBytes0(b, off, len);
@@ -567,15 +569,22 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @throws    IOException If an I/O error has occurred.
      */
     private void writeBytes(byte[] b, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
         long comp = Blocker.begin();
         try {
-            writeBytes0(b, off, len);
+            while (len > 0) {
+                int n = writeBytes0(b, off, len);
+                if (n == -1)
+                    break;
+                off += n;
+                len -= n;
+            }
         } finally {
             Blocker.end(comp);
         }
     }
 
-    private native void writeBytes0(byte[] b, int off, int len) throws IOException;
+    private native int writeBytes0(byte[] b, int off, int len) throws IOException;
 
     /**
      * Writes {@code b.length} bytes from the specified byte array
