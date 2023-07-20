@@ -281,6 +281,15 @@ void ShenandoahFullGC::do_it(GCCause::Cause gc_cause) {
     // f. Sync pinned region status from the CP marks
     heap->sync_pinned_region_status();
 
+    if (heap->mode()->is_generational()) {
+      for (size_t i = 0; i < heap->num_regions(); i++) {
+        ShenandoahHeapRegion* r = heap->get_region(i);
+        if (r->get_top_before_promote() != nullptr) {
+          r->restore_top_before_promote();
+        }
+      }
+    }
+
     // The rest of prologue:
     _preserved_marks->init(heap->workers()->active_workers());
 
