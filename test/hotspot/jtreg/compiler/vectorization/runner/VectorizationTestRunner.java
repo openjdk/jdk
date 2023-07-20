@@ -61,9 +61,6 @@ public class VectorizationTestRunner {
         // each test method returning a primitive value or an array of primitive type.
         // And each test method should not throw any exceptions.
         Class klass = getClass();
-        // Add extra VM options to verify experimental auto-vectorization
-        WB.setBooleanVMFlag("UnlockExperimentalVMOptions", true);
-        WB.setBooleanVMFlag("PostLoopMultiversioning", true);
         for (Method method : klass.getDeclaredMethods()) {
             try {
                 if (method.isAnnotationPresent(Test.class)) {

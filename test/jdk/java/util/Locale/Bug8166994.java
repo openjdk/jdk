@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 /*
  * @test
  * @bug 8166884
@@ -27,41 +28,39 @@
  *          which must generate the same list of language ranges
  *          i.e. the priority list containing equivalents, as in the
  *          first call
+ * @run junit Bug8166994
  */
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Bug8166994 {
 
-    public static void main(String[] args) {
-        List<String> list = Arrays.asList("ccq-aa", "ybd-aa", "rki-aa");
-        String ranges = "ccq-aa";
-        testParseConsistency(list, ranges);
-
+    /*
+     * Checks that consecutive calls to parse the same language ranges
+     * generate the same list of language ranges.
+     */
+    @ParameterizedTest
+    @MethodSource("ranges")
+    public void parseConsistencyTest(List<String> list, String ranges) {
         // consecutive call to check the language range parse consistency
         testParseConsistency(list, ranges);
-
-        // another case with ranges consisting of multiple equivalents and
-        // single equivalents
-        list = Arrays.asList("gfx-xz", "oun-xz", "mwj-xz", "vaj-xz",
-                "taj-xy", "tsf-xy");
-        ranges = "gfx-xz, taj-xy";
         testParseConsistency(list, ranges);
-        // consecutive call to check the language range parse consistency
-        testParseConsistency(list, ranges);
-
     }
 
+    // Ensure that parsing the ranges returns the expected list.
     private static void testParseConsistency(List<String> list, String ranges) {
         List<String> priorityList = parseRanges(ranges);
-        if (!list.equals(priorityList)) {
-            throw new RuntimeException("Failed to parse the language range ["
-                    + ranges + "], Expected: " + list + " Found: "
-                    + priorityList);
-        }
+        assertEquals(list, priorityList, "Failed to parse the language range:");
     }
 
     private static List<String> parseRanges(String s) {
@@ -70,5 +69,13 @@ public class Bug8166994 {
                 .collect(Collectors.toList());
     }
 
+    // Ranges that have multiple equivalents and single equivalents.
+    private static Stream<Arguments> ranges() {
+        return Stream.of(
+                Arguments.of(Arrays.asList("ccq-aa", "ybd-aa", "rki-aa"),
+                        "ccq-aa"),
+                Arguments.of(Arrays.asList("gfx-xz", "oun-xz", "mwj-xz",
+                        "vaj-xz", "taj-xy", "tsf-xy"), "gfx-xz, taj-xy")
+        );
+    }
 }
-

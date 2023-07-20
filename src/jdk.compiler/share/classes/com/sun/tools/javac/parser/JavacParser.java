@@ -879,6 +879,7 @@ public class JavacParser implements Parser {
         JCExpression e;
         if (token.kind == UNDERSCORE && parsedType == null) {
             nextToken();
+            checkSourceLevel(Feature.UNNAMED_VARIABLES);
             pattern = toP(F.at(token.pos).AnyPattern());
         }
         else {

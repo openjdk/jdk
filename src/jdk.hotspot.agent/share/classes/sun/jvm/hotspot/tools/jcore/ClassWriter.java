@@ -406,6 +406,16 @@ public class ClassWriter implements /* imports */ ClassConstants
             if (genSigIndex != 0)
                 fieldAttributeCount++;
 
+            U1Array fieldAnnotations = klass.getFieldAnnotations(index);
+            if (fieldAnnotations != null) {
+                fieldAttributeCount++;
+            }
+
+            U1Array fieldTypeAnnotations = klass.getFieldTypeAnnotations(index);
+            if (fieldTypeAnnotations != null) {
+                fieldAttributeCount++;
+            }
+
             dos.writeShort(fieldAttributeCount);
 
             // write synthetic, if applicable
@@ -424,6 +434,14 @@ public class ClassWriter implements /* imports */ ClassConstants
                 dos.writeInt(2);
                 dos.writeShort(genSigIndex);
                 if (DEBUG) debugMessage("\tfield generic signature index " + genSigIndex);
+            }
+
+            if (fieldAnnotations != null) {
+                writeAnnotationAttribute("RuntimeVisibleAnnotations", fieldAnnotations);
+            }
+
+            if (fieldTypeAnnotations != null) {
+                writeAnnotationAttribute("RuntimeVisibleTypeAnnotations", fieldTypeAnnotations);
             }
         }
     }
@@ -491,6 +509,26 @@ public class ClassWriter implements /* imports */ ClassConstants
         final boolean isGeneric = (m.getGenericSignature() != null);
         if (isGeneric)
             methodAttributeCount++;
+
+        final U1Array annotations = m.getAnnotations();
+        if (annotations != null) {
+            methodAttributeCount++;
+        }
+
+        final U1Array parameterAnnotations = m.getParameterAnnotations();
+        if (parameterAnnotations != null) {
+            methodAttributeCount++;
+        }
+
+        final U1Array typeAnnotations = m.getTypeAnnotations();
+        if (typeAnnotations != null) {
+            methodAttributeCount++;
+        }
+
+        final U1Array annotationDefault = m.getAnnotationDefault();
+        if (annotationDefault != null) {
+            methodAttributeCount++;
+        }
 
         dos.writeShort(methodAttributeCount);
         if (DEBUG) debugMessage("\tmethod attribute count = " + methodAttributeCount);
@@ -687,6 +725,22 @@ public class ClassWriter implements /* imports */ ClassConstants
         if (isGeneric) {
            writeGenericSignature(m.getGenericSignature().asString());
         }
+
+        if (annotationDefault != null) {
+           writeAnnotationAttribute("AnnotationDefault", annotationDefault);
+        }
+
+        if (annotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleAnnotations", annotations);
+        }
+
+        if (parameterAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleParameterAnnotations", parameterAnnotations);
+        }
+
+        if (typeAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleTypeAnnotations", typeAnnotations);
+        }
     }
 
     protected void rewriteByteCode(Method m, byte[] code) {
@@ -728,6 +782,16 @@ public class ClassWriter implements /* imports */ ClassConstants
 
         int bsmCount = klass.getConstants().getBootstrapMethodsCount();
         if (bsmCount != 0) {
+            classAttributeCount++;
+        }
+
+        U1Array classAnnotations = klass.getClassAnnotations();
+        if (classAnnotations != null) {
+            classAttributeCount++;
+        }
+
+        U1Array classTypeAnnotations = klass.getClassTypeAnnotations();
+        if (classTypeAnnotations != null) {
             classAttributeCount++;
         }
 
@@ -792,5 +856,26 @@ public class ClassWriter implements /* imports */ ClassConstants
                 }
             }
         }
+
+        if (classAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleAnnotations", classAnnotations);
+        }
+
+        if (classTypeAnnotations != null) {
+           writeAnnotationAttribute("RuntimeVisibleTypeAnnotations", classTypeAnnotations);
+        }
+    }
+
+    protected void writeAnnotationAttribute(String annotationName, U1Array annotation) throws IOException {
+      int length = annotation.length();
+      Short annotationNameIndex = utf8ToIndex.get(annotationName);
+      if (Assert.ASSERTS_ENABLED) {
+        Assert.that(annotationNameIndex != null, "should not be null");
+      }
+      writeIndex(annotationNameIndex.shortValue());
+      dos.writeInt(length);
+      for (int index = 0; index < length; index++) {
+        dos.writeByte(annotation.at(index));
+      }
     }
 }
