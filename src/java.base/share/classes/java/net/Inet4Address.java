@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.net;
+
+import sun.net.util.IPAddressUtil;
 
 import java.io.ObjectStreamException;
 
@@ -132,6 +134,61 @@ class Inet4Address extends InetAddress {
         holder().family = IPv4;
         holder().address = address;
         holder().originalHostName = hostName;
+    }
+
+    /**
+     * Creates an {@code Inet4Address} based on the provided IPv4 address literal.
+     * <p> IPv4 address literals in dotted-decimal form and
+     * <a href="Inet6Address.html#format">IPv4-compatible IPv6 address</a> literals
+     * are supported. For example, the following literals are valid literals in
+     * dotted-decimal form:
+     *
+     *   <blockquote><ul style="list-style-type:none">
+     *   <li>{@code 1.2.3.4}</li>
+     *   <li>{@code 06.07.08.09}</li>
+     *   </ul></blockquote>
+     *
+     * <p> This method doesn't block, i.e. the system-wide {@linkplain
+     * java.net.spi.InetAddressResolver resolver} is not queried to resolve
+     * the provided literal, and no reverse lookup is performed.
+     *
+     * @param addressLiteral the IPv4 address literal.
+     * @return an {@link Inet4Address} object with no hostname set constructed from the
+     *         IPv4 address literal.
+     * @throws IllegalArgumentException if literal cannot be parsed as an IPv4 address literal.
+     */
+    public static Inet4Address ofLiteral(String addressLiteral) {
+        // Try to parse IPv4-compatible IPv6 addresses first
+        try {
+            InetAddress inetAddress = Inet6Address.parseAddressString(addressLiteral,
+                                                       true);
+            if (inetAddress instanceof Inet4Address ipv4compAddress) {
+                return ipv4compAddress;
+            }
+        } catch (UnknownHostException uhe) {
+            // If address literal is not an IPv4-compatible IPv6 address - continue parsing
+            // it as an IPv4 address literal
+        }
+        return parseAddressString(addressLiteral, true);
+    }
+
+    /**
+     * Parses string with an IPv4 address literal.
+     * If string doesn't contain a valid literal - null is returned.
+     * @param addressLiteral IPv4 address literal to parse
+     * @param throwIAE throw {@code IllegalArgumentException} if literal
+     *                 cannot be parsed as an IPv4 address literal.
+     * @return {@code Inet4Address} object constructed from the address literal;
+     *         or {@@code null} if the literal cannot be parsed as an IPv4 address
+     * @throws IllegalArgumentException if ambiguous IPv4 literal is specified,
+     * or non-parsable IPv4 literal is specified with {@code throwIAE} set to "true".
+     */
+    static Inet4Address parseAddressString(String addressLiteral, boolean throwIAE) {
+        byte [] addrBytes= IPAddressUtil.validateNumericFormatV4(addressLiteral, throwIAE);
+        if (addrBytes == null) {
+            return null;
+        }
+        return new Inet4Address(null, addrBytes);
     }
 
     /**

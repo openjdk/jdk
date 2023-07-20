@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,8 @@
  */
 
 package java.net;
+
+import sun.net.util.IPAddressUtil;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -139,7 +141,8 @@ import java.util.Arrays;
  *
  * <p>The textual representation of IPv6 addresses as described above can be
  * extended to specify IPv6 scoped addresses. This extension to the basic
- * addressing architecture is described in [draft-ietf-ipngwg-scoping-arch-04.txt].
+ * addressing architecture is described in <a href="https://www.rfc-editor.org/info/rfc4007">
+ * <i>RFC&nbsp;4007: IPv6 Scoped Address Architecture</i></a>.
  *
  * <p> Because link-local and site-local addresses are non-global, it is possible
  * that different hosts may have the same destination address and may be
@@ -172,6 +175,8 @@ import java.util.Arrays;
  *
  * @spec https://www.rfc-editor.org/info/rfc2373
  *      RFC 2373: IP Version 6 Addressing Architecture
+ * @spec https://www.rfc-editor.org/info/rfc4007
+ *      RFC 4007: IPv6 Scoped Address Architecture
  * @since 1.4
  */
 
@@ -475,6 +480,116 @@ class Inet6Address extends InetAddress {
             }
         }
         throw new UnknownHostException("addr is of illegal length");
+    }
+
+    /**
+     * Creates an {@code Inet6Address} based on the provided IPv6 address literal.
+     * <p> This method doesn't block, i.e. the system-wide {@linkplain
+     * java.net.spi.InetAddressResolver resolver} is not queried to resolve
+     * the provided literal, and no reverse lookup is performed.
+     * @implNote <a href="Inet6Address.html#special-ipv6-address-heading">
+     * IPv4-mapped IPv6 address literals</a> are treated as invalid by this method.
+     * <p>{@link InetAddress#ofLiteral(String)} can be used to parse IPv4-mapped IPv6
+     * address literals.
+     *
+     * @param addressLiteral the IPv6 address literal.
+     * @return an {@link Inet6Address} object with no hostname set constructed from the
+     *         IPv6 address literal.
+     * @throws IllegalArgumentException if literal cannot be parsed as an IPv6 address literal.
+     */
+    public static Inet6Address ofLiteral(String addressLiteral) {
+        try {
+            InetAddress inetAddress = parseAddressString(addressLiteral, true);
+            // IPv4-mapped IPv6 address literals are rejected
+            if (inetAddress instanceof Inet6Address inet6Address) {
+                return inet6Address;
+            }
+        } catch (UnknownHostException uhe) {
+            // Error constructing Inet6Address from address literal containing
+            // a network interface name
+        }
+        throw IPAddressUtil.invalidIpAddressLiteral(addressLiteral);
+    }
+
+    /**
+     * Method tries to parse IPv6 or IPv4-mapped IPv6 address string as a literal IP address.
+     * If string doesn't contain valid literal - null is returned.
+     * If there is an issue with constructing {@link InetAddress} from parsed bytes -
+     * UnknownHostException is thrown.
+     *
+     * @param addressLiteral literal IP address
+     * @param removeSqBrackets if {@code "true"} remove outer square brackets
+     * @return {@link Inet6Address} or {@link Inet4Address} object constructed from
+     * literal IP address string
+     * @throws UnknownHostException if literal IP address string cannot be parsed
+     * as IPv6 or IPv4-mapped IPv6 address literals.
+     */
+    static InetAddress parseAddressString(String addressLiteral, boolean removeSqBrackets)
+            throws UnknownHostException {
+        // Remove trailing and leading square brackets if requested
+        if (removeSqBrackets && addressLiteral.charAt(0) == '[' &&
+                addressLiteral.length() > 2 &&
+                addressLiteral.charAt(addressLiteral.length() - 1) == ']') {
+            addressLiteral = addressLiteral.substring(1, addressLiteral.length() - 1);
+        }
+        int pos, numericZone = -1;
+        String ifname = null;
+        if ((pos = addressLiteral.indexOf('%')) != -1) {
+            numericZone = checkNumericZone(addressLiteral);
+            if (numericZone == -1) {
+                /* remainder of string must be an ifname */
+                ifname = addressLiteral.substring(pos + 1);
+            }
+        }
+        byte[] addrBytes = IPAddressUtil.textToNumericFormatV6(addressLiteral);
+        if (addrBytes == null) {
+            return null;
+        }
+        // IPv4-mapped IPv6 address
+        if (addrBytes.length == Inet4Address.INADDRSZ) {
+            if (numericZone != -1 || ifname != null) {
+                // IPv4-mapped address must not contain zone-id
+                throw new UnknownHostException(addressLiteral + ": invalid IPv4-mapped address");
+            }
+            return new Inet4Address(null, addrBytes);
+        }
+        if (ifname != null) {
+            return new Inet6Address(null, addrBytes, ifname);
+        } else {
+            return new Inet6Address(null, addrBytes, numericZone);
+        }
+    }
+
+    /**
+     * Check if the literal address string has %nn appended
+     * returns -1 if not, or the numeric value otherwise.
+     * <p>
+     * %nn may also be a string that represents the displayName of
+     * a currently available NetworkInterface.
+     */
+    private static int checkNumericZone(String s) {
+        int percent = s.indexOf('%');
+        int slen = s.length();
+        int digit, zone = 0;
+        int multmax = Integer.MAX_VALUE / 10; // for int overflow detection
+        if (percent == -1) {
+            return -1;
+        }
+        for (int i = percent + 1; i < slen; i++) {
+            char c = s.charAt(i);
+            if ((digit = IPAddressUtil.parseAsciiDigit(c, 10)) < 0) {
+                return -1;
+            }
+            if (zone > multmax) {
+                return -1;
+            }
+            zone = (zone * 10) + digit;
+            if (zone < 0) {
+                return -1;
+            }
+
+        }
+        return zone;
     }
 
     private void initstr(String hostName, byte[] addr, String ifname)
