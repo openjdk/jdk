@@ -90,7 +90,6 @@
 #include "utilities/growableArray.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/utf8.hpp"
-#include <unistd.h>
 #if INCLUDE_JVMCI
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
