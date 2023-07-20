@@ -260,7 +260,7 @@ public:
   // Remove all elements in the range [start - end). The order is preserved.
   void remove_range(int start, int end) {
     assert(0 <= start, "illegal start index %d", start);
-    assert(start < end && end <= _len, "erase called with invalid range %d, %d", start, end);
+    assert(start < end && end <= _len, "erase called with invalid range (%d, %d) for length %d", start, end, _len);
 
     for (int i = start, j = end; j < length(); i++, j++) {
       at_put(i, at(j));
