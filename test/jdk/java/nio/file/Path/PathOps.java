@@ -185,14 +185,22 @@ public class PathOps {
 
     // Note: "expected" is first parameter here
     PathOps resolve(String expected, String first, String... more) {
-        out.format("test resolve %s varargs\n", path());
+        out.format("test resolve %s varargs (String)\n", path());
         checkPath();
+        check(path.resolve(first, more), expected);
         Path[] others = new Path[more.length];
         int i = 0;
         for (String s : more) {
             others[i++] = Path.of(s);
         }
-        check(path.resolve(Path.of(first), others), expected);
+        return resolve(expected, Path.of(first), others);
+    }
+
+    // Note: "expected" is first parameter here
+    PathOps resolve(String expected, Path first, Path... more) {
+        out.format("test resolve %s varargs (Path)\n", path());
+        checkPath();
+        check(path.resolve(first, more), expected);
         return this;
     }
 
@@ -566,7 +574,7 @@ public class PathOps {
             .resolve("C:\\tmp\\foo\\bar\\gus", "", "bar\\gus", "")
             .resolve("C:\\tmp\\foo\\bar\\gus\\foo\\baz",
                      "", "bar\\gus", "foo\\baz")
-            .resolve("C:\\bar\\gus\\baz", "", "C::\\bar\\gus", "baz")
+            .resolve("C:\\bar\\gus\\baz", "", "C:\\bar\\gus", "baz")
             .resolve("C:\\tmp\\bar", "C:\\bar\\gus", "baz", "C:\\tmp\\bar");
         test("tmp")
             .resolve("tmp\\foo\\bar\\gus", "foo", "bar", "gus")
