@@ -53,18 +53,19 @@
 // checking functions,  FLAG_IS_CMDLINE() is used to check if
 // the flag has been set by the user and so should be checked.
 
-// As ParallelGCThreads differs among GC modes, we need constraint function.
+// (earlier ParallelGCThreadConstraintsFuncParallel) replaced after CMS is removed
 JVMFlag::Error ParallelGCThreadsConstraintFunc(uint value, bool verbose) {
-  JVMFlag::Error status = JVMFlag::SUCCESS;
+  // Parallel GC passes ParallelGCThreads when creating GrowableArray as 'int' type parameter.
+  // So can't exceed with "max_jint"
 
-#if INCLUDE_PARALLELGC
-  status = ParallelGCThreadsConstraintFuncParallel(value, verbose);
-  if (status != JVMFlag::SUCCESS) {
-    return status;
+  if (UseParallelGC && (value > (uint)max_jint)) {
+    JVMFlag::printError(verbose,
+                        "ParallelGCThreads (" UINT32_FORMAT ") must be "
+                        "less than or equal to " UINT32_FORMAT " for Parallel GC\n",
+                        value, max_jint);
+    return JVMFlag::VIOLATES_CONSTRAINT;
   }
-#endif
-
-  return status;
+  return JVMFlag::SUCCESS;
 }
 
 static JVMFlag::Error MinPLABSizeBounds(const char* name, size_t value, bool verbose) {
