@@ -538,28 +538,22 @@ void ShenandoahControlThread::service_concurrent_old_cycle(ShenandoahHeap* heap,
         // Coalescing threads detected the cancellation request and aborted. Stay
         // in this state so control thread may resume the coalescing work.
         assert(old_generation->state() == ShenandoahOldGeneration::FILLING, "Prepare for mark should be in progress");
+        assert(heap->cancelled_gc(), "Preparation for GC is not complete, expected cancellation");
+      }
+
+      // Before bootstrapping begins, we must acknowledge any cancellation request.
+      // If the gc has not been cancelled, this does nothing. If it has been cancelled,
+      // this will clear the cancellation request and exit before starting the bootstrap
+      // phase. This will allow the young GC cycle to proceed normally. If we do not
+      // acknowledge the cancellation request, the subsequent young cycle will observe
+      // the request and essentially cancel itself.
+      if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
+        log_info(gc)("Preparation for old generation cycle was cancelled");
         return;
       }
 
-      // It is possible for a young generation request to preempt this nascent old
-      // collection cycle _after_ we've finished making the old regions parseable (filling),
-      // but _before_ we have unset the preemption flag. It is also possible for an
-      // allocation failure to occur after the threads have finished filling. We must
-      // check if we have been cancelled before we start a bootstrap cycle.
-      if (check_cancellation_or_degen(ShenandoahGC::_degenerated_outside_cycle)) {
-        if (heap->cancelled_gc()) {
-          // If this was a preemption request, the cancellation would have been cleared
-          // so that we run a concurrent young cycle. If the cancellation is still set,
-          // then this is an allocation failure and we need to run a degenerated cycle.
-          // If this is a preemption request, we're just going to fall through and run
-          // the bootstrap cycle to start the old generation cycle (the bootstrap cycle is
-          // a concurrent young cycle - which is what we're being asked to do in that case).
-          // If the cycle is cancelled for any other reason, we return from here and let
-          // the control thread return to the top of its decision loop.
-          log_info(gc)("Preparation for old generation cycle was cancelled");
-          return;
-        }
-      }
+      // Coalescing threads completed and nothing was cancelled. it is safe to transition
+      // to the bootstrapping state now.
       old_generation->transition_to(ShenandoahOldGeneration::BOOTSTRAPPING);
     }
     case ShenandoahOldGeneration::BOOTSTRAPPING: {
