@@ -387,6 +387,7 @@ protected:
 
 public:
   int append(const E& elem) {
+    assert(this->_len != INT_MAX, "Overflow");
     if (this->_len == this->_capacity) grow(this->_len);
     int idx = this->_len++;
     this->_data[idx] = elem;
@@ -514,8 +515,9 @@ void GrowableArrayWithAllocator<E, Derived>::expand_to(int new_capacity) {
 
 template <typename E, typename Derived>
 void GrowableArrayWithAllocator<E, Derived>::grow(int j) {
-  // grow the array by increasing _capacity to the first power of two larger than the size we need
-  expand_to(next_power_of_2(j));
+  const size_t next_p2 = next_power_of_2((size_t)j);
+  assert(next_p2 < INT_MAX, "GrowableArray overflow (current capacity: %d)", this->_capacity);
+  expand_to((int) next_p2);
 }
 
 template <typename E, typename Derived>
