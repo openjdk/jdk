@@ -48,7 +48,7 @@ public sealed interface WritableElement<T> extends ClassfileElement
     void writeTo(BufWriter buf);
 
     /**
-     * {@return payload length of the element}
+     * {@return size of the element}
      */
-    OptionalInt payloadLen();
+    OptionalInt sizeInBytes();
 }

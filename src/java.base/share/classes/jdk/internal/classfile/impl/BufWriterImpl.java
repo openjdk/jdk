@@ -215,4 +215,8 @@ public final class BufWriterImpl implements BufWriter {
             writeIndex(info);
         }
     }
+
+    public void reset() {
+        offset = 0;
+    }
 }

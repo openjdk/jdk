@@ -187,7 +187,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
     }
 
     @Override
-    public OptionalInt payloadLen() {
+    public OptionalInt sizeInBytes() {
         int writeFrom = 1;
         int len = 2;
         if (parent != null) {
@@ -196,7 +196,7 @@ public final class SplitConstantPool implements ConstantPoolBuilder {
         }
         for (int i = writeFrom; i < entryCount(); ) {
             PoolEntry info = entryByIndex(i);
-            len += info.payloadLen().getAsInt();
+            len += info.sizeInBytes().getAsInt();
             i += info.width();
         }
         return OptionalInt.of(len);

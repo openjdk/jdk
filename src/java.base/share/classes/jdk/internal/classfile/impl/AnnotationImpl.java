@@ -60,9 +60,9 @@ public final class AnnotationImpl implements Annotation {
     }
 
     @Override
-    public OptionalInt payloadLen() {
+    public OptionalInt sizeInBytes() {
         return OptionalInt.of(4 + elements.stream()
-                .map(AnnotationElement::payloadLen)
+                .map(AnnotationElement::sizeInBytes)
                 .mapToInt(OptionalInt::getAsInt)
                 .sum());
     }
@@ -99,8 +99,8 @@ public final class AnnotationImpl implements Annotation {
         }
 
         @Override
-        public OptionalInt payloadLen() {
-            return OptionalInt.of(2 + value().payloadLen().getAsInt());
+        public OptionalInt sizeInBytes() {
+            return OptionalInt.of(2 + value().sizeInBytes().getAsInt());
         }
     }
 
@@ -123,7 +123,7 @@ public final class AnnotationImpl implements Annotation {
         }
 
         @Override
-        default OptionalInt payloadLen() {
+        default OptionalInt sizeInBytes() {
             return OptionalInt.of(3);
         }
     }
@@ -273,9 +273,9 @@ public final class AnnotationImpl implements Annotation {
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(3 + values.stream()
-                    .map(AnnotationValue::payloadLen)
+                    .map(AnnotationValue::sizeInBytes)
                     .mapToInt(OptionalInt::getAsInt)
                     .sum());
         }
@@ -296,7 +296,7 @@ public final class AnnotationImpl implements Annotation {
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(5);
         }
     }
@@ -315,8 +315,8 @@ public final class AnnotationImpl implements Annotation {
         }
 
         @Override
-        public OptionalInt payloadLen() {
-            return OptionalInt.of(1 + annotation.payloadLen().getAsInt());
+        public OptionalInt sizeInBytes() {
+            return OptionalInt.of(1 + annotation.sizeInBytes().getAsInt());
         }
     }
 
@@ -334,7 +334,7 @@ public final class AnnotationImpl implements Annotation {
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(3);
         }
     }

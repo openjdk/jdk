@@ -147,7 +147,7 @@ public class Attributes {
 
                 @Override
                 public OptionalInt payloadLen(AnnotationDefaultAttribute attr) {
-                    return attr.defaultValue().payloadLen();
+                    return attr.defaultValue().sizeInBytes();
                 }
             };
 
@@ -689,7 +689,7 @@ public class Attributes {
                     for (var info : attr.components()) {
                         len += 6;
                         for (var a : info.attributes()) {
-                            var alen = a.payloadLen();
+                            var alen = a.sizeInBytes();
                             if (alen.isEmpty()) return OptionalInt.empty();
                             len += 6 + alen.getAsInt();
                         }
@@ -715,7 +715,7 @@ public class Attributes {
                 public OptionalInt payloadLen(RuntimeInvisibleAnnotationsAttribute attr) {
                     return OptionalInt.of(2 + attr.annotations()
                             .stream()
-                            .map(Annotation::payloadLen)
+                            .map(Annotation::sizeInBytes)
                             .mapToInt(OptionalInt::getAsInt)
                             .sum());
                 }
@@ -743,7 +743,7 @@ public class Attributes {
                             .stream()
                             .mapToInt(pa -> 2 + pa
                                     .stream()
-                                    .map(Annotation::payloadLen)
+                                    .map(Annotation::sizeInBytes)
                                     .mapToInt(OptionalInt::getAsInt)
                                     .sum())
                             .sum());
@@ -767,7 +767,7 @@ public class Attributes {
                 public OptionalInt payloadLen(RuntimeInvisibleTypeAnnotationsAttribute attr) {
                     return OptionalInt.of(2 + attr.annotations()
                             .stream()
-                            .map(TypeAnnotation::payloadLen)
+                            .map(TypeAnnotation::sizeInBytes)
                             .mapToInt(OptionalInt::getAsInt)
                             .sum());
                 }
@@ -790,7 +790,7 @@ public class Attributes {
                 public OptionalInt payloadLen(RuntimeVisibleAnnotationsAttribute attr) {
                     return OptionalInt.of(2 + attr.annotations()
                             .stream()
-                            .map(Annotation::payloadLen)
+                            .map(Annotation::sizeInBytes)
                             .mapToInt(OptionalInt::getAsInt)
                             .sum());
                 }
@@ -818,7 +818,7 @@ public class Attributes {
                             .stream()
                             .mapToInt(pa -> 2 + pa
                                     .stream()
-                                    .map(Annotation::payloadLen)
+                                    .map(Annotation::sizeInBytes)
                                     .mapToInt(OptionalInt::getAsInt)
                                     .sum())
                             .sum());
@@ -842,7 +842,7 @@ public class Attributes {
                 public OptionalInt payloadLen(RuntimeVisibleTypeAnnotationsAttribute attr) {
                     return OptionalInt.of(2 + attr.annotations()
                             .stream()
-                            .map(TypeAnnotation::payloadLen)
+                            .map(TypeAnnotation::sizeInBytes)
                             .mapToInt(OptionalInt::getAsInt)
                             .sum());
                 }

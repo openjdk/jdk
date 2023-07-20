@@ -57,10 +57,10 @@ public class AttributeHolder {
             a.writeTo(buf);
     }
 
-    OptionalInt payloadLen() {
+    OptionalInt sizeInBytes() {
         int len = 2;
         for (var a : attributes) {
-            var al = a.payloadLen();
+            var al = a.sizeInBytes();
             if (al.isEmpty()) return OptionalInt.empty();
             len += al.getAsInt();
         }

@@ -121,8 +121,9 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
 
     @Override
     @SuppressWarnings("unchecked")
-    public final OptionalInt payloadLen() {
-        return mapper.payloadLen((T) this);
+    public final OptionalInt sizeInBytes() {
+        var len = mapper.payloadLen((T) this);
+        return len.isPresent() ? OptionalInt.of(len.getAsInt() + 6) : OptionalInt.empty();
     }
 
     @Override
@@ -828,7 +829,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(6 + switch (targetInfo) {
                 case TypeParameterTarget tpt -> 1;
                 case SupertypeTarget st -> 2;
@@ -842,7 +843,7 @@ public abstract sealed class UnboundAttribute<T extends Attribute<T>>
                 case TypeArgumentTarget tat -> 3;
             } + 2 * targetPath.size()
               + elements.stream()
-                        .mapToInt(e -> 2 + e.value().payloadLen().getAsInt())
+                        .mapToInt(e -> 2 + e.value().sizeInBytes().getAsInt())
                         .sum());
         }
     }

@@ -97,7 +97,7 @@ public final class BootstrapMethodEntryImpl implements BootstrapMethodEntry {
     }
 
     @Override
-    public OptionalInt payloadLen() {
+    public OptionalInt sizeInBytes() {
         return OptionalInt.of(4 + 2 * arguments().size());
     }
 }

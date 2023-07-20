@@ -109,7 +109,7 @@ public final class FieldImpl
     }
 
     @Override
-    public OptionalInt payloadLen() {
+    public OptionalInt sizeInBytes() {
         return OptionalInt.of(endPos - startPos);
     }
 

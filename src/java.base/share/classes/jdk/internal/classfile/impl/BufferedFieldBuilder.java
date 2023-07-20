@@ -122,7 +122,7 @@ public final class BufferedFieldBuilder
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.empty();
         }
 

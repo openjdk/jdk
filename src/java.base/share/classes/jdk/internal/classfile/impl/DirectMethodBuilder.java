@@ -153,8 +153,8 @@ public final class DirectMethodBuilder
     }
 
     @Override
-    public OptionalInt payloadLen() {
-        var al = attributes.payloadLen();
+    public OptionalInt sizeInBytes() {
+        var al = attributes.sizeInBytes();
         return al.isPresent() ? OptionalInt.of(6 + al.getAsInt()) : OptionalInt.empty();
     }
 }

@@ -482,7 +482,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(3 + (rawBytes == null
                     ? stringValue.chars()
                             .map(ch -> (ch >= '\001' && ch <= '\177') ? 1 : ch > '\u07FF' ? 3 : 2)
@@ -508,7 +508,7 @@ public abstract sealed class AbstractPoolEntry {
             pool.writeU2(ref1.index());
         }
 
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(3);
         }
 
@@ -543,7 +543,7 @@ public abstract sealed class AbstractPoolEntry {
             pool.writeU2(ref2.index());
         }
 
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(5);
         }
 
@@ -846,7 +846,7 @@ public abstract sealed class AbstractPoolEntry {
             pool.writeU2(nameAndType.index());
         }
 
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(5);
         }
 
@@ -956,7 +956,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(4);
         }
 
@@ -1110,7 +1110,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(5);
         }
 
@@ -1148,7 +1148,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(5);
         }
 
@@ -1185,7 +1185,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(9);
         }
 
@@ -1222,7 +1222,7 @@ public abstract sealed class AbstractPoolEntry {
         }
 
         @Override
-        public OptionalInt payloadLen() {
+        public OptionalInt sizeInBytes() {
             return OptionalInt.of(9);
         }
 

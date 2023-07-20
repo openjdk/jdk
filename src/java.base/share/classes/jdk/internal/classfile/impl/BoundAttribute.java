@@ -59,11 +59,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     }
 
     @Override
-    public OptionalInt payloadLen() {
-        return OptionalInt.of(_payloadLen());
+    public OptionalInt sizeInBytes() {
+        return OptionalInt.of(payloadLen() + 6);
     }
 
-    private int _payloadLen() {
+    private int payloadLen() {
         return classReader.readInt(payloadStart - 4);
     }
 
@@ -78,7 +78,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
     }
 
     public byte[] contents() {
-        return classReader.readBytes(payloadStart, _payloadLen());
+        return classReader.readBytes(payloadStart, payloadLen());
     }
 
     @Override
@@ -107,7 +107,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         if (!buf.canWriteDirect(classReader))
             attributeMapper().writeAttribute(buf, (T) this);
         else
-            classReader.copyBytesTo(buf, payloadStart - NAME_AND_LENGTH_PREFIX, _payloadLen() + NAME_AND_LENGTH_PREFIX);
+            classReader.copyBytesTo(buf, payloadStart - NAME_AND_LENGTH_PREFIX, payloadLen() + NAME_AND_LENGTH_PREFIX);
     }
 
     public ConstantPool constantPool() {
@@ -175,7 +175,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
 
                     @Override
                     public OptionalInt payloadLen(UnknownAttribute attr) {
-                        throw new UnsupportedOperationException("Payload calculation of unknown attribute " + name() + " not supported");
+                        throw new UnsupportedOperationException("Size calculation of unknown attribute " + name() + " not supported");
                     }
                 };
                 filled[i] = new BoundUnknownAttribute(reader, fakeMapper, p);
