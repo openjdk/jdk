@@ -51,14 +51,14 @@ public class TestListFormat {
             "sbef {0} sbet {1}",
             "{0} mid {1}",
             "{0} ebet {1} eaft",
-            "{0} two {1}",
-            "{0} three {1} three {2}",
+            "twobef {0} two {1} twoaft",
+            "threebef {0} three {1} three {2} threeaft",
     };
 
     static Arguments[] getInstance_1Arg() {
         return new Arguments[] {
-                arguments(SAMPLE2, "foo two bar"),
-                arguments(SAMPLE3, "foo three bar three baz"),
+                arguments(SAMPLE2, "twobef foo two bar twoaft"),
+                arguments(SAMPLE3, "threebef foo three bar three baz threeaft"),
                 arguments(SAMPLE4, "sbef foo sbet bar mid baz ebet qux eaft"),
         };
     }
@@ -101,7 +101,7 @@ public class TestListFormat {
                 arguments(Locale.JAPAN, ListFormat.Type.OR, ListFormat.Style.NARROW,
                         "foo\u3001bar\u3001\u307e\u305f\u306fbaz", true),
                 arguments(Locale.JAPAN, ListFormat.Type.UNIT, ListFormat.Style.NARROW,
-                        "foobarbaz", false), // no delimiter
+                        "foobarbaz", false), // no delimiter, impossible to parse/roundtrip
         };
     }
 
