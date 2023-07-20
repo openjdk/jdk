@@ -30,11 +30,14 @@ import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.module.ModuleDescriptor;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -236,13 +239,27 @@ public class MethodHandleProxies {
 
     // ClassValue, InputStream, OutputStream ...
     private static boolean hasAccessibleNoArgConstructor(Class<?> abstractClass) {
-        try {
-            var ctor = abstractClass.getDeclaredConstructor();
-            var mods = ctor.getModifiers();
-            return Modifier.isPublic(mods) || Modifier.isProtected(mods);
-        } catch (NoSuchMethodException e) {
-            return false;
+        Constructor<?> constructor;
+        @SuppressWarnings("removal")
+        var sm = System.getSecurityManager();
+        if (sm != null) {
+            try {
+                @SuppressWarnings("removal")
+                var ctor = AccessController.doPrivileged((PrivilegedExceptionAction<Constructor<?>>)
+                        abstractClass::getDeclaredConstructor);
+                constructor = ctor;
+            } catch (PrivilegedActionException e) {
+                return false;
+            }
+        } else {
+            try {
+                constructor = abstractClass.getConstructor();
+            } catch (NoSuchMethodException e) {
+                return false;
+            }
         }
+        int mods = constructor.getModifiers();
+        return Modifier.isPublic(mods) || Modifier.isProtected(mods);
     }
 
     /**
@@ -261,8 +278,20 @@ public class MethodHandleProxies {
 
         // Find protected abstract methods
         // protected methods only come from super classes
+        @SuppressWarnings("removal")
+        var sm = System.getSecurityManager();
         for (Class<?> c = type; c != Object.class && c != null; c = c.getSuperclass()) {
-            for (var method : c.getDeclaredMethods()) {
+            Method[] methods;
+            if (sm != null) {
+                @SuppressWarnings("removal")
+                var mths = AccessController.doPrivileged((PrivilegedAction<Method[]>)
+                        c::getDeclaredMethods);
+                methods = mths;
+            } else {
+                methods = c.getDeclaredMethods();
+            }
+
+            for (var method : methods) {
                 var mod = method.getModifiers();
                 if (Modifier.isAbstract(mod) && Modifier.isProtected(mod)) {
                     inheritance.merge(method);
