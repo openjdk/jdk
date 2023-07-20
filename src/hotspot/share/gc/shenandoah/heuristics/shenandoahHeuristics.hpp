@@ -26,7 +26,6 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeapStats.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
