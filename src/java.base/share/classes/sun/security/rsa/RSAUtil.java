@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -173,6 +173,20 @@ public class RSAUtil {
     public static byte[] encodeSignature(ObjectIdentifier oid, byte[] digest) {
         DerOutputStream out = new DerOutputStream();
         new AlgorithmId(oid).encode(out);
+        out.putOctetString(digest);
+        DerValue result =
+            new DerValue(DerValue.tag_Sequence, out.toByteArray());
+        return result.toByteArray();
+    }
+
+    /**
+     * Encode the digest with NULL parameter value omitted, return the
+     * to-be-signed data.
+     */
+    public static byte[] encodeSignatureOmitNull(ObjectIdentifier oid,
+            byte[] digest) {
+        DerOutputStream out = new DerOutputStream();
+        new AlgorithmId(oid, true).encode(out);
         out.putOctetString(digest);
         DerValue result =
             new DerValue(DerValue.tag_Sequence, out.toByteArray());

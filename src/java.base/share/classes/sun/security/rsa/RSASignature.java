@@ -25,7 +25,6 @@
 
 package sun.security.rsa;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import java.security.*;
@@ -193,10 +192,10 @@ abstract class RSASignature extends SignatureSpi {
             if (padded != null) {
                 return RSACore.rsa(padded, privateKey, true);
             }
-            throw new SignatureException("Could not sign data");
         } catch (GeneralSecurityException e) {
             throw new SignatureException("Could not sign data", e);
         }
+        throw new SignatureException("Could not sign data");
     }
 
     // verify the data and return the result. See JCA doc
@@ -215,25 +214,20 @@ abstract class RSASignature extends SignatureSpi {
 
             // https://www.rfc-editor.org/rfc/rfc8017.html#section-8.2.2
             // Step 4 suggests comparing the encoded message
+            byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
+
             byte[] digest = getDigestValue();
             byte[] encoded = RSAUtil.encodeSignature(digestOID, digest);
             byte[] padded = padding.pad(encoded);
-            byte[] decrypted = RSACore.rsa(sigBytes, publicKey);
-
-            boolean status = MessageDigest.isEqual(padded, decrypted);
-            if (!status) {
-                // fall back to the decode approach for max compatibility
-                byte[] unpadded = padding.unpad(decrypted);
-                if (unpadded != null) {
-                    status = MessageDigest.isEqual(digest,
-                            RSAUtil.decodeSignature(digestOID, unpadded));
-                }
+            if (!MessageDigest.isEqual(padded, decrypted)) {
+                byte[] encoded2 = RSAUtil.encodeSignatureOmitNull
+                        (digestOID, digest);
+                byte[] padded2 = padding.pad(encoded2);
+                return MessageDigest.isEqual(padded2, decrypted);
             }
-            return status;
+            return true;
         } catch (javax.crypto.BadPaddingException e) {
             return false;
-        } catch (IOException e) {
-            throw new SignatureException("Signature encoding error", e);
         } finally {
             resetDigest();
         }
