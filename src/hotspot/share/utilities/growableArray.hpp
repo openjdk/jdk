@@ -142,17 +142,17 @@ public:
   }
 
   E& at(int i) {
-    assert(0 <= i && i < _len, "illegal index %d, %d accessible elements", i, _len);
+    assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     return _data[i];
   }
 
   E const& at(int i) const {
-    assert(0 <= i && i < _len, "illegal index %d, %d accessible elements", i, _len);
+    assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     return _data[i];
   }
 
   E* adr_at(int i) const {
-    assert(0 <= i && i < _len, "illegal index %d, %d accessible elements", i, _len);
+    assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     return &_data[i];
   }
 
@@ -184,7 +184,7 @@ public:
   }
 
   void at_put(int i, const E& elem) {
-    assert(0 <= i && i < _len, "illegal index %d, %d accessible elements", i, _len);
+    assert(0 <= i && i < _len, "illegal index %d for length %d", i, _len);
     _data[i] = elem;
   }
 
@@ -245,7 +245,7 @@ public:
   }
 
   void remove_at(int index) {
-    assert(0 <= index && index < _len, "illegal index %d, %d accessible elements", index, _len);
+    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
     for (int j = index + 1; j < _len; j++) {
       _data[j-1] = _data[j];
     }
@@ -270,7 +270,7 @@ public:
 
   // The order is changed.
   void delete_at(int index) {
-    assert(0 <= index && index < _len, "illegal index %d", index);
+    assert(0 <= index && index < _len, "illegal index %d for length %d", index, _len);
     if (index < --_len) {
       // Replace removed element with last one.
       _data[index] = _data[_len];
@@ -426,7 +426,7 @@ public:
 
   // inserts the given element before the element at index i
   void insert_before(const int idx, const E& elem) {
-    assert(0 <= idx && idx <= this->_len, "illegal index");
+    assert(0 <= idx && idx <= this->_len, "illegal index %d for length %d", idx, this->_len);
     if (this->_len == this->_capacity) grow(this->_len);
     for (int j = this->_len - 1; j >= idx; j--) {
       this->_data[j + 1] = this->_data[j];
@@ -436,7 +436,7 @@ public:
   }
 
   void insert_before(const int idx, const GrowableArrayView<E>* array) {
-    assert(0 <= idx && idx <= this->_len, "illegal index");
+    assert(0 <= idx && idx <= this->_len, "illegal index %d for length %d", idx, this->_len);
     int array_len = array->length();
     int new_len = this->_len + array_len;
     if (new_len >= this->_capacity) grow(new_len);
