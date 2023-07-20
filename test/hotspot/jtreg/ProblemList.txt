@@ -73,10 +73,12 @@ compiler/onSpinWait/TestOnSpinWaitAArch64DefaultFlags.java 8277503 linux-aarch64
 
 # :hotspot_gc
 
+gc/CriticalNativeArgs.java#id1 8312028 generic-all
 gc/epsilon/TestMemoryMXBeans.java 8206434 generic-all
 gc/g1/humongousObjects/objectGraphTest/TestObjectGraphAfterGC.java 8156755 generic-all
 gc/g1/logging/TestG1LoggingFailure.java 8169634 generic-all
 gc/g1/humongousObjects/TestHeapCounters.java 8178918 generic-all
+gc/stress/CriticalNativeStress.java#id1 8312028 generic-all
 gc/stress/gclocker/TestExcessGCLockerCollections.java 8229120 generic-all
 gc/stress/gclocker/TestGCLockerWithParallel.java 8180622 generic-all
 gc/stress/gclocker/TestGCLockerWithG1.java 8180622 generic-all
