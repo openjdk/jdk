@@ -47,7 +47,13 @@ import java.util.stream.IntStream;
  * {@link Type#OR OR}, and {@link Type#UNIT UNIT}, also two styles for each
  * type are provided; {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
  * {@link Style#NARROW NARROW}. For example, an array of Strings
- * {@code ["Foo", "Bar", "Baz"]} may be formatted as follows in US English:
+ * {@code ["Foo", "Bar", "Baz"]} may be formatted as follows in US English with
+ * the following snippet ({@code STANDARD}, {@code FULL} case):
+ * {@snippet lang=java :
+ * ListFormat.getInstance(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL)
+ *     .format(new String[] {"Foo", "Bar", "Baz"})
+ * }
+ * Formatted strings will be:
  * <table class="striped">
  * <caption style="display:none">Formatting examples</caption>
  * <thead>
@@ -71,6 +77,9 @@ import java.util.stream.IntStream;
  *     <td>Foo Bar Baz</td>
  * </tbody>
  * </table>
+ * <p>
+ * Instead of relying on the locale, type, and style, a customized patterns can be
+ * specified with an instance created by {@link #getInstance(String[])}.
  * @implNote The default implementation utilizes {@link MessageFormat}
  * for formatting and parsing.
  *
@@ -161,17 +170,36 @@ public class ListFormat extends Format {
     /**
      * {@return the list format object for the specified patterns array}
      * <p>
-     * This factory produces a customized instance based on passed patterns array,
-     * instead of letting the runtime provide appropriate patterns for the locale/type/style.
+     * This factory produces an instance based on the customized patterns array,
+     * instead of letting the runtime provide appropriate patterns for the Locale/Type/Style.
      * <p>
-     * Patterns array consists of strings of patterns that correspond to Unicode LDML's
+     * Patterns array consists of five Strings of patterns, each correspond to Unicode LDML's
      * {@code listPatternPart}, i.e., "start", "middle", "end", "2", and
      * "3" patterns. Each pattern contains "{0}" and "{1}" (and "{2}" for pattern "3")
-     * placeholders that are substituted with the passed input strings on formatting. For example,
-     * the following Patterns array is equivalent to {@code STANDARD} type,
-     * {@code FULL} style in US English:
+     * placeholders that are substituted with the passed input strings on formatting.
+     * <p>
+     * Each pattern string is first parsed as follows. Patterns in parens are optional:
+     * <blockquote><pre>
+     * start := (start_before){0}start_between{1}
+     * middle := {0}middle_between{1}
+     * end := {0}end_between{1}(end_after)
+     * two := (two_before){0}two_between{1}(two_after)
+     * three := (three_before){0}three_between{1}three_between{2}(three_after)
+     * </pre></blockquote>
+     * then, the {@code n} elements in the input string array substitute these
+     * placeholders:
+     * <blockquote><pre>
+     * (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
+     * </pre></blockquote>
+     * If the length of the input array is two or three, specific pattern for the length,
+     * if exists, is used. Following table shows patterns array which is equivalent to
+     * {@code STANDARD} type, {@code FULL} style in US English:
      * <table class="striped">
-     * <caption style="display:none">Patterns</caption>
+     * <caption style="display:none">Standard/Full Patterns in US English</caption>
+     * <thead>
+     * <tr><th scope="col">Pattern Kind</th>
+     *     <th scope="col">Pattern String</th></tr>
+     * </thead>
      * <tbody>
      * <tr><th scope="row" style="text-align:left">start</th>
      *     <td>"{0}, {1}"</td>
@@ -189,6 +217,10 @@ public class ListFormat extends Format {
      * formatted as:
      * <table class="striped">
      * <caption style="display:none">Formatting examples</caption>
+     * <thead>
+     * <tr><th scope="col">Input String Array</th>
+     *     <th scope="col">Formatted String</th></tr>
+     * </thead>
      * <tbody>
      * <tr><th scope="row" style="text-align:left">["Foo", "Bar", "Baz", "Qux"]</th>
      *     <td>"Foo, Bar, Baz, and Qux"</td>
@@ -196,7 +228,6 @@ public class ListFormat extends Format {
      *     <td>"Foo, Bar, and Baz"</td>
      * <tr><th scope="row" style="text-align:left">["Foo", "Bar"]</th>
      *     <td>"Foo and Bar"</td>
-     *     <td>""</td>
      * </tbody>
      * </table>
      *
@@ -212,8 +243,8 @@ public class ListFormat extends Format {
 
     /**
      * {@return the string that consists of the input strings, concatenated with the
-     * specified {@code Type} and {@code Style}}
-     * @param input The array of input strings to format. There should be at least two
+     * patterns specified, or derived from {@code Locale}, {@code Type}, and {@code Style}}
+     * @param input The array of input strings to format. There should at least be two
      *              elements in the array, otherwise {@code IllegalArgumentException} is
      *              thrown
      * @throws IllegalArgumentException if the length of the input array is less than two
