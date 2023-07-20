@@ -916,9 +916,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
   size_t guard_size = os::Linux::default_guard_size(thr_type);
 
-  if (PreventTHPsForThreadStacks) {
+  if (!DisableTHPStackMitigation) {
     // In addition to the glibc guard page that prevents inter-thread-stack hugepage
-    // coalescation (see comment in os::Linux::default_guard_size()), we also make
+    // coalescing (see comment in os::Linux::default_guard_size()), we also make
     // sure the stack size itself is not huge-page-size aligned; that makes it much
     // more likely for thread stack boundaries to be unaligned as well and hence
     // protects thread stacks from being targeted by khugepaged.
@@ -3086,7 +3086,7 @@ bool os::Linux::libnuma_init() {
 
 size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
 
-  if (PreventTHPsForThreadStacks) {
+  if (!DisableTHPStackMitigation) {
     // If THPs are unconditionally enabled, the following scenario can lead to huge RSS
     // - parent thread spawns, in quick succession, multiple child threads
     // - child threads are slow to start
@@ -3101,8 +3101,8 @@ size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
     // into one VMA.
     //
     // Yes, this means we have two guard sections - the glibc and the JVM one - per thread. But the
-    // cost for that one extra protected page is dwarfed a large win in performance and memory that
-    // avoiding interference by khugepaged buys us.
+    // cost for that one extra protected page is dwarfed from a large win in performance and memory
+    // that avoiding interference by khugepaged buys us.
     return os::vm_page_size();
   }
 
@@ -3773,15 +3773,15 @@ void os::large_page_init() {
   // coalesce small pages in thread stacks to huge pages. That costs a lot of memory and
   // is usually unwanted for thread stacks. Therefore we attempt to prevent THP formation in
   // thread stacks unless the user explicitly allowed THP formation by manually disabling
-  // -XX:-PreventTHPsForThreadStacks.
+  // -XX:+DisableTHPStackMitigation.
   if (HugePages::thp_mode() == THPMode::always) {
-    if (PreventTHPsForThreadStacks) {
-      log_info(pagesize)("JVM will attempt to prevent THPs in thread stacks.");
-    } else if (!FLAG_IS_DEFAULT(PreventTHPsForThreadStacks)) {
+    if (DisableTHPStackMitigation) {
       log_info(pagesize)("JVM will *not* prevent THPs in thread stacks. This may cause high RSS.");
+    } else {
+      log_info(pagesize)("JVM will attempt to prevent THPs in thread stacks.");
     }
   } else {
-    FLAG_SET_ERGO(PreventTHPsForThreadStacks, false); // not needed
+    FLAG_SET_ERGO(DisableTHPStackMitigation, true); // Mitigation not needed
   }
 
   // 1) Handle the case where we do not want to use huge pages

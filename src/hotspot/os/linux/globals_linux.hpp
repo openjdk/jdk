@@ -89,9 +89,11 @@
           "to disable both the override and the printouts."             \
           "See prctl(PR_SET_TIMERSLACK) for more info.")                \
                                                                         \
-  product(bool, PreventTHPsForThreadStacks, true, EXPERIMENTAL,         \
-          "If true, the JVM will attempt to prevent formation of "      \
-          "transparent huge pages in thread stacks.")                   \
+  product(bool, DisableTHPStackMitigation, false, DIAGNOSTIC,           \
+          "If THPs are unconditionally enabled on the system (mode "    \
+          "\"always\"), the JVM will prevent THP from forming in "      \
+          "thread stacks. This switch disables that mitigation and "    \
+          "allows THPs to form in thread stacks.")                      \
                                                                         \
   develop(bool, DelayThreadStartALot, false,                            \
           "Artificially delay thread starts randomly for testing.")     \
