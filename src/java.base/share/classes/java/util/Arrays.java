@@ -4555,7 +4555,7 @@ public final class Arrays {
         int result = 1;
 
         for (Object element : a)
-            result = 31 * result + Objects.hashCode(element);
+            result = 31 * result + (element == null ? 0 : element.hashCode());
 
         return result;
     }
