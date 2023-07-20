@@ -46,7 +46,8 @@ class Chunk {
   const size_t _len;      // Size of this Chunk
  public:
   Chunk(size_t length);
-
+  void operator delete(void*) = delete;
+  void* operator new(size_t) = delete;
   enum {
     // default sizes; make them slightly smaller than 2**k to guard against
     // buddy-system style malloc implementations
