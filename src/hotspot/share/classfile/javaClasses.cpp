@@ -93,6 +93,10 @@
 #include "jvmci/jvmciJavaClasses.hpp"
 #endif
 
+#ifdef AIX
+#include <unistd.h>
+#endif
+
 #define DECLARE_INJECTED_FIELD(klass, name, signature, may_be_java)           \
   { VM_CLASS_ID(klass), VM_SYMBOL_ENUM_NAME(name##_name), VM_SYMBOL_ENUM_NAME(signature), may_be_java },
 
@@ -4711,7 +4715,7 @@ public:
   UnsafeConstantsFixup() {
     // round up values for all static final fields
     _address_size = sizeof(void*);
-    _page_size = (int)os::vm_page_size();
+    _page_size = AIX_ONLY(sysconf(_SC_PAGESIZE)) NOT_AIX((int)os::vm_page_size());
     _big_endian = LITTLE_ENDIAN_ONLY(false) BIG_ENDIAN_ONLY(true);
     _use_unaligned_access = UseUnalignedAccesses;
     _data_cache_line_flush_size = (int)VM_Version::data_cache_line_flush_size();
