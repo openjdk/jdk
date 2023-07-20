@@ -45,6 +45,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "runtime/signature.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/align.hpp"
@@ -118,6 +119,7 @@ public:
 
     init_header();
     gather_source_objs();
+    gather_array_klasses();
     reserve_buffer();
 
     log_info(cds, dynamic)("Copying %d klasses and %d symbols",
@@ -139,11 +141,11 @@ public:
 
       ArchiveBuilder::OtherROAllocMark mark;
       SystemDictionaryShared::write_to_archive(false);
+      DynamicArchive::dump_array_klasses();
 
       serialized_data = ro_region()->top();
       WriteClosure wc(ro_region());
-      SymbolTable::serialize_shared_table_header(&wc, false);
-      SystemDictionaryShared::serialize_dictionary_headers(&wc, false);
+      ArchiveBuilder::serialize_dynamic_archivable_items(&wc);
     }
 
     verify_estimate_size(_estimated_hashtable_bytes, "Hashtables");
@@ -160,6 +162,7 @@ public:
 
     write_archive(serialized_data);
     release_header();
+    DynamicArchive::post_dump();
 
     post_dump();
 
@@ -170,6 +173,28 @@ public:
   virtual void iterate_roots(MetaspaceClosure* it) {
     FileMapInfo::metaspace_pointers_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
+  }
+
+  virtual void iterate_primitive_array_klasses(MetaspaceClosure* it) {
+    for (int i = T_BOOLEAN; i <= T_LONG; i++) {
+      assert(is_java_primitive((BasicType)i), "sanity");
+      Klass* k = Universe::typeArrayKlassObj((BasicType)i);  // this give you "[I", etc
+      assert(MetaspaceShared::is_shared_static((void*)k),
+        "one-dimensional primitive array should be in static archive");
+      ArrayKlass* ak = ArrayKlass::cast(k);
+      while (ak != nullptr && ak->is_shared()) {
+        Klass* next_k = ak->array_klass_or_null();
+        if (next_k != nullptr) {
+          ak = ArrayKlass::cast(next_k);
+        } else {
+          ak = nullptr;
+        }
+      }
+      if (ak != nullptr && (ak->dimension() > 1)) {
+        // this is the lowest dimension that's not in the static archive
+        it->push(&ak);
+      }
+    }
   }
 };
 
@@ -348,6 +373,143 @@ public:
     RegeneratedClasses::cleanup();
   }
 };
+
+GrowableArray<ArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
+Array<ArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
+
+void DynamicArchive::append_array_klass(ArrayKlass* ak) {
+  if (_array_klasses == nullptr) {
+    _array_klasses = new (mtClassShared) GrowableArray<ArrayKlass*>(50, mtClassShared);
+  }
+  _array_klasses->append(ak);
+}
+
+void DynamicArchive::dump_array_klasses() {
+  assert(DynamicDumpSharedSpaces, "DynamicDumpSharedSpaces only");
+  if (_array_klasses != nullptr) {
+    ArchiveBuilder* builder = ArchiveBuilder::current();
+    int num_array_klasses = _array_klasses->length();
+    _dynamic_archive_array_klasses =
+        ArchiveBuilder::new_ro_array<ArrayKlass*>(num_array_klasses);
+    for (int i = 0; i < num_array_klasses; i++) {
+      ArrayKlass* ak = _array_klasses->at(i);
+      _dynamic_archive_array_klasses->at_put(i, ak);
+      builder->write_pointer_in_buffer(_dynamic_archive_array_klasses->adr_at(i), ak);
+    }
+  }
+}
+
+void DynamicArchive::setup_array_klasses() {
+  if (_dynamic_archive_array_klasses != nullptr) {
+    for (int i = 0; i < _dynamic_archive_array_klasses->length(); i++) {
+      ArrayKlass* ak = _dynamic_archive_array_klasses->at(i);
+      ArrayKlass* sav_ak = ak;
+      SignatureStream ss(ak->name(), false);
+      int ndims = ss.skip_array_prefix();  // skip all '['s, has_envelope() requires it.
+      BasicType t = ss.type();
+      bool is_obj_array = ss.has_envelope();
+      Klass* bk = nullptr;
+      if (is_obj_array) {
+        bk = ObjArrayKlass::cast(ak)->bottom_klass();
+        assert(MetaspaceShared::is_shared_static((void*)bk), "bottom_klass should be in static archive");
+      }
+      if (ak->dimension() > 1) {
+        Klass* higher_dim = nullptr;
+        while (ak->dimension() > 1) {
+          if (ak->dimension() == 2) {
+            // Save the two-dimensional array for setting up primitive array.
+            higher_dim = ak;
+          }
+          Klass* ld = ak->lower_dimension();
+          assert(ld != nullptr, "unexpected null lower_dimension klass");
+          assert(MetaspaceShared::is_in_shared_metaspace((void*)ld), "lower_dimension klass should be in CDS archive");
+          ld = ArrayKlass::cast(ld)->lower_dimension();
+          if (ld != nullptr) {
+            ak = ArrayKlass::cast(ld);
+          }  else {
+            break;
+          }
+        }
+        if (is_obj_array) {
+          assert(ak->dimension() >= 1, "sanity");
+          int target_dim = ak->dimension() - 1;
+          assert(target_dim >= 0, "sanity");
+          if (target_dim == 0) {
+            // Point InstanceKlass::_array_klasses to the one-dimensional archived ObjArrayKlass
+            InstanceKlass* ik = InstanceKlass::cast(bk);
+            ik->release_set_array_klasses(ObjArrayKlass::cast(ak));
+          } else {
+            ObjArrayKlass* fixup_oak = ObjArrayKlass::cast(bk->array_klass_or_null(target_dim));
+            assert(fixup_oak != nullptr, "sanity");
+            assert(MetaspaceShared::is_shared_static((void*)fixup_oak),
+              "ObjArrayKlass to be fixed should be in static CDS archive");
+            fixup_oak->set_higher_dimension(ak);
+          }
+        } else {
+          if (is_java_primitive(t)) {
+            // Setup primitive array - obtain the equivalent of a "bottom_klass" of a primitive array.
+            Klass* k = Universe::typeArrayKlassObj(t);
+            // A one-dimensional primitive array should exist in the static CDS archive.
+            assert(ArrayKlass::cast(k)->dimension() == 1, "expecting one-dimension primitive array klass");
+            assert(MetaspaceShared::is_shared_static((void*)k),
+              "one-dimension primitive array klass should be in static CDS archive");
+            if (ArrayKlass::cast(k)->higher_dimension() == nullptr) {
+              // Point _higher_dimension to the archived array.
+              ArrayKlass::cast(k)->set_higher_dimension(higher_dim);
+            }
+          }
+        }
+      } else {
+        assert(ak->dimension() == 1, "must be");
+        assert(ak->lower_dimension() == nullptr, "unexpected non-null lower_dimension klass");
+        assert(is_obj_array, "sanity");
+        // Point InstanceKlass::_array_klasses to the one-dimensional archived ObjArrayKlass
+        InstanceKlass* ik = InstanceKlass::cast(bk);
+        ik->release_set_array_klasses(ObjArrayKlass::cast(ak));
+      }
+    }
+    log_debug(cds)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
+  }
+}
+
+void DynamicArchive::serialize_array_klasses(SerializeClosure* soc) {
+  soc->do_ptr(&_dynamic_archive_array_klasses);
+}
+
+void DynamicArchive::make_array_klasses_shareable() {
+  if (_array_klasses != nullptr) {
+    int num_array_klasses = _array_klasses->length();
+    for (int i = 0; i < num_array_klasses; i++) {
+      ArrayKlass* k = ArchiveBuilder::current()->get_buffered_addr(_array_klasses->at(i));
+      k->remove_unshareable_info();
+    }
+  }
+}
+
+void DynamicArchive::post_dump() {
+  if (_array_klasses != nullptr) {
+    delete _array_klasses;
+  }
+}
+
+int DynamicArchive::num_array_klasses() {
+  return _array_klasses != nullptr ? _array_klasses->length() : 0;
+}
+
+void DynamicArchive::log_array_class_load(JavaThread* thread, Klass* k) {
+  LogTarget(Debug, class, load, cds) lt;
+  if (lt.is_enabled() && MetaspaceShared::is_in_shared_metaspace((void*)k)) {
+    LogStream ls(lt);
+    ResourceMark rm(thread);
+    ls.print("%s", k->external_name());
+    if (MetaspaceShared::is_shared_dynamic((void*)k)) {
+      ls.print(" source: shared objects file (top)");
+    } else {
+      ls.print(" source: shared objects file");
+    }
+    ls.cr();
+  }
+}
 
 void DynamicArchive::check_for_dynamic_dump() {
   if (DynamicDumpSharedSpaces && !UseSharedSpaces) {

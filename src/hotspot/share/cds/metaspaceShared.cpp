@@ -33,6 +33,7 @@
 #include "cds/classPrelinker.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/filemap.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/lambdaFormInvokers.hpp"
@@ -468,6 +469,8 @@ public:
       }
     }
   }
+
+  virtual void iterate_primitive_array_klasses(MetaspaceClosure* it) { ShouldNotReachHere(); }
 };
 
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
@@ -867,6 +870,14 @@ void MetaspaceShared::set_shared_metaspace_range(void* base, void *static_top, v
 bool MetaspaceShared::is_shared_dynamic(void* p) {
   if ((p < MetaspaceObj::shared_metaspace_top()) &&
       (p >= _shared_metaspace_static_top)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool MetaspaceShared::is_shared_static(void* p) {
+  if (is_in_shared_metaspace(p) && !is_shared_dynamic(p)) {
     return true;
   } else {
     return false;
@@ -1469,8 +1480,8 @@ void MetaspaceShared::initialize_shared_spaces() {
   if (dynamic_mapinfo != nullptr) {
     intptr_t* buffer = (intptr_t*)dynamic_mapinfo->serialized_data();
     ReadClosure rc(&buffer);
-    SymbolTable::serialize_shared_table_header(&rc, false);
-    SystemDictionaryShared::serialize_dictionary_headers(&rc, false);
+    ArchiveBuilder::serialize_dynamic_archivable_items(&rc);
+    DynamicArchive::setup_array_klasses();
     dynamic_mapinfo->close();
     dynamic_mapinfo->unmap_region(MetaspaceShared::bm);
   }

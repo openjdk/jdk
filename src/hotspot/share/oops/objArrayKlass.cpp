@@ -44,6 +44,9 @@
 #include "runtime/handles.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "utilities/macros.hpp"
+#if INCLUDE_CDS
+#include "cds/dynamicArchive.hpp"
+#endif
 
 ObjArrayKlass* ObjArrayKlass::allocate(ClassLoaderData* loader_data, int n, Klass* k, Symbol* name, TRAPS) {
   assert(ObjArrayKlass::header_size() <= InstanceKlass::header_size(),
@@ -312,7 +315,14 @@ Klass* ObjArrayKlass::array_klass(int n, TRAPS) {
 
   assert(dimension() <= n, "check order of chain");
   int dim = dimension();
-  if (dim == n) return this;
+  if (dim == n) {
+#if INCLUDE_CDS
+  if (UseSharedSpaces) {
+    DynamicArchive::log_array_class_load(THREAD, this);
+  }
+#endif
+    return this;
+  }
 
   // lock-free read needs acquire semantics
   if (higher_dimension_acquire() == nullptr) {

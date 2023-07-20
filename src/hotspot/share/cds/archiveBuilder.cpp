@@ -28,6 +28,7 @@
 #include "cds/archiveUtils.hpp"
 #include "cds/cppVtables.hpp"
 #include "cds/dumpAllocStats.hpp"
+#include "cds/dynamicArchive.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "cds/regeneratedClasses.hpp"
@@ -232,6 +233,9 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
   log_info(cds)("Gathering classes and symbols ... ");
   GatherKlassesAndSymbols doit(this);
   iterate_roots(&doit);
+  if (DynamicDumpSharedSpaces) {
+    iterate_primitive_array_klasses(&doit);
+  }
 #if INCLUDE_CDS_JAVA_HEAP
   if (is_dumping_full_module_graph()) {
     ClassLoaderDataShared::iterate_symbols(&doit);
@@ -518,10 +522,6 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
     InstanceKlass* ik = InstanceKlass::cast(klass);
     return SystemDictionaryShared::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
-    if (DynamicDumpSharedSpaces) {
-      // Don't support archiving of array klasses for now (WHY???)
-      return true;
-    }
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
     if (bottom->is_instance_klass()) {
       return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
@@ -790,6 +790,38 @@ void ArchiveBuilder::make_klasses_shareable() {
   log_info(cds)("    obj array classes  = %5d", num_obj_array_klasses);
   log_info(cds)("    type array classes = %5d", num_type_array_klasses);
   log_info(cds)("               symbols = %5d", _symbols->length());
+
+  DynamicArchive::make_array_klasses_shareable();
+}
+
+void ArchiveBuilder::gather_array_klasses() {
+  for (int i = 0; i < klasses()->length(); i++) {
+    if (klasses()->at(i)->is_objArray_klass()) {
+      ObjArrayKlass* oak = ObjArrayKlass::cast(klasses()->at(i));
+      Klass* elem = oak->element_klass();
+      if (MetaspaceShared::is_shared_static(elem)) {
+        // Only capture the array klass whose element_klass is in the static archive.
+        // During run time, setup (see DynamicArchive::setup_array_klasses()) is needed
+        // so that the element_klass can find its array klasses from the dynamic archive.
+        ArrayKlass* ak = ArrayKlass::cast(klasses()->at(i));
+        DynamicArchive::append_array_klass(ak);
+      } else {
+        // The element_klass and its array klasses are in the same archive.
+        if (oak->dimension() > 1) {
+          assert(ArrayKlass::cast(elem)->higher_dimension() == oak, "must be");
+        } else {
+          assert(InstanceKlass::cast(elem)->array_klasses() == oak, "must be");
+        }
+      }
+    }
+  }
+  log_debug(cds)("Total array klasses gathered for dynamic archive: %d", DynamicArchive::num_array_klasses());
+}
+
+void ArchiveBuilder::serialize_dynamic_archivable_items(SerializeClosure* soc) {
+  SymbolTable::serialize_shared_table_header(soc, false);
+  SystemDictionaryShared::serialize_dictionary_headers(soc, false);
+  DynamicArchive::serialize_array_klasses(soc);
 }
 
 uintx ArchiveBuilder::buffer_to_offset(address p) const {
