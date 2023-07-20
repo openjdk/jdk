@@ -387,17 +387,18 @@ final class CompilerToVM {
                     long callerMethodPointer);
 
     /**
-     * Ensures that the type referenced by the specified {@code JVM_CONSTANT_InvokeDynamic} entry at
-     * index {@code cpi} in {@code constantPool} is loaded and initialized.
+     * Converts the operand of an invokedynamic instruction in {@code operand}
+     * to an index directly into {@code constantPool}.
      *
-     * @throws IllegalArgumentException if {@code cpi} is not an invokedynamic index
-     * @return the invokedynamic index
+     * @param resolve if {@true}, then resolve the entry (which may call the bootstrap method)
+     * @throws IllegalArgumentException if {@code operand} is not a valid invokedynamic operand
+     * @return {@code JVM_CONSTANT_InvokeDynamic} constant pool entry index for the invokedynamic
      */
-    int resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, int cpi) {
-        return resolveInvokeDynamicInPool(constantPool, constantPool.getConstantPoolPointer(), cpi);
+    int invokeDynamicOperandToCPIndex(HotSpotConstantPool constantPool, int operand, boolean resolve) {
+        return invokeDynamicOperandToCPIndex(constantPool, constantPool.getConstantPoolPointer(), operand, resolve);
     }
 
-    private native int resolveInvokeDynamicInPool(HotSpotConstantPool constantPool, long constantPoolPointer, int cpi);
+    private native int invokeDynamicOperandToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int operand, boolean resolve);
 
     /**
      * Resolves the details for invoking the bootstrap method associated with the
@@ -440,7 +441,7 @@ final class CompilerToVM {
 
     /**
      * If {@code cpi} denotes an entry representing a resolved dynamic adapter (see
-     * {@link #resolveInvokeDynamicInPool} and {@link #resolveInvokeHandleInPool}), return the
+     * {@link #invokeDynamicOperandToCPIndex} and {@link #resolveInvokeHandleInPool}), return the
      * opcode of the instruction for which the resolution was performed ({@code invokedynamic} or
      * {@code invokevirtual}), or {@code -1} otherwise.
      */

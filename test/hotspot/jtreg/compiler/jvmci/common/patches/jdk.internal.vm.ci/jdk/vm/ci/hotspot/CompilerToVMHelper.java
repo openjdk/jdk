@@ -132,11 +132,6 @@ public class CompilerToVMHelper {
         return CTVM.lookupMethodInPool((HotSpotConstantPool) constantPool, cpi, opcode, null);
     }
 
-    public static void resolveInvokeDynamicInPool(
-            ConstantPool constantPool, int cpi) {
-        CTVM.resolveInvokeDynamicInPool((HotSpotConstantPool) constantPool, cpi);
-    }
-
     public static void resolveInvokeHandleInPool(
             ConstantPool constantPool, int cpi) {
         CTVM.resolveInvokeHandleInPool((HotSpotConstantPool) constantPool, cpi);

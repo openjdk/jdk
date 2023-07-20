@@ -828,7 +828,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             if (opcode != Bytecodes.INVOKEDYNAMIC) {
                 throw new IllegalArgumentException("expected INVOKEDYNAMIC at " + rawIndex + ", got " + opcode);
             }
-            return compilerToVM().resolveInvokeDynamicInPool(this, rawIndex);
+            return compilerToVM().invokeDynamicOperandToCPIndex(this, rawIndex, false);
         }
         if (opcode == Bytecodes.INVOKEDYNAMIC) {
             throw new IllegalArgumentException("unexpected INVOKEDYNAMIC at " + rawIndex);
@@ -862,7 +862,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                 if (!isInvokedynamicIndex(cpi)) {
                     throw new IllegalArgumentException("must use invokedynamic index but got " + cpi);
                 }
-                index = compilerToVM().resolveInvokeDynamicInPool(this, cpi);
+                index = compilerToVM().invokeDynamicOperandToCPIndex(this, cpi, true);
                 break;
             }
             case Bytecodes.GETSTATIC:
