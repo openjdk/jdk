@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@
  *     thread accesses.
  * @modules java.base/sun.util.locale.provider
  * @compile -XDignore.symbol.file=true Bug6989440.java
- * @run main Bug6989440
+ * @run junit Bug6989440
  */
 import java.text.spi.DateFormatProvider;
 import java.util.spi.LocaleNameProvider;
@@ -37,11 +37,17 @@ import java.util.spi.TimeZoneNameProvider;
 
 import sun.util.locale.provider.LocaleServiceProviderPool;
 
+import org.junit.jupiter.api.Test;
+
 public class Bug6989440 {
     static volatile boolean failed;  // false
     static final int THREADS = 50;
 
-    public static void main(String[] args) throws Exception {
+    /* Multiple instances of Locale Service Provider Pool calling
+     * getAvailableLocales() should not throw ConcurrentModificationException
+     */
+    @Test
+    public void multiThreadAccessTest() throws Exception {
         Thread[] threads = new Thread[THREADS];
         for (int i=0; i<threads.length; i++)
             threads[i] = new TestThread();
@@ -58,17 +64,13 @@ public class Bug6989440 {
         private Class<? extends LocaleServiceProvider> cls;
         private static int count;
 
-        public TestThread(Class<? extends LocaleServiceProvider> providerClass) {
-            cls = providerClass;
-        }
-
         public TestThread() {
             int which = count++ % 3;
             switch (which) {
-                case 0 : cls = LocaleNameProvider.class; break;
-                case 1 : cls = TimeZoneNameProvider.class; break;
-                case 2 : cls = DateFormatProvider.class; break;
-                default : throw new AssertionError("Should not reach here");
+                case 0 -> cls = LocaleNameProvider.class;
+                case 1 -> cls = TimeZoneNameProvider.class;
+                case 2 -> cls = DateFormatProvider.class;
+                default -> throw new AssertionError("Should not reach here");
             }
         }
 
