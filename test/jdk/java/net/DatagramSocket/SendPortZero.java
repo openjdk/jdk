@@ -29,6 +29,7 @@ import org.testng.annotations.Test;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetSocketAddress;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.SocketException;
@@ -69,7 +70,7 @@ public class SendPortZero {
 
         // Addresses
         loopbackAddr = InetAddress.getLoopbackAddress();
-        //wildcardAddr = new InetSocketAddress(0).getAddress();
+        wildcardAddr = new InetSocketAddress(0).getAddress();
 
         // Packets
         // loopback w/port 0
@@ -77,29 +78,29 @@ public class SendPortZero {
         loopbackZeroPkt.setAddress(loopbackAddr);
         loopbackZeroPkt.setPort(0);
 
-        /*
-        //Commented until JDK-8236852 is fixed
-
         // wildcard w/port 0
         wildcardZeroPkt = new DatagramPacket(buf, 0, buf.length);
         wildcardZeroPkt.setAddress(wildcardAddr);
         wildcardZeroPkt.setPort(0);
 
-        //Commented until JDK-8236807 is fixed
-
         // wildcard addr w/valid port
+        // Referenced in bug 8236105, but not addressed.
+        // So, this scenario is not tested
         wildcardValidPkt = new DatagramPacket(buf, 0, buf.length);
-        var addr = socket.getAddress();
-        wildcardValidPkt.setAddress(addr);
-        wildcardValidPkt.setPort(socket.getLocalPort());
-      */
+        wildcardValidPkt.setAddress(wildcardAddr);
+        wildcardValidPkt.setPort(datagramSocket.getLocalPort());
     }
 
     @DataProvider(name = "data")
     public Object[][] variants() {
         return new Object[][]{
                 { datagramSocket,        loopbackZeroPkt },
+                { datagramSocket,        wildcardZeroPkt },
+                //{ datagramSocket,        wildcardValidPkt },
+
                 { datagramSocketAdaptor, loopbackZeroPkt },
+                { datagramSocketAdaptor, wildcardZeroPkt },
+                //{ datagramSocketAdaptor, wildcardValidPkt },
         };
     }
 
