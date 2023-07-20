@@ -259,14 +259,14 @@ public final class Channels {
     /**
      * Constructs a channel that reads bytes from the given stream.
      *
-     * <p> The resulting channel will not be buffered; it will simply redirect
-     * its I/O operations to the given stream.  Closing the channel will in
-     * turn cause the stream to be closed.  </p>
+     * <p> The resulting channel will be in blocking mode and will not be
+     * buffered; it will simply redirect its I/O operations to the given stream.
+     * Closing the channel will in turn cause the stream to be closed.  </p>
      *
      * @param  in
      *         The stream from which bytes are to be read
      *
-     * @return  A new readable byte channel
+     * @return  A new readable byte channel in blocking mode
      */
     public static ReadableByteChannel newChannel(InputStream in) {
         Objects.requireNonNull(in, "in");
