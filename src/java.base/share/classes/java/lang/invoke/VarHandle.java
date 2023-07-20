@@ -1737,6 +1737,11 @@ public abstract sealed class VarHandle implements Constable
                 ps[i++] = intermediate[j];
             return i;
         }
+
+        private static final @Stable AccessType[] VALUES = values();
+        static AccessType valueFromOrdinal(int mode) {
+            return VALUES[mode];
+        }
     }
 
     /**
@@ -2003,6 +2008,11 @@ public abstract sealed class VarHandle implements Constable
                 default -> throw new IllegalArgumentException("No AccessMode value for method name " + methodName);
             };
         }
+
+        private static final @Stable AccessMode[] VALUES = values();
+        static AccessMode valueFromOrdinal(int mode) {
+            return VALUES[mode];
+        }
     }
 
     static final class AccessDescriptor {
@@ -2120,7 +2130,7 @@ public abstract sealed class VarHandle implements Constable
     }
 
     final MethodType accessModeTypeUncached(int accessTypeOrdinal) {
-        return accessModeTypeUncached(AccessType.values()[accessTypeOrdinal]);
+        return accessModeTypeUncached(AccessType.valueFromOrdinal(accessTypeOrdinal));
     }
 
     abstract MethodType accessModeTypeUncached(AccessType accessMode);
@@ -2215,7 +2225,7 @@ public abstract sealed class VarHandle implements Constable
      * @throws UnsupportedOperationException if the access mode is not supported
      */
     MethodHandle getMethodHandleUncached(int mode) {
-        MethodType mt = accessModeType(AccessMode.values()[mode]).
+        MethodType mt = accessModeType(AccessMode.valueFromOrdinal(mode)).
                 insertParameterTypes(0, VarHandle.class);
         MemberName mn = vform.getMemberName(mode);
         DirectMethodHandle dmh = DirectMethodHandle.make(mn);

@@ -132,7 +132,7 @@ final class VarForm {
 
     @DontInline
     MemberName resolveMemberName(int mode) {
-        AccessMode value = AccessMode.values()[mode];
+        AccessMode value = AccessMode.valueFromOrdinal(mode);
         String methodName = value.methodName();
         MethodType type = methodType_table[value.at.ordinal()].insertParameterTypes(0, VarHandle.class);
         return memberName_table[mode] = MethodHandles.Lookup.IMPL_LOOKUP
@@ -144,7 +144,7 @@ final class VarForm {
 
     @ForceInline
     final MethodType[] getMethodType_V_init() {
-        MethodType[] table = new MethodType[VarHandle.AccessType.values().length];
+        MethodType[] table = new MethodType[VarHandle.AccessType.COUNT];
         for (int i = 0; i < methodType_table.length; i++) {
             MethodType mt = methodType_table[i];
             // TODO only adjust for sig-poly methods returning Object
