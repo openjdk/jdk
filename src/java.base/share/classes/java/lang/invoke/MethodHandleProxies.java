@@ -54,6 +54,7 @@ import jdk.internal.classfile.CodeBuilder;
 import jdk.internal.classfile.TypeKind;
 import jdk.internal.module.Modules;
 import jdk.internal.reflect.CallerSensitive;
+import jdk.internal.reflect.MethodInheritance;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.util.ClassFileDumper;
 import sun.reflect.misc.ReflectUtil;
@@ -162,12 +163,20 @@ public class MethodHandleProxies {
     @SuppressWarnings("doclint:reference") // cross-module links
     @CallerSensitive
     public static <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
-        if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
-            throw newIllegalArgumentException("not a public interface", intfc.getName());
+        if (intfc.isArray() || intfc.isPrimitive())
+            throw newIllegalArgumentException("not a class or interface", intfc.getName());
+        var mods = intfc.getModifiers();
+        if (!Modifier.isPublic(mods))
+            throw newIllegalArgumentException("not a public class or interface", intfc.getName());
+        if (!Modifier.isAbstract(mods))
+            throw newIllegalArgumentException("not an abstract class or interface", intfc.getName());
+        if (!Modifier.isInterface(mods) && !hasAccessibleNoArgConstructor(intfc))
+            throw newIllegalArgumentException("an abstract class with no public or protected no-arg constructor",
+                    intfc.getName());
         if (intfc.isSealed())
-            throw newIllegalArgumentException("a sealed interface", intfc.getName());
+            throw newIllegalArgumentException("a sealed class or interface", intfc.getName());
         if (intfc.isHidden())
-            throw newIllegalArgumentException("a hidden interface", intfc.getName());
+            throw newIllegalArgumentException("a hidden class or interface", intfc.getName());
         Objects.requireNonNull(target);
         final MethodHandle mh;
         @SuppressWarnings("removal")
@@ -212,7 +221,7 @@ public class MethodHandleProxies {
         return intfc.cast(proxy);
     }
 
-    private record MethodInfo(MethodTypeDesc desc, List<ClassDesc> thrown, String fieldName) {}
+    private record MethodInfo(boolean hasProtectedAccess, MethodTypeDesc desc, List<ClassDesc> thrown, String fieldName) {}
 
     private static final ClassFileDumper DUMPER = ClassFileDumper.getInstance(
             "jdk.invoke.MethodHandleProxies.dumpClassFiles", "DUMP_MH_PROXY_CLASSFILES");
@@ -225,20 +234,53 @@ public class MethodHandleProxies {
         }
     };
 
+    // ClassValue, InputStream, OutputStream ...
+    private static boolean hasAccessibleNoArgConstructor(Class<?> abstractClass) {
+        try {
+            var ctor = abstractClass.getDeclaredConstructor();
+            var mods = ctor.getModifiers();
+            return Modifier.isPublic(mods) || Modifier.isProtected(mods);
+        } catch (NoSuchMethodException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Finds abstract methods, protected or public, from super classes and interfaces.
+     * @param type the abstract interface or class
+     * @return an array of all abstract methods to override
+     */
+    private static Method[] findMethods(Class<?> type) {
+        MethodInheritance inheritance = new MethodInheritance();
+        // Find public abstract methods
+        for (var method : type.getMethods()) {
+            if (Modifier.isAbstract(method.getModifiers()) && !isObjectMethod(method)) {
+                inheritance.merge(method);
+            }
+        }
+
+        // Find protected abstract methods
+        // protected methods only come from super classes
+        for (Class<?> c = type; c != Object.class && c != null; c = c.getSuperclass()) {
+            for (var method : c.getDeclaredMethods()) {
+                var mod = method.getModifiers();
+                if (Modifier.isAbstract(mod) && Modifier.isProtected(mod)) {
+                    inheritance.merge(method);
+                }
+            }
+        }
+
+        return inheritance.toArray();
+    }
+
     private static Class<?> newProxyClass(Class<?> intfc) {
         List<MethodInfo> methods = new ArrayList<>();
         Set<Class<?>> referencedTypes = new HashSet<>();
         referencedTypes.add(intfc);
         String uniqueName = null;
         int count = 0;
-        for (Method m : intfc.getMethods()) {
-            if (!Modifier.isAbstract(m.getModifiers()))
-                continue;
-
-            if (isObjectMethod(m))
-                continue;
-
-            // ensure it's SAM interface
+        for (Method m : findMethods(intfc)) {
+            // ensure it's SAM type
             String methodName = m.getName();
             if (uniqueName == null) {
                 uniqueName = methodName;
@@ -256,7 +298,7 @@ public class MethodHandleProxies {
                                        : Stream.concat(DEFAULT_RETHROWS.stream(),
                                                        Arrays.stream(thrown).map(MethodHandleProxies::desc))
                                                .distinct().toList();
-            methods.add(new MethodInfo(desc(mt), exceptionTypeDescs, fieldName));
+            methods.add(new MethodInfo(Modifier.isProtected(m.getModifiers()), desc(mt), exceptionTypeDescs, fieldName));
 
             // find the types referenced by this method
             addElementType(referencedTypes, m.getReturnType());
@@ -279,7 +321,7 @@ public class MethodHandleProxies {
         int i = intfcName.lastIndexOf('.');
         // jdk.MHProxy#.Interface
         String className = packageName + "." + (i > 0 ? intfcName.substring(i + 1) : intfcName);
-        byte[] template = createTemplate(loader, ClassDesc.of(className), desc(intfc), uniqueName, methods);
+        byte[] template = createTemplate(loader, ClassDesc.of(className), desc(intfc), uniqueName, methods, !intfc.isInterface());
         // define the dynamic module to the class loader of the interface
         var definer = new Lookup(intfc).makeHiddenClassDefiner(className, template, Set.of(), DUMPER);
 
@@ -360,18 +402,23 @@ public class MethodHandleProxies {
      * Creates an implementation class file for a given interface. One implementation class is
      * defined for each interface.
      *
-     * @param ifaceDesc the given interface
+     * @param ifaceDesc the given interface or abstract class
      * @param methodName the name of the single abstract method
      * @param methods the information for implementation methods
+     * @param isAbstractClass whether the given class is an abstract class instead of an interface
      * @return the bytes of the implementation classes
      */
     private static byte[] createTemplate(ClassLoader loader, ClassDesc proxyDesc, ClassDesc ifaceDesc,
-                                         String methodName, List<MethodInfo> methods) {
+                                         String methodName, List<MethodInfo> methods, boolean isAbstractClass) {
+        var superTypeDesc = isAbstractClass ? ifaceDesc : CD_Object;
         return Classfile.of(ClassHierarchyResolverOption.of(ClassHierarchyResolver.ofClassLoading(loader)))
                         .build(proxyDesc, clb -> {
-            clb.withSuperclass(CD_Object);
+
             clb.withFlags(ACC_FINAL | ACC_SYNTHETIC);
-            clb.withInterfaceSymbols(ifaceDesc);
+            clb.withSuperclass(superTypeDesc);
+            if (!isAbstractClass) {
+                clb.withInterfaceSymbols(ifaceDesc);
+            }
 
             // static and instance fields
             clb.withField(TYPE_NAME, CD_Class, ACC_PRIVATE | ACC_STATIC | ACC_FINAL);
@@ -390,7 +437,7 @@ public class MethodHandleProxies {
             // <init>(Lookup, MethodHandle target, MethodHandle callerBoundTarget)
             clb.withMethodBody(INIT_NAME, MTD_void_Lookup_MethodHandle_MethodHandle, 0, cob -> {
                 cob.aload(0);
-                cob.invokespecial(CD_Object, INIT_NAME, MTD_void);
+                cob.invokespecial(superTypeDesc, INIT_NAME, MTD_void);
 
                 // call ensureOriginalLookup to verify the given Lookup has access
                 cob.aload(1);
@@ -446,7 +493,8 @@ public class MethodHandleProxies {
             // implementation methods
             for (MethodInfo mi : methods) {
                 // no need to generate thrown exception attribute
-                clb.withMethodBody(methodName, mi.desc, ACC_PUBLIC, cob -> cob
+                clb.withMethodBody(methodName, mi.desc, mi.hasProtectedAccess()
+                        ? ACC_PROTECTED : ACC_PUBLIC, cob -> cob
                         .trying(bcb -> {
                                     // return this.handleField.invokeExact(arguments...);
                                     bcb.aload(0);
@@ -577,6 +625,9 @@ public class MethodHandleProxies {
     }
 
     private static boolean isObjectMethod(Method m) {
+        // abstract class Object method overrides must be implemented in subclasses
+        if (!m.getDeclaringClass().isInterface())
+            return false;
         return switch (m.getName()) {
             case "toString" -> m.getReturnType() == String.class
                     && m.getParameterCount() == 0;

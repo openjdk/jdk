@@ -27,6 +27,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.constant.ClassDesc;
 import java.lang.constant.MethodTypeDesc;
 import java.lang.invoke.MethodHandle;
@@ -35,6 +36,7 @@ import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.AccessFlag;
 import java.lang.reflect.Method;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -66,13 +68,23 @@ import static org.junit.jupiter.api.Assertions.*;
 public class BasicTest {
 
     @Test
-    public void testUsual() throws Throwable {
+    public void testInterface() throws Throwable {
         AtomicInteger ai = new AtomicInteger(5);
         var mh = MethodHandles.lookup().findVirtual(AtomicInteger.class, "getAndIncrement", methodType(int.class));
         IntSupplier is = asInterfaceInstance(IntSupplier.class, mh.bindTo(ai));
         assertEquals(5, is.getAsInt());
         assertEquals(6, is.getAsInt());
         assertEquals(7, is.getAsInt());
+    }
+
+    @Test
+    public void testAbstractClass() throws Throwable {
+        AtomicInteger ai = new AtomicInteger(5);
+        var mh = MethodHandles.lookup().findVirtual(AtomicInteger.class, "getAndIncrement", methodType(int.class));
+        InputStream is = asInterfaceInstance(InputStream.class, mh.bindTo(ai));
+        assertEquals(5, is.read());
+        assertEquals(6, is.read());
+        assertEquals(7, is.read());
     }
 
     /**
@@ -141,16 +153,25 @@ public class BasicTest {
                 "no abstract method");
         assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(Sealed.class, mh),
                 "sealed interface");
+        assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(BaseAbs.class, mh),
+                "no abstract method");
+        assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(ArgConstructor.class, mh),
+                "no no-arg constructor");
+        assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(InaccessibleConstructor.class, mh),
+                "no-arg constructor not accessible");
     }
 
     /**
-     * Tests that non-sealed interfaces can be implemented.
+     * Tests that certain classes or interfaces can be implemented.
      */
     @Test
-    public void testNonSealed() {
-        MethodHandle target = MethodHandles.constant(String.class, "Non-Sealed");
-        NonSealed proxy = asInterfaceInstance(NonSealed.class, target);
-        assertEquals(proxy.m(), "Non-Sealed");
+    public void testAccepted() {
+        var returnValue = new String(new char[] {'4', '2'});
+        var mh = MethodHandles.constant(String.class, returnValue);
+        var nonSealedProxy = asInterfaceInstance(NonSealed.class, mh);
+        assertSame(returnValue, nonSealedProxy.m());
+        var overrideProxy = asInterfaceInstance(ObjectOverride.class, mh);
+        assertSame(returnValue, overrideProxy.toString());
     }
 
     /**
@@ -374,5 +395,27 @@ public class BasicTest {
     }
 
     public non-sealed interface NonSealed extends Sealed {
+    }
+
+    public abstract static class BaseAbs {
+    }
+
+    public abstract static class ChildAbs extends BaseAbs {
+        protected abstract void take();
+    }
+
+    public abstract static class ArgConstructor {
+        protected ArgConstructor(Void arg) {}
+        protected abstract String work();
+    }
+
+    public abstract static class InaccessibleConstructor {
+        InaccessibleConstructor() {}
+        protected abstract String work();
+    }
+
+    public abstract static class ObjectOverride {
+        @Override
+        public abstract String toString();
     }
 }

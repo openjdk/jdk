@@ -35,6 +35,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.ref.WeakReference;
 import java.util.Comparator;
+import java.util.function.BooleanSupplier;
 
 import static java.lang.constant.ConstantDescs.*;
 import static java.lang.invoke.MethodHandleProxies.*;
@@ -196,19 +197,51 @@ public class WrapperHiddenClassTest {
         var wrapper1 = asInterfaceInstance(ifaceClass, mh);
         var implClass = wrapper1.getClass();
 
-        System.gc(); // helps debug if incorrect items are weakly referenced
-        var wrapper2 = asInterfaceInstance(ifaceClass, mh);
-        assertSame(implClass, wrapper2.getClass(),
-                "MHP should reuse old implementation class when available");
+        class ImplClassChangeChecker implements BooleanSupplier {
+            // have to manually unroll for implClass cannot be final
+            final Class<?> impl;
+            ImplClassChangeChecker(Class<?> impl) {
+                this.impl = impl;
+            }
+            @Override
+            public boolean getAsBoolean() {
+                return asInterfaceInstance(ifaceClass, mh).getClass() != impl;
+            }
+        }
+
+        if (ForceGC.waitFor(new ImplClassChangeChecker(implClass), 50L)) {
+            fail("MHP should reuse old implementation class when available");
+        }
 
         var implClassRef = new WeakReference<>(implClass);
         // clear strong references
         implClass = null;
         wrapper1 = null;
-        wrapper2 = null;
 
         if (!ForceGC.wait(() -> implClassRef.refersTo(null))) {
             fail("MHP impl class cannot be cleared by GC");
         }
+    }
+
+    /**
+     * Ensures that abstract classes with fields that have same name and type
+     * as impl internal fields won't affect the implementation.
+     */
+    @Test
+    public void testFieldShadowing() {
+        var value = new String(new char[] {'4', '2'});
+        var mh = MethodHandles.constant(String.class, value);
+        var inst = asInterfaceInstance(Shadowing.class, mh);
+        assertSame(Shadowing.class, wrapperInstanceType(inst));
+        assertSame(mh, wrapperInstanceTarget(inst));
+        assertSame(value, inst.produce());
+    }
+
+    public abstract static class Shadowing {
+        protected static final Class<?> interfaceType = MethodHandles.class;
+        protected final MethodHandle target = MethodHandles.zero(int.class);
+        private final MethodHandle m0 = MethodHandles.zero(double.class);
+
+        public abstract String produce();
     }
 }

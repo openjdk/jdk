@@ -79,6 +79,7 @@ import jdk.internal.module.Resources;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.reflect.CallerSensitiveAdapter;
 import jdk.internal.reflect.ConstantPool;
+import jdk.internal.reflect.MethodInheritance;
 import jdk.internal.reflect.Reflection;
 import jdk.internal.reflect.ReflectionFactory;
 import jdk.internal.vm.annotation.ForceInline;
@@ -3645,15 +3646,15 @@ public final class Class<T> implements java.io.Serializable,
 
         // No cached value available; compute value recursively.
         // Start by fetching public declared methods...
-        PublicMethods pms = new PublicMethods();
+        MethodInheritance inheritance = new MethodInheritance();
         for (Method m : privateGetDeclaredMethods(/* publicOnly */ true)) {
-            pms.merge(m);
+            inheritance.merge(m);
         }
         // ...then recur over superclass methods...
         Class<?> sc = getSuperclass();
         if (sc != null) {
             for (Method m : sc.privateGetPublicMethods()) {
-                pms.merge(m);
+                inheritance.merge(m);
             }
         }
         // ...and finally over direct superinterfaces.
@@ -3661,12 +3662,12 @@ public final class Class<T> implements java.io.Serializable,
             for (Method m : intf.privateGetPublicMethods()) {
                 // static interface methods are not inherited
                 if (!Modifier.isStatic(m.getModifiers())) {
-                    pms.merge(m);
+                    inheritance.merge(m);
                 }
             }
         }
 
-        res = pms.toArray();
+        res = inheritance.toArray();
         if (rd != null) {
             rd.publicMethods = res;
         }
@@ -3748,7 +3749,7 @@ public final class Class<T> implements java.io.Serializable,
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyMethod.
     private Method getMethod0(String name, Class<?>[] parameterTypes) {
-        PublicMethods.MethodList res = getMethodsRecursive(
+        MethodInheritance.MethodList res = getMethodsRecursive(
             name,
             parameterTypes == null ? EMPTY_CLASS_ARRAY : parameterTypes,
             /* includeStatic */ true);
@@ -3758,12 +3759,12 @@ public final class Class<T> implements java.io.Serializable,
     // Returns a list of "root" Method objects. These Method objects must NOT
     // be propagated to the outside world, but must instead be copied
     // via ReflectionFactory.copyMethod.
-    private PublicMethods.MethodList getMethodsRecursive(String name,
-                                                         Class<?>[] parameterTypes,
-                                                         boolean includeStatic) {
+    private MethodInheritance.MethodList getMethodsRecursive(String name,
+                                                             Class<?>[] parameterTypes,
+                                                             boolean includeStatic) {
         // 1st check declared public methods
         Method[] methods = privateGetDeclaredMethods(/* publicOnly */ true);
-        PublicMethods.MethodList res = PublicMethods.MethodList
+        MethodInheritance.MethodList res = MethodInheritance.MethodList
             .filter(methods, name, parameterTypes, includeStatic);
         // if there is at least one match among declared methods, we need not
         // search any further as such match surely overrides matching methods
@@ -3782,7 +3783,7 @@ public final class Class<T> implements java.io.Serializable,
         // ...and coalesce the superclass methods with methods obtained
         // from directly implemented interfaces excluding static methods...
         for (Class<?> intf : getInterfaces(/* cloneArray */ false)) {
-            res = PublicMethods.MethodList.merge(
+            res = MethodInheritance.MethodList.merge(
                 res, intf.getMethodsRecursive(name, parameterTypes,
                                               /* includeStatic */ false));
         }

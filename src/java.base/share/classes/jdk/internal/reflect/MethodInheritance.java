@@ -22,23 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package java.lang;
-
-import jdk.internal.reflect.ReflectionFactory;
+package jdk.internal.reflect;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * A collection of most specific public methods. Methods are added to it using
- * {@link #merge(Method)} method. Only the most specific methods for a
+ * A collection of most specific methods in inheritance. Methods are added to
+ * it using {@link #merge(Method)} method. Only the most specific methods for a
  * particular signature are kept.
  */
-final class PublicMethods {
+public final class MethodInheritance {
 
     /**
      * a map of (method name, parameter types) -> linked list of Method(s)
@@ -58,7 +55,7 @@ final class PublicMethods {
      * than added method.
      * See comments in code...
      */
-    void merge(Method method) {
+    public void merge(Method method) {
         Key key = new Key(method);
         MethodList existing = map.get(key);
         int xLen = existing == null ? 0 : existing.length();
@@ -73,7 +70,7 @@ final class PublicMethods {
     /**
      * Dumps methods to array.
      */
-    Method[] toArray() {
+    public Method[] toArray() {
         Method[] array = new Method[methodCount];
         int i = 0;
         for (MethodList ml : map.values()) {
@@ -88,10 +85,8 @@ final class PublicMethods {
      * Method (name, parameter types) tuple.
      */
     private static final class Key {
-        @SuppressWarnings("removal")
         private static final ReflectionFactory reflectionFactory =
-            AccessController.doPrivileged(
-                new ReflectionFactory.GetReflectionFactoryAction());
+            ReflectionFactory.getReflectionFactory();
 
         private final String name; // must be interned (as from Method.getName())
         private final Class<?>[] ptypes;
@@ -128,12 +123,12 @@ final class PublicMethods {
     }
 
     /**
-     * Node of a inked list containing Method(s) sharing the same
+     * Node of a linked list containing Method(s) sharing the same
      * (name, parameter types) tuple.
      */
-    static final class MethodList {
-        Method method;
-        MethodList next;
+    public static final class MethodList {
+        private final Method method;
+        private MethodList next;
 
         private MethodList(Method method) {
             this.method = method;
@@ -145,7 +140,7 @@ final class PublicMethods {
          *         {@code ptypes} and including or excluding static methods as
          *         requested by {@code includeStatic} flag.
          */
-        static MethodList filter(Method[] methods, String name,
+        public static MethodList filter(Method[] methods, String name,
                                  Class<?>[] ptypes, boolean includeStatic) {
             MethodList head = null, tail = null;
             for (Method method : methods) {
@@ -172,7 +167,7 @@ final class PublicMethods {
          * may not be the same as the {@code head} of the given list.
          * The given {@code methodList} is not modified.
          */
-        static MethodList merge(MethodList head, MethodList methodList) {
+        public static MethodList merge(MethodList head, MethodList methodList) {
             for (MethodList ml = methodList; ml != null; ml = ml.next) {
                 head = merge(head, ml.method);
             }
@@ -256,7 +251,7 @@ final class PublicMethods {
         /**
          * @return 1st method in list with most specific return type
          */
-        Method getMostSpecific() {
+        public Method getMostSpecific() {
             Method m = method;
             Class<?> rt = m.getReturnType();
             for (MethodList ml = next; ml != null; ml = ml.next) {
