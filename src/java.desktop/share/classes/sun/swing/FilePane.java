@@ -1932,6 +1932,8 @@ public class FilePane extends JPanel implements PropertyChangeListener {
         if (viewMenu != null) {
             viewMenu.getPopupMenu().setInvoker(viewMenu);
         }
+
+        contextMenu.applyComponentOrientation(getFileChooser().getComponentOrientation());
         return contextMenu;
     }
 
