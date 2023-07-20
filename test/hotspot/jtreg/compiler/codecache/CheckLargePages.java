@@ -25,6 +25,7 @@
  * @test
  * @bug 8304954
  * @summary Test checks that if using large pages and code cache gets above the limit it tries to revert to smaller pages instead of failing
+ * @requires vm.gc != "Z"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
