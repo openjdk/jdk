@@ -142,17 +142,17 @@ public:
   }
 
   E& at(int i) {
-    assert(0 <= i && i < _len, "illegal index");
+    assert(0 <= i && i < _len, "illegal index %d, %d accessible elements", i, _len);
     return _data[i];
   }
 
   E const& at(int i) const {
-    assert(0 <= i && i < _len, "illegal index");
+    assert(0 <= i && i < _len, "illegal index %d, %d accessible elements", i, _len);
     return _data[i];
   }
 
   E* adr_at(int i) const {
-    assert(0 <= i && i < _len, "illegal index");
+    assert(0 <= i && i < _len, "illegal index %d, %d accessible elements", i, _len);
     return &_data[i];
   }
 
@@ -184,7 +184,7 @@ public:
   }
 
   void at_put(int i, const E& elem) {
-    assert(0 <= i && i < _len, "illegal index");
+    assert(0 <= i && i < _len, "illegal index %d, %d accessible elements", i, _len);
     _data[i] = elem;
   }
 
@@ -245,7 +245,7 @@ public:
   }
 
   void remove_at(int index) {
-    assert(0 <= index && index < _len, "illegal index");
+    assert(0 <= index && index < _len, "illegal index %d, %d accessible elements", index, _len);
     for (int j = index + 1; j < _len; j++) {
       _data[j-1] = _data[j];
     }
@@ -259,8 +259,8 @@ public:
 
   // Remove all elements in the range [start - end). The order is preserved.
   void remove_range(int start, int end) {
-    assert(0 <= start, "illegal index");
-    assert(start < end && end <= _len, "erase called with invalid range");
+    assert(0 <= start, "illegal start index %d", start);
+    assert(start < end && end <= _len, "erase called with invalid range %d, %d", start, end);
 
     for (int i = start, j = end; j < length(); i++, j++) {
       at_put(i, at(j));
@@ -270,7 +270,7 @@ public:
 
   // The order is changed.
   void delete_at(int index) {
-    assert(0 <= index && index < _len, "illegal index");
+    assert(0 <= index && index < _len, "illegal index %d", index);
     if (index < --_len) {
       // Replace removed element with last one.
       _data[index] = _data[_len];
@@ -403,7 +403,7 @@ public:
   void push(const E& elem) { append(elem); }
 
   E at_grow(int i, const E& fill = E()) {
-    assert(0 <= i, "negative index");
+    assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j <= i; j++)
@@ -414,7 +414,7 @@ public:
   }
 
   void at_put_grow(int i, const E& elem, const E& fill = E()) {
-    assert(0 <= i, "negative index");
+    assert(0 <= i, "negative index %d", i);
     if (i >= this->_len) {
       if (i >= this->_capacity) grow(i);
       for (int j = this->_len; j < i; j++)
