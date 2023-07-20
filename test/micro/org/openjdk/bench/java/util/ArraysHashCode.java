@@ -62,6 +62,7 @@ public class ArraysHashCode {
     private char[] chars;
     private short[] shorts;
     private int[] ints;
+    private Object[] objects;
     private byte[][] multibytes;
     private char[][] multichars;
     private short[][] multishorts;
@@ -75,12 +76,14 @@ public class ArraysHashCode {
         chars = new char[size];
         shorts = new short[size];
         ints = new int[size];
+        objects = new Object[size];
         for (int i = 0; i < size; i++) {
             int next = rnd.nextInt();
             bytes[i] = (byte)next;
             chars[i] = (char)next;
             shorts[i] = (short)next;
             ints[i] = next;
+            objects[i] = next;
         }
 
         multibytes = new byte[100][];
@@ -121,6 +124,11 @@ public class ArraysHashCode {
     @Benchmark
     public int ints() throws Throwable {
         return Arrays.hashCode(ints);
+    }
+
+    @Benchmark
+    public int objects() throws Throwable {
+        return Arrays.hashCode(objects);
     }
 
     @Benchmark
