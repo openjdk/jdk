@@ -223,9 +223,9 @@ public class SynchronousQueue<E> extends AbstractQueue<E>
     /**
      * The transferer. (See below about serialization.)
      */
-    private transient final Transferer<E> transferer;
+    private final transient Transferer<E> transferer;
 
-    private transient final boolean fair;
+    private final transient boolean fair;
 
     /** Invokes fair or lifo transfer */
     private Object xfer(Object e, long nanos) {
