@@ -30,7 +30,7 @@
 class ShenandoahPassiveMode : public ShenandoahMode {
 public:
   virtual void initialize_flags() const;
-  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahGeneration* generation) const;
+  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahHeapStats* heap_info) const;
   virtual const char* name()     { return "Passive"; }
   virtual bool is_diagnostic()   { return true; }
   virtual bool is_experimental() { return false; }

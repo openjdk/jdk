@@ -32,6 +32,19 @@ class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;
 class ShenandoahOldGeneration;
 
+/*
+ * This heuristic is responsible for choosing a set of candidates for inclusion
+ * in mixed collections. These candidates are chosen when marking of the old
+ * generation is complete. Note that this list of candidates may live through
+ * several mixed collections.
+ *
+ * This heuristic is also responsible for triggering old collections. It has its
+ * own collection of triggers to decide whether to start an old collection. It does
+ * _not_ use any of the functionality from the adaptive heuristics for triggers.
+ * It also does not use any of the functionality from the heuristics base classes
+ * to choose the collection set. For these reasons, it does not extend from
+ * ShenandoahGenerationalHeuristics.
+ */
 class ShenandoahOldHeuristics : public ShenandoahHeuristics {
 
 private:
@@ -72,15 +85,8 @@ private:
   // How much live data must be evacuated from within the unprocessed mixed evacuation candidates?
   size_t _live_bytes_in_unprocessed_candidates;
 
-  // This can be the 'static' or 'adaptive' heuristic.
-  ShenandoahHeuristics* _trigger_heuristic;
-
   // Keep a pointer to our generation that we can use without down casting a protected member from the base class.
   ShenandoahOldGeneration* _old_generation;
-
-  // Flag is set when promotion failure is detected (by gc thread), and cleared when
-  // old generation collection begins (by control thread).
-  volatile bool _promotion_failed;
 
   // Flags are set when promotion failure is detected (by gc thread), and cleared when
   // old generation collection begins (by control thread).  Flags are set and cleared at safepoints.
@@ -88,14 +94,20 @@ private:
   bool _fragmentation_trigger;
   bool _growth_trigger;
 
+  // Compare by live is used to prioritize compaction of old-gen regions.  With old-gen compaction, the goal is
+  // to tightly pack long-lived objects into available regions.  In most cases, there has not been an accumulation
+  // of garbage within old-gen regions.  The more likely opportunity will be to combine multiple sparsely populated
+  // old-gen regions which may have been promoted in place into a smaller number of densely packed old-gen regions.
+  // This improves subsequent allocation efficiency and reduces the likelihood of allocation failure (including
+  // humongous allocation failure) due to fragmentation of the available old-gen allocation pool
+  static int compare_by_live(RegionData a, RegionData b);
+
  protected:
   virtual void choose_collection_set_from_regiondata(ShenandoahCollectionSet* set, RegionData* data, size_t data_size,
                                                      size_t free) override;
 
 public:
-  ShenandoahOldHeuristics(ShenandoahOldGeneration* generation, ShenandoahHeuristics* trigger_heuristic);
-
-  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics) override;
+  ShenandoahOldHeuristics(ShenandoahOldGeneration* generation);
 
   // Prepare for evacuation of old-gen regions by capturing the mark results of a recently completed concurrent mark pass.
   void prepare_for_old_collections();
@@ -104,7 +116,7 @@ public:
   bool prime_collection_set(ShenandoahCollectionSet* set);
 
   // How many old-collection candidates have not yet been processed?
-  uint unprocessed_old_collection_candidates();
+  uint unprocessed_old_collection_candidates() const;
 
   // How much live memory must be evacuated from within old-collection candidates that have not yet been processed?
   size_t unprocessed_old_collection_candidates_live_memory() const;
@@ -114,7 +126,7 @@ public:
   void decrease_unprocessed_old_collection_candidates_live_memory(size_t evacuated_live);
 
   // How many old or hidden collection candidates have not yet been processed?
-  uint last_old_collection_candidate_index();
+  uint last_old_collection_candidate_index() const;
 
   // Return the next old-collection candidate in order of decreasing amounts of garbage.  (We process most-garbage regions
   // first.)  This does not consume the candidate.  If the candidate is selected for inclusion in a collection set, then
@@ -138,48 +150,27 @@ public:
   // held by this heuristic for supplying mixed collections.
   void abandon_collection_candidates();
 
-  // Promotion failure does not currently trigger old-gen collections.  Often, promotion failures occur because
-  // old-gen is sized too small rather than because it is necessary to collect old gen.  We keep the method
-  // here in case we decide to feed this signal to sizing or triggering heuristics in the future.
-  void handle_promotion_failure();
-
   void trigger_cannot_expand() { _cannot_expand_trigger = true; };
   void trigger_old_is_fragmented() { _fragmentation_trigger = true; }
   void trigger_old_has_grown();
 
   void clear_triggers();
 
-  virtual void record_cycle_start() override;
+  void record_cycle_end() override;
 
-  virtual void record_cycle_end() override;
+  bool should_start_gc() override;
 
-  virtual bool should_start_gc() override;
+  void record_success_concurrent(bool abbreviated) override;
 
-  virtual bool should_degenerate_cycle() override;
+  void record_success_degenerated() override;
 
-  virtual void record_success_concurrent(bool abbreviated) override;
+  void record_success_full() override;
 
-  virtual void record_success_degenerated() override;
+  const char* name() override;
 
-  virtual void record_success_full() override;
+  bool is_diagnostic() override;
 
-  virtual void record_allocation_failure_gc() override;
-
-  virtual void record_requested_gc() override;
-
-  virtual void reset_gc_learning() override;
-
-  virtual bool can_unload_classes() override;
-
-  virtual bool can_unload_classes_normal() override;
-
-  virtual bool should_unload_classes() override;
-
-  virtual const char* name() override;
-
-  virtual bool is_diagnostic() override;
-
-  virtual bool is_experimental() override;
+  bool is_experimental() override;
 
  private:
   void slide_pinned_regions_to_front();

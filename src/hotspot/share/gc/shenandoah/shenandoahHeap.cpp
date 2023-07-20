@@ -36,6 +36,8 @@
 #include "gc/shared/plab.hpp"
 #include "gc/shared/tlab_globals.hpp"
 
+#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahAllocRequest.hpp"
 #include "gc/shenandoah/shenandoahBarrierSet.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
@@ -82,8 +84,6 @@
 #if INCLUDE_JFR
 #include "gc/shenandoah/shenandoahJfrSupport.hpp"
 #endif
-
-#include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
 
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
@@ -714,6 +714,10 @@ ShenandoahOldHeuristics* ShenandoahHeap::old_heuristics() {
   return (ShenandoahOldHeuristics*) _old_generation->heuristics();
 }
 
+ShenandoahYoungHeuristics* ShenandoahHeap::young_heuristics() {
+  return (ShenandoahYoungHeuristics*) _young_generation->heuristics();
+}
+
 bool ShenandoahHeap::doing_mixed_evacuations() {
   return _old_generation->state() == ShenandoahOldGeneration::WAITING_FOR_EVAC;
 }
@@ -908,10 +912,6 @@ void ShenandoahHeap::handle_old_evacuation_failure() {
   if (_old_gen_oom_evac.try_set()) {
     log_info(gc)("Old gen evac failure.");
   }
-}
-
-void ShenandoahHeap::handle_promotion_failure() {
-  old_heuristics()->handle_promotion_failure();
 }
 
 void ShenandoahHeap::report_promotion_failure(Thread* thread, size_t size) {
@@ -2659,6 +2659,11 @@ address ShenandoahHeap::gc_state_addr() {
   return (address) ShenandoahHeap::heap()->_gc_state.addr_of();
 }
 
+size_t ShenandoahHeap::bytes_allocated_since_gc_start() {
+  assert(!mode()->is_generational(), "This is used for heuristics that are not compatible with generational mode");
+  return global_generation()->bytes_allocated_since_gc_start();
+}
+
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
   if (mode()->is_generational()) {
     young_generation()->reset_bytes_allocated_since_gc_start();
@@ -3108,7 +3113,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
 
     // The computation of bytes_of_allocation_runway_before_gc_trigger is quite conservative so consider all of this
     // available for transfer to old. Note that transfer of humongous regions does not impact available.
-    size_t allocation_runway = young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
+    size_t allocation_runway = young_heuristics()->bytes_of_allocation_runway_before_gc_trigger(young_cset_regions);
     adjust_generation_sizes_for_next_cycle(allocation_runway, young_cset_regions, old_cset_regions);
 
     // Total old_available may have been expanded to hold anticipated promotions.  We trigger if the fragmented available
@@ -3132,7 +3137,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     size_t old_capacity = old_generation()->max_capacity();
     size_t heap_capacity = capacity();
     if ((old_capacity > heap_capacity / 8) && (old_fragmented_available > old_capacity / 8)) {
-      ((ShenandoahOldHeuristics *) old_generation()->heuristics())->trigger_old_is_fragmented();
+      old_heuristics()->trigger_old_is_fragmented();
     }
 
     size_t old_used = old_generation()->used() + old_generation()->get_humongous_waste();
@@ -3141,7 +3146,7 @@ void ShenandoahHeap::rebuild_free_set(bool concurrent) {
     assert(old_used < ShenandoahHeap::heap()->capacity(), "Old used must be less than heap capacity");
 
     if (old_used > trigger_threshold) {
-      ((ShenandoahOldHeuristics *) old_generation()->heuristics())->trigger_old_has_grown();
+      old_heuristics()->trigger_old_has_grown();
     }
   }
 }

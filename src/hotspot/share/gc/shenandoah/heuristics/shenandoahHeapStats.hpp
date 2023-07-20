@@ -22,18 +22,20 @@
  *
  */
 
-#ifndef SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
-#define SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
+#ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEAPCHARACTERISTICS_HPP
+#define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEAPCHARACTERISTICS_HPP
 
-#include "gc/shenandoah/mode/shenandoahMode.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-class ShenandoahGenerationalMode : public ShenandoahMode {
+class ShenandoahHeapStats {
 public:
-  virtual void initialize_flags() const;
-  virtual const char* name()     { return "Generational"; }
-  virtual bool is_diagnostic()   { return false; }
-  virtual bool is_experimental() { return true; }
-  virtual bool is_generational() { return true; }
+  virtual const char* name() const = 0;
+  virtual size_t soft_max_capacity() const = 0;
+  virtual size_t max_capacity() const = 0;
+  virtual size_t used() const = 0;
+  virtual size_t available() const = 0;
+  virtual size_t soft_available() const = 0;
+  virtual size_t bytes_allocated_since_gc_start() const = 0;
 };
 
-#endif // SHARE_GC_SHENANDOAH_MODE_SHENANDOAHGENERATIONALMODE_HPP
+#endif //SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEAPCHARACTERISTICS_HPP

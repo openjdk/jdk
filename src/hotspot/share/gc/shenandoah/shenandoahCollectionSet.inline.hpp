@@ -54,14 +54,6 @@ bool ShenandoahCollectionSet::is_in_loc(void* p) const {
   return _biased_cset_map[index] == 1;
 }
 
-void ShenandoahCollectionSet::set_immediate_trash(size_t immediate_trash) {
-  _immediate_trash = immediate_trash;
-}
-
-size_t ShenandoahCollectionSet::get_immediate_trash() {
-  return _immediate_trash;
-}
-
 size_t ShenandoahCollectionSet::get_old_bytes_reserved_for_evacuation() {
   return _old_bytes_to_evacuate;
 }

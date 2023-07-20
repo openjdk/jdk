@@ -32,12 +32,7 @@
 #include "logging/logTag.hpp"
 #include "runtime/os.hpp"
 
-ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahGeneration* generation) :
-  ShenandoahHeuristics(generation) {
-
-  assert(!ShenandoahHeap::heap()->mode()->is_generational(),
-         "Aggressive heuristics is not available in generational mode");
-
+ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics() : ShenandoahHeuristics() {
   // Do not shortcut evacuation
   SHENANDOAH_ERGO_OVERRIDE_DEFAULT(ShenandoahImmediateThreshold, 100);
 
@@ -54,8 +49,6 @@ ShenandoahAggressiveHeuristics::ShenandoahAggressiveHeuristics(ShenandoahGenerat
 void ShenandoahAggressiveHeuristics::choose_collection_set_from_regiondata(ShenandoahCollectionSet* cset,
                                                                            RegionData* data, size_t size,
                                                                            size_t free) {
-  // Note that there is no bound on collection set size. If we try to collect too much memory,
-  // we'll get an allocation failure during collection and slide to degenerated GC.
   for (size_t idx = 0; idx < size; idx++) {
     ShenandoahHeapRegion* r = data[idx]._region;
     if (r->garbage() > 0) {

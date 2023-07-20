@@ -30,7 +30,7 @@
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
 #include "gc/shenandoah/shenandoahYoungGeneration.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 
 ShenandoahYoungGeneration::ShenandoahYoungGeneration(uint max_queues, size_t max_capacity, size_t soft_max_capacity) :
   ShenandoahGeneration(YOUNG, max_queues, max_capacity, soft_max_capacity),
@@ -81,7 +81,7 @@ bool ShenandoahYoungGeneration::contains(oop obj) const {
 }
 
 ShenandoahHeuristics* ShenandoahYoungGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
-  _heuristics = gc_mode->initialize_heuristics(this);
+  _heuristics = new ShenandoahYoungHeuristics(this);
   _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedYoungGCInterval);
   confirm_heuristics_mode();
   return _heuristics;

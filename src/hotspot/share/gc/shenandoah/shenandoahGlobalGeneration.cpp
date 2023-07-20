@@ -23,13 +23,14 @@
  */
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/heuristics/shenandoahGlobalHeuristics.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahGlobalGeneration.hpp"
 #include "gc/shenandoah/shenandoahHeap.hpp"
 #include "gc/shenandoah/shenandoahHeapRegion.inline.hpp"
 #include "gc/shenandoah/shenandoahUtils.hpp"
 #include "gc/shenandoah/shenandoahVerifier.hpp"
-#include "gc/shenandoah/shenandoahYoungGeneration.hpp"
+
 
 const char* ShenandoahGlobalGeneration::name() const {
   return "GLOBAL";
@@ -85,4 +86,16 @@ void ShenandoahGlobalGeneration::heap_region_iterate(ShenandoahHeapRegionClosure
 bool ShenandoahGlobalGeneration::is_concurrent_mark_in_progress() {
   ShenandoahHeap* heap = ShenandoahHeap::heap();
   return heap->is_concurrent_mark_in_progress();
+}
+
+ShenandoahHeuristics* ShenandoahGlobalGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
+  if (gc_mode->is_generational()) {
+    _heuristics = new ShenandoahGlobalHeuristics(this);
+  } else {
+    _heuristics = gc_mode->initialize_heuristics(this);
+  }
+
+  _heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedGCInterval);
+  confirm_heuristics_mode();
+  return _heuristics;
 }

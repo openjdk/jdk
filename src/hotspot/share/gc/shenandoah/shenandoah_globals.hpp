@@ -78,12 +78,6 @@
           " compact - run GC more frequently and with deeper targets to "   \
           "free up more memory.")                                           \
                                                                             \
-  product(ccstr, ShenandoahOldGCHeuristics, "adaptive", EXPERIMENTAL,       \
-          "Similar to ShenandoahGCHeuristics, but applied to the old "      \
-          "generation. This configuration is only used to trigger old "     \
-          "collections and does not change how regions are selected "       \
-          "for collection.")                                                \
-                                                                            \
   product(uintx, ShenandoahUnloadClassesFrequency, 1, EXPERIMENTAL,         \
           "Unload the classes every Nth cycle. Normally affects concurrent "\
           "GC cycles, as degenerated and full GCs would try to unload "     \

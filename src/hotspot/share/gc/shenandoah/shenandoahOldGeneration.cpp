@@ -331,7 +331,7 @@ void ShenandoahOldGeneration::prepare_regions_and_collection_set(bool concurrent
         ShenandoahPhaseTimings::choose_cset :
         ShenandoahPhaseTimings::degen_gc_choose_cset);
     ShenandoahHeapLocker locker(heap->lock());
-    heuristics()->choose_collection_set(nullptr, nullptr);
+    _old_heuristics->prepare_for_old_collections();
   }
 
   {
@@ -462,21 +462,8 @@ void ShenandoahOldGeneration::validate_transition(State new_state) {
 #endif
 
 ShenandoahHeuristics* ShenandoahOldGeneration::initialize_heuristics(ShenandoahMode* gc_mode) {
-  assert(ShenandoahOldGCHeuristics != nullptr, "ShenandoahOldGCHeuristics should not be unset");
-  ShenandoahHeuristics* trigger;
-  if (strcmp(ShenandoahOldGCHeuristics, "static") == 0) {
-    trigger = new ShenandoahStaticHeuristics(this);
-  } else if (strcmp(ShenandoahOldGCHeuristics, "adaptive") == 0) {
-    trigger = new ShenandoahAdaptiveHeuristics(this);
-  } else if (strcmp(ShenandoahOldGCHeuristics, "compact") == 0) {
-    trigger = new ShenandoahCompactHeuristics(this);
-  } else {
-    vm_exit_during_initialization("Unknown -XX:ShenandoahOldGCHeuristics option (must be one of: static, adaptive, compact)");
-    ShouldNotReachHere();
-    return nullptr;
-  }
-  trigger->set_guaranteed_gc_interval(ShenandoahGuaranteedOldGCInterval);
-  _old_heuristics = new ShenandoahOldHeuristics(this, trigger);
+  _old_heuristics = new ShenandoahOldHeuristics(this);
+  _old_heuristics->set_guaranteed_gc_interval(ShenandoahGuaranteedOldGCInterval);
   _heuristics = _old_heuristics;
   return _heuristics;
 }

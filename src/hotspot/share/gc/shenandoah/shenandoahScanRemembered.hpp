@@ -178,8 +178,6 @@
 #include "gc/shared/workerThread.hpp"
 #include "gc/shenandoah/shenandoahCardStats.hpp"
 #include "gc/shenandoah/shenandoahCardTable.hpp"
-#include "gc/shenandoah/shenandoahHeap.hpp"
-#include "gc/shenandoah/shenandoahHeapRegion.hpp"
 #include "gc/shenandoah/shenandoahNumberSeq.hpp"
 #include "gc/shenandoah/shenandoahTaskqueue.hpp"
 #include "memory/iterator.hpp"
@@ -188,6 +186,7 @@
 class ShenandoahReferenceProcessor;
 class ShenandoahConcurrentMark;
 class ShenandoahHeap;
+class ShenandoahHeapRegion;
 class ShenandoahRegionIterator;
 class ShenandoahMarkingContext;
 

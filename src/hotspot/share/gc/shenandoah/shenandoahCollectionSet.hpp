@@ -49,7 +49,6 @@ private:
   size_t                _used;
   size_t                _live;
   size_t                _region_count;
-  size_t                _immediate_trash;
 
   size_t                _young_bytes_to_evacuate;
   size_t                _young_bytes_to_promote;
@@ -100,9 +99,6 @@ public:
   inline bool is_in_loc(void* loc)           const;
 
   void print_on(outputStream* out) const;
-
-  inline size_t get_immediate_trash();
-  inline void set_immediate_trash(size_t immediate_trash);
 
   // This represents total amount of work to be performed by evacuation, including evacuations to young, to old,
   // and promotions from young to old.  This equals get_young_bytes_reserved_for_evacuation() plus

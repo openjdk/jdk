@@ -28,6 +28,7 @@
 
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeapStats.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals_extension.hpp"
 
@@ -57,8 +58,6 @@
 
 class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;
-class ShenandoahGeneration;
-class ShenandoahOldHeuristics;
 
 class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Concurrent_Adjust   = -1; // recover from penalties
@@ -75,8 +74,6 @@ protected:
       size_t _live_data;        // Only used for old-gen heuristics, which prioritizes retention of _live_data over garbage reclaim
     } _u;
   } RegionData;
-
-  ShenandoahGeneration* _generation;
 
   // Depending on generation mode, region data represents the results of the relevant
   // most recently completed marking pass:
@@ -109,14 +106,6 @@ protected:
 
   static int compare_by_garbage(RegionData a, RegionData b);
 
-  // Compare by live is used to prioritize compaction of old-gen regions.  With old-gen compaction, the goal is
-  // to tightly pack long-lived objects into available regions.  In most cases, there has not been an accumulation
-  // of garbage within old-gen regions.  The more likely opportunity will be to combine multiple sparsely populated
-  // old-gen regions which may have been promoted in place into a smaller number of densely packed old-gen regions.
-  // This improves subsequent allocation efficiency and reduces the likelihood of allocation failure (including
-  // humongous allocation failure) due to fragmentation of the available old-gen allocation pool
-  static int compare_by_live(RegionData a, RegionData b);
-
   // TODO: We need to enhance this API to give visibility to accompanying old-gen evacuation effort.
   // In the case that the old-gen evacuation effort is small or zero, the young-gen heuristics
   // should feel free to dedicate increased efforts to young-gen evacuation.
@@ -127,12 +116,8 @@ protected:
 
   void adjust_penalty(intx step);
 
-  bool in_generation(ShenandoahHeapRegion* region);
-
-  size_t min_free_threshold();
-
 public:
-  ShenandoahHeuristics(ShenandoahGeneration* generation);
+  ShenandoahHeuristics();
   virtual ~ShenandoahHeuristics();
 
   void record_metaspace_oom()     { _metaspace_oom.set(); }
@@ -141,10 +126,6 @@ public:
 
   void set_guaranteed_gc_interval(size_t guaranteed_gc_interval) {
     _guaranteed_gc_interval = guaranteed_gc_interval;
-  }
-
-  uint degenerated_cycles_in_a_row() {
-    return _degenerated_cycles_in_a_row;
   }
 
   virtual void record_cycle_start();
@@ -165,11 +146,7 @@ public:
 
   virtual void record_requested_gc();
 
-  virtual void reset_gc_learning();
-
-  virtual size_t select_aged_regions(size_t old_available, size_t num_regions, bool candidate_regions_for_promotion_by_copy[]);
-
-  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set, ShenandoahOldHeuristics* old_heuristics);
+  virtual void choose_collection_set(ShenandoahCollectionSet* collection_set);
 
   virtual bool can_unload_classes();
   virtual bool can_unload_classes_normal();
@@ -179,8 +156,6 @@ public:
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;
   virtual void initialize();
-
-  virtual size_t bytes_of_allocation_runway_before_gc_trigger(size_t region_to_be_recycled);
 
   double elapsed_cycle_time() const;
 };

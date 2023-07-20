@@ -30,9 +30,8 @@
 #include "runtime/java.hpp"
 #include "utilities/formatBuffer.hpp"
 
-class ShenandoahGeneration;
+class ShenandoahHeapStats;
 class ShenandoahHeuristics;
-class ShenandoahOldHeuristics;
 
 #define SHENANDOAH_CHECK_FLAG_SET(name)                                     \
   do {                                                                      \
@@ -53,7 +52,7 @@ class ShenandoahOldHeuristics;
 class ShenandoahMode : public CHeapObj<mtGC> {
 public:
   virtual void initialize_flags() const = 0;
-  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahGeneration* generation) const;
+  virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahHeapStats* heap_info) const;
   virtual const char* name() = 0;
   virtual bool is_diagnostic() = 0;
   virtual bool is_experimental() = 0;

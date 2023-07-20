@@ -439,7 +439,6 @@ inline oop ShenandoahHeap::try_evacuate_object(oop p, Thread* thread, Shenandoah
       if (from_region->is_young()) {
         // Signal that promotion failed. Will evacuate this old object somewhere in young gen.
         report_promotion_failure(thread, size);
-        handle_promotion_failure();
         return nullptr;
       } else {
         // Remember that evacuation to old gen failed. We'll want to trigger a full gc to recover from this

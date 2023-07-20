@@ -58,6 +58,8 @@ public:
   void heap_region_iterate(ShenandoahHeapRegionClosure* cl) override;
 
   bool is_concurrent_mark_in_progress() override;
+
+  ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode) override;
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHGLOBALGENERATION_HPP

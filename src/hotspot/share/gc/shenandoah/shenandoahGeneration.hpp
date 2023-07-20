@@ -27,6 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahHeapStats.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
@@ -37,7 +38,7 @@ class ShenandoahReferenceProcessor;
 class ShenandoahHeap;
 class ShenandoahMode;
 
-class ShenandoahGeneration : public CHeapObj<mtGC> {
+class ShenandoahGeneration : public CHeapObj<mtGC>, public ShenandoahHeapStats {
   friend class VMStructs;
 private:
   ShenandoahGenerationType const _type;
@@ -82,6 +83,23 @@ private:
                                  ShenandoahCollectionSet* collection_set,
                                  size_t consumed_by_advance_promotion);
 
+  // Preselect for inclusion into the collection set regions whose age is
+  // at or above tenure age and which contain more than ShenandoahOldGarbageThreshold
+  // amounts of garbage.
+  //
+  // A side effect performed by this function is to tally up the number of regions and
+  // the number of live bytes that we plan to promote-in-place during the current GC cycle.
+  // This information, which is stored with an invocation of heap->set_promotion_in_place_potential(),
+  // feeds into subsequent decisions about when to trigger the next GC and may identify
+  // special work to be done during this GC cycle if we choose to abbreviate it.
+  //
+  // Returns bytes of old-gen memory consumed by selected aged regions
+  size_t select_aged_regions(size_t old_available,
+                             size_t num_regions, bool
+                             candidate_regions_for_promotion_by_copy[]);
+
+  size_t available(size_t capacity) const;
+
  public:
   ShenandoahGeneration(ShenandoahGenerationType type,
                        uint max_workers,
@@ -99,25 +117,23 @@ private:
 
   ShenandoahReferenceProcessor* ref_processor() { return _ref_processor; }
 
-  virtual const char* name() const = 0;
-
   virtual ShenandoahHeuristics* initialize_heuristics(ShenandoahMode* gc_mode);
 
-  virtual size_t soft_max_capacity() const { return _soft_max_capacity; }
-  virtual size_t max_capacity() const      { return _max_capacity; }
+  size_t soft_max_capacity() const override { return _soft_max_capacity; }
+  size_t max_capacity() const override      { return _max_capacity; }
   virtual size_t used_regions() const;
   virtual size_t used_regions_size() const;
   virtual size_t free_unaffiliated_regions() const;
-  virtual size_t used() const { return _used; }
-  virtual size_t available() const;
+  size_t used() const override { return _used; }
+  size_t available() const override;
 
   // Returns the memory available based on the _soft_ max heap capacity (soft_max_heap - used).
   // The soft max heap size may be adjusted lower than the max heap size to cause the trigger
   // to believe it has less memory available than is _really_ available. Lowering the soft
   // max heap size will cause the adaptive heuristic to run more frequent cycles.
-  size_t soft_available() const;
+  size_t soft_available() const override;
 
-  size_t bytes_allocated_since_gc_start();
+  size_t bytes_allocated_since_gc_start() const override;
   void reset_bytes_allocated_since_gc_start();
   void increase_allocated(size_t bytes);
 

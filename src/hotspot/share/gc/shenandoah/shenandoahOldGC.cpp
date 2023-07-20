@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 
+#include "gc/shenandoah/heuristics/shenandoahYoungHeuristics.hpp"
 #include "gc/shenandoah/shenandoahFreeSet.hpp"
 #include "gc/shenandoah/shenandoahHeap.inline.hpp"
 #include "gc/shenandoah/shenandoahMonitoringSupport.hpp"
@@ -149,7 +150,7 @@ bool ShenandoahOldGC::collect(GCCause::Cause cause) {
 
   // We do not rebuild_free following increments of old marking because memory has not been reclaimed..  However, we may
   // need to transfer memory to OLD in order to efficiently support the mixed evacuations that might immediately follow.
-  size_t allocation_runway = heap->young_generation()->heuristics()->bytes_of_allocation_runway_before_gc_trigger(0);
+  size_t allocation_runway = heap->young_heuristics()->bytes_of_allocation_runway_before_gc_trigger(0);
   heap->adjust_generation_sizes_for_next_cycle(allocation_runway, 0, 0);
 
   bool success;
