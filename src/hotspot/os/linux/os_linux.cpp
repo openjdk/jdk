@@ -916,18 +916,6 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
   size_t stack_size = os::Posix::get_initial_stack_size(thr_type, req_stack_size);
   size_t guard_size = os::Linux::default_guard_size(thr_type);
 
-  if (!DisableTHPStackMitigation) {
-    // In addition to the glibc guard page that prevents inter-thread-stack hugepage
-    // coalescing (see comment in os::Linux::default_guard_size()), we also make
-    // sure the stack size itself is not huge-page-size aligned; that makes it much
-    // more likely for thread stack boundaries to be unaligned as well and hence
-    // protects thread stacks from being targeted by khugepaged.
-    if (HugePages::thp_pagesize() > 0 &&
-        is_aligned(stack_size, HugePages::thp_pagesize())) {
-      stack_size += os::vm_page_size();
-    }
-  }
-
   // Configure glibc guard page. Must happen before calling
   // get_static_tls_area_size(), which uses the guard_size.
   pthread_attr_setguardsize(&attr, guard_size);
@@ -947,6 +935,18 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     stack_size += stack_adjust_size;
   }
   assert(is_aligned(stack_size, os::vm_page_size()), "stack_size not aligned");
+
+  if (!DisableTHPStackMitigation) {
+    // In addition to the glibc guard page that prevents inter-thread-stack hugepage
+    // coalescing (see comment in os::Linux::default_guard_size()), we also make
+    // sure the stack size itself is not huge-page-size aligned; that makes it much
+    // more likely for thread stack boundaries to be unaligned as well and hence
+    // protects thread stacks from being targeted by khugepaged.
+    if (HugePages::thp_pagesize() > 0 &&
+        is_aligned(stack_size, HugePages::thp_pagesize())) {
+      stack_size += os::vm_page_size();
+    }
+  }
 
   int status = pthread_attr_setstacksize(&attr, stack_size);
   if (status != 0) {
