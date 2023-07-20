@@ -152,6 +152,22 @@ public class ListFormat extends Format {
     }
 
     /**
+     * {@return the available locales for list formatting}
+     */
+    public static Locale[] getAvailableLocales() {
+        // Same as a typical format class
+        return DateFormat.getAvailableLocales();
+    }
+
+    /**
+     * {@return the list format object for the default {@code Locale}, {@link Type#STANDARD},
+     * and {@link Style#FULL}}
+     */
+    public static ListFormat getInstance() {
+        return getInstance(Locale.getDefault(Locale.Category.FORMAT), Type.STANDARD, Style.FULL);
+    }
+
+    /**
      * {@return the list format object for the specified {@code Locale}, {@link Type},
      * and {@link Style}}
      * @param locale Locale to be used, not null

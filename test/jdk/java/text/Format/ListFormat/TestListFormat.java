@@ -28,6 +28,7 @@
  * @run junit TestListFormat
  */
 
+import java.text.DateFormat;
 import java.text.ListFormat;
 import java.text.ParseException;
 import java.text.ParsePosition;
@@ -54,6 +55,16 @@ public class TestListFormat {
             "twobef {0} two {1} twoaft",
             "threebef {0} three {1} three {2} threeaft",
     };
+
+    @Test
+    void getAvailableLocales() {
+        assertArrayEquals(DateFormat.getAvailableLocales(), ListFormat.getAvailableLocales());
+    }
+
+    @Test
+    void getInstance_noArg() {
+        assertEquals(ListFormat.getInstance(), ListFormat.getInstance(Locale.getDefault(Locale.Category.FORMAT), ListFormat.Type.STANDARD, ListFormat.Style.FULL));
+    }
 
     static Arguments[] getInstance_1Arg() {
         return new Arguments[] {
