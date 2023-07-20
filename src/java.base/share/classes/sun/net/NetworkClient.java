@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,17 +57,17 @@ public class NetworkClient {
     /** Buffered stream for reading replies from server. */
     public InputStream  serverInput;
 
-    protected static int defaultSoTimeout;
-    protected static int defaultConnectTimeout;
+    protected static final int defaultSoTimeout;
+    protected static final int defaultConnectTimeout;
 
     protected int readTimeout = DEFAULT_READ_TIMEOUT;
     protected int connectTimeout = DEFAULT_CONNECT_TIMEOUT;
     /* Name of encoding to use for output */
-    protected static String encoding;
+    protected static final String encoding;
 
     static {
-        final int vals[] = {0, 0};
-        final String encs[] = { null };
+        final int[] vals = {0, 0};
+        final String[] encs = { null };
 
         AccessController.doPrivileged(
                 new PrivilegedAction<>() {
@@ -78,21 +78,18 @@ public class NetworkClient {
                         return null;
             }
         });
-        if (vals[0] != 0) {
-            defaultSoTimeout = vals[0];
-        }
-        if (vals[1] != 0) {
-            defaultConnectTimeout = vals[1];
-        }
+        defaultSoTimeout = vals[0];
+        defaultConnectTimeout = vals[1];
 
-        encoding = encs[0];
+        String enc = encs[0];
         try {
-            if (!isASCIISuperset (encoding)) {
-                encoding = "ISO8859_1";
+            if (!isASCIISuperset(enc)) {
+                enc = "ISO8859_1";
             }
         } catch (Exception e) {
-            encoding = "ISO8859_1";
+            enc = "ISO8859_1";
         }
+        encoding = enc;
     }
 
 
