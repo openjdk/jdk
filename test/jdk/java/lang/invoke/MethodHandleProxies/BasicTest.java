@@ -142,6 +142,10 @@ public class BasicTest {
     @Test
     public void testRejects() {
         var mh = MethodHandles.constant(String.class, "42");
+        assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(int.class, mh),
+                "primitive type");
+        assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(Object[].class, mh),
+                "array class");
         assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(PackagePrivate.class, mh),
                 "non-public interface");
         assertThrows(IllegalArgumentException.class, () -> asInterfaceInstance(loadHidden(), mh),

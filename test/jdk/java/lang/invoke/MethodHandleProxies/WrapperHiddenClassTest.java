@@ -34,6 +34,7 @@ import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Modifier;
 import java.util.Comparator;
 import java.util.function.BooleanSupplier;
 
@@ -244,4 +245,27 @@ public class WrapperHiddenClassTest {
 
         public abstract String produce();
     }
+
+    /**
+     * Ensures that in abstract classes, abstract methods keep their
+     * existing access level (public, protected).
+     */
+    @Test
+    public void testMethodAccess() throws Throwable {
+        var value = new String(new char[] {'4', '2'});
+        var mh = MethodHandles.constant(String.class, value);
+        mh = MethodHandles.dropArguments(mh, 0, int.class);
+        var inst = asInterfaceInstance(Accesses.class, mh);
+        var implClass = inst.getClass();
+        assertTrue(Modifier.isPublic(implClass.getDeclaredMethod("work", Integer.class).getModifiers()),
+                "public method not public in implementation wrapper");
+        assertTrue(Modifier.isProtected(implClass.getDeclaredMethod("work", int.class).getModifiers()),
+                "protected method not protected in implementation wrapper");
+    }
+
+    public abstract static class Accesses {
+        public abstract String work(Integer a);
+        protected abstract String work(int a);
+    }
+
 }

@@ -74,15 +74,16 @@ import static jdk.internal.classfile.Classfile.*;
  *
  * @since 1.7
  */
-public class MethodHandleProxies {
+public final class MethodHandleProxies {
 
     private MethodHandleProxies() { }  // do not instantiate
 
     /**
-     * Produces an instance of the given single-method interface which redirects
-     * its calls to the given method handle.
+     * Produces an instance of the given single-method interface or abstract
+     * class which redirects its calls to the given method handle.
      * <p>
-     * A single-method interface is an interface which declares a uniquely named method.
+     * A single-method interface or abstract class is a class or interface which
+     * declares a uniquely named abstract method.
      * When determining the uniquely named method of a single-method interface,
      * the public {@code Object} methods ({@code toString}, {@code equals}, {@code hashCode})
      * are disregarded as are any default (non-abstract) methods.
@@ -90,9 +91,11 @@ public class MethodHandleProxies {
      * even though it re-declares the {@code Object.equals} method and also
      * declares default methods, such as {@code Comparator.reverse}.
      * <p>
-     * The interface must be public, not {@linkplain Class#isHidden() hidden},
+     * The interface or abstract class must be public, not
+     * {@linkplain Class#isHidden() hidden},
      * and not {@linkplain Class#isSealed() sealed}.
-     * No additional access checks are performed.
+     * If it is an abstract class, it must have a protected or public no-arg
+     * constructor.  No additional access checks are performed.
      * <p>
      * The resulting instance of the required type will respond to
      * invocation of the type's uniquely named method by calling
@@ -143,17 +146,13 @@ public class MethodHandleProxies {
      * Beyond this type check, no further checks are made to determine that the
      * abstract methods are related in any way.
      * <p>
-     * Future versions of this API may accept additional types,
-     * such as abstract classes with single abstract methods.
-     * Future versions of this API may also equip wrapper instances
-     * with one or more additional public "marker" interfaces.
-     * <p>
      * If a security manager is installed, this method is caller sensitive.
      * During any invocation of the target method handle via the returned wrapper,
      * the original creator of the wrapper (the caller) will be visible
      * to context checks requested by the security manager.
      *
      * @param <T> the desired type of the wrapper, a single-method interface
+     *            or abstract class
      * @param intfc a class object representing {@code T}
      * @param target the method handle to invoke from the wrapper
      * @return a correctly-typed wrapper for the given target
@@ -245,8 +244,13 @@ public class MethodHandleProxies {
         if (sm != null) {
             try {
                 @SuppressWarnings("removal")
-                var ctor = AccessController.doPrivileged((PrivilegedExceptionAction<Constructor<?>>)
-                        abstractClass::getDeclaredConstructor);
+                Constructor<?> ctor = AccessController.doPrivileged(
+                        new PrivilegedExceptionAction<>() {
+                            @Override
+                            public Constructor<?> run() throws Exception {
+                                return abstractClass.getDeclaredConstructor();
+                            }
+                        });
                 constructor = ctor;
             } catch (PrivilegedActionException e) {
                 return false;
@@ -283,9 +287,16 @@ public class MethodHandleProxies {
         for (Class<?> c = type; c != Object.class && c != null; c = c.getSuperclass()) {
             Method[] methods;
             if (sm != null) {
+                final var cl = c;
+                // Using lambda here causes caller problems
                 @SuppressWarnings("removal")
-                var mths = AccessController.doPrivileged((PrivilegedAction<Method[]>)
-                        c::getDeclaredMethods);
+                Method[] mths = AccessController.doPrivileged(
+                        new PrivilegedAction<>() {
+                            @Override
+                            public Method[] run() {
+                                return cl.getDeclaredMethods();
+                            }
+                        });
                 methods = mths;
             } else {
                 methods = c.getDeclaredMethods();

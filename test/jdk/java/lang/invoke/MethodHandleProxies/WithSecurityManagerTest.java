@@ -21,6 +21,7 @@
  * questions.
  */
 
+import java.io.InputStream;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandleProxies;
 import java.lang.invoke.MethodHandles;
@@ -37,6 +38,10 @@ import static jdk.test.lib.Asserts.assertSame;
  * @summary Checks MethodHandleProxies behavior with security manager present
  */
 public class WithSecurityManagerTest {
+    public abstract static class NestedAbstractClass {
+        protected abstract void task();
+    }
+
     public interface NestedInterface {
         void task();
     }
@@ -45,7 +50,8 @@ public class WithSecurityManagerTest {
         var originalMh = MethodHandles.zero(void.class);
 
         // Test system and user interfaces
-        for (Class<?> cl : List.of(Runnable.class, Client.class, NestedInterface.class)) {
+        for (Class<?> cl : List.of(Runnable.class, Client.class, NestedInterface.class,
+                InputStream.class, NestedAbstractClass.class)) {
             try {
                 Object o = MethodHandleProxies.asInterfaceInstance(cl, originalMh);
                 testWrapperInstanceTarget(o, originalMh);
