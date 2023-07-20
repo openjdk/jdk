@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-/*
+/**
  * An implementation of sun.net.ResolverConfiguration for Windows.
  */
 
@@ -95,7 +95,7 @@ public final class ResolverConfigurationImpl
                     // Not BSD style
                     s = '[' + s + ']';
                 }
-                if (!s.isEmpty() && !l.contains(s)) {
+                if (!l.contains(s)) {
                     l.add(s);
                 }
             }
