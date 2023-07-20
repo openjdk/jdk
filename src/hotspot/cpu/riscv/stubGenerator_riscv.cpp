@@ -2388,9 +2388,7 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(t0, cnt2, wordSize * 2);
       __ beqz(t0, DONE);
     __ bind(TAIL);  // 1..15 characters left
-    if (AvoidUnalignedAccesses) {
       // Aligned access. Load bytes in portions - 4, 2, 1.
-      Label LOAD_LAST, WORD_CMP, TAIL01, TAIL02;
 
       __ addi(t0, cnt2, wordSize);
       __ addi(cnt2, cnt2, wordSize*2); // amount of characters left to process
@@ -2400,55 +2398,27 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(cnt2, cnt2, -wordSize);
       __ beqz(cnt2, DONE);  // no character left
       __ bind(LOAD_LAST);   // cnt2 = 1..7 characters left
-      // load four bytes if (cnt2 & 4) is not 0
-      __ test_bit(t0, cnt2, 2);
-      __ beqz(t0, TAIL02);
-      {
-        __ lwu(tmpL, Address(strL));
-        __ addi(strL, strL, wordSize / 2);
-        __ ld(tmpU, Address(strU));
-        __ addi(strU, strU, wordSize);
-        __ inflate_lo32(tmp3, tmpL);
-        __ mv(tmpL, tmp3);
-        __ xorr(tmp3, tmpU, tmpL);
-        __ bnez(tmp3, CALCULATE_DIFFERENCE);
-        __ addi(cnt2, cnt2, -wordSize / 2);
-      }
-      __ bind(TAIL02);
-      // load two bytes if (cnt2 & 2) is not 0
-      __ test_bit(t0, cnt2, 1);
-      __ beqz(t0, TAIL01);
-      {
-        __ lhu(tmpL, Address(strL));
-        __ addi(strL, strL, wordSize / 4);
-        __ lwu(tmpU, Address(strU));
-        __ addi(strU, strU, wordSize / 2);
-        __ inflate_lo32(tmp3, tmpL);
-        __ mv(tmpL, tmp3);
-        __ xorr(tmp3, tmpU, tmpL);
-        __ bnez(tmp3, CALCULATE_DIFFERENCE);
-        __ addi(cnt2, cnt2, -wordSize / 4);
-      }
-      __ bind(TAIL01);
-      // load one byte if anything left in cnt2
-      __ beqz(cnt2, DONE);
-      {
-        __ lbu(tmpL, Address(strL)); // when only one byte left - no need to inflate
-        __ lhu(tmpU, Address(strU));
-        __ xorr(tmp3, tmpU, tmpL);
-        __ bnez(tmp3, CALCULATE_DIFFERENCE);
-      }
+
+      __ addi(cnt2, cnt2, -wordSize); //cnt2 is now an offset in strL which points to last 8 bytes
+      __ slli(t0, cnt2, 1);     // t0 is now an offset in strU which points to last 16 bytes
+      __ add(strL, strL, cnt2); // Address of last 8 bytes in Latin1 string
+      __ add(strU, strU, t0);   // Address of last 16 bytes in UTF-16 string
+      __ load_int_misaligned(tmpL, Address(strL), t0, false);
+      __ load_long_misaligned(tmpU, Address(strU), t0, 2);
+      __ inflate_lo32(tmp3, tmpL);
+      __ mv(tmpL, tmp3);
+      __ xorr(tmp3, tmpU, tmpL);
+      __ bnez(tmp3, CALCULATE_DIFFERENCE);
+
+      __ addi(strL, strL, wordSize/2); // Address of last 4 bytes in Latin1 string
+      __ addi(strU, strU, wordSize);   // Address of last 8 bytes in UTF-16 string
+      __ load_int_misaligned(tmpL, Address(strL), t0, false);
+      __ load_long_misaligned(tmpU, Address(strU), t0, 2);
+      __ inflate_lo32(tmp3, tmpL);
+      __ mv(tmpL, tmp3);
+      __ xorr(tmp3, tmpU, tmpL);
+      __ bnez(tmp3, CALCULATE_DIFFERENCE);
       __ j(DONE); // no character left
-    } else {
-      // Unaligned accesses. Load from non-byte aligned address.
-      __ slli(t0, cnt2, 1);     // now in bytes
-      __ add(strU, strU, t0);   // Address of last 8 bytes in UTF-16 string
-      __ add(strL, strL, cnt2); // Address of last 16 bytes in Latin1 string
-      // last 16 characters
-      compare_string_8_x_LU(tmpL, tmpU, strL, strU, DIFF);
-      compare_string_8_x_LU(tmpL, tmpU, strL, strU, DIFF);
-      __ j(DONE);
-    }
     __ bind(DIFF);
       __ mv(tmpL, t0);
 
