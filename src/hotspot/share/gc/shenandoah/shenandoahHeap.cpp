@@ -281,9 +281,13 @@ jint ShenandoahHeap::initialize() {
   }
 
   // Reserve aux bitmap for use in object_iterate(). We don't commit it here.
-  ReservedSpace aux_bitmap(_bitmap_size, bitmap_page_size);
+  // Note: on Linux, in THP "advise" mode, we refrain from advising the system to use large pages
+  //  since we know these commits will be short lived.
+  const size_t aux_bitmap_page_size =
+    LINUX_ONLY(UseTransparentHugePages ? os::vm_page_size() :) bitmap_page_size;
+  ReservedSpace aux_bitmap(_bitmap_size, aux_bitmap_page_size);
   os::trace_page_sizes_for_requested_size("Aux Bitmap",
-                                          bitmap_size_orig, bitmap_page_size,
+                                          bitmap_size_orig, aux_bitmap_page_size,
                                           aux_bitmap.base(),
                                           aux_bitmap.size(), aux_bitmap.page_size());
   MemTracker::record_virtual_memory_type(aux_bitmap.base(), mtGC);
