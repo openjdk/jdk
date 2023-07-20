@@ -2220,7 +2220,7 @@ public abstract sealed class VarHandle implements Constable
      * @throws UnsupportedOperationException if the access mode is not supported
      */
     MethodHandle getMethodHandleUncached(int mode) {
-        MethodType mt = accessModeType(AccessMode.values()[mode]).
+        MethodType mt = accessModeType(AccessMode.valueFromOrdinal(mode)).
                 insertParameterTypes(0, VarHandle.class);
         MemberName mn = vform.getMemberName(mode);
         DirectMethodHandle dmh = DirectMethodHandle.make(mn);
