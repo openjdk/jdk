@@ -1295,6 +1295,11 @@ void G1ConcurrentMark::remark() {
       ClassLoaderDataGraph::purge(/*at_safepoint*/true);
     }
 
+    // Potentially, some empty-regions have been reclaimed; make this a
+    // "collection" so that pending allocation can retry before attempting a
+    // GC pause.
+    _g1h->increment_total_collections();
+
     _g1h->resize_heap_if_necessary();
     _g1h->uncommit_regions_if_necessary();
 
@@ -1352,8 +1357,8 @@ class G1ReclaimEmptyRegionsTask : public WorkerTask {
       _humongous_regions_removed(0) { }
 
     size_t freed_bytes() { return _freed_bytes; }
-    const uint old_regions_removed() { return _old_regions_removed; }
-    const uint humongous_regions_removed() { return _humongous_regions_removed; }
+    uint old_regions_removed() { return _old_regions_removed; }
+    uint humongous_regions_removed() { return _humongous_regions_removed; }
 
     bool do_heap_region(HeapRegion *hr) {
       if (hr->used() > 0 && hr->live_bytes() == 0 && !hr->is_young()) {
@@ -1461,10 +1466,6 @@ void G1ConcurrentMark::cleanup() {
   }
 
   verify_during_pause(G1HeapVerifier::G1VerifyCleanup, VerifyLocation::CleanupAfter);
-
-  // We need to make this be a "collection" so any collection pause that
-  // races with it goes around and waits for Cleanup to finish.
-  _g1h->increment_total_collections();
 
   // Local statistics
   double recent_cleanup_time = (os::elapsedTime() - start);
@@ -2307,7 +2308,7 @@ void G1CMTask::drain_local_queue(bool partially) {
   // of things to do) or totally (at the very end).
   size_t target_size;
   if (partially) {
-    target_size = MIN2((size_t)_task_queue->max_elems()/3, (size_t)GCDrainStackTargetSize);
+    target_size = MIN2((size_t)_task_queue->max_elems()/3, GCDrainStackTargetSize);
   } else {
     target_size = 0;
   }

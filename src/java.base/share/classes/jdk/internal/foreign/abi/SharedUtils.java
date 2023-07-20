@@ -78,6 +78,7 @@ public final class SharedUtils {
     private static final MethodHandle MH_BUFFER_COPY;
     private static final MethodHandle MH_REACHABILITY_FENCE;
     public static final MethodHandle MH_CHECK_SYMBOL;
+    private static final MethodHandle MH_CHECK_CAPTURE_SEGMENT;
 
     public static final AddressLayout C_POINTER = ADDRESS
             .withTargetLayout(MemoryLayout.sequenceLayout(JAVA_BYTE));
@@ -110,6 +111,8 @@ public final class SharedUtils {
                     methodType(void.class, Object.class));
             MH_CHECK_SYMBOL = lookup.findStatic(SharedUtils.class, "checkSymbol",
                     methodType(void.class, MemorySegment.class));
+            MH_CHECK_CAPTURE_SEGMENT = lookup.findStatic(SharedUtils.class, "checkCaptureSegment",
+                    methodType(MemorySegment.class, MemorySegment.class));
         } catch (ReflectiveOperationException e) {
             throw new BootstrapMethodError(e);
         }
@@ -341,6 +344,23 @@ public final class SharedUtils {
             handle = insertArguments(handle, 1, THROWING_ALLOCATOR);
         }
         return handle;
+    }
+
+    public static MethodHandle maybeCheckCaptureSegment(MethodHandle handle, LinkerOptions options) {
+        if (options.hasCapturedCallState()) {
+            // (<target address>, SegmentAllocator, <capture segment>, ...) -> ...
+            handle = MethodHandles.filterArguments(handle, 2, MH_CHECK_CAPTURE_SEGMENT);
+        }
+        return handle;
+    }
+
+    @ForceInline
+    public static MemorySegment checkCaptureSegment(MemorySegment captureSegment) {
+        Objects.requireNonNull(captureSegment);
+        if (captureSegment.equals(MemorySegment.NULL)) {
+            throw new IllegalArgumentException("Capture segment is NULL: " + captureSegment);
+        }
+        return captureSegment.asSlice(0, CapturableState.LAYOUT);
     }
 
     @ForceInline

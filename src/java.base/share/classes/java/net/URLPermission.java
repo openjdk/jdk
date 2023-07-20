@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.security.Permission;
 import java.util.Locale;
+import java.util.Objects;
 
 /**
  * Represents permission to access a resource or set of resources defined by a
@@ -376,6 +377,7 @@ public final class URLPermission extends Permission {
      * Returns true if, this.getActions().equals(p.getActions())
      * and p's url equals this's url.  Returns false otherwise.
      */
+    @Override
     public boolean equals(Object p) {
         if (!(p instanceof URLPermission that)) {
             return false;
@@ -389,22 +391,19 @@ public final class URLPermission extends Permission {
         if (!this.authority.equals(that.authority)) {
             return false;
         }
-        if (this.path != null) {
-            return this.path.equals(that.path);
-        } else {
-            return that.path == null;
-        }
+        return Objects.equals(this.path, that.path);
     }
 
     /**
      * Returns a hashcode calculated from the hashcode of the
      * actions String and the url string.
      */
+    @Override
     public int hashCode() {
         return getActions().hashCode()
             + scheme.hashCode()
             + authority.hashCode()
-            + (path == null ? 0 : path.hashCode());
+            + Objects.hashCode(path);
     }
 
 

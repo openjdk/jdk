@@ -26,11 +26,13 @@
 #include "cds/metaspaceShared.hpp"
 #include "classfile/vmClasses.hpp"
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/bytecodeStream.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/rewriter.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/generateOopMap.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/methodHandles.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/fieldDescriptor.inline.hpp"
@@ -179,13 +181,13 @@ void Rewriter::rewrite_member_reference(address bcp, int offset, bool reverse) {
   if (!reverse) {
     int  cp_index    = Bytes::get_Java_u2(p);
     int  cache_index = cp_entry_to_cp_cache(cp_index);
-    Bytes::put_native_u2(p, cache_index);
+    Bytes::put_native_u2(p, (u2)cache_index);
     if (!_method_handle_invokers.is_empty())
       maybe_rewrite_invokehandle(p - 1, cp_index, cache_index, reverse);
   } else {
     int cache_index = Bytes::get_native_u2(p);
     int pool_index = cp_cache_entry_pool_index(cache_index);
-    Bytes::put_Java_u2(p, pool_index);
+    Bytes::put_Java_u2(p, (u2)pool_index);
     if (!_method_handle_invokers.is_empty())
       maybe_rewrite_invokehandle(p - 1, pool_index, cache_index, reverse);
   }
@@ -204,7 +206,7 @@ void Rewriter::rewrite_invokespecial(address bcp, int offset, bool reverse, bool
       if (cache_index != (int)(jushort) cache_index) {
         *invokespecial_error = true;
       }
-      Bytes::put_native_u2(p, cache_index);
+      Bytes::put_native_u2(p, (u2)cache_index);
     } else {
       rewrite_member_reference(bcp, offset, reverse);
     }
@@ -286,14 +288,11 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // Should do nothing since we are not patching this bytecode
     int cache_index = ConstantPool::decode_invokedynamic_index(
                         Bytes::get_native_u4(p));
-    // We will reverse the bytecode rewriting _after_ adjusting them.
-    // Adjust the cache index by offset to the invokedynamic entries in the
-    // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
     int cp_index = _initialized_indy_entries.at(cache_index).constant_pool_index();
     assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
     // zero out 4 bytes
     Bytes::put_Java_u4(p, 0);
-    Bytes::put_Java_u2(p, cp_index);
+    Bytes::put_Java_u2(p, (u2)cp_index);
   }
 }
 
@@ -317,7 +316,7 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
       if (is_wide) {
         (*bcp) = Bytecodes::_fast_aldc_w;
         assert(ref_index == (u2)ref_index, "index overflow");
-        Bytes::put_native_u2(p, ref_index);
+        Bytes::put_native_u2(p, (u2)ref_index);
       } else {
         (*bcp) = Bytecodes::_fast_aldc;
         assert(ref_index == (u1)ref_index, "index overflow");
@@ -334,7 +333,7 @@ void Rewriter::maybe_rewrite_ldc(address bcp, int offset, bool is_wide,
       if (is_wide) {
         (*bcp) = Bytecodes::_ldc_w;
         assert(pool_index == (u2)pool_index, "index overflow");
-        Bytes::put_Java_u2(p, pool_index);
+        Bytes::put_Java_u2(p, (u2)pool_index);
       } else {
         (*bcp) = Bytecodes::_ldc;
         assert(pool_index == (u1)pool_index, "index overflow");

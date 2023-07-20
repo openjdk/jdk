@@ -4011,7 +4011,6 @@ class StubGenerator: public StubCodeGenerator {
     Register java_thread = rdi;
     __ get_thread(java_thread);
     __ reset_last_Java_frame(java_thread, true);
-    __ resolve_global_jobject(rax, java_thread, rdx);
   }
 
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
@@ -4044,6 +4043,7 @@ class StubGenerator: public StubCodeGenerator {
     jfr_prologue(the_pc, _masm);
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
     jfr_epilogue(_masm);
+    __ resolve_global_jobject(rax, rdi, rdx);
     __ leave();
     __ ret(0);
 
@@ -4052,6 +4052,47 @@ class StubGenerator: public StubCodeGenerator {
 
     RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
       RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps, false);
+    return stub;
+  }
+
+  // For c2: call to return a leased buffer.
+  static RuntimeStub* generate_jfr_return_lease() {
+    enum layout {
+      FPUState_off = 0,
+      rbp_off = FPUStateSizeInWords,
+      rdi_off,
+      rsi_off,
+      rcx_off,
+      rbx_off,
+      saved_argument_off,
+      saved_argument_off2, // 2nd half of double
+      framesize
+    };
+
+    int insts_size = 1024;
+    int locs_size = 64;
+    CodeBuffer code("jfr_return_lease", insts_size, locs_size);
+    OopMapSet* oop_maps = new OopMapSet();
+    MacroAssembler* masm = new MacroAssembler(&code);
+    MacroAssembler* _masm = masm;
+
+    address start = __ pc();
+    __ enter();
+    int frame_complete = __ pc() - start;
+    address the_pc = __ pc();
+    jfr_prologue(the_pc, _masm);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
+    jfr_epilogue(_masm);
+    __ leave();
+    __ ret(0);
+
+    OopMap* map = new OopMap(framesize, 1); // rbp
+    oop_maps->add_gc_map(the_pc - start, map);
+
+    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+      RuntimeStub::new_runtime_stub("jfr_return_lease", &code, frame_complete,
                                     (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                     oop_maps, false);
     return stub;
@@ -4148,9 +4189,17 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_returnBarrier = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(generate_jfr_stubs();)
   }
+
+#if INCLUDE_JFR
+  void generate_jfr_stubs() {
+    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+  }
+#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // Generates all stubs and initializes the entry points

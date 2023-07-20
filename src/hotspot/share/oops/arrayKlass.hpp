@@ -119,6 +119,7 @@ class ArrayKlass: public Klass {
   virtual void remove_unshareable_info();
   virtual void remove_java_mirror();
   void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
+  void cds_print_value_on(outputStream* st) const;
 #endif
 
   // Printing

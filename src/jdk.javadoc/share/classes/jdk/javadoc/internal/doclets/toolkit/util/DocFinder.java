@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,10 @@
 
 package jdk.javadoc.internal.doclets.toolkit.util;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-
 import javax.lang.model.element.ExecutableElement;
 
 public class DocFinder {
@@ -47,45 +44,34 @@ public class DocFinder {
         Result<T> apply(ExecutableElement method) throws X;
     }
 
-    private final Function<ExecutableElement, ExecutableElement> overriddenMethodLookup;
-    private final BiFunction<ExecutableElement, ExecutableElement, Iterable<ExecutableElement>> implementedMethodsLookup;
+    private final Function<ExecutableElement, Iterable<? extends ExecutableElement>> overriddenMethodLookup;
 
-    DocFinder(Function<ExecutableElement, ExecutableElement> overriddenMethodLookup,
-              BiFunction<ExecutableElement, ExecutableElement, Iterable<ExecutableElement>> implementedMethodsLookup) {
+    DocFinder(Function<ExecutableElement, Iterable<? extends ExecutableElement>> overriddenMethodLookup) {
         this.overriddenMethodLookup = overriddenMethodLookup;
-        this.implementedMethodsLookup = implementedMethodsLookup;
     }
 
     @SuppressWarnings("serial")
-    public static final class NoOverriddenMethodsFound extends Exception {
+    public static final class NoOverriddenMethodFound extends Exception {
 
         // only DocFinder should instantiate this exception
-        private NoOverriddenMethodsFound() { }
+        private NoOverriddenMethodFound() { }
     }
 
     public <T, X extends Throwable> Result<T> search(ExecutableElement method,
-                                                     Criterion<T, X> criterion)
-            throws X
-    {
-        return search(method, true, criterion);
-    }
-
-    public <T, X extends Throwable> Result<T> search(ExecutableElement method,
-                                                     boolean includeMethod,
                                                      Criterion<T, X> criterion)
             throws X
     {
         try {
-            return search0(method, includeMethod, false, criterion);
-        } catch (NoOverriddenMethodsFound e) {
+            return search0(method, true, false, criterion);
+        } catch (NoOverriddenMethodFound e) {
             // should not happen because the exception flag is unset
             throw new AssertionError(e);
         }
     }
 
-    public <T, X extends Throwable> Result<T> trySearch(ExecutableElement method,
-                                                        Criterion<T, X> criterion)
-            throws NoOverriddenMethodsFound, X
+    public <T, X extends Throwable> Result<T> find(ExecutableElement method,
+                                                   Criterion<T, X> criterion)
+            throws NoOverriddenMethodFound, X
     {
         return search0(method, false, true, criterion);
     }
@@ -114,13 +100,13 @@ public class DocFinder {
                                                        boolean includeMethodInSearch,
                                                        boolean throwExceptionIfDoesNotOverride,
                                                        Criterion<T, X> criterion)
-            throws NoOverriddenMethodsFound, X
+            throws NoOverriddenMethodFound, X
     {
         // if the "overrides" check is requested and does not pass, throw the exception
         // first so that it trumps the result that the search would otherwise had
-        Iterator<ExecutableElement> methods = methodsOverriddenBy(method);
+        Iterator<? extends ExecutableElement> methods = overriddenMethodLookup.apply(method).iterator();
         if (throwExceptionIfDoesNotOverride && !methods.hasNext() ) {
-            throw new NoOverriddenMethodsFound();
+            throw new NoOverriddenMethodFound();
         }
         Result<T> r = includeMethodInSearch ? criterion.apply(method) : Result.CONTINUE();
         if (!(r instanceof Result.Continue<T>)) {
@@ -128,25 +114,12 @@ public class DocFinder {
         }
         while (methods.hasNext()) {
             ExecutableElement m = methods.next();
-            r = search0(m, true, false /* don't check for overrides */, criterion);
+            r = criterion.apply(m);
             if (r instanceof Result.Conclude<T>) {
                 return r;
             }
         }
         return r;
-    }
-
-    // We see both overridden and implemented methods as overridden
-    // (see JLS 8.4.8.1. Overriding (by Instance Methods))
-    private Iterator<ExecutableElement> methodsOverriddenBy(ExecutableElement method) {
-        // TODO: create a lazy iterator if required
-        var list = new ArrayList<ExecutableElement>();
-        ExecutableElement overridden = overriddenMethodLookup.apply(method);
-        if (overridden != null) {
-            list.add(overridden);
-        }
-        implementedMethodsLookup.apply(method, method).forEach(list::add);
-        return list.iterator();
     }
 
     private static final Result<?> SKIP = new Skipped<>();
@@ -208,7 +181,7 @@ public class DocFinder {
 
         /*
          * Translates the given Optional into a binary decision whether to
-         * conclude the search or continue it.
+         * conclude the search or to continue it.
          *
          * Convenience method. Use in Criterion that can easily provide
          * suitable Optional. Don't use if Criterion needs to skip.

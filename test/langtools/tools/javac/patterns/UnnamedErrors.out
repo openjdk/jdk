@@ -21,6 +21,8 @@ UnnamedErrors.java:82:58: compiler.err.expected: ';'
 UnnamedErrors.java:101:14: compiler.err.expected: =
 UnnamedErrors.java:102:22: compiler.err.expected: =
 UnnamedErrors.java:104:26: compiler.err.expected: =
+UnnamedErrors.java:110:13: compiler.err.use.of.underscore.not.allowed.with.brackets
+UnnamedErrors.java:111:18: compiler.err.use.of.underscore.not.allowed.with.brackets
 UnnamedErrors.java:11:17: compiler.err.already.defined: kindname.variable, x, kindname.class, UnnamedErrors
 UnnamedErrors.java:36:13: compiler.err.unconditional.pattern.and.default
 UnnamedErrors.java:45:18: compiler.err.pattern.dominated
@@ -32,4 +34,4 @@ UnnamedErrors.java:83:13: compiler.err.switch.mixing.case.types
 UnnamedErrors.java:90:30: compiler.err.pattern.dominated
 - compiler.note.preview.filename: UnnamedErrors.java, DEFAULT
 - compiler.note.preview.recompile
-32 errors
+34 errors

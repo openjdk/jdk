@@ -47,6 +47,7 @@ import java.lang.module.ModuleDescriptor.Requires;
 import java.lang.module.ModuleFinder;
 import java.lang.module.ModuleReference;
 import java.lang.module.ResolvedModule;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -77,12 +78,14 @@ import java.util.jar.Manifest;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import jdk.internal.util.OperatingSystem;
+import jdk.internal.misc.MainMethodFinder;
+import jdk.internal.misc.PreviewFeatures;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
 import jdk.internal.module.Modules;
 import jdk.internal.platform.Container;
 import jdk.internal.platform.Metrics;
+import jdk.internal.util.OperatingSystem;
 import sun.util.calendar.ZoneInfoFile;
 
 /**
@@ -167,7 +170,11 @@ public final class LauncherHelper {
                 printProperties();
                 break;
             case "locale":
-                printLocale();
+                printLocale(false);
+                break;
+            case "security":
+                var opt = opts.length > 2 ? opts[2].trim() : "all";
+                SecuritySettings.printSecuritySettings(opt, ostream);
                 break;
             case "system":
                 if (OperatingSystem.isLinux()) {
@@ -177,7 +184,8 @@ public final class LauncherHelper {
             default:
                 printVmSettings(initialHeapSize, maxHeapSize, stackSize);
                 printProperties();
-                printLocale();
+                printLocale(true);
+                SecuritySettings.printSecuritySummarySettings(ostream);
                 if (OperatingSystem.isLinux()) {
                     printSystemMetrics();
                 }
@@ -272,9 +280,15 @@ public final class LauncherHelper {
     /*
      * prints the locale subopt/section
      */
-    private static void printLocale() {
+    private static void printLocale(boolean summaryMode) {
         Locale locale = Locale.getDefault();
-        ostream.println(LOCALE_SETTINGS);
+        if (!summaryMode) {
+            ostream.println(LOCALE_SETTINGS);
+        } else {
+            ostream.println("Locale settings summary:");
+            ostream.println(INDENT + "Use \"-XshowSettings:locale\" " +
+                    "option for verbose locale settings options");
+        }
         ostream.println(INDENT + "default locale = " +
                 locale.getDisplayName());
         ostream.println(INDENT + "default display locale = " +
@@ -283,7 +297,9 @@ public final class LauncherHelper {
                 Locale.getDefault(Category.FORMAT).getDisplayName());
         ostream.println(INDENT + "tzdata version = " +
                 ZoneInfoFile.getVersion());
-        printLocales();
+        if (!summaryMode) {
+            printLocales();
+        }
         ostream.println();
     }
 
@@ -315,9 +331,10 @@ public final class LauncherHelper {
                 ostream.print(INDENT + INDENT);
             }
         }
+        ostream.println();
     }
 
-    public static void printSystemMetrics() {
+    private static void printSystemMetrics() {
         Metrics c = Container.metrics();
 
         ostream.println("Operating System Metrics:");
@@ -843,11 +860,32 @@ public final class LauncherHelper {
         return false;
     }
 
+    /*
+     * main type flags
+     */
+    private static final int MAIN_WITHOUT_ARGS = 1;
+    private static final int MAIN_NONSTATIC = 2;
+    private static int mainType = 0;
+
+    /*
+     * Return type so that launcher invokes the correct main
+     */
+    public static int getMainType() {
+        return mainType;
+    }
+
+    private static void setMainType(Method mainMethod) {
+        int mods = mainMethod.getModifiers();
+        boolean isStatic = Modifier.isStatic(mods);
+        boolean noArgs = mainMethod.getParameterCount() == 0;
+        mainType = (isStatic ? 0 : MAIN_NONSTATIC) | (noArgs ? MAIN_WITHOUT_ARGS : 0);
+    }
+
     // Check the existence and signature of main and abort if incorrect
     static void validateMainClass(Class<?> mainClass) {
         Method mainMethod = null;
         try {
-            mainMethod = mainClass.getMethod("main", String[].class);
+            mainMethod = MainMethodFinder.findMainMethod(mainClass);
         } catch (NoSuchMethodException nsme) {
             // invalid main or not FX application, abort with an error
             abort(null, "java.launcher.cls.error4", mainClass.getName(),
@@ -863,16 +901,42 @@ public final class LauncherHelper {
             }
         }
 
+        setMainType(mainMethod);
+
         /*
-         * getMethod (above) will choose the correct method, based
+         * findMainMethod (above) will choose the correct method, based
          * on its name and parameter type, however, we still have to
-         * ensure that the method is static and returns a void.
+         * ensure that the method is static (non-preview) and returns a void.
          */
-        int mod = mainMethod.getModifiers();
-        if (!Modifier.isStatic(mod)) {
-            abort(null, "java.launcher.cls.error2", "static",
-                  mainMethod.getDeclaringClass().getName());
+        int mods = mainMethod.getModifiers();
+        boolean isStatic = Modifier.isStatic(mods);
+        boolean isPublic = Modifier.isPublic(mods);
+        boolean noArgs = mainMethod.getParameterCount() == 0;
+
+        if (!PreviewFeatures.isEnabled()) {
+            if (!isStatic || !isPublic || noArgs) {
+                abort(null, "java.launcher.cls.error2", "static",
+                      mainMethod.getDeclaringClass().getName());
+            }
         }
+
+        if (!isStatic) {
+            if (mainClass.isMemberClass() && !Modifier.isStatic(mainClass.getModifiers())) {
+                abort(null, "java.launcher.cls.error9",
+                        mainMethod.getDeclaringClass().getName());
+            }
+            try {
+                Constructor<?> constructor = mainClass.getDeclaredConstructor();
+                if (Modifier.isPrivate(constructor.getModifiers())) {
+                    abort(null, "java.launcher.cls.error8",
+                          mainMethod.getDeclaringClass().getName());
+                }
+            } catch (Throwable ex) {
+                abort(null, "java.launcher.cls.error8",
+                      mainMethod.getDeclaringClass().getName());
+            }
+        }
+
         if (mainMethod.getReturnType() != java.lang.Void.TYPE) {
             abort(null, "java.launcher.cls.error3",
                   mainMethod.getDeclaringClass().getName());

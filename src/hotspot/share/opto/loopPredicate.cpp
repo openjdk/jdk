@@ -1835,6 +1835,9 @@ ParsePredicateNode* ParsePredicates::get_parse_predicate_or_null(Node* parse_pre
 }
 
 // Initialize the Parse Predicate projection field that matches the kind of the parent of `parse_predicate_proj`.
+// Only initialize if Parse Predicate projection itself or any of the Parse Predicate projections coming further up
+// in the graph are not already initialized (this would be a sign of repeated Parse Predicates which are not cleaned up,
+// yet).
 bool ParsePredicates::assign_predicate_proj(ParsePredicateSuccessProj* parse_predicate_proj) {
   ParsePredicateNode* parse_predicate = get_parse_predicate_or_null(parse_predicate_proj);
   assert(parse_predicate != nullptr, "must exist");
@@ -1847,13 +1850,16 @@ bool ParsePredicates::assign_predicate_proj(ParsePredicateSuccessProj* parse_pre
       _loop_predicate_proj = parse_predicate_proj;
       break;
     case Deoptimization::DeoptReason::Reason_profile_predicate:
-      if (_profiled_loop_predicate_proj != nullptr) {
+      if (_profiled_loop_predicate_proj != nullptr ||
+          _loop_predicate_proj != nullptr) {
         return false;
       }
       _profiled_loop_predicate_proj = parse_predicate_proj;
       break;
     case Deoptimization::DeoptReason::Reason_loop_limit_check:
-      if (_loop_limit_check_predicate_proj != nullptr) {
+      if (_loop_limit_check_predicate_proj != nullptr ||
+          _loop_predicate_proj != nullptr ||
+          _profiled_loop_predicate_proj != nullptr) {
         return false;
       }
       _loop_limit_check_predicate_proj = parse_predicate_proj;
