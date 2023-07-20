@@ -52,14 +52,13 @@ NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 
 MemBaseline MemTracker::_baseline;
 
-void MemTracker::initialize(ccstr value) {
+void MemTracker::initialize(NMT_TrackingLevel level) {
   bool rc = true;
   assert(_tracking_level == NMT_unknown, "only call once");
 
-  NMT_TrackingLevel level = NMTUtil::parse_tracking_level(value);
   // Should have been validated before in arguments.cpp
   assert(level == NMT_off || level == NMT_summary || level == NMT_detail,
-         "Invalid setting for NativeMemoryTracking (%s)", value);
+         "Invalid setting for NativeMemoryTracking (%s)", NMTUtil::tracking_level_to_string(level));
 
   // Memory type is encoded into tracking header as a byte field,
   // make sure that we don't overflow it.

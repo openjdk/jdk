@@ -334,7 +334,7 @@ bool Arguments::is_internal_module_property(const char* property) {
   return false;
 }
 
-ccstr Arguments::process_nmt_property(JavaVMInitArgs* args) {
+NMT_TrackingLevel Arguments::process_nmt_setting(JavaVMInitArgs* args) {
   ccstr nmt = NativeMemoryTracking;
 
   // Find out user NMT setting
@@ -344,17 +344,26 @@ ccstr Arguments::process_nmt_property(JavaVMInitArgs* args) {
     if (match_option(option, "-XX:NativeMemoryTracking=", &tail)) {
       nmt = tail;
     }
+    if (match_option(option, "-XX:+PrintNMTStatistics", &tail)) {
+      PrintNMTStatistics = 1;
+    }
+    if (match_option(option, "-XX:-PrintNMTStatistics", &tail)) {
+      PrintNMTStatistics = 0;
+    }
   }
 
-  // Verify NMT arguments
+  // Verify NMT settings
   const NMT_TrackingLevel level = NMTUtil::parse_tracking_level(nmt);
   if (level == NMT_unknown) {
     jio_fprintf(defaultStream::error_stream(),
-                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", nullptr);
-    return nullptr;
+                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]");
+    return level;
   }
-
-  return nmt;
+  if (PrintNMTStatistics && level == NMT_off) {
+    warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
+    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
+  }
+  return level;
 }
 
 // Process java launcher properties.
@@ -3968,18 +3977,6 @@ jint Arguments::parse(const JavaVMInitArgs* initial_cmd_args) {
   }
   no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
-
-  // Verify NMT arguments
-  const NMT_TrackingLevel lvl = NMTUtil::parse_tracking_level(NativeMemoryTracking);
-  if (lvl == NMT_unknown) {
-    jio_fprintf(defaultStream::error_stream(),
-                "Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]\n");
-    return JNI_ERR;
-  }
-  if (PrintNMTStatistics && lvl == NMT_off) {
-    warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
-    FLAG_SET_DEFAULT(PrintNMTStatistics, false);
-  }
 
   bool trace_dependencies = log_is_enabled(Debug, dependencies);
   if (trace_dependencies && VerifyDependencies) {

@@ -416,8 +416,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   if (!is_supported_jni_version(args->version)) return JNI_EVERSION;
 
   // Initialize the NMT memory tracking as early as possible
-  ccstr nmt = Arguments::process_nmt_property(args);
-  if (nmt == nullptr) return JNI_ERR;
+  NMT_TrackingLevel nmt = Arguments::process_nmt_setting(args);
+  if (nmt == NMT_unknown) return JNI_ERR;
   MemTracker::initialize(nmt);
 
   // Initialize library-based TLS
@@ -455,7 +455,7 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   jint parse_result = Arguments::parse(args);
   if (parse_result != JNI_OK) return parse_result;
 
-  // Verify NMT flag(s) and log the initial state to the ouput
+  // Verify NMT settings and log the initial state to the output
   MemTracker::post_initialize();
 
   os::init_before_ergo();

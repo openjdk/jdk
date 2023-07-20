@@ -32,6 +32,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "services/nmtCommon.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/vmEnums.hpp"
 
@@ -450,7 +451,7 @@ class Arguments : AllStatic {
   static const char* GetSharedDynamicArchivePath() { return SharedDynamicArchivePath; }
   static size_t default_SharedBaseAddress() { return _default_SharedBaseAddress; }
 
-  static ccstr process_nmt_property(JavaVMInitArgs* args);
+  static NMT_TrackingLevel process_nmt_setting(JavaVMInitArgs* args);
 
   // Java launcher properties
   static void process_sun_java_launcher_properties(JavaVMInitArgs* args);
