@@ -1,17 +1,17 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8202056
- * @compile/ref=EnumSerial.out -XDrawDiagnostics -Xlint:serial EnumSerial.java
- * @compile/ref=empty.out      -XDrawDiagnostics               EnumSerial.java
+ * @bug 8310835
+ * @compile/ref=EnumExtern.out -XDrawDiagnostics -Xlint:serial EnumExtern.java
+ * @compile/ref=empty.out      -XDrawDiagnostics               EnumExtern.java
  */
 
 import java.io.*;
 
-enum EnumSerial implements Serializable {
+enum EnumExtern implements Externalizable {
     INSTANCE;
 
     // Verify a warning is generated in an enum class for each of the
-    // distinguished serial fields and methods.
+    // distinguished serial fields and methods as well as extern methods.
 
     private static final long serialVersionUID = 42;
     private static final ObjectStreamField[] serialPersistentFields = {};
@@ -35,5 +35,25 @@ enum EnumSerial implements Serializable {
 
     private Object readResolve() throws ObjectStreamException {
         return null;
+    }
+
+    // ineffective Externalizable methods
+    @Override
+    public void writeExternal(ObjectOutput oo) {
+        ;
+    }
+
+    @Override
+    public void readExternal(ObjectInput oi) {
+        ;
+    }
+
+    // _Not_ Externalizable methods; shouldn't generate a warning
+    public void writeExternal() {
+        ;
+    }
+
+    public void readExternal() {
+        ;
     }
 }
