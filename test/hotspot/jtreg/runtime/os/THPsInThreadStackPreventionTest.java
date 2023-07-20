@@ -36,7 +36,6 @@
  */
 
 /*
- * Note: only run manually, since this test is very costly (>2 GB)! Remove this line to run test.
  * @test id=DISABLED
  * @bug 8303215 8312182
  * @summary On THP=always systems, we prevent THPs from forming within thread stacks (negative test)
@@ -46,7 +45,7 @@
  * @requires os.arch=="amd64" | os.arch=="x86_64" | os.arch=="aarch64"
  * @modules java.base/jdk.internal.misc
  *          java.management
- * @run driver THPsInThreadStackPreventionTest  PATCH-DISABLED
+ * @run main/manual THPsInThreadStackPreventionTest  PATCH-DISABLED
  */
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
@@ -208,8 +207,8 @@ public class THPsInThreadStackPreventionTest {
                 // Only execute manually! this will allocate ~2gb of memory!
 
                 // explicitly disable the no-THP-workaround:
-                finalargs.add("-XX:+UnlockExperimentalVMOptions");
-                finalargs.add("-XX:-PreventTHPsForThreadStacks");
+                finalargs.add("-XX:+UnlockDiagnosticVMOptions");
+                finalargs.add("-XX:+DisableTHPStackMitigation");
 
                 finalargs.add(TestMain.class.getName());
                 ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(finalargs);
