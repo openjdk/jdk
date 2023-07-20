@@ -188,9 +188,10 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     entry_strong_roots();
   }
 
-  // Global marking has completed. We need to fill in any unmarked objects in the old generation
-  // so that subsequent remembered set scans will not walk pointers into reclaimed memory.
-  if (!heap->cancelled_gc() && heap->mode()->is_generational() && _generation->is_global()) {
+  // Global marking has completed and we may have collected regions with no live objects.
+  // We need to fill in any unmarked objects in the old generation so that subsequent
+  // remembered set scans will not walk pointers into reclaimed memory.
+  if (heap->mode()->is_generational() && _generation->is_global()) {
     entry_global_coalesce_and_fill();
   }
 
@@ -224,7 +225,10 @@ bool ShenandoahConcurrentGC::collect(GCCause::Cause cause) {
     // Update references freed up collection set, kick the cleanup to reclaim the space.
     entry_cleanup_complete();
   } else {
-    // We chose not to evacuate because we found sufficient immediate garbage.
+    // We chose not to evacuate because we found sufficient immediate garbage. Note that we
+    // do not check for cancellation here because, at this point, the cycle is effectively
+    // complete. If the cycle has been cancelled here, the control thread will detect it
+    // on its next iteration and run a degenerated young cycle.
     vmop_entry_final_roots();
     _abbreviated = true;
   }
