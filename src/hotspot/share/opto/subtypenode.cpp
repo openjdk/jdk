@@ -34,6 +34,7 @@
 
 const Type* SubTypeCheckNode::sub(const Type* sub_t, const Type* super_t) const {
   ciKlass* superk = super_t->is_klassptr()->klass();
+  assert(sub_t != Type::TOP && !TypePtr::NULL_PTR->higher_equal(sub_t), "should be not null");
   ciKlass* subk   = sub_t->isa_klassptr() ? sub_t->is_klassptr()->klass() : sub_t->is_oopptr()->klass();
 
   bool xsubk = sub_t->isa_klassptr() ? sub_t->is_klassptr()->klass_is_exact() : sub_t->is_oopptr()->klass_is_exact();
