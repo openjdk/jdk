@@ -37,23 +37,23 @@ import java.util.stream.IntStream;
 
 /**
  * {@code ListFormat} provides a means to produce a list of concatenated
- * objects in a language-sensitive way. Use this to construct a list
- * of objects displayed for end users. This class provides the functionality
+ * strings in a language-sensitive way. Use this to construct a list
+ * of strings displayed for end users. This class provides the functionality
  * defined in Unicode Consortium's LDML specification for
  * <a href="https://www.unicode.org/reports/tr35/tr35-general.html#ListPatterns">
  * List Patterns</a>.
  * <p>
  * Three types of concatenation are provided; {@link Type#STANDARD STANDARD},
- * {@link Type#OR OR}, and {@link Type#UNIT UNIT}, also two styles for each
+ * {@link Type#OR OR}, and {@link Type#UNIT UNIT}, also three styles for each
  * type are provided; {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
  * {@link Style#NARROW NARROW}. For example, an array of Strings
  * {@code ["Foo", "Bar", "Baz"]} may be formatted as follows in US English with
- * the following snippet ({@code STANDARD}, {@code FULL} case):
+ * the following snippet ({@code STANDARD}, {@code FULL} are used for a typical case):
  * {@snippet lang=java :
  * ListFormat.getInstance(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL)
  *     .format(new String[] {"Foo", "Bar", "Baz"})
  * }
- * Formatted strings will be:
+ * This will produce the concatenated list string as in the following table:
  * <table class="striped">
  * <caption style="display:none">Formatting examples</caption>
  * <thead>
@@ -78,10 +78,18 @@ import java.util.stream.IntStream;
  * </tbody>
  * </table>
  * <p>
- * Instead of relying on the locale, type, and style, a customized patterns can be
- * specified with an instance created by {@link #getInstance(String[])}.
- * @implNote The default implementation utilizes {@link MessageFormat}
- * for formatting and parsing.
+ * Alternatively, Locale, Type, and/or Style invariant patterns can be
+ * specified with {@link #getInstance(String[])}. The String array to the
+ * method specifies the delimiting patterns for the start/middle/end portion of
+ * the formatted string, as well as optional specialized patterns for two or three
+ * elements. Refer to the method description for more detail.
+ *
+ * <h2><a id="synchronization">Synchronization</a></h2>
+ * <p>
+ * List formats are generally not synchronized.
+ * It is recommended to create separate format instances for each thread.
+ * If multiple threads access a format concurrently, it must be synchronized
+ * externally.
  *
  * @since 22
  */
@@ -103,7 +111,8 @@ public class ListFormat extends Format {
     private final Locale locale;
 
     /**
-     * The patterns array. Each element corresponds to the Unicode LDML's `listPatternsPart` type.
+     * The array of five pattern Strings. Each element corresponds to the Unicode LDML's
+     * `listPatternsPart` type, i.e, start/middle/end/two/three.
      * @serial
      */
     private final String[] patterns;
@@ -160,19 +169,19 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the list format object for the default {@code Locale}, {@link Type#STANDARD},
-     * and {@link Style#FULL}}
+     * {@return the list format object for the default {@code Locale}, {@code STANDARD},
+     * and {@code FULL}}
      */
     public static ListFormat getInstance() {
         return getInstance(Locale.getDefault(Locale.Category.FORMAT), Type.STANDARD, Style.FULL);
     }
 
     /**
-     * {@return the list format object for the specified {@code Locale}, {@link Type},
-     * and {@link Style}}
+     * {@return the list format object for the specified {@code Locale}, {@code Type},
+     * and {@code Style}}
      * @param locale Locale to be used, not null
-     * @param type type of the list format. One of standard/or/unit
-     * @param style style of the list format. One of full/short/narrow
+     * @param type type of the list format. One of STANDARD/OR/UNIT, not null
+     * @param style style of the list format. One of FULL/SHORT/NARROW, not null
      */
     public static ListFormat getInstance(Locale locale, Type type, Style style) {
         Objects.requireNonNull(locale);
@@ -207,8 +216,9 @@ public class ListFormat extends Format {
      * <blockquote><pre>
      * (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
      * </pre></blockquote>
-     * If the length of the input array is two or three, specific pattern for the length,
-     * if exists, is used. Following table shows patterns array which is equivalent to
+     * If {@code n} is either 2 or 3, and the pattern for those is not empty, the pattern
+     * is used as it is.
+     * Following table shows patterns array which is equivalent to
      * {@code STANDARD} type, {@code FULL} style in US English:
      * <table class="striped">
      * <caption style="display:none">Standard/Full Patterns in US English</caption>
@@ -229,8 +239,7 @@ public class ListFormat extends Format {
      *     <td>""</td>
      * </tbody>
      * </table>
-     * Here are the resulting formatted strings with the above pattern array:), it will be
-     * formatted as:
+     * Here are the resulting formatted strings with the above pattern array.
      * <table class="striped">
      * <caption style="display:none">Formatting examples</caption>
      * <thead>
@@ -244,10 +253,14 @@ public class ListFormat extends Format {
      *     <td>"Foo, Bar, and Baz"</td>
      * <tr><th scope="row" style="text-align:left">["Foo", "Bar"]</th>
      *     <td>"Foo and Bar"</td>
+     * <tr><th scope="row" style="text-align:left">["Foo"]</th>
+     *     <td>"Foo"</td>
      * </tbody>
      * </table>
      *
      * @param patterns array of patterns, not null
+     * @throws IllegalArgumentException if the length {@code patterns} array is less than 5.
+     * @throws NullPointerException if {@code patterns} is null.
      */
     public static ListFormat getInstance(String[] patterns) {
         Objects.requireNonNull(patterns);
@@ -260,18 +273,22 @@ public class ListFormat extends Format {
     /**
      * {@return the string that consists of the input strings, concatenated with the
      * patterns specified, or derived from {@code Locale}, {@code Type}, and {@code Style}}
-     * @param input The array of input strings to format. There should at least be two
-     *              elements in the array, otherwise {@code IllegalArgumentException} is
-     *              thrown
-     * @throws IllegalArgumentException if the length of the input array is less than two
+     * @param input The array of input strings to format. There should at least
+     *              one String element in this array, otherwise an {@code IllegalArgumentException}
+     *              is thrown.
+     * @throws IllegalArgumentException if the length of {@code input} is zero.
+     * @throws NullPointerException if the input array is null.
      */
     public String format(String[] input) {
+        Objects.requireNonNull(input);
         return format(input, new StringBuffer(),
                 DontCareFieldPosition.INSTANCE).toString();
     }
 
     @Override
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
+        Objects.requireNonNull(toAppendTo);
+        Objects.requireNonNull(pos);
         if (obj instanceof Object[] objs) {
             return generateMessageFormat(objs).format(objs, toAppendTo, pos);
         } else {
@@ -281,23 +298,56 @@ public class ListFormat extends Format {
 
     /**
      * {@return the parsed array of Strings from the {@code source} String}
-     * @param source the String to parse
-     * @param position the position to parse
+     *
+     * Note that {@link #format(String[])} format(String[])} and this method
+     * may not guarantee a round-trip, if the input strings contain ambiguous
+     * delimiters. For example, a String array {@code ["a, b,", "c"]} will be
+     * formatted as {@code "a, b, and c"}, but may be parsed as
+     * {@code ["a", "b", "c"]}.
+     *
+     * @param source the String to parse, not null.
      * @throws ParseException if parse failed
+     * @throws NullPointerException if source is null
      */
-    public String[] parse(String source, ParsePosition position) throws ParseException {
-        if (parseObject(source, position) instanceof Object[] orig) {
+    public String[] parse(String source) throws ParseException {
+        var pp = new ParsePosition(0);
+        if (parseObject(source, pp) instanceof Object[] orig) {
             return Arrays.copyOf(orig, orig.length, String[].class);
         } else {
-            throw new ParseException("Parse failed", position.getErrorIndex());
+            throw new ParseException("Parse failed", pp.getErrorIndex());
         }
     }
 
+    /**
+     * Parses text from a string to produce an array of {@code String}s.
+     * <p>
+     * The method attempts to parse text starting at the index given by
+     * {@code pos}.
+     * If parsing succeeds, then the index of {@code pos} is updated
+     * to the index after the last character used (parsing does not necessarily
+     * use all characters up to the end of the string), and the parsed
+     * object is returned. The updated {@code pos} can be used to
+     * indicate the starting point for the next call to this method.
+     * If an error occurs, then the index of {@code pos} is not
+     * changed, the error index of {@code pos} is set to the index of
+     * the character where the error occurred, and null is returned.
+     *
+     * See the {@link #parse(String)} method for more information
+     * on list parsing.
+     *
+     * @param source A {@code String}, part of which should be parsed.
+     * @param parsePos A {@code ParsePosition} object with index and error
+     *            index information as described above.
+     * @return An array of {@code String} parsed from the string. In case of
+     *         error, returns null.
+     * @throws NullPointerException if {@code source} or {@code parsePos} is null.
+     */
     @Override
     public Object parseObject(String source, ParsePosition parsePos) {
+        Objects.requireNonNull(source);
         var sm = startPattern.matcher(source);
         var em = endPattern.matcher(source);
-        Object ret;
+        Object ret = null;
         if (sm.find(parsePos.index) && em.find(parsePos.index)) {
             // get em to the last
             var c = em.start();
@@ -307,11 +357,17 @@ public class ListFormat extends Format {
             em.find(c);
 //            System.out.println("start found: " + sm.group(0));
 //            System.out.println("end found: " + em.group(0));
-            var mid = source.substring(sm.end(), em.start());
+            var startEnd = sm.end();
+            var endStart = em.start();
+            if (startEnd <= endStart) {
+                var mid = source.substring(startEnd, endStart);
 //            System.out.println("middle found: " + mid);
-            var count = mid.split(middleBetween).length + 2;
-            ret = new MessageFormat(createMessageFormatString(count), locale).parseObject(source, parsePos);
-        } else {
+                var count = mid.split(middleBetween).length + 2;
+                ret = new MessageFormat(createMessageFormatString(count), locale).parseObject(source, parsePos);
+            }
+        }
+
+        if (ret == null) {
             // now try exact number patterns
             ret = new MessageFormat(patterns[TWO], locale).parseObject(source, parsePos);
             if (ret == null && !patterns[THREE].isEmpty()) {
@@ -320,12 +376,10 @@ public class ListFormat extends Format {
         }
 
         // return the entire source if still no match
-//        if (ret == null) {
-//            parsePos.setIndex(source.length());
-//            var sa = new String[1];
-//            sa[0] = source;
-//            ret = sa;
-//        }
+        if (ret == null) {
+            parsePos.setIndex(source.length());
+            ret = new String[]{source};
+        }
 
         return ret;
     }
@@ -348,9 +402,9 @@ public class ListFormat extends Format {
             return true;
         }
 
-        if (obj instanceof ListFormat lf) {
-            return locale.equals(lf.locale) &&
-                Arrays.equals(patterns, lf.patterns);
+        if (obj instanceof ListFormat other) {
+            return locale.equals(other.locale) &&
+                Arrays.equals(patterns, other.patterns);
         }
 
         return false;
@@ -361,7 +415,7 @@ public class ListFormat extends Format {
      */
     @Override
     public int hashCode() {
-        return Objects.hash(locale, patterns);
+        return Objects.hash(locale, Arrays.hashCode(patterns));
     }
 
     /**
@@ -371,29 +425,24 @@ public class ListFormat extends Format {
     public String toString() {
         return
             """
-            ListFormat -
-                locale: %s
-                start pattern: %s
-                middle pattern: %s
-                end pattern: %s
-                pattern for two: %s
-                pattern for three: %s
+            ListFormat [locale: "%s", start: "%s", middle: "%s",  end: "%s", two: "%s", three: "%s"]
             """.formatted(locale.getDisplayName(), patterns[START], patterns[MIDDLE], patterns[END], patterns[TWO], patterns[THREE]);
     }
 
     private MessageFormat generateMessageFormat(Object[] objs) {
-        return switch (objs.length) {
-            case 0, 1 ->
-                throw new IllegalArgumentException("The object array should at least contain two elements");
+        var len = objs.length;
+        return switch (len) {
+            case 0 -> throw new IllegalArgumentException("There should at least be one input string");
+            case 1 -> new MessageFormat("{0}", locale);
             case 2, 3 -> {
-                var pattern = patterns[objs.length + 1];
+                var pattern = patterns[len + 1];
                 if (pattern != null && !pattern.isEmpty()) {
-                    yield new MessageFormat(patterns[objs.length + 1], locale);
+                    yield new MessageFormat(pattern, locale);
                 } else {
-                    yield new MessageFormat(createMessageFormatString(objs.length), locale);
+                    yield new MessageFormat(createMessageFormatString(len), locale);
                 }
             }
-            default -> new MessageFormat(createMessageFormatString(objs.length), locale);
+            default -> new MessageFormat(createMessageFormatString(len), locale);
         };
     }
 
@@ -420,17 +469,20 @@ public class ListFormat extends Format {
     public enum Type {
 
         /**
-         * The {@code STANDARD} list format style.
+         * The {@code STANDARD} list format style. This is the default
+         * type, which concatenates elements in "and" enumeration.
          */
         STANDARD,
 
         /**
-         * The {@code OR} list format style.
+         * The {@code OR} list format style. This style concatenates
+         * elements in "or" enumeration.
          */
         OR,
 
         /**
-         * The {@code UNIT} list format style.
+         * The {@code UNIT} list format style. This style concatenates
+         * elements, useful for enumerating units.
          */
         UNIT;
 

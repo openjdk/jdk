@@ -45,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestListFormat {
+    private static final String[] SAMPLE1 = {"foo"};
     private static final String[] SAMPLE2 = {"foo", "bar"};
     private static final String[] SAMPLE3 = {"foo", "bar", "baz"};
     private static final String[] SAMPLE4 = {"foo", "bar", "baz", "qux"};
@@ -68,6 +69,7 @@ public class TestListFormat {
 
     static Arguments[] getInstance_1Arg() {
         return new Arguments[] {
+                arguments(SAMPLE1, "foo"),
                 arguments(SAMPLE2, "twobef foo two bar twoaft"),
                 arguments(SAMPLE3, "threebef foo three bar three baz threeaft"),
                 arguments(SAMPLE4, "sbef foo sbet bar mid baz ebet qux eaft"),
@@ -134,7 +136,7 @@ public class TestListFormat {
         var result = f.format(input);
         assertEquals(expected, result);
         if (roundTrip) {
-            assertArrayEquals(input, f.parse(result, new ParsePosition(0)));
+            assertArrayEquals(input, f.parse(result));
         }
     }
 }
