@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,21 +28,5 @@ package sun.nio.ch;
 /**
  * Represents the level/name of a socket option
  */
-
-class OptionKey {
-    private int level;
-    private int name;
-
-    OptionKey(int level, int name) {
-        this.level = level;
-        this.name = name;
-    }
-
-    int level() {
-        return level;
-    }
-
-    int name() {
-        return name;
-    }
+record OptionKey(int level, int name) {
 }
