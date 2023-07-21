@@ -103,7 +103,7 @@ public class CompressedReadStream extends CompressedStream {
 
   @Override
   public void setPosition(int position) {
-    this.position = position;
+    super.setPosition(position);
     remainingZeroes = 0;
   }
 

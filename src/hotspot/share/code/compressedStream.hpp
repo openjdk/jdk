@@ -115,7 +115,12 @@ class CompressedWriteStream : public CompressedStream {
   // input value is completely handled and no unsigned5 encoding required
   bool handle_zero(juint value) {
     if (value == 0) {
-      _zero_count = (_zero_count == 0xFF) ? 0 : _zero_count;
+      if (_zero_count == 0xFF) { // biggest zero chain length is 255
+        _zero_count = 1;
+        // for now, write it as an ordinary value (UNSINGED5 encodes zero int as a single byte)
+        // the new zero sequence is started if there are more than two zero values in a raw
+        return false;
+      }
       if (++_zero_count > 2) {
         _buffer[_position - 2] = 0;
         _buffer[_position - 1] = _zero_count;
