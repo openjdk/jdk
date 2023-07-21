@@ -673,6 +673,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             return false;
         if (c != null)
             c.next = c;
+
         return true;
     }
 
