@@ -229,14 +229,11 @@ void Parse::do_put_xxx(Node* obj, ciField* field, bool is_field) {
   if (DoPartialEscapeAnalysis && !stopped()) {
     PartialEscapeAnalysis* pea = PEA();
     PEAState& state = jvms()->alloc_state();
-    ObjID src_id;
-    ObjID dst_id;
 
     // val is escaped if obj is escaped or is not trackable.
     if (is_obj && !val->is_top()) {
-      if ((src_id = pea->is_alias(val)) && state.get_object_state(src_id)->is_virtual()
-          // put_static_field or unknown dst or dst has materialized.
-          && (!is_field || !(dst_id = pea->is_alias(obj)) || !state.get_object_state(dst_id)->is_virtual())) {
+      // put_static_field or unknown dst or dst is escaped.
+      if (state.as_virtual(pea, val) != nullptr && (!is_field || state.as_virtual(pea, obj) == nullptr)) {
         val = state.materialize(this, val);
       }
     }
