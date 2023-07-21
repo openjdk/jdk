@@ -36,7 +36,8 @@ class JSON_GTest : public JSON {
   JSON_GTest(const char* text);
   stringStream output;
 
-  void log(uint level, const char* format, ...) ATTRIBUTE_PRINTF(3, 4);
+  ATTRIBUTE_PRINTF(3, 4)
+  void log(uint level, const char* format, ...);
 
   bool callback(JSON_TYPE t, JSON_VAL* v, uint level);
   JSON_TYPE prev;
