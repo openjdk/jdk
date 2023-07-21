@@ -206,7 +206,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      *
      * *** Blocking ***
      *
-     * The DualNode class is shared with class SynchronousQueue It
+     * The DualNode class is shared with class SynchronousQueue. It
      * houses method await, which is used for all blocking control, as
      * described below in DualNode internal documentation.
      *
@@ -331,15 +331,21 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
      * platforms.
      *
      * 4. When using timed waits, callers spin instead of invoking
-     * timed park if the remaining time is less than the likely
-     * cost of park/unpark. This also avoids re-parks when timed
-     * park returns just barely too soon.
+     * timed park if the remaining time is less than the likely cost
+     * of park/unpark. This also avoids re-parks when timed park
+     * returns just barely too soon. As is the case in most j.u.c
+     * blocking support, untimed waits use ManagedBlockers when
+     * callers are ForkJoin threads, but timed waits use plain
+     * parkNanos, under the rationale that known-to-be transient
+     * blocking doesn't require compensation. (This decision should be
+     * revisited here and elsewhere to deal with very long timeouts.)
      *
      * 5. Park/unpark signalling otherwise relies on a Dekker-like
      * scheme in which the caller advertises the need to unpark by
      * setting its waiter field, followed by a full fence and recheck
      * before actually parking. An explicit fence in used here rather
-     * than unnecessarily requiring volatile accesses elsewhere.
+     * than unnecessarily requiring volatile accesses elsewhere. This
+     * fence also separates accesses to field isUniprocessor.
      *
      * 6. To make the above work, callers must precheck that
      * timeouts are not already elapsed, and that interruptible
@@ -609,6 +615,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
             unsplice(p, s);                 // cancelled
         else if (m != null)
             s.selfLinkItem();
+
         return m;
     }
 
@@ -636,7 +643,7 @@ public class LinkedTransferQueue<E> extends AbstractQueue<E>
                 p = f;
             else {
                 if (p != h && cmpExHead(h, p) == h)
-                    h.next = h; // h.selfLink();
+                    h.next = h; // self-link
                 break;
             }
         }
