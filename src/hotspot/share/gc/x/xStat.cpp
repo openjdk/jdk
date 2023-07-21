@@ -982,7 +982,8 @@ public:
         _width(width),
         _width_next(width_next) {}
 
-    XColumn left(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
+    ATTRIBUTE_PRINTF(2, 3)
+    XColumn left(const char* fmt, ...) {
       va_list va;
 
       va_start(va, fmt);
@@ -997,7 +998,8 @@ public:
       return next();
     }
 
-    XColumn right(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
+    ATTRIBUTE_PRINTF(2, 3)
+    XColumn right(const char* fmt, ...) {
       va_list va;
 
       va_start(va, fmt);
@@ -1020,7 +1022,8 @@ public:
       return next();
     }
 
-    XColumn center(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
+    ATTRIBUTE_PRINTF(2, 3)
+    XColumn center(const char* fmt, ...) {
       va_list va;
 
       va_start(va, fmt);
