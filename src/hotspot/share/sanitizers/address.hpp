@@ -37,7 +37,7 @@
 #ifdef ADDRESS_SANITIZER
 #if defined(TARGET_COMPILER_gcc)
 // GCC-like, including Clang.
-#define ATTRIBUTE_NO_ASAN __attribute__((no_sanitize_address))
+#define ATTRIBUTE_NO_ASAN [[gnu::no_sanitize_address]]
 #elif defined(TARGET_COMPILER_visCPP)
 // Microsoft Visual C++
 #define ATTRIBUTE_NO_ASAN __declspec(no_sanitize_address)
@@ -59,19 +59,21 @@
 // ASAN_UNPOISON_MEMORY_REGION is defined in <sanitizer/asan_interface.h>
 #else
 #define ASAN_POISON_MEMORY_REGION(addr, size) \
-  do {                                        \
+  {                                           \
     if (false) {                              \
       ((void) (addr));                        \
       ((void) (size));                        \
     }                                         \
-  } while (false)
+  }                                           \
+  ((void) 0)
 #define ASAN_UNPOISON_MEMORY_REGION(addr, size) \
-  do {                                          \
+  {                                             \
     if (false) {                                \
       ((void) (addr));                          \
       ((void) (size));                          \
     }                                           \
-  } while (false)
+  }                                             \
+  ((void) 0)
 #endif
 
 #endif // SHARE_SANITIZERS_ADDRESS_HPP
