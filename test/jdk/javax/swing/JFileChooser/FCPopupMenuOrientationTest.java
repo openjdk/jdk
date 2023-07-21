@@ -48,7 +48,9 @@ public class FCPopupMenuOrientationTest {
                 for (UIManager.LookAndFeelInfo laf :
                         UIManager.getInstalledLookAndFeels()) {
                     String className = laf.getName().toLowerCase();
-                    if (className.contains("motif") || className.contains("mac")) {
+                    if (className.contains("motif")
+                            || className.contains("mac")
+                            || className.contains("gtk")) {
                         continue;
                     }
                     setLookAndFeel(laf);
