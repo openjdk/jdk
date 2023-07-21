@@ -169,7 +169,8 @@ class FormatStringEventLog : public EventLogBase< FormatStringLogMessage<bufsz> 
   FormatStringEventLog(const char* name, const char* short_name, int count = LogEventsBufferEntries)
    : EventLogBase< FormatStringLogMessage<bufsz> >(name, short_name, count) {}
 
-  void logv(Thread* thread, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0) {
+  ATTRIBUTE_PRINTF(3, 0)
+  void logv(Thread* thread, const char* format, va_list ap) {
     if (!this->should_log()) return;
 
     double timestamp = this->fetch_timestamp();
@@ -180,7 +181,8 @@ class FormatStringEventLog : public EventLogBase< FormatStringLogMessage<bufsz> 
     this->_records[index].data.printv(format, ap);
   }
 
-  void log(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(3, 4) {
+  ATTRIBUTE_PRINTF(3, 4)
+  void log(Thread* thread, const char* format, ...) {
     va_list ap;
     va_start(ap, format);
     this->logv(thread, format, ap);
@@ -257,25 +259,25 @@ class Events : AllStatic {
   static void print();
 
   // Logs a generic message with timestamp and format as printf.
-  static void log(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3) static void log(Thread* thread, const char* format, ...);
 
-  static void log_vm_operation(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3) static void log_vm_operation(Thread* thread, const char* format, ...);
 
-  static void log_zgc_phase_switch(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
+  ATTRIBUTE_PRINTF(1, 2) static void log_zgc_phase_switch(const char* format, ...);
 
   // Log exception related message
-  static void log_exception(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3) static void log_exception(Thread* thread, const char* format, ...);
   static void log_exception(Thread* thread, Handle h_exception, const char* message, const char* file, int line);
 
-  static void log_redefinition(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3) static void log_redefinition(Thread* thread, const char* format, ...);
 
   static void log_class_unloading(Thread* thread, InstanceKlass* ik);
 
-  static void log_class_loading(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3) static void log_class_loading(Thread* thread, const char* format, ...);
 
-  static void log_deopt_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3) static void log_deopt_message(Thread* thread, const char* format, ...);
 
-  static void log_dll_message(Thread* thread, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3) static void log_dll_message(Thread* thread, const char* format, ...);
 
   // Register default loggers
   static void init();
@@ -479,7 +481,8 @@ class EventMarkBase : public StackObj {
   NONCOPYABLE(EventMarkBase);
 
  protected:
-  void log_start(const char* format, va_list argp) ATTRIBUTE_PRINTF(2, 0);
+  ATTRIBUTE_PRINTF(2, 0)
+  void log_start(const char* format, va_list argp);
   void log_end();
 
  public:
@@ -493,8 +496,8 @@ class EventMarkWithLogFunction : public EventMarkBase {
 
  public:
   // log a begin event, format as printf
-  EventMarkWithLogFunction(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) :
-      EventMarkBase(log_function) {
+  ATTRIBUTE_PRINTF(2, 3)
+  EventMarkWithLogFunction(const char* format, ...) : EventMarkBase(log_function) {
     if (LogEvents) {
       va_list ap;
       va_start(ap, format);
