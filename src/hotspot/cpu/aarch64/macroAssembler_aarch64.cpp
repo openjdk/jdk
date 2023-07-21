@@ -179,7 +179,8 @@ public:
   virtual int immediate(address insn_addr, address &target) = 0;
   virtual void verify(address insn_addr, address &target) = 0;
 
-  int ALWAYSINLINE run(address insn_addr, address &target) {
+  ALWAYSINLINE
+  int run(address insn_addr, address &target) {
     int instructions = 1;
 
     uint32_t dispatch = Instruction_aarch64::extract(_insn, 30, 25);
