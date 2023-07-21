@@ -68,7 +68,8 @@ class JSON : public ResourceObj {
     VALUE_ERROR
   } JSON_ERROR;
 
-  void error(JSON_ERROR e, const char* format, ...) ATTRIBUTE_PRINTF(3, 4);
+  ATTRIBUTE_PRINTF(3, 4)
+  void error(JSON_ERROR e, const char* format, ...);
   outputStream* _st;
 
  private:
