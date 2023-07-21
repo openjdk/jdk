@@ -362,7 +362,8 @@ public:
 
 #undef DO_THROW
 
-  void fthrow_error(const char* file, int line, const char* format, ...) ATTRIBUTE_PRINTF(4, 5);
+  ATTRIBUTE_PRINTF(4, 5)
+  void fthrow_error(const char* file, int line, const char* format, ...);
 
   // Given an instance of HotSpotInstalledCode return the corresponding CodeBlob*.
   CodeBlob* get_code_blob(JVMCIObject code);
