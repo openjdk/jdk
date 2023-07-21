@@ -303,7 +303,7 @@ bool HeapShared::archive_object(oop obj) {
       guarantee(obj == SystemDictionary::java_platform_loader() ||
                 obj == SystemDictionary::java_system_loader() ||
                 java_lang_ClassLoader::loader_data(obj) == nullptr, "must be");
-      java_lang_ClassLoader::release_set_loader_data(obj, nullptr);
+      //java_lang_ClassLoader::release_set_loader_data(obj, nullptr);
     }
 
     return true;
@@ -340,25 +340,24 @@ public:
   }
 };
 
-void HeapShared::init_scratch_references() {
-  if (_scratch_references_table == nullptr)
-    _scratch_references_table = new (mtClass)ResolvedReferenceScratchTable();
-}
-
-void HeapShared::add_scratch_resolved_reference(intptr_t src, int index, oop new_result) {
+void HeapShared::add_scratch_resolved_reference(ConstantPool* src, int index, oop new_result) {
   MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
   OopHandle* scratch_handle = _scratch_references_table->get(src);
+  assert(scratch_handle != nullptr, "Must exist");
   objArrayOop scratch = (objArrayOop)(scratch_handle->resolve());
   scratch->obj_at_put(index, new_result);
 }
 
-void HeapShared::add_scratch_resolved_references(intptr_t src, OopHandle dest) {
-  assert(_scratch_references_table != nullptr, "must be initialized");
+void HeapShared::add_scratch_resolved_references(ConstantPool* src, OopHandle dest) {
   MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
+  if (_scratch_references_table == nullptr) {
+    _scratch_references_table = new (mtClass)ResolvedReferenceScratchTable();
+  }
+  assert(_scratch_references_table != nullptr, "must be initialized");
   _scratch_references_table->put(src, dest);
 }
 
-OopHandle HeapShared::scratch_resolved_references(intptr_t src) {
+OopHandle HeapShared::scratch_resolved_references(ConstantPool* src) {
   MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
   return *(_scratch_references_table->get(src));
 }

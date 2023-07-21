@@ -261,7 +261,7 @@ void ArchiveBuilder::gather_klasses_and_symbols() {
     // TODO: in the future, if we want to produce deterministic contents in the
     // dynamic archive, we might need to sort the symbols alphabetically (also see
     // DynamicArchiveBuilder::sort_methods()).
-    log_info(cds)("Sorting symbols and fixing identity hash ... ");
+    log_info(cds)("Sorting symbols ... ");
     _symbols->sort(compare_symbols_by_address);
     sort_klasses();
 
@@ -637,7 +637,7 @@ void ArchiveBuilder::make_shallow_copy(DumpRegion *dump_region, SourceObjInfo* s
 
   memcpy(dest, src, bytes);
 
-  // Update the hash of buffered sorted symbols for static dump
+  // Update the hash of buffered sorted symbols for static dump so that the symbols have deterministic contents
   if (DumpSharedSpaces && (src_info->msotype() == MetaspaceObj::SymbolType)) {
     Symbol* buffered_symbol = (Symbol*)dest;
     assert(((Symbol*)src)->is_permanent(), "archived symbols must be permanent");

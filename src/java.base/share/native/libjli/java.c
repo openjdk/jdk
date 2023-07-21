@@ -1442,9 +1442,9 @@ ParseArguments(int *pargc, char ***pargv,
             AddOption(arg, NULL);
         }
 
-/*
- * Check for CDS option
- */
+        /*
+        * Check for CDS option
+        */
         if (JLI_StrCmp(arg, "-Xshare:dump") == 0) {
           dumpSharedSpaces = JNI_TRUE;
         }

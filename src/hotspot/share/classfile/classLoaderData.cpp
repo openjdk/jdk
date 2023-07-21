@@ -1079,10 +1079,10 @@ void ClassLoaderData::verify() {
   assert_locked_or_safepoint(_metaspace_lock);
   oop cl = class_loader();
 
-  if (!DumpSharedSpaces) {
+  //if (!DumpSharedSpaces || UseNewCode) {
     guarantee(this == class_loader_data(cl) || has_class_mirror_holder(), "Must be the same");
     guarantee(cl != nullptr || this == ClassLoaderData::the_null_class_loader_data() || has_class_mirror_holder(), "must be");
-  }
+  //}
 
   // Verify the integrity of the allocated space.
 #ifdef ASSERT
