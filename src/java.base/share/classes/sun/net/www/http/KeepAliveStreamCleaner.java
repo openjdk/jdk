@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,10 +51,10 @@ class KeepAliveStreamCleaner
     implements Runnable
 {
     // maximum amount of remaining data that we will try to cleanup
-    protected static int MAX_DATA_REMAINING = 512;
+    protected static final int MAX_DATA_REMAINING;
 
     // maximum amount of KeepAliveStreams to be queued
-    protected static int MAX_CAPACITY = 10;
+    protected static final int MAX_CAPACITY;
 
     // timeout for both socket and poll on the queue
     protected static final int TIMEOUT = 5000;
