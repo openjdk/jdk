@@ -132,28 +132,41 @@ class PackageSnippets {
     private static final MethodTypeDesc MTD_void_StringArray = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String.arrayType());
     private static final MethodTypeDesc MTD_void_String = MethodTypeDesc.of(ConstantDescs.CD_void, ConstantDescs.CD_String);
 
-    void writeHelloWorld() {
-        // @start region="helloWorld"
-        byte[] bytes = Classfile.of().build(CD_Hello, cb -> {
-            cb.withFlags(AccessFlag.PUBLIC);
-            cb.withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void, Classfile.ACC_PUBLIC,
-                          mb -> mb.withCode(
-                                  b -> b.aload(0)
-                                        .invokespecial(ConstantDescs.CD_Object, ConstantDescs.INIT_NAME,
-                                                       ConstantDescs.MTD_void)
-                                        .returnInstruction(TypeKind.VoidType)
-                          )
-              )
-              .withMethod("main", MTD_void_StringArray,
-                          Classfile.ACC_PUBLIC,
-                          mb -> mb.withFlags(AccessFlag.STATIC, AccessFlag.PUBLIC)
-                                  .withCode(
-                                  b -> b.getstatic(CD_System, "out", CD_PrintStream)
-                                        .constantInstruction(Opcode.LDC, "Hello World")
-                                        .invokevirtual(CD_PrintStream, "println", MTD_void_String)
-                                        .returnInstruction(TypeKind.VoidType)
-            ));
-        });
+    void writeHelloWorld1() {
+        // @start region="helloWorld1"
+        byte[] bytes = Classfile.of().build(CD_Hello,
+                clb -> clb.withFlags(Classfile.ACC_PUBLIC)
+                          .withMethod(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void,
+                                      Classfile.ACC_PUBLIC,
+                                      mb -> mb.withCode(
+                                              cob -> cob.aload(0)
+                                                        .invokespecial(ConstantDescs.CD_Object,
+                                                                       ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
+                                                        .return_()))
+                          .withMethod("main", MTD_void_StringArray, Classfile.ACC_PUBLIC + Classfile.ACC_STATIC,
+                                      mb -> mb.withCode(
+                                              cob -> cob.getstatic(CD_System, "out", CD_PrintStream)
+                                                        .ldc("Hello World")
+                                                        .invokevirtual(CD_PrintStream, "println", MTD_void_String)
+                                                        .return_())));
+        // @end
+    }
+
+    void writeHelloWorld2() {
+        // @start region="helloWorld2"
+        byte[] bytes = Classfile.of().build(CD_Hello,
+                clb -> clb.withFlags(Classfile.ACC_PUBLIC)
+                          .withMethodBody(ConstantDescs.INIT_NAME, ConstantDescs.MTD_void,
+                                          Classfile.ACC_PUBLIC,
+                                          cob -> cob.aload(0)
+                                                    .invokespecial(ConstantDescs.CD_Object,
+                                                                   ConstantDescs.INIT_NAME, ConstantDescs.MTD_void)
+                                                    .return_())
+                          .withMethodBody("main", MTD_void_StringArray, Classfile.ACC_PUBLIC + Classfile.ACC_STATIC,
+                                          cob -> cob.getstatic(CD_System, "out", CD_PrintStream)
+                                                    .ldc("Hello World")
+                                                    .invokevirtual(CD_PrintStream, "println", MTD_void_String)
+                                                    .return_()));
         // @end
     }
 
@@ -161,13 +174,14 @@ class PackageSnippets {
         // @start region="stripDebugMethods1"
         ClassModel classModel = Classfile.of().parse(bytes);
         byte[] newBytes = Classfile.of().build(classModel.thisClass().asSymbol(),
-                                          classBuilder -> {
-                                              for (ClassElement ce : classModel) {
-                                                  if (!(ce instanceof MethodModel mm
-                                                        && mm.methodName().stringValue().startsWith("debug")))
-                                                      classBuilder.with(ce);
-                                              }
-                                          });
+                classBuilder -> {
+                    for (ClassElement ce : classModel) {
+                        if (!(ce instanceof MethodModel mm
+                                && mm.methodName().stringValue().startsWith("debug"))) {
+                            classBuilder.with(ce);
+                        }
+                    }
+                });
         // @end
     }
 
@@ -179,6 +193,14 @@ class PackageSnippets {
         };
         var cc = Classfile.of();
         byte[] newBytes = cc.transform(cc.parse(bytes), ct);
+        // @end
+    }
+
+    void stripDebugMethods3(byte[] bytes) {
+        // @start region="stripDebugMethods3"
+        ClassTransform ct = ClassTransform.dropping(
+                                    element -> element instanceof MethodModel mm
+                                            && mm.methodName().stringValue().startsWith("debug"));
         // @end
     }
 
@@ -199,7 +221,7 @@ class PackageSnippets {
         CodeTransform instrumentCalls = (b, e) -> {
             if (e instanceof InvokeInstruction i) {
                 b.getstatic(CD_System, "out", CD_PrintStream)
-                 .constantInstruction(Opcode.LDC, i.name().stringValue())
+                 .ldc(i.name().stringValue())
                  .invokevirtual(CD_PrintStream, "println", MTD_void_String);
             }
             b.with(e);

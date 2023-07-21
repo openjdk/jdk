@@ -586,7 +586,7 @@ public sealed interface CodeBuilder
             return Double.doubleToRawLongBits(dVal) == 0l ? dconst_0()
                  : dVal == 1.0d ? dconst_1()
                  : ldc(constantPool().doubleEntry(dVal));
-        return ldc(BytecodeHelpers.constantEntry(constantPool(), value));
+        return ldc(value);
     }
 
     default CodeBuilder monitorInstruction(Opcode opcode) {
@@ -1231,6 +1231,10 @@ public sealed interface CodeBuilder
 
     default CodeBuilder lconst_1() {
         return with(ConstantInstruction.ofIntrinsic(Opcode.LCONST_1));
+    }
+
+    default CodeBuilder ldc(ConstantDesc value) {
+        return ldc(BytecodeHelpers.constantEntry(constantPool(), value));
     }
 
     default CodeBuilder ldc(LoadableConstantEntry entry) {
