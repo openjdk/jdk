@@ -41,18 +41,15 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 
 /**
  * Generate serialized form for serializable fields.
  * Documentation denoted by the tags <code>serial</code> and
  * <code>serialField</code> is processed.
  */
-public class HtmlSerialFieldWriter extends FieldWriterImpl
-        implements SerializedFormWriter.SerialFieldWriter {
+public class SerialFieldWriter extends FieldWriter {
 
-    public HtmlSerialFieldWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
+    public SerialFieldWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
     }
 
@@ -60,18 +57,15 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         return utils.serializableFields(te);
     }
 
-    @Override
-    public Content getSerializableFieldsHeader() {
+    protected Content getSerializableFieldsHeader() {
         return HtmlTree.UL(HtmlStyle.blockList);
     }
 
-    @Override
-    public Content getFieldsContentHeader(boolean isLastContent) {
+    protected Content getFieldsContentHeader(boolean isLastContent) {
         return new HtmlTree(TagName.LI).setStyle(HtmlStyle.blockList);
     }
 
-    @Override
-    public Content getSerializableFields(String heading, Content source) {
+    protected Content getSerializableFields(String heading, Content source) {
         var section = HtmlTree.SECTION(HtmlStyle.detail);
         if (!source.isEmpty()) {
             Content headingContent = Text.of(heading);
@@ -82,8 +76,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
         return HtmlTree.LI(section);
     }
 
-    @Override
-    public void addMemberHeader(TypeMirror fieldType, String fieldName, Content content) {
+    protected void addMemberHeader(TypeMirror fieldType, String fieldName, Content content) {
         Content nameContent = Text.of(fieldName);
         var heading = HtmlTree.HEADING(Headings.SerializedForm.MEMBER_HEADING, nameContent);
         content.add(heading);
@@ -102,8 +95,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param field the field to document.
      * @param content the content to which the deprecated info will be added
      */
-    @Override
-    public void addMemberDeprecatedInfo(VariableElement field, Content content) {
+    protected void addMemberDeprecatedInfo(VariableElement field, Content content) {
         addDeprecatedInfo(field, content);
     }
 
@@ -113,8 +105,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param field the field to document.
      * @param content the content to which the deprecated info will be added
      */
-    @Override
-    public void addMemberDescription(VariableElement field, Content content) {
+    protected void addMemberDescription(VariableElement field, Content content) {
         if (!utils.getFullBody(field).isEmpty()) {
             writer.addInlineComment(field, content);
         }
@@ -130,8 +121,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param serialFieldTag the field to document (represented by tag)
      * @param content the content to which the deprecated info will be added
      */
-    @Override
-    public void addMemberDescription(VariableElement field, SerialFieldTree serialFieldTag, Content content) {
+    protected void addMemberDescription(VariableElement field, SerialFieldTree serialFieldTag, Content content) {
         List<? extends DocTree> description = serialFieldTag.getDescription();
         if (!description.isEmpty()) {
             Content serialFieldContent = writer.commentTagsToContent(field,
@@ -148,8 +138,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param field the field to document.
      * @param content the content to which the member tags info will be added
      */
-    @Override
-    public void addMemberTags(VariableElement field, Content content) {
+    protected void addMemberTags(VariableElement field, Content content) {
         Content tagContent = writer.getBlockTagOutput(field);
         if (!tagContent.isEmpty()) {
             var dl = HtmlTree.DL(HtmlStyle.notes);
@@ -166,8 +155,7 @@ public class HtmlSerialFieldWriter extends FieldWriterImpl
      * @param field the field to check overview details for.
      * @return true if overview details need to be printed
      */
-    @Override
-    public boolean shouldPrintOverview(VariableElement field) {
+    protected boolean shouldPrintOverview(VariableElement field) {
         if (!options.noComment()) {
             if(!utils.getFullBody(field).isEmpty() ||
                     writer.hasSerializationOverviewTags(field))

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,11 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit.builders;
-
+package jdk.javadoc.internal.doclets.formats.html;
 
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -41,31 +40,34 @@ import javax.lang.model.type.TypeMirror;
 
 import com.sun.source.doctree.SerialFieldTree;
 import com.sun.source.doctree.SerialTree;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+
+import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
+import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
+import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
+import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
-import jdk.javadoc.internal.doclets.toolkit.SerializedFormWriter;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
+import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
+import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
+import jdk.javadoc.internal.doclets.toolkit.util.IndexItem;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
 
 /**
- * Builds the serialized form.
+ * Generates the Serialized Form Information Page, <i>serialized-form.html</i>.
  */
-public class SerializedFormBuilder extends AbstractBuilder {
-
-    /**
-     * The writer for this builder.
-     */
-    private SerializedFormWriter writer;
+public class SerializedFormWriter extends SubWriterHolderWriter {
 
     /**
      * The writer for serializable fields.
      */
-    private SerializedFormWriter.SerialFieldWriter fieldWriter;
+    private SerialFieldWriter fieldWriter;
 
     /**
      * The writer for serializable method documentation.
      */
-    private SerializedFormWriter.SerialMethodWriter methodWriter;
+    private SerialMethodWriter methodWriter;
 
     /**
      * The header for the serial version UID.  Save the string
@@ -90,22 +92,15 @@ public class SerializedFormBuilder extends AbstractBuilder {
      */
     protected Element currentMember;
 
-    /**
-     * Construct a new SerializedFormBuilder.
-     * @param context  the build context.
-     */
-    private SerializedFormBuilder(Context context) {
-        super(context);
-    }
+    Set<TypeElement> visibleClasses;
 
     /**
-     * Construct a new SerializedFormBuilder.
-     *
-     * @param context  the build context.
-     * @return the new SerializedFormBuilder
+     * @param configuration the configuration data for the doclet
      */
-    public static SerializedFormBuilder getInstance(Context context) {
-        return new SerializedFormBuilder(context);
+    public SerializedFormWriter(HtmlConfiguration configuration) {
+        super(configuration, DocPaths.SERIALIZED_FORM, false);
+        visibleClasses = configuration.getIncludedTypeElements();
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SERIALIZED_FORM);
     }
 
     /**
@@ -113,19 +108,17 @@ public class SerializedFormBuilder extends AbstractBuilder {
      *
      * @throws DocletException if there is a problem while building the documentation
      */
-    @Override
-    public void build() throws DocletException {
+     void build() throws DocletException {
         SortedSet<TypeElement> rootclasses = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
         rootclasses.addAll(configuration.getIncludedTypeElements());
         if (!serialClassFoundToDocument(rootclasses)) {
             //Nothing to document.
             return;
         }
-        writer = configuration.getWriterFactory().getSerializedFormWriter();
-        if (writer == null) {
-            //Doclet does not support this output.
-            return;
-        }
+
+        configuration.conditionalPages.add(HtmlConfiguration.ConditionalPage.SERIALIZED_FORM);
+        writeGenerating();
+
         buildSerializedForm();
     }
 
@@ -135,39 +128,35 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * @throws DocletException if there is a problem while building the documentation
      */
     protected void buildSerializedForm() throws DocletException {
-        Content content = writer.getHeader(resources.getText(
+        Content content = getHeader(resources.getText(
                 "doclet.Serialized_Form"));
 
         buildSerializedFormSummaries();
 
-        writer.addFooter();
-        writer.printDocument(content);
+        addFooter();
+        printDocument(content);
     }
 
     /**
      * Build the serialized form summaries.
-     *
-     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildSerializedFormSummaries()
-            throws DocletException {
-        Content c = writer.getSerializedSummariesHeader();
+    protected void buildSerializedFormSummaries() {
+        Content c = getSerializedSummariesHeader();
         for (PackageElement pkg : configuration.packages) {
             currentPackage = pkg;
 
             buildPackageSerializedForm(c);
         }
-        writer.addSerializedContent(c);
+        addSerializedContent(c);
     }
 
     /**
      * Build the package serialized form for the current package being processed.
      *
      * @param target the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildPackageSerializedForm(Content target) throws DocletException {
-        Content packageSerializedHeader = writer.getPackageSerializedHeader();
+    protected void buildPackageSerializedForm(Content target) {
+        Content packageSerializedHeader = getPackageSerializedHeader();
         SortedSet<TypeElement> classes = utils.getAllClassesUnfiltered(currentPackage);
         if (classes.isEmpty()) {
             return;
@@ -182,7 +171,7 @@ public class SerializedFormBuilder extends AbstractBuilder {
         buildPackageHeader(packageSerializedHeader);
         buildClassSerializedForm(packageSerializedHeader);
 
-        writer.addPackageSerialized(target, packageSerializedHeader);
+        addPackageSerialized(target, packageSerializedHeader);
     }
 
     /**
@@ -191,33 +180,31 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * @param target the content to which the documentation will be added
      */
     protected void buildPackageHeader(Content target) {
-        target.add(writer.getPackageHeader(currentPackage));
+        target.add(getPackageHeader(currentPackage));
     }
 
     /**
      * Build the class serialized form.
      *
      * @param target the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildClassSerializedForm(Content target)
-            throws DocletException {
-        Content classSerializedHeader = writer.getClassSerializedHeader();
+    protected void buildClassSerializedForm(Content target) {
+        Content classSerializedHeader = getClassSerializedHeader();
         SortedSet<TypeElement> typeElements = utils.getAllClassesUnfiltered(currentPackage);
         for (TypeElement typeElement : typeElements) {
             currentTypeElement = typeElement;
-            fieldWriter = writer.getSerialFieldWriter(currentTypeElement);
-            methodWriter = writer.getSerialMethodWriter(currentTypeElement);
+            fieldWriter = getSerialFieldWriter(currentTypeElement);
+            methodWriter = getSerialMethodWriter(currentTypeElement);
             if (utils.isClass(currentTypeElement) && utils.isSerializable(currentTypeElement)) {
                 if (!serialClassInclude(utils, currentTypeElement)) {
                     continue;
                 }
-                Content classHeader = writer.getClassHeader(currentTypeElement);
+                Content classHeader = getClassHeader(currentTypeElement);
 
                 buildSerialUIDInfo(classHeader);
                 buildClassContent(classHeader);
 
-                classSerializedHeader.add(writer.getMember(classHeader));
+                classSerializedHeader.add(getMember(classHeader));
             }
         }
         target.add(classSerializedHeader);
@@ -229,12 +216,12 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * @param target the content to which the serial UID information will be added
      */
     protected void buildSerialUIDInfo(Content target) {
-        Content serialUIDHeader = writer.getSerialUIDInfoHeader();
+        Content serialUIDHeader = getSerialUIDInfoHeader();
         for (VariableElement field : utils.getFieldsUnfiltered(currentTypeElement)) {
             if (field.getSimpleName().toString().compareTo(SERIAL_VERSION_UID) == 0 &&
-                field.getConstantValue() != null) {
-                writer.addSerialUIDInfo(SERIAL_VERSION_UID_HEADER,
-                                        utils.constantValueExpression(field), serialUIDHeader);
+                    field.getConstantValue() != null) {
+                addSerialUIDInfo(SERIAL_VERSION_UID_HEADER,
+                        utils.constantValueExpression(field), serialUIDHeader);
                 break;
             }
         }
@@ -245,10 +232,9 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * Build the summaries for the methods and fields.
      *
      * @param target the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildClassContent(Content target) throws DocletException {
-        Content classContent = writer.getClassContentHeader();
+    protected void buildClassContent(Content target) {
+        Content classContent = getClassContentHeader();
 
         buildSerializableMethods(classContent);
         buildFieldHeader(classContent);
@@ -261,9 +247,8 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * Build the summaries for the methods that belong to the given class.
      *
      * @param target the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildSerializableMethods(Content target) throws DocletException {
+    protected void buildSerializableMethods(Content target) {
         Content serializableMethodsHeader = methodWriter.getSerializableMethodsHeader();
         for (var i = utils.serializationMethods(currentTypeElement).iterator(); i.hasNext(); ) {
             currentMember = i.next();
@@ -313,9 +298,8 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * Build the information for the method.
      *
      * @param methodsContent the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildMethodInfo(Content methodsContent) throws DocletException  {
+    protected void buildMethodInfo(Content methodsContent) {
         if (options.noComment()) {
             return;
         }
@@ -394,10 +378,8 @@ public class SerializedFormBuilder extends AbstractBuilder {
      * Build the summaries for the fields that belong to the given class.
      *
      * @param target the content to which the documentation will be added
-     * @throws DocletException if there is a problem while building the documentation
      */
-    protected void buildSerializableFields(Content target)
-            throws DocletException {
+    protected void buildSerializableFields(Content target) {
         Collection<VariableElement> members = utils.serializableFields(currentTypeElement);
         if (!members.isEmpty()) {
             Content serializableFieldsHeader = fieldWriter.getSerializableFieldsHeader();
@@ -548,7 +530,6 @@ public class SerializedFormBuilder extends AbstractBuilder {
         }
         List<? extends SerialTree> serial = utils.getSerialTrees(element);
         if (!serial.isEmpty()) {
-            CommentHelper ch = utils.getCommentHelper(element);
             // look for `@serial include|exclude`
             String serialtext = Utils.toLowerCase(serial.get(0).toString());
             if (serialtext.contains("exclude")) {
@@ -573,5 +554,173 @@ public class SerializedFormBuilder extends AbstractBuilder {
             }
         }
         return false;
+    }
+
+    /**
+     * Get the given header.
+     *
+     * @param header the header to write
+     * @return the body content
+     */
+     Content getHeader(String header) {
+        HtmlTree body = getBody(getWindowTitle(header));
+        Content h1Content = Text.of(header);
+        var heading = HtmlTree.HEADING_TITLE(Headings.PAGE_TITLE_HEADING,
+                HtmlStyle.title, h1Content);
+        var div = HtmlTree.DIV(HtmlStyle.header, heading);
+        bodyContents.setHeader(getHeader(PageMode.SERIALIZED_FORM))
+                .addMainContent(div);
+        return body;
+    }
+
+    /**
+     * Get the serialized form summaries header.
+     *
+     * @return the serialized form summaries header
+     */
+     Content getSerializedSummariesHeader() {
+        return HtmlTree.UL(HtmlStyle.blockList);
+    }
+
+    /**
+     * Get the package serialized form header.
+     *
+     * @return the package serialized form header tree
+     */
+     Content getPackageSerializedHeader() {
+        return HtmlTree.SECTION(HtmlStyle.serializedPackageContainer);
+    }
+
+     Content getPackageHeader(PackageElement packageElement) {
+        var heading = HtmlTree.HEADING_TITLE(Headings.SerializedForm.PACKAGE_HEADING,
+                contents.packageLabel);
+        heading.add(Entity.NO_BREAK_SPACE);
+        heading.add(getPackageLink(packageElement, Text.of(utils.getPackageName(packageElement))));
+        return heading;
+    }
+
+     Content getClassSerializedHeader() {
+        return HtmlTree.UL(HtmlStyle.blockList);
+    }
+
+    /**
+     * Checks if a class is generated and is visible.
+     *
+     * @param typeElement the class being processed.
+     * @return true if the class, that is being processed, is generated and is visible.
+     */
+    public boolean isVisibleClass(TypeElement typeElement) {
+        return visibleClasses.contains(typeElement) && configuration.isGeneratedDoc(typeElement)
+                && !utils.hasHiddenTag(typeElement);
+    }
+
+     Content getClassHeader(TypeElement typeElement) {
+        Content classLink = (isVisibleClass(typeElement))
+                ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.PLAIN, typeElement)
+                        .label(configuration.getClassName(typeElement)))
+                : Text.of(utils.getFullyQualifiedName(typeElement));
+        var section = HtmlTree.SECTION(HtmlStyle.serializedClassDetails)
+                .setId(htmlIds.forClass(typeElement));
+        Content superClassLink = typeElement.getSuperclass() != null
+                ? getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
+                        typeElement.getSuperclass()))
+                : null;
+        Content interfaceLink = getLink(new HtmlLinkInfo(configuration, HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS,
+                utils.isExternalizable(typeElement)
+                        ? utils.getExternalizableType()
+                        : utils.getSerializableType()));
+
+        // Print the heading.
+        Content className = new ContentBuilder();
+        className.add(utils.getTypeElementKindName(typeElement, false));
+        className.add(Entity.NO_BREAK_SPACE);
+        className.add(classLink);
+        section.add(HtmlTree.HEADING(Headings.SerializedForm.CLASS_HEADING, className));
+        // Print a simplified signature.
+        Content signature = new ContentBuilder();
+        signature.add("class ");
+        signature.add(typeElement.getSimpleName());
+        signature.add(" extends ");
+        signature.add(superClassLink);
+        signature.add(" implements ");
+        signature.add(interfaceLink);
+        section.add(HtmlTree.DIV(HtmlStyle.typeSignature, signature));
+        return section;
+    }
+
+     Content getSerialUIDInfoHeader() {
+        return HtmlTree.DL(HtmlStyle.nameValue);
+    }
+
+    /**
+     * Adds the serial UID info.
+     *
+     * @param header the header that will show up before the UID.
+     * @param serialUID the serial UID to print.
+     * @param target the serial UID content to which the serial UID
+     *               content will be added
+     */
+     void addSerialUIDInfo(String header,
+                                 String serialUID,
+                                 Content target)
+    {
+        Content headerContent = Text.of(header);
+        target.add(HtmlTree.DT(headerContent));
+        Content serialContent = Text.of(serialUID);
+        target.add(HtmlTree.DD(serialContent));
+    }
+
+     Content getClassContentHeader() {
+        return HtmlTree.UL(HtmlStyle.blockList);
+    }
+
+    /**
+     * Add the serialized content section.
+     *
+     * @param source the serialized content to be added
+     */
+     void addSerializedContent(Content source) {
+        bodyContents.addMainContent(source);
+    }
+
+     void addPackageSerialized(Content serializedSummaries,
+                                     Content packageSerialized)
+    {
+        serializedSummaries.add(HtmlTree.LI(packageSerialized));
+    }
+
+    /**
+     * Add the footer.
+     */
+     void addFooter() {
+        bodyContents.setFooter(getFooter());
+    }
+
+     void printDocument(Content source) throws DocFileIOException {
+        source.add(bodyContents);
+        printHtmlDocument(null, "serialized forms", source);
+
+        if (configuration.mainIndex != null) {
+            configuration.mainIndex.add(IndexItem.of(IndexItem.Category.TAGS,
+                    resources.getText("doclet.Serialized_Form"), path));
+        }
+    }
+
+    /**
+     * Return an instance of a SerialFieldWriter.
+     *
+     * @return an instance of a SerialFieldWriter.
+     */
+     SerialFieldWriter getSerialFieldWriter(TypeElement typeElement) {
+        return new SerialFieldWriter(this, typeElement);
+    }
+
+    /**
+     * Return an instance of a SerialMethodWriter.
+     *
+     * @return an instance of a SerialMethodWriter.
+     */
+     SerialMethodWriter getSerialMethodWriter(TypeElement typeElement) {
+        return new SerialMethodWriter(this, typeElement);
     }
 }

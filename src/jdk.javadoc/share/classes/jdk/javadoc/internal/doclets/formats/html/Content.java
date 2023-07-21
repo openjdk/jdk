@@ -23,7 +23,7 @@
  * questions.
  */
 
-package jdk.javadoc.internal.doclets.toolkit;
+package jdk.javadoc.internal.doclets.formats.html;
 
 import java.io.IOException;
 import java.io.StringWriter;

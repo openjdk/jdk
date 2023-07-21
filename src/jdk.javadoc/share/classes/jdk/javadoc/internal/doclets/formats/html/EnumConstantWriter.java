@@ -25,7 +25,6 @@
 
 package jdk.javadoc.internal.doclets.formats.html;
 
-
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -34,22 +33,108 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.EnumConstantWriter;
-import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Writes enum constant documentation in HTML format.
  */
-public class EnumConstantWriterImpl extends AbstractMemberWriter
-    implements EnumConstantWriter, MemberSummaryWriter {
+public class EnumConstantWriter extends AbstractMemberWriter {
 
-    public EnumConstantWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+    /**
+     * The current enum constant that is being documented.
+     */
+    private VariableElement currentElement;
+
+    public EnumConstantWriter(ClassWriter classWriter) {
+        super(classWriter, classWriter.typeElement);
     }
 
-    public EnumConstantWriterImpl(SubWriterHolderWriter writer) {
+    public EnumConstantWriter(SubWriterHolderWriter writer) {
         super(writer);
+    }
+
+    public void build(Content target) {
+        buildEnumConstant(target);
+    }
+
+    /**
+     * Build the enum constant documentation.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildEnumConstant(Content target) {
+        var enumConstants = getVisibleMembers(VisibleMemberTable.Kind.ENUM_CONSTANTS);
+        if (!enumConstants.isEmpty()) {
+            Content enumConstantsDetailsHeader = getEnumConstantsDetailsHeader(typeElement,
+                    target);
+            Content memberList = getMemberList();
+
+            for (Element enumConstant : enumConstants) {
+                currentElement = (VariableElement)enumConstant;
+                Content enumConstantContent = getEnumConstantsHeader(currentElement,
+                        memberList);
+
+                buildSignature(enumConstantContent);
+                buildDeprecationInfo(enumConstantContent);
+                buildPreviewInfo(enumConstantContent);
+                buildEnumConstantComments(enumConstantContent);
+                buildTagInfo(enumConstantContent);
+
+                memberList.add(getMemberListItem(enumConstantContent));
+            }
+            Content enumConstantDetails = getEnumConstantsDetails(
+                    enumConstantsDetailsHeader, memberList);
+            target.add(enumConstantDetails);
+        }
+    }
+
+    /**
+     * Build the signature.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildSignature(Content target) {
+        target.add(getSignature(currentElement));
+    }
+
+    /**
+     * Build the deprecation information.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildDeprecationInfo(Content target) {
+        addDeprecated(currentElement, target);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content target) {
+        addPreview(currentElement, target);
+    }
+
+    /**
+     * Build the comments for the enum constant.  Do nothing if
+     * {@link BaseOptions#noComment()} is set to true.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildEnumConstantComments(Content target) {
+        if (!options.noComment()) {
+            addComments(currentElement, target);
+        }
+    }
+
+    /**
+     * Build the tag information.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildTagInfo(Content target) {
+        addTags(currentElement, target);
     }
 
     @Override
@@ -67,8 +152,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
                 HtmlIds.ENUM_CONSTANT_SUMMARY, summariesList, content);
     }
 
-    @Override
-    public Content getEnumConstantsDetailsHeader(TypeElement typeElement,
+    protected Content getEnumConstantsDetailsHeader(TypeElement typeElement,
                                                  Content memberDetails) {
         memberDetails.add(MarkerComments.START_OF_ENUM_CONSTANT_DETAILS);
         var enumConstantsDetailsContent = new ContentBuilder();
@@ -78,8 +162,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
         return enumConstantsDetailsContent;
     }
 
-    @Override
-    public Content getEnumConstantsHeader(VariableElement enumConstant,
+    protected Content getEnumConstantsHeader(VariableElement enumConstant,
                                           Content enumConstantsDetails) {
         Content enumConstantsContent = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
@@ -89,36 +172,30 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
                 .setId(htmlIds.forMember(enumConstant));
     }
 
-    @Override
-    public Content getSignature(VariableElement enumConstant) {
+    protected Content getSignature(VariableElement enumConstant) {
         return new Signatures.MemberSignature(enumConstant, this)
                 .setType(enumConstant.asType())
                 .setAnnotations(writer.getAnnotationInfo(enumConstant, true))
                 .toContent();
     }
 
-    @Override
-    public void addDeprecated(VariableElement enumConstant, Content content) {
+    protected void addDeprecated(VariableElement enumConstant, Content content) {
         addDeprecatedInfo(enumConstant, content);
     }
 
-    @Override
-    public void addPreview(VariableElement enumConstant, Content content) {
+    protected void addPreview(VariableElement enumConstant, Content content) {
         addPreviewInfo(enumConstant, content);
     }
 
-    @Override
-    public void addComments(VariableElement enumConstant, Content enumConstants) {
+    protected void addComments(VariableElement enumConstant, Content enumConstants) {
         addComment(enumConstant, enumConstants);
     }
 
-    @Override
-    public void addTags(VariableElement enumConstant, Content content) {
+    protected void addTags(VariableElement enumConstant, Content content) {
         writer.addTagsInfo(enumConstant, content);
     }
 
-    @Override
-    public Content getEnumConstantsDetails(Content memberDetailsHeader,
+    protected Content getEnumConstantsDetails(Content memberDetailsHeader,
             Content content) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.constantDetails)
@@ -175,8 +252,7 @@ public class EnumConstantWriterImpl extends AbstractMemberWriter
         return writer.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, member, name);
     }
 
-    @Override
-    public Content getMemberHeader(){
+    protected Content getMemberHeader(){
         return writer.getMemberHeader();
     }
 }
