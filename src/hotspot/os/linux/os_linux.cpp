@@ -2801,11 +2801,6 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_HUGE_SHIFT 26
 #endif
 
-// Define MADV_HUGEPAGE here so we can build HotSpot on old systems.
-#ifndef MADV_HUGEPAGE
-  #define MADV_HUGEPAGE 14
-#endif
-
 int os::Linux::commit_memory_impl(char* addr, size_t size,
                                   size_t alignment_hint, bool exec) {
   int err = os::Linux::commit_memory_impl(addr, size, exec);
@@ -3534,27 +3529,6 @@ bool os::unguard_memory(char* addr, size_t size) {
   return linux_mprotect(addr, size, PROT_READ|PROT_WRITE);
 }
 
-bool os::Linux::transparent_huge_pages_sanity_check(bool warn,
-                                                    size_t page_size) {
-  bool result = false;
-  void *p = mmap(nullptr, page_size * 2, PROT_READ|PROT_WRITE,
-                 MAP_ANONYMOUS|MAP_PRIVATE,
-                 -1, 0);
-  if (p != MAP_FAILED) {
-    void *aligned_p = align_up(p, page_size);
-
-    result = madvise(aligned_p, page_size, MADV_HUGEPAGE) == 0;
-
-    munmap(p, page_size * 2);
-  }
-
-  if (warn && !result) {
-    warning("TransparentHugePages is not supported by the operating system.");
-  }
-
-  return result;
-}
-
 int os::Linux::hugetlbfs_page_size_flag(size_t page_size) {
   if (page_size != HugePages::default_static_hugepage_size()) {
     return (exact_log2(page_size) << MAP_HUGE_SHIFT);
@@ -3682,16 +3656,6 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
 
     // Don't try UseTransparentHugePages since there are known
     // performance issues with it turned on. This might change in the future.
-    UseTransparentHugePages = false;
-  }
-
-  if (UseTransparentHugePages) {
-    bool warn_on_failure = !FLAG_IS_DEFAULT(UseTransparentHugePages);
-    if (transparent_huge_pages_sanity_check(warn_on_failure, page_size)) {
-      UseHugeTLBFS = false;
-      UseSHM = false;
-      return true;
-    }
     UseTransparentHugePages = false;
   }
 
