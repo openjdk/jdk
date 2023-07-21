@@ -35,8 +35,8 @@
 
 #ifdef __GNUC__
 
-// __nop needs volatile so that compiler doesn't optimize it away
-#define NOP() asm volatile ("nop");
+// ISO C++ asm is always implicitly volatile
+#define NOP() asm ("nop");
 
 #elif defined(_MSC_VER)
 
