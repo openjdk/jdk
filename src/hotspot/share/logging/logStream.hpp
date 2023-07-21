@@ -148,7 +148,8 @@ public:
     return _lm.is_level(_level);
   }
 
-  void print(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
+  ATTRIBUTE_PRINTF(2, 3)
+  void print(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
     if (is_enabled()) {
