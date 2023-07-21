@@ -2234,11 +2234,11 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
 
 void TemplateTable::load_resolved_field_entry(Register obj,
                                               Register cache,
-                                              Register index,
+                                              Register tos_state,
                                               Register offset,
                                               Register flags,
                                               bool is_static = false) {
-  assert_different_registers(cache, index, flags, offset);
+  assert_different_registers(cache, tos_state, flags, offset);
 
   // Field offset
   __ load_sized_value(offset, Address(cache, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
@@ -2246,8 +2246,8 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   // Flags
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedFieldEntry::flags_offset())));
 
-  // Store TOS into index register in case it is needed later
-  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
+  // TOS state
+  __ load_unsigned_byte(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
 
   // Klass overwrite register
   if (is_static) {
@@ -2426,7 +2426,7 @@ void TemplateTable::jvmti_post_field_access(Register cache, Register index,
     __ call_VM(noreg, CAST_FROM_FN_PTR(address,
                                        InterpreterRuntime::post_field_access),
                                        c_rarg1, c_rarg2);
-    __ load_field_entry(cache, index, 1);
+    __ load_field_entry(cache, index);
     __ bind(L1);
   }
 }
@@ -2441,14 +2441,14 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register cache     = x14;
   const Register obj       = x14;
   const Register index     = x13;
-  const Register tos       = x13;
+  const Register tos_state = x13;
   const Register off       = x9;
   const Register flags     = x16;
   const Register bc        = x14; // uses same reg as obj, so don't mix them
 
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_access(cache, index, is_static, false);
-  load_resolved_field_entry(obj, cache, tos, off, flags, is_static);
+  load_resolved_field_entry(obj, cache, tos_state, off, flags, is_static);
 
   if (!is_static) {
     // obj is on the stack
@@ -2462,7 +2462,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
               notLong, notFloat, notObj, notDouble;
 
   assert(btos == 0, "change code, btos != 0");
-  __ bnez(tos, notByte);
+  __ bnez(tos_state, notByte);
 
   // Don't rewrite getstatic, only getfield
   if (is_static) {
@@ -2479,7 +2479,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notByte);
-  __ sub(t0, tos, (u1)ztos);
+  __ sub(t0, tos_state, (u1)ztos);
   __ bnez(t0, notBool);
 
   // ztos (same code as btos)
@@ -2493,7 +2493,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notBool);
-  __ sub(t0, tos, (u1)atos);
+  __ sub(t0, tos_state, (u1)atos);
   __ bnez(t0, notObj);
   // atos
   do_oop_load(_masm, field, x10, IN_HEAP);
@@ -2504,7 +2504,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notObj);
-  __ sub(t0, tos, (u1)itos);
+  __ sub(t0, tos_state, (u1)itos);
   __ bnez(t0, notInt);
   // itos
   __ access_load_at(T_INT, IN_HEAP, x10, field, noreg, noreg);
@@ -2517,7 +2517,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notInt);
-  __ sub(t0, tos, (u1)ctos);
+  __ sub(t0, tos_state, (u1)ctos);
   __ bnez(t0, notChar);
   // ctos
   __ access_load_at(T_CHAR, IN_HEAP, x10, field, noreg, noreg);
@@ -2529,7 +2529,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notChar);
-  __ sub(t0, tos, (u1)stos);
+  __ sub(t0, tos_state, (u1)stos);
   __ bnez(t0, notShort);
   // stos
   __ access_load_at(T_SHORT, IN_HEAP, x10, field, noreg, noreg);
@@ -2541,7 +2541,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notShort);
-  __ sub(t0, tos, (u1)ltos);
+  __ sub(t0, tos_state, (u1)ltos);
   __ bnez(t0, notLong);
   // ltos
   __ access_load_at(T_LONG, IN_HEAP, x10, field, noreg, noreg);
@@ -2553,7 +2553,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ j(Done);
 
   __ bind(notLong);
-  __ sub(t0, tos, (u1)ftos);
+  __ sub(t0, tos_state, (u1)ftos);
   __ bnez(t0, notFloat);
   // ftos
   __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
@@ -2566,7 +2566,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(notFloat);
 #ifdef ASSERT
-  __ sub(t0, tos, (u1)dtos);
+  __ sub(t0, tos_state, (u1)dtos);
   __ bnez(t0, notDouble);
 #endif
   // dtos

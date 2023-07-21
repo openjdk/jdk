@@ -272,7 +272,7 @@ class TemplateTable: AllStatic {
   static void load_invokedynamic_entry(Register method);
   static void load_resolved_field_entry(Register obj,
                                         Register cache,
-                                        Register index,
+                                        Register tos_state,
                                         Register off,
                                         Register flags,
                                         bool is_static);

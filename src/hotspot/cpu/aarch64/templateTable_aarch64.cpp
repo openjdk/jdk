@@ -2321,11 +2321,11 @@ void TemplateTable::resolve_cache_and_index_for_field(int byte_no,
 
 void TemplateTable::load_resolved_field_entry(Register obj,
                                               Register cache,
-                                              Register index,
+                                              Register tos_state,
                                               Register offset,
                                               Register flags,
                                               bool is_static = false) {
-  assert_different_registers(cache, index, flags, offset);
+  assert_different_registers(cache, tos_state, flags, offset);
 
   // Field offset
   __ load_sized_value(offset, Address(cache, in_bytes(ResolvedFieldEntry::field_offset_offset())), sizeof(int), true /*is_signed*/);
@@ -2333,8 +2333,8 @@ void TemplateTable::load_resolved_field_entry(Register obj,
   // Flags
   __ load_unsigned_byte(flags, Address(cache, in_bytes(ResolvedFieldEntry::flags_offset())));
 
-  // Store TOS into index register in case it is needed later
-  __ load_unsigned_byte(index, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
+  // TOS state
+  __ load_unsigned_byte(tos_state, Address(cache, in_bytes(ResolvedFieldEntry::type_offset())));
 
   // Klass overwrite register
   if (is_static) {
@@ -2526,14 +2526,14 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   const Register cache = r4;
   const Register obj   = r4;
   const Register index = r3;
-  const Register tos = r3;
+  const Register tos_state = r3;
   const Register off   = r19;
   const Register flags = r6;
   const Register bc    = r4; // uses same reg as obj, so don't mix them
 
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_access(cache, index, is_static, false);
-  load_resolved_field_entry(obj, cache, tos, off, flags, is_static);
+  load_resolved_field_entry(obj, cache, tos_state, off, flags, is_static);
 
   if (!is_static) {
     // obj is on the stack
@@ -2559,7 +2559,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
               notLong, notFloat, notObj, notDouble;
 
   assert(btos == 0, "change code, btos != 0");
-  __ cbnz(tos, notByte);
+  __ cbnz(tos_state, notByte);
 
   // Don't rewrite getstatic, only getfield
   if (is_static) rc = may_not_rewrite;
@@ -2574,7 +2574,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notByte);
-  __ cmp(tos, (u1)ztos);
+  __ cmp(tos_state, (u1)ztos);
   __ br(Assembler::NE, notBool);
 
   // ztos (same code as btos)
@@ -2588,7 +2588,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notBool);
-  __ cmp(tos, (u1)atos);
+  __ cmp(tos_state, (u1)atos);
   __ br(Assembler::NE, notObj);
   // atos
   do_oop_load(_masm, field, r0, IN_HEAP);
@@ -2599,7 +2599,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notObj);
-  __ cmp(tos, (u1)itos);
+  __ cmp(tos_state, (u1)itos);
   __ br(Assembler::NE, notInt);
   // itos
   __ access_load_at(T_INT, IN_HEAP, r0, field, noreg, noreg);
@@ -2611,7 +2611,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notInt);
-  __ cmp(tos, (u1)ctos);
+  __ cmp(tos_state, (u1)ctos);
   __ br(Assembler::NE, notChar);
   // ctos
   __ access_load_at(T_CHAR, IN_HEAP, r0, field, noreg, noreg);
@@ -2623,7 +2623,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notChar);
-  __ cmp(tos, (u1)stos);
+  __ cmp(tos_state, (u1)stos);
   __ br(Assembler::NE, notShort);
   // stos
   __ access_load_at(T_SHORT, IN_HEAP, r0, field, noreg, noreg);
@@ -2635,7 +2635,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notShort);
-  __ cmp(tos, (u1)ltos);
+  __ cmp(tos_state, (u1)ltos);
   __ br(Assembler::NE, notLong);
   // ltos
   __ access_load_at(T_LONG, IN_HEAP, r0, field, noreg, noreg);
@@ -2647,7 +2647,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
   __ b(Done);
 
   __ bind(notLong);
-  __ cmp(tos, (u1)ftos);
+  __ cmp(tos_state, (u1)ftos);
   __ br(Assembler::NE, notFloat);
   // ftos
   __ access_load_at(T_FLOAT, IN_HEAP, noreg /* ftos */, field, noreg, noreg);
@@ -2660,7 +2660,7 @@ void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(notFloat);
 #ifdef ASSERT
-  __ cmp(tos, (u1)dtos);
+  __ cmp(tos_state, (u1)dtos);
   __ br(Assembler::NE, notDouble);
 #endif
   // dtos
@@ -2752,16 +2752,17 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
 void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
   transition(vtos, vtos);
 
-  const Register cache = r2;
-  const Register index = r3;
-  const Register obj   = r2;
-  const Register off   = r19;
-  const Register flags = r0;
-  const Register bc    = r4;
+  const Register cache     = r2;
+  const Register index     = r3;
+  const Register tos_state = r3
+  const Register obj       = r2;
+  const Register off       = r19;
+  const Register flags     = r0;
+  const Register bc        = r4;
 
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_mod(cache, index, is_static);
-  load_resolved_field_entry(obj, cache, index, off, flags, is_static);
+  load_resolved_field_entry(obj, cache, tos_state, off, flags, is_static);
 
   Label Done;
   __ mov(r5, flags);
@@ -2780,8 +2781,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         notLong, notFloat, notObj, notDouble;
 
   assert(btos == 0, "change code, btos != 0");
-  // Index holds TOS
-  __ cbnz(index, notByte);
+  __ cbnz(tos_state, notByte);
 
   // Don't rewrite putstatic, only putfield
   if (is_static) rc = may_not_rewrite;
@@ -2798,7 +2798,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notByte);
-  __ cmp(index, (u1)ztos);
+  __ cmp(tos_state, (u1)ztos);
   __ br(Assembler::NE, notBool);
 
   // ztos
@@ -2813,7 +2813,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notBool);
-  __ cmp(index, (u1)atos);
+  __ cmp(tos_state, (u1)atos);
   __ br(Assembler::NE, notObj);
 
   // atos
@@ -2829,7 +2829,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notObj);
-  __ cmp(index, (u1)itos);
+  __ cmp(tos_state, (u1)itos);
   __ br(Assembler::NE, notInt);
 
   // itos
@@ -2844,7 +2844,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notInt);
-  __ cmp(index, (u1)ctos);
+  __ cmp(tos_state, (u1)ctos);
   __ br(Assembler::NE, notChar);
 
   // ctos
@@ -2859,7 +2859,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notChar);
-  __ cmp(index, (u1)stos);
+  __ cmp(tos_state, (u1)stos);
   __ br(Assembler::NE, notShort);
 
   // stos
@@ -2874,7 +2874,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notShort);
-  __ cmp(index, (u1)ltos);
+  __ cmp(tos_state, (u1)ltos);
   __ br(Assembler::NE, notLong);
 
   // ltos
@@ -2889,7 +2889,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notLong);
-  __ cmp(index, (u1)ftos);
+  __ cmp(tos_state, (u1)ftos);
   __ br(Assembler::NE, notFloat);
 
   // ftos
@@ -2905,7 +2905,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(notFloat);
 #ifdef ASSERT
-  __ cmp(index, (u1)dtos);
+  __ cmp(tos_state, (u1)dtos);
   __ br(Assembler::NE, notDouble);
 #endif
 
