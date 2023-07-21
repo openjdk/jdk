@@ -32,6 +32,8 @@ import java.awt.Window;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,26 +42,21 @@ import java.util.List;
  * @test
  * @bug 8280482
  * @key headful
- * @requires (os.family == "linux")
- * @library /java/awt/regtesthelpers
  * @summary Test to check if window GC doesn't change within same screen.
  * @run main MultiScreenCheckScreenIDTest
  */
 
-public class MultiScreenCheckScreenIDTest {
+public class MultiScreenCheckScreenIDTest extends MouseAdapter {
     private static final int COLS = 12;
     private static final int ROWS = 8;
     private static final Color BACKGROUND = new Color(0, 0, 255, 64);
     private static GraphicsDevice[] screens;
     static List<Window> windowList = new ArrayList<>();
-
     static Robot robot;
 
     public static void main(final String[] args) throws Exception {
         try {
             createGUI();
-            robot.delay(100);
-            robot.waitForIdle();
         } finally {
             for (Window win : windowList) {
                 win.dispose();
@@ -79,11 +76,12 @@ public class MultiScreenCheckScreenIDTest {
 
         if (screens.length < 2) {
             System.out.println("Testing aborted. Required min of 2 screens. " +
-                    "Found : " + screens.length);
+                    "Available : " + screens.length);
             return;
         }
         robot = new Robot();
 
+        int screenNumber = 1;
         for (GraphicsDevice screen : screens) {
             Rectangle screenBounds = screen.getDefaultConfiguration().getBounds();
 
@@ -102,25 +100,17 @@ public class MultiScreenCheckScreenIDTest {
                 robot.delay(50);
                 robot.waitForIdle();
                 if (windowList.get(windowList.size() - 1).getBounds().intersects
-                        (screens[0].getDefaultConfiguration().getBounds())) {
+                        (screen.getDefaultConfiguration().getBounds())) {
                     if (!(windowList.get(windowList.size() - 1).
                             getGraphicsConfiguration().getBounds().
-                            intersects(screens[0].getDefaultConfiguration().
+                            intersects(screen.getDefaultConfiguration().
                                     getBounds()))) {
                         throw new RuntimeException("Graphics configuration " +
-                                "changed for screen 0");
-                    }
-                } else if (windowList.get(windowList.size() - 1).getBounds().
-                        intersects(screens[1].getDefaultConfiguration().getBounds())) {
-                    if (!(windowList.get(windowList.size() - 1).
-                            getGraphicsConfiguration().getBounds().
-                            intersects(screens[1].getDefaultConfiguration().
-                                    getBounds()))) {
-                        throw new RuntimeException("Graphics configuration " +
-                                "changed for screen 1");
+                                "changed for screen :" + screenNumber);
                     }
                 }
             }
+            screenNumber++;
         }
     }
 
@@ -129,10 +119,15 @@ public class MultiScreenCheckScreenIDTest {
         window.setBounds(bounds);
         window.setBackground(BACKGROUND);
         window.setAlwaysOnTop(true);
+        window.addMouseListener(this);
         window.setVisible(true);
         windowList.add(window);
     }
 
+    @Override
+    public void mouseClicked(MouseEvent e) {
+        ((Window) e.getSource()).dispose();
+    }
     private static List<Rectangle> gridOfRectangles(Rectangle r, int cols, int rows) {
         List<Rectangle> l = new ArrayList<>();
         for (int row = 0; row < rows; row++) {
