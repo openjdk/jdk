@@ -320,27 +320,25 @@ void CodeCache::initialize_heaps() {
   // Check that code heap segments fit in cache when using large pages
   size_t ps = page_size();
   if (UseLargePages) {
-    size_t temp_ps = ps;
-    while (temp_ps > 0 &&
-           align_up(non_nmethod_size, temp_ps) +
-           align_up(profiled_size, temp_ps) +
-           align_up(non_profiled_size, temp_ps) > cache_size) {
-      temp_ps = os::page_sizes().next_smaller(temp_ps);
+    while (ps > 0 &&
+           align_up(non_nmethod_size, ps) +
+           align_up(profiled_size, ps) +
+           align_up(non_profiled_size, ps) > cache_size) {
+      ps = os::page_sizes().next_smaller(ps);
     }
-    if (temp_ps <= 0) {
+    if (ps <= 0) {
       // No small enough page found
       vm_exit_during_initialization(err_msg("Could not reserve enough space for code cache with any page size"));
-    } else if (temp_ps != ps){
+    } else {
       // Smaller page found
       char msg[256];
       jio_snprintf(msg, sizeof(msg),
                    "Failed to reserve large page memory for segmented code cache (" SIZE_FORMAT "%s). "
                    "Reverting to smaller page size (" SIZE_FORMAT "%s).",
+                   byte_size_in_exact_unit(page_size()), exact_unit_for_byte_size(page_size()),
                    byte_size_in_exact_unit(ps), exact_unit_for_byte_size(ps));
-                   byte_size_in_exact_unit(temp_ps), exact_unit_for_byte_size(temp_ps),
       log_warning(codecache)("%s", msg);
       warning("%s", msg);
-      ps = temp_ps;
     }
   }
 
