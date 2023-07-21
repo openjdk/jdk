@@ -80,24 +80,23 @@ void DFSClosure::closure_impl(UnifiedOopRef reference, const oop pointee) {
   if (GranularTimer::is_finished()) {
     return;
   }
+
   if (_depth == 0 && _ignore_root_set) {
     // Root set is already marked, but we want
     // to continue, so skip is_marked check.
     assert(_mark_bits->is_marked(pointee), "invariant");
-  }  else {
+    _reference_stack[_depth] = reference;
+  } else {
     if (_mark_bits->is_marked(pointee)) {
       return;
     }
+    _mark_bits->mark_obj(pointee);
+    _reference_stack[_depth] = reference;
+    // is the pointee a sample object?
+    if (pointee->mark().is_marked()) {
+      add_chain();
+    }
   }
-  _reference_stack[_depth] = reference;
-  _mark_bits->mark_obj(pointee);
-  assert(_mark_bits->is_marked(pointee), "invariant");
-
-  // is the pointee a sample object?
-  if (pointee->mark().is_marked()) {
-    add_chain();
-  }
-
   assert(_max_depth >= 1, "invariant");
   if (_depth < _max_depth - 1) {
     _depth++;
