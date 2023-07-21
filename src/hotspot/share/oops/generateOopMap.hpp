@@ -407,9 +407,12 @@ class GenerateOopMap {
   int copy_cts                              (CellTypeState *dst, CellTypeState *src);
 
   // Error handling
-  void  error_work                          (const char *format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
-  void  report_error                        (const char *format, ...) ATTRIBUTE_PRINTF(2, 3);
-  void  verify_error                        (const char *format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 0)
+  void  error_work                          (const char *format, va_list ap);
+  ATTRIBUTE_PRINTF(2, 3)
+  void  report_error                        (const char *format, ...);
+  ATTRIBUTE_PRINTF(2, 3)
+  void  verify_error                        (const char *format, ...);
   bool  got_error()                         { return _got_error; }
 
   // Create result set
