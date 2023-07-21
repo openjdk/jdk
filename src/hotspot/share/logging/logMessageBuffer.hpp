@@ -121,8 +121,8 @@ class LogMessageBuffer : public StackObj {
   virtual void vwrite(LogLevelType level, const char* fmt, va_list args);
 
 #define LOG_LEVEL(level, name) \
-  LogMessageBuffer& v##name(const char* fmt, va_list args) ATTRIBUTE_PRINTF(2, 0); \
-  LogMessageBuffer& name(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 0) LogMessageBuffer& v##name(const char* fmt, va_list args); \
+  ATTRIBUTE_PRINTF(2, 3) LogMessageBuffer& name(const char* fmt, ...);
   LOG_LEVEL_LIST
 #undef LOG_LEVEL
 };
