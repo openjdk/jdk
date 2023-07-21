@@ -2114,6 +2114,15 @@ int DirectivesStack::_depth = 0;
 CompilerDirectives* DirectivesStack::_top = nullptr;
 CompilerDirectives* DirectivesStack::_bottom = nullptr;
 
+// Acquires Compilation_lock and waits for it to be notified
+// as long as WhiteBox::compilation_locked is true.
+static void whitebox_lock_compilation() {
+  MonitorLocker locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
+  while (WhiteBox::compilation_locked) {
+    locker.wait();
+  }
+}
+
 // ------------------------------------------------------------------
 // CompileBroker::invoke_compiler_on_method
 //
@@ -2196,6 +2205,11 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       JVMCIEnv env(thread, &compile_state, __FILE__, __LINE__);
       failure_reason = compile_state.failure_reason();
       if (failure_reason == nullptr) {
+        if (WhiteBoxAPI && WhiteBox::compilation_locked) {
+          // Must switch to native to block
+          ThreadToNativeFromVM ttn(thread);
+          whitebox_lock_compilation();
+        }
         methodHandle method(thread, target_handle);
         runtime = env.runtime();
         runtime->compile_method(&env, jvmci, method, osr_bci);
@@ -2257,10 +2271,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
       ci_env.record_method_not_compilable("no compiler");
     } else if (!ci_env.failing()) {
       if (WhiteBoxAPI && WhiteBox::compilation_locked) {
-        MonitorLocker locker(Compilation_lock, Mutex::_no_safepoint_check_flag);
-        while (WhiteBox::compilation_locked) {
-          locker.wait();
-        }
+        whitebox_lock_compilation();
       }
       comp->compile_method(&ci_env, target, osr_bci, true, directive);
 
