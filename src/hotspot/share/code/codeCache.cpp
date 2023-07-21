@@ -336,8 +336,8 @@ void CodeCache::initialize_heaps() {
       jio_snprintf(msg, sizeof(msg),
                    "Failed to reserve large page memory for segmented code cache (" SIZE_FORMAT "%s). "
                    "Reverting to smaller page size (" SIZE_FORMAT "%s).",
-                   byte_size_in_exact_unit(ps), exact_unit_for_byte_size(ps),
-                   byte_size_in_exact_unit(temp_ps), exact_unit_for_byte_size(temp_ps));
+                   byte_size_in_exact_unit(ps), exact_unit_for_byte_size(ps));
+                   byte_size_in_exact_unit(temp_ps), exact_unit_for_byte_size(temp_ps),
       log_warning(codecache)("%s", msg);
       warning("%s", msg);
       ps = temp_ps;
