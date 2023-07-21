@@ -250,11 +250,6 @@ class Arguments : AllStatic {
   static Mode _mode;
   static void set_mode_flags(Mode mode);
 
-  // -Xdebug flag
-  static bool _xdebug_mode;
-  static void set_xdebug_mode(bool arg) { _xdebug_mode = arg; }
-  static bool xdebug_mode()             { return _xdebug_mode; }
-
   // preview features
   static bool _enable_preview;
 

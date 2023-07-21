@@ -1,12 +1,11 @@
 /*
- * Copyright (c) 2022, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023 Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,24 +20,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
-package jdk.internal.io;
 
-import java.nio.charset.Charset;
-
-/**
- * Service provider interface for JdkConsole implementations.
+/* @test
+ * @summary Run a subset of gtests with the native trimmer activated.
+ * @library /test/lib
+ * @modules java.base/jdk.internal.misc
+ *          java.xml
+ * @run main/native GTestWrapper --gtest_filter=os.trim* -Xlog:trimnative -XX:+UnlockExperimentalVMOptions -XX:TrimNativeHeapInterval=100
  */
-public interface JdkConsoleProvider {
-    /**
-     * The module name of the JdkConsole default provider.
-     */
-    String DEFAULT_PROVIDER_MODULE_NAME = "jdk.internal.le";
-
-    /**
-     * {@return the Console instance, or {@code null} if not available}
-     * @param isTTY indicates if the jvm is attached to a terminal
-     * @param charset charset of the platform console
-     */
-    JdkConsole console(boolean isTTY, Charset charset);
-}
