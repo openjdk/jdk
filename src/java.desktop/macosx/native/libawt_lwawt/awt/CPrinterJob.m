@@ -355,7 +355,7 @@ static void javaPageFormatToNSPrintInfo(JNIEnv* env, jobject srcPrintJob, jobjec
     [dstPrintInfo setPrinter:printer];
 }
 
-static int duplexModeToSides(PMDuplexMode duplexMode) {
+static jint duplexModeToSides(PMDuplexMode duplexMode) {
     switch(duplexMode) {
         case kPMDuplexNone: return ONE_SIDED;
         case kPMDuplexTumble: return TWO_SIDED_SHORT_EDGE;
@@ -364,7 +364,7 @@ static int duplexModeToSides(PMDuplexMode duplexMode) {
     }
 }
 
-static PMDuplexMode sidesToDuplexMode(int sides) {
+static PMDuplexMode sidesToDuplexMode(jint sides) {
     switch(sides) {
         case ONE_SIDED: return kPMDuplexNone;
         case TWO_SIDED_SHORT_EDGE: return kPMDuplexTumble;
@@ -445,7 +445,7 @@ static void nsPrintInfoToJavaPrinterJob(JNIEnv* env, NSPrintInfo* src, jobject d
 
         PMDuplexMode duplexSetting;
         if (PMGetDuplex(src.PMPrintSettings, &duplexSetting) == noErr) {
-            int sides = duplexModeToSides(duplexSetting);
+            jint sides = duplexModeToSides(duplexSetting);
             (*env)->CallVoidMethod(env, dstPrinterJob, jm_setSides, sides); // AWT_THREADING Safe (known object)
             CHECK_EXCEPTION();
         }
@@ -528,7 +528,7 @@ static void javaPrinterJobToNSPrintInfo(JNIEnv* env, jobject srcPrinterJob, jobj
        [dst setJobDisposition:NSPrintSpoolJob];
     }
 
-    int sides = (*env)->CallIntMethod(env, srcPrinterJob, jm_getSides);
+    jint sides = (*env)->CallIntMethod(env, srcPrinterJob, jm_getSides);
     CHECK_EXCEPTION();
 
     if (sides >= 0) {
