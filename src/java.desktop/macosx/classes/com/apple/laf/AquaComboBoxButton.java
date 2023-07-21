@@ -230,7 +230,6 @@ class AquaComboBoxButton extends JButton {
 
         rendererPane.paintComponent(g, c, this, left, top, cWidth, height, shouldValidate); // h - (insets.top + insets.bottom) );
 
-        // fix for 8283214
         // set the accessible name to the displayed text in JComboBox.
         // screen magnifier queries to get the accessible name to display magnified text.
 
