@@ -47,12 +47,14 @@ public:
     return _tagset;
   }
 
-#define LOG_LEVEL(level, name) ATTRIBUTE_PRINTF(2, 0)   \
+#define LOG_LEVEL(level, name) \
+  ATTRIBUTE_PRINTF(2, 0)   \
   LogHandle& v##name(const char* fmt, va_list args) { \
     _tagset.vwrite(LogLevel::level, fmt, args); \
     return *this; \
   } \
-  LogHandle& name(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) { \
+  ATTRIBUTE_PRINTF(2, 3) \
+  LogHandle& name(const char* fmt, ...) { \
     va_list args; \
     va_start(args, fmt); \
     _tagset.vwrite(LogLevel::level, fmt, args); \
@@ -90,7 +92,8 @@ public:
     return LogTargetHandle(LogTargetImpl<level, T0, T1, T2, T3, T4, GuardTag>());
   }
 
-  void print(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3) {
+  ATTRIBUTE_PRINTF(2, 3)
+  void print(const char* fmt, ...) {
     va_list args;
     va_start(args, fmt);
     if (is_enabled()) {
