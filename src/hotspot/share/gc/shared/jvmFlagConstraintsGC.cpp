@@ -53,20 +53,6 @@
 // checking functions,  FLAG_IS_CMDLINE() is used to check if
 // the flag has been set by the user and so should be checked.
 
-JVMFlag::Error ParallelGCThreadsConstraintFunc(uint value, bool verbose) {
-  // Parallel GC passes ParallelGCThreads when creating GrowableArray as 'int' type parameter.
-  // So can't exceed with "INT_MAX"
-
-  if (UseParallelGC && (value > INT_MAX)) {
-    JVMFlag::printError(verbose,
-                        "ParallelGCThreads (%u) must be "
-                        "less than or equal to %d for Parallel GC\n",
-                        value, INT_MAX);
-    return JVMFlag::VIOLATES_CONSTRAINT;
-  }
-  return JVMFlag::SUCCESS;
-}
-
 static JVMFlag::Error MinPLABSizeBounds(const char* name, size_t value, bool verbose) {
   if ((GCConfig::is_gc_selected(CollectedHeap::G1) || GCConfig::is_gc_selected(CollectedHeap::Parallel)) &&
       (value < PLAB::min_size())) {
