@@ -1807,8 +1807,9 @@ public final class LocalDateTime
      * chronology is also considered, see {@link ChronoLocalDateTime#compareTo}.
      *
      * @param other  the other date-time to compare to, not null
-     * @return the comparator value, that is less than zero if this is before {@code other},
-     *          zero if they are equal, or greater than zero if this is after {@code other}
+     * @return the comparator value, that is the comparison of this local date-time with
+     *          the {@code other} local date-time and this chronology with the {@code other} chronology,
+     *          in order, returning the first non-zero result, and otherwise returning zero
      * @see #isBefore
      * @see #isAfter
      */

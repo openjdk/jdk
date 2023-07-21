@@ -1988,8 +1988,9 @@ public final class LocalDate
      * chronology is also considered, see {@link java.time.chrono.ChronoLocalDate#compareTo}.
      *
      * @param other  the other date to compare to, not null
-     * @return the comparator value, that is less than zero if this is before {@code other},
-     *          zero if they are equal, or greater than zero if this is after {@code other}
+     * @return the comparator value, that is the comparison of this local date with
+     *          the {@code other} local date and this chronology with the {@code other} chronology,
+     *          in order, returning the first non-zero result, and otherwise returning zero
      * @see #isBefore
      * @see #isAfter
      */
