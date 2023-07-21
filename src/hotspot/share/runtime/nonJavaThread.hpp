@@ -89,7 +89,8 @@ class NamedThread: public NonJavaThread {
   NamedThread();
   ~NamedThread();
   // May only be called once per thread.
-  void set_name(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3)
+  void set_name(const char* format, ...);
   virtual bool is_Named_thread() const { return true; }
   virtual const char* name() const { return _name == nullptr ? "Unknown Thread" : _name; }
   virtual const char* type_name() const { return "NamedThread"; }
