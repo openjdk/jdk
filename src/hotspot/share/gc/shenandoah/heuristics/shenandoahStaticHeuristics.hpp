@@ -34,7 +34,7 @@
  */
 class ShenandoahStaticHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahStaticHeuristics(ShenandoahHeapStats* heap_stats);
+  ShenandoahStaticHeuristics(ShenandoahSpaceInfo* space_info);
 
   virtual ~ShenandoahStaticHeuristics();
 

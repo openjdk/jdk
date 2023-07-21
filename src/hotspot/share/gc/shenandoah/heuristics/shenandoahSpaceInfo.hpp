@@ -34,7 +34,7 @@
  * future operational modes of Shenandoah in which the heap may be split
  * into generations.
  */
-class ShenandoahHeapStats {
+class ShenandoahSpaceInfo {
 public:
   virtual size_t soft_max_capacity() const = 0;
   virtual size_t max_capacity() const = 0;

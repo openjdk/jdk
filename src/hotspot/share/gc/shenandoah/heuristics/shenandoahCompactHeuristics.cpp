@@ -32,8 +32,8 @@
 #include "logging/log.hpp"
 #include "logging/logTag.hpp"
 
-ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahHeapStats* heap_stats) :
-  ShenandoahHeuristics(heap_stats) {
+ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info) :
+  ShenandoahHeuristics(space_info) {
   SHENANDOAH_ERGO_ENABLE_FLAG(ExplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahImplicitGCInvokesConcurrent);
   SHENANDOAH_ERGO_ENABLE_FLAG(ShenandoahUncommit);
@@ -46,9 +46,9 @@ ShenandoahCompactHeuristics::ShenandoahCompactHeuristics(ShenandoahHeapStats* he
 }
 
 bool ShenandoahCompactHeuristics::should_start_gc() {
-  size_t max_capacity = _heap_stats->max_capacity();
-  size_t capacity = _heap_stats->soft_max_capacity();
-  size_t available = _heap_stats->available();
+  size_t max_capacity = _space_info->max_capacity();
+  size_t capacity = _space_info->soft_max_capacity();
+  size_t available = _space_info->available();
 
   // Make sure the code below treats available without the soft tail.
   size_t soft_tail = max_capacity - capacity;
@@ -64,7 +64,7 @@ bool ShenandoahCompactHeuristics::should_start_gc() {
     return true;
   }
 
-  size_t bytes_allocated = _heap_stats->bytes_allocated_since_gc_start();
+  size_t bytes_allocated = _space_info->bytes_allocated_since_gc_start();
   if (bytes_allocated > threshold_bytes_allocated) {
     log_info(gc)("Trigger: Allocated since last cycle (" SIZE_FORMAT "%s) is larger than allocation threshold (" SIZE_FORMAT "%s)",
                  byte_size_in_proper_unit(bytes_allocated),           proper_unit_for_byte_size(bytes_allocated),

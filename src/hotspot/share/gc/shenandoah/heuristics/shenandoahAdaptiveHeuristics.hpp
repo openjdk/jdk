@@ -26,7 +26,7 @@
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHADAPTIVEHEURISTICS_HPP
 
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeapStats.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "utilities/numberSeq.hpp"
 
@@ -65,7 +65,7 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
  */
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahAdaptiveHeuristics(ShenandoahHeapStats* heap_stats);
+  ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info);
 
   virtual ~ShenandoahAdaptiveHeuristics();
 

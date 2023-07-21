@@ -33,7 +33,7 @@
  */
 class ShenandoahCompactHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahCompactHeuristics(ShenandoahHeapStats* heap_stats);
+  ShenandoahCompactHeuristics(ShenandoahSpaceInfo* space_info);
 
   virtual bool should_start_gc();
 
