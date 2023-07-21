@@ -35,7 +35,7 @@ import sun.jvm.hotspot.debugger.*;
 public class TestCompressedReadStream {
 
     public static void testReadInt() {
-        byte data[] = { 
+        byte data[] = {
             (byte)0, (byte)4, // zero zequence of four values
             (byte)33, // UNSIGNED5(32) = 33
             (byte)0, (byte)4  // zero zequence of four values
@@ -54,7 +54,7 @@ public class TestCompressedReadStream {
         in.setPosition(2); // rollback and read once again
         assertEquals(in.readInt(), 32);
     }
-    
+
     public static void main(String[] args) {
         testReadInt();
     }

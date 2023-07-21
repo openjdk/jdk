@@ -51,7 +51,7 @@ public:
     // optionally: 523776 position() calls
     // optionally: 523776 bytes is written
     // 1024 int values is written
-    int expected_position = (variant == 0) ? 6982 : 
+    int expected_position = (variant == 0) ? 6982 :
                             (variant == 1) ? 525633 : 1049409;
     ASSERT_TRUE(out.position() == expected_position);
 
