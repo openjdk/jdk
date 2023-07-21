@@ -1812,19 +1812,6 @@ See \f[B]Enable Logging with the JVM Unified Logging Framework\f[R] for
 a description of using Unified Logging.
 .RE
 .TP
-\f[V]-XX:+UseHugeTLBFS\f[R]
-\f[B]Linux only:\f[R] This option is the equivalent of specifying
-\f[V]-XX:+UseLargePages\f[R].
-This option is disabled by default.
-This option pre-allocates all large pages up-front, when memory is
-reserved; consequently the JVM can\[aq]t dynamically grow or shrink
-large pages memory areas; see \f[V]-XX:UseTransparentHugePages\f[R] if
-you want this behavior.
-.RS
-.PP
-See \f[B]Large Pages\f[R].
-.RE
-.TP
 \f[V]-XX:+UseLargePages\f[R]
 Enables the use of large page memory.
 By default, this option is disabled and large page memory isn\[aq]t
@@ -3655,14 +3642,6 @@ This is generally the best choice for small and simple applications that
 don\[aq]t require any special functionality from garbage collection.
 By default, this option is disabled and the default collector is used.
 .TP
-\f[V]-XX:+UseSHM\f[R]
-\f[B]Linux only:\f[R] Enables the JVM to use shared memory to set up
-large pages.
-.RS
-.PP
-See \f[B]Large Pages\f[R] for setting up large pages.
-.RE
-.TP
 \f[V]-XX:+UseStringDeduplication\f[R]
 Enables string deduplication.
 By default, this option is disabled.
@@ -4915,20 +4894,6 @@ login as \f[V]root\f[R] and run:
 It is always recommended to check the value of \f[V]nr_hugepages\f[R]
 after the request to make sure the kernel was able to allocate the
 requested number of large pages.
-.PP
-When using the option \f[V]-XX:+UseSHM\f[R] to enable large pages you
-also need to make sure the \f[V]SHMMAX\f[R] parameter is configured to
-allow large enough shared memory segments to be allocated.
-To allow a maximum shared segment of 8 GB, login as \f[V]root\f[R] and
-run:
-.RS
-.PP
-\f[V]# echo 8589934592 > /proc/sys/kernel/shmmax\f[R]
-.RE
-.PP
-In some environments this is not needed since the default value is large
-enough, but it is important to make sure the value is large enough to
-fit the amount of memory intended to be backed by large pages.
 .RS
 .PP
 \f[B]Note:\f[R] The values contained in \f[V]/proc\f[R] and
