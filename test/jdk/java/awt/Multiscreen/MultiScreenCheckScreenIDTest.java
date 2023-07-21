@@ -48,6 +48,7 @@ import java.util.List;
 
 public class MultiScreenCheckScreenIDTest {
     private static final int COLS = 12;
+    private static final int ROWS = 8;
     private static final Color BACKGROUND = new Color(0, 0, 255, 64);
     private static GraphicsDevice[] screens;
     static List<Window> windowList = new ArrayList<>();
@@ -86,7 +87,7 @@ public class MultiScreenCheckScreenIDTest {
         for (GraphicsDevice screen : screens) {
             Rectangle screenBounds = screen.getDefaultConfiguration().getBounds();
 
-            for (Rectangle r : gridOfRectangles(screenBounds, COLS)) {
+            for (Rectangle r : gridOfRectangles(screenBounds, COLS, ROWS)) {
                 try {
                     SwingUtilities.invokeAndWait(() -> {
                         try {
@@ -132,12 +133,16 @@ public class MultiScreenCheckScreenIDTest {
         windowList.add(window);
     }
 
-    private static List<Rectangle> gridOfRectangles(Rectangle r, int cols) {
+    private static List<Rectangle> gridOfRectangles(Rectangle r, int cols, int rows) {
         List<Rectangle> l = new ArrayList<>();
-        for (int col = 0; col < cols; col++) {
-            int x1 = r.x + (int) Math.round(r.width * (double) col / cols);
-            int x2 = r.x + (int) Math.round(r.width * (double) (col + 1) / cols);
-            l.add(new Rectangle(x1, 0, x2 - x1, x2-x1));
+        for (int row = 0; row < rows; row++) {
+            int y1 = r.y + (int) Math.round(r.height * (double) row / rows);
+            int y2 = r.y + (int) Math.round(r.height * (double) (row + 1) / rows);
+            for (int col = 0; col < cols; col++) {
+                int x1 = r.x + (int) Math.round(r.width * (double) col / cols);
+                int x2 = r.x + (int) Math.round(r.width * (double) (col + 1) / cols);
+                l.add(new Rectangle(x1, y1, x2 - x1, y2 - y1));
+            }
         }
         return l;
     }
