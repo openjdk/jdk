@@ -73,7 +73,7 @@ public class FCPopupMenuOrientationTest {
     private static void setLookAndFeel(UIManager.LookAndFeelInfo laf) {
         try {
             UIManager.setLookAndFeel(laf.getClassName());
-            System.out.println("Set L&F : "+laf.getName());
+            System.out.println("Set L&F : " + laf.getName());
         } catch (UnsupportedLookAndFeelException ignored) {
             System.out.println("Unsupported LookAndFeel: " + laf.getClassName());
         } catch (ClassNotFoundException | InstantiationException |
