@@ -432,8 +432,8 @@ class ClassVerifier : public StackObj {
 
   // Called when verify or class format errors are encountered.
   // May throw an exception based upon the mode.
-  void verify_error(ErrorContext ctx, const char* fmt, ...) ATTRIBUTE_PRINTF(3, 4);
-  void class_format_error(const char* fmt, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(3, 4) void verify_error(ErrorContext ctx, const char* fmt, ...);
+  ATTRIBUTE_PRINTF(2, 3) void class_format_error(const char* fmt, ...);
 
   Klass* load_class(Symbol* name, TRAPS);
 
