@@ -121,3 +121,43 @@ static void test_unaliged_block_address() {
   os::free(p + 6);
 }
 DEFINE_TEST(test_unaliged_block_address, "block address is unaligned");
+
+///////
+
+// Test that we notice block corruption on realloc too
+static void test_corruption_on_realloc(size_t s1, size_t s2) {
+  address p1 = (address) os::malloc(s1, mtTest);
+  *(p1 + s1) = 'a';
+  address p2 = (address) os::realloc(p1, s2, mtTest);
+
+  // Still here?
+  tty->print_cr("NMT did not detect corruption on os::realloc?");
+  // Note: don't use ASSERT here, that does not work as expected in death tests. Just
+  // let the test run its course, it should notice something is amiss.
+}
+static void test_corruption_on_realloc_growing()    { test_corruption_on_realloc(0x10, 0x11); }
+DEFINE_TEST(test_corruption_on_realloc_growing, COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX);
+static void test_corruption_on_realloc_shrinking()  { test_corruption_on_realloc(0x11, 0x10); }
+DEFINE_TEST(test_corruption_on_realloc_shrinking, COMMON_NMT_HEAP_CORRUPTION_MESSAGE_PREFIX);
+
+///////
+
+// realloc is the trickiest of the bunch. Test that realloc works and correctly takes over
+// NMT header and footer to the resized block. We just test that nothing crashes - if the
+// header/footer get corrupted, NMT heap corruption checker will trigger alert on os::free()).
+TEST_VM(NMT, test_realloc) {
+  // We test both directions (growing and shrinking) and a small range for each to cover all
+  // size alignment variants. Should not matter, but this should be cheap.
+  for (size_t s1 = 0xF0; s1 < 0x110; s1 ++) {
+    for (size_t s2 = 0x100; s2 > 0xF0; s2 --) {
+      address p1 = (address) os::malloc(s1, mtTest);
+      ASSERT_NOT_NULL(p1);
+      GtestUtils::mark_range(p1, s1);       // mark payload range...
+      address p2 = (address) os::realloc(p1, s2, mtTest);
+      ASSERT_NOT_NULL(p2);
+      ASSERT_RANGE_IS_MARKED(p2, MIN2(s1, s2))        // ... and check that it survived the resize
+         << s1 << "->" << s2 << std::endl;
+      os::free(p2);                         // <- if NMT headers/footers got corrupted this asserts
+    }
+  }
+}

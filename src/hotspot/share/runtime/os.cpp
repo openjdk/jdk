@@ -674,7 +674,12 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
 }
 
 void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
+
+  // Special handling for NMT preinit phase before arguments are parsed
   void* rc = nullptr;
+  if (NMTPreInit::handle_realloc(&rc, memblock, size, memflags)) {
+    return rc;
+  }
 
   if (memblock == nullptr) {
     return os::malloc(size, memflags, stack);

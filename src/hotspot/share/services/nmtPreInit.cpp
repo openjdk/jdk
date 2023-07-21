@@ -34,6 +34,7 @@
 // Obviously we cannot use os::malloc for any dynamic allocation during pre-NMT-init, so we must use
 // raw malloc; to make this very clear, wrap them.
 static void* raw_malloc(size_t s)               { ALLOW_C_FUNCTION(::malloc, return ::malloc(s);) }
+static void* raw_realloc(void* old, size_t s)   { ALLOW_C_FUNCTION(::realloc, return ::realloc(old, s);) }
 static void  raw_free(void* p)                  { ALLOW_C_FUNCTION(::free, ::free(p);) }
 
 // To keep matters simple we just raise a fatal error on OOM. Since preinit allocation
@@ -42,6 +43,14 @@ static void  raw_free(void* p)                  { ALLOW_C_FUNCTION(::free, ::fre
 
 static void* raw_checked_malloc(size_t s) {
   void* p = raw_malloc(s);
+  if (p == nullptr) {
+    vm_exit_out_of_memory(s, OOM_MALLOC_ERROR, "VM early initialization phase");
+  }
+  return p;
+}
+
+static void* raw_checked_realloc(void* old, size_t s) {
+  void* p = raw_realloc(old, s);
   if (p == nullptr) {
     vm_exit_out_of_memory(s, OOM_MALLOC_ERROR, "VM early initialization phase");
   }
@@ -62,6 +71,14 @@ NMTPreInitAllocation* NMTPreInitAllocation::do_alloc(size_t payload_size) {
   void* payload = raw_checked_malloc(payload_size);
   NMTPreInitAllocation* a = new NMTPreInitAllocation(payload_size, payload);
   return a;
+}
+
+NMTPreInitAllocation* NMTPreInitAllocation::do_reallocate(NMTPreInitAllocation* a, size_t new_payload_size) {
+  assert(a->next == nullptr, "unhang from map first");
+  void* new_payload = raw_checked_realloc(a->payload, new_payload_size);
+  NMTPreInitAllocation* a2 = new NMTPreInitAllocation(new_payload_size, new_payload);
+  delete a;
+  return a2;
 }
 
 void NMTPreInitAllocation::do_free(NMTPreInitAllocation* a) {
@@ -133,6 +150,12 @@ void NMTPreInitAllocationTable::print_map(outputStream* st) const {
 }
 
 void NMTPreInitAllocationTable::verify() const {
+  // This verifies the buildup of the lookup table, including the load and the chain lengths.
+  // We should see chain lens of 0-1 under normal conditions. Under artificial conditions
+  // (20000 VM args) we should see maybe 6-7. From a certain length on we can be sure something
+  // is broken.
+  const int longest_acceptable_chain_len = 30;
+  int num_chains_too_long = 0;
   for (index_t i = 0; i < table_size; i++) {
     int len = 0;
     for (const NMTPreInitAllocation* a = _entries[i]; a != nullptr; a = a->next) {
@@ -149,6 +172,13 @@ void NMTPreInitAllocationTable::verify() const {
         }
       }
     }
+    if (len > longest_acceptable_chain_len) {
+      num_chains_too_long++;
+    }
+  }
+  if (num_chains_too_long > 0) {
+    assert(false, "NMT preinit lookup table degenerated (%d/%d chains longer than %d)",
+                  num_chains_too_long, table_size, longest_acceptable_chain_len);
   }
 }
 #endif // ASSERT
@@ -159,6 +189,7 @@ NMTPreInitAllocationTable* NMTPreInit::_table = nullptr;
 
 // Some statistics
 unsigned NMTPreInit::_num_mallocs_pre = 0;
+unsigned NMTPreInit::_num_reallocs_pre = 0;
 unsigned NMTPreInit::_num_frees_pre = 0;
 
 void NMTPreInit::create_table() {
@@ -183,7 +214,7 @@ void NMTPreInit::pre_to_post(bool nmt_off) {
     // can be handled directly by os::realloc or os::free.
     // We also can get rid of the lookup table.
     // Note that we deliberately leak the headers (NMTPreInitAllocation) in order to speed up startup.
-    // That may leak about 64 bytes of memory for 2 surviving pre-init allocations, which is a typical
+    // That may leak about 12KB of memory for ~500 surviving pre-init allocations, which is a typical
     // number. This is a compromise to keep the coding simple and startup time short. It could very
     // easily improved by keeping a header pool, similar to metaspace ChunkHeaderPool. But since NMTPreInit
     // had been critizised as "too complicated", I try to keep things short and simple.
@@ -197,7 +228,8 @@ void NMTPreInit::verify() {
   if (_table != nullptr) {
     _table->verify();
   }
-  assert(_num_frees_pre <= _num_mallocs_pre, "stats are off");
+  assert(_num_reallocs_pre <= _num_mallocs_pre &&
+         _num_frees_pre <= _num_mallocs_pre, "stats are off");
 }
 #endif // ASSERT
 
@@ -206,5 +238,6 @@ void NMTPreInit::print_state(outputStream* st) {
     _table->print_state(st);
     st->cr();
   }
-  st->print_cr("pre-init mallocs: %u, pre-init frees: %u", _num_mallocs_pre, _num_frees_pre);
+  st->print_cr("pre-init mallocs: %u, pre-init reallocs: %u, pre-init frees: %u",
+               _num_mallocs_pre, _num_reallocs_pre, _num_frees_pre);
 }

@@ -73,8 +73,7 @@ class MemTracker : AllStatic {
   // Initializes NMT to whatever -XX:NativeMemoryTracking says.
   //  - Can only be called once.
   //  - NativeMemoryTracking must be validated beforehand.
-  static void initialize(NMT_TrackingLevel level);
-  static void post_initialize();
+  static void initialize();
 
   // Returns true if NMT had been initialized.
   static bool is_initialized()  {
