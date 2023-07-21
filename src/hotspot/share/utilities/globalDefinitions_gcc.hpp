@@ -156,9 +156,9 @@ inline int g_isfinite(jdouble f)                 { return isfinite(f); }
 #define THREAD_LOCAL __thread
 
 // Inlining support
-#define NOINLINE     __attribute__ ((noinline))
+#define NOINLINE     [[gnu::noinline]]
 #define ALWAYSINLINE inline __attribute__ ((always_inline))
-#define ATTRIBUTE_FLATTEN __attribute__ ((flatten))
+#define ATTRIBUTE_FLATTEN [[gnu::flatten]]
 
 // Alignment
 //
