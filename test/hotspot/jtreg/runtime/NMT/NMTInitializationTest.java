@@ -157,10 +157,7 @@ public class NMTInitializationTest {
         vmArgs.add("-version");
 
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(vmArgs);
-        Process proc = pb.start();
-        long pid = proc.pid();
-        System.out.println("Test process pid:" + pid);
-        OutputAnalyzer output = new OutputAnalyzer(proc);
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
         if (debug) {
             output.reportDiagnosticSummary();
         }
@@ -190,7 +187,7 @@ public class NMTInitializationTest {
             int entries = Integer.parseInt(mat.group(1));
             int sum_bytes = Integer.parseInt(mat.group(2));
             int longest_chain = Integer.parseInt(mat.group(3));
-            System.out.println("[pid"+pid+"] found: " + entries + " - " + sum_bytes + " - " + longest_chain + ".");
+            System.out.println("found: " + entries + " - " + sum_bytes + longest_chain + ".");
 
             // Now we test the state of the internal lookup table, and through our assumptions about
             //   early pre-NMT-init allocations:
@@ -203,16 +200,16 @@ public class NMTInitializationTest {
 
             // Apply some sensible assumptions
             if (entries > testMode.num_command_line_args + 2000) { // Note: normal baseline is 400-500
-                throw new RuntimeException("[pid"+pid+"] Suspiciously high number of pre-init allocations.");
+                throw new RuntimeException("Suspiciously high number of pre-init allocations.");
             }
             if (sum_bytes > 128 * 1024 * 1024) { // Note: normal baseline is ~30-40KB
-                throw new RuntimeException("[pid"+pid+"] Suspiciously high pre-init memory usage.");
+                throw new RuntimeException("Suspiciously high pre-init memory usage.");
             }
             if (longest_chain > testMode.expected_max_chain_len) {
                 // Under normal circumstances, load factor of the map should be about 0.1. With a good hash distribution, we
                 // should rarely see even a chain > 1. Warn if we see exceedingly long bucket chains, since this indicates
                 // either that the hash algorithm is inefficient or we have a bug somewhere.
-                throw new RuntimeException("[pid"+pid+"] Suspiciously long bucket chains in lookup table.");
+                throw new RuntimeException("Suspiciously long bucket chains in lookup table.");
             }
 
             // Finally, check that we see our final NMT report:
