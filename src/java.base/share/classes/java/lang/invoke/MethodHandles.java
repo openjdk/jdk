@@ -2844,10 +2844,16 @@ assertEquals("[x, y, z]", pb.command().toString());
          * Such a resolution, as specified in JVMS {@jvms 5.4.3.1}, attempts to locate and load the class,
          * and then determines whether the class is accessible to this lookup object.
          * <p>
+         * For a class or an interface, the name is the {@linkplain ClassLoader##binary-name binary name}.
+         * For an array class of {@code n} dimensions, the name begins with {@code n} occurrences
+         * of {@code '['} and followed by the element type as encoded in the
+         * {@linkplain Class##nameFormat table} specified in {@link Class#getName}.
+         * <p>
          * The lookup context here is determined by the {@linkplain #lookupClass() lookup class},
          * its class loader, and the {@linkplain #lookupModes() lookup modes}.
          *
-         * @param targetName the fully qualified name of the class to be looked up.
+         * @param targetName the {@linkplain ClassLoader##binary-name binary name} of the class
+         *                   or the string representing an array class
          * @return the requested class.
          * @throws SecurityException if a security manager is present and it
          *                           <a href="MethodHandles.Lookup.html#secmgr">refuses access</a>
@@ -4201,7 +4207,7 @@ return mh1;
                 }
                 refc = lookupClass();
             }
-            return VarHandles.makeFieldHandle(getField, refc, getField.getFieldType(),
+            return VarHandles.makeFieldHandle(getField, refc,
                                               this.allowedModes == TRUSTED && !getField.isTrustedFinalField());
         }
         /** Check access and get the requested constructor. */
@@ -8188,19 +8194,18 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * filter function and the target var handle is then called on the modified (usually shortened)
      * coordinate list.
      * <p>
-     * If {@code R} is the return type of the filter (which cannot be void), the target var handle must accept a value of
-     * type {@code R} as its coordinate in position {@code pos}, preceded and/or followed by
-     * any coordinate not passed to the filter.
-     * No coordinates are reordered, and the result returned from the filter
-     * replaces (in order) the whole subsequence of coordinates originally
-     * passed to the adapter.
-     * <p>
-     * The argument types (if any) of the filter
-     * replace zero or one coordinate types of the target var handle, at position {@code pos},
-     * in the resulting adapted var handle.
-     * The return type of the filter must be identical to the
-     * coordinate type of the target var handle at position {@code pos}, and that target var handle
-     * coordinate is supplied by the return value of the filter.
+     * If {@code R} is the return type of the filter, then:
+     * <ul>
+     * <li>if {@code R} <em>is not</em> {@code void}, the target var handle must have a coordinate of type {@code R} in
+     * position {@code pos}. The parameter types of the filter will replace the coordinate type at position {@code pos}
+     * of the target var handle. When the returned var handle is invoked, it will be as if the filter is invoked first,
+     * and its result is passed in place of the coordinate at position {@code pos} in a downstream invocation of the
+     * target var handle.</li>
+     * <li> if {@code R} <em>is</em> {@code void}, the parameter types (if any) of the filter will be inserted in the
+     * coordinate type list of the target var handle at position {@code pos}. In this case, when the returned var handle
+     * is invoked, the filter essentially acts as a side effect, consuming some of the coordinate values, before a
+     * downstream invocation of the target var handle.</li>
+     * </ul>
      * <p>
      * If any of the filters throws a checked exception when invoked, the resulting var handle will
      * throw an {@link IllegalStateException}.
@@ -8209,12 +8214,12 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * atomic access guarantees as those featured by the target var handle.
      *
      * @param target the var handle to invoke after the coordinates have been filtered
-     * @param pos the position of the coordinate to be filtered
+     * @param pos the position in the coordinate list of the target var handle where the filter is to be inserted
      * @param filter the filter method handle
      * @return an adapter var handle which filters the incoming coordinate values,
      * before calling the target var handle
      * @throws IllegalArgumentException if the return type of {@code filter}
-     * is void, or it is not the same as the {@code pos} coordinate of the target var handle,
+     * is not void, and it is not the same as the {@code pos} coordinate of the target var handle,
      * if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive,
      * if the resulting var handle's type would have <a href="MethodHandle.html#maxarity">too many coordinates</a>,
      * or if it's determined that {@code filter} throws any checked exceptions.

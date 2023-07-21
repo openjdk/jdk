@@ -32,6 +32,8 @@
 #include "interpreter/interpreter.hpp"
 #include "memory/resourceArea.hpp"
 #include "nativeInst_ppc.hpp"
+#include "oops/compressedKlass.inline.hpp"
+#include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/methodData.hpp"
 #include "prims/methodHandles.hpp"

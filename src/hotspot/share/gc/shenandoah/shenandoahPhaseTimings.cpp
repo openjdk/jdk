@@ -329,4 +329,3 @@ ShenandoahWorkerTimingsTracker::~ShenandoahWorkerTimingsTracker() {
     _event.commit(GCId::current(), _worker_id, ShenandoahPhaseTimings::phase_name(cur_phase));
   }
 }
-

@@ -31,7 +31,7 @@
 #include "jfr/utilities/jfrEpochQueue.inline.hpp"
 #include "jfr/utilities/jfrTypes.hpp"
 #include "memory/metaspace.hpp"
-#include "oops/compressedOops.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "utilities/macros.hpp"
 
 #ifdef VM_LITTLE_ENDIAN
