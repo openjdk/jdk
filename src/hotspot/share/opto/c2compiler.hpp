@@ -50,6 +50,7 @@ public:
   static const char* retry_no_subsuming_loads();
   static const char* retry_no_escape_analysis();
   static const char* retry_no_iterative_escape_analysis();
+  static const char* retry_no_reduce_allocation_merges();
   static const char* retry_no_locks_coarsening();
 
   // Print compilation timers and statistics

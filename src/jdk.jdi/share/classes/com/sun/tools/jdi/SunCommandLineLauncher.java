@@ -225,7 +225,6 @@ public class SunCommandLineLauncher extends AbstractLauncher {
 
             String command = exePath + ' ' +
                              options + ' ' +
-                             "-Xdebug " +
                              "-Xrunjdwp:" + xrun + ' ' +
                              mainClassAndArgs;
 

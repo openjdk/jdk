@@ -428,7 +428,7 @@ java/awt/xembed/server/RunTestXEmbed.java 7034201 linux-all
 java/awt/Modal/ModalFocusTransferTests/FocusTransferDialogsDocModalTest.java 8164473 linux-all
 java/awt/Frame/DisposeParentGC/DisposeParentGC.java 8079786 macosx-all
 
-java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 7099223,8274106 macosx-aarch64,linux-all,windows-all
+java/awt/GraphicsDevice/DisplayModes/CycleDMImage.java 7099223,8274106 macosx-all,linux-all,windows-all
 java/awt/keyboard/AllKeyCode/AllKeyCode.java 8242930 macosx-all
 java/awt/FullScreen/8013581/bug8013581.java 8169471 macosx-all
 java/awt/event/MouseEvent/RobotLWTest/RobotLWTest.java 8233568 macosx-all
@@ -575,8 +575,6 @@ com/sun/nio/sctp/SctpChannel/SocketOptionTests.java             8141694 linux-al
 # jdk_security
 
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            8161536 generic-all
-
-sun/security/tools/keytool/ListKeychainStore.sh                 8156889 macosx-all
 
 sun/security/smartcardio/TestChannel.java                       8039280 generic-all
 sun/security/smartcardio/TestConnect.java                       8039280 generic-all
@@ -734,8 +732,6 @@ sun/tools/jhsdb/JStackStressTest.java                           8276210 linux-aa
 ############################################################################
 
 # jdk_other
-
-javax/rmi/ssl/SSLSocketParametersTest.sh                        8162906 generic-all
 
 jdk/incubator/vector/ShortMaxVectorTests.java                   8306592 generic-i586
 jdk/incubator/vector/LoadJsvmlTest.java                         8305390 windows-x64

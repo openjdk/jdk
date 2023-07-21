@@ -35,18 +35,24 @@ import jdk.test.lib.process.ProcessTools;
 import jdk.test.lib.process.OutputAnalyzer;
 
 public class DoubleFlagWithIntegerValue {
-  public static void testDoubleFlagWithValue(String value) throws Exception {
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-XX:SweeperThreshold=" + value, "-version");
+  public static void testDoubleFlagWithValue(String flag, String value) throws Exception {
+    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(flag + "=" + value, "-version");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
     output.shouldNotContain("Improperly specified VM option");
     output.shouldHaveExitValue(0);
   }
 
   public static void main(String[] args) throws Exception {
-    // Test double format
-    testDoubleFlagWithValue("10.0");
+    // Test double format for -XX:SweeperThreshold
+    testDoubleFlagWithValue("-XX:SweeperThreshold", "10.0");
 
-    // Test integer format
-    testDoubleFlagWithValue("10");
+    // Test integer format -XX:SweeperThreshold
+    testDoubleFlagWithValue("-XX:SweeperThreshold", "10");
+
+    // Test double format for -XX:SafepointTimeoutDelay
+    testDoubleFlagWithValue("-XX:SafepointTimeoutDelay", "5.0");
+
+    // Test integer format -XX:SafepointTimeoutDelay
+    testDoubleFlagWithValue("-XX:SafepointTimeoutDelay", "5");
   }
 }
