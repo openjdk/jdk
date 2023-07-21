@@ -2302,7 +2302,7 @@ bool Matcher::match_rule_supported(int opcode) {
       break;
     case Op_ExpandBits:
     case Op_CompressBits:
-      if (!(UseSVE > 1 && VM_Version::supports_svebitperm())) {
+      if (!VM_Version::supports_svebitperm()) {
         ret_value = false;
       }
       break;
