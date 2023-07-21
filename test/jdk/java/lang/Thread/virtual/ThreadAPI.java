@@ -1711,43 +1711,79 @@ class ThreadAPI {
     @Test
     void testGetState4() throws Exception {
         var thread = Thread.ofVirtual().start(LockSupport::park);
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(20);
+        try {
+            Thread.State state = awaitParked(thread);
+            assertEquals(Thread.State.WAITING, state);
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
         }
-        LockSupport.unpark(thread);
-        thread.join();
+    }
+
+    /**
+     * Test Thread::getState when thread is timed parked.
+     */
+    @Test
+    void testGetState5() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> LockSupport.parkNanos(Long.MAX_VALUE));
+        try {
+            Thread.State state = awaitParked(thread);
+            assertEquals(Thread.State.TIMED_WAITING, state);
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
     }
 
     /**
      * Test Thread::getState when thread is parked while holding a monitor.
      */
     @Test
-    void testGetState5() throws Exception {
+    void testGetState6() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
                 LockSupport.park();
             }
         });
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(20);
+        try {
+            Thread.State state = awaitParked(thread);
+            assertEquals(Thread.State.WAITING, state);
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
         }
-        LockSupport.unpark(thread);
-        thread.join();
     }
 
     /**
-     * Test Thread::getState when thread is waiting for a monitor.
+     * Test Thread::getState when thread is timed parked while holding a monitor.
      */
     @Test
-    void testGetState6() throws Exception {
+    void testGetState7() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            synchronized (lock) {
+                LockSupport.parkNanos(Long.MAX_VALUE);
+            }
+        });
+        try {
+            Thread.State state = awaitParked(thread);
+            assertEquals(Thread.State.TIMED_WAITING, state);
+        } finally {
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test Thread::getState when thread is waiting to enter a monitor.
+     */
+    @Test
+    void testGetState8() throws Exception {
         var thread = Thread.ofVirtual().unstarted(() -> {
             synchronized (lock) { }
         });
         synchronized (lock) {
             thread.start();
-            while (thread.getState() != Thread.State.BLOCKED) {
-                Thread.sleep(20);
-            }
+            awaitBlocked(thread);  // await BLOCKED state
         }
         thread.join();
     }
@@ -1756,24 +1792,47 @@ class ThreadAPI {
      * Test Thread::getState when thread is waiting in Object.wait.
      */
     @Test
-    void testGetState7() throws Exception {
+    void testGetState9() throws Exception {
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
                 try { lock.wait(); } catch (InterruptedException e) { }
             }
         });
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(20);
+        try {
+            Thread.State state = awaitParked(thread);
+            assertEquals(Thread.State.WAITING, state);
+        } finally {
+            thread.interrupt();
+            thread.join();
         }
-        thread.interrupt();
-        thread.join();
+    }
+
+    /**
+     * Test Thread::getState when thread is waiting in Object.wait(millis).
+     */
+    @Test
+    void testGetState10() throws Exception {
+        var thread = Thread.ofVirtual().start(() -> {
+            synchronized (lock) {
+                try {
+                    lock.wait(Long.MAX_VALUE);
+                } catch (InterruptedException e) { }
+            }
+        });
+        try {
+            Thread.State state = awaitParked(thread);
+            assertEquals(Thread.State.TIMED_WAITING, state);
+        } finally {
+            thread.interrupt();
+            thread.join();
+        }
     }
 
     /**
      * Test Thread::getState when thread is terminated.
      */
     @Test
-    void testGetState8() throws Exception {
+    void testGetState11() throws Exception {
         var thread = Thread.ofVirtual().start(() -> { });
         thread.join();
         assertTrue(thread.getState() == Thread.State.TERMINATED);
@@ -1899,9 +1958,7 @@ class ThreadAPI {
             }
 
             // wait for virtual thread to block in wait
-            while (vthread.getState() != Thread.State.WAITING) {
-                Thread.sleep(20);
-            }
+            awaitParked(vthread);
 
             // get stack trace of both carrier and virtual thread
             StackTraceElement[] carrierStackTrace = carrier.getStackTrace();
@@ -1928,12 +1985,7 @@ class ThreadAPI {
     @Test
     void testGetStackTrace5() throws Exception {
         var thread = Thread.ofVirtual().start(LockSupport::park);
-
-        // wait for thread to park
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(20);
-        }
-
+        awaitParked(thread);
         try {
             StackTraceElement[] stack = thread.getStackTrace();
             assertTrue(contains(stack, "LockSupport.park"));
@@ -1996,9 +2048,7 @@ class ThreadAPI {
             }
 
             // wait for virtual thread to block in wait
-            while (vthread.getState() != Thread.State.WAITING) {
-                Thread.sleep(20);
-            }
+            awaitParked(vthread);
 
             // get all stack traces
             Map<Thread, StackTraceElement[]> map = Thread.getAllStackTraces();
@@ -2208,9 +2258,7 @@ class ThreadAPI {
             me.setName("fred");
             LockSupport.park();
         });
-        while (thread.getState() != Thread.State.WAITING) {
-            Thread.sleep(10);
-        }
+        awaitParked(thread);
         try {
             assertTrue(thread.toString().contains("fred"));
         } finally {
@@ -2235,13 +2283,14 @@ class ThreadAPI {
     /**
      * Waits for the given thread to park.
      */
-    static void awaitParked(Thread thread) throws InterruptedException {
+    static Thread.State awaitParked(Thread thread) throws InterruptedException {
         Thread.State state = thread.getState();
         while (state != Thread.State.WAITING && state != Thread.State.TIMED_WAITING) {
             assertTrue(state != Thread.State.TERMINATED, "Thread has terminated");
             Thread.sleep(10);
             state = thread.getState();
         }
+        return state;
     }
 
     /**

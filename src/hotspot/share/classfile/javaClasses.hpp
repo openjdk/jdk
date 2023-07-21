@@ -532,10 +532,9 @@ class java_lang_VirtualThread : AllStatic {
     YIELDING     = 7,
     TERMINATED   = 99,
 
-    // can be suspended from scheduling when unmounted
-    SUSPENDED    = 1 << 8,
-    RUNNABLE_SUSPENDED = (RUNNABLE | SUSPENDED),
-    PARKED_SUSPENDED   = (PARKED | SUSPENDED)
+    // additional state bits
+    TIMED        = 1 << 8,   // timed parked
+    SUSPENDED    = 1 << 9,   // suspended when unmounted
   };
 
   static void compute_offsets();

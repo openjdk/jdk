@@ -117,10 +117,9 @@ final class VirtualThread extends BaseVirtualThread {
     private static final int YIELDING = 7;     // Thread.yield
     private static final int TERMINATED = 99;  // final state
 
-    // can be suspended from scheduling when unmounted
-    private static final int SUSPENDED = 1 << 8;
-    private static final int RUNNABLE_SUSPENDED = (RUNNABLE | SUSPENDED);
-    private static final int PARKED_SUSPENDED   = (PARKED | SUSPENDED);
+    // additional state bits
+    private static final int TIMED     = 1 << 8;  // timed parked
+    private static final int SUSPENDED = 1 << 9;  // suspended when unmounted
 
     // parking permit
     private volatile boolean parkPermit;
@@ -443,17 +442,19 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private void afterYield() {
         int s = state();
-        assert (s == PARKING || s == YIELDING) && (carrierThread == null);
+        boolean parking = (s & ~TIMED) == PARKING;
+        assert (parking || s == YIELDING) && (carrierThread == null);
 
-        if (s == PARKING) {
-            setState(PARKED);
+        if (parking) {
+            int newState = PARKED | (s & TIMED);
+            setState(newState);
 
             // notify JVMTI that unmount has completed, thread is parked
             notifyJvmtiUnmount(/*hide*/false);
 
             // may have been unparked while parking
-            if (parkPermit && compareAndSetState(PARKED, RUNNABLE)) {
-                // lazy submit to continue on the current thread as carrier if possible
+            if (parkPermit && compareAndSetState(newState, RUNNABLE)) {
+                // lazy submit to continue on the current carrier if possible
                 if (currentThread() instanceof CarrierThread ct) {
                     lazySubmitRunContinuation(ct.getPool());
                 } else {
@@ -616,13 +617,13 @@ final class VirtualThread extends BaseVirtualThread {
 
             boolean yielded = false;
             Future<?> unparker = scheduleUnpark(this::unpark, nanos);
-            setState(PARKING);
+            setState(PARKING | TIMED);
             try {
                 yielded = yieldContinuation();  // may throw
             } finally {
                 assert (Thread.currentThread() == this) && (yielded == (state() == RUNNING));
                 if (!yielded) {
-                    assert state() == PARKING;
+                    assert state() == (PARKING | TIMED);
                     setState(RUNNING);
                 }
                 cancel(unparker);
@@ -656,7 +657,7 @@ final class VirtualThread extends BaseVirtualThread {
             event = null;
         }
 
-        setState(PINNED);
+        setState(PINNED | ((timed ? TIMED : 0)));
         try {
             if (!parkPermit) {
                 if (!timed) {
@@ -724,7 +725,8 @@ final class VirtualThread extends BaseVirtualThread {
         Thread currentThread = Thread.currentThread();
         if (!getAndSetParkPermit(true) && currentThread != this) {
             int s = state();
-            if (s == PARKED && compareAndSetState(PARKED, RUNNABLE)) {
+
+            if ((s & ~TIMED) == PARKED && compareAndSetState(s, RUNNABLE)) {
                 if (currentThread instanceof VirtualThread vthread) {
                     vthread.switchToCarrierThread();
                     try {
@@ -735,11 +737,11 @@ final class VirtualThread extends BaseVirtualThread {
                 } else {
                     submitRunContinuation();
                 }
-            } else if (s == PINNED) {
+            } else if ((s & ~TIMED) == PINNED) {
                 // unpark carrier thread when pinned.
                 synchronized (carrierThreadAccessLock()) {
                     Thread carrier = carrierThread;
-                    if (carrier != null && state() == PINNED) {
+                    if (carrier != null && (state() & ~TIMED) == PINNED) {
                         U.unpark(carrier);
                     }
                 }
@@ -876,7 +878,8 @@ final class VirtualThread extends BaseVirtualThread {
 
     @Override
     Thread.State threadState() {
-        switch (state()) {
+        int s = state();
+        switch (s & ~(TIMED | SUSPENDED)) {
             case NEW:
                 return Thread.State.NEW;
             case STARTED:
@@ -887,7 +890,6 @@ final class VirtualThread extends BaseVirtualThread {
                     return Thread.State.RUNNABLE;
                 }
             case RUNNABLE:
-            case RUNNABLE_SUSPENDED:
                 // runnable, not mounted
                 return Thread.State.RUNNABLE;
             case RUNNING:
@@ -905,9 +907,8 @@ final class VirtualThread extends BaseVirtualThread {
                 // runnable, mounted, not yet waiting
                 return Thread.State.RUNNABLE;
             case PARKED:
-            case PARKED_SUSPENDED:
             case PINNED:
-                return Thread.State.WAITING;
+                return (s & TIMED) != 0 ? State.TIMED_WAITING : State.WAITING;
             case TERMINATED:
                 return Thread.State.TERMINATED;
             default:
@@ -946,7 +947,7 @@ final class VirtualThread extends BaseVirtualThread {
      */
     private StackTraceElement[] tryGetStackTrace() {
         int initialState = state();
-        return switch (initialState) {
+        return switch (initialState & ~TIMED) {
             case RUNNABLE, PARKED -> {
                 int suspendedState = initialState | SUSPENDED;
                 if (compareAndSetState(initialState, suspendedState)) {
@@ -959,7 +960,7 @@ final class VirtualThread extends BaseVirtualThread {
                         // re-submit if runnable
                         // re-submit if unparked while suspended
                         if (initialState == RUNNABLE
-                            || (parkPermit && compareAndSetState(PARKED, RUNNABLE))) {
+                            || (parkPermit && compareAndSetState(initialState, RUNNABLE))) {
                             try {
                                 submitRunContinuation();
                             } catch (RejectedExecutionException ignore) { }
