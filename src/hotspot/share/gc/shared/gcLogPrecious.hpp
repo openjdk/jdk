@@ -60,22 +60,25 @@ private:
   // Protects the buffers
   static Mutex* _lock;
 
+  ATTRIBUTE_PRINTF(2, 0)
   static void vwrite_inner(LogTargetHandle log,
                            const char* format,
-                           va_list args) ATTRIBUTE_PRINTF(2, 0);
+                           va_list args);
 
 public:
   static void initialize();
 
+  ATTRIBUTE_PRINTF(2, 0)
   static void vwrite(LogTargetHandle log,
                      const char* format,
-                     va_list args) ATTRIBUTE_PRINTF(2, 0);
+                     va_list args);
 
+  ATTRIBUTE_PRINTF(2, 0)
   static void vwrite_and_debug(LogTargetHandle log,
                                const char* format,
                                va_list args
                                DEBUG_ONLY(COMMA const char* file)
-                               DEBUG_ONLY(COMMA int line)) ATTRIBUTE_PRINTF(2, 0);
+                               DEBUG_ONLY(COMMA int line));
 
   static void print_on_error(outputStream* st);
 };
@@ -94,14 +97,16 @@ class GCLogPreciousHandle {
       DEBUG_ONLY(COMMA _line(line))
  {}
 
-  void write(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
+  ATTRIBUTE_PRINTF(2, 3)
+  void write(const char* format, ...) {
     va_list args;
     va_start(args, format);
     GCLogPrecious::vwrite(_log, format, args);
     va_end(args);
   }
 
-  void write_and_debug(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
+  ATTRIBUTE_PRINTF(2, 3)
+  void write_and_debug(const char* format, ...) {
     va_list args;
     va_start(args, format);
     GCLogPrecious::vwrite_and_debug(_log, format, args DEBUG_ONLY(COMMA _file COMMA _line));
