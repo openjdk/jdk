@@ -70,7 +70,7 @@ class MemAllocator::Allocation: StackObj {
 public:
   Allocation(const MemAllocator& allocator, oop* obj_ptr)
     : _allocator(allocator),
-      _thread(JavaThread::current()),
+      _thread((JavaThread*)allocator._thread),
       _obj_ptr(obj_ptr),
       _overhead_limit_exceeded(false),
       _allocated_outside_tlab(false),

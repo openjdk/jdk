@@ -510,6 +510,11 @@ protected:
     DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
     return res;
   }
+  void* operator new(size_t size, Thread* thread) {
+    address res = (address)resource_allocate_bytes(thread, size);
+    DEBUG_ONLY(set_allocation_type(res, RESOURCE_AREA);)
+    return res;
+  }
   void* operator new(size_t size, const std::nothrow_t& nothrow_constant) throw() {
     address res = (address)resource_allocate_bytes(size, AllocFailStrategy::RETURN_NULL);
     DEBUG_ONLY(if (res != nullptr) set_allocation_type(res, RESOURCE_AREA);)

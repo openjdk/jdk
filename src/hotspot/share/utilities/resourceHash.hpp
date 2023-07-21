@@ -166,7 +166,7 @@ class ResourceHashtableBase : public STORAGE {
   * @return: true:  if a new item is added
   *          false: if the item already existed and the value is updated
   */
-  bool put(K const& key, V const& value) {
+  bool put(K const& key, V const& value, Thread* thread = nullptr) {
     unsigned hv = HASH(key);
     Node** ptr = lookup_node(hv, key);
     if (*ptr != nullptr) {
@@ -176,7 +176,11 @@ class ResourceHashtableBase : public STORAGE {
       if (ALLOC_TYPE == AnyObj::C_HEAP) {
         *ptr = new (MEM_TYPE) Node(hv, key, value);
       } else {
-        *ptr = new Node(hv, key, value);
+        if (thread == nullptr) {
+          *ptr = new Node(hv, key, value);
+        } else {
+          *ptr = new (thread) Node(hv, key, value);
+        }
       }
       _number_of_entries ++;
       return true;

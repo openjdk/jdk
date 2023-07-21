@@ -1456,12 +1456,14 @@ void MetaspaceShared::initialize_shared_spaces() {
   static_mapinfo->patch_heap_embedded_pointers();
   ArchiveHeapLoader::finish_initialization();
 
-  CDS_JAVA_HEAP_ONLY(Universe::update_archived_basic_type_mirrors());
+  //CDS_JAVA_HEAP_ONLY(Universe::update_archived_basic_type_mirrors());
 
   // Close the mapinfo file
   static_mapinfo->close();
 
-  static_mapinfo->unmap_region(MetaspaceShared::bm);
+  if (!NewArchiveHeapLoading) {
+    static_mapinfo->unmap_region(MetaspaceShared::bm);
+  }
 
   FileMapInfo *dynamic_mapinfo = FileMapInfo::dynamic_info();
   if (dynamic_mapinfo != nullptr) {

@@ -1984,6 +1984,9 @@ void FileMapInfo::map_or_load_heap_region() {
   }
 
   if (!success) {
+    if (can_use_heap_region()) {
+      log_info(cds)("CDS archive heap loading failed");
+    }
     MetaspaceShared::disable_full_module_graph();
   }
 }
@@ -2056,7 +2059,7 @@ address FileMapInfo::heap_region_requested_address() {
   assert(UseSharedSpaces, "runtime only");
   FileMapRegion* r = region_at(MetaspaceShared::hp);
   assert(is_aligned(r->mapping_offset(), sizeof(HeapWord)), "must be");
-  assert(ArchiveHeapLoader::can_map(), "cannot be used by ArchiveHeapLoader::can_load() mode");
+  assert(ArchiveHeapLoader::can_map() || NewArchiveHeapLoading, "cannot be used by *old* ArchiveHeapLoader::can_load() mode");
   if (UseCompressedOops) {
     // We can avoid relocation if each region's offset from the runtime CompressedOops::base()
     // is the same as its offset from the CompressedOops::base() during dumptime.
@@ -2177,6 +2180,19 @@ bool FileMapInfo::map_heap_region_impl() {
                 p2i(mapped_start), _mapped_heap_memregion.byte_size());
   log_info(cds)("CDS heap data relocation delta = " INTX_FORMAT " bytes", delta);
   return true;
+}
+
+char* FileMapInfo::new_map_heap(size_t& size) {
+  FileMapRegion* r = region_at(MetaspaceShared::hp);
+  size_t byte_size = r->used();
+  if (byte_size == 0) {
+    return nullptr; // no archived java heap data
+  }
+
+  char* base = os::map_memory(_fd, _full_path, r->file_offset(),
+                              nullptr, byte_size, /*read_only*/true, /*allow_exec*/false);
+  size = heap_word_size(byte_size);
+  return base;
 }
 
 narrowOop FileMapInfo::encoded_heap_region_dumptime_address() {

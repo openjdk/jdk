@@ -24,12 +24,14 @@
 
 #include "precompiled.hpp"
 #include "cds/archiveHeapLoader.inline.hpp"
+#include "cds/archiveHeapWriter.hpp"
 #include "cds/heapShared.hpp"
 #include "cds/metaspaceShared.hpp"
 #include "classfile/classLoaderDataShared.hpp"
 #include "classfile/systemDictionaryShared.hpp"
-#include "gc/shared/collectedHeap.hpp"
+#include "gc/shared/collectedHeap.inline.hpp"
 #include "logging/log.hpp"
+#include "runtime/java.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
@@ -83,6 +85,17 @@ void ArchiveHeapLoader::fixup_region() {
   FileMapInfo* mapinfo = FileMapInfo::current_info();
   if (is_mapped()) {
     mapinfo->fixup_mapped_heap_region();
+  } else if (NewArchiveHeapLoading) {
+    JavaThread* THREAD = JavaThread::current();
+    new_fixup_region(THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      vm_exit_during_initialization("Cannot load archived heap. "
+                                    "Initial heap size too small.");
+
+    }
+    if (!_is_loaded) {
+      MetaspaceShared::disable_full_module_graph();
+    }
   } else if (_loading_failed) {
     fill_failed_loaded_heap();
   }
@@ -224,6 +237,9 @@ void ArchiveHeapLoader::init_loaded_heap_relocation(LoadedArchiveHeapRegion* loa
 }
 
 bool ArchiveHeapLoader::can_load() {
+  if (NewArchiveHeapLoading) {
+    return true;
+  }
   if (!UseCompressedOops) {
     // Pointer relocation for uncompressed oops is unimplemented.
     return false;
@@ -321,6 +337,9 @@ bool ArchiveHeapLoader::load_heap_region_impl(FileMapInfo* mapinfo, LoadedArchiv
 }
 
 bool ArchiveHeapLoader::load_heap_region(FileMapInfo* mapinfo) {
+  if (NewArchiveHeapLoading) {
+    return new_load_heap_region(mapinfo);
+  }
   assert(UseCompressedOops, "loaded heap for !UseCompressedOops is unimplemented");
   init_narrow_oop_decoding(mapinfo->narrow_oop_base(), mapinfo->narrow_oop_shift());
 
@@ -376,9 +395,11 @@ void ArchiveHeapLoader::finish_initialization() {
   }
   if (is_in_use()) {
     patch_native_pointers();
-    intptr_t bottom = is_loaded() ? _loaded_heap_bottom : _mapped_heap_bottom;
-    intptr_t roots_oop = bottom + FileMapInfo::current_info()->heap_roots_offset();
-    HeapShared::init_roots(cast_to_oop(roots_oop));
+    if (!NewArchiveHeapLoading) {
+      intptr_t bottom = is_loaded() ? _loaded_heap_bottom : _mapped_heap_bottom;
+      intptr_t roots_oop = bottom + FileMapInfo::current_info()->heap_roots_offset();
+      HeapShared::init_roots(cast_to_oop(roots_oop));
+    }
   }
 }
 
@@ -452,4 +473,360 @@ void ArchiveHeapLoader::patch_native_pointers() {
     bm.iterate(&patcher);
   }
 }
+
+static size_t _new_load_heap_size; // total size of heap region, in number of HeapWords
+static char* _new_load_heap_buff;
+static int _num_dst_alloced = 0;
+static int _num_null_relocs = 0;
+static int _num_real_relocs = 0;
+
+bool ArchiveHeapLoader::new_load_heap_region(FileMapInfo* mapinfo) {
+  _new_load_heap_buff = FileMapInfo::current_info()->new_map_heap(_new_load_heap_size);
+  // FIXME -- do crc check here
+  return (_new_load_heap_buff != nullptr);
+}
+
+class NewQuickLoader {
+public:
+  static HeapWord* mem_allocate_raw(size_t size) {
+    bool gc_overhead_limit_was_exceeded;
+    HeapWord* hw = Universe::heap()->mem_allocate(size, &gc_overhead_limit_was_exceeded);
+    assert(hw != nullptr, "must not fail");
+    return hw;
+  }
+};
+
+template <bool COOPS, bool RAW_ALLOC>
+class NewQuickLoaderImpl : public StackObj {
+  struct Dst {
+    Dst* _next;
+    union {
+      oop* _oop_addr;
+      narrowOop* _narrowOop_addr;
+    };
+  };
+
+  union Reloc {
+    Dst* _dst;
+    oop _oop;
+    narrowOop _narrowOop;
+  };
+
+  template <bool QUICK, int INDEX_SHIFT>
+  class Relocator : public BasicOopIterateClosure {
+    NewQuickLoaderImpl* _loader;
+    Reloc* _reloc_table;
+    intptr_t _base;
+    size_t _current_index;
+  public:
+    Relocator(NewQuickLoaderImpl *loader, intptr_t base, size_t current_index)
+      : _loader(loader), _reloc_table(loader->_reloc_table), _base(base), _current_index(current_index) {}
+
+    void do_oop(narrowOop* p) {
+      if (COOPS) {
+        narrowOop narrow = *p;
+        if (narrow != narrowOop::null) {
+          DEBUG_ONLY(_num_real_relocs++);
+          size_t index = ((size_t)narrow - (size_t)_base) >> INDEX_SHIFT;
+          *p = narrowOop::null; // not to confuse GC
+          if (QUICK) {
+            assert(index <= _current_index, "must be");
+          }
+
+          if (QUICK || index <= _current_index) {
+            HeapAccess<IS_NOT_NULL>::oop_store(p, _reloc_table[index]._oop);
+          } else {
+            _loader->add_relocation(index, p);
+          }
+        } else {
+          DEBUG_ONLY(_num_null_relocs++);
+        }
+      }
+    }
+    void do_oop(oop *p) {
+      if (!COOPS) {
+        oop o = *p;
+        if (o != nullptr) {
+          DEBUG_ONLY(_num_real_relocs++);
+          size_t index = pointer_delta((void*)o, (void*)_base, MinObjAlignmentInBytes);
+          *p = nullptr; // not to confuse GC
+          if (QUICK) {
+            assert(index <= _current_index, "must be");
+          }
+
+          if (QUICK || index <= _current_index) {
+            HeapAccess<IS_NOT_NULL>::oop_store(p, _reloc_table[index]._oop);
+          } else {
+            _loader->add_relocation(index, p);
+          }
+        } else {
+          DEBUG_ONLY(_num_null_relocs++);
+        }
+      }
+    }
+  };
+
+  HeapWord* _stream_bottom;
+  HeapWord* _stream_top;
+  Reloc* _reloc_table;
+  Dst* _unused_dsts;
+  Dst* _unused_dsts_top;
+  Dst* _freed_dsts;
+
+  // native pointer relocation
+  BitMapView _ptrmap;
+  BitMap::idx_t _next_ptr_idx;
+  HeapWord* _next_ptr_in_stream;
+
+  constexpr static int UNUSED_DST_BLOCK_SIZE = 128;
+public:
+  inline NewQuickLoaderImpl() {
+    assert(COOPS == UseCompressedOops, "sanity");
+    _stream_bottom = (HeapWord*)_new_load_heap_buff;
+    _stream_top    = _stream_bottom + _new_load_heap_size;
+    size_t reloc_table_len = pointer_delta(_stream_top, _stream_bottom, MinObjAlignmentInBytes);
+    _reloc_table = NEW_RESOURCE_ARRAY(Reloc, reloc_table_len);
+    memset((void*)_reloc_table, 0, sizeof(Reloc) * reloc_table_len);
+
+    _unused_dsts = nullptr;
+    _unused_dsts_top = nullptr;
+    _freed_dsts = nullptr;
+
+    init_ptrmap();
+  }
+
+  inline oop load_archive_heap(TRAPS) {
+    HeapWord* first_quick_reloc = _stream_bottom + FileMapInfo::current_info()->heap_first_quick_reloc() / HeapWordSize;
+    HeapWord* first_slow_reloc  = _stream_bottom + FileMapInfo::current_info()->heap_first_slow_reloc()  / HeapWordSize;
+
+    if (COOPS && FileMapInfo::current_info()->narrow_oop_shift() == 0) {
+      load_archive_heap_inner<false, false, 3>(_stream_bottom, _stream_bottom,    first_quick_reloc, CHECK_NULL);
+      load_archive_heap_inner<true,  false, 3>(_stream_bottom, first_quick_reloc, first_slow_reloc,  CHECK_NULL);
+      load_archive_heap_inner<false, true , 3>(_stream_bottom, first_slow_reloc,  _stream_top,       CHECK_NULL);
+    } else {
+      load_archive_heap_inner<false, false, 0>(_stream_bottom, _stream_bottom,    first_quick_reloc, CHECK_NULL);
+      load_archive_heap_inner<true,  false, 0>(_stream_bottom, first_quick_reloc, first_slow_reloc,  CHECK_NULL);
+      load_archive_heap_inner<false, true,  0>(_stream_bottom, first_slow_reloc,  _stream_top,       CHECK_NULL);
+    }
+
+    size_t roots_index = FileMapInfo::current_info()->heap_roots_offset() / HeapWordSize;
+    return _reloc_table[roots_index]._oop;
+  }
+
+private:
+  template <bool QUICK_RELOC, bool SLOW_RELOC, int INDEX_SHIFT>
+  void load_archive_heap_inner(HeapWord* stream_bottom, HeapWord* stream, HeapWord* stream_top, TRAPS) {
+    Reloc* reloc_table = _reloc_table;
+    intptr_t base;
+    if (COOPS) {
+      int dumptime_oop_shift = FileMapInfo::current_info()->narrow_oop_shift();
+      assert(dumptime_oop_shift == 0 || dumptime_oop_shift == 3,
+             "other values are not supproted by the C++ templates");
+      base = (intptr_t)(FileMapInfo::current_info()->region_at(MetaspaceShared::hp)->mapping_offset() >>
+                        dumptime_oop_shift);
+    } else {
+      base = (intptr_t)FileMapInfo::current_info()->heap_region_requested_address();
+    }
+
+    while (stream < stream_top) {
+      // Copy from stream and relocate oop pointers
+      size_t size; // size of object being copied
+      oop m = allocate(stream, size, CHECK);
+      memcpy(cast_from_oop<HeapWord*>(m), stream, size * HeapWordSize);
+      size_t index = pointer_delta(stream, stream_bottom, MinObjAlignmentInBytes);
+      Dst* dst_list = reloc_table[index]._dst;
+      reloc_table[index]._oop = m;
+
+      if (SLOW_RELOC) {
+        Relocator<false, INDEX_SHIFT> relocator(this, base, index);
+        m->oop_iterate(&relocator);
+        if (dst_list != nullptr) {
+          update(dst_list, m);
+        }
+      } else if (QUICK_RELOC) {
+        Relocator<true, INDEX_SHIFT> relocator(this, base, index);
+        m->oop_iterate(&relocator);
+      }
+
+      // Relocate native pointers, if necessary.
+      HeapWord* stream_next = stream + size;
+      while (stream_next > _next_ptr_in_stream) {
+        assert(stream < _next_ptr_in_stream, "must be in the current object, and cannot be first word");
+        relocate_one_native_pointer(stream, cast_from_oop<HeapWord*>(m));
+      }
+
+      stream = stream_next;
+    }
+  }
+
+  void init_ptrmap() {
+    _next_ptr_in_stream = _stream_top;
+    _next_ptr_idx = 0;
+
+    if (MetaspaceShared::relocation_delta() == 0) {
+      return;
+    }
+
+    FileMapRegion* r = FileMapInfo::current_info()->region_at(MetaspaceShared::hp);
+    if (!r->has_ptrmap()) {
+      return;
+    }
+
+    _ptrmap = r->ptrmap_view();
+    update_next_ptr_in_stream(0);
+  }
+
+  void update_next_ptr_in_stream(BitMap::idx_t increment) {
+    _next_ptr_idx += increment;
+    _next_ptr_idx = _ptrmap.find_first_set_bit(_next_ptr_idx);
+    if (_next_ptr_idx < _ptrmap.size()) {
+      _next_ptr_in_stream = _stream_bottom + _next_ptr_idx;
+    } else {
+      // we have relocated all native pointers
+      _next_ptr_in_stream = _stream_top;
+    }
+  }
+
+  void relocate_one_native_pointer(HeapWord* stream, HeapWord* m) {
+    assert(_stream_bottom < _next_ptr_in_stream && _next_ptr_in_stream < _stream_top, "must be");
+    size_t offset = pointer_delta(_next_ptr_in_stream, stream, sizeof(HeapWord));
+    address* src_loc = (address*)_next_ptr_in_stream;
+    address* dst_loc = (address*)(m + offset);
+    address requested_ptr = *src_loc;
+    address relocated_ptr = requested_ptr + MetaspaceShared::relocation_delta();
+
+    // Currently we have only Klass pointers in heap objects.
+    // This needs to be relaxed when we support other types of native
+    // pointers such as Method.
+    assert(((Klass*)(relocated_ptr))->is_klass(), "must be");
+    *dst_loc = relocated_ptr;
+
+    update_next_ptr_in_stream(1);
+  }
+
+  inline oop allocate(HeapWord* stream, size_t& size, TRAPS) {
+    oop o = cast_to_oop(stream); // "original" from the stream
+    size = o->size();
+
+    if (RAW_ALLOC) {
+      return cast_to_oop(NewQuickLoader::mem_allocate_raw(size));
+    }
+    assert(!o->is_instanceRef(), "no such objects are archived");
+    assert(!o->is_stackChunk(), "no such objects are archived");
+
+    if (o->is_instance()) {
+      return Universe::heap()->obj_allocate(o->klass(), size, CHECK_NULL);
+      // Can't use the following because o->klass() isn't initialized (so injected field sizes aren't known??)
+      // m = InstanceKlass::cast(o->klass())->allocate_instance(CHECK);
+    } else if (o->is_typeArray()) {
+      int len = static_cast<typeArrayOop>(o)->length();
+      return TypeArrayKlass::cast(o->klass())->allocate(len, CHECK_NULL);
+    } else {
+      assert(o->is_objArray(), "must be");
+      int len = static_cast<objArrayOop>(o)->length();
+      return ObjArrayKlass::cast(o->klass())->allocate(len, CHECK_NULL);
+    }
+  }
+
+  inline Dst* get_relocation() {
+    Dst* dst;
+    if (_freed_dsts != nullptr) { // take from free list
+      dst = _freed_dsts;
+      _freed_dsts = dst->_next;
+    } else {
+      if (_unused_dsts >= _unused_dsts_top) {
+        int blksize = UNUSED_DST_BLOCK_SIZE;
+        _unused_dsts = NEW_RESOURCE_ARRAY(Dst, blksize);
+        _unused_dsts_top = _unused_dsts + blksize;
+        _num_dst_alloced += blksize;
+      }
+      dst = _unused_dsts;
+      _unused_dsts ++;
+    }
+    return dst;
+  }
+
+  inline void add_relocation(size_t index, narrowOop* ptr_location) { // compressed oops
+    Dst* dst = get_relocation();
+    dst->_narrowOop_addr = ptr_location;
+    dst->_next = _reloc_table[index]._dst;
+    _reloc_table[index]._dst = dst;
+  }
+
+  inline void add_relocation(size_t index, oop* ptr_location) { // uncompressed oops
+    Dst* dst = get_relocation();
+    dst->_oop_addr = ptr_location;
+    dst->_next = _reloc_table[index]._dst;
+    _reloc_table[index]._dst = dst;
+  }
+
+  inline Dst* return_to_pool(Dst* dst) {
+    Dst* next = dst->_next;
+    dst->_next = _freed_dsts;
+    _freed_dsts = dst;
+    return next;
+  }
+
+  inline void update(Dst* dst_list, oop m) {
+    if (COOPS) {
+      for (Dst* dst = dst_list; dst != nullptr; ) {
+        RawAccess<IS_NOT_NULL>::oop_store(dst->_narrowOop_addr, m);
+        dst = return_to_pool(dst);
+      }
+    } else {
+      for (Dst* dst = dst_list; dst != nullptr; ) {
+        RawAccess<IS_NOT_NULL>::oop_store(dst->_oop_addr, m);
+        dst = return_to_pool(dst);
+      }
+    }
+  }
+};
+
+#define LOAD_ARCHIVE_HEAP_WITH_TEMPLATE(a, b) \
+   NewQuickLoaderImpl<a, b> loader; \
+   roots = loader.load_archive_heap(CHECK);
+
+void ArchiveHeapLoader::new_fixup_region(TRAPS) {
+  if (_new_load_heap_buff == nullptr) {
+    FileMapInfo::current_info()->unmap_region(MetaspaceShared::bm);
+    return;
+  }
+  
+
+  log_info(cds)("new heap loading: start");
+
+  ResourceMark rm;
+  jlong time_started = os::thread_cpu_time(THREAD);
+  jlong time_done;
+  oop roots;
+
+  // The parameters are <UseCompressedOops, NahlRawAlloc>
+  if (UseCompressedOops) {
+    if (NahlRawAlloc) {
+      LOAD_ARCHIVE_HEAP_WITH_TEMPLATE(true, true);
+    } else {
+      LOAD_ARCHIVE_HEAP_WITH_TEMPLATE(true, false);
+    }
+  } else {
+    if (NahlRawAlloc) {
+      LOAD_ARCHIVE_HEAP_WITH_TEMPLATE(false, true);
+    } else {
+      LOAD_ARCHIVE_HEAP_WITH_TEMPLATE(false, false);
+    }
+  }
+  _is_loaded = true;
+  HeapShared::init_roots(roots);
+  log_info(cds)("new heap loading: roots = " INTPTR_FORMAT, p2i(roots));
+  time_done = os::thread_cpu_time(THREAD);
+  DEBUG_ONLY({
+    log_info(cds, gc)("    null oops found during relocation: %d", _num_null_relocs);
+    log_info(cds, gc)("non-null oops found during relocation: %d", _num_real_relocs);
+  });
+  log_info(cds, gc)("Delayed allocation records alloced: %d", _num_dst_alloced);
+  log_info(cds, gc)("Load Time: " JLONG_FORMAT, (time_done - time_started));
+
+  FileMapInfo::current_info()->unmap_region(MetaspaceShared::bm);
+  return;
+}
+
 #endif // INCLUDE_CDS_JAVA_HEAP

@@ -143,6 +143,7 @@ void vmClasses::resolve_all(TRAPS) {
     // call. No mirror objects are accessed/restored in the above call.
     // Mirrors are restored after java.lang.Class is loaded.
     ArchiveHeapLoader::fixup_region();
+    CDS_JAVA_HEAP_ONLY(Universe::update_archived_basic_type_mirrors());
 
     // Initialize the constant pool for the Object_class
     assert(Object_klass()->is_shared(), "must be");

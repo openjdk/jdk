@@ -26,6 +26,7 @@
 #define SHARE_CDS_ARCHIVEHEAPLOADER_HPP
 
 #include "cds/filemap.hpp"
+#include "cds/cds_globals.hpp"
 #include "gc/shared/gc_globals.hpp"
 #include "memory/allocation.hpp"
 #include "memory/allStatic.hpp"
@@ -50,6 +51,9 @@ public:
 
   // Can this VM map archived heap region? Currently only G1+compressed{oops,cp}
   static bool can_map() {
+    if (NewArchiveHeapLoading) {
+      return false;
+    }
     CDS_JAVA_HEAP_ONLY(return (UseG1GC && UseCompressedClassPointers);)
     NOT_CDS_JAVA_HEAP(return false;)
   }
@@ -147,9 +151,12 @@ private:
 
   class PatchLoadedRegionPointers;
 
+  static void new_fixup_region(TRAPS);
 public:
 
   static bool load_heap_region(FileMapInfo* mapinfo);
+  static bool new_load_heap_region(FileMapInfo* mapinfo);
+  static void newcode_set_roots(narrowOop n);
   static void assert_in_loaded_heap(uintptr_t o) {
     assert(is_in_loaded_heap(o), "must be");
   }

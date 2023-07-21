@@ -98,7 +98,7 @@ class CollectedHeap : public CHeapObj<mtGC> {
   friend class DisableIsGCActiveMark; // Disable current IsGCActiveMark
   friend class MemAllocator;
   friend class ParallelObjectIterator;
-
+  friend class NewQuickLoader;
  private:
   GCHeapLog* _gc_heap_log;
 

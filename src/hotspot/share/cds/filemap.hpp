@@ -568,6 +568,8 @@ public:
   address heap_region_requested_address() NOT_CDS_JAVA_HEAP_RETURN_(nullptr);
   narrowOop encoded_heap_region_dumptime_address();
 
+  char* new_map_heap(size_t& size);
+
 private:
 
 #if INCLUDE_JVMTI
