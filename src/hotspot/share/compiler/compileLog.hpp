@@ -55,7 +55,8 @@ class CompileLog : public xmlStream {
 
   static CompileLog* _first;     // head of static chain
 
-  void va_tag(bool push, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0);
+  ATTRIBUTE_PRINTF(3, 0)
+  void va_tag(bool push, const char* format, va_list ap);
 
  public:
   CompileLog(const char* file_name, FILE* fp, intx thread_id);
@@ -69,7 +70,9 @@ class CompileLog : public xmlStream {
   // or reset, context string will be silently ignored
   stringStream* context()                        { return &_context; }
   void    clear_context()                        { context()->reset(); }
-  void      set_context(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+
+  ATTRIBUTE_PRINTF(2, 3)
+  void      set_context(const char* format, ...);
 
   void          name(ciSymbol* s);               // name='s'
   void          name(Symbol* s)                  { xmlStream::name(s); }
