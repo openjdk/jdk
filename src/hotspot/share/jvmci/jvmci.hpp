@@ -186,18 +186,18 @@ class JVMCI : public AllStatic {
   static JVMCIRuntime* compiler_runtime(JavaThread* thread, bool create=true);
 
   // Appends an event to the JVMCI event log if JVMCIEventLogLevel >= `level`
-  static void vlog(int level, const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
+  ATTRIBUTE_PRINTF(2, 0) static void vlog(int level, const char* format, va_list ap);
 
   // Traces an event to tty if JVMCITraceLevel >= `level`
-  static void vtrace(int level, const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
+  ATTRIBUTE_PRINTF(2, 0) static void vtrace(int level, const char* format, va_list ap);
 
  public:
   // Log/trace a JVMCI event
-  static void event(int level, const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
-  static void event1(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
-  static void event2(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
-  static void event3(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
-  static void event4(const char* format, ...) ATTRIBUTE_PRINTF(1, 2);
+  ATTRIBUTE_PRINTF(2, 3) static void event(int level, const char* format, ...);
+  ATTRIBUTE_PRINTF(1, 2) static void event1(const char* format, ...);
+  ATTRIBUTE_PRINTF(1, 2) static void event2(const char* format, ...);
+  ATTRIBUTE_PRINTF(1, 2) static void event3(const char* format, ...);
+  ATTRIBUTE_PRINTF(1, 2) static void event4(const char* format, ...);
 };
 
 // JVMCI event macros.
