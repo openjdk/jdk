@@ -21,19 +21,17 @@
  * questions.
  */
 
+import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.Rectangle;
+import java.awt.Robot;
 import java.awt.Window;
 
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,44 +46,47 @@ import java.util.List;
  * @run main MultiScreenCheckScreenIDTest
  */
 
-public class MultiScreenCheckScreenIDTest extends MouseAdapter {
+public class MultiScreenCheckScreenIDTest {
     private static final int COLS = 12;
-    private static final int ROWS = 8;
     private static final Color BACKGROUND = new Color(0, 0, 255, 64);
-    private GraphicsDevice[] screens;
+    private static GraphicsDevice[] screens;
     static List<Window> windowList = new ArrayList<>();
+
+    static Robot robot;
 
     public static void main(final String[] args) throws Exception {
         try {
             createGUI();
+            robot.delay(100);
+            robot.waitForIdle();
         } finally {
             for (Window win : windowList) {
                 win.dispose();
             }
         }
-        Thread.sleep(1000);
         System.out.println("Test Pass");
     }
 
-    private static void createGUI() {
+    private static void createGUI() throws AWTException {
         new MultiScreenCheckScreenIDTest().createWindowGrid();
     }
 
-    private void createWindowGrid() {
+    private void createWindowGrid() throws AWTException {
         screens = GraphicsEnvironment
                 .getLocalGraphicsEnvironment()
                 .getScreenDevices();
 
         if (screens.length < 2) {
             System.out.println("Testing aborted. Required min of 2 screens. " +
-                    "Found : " + screens.length );
+                    "Found : " + screens.length);
             return;
         }
+        robot = new Robot();
 
         for (GraphicsDevice screen : screens) {
             Rectangle screenBounds = screen.getDefaultConfiguration().getBounds();
 
-            for (Rectangle r : gridOfRectangles(screenBounds, COLS, ROWS)) {
+            for (Rectangle r : gridOfRectangles(screenBounds, COLS)) {
                 try {
                     SwingUtilities.invokeAndWait(() -> {
                         try {
@@ -94,60 +95,49 @@ public class MultiScreenCheckScreenIDTest extends MouseAdapter {
                             throw new RuntimeException(e);
                         }
                     });
-
-                    Thread.sleep(100);
                 } catch (InterruptedException | InvocationTargetException e) {
                     e.printStackTrace();
+                }
+                robot.delay(50);
+                robot.waitForIdle();
+                if (windowList.get(windowList.size() - 1).getBounds().intersects
+                        (screens[0].getDefaultConfiguration().getBounds())) {
+                    if (!(windowList.get(windowList.size() - 1).
+                            getGraphicsConfiguration().getBounds().
+                            intersects(screens[0].getDefaultConfiguration().
+                                    getBounds()))) {
+                        throw new RuntimeException("Graphics configuration " +
+                                "changed for screen 0");
+                    }
+                } else if (windowList.get(windowList.size() - 1).getBounds().
+                        intersects(screens[1].getDefaultConfiguration().getBounds())) {
+                    if (!(windowList.get(windowList.size() - 1).
+                            getGraphicsConfiguration().getBounds().
+                            intersects(screens[1].getDefaultConfiguration().
+                                    getBounds()))) {
+                        throw new RuntimeException("Graphics configuration " +
+                                "changed for screen 1");
+                    }
                 }
             }
         }
     }
 
-    private void createWindow(Rectangle bounds) throws Exception {
-        Thread.sleep(50);
+    private void createWindow(Rectangle bounds) {
         JWindow window = new JWindow();
         window.setBounds(bounds);
         window.setBackground(BACKGROUND);
         window.setAlwaysOnTop(true);
-        window.addMouseListener(this);
         window.setVisible(true);
         windowList.add(window);
-
-        window.addPropertyChangeListener("graphicsConfiguration",
-                new PropertyChangeListener() {
-            @Override
-            public void propertyChange(PropertyChangeEvent propertyChangeEvent) {
-                double windowXPos = window.getBounds().getX();
-                double screen1Width = screens[0].getDefaultConfiguration()
-                        .getBounds().getWidth();
-                System.out.println("window x Position : " + windowXPos + "," +
-                        " screen[0] width : " + screen1Width);
-
-                //Check if GC is changed for windows positioned in screen 0.
-
-                if (windowXPos < screen1Width) {
-                    throw new RuntimeException("Graphics configuration changed" +
-                            " for screen 1");
-                }
-            }
-        });
     }
 
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        ((Window) e.getSource()).dispose();
-    }
-
-    private static List<Rectangle> gridOfRectangles(Rectangle r, int cols, int rows) {
+    private static List<Rectangle> gridOfRectangles(Rectangle r, int cols) {
         List<Rectangle> l = new ArrayList<>();
-        for (int row = 0; row < rows; row++) {
-            int y1 = r.y + (int) Math.round(r.height * (double) row / rows);
-            int y2 = r.y + (int) Math.round(r.height * (double) (row + 1) / rows);
-            for (int col = 0; col < cols; col++) {
-                int x1 = r.x + (int) Math.round(r.width * (double) col / cols);
-                int x2 = r.x + (int) Math.round(r.width * (double) (col + 1) / cols);
-                l.add(new Rectangle(x1, y1, x2 - x1, y2 - y1));
-            }
+        for (int col = 0; col < cols; col++) {
+            int x1 = r.x + (int) Math.round(r.width * (double) col / cols);
+            int x2 = r.x + (int) Math.round(r.width * (double) (col + 1) / cols);
+            l.add(new Rectangle(x1, 0, x2 - x1, x2-x1));
         }
         return l;
     }
