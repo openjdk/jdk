@@ -2523,13 +2523,13 @@ void TemplateTable::pop_and_check_object(Register r)
 
 void TemplateTable::getfield_or_static(int byte_no, bool is_static, RewriteControl rc)
 {
-  const Register cache = r4;
-  const Register obj   = r4;
-  const Register index = r3;
+  const Register cache     = r4;
+  const Register obj       = r4;
+  const Register index     = r3;
   const Register tos_state = r3;
-  const Register off   = r19;
-  const Register flags = r6;
-  const Register bc    = r4; // uses same reg as obj, so don't mix them
+  const Register off       = r19;
+  const Register flags     = r6;
+  const Register bc        = r4; // uses same reg as obj, so don't mix them
 
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_access(cache, index, is_static, false);
@@ -2754,7 +2754,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   const Register cache     = r2;
   const Register index     = r3;
-  const Register tos_state = r3
+  const Register tos_state = r3;
   const Register obj       = r2;
   const Register off       = r19;
   const Register flags     = r0;
