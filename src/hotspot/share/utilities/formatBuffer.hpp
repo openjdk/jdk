@@ -43,7 +43,7 @@ class FormatBufferBase {
 // Use resource area for buffer
 class FormatBufferResource : public FormatBufferBase {
  public:
-  FormatBufferResource(const char * format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3) FormatBufferResource(const char * format, ...);
 };
 
 class FormatBufferDummy {};
@@ -52,12 +52,12 @@ class FormatBufferDummy {};
 template <size_t bufsz = FormatBufferBase::BufferSize>
 class FormatBuffer : public FormatBufferBase {
  public:
-  inline FormatBuffer(const char* format, ...) ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3) inline FormatBuffer(const char* format, ...);
   // since va_list is unspecified type (can be char*), we use FormatBufferDummy to disambiguate these constructors
-  inline FormatBuffer(FormatBufferDummy dummy, const char* format, va_list ap) ATTRIBUTE_PRINTF(3, 0);
-  inline void append(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
-  inline void print(const char* format, ...)  ATTRIBUTE_PRINTF(2, 3);
-  inline void printv(const char* format, va_list ap) ATTRIBUTE_PRINTF(2, 0);
+  ATTRIBUTE_PRINTF(3, 0) inline FormatBuffer(FormatBufferDummy dummy, const char* format, va_list ap);
+  ATTRIBUTE_PRINTF(2, 3) inline void append(const char* format, ...);
+  ATTRIBUTE_PRINTF(2, 3) inline void print(const char* format, ...);
+  ATTRIBUTE_PRINTF(2, 0) inline void printv(const char* format, va_list ap);
 
   char* buffer() { return _buf; }
   int size() { return bufsz; }
