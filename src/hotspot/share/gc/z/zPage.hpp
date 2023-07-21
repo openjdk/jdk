@@ -208,7 +208,8 @@ public:
   bool undo_alloc_object(zaddress addr, size_t size);
   bool undo_alloc_object_atomic(zaddress addr, size_t size);
 
-  void log_msg(const char* msg_format, ...) const ATTRIBUTE_PRINTF(2, 3);
+  ATTRIBUTE_PRINTF(2, 3)
+  void log_msg(const char* msg_format, ...) const;
 
   void print_on_msg(outputStream* out, const char* msg) const;
   void print_on(outputStream* out) const;
