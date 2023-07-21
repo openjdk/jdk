@@ -28,10 +28,10 @@
 // Macros related to control of compiler warnings.
 
 #ifndef ATTRIBUTE_PRINTF
-#define ATTRIBUTE_PRINTF(fmt,vargs)  __attribute__((format(printf, fmt, vargs)))
+#define ATTRIBUTE_PRINTF(fmt,vargs)  [[gnu::format(printf, fmt, vargs)]]
 #endif
 #ifndef ATTRIBUTE_SCANF
-#define ATTRIBUTE_SCANF(fmt,vargs)  __attribute__((format(scanf, fmt, vargs)))
+#define ATTRIBUTE_SCANF(fmt,vargs)  [[gnu::format(scanf, fmt, vargs)]]
 #endif
 
 #define PRAGMA_DISABLE_GCC_WARNING(optstring) _Pragma(STR(GCC diagnostic ignored optstring))
