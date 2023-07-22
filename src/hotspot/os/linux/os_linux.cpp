@@ -2801,6 +2801,11 @@ void os::pd_commit_memory_or_exit(char* addr, size_t size, bool exec,
   #define MAP_HUGE_SHIFT 26
 #endif
 
+// Define MADV_HUGEPAGE here so we can build HotSpot on old systems.
+#ifndef MADV_HUGEPAGE
+  #define MADV_HUGEPAGE 14
+#endif
+
 int os::Linux::commit_memory_impl(char* addr, size_t size,
                                   size_t alignment_hint, bool exec) {
   int err = os::Linux::commit_memory_impl(addr, size, exec);
@@ -3657,6 +3662,12 @@ bool os::Linux::setup_large_page_type(size_t page_size) {
     // Don't try UseTransparentHugePages since there are known
     // performance issues with it turned on. This might change in the future.
     UseTransparentHugePages = false;
+  }
+
+  if (UseTransparentHugePages) {
+    UseHugeTLBFS = false;
+    UseSHM = false;
+    return true;
   }
 
   if (UseHugeTLBFS) {
