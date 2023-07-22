@@ -37,23 +37,114 @@ import jdk.javadoc.internal.doclets.formats.html.markup.Entity;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.FieldWriter;
-import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * Writes field documentation in HTML format.
  */
-public class FieldWriterImpl extends AbstractMemberWriter
-    implements FieldWriter, MemberSummaryWriter {
+public class FieldWriter extends AbstractMemberWriter {
 
-    public FieldWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
+    /**
+     * The index of the current field that is being documented at this point
+     * in time.
+     */
+    private VariableElement currentElement;
+
+    public FieldWriter(ClassWriter writer) {
+        super(writer, writer.typeElement);
+    }
+
+    public FieldWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
         super(writer, typeElement);
     }
 
-    public FieldWriterImpl(SubWriterHolderWriter writer) {
+    // used in ClassUseWriter and SummaryUseWriter
+    public FieldWriter(SubWriterHolderWriter writer) {
         super(writer);
     }
+
+    public void build(Content target) throws DocletException {
+        buildFieldDoc(target);
+    }
+
+    /**
+     * Build the field documentation.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildFieldDoc(Content target) {
+        var fields = getVisibleMembers(VisibleMemberTable.Kind.FIELDS);
+        if (!fields.isEmpty()) {
+            Content fieldDetailsHeader = getFieldDetailsHeader(target);
+            Content memberList = getMemberList();
+
+            for (Element element : fields) {
+                currentElement = (VariableElement)element;
+                Content fieldContent = getFieldHeaderContent(currentElement);
+
+                buildSignature(fieldContent);
+                buildDeprecationInfo(fieldContent);
+                buildPreviewInfo(fieldContent);
+                buildFieldComments(fieldContent);
+                buildTagInfo(fieldContent);
+
+                memberList.add(getMemberListItem(fieldContent));
+            }
+            Content fieldDetails = getFieldDetails(fieldDetailsHeader, memberList);
+            target.add(fieldDetails);
+        }
+    }
+
+    /**
+     * Build the signature.
+     *
+     * @param fieldContent the content to which the documentation will be added
+     */
+    protected void buildSignature(Content fieldContent) {
+        fieldContent.add(getSignature(currentElement));
+    }
+
+    /**
+     * Build the deprecation information.
+     *
+     * @param fieldContent the content to which the documentation will be added
+     */
+    protected void buildDeprecationInfo(Content fieldContent) {
+        addDeprecated(currentElement, fieldContent);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param fieldContent the content to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content fieldContent) {
+        addPreview(currentElement, fieldContent);
+    }
+
+    /**
+     * Build the comments for the field.  Do nothing if
+     * {@link BaseOptions#noComment()} is set to true.
+     *
+     * @param fieldContent the content to which the documentation will be added
+     */
+    protected void buildFieldComments(Content fieldContent) {
+        if (!options.noComment()) {
+            addComments(currentElement, fieldContent);
+        }
+    }
+
+    /**
+     * Build the tag information.
+     *
+     * @param fieldContent the content to which the documentation will be added
+     */
+    protected void buildTagInfo(Content fieldContent) {
+        addTags(currentElement, fieldContent);
+    }
+
 
     @Override
     public Content getMemberSummaryHeader(TypeElement typeElement,
@@ -70,8 +161,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
                 HtmlIds.FIELD_SUMMARY, summariesList, content);
     }
 
-    @Override
-    public Content getFieldDetailsHeader(Content content) {
+    protected Content getFieldDetailsHeader(Content content) {
         content.add(MarkerComments.START_OF_FIELD_DETAILS);
         Content fieldDetailsContent = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
@@ -80,8 +170,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
         return fieldDetailsContent;
     }
 
-    @Override
-    public Content getFieldHeaderContent(VariableElement field) {
+    protected Content getFieldHeaderContent(VariableElement field) {
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(field)));
@@ -90,38 +179,32 @@ public class FieldWriterImpl extends AbstractMemberWriter
                 .setId(htmlIds.forMember(field));
     }
 
-    @Override
-    public Content getSignature(VariableElement field) {
+    protected Content getSignature(VariableElement field) {
         return new Signatures.MemberSignature(field, this)
                 .setType(utils.asInstantiatedFieldType(typeElement, field))
                 .setAnnotations(writer.getAnnotationInfo(field, true))
                 .toContent();
     }
 
-    @Override
-    public void addDeprecated(VariableElement field, Content fieldContent) {
+    protected void addDeprecated(VariableElement field, Content fieldContent) {
         addDeprecatedInfo(field, fieldContent);
     }
 
-    @Override
-    public void addPreview(VariableElement field, Content content) {
+    protected void addPreview(VariableElement field, Content content) {
         addPreviewInfo(field, content);
     }
 
-    @Override
-    public void addComments(VariableElement field, Content fieldContent) {
+    protected void addComments(VariableElement field, Content fieldContent) {
         if (!utils.getFullBody(field).isEmpty()) {
             writer.addInlineComment(field, fieldContent);
         }
     }
 
-    @Override
-    public void addTags(VariableElement field, Content fieldContent) {
+    protected void addTags(VariableElement field, Content fieldContent) {
         writer.addTagsInfo(field, fieldContent);
     }
 
-    @Override
-    public Content getFieldDetails(Content memberDetailsHeaderContent, Content memberContent) {
+    protected Content getFieldDetails(Content memberDetailsHeaderContent, Content memberContent) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.fieldDetails)
                         .setId(HtmlIds.FIELD_DETAIL)
@@ -201,8 +284,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
         return writer.getDocLink(HtmlLinkInfo.Kind.SHOW_PREVIEW, member, name);
     }
 
-    @Override
-    public Content getMemberHeader(){
+    protected Content getMemberHeader(){
         return writer.getMemberHeader();
     }
 }
