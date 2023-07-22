@@ -443,10 +443,14 @@ class os: AllStatic {
   // aligned to a given alignment.
   static char*  attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment, int max_attempts);
 
-  // Given an address range [min, max) attempt to reserve memory within this range by probing a number
+  // Given an address range [min, max), attempt to reserve memory within this range by probing a number
   // of attach points within this range. The maximum number of attempts is limited with max_attempts.
   static char*  attempt_reserve_memory_in_range(char* min, char* max, size_t bytes,
                                                 size_t alignment, int max_attempts);
+
+  // Given an address range [min, max) and a stride, attempt to reserve memory within this range by probing
+  // at [max, max - stride, max - 2 * stride, ...] until we reached or passed min.
+  static char*  attempt_reserve_memory_strides(char* min, char* max, size_t bytes, size_t stride);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,

@@ -1786,6 +1786,49 @@ char* os::get_highest_attach_address() {
   - os::vm_page_size());
 }
 
+// Given an address range [min, max) and a stride, attempt to reserve memory within this range by probing
+// at [max, max - stride, max - 2 * stride, ...] until we reached or passed min.
+char*  os::attempt_reserve_memory_strides(char* min, char* max, size_t bytes, size_t stride) {
+  assert(is_aligned(max, os::vm_allocation_granularity()), "Unaligned max");
+  assert(is_aligned(stride, os::vm_allocation_granularity()), "Unaligned max");
+  assert(stride < SIZE_MAX / 4, "Too large stride");
+
+  // Limit the attach points we test by value range of virtual addresses
+  char* const lowest_possible = os::get_lowest_attach_address();
+  char* const highest_possible = 
+    align_down(os::get_highest_attach_address() - bytes, os::vm_allocation_granularity());
+
+  // Limit min and max ny lowest/highest_possible.
+  char* const min_adjusted = MAX2(min, lowest_possible);
+  char* const max_adjusted =
+    (max > highest_possible) ? max - ((((max - highest_possible) / stride) + 1) * stride) : max;
+
+  char* candidate = max, *result = nullptr;
+  do {
+    assert(((max - result) % stride) == 0, "Stride violation");
+    result = os::attempt_reserve_memory_at(candidate, bytes, false);
+    if (result == nullptr) {
+      log_trace(os, map)("failed to attach at " PTR_FORMAT ".", p2i(candidate));
+    }
+    char* next_candidate = candidate - stride;
+    if (next_candidate > candidate || next_candidate < min ) {
+      break;
+    }
+    candidate = next_candidate;
+  } while (result != nullptr && candidate > min );
+
+  if (result != nullptr) {
+    assert(result >= min && result <= max, "OOB");
+    assert(result >= os::get_lowest_attach_address() && 
+           (result + bytes) <= os::get_highest_attach_address(), "OOB virtual address");
+    assert(((max - result) % stride) == 0, "Stride violation");
+    log_trace(os, map)("successfully attached at [" PTR_FORMAT "-" PTR_FORMAT ").",
+                       p2i(result), p2i(result + bytes));
+  }
+
+  return result;
+}
+
 char* os::attempt_reserve_memory_in_range(char* min, char* max, size_t bytes,
                                           size_t alignment, int max_attempts) {
   assert(is_power_of_2(alignment), "alignment not pow2");
@@ -1826,7 +1869,9 @@ char* os::attempt_reserve_memory_in_range(char* min, char* max, size_t bytes,
   }
 
   if (result != nullptr) {
-    assert(result >= min && (result + bytes) <= max, "not in range");
+    assert(result >= min && (result + bytes) <= max, "OOB");
+    assert(result >= os::get_lowest_attach_address() && 
+           (result + bytes) <= os::get_highest_attach_address(), "OOB virtual address");
     assert(is_aligned(result, alignment), "bad alignment");
     log_trace(os, map)("successfully attached at [" PTR_FORMAT "-" PTR_FORMAT ").",
                        p2i(result), p2i(result + bytes));
