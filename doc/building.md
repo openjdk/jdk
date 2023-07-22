@@ -26,7 +26,7 @@ on Windows) and cloned the top-level JDK repository that you want to build.
  4. Verify your newly built JDK: \
     `./build/*/images/jdk/bin/java -version`
 
- 5. [Run basic tests](##running-tests): \
+ 5. [Run basic tests](#running-tests): \
     `make run-test-tier1`
 
 If any of these steps failed, or if you want to know more about build
