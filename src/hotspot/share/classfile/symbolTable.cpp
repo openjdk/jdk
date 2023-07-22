@@ -337,6 +337,7 @@ Symbol* SymbolTable::lookup_common(const char* name,
 }
 
 Symbol* SymbolTable::new_symbol(const char* name, int len) {
+  assert(len <= Symbol::max_length(), "sanity");
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* sym = lookup_common(name, len, hash);
   if (sym == nullptr) {
@@ -352,6 +353,7 @@ Symbol* SymbolTable::new_symbol(const Symbol* sym, int begin, int end) {
   assert(sym->refcount() != 0, "require a valid symbol");
   const char* name = (const char*)sym->base() + begin;
   int len = end - begin;
+  assert(len <= Symbol::max_length(), "sanity");
   unsigned int hash = hash_symbol(name, len, _alt_hash);
   Symbol* found = lookup_common(name, len, hash);
   if (found == nullptr) {
