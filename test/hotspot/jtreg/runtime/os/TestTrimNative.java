@@ -130,6 +130,7 @@ public class TestTrimNative {
         allOptions.add("-Xbootclasspath/a:.");
         allOptions.add("-XX:-ExplicitGCInvokesConcurrent"); // Invoke explicit GC on System.gc
         allOptions.add("-Xlog:trimnative=debug");
+        allOptions.add("-Xlog:os"); // for LD_PRELOAD, glibc version, and malloc tunables
         allOptions.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         if (programOptions != null) {
             allOptions.addAll(Arrays.asList(programOptions));
@@ -168,15 +169,21 @@ public class TestTrimNative {
         List<String> lines = output.asLines();
         Pattern pat = Pattern.compile(".*\\[trimnative\\] Periodic Trim \\(\\d+\\): (\\d+)([BKMG])->(\\d+)([BKMG]).*");
         int numTrimsFound = 0;
-        long rssReductionTotal = 0;
+        long rssReductionByTrim = 0;
+        long lastRss2 = 0;
+        long rssReductionOutsideOfTrim = 0;
         for (String line : lines) {
             Matcher mat = pat.matcher(line);
             if (mat.matches()) {
                 long rss1 = Long.parseLong(mat.group(1)) * Unit.valueOf(mat.group(2)).size;
                 long rss2 = Long.parseLong(mat.group(3)) * Unit.valueOf(mat.group(4)).size;
-                if (rss1 > rss2) {
-                    rssReductionTotal += (rss1 - rss2);
+                if (lastRss2 > rss1) {
+                    rssReductionOutsideOfTrim += (lastRss2 - rss1);
                 }
+                if (rss1 > rss2) {
+                    rssReductionByTrim += (rss1 - rss2);
+                }
+                lastRss2 = rss2;
                 numTrimsFound ++;
             }
             if (numTrimsFound > maxTrimsExpected) {
@@ -199,6 +206,10 @@ public class TestTrimNative {
             if (Platform.isPPC()) { // le and be both
                 fudge = 0.01f;
             }
+            // JDK-8312525: The system may be configured such that the glibc already frees memory on free(3). In that
+            // case, our periodic trims have not much to trim. Therefore, when evaluating success, also count RSS reductions
+            // that happened outside of the periodic trims.
+            long rssReductionTotal = rssReductionByTrim + rssReductionOutsideOfTrim;
             long expectedMinimalReduction = (long) (totalAllocationsSize * fudge);
             if (rssReductionTotal < expectedMinimalReduction) {
                 throw new RuntimeException("We did not see the expected RSS reduction in the UL log. Expected (with fudge)" +
