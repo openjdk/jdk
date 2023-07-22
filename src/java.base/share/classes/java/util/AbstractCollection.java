@@ -272,19 +272,10 @@ public abstract class AbstractCollection<E> implements Collection<E> {
      */
     public boolean remove(Object o) {
         Iterator<E> it = iterator();
-        if (o==null) {
-            while (it.hasNext()) {
-                if (it.next()==null) {
-                    it.remove();
-                    return true;
-                }
-            }
-        } else {
-            while (it.hasNext()) {
-                if (o.equals(it.next())) {
-                    it.remove();
-                    return true;
-                }
+        while (it.hasNext()) {
+            if (Objects.equals(o, it.next())) {
+                it.remove();
+                return true;
             }
         }
         return false;
