@@ -30,7 +30,7 @@ import javax.sound.midi.MidiSystem;
 
 /**
  * @test
- * @bug 1234567
+ * @bug 8312535
  * @summary MidiSystem.getSoundbank() throws unexpected ecurityException
  * @run main/othervm/policy=security.policy GetSoundBankSecurityException
  */
