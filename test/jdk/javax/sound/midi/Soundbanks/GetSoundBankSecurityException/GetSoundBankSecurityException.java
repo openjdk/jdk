@@ -31,10 +31,10 @@ import javax.sound.midi.MidiSystem;
 /**
  * @test
  * @bug 1234567
- * @summary MidiSystem.getSoundbank should not throw unexpected SecurityException
- * @run main/othervm/policy=security.policy TryToGetSoundbank
+ * @summary MidiSystem.getSoundbank() throws unexpected ecurityException
+ * @run main/othervm/policy=security.policy GetSoundBankSecurityException
  */
-public final class TryToGetSoundbank {
+public final class GetSoundBankSecurityException {
 
     public static void main(String[] args) throws Exception {
         File tempFile = new File("sound.bank");
