@@ -45,10 +45,9 @@ class WindowsAsynchronousSocketChannelImpl
     extends AsynchronousSocketChannelImpl implements Iocp.OverlappedChannel
 {
     private static final Unsafe unsafe = Unsafe.getUnsafe();
-    private static int addressSize = unsafe.addressSize();
 
     private static int dependsArch(int value32, int value64) {
-        return (addressSize == 4) ? value32 : value64;
+        return (unsafe.addressSize() == 4) ? value32 : value64;
     }
 
     /*

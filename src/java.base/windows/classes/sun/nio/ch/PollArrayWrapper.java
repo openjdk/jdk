@@ -51,7 +51,7 @@ class PollArrayWrapper {
     @Native private static final short FD_OFFSET     = 0; // fd offset in pollfd
     @Native private static final short EVENT_OFFSET  = 4; // events offset in pollfd
 
-    static short SIZE_POLLFD = 8; // sizeof pollfd struct
+    static final short SIZE_POLLFD = 8; // sizeof pollfd struct
 
     private int size; // Size of the pollArray
 
