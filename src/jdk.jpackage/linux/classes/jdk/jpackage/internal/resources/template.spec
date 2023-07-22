@@ -30,6 +30,7 @@ Requires: PACKAGE_DEFAULT_DEPENDENCIES PACKAGE_CUSTOM_DEPENDENCIES
 #build time will substantially increase and it may require unpack200/system java to install
 %define __jar_repack %{nil}
 
+
 %define package_filelist %{_builddir}/%{name}.files
 %define app_filelist %{_builddir}/%{name}.app.files
 %define filesystem_filelist %{_builddir}/%{name}.filesystem.files
