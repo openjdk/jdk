@@ -35,8 +35,6 @@ import javax.lang.model.element.TypeElement;
 
 import jdk.javadoc.doclet.Doclet;
 import jdk.javadoc.doclet.DocletEnvironment;
-import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
-import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.UncheckedDocletException;
@@ -193,13 +191,7 @@ public abstract class AbstractDoclet implements Doclet {
      * @param classTree the data structure representing the class tree
      * @throws DocletException if there is a problem while generating the documentation
      */
-    protected void generateOtherFiles(ClassTree classTree) throws DocletException {
-        BuilderFactory builderFactory = configuration.getBuilderFactory();
-        AbstractBuilder constantsSummaryBuilder = builderFactory.getConstantsSummaryBuilder();
-        constantsSummaryBuilder.build();
-        AbstractBuilder serializedFormBuilder = builderFactory.getSerializedFormBuilder();
-        serializedFormBuilder.build();
-    }
+    protected void generateOtherFiles(ClassTree classTree) throws DocletException { }
 
     /**
      * Generate the module documentation.

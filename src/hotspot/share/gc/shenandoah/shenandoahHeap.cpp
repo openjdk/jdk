@@ -662,6 +662,10 @@ size_t ShenandoahHeap::committed() const {
   return Atomic::load(&_committed);
 }
 
+size_t ShenandoahHeap::available() const {
+  return free_set()->available();
+}
+
 void ShenandoahHeap::increase_committed(size_t bytes) {
   shenandoah_assert_heaplocked_or_safepoint();
   _committed += bytes;
@@ -1899,7 +1903,7 @@ address ShenandoahHeap::gc_state_addr() {
   return (address) ShenandoahHeap::heap()->_gc_state.addr_of();
 }
 
-size_t ShenandoahHeap::bytes_allocated_since_gc_start() {
+size_t ShenandoahHeap::bytes_allocated_since_gc_start() const {
   return Atomic::load(&_bytes_allocated_since_gc_start);
 }
 
