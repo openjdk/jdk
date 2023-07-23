@@ -816,6 +816,20 @@ bool ThreadsListHandle::cv_internal_thread_to_JavaThread(jobject jthread,
   return true;
 }
 
+FastThreadsListHandle::FastThreadsListHandle(oop thread_oop, JavaThread* java_thread) : _protected_java_thread(nullptr) {
+  assert(thread_oop != nullptr, "must be");
+  if (java_thread != nullptr) {
+    // We captured a non-nullptr JavaThread* before the _tlh was created
+    // so that covers the early life stage of the target JavaThread.
+    _protected_java_thread = java_lang_Thread::thread(thread_oop);
+    assert(_protected_java_thread == nullptr || _tlh.includes(_protected_java_thread), "must be");
+    // If we captured a non-nullptr JavaThread* after the _tlh was created
+    // then that covers the end life stage of the target JavaThread and we
+    // we know that _tlh protects the JavaThread*. The underlying atomic
+    // load is sufficient (no acquire necessary here).
+  }
+}
+
 void ThreadsSMRSupport::add_thread(JavaThread *thread){
   ThreadsList *new_list = ThreadsList::add_thread(get_java_thread_list(), thread);
   if (EnableThreadSMRStatistics) {

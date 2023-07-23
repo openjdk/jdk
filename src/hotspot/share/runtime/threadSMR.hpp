@@ -320,6 +320,29 @@ public:
   }
 };
 
+// This stack allocated FastThreadsListHandle implements the special case
+// where we want to quickly determine if a JavaThread* is protected by the
+// embedded ThreadsListHandle.
+//
+class FastThreadsListHandle : public StackObj {
+  JavaThread* _protected_java_thread;
+  ThreadsListHandle _tlh;
+
+public:
+  // The 'java_thread' parameter to the constructor must be provided
+  // by a java_lang_Thread::thread_acquire(thread_oop) call which gets
+  // us the JavaThread* stored in the java.lang.Thread object _before_
+  // the embedded ThreadsListHandle is constructed. We use acquire there
+  // to ensure that if we see a non-nullptr value, then we also see the
+  // main ThreadsList updates from the JavaThread* being added.
+  //
+  FastThreadsListHandle(oop thread_oop, JavaThread* java_thread);
+
+  JavaThread* protected_java_thread() {
+    return _protected_java_thread;
+  }
+};
+
 // This stack allocated JavaThreadIterator is used to walk the
 // specified ThreadsList using the following style:
 //
