@@ -1740,15 +1740,19 @@ class ThreadAPI {
      */
     @Test
     void testGetState6() throws Exception {
+        var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
-                LockSupport.park();
+                while (!done.get()) {
+                    LockSupport.park();
+                }
             }
         });
         try {
             Thread.State state = awaitParked(thread);
             assertEquals(Thread.State.WAITING, state);
         } finally {
+            done.set(true);
             LockSupport.unpark(thread);
             thread.join();
         }
@@ -1759,15 +1763,19 @@ class ThreadAPI {
      */
     @Test
     void testGetState7() throws Exception {
+        var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
-                LockSupport.parkNanos(Long.MAX_VALUE);
+                while (!done.get()) {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                }
             }
         });
         try {
             Thread.State state = awaitParked(thread);
             assertEquals(Thread.State.TIMED_WAITING, state);
         } finally {
+            done.set(true);
             LockSupport.unpark(thread);
             thread.join();
         }

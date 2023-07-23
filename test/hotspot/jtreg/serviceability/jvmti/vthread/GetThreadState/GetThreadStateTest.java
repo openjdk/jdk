@@ -36,6 +36,7 @@
 
 import java.lang.ref.Reference;
 import java.util.StringJoiner;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
@@ -52,43 +53,12 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test unstarted thread.
+     * Test new/unstarted thread.
      */
     @Test
-    void testUnstarted() {
+    void testNew() {
         var thread = Thread.ofVirtual().unstarted(() -> { });
-        check(thread, 0);
-    }
-
-    /**
-     * Test runnable (mounted).
-     */
-    @Test
-    void testRunnable() throws Exception {
-        var started = new AtomicBoolean();
-        var done = new AtomicBoolean();
-        var thread = Thread.ofVirtual().start(() -> {
-            started.set(true);
-            while (!done.get()) {
-                Thread.onSpinWait();
-            }
-        });
-        try {
-            // wait for thread to start execution
-            while (!started.get()) {
-                Thread.sleep(10);
-            }
-            // thread should be runnable
-            int expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE;
-            check(thread, expected);
-
-            // runnable + interrupted
-            thread.interrupt();
-            check(thread, expected | JVMTI_THREAD_STATE_INTERRUPTED);
-        } finally {
-            done.set(true);
-            thread.join();
-        }
+        check(thread, /*new*/ 0);
     }
 
     /**
@@ -102,59 +72,101 @@ class GetThreadStateTest {
     }
 
     /**
+     * Test runnable.
+     */
+    @Test
+    void testRunnable() throws Exception {
+        var latch = new CountDownLatch(1);
+        var done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            latch.countDown();
+
+            // spin until done
+            while (!done.get()) {
+                Thread.onSpinWait();
+            }
+        });
+        try {
+            // wait for thread to start execution
+            latch.await();
+
+            // thread should be runnable
+            int expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_RUNNABLE;
+            check(thread, expected);
+
+            // re-test with interrupt status set
+            thread.interrupt();
+            check(thread, expected | JVMTI_THREAD_STATE_INTERRUPTED);
+        } finally {
+            done.set(true);
+            thread.join();
+        }
+    }
+
+    /**
      * Test waiting to enter a monitor.
      */
     @Test
     void testMonitorEnter() throws Exception {
+        var latch = new CountDownLatch(1);
         Object lock = new Object();
         var thread = Thread.ofVirtual().unstarted(() -> {
+            latch.countDown();
             synchronized (lock) { }
         });
         try {
             synchronized (lock) {
+                // start thread and wait for it to start execution
                 thread.start();
-                awaitBlocked(thread);
-                int expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
-                check(thread, expected);
+                latch.await();
 
-                // waiting to enter + interrupted
+                // thread should block on monitor enter
+                int expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
+                await(thread, expected);
+
+                // re-test with interrupt status set
                 thread.interrupt();
                 check(thread, expected | JVMTI_THREAD_STATE_INTERRUPTED);
             }
-            thread.join();
         } finally {
+            thread.join();
             Reference.reachabilityFence(lock);
         }
     }
 
     /**
-     * Test waiting in untimed-Object.wait.
+     * Test waiting in Object.wait().
      */
     @Test
-    void testUntimedWait() throws Exception {
+    void testObjectWait() throws Exception {
+        var latch = new CountDownLatch(1);
         Object lock = new Object();
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
+                latch.countDown();
                 try {
                     lock.wait();
                 } catch (InterruptedException e) { }
             }
         });
         try {
-            awaitParked(thread);
+            // wait for thread to own monitor
+            latch.await();
+
+            // thread should wait
             int expected = JVMTI_THREAD_STATE_ALIVE |
                     JVMTI_THREAD_STATE_WAITING |
                     JVMTI_THREAD_STATE_WAITING_INDEFINITELY |
                     JVMTI_THREAD_STATE_IN_OBJECT_WAIT;
-            check(thread, expected);
+            await(thread, expected);
 
-            // notify so that virtual thread is waiting to re-enter monitor
+            // notify so thread waits to re-enter monitor
             synchronized (lock) {
                 lock.notifyAll();
                 expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
                 check(thread, expected);
 
-                // waiting to re-enter + interrupted
+                // re-test with interrupt status set
                 thread.interrupt();
                 check(thread, expected | JVMTI_THREAD_STATE_INTERRUPTED);
             }
@@ -166,33 +178,38 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test waiting in timed-Object.wait.
+     * Test waiting in Object.wait(millis).
      */
     @Test
-    void testTimedWait() throws Exception {
+    void testObjectWaitMillis() throws Exception {
+        var latch = new CountDownLatch(1);
         Object lock = new Object();
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
+                latch.countDown();
                 try {
                     lock.wait(Long.MAX_VALUE);
                 } catch (InterruptedException e) { }
             }
         });
         try {
-            awaitParked(thread);
+            // wait for thread to own monitor
+            latch.await();
+
+            // thread should wait
             int expected = JVMTI_THREAD_STATE_ALIVE |
                     JVMTI_THREAD_STATE_WAITING |
                     JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT |
                     JVMTI_THREAD_STATE_IN_OBJECT_WAIT;
-            check(thread, expected);
+            await(thread, expected);
 
-            // notify so that virtual thread is waiting to re-enter monitor
+            // notify so thread waits to re-enter monitor
             synchronized (lock) {
                 lock.notifyAll();
                 expected = JVMTI_THREAD_STATE_ALIVE | JVMTI_THREAD_STATE_BLOCKED_ON_MONITOR_ENTER;
                 check(thread, expected);
 
-                // waiting to re-enter + interrupted
+                // re-test with interrupt status set
                 thread.interrupt();
                 check(thread, expected | JVMTI_THREAD_STATE_INTERRUPTED);
             }
@@ -204,62 +221,93 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test untimed-park.
+     * Test parked with LockSupport.park.
      */
     @Test
-    void testUntimedPark() throws Exception {
-        var thread = Thread.ofVirtual().start(LockSupport::park);
-        try {
-            awaitParked(thread);
-            int expected = JVMTI_THREAD_STATE_ALIVE |
-                    JVMTI_THREAD_STATE_WAITING |
-                    JVMTI_THREAD_STATE_WAITING_INDEFINITELY |
-                    JVMTI_THREAD_STATE_PARKED;
-            check(thread, expected);
-        } finally {
-            LockSupport.unpark(thread);
-            thread.join();
-        }
-    }
-
-    /**
-     * Test timed parked.
-     */
-    @Test
-    void testTimedPark() throws Exception {
-        var thread = Thread.ofVirtual().start(() -> LockSupport.parkNanos(Long.MAX_VALUE));
-        try {
-            awaitParked(thread);
-            int expected = JVMTI_THREAD_STATE_ALIVE |
-                    JVMTI_THREAD_STATE_WAITING |
-                    JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT |
-                    JVMTI_THREAD_STATE_PARKED;
-            check(thread, expected);
-        } finally {
-            LockSupport.unpark(thread);
-            thread.join();
-        }
-    }
-
-    /**
-     * Test untimed-park while holding a monitor.
-     */
-    @Test
-    void testUntimedParkWhenPinned() throws Exception {
-        Object lock = new Object();
+    void testLockSupportPark() throws Exception {
+        var latch = new CountDownLatch(1);
+        var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
-            synchronized (lock) {
+            latch.countDown();
+            while (!done.get()) {
                 LockSupport.park();
             }
         });
         try {
-            awaitParked(thread);
+            // wait for thread to start execution
+            latch.await();
+
+            // thread should park
             int expected = JVMTI_THREAD_STATE_ALIVE |
                     JVMTI_THREAD_STATE_WAITING |
                     JVMTI_THREAD_STATE_WAITING_INDEFINITELY |
                     JVMTI_THREAD_STATE_PARKED;
-            check(thread, expected);
+            await(thread, expected);
         } finally {
+            done.set(true);
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test timed park with LockSupport.parkNanos.
+     */
+    @Test
+    void testLockSupportParkNanos() throws Exception {
+        var latch = new CountDownLatch(1);
+        var done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            latch.countDown();
+            while (!done.get()) {
+                LockSupport.parkNanos(Long.MAX_VALUE);
+            }
+        });
+        try {
+            // wait for thread to start execution
+            latch.await();
+
+            // thread should park
+            int expected = JVMTI_THREAD_STATE_ALIVE |
+                    JVMTI_THREAD_STATE_WAITING |
+                    JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT |
+                    JVMTI_THREAD_STATE_PARKED;
+            await(thread, expected);
+        } finally {
+            done.set(true);
+            LockSupport.unpark(thread);
+            thread.join();
+        }
+    }
+
+    /**
+     * Test parked with LockSupport.park while holding a monitor.
+     */
+    @Test
+    void testLockSupportParkWhenPinned() throws Exception {
+        var latch = new CountDownLatch(1);
+        Object lock = new Object();
+        var done = new AtomicBoolean();
+        var thread = Thread.ofVirtual().start(() -> {
+            synchronized (lock) {
+                latch.countDown();
+                while (!done.get()) {
+                    LockSupport.park();
+                }
+            }
+        });
+        try {
+            // wait for thread to own monitor
+            latch.await();
+
+            // thread should park
+            int expected = JVMTI_THREAD_STATE_ALIVE |
+                    JVMTI_THREAD_STATE_WAITING |
+                    JVMTI_THREAD_STATE_WAITING_INDEFINITELY |
+                    JVMTI_THREAD_STATE_PARKED;
+            await(thread, expected);
+        } finally {
+            done.set(true);
             LockSupport.unpark(thread);
             thread.join();
             Reference.reachabilityFence(lock);
@@ -267,34 +315,62 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test timed-park while holding a monitor.
+     * Test timed park with LockSupport.parkNanos while holding a monitor.
      */
     @Test
-    void testTimedParkWhenPinned() throws Exception {
+    void testLockSupportParkNanosWhenPinned() throws Exception {
+        var latch = new CountDownLatch(1);
         Object lock = new Object();
+        var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
             synchronized (lock) {
-                LockSupport.parkNanos(Long.MAX_VALUE);
+                latch.countDown();
+                while (!done.get()) {
+                    LockSupport.parkNanos(Long.MAX_VALUE);
+                }
             }
         });
         try {
-            awaitParked(thread);
+            // wait for thread to own monitor
+            latch.await();
+
+            // thread should park
             int expected = JVMTI_THREAD_STATE_ALIVE |
                     JVMTI_THREAD_STATE_WAITING |
                     JVMTI_THREAD_STATE_WAITING_WITH_TIMEOUT |
                     JVMTI_THREAD_STATE_PARKED;
-            check(thread, expected);
+            await(thread, expected);
         } finally {
+            done.set(true);
             LockSupport.unpark(thread);
             thread.join();
             Reference.reachabilityFence(lock);
         }
     }
-    
+
+    /**
+     * Asserts that the given thread has the expected JVMTI state.
+     */
     private static void check(Thread thread, int expected) {
+        System.err.format("  expect state=0x%x (%s) ...%n", expected, jvmtiStateToString(expected));
         int state = jvmtiState(thread);
-        System.err.format("  state=0x%x (%s)%n", state, jvmtiStateToString(state));
+        System.err.format("  thread state=0x%x (%s)%n", state, jvmtiStateToString(state));
         assertEquals(expected, state);
+    }
+
+    /**
+     * Waits indefinitely for the given thread to get to the target JVMTI state.
+     */
+    private static void await(Thread thread, int targetState) throws Exception {
+        System.err.format("  await state=0x%x (%s) ...%n", targetState, jvmtiStateToString(targetState));
+        int state = jvmtiState(thread);
+        System.err.format("  thread state=0x%x (%s)%n", state, jvmtiStateToString(state));
+        while (state != targetState) {
+            assertTrue(thread.isAlive(), "Thread has terminated");
+            Thread.sleep(20);
+            state = jvmtiState(thread);
+            System.err.format("  thread state=0x%x (%s)%n", state, jvmtiStateToString(state));
+        }
     }
 
     private static final int JVMTI_THREAD_STATE_ALIVE = 0x0001;
@@ -340,30 +416,7 @@ class GetThreadStateTest {
             sj.add("JVMTI_THREAD_STATE_INTERRUPTED");
         if ((state & JVMTI_THREAD_STATE_IN_NATIVE) != 0)
             sj.add("JVMTI_THREAD_STATE_IN_NATIVE");
-        return sj.toString();
-    }
-
-    /**
-     * Waits for the given thread to park.
-     */
-    private static void awaitParked(Thread thread) throws InterruptedException {
-        Thread.State state = thread.getState();
-        while (state != Thread.State.WAITING && state != Thread.State.TIMED_WAITING) {
-            assertFalse(state == Thread.State.TERMINATED, "Thread has terminated");
-            Thread.sleep(10);
-            state = thread.getState();
-        }
-    }
-
-    /**
-     * Waits for the given thread to block waiting on a monitor.
-     */
-    private static void awaitBlocked(Thread thread) throws InterruptedException {
-        Thread.State state = thread.getState();
-        while (state != Thread.State.BLOCKED) {
-            assertFalse(state == Thread.State.TERMINATED, "Thread has terminated");
-            Thread.sleep(10);
-            state = thread.getState();
-        }
+        String s = sj.toString();
+        return s.isEmpty() ? "<empty>" : s;
     }
 }
