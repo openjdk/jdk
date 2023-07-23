@@ -147,7 +147,7 @@ import java.util.function.Function;
 
 import jdk.test.lib.Asserts;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 
 //

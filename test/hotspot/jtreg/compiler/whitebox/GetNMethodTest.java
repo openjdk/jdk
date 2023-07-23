@@ -42,8 +42,8 @@
 package compiler.whitebox;
 
 import jdk.test.lib.Asserts;
-import sun.hotspot.code.BlobType;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.code.BlobType;
+import jdk.test.whitebox.code.NMethod;
 
 public class GetNMethodTest extends CompilerWhiteBoxTest {
     public static void main(String[] args) throws Exception {

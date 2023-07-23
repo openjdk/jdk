@@ -26,8 +26,8 @@ package compiler.codecache.jmx;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.Utils;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.code.BlobType;
-import sun.hotspot.code.CodeBlob;
+import jdk.test.whitebox.code.BlobType;
+import jdk.test.whitebox.code.CodeBlob;
 
 import javax.management.Notification;
 import java.lang.management.MemoryPoolMXBean;

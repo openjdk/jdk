@@ -65,7 +65,7 @@ import java.util.LinkedList;
 
 import jtreg.SkippedException;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 public class TestSmallHeap {
 

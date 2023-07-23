@@ -52,7 +52,7 @@ import static jdk.internal.misc.Unsafe.*;
 import static jdk.test.lib.Asserts.assertEQ;
 import static jdk.test.lib.Asserts.assertNE;
 
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 
 public class UnsafeGetStableArrayElement {
     @Stable static final boolean[] STABLE_BOOLEAN_ARRAY = new boolean[16];

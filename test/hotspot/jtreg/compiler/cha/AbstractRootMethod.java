@@ -61,7 +61,7 @@ public class AbstractRootMethod {
         run(AbstractInterface.class);
 
         // Implementation limitation: CHA is not performed by C1 during inlining through MH linkers.
-        if (!sun.hotspot.code.Compiler.isC1Enabled()) {
+        if (!jdk.test.whitebox.code.Compiler.isC1Enabled()) {
             run(AbstractClass.TestMH.class, AbstractClass.class);
             run(AbstractInterface.TestMH.class, AbstractInterface.class);
         }

@@ -102,17 +102,13 @@ public class ClassFileInstaller {
     }
 
     // Add commonly used inner classes that are often omitted by mistake. Currently
-    // we support only jdk.test.whitebox.WhiteBox$WhiteBoxPermission and
-    // jdk/test/whitebox/WhiteBox$WhiteBoxPermission. See JDK-8199290
+    // we support only jdk.test.whitebox.WhiteBox$WhiteBoxPermission.
+    // See JDK-8199290
     private static String[] addInnerClasses(String[] classes, int startIdx) {
         boolean seenNewWb = false;
         boolean seenNewWbInner = false;
-        boolean seenOldWb = false;
-        boolean seenOldWbInner = false;
         final String newWb = "jdk.test.whitebox.WhiteBox";
         final String newWbInner = newWb + "$WhiteBoxPermission";
-        final String oldWb = "sun.hotspot.WhiteBox";
-        final String oldWbInner = oldWb + "$WhiteBoxPermission";
 
         ArrayList<String> list = new ArrayList<>();
 
@@ -122,17 +118,11 @@ public class ClassFileInstaller {
             switch (cls) {
             case newWb:      seenNewWb      = true; break;
             case newWbInner: seenNewWbInner = true; break;
-            case oldWb:      seenOldWb      = true; break;
-            case oldWbInner: seenOldWbInner = true; break;
             }
         }
         if (seenNewWb && !seenNewWbInner) {
             list.add(newWbInner);
         }
-        if (seenOldWb && !seenOldWbInner) {
-            list.add(oldWbInner);
-        }
-
         String[] array = new String[list.size()];
         list.toArray(array);
         return array;

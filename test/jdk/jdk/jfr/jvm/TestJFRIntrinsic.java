@@ -51,7 +51,7 @@ import java.util.stream.IntStream;
 import jdk.jfr.internal.JVM;
 import jdk.test.lib.Platform;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.code.NMethod;
 
 public class TestJFRIntrinsic {
 

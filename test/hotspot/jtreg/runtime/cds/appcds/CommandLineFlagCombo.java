@@ -42,7 +42,7 @@ import jdk.test.lib.BuildHelper;
 import jdk.test.lib.Platform;
 import jdk.test.lib.process.OutputAnalyzer;
 
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.WhiteBox;
 
 public class CommandLineFlagCombo {

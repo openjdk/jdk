@@ -61,7 +61,7 @@ public class DefaultRootMethod {
         run(InheritedDefault.class);
 
         // Implementation limitation: CHA is not performed by C1 during inlining through MH linkers.
-        if (!sun.hotspot.code.Compiler.isC1Enabled()) {
+        if (!jdk.test.whitebox.code.Compiler.isC1Enabled()) {
             run(DefaultRoot.TestMH.class, DefaultRoot.class);
             run(InheritedDefault.TestMH.class, InheritedDefault.class);
         }

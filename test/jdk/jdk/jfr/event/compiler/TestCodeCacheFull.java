@@ -31,7 +31,7 @@ import jdk.test.lib.Asserts;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 /**
  * @test TestCodeCacheFull

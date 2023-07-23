@@ -45,7 +45,7 @@ import javax.crypto.spec.SecretKeySpec;
 
 import compiler.whitebox.CompilerWhiteBoxTest;
 import jdk.test.lib.Utils;
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jtreg.SkippedException;
 
 public class Test8292158 {

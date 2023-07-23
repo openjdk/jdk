@@ -38,7 +38,7 @@
 
 package compiler.intrinsics.bmi;
 
-import sun.hotspot.cpuinfo.CPUInfo;
+import jdk.test.whitebox.cpuinfo.CPUInfo;
 
 public class TestAndnI {
 

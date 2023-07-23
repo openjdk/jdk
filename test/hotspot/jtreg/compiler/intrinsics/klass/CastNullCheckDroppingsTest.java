@@ -47,7 +47,7 @@ import jdk.test.lib.Platform;
 import jdk.test.lib.jfr.EventNames;
 import jdk.test.lib.jfr.Events;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.code.NMethod;
+import jdk.test.whitebox.code.NMethod;
 
 import java.io.IOException;
 import java.lang.invoke.MethodHandle;

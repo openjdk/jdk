@@ -43,7 +43,7 @@
 
 package compiler.codecache.jmx;
 
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 import java.lang.management.MemoryPoolMXBean;
 

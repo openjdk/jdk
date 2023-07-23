@@ -61,9 +61,9 @@
  *      TestDriver
  */
 
-import sun.hotspot.code.Compiler;
+import jdk.test.whitebox.code.Compiler;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 public class TestDriver {
     public static void main(String[] args) throws Exception {

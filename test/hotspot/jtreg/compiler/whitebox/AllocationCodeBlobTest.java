@@ -45,7 +45,7 @@ package compiler.whitebox;
 import jdk.test.lib.Asserts;
 import jdk.test.lib.InfiniteLoop;
 import jdk.test.whitebox.WhiteBox;
-import sun.hotspot.code.BlobType;
+import jdk.test.whitebox.code.BlobType;
 
 import java.lang.management.MemoryPoolMXBean;
 import java.util.ArrayList;

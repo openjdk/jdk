@@ -37,7 +37,7 @@ package gc.ergonomics;
 import jdk.test.lib.process.OutputAnalyzer;
 import jdk.test.lib.process.ProcessTools;
 import jtreg.SkippedException;
-import sun.hotspot.gc.GC;
+import jdk.test.whitebox.gc.GC;
 
 public class TestDynamicNumberOfGCThreads {
   public static void main(String[] args) throws Exception {
