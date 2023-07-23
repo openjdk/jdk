@@ -50,6 +50,11 @@ import sun.security.action.GetBooleanAction;
  */
 public final class JARSoundbankReader extends SoundbankReader {
 
+    /**
+     * Value of the system property that enables the Jar soundbank loading
+     * {@code true} if jar sound bank is allowed to be loaded default is
+     * {@code false}.
+     */
     @SuppressWarnings("removal")
     private static final boolean JAR_SOUNDBANK_ENABLED =
             AccessController.doPrivileged(
