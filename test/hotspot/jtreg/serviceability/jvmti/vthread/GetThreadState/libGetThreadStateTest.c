@@ -45,7 +45,7 @@ JNIEXPORT jint JNICALL Java_GetThreadStateTest_jvmtiState(JNIEnv *env, jclass cl
     jint state = 0;
     err = (*jvmti)->GetThreadState(jvmti, thread, &state);
     if (err != JVMTI_ERROR_NONE) {
-	    (*env)->FatalError(env, "GetThreadState failed");
+        (*env)->FatalError(env, "GetThreadState failed");
     }
     return state;
 }
