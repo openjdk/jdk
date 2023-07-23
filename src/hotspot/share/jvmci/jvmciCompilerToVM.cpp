@@ -1498,6 +1498,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
             GrowableArray<ScopeValue*>* local_values = scope->locals();
             for (int i = 0; i < local_values->length(); i++) {
               ScopeValue* value = local_values->at(i);
+              assert(!value->is_object_merge(), "Should not be.");
               if (value->is_object()) {
                 if (localIsVirtual_h.is_null()) {
                   typeArrayOop array_oop = oopFactory::new_boolArray(local_values->length(), CHECK_NULL);
@@ -1740,6 +1741,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (locals != nullptr) {
       for (int i2 = 0; i2 < locals->size(); i2++) {
         StackValue* var = locals->at(i2);
+        assert(!scopedValues->at(i2)->is_object_merge(), "Should not be.");
         if (var->type() == T_OBJECT && scopedValues->at(i2)->is_object()) {
           jvalue val;
           val.l = cast_from_oop<jobject>(locals->at(i2)->get_obj()());
@@ -1753,6 +1755,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (expressions != nullptr) {
       for (int i2 = 0; i2 < expressions->size(); i2++) {
         StackValue* var = expressions->at(i2);
+        assert(!scopeExpressions->at(i2)->is_object_merge(), "Should not be.");
         if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
           jvalue val;
           val.l = cast_from_oop<jobject>(expressions->at(i2)->get_obj()());

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ namespace WindowsDbgHelp {
                          PMINIDUMP_CALLBACK_INFORMATION CallbackParam);
   BOOL symGetLineFromAddr64 (HANDLE hProcess, DWORD64 dwAddr,
                              PDWORD pdwDisplacement, PIMAGEHLP_LINE64 Line);
+  BOOL symRefreshModuleList(HANDLE hProcess);
 
   // Print one liner describing state (if library loaded, which functions are
   // missing - if any, and the dbhelp API version)

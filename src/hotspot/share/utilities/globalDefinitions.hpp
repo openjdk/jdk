@@ -400,6 +400,9 @@ inline size_t byte_size_in_exact_unit(size_t s) {
   return s;
 }
 
+#define EXACTFMT            SIZE_FORMAT "%s"
+#define EXACTFMTARGS(s)     byte_size_in_exact_unit(s), exact_unit_for_byte_size(s)
+
 // Memory size transition formatting.
 
 #define HEAP_CHANGE_FORMAT "%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)->" SIZE_FORMAT "K(" SIZE_FORMAT "K)"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,12 +26,7 @@
 package jdk.javadoc.internal.doclets.toolkit;
 
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.InvalidPathException;
-import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -53,10 +48,8 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleElementVisitor14;
-import javax.tools.DocumentationTool;
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
-import javax.tools.StandardJavaFileManager;
 
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.util.TreePath;
@@ -67,8 +60,6 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.doclet.Taglet;
-import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
-import jdk.javadoc.internal.doclets.toolkit.taglets.TagletManager;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileFactory;
@@ -94,16 +85,6 @@ public abstract class BaseConfiguration {
      * The doclet that created this configuration.
      */
     public final Doclet doclet;
-
-    /**
-     * The factory for builders.
-     */
-    protected BuilderFactory builderFactory;
-
-    /**
-     * The taglet manager.
-     */
-    public TagletManager tagletManager;
 
     /**
      * The meta tag keywords instance.
@@ -262,18 +243,6 @@ public abstract class BaseConfiguration {
         includedTypeElements = Collections.unmodifiableSet(includedSplitter.tset);
     }
 
-    /**
-     * Return the builder factory for this doclet.
-     *
-     * @return the builder factory for this doclet.
-     */
-    public BuilderFactory getBuilderFactory() {
-        if (builderFactory == null) {
-            builderFactory = new BuilderFactory(this);
-        }
-        return builderFactory;
-    }
-
     public Reporter getReporter() {
         return this.reporter;
     }
@@ -374,28 +343,6 @@ public abstract class BaseConfiguration {
         }
         typeElementCatalog = new TypeElementCatalog(includedTypeElements, this);
 
-        String snippetPath = options.snippetPath();
-        if (snippetPath != null) {
-            Messages messages = getMessages();
-            JavaFileManager fm = getFileManager();
-            if (fm instanceof StandardJavaFileManager) {
-                try {
-                    List<Path> sp = Arrays.stream(snippetPath.split(File.pathSeparator))
-                            .map(Path::of)
-                            .toList();
-                    StandardJavaFileManager sfm = (StandardJavaFileManager) fm;
-                    sfm.setLocationFromPaths(DocumentationTool.Location.SNIPPET_PATH, sp);
-                } catch (IOException | InvalidPathException e) {
-                    throw new SimpleDocletException(messages.getResources().getText(
-                            "doclet.error_setting_snippet_path", snippetPath, e), e);
-                }
-            } else {
-                throw new SimpleDocletException(messages.getResources().getText(
-                        "doclet.cannot_use_snippet_path", snippetPath));
-            }
-        }
-
-        initTagletManager(options.customTagStrs());
         options.groupPairs().forEach(grp -> {
             if (showModules) {
                 group.checkModuleGroups(grp.first, grp.second);
@@ -449,100 +396,6 @@ public abstract class BaseConfiguration {
             }
         }
         DocFileFactory.getFactory(this).setDestDir(destDirName);
-    }
-
-    /**
-     * Initialize the taglet manager.  The strings to initialize the simple custom tags should
-     * be in the following format:  "[tag name]:[location str]:[heading]".
-     *
-     * @param customTagStrs the set two dimensional arrays of strings.  These arrays contain
-     *                      either -tag or -taglet arguments.
-     */
-    private void initTagletManager(Set<List<String>> customTagStrs) {
-        tagletManager = tagletManager != null ? tagletManager : new TagletManager(this);
-        JavaFileManager fileManager = getFileManager();
-        Messages messages = getMessages();
-        try {
-            tagletManager.initTagletPath(fileManager);
-            tagletManager.loadTaglets(fileManager);
-
-            for (List<String> args : customTagStrs) {
-                if (args.get(0).equals("-taglet")) {
-                    tagletManager.addCustomTag(args.get(1), fileManager);
-                    continue;
-                }
-                /* Since there are few constraints on the characters in a tag name,
-                 * and real world examples with ':' in the tag name, we cannot simply use
-                 * String.split(regex);  instead, we tokenize the string, allowing
-                 * special characters to be escaped with '\'. */
-                List<String> tokens = tokenize(args.get(1), 3);
-                switch (tokens.size()) {
-                    case 1 -> {
-                        String tagName = args.get(1);
-                        if (tagletManager.isKnownCustomTag(tagName)) {
-                            //reorder a standard tag
-                            tagletManager.addNewSimpleCustomTag(tagName, null, "");
-                        } else {
-                            //Create a simple tag with the heading that has the same name as the tag.
-                            StringBuilder heading = new StringBuilder(tagName + ":");
-                            heading.setCharAt(0, Character.toUpperCase(tagName.charAt(0)));
-                            tagletManager.addNewSimpleCustomTag(tagName, heading.toString(), "a");
-                        }
-                    }
-
-                    case 2 ->
-                        //Add simple taglet without heading, probably to excluding it in the output.
-                        tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(1), "");
-
-                    case 3 ->
-                        tagletManager.addNewSimpleCustomTag(tokens.get(0), tokens.get(2), tokens.get(1));
-
-                    default ->
-                        messages.error("doclet.Error_invalid_custom_tag_argument", args.get(1));
-                }
-            }
-        } catch (IOException e) {
-            messages.error("doclet.taglet_could_not_set_location", e.toString());
-        }
-    }
-
-    /**
-     * Given a string, return an array of tokens, separated by ':'.
-     * The separator character can be escaped with the '\' character.
-     * The '\' character may also be escaped with the '\' character.
-     *
-     * @param s         the string to tokenize
-     * @param maxTokens the maximum number of tokens returned.  If the
-     *                  max is reached, the remaining part of s is appended
-     *                  to the end of the last token.
-     * @return an array of tokens
-     */
-    private List<String> tokenize(String s, int maxTokens) {
-        List<String> tokens = new ArrayList<>();
-        StringBuilder token = new StringBuilder();
-        boolean prevIsEscapeChar = false;
-        for (int i = 0; i < s.length(); i += Character.charCount(i)) {
-            int currentChar = s.codePointAt(i);
-            if (prevIsEscapeChar) {
-                // Case 1:  escaped character
-                token.appendCodePoint(currentChar);
-                prevIsEscapeChar = false;
-            } else if (currentChar == ':' && tokens.size() < maxTokens - 1) {
-                // Case 2:  separator
-                tokens.add(token.toString());
-                token = new StringBuilder();
-            } else if (currentChar == '\\') {
-                // Case 3:  escape character
-                prevIsEscapeChar = true;
-            } else {
-                // Case 4:  regular character
-                token.appendCodePoint(currentChar);
-            }
-        }
-        if (token.length() > 0) {
-            tokens.add(token.toString());
-        }
-        return tokens;
     }
 
     /**
@@ -610,13 +463,6 @@ public abstract class BaseConfiguration {
         }
         return !(utils.isDeprecated(te) || utils.isDeprecated(utils.containingPackage(te)));
     }
-
-    /**
-     * Return the doclet specific instance of a writer factory.
-     *
-     * @return the {@link WriterFactory} for the doclet.
-     */
-    public abstract WriterFactory getWriterFactory();
 
     /**
      * Return the Locale for this document.
