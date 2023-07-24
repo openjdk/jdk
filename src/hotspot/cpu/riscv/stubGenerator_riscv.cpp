@@ -2311,18 +2311,18 @@ class StubGenerator: public StubCodeGenerator {
 
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU, Register strL, Register strU, Label& DIFF) {
-    const Register tmp = x30;
-    __ ld(t0, Address(strL));
+    const Register tmp = x30, tmpLval = x7;
+    __ ld(tmpLval, Address(strL));
     __ addi(strL, strL, wordSize);
     __ ld(tmpU, Address(strU));
     __ addi(strU, strU, wordSize);
-    __ inflate_lo32(tmpL, t0, tmp);
+    __ inflate_lo32(tmpL, tmpLval);
     __ xorr(tmp, tmpU, tmpL);
     __ bnez(tmp, DIFF);
 
     __ ld(tmpU, Address(strU));
     __ addi(strU, strU, wordSize);
-    __ inflate_hi32(tmpL, t0, tmp);
+    __ inflate_hi32(tmpL, tmpLval);
     __ xorr(tmp, tmpU, tmpL);
     __ bnez(tmp, DIFF);
   }
