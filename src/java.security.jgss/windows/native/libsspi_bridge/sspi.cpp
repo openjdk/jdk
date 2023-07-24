@@ -569,7 +569,7 @@ gss_export_name(OM_uint32 *minor_status,
     result = GSS_S_COMPLETE;
 err:
     if (fullname != name) {
-        delete[] fullname;
+        if (fullname != NULL) delete[] fullname;
     }
     return result;
 }
