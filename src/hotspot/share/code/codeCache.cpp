@@ -356,7 +356,20 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
   // Align and reserve space for code cache
-  const size_t rs_ps = page_size();
+  const size_t rs_ps = page_size(false, 8);
+  if (UseLargePages) {
+    const size_t ps = page_size();
+    if (rs_ps < ps) {
+      char msg[256];
+      jio_snprintf(msg, sizeof(msg),
+                   "Failed to reserve large page memory for code cache (" SIZE_FORMAT "%s). "
+                   "Reverting to smaller page size (" SIZE_FORMAT "%s).",
+                   byte_size_in_exact_unit(ps), exact_unit_for_byte_size(ps),
+                   byte_size_in_exact_unit(rs_ps), exact_unit_for_byte_size(rs_ps));
+      log_warning(codecache)("%s", msg);
+      warning("%s", msg);
+    };
+  }
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
   ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
