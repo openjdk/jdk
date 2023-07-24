@@ -95,12 +95,12 @@ class TypeArrayKlass : public ArrayKlass {
 
  public:
   // Find n'th dimensional array
-  virtual Klass* array_klass(int n, TRAPS);
-  virtual Klass* array_klass_or_null(int n);
+  virtual ArrayKlass* array_klass(int n, TRAPS);
+  virtual ArrayKlass* array_klass_or_null(int n);
 
   // Returns the array class with this class as element type
-  virtual Klass* array_klass(TRAPS);
-  virtual Klass* array_klass_or_null();
+  virtual ArrayKlass* array_klass(TRAPS);
+  virtual ArrayKlass* array_klass_or_null();
 
   static TypeArrayKlass* cast(Klass* k) {
     return const_cast<TypeArrayKlass*>(cast(const_cast<const Klass*>(k)));

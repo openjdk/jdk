@@ -171,7 +171,7 @@ void TypeArrayKlass::copy_array(arrayOop s, int src_pos, arrayOop d, int dst_pos
 }
 
 // create a klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
+ArrayKlass* TypeArrayKlass::array_klass(int n, TRAPS) {
   int dim = dimension();
   assert(dim <= n, "check order of chain");
     if (dim == n)
@@ -198,13 +198,13 @@ Klass* TypeArrayKlass::array_klass(int n, TRAPS) {
     }
   }
 
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass* h_ak = higher_dimension();
   THREAD->check_possible_safepoint();
   return h_ak->array_klass(n, THREAD);
 }
 
 // return existing klass of array holding typeArrays
-Klass* TypeArrayKlass::array_klass_or_null(int n) {
+ArrayKlass* TypeArrayKlass::array_klass_or_null(int n) {
   int dim = dimension();
   assert(dim <= n, "check order of chain");
     if (dim == n)
@@ -215,15 +215,15 @@ Klass* TypeArrayKlass::array_klass_or_null(int n) {
     return nullptr;
   }
 
-  ObjArrayKlass* h_ak = ObjArrayKlass::cast(higher_dimension());
+  ObjArrayKlass* h_ak = higher_dimension();
   return h_ak->array_klass_or_null(n);
 }
 
-Klass* TypeArrayKlass::array_klass(TRAPS) {
+ArrayKlass* TypeArrayKlass::array_klass(TRAPS) {
   return array_klass(dimension() +  1, THREAD);
 }
 
-Klass* TypeArrayKlass::array_klass_or_null() {
+ArrayKlass* TypeArrayKlass::array_klass_or_null() {
   return array_klass_or_null(dimension() +  1);
 }
 
