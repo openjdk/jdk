@@ -2659,11 +2659,6 @@ address ShenandoahHeap::gc_state_addr() {
   return (address) ShenandoahHeap::heap()->_gc_state.addr_of();
 }
 
-size_t ShenandoahHeap::bytes_allocated_since_gc_start() {
-  assert(!mode()->is_generational(), "This is used for heuristics that are not compatible with generational mode");
-  return global_generation()->bytes_allocated_since_gc_start();
-}
-
 void ShenandoahHeap::reset_bytes_allocated_since_gc_start() {
   if (mode()->is_generational()) {
     young_generation()->reset_bytes_allocated_since_gc_start();

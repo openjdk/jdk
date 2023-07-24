@@ -43,17 +43,18 @@ int ShenandoahHeuristics::compare_by_garbage(RegionData a, RegionData b) {
   else return 0;
 }
 
-ShenandoahHeuristics::ShenandoahHeuristics() :
-        _region_data(nullptr),
-        _degenerated_cycles_in_a_row(0),
-        _successful_cycles_in_a_row(0),
-        _guaranteed_gc_interval(0),
-        _cycle_start(os::elapsedTime()),
-        _last_cycle_end(0),
-        _gc_times_learned(0),
-        _gc_time_penalties(0),
-        _gc_cycle_time_history(new TruncatedSeq(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor)),
-        _metaspace_oom()
+ShenandoahHeuristics::ShenandoahHeuristics(ShenandoahSpaceInfo* space_info) :
+  _space_info(space_info),
+  _region_data(nullptr),
+  _degenerated_cycles_in_a_row(0),
+  _successful_cycles_in_a_row(0),
+  _guaranteed_gc_interval(0),
+  _cycle_start(os::elapsedTime()),
+  _last_cycle_end(0),
+  _gc_times_learned(0),
+  _gc_time_penalties(0),
+  _gc_cycle_time_history(new TruncatedSeq(Moving_Average_Samples, ShenandoahAdaptiveDecayFactor)),
+  _metaspace_oom()
 {
   // No unloading during concurrent mark? Communicate that to heuristics
   if (!ClassUnloadingWithConcurrentMark) {
@@ -200,8 +201,8 @@ bool ShenandoahHeuristics::should_start_gc() {
   if (_guaranteed_gc_interval > 0) {
     double last_time_ms = (os::elapsedTime() - _last_cycle_end) * 1000;
     if (last_time_ms > _guaranteed_gc_interval) {
-      log_info(gc)("Trigger: Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
-                   last_time_ms, _guaranteed_gc_interval);
+      log_info(gc)("Trigger (%s): Time since last GC (%.0f ms) is larger than guaranteed interval (" UINTX_FORMAT " ms)",
+                   _space_info->name(), last_time_ms, _guaranteed_gc_interval);
       return true;
     }
   }

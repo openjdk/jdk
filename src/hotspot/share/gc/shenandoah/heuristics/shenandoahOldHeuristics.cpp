@@ -46,7 +46,7 @@ int ShenandoahOldHeuristics::compare_by_live(RegionData a, RegionData b) {
 }
 
 ShenandoahOldHeuristics::ShenandoahOldHeuristics(ShenandoahOldGeneration* generation) :
-  ShenandoahHeuristics(),
+  ShenandoahHeuristics(generation),
   _first_pinned_candidate(NOT_FOUND),
   _last_old_collection_candidate(0),
   _next_old_collection_candidate(0),

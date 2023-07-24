@@ -26,9 +26,9 @@
 #ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 #define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHHEURISTICS_HPP
 
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
 #include "gc/shenandoah/shenandoahSharedVariables.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeapStats.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/globals_extension.hpp"
 
@@ -59,6 +59,11 @@
 class ShenandoahCollectionSet;
 class ShenandoahHeapRegion;
 
+/*
+ * Shenandoah heuristics are primarily responsible for deciding when to start
+ * a collection cycle and choosing which regions will be evacuated during the
+ * cycle.
+ */
 class ShenandoahHeuristics : public CHeapObj<mtGC> {
   static const intx Concurrent_Adjust   = -1; // recover from penalties
   static const intx Degenerated_Penalty = 10; // how much to penalize average GC duration history on Degenerated GC
@@ -74,6 +79,9 @@ protected:
       size_t _live_data;        // Only used for old-gen heuristics, which prioritizes retention of _live_data over garbage reclaim
     } _u;
   } RegionData;
+
+  // Source of information about the memory space managed by this heuristic
+  ShenandoahSpaceInfo* _space_info;
 
   // Depending on generation mode, region data represents the results of the relevant
   // most recently completed marking pass:
@@ -117,7 +125,7 @@ protected:
   void adjust_penalty(intx step);
 
 public:
-  ShenandoahHeuristics();
+  ShenandoahHeuristics(ShenandoahSpaceInfo* space_info);
   virtual ~ShenandoahHeuristics();
 
   void record_metaspace_oom()     { _metaspace_oom.set(); }

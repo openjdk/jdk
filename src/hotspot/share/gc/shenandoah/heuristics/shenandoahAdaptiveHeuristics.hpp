@@ -28,10 +28,10 @@
 
 #include "runtime/globals_extension.hpp"
 #include "memory/allocation.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeapStats.hpp"
-#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "gc/shenandoah/heuristics/shenandoahHeuristics.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahPhaseTimings.hpp"
+#include "gc/shenandoah/shenandoahSharedVariables.hpp"
 #include "utilities/numberSeq.hpp"
 
 class ShenandoahAllocationRate : public CHeapObj<mtGC> {
@@ -54,9 +54,20 @@ class ShenandoahAllocationRate : public CHeapObj<mtGC> {
   TruncatedSeq _rate_avg;
 };
 
+/*
+ * The adaptive heuristic tracks the allocation behavior and average cycle
+ * time of the application. It attempts to start a cycle with enough time
+ * to complete before the available memory is exhausted. It errors on the
+ * side of starting cycles early to avoid allocation failures (degenerated
+ * cycles).
+ *
+ * This heuristic limits the number of regions for evacuation such that the
+ * evacuation reserve is respected. This helps it avoid allocation failures
+ * during evacuation. It preferentially selects regions with the most garbage.
+ */
 class ShenandoahAdaptiveHeuristics : public ShenandoahHeuristics {
 public:
-  ShenandoahAdaptiveHeuristics(ShenandoahHeapStats* heap_stats);
+  ShenandoahAdaptiveHeuristics(ShenandoahSpaceInfo* space_info);
 
   virtual ~ShenandoahAdaptiveHeuristics();
 
@@ -103,8 +114,6 @@ public:
   void adjust_spike_threshold(double amount);
 
 protected:
-  ShenandoahHeapStats* _heap_stats;
-
   ShenandoahAllocationRate _allocation_rate;
 
   // The margin of error expressed in standard deviations to add to our

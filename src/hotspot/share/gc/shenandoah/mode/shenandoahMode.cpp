@@ -27,23 +27,23 @@
 #include "gc/shenandoah/heuristics/shenandoahAdaptiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahAggressiveHeuristics.hpp"
 #include "gc/shenandoah/heuristics/shenandoahCompactHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeapStats.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/heuristics/shenandoahStaticHeuristics.hpp"
 #include "gc/shenandoah/mode/shenandoahMode.hpp"
 
-ShenandoahHeuristics* ShenandoahMode::initialize_heuristics(ShenandoahHeapStats* heap_info) const {
+ShenandoahHeuristics* ShenandoahMode::initialize_heuristics(ShenandoahSpaceInfo* space_info) const {
   if (ShenandoahGCHeuristics == nullptr) {
     vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option (null)");
   }
 
   if (strcmp(ShenandoahGCHeuristics, "aggressive") == 0) {
-    return new ShenandoahAggressiveHeuristics();
+    return new ShenandoahAggressiveHeuristics(space_info);
   } else if (strcmp(ShenandoahGCHeuristics, "static") == 0) {
-    return new ShenandoahStaticHeuristics();
+    return new ShenandoahStaticHeuristics(space_info);
   } else if (strcmp(ShenandoahGCHeuristics, "adaptive") == 0) {
-    return new ShenandoahAdaptiveHeuristics(heap_info);
+    return new ShenandoahAdaptiveHeuristics(space_info);
   } else if (strcmp(ShenandoahGCHeuristics, "compact") == 0) {
-    return new ShenandoahCompactHeuristics();
+    return new ShenandoahCompactHeuristics(space_info);
   } else {
     vm_exit_during_initialization("Unknown -XX:ShenandoahGCHeuristics option");
   }

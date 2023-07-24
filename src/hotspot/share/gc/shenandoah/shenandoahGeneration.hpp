@@ -27,7 +27,7 @@
 
 #include "memory/allocation.hpp"
 #include "gc/shenandoah/heuristics/shenandoahOldHeuristics.hpp"
-#include "gc/shenandoah/heuristics/shenandoahHeapStats.hpp"
+#include "gc/shenandoah/heuristics/shenandoahSpaceInfo.hpp"
 #include "gc/shenandoah/shenandoahGenerationType.hpp"
 #include "gc/shenandoah/shenandoahLock.hpp"
 #include "gc/shenandoah/shenandoahMarkingContext.hpp"
@@ -38,7 +38,7 @@ class ShenandoahReferenceProcessor;
 class ShenandoahHeap;
 class ShenandoahMode;
 
-class ShenandoahGeneration : public CHeapObj<mtGC>, public ShenandoahHeapStats {
+class ShenandoahGeneration : public CHeapObj<mtGC>, public ShenandoahSpaceInfo {
   friend class VMStructs;
 private:
   ShenandoahGenerationType const _type;
