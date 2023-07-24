@@ -389,7 +389,7 @@ class GetThreadStateTest {
 
     private static native void init();
     private static native int jvmtiState(Thread thread);
-    
+
     private static String jvmtiStateToString(int state) {
         StringJoiner sj = new StringJoiner(" | ");
         if ((state & JVMTI_THREAD_STATE_ALIVE) != 0)
