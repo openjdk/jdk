@@ -53,16 +53,16 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test new/unstarted thread.
+     * Test state of new/unstarted thread.
      */
     @Test
-    void testNew() {
+    void testUnstarted() {
         var thread = Thread.ofVirtual().unstarted(() -> { });
         check(thread, /*new*/ 0);
     }
 
     /**
-     * Test terminated thread.
+     * Test state of terminated thread.
      */
     @Test
     void testTerminated() throws Exception {
@@ -72,7 +72,7 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test runnable.
+     * Test state of runnable thread.
      */
     @Test
     void testRunnable() throws Exception {
@@ -104,7 +104,7 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test waiting to enter a monitor.
+     * Test state of thread waiting to enter a monitor.
      */
     @Test
     void testMonitorEnter() throws Exception {
@@ -135,7 +135,7 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test waiting in Object.wait().
+     * Test state of thread waiting in Object.wait().
      */
     @Test
     void testObjectWait() throws Exception {
@@ -178,7 +178,7 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test waiting in Object.wait(millis).
+     * Test state of thread waiting in Object.wait(millis).
      */
     @Test
     void testObjectWaitMillis() throws Exception {
@@ -221,10 +221,10 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test parked with LockSupport.park.
+     * Test state of thread parked with LockSupport.park.
      */
     @Test
-    void testLockSupportPark() throws Exception {
+    void testPark() throws Exception {
         var latch = new CountDownLatch(1);
         var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
@@ -251,10 +251,10 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test timed park with LockSupport.parkNanos.
+     * Test state of thread parked with LockSupport.parkNanos.
      */
     @Test
-    void testLockSupportParkNanos() throws Exception {
+    void testParkNanos() throws Exception {
         var latch = new CountDownLatch(1);
         var done = new AtomicBoolean();
         var thread = Thread.ofVirtual().start(() -> {
@@ -281,10 +281,10 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test parked with LockSupport.park while holding a monitor.
+     * Test state of thread parked with LockSupport.park while holding a monitor.
      */
     @Test
-    void testLockSupportParkWhenPinned() throws Exception {
+    void testParkWhenPinned() throws Exception {
         var latch = new CountDownLatch(1);
         Object lock = new Object();
         var done = new AtomicBoolean();
@@ -315,10 +315,10 @@ class GetThreadStateTest {
     }
 
     /**
-     * Test timed park with LockSupport.parkNanos while holding a monitor.
+     * Test state of thread parked with LockSupport.parkNanos while holding a monitor.
      */
     @Test
-    void testLockSupportParkNanosWhenPinned() throws Exception {
+    void testParkNanosWhenPinned() throws Exception {
         var latch = new CountDownLatch(1);
         Object lock = new Object();
         var done = new AtomicBoolean();
