@@ -54,7 +54,7 @@ public class CheckLargePages {
                     "-Xlog:pagesize*=debug",
                     "-version");
             OutputAnalyzer out = new OutputAnalyzer(pb.start());
-            out.shouldContain("Failed to reserve large page memory for segmented code cache");
+            out.shouldContain("Failed to reserve large page memory for code cache");
             out.shouldHaveExitValue(0);
         } else {
             System.out.println("1GB large pages not supported: UseLargePages=" + largePages +
