@@ -319,7 +319,7 @@ Java_sun_lwawt_macosx_CRobot_keyEvent
             }
 
             CGEventFlags flags = CGEventSourceFlagsState(kCGEventSourceStateHIDSystemState);
-            flags  = (initFlags & allModifiersMask) | (flags & (~allModifiersMask));
+            flags = (initFlags & allModifiersMask) | (flags & (~allModifiersMask));
             CGEventSetFlags(event, flags);
 
             CGEventPost(kCGHIDEventTap, event);

@@ -61,7 +61,6 @@ public class RobotModifierMaskTest {
     private static JFrame jFrame;
     private static JTextArea jTextArea;
     private static boolean isManual = false;
-    private static boolean testStarted = false;
     private static volatile CountDownLatch countDownLatch;
 
     private static StringBuffer errorLog = new StringBuffer();
@@ -88,7 +87,6 @@ public class RobotModifierMaskTest {
 
         try {
             isManual = args.length != 0;
-            testStarted = !isManual;
 
             robot = new Robot();
             robot.setAutoWaitForIdle(true);
@@ -96,14 +94,20 @@ public class RobotModifierMaskTest {
 
             // create instruction frame when running in manual mode
             if (isManual) {
-                countDownLatch = new CountDownLatch(1);
-                invokeAndWait(RobotModifierMaskTest::createInstructionsUI);
-                robot.waitForIdle();
-                countDownLatch.await(2, TimeUnit.MINUTES);
-            }
-
-            if (!testStarted) {
-                throw new RuntimeException("Test Failed: Manual test timed out!!");
+                try {
+                    countDownLatch = new CountDownLatch(1);
+                    invokeAndWait(RobotModifierMaskTest::createInstructionsUI);
+                    boolean timeout = countDownLatch.await(2, TimeUnit.MINUTES);
+                    if (!timeout) {
+                        throw new RuntimeException("Test failed: Manual test timed out!!");
+                    }
+                } finally {
+                    invokeAndWait(() -> {
+                        if (jFrame != null) {
+                            jFrame.dispose();
+                        }
+                    });
+                }
             }
 
             invokeAndWait(RobotModifierMaskTest::createTestUI);
@@ -228,15 +232,12 @@ public class RobotModifierMaskTest {
         jFrame.getContentPane().add(pane, BorderLayout.CENTER);
 
         JButton jButton = new JButton("Start");
-        jButton.addActionListener(e -> {
-            testStarted = true;
-            countDownLatch.countDown();
-        });
+        jButton.addActionListener(e -> countDownLatch.countDown());
         jFrame.getContentPane().add(jButton, BorderLayout.PAGE_END);
 
         jFrame.setSize(560, 200);
         jFrame.setLocation(200, 200);
-        jFrame.addWindowListener(new CustomWindowAdapter());
+        jFrame.addWindowListener(new CloseWindowHandler());
         jFrame.setVisible(true);
     }
 
@@ -250,7 +251,7 @@ public class RobotModifierMaskTest {
         jFrame.setSize(450, 100);
         jFrame.setLocation(200, 200);
 
-        jFrame.addWindowListener(new CustomWindowAdapter());
+        jFrame.addWindowListener(new CloseWindowHandler());
         jFrame.setVisible(true);
     }
 
@@ -274,7 +275,7 @@ public class RobotModifierMaskTest {
         });
     }
 
-    private static class CustomWindowAdapter extends WindowAdapter {
+    private static class CloseWindowHandler extends WindowAdapter {
         @Override
         public void windowClosing(WindowEvent e) {
             if (isManual) {
