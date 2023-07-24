@@ -952,9 +952,9 @@ void AllocationStateMerger::process_phi(PhiNode* phi, GraphKit* kit, RegionNode*
         }
       }
     }
-
-    if (pea->is_alias(phi)) {
-      pea->remove_alias(unique, phi);
+    ObjID obj = pea->is_alias(phi);
+    if (obj != nullptr) {
+      pea->remove_alias(obj, phi);
     }
   }
 }
