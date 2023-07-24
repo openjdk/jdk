@@ -5213,6 +5213,18 @@ public class Check {
                             }
                         }
                     }
+
+                    case ENUM_CONSTANT -> {
+                        var field = (VarSymbol)enclosed;
+                        if (field.isEnum()) {
+                            JCVariableDecl decl = (JCVariableDecl) TreeInfo.declarationFor(field, p);
+                            if (decl.init instanceof JCNewClass nc && nc.def != null) {
+                                ClassSymbol enumConstantType = nc.def.sym;
+                                visitTypeAsEnum(enumConstantType, p);
+                            }
+                        }
+                    } 
+
                     }});
             }
             return null;
