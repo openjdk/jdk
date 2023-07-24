@@ -93,7 +93,7 @@ public interface SegmentAllocator {
      * @implSpec the default implementation for this method copies the contents of the provided Java string
      * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
      * @param str the Java string to be converted into a C string.
-     * @return a new native segment containing the converted C string.
+     * @return a new segment containing the converted C string.
      */
     default MemorySegment allocateUtf8String(String str) {
         Objects.requireNonNull(str);
@@ -101,124 +101,164 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given byte value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 1
+     * initialized with the provided byte {@code value}}.
+     *
+     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * allocate a segment after which the provided {@code value} is written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param value  the value to be set in the newly allocated memory segment.
      */
     default MemorySegment allocate(ValueLayout.OfByte layout, byte value) {
         Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle();
-        MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
-        return addr;
+        MemorySegment seg = allocate(layout);
+        handle.set(seg, value);
+        return seg;
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given char value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 2
+     * initialized with the provided char {@code value} using the byte order of the provided
+     * {@link ValueLayout#order()} layout.order()}}
+     *
+     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * allocate a segment after which the provided {@code value} is written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param value  the value to be set in the newly allocated memory segment.
      */
     default MemorySegment allocate(ValueLayout.OfChar layout, char value) {
         Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle();
-        MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
-        return addr;
+        MemorySegment seg = allocate(layout);
+        handle.set(seg, value);
+        return seg;
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given short value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 2
+     * initialized with the provided short {@code value} using the byte order of the provided
+     * {@link ValueLayout#order()} layout.order()}}
+     *
+     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * allocate a segment after which the provided {@code value} is written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param value  the value to be set in the newly allocated memory segment.
      */
     default MemorySegment allocate(ValueLayout.OfShort layout, short value) {
         Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle();
-        MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
-        return addr;
+        MemorySegment seg = allocate(layout);
+        handle.set(seg, value);
+        return seg;
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given int value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 4
+     * initialized with the provided int {@code value} using the byte order of the provided
+     * {@link ValueLayout#order()} layout.order()}}
+     *
+     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * allocate a segment after which the provided {@code value} is written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param value  the value to be set in the newly allocated memory segment.
      */
     default MemorySegment allocate(ValueLayout.OfInt layout, int value) {
         Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle();
-        MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
-        return addr;
+        MemorySegment seg = allocate(layout);
+        handle.set(seg, value);
+        return seg;
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given float value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 4
+     * initialized with the provided float {@code value} using the byte order of the provided
+     * {@link ValueLayout#order()} layout.order()}}
+     *
+     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * allocate a segment after which the provided {@code value} is written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param value  the value to be set in the newly allocated memory segment.
      */
     default MemorySegment allocate(ValueLayout.OfFloat layout, float value) {
         Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle();
-        MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
-        return addr;
+        MemorySegment seg = allocate(layout);
+        handle.set(seg, value);
+        return seg;
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given long value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 8
+     * initialized with the provided long {@code value} using the byte order of the provided
+     * {@link ValueLayout#order()} layout.order()}}
+     *
+     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * allocate a segment after which the provided {@code value} is written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param value  the value to be set in the newly allocated memory segment.
      */
     default MemorySegment allocate(ValueLayout.OfLong layout, long value) {
         Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle();
-        MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
-        return addr;
+        MemorySegment seg = allocate(layout);
+        handle.set(seg, value);
+        return seg;
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given double value.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 8
+     * initialized with the provided double {@code value} using the byte order of the provided
+     * {@link ValueLayout#order()} layout.order()}}
+     *
+     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * allocate a segment after which the provided {@code value} is written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param value  the value to be set in the newly allocated memory segment.
      */
     default MemorySegment allocate(ValueLayout.OfDouble layout, double value) {
         Objects.requireNonNull(layout);
         VarHandle handle = layout.varHandle();
-        MemorySegment addr = allocate(layout);
-        handle.set(addr, value);
-        return addr;
+        MemorySegment seg = allocate(layout);
+        handle.set(seg, value);
+        return seg;
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given address value.
+     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} as specified by the
+     * provided {@link AddressLayout#byteSize() layout.byteSize()} initialized with the provided address {@code value}
+     * using the byte order of the provided {@link ValueLayout#order()} layout.order()}}
+     * <p>
      * The address value might be narrowed according to the platform address size (see {@link ValueLayout#ADDRESS}).
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout)}.
+     *
+     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * allocate a segment after which the provided {@code value} is written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param layout the layout of the block of memory to be allocated.
-     * @param value the value to be set on the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param value  the value to be set in the newly allocated memory segment.
      */
     default MemorySegment allocate(AddressLayout layout, MemorySegment value) {
         Objects.requireNonNull(value);
         Objects.requireNonNull(layout);
-        MemorySegment segment = allocate(layout);
-        layout.varHandle().set(segment, value);
-        return segment;
+        MemorySegment seg = allocate(layout);
+        layout.varHandle().set(seg, value);
+        return seg;
     }
 
     /**
