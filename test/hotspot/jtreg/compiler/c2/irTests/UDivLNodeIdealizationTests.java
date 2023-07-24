@@ -42,7 +42,7 @@ public class UDivLNodeIdealizationTests {
 
     @Run(test = {"constantDiv", "identity", "identityAgain", "identityThird",
                  "retainDenominator", "divByPow2", "largeDivisor",
-                 "magicDiv19", "magicDiv7",
+                 "magicDiv19", "magicDiv7", "magicDiv7Bounded",
                  "constantMod", "constantModAgain", "modByPow2", "magicMod19"})
     public void runMethod() {
         long a = RunInfo.getRandom().nextLong();
@@ -103,14 +103,15 @@ public class UDivLNodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
-        Asserts.assertEQ(a           , identity(a));
-        Asserts.assertEQ(a           , identityAgain(a));
-        Asserts.assertEQ(udiv(a, 8) , divByPow2(a));
-        Asserts.assertEQ(udiv(a, -7) , largeDivisor(a));
+        Asserts.assertEQ(a, identity(a));
+        Asserts.assertEQ(a, identityAgain(a));
+        Asserts.assertEQ(udiv(a, 8), divByPow2(a));
+        Asserts.assertEQ(udiv(a, -7), largeDivisor(a));
         Asserts.assertEQ(udiv(a, 19), magicDiv19(a));
-        Asserts.assertEQ(udiv(a, 7) , magicDiv7(a));
-        Asserts.assertEQ(umod(a, 1) , constantModAgain(a));
-        Asserts.assertEQ(umod(a, 8) , modByPow2(a));
+        Asserts.assertEQ(udiv(a, 7), magicDiv7(a));
+        Asserts.assertEQ(a >= 0 ? udiv(a, 7) : 0, magicDiv7Bounded(a));
+        Asserts.assertEQ(umod(a, 1), constantModAgain(a));
+        Asserts.assertEQ(umod(a, 8), modByPow2(a));
         Asserts.assertEQ(umod(a, 19), magicMod19(a));
     }
 
@@ -195,6 +196,22 @@ public class UDivLNodeIdealizationTests {
     // of a u65
     public long magicDiv7(long x) {
         return Long.divideUnsigned(x, 7);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_L})
+    @IR(counts = {IRNode.URSHIFT_L, "1",
+                  IRNode.UMUL_HI_L, "1",
+                  IRNode.ADD_L, "1"
+                 })
+    // Checks magic long division occurs in general when dividing by a non power of 2.
+    // The constant derived from 7 lies outside the limit of an u64 but inside the limit
+    // of a u65
+    public long magicDiv7Bounded(long x) {
+        if (x >= 0) {
+            return Long.divideUnsigned(x, 7);
+        }
+        return 0;
     }
 
     @Test

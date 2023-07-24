@@ -26,7 +26,6 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/powerOfTwo.hpp"
 
-//----------------------magic_int_divide_constants-----------------------------
 // Compute magic multiplier and shift constant for converting a 32 bit divide
 // by constant into a multiply/shift series.
 //
@@ -64,14 +63,13 @@ void magic_int_divide_constants(jint d, jlong& M, jint& s) {
     delta = ad - r2;
   } while (q1 < delta || (q1 == delta && r1 == 0));
 
-  M = q2 + 1;             // Magic number and
-  s = p - 32;             // shift amount to return.
+  M = q2 + 1;
+  s = p - 32;
 
-  assert(M < java_shift_left(jlong(1), 32), "");
-  assert(s < 32, "");
+  assert(M >= 0 && M <= jlong(max_juint), "sanity");
+  assert(s >= 0 && s < 32, "sanity");
 }
 
-//---------------magic_int_unsigned_divide_constants_down----------------------
 // Compute magic multiplier and shift constant for converting a 32 bit divide
 // by constant into a multiply/add/shift series.
 //
@@ -95,26 +93,28 @@ void magic_int_unsigned_divide_constants_down(juint d, jlong& M, jint& s) {
   do {
     p = p + 1;
     if (r1 >= nc - r1) {
-      q1 = 2*q1 + 1;       // Update q1.
-      r1 = 2*r1 - nc;      // Update r1.
+      q1 = 2*q1 + 1;
+      r1 = 2*r1 - nc;
     } else {
       q1 = 2*q1;
       r1 = 2*r1;
     }
     if (r2 + 1 >= ad - r2) {
-      q2 = 2*q2 + 1;       // Update q2.
-      r2 = 2*r2 + 1 - ad;  // Update r2.
+      q2 = 2*q2 + 1;
+      r2 = 2*r2 + 1 - ad;
     } else {
       q2 = 2*q2;
       r2 = 2*r2 + 1;
     }
     delta = ad - 1 - r2;
   } while (p < 64 && (q1 < delta || (q1 == delta && r1 == 0)));
-  M = q2 + 1; // Magic number
-  s = p - 32; // and shift amount to return
+  M = q2 + 1;
+  s = p - 32;
+
+  assert(M >= 0 && M <= 0x1FFFFFFFFL, "sanity");
+  assert(s >= 0 && s < 33, "sanity");
 }
 
-//-----------------magic_int_unsigned_divide_constants_up----------------------
 // Compute magic multiplier and shift constant for converting a 32 bit divide
 // by constant into a multiply/add/shift series.
 //
@@ -132,9 +132,11 @@ void magic_int_unsigned_divide_constants_up(juint d, jlong& M, jint& s) {
   julong r = ((t + 1) * julong(d)) & julong(max_juint);
   assert(r > (julong(1) << s), "Should call down first since it is more efficient");
 #endif
+
+  assert(M >= 0 && M <= jlong(max_juint), "sanity");
+  assert(s >= 0 && s < 32, "sanity");
 }
 
-//---------------------magic_long_divide_constants-----------------------------
 // Compute magic multiplier and shift constant for converting a 64 bit divide
 // by constant into a multiply/shift/add series.
 //
@@ -145,7 +147,7 @@ void magic_long_divide_constants(jlong d, jlong& M, jint& s) {
 
   int64_t p;
   uint64_t ad, anc, delta, q1, r1, q2, r2, t;
-  const uint64_t two63 = UCONST64(0x8000000000000000);     // 2**63.
+  const uint64_t two63 = java_shift_left(1L, 63);     // 2**63.
 
   ad = ABS(d);
   t = two63;
@@ -173,10 +175,10 @@ void magic_long_divide_constants(jlong d, jlong& M, jint& s) {
   } while (q1 < delta || (q1 == delta && r1 == 0));
 
   M = q2 + 1;
-  s = p - 64;             // shift amount to return.
+  s = p - 64;
+  assert(s >= 0 && s < 64, "sanity");
 }
 
-//-----------------magic_long_unsigned_divide_constants------------------------
 // Compute magic multiplier and shift constant for converting a 64 bit divide
 // by constant into a multiply/shift/add series.
 //
@@ -200,8 +202,8 @@ void magic_long_unsigned_divide_constants(julong d, jlong& M, jint& s, bool& mag
   do {
     p = p + 1;
     if (r1 >= nc - r1) {
-      q1 = 2*q1 + 1;      // Update q1.
-      r1 = 2*r1 - nc;     // Update r1.
+      q1 = 2*q1 + 1;
+      r1 = 2*r1 - nc;
     } else {
       q1 = 2*q1;
       r1 = 2*r1;
@@ -210,8 +212,8 @@ void magic_long_unsigned_divide_constants(julong d, jlong& M, jint& s, bool& mag
       if (q2 >= two63m1) {
         magic_const_ovf = true;
       }
-      q2 = 2*q2 + 1;      // Update q2.
-      r2 = 2*r2 + 1 - d;  // Update r2.
+      q2 = 2*q2 + 1;
+      r2 = 2*r2 + 1 - d;
     } else {
       if (q2 >= two63) {
         magic_const_ovf = true;
@@ -221,6 +223,7 @@ void magic_long_unsigned_divide_constants(julong d, jlong& M, jint& s, bool& mag
     }
     delta = d - 1 - r2;
   } while (p < 128 && (q1 < delta || (q1 == delta && r1 == 0)));
-  M = q2 + 1;             // Magic number
-  s = p - 64;             // and shift amount to return
+  M = q2 + 1;
+  s = p - 64;
+  assert(s >= 0 && s < 65, "sanity");
 }

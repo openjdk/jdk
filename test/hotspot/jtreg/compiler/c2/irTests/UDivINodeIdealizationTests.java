@@ -36,14 +36,19 @@ import compiler.lib.ir_framework.*;
  * @run driver compiler.c2.irTests.UDivINodeIdealizationTests
  */
 public class UDivINodeIdealizationTests {
+
+    // The constant for unsigned division by 7 is 4908534053 so 3758096383
+    // is the upper limit of the dividend that the product does not overflow
+    static final int MAGIC_BOUND_7 = (int)3758096383L;
+
     public static void main(String[] args) {
         TestFramework.run();
     }
 
     @Run(test = {"constantDiv", "identity", "identityAgain", "identityThird",
-                 "retainDenominator", "divByPow2", "largeDivisor",
-                 "magicDiv13", "magicDiv7",
-                "constantMod", "constantModAgain", "modByPow2", "magicMod13"})
+                 "retainDenominator", "divByPow2", "largeDivisorCon", "largeDivisorVar",
+                 "magicDiv13", "magicDiv7", "magicDiv7Bounded1", "magicDiv7Bounded2",
+                 "constantMod", "constantModAgain", "modByPow2", "magicMod13"})
     public void runMethod() {
         int a = RunInfo.getRandom().nextInt();
             a = (a == 0) ? 1 : a;
@@ -103,14 +108,17 @@ public class UDivINodeIdealizationTests {
             Asserts.assertTrue(shouldThrow, "Did not expected an exception to be thrown.");
         }
 
-        Asserts.assertEQ(a           , identity(a));
-        Asserts.assertEQ(a           , identityAgain(a));
-        Asserts.assertEQ(udiv(a, 8) , divByPow2(a));
-        Asserts.assertEQ(udiv(a, -7) , largeDivisor(a));
+        Asserts.assertEQ(a, identity(a));
+        Asserts.assertEQ(a, identityAgain(a));
+        Asserts.assertEQ(udiv(a, 8), divByPow2(a));
+        Asserts.assertEQ(udiv(a, -7), largeDivisorCon(a));
+        Asserts.assertEQ(udiv(a, Math.min(b, Integer.MIN_VALUE)), largeDivisorVar(a, b));
         Asserts.assertEQ(udiv(a, 13), magicDiv13(a));
-        Asserts.assertEQ(udiv(a, 7) , magicDiv7(a));
-        Asserts.assertEQ(umod(a, 1) , constantModAgain(a));
-        Asserts.assertEQ(umod(a, 8) , modByPow2(a));
+        Asserts.assertEQ(udiv(a, 7), magicDiv7(a));
+        Asserts.assertEQ(udiv(Math.max(a, 0), 7), magicDiv7Bounded1(a));
+        Asserts.assertEQ(udiv(Math.min(a, MAGIC_BOUND_7), 7), magicDiv7Bounded2(a));
+        Asserts.assertEQ(umod(a, 1), constantModAgain(a));
+        Asserts.assertEQ(umod(a, 8), modByPow2(a));
         Asserts.assertEQ(umod(a, 13), magicMod13(a));
     }
 
@@ -168,8 +176,18 @@ public class UDivINodeIdealizationTests {
                   IRNode.CMOVE_I, "1"
                  })
     // Checks x / d => x u>= d ? 1 : 0 for large d
-    public int largeDivisor(int x) {
+    public int largeDivisorCon(int x) {
         return Integer.divideUnsigned(x, -7);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_I})
+    @IR(counts = {IRNode.CMP_U, "1",
+                  IRNode.CMOVE_I, "1"
+                 })
+    // Checks x / d => x u>= d ? 1 : 0 for large d
+    public int largeDivisorVar(int x, int y) {
+        return Integer.divideUnsigned(x, Math.min(y, Integer.MIN_VALUE));
     }
 
     @Test
@@ -198,6 +216,34 @@ public class UDivINodeIdealizationTests {
     // of a u33
     public int magicDiv7(int x) {
         return Integer.divideUnsigned(x, 7);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_I})
+    @IR(counts = {IRNode.MUL_L, "1",
+                  IRNode.URSHIFT_L, "1",
+                  IRNode.CONV_I2L, "1",
+                  IRNode.CONV_L2I, "1",
+                 })
+    // Checks magic int division occurs in general when dividing by a non power of 2.
+    // The constant derived from 7 lies outside the limit of a u32 but inside the limit
+    // of a u33, the dividend is bounded so we do not need to worry about overflow
+    public int magicDiv7Bounded1(int x) {
+        return Integer.divideUnsigned(Math.max(x, 0), 7);
+    }
+
+    @Test
+    @IR(failOn = {IRNode.UDIV_I})
+    @IR(counts = {IRNode.MUL_L, "1",
+                  IRNode.URSHIFT_L, "1",
+                  IRNode.CONV_I2L, "1",
+                  IRNode.CONV_L2I, "1",
+                 })
+    // Checks magic int division occurs in general when dividing by a non power of 2.
+    // The constant derived from 7 lies outside the limit of a u32 but inside the limit
+    // of a u33, the dividend is bounded so we do not need to worry about overflow
+    public int magicDiv7Bounded2(int x) {
+        return Integer.divideUnsigned(Math.min(x, MAGIC_BOUND_7), 7);
     }
 
     @Test
