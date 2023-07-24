@@ -64,6 +64,9 @@ public:
   }
 
   virtual void add_collection_time(double time_seconds) override;
+
+  size_t available() const override;
+  size_t soft_available() const override;
 };
 
 #endif // SHARE_VM_GC_SHENANDOAH_SHENANDOAHYOUNGGENERATION_HPP

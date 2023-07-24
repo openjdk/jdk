@@ -95,3 +95,15 @@ void ShenandoahYoungGeneration::add_collection_time(double time_seconds) {
     ShenandoahGeneration::add_collection_time(time_seconds);
   }
 }
+
+size_t ShenandoahYoungGeneration::available() const {
+  // The collector reserve may eat into what the mutator is allowed to use. Make sure we are looking
+  // at what is available to the mutator when reporting how much memory is available.
+  size_t available = this->ShenandoahGeneration::available();
+  return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
+}
+
+size_t ShenandoahYoungGeneration::soft_available() const {
+  size_t available = this->ShenandoahGeneration::soft_available();
+  return MIN2(available, ShenandoahHeap::heap()->free_set()->available());
+}
