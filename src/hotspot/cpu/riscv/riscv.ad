@@ -4173,6 +4173,16 @@ pipe_class fp_uop_d(fRegD dst, fRegD src)
   FPU    : S5;
 %}
 
+pipe_class fp_rnd_d(fRegD dst, fRegD src)
+%{
+  instruction_count(10);
+  multiple_bundles;
+  src    : S1(read);
+  dst    : S5(write);
+  DECODE : ID;
+  FPU    : S5;
+%}
+
 pipe_class fp_d2f(fRegF dst, fRegD src)
 %{
   single_instruction;
@@ -7687,6 +7697,34 @@ instruct sqrtD_reg(fRegD dst, fRegD src) %{
   %}
 
   ins_pipe(fp_sqrt_d);
+%}
+
+// Round Instruction
+instruct roundD_reg(fRegD dst, fRegD src, immI rmode, iRegLNoSp tmp1, iRegLNoSp tmp2, iRegLNoSp tmp3, rFlagsReg cr) %{
+  match(Set dst (RoundDoubleMode src rmode));
+  ins_cost(2 * XFER_COST + BRANCH_COST);
+  effect(TEMP_DEF dst, TEMP tmp1, TEMP tmp2, TEMP tmp3, KILL cr);
+
+  format %{ "RoundDoubleMode $src,$rmode" %}
+  ins_encode %{
+  switch ($rmode$$constant) {
+      case RoundDoubleModeNode::rmode_rint:
+        __ round_double_mode(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src$$reg), MacroAssembler::Round_double_mode::rmode_rint, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+        break;
+      case RoundDoubleModeNode::rmode_floor:
+        __ round_double_mode(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src$$reg), MacroAssembler::Round_double_mode::rmode_floor, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+        break;
+      case RoundDoubleModeNode::rmode_ceil:
+        __ round_double_mode(as_FloatRegister($dst$$reg),
+               as_FloatRegister($src$$reg), MacroAssembler::Round_double_mode::rmode_ceil, $tmp1$$Register, $tmp2$$Register, $tmp3$$Register);
+        break;
+      default:
+        ShouldNotReachHere();
+    }
+  %}
+  ins_pipe(fp_rnd_d);
 %}
 
 // Arithmetic Instructions End

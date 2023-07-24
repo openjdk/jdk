@@ -4246,6 +4246,64 @@ FCMP(double, d);
 
 #undef FCMP
 
+// Round double with mode
+
+void MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, enum Round_double_mode round_mode, Register converted_dbl, Register mask, Register converted_dbl_masked)
+{
+
+  assert_different_registers(dst, src);
+  assert_different_registers(converted_dbl, mask, converted_dbl_masked);
+
+  // setting roundig mode to double->long (rm_direct) and long->double (rm_back) conversions
+  RoundingMode rm_direct, rm_back;
+  switch (round_mode) {
+    case Round_double_mode::rmode_ceil:
+      rm_direct = RoundingMode::rup;
+      rm_back = RoundingMode::rdn;
+      break;
+    case Round_double_mode::rmode_floor:
+      rm_direct = RoundingMode::rdn;
+      rm_back = RoundingMode::rup;
+      break;
+    case Round_double_mode::rmode_rint:
+      rm_direct = RoundingMode::rne;
+      rm_back = RoundingMode::rne;
+      break;
+    default:
+      ShouldNotReachHere();
+  }
+
+  // converted_dbl - is a register to store double converted to long int
+  // mask - is a register to create constant for comparsion
+  // converted_dbl_masked - is a register were we stroe modidfied result of double -> long int comparison
+  Label done, bad_val;
+
+  // generating constant (tmp2)
+  // tmp2 = 100...0000
+  addi(mask, zr, 1);
+  slli(mask, mask, 63);
+  /* conversion from double to long */
+  fcvt_l_d(converted_dbl, src, rm_direct);
+
+  // preparing converted long (tmp1)
+  // as a result when conversion overflow we got:
+  // converted_dbl = 011...1111 or 100...0000
+  // converting to: converted_dbl_masked = 100...0000
+  addi(converted_dbl_masked, converted_dbl, 1);
+  andi(converted_dbl_masked, converted_dbl_masked, -2);
+  beq(converted_dbl_masked, mask, bad_val);
+  // conversion from long to double
+  fcvt_d_l(dst, converted_dbl, rm_back);
+  // add sign of input value to result
+  fsgnj_d(dst, dst, src);
+  j(done);
+  // if got conversion overflow return src
+  bind(bad_val);
+  fsgnj_d(dst, src, src);
+
+  bind(done);
+}
+
 // Zero words; len is in bytes
 // Destroys all registers except addr
 // len must be a nonzero multiple of wordSize

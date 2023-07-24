@@ -1228,6 +1228,15 @@ public:
   void fcvt_w_d_safe(Register dst, FloatRegister src, Register tmp = t0);
   void fcvt_l_d_safe(Register dst, FloatRegister src, Register tmp = t0);
 
+  // round double modes which match Double.ceil/floor/int spec
+  enum Round_double_mode {
+    rmode_ceil,
+    rmode_floor,
+    rmode_rint
+  };
+
+  void round_double_mode(FloatRegister dst, FloatRegister src, enum Round_double_mode round_mode, Register converted_dbl, Register mask, Register converted_dbl_masked);
+
   // vector load/store unit-stride instructions
   void vlex_v(VectorRegister vd, Register base, Assembler::SEW sew, VectorMask vm = unmasked) {
     switch (sew) {
