@@ -310,9 +310,23 @@ void CodeCache::initialize_heaps() {
   FLAG_SET_ERGO(ProfiledCodeHeapSize, profiled_size);
   FLAG_SET_ERGO(NonProfiledCodeHeapSize, non_profiled_size);
 
+  const size_t ps = page_size(false, 8);
+  // Print warning if using large pages but not able to use the size given
+  if (UseLargePages) {
+    if (ps < LargePageSizeInBytes) {
+      char msg[256];
+      jio_snprintf(msg, sizeof(msg),
+                   "Failed to reserve large page memory for code cache (" SIZE_FORMAT "%s). "
+                   "Reverting to smaller page size (" SIZE_FORMAT "%s).",
+                   byte_size_in_exact_unit(LargePageSizeInBytes), exact_unit_for_byte_size(LargePageSizeInBytes),
+                   byte_size_in_exact_unit(ps), exact_unit_for_byte_size(ps));
+      log_warning(codecache)("%s", msg);
+      warning("%s", msg);
+    };
+  }
+
   // If large page support is enabled, align code heaps according to large
   // page size to make sure that code cache is covered by large pages.
-  const size_t ps = page_size(false, 8);
   const size_t alignment = MAX2(ps, os::vm_allocation_granularity());
   non_nmethod_size = align_up(non_nmethod_size, alignment);
   profiled_size    = align_down(profiled_size, alignment);
@@ -357,19 +371,6 @@ size_t CodeCache::page_size(bool aligned, size_t min_pages) {
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size, size_t rs_ps) {
   // Align and reserve space for code cache
-  if (UseLargePages) {
-    const size_t ps = page_size();
-    if (rs_ps < ps) {
-      char msg[256];
-      jio_snprintf(msg, sizeof(msg),
-                   "Failed to reserve large page memory for code cache (" SIZE_FORMAT "%s). "
-                   "Reverting to smaller page size (" SIZE_FORMAT "%s).",
-                   byte_size_in_exact_unit(ps), exact_unit_for_byte_size(ps),
-                   byte_size_in_exact_unit(rs_ps), exact_unit_for_byte_size(rs_ps));
-      log_warning(codecache)("%s", msg);
-      warning("%s", msg);
-    };
-  }
   const size_t rs_align = MAX2(rs_ps, os::vm_allocation_granularity());
   const size_t rs_size = align_up(size, rs_align);
   ReservedCodeSpace rs(rs_size, rs_align, rs_ps);
