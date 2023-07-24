@@ -34,7 +34,7 @@ import com.sun.source.doctree.SummaryTree;
 
 import jdk.javadoc.doclet.Taglet.Location;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 
 /**
  * A taglet that represents the {@code {@summary}} tag.

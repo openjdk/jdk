@@ -60,7 +60,6 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.doclet.Taglet;
-import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileFactory;
@@ -86,11 +85,6 @@ public abstract class BaseConfiguration {
      * The doclet that created this configuration.
      */
     public final Doclet doclet;
-
-    /**
-     * The factory for builders.
-     */
-    protected BuilderFactory builderFactory;
 
     /**
      * The meta tag keywords instance.
@@ -247,18 +241,6 @@ public abstract class BaseConfiguration {
         includedModuleElements = Collections.unmodifiableSet(includedSplitter.mset);
         includedPackageElements = Collections.unmodifiableSet(includedSplitter.pset);
         includedTypeElements = Collections.unmodifiableSet(includedSplitter.tset);
-    }
-
-    /**
-     * Return the builder factory for this doclet.
-     *
-     * @return the builder factory for this doclet.
-     */
-    public BuilderFactory getBuilderFactory() {
-        if (builderFactory == null) {
-            builderFactory = new BuilderFactory(this);
-        }
-        return builderFactory;
     }
 
     public Reporter getReporter() {
@@ -481,13 +463,6 @@ public abstract class BaseConfiguration {
         }
         return !(utils.isDeprecated(te) || utils.isDeprecated(utils.containingPackage(te)));
     }
-
-    /**
-     * Return the doclet specific instance of a writer factory.
-     *
-     * @return the {@link WriterFactory} for the doclet.
-     */
-    public abstract WriterFactory getWriterFactory();
 
     /**
      * Return the Locale for this document.
