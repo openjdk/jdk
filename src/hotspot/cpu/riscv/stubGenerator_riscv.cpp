@@ -2532,7 +2532,6 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(str1, str1, 8);
       __ ld(tmp2, Address(str2));
       __ addi(str2, str2, 8);
-      __ beqz(cnt2, LAST_CHECK_AND_LENGTH_DIFF);
       __ sub(cnt2, cnt2, isLL ? 8 : 4);
     __ bind(CHECK_LAST);
       if (!isLL) {
