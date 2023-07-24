@@ -206,13 +206,13 @@ source %{
         }
         break;
       case Op_VectorLongToMask:
-        if (UseSVE < 2 || vlen > 64 || !VM_Version::supports_svebitperm()) {
+        if (vlen > 64 || !VM_Version::supports_svebitperm()) {
           return false;
         }
         break;
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
-        if (UseSVE < 2 || !VM_Version::supports_svebitperm()) {
+        if (!VM_Version::supports_svebitperm()) {
           return false;
         }
         break;

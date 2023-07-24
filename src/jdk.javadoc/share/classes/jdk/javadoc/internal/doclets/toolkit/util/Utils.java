@@ -34,7 +34,6 @@ import java.text.ParseException;
 import java.text.RuleBasedCollator;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
@@ -116,13 +115,12 @@ import com.sun.source.tree.LineMap;
 import com.sun.source.util.DocSourcePositions;
 import com.sun.source.util.DocTrees;
 import com.sun.source.util.TreePath;
+
 import jdk.javadoc.internal.doclets.toolkit.BaseConfiguration;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils;
 import jdk.javadoc.internal.doclets.toolkit.CommentUtils.DocCommentInfo;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.taglets.BaseTaglet;
-import jdk.javadoc.internal.doclets.toolkit.taglets.Taglet;
 
 import static javax.lang.model.element.ElementKind.*;
 import static javax.lang.model.type.TypeKind.*;
@@ -991,7 +989,7 @@ public class Utils {
     /**
      * Return the type's dimension information, as a string.
      * <p>
-     * For example, a two dimensional array of String returns "{@code [][]}".
+     * For example, a two-dimensional array of String returns "{@code [][]}".
      *
      * @return the type's dimension information as a string.
      */
@@ -2087,47 +2085,102 @@ public class Utils {
         commentHelperCache.remove(element);
     }
 
+    /**
+     * Returns the "raw" list of block tags from the doc-comment tree for an element,
+     * or an empty list if there is no such comment.
+     *
+     * Note: The list may include {@code ErroneousTree} nodes.
+     *
+     * @param element the element
+     * @return the list
+     */
     public List<? extends DocTree> getBlockTags(Element element) {
         return getBlockTags(getDocCommentTree(element));
     }
 
+    /**
+     * Returns the "raw" list of block tags from a {@code DocCommentTree}, or an empty list
+     * if the doc-comment tree is {@code null}.
+     *
+     * Note: The list may include {@code ErroneousTree} nodes.
+     *
+     * @param dcTree the doc-comment tree
+     * @return the list
+     */
     public List<? extends DocTree> getBlockTags(DocCommentTree dcTree) {
         return dcTree == null ? List.of() : dcTree.getBlockTags();
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, Predicate<DocTree> filter) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match
+     * a given filter, or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @param filter  the filter
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, Predicate<? super BlockTagTree> filter) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
+                .map(t -> (BlockTagTree) t)
                 .filter(filter)
                 .toList();
     }
 
-    public <T extends DocTree> List<T> getBlockTags(Element element, Predicate<DocTree> filter, Class<T> tClass) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match
+     * a given filter, or an empty list if there is no such doc-comment.
+     *
+     * @param <T> the type of the required block tags
+     * @param element the element
+     * @param filter  the filter
+     * @return the list
+     */
+    public <T extends BlockTagTree> List<T> getBlockTags(Element element,
+                                                         Predicate<? super BlockTagTree> filter,
+                                                         Class<T> tClass) {
         return getBlockTags(element).stream()
                 .filter(t -> t.getKind() != ERRONEOUS)
+                .map(t -> (BlockTagTree) t)
                 .filter(filter)
                 .map(tClass::cast)
                 .toList();
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, DocTree.Kind kind) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, DocTree.Kind kind) {
         return getBlockTags(element, t -> t.getKind() == kind);
     }
 
-    public <T extends DocTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match a given kind,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param <T> the type of the required block tags
+     * @param element the element
+     * @param kind the kind for the required block tags
+     * @return the list
+     */
+    public <T extends BlockTagTree> List<? extends T> getBlockTags(Element element, DocTree.Kind kind, Class<T> tClass) {
         return getBlockTags(element, t -> t.getKind() == kind, tClass);
     }
 
-    public List<? extends DocTree> getBlockTags(Element element, Taglet taglet) {
-        return getBlockTags(element, t -> {
-            if (taglet instanceof BaseTaglet baseTaglet) {
-                return baseTaglet.accepts(t);
-            } else if (t instanceof BlockTagTree blockTagTree) {
-                return blockTagTree.getTagName().equals(taglet.getName());
-            } else {
-                return false;
-            }
-        });
+    /**
+     * Returns the list of block tags for the doc-comment tree for an element that match a given name,
+     * or an empty list if there is no such doc-comment.
+     *
+     * @param element the element
+     * @param tagName the name of the required block tags
+     * @return the list
+     */
+    public List<? extends BlockTagTree> getBlockTags(Element element, String tagName) {
+        return getBlockTags(element, t -> t.getTagName().equals(tagName));
     }
 
     public boolean hasBlockTag(Element element, DocTree.Kind kind) {

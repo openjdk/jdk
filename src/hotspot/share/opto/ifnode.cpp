@@ -91,9 +91,14 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
   // See that the merge point contains some constants
   Node *con1=nullptr;
   uint i4;
-  for( i4 = 1; i4 < phi->req(); i4++ ) {
+  RegionNode* phi_region = phi->region();
+  for (i4 = 1; i4 < phi->req(); i4++ ) {
     con1 = phi->in(i4);
-    if( !con1 ) return nullptr;    // Do not optimize partially collapsed merges
+    // Do not optimize partially collapsed merges
+    if (con1 == nullptr || phi_region->in(i4) == nullptr || igvn->type(phi_region->in(i4)) == Type::TOP) {
+      igvn->_worklist.push(iff);
+      return nullptr;
+    }
     if( con1->is_Con() ) break; // Found a constant
     // Also allow null-vs-not-null checks
     const TypePtr *tp = igvn->type(con1)->isa_ptr();
@@ -115,7 +120,7 @@ static Node* split_if(IfNode *iff, PhaseIterGVN *igvn) {
 
   // No intervening control, like a simple Call
   Node* r = iff->in(0);
-  if (!r->is_Region() || r->is_Loop() || phi->region() != r || r->as_Region()->is_copy()) {
+  if (!r->is_Region() || r->is_Loop() || phi_region != r || r->as_Region()->is_copy()) {
     return nullptr;
   }
 

@@ -636,4 +636,3 @@ G1EvacPhaseTimesTracker::~G1EvacPhaseTimesTracker() {
     _phase_times->record_or_add_time_secs(G1GCPhaseTimes::ObjCopy, _worker_id, _trim_time.seconds());
   }
 }
-

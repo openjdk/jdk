@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8049429
  * @modules java.management
- *          jdk.crypto.ec/sun.security.ec
+ *          java.base/sun.security.ec
  * @summary Test that all cipher suites work in all versions and all client
  *          authentication types. The way this is setup the server is stateless
  *          and all checking is done on the client side.

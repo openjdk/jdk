@@ -1546,7 +1546,10 @@ public class JavaTokenizer extends UnicodeReader {
                     return;
                 }
 
-                skip('*');
+                if (skip('*') != 0 && is('/')) {
+                    return ;
+                }
+
                 skipWhitespace();
 
                 if (isEOLN()) {

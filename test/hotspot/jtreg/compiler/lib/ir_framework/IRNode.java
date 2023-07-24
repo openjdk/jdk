@@ -198,25 +198,25 @@ public class IRNode {
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     static {
-        String optoRegex = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        String optoRegex = "(.*precise .*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
         allocNodes(ALLOC, "Allocate", optoRegex);
     }
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
         optoOnly(ALLOC_OF, regex);
     }
 
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
     static {
-        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|mv|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
         allocNodes(ALLOC_ARRAY, "AllocateArray", optoRegex);
     }
 
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
         optoOnly(ALLOC_ARRAY_OF, regex);
     }
 
@@ -277,13 +277,13 @@ public class IRNode {
 
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|mv|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY, regex);
     }
 
     public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|mv|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY_OF, regex);
     }
 

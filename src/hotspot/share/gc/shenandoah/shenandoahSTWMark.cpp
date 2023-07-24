@@ -140,4 +140,3 @@ void ShenandoahSTWMark::finish_mark(uint worker_id) {
             false /* not cancellable */,
             ShenandoahStringDedup::is_enabled() ? ALWAYS_DEDUP : NO_DEDUP, &requests);
 }
-

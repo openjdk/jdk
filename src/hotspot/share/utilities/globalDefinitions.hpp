@@ -409,6 +409,9 @@ inline size_t byte_size_in_exact_unit(size_t s) {
   return s;
 }
 
+#define EXACTFMT            SIZE_FORMAT "%s"
+#define EXACTFMTARGS(s)     byte_size_in_exact_unit(s), exact_unit_for_byte_size(s)
+
 // Memory size transition formatting.
 
 #define HEAP_CHANGE_FORMAT "%s: " SIZE_FORMAT "K(" SIZE_FORMAT "K)->" SIZE_FORMAT "K(" SIZE_FORMAT "K)"
@@ -444,23 +447,6 @@ typedef unsigned int uint;   NEEDS_CLEANUP
 typedef   signed char s_char;
 typedef unsigned char u_char;
 typedef u_char*       address;
-typedef uintptr_t     address_word; // unsigned integer which will hold a pointer
-                                    // except for some implementations of a C++
-                                    // linkage pointer to function. Should never
-                                    // need one of those to be placed in this
-                                    // type anyway.
-
-//  Utility functions to "portably" (?) bit twiddle pointers
-//  Where portable means keep ANSI C++ compilers quiet
-
-inline address       set_address_bits(address x, int m)       { return address(intptr_t(x) | m); }
-inline address       clear_address_bits(address x, int m)     { return address(intptr_t(x) & ~m); }
-
-//  Utility functions to "portably" make cast to/from function pointers.
-
-inline address_word  mask_address_bits(address x, int m)      { return address_word(x) & m; }
-inline address_word  castable_address(address x)              { return address_word(x) ; }
-inline address_word  castable_address(void* x)                { return address_word(x) ; }
 
 // Pointer subtraction.
 // The idea here is to avoid ptrdiff_t, which is signed and so doesn't have
@@ -503,7 +489,7 @@ inline size_t pointer_delta(const MetaWord* left, const MetaWord* right) {
 // many C++ compilers.
 //
 #define CAST_TO_FN_PTR(func_type, value) (reinterpret_cast<func_type>(value))
-#define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((address_word)(func_ptr)))
+#define CAST_FROM_FN_PTR(new_type, func_ptr) ((new_type)((uintptr_t)(func_ptr)))
 
 // In many places we've added C-style casts to silence compiler
 // warnings, for example when truncating a size_t to an int when we
@@ -601,22 +587,12 @@ extern int MinObjAlignmentInBytesMask;
 extern int LogMinObjAlignment;
 extern int LogMinObjAlignmentInBytes;
 
-const int LogKlassAlignmentInBytes = 3;
-const int LogKlassAlignment        = LogKlassAlignmentInBytes - LogHeapWordSize;
-const int KlassAlignmentInBytes    = 1 << LogKlassAlignmentInBytes;
-const int KlassAlignment           = KlassAlignmentInBytes / HeapWordSize;
-
 // Maximal size of heap where unscaled compression can be used. Also upper bound
 // for heap placement: 4GB.
 const  uint64_t UnscaledOopHeapMax = (uint64_t(max_juint) + 1);
 // Maximal size of heap where compressed oops can be used. Also upper bound for heap
 // placement for zero based compression algorithm: UnscaledOopHeapMax << LogMinObjAlignmentInBytes.
 extern uint64_t OopEncodingHeapMax;
-
-// Maximal size of compressed class space. Above this limit compression is not possible.
-// Also upper bound for placement of zero based class space. (Class space is further limited
-// to be < 3G, see arguments.cpp.)
-const  uint64_t KlassEncodingMetaspaceMax = (uint64_t(max_juint) + 1) << LogKlassAlignmentInBytes;
 
 // Machine dependent stuff
 
