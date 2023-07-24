@@ -66,7 +66,7 @@ class EnumExternClassBody {
         public void readExternal(ObjectInput in) {
             throw new RuntimeException();
         }
-    
+
         @Override
         public void writeExternal(ObjectOutput out) throws IOException {
             throw new RuntimeException();

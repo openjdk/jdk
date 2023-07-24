@@ -5223,7 +5223,7 @@ public class Check {
                                 visitTypeAsEnum(enumConstantType, p);
                             }
                         }
-                    } 
+                    }
 
                     }});
             }
