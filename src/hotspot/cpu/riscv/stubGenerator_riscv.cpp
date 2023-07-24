@@ -2312,20 +2312,18 @@ class StubGenerator: public StubCodeGenerator {
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU, Register strL, Register strU, Label& DIFF) {
     const Register tmp = x30;
-    __ ld(tmpL, Address(strL));
+    __ ld(t0, Address(strL));
     __ addi(strL, strL, wordSize);
     __ ld(tmpU, Address(strU));
     __ addi(strU, strU, wordSize);
-    __ inflate_lo32(tmp, tmpL);
-    __ mv(t0, tmp);
-    __ xorr(tmp, tmpU, t0);
+    __ inflate_lo32(tmpL, t0, tmp);
+    __ xorr(tmp, tmpU, tmpL);
     __ bnez(tmp, DIFF);
 
     __ ld(tmpU, Address(strU));
     __ addi(strU, strU, wordSize);
-    __ inflate_hi32(tmp, tmpL);
-    __ mv(t0, tmp);
-    __ xorr(tmp, tmpU, t0);
+    __ inflate_hi32(tmpL, t0, tmp);
+    __ xorr(tmp, tmpU, tmpL);
     __ bnez(tmp, DIFF);
   }
 
@@ -2341,7 +2339,7 @@ class StubGenerator: public StubCodeGenerator {
     __ align(CodeEntryAlignment);
     StubCodeMark mark(this, "StubRoutines", isLU ? "compare_long_string_different_encoding LU" : "compare_long_string_different_encoding UL");
     address entry = __ pc();
-    Label SMALL_LOOP, TAIL, LOAD_LAST, DIFF, DONE, CALCULATE_DIFFERENCE;
+    Label SMALL_LOOP, TAIL, LOAD_LAST, DONE, CALCULATE_DIFFERENCE;
     const Register result = x10, str1 = x11, cnt1 = x12, str2 = x13, cnt2 = x14,
                    tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x7, tmp5 = x31;
     RegSet spilled_regs = RegSet::of(tmp4, tmp5);
@@ -2365,7 +2363,7 @@ class StubGenerator: public StubCodeGenerator {
              tmpL = isLU ? tmp1 : tmp5; // where to keep L for comparison
 
     // make sure main loop is 8 byte-aligned, we should load another 4 bytes from strL
-    __ beqz(cnt2, DONE);  // no characters left
+    // cnt2 is >= 68 here, no need to check it for >= 0
     __ lwu(tmpL, Address(strL));
     __ addi(strL, strL, wordSize / 2);
     __ ld(tmpU, Address(strU));
@@ -2376,14 +2374,13 @@ class StubGenerator: public StubCodeGenerator {
     __ bnez(tmp3, CALCULATE_DIFFERENCE);
     __ addi(cnt2, cnt2, -wordSize / 2);
 
-    __ beqz(cnt2, DONE);  // no character left
     // we are now 8-bytes aligned on strL
     __ sub(cnt2, cnt2, wordSize * 2);
     __ bltz(cnt2, TAIL);
     __ bind(SMALL_LOOP); // smaller loop
       __ sub(cnt2, cnt2, wordSize * 2);
-      compare_string_8_x_LU(tmpL, tmpU, strL, strU, DIFF);
-      compare_string_8_x_LU(tmpL, tmpU, strL, strU, DIFF);
+      compare_string_8_x_LU(tmpL, tmpU, strL, strU, CALCULATE_DIFFERENCE);
+      compare_string_8_x_LU(tmpL, tmpU, strL, strU, CALCULATE_DIFFERENCE);
       __ bgez(cnt2, SMALL_LOOP);
       __ addi(t0, cnt2, wordSize * 2);
       __ beqz(t0, DONE);
@@ -2394,7 +2391,7 @@ class StubGenerator: public StubCodeGenerator {
       __ addi(cnt2, cnt2, wordSize*2); // amount of characters left to process
       __ bltz(t0, LOAD_LAST);
       // remaining characters are greater than or equals to 8, we can do one compare_string_8_x_LU
-      compare_string_8_x_LU(tmpL, tmpU, strL, strU, DIFF);
+      compare_string_8_x_LU(tmpL, tmpU, strL, strU, CALCULATE_DIFFERENCE);
       __ addi(cnt2, cnt2, -wordSize);
       __ beqz(cnt2, DONE);  // no character left
       __ bind(LOAD_LAST);   // cnt2 = 1..7 characters left
@@ -2419,8 +2416,6 @@ class StubGenerator: public StubCodeGenerator {
       __ xorr(tmp3, tmpU, tmpL);
       __ bnez(tmp3, CALCULATE_DIFFERENCE);
       __ j(DONE); // no character left
-    __ bind(DIFF);
-      __ mv(tmpL, t0);
 
       // Find the first different characters in the longwords and
       // compute their difference.
