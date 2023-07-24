@@ -90,7 +90,7 @@ public interface SegmentAllocator {
      * the string, such as {@link MemorySegment#getUtf8String(long)}, the string
      * will appear truncated when read again.
      *
-     * @implSpec the default implementation for this method copies the contents of the provided Java string
+     * @implSpec The default implementation for this method copies the contents of the provided Java string
      * into a new memory segment obtained by calling {@code this.allocate(str.length() + 1)}.
      * @param str the Java string to be converted into a C string.
      * @return a new segment containing the converted C string.
@@ -104,7 +104,7 @@ public interface SegmentAllocator {
      * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of 1
      * initialized with the provided byte {@code value}}.
      *
-     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * @implSpec The default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
      * byte ordering specified by the provided {@code layout}.
      *
@@ -124,7 +124,7 @@ public interface SegmentAllocator {
      * initialized with the provided char {@code value} using the byte order of the provided
      * {@linkplain ValueLayout#order() layout.order()}}
      *
-     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * @implSpec The default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
      * byte ordering specified by the provided {@code layout}.
      *
@@ -144,7 +144,7 @@ public interface SegmentAllocator {
      * initialized with the provided short {@code value} using the byte order of the provided
      * {@linkplain ValueLayout#order() layout.order()}}
      *
-     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * @implSpec The default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
      * byte ordering specified by the provided {@code layout}.
      *
@@ -164,7 +164,7 @@ public interface SegmentAllocator {
      * initialized with the provided int {@code value} using the byte order of the provided
      * {@linkplain ValueLayout#order() layout.order()}}
      *
-     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * @implSpec The default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
      * byte ordering specified by the provided {@code layout}.
      *
@@ -184,7 +184,7 @@ public interface SegmentAllocator {
      * initialized with the provided float {@code value} using the byte order of the provided
      * {@linkplain ValueLayout#order() layout.order()}}
      *
-     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * @implSpec The default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
      * byte ordering specified by the provided {@code layout}.
      *
@@ -204,7 +204,7 @@ public interface SegmentAllocator {
      * initialized with the provided long {@code value} using the byte order of the provided
      * {@linkplain ValueLayout#order() layout.order()}}
      *
-     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * @implSpec The default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
      * byte ordering specified by the provided {@code layout}.
      *
@@ -224,7 +224,7 @@ public interface SegmentAllocator {
      * initialized with the provided double {@code value} using the byte order of the provided
      * {@linkplain ValueLayout#order() layout.order()}}
      *
-     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * @implSpec The default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
      * byte ordering specified by the provided {@code layout}.
      *
@@ -246,7 +246,7 @@ public interface SegmentAllocator {
      * <p>
      * The address value might be narrowed according to the platform address size (see {@link ValueLayout#ADDRESS}).
      *
-     * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
+     * @implSpec The default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
      * byte ordering specified by the provided {@code layout}.
      *
@@ -262,77 +262,111 @@ public interface SegmentAllocator {
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given byte elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
+     * {@code E} initialized with the provided {@code E} byte {@code elements}}
+     *
+     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
+     * to allocate a segment after which the provided {@code elements} are written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the byte elements to be copied to the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param elements      the short elements to be copied to the newly allocated memory block.
      */
     default MemorySegment allocateArray(ValueLayout.OfByte elementLayout, byte... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given short elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
+     * {@code E*2} initialized with the provided {@code E} short {@code elements} using the byte order of
+     * the provided {@linkplain ValueLayout#order() layout.order()}}
+     *
+     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
+     * to allocate a segment after which the provided {@code elements} are written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the short elements to be copied to the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param elements      the short elements to be copied to the newly allocated memory block.
      */
     default MemorySegment allocateArray(ValueLayout.OfShort elementLayout, short... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given char elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
+     * {@code E*2} initialized with the provided {@code E} char {@code elements} using the byte order of
+     * the provided {@linkplain ValueLayout#order() layout.order()}}
+     *
+     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
+     * to allocate a segment after which the provided {@code elements} are written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the char elements to be copied to the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param elements      the short elements to be copied to the newly allocated memory block.
      */
     default MemorySegment allocateArray(ValueLayout.OfChar elementLayout, char... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given int elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
+     * {@code E*4} initialized with the provided {@code E} int {@code elements} using the byte order of
+     * the provided {@linkplain ValueLayout#order() layout.order()}}
+     *
+     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
+     * to allocate a segment after which the provided {@code elements} are written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the int elements to be copied to the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param elements      the short elements to be copied to the newly allocated memory block.
      */
     default MemorySegment allocateArray(ValueLayout.OfInt elementLayout, int... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given float elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
+     * {@code E*4} initialized with the provided {@code E} float {@code elements} using the byte order of
+     * the provided {@linkplain ValueLayout#order() layout.order()}}
+     *
+     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
+     * to allocate a segment after which the provided {@code elements} are written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the float elements to be copied to the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param elements      the short elements to be copied to the newly allocated memory block.
      */
     default MemorySegment allocateArray(ValueLayout.OfFloat elementLayout, float... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given long elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
+     * {@code E*8} initialized with the provided {@code E} long {@code elements} using the byte order of
+     * the provided {@linkplain ValueLayout#order() layout.order()}}
+     *
+     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
+     * to allocate a segment after which the provided {@code elements} are written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the long elements to be copied to the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param elements      the short elements to be copied to the newly allocated memory block.
      */
     default MemorySegment allocateArray(ValueLayout.OfLong elementLayout, long... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
     }
 
     /**
-     * Allocates a memory segment with the given layout and initializes it with the given double elements.
-     * @implSpec the default implementation for this method calls {@code this.allocateArray(layout, array.length)}.
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of
+     * {@code E*8} initialized with the provided {@code E} short {@code elements} using the byte order of
+     * the provided {@linkplain ValueLayout#order() layout.order()}}
+     *
+     * @implSpec The default implementation of this method first calls {@code this.allocateArray(layout, array.length)}
+     * to allocate a segment after which the provided {@code elements} are written into the segment using the
+     * byte ordering specified by the provided {@code layout}.
+     *
      * @param elementLayout the element layout of the array to be allocated.
-     * @param elements the double elements to be copied to the newly allocated memory block.
-     * @return a segment for the newly allocated memory block.
+     * @param elements      the short elements to be copied to the newly allocated memory block.
      */
     default MemorySegment allocateArray(ValueLayout.OfDouble elementLayout, double... elements) {
         return copyArrayWithSwapIfNeeded(elements, elementLayout, MemorySegment::ofArray);
@@ -341,17 +375,19 @@ public interface SegmentAllocator {
     private <Z> MemorySegment copyArrayWithSwapIfNeeded(Z array, ValueLayout elementLayout,
                                                         Function<Z, MemorySegment> heapSegmentFactory) {
         int size = Array.getLength(Objects.requireNonNull(array));
-        MemorySegment addr = allocateArray(Objects.requireNonNull(elementLayout), size);
+        MemorySegment seg = allocateArray(Objects.requireNonNull(elementLayout), size);
         if (size > 0) {
             MemorySegment.copy(heapSegmentFactory.apply(array), elementLayout, 0,
-                    addr, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
+                    seg, elementLayout.withOrder(ByteOrder.nativeOrder()), 0, size);
         }
-        return addr;
+        return seg;
     }
 
     /**
      * Allocates a memory segment with the given layout.
-     * @implSpec the default implementation for this method calls {@code this.allocate(layout.byteSize(), layout.byteAlignment())}.
+     *
+     * @implSpec The default implementation for this method calls {@code this.allocate(layout.byteSize(), layout.byteAlignment())}.
+     *
      * @param layout the layout of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
      */
@@ -362,7 +398,9 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given element layout and size.
-     * @implSpec the default implementation for this method calls {@code this.allocate(MemoryLayout.sequenceLayout(count, elementLayout))}.
+     *
+     * @implSpec The default implementation for this method calls {@code this.allocate(MemoryLayout.sequenceLayout(count, elementLayout))}.
+     *
      * @param elementLayout the array element layout.
      * @param count the array element count.
      * @return a segment for the newly allocated memory block.
@@ -379,7 +417,9 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given size.
-     * @implSpec the default implementation for this method calls {@code this.allocate(byteSize, 1)}.
+     *
+     * @implSpec The default implementation for this method calls {@code this.allocate(byteSize, 1)}.
+     *
      * @param byteSize the size (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
      * @throws IllegalArgumentException if {@code byteSize < 0}
@@ -390,6 +430,7 @@ public interface SegmentAllocator {
 
     /**
      * Allocates a memory segment with the given size and alignment constraint.
+     *
      * @param byteSize the size (in bytes) of the block of memory to be allocated.
      * @param byteAlignment the alignment (in bytes) of the block of memory to be allocated.
      * @return a segment for the newly allocated memory block.
@@ -405,6 +446,7 @@ public interface SegmentAllocator {
      * <p>
      * The returned allocator throws {@link IndexOutOfBoundsException} when a slice of the provided
      * segment with the requested size and alignment cannot be found.
+     *
      * @implNote A slicing allocator is not <em>thread-safe</em>.
      *
      * @param segment the segment which the returned allocator should slice from.
