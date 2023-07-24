@@ -453,7 +453,8 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
 void LoaderConstraintTable::verify() {
   Thread* thread = Thread::current();
   auto check = [&] (SymbolHandle& key, ConstraintSet& set) {
-    // foreach constraint in the set, check the klass is in the dictionary or placeholder table.
+    // foreach constraint in the set, check the klass is the same as what is in the dictionary.
+    // If the class is in defineClass, it may not be in the dictionary yet.
     int len = set.num_constraints();
     for (int i = 0; i < len; i++) {
       LoaderConstraint* probe = set.constraint_at(i);
