@@ -78,7 +78,7 @@ public class JcmdScale {
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Incorrect scale value:");
 
-    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary", "scale=(null)"});
+    pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary", "scale"});
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Incorrect scale value: (null)");
   }
