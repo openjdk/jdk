@@ -312,8 +312,7 @@ void CodeCache::initialize_heaps() {
 
   const size_t ps = page_size(false, 8);
   // Print warning if using large pages but not able to use the size given
-  if (UseLargePages) {
-    if (ps < LargePageSizeInBytes) {
+  if (UseLargePages && ps < LargePageSizeInBytes) {
       char msg[256];
       jio_snprintf(msg, sizeof(msg),
                    "Failed to reserve large page memory for code cache (" SIZE_FORMAT "%s). "
@@ -322,7 +321,6 @@ void CodeCache::initialize_heaps() {
                    byte_size_in_exact_unit(ps), exact_unit_for_byte_size(ps));
       log_warning(codecache)("%s", msg);
       warning("%s", msg);
-    };
   }
 
   // If large page support is enabled, align code heaps according to large
