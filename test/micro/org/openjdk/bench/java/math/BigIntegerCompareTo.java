@@ -24,7 +24,6 @@
 package org.openjdk.bench.java.math;
 
 import java.math.BigInteger;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import org.openjdk.jmh.annotations.Benchmark;
@@ -38,57 +37,57 @@ import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.Warmup;
-import org.openjdk.jmh.infra.Blackhole;
 
 @BenchmarkMode(Mode.AverageTime)
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @State(Scope.Thread)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 5, time = 1)
+@Warmup(iterations = 3, time = 1)
+@Measurement(iterations = 3, time = 1)
 @Fork(value = 3)
-public class BigIntegerEqualsHashCodeCompareTo {
+public class BigIntegerCompareTo {
 
-    @Param({  "16", // short
+    // The below list was derived from stats gathered from running tests in
+    // the security area, which is the biggest client of BigInteger in JDK.
+    //
+    // Every time bigInteger1.compareTo(bigInteger2) was called, the
+    // Math.min(bigInteger1.bitLength(), bigInteger2.bitLength()) value
+    // was recorded. Recorded values were then sorted by frequency in
+    // descending order. Top 20 of the most frequent values were then picked.
+    @Param({
+              "19",
+              "18",
               "17",
-              "32", // int
-              "37",
-              "64", // long
-              "83",
-            "2048", // typical size of an RSA key
-            "4096", // typical size of an RSA key
-           "65536",
+              "16",
+               "1",
+              "15",
+              "14",
+               "2",
+              "13",
+               "0",
+              "12",
+            "1536",
+            "1024",
+            "1535",
+            "1023",
+              "11",
+             "512",
+             "256",
+             "255",
+            "1534",
     })
+    private int nBits;
 
-    private int bits;
-
-    private static final int N = 512;
-
-    private BigInteger[] numbers;
+    private BigInteger x, y;
 
     @Setup
     public void setup() {
-        var random = new Random();
-        numbers = new BigInteger[N];
-        for (int i = 0; i < N; i++) {
-            numbers[i] = new BigInteger(bits, random);
-        }
+        var p = Shared.createPair(nBits);
+        x = p.x();
+        y = p.y();
     }
 
     @Benchmark
-    public void testEquals(Blackhole bh) {
-        for (int i = 1; i < N; i++)
-            bh.consume(numbers[i].equals(numbers[0]));
-    }
-
-    @Benchmark
-    public void testHashCode(Blackhole bh) {
-        for (int i = 1; i < N; i++)
-            bh.consume(numbers[i].hashCode());
-    }
-
-    @Benchmark
-    public void testCompareTo(Blackhole bh) {
-        for (int i = 1; i < N; i++)
-            bh.consume(numbers[i].compareTo(numbers[0]));
+    public int testCompareTo() {
+        return x.compareTo(y);
     }
 }
