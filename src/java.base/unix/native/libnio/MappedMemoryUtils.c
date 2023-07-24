@@ -34,7 +34,11 @@
 #include <stdlib.h>
 
 /* Output type for mincore(2) */
+#ifdef __linux__
 typedef unsigned char mincore_vec_t;
+#else
+typedef char mincore_vec_t;
+#endif
 
 JNIEXPORT jboolean JNICALL
 Java_java_nio_MappedMemoryUtils_isLoaded0(JNIEnv *env, jobject obj, jlong address,
