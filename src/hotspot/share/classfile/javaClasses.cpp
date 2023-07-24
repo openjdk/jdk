@@ -569,16 +569,9 @@ char* java_lang_String::as_quoted_ascii(oop java_string) {
   return result;
 }
 
-// Return a Symbol for the input Java string. A new Symbol is created if one
-// does not exist. If the length of the input string exceeds Symbol::max_length,
-// the string is truncated to Symbol::max_length.
 Symbol* java_lang_String::as_symbol(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
   int          length = java_lang_String::length(java_string, value);
-  if (length > Symbol::max_length()) {
-    length = Symbol::max_length();
-  }
-
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* base = (length == 0) ? nullptr : value->char_at_addr(0);
@@ -593,15 +586,9 @@ Symbol* java_lang_String::as_symbol(oop java_string) {
   }
 }
 
-// Find the Symbol for the input Java string. If the length of the input string
-// exceeds Symbol::max_length, the string is truncated to Symbol::max_length.
 Symbol* java_lang_String::as_symbol_or_null(oop java_string) {
   typeArrayOop value  = java_lang_String::value(java_string);
   int          length = java_lang_String::length(java_string, value);
-  if (length > Symbol::max_length()) {
-    length = Symbol::max_length();
-  }
-
   bool      is_latin1 = java_lang_String::is_latin1(java_string);
   if (!is_latin1) {
     jchar* base = (length == 0) ? nullptr : value->char_at_addr(0);

@@ -188,8 +188,6 @@ class java_lang_String : AllStatic {
   static Handle externalize_classname(Symbol* java_name, TRAPS);
 
   // Conversion
-  // If the length of the input string exceeds Symbol::max_length, the string
-  // is truncated to Symbol::max_length.
   static Symbol* as_symbol(oop java_string);
   static Symbol* as_symbol_or_null(oop java_string);
 
