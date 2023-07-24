@@ -1342,7 +1342,7 @@ void PhaseIdealLoop::copy_assertion_predicates_to_main_loop_helper(Node* predica
       predicates.push(predicate);
       predicate = predicate->in(0)->in(0);
     }
-    while(predicates.size() > 0) {
+    while (predicates.size() > 0) {
       predicate = predicates.pop();
       iff = predicate->in(0)->as_If();
       uncommon_proj = iff->proj_out(1 - predicate->as_Proj()->_con);
