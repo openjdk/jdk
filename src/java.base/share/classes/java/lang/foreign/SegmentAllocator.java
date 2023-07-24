@@ -101,7 +101,7 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 1
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of 1
      * initialized with the provided byte {@code value}}.
      *
      * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
@@ -120,9 +120,9 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 2
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of 2
      * initialized with the provided char {@code value} using the byte order of the provided
-     * {@link ValueLayout#order()} layout.order()}}
+     * {@linkplain ValueLayout#order() layout.order()}}
      *
      * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
@@ -140,9 +140,9 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 2
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of 2
      * initialized with the provided short {@code value} using the byte order of the provided
-     * {@link ValueLayout#order()} layout.order()}}
+     * {@linkplain ValueLayout#order() layout.order()}}
      *
      * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
@@ -160,9 +160,9 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 4
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of 4
      * initialized with the provided int {@code value} using the byte order of the provided
-     * {@link ValueLayout#order()} layout.order()}}
+     * {@linkplain ValueLayout#order() layout.order()}}
      *
      * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
@@ -180,9 +180,9 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 4
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of 4
      * initialized with the provided float {@code value} using the byte order of the provided
-     * {@link ValueLayout#order()} layout.order()}}
+     * {@linkplain ValueLayout#order() layout.order()}}
      *
      * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
@@ -200,9 +200,9 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 8
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of 8
      * initialized with the provided long {@code value} using the byte order of the provided
-     * {@link ValueLayout#order()} layout.order()}}
+     * {@linkplain ValueLayout#order() layout.order()}}
      *
      * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
@@ -220,9 +220,9 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} of 8
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} of 4
      * initialized with the provided double {@code value} using the byte order of the provided
-     * {@link ValueLayout#order()} layout.order()}}
+     * {@linkplain ValueLayout#order() layout.order()}}
      *
      * @implSpec the default implementation of this method first calls {@code this.allocate(layout)} to
      * allocate a segment after which the provided {@code value} is written into the segment using the
@@ -240,9 +240,9 @@ public interface SegmentAllocator {
     }
 
     /**
-     * {@return a newly allocated memory segment with a {@link MemorySegment#byteSize()} as specified by the
-     * provided {@link AddressLayout#byteSize() layout.byteSize()} initialized with the provided address {@code value}
-     * using the byte order of the provided {@link ValueLayout#order()} layout.order()}}
+     * {@return a newly allocated memory segment with a {@linkplain MemorySegment#byteSize() byteSize()} as specified by the
+     * provided {@linkplain AddressLayout#byteSize() layout.byteSize()} initialized with the provided address {@code value}
+     * using the byte order of the provided {@link ValueLayout#order() layout.order()}}
      * <p>
      * The address value might be narrowed according to the platform address size (see {@link ValueLayout#ADDRESS}).
      *
