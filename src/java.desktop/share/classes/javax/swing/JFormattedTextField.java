@@ -743,6 +743,16 @@ public class JFormattedTextField extends JTextField {
         doc.addDocumentListener(documentListener);
     }
 
+    @Override
+    public void setText(String text){
+        super.setText(text);
+        if(isEdited() && isEditValid()){
+            try{
+                commitEdit();
+            } catch(ParseException pe){}//do nothing, we assume this will never happen.
+        }
+    }
+
     /*
      * See readObject and writeObject in JComponent for more
      * information about serialization in Swing.
