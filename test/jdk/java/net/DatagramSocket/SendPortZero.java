@@ -84,8 +84,7 @@ public class SendPortZero {
         wildcardZeroPkt.setPort(0);
 
         // wildcard addr w/valid port
-        // Referenced in bug 8236105, but not addressed.
-        // So, this scenario is not tested
+        // Not currently tested. See JDK-8236807
         wildcardValidPkt = new DatagramPacket(buf, 0, buf.length);
         wildcardValidPkt.setAddress(wildcardAddr);
         wildcardValidPkt.setPort(datagramSocket.getLocalPort());
@@ -96,10 +95,12 @@ public class SendPortZero {
         return new Object[][]{
                 { datagramSocket,        loopbackZeroPkt },
                 { datagramSocket,        wildcardZeroPkt },
+                // Re-enable when JDK-8236807 fixed
                 //{ datagramSocket,        wildcardValidPkt },
 
                 { datagramSocketAdaptor, loopbackZeroPkt },
                 { datagramSocketAdaptor, wildcardZeroPkt },
+                // Re-enable when JDK-8236807 fixed
                 //{ datagramSocketAdaptor, wildcardValidPkt },
         };
     }

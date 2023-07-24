@@ -83,7 +83,7 @@ public class SendPortZero {
         wildcardZeroPkt.setPort(0);
 
         // wildcard addr w/valid port
-        // This scenario is not tested
+        // Not currently tested. See JDK-8236807
         wildcardValidPkt = new DatagramPacket(buf, 0, buf.length);
         wildcardValidPkt.setAddress(wildcardAddr);
         wildcardValidPkt.setPort(multicastSocket.getLocalPort());
@@ -94,6 +94,7 @@ public class SendPortZero {
         return new Object[][]{
                 { multicastSocket,       loopbackZeroPkt },
                 { multicastSocket,       wildcardZeroPkt },
+                // Not currently tested. See JDK-8236807
                 //{ multicastSocket,       wildcardValidPkt }
         };
     }
