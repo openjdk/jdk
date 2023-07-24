@@ -65,9 +65,7 @@ public final class SecuritySettings {
             case "providers"  -> printSecurityProviderConfig(true);
             case "tls"        -> printSecurityTLSConfig(true);
             case "all"        -> printAllSecurityConfig();
-            default           -> ostream.println(
-                    "\nUnrecognized security subcommand. Valid values are " +
-                    "\"all\", \"properties\", \"providers\", \"tls\". See \"java -X\"\n");
+            default           -> LauncherHelper.abort(null, "java.launcher.bad.security.option", arg);
         }
     }
 

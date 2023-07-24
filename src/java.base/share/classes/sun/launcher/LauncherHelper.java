@@ -152,7 +152,7 @@ public final class LauncherHelper {
             case "system" -> printSystemMetrics();
             case "vm" -> printVmSettings(initialHeapSize, maxHeapSize, stackSize);
             case "" -> printAllSettings(false, initialHeapSize, maxHeapSize, stackSize);
-            default -> printHelp(optStr);
+            default -> abort(null, "java.launcher.bad.option", optStr);
         }
     }
 
@@ -309,8 +309,7 @@ public final class LauncherHelper {
     private static void printSystemMetrics() {
         // only Linux supported
         if (!OperatingSystem.isLinux()) {
-            printHelp("system");
-            return;
+            abort(null, "java.launcher.bad.option");
         }
 
         Metrics c = Container.metrics();
@@ -522,16 +521,6 @@ public final class LauncherHelper {
         outBuf = outBuf.append(getLocalizedMessage("java.launcher.opt.footer",
                 File.pathSeparator));
         ostream.println(outBuf.toString());
-    }
-
-    /**
-     * Prints a help message relating to supported components if a bad
-     * option is detected.
-     */
-    private static void printHelp(String opt) {
-        ostream.println("\nUnrecognized showSettings option: " + opt +
-                "\nValid values are \"all\", \"locale\", \"properties\", " +
-                "\"security\", \"system\"(Linux only), \"vm\"\nSee \"java -X\"\n");
     }
 
     /**

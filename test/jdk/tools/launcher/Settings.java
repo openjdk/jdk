@@ -76,7 +76,7 @@ public class Settings extends TestHelper {
     private static final String SEC_PROVIDER_SETTINGS =
                 "Security provider static configuration:";
     private static final String SEC_TLS_SETTINGS = "Security TLS configuration";
-    private static final String BAD_SEC_OPTION_MSG = "Unrecognized security subcommand";
+    private static final String BAD_SEC_OPTION_MSG = "Unrecognized showSettings security option";
     private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
     private static final String STACKSIZE_SETTINGS = "Stack Size:";
     private static final String TZDATA_SETTINGS = "tzdata version";
@@ -110,7 +110,7 @@ public class Settings extends TestHelper {
         checkNotContains(tr, LOCALE_SETTINGS);
         checkNotContains(tr, AVAILABLE_LOCALES);
         checkContains(tr, LOCALE_SUMMARY_SETTINGS);
-        // no verbose security settings unless "security" used
+        // no verbose security settings unless "security" or "all" used
         checkNotContains(tr, SEC_PROPS_SETTINGS);
         checkContains(tr, SEC_SUMMARY_PROPS_SETTINGS);
         checkContains(tr, SEC_PROVIDER_SETTINGS);
@@ -228,6 +228,7 @@ public class Settings extends TestHelper {
     // ensure error message is printed when unrecognized option used
     static void runTestOptionBadSecurityOption() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettings:security:bad");
+        tr.checkNegative();
         checkContains(tr, BAD_SEC_OPTION_MSG);
         // we print all security settings in such scenario
         checkNotContains(tr, SEC_PROPS_SETTINGS);
@@ -252,12 +253,14 @@ public class Settings extends TestHelper {
 
     static void runTestBadOptions() throws IOException {
         TestResult tr = doExec(javaCmd, "-XshowSettingsBadOption");
+        tr.checkNegative();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
         checkContains(tr, "Unrecognized option: -XshowSettingsBadOption");
 
         tr = doExec(javaCmd, "-XshowSettings:BadOption");
+        tr.checkNegative();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
