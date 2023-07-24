@@ -1515,7 +1515,7 @@ IfProjNode* PhaseIdealLoop::add_template_assertion_predicate(IfNode* iff, IdealL
   // unrolling proceeds current stride is updated.
   if (max_value == nullptr) {
     // init + (current stride - initial stride) is within the loop so narrow its type by leveraging the type of the iv Phi
-    iv_phi_assertion_predicate_condition(loop->_head->as_CountedLoop(), new_proj, opaque_init, max_value);
+    bol = iv_phi_assertion_predicate_condition(loop->_head->as_CountedLoop(), new_proj, opaque_init, max_value);
     new_proj = add_template_assertion_predicate_helper(predicate_proj, reason, new_proj, bol, Op_If);
   }
 
