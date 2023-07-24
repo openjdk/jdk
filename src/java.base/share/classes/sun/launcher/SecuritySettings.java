@@ -53,8 +53,13 @@ public final class SecuritySettings {
     private static final String PROV_INFO_STRING = "Provider information: ";
     private static PrintStream ostream = null;
 
-    static void printSecuritySettings(String arg, PrintStream stream) {
+    static void printSecuritySettings(String[] opts, PrintStream stream, boolean verbose) {
         ostream = stream;
+        if (!verbose) {
+            printSecuritySummarySettings();
+            return;
+        }
+        var arg = opts.length > 2 ? opts[2].trim() : "all";
         switch (arg) {
             case "properties" -> printSecurityProperties();
             case "providers"  -> printSecurityProviderConfig(true);
@@ -67,10 +72,10 @@ public final class SecuritySettings {
     }
 
     // A non-verbose description of some core security configuration settings
-    static void printSecuritySummarySettings(PrintStream stream) {
-        ostream = stream;
-        ostream.println("Security settings summary: " + "\n" +
-                INDENT + "See \"java -X\" for verbose security settings options");
+    static void printSecuritySummarySettings() {
+        ostream.println("Security settings summary:");
+        ostream.println(INDENT + "Use \"-XshowSettings:security\" " +
+                "option for verbose security settings options");
         printSecurityProviderConfig(false);
         printSecurityTLSConfig(false);
     }

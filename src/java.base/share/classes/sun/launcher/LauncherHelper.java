@@ -25,15 +25,6 @@
 
 package sun.launcher;
 
-/*
- *
- *  <p><b>This is NOT part of any API supported by Sun Microsystems.
- *  If you write code that depends on this, you do so at your own
- *  risk.  This code and its internal interfaces are subject to change
- *  or deletion without notice.</b>
- *
- */
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -60,18 +51,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.text.Normalizer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
+import java.util.*;
 import java.util.Locale.Category;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.ResourceBundle;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -132,10 +113,13 @@ public final class LauncherHelper {
     private static Class<?> appClass; // application class, for GUI/reporting purposes
 
     /*
-     * A method called by the launcher to print out the standard settings,
-     * by default -XshowSettings is equivalent to -XshowSettings:all,
-     * Specific information may be gotten by using suboptions with possible
-     * values vm, properties and locale.
+     * A method called by the launcher to print out the standard settings.
+     * -XshowSettings prints details of all supported components in non-verbose
+     * mode. -XshowSettings:all prints all settings in verbose mode.
+     * Specific settings information may be obtained by using suboptions.
+     *
+     * suboption values include "all", "locale", "properties", "security",
+     * "system"(Linux only) and "vm". Help message printed for bad value.
      *
      * printToStderr: choose between stdout and stderr
      *
@@ -159,43 +143,34 @@ public final class LauncherHelper {
 
         initOutput(printToStderr);
         String[] opts = optionFlag.split(":");
-        String optStr = opts.length > 1
-                ? opts[1].trim()
-                : "all";
+        String optStr = Arrays.stream(opts).skip(1).findFirst().orElse("").trim();
         switch (optStr) {
-            case "vm":
-                printVmSettings(initialHeapSize, maxHeapSize, stackSize);
-                break;
-            case "properties":
-                printProperties();
-                break;
-            case "locale":
-                printLocale(false);
-                break;
-            case "security":
-                var opt = opts.length > 2 ? opts[2].trim() : "all";
-                SecuritySettings.printSecuritySettings(opt, ostream);
-                break;
-            case "system":
-                if (OperatingSystem.isLinux()) {
-                    printSystemMetrics();
-                    break;
-                }
-            default:
-                printVmSettings(initialHeapSize, maxHeapSize, stackSize);
-                printProperties();
-                printLocale(true);
-                SecuritySettings.printSecuritySummarySettings(ostream);
-                if (OperatingSystem.isLinux()) {
-                    printSystemMetrics();
-                }
-                break;
+            case "all" -> printAllSettings(true, initialHeapSize, maxHeapSize, stackSize);
+            case "locale" -> printLocale(true);
+            case "properties" -> printProperties();
+            case "security" -> SecuritySettings.printSecuritySettings(opts, ostream, true);
+            case "system" -> printSystemMetrics();
+            case "vm" -> printVmSettings(initialHeapSize, maxHeapSize, stackSize);
+            case "" -> printAllSettings(false, initialHeapSize, maxHeapSize, stackSize);
+            default -> printHelp(optStr);
         }
     }
 
     /*
-     * prints the main vm settings subopt/section
+     * prints all available settings. Verbose option.
      */
+    private static void printAllSettings(boolean verbose, long initialHeapSize,
+                                         long maxHeapSize, long stackSize) {
+        printVmSettings(initialHeapSize, maxHeapSize, stackSize);
+        printProperties();
+        printLocale(verbose);
+        SecuritySettings.printSecuritySettings(
+                    new String[] {"all"}, ostream, verbose);
+        if (OperatingSystem.isLinux()) {
+            printSystemMetrics();
+        }
+    }
+
     private static void printVmSettings(
             long initialHeapSize, long maxHeapSize,
             long stackSize) {
@@ -227,11 +202,8 @@ public final class LauncherHelper {
     private static void printProperties() {
         Properties p = System.getProperties();
         ostream.println(PROP_SETTINGS);
-        List<String> sortedPropertyKeys = new ArrayList<>();
-        sortedPropertyKeys.addAll(p.stringPropertyNames());
-        Collections.sort(sortedPropertyKeys);
-        for (String x : sortedPropertyKeys) {
-            printPropertyValue(x, p.getProperty(x));
+        for (String key : p.stringPropertyNames().stream().sorted().toList()) {
+            printPropertyValue(key, p.getProperty(key));
         }
         ostream.println();
     }
@@ -280,9 +252,9 @@ public final class LauncherHelper {
     /*
      * prints the locale subopt/section
      */
-    private static void printLocale(boolean summaryMode) {
+    private static void printLocale(boolean verbose) {
         Locale locale = Locale.getDefault();
-        if (!summaryMode) {
+        if (verbose) {
             ostream.println(LOCALE_SETTINGS);
         } else {
             ostream.println("Locale settings summary:");
@@ -297,7 +269,7 @@ public final class LauncherHelper {
                 Locale.getDefault(Category.FORMAT).getDisplayName());
         ostream.println(INDENT + "tzdata version = " +
                 ZoneInfoFile.getVersion());
-        if (!summaryMode) {
+        if (verbose) {
             printLocales();
         }
         ostream.println();
@@ -335,6 +307,12 @@ public final class LauncherHelper {
     }
 
     private static void printSystemMetrics() {
+        // only Linux supported
+        if (!OperatingSystem.isLinux()) {
+            printHelp("system");
+            return;
+        }
+
         Metrics c = Container.metrics();
 
         ostream.println("Operating System Metrics:");
@@ -544,6 +522,16 @@ public final class LauncherHelper {
         outBuf = outBuf.append(getLocalizedMessage("java.launcher.opt.footer",
                 File.pathSeparator));
         ostream.println(outBuf.toString());
+    }
+
+    /**
+     * Prints a help message relating to supported components if a bad
+     * option is detected.
+     */
+    private static void printHelp(String opt) {
+        ostream.println("\nUnrecognized showSettings option: " + opt +
+                "\nValid values are \"all\", \"locale\", \"properties\", " +
+                "\"security\", \"system\"(Linux only), \"vm\"\nSee \"java -X\"\n");
     }
 
     /**

@@ -25,7 +25,7 @@ import java.io.IOException;
 
 /*
  * @test
- * @bug 6994753 7123582 8305950 8281658 8310201
+ * @bug 6994753 7123582 8305950 8281658 8310201 8311653
  * @summary tests -XshowSettings options
  * @modules jdk.compiler
  *          jdk.zipfs
@@ -80,8 +80,31 @@ public class Settings extends TestHelper {
     private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
     private static final String STACKSIZE_SETTINGS = "Stack Size:";
     private static final String TZDATA_SETTINGS = "tzdata version";
+    private static final String HELP_MSG = "Unrecognized showSettings option:";
 
+    /*
+     * "all" should print verbose settings
+     */
     static void containsAllOptions(TestResult tr) {
+        checkContains(tr, VM_SETTINGS);
+        checkContains(tr, PROP_SETTINGS);
+        checkContains(tr, LOCALE_SETTINGS);
+        checkContains(tr, AVAILABLE_LOCALES);
+        checkNotContains(tr, LOCALE_SUMMARY_SETTINGS);
+        checkContains(tr, SEC_PROPS_SETTINGS);
+        checkNotContains(tr, SEC_SUMMARY_PROPS_SETTINGS);
+        checkContains(tr, SEC_PROVIDER_SETTINGS);
+        checkContains(tr, SEC_TLS_SETTINGS);
+        checkContains(tr, TZDATA_SETTINGS);
+        if (System.getProperty("os.name").contains("Linux")) {
+            checkContains(tr, SYSTEM_SETTINGS);
+        }
+    }
+    /*
+     * default (no options) should print non verbose
+     * details on each component
+     */
+    static void containsDefaultOptions(TestResult tr) {
         checkContains(tr, VM_SETTINGS);
         checkContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
@@ -118,7 +141,7 @@ public class Settings extends TestHelper {
                 "-Xss" + stackSize + "k", "-XshowSettings", "-jar", testJar.getAbsolutePath());
         // Check the stack size logs printed by -XshowSettings to verify -Xss meaningfully.
         checkContains(tr, STACKSIZE_SETTINGS);
-        containsAllOptions(tr);
+        containsDefaultOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr);
             throw new RuntimeException("test fails");
@@ -126,7 +149,7 @@ public class Settings extends TestHelper {
         tr = doExec(javaCmd, "-Xms65536k", "-Xmx712m",
                 "-Xss" + (stackSize * 1024), "-XshowSettings", "-jar", testJar.getAbsolutePath());
         checkContains(tr, STACKSIZE_SETTINGS);
-        containsAllOptions(tr);
+        containsDefaultOptions(tr);
         if (!tr.isOK()) {
             System.out.println(tr);
             throw new RuntimeException("test fails");
@@ -219,9 +242,11 @@ public class Settings extends TestHelper {
             checkNotContains(tr, LOCALE_SETTINGS);
             checkContains(tr, SYSTEM_SETTINGS);
         } else {
-            // -XshowSettings prints all available settings when
-            // settings argument is not recognized.
-            containsAllOptions(tr);
+            // "system" should trigger help message
+            // on other OSes
+            checkNotContains(tr, VM_SETTINGS);
+            checkNotContains(tr, SYSTEM_SETTINGS);
+            checkContains(tr, HELP_MSG);
         }
     }
 
@@ -231,6 +256,12 @@ public class Settings extends TestHelper {
         checkNotContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
         checkContains(tr, "Unrecognized option: -XshowSettingsBadOption");
+
+        tr = doExec(javaCmd, "-XshowSettings:BadOption");
+        checkNotContains(tr, VM_SETTINGS);
+        checkNotContains(tr, PROP_SETTINGS);
+        checkNotContains(tr, LOCALE_SETTINGS);
+        checkContains(tr, HELP_MSG);
     }
 
     static void runTest7123582() throws IOException {
@@ -239,7 +270,7 @@ public class Settings extends TestHelper {
             System.out.println(tr);
             throw new RuntimeException("test fails");
         }
-        containsAllOptions(tr);
+        containsDefaultOptions(tr);
     }
 
     public static void main(String... args) throws IOException {
