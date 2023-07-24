@@ -97,8 +97,7 @@ public class RobotModifierMaskTest {
                 try {
                     countDownLatch = new CountDownLatch(1);
                     invokeAndWait(RobotModifierMaskTest::createInstructionsUI);
-                    boolean timeout = countDownLatch.await(2, TimeUnit.MINUTES);
-                    if (!timeout) {
+                    if (!countDownLatch.await(2, TimeUnit.MINUTES)) {
                         throw new RuntimeException("Test failed: Manual test timed out!!");
                     }
                 } finally {
