@@ -4282,7 +4282,7 @@ void MacroAssembler::round_double_mode(FloatRegister dst, FloatRegister src, enu
   // tmp2 = 100...0000
   addi(mask, zr, 1);
   slli(mask, mask, 63);
-  /* conversion from double to long */
+  // conversion from double to long
   fcvt_l_d(converted_dbl, src, rm_direct);
 
   // preparing converted long (tmp1)
