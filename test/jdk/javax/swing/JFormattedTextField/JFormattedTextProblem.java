@@ -25,7 +25,7 @@
  * @test
  * @bug 5032471
  * @key headful
- * @summary Verifies JFormattedTextField uses edit formatter on initial focus 
+ * @summary Verifies JFormattedTextField uses edit formatter on initial focus
  * @run main JFormattedTextProblem
  */
 
@@ -50,15 +50,15 @@ import java.text.SimpleDateFormat;
 
 public class JFormattedTextProblem {
 
-    static JFrame frame;	
+    static JFrame frame;
     static volatile boolean expected = false;
 
     public static void main(String[] args) throws Exception {
-        try {	    
-            Robot robot = new Robot();	    
+        try {
+            Robot robot = new Robot();
             robot.setAutoDelay(100);
             JFormattedTextProblem test = new JFormattedTextProblem();
-            SwingUtilities.invokeAndWait(() -> {	
+            SwingUtilities.invokeAndWait(() -> {
                 test.testFormatter();
             });
             robot.waitForIdle();
@@ -69,12 +69,12 @@ public class JFormattedTextProblem {
                 throw new RuntimeException("Field not editable format");
             }
         } finally {
-            SwingUtilities.invokeAndWait(() -> {	
+            SwingUtilities.invokeAndWait(() -> {
                 if (frame != null) {
                     frame.dispose();
                 }
             });
-        }	    
+        }
     }
 
     private void testFormatter() {
@@ -102,7 +102,6 @@ public class JFormattedTextProblem {
         dateField.setText(displayDate.format(new Date()));
 
         frame.getContentPane().add(panel);
-    
         DocumentListener documentListener = new DocumentListener() {
             public void changedUpdate(DocumentEvent documentEvent) {
                 printIt(documentEvent);
