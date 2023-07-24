@@ -39,19 +39,20 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.ConstructorWriter;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
+import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
-
-import static jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable.Kind.CONSTRUCTORS;
 
 
 /**
  * Writes constructor documentation.
  */
-public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
-    implements ConstructorWriter, MemberSummaryWriter {
+public class ConstructorWriter extends AbstractExecutableMemberWriter {
+
+    /**
+     * The current constructor that is being documented at this point in time.
+     */
+    private ExecutableElement currentConstructor;
 
     private boolean foundNonPubConstructor = false;
 
@@ -59,14 +60,12 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      * Construct a new ConstructorWriterImpl.
      *
      * @param writer The writer for the class that the constructors belong to.
-     * @param typeElement the class being documented.
      */
-    public ConstructorWriterImpl(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+    public ConstructorWriter(ClassWriter writer) {
+        super(writer, writer.getTypeElement());
 
-        VisibleMemberTable vmt = configuration.getVisibleMemberTable(typeElement);
-        List<? extends Element> constructors = vmt.getVisibleMembers(CONSTRUCTORS);
-
+        // the following must be done before the summary table is generated
+        var constructors = getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
         for (Element constructor : constructors) {
             if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
                 setFoundNonPubConstructor(true);
@@ -79,8 +78,94 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
      *
      * @param writer The writer for the class that the constructors belong to.
      */
-    public ConstructorWriterImpl(SubWriterHolderWriter writer) {
+    public ConstructorWriter(SubWriterHolderWriter writer) {
         super(writer);
+    }
+
+    public void build(Content target) throws DocletException {
+        buildConstructorDoc(target);
+    }
+
+    /**
+     * Build the constructor documentation.
+     *
+     * @param target the content to which the documentation will be added
+     */
+    protected void buildConstructorDoc(Content target) {
+        var constructors = getVisibleMembers(VisibleMemberTable.Kind.CONSTRUCTORS);
+        if (!constructors.isEmpty()) {
+            for (Element constructor : constructors) {
+                if (utils.isProtected(constructor) || utils.isPrivate(constructor)) {
+                    setFoundNonPubConstructor(true);
+                }
+            }
+
+            Content constructorDetailsHeader = getConstructorDetailsHeader(target);
+            Content memberList = getMemberList();
+
+            for (Element constructor : constructors) {
+                currentConstructor = (ExecutableElement)constructor;
+                Content constructorContent = getConstructorHeaderContent(currentConstructor);
+
+                buildSignature(constructorContent);
+                buildDeprecationInfo(constructorContent);
+                buildPreviewInfo(constructorContent);
+                buildConstructorComments(constructorContent);
+                buildTagInfo(constructorContent);
+
+                memberList.add(getMemberListItem(constructorContent));
+            }
+            Content constructorDetails = getConstructorDetails(constructorDetailsHeader, memberList);
+            target.add(constructorDetails);
+        }
+    }
+
+    /**
+     * Build the signature.
+     *
+     * @param constructorContent the content to which the documentation will be added
+     */
+    protected void buildSignature(Content constructorContent) {
+        constructorContent.add(getSignature(currentConstructor));
+    }
+
+    /**
+     * Build the deprecation information.
+     *
+     * @param constructorContent the content to which the documentation will be added
+     */
+    protected void buildDeprecationInfo(Content constructorContent) {
+        addDeprecated(currentConstructor, constructorContent);
+    }
+
+    /**
+     * Build the preview information.
+     *
+     * @param constructorContent the content to which the documentation will be added
+     */
+    protected void buildPreviewInfo(Content constructorContent) {
+        addPreview(currentConstructor, constructorContent);
+    }
+
+    /**
+     * Build the comments for the constructor.  Do nothing if
+     * {@link BaseOptions#noComment()} is set to true.
+     *
+     * @param constructorContent the content to which the documentation will be added
+     */
+    protected void buildConstructorComments(Content constructorContent) {
+        if (!options.noComment()) {
+            addComments(currentConstructor, constructorContent);
+        }
+    }
+
+    /**
+     * Build the tag information.
+     *
+     * @param constructorContent the content to which the documentation will be added
+     */
+    protected void buildTagInfo(Content constructorContent) {
+        addTags(currentConstructor, constructorContent);
     }
 
     @Override
@@ -98,8 +183,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 HtmlIds.CONSTRUCTOR_SUMMARY, summariesList, content);
     }
 
-    @Override
-    public Content getConstructorDetailsHeader(Content content) {
+    protected Content getConstructorDetailsHeader(Content content) {
         content.add(MarkerComments.START_OF_CONSTRUCTOR_DETAILS);
         Content constructorDetails = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.DETAILS_HEADING,
@@ -108,8 +192,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         return constructorDetails;
     }
 
-    @Override
-    public Content getConstructorHeaderContent(ExecutableElement constructor) {
+    protected Content getConstructorHeaderContent(ExecutableElement constructor) {
         Content content = new ContentBuilder();
         var heading = HtmlTree.HEADING(Headings.TypeDeclaration.MEMBER_HEADING,
                 Text.of(name(constructor)));
@@ -122,8 +205,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 .setId(htmlIds.forMember(constructor));
     }
 
-    @Override
-    public Content getSignature(ExecutableElement constructor) {
+    protected Content getSignature(ExecutableElement constructor) {
         return new Signatures.MemberSignature(constructor, this)
                 .setParameters(getParameters(constructor, true))
                 .setExceptions(getExceptions(constructor))
@@ -131,28 +213,23 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                 .toContent();
     }
 
-    @Override
-    public void addDeprecated(ExecutableElement constructor, Content constructorContent) {
+    protected void addDeprecated(ExecutableElement constructor, Content constructorContent) {
         addDeprecatedInfo(constructor, constructorContent);
     }
 
-    @Override
-    public void addPreview(ExecutableElement constructor, Content content) {
+    protected void addPreview(ExecutableElement constructor, Content content) {
         addPreviewInfo(constructor, content);
     }
 
-    @Override
-    public void addComments(ExecutableElement constructor, Content constructorContent) {
+    protected void addComments(ExecutableElement constructor, Content constructorContent) {
         addComment(constructor, constructorContent);
     }
 
-    @Override
-    public void addTags(ExecutableElement constructor, Content constructorContent) {
+    protected void addTags(ExecutableElement constructor, Content constructorContent) {
         writer.addTagsInfo(constructor, constructorContent);
     }
 
-    @Override
-    public Content getConstructorDetails(Content memberDetailsHeader, Content memberDetails) {
+    protected Content getConstructorDetails(Content memberDetailsHeader, Content memberDetails) {
         return writer.getDetailsListItem(
                 HtmlTree.SECTION(HtmlStyle.constructorDetails)
                         .setId(HtmlIds.CONSTRUCTOR_DETAIL)
@@ -160,8 +237,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
                         .add(memberDetails));
     }
 
-    @Override
-    public void setFoundNonPubConstructor(boolean foundNonPubConstructor) {
+    protected void setFoundNonPubConstructor(boolean foundNonPubConstructor) {
         this.foundNonPubConstructor = foundNonPubConstructor;
     }
 
@@ -222,8 +298,7 @@ public class ConstructorWriterImpl extends AbstractExecutableMemberWriter
         }
     }
 
-    @Override
-    public Content getMemberHeader(){
+    protected Content getMemberHeader(){
         return writer.getMemberHeader();
     }
 }

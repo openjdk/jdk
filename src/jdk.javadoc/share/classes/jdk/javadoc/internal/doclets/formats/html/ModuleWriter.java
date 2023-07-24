@@ -50,8 +50,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.ModuleSummaryWriter;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 
@@ -60,7 +59,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
  * required modules, packages and service types for the module. A click on any of the links will update
  * the frame with the clicked element page.
  */
-public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryWriter {
+public class ModuleWriter extends HtmlDocletWriter {
 
     /**
      * The module being documented.
@@ -91,7 +90,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * A package that is neither exported or opened to any modules is a concealed package.
      * An open module opens all its packages to all modules.
      */
-    class PackageEntry {
+    static class PackageEntry {
         /**
          * Summary of package exports:
          * If null, the package is not exported to any modules;
@@ -159,15 +158,107 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
      * @param configuration the configuration of the doclet.
      * @param mdle        Module under consideration.
      */
-    public ModuleWriterImpl(HtmlConfiguration configuration, ModuleElement mdle) {
+    public ModuleWriter(HtmlConfiguration configuration, ModuleElement mdle) {
         super(configuration, configuration.docPaths.moduleSummary(mdle));
         this.mdle = mdle;
         this.moduleMode = configuration.docEnv.getModuleMode();
         computeModulesData();
     }
 
-    @Override
-    public Content getModuleHeader(String heading) {
+    /**
+     * Build the module summary.
+     *
+     * @throws DocletException if there is a problem while building the documentation
+     */
+    public void build() throws DocletException {
+        buildModuleDoc();
+    }
+
+    /**
+     * Build the module documentation.
+     *
+     * @throws DocletException if there is a problem while building the documentation
+     */
+    protected void buildModuleDoc() throws DocletException {
+        Content content = getModuleHeader(mdle.getQualifiedName().toString());
+
+        buildContent();
+
+        addModuleFooter();
+        printDocument(content);
+        var docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(mdle);
+        docFilesHandler.copyDocFiles();
+    }
+
+    /**
+     * Build the content for the module doc.
+     */
+    protected void buildContent() {
+        Content moduleContent = getContentHeader();
+
+        addModuleSignature(moduleContent);
+        buildModuleDescription(moduleContent);
+        buildSummary(moduleContent);
+
+        addModuleContent(moduleContent);
+    }
+
+    /**
+     * Builds the list of summary sections for this module.
+     *
+     * @param target the module content to which the summaries will
+     *               be added
+     */
+    protected void buildSummary(Content target) {
+        Content summariesList = getSummariesList();
+
+        buildPackagesSummary(summariesList);
+        buildModulesSummary(summariesList);
+        buildServicesSummary(summariesList);
+
+        target.add(getSummary(summariesList));
+    }
+
+    /**
+     * Builds the summary of the module dependencies of this module.
+     *
+     * @param summariesList the list of summaries to which the summary will be added
+     */
+    protected void buildModulesSummary(Content summariesList) {
+        addModulesSummary(summariesList);
+    }
+
+    /**
+     * Builds the summary of the packages exported or opened by this module.
+     *
+     * @param summariesList the list of summaries to which the summary will be added
+     */
+    protected void buildPackagesSummary(Content summariesList) {
+        addPackagesSummary(summariesList);
+    }
+
+    /**
+     * Builds the summary of the services used or provided by this module.
+     *
+     * @param summariesList the list of summaries to which the summary will be added
+     */
+    protected void buildServicesSummary(Content summariesList) {
+        addServicesSummary(summariesList);
+    }
+
+    /**
+     * Builds the description for this module.
+     *
+     * @param moduleContent the content to which the module description will
+     *                      be added
+     */
+    protected void buildModuleDescription(Content moduleContent) {
+        if (!options.noComment()) {
+            addModuleDescription(moduleContent);
+        }
+    }
+
+    protected Content getModuleHeader(String heading) {
         HtmlTree body = getBody(getWindowTitle(mdle.getQualifiedName().toString()));
         var div = HtmlTree.DIV(HtmlStyle.header);
         Content moduleHead = new ContentBuilder();
@@ -197,18 +288,15 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 ));
     }
 
-    @Override
-    public Content getContentHeader() {
+    protected Content getContentHeader() {
         return new ContentBuilder();
     }
 
-    @Override
-    public Content getSummariesList() {
+    protected Content getSummariesList() {
         return HtmlTree.UL(HtmlStyle.summaryList);
     }
 
-    @Override
-    public Content getSummary(Content source) {
+    protected Content getSummary(Content source) {
         return HtmlTree.SECTION(HtmlStyle.summary, source);
     }
 
@@ -448,8 +536,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
                 .setColumnStyles(HtmlStyle.colFirst, HtmlStyle.colSecond, HtmlStyle.colLast);
     }
 
-    @Override
-    public void addModulesSummary(Content summariesList) {
+    protected void addModulesSummary(Content summariesList) {
         if (display(requires) || display(indirectModules)) {
             TableHeader requiresTableHeader =
                     new TableHeader(contents.modifierLabel, contents.moduleLabel,
@@ -492,8 +579,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
     }
 
-    @Override
-    public void addPackagesSummary(Content summariesList) {
+    protected void addPackagesSummary(Content summariesList) {
         if (display(packages)
                 || display(indirectPackages) || display(indirectOpenPackages)) {
             var section = HtmlTree.SECTION(HtmlStyle.packagesSummary)
@@ -659,8 +745,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
     }
 
-    @Override
-    public void addServicesSummary(Content summariesList) {
+    protected void addServicesSummary(Content summariesList) {
 
         boolean haveUses = displayServices(uses, usesTrees);
         boolean haveProvides = displayServices(provides.keySet(), providesTrees);
@@ -786,8 +871,7 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
     }
 
-    @Override
-    public void addModuleDescription(Content moduleContent) {
+    protected void addModuleDescription(Content moduleContent) {
         addPreviewInfo(mdle, moduleContent);
         if (!utils.getFullBody(mdle).isEmpty()) {
             var tree = HtmlTree.SECTION(HtmlStyle.moduleDescription)
@@ -800,24 +884,20 @@ public class ModuleWriterImpl extends HtmlDocletWriter implements ModuleSummaryW
         }
     }
 
-    @Override
-    public void addModuleSignature(Content moduleContent) {
+    protected void addModuleSignature(Content moduleContent) {
         moduleContent.add(new HtmlTree(TagName.HR));
         moduleContent.add(Signatures.getModuleSignature(mdle, this));
     }
 
-    @Override
-    public void addModuleContent(Content source) {
+    protected void addModuleContent(Content source) {
         bodyContents.addMainContent(source);
     }
 
-    @Override
-    public void addModuleFooter() {
+    protected void addModuleFooter() {
         bodyContents.setFooter(getFooter());
     }
 
-    @Override
-    public void printDocument(Content content) throws DocFileIOException {
+    protected void printDocument(Content content) throws DocFileIOException {
         content.add(bodyContents);
         printHtmlDocument(configuration.metakeywords.getMetaKeywordsForModule(mdle),
                 getDescription("declaration", mdle), getLocalStylesheets(mdle), content);

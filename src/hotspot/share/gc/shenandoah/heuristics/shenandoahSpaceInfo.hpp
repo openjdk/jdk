@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2003, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright Amazon.com Inc. or its affiliates. All Rights Reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,12 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-package jdk.javadoc.internal.doclets.toolkit;
+#ifndef SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP
+#define SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP
 
-/**
- * The interface for writing class output.
+#include "utilities/globalDefinitions.hpp"
+
+/*
+ * The purpose of this interface is to decouple the heuristics from a
+ * direct dependency on the ShenandoahHeap singleton instance. This is
+ * done to facilitate future unit testing of the heuristics and to support
+ * future operational modes of Shenandoah in which the heap may be split
+ * into generations.
  */
-public interface NestedClassWriter {
-}
+class ShenandoahSpaceInfo {
+public:
+  virtual size_t soft_max_capacity() const = 0;
+  virtual size_t max_capacity() const = 0;
+  virtual size_t available() const = 0;
+  virtual size_t bytes_allocated_since_gc_start() const = 0;
+};
+
+#endif //SHARE_GC_SHENANDOAH_HEURISTICS_SHENANDOAHSPACEINFO_HPP

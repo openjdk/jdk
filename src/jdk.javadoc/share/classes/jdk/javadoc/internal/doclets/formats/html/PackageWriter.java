@@ -48,8 +48,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.PackageSummaryWriter;
+import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
@@ -60,8 +59,7 @@ import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
  * frame. This will list all the Class Kinds in the package. A click on any
  * class-kind will update the frame with the clicked class-kind page.
  */
-public class PackageWriterImpl extends HtmlDocletWriter
-    implements PackageSummaryWriter {
+public class PackageWriter extends HtmlDocletWriter {
 
     /**
      * The package being documented.
@@ -94,7 +92,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      * @param configuration the configuration of the doclet.
      * @param packageElement    PackageElement under consideration.
      */
-    public PackageWriterImpl(HtmlConfiguration configuration, PackageElement packageElement) {
+    public PackageWriter(HtmlConfiguration configuration, PackageElement packageElement) {
         super(configuration,
                 configuration.docPaths.forPackage(packageElement)
                 .resolve(DocPaths.PACKAGE_SUMMARY));
@@ -102,8 +100,107 @@ public class PackageWriterImpl extends HtmlDocletWriter
         computePackageData();
     }
 
-    @Override
-    public Content getPackageHeader() {
+    /**
+     * Build the package summary.
+     *
+     * @throws DocletException if there is a problem while building the documentation
+     */
+    public void build() throws DocletException {
+        buildPackageDoc();
+    }
+
+    /**
+     * Build the package documentation.
+     *
+     * @throws DocletException if there is a problem while building the documentation
+     */
+    protected void buildPackageDoc() throws DocletException {
+        Content content = getPackageHeader();
+
+        buildContent();
+
+        addPackageFooter();
+        printDocument(content);
+        var docFilesHandler = configuration
+                .getWriterFactory()
+                .getDocFilesHandler(packageElement);
+        docFilesHandler.copyDocFiles();
+    }
+
+    /**
+     * Build the content for the package.
+     */
+    protected void buildContent() {
+        Content packageContent = getContentHeader();
+
+        addPackageSignature(packageContent);
+        buildPackageDescription(packageContent);
+        buildPackageTags(packageContent);
+        buildSummary(packageContent);
+
+        addPackageContent(packageContent);
+    }
+
+    /**
+     * Builds the list of summaries for the different kinds of types in this package.
+     *
+     * @param packageContent the package content to which the summaries will
+     *                       be added
+     */
+    protected void buildSummary(Content packageContent) {
+        Content summariesList = getSummariesList();
+
+        buildRelatedPackagesSummary(summariesList);
+        buildAllClassesAndInterfacesSummary(summariesList);
+
+        packageContent.add(getPackageSummary(summariesList));
+    }
+
+    /**
+     * Builds a list of "nearby" packages (subpackages, superpackages, and sibling packages).
+     *
+     * @param summariesList the list of summaries to which the summary will be added
+     */
+    protected void buildRelatedPackagesSummary(Content summariesList) {
+        addRelatedPackagesSummary(summariesList);
+    }
+
+    /**
+     * Builds the summary for all classes and interfaces in this package.
+     *
+     * @param summariesList the list of summaries to which the summary will be added
+     */
+    protected void buildAllClassesAndInterfacesSummary(Content summariesList) {
+        addAllClassesAndInterfacesSummary(summariesList);
+    }
+
+
+    /**
+     * Build the description of the summary.
+     *
+     * @param packageContent the content to which the package description will
+     *                       be added
+     */
+    protected void buildPackageDescription(Content packageContent) {
+        if (options.noComment()) {
+            return;
+        }
+        addPackageDescription(packageContent);
+    }
+
+    /**
+     * Build the tags of the summary.
+     *
+     * @param packageContent the content to which the package tags will be added
+     */
+    protected void buildPackageTags(Content packageContent) {
+        if (options.noComment()) {
+            return;
+        }
+        addPackageTags(packageContent);
+    }
+
+    protected Content getPackageHeader() {
         String packageName = getLocalizedPackageName(packageElement).toString();
         HtmlTree body = getBody(getWindowTitle(packageName));
         var div = HtmlTree.DIV(HtmlStyle.header);
@@ -129,8 +226,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         return body;
     }
 
-    @Override
-    public Content getContentHeader() {
+    protected Content getContentHeader() {
         return new ContentBuilder();
     }
 
@@ -219,13 +315,11 @@ public class PackageWriterImpl extends HtmlDocletWriter
         }
     }
 
-    @Override
-    public Content getSummariesList() {
+    protected Content getSummariesList() {
         return HtmlTree.UL(HtmlStyle.summaryList);
     }
 
-    @Override
-    public void addRelatedPackagesSummary(Content summaryContent) {
+    protected void addRelatedPackagesSummary(Content summaryContent) {
         boolean showModules = configuration.showModules && hasRelatedPackagesInOtherModules(relatedPackages);
         TableHeader tableHeader= showModules
                 ? new TableHeader(contents.moduleLabel, contents.packageLabel, contents.descriptionLabel)
@@ -247,10 +341,10 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 .setId(HtmlIds.CLASS_SUMMARY)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
-                .addTab(contents.classes, e -> utils.isNonThrowableClass(e))
+                .addTab(contents.classes, utils::isNonThrowableClass)
                 .addTab(contents.enums, utils::isEnum)
-                .addTab(contents.records, e -> utils.isRecord(e))
-                .addTab(contents.exceptionClasses, e -> utils.isThrowable(e))
+                .addTab(contents.records, utils::isRecord)
+                .addTab(contents.exceptionClasses, utils::isThrowable)
                 .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (TypeElement typeElement : allClasses) {
             if (typeElement != null && utils.isCoreClass(typeElement)) {
@@ -319,8 +413,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
         }
     }
 
-    @Override
-    public void addPackageDescription(Content packageContent) {
+    protected void addPackageDescription(Content packageContent) {
         addPreviewInfo(packageElement, packageContent);
         if (!utils.getBody(packageElement).isEmpty()) {
             section.setId(HtmlIds.PACKAGE_DESCRIPTION);
@@ -329,30 +422,25 @@ public class PackageWriterImpl extends HtmlDocletWriter
         }
     }
 
-    @Override
-    public void addPackageTags(Content packageContent) {
+    protected void addPackageTags(Content packageContent) {
         addTagsInfo(packageElement, section);
         packageContent.add(section);
     }
 
-    @Override
-    public void addPackageSignature(Content packageContent) {
+    protected void addPackageSignature(Content packageContent) {
         packageContent.add(new HtmlTree(TagName.HR));
         packageContent.add(Signatures.getPackageSignature(packageElement, this));
     }
 
-    @Override
-    public void addPackageContent(Content packageContent) {
+    protected void addPackageContent(Content packageContent) {
         bodyContents.addMainContent(packageContent);
     }
 
-    @Override
-    public void addPackageFooter() {
+    protected void addPackageFooter() {
         bodyContents.setFooter(getFooter());
     }
 
-    @Override
-    public void printDocument(Content content) throws DocFileIOException {
+    protected void printDocument(Content content) throws DocFileIOException {
         String description = getDescription("declaration", packageElement);
         List<DocPath> localStylesheets = getLocalStylesheets(packageElement);
         content.add(bodyContents);
@@ -360,8 +448,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                 description, localStylesheets, content);
     }
 
-    @Override
-    public Content getPackageSummary(Content summaryContent) {
+    protected Content getPackageSummary(Content summaryContent) {
         return HtmlTree.SECTION(HtmlStyle.summary, summaryContent);
     }
 
