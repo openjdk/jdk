@@ -4014,6 +4014,22 @@ void ArchDesc::buildMachNode(FILE *fp_cpp, InstructForm *inst, const char *inden
     fprintf(fp_cpp, " );\n");
     // #####
   }
+  if (inst->_flag != nullptr) {
+    Flag* node = inst->_flag;
+    const char* prefix = "Node::";
+    bool node_flags_set = false;
+    do {
+      if (!node_flags_set) {
+        fprintf(fp_cpp, "%s node->add_flag(%s%s", indent, strncmp(node->_name, prefix, strlen(prefix)) != 0 ? prefix : "", node->_name);
+        node_flags_set = true;
+      } else {
+        fprintf(fp_cpp, " | %s%s", strncmp(node->_name, prefix, strlen(prefix)) != 0 ? prefix : "", node->_name);
+      }
+    } while ((node = node->next()) != nullptr);
+    if (node_flags_set) {
+      fprintf(fp_cpp, ");\n");
+    }
+  }
 
   // Fill in the bottom_type where requested
   if (inst->captures_bottom_type(_globalNames)) {

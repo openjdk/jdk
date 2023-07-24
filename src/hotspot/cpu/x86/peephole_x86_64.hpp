@@ -34,9 +34,8 @@ public:
                                MachNode* (*new_root)(), uint inst0_rule);
   static bool lea_coalesce_imm(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
                                MachNode* (*new_root)(), uint inst0_rule);
-  static bool test_may_remove_5(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
-                                 MachNode* (*new_root)(), uint inst0_rule, uint inst1_rule, uint inst2_rule,
-                                 uint inst3_rule, uint inst4_rule, uint inst5_rule);
+  static bool test_may_remove(Block* block, int block_index, PhaseCFG* cfg_, PhaseRegAlloc* ra_,
+                              MachNode* (*new_root)(), uint inst0_rule);
 };
 
 #endif // CPU_X86_PEEPHOLE_X86_64_HPP
