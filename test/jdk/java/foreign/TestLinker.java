@@ -93,10 +93,6 @@ public class TestLinker extends NativeTestHelper {
                     FunctionDescriptor.ofVoid(structLayout(C_INT).withName("x")) },
             { FunctionDescriptor.ofVoid(structLayout(C_INT)),
                     FunctionDescriptor.ofVoid(structLayout(C_INT.withName("x"))) },
-            { FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4), C_LONG_LONG)),
-                    FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4), C_LONG_LONG.withName("x"))) },
-            { FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4), C_LONG_LONG)),
-                    FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4).withName("x"), C_LONG_LONG)) },
             { FunctionDescriptor.ofVoid(structLayout(sequenceLayout(1, C_INT))),
                     FunctionDescriptor.ofVoid(structLayout(sequenceLayout(1, C_INT).withName("x"))) },
             { FunctionDescriptor.ofVoid(structLayout(sequenceLayout(1, C_INT))),
@@ -114,6 +110,12 @@ public class TestLinker extends NativeTestHelper {
                     FunctionDescriptor.ofVoid(unionLayout(C_INT).withName("x")) });
             cases.add(new Object[]{ FunctionDescriptor.ofVoid(unionLayout(C_INT)),
                     FunctionDescriptor.ofVoid(unionLayout(C_INT.withName("x"))) });
+        }
+        if (C_LONG_LONG.byteAlignment() == 8) {
+            cases.add(new Object[]{ FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4), C_LONG_LONG)),
+                    FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4), C_LONG_LONG.withName("x"))) });
+            cases.add(new Object[]{ FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4), C_LONG_LONG)),
+                    FunctionDescriptor.ofVoid(structLayout(C_INT, paddingLayout(4).withName("x"), C_LONG_LONG)) });
         }
 
         return cases.toArray(Object[][]::new);

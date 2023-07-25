@@ -48,6 +48,8 @@ import jdk.internal.foreign.CABI;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 
+import static java.lang.foreign.ValueLayout.*;
+
 import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
@@ -128,7 +130,7 @@ public class TestIllegalLink extends NativeTestHelper {
             {
                     FunctionDescriptor.ofVoid(C_POINTER.withByteAlignment(2)),
                     NO_OPTIONS,
-                    "Unsupported layout: 2%a8"
+                    "Unsupported layout: 2%a" + ADDRESS.byteSize()
             },
             {
                     FunctionDescriptor.ofVoid(ValueLayout.JAVA_CHAR.withByteAlignment(4)),
@@ -187,13 +189,6 @@ public class TestIllegalLink extends NativeTestHelper {
             },
             {
                     FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
-                            ValueLayout.JAVA_LONG,
-                            ValueLayout.JAVA_INT)), // missing trailing padding
-                    NO_OPTIONS,
-                    "has unexpected size"
-            },
-            {
-                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
                             ValueLayout.JAVA_INT,
                             MemoryLayout.paddingLayout(4))), // too much trailing padding
                     NO_OPTIONS,
@@ -217,6 +212,15 @@ public class TestIllegalLink extends NativeTestHelper {
                             ))),
                     NO_OPTIONS,
                     "GroupLayout is too large"
+            });
+        }
+        if (ValueLayout.JAVA_LONG.byteAlignment() == 8) {
+            cases.add(new Object[]{
+                    FunctionDescriptor.ofVoid(MemoryLayout.structLayout(
+                            ValueLayout.JAVA_LONG,
+                            ValueLayout.JAVA_INT)), // missing trailing padding
+                    NO_OPTIONS,
+                    "has unexpected size"
             });
         }
         return cases.toArray(Object[][]::new);

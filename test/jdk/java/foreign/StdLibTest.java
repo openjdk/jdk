@@ -51,7 +51,6 @@ import org.testng.annotations.*;
 
 import static org.testng.Assert.*;
 
-@Test
 public class StdLibTest extends NativeTestHelper {
 
     final static Linker abi = Linker.nativeLinker();
@@ -121,16 +120,20 @@ public class StdLibTest extends NativeTestHelper {
 
     @Test(dataProvider = "printfArgs")
     void test_printf(List<PrintfArg> args) throws Throwable {
-        String formatArgs = args.stream()
-                .map(a -> a.format)
+        String javaFormatArgs = args.stream()
+                .map(a -> a.javaFormat)
+                .collect(Collectors.joining(","));
+        String nativeFormatArgs = args.stream()
+                .map(a -> a.nativeFormat)
                 .collect(Collectors.joining(","));
 
-        String formatString = "hello(" + formatArgs + ")\n";
+        String javaFormatString = "hello(" + javaFormatArgs + ")\n";
+        String nativeFormatString = "hello(" + nativeFormatArgs + ")\n";
 
-        String expected = String.format(formatString, args.stream()
+        String expected = String.format(javaFormatString, args.stream()
                 .map(a -> a.javaValue).toArray());
 
-        int found = stdLibHelper.printf(formatString, args);
+        int found = stdLibHelper.printf(nativeFormatString, args);
         assertEquals(found, expected.length());
     }
 
@@ -156,8 +159,9 @@ public class StdLibTest extends NativeTestHelper {
         final static MethodHandle gmtime = abi.downcallHandle(abi.defaultLookup().find("gmtime").get(),
                 FunctionDescriptor.of(C_POINTER.withTargetLayout(Tm.LAYOUT), C_POINTER));
 
+        // void qsort( void *ptr, size_t count, size_t size, int (*comp)(const void *, const void *) );
         final static MethodHandle qsort = abi.downcallHandle(abi.defaultLookup().find("qsort").get(),
-                FunctionDescriptor.ofVoid(C_POINTER, C_LONG_LONG, C_LONG_LONG, C_POINTER));
+                FunctionDescriptor.ofVoid(C_POINTER, C_SIZE_T, C_SIZE_T, C_POINTER));
 
         final static FunctionDescriptor qsortComparFunction = FunctionDescriptor.of(C_INT,
                 C_POINTER.withTargetLayout(C_INT), C_POINTER.withTargetLayout(C_INT));
@@ -282,7 +286,11 @@ public class StdLibTest extends NativeTestHelper {
                 //call qsort
                 MemorySegment qsortUpcallStub = abi.upcallStub(qsortCompar, qsortComparFunction, arena);
 
-                qsort.invokeExact(nativeArr, (long)arr.length, C_INT.byteSize(), qsortUpcallStub);
+                // both of these fit in an int
+                // automatically widen them to long on x64
+                int count = arr.length;
+                int size = (int) C_INT.byteSize();
+                qsort.invoke(nativeArr, count, size, qsortUpcallStub);
 
                 //convert back to Java array
                 return nativeArr.toArray(C_INT);
@@ -378,21 +386,24 @@ public class StdLibTest extends NativeTestHelper {
     }
 
     enum PrintfArg {
-        INT(int.class, C_INT, "%d", arena -> 42, 42),
-        LONG(long.class, C_LONG_LONG, "%d", arena -> 84L, 84L),
-        DOUBLE(double.class, C_DOUBLE, "%.4f", arena -> 1.2345d, 1.2345d),
-        STRING(MemorySegment.class, C_POINTER, "%s", arena -> arena.allocateFrom("str"), "str");
+        INT(int.class, C_INT, "%d", "%d", arena -> 42, 42),
+        LONG(long.class, C_LONG_LONG, "%lld", "%d", arena -> 84L, 84L),
+        DOUBLE(double.class, C_DOUBLE, "%.4f", "%.4f", arena -> 1.2345d, 1.2345d),
+        STRING(MemorySegment.class, C_POINTER, "%s", "%s", arena -> arena.allocateFrom("str"), "str");
 
         final Class<?> carrier;
         final ValueLayout layout;
-        final String format;
+        final String nativeFormat;
+        final String javaFormat;
         final Function<Arena, ?> nativeValueFactory;
         final Object javaValue;
 
-        <Z, L extends ValueLayout> PrintfArg(Class<?> carrier, L layout, String format, Function<Arena, Z> nativeValueFactory, Object javaValue) {
+        <Z, L extends ValueLayout> PrintfArg(Class<?> carrier, L layout, String nativeFormat, String javaFormat,
+                                             Function<Arena, Z> nativeValueFactory, Object javaValue) {
             this.carrier = carrier;
             this.layout = layout;
-            this.format = format;
+            this.nativeFormat = nativeFormat;
+            this.javaFormat = javaFormat;
             this.nativeValueFactory = nativeValueFactory;
             this.javaValue = javaValue;
         }
