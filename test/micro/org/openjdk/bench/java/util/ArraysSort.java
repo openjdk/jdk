@@ -80,11 +80,20 @@ public class ArraysSort {
         floats_unsorted = new float[size];
         doubles_unsorted = new double[size];
 
+        float[] floatSpecialCases = {+0.0f, -0.0f, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY, Float.NaN};
+        double[] doubleSpecialCases = {+0.0, -0.0, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NaN};
+
         for (int i = 0; i < size; i++) {
             ints_unsorted[i] = rnd.nextInt();
             longs_unsorted[i] = rnd.nextLong();
-            floats_unsorted[i] = rnd.nextFloat();
-            doubles_unsorted[i] = rnd.nextDouble();
+            if (i % 10 != 0) {
+                floats_unsorted[i] = rnd.nextFloat();
+                doubles_unsorted[i] = rnd.nextDouble();
+            } else {
+                int rndIdx = rnd.nextInt(doubleSpecialCases.length);
+                floats_unsorted[i] = floatSpecialCases[rndIdx];
+                doubles_unsorted[i] = doubleSpecialCases[rndIdx];
+            }
         }
     }
 
