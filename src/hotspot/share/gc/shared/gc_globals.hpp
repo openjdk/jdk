@@ -131,6 +131,8 @@
   product(bool, UseShenandoahGC, false,                                     \
           "Use the Shenandoah garbage collector")                           \
                                                                             \
+  /* notice: the max range value here is INT_MAX not UINT_MAX  */           \
+  /* to protect from overflows                                 */           \
   product(uint, ParallelGCThreads, 0,                                       \
           "Number of parallel threads parallel gc will use")                \
           range(0, INT_MAX)                                                 \
