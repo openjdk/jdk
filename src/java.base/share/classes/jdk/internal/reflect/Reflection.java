@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
+import jdk.internal.access.JavaLangAccess;
 import jdk.internal.access.SharedSecrets;
 import jdk.internal.misc.VM;
 import jdk.internal.module.ModuleBootstrap;
@@ -115,7 +116,10 @@ public class Reflection {
         Module module = currentClass != null ?
                 currentClass.getModule() :
                 ClassLoader.getSystemClassLoader().getUnnamedModule();
-        SharedSecrets.getJavaLangAccess().ensureNativeAccess(module, owner, methodName);
+        class Holder {
+            static final JavaLangAccess JLA = SharedSecrets.getJavaLangAccess();
+        }
+        Holder.JLA.ensureNativeAccess(module, owner, methodName);
     }
 
     /**
