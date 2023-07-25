@@ -312,15 +312,13 @@ void CodeCache::initialize_heaps() {
 
   const size_t ps = page_size(false, 8);
   // Print warning if using large pages but not able to use the size given
-  if (UseLargePages && ps < LargePageSizeInBytes) {
-      char msg[256];
-      jio_snprintf(msg, sizeof(msg),
-                   "Failed to reserve large page memory for code cache (" SIZE_FORMAT "%s). "
-                   "Reverting to smaller page size (" SIZE_FORMAT "%s).",
-                   byte_size_in_exact_unit(LargePageSizeInBytes), exact_unit_for_byte_size(LargePageSizeInBytes),
-                   byte_size_in_exact_unit(ps), exact_unit_for_byte_size(ps));
-      log_warning(codecache)("%s", msg);
-      warning("%s", msg);
+  if (UseLargePages) {
+    const size_t lg_ps = page_size(false, 1);
+    if (ps < lg_ps) {
+      log_warning(codecache)("Failed to reserve large page memory for code cache (" PROPERFMT "). "
+                             "Reverting to smaller page size (" PROPERFMT ").",
+                             PROPERFMTARGS(lg_ps), PROPERFMTARGS(ps));
+    }
   }
 
   // If large page support is enabled, align code heaps according to large

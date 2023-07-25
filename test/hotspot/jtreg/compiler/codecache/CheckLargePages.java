@@ -24,7 +24,8 @@
 /*
  * @test
  * @bug 8304954
- * @summary Test checks that if using large pages and code cache gets above the limit it tries to revert to smaller pages instead of failing
+ * @summary Code cache reservation should gracefully downgrade to using smaller pages if the code cache size is too small to host the requested page size.
+ * @requires os.family == "linux"
  * @requires vm.gc != "Z"
  * @library /test/lib
  * @build jdk.test.whitebox.WhiteBox
@@ -51,10 +52,9 @@ public class CheckLargePages {
                     "-XX:InitialCodeCacheSize=2g",
                     "-XX:ReservedCodeCacheSize=2g",
                     "-XX:LargePageSizeInBytes=1g",
-                    "-Xlog:pagesize*=debug",
                     "-version");
             OutputAnalyzer out = new OutputAnalyzer(pb.start());
-            out.shouldContain("Failed to reserve large page memory for code cache");
+            out.shouldContain("Failed to use large page memory for code cache");
             out.shouldHaveExitValue(0);
         } else {
             System.out.println("1GB large pages not supported: UseLargePages=" + largePages +
