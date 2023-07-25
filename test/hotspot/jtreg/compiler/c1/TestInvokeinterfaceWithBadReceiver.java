@@ -34,7 +34,7 @@
 import jdk.internal.vm.annotation.Stable;
 
 interface MyInterface {
-    public String get();    
+    public String get();
 }
 
 // Single implementor
@@ -44,7 +44,7 @@ class MyClass implements MyInterface {
 
     public String get() {
         return field;
-    }    
+    }
 }
 
 public class TestInvokeinterfaceWithBadReceiver {
