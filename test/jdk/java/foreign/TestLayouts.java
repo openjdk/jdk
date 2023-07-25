@@ -260,10 +260,13 @@ public class TestLayouts {
 
     @Test
     public void testStructToString() {
-        StructLayout padding = MemoryLayout.structLayout(JAVA_INT).withName("struct");
-        assertEquals(padding.toString(), "[i4](struct)");
-        var toStringUnaligned = padding.withByteAlignment(8).toString();
-        assertEquals(toStringUnaligned, "8%[i4](struct)");
+        for (ByteOrder order : List.of(ByteOrder.LITTLE_ENDIAN, ByteOrder.BIG_ENDIAN)) {
+            String intRepresentation = (order == ByteOrder.LITTLE_ENDIAN ? "i" : "I");
+            StructLayout padding = MemoryLayout.structLayout(JAVA_INT.withOrder(order)).withName("struct");
+            assertEquals(padding.toString(), "[" + intRepresentation + "4](struct)");
+            var toStringUnaligned = padding.withByteAlignment(8).toString();
+            assertEquals(toStringUnaligned, "8%[" + intRepresentation + "4](struct)");
+        }
     }
 
     @Test(dataProvider = "layoutKinds")

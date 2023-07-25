@@ -98,6 +98,8 @@ runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
+runtime/os/TestTrimNative.java#trimNative 8312525 linux-all
+runtime/os/TestTrimNative.java#trimNativeLowInterval 8312525 linux-all
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/CompressedOops/CompressedClassPointers.java 8305765 generic-all
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
@@ -118,7 +120,6 @@ serviceability/sa/TestRevPtrsForInvokeDynamic.java 8241235 generic-all
 
 serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 windows-all
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
-serviceability/jvmti/vthread/VThreadTLSTest/VThreadTLSTest.java#id1 8300051 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
 serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64

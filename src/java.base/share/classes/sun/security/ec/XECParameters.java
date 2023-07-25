@@ -137,7 +137,7 @@ public class XECParameters {
         ObjectIdentifier oid = ObjectIdentifier.of(koid);
         XECParameters params =
             new XECParameters(bits, p, a24, basePoint, logCofactor, oid, name);
-        namedParams.put(name.toLowerCase(), oid, bits, params);
+        namedParams.put(name, oid, bits, params);
         return params;
     }
 
@@ -170,4 +170,3 @@ public class XECParameters {
         return namedParams.get(exception, params);
     }
 }
-
