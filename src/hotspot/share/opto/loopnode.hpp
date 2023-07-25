@@ -333,6 +333,7 @@ public:
   }
 
   Node* is_canonical_loop_entry();
+  CountedLoopEndNode* find_pre_loop_end();
 
 #ifndef PRODUCT
   virtual void dump_spec(outputStream *st) const;

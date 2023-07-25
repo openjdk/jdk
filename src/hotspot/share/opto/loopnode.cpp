@@ -629,7 +629,7 @@ static bool no_side_effect_since_safepoint(Compile* C, Node* x, Node* mem, Merge
   SafePointNode* safepoint = nullptr;
   for (DUIterator_Fast imax, i = x->fast_outs(imax); i < imax; i++) {
     Node* u = x->fast_out(i);
-    if (u->is_Phi() && u->bottom_type() == Type::MEMORY) {
+    if (u->is_memory_phi()) {
       Node* m = u->in(LoopNode::LoopBackControl);
       if (u->adr_type() == TypePtr::BOTTOM) {
         if (m->is_MergeMem() && mem->is_MergeMem()) {
@@ -2677,7 +2677,7 @@ void OuterStripMinedLoopNode::fix_sunk_stores(CountedLoopEndNode* inner_cle, Loo
 #ifdef ASSERT
         for (DUIterator_Fast jmax, j = inner_cl->fast_outs(jmax); j < jmax; j++) {
           Node* uu = inner_cl->fast_out(j);
-          if (uu->is_Phi() && uu->bottom_type() == Type::MEMORY) {
+          if (uu->is_memory_phi()) {
             if (uu->adr_type() == igvn->C->get_adr_type(igvn->C->get_alias_index(u->adr_type()))) {
               assert(phi == uu, "what's that phi?");
             } else if (uu->adr_type() == TypePtr::BOTTOM) {
@@ -5718,6 +5718,26 @@ Node* CountedLoopNode::is_canonical_loop_entry() {
   assert(found_opaque == res, "wrong pattern");
 #endif
   return res ? cmpzm->in(input) : nullptr;
+}
+
+// Find pre loop end from main loop. Returns nullptr if none.
+CountedLoopEndNode* CountedLoopNode::find_pre_loop_end() {
+  assert(is_main_loop(), "Can only find pre-loop from main-loop");
+  // The loop cannot be optimized if the graph shape at the loop entry is
+  // inappropriate.
+  if (is_canonical_loop_entry() == nullptr) {
+    return nullptr;
+  }
+  Node* p_f = skip_predicates()->in(0)->in(0);
+  if (!p_f->is_IfFalse() || !p_f->in(0)->is_CountedLoopEnd()) {
+    return nullptr;
+  }
+  CountedLoopEndNode* pre_end = p_f->in(0)->as_CountedLoopEnd();
+  CountedLoopNode* loop_node = pre_end->loopnode();
+  if (loop_node == nullptr || !loop_node->is_pre_loop()) {
+    return nullptr;
+  }
+  return pre_end;
 }
 
 //------------------------------get_late_ctrl----------------------------------
