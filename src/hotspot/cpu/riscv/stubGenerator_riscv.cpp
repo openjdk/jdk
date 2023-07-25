@@ -2311,7 +2311,7 @@ class StubGenerator: public StubCodeGenerator {
 
   // code for comparing 8 characters of strings with Latin1 and Utf16 encoding
   void compare_string_8_x_LU(Register tmpL, Register tmpU, Register strL, Register strU, Label& DIFF) {
-    const Register tmp = x30, tmpLval = x7;
+    const Register tmp = x30, tmpLval = x12;
     __ ld(tmpLval, Address(strL));
     __ addi(strL, strL, wordSize);
     __ ld(tmpU, Address(strU));
@@ -2340,9 +2340,8 @@ class StubGenerator: public StubCodeGenerator {
     StubCodeMark mark(this, "StubRoutines", isLU ? "compare_long_string_different_encoding LU" : "compare_long_string_different_encoding UL");
     address entry = __ pc();
     Label SMALL_LOOP, TAIL, LOAD_LAST, DONE, CALCULATE_DIFFERENCE;
-    const Register result = x10, str1 = x11, cnt1 = x12, str2 = x13, cnt2 = x14,
-                   tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x7, tmp5 = x31;
-    RegSet spilled_regs = RegSet::of(tmp4, tmp5);
+    const Register result = x10, str1 = x11, str2 = x13, cnt2 = x14,
+                   tmp1 = x28, tmp2 = x29, tmp3 = x30, tmp4 = x12;
 
     // cnt2 == amount of characters left to compare
     // Check already loaded first 4 symbols
@@ -2351,16 +2350,14 @@ class StubGenerator: public StubCodeGenerator {
     __ addi(str1, str1, isLU ? wordSize / 2 : wordSize);
     __ addi(str2, str2, isLU ? wordSize : wordSize / 2);
     __ sub(cnt2, cnt2, wordSize / 2); // Already loaded 4 symbols
-    __ push_reg(spilled_regs, sp);
 
     __ xorr(tmp3, tmp1, tmp2);
-    __ mv(tmp5, tmp2);
     __ bnez(tmp3, CALCULATE_DIFFERENCE);
 
     Register strU = isLU ? str2 : str1,
              strL = isLU ? str1 : str2,
-             tmpU = isLU ? tmp5 : tmp1, // where to keep U for comparison
-             tmpL = isLU ? tmp1 : tmp5; // where to keep L for comparison
+             tmpU = isLU ? tmp2 : tmp1, // where to keep U for comparison
+             tmpL = isLU ? tmp1 : tmp2; // where to keep L for comparison
 
     // make sure main loop is 8 byte-aligned, we should load another 4 bytes from strL
     // cnt2 is >= 68 here, no need to check it for >= 0
@@ -2388,7 +2385,7 @@ class StubGenerator: public StubCodeGenerator {
       // Aligned access. Load bytes in portions - 4, 2, 1.
 
       __ addi(t0, cnt2, wordSize);
-      __ addi(cnt2, cnt2, wordSize*2); // amount of characters left to process
+      __ addi(cnt2, cnt2, wordSize * 2); // amount of characters left to process
       __ bltz(t0, LOAD_LAST);
       // remaining characters are greater than or equals to 8, we can do one compare_string_8_x_LU
       compare_string_8_x_LU(tmpL, tmpU, strL, strU, CALCULATE_DIFFERENCE);
@@ -2407,7 +2404,7 @@ class StubGenerator: public StubCodeGenerator {
       __ xorr(tmp3, tmpU, tmpL);
       __ bnez(tmp3, CALCULATE_DIFFERENCE);
 
-      __ addi(strL, strL, wordSize/2); // Address of last 4 bytes in Latin1 string
+      __ addi(strL, strL, wordSize / 2); // Address of last 4 bytes in Latin1 string
       __ addi(strU, strU, wordSize);   // Address of last 8 bytes in UTF-16 string
       __ load_int_misaligned(tmpL, Address(strL), t0, false);
       __ load_long_misaligned(tmpU, Address(strU), t0, 2);
@@ -2422,12 +2419,11 @@ class StubGenerator: public StubCodeGenerator {
     __ bind(CALCULATE_DIFFERENCE);
       __ ctzc_bit(tmp4, tmp3);
       __ srl(tmp1, tmp1, tmp4);
-      __ srl(tmp5, tmp5, tmp4);
+      __ srl(tmp2, tmp2, tmp4);
       __ andi(tmp1, tmp1, 0xFFFF);
-      __ andi(tmp5, tmp5, 0xFFFF);
-      __ sub(result, tmp1, tmp5);
+      __ andi(tmp2, tmp2, 0xFFFF);
+      __ sub(result, tmp1, tmp2);
     __ bind(DONE);
-      __ pop_reg(spilled_regs, sp);
       __ ret();
     return entry;
   }
