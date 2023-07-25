@@ -54,31 +54,38 @@ public class VectorizationTestRunner {
     private static final long COMP_THRES_SECONDS = 30;
 
     protected void run() {
+        Class klass = getClass();
+
         // 1) Vectorization correctness test
-        // For each method annotated with @Test in the test method, this test runner
+        // For each method annotated with "@Test" in test classes, this test runner
         // invokes it twice - first time in the interpreter and second time compiled
         // by C2. Then this runner compares the two return values. Hence we require
         // each test method returning a primitive value or an array of primitive type.
-        // And each test method should not throw any exceptions.
-        Class klass = getClass();
-        for (Method method : klass.getDeclaredMethods()) {
-            try {
-                if (method.isAnnotationPresent(Test.class)) {
-                    verifyTestMethod(method);
-                    runTestOnMethod(method);
+        // Some VM options like "-Xcomp" may mess with the compiler control for the
+        // correctness check. We disable the check in these cases.
+        boolean use_intp = WB.getBooleanVMFlag("UseInterpreter");
+        boolean use_comp = WB.getBooleanVMFlag("UseCompiler");
+        boolean bg_comp = WB.getBooleanVMFlag("BackgroundCompilation");
+        if (use_intp && use_comp && bg_comp) {
+            for (Method method : klass.getDeclaredMethods()) {
+                try {
+                    if (method.isAnnotationPresent(Test.class)) {
+                        verifyTestMethod(method);
+                        runTestOnMethod(method);
+                    }
+                } catch (Exception e) {
+                    throw new RuntimeException("Test failed in " + klass.getName() +
+                            "." + method.getName() + ": " + e.getMessage());
                 }
-            } catch (Exception e) {
-                throw new RuntimeException("Test failed in " + klass.getName() +
-                        "." + method.getName() + ": " + e.getMessage());
             }
+        } else {
+            System.out.println("WARNING: Correctness check is skipped due to extra compiler control flags");
         }
 
         // 2) Vectorization ability test
         // To test vectorizability, invoke the IR test framework to check existence of
         // expected C2 IR node.
         TestFramework irTest = new TestFramework(klass);
-        // Add extra VM options to enable more auto-vectorization chances
-        irTest.addFlags("-XX:-OptimizeFill");
         irTest.start();
     }
 
@@ -131,7 +138,10 @@ public class VectorizationTestRunner {
         WB.enqueueMethodForCompilation(method, COMP_LEVEL_C2);
         while (WB.getMethodCompilationLevel(method) != COMP_LEVEL_C2) {
             if (System.currentTimeMillis() - enqueueTime > COMP_THRES_SECONDS * 1000) {
-                fail("Method is not compiled after " + COMP_THRES_SECONDS + "s.");
+                // C2 compilation may timeout with extra compiler control options.
+                // We skip the correctness check in this case.
+                System.out.println("WARNING: Correctness check is skipped because C2 compilation times out");
+                return;
             }
             Thread.sleep(50 /*ms*/);
         }
