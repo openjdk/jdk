@@ -2190,7 +2190,7 @@ char* FileMapInfo::new_map_heap(size_t& size) {
   }
 
   char* base = os::map_memory(_fd, _full_path, r->file_offset(),
-                              nullptr, byte_size, /*read_only*/true, /*allow_exec*/false);
+                              nullptr, byte_size, /*read_only*/false, /*allow_exec*/false);
   size = heap_word_size(byte_size);
   return base;
 }

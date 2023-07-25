@@ -1459,9 +1459,8 @@ void MetaspaceShared::initialize_shared_spaces() {
   //CDS_JAVA_HEAP_ONLY(Universe::update_archived_basic_type_mirrors());
 
   // Close the mapinfo file
-  static_mapinfo->close();
-
   if (!NewArchiveHeapLoading) {
+    static_mapinfo->close();
     static_mapinfo->unmap_region(MetaspaceShared::bm);
   }
 
