@@ -30,6 +30,7 @@ import jdk.internal.vm.annotation.IntrinsicCandidate;
 
 import java.io.Serializable;
 import java.lang.reflect.Array;
+import java.util.Arrays.NaturalOrder;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BinaryOperator;
 import java.util.function.Consumer;
@@ -46,6 +47,7 @@ import java.util.stream.IntStream;
 import java.util.stream.LongStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
+import jdk.internal.misc.Unsafe;
 
 /**
  * This class contains various methods for manipulating arrays (such as
@@ -77,8 +79,18 @@ public final class Arrays {
     // Suppresses default constructor, ensuring non-instantiability.
     private Arrays() {}
 
+    /**
+     * Sorts the specified array into ascending numerical order.
+     *
+     *
+     * @param elemType the class of the array to be sorted
+     * @param array the array to be sorted
+     * @param offset the array offset
+     * @param fromIndex from Index
+     * @param toIndex to Index
+     */
     @IntrinsicCandidate
-    private static void arraySort(Class<?> elemType, Object array, int fromIndex, int toIndex) {
+    public static void arraySort(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex) {
         if (elemType == int.class) DualPivotQuicksort.sort((int[]) array, 0, fromIndex, toIndex);
         else if (elemType == long.class) DualPivotQuicksort.sort((long[]) array, 0, fromIndex, toIndex);
         else if (elemType == float.class) DualPivotQuicksort.sort((float[]) array, 0, fromIndex, toIndex);
@@ -105,7 +117,8 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(int[] a) {
-        arraySort(int.class, a, 0, a.length);
+        int offset = Unsafe.ARRAY_INT_BASE_OFFSET;
+        arraySort(int.class, a, offset, 0, a.length);
     }
 
     /**
@@ -129,7 +142,8 @@ public final class Arrays {
      */
     public static void sort(int[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        arraySort(int.class, a, fromIndex, toIndex);
+        int offset = Unsafe.ARRAY_INT_BASE_OFFSET + (fromIndex << ArraysSupport.LOG2_ARRAY_INT_INDEX_SCALE);
+        arraySort(int.class, a, offset, fromIndex, toIndex);
     }
 
     /**
@@ -143,7 +157,8 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(long[] a) {
-        arraySort(long.class, a, 0, a.length);
+        int offset = Unsafe.ARRAY_LONG_BASE_OFFSET;
+        arraySort(long.class, a, offset, 0, a.length);
     }
 
     /**
@@ -167,7 +182,8 @@ public final class Arrays {
      */
     public static void sort(long[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        arraySort(long.class, a, fromIndex, toIndex);
+        int offset = Unsafe.ARRAY_LONG_BASE_OFFSET + (fromIndex << ArraysSupport.LOG2_ARRAY_LONG_INDEX_SCALE);
+        arraySort(long.class, a, offset, fromIndex, toIndex);
     }
 
     /**
@@ -303,7 +319,8 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(float[] a) {
-        arraySort(float.class, a, 0, a.length);
+        int offset = Unsafe.ARRAY_FLOAT_BASE_OFFSET;
+        arraySort(float.class, a, offset, 0, a.length);
     }
 
     /**
@@ -335,7 +352,8 @@ public final class Arrays {
      */
     public static void sort(float[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        arraySort(float.class, a, fromIndex, toIndex);
+        int offset = Unsafe.ARRAY_FLOAT_BASE_OFFSET + (fromIndex << ArraysSupport.LOG2_ARRAY_FLOAT_INDEX_SCALE);
+        arraySort(float.class, a, offset, fromIndex, toIndex);
     }
 
     /**
@@ -357,7 +375,8 @@ public final class Arrays {
      * @param a the array to be sorted
      */
     public static void sort(double[] a) {
-        arraySort(double.class, a, 0, a.length);
+        int offset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET;
+        arraySort(double.class, a, offset, 0, a.length);
     }
 
     /**
@@ -389,7 +408,8 @@ public final class Arrays {
      */
     public static void sort(double[] a, int fromIndex, int toIndex) {
         rangeCheck(a.length, fromIndex, toIndex);
-        arraySort(double.class, a, fromIndex, toIndex);
+        int offset = Unsafe.ARRAY_DOUBLE_BASE_OFFSET + (fromIndex << ArraysSupport.LOG2_ARRAY_DOUBLE_INDEX_SCALE);
+        arraySort(double.class, a, offset, fromIndex, toIndex);
     }
 
     /**

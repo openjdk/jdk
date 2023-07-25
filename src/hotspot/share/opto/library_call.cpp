@@ -5201,35 +5201,27 @@ bool LibraryCallKit::inline_arraysort() {
   const char *stubName;
   stubName = "arraysort_stub";
 
-  Node* elementType     = argument(0);
-  Node* array           = argument(1);
-  Node* fromIndex       = argument(2);
-  Node* toIndex         = argument(3);
+  Node* elementType     = null_check(argument(0));
+  Node* obj             = argument(1);
+  Node* offset          = argument(2);
+  Node* fromIndex       = argument(4);
+  Node* toIndex         = argument(5);
 
   const TypeInstPtr* elem_klass = gvn().type(elementType)->isa_instptr();
   ciType* elem_type = elem_klass->const_oop()->as_instance()->java_mirror_type();
   BasicType bt = elem_type->basic_type();
-
   stubAddr = StubRoutines::select_arraysort_function(bt);
   if (stubAddr == nullptr) return false;
 
-  array = must_be_not_null(array, true);
-
-  const TypeAryPtr* array_type = array->Value(&_gvn)->isa_aryptr();
-  assert(array_type != nullptr &&  array_type->elem() != Type::BOTTOM, "args are strange");
-
-  // for the quick and dirty code we will skip all the checks.
-  // we are just trying to get the call to be generated.
-  Node* array_fromIndex  = array;
-  if (fromIndex != nullptr || toIndex != nullptr) {
-    assert(fromIndex != nullptr && toIndex != nullptr, "");
-    array_fromIndex = array_element_address(array, fromIndex, bt);
+  const TypeAryPtr* obj_t = _gvn.type(obj)->isa_aryptr();
+  if (obj_t == nullptr || obj_t->elem() == Type::BOTTOM ) {
+    return false; // failed input validation
   }
-
+  Node* obj_adr = make_unsafe_address(obj, offset);
   // Call the stub.
   make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::array_sort_Type(),
                     stubAddr, stubName, TypePtr::BOTTOM,
-                    array_fromIndex, fromIndex, toIndex);
+                    obj_adr, fromIndex, toIndex);
 
   return true;
 }
