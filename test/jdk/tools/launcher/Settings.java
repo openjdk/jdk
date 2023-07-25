@@ -76,11 +76,12 @@ public class Settings extends TestHelper {
     private static final String SEC_PROVIDER_SETTINGS =
                 "Security provider static configuration:";
     private static final String SEC_TLS_SETTINGS = "Security TLS configuration";
-    private static final String BAD_SEC_OPTION_MSG = "Unrecognized showSettings security option";
+    private static final String BAD_SEC_OPTION_MSG = "Valid \"security\" suboption values are";
     private static final String SYSTEM_SETTINGS = "Operating System Metrics:";
+    private static final String METRICS_NOT_AVAILABLE_MSG = "No metrics available for this platform";
     private static final String STACKSIZE_SETTINGS = "Stack Size:";
     private static final String TZDATA_SETTINGS = "tzdata version";
-    private static final String HELP_MSG = "Unrecognized showSettings option:";
+    private static final String ERR_MSG = "Unrecognized showSettings option:";
 
     /*
      * "all" should print verbose settings
@@ -98,6 +99,9 @@ public class Settings extends TestHelper {
         checkContains(tr, TZDATA_SETTINGS);
         if (System.getProperty("os.name").contains("Linux")) {
             checkContains(tr, SYSTEM_SETTINGS);
+        } else {
+            // only invoke system option by default on Linux
+            checkNotContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
     }
     /*
@@ -118,6 +122,9 @@ public class Settings extends TestHelper {
         checkContains(tr, TZDATA_SETTINGS);
         if (System.getProperty("os.name").contains("Linux")) {
             checkContains(tr, SYSTEM_SETTINGS);
+        } else {
+            // only invoke system option by default on Linux
+            checkNotContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
     }
 
@@ -243,11 +250,10 @@ public class Settings extends TestHelper {
             checkNotContains(tr, LOCALE_SETTINGS);
             checkContains(tr, SYSTEM_SETTINGS);
         } else {
-            // "system" should trigger help message
-            // on other OSes
+            // "system" should print a "No metrics available"
+            // message on other OSes
             checkNotContains(tr, VM_SETTINGS);
-            checkNotContains(tr, SYSTEM_SETTINGS);
-            checkContains(tr, HELP_MSG);
+            checkContains(tr, METRICS_NOT_AVAILABLE_MSG);
         }
     }
 
@@ -259,12 +265,35 @@ public class Settings extends TestHelper {
         checkNotContains(tr, LOCALE_SETTINGS);
         checkContains(tr, "Unrecognized option: -XshowSettingsBadOption");
 
+        // no such component option
         tr = doExec(javaCmd, "-XshowSettings:BadOption");
         tr.checkNegative();
         checkNotContains(tr, VM_SETTINGS);
         checkNotContains(tr, PROP_SETTINGS);
         checkNotContains(tr, LOCALE_SETTINGS);
-        checkContains(tr, HELP_MSG);
+        checkContains(tr, ERR_MSG);
+
+        // don't allow invalid sub options
+        tr = doExec(javaCmd, "-XshowSettings:locale:bad");
+        tr.checkNegative();
+        checkContains(tr, ERR_MSG);
+
+        // don't allow ":" as an option
+        tr = doExec(javaCmd, "-XshowSettings:");
+        tr.checkNegative();
+        checkContains(tr, ERR_MSG);
+
+        // case-sensitive test
+        tr = doExec(javaCmd, "-XshowSettings:VM");
+        tr.checkNegative();
+        checkContains(tr, ERR_MSG);
+
+        // exclude this enum value
+        tr = doExec(javaCmd, "-XshowSettings:empty");
+        tr.checkNegative();
+        checkContains(tr, ERR_MSG);
+
+
     }
 
     static void runTest7123582() throws IOException {

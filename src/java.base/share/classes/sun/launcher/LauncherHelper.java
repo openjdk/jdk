@@ -122,14 +122,19 @@ public final class LauncherHelper {
     private static PrintStream ostream;
     private static Class<?> appClass; // application class, for GUI/reporting purposes
 
+    enum Option { EMPTY, ALL, LOCALE, PROPERTIES, SECURITY,
+        SECURITY_ALL, SECURITY_PROPERTIES, SECURITY_PROVIDERS,
+        SECURITY_TLS, SYSTEM, VM };
+
     /*
      * A method called by the launcher to print out the standard settings.
      * -XshowSettings prints details of all supported components in non-verbose
      * mode. -XshowSettings:all prints all settings in verbose mode.
      * Specific settings information may be obtained by using suboptions.
      *
-     * suboption values include "all", "locale", "properties", "security",
-     * "system"(Linux only) and "vm". Help message printed for bad value.
+     * Suboption values include "all", "locale", "properties", "security",
+     * "system" (Linux only) and "vm". A error message is printed for an
+     * unknown suboption value and the VM launch aborts.
      *
      * printToStderr: choose between stdout and stderr
      *
@@ -152,30 +157,73 @@ public final class LauncherHelper {
             long initialHeapSize, long maxHeapSize, long stackSize) {
 
         initOutput(printToStderr);
-        String[] opts = optionFlag.split(":");
-        String optStr = Arrays.stream(opts).skip(1).findFirst().orElse("").trim();
-        switch (optStr) {
-            case "all" -> printAllSettings(true, initialHeapSize, maxHeapSize, stackSize);
-            case "locale" -> printLocale(true);
-            case "properties" -> printProperties();
-            case "security" -> SecuritySettings.printSecuritySettings(opts, ostream, true);
-            case "system" -> printSystemMetrics();
-            case "vm" -> printVmSettings(initialHeapSize, maxHeapSize, stackSize);
-            case "" -> printAllSettings(false, initialHeapSize, maxHeapSize, stackSize);
-            default -> abort(null, "java.launcher.bad.option", optStr);
+        Option component = validateOption(optionFlag);
+        switch (component) {
+            case ALL -> printAllSettings(initialHeapSize, maxHeapSize, stackSize, true);
+            case LOCALE -> printLocale(true);
+            case PROPERTIES -> printProperties();
+            case SECURITY,
+                 SECURITY_ALL,
+                 SECURITY_PROPERTIES,
+                 SECURITY_PROVIDERS,
+                 SECURITY_TLS -> SecuritySettings.printSecuritySettings(component, ostream, true);
+            case SYSTEM-> printSystemMetrics();
+            case VM -> printVmSettings(initialHeapSize, maxHeapSize, stackSize);
+            case EMPTY -> printAllSettings(initialHeapSize, maxHeapSize, stackSize, false);
         }
     }
 
     /*
-     * prints all available settings. Verbose option.
+     * Validate that the -XshowSettings value is allowed
+     * If a valid option is parsed, return enum corresponding
+     * to that option. Abort if a bad option is parsed.
      */
-    private static void printAllSettings(boolean verbose, long initialHeapSize,
-                                         long maxHeapSize, long stackSize) {
+    private static Option validateOption(String optionFlag) {
+        if (optionFlag.equals("-XshowSettings")) {
+            return Option.EMPTY;
+        }
+
+        if (optionFlag.equals("-XshowSetings:")) {
+            abort(null, "java.launcher.bad.option", ":");
+        }
+
+        // case-sensitive check of input flag
+        List<String> validOpts = Arrays.stream(Option.values())
+                .filter(o -> !o.equals(Option.EMPTY)) // non-valid option
+                .map(o -> o.name()
+                        .toLowerCase(Locale.ROOT)
+                        .replace("_", ":")).collect(Collectors.toList());
+
+        String optStr = optionFlag.substring("-XshowSettings:".length());
+        if (!validOpts.contains(optionFlag.substring("-XshowSettings:".length()))) {
+            abort(null, "java.launcher.bad.option", optStr);
+        }
+
+        Option component = null;
+        try {
+            component = Option.valueOf(optStr
+                    .toUpperCase(Locale.ROOT)
+                    .replace(":", "_")
+                    .trim());
+        } catch (IllegalArgumentException | NullPointerException e) {
+            abort(null, "java.launcher.bad.option", optStr);
+        }
+        return component;
+    }
+
+    /*
+     * Print settings for all supported components.
+     * verbose value used to determine if verbose information
+     * should be printed for components that support printing
+     * in verbose or non-verbose mode.
+     */
+    private static void printAllSettings(long initialHeapSize, long maxHeapSize,
+                                         long stackSize, boolean verbose) {
         printVmSettings(initialHeapSize, maxHeapSize, stackSize);
         printProperties();
         printLocale(verbose);
         SecuritySettings.printSecuritySettings(
-                    new String[] {"all"}, ostream, verbose);
+                    Option.SECURITY_ALL, ostream, verbose);
         if (OperatingSystem.isLinux()) {
             printSystemMetrics();
         }
@@ -317,11 +365,6 @@ public final class LauncherHelper {
     }
 
     private static void printSystemMetrics() {
-        // only Linux supported
-        if (!OperatingSystem.isLinux()) {
-            abort(null, "java.launcher.bad.option");
-        }
-
         Metrics c = Container.metrics();
 
         ostream.println("Operating System Metrics:");

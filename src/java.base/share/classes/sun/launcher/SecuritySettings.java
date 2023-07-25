@@ -53,19 +53,17 @@ public final class SecuritySettings {
     private static final String PROV_INFO_STRING = "Provider information: ";
     private static PrintStream ostream = null;
 
-    static void printSecuritySettings(String[] opts, PrintStream stream, boolean verbose) {
+    static void printSecuritySettings(LauncherHelper.Option o, PrintStream stream, boolean verbose) {
         ostream = stream;
         if (!verbose) {
             printSecuritySummarySettings();
             return;
         }
-        var arg = opts.length > 2 ? opts[2].trim() : "all";
-        switch (arg) {
-            case "properties" -> printSecurityProperties();
-            case "providers"  -> printSecurityProviderConfig(true);
-            case "tls"        -> printSecurityTLSConfig(true);
-            case "all"        -> printAllSecurityConfig();
-            default           -> LauncherHelper.abort(null, "java.launcher.bad.security.option", arg);
+        switch (o) {
+            case SECURITY_PROPERTIES -> printSecurityProperties();
+            case SECURITY_PROVIDERS -> printSecurityProviderConfig(true);
+            case SECURITY_TLS -> printSecurityTLSConfig(true);
+            case SECURITY, SECURITY_ALL -> printAllSecurityConfig();
         }
     }
 
