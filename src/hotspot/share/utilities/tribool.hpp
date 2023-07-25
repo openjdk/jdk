@@ -40,11 +40,11 @@ class TriBool{
 
  public:
   TriBool() : _value(0) {}
-  TriBool(bool value) : _value((u1)(value | 2) & 3) { }
+  TriBool(bool value) : _value((u1)((u1)value | 2) & 3) {}
   TriBool(const TriBool& o): _value(o._value) {}
 
   TriBool& operator=(bool value) {
-    _value = (u1)(value | 2) & 3;
+    _value = (u1)((u1)value | 2) & 3;
     return *this;
   }
 
@@ -73,7 +73,7 @@ class TriBoolArray {
 
     TriBoolAssigner& operator=(bool newval) {
       _slot ^= ((u1)_value) << _offset;  // reset the tribool
-      _value = (u1)(newval | 2) & 3;
+      _value = (u1)((u1)newval | 2) & 3;
       _slot |= ((u1)_value) << _offset;
       return *this;
     };
