@@ -22,10 +22,10 @@
  */
 /*
     @test
+    @bug 4184873
     @summary test that locale invariants are preserved across serialization
     @library /java/text/testlib
-    @run main Bug4184873Test
-    @bug 4184873
+    @run main LegacyCodesClassInvariant
 */
 /*
  * This file is available under and governed by the GNU General Public
@@ -71,12 +71,12 @@ import java.util.Locale;
 /**
  *  A Locale can never contain the following language codes: he, yi or id.
  */
-public class Bug4184873Test extends IntlTest {
+public class LegacyCodesClassInvariant extends IntlTest {
     public static void main(String[] args) throws Exception {
         if (args.length == 1 && args[0].equals("prepTest")) {
             prepTest();
         } else {
-            new Bug4184873Test().run(args);
+            new LegacyCodesClassInvariant().run(args);
         }
     }
 
@@ -108,7 +108,7 @@ public class Bug4184873Test extends IntlTest {
 
     private ObjectInputStream getStream(String lang) {
         try {
-            final File f = new File(System.getProperty("test.src", "."), "Bug4184873_"+lang);
+            final File f = new File(System.getProperty("test.src", "."), "LegacyCodesClassInvariant_"+lang);
             return new ObjectInputStream(new FileInputStream(f));
         } catch (Exception e) {
             errln(e.toString());
@@ -129,7 +129,7 @@ public class Bug4184873Test extends IntlTest {
     private static void outputLocale(String lang) {
         try {
             ObjectOutputStream out = new ObjectOutputStream(
-                    new FileOutputStream("Bug4184873_"+lang));
+                    new FileOutputStream("LegacyCodesClassInvariant_"+lang));
             out.writeObject(Locale.of(lang, "XX"));
             out.close();
         } catch (Exception e) {
