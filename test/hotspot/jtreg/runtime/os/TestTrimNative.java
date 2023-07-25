@@ -35,6 +35,16 @@
  */
 
 /*
+ * @test id=trimNativeStrict
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/manual TestTrimNative trimNativeStrict
+ */
+
+/*
  * @test id=trimNativeHighInterval
  * @summary High interval trimming should not even kick in for short program runtimes
  * @requires (os.family=="linux") & !vm.musl
@@ -54,6 +64,17 @@
  * @build jdk.test.whitebox.WhiteBox
  * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
  * @run driver TestTrimNative trimNativeLowInterval
+ */
+
+/*
+ * @test id=trimNativeLowIntervalStrict
+ * @summary Very low (sub-second) interval, nothing should explode (stricter test, manual mode)
+ * @requires (os.family=="linux") & !vm.musl
+ * @modules java.base/jdk.internal.misc
+ * @library /test/lib
+ * @build jdk.test.whitebox.WhiteBox
+ * @run driver jdk.test.lib.helpers.ClassFileInstaller jdk.test.whitebox.WhiteBox
+ * @run main/manual TestTrimNative trimNativeLowIntervalStrict
  */
 
 /*
@@ -162,28 +183,23 @@ public class TestTrimNative {
      * @param output
      * @param minTrimsExpected min number of periodic trim lines expected in UL log
      * @param maxTrimsExpected min number of periodic trim lines expected in UL log
+     * @param strict: if true, expect RSS to go down; if false, just look for trims without looking at RSS.
      */
     private static void parseOutputAndLookForNegativeTrim(OutputAnalyzer output, int minTrimsExpected,
-                                                          int maxTrimsExpected) {
+                                                          int maxTrimsExpected, boolean strict) {
         output.reportDiagnosticSummary();
         List<String> lines = output.asLines();
         Pattern pat = Pattern.compile(".*\\[trimnative\\] Periodic Trim \\(\\d+\\): (\\d+)([BKMG])->(\\d+)([BKMG]).*");
         int numTrimsFound = 0;
-        long rssReductionByTrim = 0;
-        long lastRss2 = 0;
-        long rssReductionOutsideOfTrim = 0;
+        long rssReductionTotal = 0;
         for (String line : lines) {
             Matcher mat = pat.matcher(line);
             if (mat.matches()) {
                 long rss1 = Long.parseLong(mat.group(1)) * Unit.valueOf(mat.group(2)).size;
                 long rss2 = Long.parseLong(mat.group(3)) * Unit.valueOf(mat.group(4)).size;
-                if (lastRss2 > rss1) {
-                    rssReductionOutsideOfTrim += (lastRss2 - rss1);
-                }
                 if (rss1 > rss2) {
-                    rssReductionByTrim += (rss1 - rss2);
+                    rssReductionTotal += (rss1 - rss2);
                 }
-                lastRss2 = rss2;
                 numTrimsFound ++;
             }
             if (numTrimsFound > maxTrimsExpected) {
@@ -195,7 +211,8 @@ public class TestTrimNative {
             throw new RuntimeException("We found fewer (periodic) trim lines in UL log than expected (expected at least " + minTrimsExpected +
                     ", found " + numTrimsFound + ").");
         }
-        if (maxTrimsExpected > 0) {
+        System.out.println("Found " + numTrimsFound + " trims. Ok.");
+        if (strict && maxTrimsExpected > 0) {
             // This is very fuzzy. Test program malloced X bytes, then freed them again and trimmed. But the log line prints change in RSS.
             // Which, of course, is influenced by a lot of other factors. But we expect to see *some* reasonable reduction in RSS
             // due to trimming.
@@ -206,14 +223,12 @@ public class TestTrimNative {
             if (Platform.isPPC()) { // le and be both
                 fudge = 0.01f;
             }
-            // JDK-8312525: The system may be configured such that the glibc already frees memory on free(3). In that
-            // case, our periodic trims have not much to trim. Therefore, when evaluating success, also count RSS reductions
-            // that happened outside of the periodic trims.
-            long rssReductionTotal = rssReductionByTrim + rssReductionOutsideOfTrim;
             long expectedMinimalReduction = (long) (totalAllocationsSize * fudge);
             if (rssReductionTotal < expectedMinimalReduction) {
                 throw new RuntimeException("We did not see the expected RSS reduction in the UL log. Expected (with fudge)" +
                         " to see at least a combined reduction of " + expectedMinimalReduction + ".");
+            } else {
+                System.out.println("Found high enough RSS reduction from trims: " + rssReductionTotal);
             }
         }
     }
@@ -249,8 +264,11 @@ public class TestTrimNative {
             throw new RuntimeException("Argument error");
         }
 
+        boolean strictTesting = args[0].endsWith("Strict");
+
         switch (args[0]) {
-            case "trimNative": {
+            case "trimNative":
+            case "trimNativeStrict": {
                 long trimInterval = 500; // twice per second
                 long ms1 = System.currentTimeMillis();
                 OutputAnalyzer output = runTestWithOptions(
@@ -264,7 +282,7 @@ public class TestTrimNative {
 
                 long maxTrimsExpected = runtime_ms / trimInterval;
                 long minTrimsExpected = maxTrimsExpected / 2;
-                parseOutputAndLookForNegativeTrim(output, (int) minTrimsExpected, (int) maxTrimsExpected);
+                parseOutputAndLookForNegativeTrim(output, (int) minTrimsExpected, (int) maxTrimsExpected, strictTesting);
             } break;
 
             case "trimNativeHighInterval": {
@@ -274,16 +292,17 @@ public class TestTrimNative {
                 );
                 checkExpectedLogMessages(output, true, Integer.MAX_VALUE);
                 // We should not see any trims since the interval would prevent them
-                parseOutputAndLookForNegativeTrim(output, 0, 0);
+                parseOutputAndLookForNegativeTrim(output, 0, 0, strictTesting);
             } break;
 
-            case "trimNativeLowInterval": {
+            case "trimNativeLowInterval":
+            case "trimNativeLowIntervalStrict": {
                 OutputAnalyzer output = runTestWithOptions(
                         new String[] { "-XX:+UnlockExperimentalVMOptions", "-XX:TrimNativeHeapInterval=1" },
                         new String[] { TestTrimNative.Tester.class.getName(), "0" }
                 );
                 checkExpectedLogMessages(output, true, 1);
-                parseOutputAndLookForNegativeTrim(output, 1, 3000);
+                parseOutputAndLookForNegativeTrim(output, 1, 3000, strictTesting);
             } break;
 
             case "testOffOnNonCompliantPlatforms": {
@@ -292,7 +311,7 @@ public class TestTrimNative {
                         new String[] { "-version" }
                 );
                 checkExpectedLogMessages(output, false, 0);
-                parseOutputAndLookForNegativeTrim(output, 0, 0);
+                parseOutputAndLookForNegativeTrim(output, 0, 0, strictTesting);
                 // The following output is expected to be printed with warning level, so it should not need -Xlog
                 output.shouldContain("[warning][trimnative] Native heap trim is not supported on this platform");
             } break;
@@ -303,13 +322,13 @@ public class TestTrimNative {
                         new String[] { "-version" }
                 );
                 checkExpectedLogMessages(output, false, 0);
-                parseOutputAndLookForNegativeTrim(output, 0, 0);
+                parseOutputAndLookForNegativeTrim(output, 0, 0, strictTesting);
             } break;
 
             case "testOffByDefault": {
                 OutputAnalyzer output = runTestWithOptions(null, new String[] { "-version" } );
                 checkExpectedLogMessages(output, false, 0);
-                parseOutputAndLookForNegativeTrim(output, 0, 0);
+                parseOutputAndLookForNegativeTrim(output, 0, 0, strictTesting);
             } break;
 
             default:
