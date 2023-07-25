@@ -894,7 +894,7 @@ CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool 
 }
 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesParser::parse_from_file(_filename.value(), output());
+  DirectivesParser::parse_from_file(_filename.value(), output(), true);
   if (_force_deopt.value()) {
     CodeCache::mark_directives_matches();
     CodeCache::recompile_marked_directives_matches();
@@ -917,14 +917,14 @@ void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
     CodeCache::mark_directives_matches();
 
     DirectivesStack::clear();
-    DirectivesParser::parse_from_file(_filename.value(), output());
+    DirectivesParser::parse_from_file(_filename.value(), output(), true);
 
     CodeCache::mark_directives_matches();
     CodeCache::recompile_marked_directives_matches();
   }
   else {
     DirectivesStack::clear();
-    DirectivesParser::parse_from_file(_filename.value(), output());
+    DirectivesParser::parse_from_file(_filename.value(), output(), true);
   }
 }
 

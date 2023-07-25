@@ -227,6 +227,21 @@ public class TestArrayCopy {
         }
     }
 
+    @Test(dataProvider = "copyModesAndHelpers")
+    public void testCopyReadOnlyDest(CopyMode mode, CopyHelper<Object, ValueLayout> helper, String helperDebugString) {
+        int bytesPerElement = (int)helper.elementLayout.byteSize();
+        MemorySegment base = srcSegment(SEG_LENGTH_BYTES);
+        //CopyFrom
+        Object srcArr = helper.toArray(base);
+        MemorySegment dstSeg = helper.fromArray(srcArr).asReadOnly();
+        try {
+            helper.copyFromArray(srcArr, 0, SEG_LENGTH_BYTES / bytesPerElement, dstSeg, 0, ByteOrder.nativeOrder());
+            fail();
+        } catch (UnsupportedOperationException ex) {
+            //ok
+        }
+    }
+
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void testNotAnArraySrc() {
         MemorySegment segment = MemorySegment.ofArray(new int[] {1, 2, 3, 4});

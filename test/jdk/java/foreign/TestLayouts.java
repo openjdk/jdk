@@ -218,6 +218,8 @@ public class TestLayouts {
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE, JAVA_SHORT));
         assertThrows(IllegalArgumentException.class, // flip back to positive
                 () -> MemoryLayout.sequenceLayout(Long.MAX_VALUE/3, JAVA_LONG));
+        assertThrows(IllegalArgumentException.class, // flip back to positive
+                () -> MemoryLayout.sequenceLayout(0, JAVA_LONG).withElementCount(Long.MAX_VALUE));
     }
 
     @Test
@@ -258,10 +260,13 @@ public class TestLayouts {
 
     @Test
     public void testStructToString() {
-        StructLayout padding = MemoryLayout.structLayout(JAVA_INT).withName("struct");
-        assertEquals(padding.toString(), "[i4](struct)");
-        var toStringUnaligned = padding.withByteAlignment(8).toString();
-        assertEquals(toStringUnaligned, "8%[i4](struct)");
+        for (ByteOrder order : List.of(ByteOrder.LITTLE_ENDIAN, ByteOrder.BIG_ENDIAN)) {
+            String intRepresentation = (order == ByteOrder.LITTLE_ENDIAN ? "i" : "I");
+            StructLayout padding = MemoryLayout.structLayout(JAVA_INT.withOrder(order)).withName("struct");
+            assertEquals(padding.toString(), "[" + intRepresentation + "4](struct)");
+            var toStringUnaligned = padding.withByteAlignment(8).toString();
+            assertEquals(toStringUnaligned, "8%[" + intRepresentation + "4](struct)");
+        }
     }
 
     @Test(dataProvider = "layoutKinds")
@@ -330,6 +335,14 @@ public class TestLayouts {
             assertFalse(shouldFail);
         } catch (IllegalArgumentException ex) {
             assertTrue(shouldFail);
+        }
+    }
+
+    @Test(dataProvider="layoutsAndAlignments")
+    public void testArrayElementVarHandleBadAlignment(MemoryLayout layout, long byteAlign) {
+        if (layout instanceof ValueLayout) {
+            assertThrows(UnsupportedOperationException.class, () ->
+                    ((ValueLayout) layout).withByteAlignment(byteAlign * 2).arrayElementVarHandle());
         }
     }
 

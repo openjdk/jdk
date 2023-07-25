@@ -40,7 +40,7 @@ inline XPageTableIterator::XPageTableIterator(const XPageTable* page_table) :
 
 inline bool XPageTableIterator::next(XPage** page) {
   for (XPage* entry; _iter.next(&entry);) {
-    if (entry != NULL && entry != _prev) {
+    if (entry != nullptr && entry != _prev) {
       // Next page found
       *page = _prev = entry;
       return true;

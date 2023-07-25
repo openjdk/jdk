@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,7 +197,7 @@ void NET_ThrowUnknownHostExceptionWithGaiError(JNIEnv *env,
     buf = (char *) malloc(size);
     if (buf) {
         jstring s;
-        sprintf(buf, format, hostname, error_string);
+        snprintf(buf, size, format, hostname, error_string);
         s = JNU_NewStringPlatform(env, buf);
         if (s != NULL) {
             jobject x = JNU_NewObjectByName(env,

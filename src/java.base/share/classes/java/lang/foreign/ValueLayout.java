@@ -42,9 +42,11 @@ import jdk.internal.javac.PreviewFeature;
  * {@linkplain MemorySegment#get(OfInt, long) accessing} a region of memory using the value layout.
  * <p>
  * This class defines useful value layout constants for Java primitive types and addresses.
- * The layout constants in this class make implicit alignment and byte-ordering assumption: all layout
- * constants in this class are byte-aligned, and their byte order is set to the {@linkplain ByteOrder#nativeOrder() platform default},
- * thus making it easy to work with other APIs, such as arrays and {@link java.nio.ByteBuffer}.
+ * @apiNote Some characteristics of the Java layout constants are platform-dependent. For instance, the byte order of
+ * these constants is set to the {@linkplain ByteOrder#nativeOrder() native byte order}, thus making it easy to work
+ * with other APIs, such as arrays and {@link java.nio.ByteBuffer}. Moreover, the alignment constraint of
+ * {@link ValueLayout#JAVA_LONG} and {@link ValueLayout#JAVA_DOUBLE} is set to 8 bytes on 64-bit platforms, but only to
+ * 4 bytes on 32-bit platforms.
  *
  * @implSpec implementing classes and subclasses are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
@@ -62,11 +64,9 @@ public sealed interface ValueLayout extends MemoryLayout permits
     ByteOrder order();
 
     /**
-     * Returns a value layout with the same carrier, alignment constraint and name as this value layout,
-     * but with the specified byte order.
+     * {@return a value layout with the same characteristics as this layout, but with the given byte order}
      *
      * @param order the desired byte order.
-     * @return a value layout with the given byte order.
      */
     ValueLayout withOrder(ByteOrder order);
 
@@ -78,12 +78,10 @@ public sealed interface ValueLayout extends MemoryLayout permits
 
     /**
      * Creates a <em>strided</em> var handle that can be used to access a memory segment as multi-dimensional
-     * array. The layout of this array is a sequence layout with {@code shape.length} nested sequence layouts. The element
-     * layout of the sequence layout at depth {@code shape.length} is this value layout.
-     * As a result, if {@code shape.length == 0}, the array layout will feature only one dimension.
-     * <p>
-     * The resulting var handle will feature {@code sizes.length + 1} coordinates of type {@code long}, which are
-     * used as indices into a multi-dimensional array.
+     * array. This array has a notional sequence layout featuring {@code shape.length} nested sequence layouts. The element
+     * layout of the innermost sequence layout in the notional sequence layout is this value layout. The resulting var handle
+     * is obtained as if calling the {@link #varHandle(PathElement...)} method on the notional layout, with a layout
+     * path containing exactly {@code shape.length + 1} {@linkplain PathElement#sequenceElement() open sequence layout path elements}.
      * <p>
      * For instance, the following method call:
      *
@@ -91,12 +89,14 @@ public sealed interface ValueLayout extends MemoryLayout permits
      * VarHandle arrayHandle = ValueLayout.JAVA_INT.arrayElementVarHandle(10, 20);
      * }
      *
-     * Can be used to access a multi-dimensional array whose layout is as follows:
+     * Is equivalent to the following code:
      *
      * {@snippet lang = java:
-     * SequenceLayout arrayLayout = MemoryLayout.sequenceLayout(
-     *                                      MemoryLayout.sequenceLayout(10,
-     *                                                  MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT)));
+     * SequenceLayout notionalLayout = MemoryLayout.sequenceLayout(
+ *                                         MemoryLayout.sequenceLayout(10, MemoryLayout.sequenceLayout(20, ValueLayout.JAVA_INT)));
+     * VarHandle arrayHandle = notionalLayout.varHandle(PathElement.sequenceElement(),
+     *                                                  PathElement.sequenceElement(),
+     *                                                  PathElement.sequenceElement());
      *}
      *
      * The resulting var handle {@code arrayHandle} will feature 3 coordinates of type {@code long}; each coordinate
@@ -110,7 +110,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
      *
      * Additionally, the values of {@code x}, {@code y} and {@code z} are constrained as follows:
      * <ul>
-     *     <li>{@code 0 <= x < arrayLayout.elementCount() }</li>
+     *     <li>{@code 0 <= x < notionalLayout.elementCount() }</li>
      *     <li>{@code 0 <= y < 10 }</li>
      *     <li>{@code 0 <= z < 20 }</li>
      * </ul>
@@ -448,7 +448,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
     }
 
     /**
-     * A value layout constant whose size is the same as that of a machine address ({@code size_t}),
+     * An address layout constant whose size is the same as that of a machine address ({@code size_t}),
      * byte alignment set to {@code sizeof(size_t)}, byte order set to {@link ByteOrder#nativeOrder()}.
      */
     AddressLayout ADDRESS = ValueLayouts.OfAddressImpl.of(ByteOrder.nativeOrder());
@@ -504,7 +504,7 @@ public sealed interface ValueLayout extends MemoryLayout permits
     OfDouble JAVA_DOUBLE = ValueLayouts.OfDoubleImpl.of(ByteOrder.nativeOrder());
 
     /**
-     * An unaligned value layout constant whose size is the same as that of a machine address ({@code size_t}),
+     * An unaligned address layout constant whose size is the same as that of a machine address ({@code size_t}),
      * and byte order set to {@link ByteOrder#nativeOrder()}.
      * Equivalent to the following code:
      * {@snippet lang=java :

@@ -24,6 +24,8 @@
  */
 package jdk.jpackage.internal;
 
+import jdk.internal.util.OperatingSystem;
+
 import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.Files;
@@ -578,7 +580,7 @@ public class Arguments {
         boolean hasRuntime = allOptions.contains(
                 CLIOptions.PREDEFINED_RUNTIME_IMAGE);
         boolean installerOnly = !imageOnly && hasAppImage;
-        boolean isMac = Platform.isMac();
+        boolean isMac = OperatingSystem.isMacOS();
         runtimeInstaller = !imageOnly && hasRuntime && !hasAppImage &&
                 !hasMainModule && !hasMainJar;
 

@@ -145,6 +145,8 @@
 
 #define JAVA_21_VERSION                   65
 
+#define JAVA_22_VERSION                   66
+
 void ClassFileParser::set_class_bad_constant_seen(short bad_constant) {
   assert((bad_constant == JVM_CONSTANT_Module ||
           bad_constant == JVM_CONSTANT_Package) && _major_version >= JAVA_9_VERSION,
@@ -2672,7 +2674,7 @@ Method* ClassFileParser::parse_method(const ClassFileStream* const cfs,
   m->set_constants(_cp);
   m->set_name_index(name_index);
   m->set_signature_index(signature_index);
-  m->compute_from_signature(cp->symbol_at(signature_index));
+  m->constMethod()->compute_from_signature(cp->symbol_at(signature_index), access_flags.is_static());
   assert(args_size < 0 || args_size == m->size_of_parameters(), "");
 
   // Fill in code attribute information
@@ -4959,7 +4961,7 @@ void ClassFileParser::verify_legal_field_signature(const Symbol* name,
                                                    TRAPS) const {
   if (!_need_verify) { return; }
 
-  const char* const bytes = (const char* const)signature->bytes();
+  const char* const bytes = (const char*)signature->bytes();
   const unsigned int length = signature->utf8_length();
   const char* const p = skip_over_field_signature(bytes, false, length, CHECK);
 
@@ -5670,7 +5672,7 @@ void ClassFileParser::parse_stream(const ClassFileStream* const stream,
 
   parse_constant_pool(stream, cp, _orig_cp_size, CHECK);
 
-  assert(cp_size == (const u2)cp->length(), "invariant");
+  assert(cp_size == (u2)cp->length(), "invariant");
 
   // ACCESS FLAGS
   stream->guarantee_more(8, CHECK);  // flags, this_class, super_class, infs_len

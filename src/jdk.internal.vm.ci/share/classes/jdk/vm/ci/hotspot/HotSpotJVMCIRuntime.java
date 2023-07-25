@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2015, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ import static jdk.vm.ci.services.Services.IS_BUILDING_NATIVE_IMAGE;
 import static jdk.vm.ci.services.Services.IS_IN_NATIVE_IMAGE;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -39,6 +40,7 @@ import java.lang.reflect.Executable;
 import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Formatter;
@@ -198,8 +200,19 @@ public final class HotSpotJVMCIRuntime implements JVMCIRuntime {
     }
 
     @VMEntryPoint
-    static String callToString(Object o) {
-        return o.toString();
+    static String[] exceptionToString(Throwable o, boolean toString, boolean stackTrace) {
+        String[] res = {null, null};
+        if (toString) {
+            res[0] = o.toString();
+        }
+        if (stackTrace) {
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            try (PrintStream ps = new PrintStream(buf)) {
+                o.printStackTrace(ps);
+            }
+            res[1] = buf.toString(StandardCharsets.UTF_8);
+        }
+        return res;
     }
 
     /**

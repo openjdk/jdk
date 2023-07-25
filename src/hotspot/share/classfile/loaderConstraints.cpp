@@ -89,6 +89,9 @@ class ConstraintSet {                               // copied into hashtable as 
   }
 
   ~ConstraintSet() {
+    while (!_constraints->is_empty()) {
+      delete _constraints->pop();
+    }
     delete _constraints;
   }
 
@@ -106,7 +109,8 @@ class ConstraintSet {                               // copied into hashtable as 
 };
 
 
-ResourceHashtable<SymbolHandle, ConstraintSet, 107, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash> _loader_constraint_table;
+using InternalLoaderConstraintTable = ResourceHashtable<SymbolHandle, ConstraintSet, 107, AnyObj::C_HEAP, mtClass, SymbolHandle::compute_hash>;
+static InternalLoaderConstraintTable* _loader_constraint_table;
 
 void LoaderConstraint::extend_loader_constraint(Symbol* class_name,
                                                 ClassLoaderData* loader,
@@ -131,11 +135,15 @@ void LoaderConstraint::extend_loader_constraint(Symbol* class_name,
 // SystemDictionary lock held. This is true even for readers as
 // entries in the table could be being dynamically resized.
 
+void LoaderConstraintTable::initialize() {
+  _loader_constraint_table = new (mtClass) InternalLoaderConstraintTable();
+}
+
 LoaderConstraint* LoaderConstraintTable::find_loader_constraint(
                                     Symbol* name, ClassLoaderData* loader_data) {
 
   assert_lock_strong(SystemDictionary_lock);
-  ConstraintSet* set = _loader_constraint_table.get(name);
+  ConstraintSet* set = _loader_constraint_table->get(name);
   if (set == nullptr) {
     return nullptr;
   }
@@ -164,7 +172,7 @@ void LoaderConstraintTable::add_loader_constraint(Symbol* name, InstanceKlass* k
   // a parameter name to a method call.  We impose this constraint that the
   // class that is eventually loaded must match between these two loaders.
   bool created;
-  ConstraintSet* set = _loader_constraint_table.put_if_absent(name, &created);
+  ConstraintSet* set = _loader_constraint_table->put_if_absent(name, &created);
   if (created) {
     set->initialize(constraint);
   } else {
@@ -246,7 +254,7 @@ void LoaderConstraintTable::purge_loader_constraints() {
   assert_locked_or_safepoint(SystemDictionary_lock);
   // Remove unloaded entries from constraint table
   PurgeUnloadedConstraints purge;
-  _loader_constraint_table.unlink(&purge);
+  _loader_constraint_table->unlink(&purge);
 }
 
 void log_ldr_constraint_msg(Symbol* class_name, const char* reason,
@@ -438,7 +446,7 @@ void LoaderConstraintTable::merge_loader_constraints(Symbol* class_name,
   }
 
   // Remove src from set
-  ConstraintSet* set = _loader_constraint_table.get(class_name);
+  ConstraintSet* set = _loader_constraint_table->get(class_name);
   set->remove_constraint(src);
 }
 
@@ -477,7 +485,7 @@ void LoaderConstraintTable::verify() {
     }
   };
   assert_locked_or_safepoint(SystemDictionary_lock);
-  _loader_constraint_table.iterate_all(check);
+  _loader_constraint_table->iterate_all(check);
 }
 
 void LoaderConstraintTable::print_table_statistics(outputStream* st) {
@@ -491,7 +499,7 @@ void LoaderConstraintTable::print_table_statistics(outputStream* st) {
     }
     return sum;
   };
-  TableStatistics ts = _loader_constraint_table.statistics_calculate(size);
+  TableStatistics ts = _loader_constraint_table->statistics_calculate(size);
   ts.print(st, "LoaderConstraintTable");
 }
 
@@ -513,8 +521,8 @@ void LoaderConstraintTable::print_on(outputStream* st) {
   assert_locked_or_safepoint(SystemDictionary_lock);
   ResourceMark rm;
   st->print_cr("Java loader constraints (table_size=%d, constraints=%d)",
-               _loader_constraint_table.table_size(), _loader_constraint_table.number_of_entries());
-  _loader_constraint_table.iterate_all(printer);
+               _loader_constraint_table->table_size(), _loader_constraint_table->number_of_entries());
+  _loader_constraint_table->iterate_all(printer);
 }
 
 void LoaderConstraintTable::print() { print_on(tty); }

@@ -985,9 +985,11 @@ void ZPageAllocator::handle_alloc_stalling_for_young() {
   restart_gc();
 }
 
-void ZPageAllocator::handle_alloc_stalling_for_old() {
+void ZPageAllocator::handle_alloc_stalling_for_old(bool cleared_soft_refs) {
   ZLocker<ZLock> locker(&_lock);
-  notify_out_of_memory();
+  if (cleared_soft_refs) {
+    notify_out_of_memory();
+  }
   restart_gc();
 }
 

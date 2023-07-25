@@ -46,16 +46,17 @@ static const double NANOS_PER_SEC = 1000000000.0;
 class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
    friend class CPUPerformanceInterface;
  private:
-  long _total_cpu_nanos;
-  long _total_csr_nanos;
-  long _jvm_user_nanos;
-  long _jvm_system_nanos;
+#ifdef __APPLE__
+  uint64_t _total_cpu_nanos;
+  uint64_t _total_csr_nanos;
+  uint64_t _jvm_user_nanos;
+  uint64_t _jvm_system_nanos;
   long _jvm_context_switches;
   long _used_ticks;
   long _total_ticks;
   int  _active_processor_count;
 
-  bool now_in_nanos(long* resultp) {
+  bool now_in_nanos(uint64_t* resultp) {
     struct timespec tp;
     int status = clock_gettime(CLOCK_REALTIME, &tp);
     assert(status == 0, "clock_gettime error: %s", os::strerror(errno));
@@ -65,6 +66,7 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
     *resultp = tp.tv_sec * NANOS_PER_SEC + tp.tv_nsec;
     return true;
   }
+#endif
 
   double normalize(double value) {
     return MIN2<double>(MAX2<double>(value, 0.0), 1.0);
@@ -83,6 +85,7 @@ class CPUPerformanceInterface::CPUPerformance : public CHeapObj<mtInternal> {
 };
 
 CPUPerformanceInterface::CPUPerformance::CPUPerformance() {
+#ifdef __APPLE__
   _total_cpu_nanos= 0;
   _total_csr_nanos= 0;
   _jvm_context_switches = 0;
@@ -91,6 +94,7 @@ CPUPerformanceInterface::CPUPerformance::CPUPerformance() {
   _used_ticks = 0;
   _total_ticks = 0;
   _active_processor_count = 0;
+#endif
 }
 
 bool CPUPerformanceInterface::CPUPerformance::initialize() {
@@ -158,10 +162,10 @@ int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserL
   task_absolutetime_info_t absolutetime_info = (task_absolutetime_info_t)task_info_data;
 
   int active_processor_count = os::active_processor_count();
-  long jvm_user_nanos = absolutetime_info->total_user;
-  long jvm_system_nanos = absolutetime_info->total_system;
+  uint64_t jvm_user_nanos = absolutetime_info->total_user;
+  uint64_t jvm_system_nanos = absolutetime_info->total_system;
 
-  long total_cpu_nanos;
+  uint64_t total_cpu_nanos;
   if(!now_in_nanos(&total_cpu_nanos)) {
     return OS_ERR;
   }
@@ -169,16 +173,16 @@ int CPUPerformanceInterface::CPUPerformance::cpu_loads_process(double* pjvmUserL
   if (_total_cpu_nanos == 0 || active_processor_count != _active_processor_count) {
     // First call or change in active processor count
     result = OS_ERR;
-  }
+  } else {
+    uint64_t delta_nanos = active_processor_count * (total_cpu_nanos - _total_cpu_nanos);
+    if (delta_nanos == 0) {
+      // Avoid division by zero
+      return OS_ERR;
+    }
 
-  long delta_nanos = active_processor_count * (total_cpu_nanos - _total_cpu_nanos);
-  if (delta_nanos == 0) {
-    // Avoid division by zero
-    return OS_ERR;
+    *pjvmUserLoad = normalize((double)(jvm_user_nanos - _jvm_user_nanos)/delta_nanos);
+    *pjvmKernelLoad = normalize((double)(jvm_system_nanos - _jvm_system_nanos)/delta_nanos);
   }
-
-  *pjvmUserLoad = normalize((double)(jvm_user_nanos - _jvm_user_nanos)/delta_nanos);
-  *pjvmKernelLoad = normalize((double)(jvm_system_nanos - _jvm_system_nanos)/delta_nanos);
 
   _active_processor_count = active_processor_count;
   _total_cpu_nanos = total_cpu_nanos;
@@ -209,7 +213,7 @@ int CPUPerformanceInterface::CPUPerformance::context_switch_rate(double* rate) {
 
   long jvm_context_switches = ((task_events_info_t)task_info_data)->csw;
 
-  long total_csr_nanos;
+  uint64_t total_csr_nanos;
   if(!now_in_nanos(&total_csr_nanos)) {
     return OS_ERR;
   }

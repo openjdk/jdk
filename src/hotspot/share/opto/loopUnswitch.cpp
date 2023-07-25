@@ -117,12 +117,9 @@ IfNode* PhaseIdealLoop::find_unswitching_candidate(const IdealLoopTree *loop) co
 // insert a clone of the test that selects which version to
 // execute.
 void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
-
   LoopNode *head = loop->_head->as_Loop();
   Node* entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
-  if (find_predicate_insertion_point(entry, Deoptimization::Reason_loop_limit_check) != nullptr
-      || (UseProfiledLoopPredicate && find_predicate_insertion_point(entry, Deoptimization::Reason_profile_predicate) != nullptr)
-      || (UseLoopPredicate && find_predicate_insertion_point(entry, Deoptimization::Reason_predicate) != nullptr)) {
+  if (ParsePredicates::is_success_proj(entry)) {
     assert(entry->is_IfProj(), "sanity - must be ifProj since there is at least one predicate");
     if (entry->outcnt() > 1) {
       // Bailout if there are predicates from which there are additional control dependencies (i.e. from loop
@@ -154,29 +151,17 @@ void PhaseIdealLoop::do_unswitching(IdealLoopTree *loop, Node_List &old_new) {
 #ifdef ASSERT
   assert(proj_true->is_IfTrue(), "must be true projection");
   entry = head->skip_strip_mined()->in(LoopNode::EntryControl);
-  Node* parse_predicate = find_parse_predicate(entry);
-  if (parse_predicate == nullptr) {
+  ParsePredicates parse_predicates(entry);
+  if (!parse_predicates.has_any()) {
     // No Parse Predicate.
     Node* uniqc = proj_true->unique_ctrl_out();
     assert((uniqc == head && !head->is_strip_mined()) || (uniqc == head->in(LoopNode::EntryControl)
            && head->is_strip_mined()), "must hold by construction if no predicates");
   } else {
-    // There is at least one Parse Predicate. When calling 'skip_related_predicates' on each found Parse Predicate,
-    // we should end up at 'proj_true'.
-    Node* proj_before_first_parse_predicate = skip_related_predicates(entry);
-    if (UseProfiledLoopPredicate) {
-      parse_predicate = find_parse_predicate(proj_before_first_parse_predicate);
-      if (parse_predicate != nullptr) {
-        proj_before_first_parse_predicate = skip_related_predicates(parse_predicate);
-      }
-    }
-    if (UseLoopPredicate) {
-      parse_predicate = find_parse_predicate(proj_before_first_parse_predicate);
-      if (parse_predicate != nullptr) {
-        proj_before_first_parse_predicate = skip_related_predicates(parse_predicate);
-      }
-    }
-    assert(proj_true == proj_before_first_parse_predicate, "must hold by construction if at least one predicate");
+    // There is at least one Parse Predicate. When skipping all predicates/Regular Predicate Blocks, we should end up
+    // at 'proj_true'.
+    assert(proj_true == Predicates::skip_all_predicates(parse_predicates),
+           "must hold by construction if at least one Parse Predicate");
   }
 #endif
   // Increment unswitch count

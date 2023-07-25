@@ -30,6 +30,7 @@
 #include "oops/constMethod.hpp"
 #include "oops/method.hpp"
 #include "runtime/safepointVerifiers.hpp"
+#include "runtime/signature.hpp"
 #include "utilities/align.hpp"
 
 // Static initialization
@@ -70,6 +71,20 @@ ConstMethod::ConstMethod(int byte_code_size,
   set_result_type((BasicType)0);
 }
 
+// Derive size of parameters, return type, and fingerprint,
+// all in one pass, which is run at load time.
+// We need the first two, and might as well grab the third.
+void ConstMethod::compute_from_signature(Symbol* sig, bool is_static) {
+  // At this point, since we are scanning the signature,
+  // we might as well compute the whole fingerprint.
+  Fingerprinter fp(sig, is_static);
+  set_size_of_parameters(fp.size_of_parameters());
+  set_num_stack_arg_slots(fp.num_stack_arg_slots());
+  set_result_type(fp.return_type());
+  set_fingerprint(fp.fingerprint());
+}
+
+
 // Accessor that copies to metadata.
 void ConstMethod::copy_stackmap_data(ClassLoaderData* loader_data,
                                      u1* sd, int length, TRAPS) {
@@ -105,16 +120,16 @@ int ConstMethod::size(int code_size,
   }
   if (sizes->checked_exceptions_length() > 0) {
     extra_bytes += sizeof(u2);
-    extra_bytes += sizes->checked_exceptions_length() * sizeof(CheckedExceptionElement);
+    extra_bytes += sizes->checked_exceptions_length() * (int)sizeof(CheckedExceptionElement);
   }
   if (sizes->localvariable_table_length() > 0) {
     extra_bytes += sizeof(u2);
     extra_bytes +=
-              sizes->localvariable_table_length() * sizeof(LocalVariableTableElement);
+              sizes->localvariable_table_length() * (int)sizeof(LocalVariableTableElement);
   }
   if (sizes->exception_table_length() > 0) {
     extra_bytes += sizeof(u2);
-    extra_bytes += sizes->exception_table_length() * sizeof(ExceptionTableElement);
+    extra_bytes += sizes->exception_table_length() * (int)sizeof(ExceptionTableElement);
   }
   if (sizes->generic_signature_index() != 0) {
     extra_bytes += sizeof(u2);
@@ -125,7 +140,7 @@ int ConstMethod::size(int code_size,
   // cause the reflection API to throw a MalformedParametersException.
   if (sizes->method_parameters_length() >= 0) {
     extra_bytes += sizeof(u2);
-    extra_bytes += sizes->method_parameters_length() * sizeof(MethodParametersElement);
+    extra_bytes += sizes->method_parameters_length() * (int)sizeof(MethodParametersElement);
   }
 
   // Align sizes up to a word.
@@ -133,16 +148,16 @@ int ConstMethod::size(int code_size,
 
   // One pointer per annotation array
   if (sizes->method_annotations_length() > 0) {
-    extra_bytes += sizeof(AnnotationArray*);
+    extra_bytes += (int)sizeof(AnnotationArray*);
   }
   if (sizes->parameter_annotations_length() > 0) {
-    extra_bytes += sizeof(AnnotationArray*);
+    extra_bytes += (int)sizeof(AnnotationArray*);
   }
   if (sizes->type_annotations_length() > 0) {
-    extra_bytes += sizeof(AnnotationArray*);
+    extra_bytes += (int)sizeof(AnnotationArray*);
   }
   if (sizes->default_annotations_length() > 0) {
-    extra_bytes += sizeof(AnnotationArray*);
+    extra_bytes += (int)sizeof(AnnotationArray*);
   }
 
   int extra_words = align_up(extra_bytes, BytesPerWord) / BytesPerWord;
@@ -276,16 +291,16 @@ void ConstMethod::set_inlined_tables_length(InlineTableSizes* sizes) {
   // anything is added here.  It might be advisable to have some sort
   // of indication of this inline.
   if (sizes->generic_signature_index() != 0)
-    *(generic_signature_index_addr()) = sizes->generic_signature_index();
+    *(generic_signature_index_addr()) = checked_cast<u2>(sizes->generic_signature_index());
   // New data should probably go here.
   if (sizes->method_parameters_length() >= 0)
-    *(method_parameters_length_addr()) = sizes->method_parameters_length();
+    *(method_parameters_length_addr()) = checked_cast<u2>(sizes->method_parameters_length());
   if (sizes->checked_exceptions_length() > 0)
-    *(checked_exceptions_length_addr()) = sizes->checked_exceptions_length();
+    *(checked_exceptions_length_addr()) = checked_cast<u2>(sizes->checked_exceptions_length());
   if (sizes->exception_table_length() > 0)
-    *(exception_table_length_addr()) = sizes->exception_table_length();
+    *(exception_table_length_addr()) = checked_cast<u2>(sizes->exception_table_length());
   if (sizes->localvariable_table_length() > 0)
-    *(localvariable_table_length_addr()) = sizes->localvariable_table_length();
+    *(localvariable_table_length_addr()) = checked_cast<u2>(sizes->localvariable_table_length());
 }
 
 int ConstMethod::method_parameters_length() const {
@@ -300,7 +315,7 @@ MethodParametersElement* ConstMethod::method_parameters_start() const {
 }
 
 
-int ConstMethod::checked_exceptions_length() const {
+u2 ConstMethod::checked_exceptions_length() const {
   return has_checked_exceptions() ? *(checked_exceptions_length_addr()) : 0;
 }
 
@@ -314,7 +329,7 @@ CheckedExceptionElement* ConstMethod::checked_exceptions_start() const {
 }
 
 
-int ConstMethod::localvariable_table_length() const {
+u2 ConstMethod::localvariable_table_length() const {
   return has_localvariable_table() ? *(localvariable_table_length_addr()) : 0;
 }
 
@@ -327,7 +342,7 @@ LocalVariableTableElement* ConstMethod::localvariable_table_start() const {
   return (LocalVariableTableElement*) addr;
 }
 
-int ConstMethod::exception_table_length() const {
+u2 ConstMethod::exception_table_length() const {
   return has_exception_table() ? *(exception_table_length_addr()) : 0;
 }
 
@@ -505,7 +520,7 @@ void ConstMethod::verify_on(outputStream* st) {
   } else {
       uncompressed_table_start = (u2*) m_end;
   }
-  int gap = (intptr_t) uncompressed_table_start - (intptr_t) compressed_table_end;
+  int gap = int((intptr_t) uncompressed_table_start - (intptr_t) compressed_table_end);
   int max_gap = align_metadata_size(1)*BytesPerWord;
   guarantee(gap >= 0 && gap < max_gap, "invalid method layout");
 }
