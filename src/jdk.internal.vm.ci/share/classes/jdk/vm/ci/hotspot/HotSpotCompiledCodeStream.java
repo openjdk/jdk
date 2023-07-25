@@ -1033,8 +1033,8 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
         return oopValue.getPlatformKind() != runtime.getHostJVMCIBackend().getTarget().arch.getWordKind();
     }
 
-    private boolean isVector(Value vectorValue) {
-        return vectorValue.getPlatformKind().getVectorLength() > 1;
+    private boolean isVector(Value value) {
+        return value.getPlatformKind().getVectorLength() > 1;
     }
 
     private void writeJavaValue(JavaValue value, JavaKind kind) {
