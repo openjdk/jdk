@@ -896,9 +896,8 @@ CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
   DirectivesParser::parse_from_file(_filename.value(), output());
   if (_force_deopt.value()) {
-    DeoptimizationScope deopt_scope;
-    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
-    deopt_scope.deoptimize_marked();
+    CodeCache::mark_directives_matches();
+    CodeCache::recompile_marked_directives_matches();
   }
 }
 
@@ -914,16 +913,14 @@ CompilerDirectivesReplaceDCmd::CompilerDirectivesReplaceDCmd(outputStream* outpu
 void CompilerDirectivesReplaceDCmd::execute(DCmdSource source, TRAPS) {
   // Need to do it twice, to account for the method that doesn't match
   // the directives anymore
-  // Have to duplicate code to shut an assert in DTR of DeoptimizationScope
   if (_force_deopt.value()) {
-    DeoptimizationScope deopt_scope;
-    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
+    CodeCache::mark_directives_matches();
 
     DirectivesStack::clear();
     DirectivesParser::parse_from_file(_filename.value(), output());
 
-    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
-    deopt_scope.deoptimize_marked();
+    CodeCache::mark_directives_matches();
+    CodeCache::recompile_marked_directives_matches();
   }
   else {
     DirectivesStack::clear();
@@ -941,10 +938,9 @@ CompilerDirectivesRemoveDCmd::CompilerDirectivesRemoveDCmd(outputStream* output,
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {
   // Have to duplicate code to shut an assert in DTR of DeoptimizationScope
   if (_force_deopt.value()) {
-    DeoptimizationScope deopt_scope;
-    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
+    CodeCache::mark_directives_matches();
     DirectivesStack::pop(1);
-    deopt_scope.deoptimize_marked();
+    CodeCache::recompile_marked_directives_matches();
   }
   else {
     DirectivesStack::pop(1);
@@ -961,10 +957,9 @@ CompilerDirectivesClearDCmd::CompilerDirectivesClearDCmd(outputStream* output, b
 void CompilerDirectivesClearDCmd::execute(DCmdSource source, TRAPS) {
   // Have to duplicate code to shut an assert in DTR of DeoptimizationScope
   if (_force_deopt.value()) {
-    DeoptimizationScope deopt_scope;
-    CodeCache::mark_for_deoptimization_directives_matches(&deopt_scope);
+    CodeCache::mark_directives_matches();
     DirectivesStack::clear();
-    deopt_scope.deoptimize_marked();
+    CodeCache::recompile_marked_directives_matches();
   }
   else {
     DirectivesStack::clear();

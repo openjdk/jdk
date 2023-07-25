@@ -1357,6 +1357,42 @@ void CodeCache::mark_all_nmethods_for_evol_deoptimization(DeoptimizationScope* d
 
 #endif // INCLUDE_JVMTI
 
+void CodeCache::mark_directives_matches() {
+  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
+  Thread *thread = Thread::current();
+  HandleMark hm(thread);
+
+  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    methodHandle mh(thread, nm->method());
+    if (DirectivesStack::hasMatchingDirectives(mh)) {
+      ResourceMark rm;
+      log_trace(codecache)("Mark because of matching directives %s", mh->external_name());
+      mh->set_has_matching_directives();
+    }
+  }
+}
+
+void CodeCache::recompile_marked_directives_matches() {
+  Thread *thread = Thread::current();
+  HandleMark hm(thread);
+
+  RelaxedCompiledMethodIterator iter(RelaxedCompiledMethodIterator::only_not_unloading);
+  while(iter.next()) {
+    CompiledMethod* nm = iter.method();
+    methodHandle mh(thread, nm->method());
+    if (mh->has_matching_directives()) {
+      ResourceMark rm;
+      log_trace(codecache)("Recompile because of matching directives %s", mh->external_name());
+      mh->clear_method_flags();
+      CompileBroker::compile_method(mh, InvocationEntryBci, CompLevel::CompLevel_full_optimization,
+                                      methodHandle(), 0, CompileTask::Reason_DirectivesChanged, (JavaThread *)thread);
+      gc_on_allocation(); // Flush unused methods from CodeCache if required
+    }
+  }
+}
+
 // Mark methods for deopt (if safe or possible).
 void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_scope) {
   MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
@@ -1364,23 +1400,6 @@ void CodeCache::mark_all_nmethods_for_deoptimization(DeoptimizationScope* deopt_
   while(iter.next()) {
     CompiledMethod* nm = iter.method();
     if (!nm->is_native_method()) {
-      deopt_scope->mark(nm);
-    }
-  }
-}
-
-void CodeCache::mark_for_deoptimization_directives_matches(DeoptimizationScope *deopt_scope) {
-  MutexLocker mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-  Thread *thread = Thread::current();
-
-  CompiledMethodIterator iter(CompiledMethodIterator::only_not_unloading);
-  while(iter.next()) {
-    CompiledMethod* nm = iter.method();
-    HandleMark hm(thread);
-    methodHandle mh(thread, nm->method());
-    if (DirectivesStack::hasMatchingDirectives(mh)) {
-      ResourceMark rm;
-      log_trace(codecache)("Mark for deopt because of matching directives %s", mh->external_name());
       deopt_scope->mark(nm);
     }
   }

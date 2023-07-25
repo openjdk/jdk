@@ -869,6 +869,12 @@ public:
     return _method_counters;
   }
 
+  // Clear the flags related to compiler directives that were set by the compilerBroker, 
+  // because the directives can be updated.
+  void clear_method_flags() {
+    set_has_matching_directives(false);
+  }
+
   void clear_is_not_c1_compilable()           { set_is_not_c1_compilable(false); }
   void clear_is_not_c2_compilable()           { set_is_not_c2_compilable(false); }
   void clear_is_not_c2_osr_compilable()       { set_is_not_c2_osr_compilable(false); }

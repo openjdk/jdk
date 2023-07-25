@@ -742,7 +742,7 @@ public:
     return "Compiler.directives_replace";
   }
   static const char* description() {
-    return "Clear derectives stack amd load new compiler directives from file.";
+    return "Clear directives stack, and load new compiler directives from file.";
   }
   static const char* impact() {
     return "Low";
