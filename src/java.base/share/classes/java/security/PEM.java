@@ -16,7 +16,6 @@ import javax.crypto.spec.PBEKeySpec;
 import java.io.*;
 import java.security.cert.*;
 import java.security.cert.Certificate;
-import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.EncodedKeySpec;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -99,11 +98,11 @@ public class PEM {
         /**
          * The Cipher.
          */
-        Cipher cipher = null;
+        final Cipher cipher;
         /**
          * The Algid.
          */
-        AlgorithmId algid = null;
+        final AlgorithmId algid;
 
         /**
          * Instantiates a new Encoder.
@@ -120,6 +119,7 @@ public class PEM {
          * Instantiates a new Encoder.
          */
         private Encoder() {
+            this(null,null);
         }
 
         /**
@@ -308,8 +308,27 @@ public class PEM {
          * @return the encoder
          * @throws IOException the io exception
          */
-        public Encoder encrypt(char[] password) throws IOException {
-            return encrypt(password, DEFAULT_ALGO, null, null);
+        public Encoder withPassword(char[] password) throws IOException {
+            if (cipher != null) {
+                throw new IOException("Encryption cannot be used more than once");
+            }
+            AlgorithmId algid;
+            Cipher c;
+            try {
+                var spec = new PBEKeySpec(password);
+                // PBEKeySpec clones password
+                SecretKeyFactory factory;
+                factory = SecretKeyFactory.getInstance(DEFAULT_ALGO);
+                c = Cipher.getInstance(DEFAULT_ALGO);
+                var skey = factory.generateSecret(spec);
+                c.init(Cipher.ENCRYPT_MODE, skey);
+                algid = new AlgorithmId(Pem.getPBEID(DEFAULT_ALGO),
+                    c.getParameters());
+            } catch (Exception e) {
+                throw new IOException(e);
+            }
+
+            return new PEMEncoder(c, algid);
         }
 
         /**
@@ -322,7 +341,8 @@ public class PEM {
          * @return the encoder
          * @throws IOException the io exception
          */
-        public Encoder encrypt(char[] password, String pbeAlgo, AlgorithmParameterSpec aps, Provider p) throws IOException {
+        /*
+        public Encoder withPassword(char[] password, String pbeAlgo, AlgorithmParameterSpec aps, Provider p) throws IOException {
             if (cipher != null) {
                 throw new IOException("Encryption cannot be used more than once");
             }
@@ -348,6 +368,7 @@ public class PEM {
 
             return new PEMEncoder(cipher, algid);
         }
+         */
 
         /**
          * Build string.
@@ -654,7 +675,22 @@ public class PEM {
      * The type Pem decoder.
      */
     public static final class PEMDecoder extends Decoder {
-            private PEMDecoder() {super();}
+
+        final Provider factory;
+        final char[] password;
+
+
+        private PEMDecoder() {
+            super();
+            factory = null;
+            password = null;
+        }
+
+        private PEMDecoder(Provider withFactory, char[] withPassword) {
+            super();
+            factory = withFactory;
+            password = withPassword;
+        }
 
         protected Object decode(String data, String header, String footer) throws IOException {
             KeyType keyType;
@@ -671,6 +707,13 @@ public class PEM {
                 keyType = KeyType.CRL;
             } else {
                 return null;
+            }
+
+            if (password != null) {
+                if (keyType != KeyType.ENCRYPTED_PRIVATE) {
+                    throw new IOException("Decoder configured only for " +
+                        "encrypted PEM.");
+                }
             }
 
             Base64.Decoder decoder = Base64.getDecoder();
@@ -693,7 +736,10 @@ public class PEM {
                     }
                 }
                 case ENCRYPTED_PRIVATE -> {
-                    return new EncryptedPrivateKeyInfo(decoder.decode(data));
+                    if (password == null) {
+                        return new EncryptedPrivateKeyInfo(decoder.decode(data));
+                    }
+                    return new EncryptedPrivateKeyInfo(decoder.decode(data)).getKey(password);
                 }
                 case CERTIFICATE -> {
                     try {
@@ -716,5 +762,12 @@ public class PEM {
             }
         }
 
+        public Decoder withFactory(Provider p) {
+            return new PEMDecoder(p, password);
+        }
+
+        public Decoder withDecryption(char[] password) {
+            return new PEMDecoder(factory, password);
+        }
     }
 }
