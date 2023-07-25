@@ -1008,9 +1008,11 @@ static char* query_lowest_mapping_address() {
 #ifdef LINUX
   {
     FILE* f = os::fopen("/proc/self/maps", "r");
-    ASSERT_NOT_NULL(f);
-    ASSERT_EQ(::fscanf(f, "%p-", &result), 1);
-    ::fclose(f);
+    EXPECT_NOT_NULL(f);
+    if (f != nullptr) {
+      EXPECT_EQ(::fscanf(f, "%p-", &result), 1);
+      ::fclose(f);
+    }
   }
 #endif
 #ifdef _WIN32
