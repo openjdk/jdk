@@ -222,11 +222,6 @@ const Type* AddNode::Value(PhaseGVN* phase) const {
     return Type::TOP;
   }
 
-  // Either input is BOTTOM ==> the result is the local BOTTOM
-  if (t1 == Type::BOTTOM || t2 == Type::BOTTOM) {
-    return bottom_type();
-  }
-
   // Check for an addition involving the additive identity
   const Type* tadd = add_of_identity(t1, t2);
   if (tadd != nullptr) {
