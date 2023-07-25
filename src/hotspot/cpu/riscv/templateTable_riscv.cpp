@@ -2661,16 +2661,17 @@ void TemplateTable::jvmti_post_field_mod(Register cache, Register index, bool is
 void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteControl rc) {
   transition(vtos, vtos);
 
-  const Register cache = x12;
-  const Register index = x13;
-  const Register obj   = x12;
-  const Register off   = x9;
-  const Register flags = x10;
-  const Register bc    = x14;
+  const Register cache     = x12;
+  const Register index     = x13;
+  const Register tos_state = x13;
+  const Register obj       = x12;
+  const Register off       = x9;
+  const Register flags     = x10;
+  const Register bc        = x14;
 
   resolve_cache_and_index_for_field(byte_no, cache, index);
   jvmti_post_field_mod(cache, index, is_static);
-  load_resolved_field_entry(obj, cache, index, off, flags, is_static);
+  load_resolved_field_entry(obj, cache, tos_state, off, flags, is_static);
 
   Label Done;
   __ mv(x15, flags);
@@ -2687,8 +2688,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
         notLong, notFloat, notObj, notDouble;
 
   assert(btos == 0, "change code, btos != 0");
-  // Index holds TOS
-  __ bnez(index, notByte);
+  __ bnez(tos_state, notByte);
 
   // Don't rewrite putstatic, only putfield
   if (is_static) {
@@ -2712,7 +2712,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notByte);
-  __ sub(t0, index, (u1)ztos);
+  __ sub(t0, tos_state, (u1)ztos);
   __ bnez(t0, notBool);
 
   // ztos
@@ -2732,7 +2732,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notBool);
-  __ sub(t0, index, (u1)atos);
+  __ sub(t0, tos_state, (u1)atos);
   __ bnez(t0, notObj);
 
   // atos
@@ -2753,7 +2753,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notObj);
-  __ sub(t0, index, (u1)itos);
+  __ sub(t0, tos_state, (u1)itos);
   __ bnez(t0, notInt);
 
   // itos
@@ -2773,7 +2773,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notInt);
-  __ sub(t0, index, (u1)ctos);
+  __ sub(t0, tos_state, (u1)ctos);
   __ bnez(t0, notChar);
 
   // ctos
@@ -2793,7 +2793,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notChar);
-  __ sub(t0, index, (u1)stos);
+  __ sub(t0, tos_state, (u1)stos);
   __ bnez(t0, notShort);
 
   // stos
@@ -2813,7 +2813,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notShort);
-  __ sub(t0, index, (u1)ltos);
+  __ sub(t0, tos_state, (u1)ltos);
   __ bnez(t0, notLong);
 
   // ltos
@@ -2833,7 +2833,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
   }
 
   __ bind(notLong);
-  __ sub(t0, index, (u1)ftos);
+  __ sub(t0, tos_state, (u1)ftos);
   __ bnez(t0, notFloat);
 
   // ftos
@@ -2854,7 +2854,7 @@ void TemplateTable::putfield_or_static(int byte_no, bool is_static, RewriteContr
 
   __ bind(notFloat);
 #ifdef ASSERT
-  __ sub(t0, index, (u1)dtos);
+  __ sub(t0, tos_state, (u1)dtos);
   __ bnez(t0, notDouble);
 #endif
 
