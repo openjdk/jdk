@@ -1084,3 +1084,17 @@ TEST_VM(os, attempt_reserve_memory_in_below) {
   os::release_memory(p2, M);
   os::release_memory(p3, M);
 }
+
+TEST_VM(os, attempt_reserve_memory_in_below_2) {
+  // Attempt to allocate below 4 G, with a varying set of alignments and sizes.
+  // We don't expect the mapping to work, but if it does, we check the return value
+  // for validity.
+  for (size_t size = os::vm_page_size(); size < G; size *= 2) {
+    for (size_t alignment = os::vm_allocation_granularity(); alignment <= LP64_ONLY(4 * G) NOT_LP64(256 * M); alignment *= 2) {
+      char* p = call_attempt_reserve_memory_below((char*)(4 * G), size, alignment);
+      if (p != nullptr) {
+        os::release_memory(p, size);
+      }
+    }
+  }
+}

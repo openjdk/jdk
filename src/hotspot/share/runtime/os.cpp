@@ -1844,7 +1844,7 @@ char* os::attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment
   } else {
     // Failing that, probe at equidistant points
     const size_t max_strides = align_down(((size_t)max - bytes), os::vm_allocation_granularity()) / alignment;
-    const size_t max_attempts = MIN2((size_t)32, max_strides);
+    const size_t max_attempts = MIN2((size_t)31, max_strides) + 1;
     const size_t stride = align_up((size_t)max / max_attempts, 
                         MAX2(alignment, os::vm_allocation_granularity()));
     result = attempt_reserve_memory_between(nullptr, max, bytes, stride);
