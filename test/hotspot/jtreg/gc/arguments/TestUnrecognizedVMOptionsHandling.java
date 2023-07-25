@@ -70,4 +70,3 @@ public class TestUnrecognizedVMOptionsHandling {
     outputWithNoError.shouldHaveExitValue(0);
   }
 }
-

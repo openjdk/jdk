@@ -51,8 +51,6 @@ import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.internal.doclets.toolkit.AbstractDoclet;
 import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
-import jdk.javadoc.internal.doclets.toolkit.builders.AbstractBuilder;
-import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.ClassTree;
 import jdk.javadoc.internal.doclets.toolkit.util.DeprecatedAPIListBuilder;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
@@ -213,7 +211,11 @@ public class HtmlDoclet extends AbstractDoclet {
     protected void generateOtherFiles(ClassTree classTree)
             throws DocletException {
         super.generateOtherFiles(classTree);
-        HtmlOptions options = configuration.getOptions();
+
+        new ConstantsSummaryWriter(configuration).build();
+        new SerializedFormWriter(configuration).build();
+
+        var options = configuration.getOptions();
         if (options.linkSource()) {
             SourceToHTMLConverter.convertRoot(configuration, DocPaths.SOURCE_OUTPUT);
         }
@@ -319,6 +321,16 @@ public class HtmlDoclet extends AbstractDoclet {
         copyLegalFiles(options.createIndex());
     }
 
+    @Override
+    protected void generateFiles() throws DocletException {
+        super.generateFiles();
+
+        if (configuration.tagletManager != null) { // may be null, if no files generated, perhaps because of errors
+            configuration.tagletManager.printReport();
+        }
+
+    }
+
     private void copyJqueryFiles() throws DocletException {
         List<String> files = Arrays.asList(
                 DocPaths.JQUERY_JS.getPath(),
@@ -378,13 +390,12 @@ public class HtmlDoclet extends AbstractDoclet {
     @Override // defined by AbstractDoclet
     protected void generateClassFiles(SortedSet<TypeElement> typeElems, ClassTree classTree)
             throws DocletException {
-        BuilderFactory f = configuration.getBuilderFactory();
         for (TypeElement te : typeElems) {
             if (utils.hasHiddenTag(te) ||
                     !(configuration.isGeneratedDoc(te) && utils.isIncluded(te))) {
                 continue;
             }
-            f.getClassBuilder(te, classTree).build();
+            new ClassWriter(configuration, te, classTree).build();
         }
     }
 
@@ -393,9 +404,7 @@ public class HtmlDoclet extends AbstractDoclet {
         if (configuration.showModules) {
             List<ModuleElement> mdles = new ArrayList<>(configuration.modulePackages.keySet());
             for (ModuleElement mdle : mdles) {
-                AbstractBuilder moduleSummaryBuilder =
-                        configuration.getBuilderFactory().getModuleSummaryBuilder(mdle);
-                moduleSummaryBuilder.build();
+                new ModuleWriter(configuration, mdle).build();
             }
         }
     }
@@ -410,9 +419,7 @@ public class HtmlDoclet extends AbstractDoclet {
             // deprecated, do not generate the package-summary.html, package-frame.html
             // and package-tree.html pages for that package.
             if (!(options.noDeprecated() && utils.isDeprecated(pkg))) {
-                AbstractBuilder packageSummaryBuilder =
-                        configuration.getBuilderFactory().getPackageSummaryBuilder(pkg);
-                packageSummaryBuilder.build();
+                new PackageWriter(configuration, pkg).build();
                 if (options.createTree()) {
                     PackageTreeWriter.generate(configuration, pkg, options.noDeprecated());
                 }

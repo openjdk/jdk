@@ -42,17 +42,14 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Links;
-import jdk.javadoc.internal.doclets.toolkit.Content;
-import jdk.javadoc.internal.doclets.toolkit.MemberSummaryWriter;
-import jdk.javadoc.internal.doclets.toolkit.MemberWriter;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
-import jdk.javadoc.internal.doclets.toolkit.taglets.DeprecatedTaglet;
 import jdk.javadoc.internal.doclets.toolkit.util.Utils;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
  * The base class for member writers.
  */
-public abstract class AbstractMemberWriter implements MemberSummaryWriter, MemberWriter {
+public abstract class AbstractMemberWriter {
 
     protected final HtmlConfiguration configuration;
     protected final HtmlOptions options;
@@ -79,6 +76,33 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
 
     public AbstractMemberWriter(SubWriterHolderWriter writer) {
         this(writer, null);
+    }
+
+    /**
+     * Returns the member summary header for the given class.
+     *
+     * @param typeElement the class the summary belongs to
+     * @param content     the content to which the member summary will be added
+     *
+     * @return the member summary header
+     */
+    public abstract Content getMemberSummaryHeader(TypeElement typeElement, Content content);
+    /**
+     * Adds the given summary to the list of summaries.
+     *
+     * @param summariesList the list of summaries
+     * @param content       the summary
+     */
+    public abstract void addSummary(Content summariesList, Content content);
+
+    /**
+     * Returns a list of visible elements of the specified kind in this
+     * type element.
+     * @param kind of members
+     * @return a list of members
+     */
+    protected List<Element> getVisibleMembers(VisibleMemberTable.Kind kind) {
+        return configuration.getVisibleMemberTable(typeElement).getVisibleMembers(kind);
     }
 
     /* ----- abstracts ----- */
@@ -257,8 +281,8 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
      * @param target the content to which the deprecated information will be added.
      */
     protected void addDeprecatedInfo(Element member, Content target) {
-        Content output = (new DeprecatedTaglet()).getAllBlockTagOutput(member,
-            writer.getTagletWriterInstance(false));
+        var t = configuration.tagletManager.getTaglet(DocTree.Kind.DEPRECATED);
+        Content output = t.getAllBlockTagOutput(member, writer.getTagletWriterInstance(false));
         if (!output.isEmpty()) {
             target.add(HtmlTree.DIV(HtmlStyle.deprecationBlock, output));
         }
@@ -341,11 +365,17 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         }
     }
 
-    @Override
+    /**
+     * Adds the member summary for the given class and member.
+     *
+     * @param tElement           the class the summary belongs to
+     * @param member             the member that is documented
+     * @param firstSentenceTrees the tags for the sentence being documented
+     */
     public void addMemberSummary(TypeElement tElement, Element member,
             List<? extends DocTree> firstSentenceTrees) {
         if (tElement != typeElement) {
-            throw new IllegalStateException();
+            throw new IllegalStateException(tElement + ", " + typeElement);
         }
         var table = getSummaryTable();
         List<Content> rowContents = new ArrayList<>();
@@ -362,26 +392,50 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         table.addRow(member, rowContents);
     }
 
-    @Override
+    /**
+     * Adds the inherited member summary for the given class and member.
+     *
+     * @param tElement the class the inherited member belongs to
+     * @param member the inherited member that is being documented
+     * @param isFirst true if this is the first member in the list
+     * @param isLast true if this is the last member in the list
+     * @param content the content to which the links will be added
+     */
     public void addInheritedMemberSummary(TypeElement tElement,
-            Element nestedClass, boolean isFirst, boolean isLast,
+            Element member, boolean isFirst, boolean isLast,
             Content content) {
-        writer.addInheritedMemberSummary(this, tElement, nestedClass, isFirst, content);
+        writer.addInheritedMemberSummary(this, tElement, member, isFirst, content);
     }
 
-    @Override
+    /**
+     * Returns the inherited member summary header for the given class.
+     *
+     * @param tElement the class the summary belongs to
+     *
+     * @return the inherited member summary header
+     */
     public Content getInheritedSummaryHeader(TypeElement tElement) {
         Content c = writer.getMemberInherited();
         writer.addInheritedSummaryHeader(this, tElement, c);
         return c;
     }
 
-    @Override
+    /**
+     * Returns the inherited summary links.
+     *
+     * @return the inherited summary links
+     */
     public Content getInheritedSummaryLinks() {
         return new HtmlTree(TagName.CODE);
     }
 
-    @Override
+    /**
+     * Returns the summary table for the given class.
+     *
+     * @param tElement the class the summary table belongs to
+     *
+     * @return the summary table
+     */
     public Content getSummaryTable(TypeElement tElement) {
         if (tElement != typeElement) {
             throw new IllegalStateException();
@@ -389,18 +443,33 @@ public abstract class AbstractMemberWriter implements MemberSummaryWriter, Membe
         return getSummaryTable();
     }
 
-    @Override
+    /**
+     * Returns the member content.
+     *
+     * @param memberContent the content representing the member
+     *
+     * @return the member content
+     */
     public Content getMember(Content memberContent) {
         return writer.getMember(memberContent);
     }
 
-    @Override
-    public Content getMemberList() {
+    /**
+     * {@return a list to add member items to}
+     *
+     * @see #getMemberListItem(Content)
+     */
+    protected Content getMemberList() {
         return writer.getMemberList();
     }
 
-    @Override
-    public Content getMemberListItem(Content memberContent) {
+    /**
+     * {@return a member item}
+     *
+     * @param memberContent the member to represent as an item
+     * @see #getMemberList()
+     */
+    protected Content getMemberListItem(Content memberContent) {
         return writer.getMemberListItem(memberContent);
     }
 

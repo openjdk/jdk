@@ -36,6 +36,7 @@
 
 class JvmtiThreadState;
 class RecordComponent;
+class SerializeClosure;
 
 #define CHECK_INIT(offset)  assert(offset != 0, "should be initialized"); return offset;
 

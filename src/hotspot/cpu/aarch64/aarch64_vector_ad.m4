@@ -206,13 +206,13 @@ source %{
         }
         break;
       case Op_VectorLongToMask:
-        if (UseSVE < 2 || vlen > 64 || !VM_Version::supports_svebitperm()) {
+        if (vlen > 64 || !VM_Version::supports_svebitperm()) {
           return false;
         }
         break;
       case Op_CompressBitsV:
       case Op_ExpandBitsV:
-        if (UseSVE < 2 || !VM_Version::supports_svebitperm()) {
+        if (!VM_Version::supports_svebitperm()) {
           return false;
         }
         break;
@@ -3118,6 +3118,34 @@ instruct extract$1_index_ge$2($3 dst, vReg src, immI idx, vReg tmp) %{
   ins_pipe(pipe_slow);
 %}')dnl
 dnl
+
+// BOOLEAN
+
+instruct extractUB_ireg(iRegINoSp dst, vReg src, iRegI idx, vReg tmp) %{
+  match(Set dst (ExtractUB src idx));
+  effect(TEMP tmp);
+  format %{ "extractUB_ireg $dst, $src, $idx\t# variable index. KILL $tmp" %}
+  ins_encode %{
+    // Input "src" is a vector of boolean represented as
+    // bytes with 0x00/0x01 as element values.
+    // "idx" is expected to be in range.
+
+    uint length_in_bytes = Matcher::vector_length_in_bytes(this, $src);
+    __ mov($tmp$$FloatRegister, __ B, 0, $idx$$Register);
+    if (VM_Version::use_neon_for_vector(length_in_bytes)) {
+      __ tbl($tmp$$FloatRegister, length_in_bytes == 16 ? __ T16B : __ T8B,
+             $src$$FloatRegister, 1, $tmp$$FloatRegister);
+    } else {
+      assert(UseSVE > 0, "must be sve");
+      __ sve_tbl($tmp$$FloatRegister, __ B, $src$$FloatRegister, $tmp$$FloatRegister);
+    }
+    __ smov($dst$$Register, $tmp$$FloatRegister, __ B, 0);
+  %}
+  ins_pipe(pipe_slow);
+%}
+EXTRACT_INT_SMALL(UB, 16, iRegINoSp, smov, B)
+EXTRACT_INT_LARGE(UB, 16, iRegINoSp, T_BYTE)
+
 // BYTE
 EXTRACT_INT_SMALL(B, 16, iRegINoSp, smov, B)
 EXTRACT_INT_LARGE(B, 16, iRegINoSp, T_BYTE)

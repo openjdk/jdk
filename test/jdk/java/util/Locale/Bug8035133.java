@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,89 +25,52 @@
  * @bug 8035133
  * @summary Checks that the tags matching the range with quality weight q=0
  *          e.g. en;q=0 must be elimited and must not be the part of output
+ * @run junit Bug8035133
  */
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class Bug8035133 {
 
-    private static boolean err = false;
-
-    public static void main(String[] args) {
-
-        // checking Locale.lookup with de-ch;q=0
-        checkLookup("en;q=0.1, *-ch;q=0.5, de-ch;q=0",
-                "de-ch, en, fr-ch", "fr-CH");
-
-        /* checking Locale.lookup with *;q=0 '*' should be ignored
-         * in lookup
-         */
-        checkLookup("en;q=0.1, *-ch;q=0.5, *;q=0",
-                "de-ch, en, fr-ch", "de-CH");
-
-        // checking Locale.filter with fr-ch;q=0 in BASIC_FILTERING
-        checkFilter("en;q=0.1, fr-ch;q=0.0, de-ch;q=0.5",
-                "de-ch, en, fr-ch", "de-CH, en");
-
-        // checking Locale.filter with *;q=0 in BASIC_FILTERING
-        checkFilter("de-ch;q=0.6, *;q=0", "de-ch, fr-ch", "");
-
-        // checking Locale.filter with *;q=0 in BASIC_FILTERING
-        checkFilter("de-ch;q=0.6, de;q=0", "de-ch", "");
-
-        // checking Locale.filter with *;q=0.6, en;q=0 in BASIC_FILTERING
-        checkFilter("*;q=0.6, en;q=0", "de-ch, hi-in, en", "de-CH, hi-IN");
-
-        // checking Locale.filter with de-ch;q=0 in EXTENDED_FILTERING
-        checkFilter("en;q=0.1, *-ch;q=0.5, de-ch;q=0",
-                "de-ch, en, fr-ch", "fr-CH, en");
-
-        /* checking Locale.filter with *-ch;q=0 in EXTENDED_FILTERING which
-         * must make filter to return "" empty or no match
-         */
-        checkFilter("de-ch;q=0.5, *-ch;q=0", "de-ch, fr-ch", "");
-
-        /* checking Locale.filter with *;q=0 in EXTENDED_FILTERING which
-         * must make filter to return "" empty or no match
-         */
-        checkFilter("*-ch;q=0.5, *;q=0", "de-ch, fr-ch", "");
-
-        /* checking Locale.filter with *;q=0.6, *-Latn;q=0 in
-         * EXTENDED_FILTERING
-         */
-        checkFilter("*;q=0.6, *-Latn;q=0", "de-ch, hi-in, en-Latn",
-                "de-CH, hi-IN");
-
-        if (err) {
-            throw new RuntimeException("[LocaleMatcher method(s) failed]");
-        }
-
-    }
-
-    private static void checkLookup(String ranges, String tags,
+    // Ensure weights with 'q=0' work as expected during lookup
+    @ParameterizedTest
+    @MethodSource("lookupProvider")
+    public void lookupTest(String ranges, String tags,
             String expectedLocale) {
 
         List<Locale.LanguageRange> priorityList = Locale.LanguageRange
                 .parse(ranges);
         List<Locale> localeList = generateLocales(tags);
         Locale loc = Locale.lookup(priorityList, localeList);
-        String actualLocale
-                = loc.toLanguageTag();
-
-        if (!actualLocale.equals(expectedLocale)) {
-            System.err.println("Locale.lookup failed with ranges: " + ranges
-                    + " Expected: " + expectedLocale
-                    + " Actual: " + actualLocale);
-            err = true;
-        }
-
+        String actualLocale = loc.toLanguageTag();
+        assertEquals(expectedLocale, actualLocale);
     }
 
-    private static void checkFilter(String ranges, String tags,
+    private static Stream<Arguments> lookupProvider() {
+        return Stream.of(
+                // checking Locale.lookup with de-ch;q=0
+                Arguments.of("en;q=0.1, *-ch;q=0.5, de-ch;q=0",
+                        "de-ch, en, fr-ch", "fr-CH"),
+                // checking Locale.lookup with *;q=0 '*' should be ignored in lookup
+                Arguments.of("en;q=0.1, *-ch;q=0.5, *;q=0",
+                        "de-ch, en, fr-ch", "de-CH")
+        );
+    }
+
+    // Ensure weights with 'q=0' work as expected during filtering
+    @ParameterizedTest
+    @MethodSource("filterProvider")
+    public void filterTest(String ranges, String tags,
             String expectedLocales) {
 
         List<Locale.LanguageRange> priorityList = Locale.LanguageRange
@@ -115,14 +78,37 @@ public class Bug8035133 {
         List<Locale> localeList = generateLocales(tags);
         String actualLocales = getLocalesAsString(
                 Locale.filter(priorityList, localeList));
+        assertEquals(expectedLocales, actualLocales);
+    }
 
-        if (!actualLocales.equals(expectedLocales)) {
-            System.err.println("Locale.filter failed with ranges: " + ranges
-                    + " Expected: " + expectedLocales
-                    + " Actual: " + actualLocales);
-            err = true;
-        }
-
+    private static Stream<Arguments> filterProvider() {
+        return Stream.of(
+                // checking Locale.filter with fr-ch;q=0 in BASIC_FILTERING
+                Arguments.of("en;q=0.1, fr-ch;q=0.0, de-ch;q=0.5",
+                        "de-ch, en, fr-ch", "de-CH, en"),
+                // checking Locale.filter with *;q=0 in BASIC_FILTERING
+                Arguments.of("de-ch;q=0.6, *;q=0", "de-ch, fr-ch", ""),
+                // checking Locale.filter with *;q=0 in BASIC_FILTERING
+                Arguments.of("de-ch;q=0.6, de;q=0", "de-ch", ""),
+                // checking Locale.filter with *;q=0.6, en;q=0 in BASIC_FILTERING
+                Arguments.of("*;q=0.6, en;q=0", "de-ch, hi-in, en", "de-CH, hi-IN"),
+                // checking Locale.filter with de-ch;q=0 in EXTENDED_FILTERING
+                Arguments.of("en;q=0.1, *-ch;q=0.5, de-ch;q=0",
+                        "de-ch, en, fr-ch", "fr-CH, en"),
+                /* checking Locale.filter with *-ch;q=0 in EXTENDED_FILTERING which
+                 * must make filter to return "" empty or no match
+                 */
+                Arguments.of("de-ch;q=0.5, *-ch;q=0", "de-ch, fr-ch", ""),
+                /* checking Locale.filter with *;q=0 in EXTENDED_FILTERING which
+                 * must make filter to return "" empty or no match
+                 */
+                Arguments.of("*-ch;q=0.5, *;q=0", "de-ch, fr-ch", ""),
+                /* checking Locale.filter with *;q=0.6, *-Latn;q=0 in
+                 * EXTENDED_FILTERING
+                 */
+                Arguments.of("*;q=0.6, *-Latn;q=0", "de-ch, hi-in, en-Latn",
+                        "de-CH, hi-IN")
+        );
     }
 
     private static List<Locale> generateLocales(String tags) {
@@ -155,5 +141,4 @@ public class Bug8035133 {
 
         return sb.toString().trim();
     }
-
 }

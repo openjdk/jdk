@@ -54,6 +54,7 @@
 #include "runtime/synchronizer.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vframe.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/align.hpp"
@@ -1646,6 +1647,7 @@ public:
 };
 
 static size_t delete_monitors(GrowableArray<ObjectMonitor*>* delete_list) {
+  NativeHeapTrimmer::SuspendMark sm("monitor deletion");
   size_t count = 0;
   for (ObjectMonitor* monitor: *delete_list) {
     delete monitor;

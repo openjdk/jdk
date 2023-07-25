@@ -96,7 +96,7 @@
                                                                             \
   notproduct(intx, IndexSetWatch, 0,                                        \
           "Trace all operations on this IndexSet (-1 means all, 0 none)")   \
-          range(-1, 0)                                                      \
+          range(-1, max_intx)                                               \
                                                                             \
   develop(intx, OptoNodeListSize, 4,                                        \
           "Starting allocation size of Node_List data structures")          \
@@ -181,9 +181,6 @@
   product_pd(bool,  SuperWordLoopUnrollAnalysis,                            \
            "Map number of unrolls for main loop via "                       \
            "Superword Level Parallelism analysis")                          \
-                                                                            \
-  product(bool, PostLoopMultiversioning, false, EXPERIMENTAL,               \
-           "Multi versioned post loops to eliminate range checks")          \
                                                                             \
   notproduct(bool, TraceSuperWordLoopUnrollAnalysis, false,                 \
           "Trace what Superword Level Parallelism analysis applies")        \
@@ -469,6 +466,12 @@
                                                                             \
   develop(bool, TracePostallocExpand, false, "Trace expanding nodes after"  \
           " register allocation.")                                          \
+                                                                            \
+  product(bool, ReduceAllocationMerges, true, DIAGNOSTIC,                   \
+          "Try to simplify allocation merges before Scalar Replacement")    \
+                                                                            \
+  notproduct(bool, TraceReduceAllocationMerges, false,                      \
+          "Trace decision for simplifying allocation merges.")              \
                                                                             \
   product(bool, DoEscapeAnalysis, true,                                     \
           "Perform escape analysis")                                        \

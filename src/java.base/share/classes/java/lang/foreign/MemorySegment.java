@@ -1252,7 +1252,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * {@code srcOffset} through {@code srcOffset + bytes - 1} in the source segment are copied into the destination
      * segment at offset {@code dstOffset} through {@code dstOffset + bytes - 1}.
      * <p>
-     * If the source segment overlaps with this segment, then the copying is performed as if the bytes at
+     * If the source segment overlaps with the destination segment, then the copying is performed as if the bytes at
      * offset {@code srcOffset} through {@code srcOffset + bytes - 1} in the source segment were first copied into a
      * temporary segment with size {@code bytes}, and then the contents of the temporary segment were copied into
      * the destination segment at offset {@code dstOffset} through {@code dstOffset + bytes - 1}.
@@ -1300,7 +1300,7 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * If the byte order of the two element layouts differ, the bytes corresponding to each element to be copied
      * are swapped accordingly during the copy operation.
      * <p>
-     * If the source segment overlaps with this segment, then the copying is performed as if the bytes at
+     * If the source segment overlaps with the destination segment, then the copying is performed as if the bytes at
      * offset {@code srcOffset} through {@code srcOffset + (elementCount * S) - 1} in the source segment were first copied into a
      * temporary segment with size {@code bytes}, and then the contents of the temporary segment were copied into
      * the destination segment at offset {@code dstOffset} through {@code dstOffset + (elementCount * S) - 1}.

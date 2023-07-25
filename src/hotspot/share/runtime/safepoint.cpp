@@ -379,7 +379,7 @@ void SafepointSynchronize::begin() {
   if (SafepointTimeout) {
     // Set the limit time, so that it can be compared to see if this has taken
     // too long to complete.
-    safepoint_limit_time = SafepointTracing::start_of_safepoint() + (jlong)SafepointTimeoutDelay * (NANOUNITS / MILLIUNITS);
+    safepoint_limit_time = SafepointTracing::start_of_safepoint() + (jlong)(SafepointTimeoutDelay * NANOSECS_PER_MILLISEC);
     timeout_error_printed = false;
   }
 
@@ -819,7 +819,7 @@ void SafepointSynchronize::print_safepoint_timeout() {
         os::naked_sleep(3000);
       }
     }
-    fatal("Safepoint sync time longer than " INTX_FORMAT "ms detected when executing %s.",
+    fatal("Safepoint sync time longer than %.6f ms detected when executing %s.",
           SafepointTimeoutDelay, VMThread::vm_operation()->name());
   }
 }
