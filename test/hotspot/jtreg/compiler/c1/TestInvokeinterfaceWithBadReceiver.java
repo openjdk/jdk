@@ -23,8 +23,7 @@
 
 /*
  * @test
- * TODO update bug number
- * @bug 1234567
+ * @bug 8312909
  * @summary Test monomorphic interface call to with invalid receiver.
  * @modules java.base/jdk.internal.vm.annotation
  * @compile TestInvokeinterfaceWithBadReceiverHelper.jasm
