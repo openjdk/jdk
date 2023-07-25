@@ -71,11 +71,11 @@ class Bytecode: public StackObj {
   Bytecodes::Code invoke_code() const            { return (code() == Bytecodes::_invokehandle) ? code() : java_code(); }
 
   // Static functions for parsing bytecodes in place.
-  int get_index_u1(Bytecodes::Code bc) const {
+  u1 get_index_u1(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(1, bc);
     return *(jubyte*)addr_at(1);
   }
-  int get_index_u2(Bytecodes::Code bc, bool is_wide = false) const {
+  u2 get_index_u2(Bytecodes::Code bc, bool is_wide = false) const {
     assert_same_format_as(bc, is_wide); assert_index_size(2, bc, is_wide);
     address p = addr_at(is_wide ? 2 : 1);
     if (can_use_native_byte_order(bc, is_wide)) {
