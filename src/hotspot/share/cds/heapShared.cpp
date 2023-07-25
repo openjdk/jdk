@@ -135,6 +135,8 @@ OopHandle HeapShared::_roots;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
 KlassToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
 HeapShared::ResolvedReferenceScratchTable* HeapShared::_scratch_references_table = nullptr;
+ClassLoaderData* HeapShared::_saved_java_platform_loader_data = nullptr;
+ClassLoaderData* HeapShared::_saved_java_system_loader_data = nullptr;
 
 static bool is_subgraph_root_class_of(ArchivableStaticFieldInfo fields[], InstanceKlass* ik) {
   for (int i = 0; fields[i].valid(); i++) {
@@ -263,6 +265,7 @@ void HeapShared::clear_root(int index) {
 }
 
 bool HeapShared::archive_object(oop obj) {
+  tty->print_cr("archive object");
   assert(DumpSharedSpaces, "dump-time only");
 
   assert(!obj->is_stackChunk(), "do not archive stack chunks");
@@ -299,15 +302,26 @@ bool HeapShared::archive_object(oop obj) {
       }
       java_lang_Module::set_module_entry(obj, nullptr);
     } else if (java_lang_ClassLoader::is_instance(obj)) {
-      // class_data will be restored explicitly at run time.
+      // class_data will be restored explicitly at run time and after dumptime
       guarantee(obj == SystemDictionary::java_platform_loader() ||
                 obj == SystemDictionary::java_system_loader() ||
                 java_lang_ClassLoader::loader_data(obj) == nullptr, "must be");
-      //java_lang_ClassLoader::release_set_loader_data(obj, nullptr);
+      if (obj == SystemDictionary::java_platform_loader()) {
+        _saved_java_platform_loader_data = java_lang_ClassLoader::loader_data_acquire(SystemDictionary::java_platform_loader());
+      } else if (obj == SystemDictionary::java_system_loader()) {
+        _saved_java_system_loader_data = java_lang_ClassLoader::loader_data_acquire(SystemDictionary::java_system_loader());
+      }
+      java_lang_ClassLoader::release_set_loader_data(obj, nullptr);
     }
 
     return true;
   }
+}
+
+void HeapShared::restore_loader_data() {
+  log_info(cds)("Restoring java platform and system loaders");
+  java_lang_ClassLoader::release_set_loader_data(SystemDictionary::java_platform_loader(), _saved_java_platform_loader_data);
+  java_lang_ClassLoader::release_set_loader_data(SystemDictionary::java_system_loader(), _saved_java_system_loader_data);
 }
 
 class KlassToOopHandleTable: public ResourceHashtable<Klass*, OopHandle,
