@@ -60,7 +60,7 @@ public:
     _field_offset(0),
     _field_index(0),
     _cpool_index(cpi),
-    _tos(0),
+    _tos_state(0),
     _flags(0),
     _get_code(0),
     _put_code(0) {}
@@ -116,11 +116,11 @@ public:
   }
 
   // Populate the strucutre with resolution information
-  void fill_in(InstanceKlass* klass, intx offset, int index, int tos, u1 b1, u1 b2) {
+  void fill_in(InstanceKlass* klass, intx offset, int index, int tos_state, u1 b1, u1 b2) {
     _field_holder = klass;
     _field_offset = offset;
     _field_index = index;
-    _tos = tos;
+    _tos_state = tos_state;
 
     // These must be set after the other fields
     set_bytecode(&_get_code, b1);
@@ -136,7 +136,7 @@ public:
   static ByteSize field_index_offset()  { return byte_offset_of(ResolvedFieldEntry, _field_index);  }
   static ByteSize get_code_offset()     { return byte_offset_of(ResolvedFieldEntry, _get_code);     }
   static ByteSize put_code_offset()     { return byte_offset_of(ResolvedFieldEntry, _put_code);     }
-  static ByteSize type_offset()         { return byte_offset_of(ResolvedFieldEntry, _tos);          }
+  static ByteSize type_offset()         { return byte_offset_of(ResolvedFieldEntry, _tos_state);    }
   static ByteSize flags_offset()        { return byte_offset_of(ResolvedFieldEntry, _flags);        }
 
 };

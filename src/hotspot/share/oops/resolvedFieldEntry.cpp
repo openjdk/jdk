@@ -36,7 +36,7 @@ void ResolvedFieldEntry::print_on(outputStream* st) const {
   st->print_cr(" - Offset: %d", field_offset());
   st->print_cr(" - Field Index: %d", field_index());
   st->print_cr(" - CP Index: %d", constant_pool_index());
-  st->print_cr(" - TOS: %s", type2name(as_BasicType((TosState)tos())));
+  st->print_cr(" - TOS: %s", type2name(as_BasicType((TosState)tos_state())));
   st->print_cr(" - Is Final: %d", is_final());
   st->print_cr(" - Is Volatile: %d", is_volatile());
   st->print_cr(" - Get Bytecode: %s", Bytecodes::name((Bytecodes::Code)get_code()));
