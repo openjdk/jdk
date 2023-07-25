@@ -407,27 +407,29 @@ AC_DEFUN_ONCE([BASIC_SETUP_OUTPUT_DIR],
     # have a configuration in this directory. Do some sanity checks!
 
     if test ! -e "$OUTPUTDIR/spec.gmk"; then
-      # If we have a spec.gmk, we have run here before and we are OK. Otherwise, check for
-      # other files
-      files_present=`$LS $OUTPUTDIR`
-      # Configure has already touched config.log and confdefs.h in the current dir when this check
-      # is performed.
-      filtered_files=`$ECHO "$files_present" \
-          | $SED -e 's/config.log//g' \
-              -e 's/configure.log//g' \
-              -e 's/confdefs.h//g' \
-              -e 's/configure-support//g' \
-              -e 's/ //g' \
-          | $TR -d '\n'`
-      if test "x$filtered_files" != x; then
-        AC_MSG_NOTICE([Current directory is $CONFIGURE_START_DIR.])
-        AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
-        AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
-        AC_MSG_NOTICE([However, this directory is not empty. This is not allowed, since it could])
-        AC_MSG_NOTICE([seriously mess up just about everything.])
-        AC_MSG_NOTICE([Try 'cd $TOPDIR' and restart configure])
-        AC_MSG_NOTICE([(or create a new empty directory and cd to it).])
-        AC_MSG_ERROR([Will not continue creating configuration in $CONFIGURE_START_DIR])
+      if test ! -e "$OUTPUTDIR/configure-support/generated-configure.sh"; then
+        # If we have a spec.gmk or configure-support/generated-configure.sh,
+        # we have run here before and we are OK. Otherwise, check for other files
+        files_present=`$LS $OUTPUTDIR`
+        # Configure has already touched config.log and confdefs.h in the current dir when this check
+        # is performed.
+        filtered_files=`$ECHO "$files_present" \
+            | $SED -e 's/config.log//g' \
+                -e 's/configure.log//g' \
+                -e 's/confdefs.h//g' \
+                -e 's/configure-support//g' \
+                -e 's/ //g' \
+            | $TR -d '\n'`
+        if test "x$filtered_files" != x; then
+          AC_MSG_NOTICE([Current directory is $CONFIGURE_START_DIR.])
+          AC_MSG_NOTICE([Since this is not the source root, configure will output the configuration here])
+          AC_MSG_NOTICE([(as opposed to creating a configuration in <src_root>/build/<conf-name>).])
+          AC_MSG_NOTICE([However, this directory is not empty. This is not allowed, since it could])
+          AC_MSG_NOTICE([seriously mess up just about everything.])
+          AC_MSG_NOTICE([Try 'cd $TOPDIR' and restart configure])
+          AC_MSG_NOTICE([(or create a new empty directory and cd to it).])
+          AC_MSG_ERROR([Will not continue creating configuration in $CONFIGURE_START_DIR])
+        fi
       fi
     fi
   fi
