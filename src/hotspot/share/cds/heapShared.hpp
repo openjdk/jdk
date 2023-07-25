@@ -407,7 +407,7 @@ private:
   static void add_scratch_resolved_reference(ConstantPool* src, int index, oop new_result) NOT_CDS_JAVA_HEAP_RETURN;
   static void add_scratch_resolved_references(ConstantPool* src, OopHandle dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
-  static void restore_loader_data();
+  static void restore_loader_data() NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
     CDS_JAVA_HEAP_ONLY(return (idx == MetaspaceShared::hp);)
     NOT_CDS_JAVA_HEAP_RETURN_(false);

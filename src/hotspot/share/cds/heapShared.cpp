@@ -265,7 +265,6 @@ void HeapShared::clear_root(int index) {
 }
 
 bool HeapShared::archive_object(oop obj) {
-  tty->print_cr("archive object");
   assert(DumpSharedSpaces, "dump-time only");
 
   assert(!obj->is_stackChunk(), "do not archive stack chunks");
