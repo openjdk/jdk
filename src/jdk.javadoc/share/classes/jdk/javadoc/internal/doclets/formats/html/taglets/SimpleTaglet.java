@@ -36,14 +36,13 @@ import javax.lang.model.element.ExecutableElement;
 
 import com.sun.source.doctree.BlockTagTree;
 import com.sun.source.doctree.DocTree;
-import com.sun.source.doctree.UnknownBlockTagTree;
 
 import jdk.javadoc.doclet.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFinder;
 
 /**
@@ -184,7 +183,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
         if (header == null || tags.isEmpty()) {
             return null;
         }
-        return simpleBlockTagOutput(holder, tags, header, tagletWriter);
+        return simpleBlockTagOutput(holder, tags, header);
     }
 
     /**
@@ -198,8 +197,7 @@ public class SimpleTaglet extends BaseTaglet implements InheritableTaglet {
      */
     private Content simpleBlockTagOutput(Element element,
                                         List<? extends DocTree> simpleTags,
-                                        String header,
-                                        TagletWriter writer) {
+                                        String header) {
         var ch = utils.getCommentHelper(element);
         var context = tagletWriter.context;
         var htmlWriter = tagletWriter.htmlWriter;
