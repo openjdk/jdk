@@ -315,7 +315,7 @@ void CodeCache::initialize_heaps() {
   if (UseLargePages) {
     const size_t lg_ps = page_size(false, 1);
     if (ps < lg_ps) {
-      log_warning(codecache)("Failed to reserve large page memory for code cache (" PROPERFMT "). "
+      log_warning(codecache)("Failed to use large page memory for code cache (" PROPERFMT "). "
                              "Reverting to smaller page size (" PROPERFMT ").",
                              PROPERFMTARGS(lg_ps), PROPERFMTARGS(ps));
     }
