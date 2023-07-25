@@ -1313,19 +1313,19 @@ static jbyte* check_alignment_get_addr(typeArrayOop obj, int index, int expected
     return res;
 }
 
-static void byte_array_put(typeArrayOop obj, intptr_t val, int index, int byte_count) {
+static void byte_array_put(typeArrayOop obj, StackValue* value, int index, int byte_count) {
   switch (byte_count) {
     case 1:
-      obj->byte_at_put(index, (jbyte) *((jint *) &val));
+      obj->byte_at_put(index, (jbyte) value->get_jint());
       break;
     case 2:
-      *((jshort *) check_alignment_get_addr(obj, index, 2)) = (jshort) *((jint *) &val);
+      *((jshort *) check_alignment_get_addr(obj, index, 2)) = (jshort) value->get_jint();
       break;
     case 4:
-      *((jint *) check_alignment_get_addr(obj, index, 4)) = (jint) *((jint *) &val);
+      *((jint *) check_alignment_get_addr(obj, index, 4)) = value->get_jint();
       break;
     case 8:
-      *((jlong *) check_alignment_get_addr(obj, index, 8)) = (jlong) *((jlong *) &val);
+      *((jlong *) check_alignment_get_addr(obj, index, 8)) = (jlong) value->get_intptr();
       break;
     default:
       ShouldNotReachHere();
@@ -1337,7 +1337,6 @@ static void byte_array_put(typeArrayOop obj, intptr_t val, int index, int byte_c
 // restore elements of an eliminated type array
 void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_map, ObjectValue* sv, typeArrayOop obj, BasicType type) {
   int index = 0;
-  intptr_t val;
 
   for (int i = 0; i < sv->field_size(); i++) {
     StackValue* value = StackValue::create_stack_value(fr, reg_map, sv->field_at(i));
@@ -1401,9 +1400,8 @@ void Deoptimization::reassign_type_array_elements(frame* fr, RegisterMap* reg_ma
       assert(value->type() == T_INT, "Agreement.");
 #if INCLUDE_JVMCI
       // The value we get is erased as a regular int. We will need to find its actual byte count 'by hand'.
-      val = value->get_intptr();
       int byte_count = count_number_of_bytes_for_entry(sv, i);
-      byte_array_put(obj, val, index, byte_count);
+      byte_array_put(obj, value, index, byte_count);
       // According to byte_count contract, the values from i + 1 to i + byte_count are illegal values. Skip.
       i += byte_count - 1; // Balance the loop counter.
       index += byte_count;
