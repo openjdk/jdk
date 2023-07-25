@@ -35,7 +35,7 @@ on:
       apt-gcc-version:
         required: false
         type: string
-        default: '10.3.0-1ubuntu1~20.04'
+        default: '10.4.0-4ubuntu1~22.04'
       apt-gcc-cross-suffix:
         required: false
         type: string
@@ -44,7 +44,7 @@ on:
 jobs:
   build-cross-compile:
     name: build
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
 
     strategy:
       fail-fast: false
