@@ -52,6 +52,9 @@ class StaticHugePageSupport {
   // - is the size one gets when using mmap(MAP_HUGETLB) when omitting size specifiers like MAP_HUGE_SHIFT)
   size_t _default_hugepage_size;
 
+  // If true, the kernel support for hugepages is inconsistent
+  bool _inconsistent;
+
 public:
   StaticHugePageSupport();
 
@@ -60,6 +63,8 @@ public:
   os::PageSizes pagesizes() const;
   size_t default_hugepage_size() const;
   void print_on(outputStream* os);
+
+  bool inconsistent() const { return _inconsistent; }
 };
 
 enum class THPMode { always, never, madvise };
@@ -98,7 +103,7 @@ public:
   static const THPSupport& thp_info() { return _thp_support; }
 
   static size_t default_static_hugepage_size()  { return _static_hugepage_support.default_hugepage_size(); }
-  static bool supports_static_hugepages()       { return default_static_hugepage_size() > 0; }
+  static bool supports_static_hugepages()       { return default_static_hugepage_size() > 0 && !_static_hugepage_support.inconsistent(); }
   static THPMode thp_mode()                     { return _thp_support.mode(); }
   static bool supports_thp()                    { return thp_mode() == THPMode::madvise || thp_mode() == THPMode::always; }
   static size_t thp_pagesize()                  { return _thp_support.pagesize(); }
