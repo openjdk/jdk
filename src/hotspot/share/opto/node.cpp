@@ -55,7 +55,7 @@ class PhaseGVN;
 const uint Node::NotAMachineReg = 0xffff0000;
 
 #ifndef PRODUCT
-extern int nodes_created;
+extern uint nodes_created;
 #endif
 #ifdef __clang__
 #pragma clang diagnostic push

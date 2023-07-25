@@ -123,10 +123,8 @@ class TypeArrayKlass : public ArrayKlass {
 
  public:
   // Printing
-#ifndef PRODUCT
   void oop_print_on(oop obj, outputStream* st);
-#endif
-
+  void oop_print_elements_on(typeArrayOop ta, outputStream* st);
   void print_on(outputStream* st) const;
   void print_value_on(outputStream* st) const;
 
