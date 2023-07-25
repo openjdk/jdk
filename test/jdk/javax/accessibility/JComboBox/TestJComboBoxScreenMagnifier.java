@@ -47,19 +47,20 @@ public class TestJComboBoxScreenMagnifier {
     private static final String INSTRUCTIONS =
             "1) Enable Screen magnifier on the Mac \n\n" +
                 "System Preference -> Accessibility -> Zoom -> " +
-                "Select ( Enable Hover Text) \n\n" +
+                "Select \"Enable Hover Text\"\n\n" +
             "2) Move the mouse over the combobox selected item by pressing  " +
-                "\"cmd\" button.\n\n" +
+                "\"command\" button.\n\n" +
             "3) If magnified label is visible, Press Pass else Fail.";
 
     public static void main(String[] args) throws InterruptedException,
              InvocationTargetException {
         PassFailJFrame passFailJFrame = new PassFailJFrame(
-                "JMenu Screen Magnifier Test Instructions", INSTRUCTIONS, 5, 12, 40);
+                "JComboBox Screen Magnifier Test Instructions", INSTRUCTIONS, 5, 12, 40);
 
         SwingUtilities.invokeAndWait(TestJComboBoxScreenMagnifier::createAndShowUI);
         passFailJFrame.awaitAndCheck();
     }
+
     private static void createAndShowUI() {
         frame = new JFrame("JComboBox A11Y Screen Magnifier Test");
 

@@ -25,13 +25,32 @@
 
 package com.apple.laf;
 
-import java.awt.*;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Graphics;
+import java.awt.Insets;
 
-import javax.swing.*;
+import javax.swing.ButtonModel;
+import javax.swing.CellRendererPane;
+import javax.swing.DefaultButtonModel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JLabel;
+import javax.swing.JList;
+import javax.swing.JPanel;
+import javax.swing.ListCellRenderer;
+import javax.swing.UIManager;
 import javax.swing.plaf.UIResource;
 
 import apple.laf.JRSUIState;
-import apple.laf.JRSUIConstants.*;
+import apple.laf.JRSUIConstants.ArrowsOnly;
+import apple.laf.JRSUIConstants.AlignmentHorizontal;
+import apple.laf.JRSUIConstants.AlignmentVertical;
+import apple.laf.JRSUIConstants.Focused;
+import apple.laf.JRSUIConstants.IndicatorOnly;
+import apple.laf.JRSUIConstants.Size;
+import apple.laf.JRSUIConstants.State;
+import apple.laf.JRSUIConstants.Widget;
 
 import javax.accessibility.AccessibleContext;
 
