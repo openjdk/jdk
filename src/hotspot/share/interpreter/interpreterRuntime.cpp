@@ -1193,7 +1193,7 @@ JRT_ENTRY(void, InterpreterRuntime::post_field_modification(JavaThread* current,
 
   char sig_type = '\0';
 
-  switch((TosState)entry->tos()) {
+  switch((TosState)entry->tos_state()) {
     case btos: sig_type = JVM_SIGNATURE_BYTE;    break;
     case ztos: sig_type = JVM_SIGNATURE_BOOLEAN; break;
     case ctos: sig_type = JVM_SIGNATURE_CHAR;    break;

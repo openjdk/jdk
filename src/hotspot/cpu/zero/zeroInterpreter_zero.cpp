@@ -622,7 +622,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
 
   // If needed, allocate additional slot on stack: we already have one
   // for receiver, and double/long need another one.
-  switch (entry->tos()) {
+  switch (entry->tos_state()) {
     case ltos:
     case dtos:
       stack->overflow_check(1, CHECK_0);
@@ -639,7 +639,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
       OrderAccess::fence();
     }
-    switch (entry->tos()) {
+    switch (entry->tos_state()) {
       case btos:
       case ztos: SET_STACK_INT(object->byte_field_acquire(offset),      0); break;
       case ctos: SET_STACK_INT(object->char_field_acquire(offset),      0); break;
@@ -653,7 +653,7 @@ int ZeroInterpreter::getter_entry(Method* method, intptr_t UNUSED, TRAPS) {
         ShouldNotReachHere();
     }
   } else {
-    switch (entry->tos()) {
+    switch (entry->tos_state()) {
       case btos:
       case ztos: SET_STACK_INT(object->byte_field(offset),      0); break;
       case ctos: SET_STACK_INT(object->char_field(offset),      0); break;
@@ -707,7 +707,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Figure out where the receiver is. If there is a long/double
   // operand on stack top, then receiver is two slots down.
   oop object = nullptr;
-  switch (entry->tos()) {
+  switch (entry->tos_state()) {
     case ltos:
     case dtos:
       object = STACK_OBJECT(-2);
@@ -726,7 +726,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
   // Store the stack(0) to field
   int offset = entry->field_offset();
   if (entry->is_volatile()) {
-    switch (entry->tos()) {
+    switch (entry->tos_state()) {
       case btos: object->release_byte_field_put(offset,   STACK_INT(0));     break;
       case ztos: object->release_byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
       case ctos: object->release_char_field_put(offset,   STACK_INT(0));     break;
@@ -741,7 +741,7 @@ int ZeroInterpreter::setter_entry(Method* method, intptr_t UNUSED, TRAPS) {
     }
     OrderAccess::storeload();
   } else {
-    switch (entry->tos()) {
+    switch (entry->tos_state()) {
       case btos: object->byte_field_put(offset,   STACK_INT(0));     break;
       case ztos: object->byte_field_put(offset,   STACK_INT(0) & 1); break; // only store LSB
       case ctos: object->char_field_put(offset,   STACK_INT(0));     break;

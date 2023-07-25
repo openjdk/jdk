@@ -1755,7 +1755,7 @@ run:
             if (REWRITE_BYTECODES && !entry->is_volatile() &&
                   ((Bytecodes::Code)opcode != Bytecodes::_nofast_getfield)) {
               // Rewrite current BC to _fast_Xgetfield.
-              REWRITE_AT_PC(fast_get_type((TosState)(entry->tos())));
+              REWRITE_AT_PC(fast_get_type((TosState)(entry->tos_state())));
             }
           }
 
@@ -1764,7 +1764,7 @@ run:
           //
           // Now store the result on the stack
           //
-          TosState tos_type = (TosState)(entry->tos());
+          TosState tos_type = (TosState)(entry->tos_state());
           int field_offset = entry->field_offset();
           if (entry->is_volatile()) {
             if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
@@ -1869,7 +1869,7 @@ run:
 
           oop obj;
           int count;
-          TosState tos_type = (TosState)(entry->tos());
+          TosState tos_type = (TosState)(entry->tos_state());
 
           count = -1;
           if (tos_type == ltos || tos_type == dtos) {
@@ -1887,7 +1887,7 @@ run:
             if (REWRITE_BYTECODES && !entry->is_volatile() &&
                   ((Bytecodes::Code)opcode != Bytecodes::_nofast_putfield)) {
               // Rewrite current BC to _fast_Xputfield.
-              REWRITE_AT_PC(fast_put_type((TosState)(entry->tos())));
+              REWRITE_AT_PC(fast_put_type((TosState)(entry->tos_state())));
             }
           }
 
