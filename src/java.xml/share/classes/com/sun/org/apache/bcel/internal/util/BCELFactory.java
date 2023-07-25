@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2017, 2023, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
@@ -60,45 +60,85 @@ import com.sun.org.apache.bcel.internal.generic.Select;
 import com.sun.org.apache.bcel.internal.generic.Type;
 
 /**
- * Factory creates il.append() statements, and sets instruction targets.
- * A helper class for BCELifier.
+ * Factory creates il.append() statements, and sets instruction targets. A helper class for BCELifier.
  *
  * @see BCELifier
- * @LastModified: May 2021
+ * @LastModified: Feb 2023
  */
 class BCELFactory extends EmptyVisitor {
 
-    private static final String CONSTANT_PREFIX = Const.class.getSimpleName()+".";
-    private final MethodGen _mg;
-    private final PrintWriter _out;
-    private final ConstantPoolGen _cp;
+    private static final String CONSTANT_PREFIX = Const.class.getSimpleName() + ".";
+    private final MethodGen methodGen;
+    private final PrintWriter printWriter;
+    private final ConstantPoolGen constantPoolGen;
 
+    private final Map<Instruction, InstructionHandle> branchMap = new HashMap<>();
+
+    // Memorize BranchInstructions that need an update
+    private final List<BranchInstruction> branches = new ArrayList<>();
 
     BCELFactory(final MethodGen mg, final PrintWriter out) {
-        _mg = mg;
-        _cp = mg.getConstantPool();
-        _out = out;
+        methodGen = mg;
+        constantPoolGen = mg.getConstantPool();
+        printWriter = out;
     }
 
-    private final Map<Instruction, InstructionHandle> branch_map = new HashMap<>();
+    private void createConstant(final Object value) {
+        String embed = value.toString();
+        if (value instanceof String) {
+            embed = '"' + Utility.convertString(embed) + '"';
+        } else if (value instanceof Character) {
+            embed = "(char)0x" + Integer.toHexString(((Character) value).charValue());
+        } else if (value instanceof Float) {
+            final Float f = (Float) value;
+            if (Float.isNaN(f)) {
+                embed = "Float.NaN";
+            } else if (f == Float.POSITIVE_INFINITY) {
+                embed = "Float.POSITIVE_INFINITY";
+            } else if (f == Float.NEGATIVE_INFINITY) {
+                embed = "Float.NEGATIVE_INFINITY";
+            } else {
+                embed += "f";
+            }
+        }  else if (value instanceof Double) {
+            final Double d = (Double) value;
+            if (Double.isNaN(d)) {
+                embed = "Double.NaN";
+            } else if (d == Double.POSITIVE_INFINITY) {
+                embed = "Double.POSITIVE_INFINITY";
+            } else if (d == Double.NEGATIVE_INFINITY) {
+                embed = "Double.NEGATIVE_INFINITY";
+            } else {
+                embed += "d";
+            }
+        } else if (value instanceof Long) {
+            embed += "L";
+        } else if (value instanceof ObjectType) {
+            final ObjectType ot = (ObjectType) value;
+            embed = "new ObjectType(\"" + ot.getClassName() + "\")";
+        } else if (value instanceof ArrayType) {
+            final ArrayType at = (ArrayType) value;
+            embed = "new ArrayType(" + BCELifier.printType(at.getBasicType()) + ", " + at.getDimensions() + ")";
+        }
 
+        printWriter.println("il.append(new PUSH(_cp, " + embed + "));");
+    }
 
     public void start() {
-        if (!_mg.isAbstract() && !_mg.isNative()) {
-            for (InstructionHandle ih = _mg.getInstructionList().getStart(); ih != null; ih = ih
-                    .getNext()) {
+        if (!methodGen.isAbstract() && !methodGen.isNative()) {
+            for (InstructionHandle ih = methodGen.getInstructionList().getStart(); ih != null; ih = ih.getNext()) {
                 final Instruction i = ih.getInstruction();
                 if (i instanceof BranchInstruction) {
-                    branch_map.put(i, ih); // memorize container
+                    branchMap.put(i, ih); // memorize container
                 }
                 if (ih.hasTargeters()) {
                     if (i instanceof BranchInstruction) {
-                        _out.println("    InstructionHandle ih_" + ih.getPosition() + ";");
+                        printWriter.println("    InstructionHandle ih_" + ih.getPosition() + ";");
                     } else {
-                        _out.print("    InstructionHandle ih_" + ih.getPosition() + " = ");
+                        printWriter.print("    InstructionHandle ih_" + ih.getPosition() + " = ");
                     }
                 } else {
-                    _out.print("    ");
+                    printWriter.print("    ");
                 }
                 if (!visitInstruction(i)) {
                     i.accept(this);
@@ -109,167 +149,74 @@ class BCELFactory extends EmptyVisitor {
         }
     }
 
+    private void updateBranchTargets() {
+        branches.forEach(bi -> {
+            final BranchHandle bh = (BranchHandle) branchMap.get(bi);
+            final int pos = bh.getPosition();
+            final String name = bi.getName() + "_" + pos;
+            int targetPos = bh.getTarget().getPosition();
+            printWriter.println("    " + name + ".setTarget(ih_" + targetPos + ");");
+            if (bi instanceof Select) {
+                final InstructionHandle[] ihs = ((Select) bi).getTargets();
+                for (int j = 0; j < ihs.length; j++) {
+                    targetPos = ihs[j].getPosition();
+                    printWriter.println("    " + name + ".setTarget(" + j + ", ih_" + targetPos + ");");
+                }
+            }
+        });
+    }
 
-    private boolean visitInstruction( final Instruction i ) {
-        final short opcode = i.getOpcode();
-        if ((InstructionConst.getInstruction(opcode) != null)
-                && !(i instanceof ConstantPushInstruction) && !(i instanceof ReturnInstruction)) { // Handled below
-            _out.println("il.append(InstructionConst."
-                    + i.getName().toUpperCase(Locale.ENGLISH) + ");");
-            return true;
+    private void updateExceptionHandlers() {
+        final CodeExceptionGen[] handlers = methodGen.getExceptionHandlers();
+        for (final CodeExceptionGen h : handlers) {
+            final String type = h.getCatchType() == null ? "null" : BCELifier.printType(h.getCatchType());
+            printWriter.println("    method.addExceptionHandler(" + "ih_" + h.getStartPC().getPosition() + ", " + "ih_" + h.getEndPC().getPosition() + ", "
+                + "ih_" + h.getHandlerPC().getPosition() + ", " + type + ");");
         }
-        return false;
     }
-
-
-    @Override
-    public void visitLocalVariableInstruction( final LocalVariableInstruction i ) {
-        final short opcode = i.getOpcode();
-        final Type type = i.getType(_cp);
-        if (opcode == Const.IINC) {
-            _out.println("il.append(new IINC(" + i.getIndex() + ", " + ((IINC) i).getIncrement()
-                    + "));");
-        } else {
-            final String kind = (opcode < Const.ISTORE) ? "Load" : "Store";
-            _out.println("il.append(_factory.create" + kind + "(" + BCELifier.printType(type)
-                    + ", " + i.getIndex() + "));");
-        }
-    }
-
-
-    @Override
-    public void visitArrayInstruction( final ArrayInstruction i ) {
-        final short opcode = i.getOpcode();
-        final Type type = i.getType(_cp);
-        final String kind = (opcode < Const.IASTORE) ? "Load" : "Store";
-        _out.println("il.append(_factory.createArray" + kind + "(" + BCELifier.printType(type)
-                + "));");
-    }
-
-
-    @Override
-    public void visitFieldInstruction( final FieldInstruction i ) {
-        final short opcode = i.getOpcode();
-        final String class_name = i.getReferenceType(_cp).getSignature();
-        final String field_name = i.getFieldName(_cp);
-        final Type type = i.getFieldType(_cp);
-        _out.println("il.append(_factory.createFieldAccess(\"" + class_name + "\", \"" + field_name
-                + "\", " + BCELifier.printType(type) + ", " + CONSTANT_PREFIX
-                + Const.getOpcodeName(opcode).toUpperCase(Locale.ENGLISH) + "));");
-    }
-
-
-    @Override
-    public void visitInvokeInstruction( final InvokeInstruction i ) {
-        final short opcode = i.getOpcode();
-        final String class_name = i.getReferenceType(_cp).getSignature();
-        final String method_name = i.getMethodName(_cp);
-        final Type type = i.getReturnType(_cp);
-        final Type[] arg_types = i.getArgumentTypes(_cp);
-        _out.println("il.append(_factory.createInvoke(\"" + class_name + "\", \"" + method_name
-                + "\", " + BCELifier.printType(type) + ", "
-                + BCELifier.printArgumentTypes(arg_types) + ", " + CONSTANT_PREFIX
-                + Const.getOpcodeName(opcode).toUpperCase(Locale.ENGLISH) + "));");
-    }
-
 
     @Override
     @SuppressWarnings("fallthrough") // by design for case Const.ANEWARRAY
-    public void visitAllocationInstruction( final AllocationInstruction i ) {
+    public void visitAllocationInstruction(final AllocationInstruction i) {
         Type type;
         if (i instanceof CPInstruction) {
-            type = ((CPInstruction) i).getType(_cp);
+            type = ((CPInstruction) i).getType(constantPoolGen);
         } else {
             type = ((NEWARRAY) i).getType();
         }
         final short opcode = ((Instruction) i).getOpcode();
         int dim = 1;
         switch (opcode) {
-            case Const.NEW:
-                _out.println("il.append(_factory.createNew(\"" + ((ObjectType) type).getClassName()
-                        + "\"));");
-                break;
-            case Const.MULTIANEWARRAY:
-                dim = ((MULTIANEWARRAY) i).getDimensions();
-                //$FALL-THROUGH$
-            case Const.ANEWARRAY:
-            case Const.NEWARRAY:
-                if (type instanceof ArrayType) {
-                    type = ((ArrayType) type).getBasicType();
-                }
-                _out.println("il.append(_factory.createNewArray(" + BCELifier.printType(type)
-                        + ", (short) " + dim + "));");
-                break;
-            default:
-                throw new IllegalArgumentException("Unhandled opcode: " + opcode);
+        case Const.NEW:
+            printWriter.println("il.append(_factory.createNew(\"" + ((ObjectType) type).getClassName() + "\"));");
+            break;
+        case Const.MULTIANEWARRAY:
+            dim = ((MULTIANEWARRAY) i).getDimensions();
+            //$FALL-THROUGH$
+        case Const.NEWARRAY:
+            if (type instanceof ArrayType) {
+                type = ((ArrayType) type).getBasicType();
+            }
+            //$FALL-THROUGH$
+        case Const.ANEWARRAY:
+            printWriter.println("il.append(_factory.createNewArray(" + BCELifier.printType(type) + ", (short) " + dim + "));");
+            break;
+        default:
+            throw new IllegalArgumentException("Unhandled opcode: " + opcode);
         }
     }
 
-
-    private void createConstant( final Object value ) {
-        String embed = value.toString();
-        if (value instanceof String) {
-            embed = '"' + Utility.convertString(embed) + '"';
-        } else if (value instanceof Character) {
-            embed = "(char)0x" + Integer.toHexString(((Character) value).charValue());
-        } else if (value instanceof Float) {
-            embed += "f";
-        } else if (value instanceof Long) {
-            embed += "L";
-        } else if (value instanceof ObjectType) {
-            final ObjectType ot = (ObjectType) value;
-            embed = "new ObjectType(\""+ot.getClassName()+"\")";
-        }
-
-        _out.println("il.append(new PUSH(_cp, " + embed + "));");
+    @Override
+    public void visitArrayInstruction(final ArrayInstruction i) {
+        final short opcode = i.getOpcode();
+        final Type type = i.getType(constantPoolGen);
+        final String kind = opcode < Const.IASTORE ? "Load" : "Store";
+        printWriter.println("il.append(_factory.createArray" + kind + "(" + BCELifier.printType(type) + "));");
     }
 
-
     @Override
-    public void visitLDC( final LDC i ) {
-        createConstant(i.getValue(_cp));
-    }
-
-
-    @Override
-    public void visitLDC2_W( final LDC2_W i ) {
-        createConstant(i.getValue(_cp));
-    }
-
-
-    @Override
-    public void visitConstantPushInstruction( final ConstantPushInstruction i ) {
-        createConstant(i.getValue());
-    }
-
-
-    @Override
-    public void visitINSTANCEOF( final INSTANCEOF i ) {
-        final Type type = i.getType(_cp);
-        _out.println("il.append(new INSTANCEOF(_cp.addClass(" + BCELifier.printType(type) + ")));");
-    }
-
-
-    @Override
-    public void visitCHECKCAST( final CHECKCAST i ) {
-        final Type type = i.getType(_cp);
-        _out.println("il.append(_factory.createCheckCast(" + BCELifier.printType(type) + "));");
-    }
-
-
-    @Override
-    public void visitReturnInstruction( final ReturnInstruction i ) {
-        final Type type = i.getType(_cp);
-        _out.println("il.append(_factory.createReturn(" + BCELifier.printType(type) + "));");
-    }
-
-    // Memorize BranchInstructions that need an update
-    private final List<BranchInstruction> branches = new ArrayList<>();
-
-
-    @Override
-    public void visitBranchInstruction( final BranchInstruction bi ) {
-        final BranchHandle bh = (BranchHandle) branch_map.get(bi);
+    public void visitBranchInstruction(final BranchInstruction bi) {
+        final BranchHandle bh = (BranchHandle) branchMap.get(bi);
         final int pos = bh.getPosition();
         final String name = bi.getName() + "_" + pos;
         if (bi instanceof Select) {
@@ -284,68 +231,110 @@ class BCELFactory extends EmptyVisitor {
                 }
             }
             args.append(" }");
-            _out.print("Select " + name + " = new " + bi.getName().toUpperCase(Locale.ENGLISH)
-                    + "(" + args + ", new InstructionHandle[] { ");
+            printWriter.print("Select " + name + " = new " + bi.getName().toUpperCase(Locale.ENGLISH) + "(" + args + ", new InstructionHandle[] { ");
             for (int i = 0; i < matchs.length; i++) {
-                _out.print("null");
+                printWriter.print("null");
                 if (i < matchs.length - 1) {
-                    _out.print(", ");
+                    printWriter.print(", ");
                 }
             }
-            _out.println(" }, null);");
+            printWriter.println(" }, null);");
         } else {
-            final int t_pos = bh.getTarget().getPosition();
+            final int tPos = bh.getTarget().getPosition();
             String target;
-            if (pos > t_pos) {
-                target = "ih_" + t_pos;
+            if (pos > tPos) {
+                target = "ih_" + tPos;
             } else {
                 branches.add(bi);
                 target = "null";
             }
-            _out.println("    BranchInstruction " + name + " = _factory.createBranchInstruction("
-                    + CONSTANT_PREFIX + bi.getName().toUpperCase(Locale.ENGLISH) + ", " + target
-                    + ");");
+            printWriter.println("    BranchInstruction " + name + " = _factory.createBranchInstruction(" + CONSTANT_PREFIX
+                + bi.getName().toUpperCase(Locale.ENGLISH) + ", " + target + ");");
         }
         if (bh.hasTargeters()) {
-            _out.println("    ih_" + pos + " = il.append(" + name + ");");
+            printWriter.println("    ih_" + pos + " = il.append(" + name + ");");
         } else {
-            _out.println("    il.append(" + name + ");");
+            printWriter.println("    il.append(" + name + ");");
         }
     }
-
 
     @Override
-    public void visitRET( final RET i ) {
-        _out.println("il.append(new RET(" + i.getIndex() + ")));");
+    public void visitCHECKCAST(final CHECKCAST i) {
+        final Type type = i.getType(constantPoolGen);
+        printWriter.println("il.append(_factory.createCheckCast(" + BCELifier.printType(type) + "));");
     }
 
+    @Override
+    public void visitConstantPushInstruction(final ConstantPushInstruction i) {
+        createConstant(i.getValue());
+    }
 
-    private void updateBranchTargets() {
-        for (final BranchInstruction bi : branches) {
-            final BranchHandle bh = (BranchHandle) branch_map.get(bi);
-            final int pos = bh.getPosition();
-            final String name = bi.getName() + "_" + pos;
-            int t_pos = bh.getTarget().getPosition();
-            _out.println("    " + name + ".setTarget(ih_" + t_pos + ");");
-            if (bi instanceof Select) {
-                final InstructionHandle[] ihs = ((Select) bi).getTargets();
-                for (int j = 0; j < ihs.length; j++) {
-                    t_pos = ihs[j].getPosition();
-                    _out.println("    " + name + ".setTarget(" + j + ", ih_" + t_pos + ");");
-                }
-            }
+    @Override
+    public void visitFieldInstruction(final FieldInstruction i) {
+        final short opcode = i.getOpcode();
+        final String className = i.getReferenceType(constantPoolGen).getClassName();
+        final String fieldName = i.getFieldName(constantPoolGen);
+        final Type type = i.getFieldType(constantPoolGen);
+        printWriter.println("il.append(_factory.createFieldAccess(\"" + className + "\", \"" + fieldName + "\", " + BCELifier.printType(type) + ", "
+            + CONSTANT_PREFIX + Const.getOpcodeName(opcode).toUpperCase(Locale.ENGLISH) + "));");
+    }
+
+    @Override
+    public void visitINSTANCEOF(final INSTANCEOF i) {
+        final Type type = i.getType(constantPoolGen);
+        printWriter.println("il.append(_factory.createInstanceOf(" + BCELifier.printType(type) + "));");
+    }
+
+    private boolean visitInstruction(final Instruction i) {
+        final short opcode = i.getOpcode();
+        if (InstructionConst.getInstruction(opcode) != null && !(i instanceof ConstantPushInstruction) && !(i instanceof ReturnInstruction)) { // Handled below
+            printWriter.println("il.append(InstructionConst." + i.getName().toUpperCase(Locale.ENGLISH) + ");");
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public void visitInvokeInstruction(final InvokeInstruction i) {
+        final short opcode = i.getOpcode();
+        final String className = i.getReferenceType(constantPoolGen).getClassName();
+        final String methodName = i.getMethodName(constantPoolGen);
+        final Type type = i.getReturnType(constantPoolGen);
+        final Type[] argTypes = i.getArgumentTypes(constantPoolGen);
+        printWriter.println("il.append(_factory.createInvoke(\"" + className + "\", \"" + methodName + "\", " + BCELifier.printType(type) + ", "
+            + BCELifier.printArgumentTypes(argTypes) + ", " + CONSTANT_PREFIX + Const.getOpcodeName(opcode).toUpperCase(Locale.ENGLISH) + "));");
+    }
+
+    @Override
+    public void visitLDC(final LDC i) {
+        createConstant(i.getValue(constantPoolGen));
+    }
+
+    @Override
+    public void visitLDC2_W(final LDC2_W i) {
+        createConstant(i.getValue(constantPoolGen));
+    }
+
+    @Override
+    public void visitLocalVariableInstruction(final LocalVariableInstruction i) {
+        final short opcode = i.getOpcode();
+        final Type type = i.getType(constantPoolGen);
+        if (opcode == Const.IINC) {
+            printWriter.println("il.append(new IINC(" + i.getIndex() + ", " + ((IINC) i).getIncrement() + "));");
+        } else {
+            final String kind = opcode < Const.ISTORE ? "Load" : "Store";
+            printWriter.println("il.append(_factory.create" + kind + "(" + BCELifier.printType(type) + ", " + i.getIndex() + "));");
         }
     }
 
+    @Override
+    public void visitRET(final RET i) {
+        printWriter.println("il.append(new RET(" + i.getIndex() + "));");
+    }
 
-    private void updateExceptionHandlers() {
-        final CodeExceptionGen[] handlers = _mg.getExceptionHandlers();
-        for (final CodeExceptionGen h : handlers) {
-            final String type = (h.getCatchType() == null) ? "null" : BCELifier.printType(h
-                    .getCatchType());
-            _out.println("    method.addExceptionHandler(" + "ih_" + h.getStartPC().getPosition()
-                    + ", " + "ih_" + h.getEndPC().getPosition() + ", " + "ih_"
-                    + h.getHandlerPC().getPosition() + ", " + type + ");");
-        }
+    @Override
+    public void visitReturnInstruction(final ReturnInstruction i) {
+        final Type type = i.getType(constantPoolGen);
+        printWriter.println("il.append(_factory.createReturn(" + BCELifier.printType(type) + "));");
     }
 }
