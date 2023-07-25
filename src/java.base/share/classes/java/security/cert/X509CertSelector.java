@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -601,7 +601,7 @@ public class X509CertSelector implements CertSelector {
             keyPurposeOIDSet = null;
         } else {
             this.keyPurposeSet =
-                Collections.unmodifiableSet(new HashSet<>(keyPurposeSet));
+                Collections.unmodifiableSet(keyPurposeSet);
             keyPurposeOIDSet = new HashSet<>();
             for (String s : this.keyPurposeSet) {
                 keyPurposeOIDSet.add(ObjectIdentifier.of(s));
@@ -1045,8 +1045,7 @@ public class X509CertSelector implements CertSelector {
             policy = null;
         } else {
             // Snapshot set and parse it
-            Set<String> tempSet = Collections.unmodifiableSet
-                                        (new HashSet<>(certPolicySet));
+            Set<String> tempSet = Collections.unmodifiableSet(certPolicySet);
             /* Convert to Vector of ObjectIdentifiers */
             Iterator<String> i = tempSet.iterator();
             Vector<CertificatePolicyId> polIdVector = new Vector<>();

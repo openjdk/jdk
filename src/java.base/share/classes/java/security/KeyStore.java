@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -566,8 +566,7 @@ public class KeyStore {
                 this.chain = clonedChain;
             }
 
-            this.attributes =
-                Collections.unmodifiableSet(new HashSet<>(attributes));
+            this.attributes = Collections.unmodifiableSet(attributes);
         }
 
         /**
@@ -685,8 +684,7 @@ public class KeyStore {
                 throw new NullPointerException("invalid null input");
             }
             this.sKey = secretKey;
-            this.attributes =
-                Collections.unmodifiableSet(new HashSet<>(attributes));
+            this.attributes = Collections.unmodifiableSet(attributes);
         }
 
         /**
@@ -768,8 +766,7 @@ public class KeyStore {
                 throw new NullPointerException("invalid null input");
             }
             this.cert = trustedCert;
-            this.attributes =
-                Collections.unmodifiableSet(new HashSet<>(attributes));
+            this.attributes = Collections.unmodifiableSet(attributes);
         }
 
         /**

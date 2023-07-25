@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -206,8 +206,7 @@ public class PKIXParameters implements CertPathParameters {
                     + "of type java.security.cert.TrustAnchor");
             }
         }
-        this.unmodTrustAnchors = Collections.unmodifiableSet
-                (new HashSet<>(trustAnchors));
+        this.unmodTrustAnchors = Collections.unmodifiableSet(trustAnchors);
     }
 
     /**
@@ -255,7 +254,7 @@ public class PKIXParameters implements CertPathParameters {
                         + "of type java.lang.String");
             }
             this.unmodInitialPolicies =
-                Collections.unmodifiableSet(new HashSet<>(initialPolicies));
+                Collections.unmodifiableSet(initialPolicies);
         } else
             this.unmodInitialPolicies = Collections.<String>emptySet();
     }
@@ -314,8 +313,7 @@ public class PKIXParameters implements CertPathParameters {
      * @see #setCertStores
      */
     public List<CertStore> getCertStores() {
-        return Collections.unmodifiableList
-                (new ArrayList<>(this.certStores));
+        return Collections.unmodifiableList(this.certStores);
     }
 
     /**
