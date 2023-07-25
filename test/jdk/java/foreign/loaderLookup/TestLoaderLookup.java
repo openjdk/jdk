@@ -24,7 +24,6 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @compile lookup/Lookup.java
  * @compile invoker/Invoker.java
  * @run main/othervm --enable-native-access=ALL-UNNAMED TestLoaderLookup

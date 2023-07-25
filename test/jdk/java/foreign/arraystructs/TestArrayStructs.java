@@ -25,7 +25,6 @@
  * @test id=specialized
  * @enablePreview
  * @library ../
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm
@@ -39,7 +38,6 @@
  * @test id=interpreted
  * @enablePreview
  * @library ../
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm

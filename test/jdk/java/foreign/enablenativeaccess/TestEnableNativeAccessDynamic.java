@@ -24,7 +24,6 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires !vm.musl
  *
  * @library /test/lib

@@ -509,8 +509,6 @@ public sealed interface Linker permits AbstractLinker {
      * @implNote The libraries exposed by the {@linkplain #defaultLookup() default lookup} associated with the returned
      * linker are the native libraries loaded in the process where the Java runtime is currently executing. For example,
      * on Linux, these libraries typically include {@code libc}, {@code libm} and {@code libdl}.
-     *
-     * @throws UnsupportedOperationException if the underlying native platform is not supported.
      */
     static Linker nativeLinker() {
         return SharedUtils.getSystemLinker();

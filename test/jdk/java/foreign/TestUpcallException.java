@@ -24,7 +24,6 @@
 /*
  * @test
  * @enablePreview
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @library /test/lib
  * @build TestUpcallException
  *

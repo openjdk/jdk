@@ -25,7 +25,6 @@
  * @test
  * @enablePreview
  * @library ../ /test/lib
- * @requires jdk.foreign.linker != "UNSUPPORTED"
  * @requires jdk.foreign.linker != "FALLBACK"
  * @build NativeTestHelper
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestNested
