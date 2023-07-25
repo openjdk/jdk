@@ -67,7 +67,7 @@ Java_java_io_FileInputStream_read0(JNIEnv *env, jobject this) {
 }
 
 JNIEXPORT jint JNICALL
-Java_java_io_FileInputStream_readBytes(JNIEnv *env, jobject this,
+Java_java_io_FileInputStream_readBytes0(JNIEnv *env, jobject this,
         jbyteArray bytes, jint off, jint len) {
     return readBytes(env, this, bytes, off, len, fis_fd);
 }

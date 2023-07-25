@@ -300,7 +300,7 @@ public class FileOutputStream extends OutputStream
      * @param   append   {@code true} if the write operation first
      *     advances the position to the end of file
      */
-    private native void write(int b, boolean append) throws IOException;
+    private native void write0(int b, boolean append) throws IOException;
 
     /**
      * Writes the specified byte to this file output stream. Implements
@@ -314,23 +314,38 @@ public class FileOutputStream extends OutputStream
         boolean append = FD_ACCESS.getAppend(fd);
         long comp = Blocker.begin();
         try {
-            write(b, append);
+            write0(b, append);
         } finally {
             Blocker.end(comp);
         }
     }
+
+    private native int writeBytes0(byte[] b, int off, int len, boolean append)
+        throws IOException;
 
     /**
      * Writes a sub array as a sequence of bytes.
      * @param b the data to be written
      * @param off the start offset in the data
      * @param len the number of bytes that are written
-     * @param append {@code true} to first advance the position to the
-     *     end of file
      * @throws    IOException If an I/O error has occurred.
      */
-    private native int writeBytes(byte[] b, int off, int len, boolean append)
-        throws IOException;
+    private void writeBytes(byte[] b, int off, int len)
+        throws IOException
+    {
+        Objects.checkFromIndexSize(off, len, b.length);
+        boolean append = FD_ACCESS.getAppend(fd);
+        long comp = Blocker.begin();
+        try {
+            while (len > 0) {
+                int n = writeBytes0(b, off, len, append);
+                off += n;
+                len -= n;
+            }
+        } finally {
+            Blocker.end(comp);
+        }
+    }
 
     /**
      * Writes {@code b.length} bytes from the specified byte array
@@ -341,7 +356,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(byte[] b) throws IOException {
-        write(b, 0, b.length);
+        writeBytes(b, 0, b.length);
     }
 
     /**
@@ -356,18 +371,7 @@ public class FileOutputStream extends OutputStream
      */
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        Objects.checkFromIndexSize(off, len, b.length);
-        boolean append = FD_ACCESS.getAppend(fd);
-        long comp = Blocker.begin();
-        try {
-            while (len > 0) {
-                int n = writeBytes(b, off, len, append);
-                off += n;
-                len -= n;
-            }
-        } finally {
-            Blocker.end(comp);
-        }
+        writeBytes(b, off, len);
     }
 
     /**

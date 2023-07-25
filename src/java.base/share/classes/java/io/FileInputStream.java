@@ -237,6 +237,8 @@ public class FileInputStream extends InputStream
 
     private native int read0() throws IOException;
 
+    private native int readBytes0(byte[] b, int off, int len) throws IOException;
+
     /**
      * Reads a subarray as a sequence of bytes.
      * @param     b the data to be written
@@ -244,7 +246,30 @@ public class FileInputStream extends InputStream
      * @param     len the number of bytes that are written
      * @throws    IOException If an I/O error has occurred.
      */
-    private native int readBytes(byte[] b, int off, int len) throws IOException;
+    private int readBytes(byte[] b, int off, int len) throws IOException {
+        Objects.checkFromIndexSize(off, len, b.length);
+        final int start = off;
+        long comp = Blocker.begin();
+        try {
+            while (len > 0) {
+                int n = readBytes0(b, off, len);
+                if (n < 0) {
+                    if (off == start)
+                        return -1;
+                    break;
+                }
+                off += n;
+                len -= n;
+            }
+        } catch (IOException e) {
+            // Throw only if no bytes have been read
+            if (off == start)
+                throw e;
+        } finally {
+            Blocker.end(comp);
+        }
+        return off - start;
+    }
 
     /**
      * Reads up to {@code b.length} bytes of data from this input
@@ -259,7 +284,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b) throws IOException {
-        return read(b, 0, b.length);
+        return readBytes(b, 0, b.length);
     }
 
     /**
@@ -278,28 +303,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        Objects.checkFromIndexSize(off, len, b.length);
-        final int start = off;
-        long comp = Blocker.begin();
-        try {
-            while (len > 0) {
-                int n = readBytes(b, off, len);
-                if (n < 0) {
-                    if (off == start)
-                        return -1;
-                    break;
-                }
-                off += n;
-                len -= n;
-            }
-        } catch (IOException e) {
-            // Throw only if no bytes have been read
-            if (off == start)
-                throw e;
-        } finally {
-            Blocker.end(comp);
-        }
-        return off - start;
+        return readBytes(b, off, len);
     }
 
     @Override
