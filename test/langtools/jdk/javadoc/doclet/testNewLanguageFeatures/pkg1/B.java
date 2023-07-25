@@ -36,7 +36,8 @@ import pkg2.*;
    a = @AnnotationType(optional="foo",required=1994),
    sa = {"up", "down"},
    primitiveClassTest = boolean.class,
-   arrayClassTest = String[].class,
-   arrayPrimitiveTest = boolean[].class)
+   arrayClassTest = String[][].class,
+   arrayPrimitiveTest = boolean[].class,
+   classArrayTest = {TypeParameterSubClass[].class, String.class, long[][][].class})
 public interface B {
 }

@@ -52,6 +52,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor9;
@@ -90,6 +91,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
@@ -1874,17 +1876,18 @@ public class HtmlDocletWriter {
                     public Content visitDeclared(DeclaredType t, Void p) {
                         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
                                 HtmlLinkInfo.Kind.PLAIN, t);
-                        String name = utils.isIncluded(t.asElement())
-                                ? t.asElement().getSimpleName().toString()
-                                : utils.getFullyQualifiedName(t.asElement());
-                        linkInfo.label(name + utils.getDimension(t) + ".class");
                         return getLink(linkInfo);
                     }
                     @Override
-                    protected Content defaultAction(TypeMirror e, Void p) {
-                        return Text.of(t + utils.getDimension(t) + ".class");
+                    public Content visitArray(ArrayType t, Void p) {
+                        // render declared base component type as link
+                        return visit(t.getComponentType()).add("[]");
                     }
-                }.visit(t);
+                    @Override
+                    protected Content defaultAction(TypeMirror t, Void p) {
+                        return new TextBuilder(t.toString());
+                    }
+                }.visit(t).add(".class");
             }
 
             @Override
