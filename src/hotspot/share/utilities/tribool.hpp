@@ -73,8 +73,7 @@ class TriBoolArray {
 
     TriBoolAssigner& operator=(bool newval) {
       _slot ^= ((u1)_value) << _offset;  // reset the tribool
-      _value = (u1)newval;
-      _value = _value | 2;
+      _value = (u1)(newval | 2) & 3;
       _slot |= ((u1)_value) << _offset;
       return *this;
     };
