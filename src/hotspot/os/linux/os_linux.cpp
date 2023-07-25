@@ -4180,8 +4180,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return nullptr;
 }
 
-char* os::pd_attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment,
-                                          int max_attempts) {
+char* os::pd_attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment) {
 
   assert(is_aligned(alignment, os::vm_allocation_granularity()), "alignment unaligned");
   assert(is_aligned(bytes, os::vm_page_size()), "size unaligned");
@@ -4213,6 +4212,7 @@ char* os::pd_attempt_reserve_memory_below(char* max, size_t bytes, size_t alignm
   char line[512];
   size_t len = 0;
   char* last_mapping_end = 0;
+  const int max_attempts = 16;
   int stop_after = max_attempts;
 
   while (stop_after-- > 0 && result == nullptr && fgets(line, sizeof(line), f) != nullptr) {

@@ -596,10 +596,10 @@ ReservedSpace Metaspace::reserve_address_space_for_compressed_classes(size_t siz
     // First try for zero-base zero-shift (lower 4G); failing that, try for zero-based with max shift (lower 32G)
     constexpr int num_tries = 8;
     char* unscaled_max = (char*)((uintptr_t)UINT_MAX + 1);
-    char* addr = os::attempt_reserve_memory_below(unscaled_max, size, Metaspace::reserve_alignment(), num_tries);
+    char* addr = os::attempt_reserve_memory_below(unscaled_max, size, Metaspace::reserve_alignment());
     if (addr == nullptr) {
       char* zerobased_max = (char*)(KlassEncodingMetaspaceMax + 1);
-      addr = os::attempt_reserve_memory_below(zerobased_max, size, Metaspace::reserve_alignment(), num_tries);
+      addr = os::attempt_reserve_memory_below(zerobased_max, size, Metaspace::reserve_alignment());
     }
     if (addr != nullptr && CompressedKlassPointers::is_valid_base((address)addr)) {
       ReservedSpace rs = ReservedSpace::space_for_range(addr, size, Metaspace::reserve_alignment(),

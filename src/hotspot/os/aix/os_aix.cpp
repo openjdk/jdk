@@ -2137,8 +2137,7 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   return addr;
 }
 
-char* os::pd_attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment,
-                                          int max_attempts) {
+char* os::pd_attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment) {
   return nullptr;
 }
 

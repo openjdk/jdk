@@ -1787,35 +1787,29 @@ char* os::get_highest_attach_address() {
 }
 
 // Given an address range [min, max) and a stride, attempt to reserve memory within this range by probing
-// at [max, max - stride, max - 2 * stride, ...] until we reached or passed min.
-char*  os::attempt_reserve_memory_strides(char* min, char* max, size_t bytes, size_t stride) {
-  assert(is_aligned(max, os::vm_allocation_granularity()), "Unaligned max");
+// at [min, min + stride, min + 2 * stride, ...] until we either successfully map or reached max.
+char*  os::attempt_reserve_at_multiple(char* min, char* max, size_t bytes, size_t stride) {
+  assert(is_aligned(min, os::vm_allocation_granularity()), "min not allocation granularity aligned.");
   assert(is_aligned(stride, os::vm_allocation_granularity()), "Unaligned max");
+  assert(is_aligned(bytes, os::vm_page_size()), "size not page-agligned");
+  assert(bytes <= SIZE_MAX / 4, "size too large");
   assert(stride < SIZE_MAX / 4, "Too large stride");
 
-  // Limit the attach points we test by value range of virtual addresses
-  char* const lowest_possible = os::get_lowest_attach_address();
-  char* const highest_possible = 
-    align_down(os::get_highest_attach_address() - bytes, os::vm_allocation_granularity());
+  char* const hi = os::get_highest_attach_address();
+  char* const lo = os::get_lowest_attach_address();
+  char* candidate = min, *last = nullptr, *result = nullptr;
 
-  // Limit min and max ny lowest/highest_possible.
-  char* const min_adjusted = MAX2(min, lowest_possible);
-  char* const max_adjusted =
-    (max > highest_possible) ? max - ((((max - highest_possible) / stride) + 1) * stride) : max;
-
-  char* candidate = max, *result = nullptr;
   do {
-    assert(((max - result) % stride) == 0, "Stride violation");
-    result = os::attempt_reserve_memory_at(candidate, bytes, false);
+    if (candidate >= lo) {
+      result = os::attempt_reserve_memory_at(candidate, bytes, false);
+    }
     if (result == nullptr) {
       log_trace(os, map)("failed to attach at " PTR_FORMAT ".", p2i(candidate));
     }
-    char* next_candidate = candidate - stride;
-    if (next_candidate > candidate || next_candidate < min ) {
-      break;
-    }
-    candidate = next_candidate;
-  } while (result != nullptr && candidate > min );
+    last = candidate;
+    candidate += stride;
+  } while (result == nullptr && 
+           (candidate + bytes) < MIN2(max, hi) && candidate > last);
 
   if (result != nullptr) {
     assert(result >= min && result <= max, "OOB");
@@ -1824,84 +1818,42 @@ char*  os::attempt_reserve_memory_strides(char* min, char* max, size_t bytes, si
     assert(((max - result) % stride) == 0, "Stride violation");
     log_trace(os, map)("successfully attached at [" PTR_FORMAT "-" PTR_FORMAT ").",
                        p2i(result), p2i(result + bytes));
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   }
-
   return result;
 }
 
-char* os::attempt_reserve_memory_in_range(char* min, char* max, size_t bytes,
-                                          size_t alignment, int max_attempts) {
+char* os::attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment) {
+  assert(is_aligned(max, os::vm_allocation_granularity()), "max not allocation granularity aligned.");
+  assert(is_aligned(bytes, os::vm_page_size()), "size not page-aligned");
+  assert(bytes <= SIZE_MAX / 4, "size too large");
   assert(is_power_of_2(alignment), "alignment not pow2");
-  assert(alignment <= 2 * G, "alignment too large");
-  assert(max_attempts > 0, "at least one attempt");
-  assert(is_aligned(bytes, os::vm_page_size()), "bytes not page_aligned");
-
-  log_trace(os, map)("attempt_reserve_memory_in_range " PTR_FORMAT "-" PTR_FORMAT ", bytes: " SIZE_FORMAT_X
-                     ", alignment: " SIZE_FORMAT_X, p2i(min), p2i(max), bytes, alignment);
-
-  alignment = align_up(alignment, os::vm_allocation_granularity());
-
-  // lowest, highest possible attach points
-  char* lo_att = MAX2(min, os::get_lowest_attach_address());
-  lo_att = align_up(lo_att, alignment);
-
-  char* hi_att = MIN2(max, os::get_highest_attach_address());
-  hi_att -= bytes;
-  hi_att = align_down(hi_att, alignment);
-
-  if (hi_att < lo_att) {
+  assert(alignment <= SIZE_MAX / 4, "alignment too large");
+  
+  if ((size_t)max < bytes) {
     return nullptr;
   }
 
-  const size_t range_size = hi_att - lo_att + alignment;
-  const size_t num_attach_points = range_size / alignment;
-  max_attempts = (int) MIN2((size_t)max_attempts, num_attach_points);
-  const size_t step_size = align_up(range_size / max_attempts, alignment);
+  // First let platform try, it may have a better strategy:
+  char* result = pd_attempt_reserve_memory_below(max, bytes, alignment);
 
-  char* candidate, *result = nullptr;
-  for (candidate = hi_att;
-       candidate <= hi_att && candidate >= lo_att && result == nullptr;
-       candidate -= step_size) {
-    result = os::attempt_reserve_memory_at(candidate, bytes, false);
-    if (result == nullptr) {
-      log_trace(os, map)("failed to attach at " PTR_FORMAT ".", p2i(candidate));
-    }
+  // Failing that, use a staggered ladder approach
+  if (result != nullptr) {
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
+  } else {
+    const size_t max_strides = align_down(((size_t)max - bytes), os::vm_allocation_granularity()) / alignment;
+    const size_t max_attempts = MIN2((size_t)32, max_strides);
+    const size_t stride = align_up((size_t)max / max_attempts, os::vm_allocation_granularity());
+    result = attempt_reserve_memory_at_multiple(nullptr, max, bytes, stride);
   }
 
   if (result != nullptr) {
-    assert(result >= min && (result + bytes) <= max, "OOB");
+    assert((result + bytes) <= max, "not in range");
     assert(result >= os::get_lowest_attach_address() && 
            (result + bytes) <= os::get_highest_attach_address(), "OOB virtual address");
     assert(is_aligned(result, alignment), "bad alignment");
     log_trace(os, map)("successfully attached at [" PTR_FORMAT "-" PTR_FORMAT ").",
                        p2i(result), p2i(result + bytes));
-  }
-
-  return result;
-}
-
-char* os::attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment, int max_attempts) {
-  assert(is_power_of_2(alignment), "alignment not pow2");
-  assert(alignment <= 2 * G, "alignment too large");
-  assert(max_attempts > 0, "at least one attempt");
-  assert(is_aligned(bytes, os::vm_page_size()), "bytes not page_aligned");
-  alignment = MAX2(alignment, os::vm_allocation_granularity());
-
-  // First let platform try, it may have a better strategy:
-  char* result = pd_attempt_reserve_memory_below(max, bytes, alignment, max_attempts);
-
-  if (result != nullptr) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
-  }
-
-  // Failing that, use a staggered ladder approach
-  if (result == nullptr) {
-    result = attempt_reserve_memory_in_range(nullptr, max, bytes, alignment, max_attempts);
-  }
-
-  if (result != nullptr) {
-    assert((result + bytes) <= max, "not in range");
-    assert(is_aligned(result, alignment), "bad alignment");
   }
 
   return result;
