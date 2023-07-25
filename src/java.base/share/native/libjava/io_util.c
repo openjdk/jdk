@@ -59,7 +59,7 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
 
 /* The maximum size of a dynamically-allocated buffer.
  */
-#define MAX_MALLOC_SIZE 2097152
+#define MAX_MALLOC_SIZE 1572864
 
 /*
  * Returns true if the array slice defined by the given offset and length
