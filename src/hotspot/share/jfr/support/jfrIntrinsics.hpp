@@ -1,5 +1,5 @@
 /*
-* Copyright (c) 2012, 2022, Oracle and/or its affiliates. All rights reserved.
+* Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 *
 * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 class JfrIntrinsicSupport : AllStatic {
  public:
   static void* write_checkpoint(JavaThread* jt);
+  static void return_lease(JavaThread* jt);
   static void load_barrier(const Klass* klass);
   static address epoch_address();
   static address signal_address();
@@ -61,7 +62,7 @@ class JfrIntrinsicSupport : AllStatic {
     do_name(     getClassId_name,                              "getClassId")                                         \
   do_intrinsic(_getEventWriter,   jdk_jfr_internal_JVM, getEventWriter_name, getEventWriter_signature, F_SN)         \
     do_name(     getEventWriter_name,                          "getEventWriter")                                     \
-
+  do_intrinsic(_jvm_commit,   jdk_jfr_internal_JVM, commit_name, long_long_signature, F_SN)
 #else // !INCLUDE_JFR
 
 #define JFR_TEMPLATES(template)

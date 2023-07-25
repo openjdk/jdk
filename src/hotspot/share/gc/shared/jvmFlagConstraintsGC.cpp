@@ -435,4 +435,3 @@ JVMFlag::Error GCCardSizeInBytesConstraintFunc(uint value, bool verbose) {
     return JVMFlag::SUCCESS;
   }
 }
-

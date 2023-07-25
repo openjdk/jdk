@@ -99,6 +99,7 @@ const char*       VMError::_filename;
 int               VMError::_lineno;
 size_t            VMError::_size;
 const size_t      VMError::_reattempt_required_stack_headroom = 64 * K;
+const intptr_t    VMError::segfault_address = pd_segfault_address;
 
 // List of environment variables that should be reported in error log file.
 static const char* env_list[] = {
@@ -474,6 +475,8 @@ void VMError::print_native_stack(outputStream* st, frame fr, Thread* t, bool pri
       st->print_cr("...<more frames>...");
     }
 
+  } else {
+    st->print_cr("Native frames: <unavailable>");
   }
 }
 
