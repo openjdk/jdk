@@ -35,6 +35,7 @@
 #include "utilities/ostream.hpp"
 #include "testutils.hpp"
 #include "unittest.hpp"
+#include <climits>
 #ifdef _WIN32
 #include "os_windows.hpp"
 #endif
@@ -942,87 +943,61 @@ static char* call_attempt_reserve_memory_between(char* min, char* max, size_t si
   return addr;
 }
 
-static void test_attempt_reserve_memory_between(char* min, char* max, size_t size, size_t stride) {
+static void test_attempt_reserve_memory_between(char* min, char* max, size_t size, size_t stride, char* expected_result) {
   char* const  addr = call_attempt_reserve_memory_between(min, max, size, stride);
-  if ((size_t)(max - min) > 4 * G && size < M && stride < M) {
-    // For very large ranges, we expect this to have worked
-    EXPECT_NE(addr, (char*)nullptr) << ERRINFO;
-  }
-  if (addr != nullptr) {
-    os::release_memory(addr, size);
-  }
+  EXPECT_EQ(addr, expected_result) << ERRINFO;
 }
 
 #undef ERRINFO
 
 TEST_VM(os, attempt_reserve_memory_between) {
 
-  const size_t pagesize = os::vm_page_size();
-  static const struct { uintptr_t min; uintptr_t max; } some_ranges [] = {
-      { 0, 128 * M }, { 0, 4 * G }, { G, 4 * G },
-      { G + 16, (4 * G) - 16 }, // not page aligned
-#ifdef _LP64
-      { 0, 32 * G }, { nth_bit(32), nth_bit(48) },
-#endif
-      { 0, 0 } // last
-  };
-
-  for (int n = 0; some_ranges[n].max != 0; n++) {
-    char* const min = (char*)(some_ranges[n].min);
-    char* const max = (char*)(some_ranges[n].max);
-    size_t min_stride = (max - min) / 128;
-    min_stride = align_up(min_stride, os::vm_allocation_granularity());
-    const size_t range_size = max - min;
-    for (size_t size = os::vm_page_size(); size < 32 * M; size *= 13) {
-      for (size_t stride = min_stride; stride < size * 2; stride *= 2) {
-        for (int tries = 1; tries <= 64; tries *= 8) {
-          test_attempt_reserve_memory_between(min, max, size, stride);
-        }
-      }
-    }
+  // Allocate a large area, then punch equidistant holes of 1M size
+  const size_t totalsize = 17 * M;
+  char* const min = os::reserve_memory(totalsize, false, mtTest);
+  char* const max = min + totalsize; 
+  for (char* hole = min + M; hole < max; hole += 2 * M) {
+    os::release_memory(hole, M);
   }
+  
+  // Allocate 1M, with 1M stride, starting at min, should fill hole 1
+  test_attempt_reserve_memory_between(min, max, M, M, min + M);
+
+  // Allocate 1M, with 1M stride, starting at min, should fill hole 2
+  test_attempt_reserve_memory_between(min, max, M, M, min + 3 * M);
+
+  // Attempt to allocate with stride 2 M; should fail since holes start at odd-numbered holes
+  test_attempt_reserve_memory_between(min, max, M, 2 * M, nullptr);
+
+  // Attempt to allocate with stride 1 M, but at an offset; should fail since stride won't match up with holes
+  test_attempt_reserve_memory_between(min + os::vm_allocation_granularity(), max, M, M, nullptr);
+
+  // Attempt to allocate 2M - no hole is large enough
+  test_attempt_reserve_memory_between(min, max, 2 * M, M, nullptr);
+
+  // Allocate 256K, four times, with small stride. Should fill hole 3
+  test_attempt_reserve_memory_between(min, max, 256 * K, os::vm_allocation_granularity(), min + 5 * M);
+  test_attempt_reserve_memory_between(min, max, 256 * K, os::vm_allocation_granularity(), min + 5 * M + 256 * K);
+  test_attempt_reserve_memory_between(min, max, 256 * K, os::vm_allocation_granularity(), min + 5 * M + 512 * K);
+  test_attempt_reserve_memory_between(min, max, 256 * K, os::vm_allocation_granularity(), min + 5 * M + 768 * K);
+
+  // Leave memory reserved. Not a big deal (reserved only, not yet committed). Releasing multiple mappings with os::release_memory
+  // still broken in NMT.
 }
 
-TEST_VM(os, attempt_reserve_memory_between_cornercases) {
-  char* const min = (char*)(128 * M);
-  char* const max = min + M;
+TEST_VM(os, attempt_reserve_memory_between_2) {
 
-  char* p = os::attempt_reserve_memory_at(min, M, false);
-  if (p != nullptr) {
+  // A reservation of 1M within the lowest 64G should probably work
+ #ifdef _LP64
+  char* p = call_attempt_reserve_memory_between(nullptr, (char*)(64 * G), M, 128 * M);
+  ASSERT_NOT_NULL(p);
 
-    // For the duration of the test, we optimistically assume this range stays reservable.
+  // A reservation at the same point should fail
+  char* p2 = call_attempt_reserve_memory_between(p, p + M, M, 128 * M);
+  ASSERT_NULL(p2);
 
-    assert(p == min, "Sanity");
-    os::release_memory(p, M);
-
-    // reservation of 1 M with 1 M alignment has exactly one fit in the range
-    p = call_attempt_reserve_memory_between(min, max, M, M);
-    ASSERT_EQ(p, min);
-    os::release_memory(p, M);
-
-    // reservation of just one page, but with 1 M alignment, still has exactly one fit in the range
-    p = call_attempt_reserve_memory_between(min, max, os::vm_page_size(), M);
-    ASSERT_EQ(p, min);
-    os::release_memory(p, os::vm_page_size());
-
-    // reservation of 1M in a not-1-M aligned range shall work
-    p = call_attempt_reserve_memory_between(min + os::vm_allocation_granularity(), 
-                                            min + M + os::vm_allocation_granularity(),
-                                            M, M);
-    ASSERT_EQ(p, min);
-    os::release_memory(p, os::vm_page_size());
-
-    // reservation of 1 M + page will not fit
-    p = call_attempt_reserve_memory_between(min, max, M + os::vm_page_size(), 1);
-    ASSERT_NULL(p);
-
-    // reservation of page with larger than 128M alignment will not fit
-    p = call_attempt_reserve_memory_between(min, max, os::vm_page_size(), 256 * M);
-    ASSERT_NULL(p);
-
-  } else {
-    tty->print_cr("Failed to reserve block; skipping test");
-  }
+  os::release_memory(p, M);
+#endif
 }
 
 // Return the lowest mapping start address, if we can find it out. If not, 
@@ -1070,49 +1045,9 @@ static char* call_attempt_reserve_memory_below(char* max, size_t size, size_t al
   return addr;
 }
 
-static void test_attempt_reserve_memory_below(char* max, size_t size,
-                                              size_t alignment, bool expect_success) {
-  char* const addr = call_attempt_reserve_memory_below(max, size, alignment);
-  if (expect_success) {
-    EXPECT_NE(addr, (char*)nullptr) << ERRINFO;
-  }
-  if (addr != nullptr) {
-    EXPECT_TRUE(is_aligned(addr, alignment)) << ERRINFO;
-    EXPECT_TRUE(is_aligned(addr, os::vm_allocation_granularity())) << ERRINFO;
-    EXPECT_LE(addr, max - size) << ERRINFO;
-    EXPECT_LE(addr, os::get_highest_attach_address() - size) << ERRINFO;
-    EXPECT_GE(addr, os::get_lowest_attach_address()) << ERRINFO;
-    os::release_memory(addr, size);
-  }
-}
-
 #undef ERRINFO
 
-TEST_VM(os, attempt_reserve_memory_below) {
-
-  char* const first_mapping_start = query_lowest_mapping_address();
-  
-  const size_t pagesize = os::vm_page_size();
-  static const uintptr_t limits[] = {
-    SIZE_MAX, 4 * G, G + 16, G - 16, 16 * M,
-#ifdef _LP64
-      nth_bit(32), nth_bit(48),
-#endif
-    0 // last
-  };
-  
-  for (int n = 0; limits[n] != 0; n++) {
-    char* const max = (char*)(limits[n]);
-    for (size_t size = os::vm_page_size(); size < G; size *= 2) {
-      for (size_t alignment = 8; alignment < G; alignment *= 2) {
-        test_attempt_reserve_memory_below(max, size, alignment, 
-                                          max < first_mapping_start);
-      }
-    }
-  }
-}
-
-TEST_VM(os, attempt_reserve_memory_in_below_2) {
+TEST_VM(os, attempt_reserve_memory_in_below) {
 
   char* const first_mapping_start = query_lowest_mapping_address();
 
@@ -1127,18 +1062,19 @@ TEST_VM(os, attempt_reserve_memory_in_below_2) {
   
   // address space hole large enough, the following should work
   char* const limit = first_mapping_start + os::vm_page_size(); // limit in the middle of the first mapping.
-  char* p1 = os::attempt_reserve_memory_below(limit, M, M);
-  // it should have attempted first to allocate adjacent to the mapping
+
+  // We should be located adjacent to the mapping.
+  char* p1 = call_attempt_reserve_memory_below(limit, M, M);
   char* expected_mapping_address = align_down(first_mapping_start - M, M);
   EXPECT_EQ(expected_mapping_address, p1);
 
   // Attempt again, this time it should allocate adjacent to the last segment.
-  char* p2 = os::attempt_reserve_memory_below(limit, M, M);
+  char* p2 = call_attempt_reserve_memory_below(limit, M, M);
   expected_mapping_address = p1 - M;
   EXPECT_EQ(expected_mapping_address, p2);
 
   // Attempt again, this time with a higher alignment.
-  char* p3 = os::attempt_reserve_memory_below(limit, M, 64 * M);
+  char* p3 = call_attempt_reserve_memory_below(limit, M, 64 * M);
   expected_mapping_address = align_down(p2 - M, 64 * M);
   EXPECT_EQ(expected_mapping_address, p3);
 
