@@ -439,17 +439,12 @@ class os: AllStatic {
   static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
 
   // Given an address range [min, max) and a stride, attempt to reserve memory within this range by probing
-  // at [max, max - stride, max - 2 * stride, ...] until we either successfully map memory at the given location,
-  // or until we reached or passed min.
-  static char* attempt_reserve_memory_at_multiple(char* min, char* max, size_t bytes, size_t stride);
+  // at [min, min + stride, min + 2 * stride ...].
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t stride);
 
   // Attempts to reserve memory below a given max address (for zero-based addressing needs) and
   // aligned to a given alignment.
   static char* attempt_reserve_memory_below(char* max, size_t bytes, size_t alignment);
-
-  // Given an address range [min, max) and a stride, attempt to reserve memory within this range by probing
-  // at [max, max - stride, max - 2 * stride, ...] until we reached or passed min.
-  static char*  attempt_reserve_memory_strides(char* min, char* max, size_t bytes, size_t stride);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,
