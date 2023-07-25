@@ -863,7 +863,7 @@ public:
     return _method_counters;
   }
 
-  // Clear the flags related to compiler directives that were set by the compilerBroker, 
+  // Clear the flags related to compiler directives that were set by the compilerBroker,
   // because the directives can be updated.
   void clear_method_flags() {
     set_has_matching_directives(false);
