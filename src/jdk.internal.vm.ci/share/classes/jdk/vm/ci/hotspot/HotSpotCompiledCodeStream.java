@@ -1047,12 +1047,30 @@ final class HotSpotCompiledCodeStream implements AutoCloseable {
             writeTag(NULL_CONSTANT);
         } else if (value instanceof RegisterValue) {
             RegisterValue reg = (RegisterValue) value;
-            Tag tag = kind == JavaKind.Object ? (isVector(reg) ? REGISTER_VECTOR : isNarrowOop(reg) ? REGISTER_NARROW_OOP : REGISTER_OOP) : REGISTER_PRIMITIVE;
+            Tag tag;
+            if (kind == JavaKind.Object) {
+                if (isVector(reg)) {
+                    tag = REGISTER_VECTOR;
+                } else {
+                    tag = isNarrowOop(reg) ? REGISTER_NARROW_OOP : REGISTER_OOP;
+                }
+            } else {
+                tag = REGISTER_PRIMITIVE;
+            }
             writeTag(tag);
             writeRegister(reg.getRegister());
         } else if (value instanceof StackSlot) {
             StackSlot slot = (StackSlot) value;
-            Tag tag = kind == JavaKind.Object ? (isVector(slot) ? STACK_SLOT_VECTOR : isNarrowOop(slot) ? STACK_SLOT_NARROW_OOP : STACK_SLOT_OOP) : STACK_SLOT_PRIMITIVE;
+            Tag tag;
+            if (kind == JavaKind.Object) {
+                if (isVector(slot)) {
+                    tag = STACK_SLOT_VECTOR;
+                } else {
+                    tag = isNarrowOop(slot) ? STACK_SLOT_NARROW_OOP : STACK_SLOT_OOP;
+                }
+            } else {
+                tag = STACK_SLOT_PRIMITIVE;
+            }
             writeTag(tag);
             writeS2("offset", slot.getRawOffset());
             writeBoolean("addRawFrameSize", slot.getRawAddFrameSize());
