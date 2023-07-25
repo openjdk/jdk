@@ -267,9 +267,9 @@ ciConstant ciBytecodeStream::get_constant() {
 //
 // If this bytecode is one of the ldc variants, get the referenced
 // constant.
-constantTag ciBytecodeStream::get_constant_pool_tag(int index) const {
+constantTag ciBytecodeStream::get_constant_pool_tag(int cp_index) const {
   VM_ENTRY_MARK;
-  return _method->get_Method()->constants()->constant_tag_at(index);
+  return _method->get_Method()->constants()->constant_tag_at(cp_index);
 }
 
 // ------------------------------------------------------------------
@@ -283,9 +283,9 @@ constantTag ciBytecodeStream::get_raw_pool_tag_at(int index) const {
 // ------------------------------------------------------------------
 // ciBytecodeStream::get_basic_type_for_constant_at
 //
-BasicType ciBytecodeStream::get_basic_type_for_constant_at(int index) const {
+BasicType ciBytecodeStream::get_basic_type_for_constant_at(int cp_index) const {
   VM_ENTRY_MARK;
-  return _method->get_Method()->constants()->basic_type_for_constant_at(index);
+  return _method->get_Method()->constants()->basic_type_for_constant_at(cp_index);
 }
 
 // ------------------------------------------------------------------
