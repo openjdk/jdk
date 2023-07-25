@@ -653,8 +653,9 @@ class Address {
   static bool offset_ok_for_sve_immed(int64_t offset, int shift, int vl /* sve vector length */) {
     if (offset % vl == 0) {
       // Convert address offset into sve imm offset (MUL VL).
-      int32_t sve_offset = (int32_t)(offset / vl);
-      if (((-(1 << (shift - 1))) <= sve_offset) && (sve_offset < (1 << (shift - 1)))) {
+      int64_t sve_offset = offset / vl;
+      int64_t range = 1 << (shift - 1);
+      if ((-range <= sve_offset) && (sve_offset < range)) {
         // sve_offset can be encoded
         return true;
       }
