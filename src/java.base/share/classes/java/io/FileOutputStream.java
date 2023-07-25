@@ -362,8 +362,6 @@ public class FileOutputStream extends OutputStream
         try {
             while (len > 0) {
                 int n = writeBytes(b, off, len, append);
-                if (n == -1)
-                    break;
                 off += n;
                 len -= n;
             }

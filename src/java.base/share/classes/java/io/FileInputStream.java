@@ -259,12 +259,7 @@ public class FileInputStream extends InputStream
      */
     @Override
     public int read(byte[] b) throws IOException {
-        long comp = Blocker.begin();
-        try {
-            return readBytes(b, 0, b.length);
-        } finally {
-            Blocker.end(comp);
-        }
+        return read(b, 0, b.length);
     }
 
     /**
@@ -284,12 +279,27 @@ public class FileInputStream extends InputStream
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
+        final int start = off;
         long comp = Blocker.begin();
         try {
-            return readBytes(b, off, len);
+            while (len > 0) {
+                int n = readBytes(b, off, len);
+                if (n < 0) {
+                    if (off == start)
+                        return -1;
+                    break;
+                }
+                off += n;
+                len -= n;
+            }
+        } catch (IOException e) {
+            // Throw only if no bytes have been read
+            if (off == start)
+                throw e;
         } finally {
             Blocker.end(comp);
         }
+        return off - start;
     }
 
     @Override

@@ -397,12 +397,27 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
     private int readBytes(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
+        final int start = off;
         long comp = Blocker.begin();
         try {
-            return readBytes0(b, off, len);
+            while (len > 0) {
+                int n = readBytes0(b, off, len);
+                if (n < 0) {
+                    if (off == start)
+                        return -1;
+                    break;
+                }
+                off += n;
+                len -= n;
+            }
+        } catch (IOException e) {
+            // Throw only if no bytes have been read
+            if (off == start)
+                throw e;
         } finally {
             Blocker.end(comp);
         }
+        return off - start;
     }
 
     private native int readBytes0(byte[] b, int off, int len) throws IOException;
@@ -574,8 +589,6 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         try {
             while (len > 0) {
                 int n = writeBytes0(b, off, len);
-                if (n == -1)
-                    break;
                 off += n;
                 len -= n;
             }
