@@ -40,14 +40,11 @@ class TriBool{
 
  public:
   TriBool() : _value(0) {}
-  TriBool(bool value) : _value(value) {
-    _value = _value | 2;
-  }
+  TriBool(bool value) : _value((u1)(value | 2) & 3) { }
   TriBool(const TriBool& o): _value(o._value) {}
 
   TriBool& operator=(bool value) {
-    _value = (u1)value;
-    _value = _value | 2;
+    _value = (u1)(value | 2) & 3;
     return *this;
   }
 
