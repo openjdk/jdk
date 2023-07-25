@@ -85,9 +85,11 @@ public final class Arrays {
      *
      * @param elemType the class of the array to be sorted
      * @param array the array to be sorted
-     * @param offset the array offset
-     * @param fromIndex from Index
-     * @param toIndex to Index
+     * @param offset the relative offset, in bytes, from the base address of
+     * the array to sort, otherwise if the array is {@code null},an absolute
+     * address pointing to the first element to sort from.
+     * @param fromIndex the index of the first element, inclusive, to be sorted
+     * @param toIndex the index of the last element, exclusive, to be sorted
      */
     @IntrinsicCandidate
     public static void arraySort(Class<?> elemType, Object array, long offset, int fromIndex, int toIndex) {
