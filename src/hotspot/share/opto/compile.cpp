@@ -4907,7 +4907,15 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
         const Type* t_no_spec = t->remove_speculative();
         if (t_no_spec != t) {
           bool in_hash = igvn.hash_delete(n);
-          assert(in_hash, "node should be in igvn hash table");
+#ifdef ASSERT
+          if (!in_hash) {
+            tty->print_cr("current graph:");
+            n->dump_bfs(MaxNodeLimit, nullptr, "S$");
+            tty->print_cr("erroneous node:");
+            n->dump();
+            assert(false, "node should be in igvn hash table");
+          }
+#endif
           tn->set_type(t_no_spec);
           igvn.hash_insert(n);
           igvn._worklist.push(n); // give it a chance to go away
