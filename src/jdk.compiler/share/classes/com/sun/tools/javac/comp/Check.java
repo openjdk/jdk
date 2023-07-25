@@ -5214,14 +5214,13 @@ public class Check {
                         }
                     }
 
+                    // Also perform checks on any class bodies of enum constants, see JLS 8.9.1.
                     case ENUM_CONSTANT -> {
                         var field = (VarSymbol)enclosed;
-                        if (field.isEnum()) {
-                            JCVariableDecl decl = (JCVariableDecl) TreeInfo.declarationFor(field, p);
-                            if (decl.init instanceof JCNewClass nc && nc.def != null) {
-                                ClassSymbol enumConstantType = nc.def.sym;
-                                visitTypeAsEnum(enumConstantType, p);
-                            }
+                        JCVariableDecl decl = (JCVariableDecl) TreeInfo.declarationFor(field, p);
+                        if (decl.init instanceof JCNewClass nc && nc.def != null) {
+                            ClassSymbol enumConstantType = nc.def.sym;
+                            visitTypeAsEnum(enumConstantType, p);
                         }
                     }
 
