@@ -946,58 +946,102 @@ static char* call_attempt_reserve_memory_between(char* min, char* max, size_t si
 static void test_attempt_reserve_memory_between(char* min, char* max, size_t size, size_t stride, char* expected_result) {
   char* const  addr = call_attempt_reserve_memory_between(min, max, size, stride);
   EXPECT_EQ(addr, expected_result) << ERRINFO;
+  if (addr != nullptr) {
+    os::release_memory(addr, size);
+  }
 }
 
 #undef ERRINFO
 
-TEST_VM(os, attempt_reserve_memory_between) {
+// Helper for attempt_reserve_memory_between tests to
+// reserve an area with a hole in the middle
+struct SpaceWithHole {
+  char* _p1;
+  size_t _l1;
+  char* _p2;
+  size_t _l2;
 
-  // Allocate a large area, then punch equidistant holes of 1M size
-  const size_t totalsize = 17 * M;
-  char* const min = os::reserve_memory(totalsize, false, mtTest);
-  char* const max = min + totalsize; 
-  for (char* hole = min + M; hole < max; hole += 2 * M) {
-    os::release_memory(hole, M);
+public:
+
+  char* base() const { return _p1; }
+  char* end() const { return _p2 + _l2; }
+  char* hole() const { return _p1 + _l1; }
+  size_t hole_size() const { return _p2 - _p1 - _l1; }
+
+  SpaceWithHole(size_t total_size, size_t hole_offset, size_t hole_size) {
+    assert(total_size > hole_offset + hole_size, "Sanity");
+    // We cannot reserve the total size, then punch a hole in the middle, since NMT cannot
+    // cope with releases crossing reservation boundaries. Therefore we first reserve the total
+    // amount, release that area again, reserve the parts.
+    char* p = os::reserve_memory(total_size);
+    if (p != nullptr) {
+      os::release_memory(p, total_size);
+      _l1 = hole_offset;
+      if (_l1 > 0) {
+        _p1 = os::attempt_reserve_memory_at(p, _l1);
+      }
+      _l2 = total_size - hole_offset - hole_size;
+      if (_l2 > 0) {
+        _p2 = os::attempt_reserve_memory_at(p + hole_offset + hole_size, _l2);
+      }
+    }
   }
-  
-  // Allocate 1M, with 1M stride, starting at min, should fill hole 1
-  test_attempt_reserve_memory_between(min, max, M, M, min + M);
 
-  // Allocate 1M, with 1M stride, starting at min, should fill hole 2
-  test_attempt_reserve_memory_between(min, max, M, M, min + 3 * M);
+  ~SpaceWithHole() {
+    if (_p1 != nullptr) {
+      os::release_memory(_p1, _l1);
+    }
+    if (_p2 != nullptr) {
+      os::release_memory(_p2, _l2);
+    }
+  }
 
-  // Attempt to allocate with stride 2 M; should fail since holes start at odd-numbered holes
-  test_attempt_reserve_memory_between(min, max, M, 2 * M, nullptr);
+  bool is_reserved() const { return _p1 != nullptr || _p2 != nullptr; }
+};
 
-  // Attempt to allocate with stride 1 M, but at an offset; should fail since stride won't match up with holes
-  test_attempt_reserve_memory_between(min + os::vm_allocation_granularity(), max, M, M, nullptr);
+TEST_VM(os, attempt_reserve_memory_between_1) {
+  // Note: here, and in other places where we use SpaceWithHole, we use very small hole size to
+  // minimize the chance of concurrent mmaps grabbing that hole. Not much should be going on
+  // concurrently anyway.
+  SpaceWithHole space(32 * M, 5 * M, os::vm_allocation_granularity() * 2);
+  if (!space.is_reserved()) {
+    tty->print_cr("Failed to reserve holed space, skipping.");
+  }
 
-  // Attempt to allocate 2M - no hole is large enough
-  test_attempt_reserve_memory_between(min, max, 2 * M, M, nullptr);
+  // 1MB hole, 1M alloc size, 1M stride, starting at min, should fill hole perfectly
+  test_attempt_reserve_memory_between(space.base(), space.end(), space.hole_size(), M, space.hole());
 
-  // Allocate 256K, four times, with small stride. Should fill hole 3
-  test_attempt_reserve_memory_between(min, max, 256 * K, os::vm_allocation_granularity(), min + 5 * M);
-  test_attempt_reserve_memory_between(min, max, 256 * K, os::vm_allocation_granularity(), min + 5 * M + 256 * K);
-  test_attempt_reserve_memory_between(min, max, 256 * K, os::vm_allocation_granularity(), min + 5 * M + 512 * K);
-  test_attempt_reserve_memory_between(min, max, 256 * K, os::vm_allocation_granularity(), min + 5 * M + 768 * K);
+  // 1MB hole, one page only, 1M stride, starting at min, should fill hole
+  test_attempt_reserve_memory_between(space.base(), space.end(), os::vm_page_size(), M, space.hole());
 
-  // Leave memory reserved. Not a big deal (reserved only, not yet committed). Releasing multiple mappings with os::release_memory
-  // still broken in NMT.
+  // 1MB hole, 1M alloc size, 2M stride, starting at min, should fail since hole is at uneven MB position
+  test_attempt_reserve_memory_between(space.base(), space.end(), space.hole_size(), 2 * M, nullptr);
+
+  // 1MB hole, 1M alloc size, 1M stride, starting at min + offset, should fail since min mismatch
+  test_attempt_reserve_memory_between(space.base() + os::vm_allocation_granularity(), space.end(), space.hole_size(), M, nullptr);
+
+  // 1MB hole at start of range, 1M alloc size, 1M stride, should succeed
+  test_attempt_reserve_memory_between(space.hole(), space.end(), space.hole_size(), M, space.hole());
+
+  // 1MB hole at end of range, 1M alloc size, 1M stride, should succeed
+  test_attempt_reserve_memory_between(space.base(), space.hole() + space.hole_size(), space.hole_size(),  M, space.hole());
+
 }
 
 TEST_VM(os, attempt_reserve_memory_between_2) {
-
-  // A reservation of 1M within the lowest 64G should probably work
- #ifdef _LP64
-  char* p = call_attempt_reserve_memory_between(nullptr, (char*)(64 * G), M, 128 * M);
-  ASSERT_NOT_NULL(p);
-
-  // A reservation at the same point should fail
-  char* p2 = call_attempt_reserve_memory_between(p, p + M, M, 128 * M);
-  ASSERT_NULL(p2);
-
-  os::release_memory(p, M);
-#endif
+  // Attempt to allocate in a range, with a varying set of alignments and sizes.
+  // We don't expect the mapping to work, but if it does, we check the return value
+  // for validity.
+  SpaceWithHole space(32 * M, 5 * M, os::vm_allocation_granularity() * 2);
+  if (!space.is_reserved()) {
+    tty->print_cr("Failed to reserve holed space, skipping.");
+  }
+  for (size_t size = os::vm_page_size(); size < 32 * M; size *= 2) {
+    for (size_t stride = os::vm_allocation_granularity(); stride < 4 * M; stride *= 2) {
+      char* const expected_result = (size <= space.hole_size() && stride <= M) ? space.hole() : nullptr;
+      test_attempt_reserve_memory_between(space.base(), space.end(), size, stride, expected_result);
+    }
+  }
 }
 
 // Return the lowest mapping start address, if we can find it out. If not, 
@@ -1034,7 +1078,6 @@ static char* query_lowest_mapping_address() {
 }
 
 #define ERRINFO "addr: " << ((void*)addr) << "max: " << ((void*)max) << " size: " << size << " alignment: " << alignment
-
 static char* call_attempt_reserve_memory_below(char* max, size_t size, size_t alignment) {
   char* const addr = os::attempt_reserve_memory_below(max, size, alignment);
   if (addr != nullptr) {
@@ -1046,7 +1089,6 @@ static char* call_attempt_reserve_memory_below(char* max, size_t size, size_t al
   }
   return addr;
 }
-
 #undef ERRINFO
 
 TEST_VM(os, attempt_reserve_memory_in_below) {

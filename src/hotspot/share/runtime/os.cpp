@@ -1810,13 +1810,13 @@ char* os::attempt_reserve_memory_between(char* min, char* max, size_t bytes, siz
     last = candidate;
     candidate += stride;
   } while (result == nullptr && 
-           (candidate + bytes) < MIN2(max, hi) && candidate > last);
+           (candidate + bytes) <= MIN2(max, hi) && candidate > last);
 
   if (result != nullptr) {
     assert(result >= min && result <= max, "OOB");
     assert(result >= os::get_lowest_attach_address() && 
            (result + bytes) <= os::get_highest_attach_address(), "OOB virtual address");
-    assert(((max - result) % stride) == 0, "Stride violation");
+    assert(((result - min) % stride) == 0, "Stride violation");
     log_debug(os, map)("successfully attached at [" PTR_FORMAT "-" PTR_FORMAT ").",
                        p2i(result), p2i(result + bytes));
     MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
