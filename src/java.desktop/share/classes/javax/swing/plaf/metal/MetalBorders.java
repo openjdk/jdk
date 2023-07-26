@@ -1111,7 +1111,7 @@ public class MetalBorders {
             SwingUtilities2.drawVLine(g, w-1, 0, h-1);
             SwingUtilities2.drawHLine(g, 1, w-1, h-1);
             g.setColor( MetalLookAndFeel.getControlHighlight() );
-            SwingUtilities2.drawHLine(g, 0, w-2, 0 );
+            SwingUtilities2.drawHLine(g, 0, w-2, 0);
             SwingUtilities2.drawVLine(g, 0, 0, h-2);
 
             g.translate( -x, -y );

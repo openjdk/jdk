@@ -25,7 +25,6 @@ import javax.imageio.ImageIO;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.UIManager;
 
 import java.awt.Dimension;
@@ -39,12 +38,11 @@ import java.io.IOException;
  * @test
  * @bug 8311031
  * @summary Test to validate JTable header border vertical line is
- * aligned with data grid lines (Metal L&F).
+ *          aligned with data grid lines (Metal L&F).
  * @run main TableHeaderBorderPositionTest
  */
 
 public class TableHeaderBorderPositionTest {
-    static JTable table;
     private static final int WIDTH = 300;
     private static final int HEIGHT = 150;
     private static final double SCALE = 2.25;
@@ -52,37 +50,28 @@ public class TableHeaderBorderPositionTest {
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         SwingUtilities.invokeAndWait(() -> {
-            TableHeaderBorderPositionTest.Test();
+            test();
         });
     }
 
-    public static void Test() {
-        int verticalLineCol;
-        int expectedRGB;
-        BufferedImage imgData;
-        BufferedImage imgHeader;
-        double w;
-        double h;
+    private static void test() {
         String[][] data = {
-                { "1", "1", "Green"},
-                { "2", "2", "Blue"}
+                { "1", "1"}
         };
 
-        String[] columnNames = { "Number", "Size", "Color"};
-
-        table = new JTable(data, columnNames);
+        String[] columnNames = { "Size", "Size"};
+        JTable table = new JTable(data, columnNames);
         table.setSize(WIDTH, HEIGHT);
 
         final JTableHeader header = table.getTableHeader();
-        TableCellRenderer renderer = header.getDefaultRenderer();
-        header.setDefaultRenderer(renderer);
-        table.updateUI();
-
         Dimension size = header.getPreferredSize();
         header.setSize(size);
-        w = SCALE * size.width;
-        h = SCALE * size.height;
-        imgHeader = new BufferedImage((int)(w), (int)(h), BufferedImage.TYPE_INT_RGB);
+
+        int w = (int)Math.ceil(SCALE * size.width);
+        int h = (int)Math.ceil(SCALE * size.height);
+
+        BufferedImage imgHeader = new BufferedImage(w, h,
+                BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = imgHeader.createGraphics();
         g2d.scale(SCALE, SCALE);
         try {
@@ -91,10 +80,10 @@ public class TableHeaderBorderPositionTest {
             g2d.dispose();
         }
 
-        w = SCALE * WIDTH;
-        h = SCALE * HEIGHT;
-
-        imgData = new BufferedImage((int)w, (int)h, BufferedImage.TYPE_INT_RGB);
+        w = (int)Math.ceil(SCALE * WIDTH);
+        h = (int)Math.ceil(SCALE * HEIGHT);
+        BufferedImage imgData = new BufferedImage(w, h,
+                BufferedImage.TYPE_INT_RGB);
         g2d = imgData.createGraphics();
         g2d.scale(SCALE, SCALE);
         try {
@@ -103,35 +92,37 @@ public class TableHeaderBorderPositionTest {
             g2d.dispose();
         }
 
-        verticalLineCol = (int)(table.getTableHeader().
+        int verticalLineCol = (int)(table.getTableHeader().
                 getColumnModel().getColumn(0).getWidth() * SCALE) - 2;
-        expectedRGB = imgData.getRGB(verticalLineCol, 0);
+        int expectedRGB = imgData.getRGB(verticalLineCol, 0);
 
-        for (int i = 0; i < imgHeader.getHeight(); i++) {
-            for (int j = verticalLineCol; j < verticalLineCol + 3; j++) {
-                if (expectedRGB != imgHeader.getRGB(j, i)) {
-                    try {
-                        ImageIO.write(imgHeader, "png",new File("FailureImageHeader.png"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+        for (int y = 0; y < imgHeader.getHeight(); y++) {
+            for (int x = verticalLineCol; x < verticalLineCol + 3; x++) {
+                if (expectedRGB != imgHeader.getRGB(x, y)) {
+                    saveImage(imgHeader, "FailureImageHeader.png");
                     throw new RuntimeException("Test Failed");
                 }
             }
         }
 
-        for (int i = 0; i < table.getRowCount() * table.getRowHeight() * SCALE; i++) {
-            for (int j = verticalLineCol; j < verticalLineCol + 3; j++) {
-                if (expectedRGB != imgData.getRGB(j, i)) {
-                    try {
-                        ImageIO.write(imgData, "png", new File("FailureImageData.png"));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+        int maxVerticalLine = (int) Math.ceil(
+                table.getRowCount() * table.getRowHeight() * SCALE);
+        for (int y = 0; y < maxVerticalLine; y++) {
+            for (int x = verticalLineCol; x < verticalLineCol + 3; x++) {
+                if (expectedRGB != imgData.getRGB(x, y)) {
+                    saveImage(imgData,"FailureImageData.png");
                     throw new RuntimeException("Test Failed");
                 }
             }
         }
-        System.out.println("Test Pass!!");
+        System.out.println("Test Passed");
+    }
+
+    private static void saveImage(BufferedImage img, String fileName) {
+        try {
+            ImageIO.write(img, "png", new File(fileName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
