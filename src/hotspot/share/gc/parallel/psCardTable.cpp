@@ -276,6 +276,14 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     if (first_obj_addr < cur_stripe_addr) {
       // this obj belongs to previous stripe; can't clear any cards it occupies
       first_obj_addr += cast_to_oop(first_obj_addr)->size();
+      if (first_obj_addr >= cur_stripe_end_addr) {
+        // No object starts in the stripe so continue.
+        // object_starts_in_range() above is imprecise. It can return true iff
+        // cur_stripe_end_addr equals space_top which is not aligned to _card_size and an
+        // object starts there.
+        assert(first_obj_addr == space_top, "assumption");
+        continue;
+      }
       clear_limit_l = byte_for(first_obj_addr - 1) + 1;
       iter_limit_l = byte_for(first_obj_addr);
     } else {
@@ -284,17 +292,19 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     }
 
     assert(cur_stripe_addr <= first_obj_addr, "inside this stripe");
-    assert(first_obj_addr <= cur_stripe_end_addr, "can be empty");
+    assert(first_obj_addr < cur_stripe_end_addr, "no objects start in stripe");
 
     {
       // Identify right ends.
       HeapWord* obj_addr = start_array->object_start(cur_stripe_end_addr - 1);
       size_t obj_sz = cast_to_oop(obj_addr)->size();
       HeapWord* obj_end_addr = obj_addr + obj_sz;
-      // large arrays starting in this stripe are scanned here
-      if (obj_sz >= large_obj_arr_min_words() && cast_to_oop(obj_addr)->is_objArray() &&
-          obj_addr >= cur_stripe_addr) {
-        // the last condition is not redundant as we can reach here if an obj starts at space_top
+      // Scan the elements of a large array to the stripe end.
+      if (obj_sz >= large_obj_arr_min_words() && cast_to_oop(obj_addr)->is_objArray()) {
+        // Reaching here we know that the large array starts in this stripe.
+        // If it starts here then its end has to be in a following stripe.
+        assert(obj_addr >= cur_stripe_addr &&
+               obj_end_addr >= cur_stripe_end_addr, "overlapping work");
         obj_end_addr = cur_stripe_end_addr;
         large_arr = objArrayOop(cast_to_oop(obj_addr));
       }
