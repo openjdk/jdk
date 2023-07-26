@@ -139,7 +139,7 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
         TypeElement superClass =
             (TypeElement)(((DeclaredType)enumConstBody.getSuperclass()).asElement());
 
-        if (superClass.equals(enumClass)) {
+        if (!superClass.equals(enumClass)) {
             messager.printError("Class body is not a direct subclass of the enum", enumConstBody);
         }
 
