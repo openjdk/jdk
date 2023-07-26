@@ -2393,7 +2393,7 @@ class StubGenerator: public StubCodeGenerator {
       __ beqz(cnt2, DONE);  // no character left
       __ bind(LOAD_LAST);   // cnt2 = 1..7 characters left
 
-      __ addi(cnt2, cnt2, -wordSize); //cnt2 is now an offset in strL which points to last 8 bytes
+      __ addi(cnt2, cnt2, -wordSize); // cnt2 is now an offset in strL which points to last 8 bytes
       __ slli(t0, cnt2, 1);     // t0 is now an offset in strU which points to last 16 bytes
       __ add(strL, strL, cnt2); // Address of last 8 bytes in Latin1 string
       __ add(strU, strU, t0);   // Address of last 16 bytes in UTF-16 string
