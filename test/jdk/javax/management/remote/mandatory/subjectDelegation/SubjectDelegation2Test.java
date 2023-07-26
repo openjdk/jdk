@@ -73,7 +73,7 @@ public class SubjectDelegation2Test {
             System.out.println("Start RMI registry...");
             Registry reg = null;
             int port = 5880;
-            while (port++ < 6000) {
+            while (port++ < 5900) {
                 try {
                     reg = LocateRegistry.createRegistry(port);
                     System.out.println("RMI registry running on port " + port);
