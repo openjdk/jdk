@@ -52,7 +52,7 @@ import java.util.stream.IntStream;
  * the following snippet ({@code STANDARD}, {@code FULL} are used for a typical case):
  * {@snippet lang=java :
  * ListFormat.getInstance(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL)
- *     .format(new List.of("Foo", "Bar", "Baz"))
+ *     .format(List.of("Foo", "Bar", "Baz"))
  * }
  * This will produce the concatenated list string as in the following table:
  * <table class="striped">
@@ -199,10 +199,12 @@ public class ListFormat extends Format {
      * This factory produces an instance based on the customized patterns array,
      * instead of letting the runtime provide appropriate patterns for the Locale/Type/Style.
      * <p>
-     * Patterns array consists of five Strings of patterns, each correspond to Unicode LDML's
-     * {@code listPatternPart}, i.e., "start", "middle", "end", "2", and
-     * "3" patterns. Each pattern contains "{0}" and "{1}" (and "{2}" for pattern "3")
+     * Patterns array should contain five Strings of patterns, each correspond to Unicode LDML's
+     * {@code listPatternPart}, i.e., "start", "middle", "end", "2", and "3" patterns
+     * in this order. Each pattern contains "{0}" and "{1}" (and "{2}" for pattern "3")
      * placeholders that are substituted with the passed input strings on formatting.
+     * If the length of the patterns array is less than 5, an {@code IllegalArgumentException}
+     * is thrown.
      * <p>
      * Each pattern string is first parsed as follows. Patterns in parens are optional:
      * <blockquote><pre>
@@ -212,7 +214,9 @@ public class ListFormat extends Format {
      * two := (two_before){0}two_between{1}(two_after)
      * three := (three_before){0}three_between{1}three_between{2}(three_after)
      * </pre></blockquote>
-     * then, the {@code n} elements in the input string list substitute these
+     * If parsing of the pattern string fails, start/middle/end fall back to "{0}{1}",
+     * and two/three fall back to empty strings.
+     * Then the input string list with {@code n} elements substitutes these
      * placeholders:
      * <blockquote><pre>
      * (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
@@ -286,11 +290,32 @@ public class ListFormat extends Format {
                 DontCareFieldPosition.INSTANCE).toString();
     }
 
+    /**
+     * Formats an object and appends the resulting text to a given string
+     * buffer. The object should either be a List or an array of Objects.
+     * If the {@code pos} argument identifies a field used by the format,
+     * then its indices are set to the beginning and end of the first such
+     * field encountered.
+     *
+     * @param obj    The object to format. Must be a List or an array
+     *               of Object.
+     * @param toAppendTo    where the text is to be appended
+     * @param pos    A {@code FieldPosition} identifying a field
+     *               in the formatted text
+     * @return       the string buffer passed in as {@code toAppendTo},
+     *               with formatted text appended
+     * @throws    NullPointerException if {@code toAppendTo} or
+     *            {@code pos} is null
+     * @throws    IllegalArgumentException if it cannot format the given
+     *            object
+     */
     @Override
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
         Objects.requireNonNull(toAppendTo);
         Objects.requireNonNull(pos);
-        if (obj instanceof List<?> objs) {
+        if (obj instanceof Object[] objs) {
+            return generateMessageFormat(objs).format(objs, toAppendTo, pos);
+        } else if (obj instanceof List<?> objs) {
             var a = objs.toArray(new Object[0]);
             return generateMessageFormat(a).format(a, toAppendTo, pos);
         } else {
