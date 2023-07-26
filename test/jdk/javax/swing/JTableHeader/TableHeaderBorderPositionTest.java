@@ -49,17 +49,15 @@ public class TableHeaderBorderPositionTest {
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-        SwingUtilities.invokeAndWait(() -> {
-            test();
-        });
+        SwingUtilities.invokeAndWait(TableHeaderBorderPositionTest::test);
     }
 
     private static void test() {
         String[][] data = {
-                { "1", "1"}
+                {"1", "1"}
         };
 
-        String[] columnNames = { "Size", "Size"};
+        String[] columnNames = {"Size", "Size"};
         JTable table = new JTable(data, columnNames);
         table.setSize(WIDTH, HEIGHT);
 
@@ -100,7 +98,8 @@ public class TableHeaderBorderPositionTest {
             for (int x = verticalLineCol; x < verticalLineCol + 3; x++) {
                 if (expectedRGB != imgHeader.getRGB(x, y)) {
                     saveImage(imgHeader, "FailureImageHeader.png");
-                    throw new RuntimeException("Test Failed");
+                    throw new RuntimeException("Header Comparison Test Failed" +
+                            "(At Pos_x : " + x + ", Pos_y : " + y +")");
                 }
             }
         }
@@ -111,7 +110,8 @@ public class TableHeaderBorderPositionTest {
             for (int x = verticalLineCol; x < verticalLineCol + 3; x++) {
                 if (expectedRGB != imgData.getRGB(x, y)) {
                     saveImage(imgData,"FailureImageData.png");
-                    throw new RuntimeException("Test Failed");
+                    throw new RuntimeException("TableData Comparison Test Failed" +
+                            "(At Pos_x : " + x + ", Pos_y : " + y +")");
                 }
             }
         }
