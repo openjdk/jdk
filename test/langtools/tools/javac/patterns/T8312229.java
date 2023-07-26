@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,25 +20,25 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-package pkg1;
-
-import pkg.Coin;
-import pkg.*;
-import java.lang.annotation.*;
-
-@Documented public @interface A {
-    int i();
-    double d();
-    boolean b();
-    String s();
-    Class<?> c();
-    Class<? extends TypeParameterSuperClass> w();
-    Coin[] e();
-    AnnotationType a();
-    String[] sa();
-    Class<?> primitiveClassTest();
-    Class<?> arrayClassTest();
-    Class<?> arrayPrimitiveTest();
-    Class<?>[] classArrayTest();
+ /*
+ * @test
+ * @bug 8312229
+ * @summary Ensure javac does not crash when a variable is used from an anonymous class
+ * @compile T8312229.java
+ */
+public class T8312229 {
+    void test(Object o) {
+        Runnable r = () -> {
+            var l = switch (o) {
+                default -> {
+                    Integer i = 42;
+                    yield new Runnable() {
+                        public void run() {
+                            i.toString(); // should not crash here
+                        }
+                    };
+                }
+            };
+        };
+    }
 }
