@@ -61,7 +61,7 @@ public class CheckLargePages {
             OutputAnalyzer out = new OutputAnalyzer(pb.start());
             out.shouldContain("Failed to use large page memory for code cache");
             out.shouldHaveExitValue(0);
-            // Parse page sizes to find next smaller page
+            // Parse page sizes to find next biggest page
             String sizes = out.firstMatch("Usable page sizes:(.*)", 1);
             List<Long> sizeList = Arrays.stream(sizes.trim().split("\\s*,\\s*")).map(CheckLargePages::parseMemoryString).sorted().toList();
             final int smallerPageSizeIndex = sizeList.indexOf(largePageSize) - 1;
