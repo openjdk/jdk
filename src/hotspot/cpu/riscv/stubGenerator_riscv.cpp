@@ -75,7 +75,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef PRODUCT
 #define inc_counter_np(counter) ((void)0)
 #else
-  void inc_counter_np_(int& counter) {
+  void inc_counter_np_(uint& counter) {
     __ la(t1, ExternalAddress((address)&counter));
     __ lwu(t0, Address(t1, 0));
     __ addiw(t0, t0, 1);
@@ -851,47 +851,6 @@ class StubGenerator: public StubCodeGenerator {
 
   Label copy_f, copy_b;
 
-  // All-singing all-dancing memory copy.
-  //
-  // Copy count units of memory from s to d.  The size of a unit is
-  // step, which can be positive or negative depending on the direction
-  // of copy.  If is_aligned is false, we align the source address.
-  //
-  /*
-   * if (is_aligned) {
-   *   if (count >= 32)
-   *     goto copy32_loop;
-   *   if (count >= 8)
-   *     goto copy8_loop;
-   *   goto copy_small;
-   * }
-   * bool is_backwards = step < 0;
-   * int granularity = uabs(step);
-   * count = count  *  granularity;   * count bytes
-   *
-   * if (is_backwards) {
-   *   s += count;
-   *   d += count;
-   * }
-   *
-   * count limit maybe greater than 16, for better performance
-   * if (count < 16) {
-   *   goto copy_small;
-   * }
-   *
-   * if ((dst % 8) == (src % 8)) {
-   *   aligned;
-   *   goto copy_big;
-   * }
-   *
-   * copy_big:
-   * if the amount to copy is more than (or equal to) 32 bytes goto copy32_loop
-   *  else goto copy8_loop
-   * copy_small:
-   *   load element one by one;
-   * done;
-   */
-
   typedef void (MacroAssembler::*copy_insn)(Register Rd, const Address &adr, Register temp);
 
   void copy_memory_v(Register s, Register d, Register count, int step) {
@@ -944,6 +903,12 @@ class StubGenerator: public StubCodeGenerator {
     }
   }
 
+  // All-singing all-dancing memory copy.
+  //
+  // Copy count units of memory from s to d.  The size of a unit is
+  // step, which can be positive or negative depending on the direction
+  // of copy.
+  //
   void copy_memory(DecoratorSet decorators, BasicType type, bool is_aligned,
                    Register s, Register d, Register count, int step) {
     BarrierSetAssembler* bs_asm = BarrierSet::barrier_set()->barrier_set_assembler();
@@ -1037,7 +1002,7 @@ class StubGenerator: public StubCodeGenerator {
     __ beqz(cnt, done); // if that's all - done
 
     __ addi(t0, cnt, -8); // if not - copy the reminder
-    __ bltz(t0, copy_small); // cnt < 8, go to copy_small, else fall throught to copy8_loop
+    __ bltz(t0, copy_small); // cnt < 8, go to copy_small, else fall through to copy8_loop
 
     __ bind(copy8_loop);
     if (is_backwards) {
@@ -3337,8 +3302,7 @@ class StubGenerator: public StubCodeGenerator {
       assert(tmp1->encoding() < x28->encoding(), "register corruption");
       assert(tmp2->encoding() < x28->encoding(), "register corruption");
 
-      slli(tmp1, len, LogBytesPerWord);
-      add(s, s, tmp1);
+      shadd(s, len, s, tmp1, LogBytesPerWord);
       mv(tmp1, len);
       unroll_2(tmp1,  &MontgomeryMultiplyGenerator::reverse1, d, s, tmp2);
       slli(tmp1, len, LogBytesPerWord);
@@ -3959,7 +3923,6 @@ class StubGenerator: public StubCodeGenerator {
 
   static void jfr_epilogue(MacroAssembler* _masm) {
     __ reset_last_Java_frame(true);
-    __ resolve_global_jobject(x10, t0, t1);
   }
   // For c2: c_rarg0 is junk, call to runtime to write a checkpoint.
   // It returns a jobject handle to the event writer.
@@ -3988,6 +3951,7 @@ class StubGenerator: public StubCodeGenerator {
     __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::write_checkpoint), 1);
 
     jfr_epilogue(_masm);
+    __ resolve_global_jobject(x10, t0, t1);
     __ leave();
     __ ret();
 
@@ -3996,6 +3960,44 @@ class StubGenerator: public StubCodeGenerator {
 
     RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
       RuntimeStub::new_runtime_stub("jfr_write_checkpoint", &code, frame_complete,
+                                    (framesize >> (LogBytesPerWord - LogBytesPerInt)),
+                                    oop_maps, false);
+    return stub;
+  }
+
+  // For c2: call to return a leased buffer.
+  static RuntimeStub* generate_jfr_return_lease() {
+    enum layout {
+      fp_off,
+      fp_off2,
+      return_off,
+      return_off2,
+      framesize // inclusive of return address
+    };
+
+    int insts_size = 1024;
+    int locs_size = 64;
+    CodeBuffer code("jfr_return_lease", insts_size, locs_size);
+    OopMapSet* oop_maps = new OopMapSet();
+    MacroAssembler* masm = new MacroAssembler(&code);
+    MacroAssembler* _masm = masm;
+
+    address start = __ pc();
+    __ enter();
+    int frame_complete = __ pc() - start;
+    address the_pc = __ pc();
+    jfr_prologue(the_pc, _masm, xthread);
+    __ call_VM_leaf(CAST_FROM_FN_PTR(address, JfrIntrinsicSupport::return_lease), 1);
+
+    jfr_epilogue(_masm);
+    __ leave();
+    __ ret();
+
+    OopMap* map = new OopMap(framesize, 1);
+    oop_maps->add_gc_map(the_pc - start, map);
+
+    RuntimeStub* stub = // codeBlob framesize is in words (not VMRegImpl::slot_size)
+      RuntimeStub::new_runtime_stub("jfr_return_lease", &code, frame_complete,
                                     (framesize >> (LogBytesPerWord - LogBytesPerInt)),
                                     oop_maps, false);
     return stub;
@@ -4044,9 +4046,17 @@ class StubGenerator: public StubCodeGenerator {
     StubRoutines::_cont_returnBarrier    = generate_cont_returnBarrier();
     StubRoutines::_cont_returnBarrierExc = generate_cont_returnBarrier_exception();
 
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();)
-    JFR_ONLY(StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();)
+    JFR_ONLY(generate_jfr_stubs();)
   }
+
+#if INCLUDE_JFR
+  void generate_jfr_stubs() {
+    StubRoutines::_jfr_write_checkpoint_stub = generate_jfr_write_checkpoint();
+    StubRoutines::_jfr_write_checkpoint = StubRoutines::_jfr_write_checkpoint_stub->entry_point();
+    StubRoutines::_jfr_return_lease_stub = generate_jfr_return_lease();
+    StubRoutines::_jfr_return_lease = StubRoutines::_jfr_return_lease_stub->entry_point();
+  }
+#endif // INCLUDE_JFR
 
   void generate_final_stubs() {
     // support for verify_oop (must happen after universe_init)

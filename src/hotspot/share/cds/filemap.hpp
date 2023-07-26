@@ -194,13 +194,10 @@ private:
   bool   _compact_strings;                        // value of CompactStrings
   uintx  _max_heap_size;                          // java max heap size during dumping
   CompressedOops::Mode _narrow_oop_mode;          // compressed oop encoding mode
-  int     _narrow_klass_shift;                    // save narrow klass base and shift
   bool    _compressed_oops;                       // save the flag UseCompressedOops
   bool    _compressed_class_ptrs;                 // save the flag UseCompressedClassPointers
   size_t  _cloned_vtables_offset;                 // The address of the first cloned vtable
   size_t  _serialized_data_offset;                // Data accessed using {ReadClosure,WriteClosure}::serialize()
-  address _heap_begin;                            // heap begin at dump time.
-  address _heap_end;                              // heap end at dump time.
   bool _has_non_jar_in_classpath;                 // non-jar file entry exists in classpath
   unsigned int _common_app_classpath_prefix_size; // size of the common prefix of app class paths
                                                   //    0 if no common prefix exists
@@ -233,6 +230,8 @@ private:
                                         // some expensive operations.
   bool   _use_full_module_graph;        // Can we use the full archived module graph?
   size_t _ptrmap_size_in_bits;          // Size of pointer relocation bitmap
+  size_t _heap_roots_offset;            // Offset of the HeapShared::roots() object, from the bottom
+                                        // of the archived heap objects, in bytes.
   char* from_mapped_offset(size_t offset) const {
     return mapped_base_address() + offset;
   }
@@ -262,12 +261,8 @@ public:
   bool compact_strings()                   const { return _compact_strings; }
   uintx max_heap_size()                    const { return _max_heap_size; }
   CompressedOops::Mode narrow_oop_mode()   const { return _narrow_oop_mode; }
-  int narrow_klass_shift()                 const { return _narrow_klass_shift; }
-  address narrow_klass_base()              const { return (address)mapped_base_address(); }
   char* cloned_vtables()                   const { return from_mapped_offset(_cloned_vtables_offset); }
   char* serialized_data()                  const { return from_mapped_offset(_serialized_data_offset); }
-  address heap_begin()                     const { return _heap_begin; }
-  address heap_end()                       const { return _heap_end; }
   const char* jvm_ident()                  const { return _jvm_ident; }
   char* requested_base_address()           const { return _requested_base_address; }
   char* mapped_base_address()              const { return _mapped_base_address; }
@@ -276,6 +271,7 @@ public:
   size_t ptrmap_size_in_bits()             const { return _ptrmap_size_in_bits; }
   bool compressed_oops()                   const { return _compressed_oops; }
   bool compressed_class_pointers()         const { return _compressed_class_ptrs; }
+  size_t heap_roots_offset()               const { return _heap_roots_offset; }
   // FIXME: These should really return int
   jshort max_used_path_index()             const { return _max_used_path_index; }
   jshort app_module_paths_start_index()    const { return _app_module_paths_start_index; }
@@ -287,6 +283,7 @@ public:
   void set_serialized_data(char* p)              { set_as_offset(p, &_serialized_data_offset); }
   void set_ptrmap_size_in_bits(size_t s)         { _ptrmap_size_in_bits = s; }
   void set_mapped_base_address(char* p)          { _mapped_base_address = p; }
+  void set_heap_roots_offset(size_t n)           { _heap_roots_offset = n; }
   void copy_base_archive_name(const char* name);
 
   void set_shared_path_table(SharedPathTable table) {
@@ -382,8 +379,7 @@ public:
   address narrow_oop_base()    const { return header()->narrow_oop_base(); }
   int     narrow_oop_shift()   const { return header()->narrow_oop_shift(); }
   uintx   max_heap_size()      const { return header()->max_heap_size(); }
-  address narrow_klass_base()  const { return header()->narrow_klass_base(); }
-  int     narrow_klass_shift() const { return header()->narrow_klass_shift(); }
+  size_t  heap_roots_offset()  const { return header()->heap_roots_offset(); }
   size_t  core_region_alignment() const { return header()->core_region_alignment(); }
 
   CompressedOops::Mode narrow_oop_mode()      const { return header()->narrow_oop_mode(); }

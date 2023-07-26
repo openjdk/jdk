@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 8135061
  * @summary Checks that the Locale.lookup executes properly without throwing
  *          any exception for some specific language ranges
- * @run main Bug8135061
+ * @run junit Bug8135061
  */
 
 import java.util.Collection;
@@ -35,47 +35,46 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Locale.LanguageRange;
 
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
 public class Bug8135061 {
 
-    public static void main(String[] args) {
-
-        /* lookup should run without throwing any exception and
-         * return null as the language range does not match with the language
-         * tag
-         */
+    /**
+     * Lookup should run without throwing any exception and return null as
+     * the language range does not match with the language tag.
+     */
+    @Test
+    public void lookupReturnNullTest() {
         List<LanguageRange> ranges = LanguageRange.parse("nv");
         Collection<Locale> locales = Collections.singleton(Locale.ENGLISH);
-
         try {
             Locale match = Locale.lookup(ranges, locales);
-            if (match != null) {
-                throw new RuntimeException("Locale.lookup returned non-null: "
-                        + match);
-            }
+            assertNull(match);
         } catch (Exception ex) {
             throw new RuntimeException("[Locale.lookup failed on language"
                     + " range: " + ranges + " and language tags "
                     + locales + "]", ex);
         }
-
-        /* lookup should run without throwing any exception and
-         * return "nv" as the matching tag
-         */
-        ranges = LanguageRange.parse("i-navajo");
-        locales = Collections.singleton(Locale.of("nv"));
-
-        try {
-            Locale match = Locale.lookup(ranges, locales);
-            if (!match.toLanguageTag().equals("nv")) {
-                throw new RuntimeException("Locale.lookup returned unexpected"
-                        + " result: " + match);
-            }
-        } catch (Exception ex) {
-            throw new RuntimeException("[Locale.lookup failed on language"
-                    + " range: " + ranges + " and language tags "
-                    + locales + "]", ex);
-        }
-
     }
 
+    /**
+     * Lookup should run without throwing any exception and return "nv"
+     * as the matching tag.
+     */
+    @Test
+    public void lookupReturnValueTest() {
+        List<LanguageRange> ranges = LanguageRange.parse("i-navajo");
+        Collection<Locale> locales = Collections.singleton(Locale.of("nv"));
+        try {
+            Locale match = Locale.lookup(ranges, locales);
+            assertEquals(match.toLanguageTag(), "nv");
+        } catch (Exception ex) {
+            throw new RuntimeException("[Locale.lookup failed on language"
+                    + " range: " + ranges + " and language tags "
+                    + locales + "]", ex);
+        }
+    }
 }

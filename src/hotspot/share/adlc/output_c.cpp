@@ -906,14 +906,14 @@ void ArchDesc::build_pipe_classes(FILE *fp_cpp) {
       pipeclass->forceSerialization() ? "true" : "false",
       pipeclass->mayHaveNoCode() ? "true" : "false" );
     if (paramcount > 0) {
-      fprintf(fp_cpp, "\n  (enum machPipelineStages * const) pipeline_reads_%03d,\n ",
+      fprintf(fp_cpp, "\n  (enum machPipelineStages *) pipeline_reads_%03d,\n ",
         pipeline_reads_index+1);
     }
     else
       fprintf(fp_cpp, " nullptr,");
-    fprintf(fp_cpp, "  (enum machPipelineStages * const) pipeline_res_stages_%03d,\n",
+    fprintf(fp_cpp, "  (enum machPipelineStages *) pipeline_res_stages_%03d,\n",
       pipeline_res_stages_index+1);
-    fprintf(fp_cpp, "  (uint * const) pipeline_res_cycles_%03d,\n",
+    fprintf(fp_cpp, "  (uint *) pipeline_res_cycles_%03d,\n",
       pipeline_res_cycles_index+1);
     fprintf(fp_cpp, "  Pipeline_Use(%s, (Pipeline_Use_Element *)",
       pipeline_res_args.name(pipeline_res_mask_index));
@@ -4209,7 +4209,7 @@ void ArchDesc::buildMachNodeGenerator(FILE *fp_cpp) {
 // instruction has a matching rule for the host architecture.
 void ArchDesc::buildInstructMatchCheck(FILE *fp_cpp) const {
   fprintf(fp_cpp, "\n\n");
-  fprintf(fp_cpp, "const bool Matcher::has_match_rule(int opcode) {\n");
+  fprintf(fp_cpp, "bool Matcher::has_match_rule(int opcode) {\n");
   fprintf(fp_cpp, "  assert(_last_machine_leaf < opcode && opcode < _last_opcode, \"opcode in range\");\n");
   fprintf(fp_cpp, "  return _hasMatchRule[opcode];\n");
   fprintf(fp_cpp, "}\n\n");

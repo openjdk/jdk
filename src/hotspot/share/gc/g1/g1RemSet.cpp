@@ -1262,9 +1262,9 @@ class G1MergeHeapRootsTask : public WorkerTask {
 
   void apply_closure_to_dirty_card_buffers(G1MergeLogBufferCardsClosure* cl, uint worker_id) {
     G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
-    size_t buffer_size = dcqs.buffer_size();
+    size_t buffer_capacity = dcqs.buffer_capacity();
     while (BufferNode* node = _dirty_card_buffers.pop()) {
-      cl->apply_to_buffer(node, buffer_size, worker_id);
+      cl->apply_to_buffer(node, buffer_capacity, worker_id);
       dcqs.deallocate_buffer(node);
     }
   }
@@ -1567,7 +1567,7 @@ void G1RemSet::enqueue_for_reprocessing(CardValue* card_ptr) {
   *card_ptr = G1CardTable::dirty_card_val();
   G1DirtyCardQueueSet& dcqs = G1BarrierSet::dirty_card_queue_set();
   void** buffer = dcqs.allocate_buffer();
-  size_t index = dcqs.buffer_size() - 1;
+  size_t index = dcqs.buffer_capacity() - 1;
   buffer[index] = card_ptr;
   dcqs.enqueue_completed_buffer(BufferNode::make_node_from_buffer(buffer, index));
 }

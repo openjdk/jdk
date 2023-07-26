@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public final class JLinkOptionsTest {
                     "--bind-services",
                     },
                     // with bind-services should have some services
-                    new String[]{"java.smartcardio", "jdk.crypto.ec"},
+                    new String[]{"java.smartcardio", "jdk.crypto.cryptoki"},
                     null,
                     },
             // bind-services
@@ -80,7 +80,7 @@ public final class JLinkOptionsTest {
                     "--jlink-options", "--bind-services",
                     },
                     // with bind-services should have some services
-                    new String[]{"java.smartcardio", "jdk.crypto.ec"},
+                    new String[]{"java.smartcardio", "jdk.crypto.cryptoki"},
                     null,
                     },
 
@@ -105,7 +105,7 @@ public final class JLinkOptionsTest {
                     // with bind-services should have some services
                     new String[]{"java.smartcardio"},
                     // but not limited
-                    new String[]{"jdk.crypto.ec"},
+                    new String[]{"jdk.crypto.cryptoki"},
                     },
 
         });

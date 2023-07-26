@@ -1016,8 +1016,11 @@ static jclass jvm_lookup_define_class(jclass lookup, const char *name,
                                   ik->is_hidden() ? "is hidden" : "is not hidden");
     }
   }
-  assert(Reflection::is_same_class_package(lookup_k, ik),
-         "lookup class and defined class are in different packages");
+
+  if ((!is_hidden || is_nestmate) && !Reflection::is_same_class_package(lookup_k, ik)) {
+    // non-hidden class or nestmate class must be in the same package as the Lookup class
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(), "Lookup class and defined class are in different packages");
+  }
 
   if (init) {
     ik->initialize(CHECK_NULL);
@@ -1385,9 +1388,8 @@ JVM_ENTRY(jobject, JVM_FindScopedValueBindings(JNIEnv *env, jclass cls))
 
     InstanceKlass* holder = method->method_holder();
     if (name == vmSymbols::runWith_method_name()) {
-      if ((holder == resolver.Carrier_klass
-           || holder == vmClasses::VirtualThread_klass()
-           || holder == vmClasses::Thread_klass())) {
+      if (holder == vmClasses::Thread_klass()
+          || holder == resolver.Carrier_klass) {
         loc = 1;
       }
     }
@@ -3044,7 +3046,7 @@ JVM_LEAF(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   os::naked_yield();
 JVM_END
 
-JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong nanos))
+JVM_ENTRY(void, JVM_SleepNanos(JNIEnv* env, jclass threadClass, jlong nanos))
   if (nanos < 0) {
     THROW_MSG(vmSymbols::java_lang_IllegalArgumentException(), "nanosecond timeout value out of range");
   }

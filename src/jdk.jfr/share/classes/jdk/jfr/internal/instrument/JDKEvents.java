@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,7 +125,6 @@ public final class JDKEvents {
     };
 
     private static final Class<?>[] targetClasses = new Class<?>[instrumentationClasses.length];
-    private static final JVM jvm = JVM.getJVM();
     private static final Runnable emitExceptionStatistics = JDKEvents::emitExceptionStatistics;
     private static final Runnable emitDirectBufferStatistics = JDKEvents::emitDirectBufferStatistics;
     private static final Runnable emitContainerConfiguration = JDKEvents::emitContainerConfiguration;
@@ -171,7 +170,7 @@ public final class JDKEvents {
             list.add(java.lang.Throwable.class);
             list.add(java.lang.Error.class);
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.INFO, "Retransformed JDK classes");
-            jvm.retransformClasses(list.toArray(new Class<?>[list.size()]));
+            JVM.retransformClasses(list.toArray(new Class<?>[list.size()]));
         } catch (IllegalStateException ise) {
             throw ise;
         } catch (Exception e) {
@@ -180,7 +179,7 @@ public final class JDKEvents {
     }
 
     private static void initializeContainerEvents() {
-        if (JVM.getJVM().isContainerized() ) {
+        if (JVM.isContainerized() ) {
             Logger.log(LogTag.JFR_SYSTEM, LogLevel.DEBUG, "JVM is containerized");
             containerMetrics = Container.metrics();
             if (containerMetrics != null) {
@@ -219,7 +218,7 @@ public final class JDKEvents {
             t.memorySoftLimit = containerMetrics.getMemorySoftLimit();
             t.memoryLimit = containerMetrics.getMemoryLimit();
             t.swapMemoryLimit = containerMetrics.getMemoryAndSwapLimit();
-            t.hostTotalMemory = JVM.getJVM().hostTotalMemory();
+            t.hostTotalMemory = JVM.hostTotalMemory();
             t.commit();
         }
     }

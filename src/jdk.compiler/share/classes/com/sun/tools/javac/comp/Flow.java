@@ -287,7 +287,7 @@ public class Flow {
         }
     }
 
-    public boolean breaksOutOf(Env<AttrContext> env, JCTree loop, JCTree body, TreeMaker make) {
+    public boolean breaksToTree(Env<AttrContext> env, JCTree breakTo, JCTree body, TreeMaker make) {
         //we need to disable diagnostics temporarily; the problem is that if
         //"that" contains e.g. an unreachable statement, an error
         //message will be reported and will cause compilation to skip the flow analysis
@@ -295,10 +295,10 @@ public class Flow {
         //related errors, which will allow for more errors to be detected
         Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
-            SnippetBreakAnalyzer analyzer = new SnippetBreakAnalyzer();
+            SnippetBreakToAnalyzer analyzer = new SnippetBreakToAnalyzer(breakTo);
 
             analyzer.analyzeTree(env, body, make);
-            return analyzer.breaksOut();
+            return analyzer.breaksTo();
         } finally {
             log.popDiagnosticHandler(diagHandler);
         }
@@ -773,15 +773,16 @@ public class Flow {
                     patternSet.add(new BindingPattern(e.getKey().type));
                 }
             }
-            List<PatternDescription> patterns = List.from(patternSet);
+            Set<PatternDescription> patterns = patternSet;
             try {
                 boolean repeat = true;
                 while (repeat) {
-                    List<PatternDescription> updatedPatterns;
+                    Set<PatternDescription> updatedPatterns;
                     updatedPatterns = reduceBindingPatterns(selector.type, patterns);
                     updatedPatterns = reduceNestedPatterns(updatedPatterns);
                     updatedPatterns = reduceRecordPatterns(updatedPatterns);
-                    repeat = updatedPatterns != patterns;
+                    updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
+                    repeat = !updatedPatterns.equals(patterns);
                     patterns = updatedPatterns;
                     if (checkCovered(selector.type, patterns)) {
                         return true;
@@ -794,7 +795,7 @@ public class Flow {
             }
         }
 
-        private boolean checkCovered(Type seltype, List<PatternDescription> patterns) {
+        private boolean checkCovered(Type seltype, Iterable<PatternDescription> patterns) {
             for (Type seltypeComponent : components(seltype)) {
                 for (PatternDescription pd : patterns) {
                     if (pd instanceof BindingPattern bp &&
@@ -830,7 +831,7 @@ public class Flow {
          * is found, it is removed, and replaced with a binding pattern
          * for the sealed supertype.
          */
-        private List<PatternDescription> reduceBindingPatterns(Type selectorType, List<PatternDescription> patterns) {
+        private Set<PatternDescription> reduceBindingPatterns(Type selectorType, Set<PatternDescription> patterns) {
             Set<Symbol> existingBindings = patterns.stream()
                                                    .filter(pd -> pd instanceof BindingPattern)
                                                    .map(pd -> ((BindingPattern) pd).type.tsym)
@@ -838,11 +839,12 @@ public class Flow {
 
             for (PatternDescription pdOne : patterns) {
                 if (pdOne instanceof BindingPattern bpOne) {
-                    Set<PatternDescription> toRemove = new HashSet<>();
                     Set<PatternDescription> toAdd = new HashSet<>();
 
                     for (Type sup : types.directSupertypes(bpOne.type)) {
                         ClassSymbol clazz = (ClassSymbol) sup.tsym;
+
+                        clazz.complete();
 
                         if (clazz.isSealed() && clazz.isAbstract() &&
                             //if a binding pattern for clazz already exists, no need to analyze it again:
@@ -869,7 +871,6 @@ public class Flow {
 
                             for (PatternDescription pdOther : patterns) {
                                 if (pdOther instanceof BindingPattern bpOther) {
-                                    boolean reduces = false;
                                     Set<Symbol> currentPermittedSubTypes =
                                             allPermittedSubTypes((ClassSymbol) bpOther.type.tsym, s -> true);
 
@@ -886,31 +887,21 @@ public class Flow {
                                         if (types.isSubtype(types.erasure(perm.type),
                                                             types.erasure(bpOther.type))) {
                                             it.remove();
-                                            reduces = true;
                                         }
-                                    }
-
-                                    if (reduces) {
-                                        bindings.append(pdOther);
                                     }
                                 }
                             }
 
                             if (permitted.isEmpty()) {
-                                toRemove.addAll(bindings);
                                 toAdd.add(new BindingPattern(clazz.type));
                             }
                         }
                     }
 
-                    if (!toAdd.isEmpty() || !toRemove.isEmpty()) {
-                        for (PatternDescription pd : toRemove) {
-                            patterns = List.filter(patterns, pd);
-                        }
-                        for (PatternDescription pd : toAdd) {
-                            patterns = patterns.prepend(pd);
-                        }
-                        return patterns;
+                    if (!toAdd.isEmpty()) {
+                        Set<PatternDescription> newPatterns = new HashSet<>(patterns);
+                        newPatterns.addAll(toAdd);
+                        return newPatterns;
                     }
                 }
             }
@@ -925,6 +916,8 @@ public class Flow {
                 ClassSymbol current = permittedSubtypesClosure.head;
 
                 permittedSubtypesClosure = permittedSubtypesClosure.tail;
+
+                current.complete();
 
                 if (current.isSealed() && current.isAbstract()) {
                     for (Symbol sym : current.permitted) {
@@ -952,7 +945,7 @@ public class Flow {
          * of patterns is replaced with a new set of patterns of the form:
          * $record($prefix$, $resultOfReduction, $suffix$)
          */
-        private List<PatternDescription> reduceNestedPatterns(List<PatternDescription> patterns) {
+        private Set<PatternDescription> reduceNestedPatterns(Set<PatternDescription> patterns) {
             /* implementation note:
              * finding a sub-set of patterns that only differ in a single
              * column is time-consuming task, so this method speeds it up by:
@@ -971,13 +964,14 @@ public class Flow {
 
             for (var e : groupByRecordClass.entrySet()) {
                 int nestedPatternsCount = e.getKey().getRecordComponents().size();
+                Set<RecordPattern> current = new HashSet<>(e.getValue());
 
                 for (int mismatchingCandidate = 0;
                      mismatchingCandidate < nestedPatternsCount;
                      mismatchingCandidate++) {
                     int mismatchingCandidateFin = mismatchingCandidate;
                     var groupByHashes =
-                            e.getValue()
+                            current
                              .stream()
                              //error recovery, ignore patterns with incorrect number of nested patterns:
                              .filter(pd -> pd.nested.length == nestedPatternsCount)
@@ -1012,36 +1006,34 @@ public class Flow {
                                 }
                             }
 
-                            var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(List.collector());
+                            var nestedPatterns = join.stream().map(rp -> rp.nested[mismatchingCandidateFin]).collect(Collectors.toSet());
                             var updatedPatterns = reduceNestedPatterns(nestedPatterns);
 
                             updatedPatterns = reduceRecordPatterns(updatedPatterns);
+                            updatedPatterns = removeCoveredRecordPatterns(updatedPatterns);
                             updatedPatterns = reduceBindingPatterns(rpOne.fullComponentTypes()[mismatchingCandidateFin], updatedPatterns);
 
-                            if (nestedPatterns != updatedPatterns) {
-                                ListBuffer<PatternDescription> result = new ListBuffer<>();
-                                Set<PatternDescription> toRemove = Collections.newSetFromMap(new IdentityHashMap<>());
-
-                                toRemove.addAll(join);
-
-                                for (PatternDescription p : patterns) {
-                                    if (!toRemove.contains(p)) {
-                                        result.append(p);
-                                    }
-                                }
+                            if (!nestedPatterns.equals(updatedPatterns)) {
+                                current.removeAll(join);
 
                                 for (PatternDescription nested : updatedPatterns) {
                                     PatternDescription[] newNested =
                                             Arrays.copyOf(rpOne.nested, rpOne.nested.length);
                                     newNested[mismatchingCandidateFin] = nested;
-                                    result.append(new RecordPattern(rpOne.recordType(),
+                                    current.add(new RecordPattern(rpOne.recordType(),
                                                                     rpOne.fullComponentTypes(),
                                                                     newNested));
                                 }
-                                return result.toList();
                             }
                         }
                     }
+                }
+
+                if (!current.equals(new HashSet<>(e.getValue()))) {
+                    Set<PatternDescription> result = new HashSet<>(patterns);
+                    result.removeAll(e.getValue());
+                    result.addAll(current);
+                    return result;
                 }
             }
             return patterns;
@@ -1052,22 +1044,22 @@ public class Flow {
          * all the $nestedX pattern cover the given record component,
          * and replace those with a simple binding pattern over $record.
          */
-        private List<PatternDescription> reduceRecordPatterns(List<PatternDescription> patterns) {
-            var newPatterns = new ListBuffer<PatternDescription>();
+        private Set<PatternDescription> reduceRecordPatterns(Set<PatternDescription> patterns) {
+            var newPatterns = new HashSet<PatternDescription>();
             boolean modified = false;
             for (PatternDescription pd : patterns) {
                 if (pd instanceof RecordPattern rpOne) {
                     PatternDescription reducedPattern = reduceRecordPattern(rpOne);
                     if (reducedPattern != rpOne) {
-                        newPatterns.append(reducedPattern);
+                        newPatterns.add(reducedPattern);
                         modified = true;
                         continue;
                     }
                 }
-                newPatterns.append(pd);
+                newPatterns.add(pd);
             }
-            return modified ? newPatterns.toList() : patterns;
-                }
+            return modified ? newPatterns : patterns;
+        }
 
         private PatternDescription reduceRecordPattern(PatternDescription pattern) {
             if (pattern instanceof RecordPattern rpOne) {
@@ -1097,6 +1089,23 @@ public class Flow {
                 }
             }
             return pattern;
+        }
+
+        private Set<PatternDescription> removeCoveredRecordPatterns(Set<PatternDescription> patterns) {
+            Set<Symbol> existingBindings = patterns.stream()
+                                                   .filter(pd -> pd instanceof BindingPattern)
+                                                   .map(pd -> ((BindingPattern) pd).type.tsym)
+                                                   .collect(Collectors.toSet());
+            Set<PatternDescription> result = new HashSet<>(patterns);
+
+            for (Iterator<PatternDescription> it = result.iterator(); it.hasNext();) {
+                PatternDescription pd = it.next();
+                if (pd instanceof RecordPattern rp && existingBindings.contains(rp.recordType.tsym)) {
+                    it.remove();
+                }
+            }
+
+            return result;
         }
 
         public void visitTry(JCTry tree) {
@@ -1909,52 +1918,21 @@ public class Flow {
         }
     }
 
-    class SnippetBreakAnalyzer extends AliveAnalyzer {
-        private final Set<JCTree> seenTrees = new HashSet<>();
-        private boolean breaksOut;
+    class SnippetBreakToAnalyzer extends AliveAnalyzer {
+        private final JCTree breakTo;
+        private boolean breaksTo;
 
-        public SnippetBreakAnalyzer() {
-        }
-
-        @Override
-        public void visitLabelled(JCTree.JCLabeledStatement tree) {
-            seenTrees.add(tree);
-            super.visitLabelled(tree);
-        }
-
-        @Override
-        public void visitWhileLoop(JCTree.JCWhileLoop tree) {
-            seenTrees.add(tree);
-            super.visitWhileLoop(tree);
-        }
-
-        @Override
-        public void visitForLoop(JCTree.JCForLoop tree) {
-            seenTrees.add(tree);
-            super.visitForLoop(tree);
-        }
-
-        @Override
-        public void visitForeachLoop(JCTree.JCEnhancedForLoop tree) {
-            seenTrees.add(tree);
-            super.visitForeachLoop(tree);
-        }
-
-        @Override
-        public void visitDoLoop(JCTree.JCDoWhileLoop tree) {
-            seenTrees.add(tree);
-            super.visitDoLoop(tree);
+        public SnippetBreakToAnalyzer(JCTree breakTo) {
+            this.breakTo = breakTo;
         }
 
         @Override
         public void visitBreak(JCBreak tree) {
-            breaksOut |= (super.alive == Liveness.ALIVE &&
-                          !seenTrees.contains(tree.target));
-            super.visitBreak(tree);
+            breaksTo |= breakTo == tree.target && super.alive == Liveness.ALIVE;
         }
 
-        public boolean breaksOut() {
-            return breaksOut;
+        public boolean breaksTo() {
+            return breaksTo;
         }
     }
 
@@ -3233,7 +3211,7 @@ public class Flow {
         void checkEffectivelyFinal(DiagnosticPosition pos, VarSymbol sym) {
             if (currentTree != null &&
                     sym.owner.kind == MTH &&
-                    sym.pos < currentTree.getStartPosition()) {
+                    sym.pos < getCurrentTreeStartPosition()) {
                 switch (currentTree.getTag()) {
                     case CLASSDEF:
                     case CASE:
@@ -3243,6 +3221,11 @@ public class Flow {
                         }
                 }
             }
+        }
+
+        int getCurrentTreeStartPosition() {
+            return currentTree instanceof JCCase cse ? cse.guard.getStartPosition()
+                                                     : currentTree.getStartPosition();
         }
 
         @SuppressWarnings("fallthrough")
@@ -3501,9 +3484,7 @@ public class Flow {
             }
             return new RecordPattern(record.type, componentTypes, nestedDescriptions);
         } else if (pattern instanceof JCAnyPattern) {
-            Type type = types.isSubtype(selectorType, syms.objectType)
-                    ? selectorType : syms.objectType;
-            return new BindingPattern(type);
+            return new BindingPattern(selectorType);
         } else {
             throw Assert.error();
         }

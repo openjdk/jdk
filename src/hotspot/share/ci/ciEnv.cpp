@@ -1318,13 +1318,7 @@ void ciEnv::record_best_dyno_loc(const InstanceKlass* ik) {
     return;
   }
   const char *loc0;
-  if (dyno_loc(ik, loc0)) {
-    // TODO: found multiple references, see if we can improve
-    if (Verbose) {
-      tty->print_cr("existing call site @ %s for %s",
-                     loc0, ik->external_name());
-    }
-  } else {
+  if (!dyno_loc(ik, loc0)) {
     set_dyno_loc(ik);
   }
 }

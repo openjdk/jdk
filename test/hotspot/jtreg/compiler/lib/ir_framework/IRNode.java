@@ -198,25 +198,25 @@ public class IRNode {
 
     public static final String ALLOC = PREFIX + "ALLOC" + POSTFIX;
     static {
-        String optoRegex = "(.*precise .*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        String optoRegex = "(.*precise .*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
         allocNodes(ALLOC, "Allocate", optoRegex);
     }
 
     public static final String ALLOC_OF = COMPOSITE_PREFIX + "ALLOC_OF" + POSTFIX;
     static {
-        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
+        String regex = "(.*precise .*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*)\\R)*.*(?i:call,static).*wrapper for: _new_instance_Java" + END;
         optoOnly(ALLOC_OF, regex);
     }
 
     public static final String ALLOC_ARRAY = PREFIX + "ALLOC_ARRAY" + POSTFIX;
     static {
-        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        String optoRegex = "(.*precise \\[.*\\R((.*(?i:mov|mv|xor|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
         allocNodes(ALLOC_ARRAY, "AllocateArray", optoRegex);
     }
 
     public static final String ALLOC_ARRAY_OF = COMPOSITE_PREFIX + "ALLOC_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
+        String regex = "(.*precise \\[.*" + IS_REPLACED + ":.*\\R((.*(?i:mov|mv|xorl|nop|spill).*|\\s*|.*(LGHI|LI).*)\\R)*.*(?i:call,static).*wrapper for: _new_array_Java" + END;
         optoOnly(ALLOC_ARRAY_OF, regex);
     }
 
@@ -277,13 +277,13 @@ public class IRNode {
 
     public static final String CHECKCAST_ARRAY = PREFIX + "CHECKCAST_ARRAY" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*:|.*(?i:mov|mv|or).*precise \\[.*:.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY, regex);
     }
 
     public static final String CHECKCAST_ARRAY_OF = COMPOSITE_PREFIX + "CHECKCAST_ARRAY_OF" + POSTFIX;
     static {
-        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
+        String regex = "(((?i:cmp|CLFI|CLR).*precise \\[.*" + IS_REPLACED + ":|.*(?i:mov|mv|or).*precise \\[.*" + IS_REPLACED + ":.*\\R.*(cmp|CMP|CLR))" + END;
         optoOnly(CHECKCAST_ARRAY_OF, regex);
     }
 
@@ -809,6 +809,11 @@ public class IRNode {
         beforeMatchingNameRegex(NEG_V, "NegV(F|D)");
     }
 
+    public static final String NOP = PREFIX + "NOP" + POSTFIX;
+    static {
+        machOnlyNameRegex(NOP, "Nop");
+    }
+
     public static final String NULL_ASSERT_TRAP = PREFIX + "NULL_ASSERT_TRAP" + POSTFIX;
     static {
         trapNodes(NULL_ASSERT_TRAP,"null_assert");
@@ -1188,6 +1193,11 @@ public class IRNode {
         beforeMatchingNameRegex(SUB_V, "SubV(B|S|I|L|F|D)");
     }
 
+    public static final String SUBTYPE_CHECK = PREFIX + "SUBTYPE_CHECK" + POSTFIX;
+    static {
+        beforeMatchingNameRegex(SUBTYPE_CHECK, "SubTypeCheck");
+    }
+
     public static final String TRAP = PREFIX + "TRAP" + POSTFIX;
     static {
         trapNodes(TRAP,"reason");
@@ -1544,6 +1554,66 @@ public class IRNode {
     static {
         String regex = START + "(zXChgP)|(zGetAndSetP\\S*)" + MID + "barrier\\(\\s*" + IS_REPLACED + "\\s*\\)" + END;
         machOnly(Z_GET_AND_SET_P_WITH_BARRIER_FLAG, regex);
+    }
+
+    public static final String X86_LOCK_ADDB_REG = PREFIX + "X86_LOCK_ADDB_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDB_REG, "xaddB_reg_no_res");
+    }
+
+    public static final String X86_LOCK_ADDB_IMM = PREFIX + "X86_LOCK_ADDB_IMM" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDB_IMM, "xaddB_imm_no_res");
+    }
+
+    public static final String X86_LOCK_XADDB = PREFIX + "X86_LOCK_XADDB" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_XADDB, "xaddB");
+    }
+
+    public static final String X86_LOCK_ADDS_REG = PREFIX + "X86_LOCK_ADDS_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDS_REG, "xaddS_reg_no_res");
+    }
+
+    public static final String X86_LOCK_ADDS_IMM = PREFIX + "X86_LOCK_ADDS_IMM" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDS_IMM, "xaddS_imm_no_res");
+    }
+
+    public static final String X86_LOCK_XADDS = PREFIX + "X86_LOCK_XADDS" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_XADDS, "xaddS");
+    }
+
+    public static final String X86_LOCK_ADDI_REG = PREFIX + "X86_LOCK_ADDI_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDI_REG, "xaddI_reg_no_res");
+    }
+
+    public static final String X86_LOCK_ADDI_IMM = PREFIX + "X86_LOCK_ADDI_IMM" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDI_IMM, "xaddI_imm_no_res");
+    }
+
+    public static final String X86_LOCK_XADDI = PREFIX + "X86_LOCK_XADDI" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_XADDI, "xaddI");
+    }
+
+    public static final String X86_LOCK_ADDL_REG = PREFIX + "X86_LOCK_ADDL_REG" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDL_REG, "xaddL_reg_no_res");
+    }
+
+    public static final String X86_LOCK_ADDL_IMM = PREFIX + "X86_LOCK_ADDL_IMM" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_ADDL_IMM, "xaddL_imm_no_res");
+    }
+
+    public static final String X86_LOCK_XADDL = PREFIX + "X86_LOCK_XADDL" + POSTFIX;
+    static {
+        machOnlyNameRegex(X86_LOCK_XADDL, "xaddL");
     }
 
     /*

@@ -582,7 +582,7 @@ C2V_VMENTRY_NULL(jobject, lookupType, (JNIEnv* env, jobject, jstring jname, ARGU
   TempNewSymbol class_name = SymbolTable::new_symbol(str);
 
   if (class_name->utf8_length() <= 1) {
-    JVMCI_THROW_MSG_0(InternalError, err_msg("Primitive type %s should be handled in Java code", class_name->as_C_string()));
+    JVMCI_THROW_MSG_0(InternalError, err_msg("Primitive type %s should be handled in Java code", str));
   }
 
   JVMCIKlassHandle resolved_klass(THREAD);
@@ -701,8 +701,8 @@ C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, job
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   oop obj = cp->resolve_possibly_cached_constant_at(index, CHECK_NULL);
   constantTag tag = cp->tag_at(index);
-  if (tag.is_dynamic_constant() || tag.is_dynamic_constant_in_error()) {
-    if (obj == Universe::the_null_sentinel()) {
+  if (tag.is_dynamic_constant()) {
+    if (obj == nullptr) {
       return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
     }
     BasicType bt = Signature::basic_type(cp->uncached_signature_ref_at(index));
@@ -1498,6 +1498,7 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
             GrowableArray<ScopeValue*>* local_values = scope->locals();
             for (int i = 0; i < local_values->length(); i++) {
               ScopeValue* value = local_values->at(i);
+              assert(!value->is_object_merge(), "Should not be.");
               if (value->is_object()) {
                 if (localIsVirtual_h.is_null()) {
                   typeArrayOop array_oop = oopFactory::new_boolArray(local_values->length(), CHECK_NULL);
@@ -1740,6 +1741,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (locals != nullptr) {
       for (int i2 = 0; i2 < locals->size(); i2++) {
         StackValue* var = locals->at(i2);
+        assert(!scopedValues->at(i2)->is_object_merge(), "Should not be.");
         if (var->type() == T_OBJECT && scopedValues->at(i2)->is_object()) {
           jvalue val;
           val.l = cast_from_oop<jobject>(locals->at(i2)->get_obj()());
@@ -1753,6 +1755,7 @@ C2V_VMENTRY(void, materializeVirtualObjects, (JNIEnv* env, jobject, jobject _hs_
     if (expressions != nullptr) {
       for (int i2 = 0; i2 < expressions->size(); i2++) {
         StackValue* var = expressions->at(i2);
+        assert(!scopeExpressions->at(i2)->is_object_merge(), "Should not be.");
         if (var->type() == T_OBJECT && scopeExpressions->at(i2)->is_object()) {
           jvalue val;
           val.l = cast_from_oop<jobject>(expressions->at(i2)->get_obj()());

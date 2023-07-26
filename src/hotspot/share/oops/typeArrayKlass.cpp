@@ -276,8 +276,6 @@ void TypeArrayKlass::print_value_on(outputStream* st) const {
   st->print("}");
 }
 
-#ifndef PRODUCT
-
 static void print_boolean_array(typeArrayOop ta, int print_len, outputStream* st) {
   for (int index = 0; index < print_len; index++) {
     st->print_cr(" - %3d: %s", index, (ta->bool_at(index) == 0) ? "false" : "true");
@@ -341,7 +339,10 @@ static void print_long_array(typeArrayOop ta, int print_len, outputStream* st) {
 
 void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
   ArrayKlass::oop_print_on(obj, st);
-  typeArrayOop ta = typeArrayOop(obj);
+  oop_print_elements_on(typeArrayOop(obj), st);
+}
+
+void TypeArrayKlass::oop_print_elements_on(typeArrayOop ta, outputStream* st) {
   int print_len = MIN2((intx) ta->length(), MaxElementPrintSize);
   switch (element_type()) {
     case T_BOOLEAN: print_boolean_array(ta, print_len, st); break;
@@ -359,8 +360,6 @@ void TypeArrayKlass::oop_print_on(oop obj, outputStream* st) {
     st->print_cr(" - <%d more elements, increase MaxElementPrintSize to print>", remaining);
   }
 }
-
-#endif // PRODUCT
 
 const char* TypeArrayKlass::internal_name() const {
   return Klass::external_name();

@@ -55,21 +55,19 @@ compiler/rtm/locking/TestRTMAbortRatio.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMAbortThreshold.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMAfterNonRTMDeopt.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMDeoptOnHighAbortRatio.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263,8307907 generic-x64,generic-i586,aix-ppc64
+compiler/rtm/locking/TestRTMDeoptOnLowAbortRatio.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMLockingCalculationDelay.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestRTMLockingThreshold.java 8183263,8307907 generic-x64,generic-i586,aix-ppc64
+compiler/rtm/locking/TestRTMLockingThreshold.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestRTMSpinLoopCount.java 8183263 generic-x64,generic-i586
 compiler/rtm/locking/TestUseRTMDeopt.java 8183263 generic-x64,generic-i586
-compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263,8307907 generic-x64,generic-i586,aix-ppc64
-compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263,8307907 generic-x64,generic-i586,aix-ppc64
+compiler/rtm/locking/TestUseRTMXendForLockBusy.java 8183263 generic-x64,generic-i586
+compiler/rtm/print/TestPrintPreciseRTMLockingStatistics.java 8183263 generic-x64,generic-i586
 
 compiler/c2/Test8004741.java 8235801 generic-all
 
 compiler/codecache/jmx/PoolsIndependenceTest.java 8264632 macosx-all
 
 compiler/vectorapi/VectorLogicalOpIdentityTest.java 8302459 linux-x64,windows-x64
-
-compiler/c2/irTests/TestVectorConditionalMove.java 8306922 generic-all
 
 compiler/jvmci/TestUncaughtErrorInCompileMethod.java 8309073 generic-all
 
@@ -100,12 +98,15 @@ runtime/os/TestTracePageSizes.java#compiler-options 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#G1 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Parallel 8267460 linux-aarch64
 runtime/os/TestTracePageSizes.java#Serial 8267460 linux-aarch64
+runtime/os/TestTrimNative.java#trimNative 8312525 linux-all
+runtime/os/TestTrimNative.java#trimNativeLowInterval 8312525 linux-all
 runtime/ErrorHandling/CreateCoredumpOnCrash.java 8267433 macosx-x64
 runtime/CompressedOops/CompressedClassPointers.java 8305765 generic-all
 runtime/StackGuardPages/TestStackGuardPagesNative.java 8303612 linux-all
 runtime/ErrorHandling/TestDwarf.java 8305489 linux-all
 
 applications/jcstress/copy.java 8229852 linux-all
+applications/ctw/modules/jdk_crypto_ec.java 8312194 generic-all
 
 containers/docker/TestJcmd.java 8278102 linux-all
 containers/docker/TestMemoryAwareness.java 8303470 linux-x64
@@ -121,13 +122,13 @@ serviceability/jvmti/ModuleAwareAgents/ThreadStart/MAAThreadStart.java 8225354 w
 serviceability/jvmti/vthread/GetSetLocalTest/GetSetLocalTest.java 8286836 generic-all
 serviceability/dcmd/gc/RunFinalizationTest.java 8227120 linux-all,windows-x64
 
-serviceability/sa/ClhsdbCDSCore.java 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#xcomp-core 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbPmap.java#core 8294316,8267433 macosx-x64
-serviceability/sa/ClhsdbPstack.java#core 8294316,8267433 macosx-x64
-serviceability/sa/TestJmapCore.java 8294316,8267433 macosx-x64
-serviceability/sa/TestJmapCoreMetaspace.java 8294316,8267433 macosx-x64
+serviceability/sa/ClhsdbCDSCore.java 8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#xcomp-core 8267433 macosx-x64
+serviceability/sa/ClhsdbFindPC.java#no-xcomp-core 8267433 macosx-x64
+serviceability/sa/ClhsdbPmap.java#core 8267433 macosx-x64
+serviceability/sa/ClhsdbPstack.java#core 8267433 macosx-x64
+serviceability/sa/TestJmapCore.java 8267433 macosx-x64
+serviceability/sa/TestJmapCoreMetaspace.java 8267433 macosx-x64
 
 serviceability/attach/ConcAttachTest.java 8290043 linux-all
 
