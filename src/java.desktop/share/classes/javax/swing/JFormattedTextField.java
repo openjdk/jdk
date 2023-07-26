@@ -737,19 +737,31 @@ public class JFormattedTextField extends JTextField {
             getDocument().removeDocumentListener(documentListener);
         }
         super.setDocument(doc);
+        if (isEdited() && isEditValid()) {
+            try {
+                commitEdit();
+            } catch (ParseException pe) {
+                //do nothing, we assume this will never happen.
+            }
+        }
         if (documentListener == null) {
             documentListener = new DocumentHandler();
         }
         doc.addDocumentListener(documentListener);
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
-    public void setText(String text){
+    public void setText(String text) {
         super.setText(text);
-        if(isEdited() && isEditValid()){
-            try{
+        if (isEdited() && isEditValid()) {
+            try {
                 commitEdit();
-            } catch(ParseException pe){}//do nothing, we assume this will never happen.
+            } catch (ParseException pe) {
+                //do nothing, we assume this will never happen.
+            }
         }
     }
 

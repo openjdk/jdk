@@ -57,14 +57,15 @@ public class JFormattedTextProblem {
         try {
             Robot robot = new Robot();
             robot.setAutoDelay(100);
-            JFormattedTextProblem test = new JFormattedTextProblem();
             SwingUtilities.invokeAndWait(() -> {
+                JFormattedTextProblem test = new JFormattedTextProblem();
                 test.testFormatter();
             });
             robot.waitForIdle();
             robot.delay(1000);
             robot.keyPress(KeyEvent.VK_TAB);
             robot.keyRelease(KeyEvent.VK_TAB);
+            robot.waitForIdle();
             if (!expected) {
                 throw new RuntimeException("Field not editable format");
             }
