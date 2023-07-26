@@ -21,11 +21,11 @@
  * questions.
  */
 
+import javax.imageio.ImageIO;
 import javax.swing.JLabel;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
 import javax.swing.table.JTableHeader;
-import javax.swing.table.TableCellRenderer;
 import javax.swing.UIManager;
 
 import java.awt.Dimension;
@@ -33,20 +33,16 @@ import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 
 import java.io.File;
-import javax.imageio.ImageIO;
+import java.io.IOException;
 
 /*
  * @test
  * @bug 8301606
- * @library /java/awt/regtesthelpers
- * @build PassFailJFrame
  * @summary Test to check if the Right aligned header
- * label doesn't cut off Metal Look&Feel
+ *          label doesn't cut off Metal Look&Feel
  * @run main JTableHeaderLabelRightAlignTest
  */
-
 public class JTableHeaderLabelRightAlignTest {
-    static JTable table;
     private static final int WIDTH = 300;
     private static final int HEIGHT = 150;
     private static final double SCALE = 2.25;
@@ -54,42 +50,31 @@ public class JTableHeaderLabelRightAlignTest {
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
         SwingUtilities.invokeAndWait(() -> {
-            try {
-                JTableHeaderLabelRightAlignTest.Test();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            test();
         });
     }
 
-    public static void Test() throws Exception {
-        int verticalLineCol;
-        int expectedRGB;
-        BufferedImage imgHeader;
-        double w;
-        double h;
+    private static void test() {
+        JTable table;
+
         String[][] data = {
-                { "1", "1", "Green"},
-                { "2", "2", "Blue"}
+                { "1", "1"}
         };
 
-        String[] columnNames = { "Size", "Size", "Size"};
+        String[] columnNames = { "Size", "Size"};
 
         table = new JTable(data, columnNames);
-        table.setSize(WIDTH,HEIGHT);
+        table.setSize(WIDTH, HEIGHT);
         ((JLabel)table.getTableHeader().getDefaultRenderer())
                 .setHorizontalAlignment( JLabel.RIGHT );
 
         final JTableHeader header = table.getTableHeader();
-        TableCellRenderer renderer = header.getDefaultRenderer();
-        header.setDefaultRenderer(renderer);
-        table.updateUI();
-
         Dimension size = header.getPreferredSize();
         header.setSize(size);
-        w = SCALE * size.width;
-        h = SCALE * size.height;
-        imgHeader = new BufferedImage((int)(w), (int)(h),
+
+        int w = (int)Math.ceil(SCALE * size.width);
+        int h = (int)Math.ceil(SCALE * size.height);
+        BufferedImage imgHeader = new BufferedImage((w), (h),
                 BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = imgHeader.createGraphics();
         g2d.scale(SCALE, SCALE);
@@ -99,19 +84,23 @@ public class JTableHeaderLabelRightAlignTest {
             g2d.dispose();
         }
 
-        verticalLineCol = (int)(table.getTableHeader().
+        int verticalLine = (int)(table.getTableHeader().
                 getColumnModel().getColumn(0).getWidth() * SCALE);
-        expectedRGB = imgHeader.getRGB(verticalLineCol, 1);
+        int expectedRGB = imgHeader.getRGB(verticalLine, 1);
 
-        for (int i = 1; i < imgHeader.getHeight()-3; i++) {
-            for (int j = verticalLineCol; j < verticalLineCol + 1; j++) {
-                if (expectedRGB != imgHeader.getRGB(j, i)) {
-                    ImageIO.write(imgHeader, "png",
-                            new File("FailureImage.png"));
+        for (int y = 1; y < (imgHeader.getHeight() -3); y++) {
+            for (int x = verticalLine; x < verticalLine + 1; x++) {
+                if (expectedRGB != imgHeader.getRGB(x, y)) {
+                    try {
+                        ImageIO.write(imgHeader, "png",
+                                new File("FailureImage.png"));
+                    } catch (IOException ioException){
+                        ioException.printStackTrace();
+                    }
                     throw new RuntimeException("Test Failed");
                 }
             }
         }
-        System.out.println("Test Pass!!");
+        System.out.println("Test Passed");
     }
 }
