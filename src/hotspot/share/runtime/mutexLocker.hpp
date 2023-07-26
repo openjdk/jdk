@@ -187,11 +187,11 @@ void assert_lock_strong(const Mutex* lock);
 #define assert_lock_strong(lock)
 #endif
 
-class MutexLocker: public StackObj {
+class MutexLockerImpl: public StackObj {
  protected:
   Mutex* _mutex;
- public:
-  MutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+
+  MutexLockerImpl(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != nullptr) {
@@ -203,7 +203,7 @@ class MutexLocker: public StackObj {
     }
   }
 
-  MutexLocker(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+  MutexLockerImpl(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
     _mutex(mutex) {
     bool no_safepoint_check = flag == Mutex::_no_safepoint_check_flag;
     if (_mutex != nullptr) {
@@ -215,19 +215,57 @@ class MutexLocker: public StackObj {
     }
   }
 
-  ~MutexLocker() {
+  ~MutexLockerImpl() {
     if (_mutex != nullptr) {
       assert_lock_strong(_mutex);
       _mutex->unlock();
     }
   }
 
+ public:
   static void post_initialize();
 };
 
+// Simplest locker, does not allow reentrancy
+class MutexLocker: public MutexLockerImpl {
+ public:
+   MutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+     MutexLockerImpl(mutex, flag) {
+     assert(mutex != nullptr, "null mutex is not allowed");
+   }
+
+   MutexLocker(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+     MutexLockerImpl(thread, mutex, flag) {
+     assert(mutex != nullptr, "null mutex is not allowed");
+   };
+};
+
+// Conditional locker: only lock when condition is true
+class ConditionalMutexLocker: public MutexLockerImpl {
+ public:
+   ConditionalMutexLocker(Mutex* mutex, bool condition, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+     MutexLockerImpl(condition ? mutex : nullptr, flag) {
+     assert(!condition || mutex != nullptr, "null mutex is not allowed when locking");
+   }
+
+   ConditionalMutexLocker(Thread* thread, Mutex* mutex, bool condition, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+     MutexLockerImpl(thread, condition ? mutex : nullptr, flag) {
+     assert(!condition || mutex != nullptr, "null mutex is not allowed when locking");
+   }
+ };
+
+// Reentrant locker: only lock when mutex is not owned already
+class ReentrantMutexLocker: public ConditionalMutexLocker {
+ public:
+   ReentrantMutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+     ConditionalMutexLocker(mutex, !mutex->owned_by_self(), flag) {}
+
+   ReentrantMutexLocker(Thread* thread, Mutex* mutex, bool condition, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
+     ConditionalMutexLocker(thread, mutex, !mutex->owned_by_self(), flag) {}
+ };
+
 // A MonitorLocker is like a MutexLocker above, except it allows
 // wait/notify as well which are delegated to the underlying Monitor.
-// It also disallows null.
 
 class MonitorLocker: public MutexLocker {
   Mutex::SafepointCheckFlag _flag;
@@ -239,16 +277,10 @@ class MonitorLocker: public MutexLocker {
 
  public:
   MonitorLocker(Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    MutexLocker(monitor, flag), _flag(flag) {
-    // Superclass constructor did locking
-    assert(monitor != nullptr, "null monitor not allowed");
-  }
+    MutexLocker(monitor, flag), _flag(flag) {}
 
   MonitorLocker(Thread* thread, Monitor* monitor, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-    MutexLocker(thread, monitor, flag), _flag(flag) {
-    // Superclass constructor did locking
-    assert(monitor != nullptr, "null monitor not allowed");
-  }
+    MutexLocker(thread, monitor, flag), _flag(flag) {}
 
   bool wait(int64_t timeout = 0) {
     return _flag == Mutex::_safepoint_check_flag ?

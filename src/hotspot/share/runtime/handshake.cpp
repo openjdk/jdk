@@ -503,7 +503,7 @@ bool HandshakeState::has_operation(bool allow_suspend, bool check_async_exceptio
 
 bool HandshakeState::has_async_exception_operation() {
   if (!has_operation()) return false;
-  MutexLocker ml(_lock.owned_by_self() ? nullptr :  &_lock, Mutex::_no_safepoint_check_flag);
+  ReentrantMutexLocker ml(&_lock, Mutex::_no_safepoint_check_flag);
   return _queue.peek(async_exception_filter) != nullptr;
 }
 
