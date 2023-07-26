@@ -2190,7 +2190,7 @@ bool os::Linux::query_process_memory_info(os::Linux::meminfo_t* info) {
 // For Glibc, print a one-liner with the malloc tunables.
 // Most important and popular is MALLOC_ARENA_MAX, but we are
 // thorough and print them all.
-void os::Linux::print_glibc_malloc_tunables(outputStream* st) {
+static void print_glibc_malloc_tunables(outputStream* st) {
   static const char* var[] = {
       // the new variant
       "GLIBC_TUNABLES",
@@ -2255,7 +2255,7 @@ void os::Linux::print_process_memory_info(outputStream* st) {
                total_allocated / K, free_retained / K,
                might_have_wrapped ? " (may have wrapped)" : "");
   // Tunables
-  os::Linux::print_glibc_malloc_tunables(st);
+  print_glibc_malloc_tunables(st);
   st->cr();
 #endif
 }
@@ -4644,19 +4644,6 @@ jint os::init_2(void) {
   Linux::sched_getcpu_init();
   log_info(os)("HotSpot is running with %s, %s",
                Linux::libc_version(), Linux::libpthread_version());
-
-  // Log also:
-  // - LD_PRELOAD, since this is the most popular mechanism to divert libc functions
-  // - Malloc Tunables, since those have a large effect on how the libc allocator works
-  LogTarget(Info, os) lt;
-  if (lt.is_enabled()) {
-    LogStream ls(lt);
-    const char* const v = ::getenv("LD_PRELOAD");
-    log_info(os)("LD_PRELOAD=%.1024s", v ? v : "(unset)");
-#ifdef __GLIBC__
-    os::Linux::print_glibc_malloc_tunables(&ls);
-#endif
-  }
 
 #ifdef __GLIBC__
   // Check if we need to adjust the stack size for glibc guard pages.

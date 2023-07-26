@@ -189,8 +189,6 @@ class os::Linux {
   // fields will contain -1.
   static bool query_process_memory_info(meminfo_t* info);
 
-  static void print_glibc_malloc_tunables(outputStream* st);
-
   // Stack repair handling
 
   // none present

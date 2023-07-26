@@ -151,7 +151,6 @@ public class TestTrimNative {
         allOptions.add("-Xbootclasspath/a:.");
         allOptions.add("-XX:-ExplicitGCInvokesConcurrent"); // Invoke explicit GC on System.gc
         allOptions.add("-Xlog:trimnative=debug");
-        allOptions.add("-Xlog:os"); // for LD_PRELOAD, glibc version, and malloc tunables
         allOptions.add("--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         if (programOptions != null) {
             allOptions.addAll(Arrays.asList(programOptions));
