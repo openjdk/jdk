@@ -49,24 +49,20 @@ public class JTableHeaderLabelRightAlignTest {
 
     public static void main(String[] args) throws Exception {
         UIManager.setLookAndFeel("javax.swing.plaf.metal.MetalLookAndFeel");
-        SwingUtilities.invokeAndWait(() -> {
-            test();
-        });
+        SwingUtilities.invokeAndWait(JTableHeaderLabelRightAlignTest::test);
     }
 
     private static void test() {
-        JTable table;
-
         String[][] data = {
-                { "1", "1"}
+                {"1", "1"}
         };
 
-        String[] columnNames = { "Size", "Size"};
+        String[] columnNames = {"Size", "Size"};
 
-        table = new JTable(data, columnNames);
+        JTable table = new JTable(data, columnNames);
         table.setSize(WIDTH, HEIGHT);
         ((JLabel)table.getTableHeader().getDefaultRenderer())
-                .setHorizontalAlignment( JLabel.RIGHT );
+                .setHorizontalAlignment(JLabel.RIGHT);
 
         final JTableHeader header = table.getTableHeader();
         Dimension size = header.getPreferredSize();
@@ -74,7 +70,7 @@ public class JTableHeaderLabelRightAlignTest {
 
         int w = (int)Math.ceil(SCALE * size.width);
         int h = (int)Math.ceil(SCALE * size.height);
-        BufferedImage imgHeader = new BufferedImage((w), (h),
+        BufferedImage imgHeader = new BufferedImage(w, h,
                 BufferedImage.TYPE_INT_RGB);
         Graphics2D g2d = imgHeader.createGraphics();
         g2d.scale(SCALE, SCALE);
@@ -94,10 +90,10 @@ public class JTableHeaderLabelRightAlignTest {
                     try {
                         ImageIO.write(imgHeader, "png",
                                 new File("FailureImage.png"));
-                    } catch (IOException ioException){
+                    } catch (IOException ioException) {
                         ioException.printStackTrace();
                     }
-                    throw new RuntimeException("Test Failed");
+                    throw new RuntimeException("Test Failed at Pos_x : " + x + ", Pos_y : " + y );
                 }
             }
         }
