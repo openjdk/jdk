@@ -929,7 +929,8 @@ void ClassLoader::load_java_library() {
 }
 
 void ClassLoader::release_load_zip_library() {
-  MutexLocker locker(Zip_lock, Monitor::_no_safepoint_check_flag);
+  // Temporary workaround for JDK-8313210: Zip_lock can be null on some paths
+  ConditionalMutexLocker locker(Zip_lock, Zip_lock != nullptr, Monitor::_no_safepoint_check_flag);
   if (_libzip_loaded == 0) {
     load_zip_library();
     Atomic::release_store(&_libzip_loaded, 1);
