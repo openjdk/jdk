@@ -523,7 +523,11 @@ bool ArchiveBuilder::is_excluded(Klass* klass) {
     return SystemDictionaryShared::is_excluded_class(ik);
   } else if (klass->is_objArray_klass()) {
     Klass* bottom = ObjArrayKlass::cast(klass)->bottom_klass();
-    if (bottom->is_instance_klass()) {
+    if (MetaspaceShared::is_shared_static(bottom)) {
+      // The bottom class is in the static archive so it's clearly not excluded.
+      assert(DynamicDumpSharedSpaces, "sanity");
+      return false;
+    } else if (bottom->is_instance_klass()) {
       return SystemDictionaryShared::is_excluded_class(InstanceKlass::cast(bottom));
     }
   }

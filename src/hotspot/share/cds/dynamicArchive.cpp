@@ -45,7 +45,6 @@
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
-#include "runtime/signature.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "utilities/align.hpp"
@@ -403,69 +402,32 @@ void DynamicArchive::setup_array_klasses() {
   if (_dynamic_archive_array_klasses != nullptr) {
     for (int i = 0; i < _dynamic_archive_array_klasses->length(); i++) {
       ArrayKlass* ak = _dynamic_archive_array_klasses->at(i);
-      ArrayKlass* sav_ak = ak;
-      SignatureStream ss(ak->name(), false);
-      int ndims = ss.skip_array_prefix();  // skip all '['s, has_envelope() requires it.
-      BasicType t = ss.type();
-      bool is_obj_array = ss.has_envelope();
-      Klass* bk = nullptr;
-      if (is_obj_array) {
-        bk = ObjArrayKlass::cast(ak)->bottom_klass();
-        assert(MetaspaceShared::is_shared_static((void*)bk), "bottom_klass should be in static archive");
+      Klass* bk = ObjArrayKlass::cast(ak)->bottom_klass();
+      assert(MetaspaceShared::is_shared_static((void*)bk), "bottom_klass should be in static archive");
+      while (ak->dimension() > 1) {
+        Klass* ld = ak->lower_dimension();
+        assert(ld != nullptr, "unexpected null lower_dimension klass");
+        assert(MetaspaceShared::is_in_shared_metaspace((void*)ld), "lower_dimension klass should be in CDS archive");
+        ld = ArrayKlass::cast(ld)->lower_dimension();
+        if (ld != nullptr) {
+          ak = ArrayKlass::cast(ld);
+        }  else {
+          break;
+        }
       }
-      if (ak->dimension() > 1) {
-        Klass* higher_dim = nullptr;
-        while (ak->dimension() > 1) {
-          if (ak->dimension() == 2) {
-            // Save the two-dimensional array for setting up primitive array.
-            higher_dim = ak;
-          }
-          Klass* ld = ak->lower_dimension();
-          assert(ld != nullptr, "unexpected null lower_dimension klass");
-          assert(MetaspaceShared::is_in_shared_metaspace((void*)ld), "lower_dimension klass should be in CDS archive");
-          ld = ArrayKlass::cast(ld)->lower_dimension();
-          if (ld != nullptr) {
-            ak = ArrayKlass::cast(ld);
-          }  else {
-            break;
-          }
-        }
-        if (is_obj_array) {
-          assert(ak->dimension() >= 1, "sanity");
-          int target_dim = ak->dimension() - 1;
-          assert(target_dim >= 0, "sanity");
-          if (target_dim == 0) {
-            // Point InstanceKlass::_array_klasses to the one-dimensional archived ObjArrayKlass
-            InstanceKlass* ik = InstanceKlass::cast(bk);
-            ik->release_set_array_klasses(ObjArrayKlass::cast(ak));
-          } else {
-            ObjArrayKlass* fixup_oak = ObjArrayKlass::cast(bk->array_klass_or_null(target_dim));
-            assert(fixup_oak != nullptr, "sanity");
-            assert(MetaspaceShared::is_shared_static((void*)fixup_oak),
-              "ObjArrayKlass to be fixed should be in static CDS archive");
-            fixup_oak->set_higher_dimension(ak);
-          }
-        } else {
-          if (is_java_primitive(t)) {
-            // Setup primitive array - obtain the equivalent of a "bottom_klass" of a primitive array.
-            Klass* k = Universe::typeArrayKlassObj(t);
-            // A one-dimensional primitive array should exist in the static CDS archive.
-            assert(ArrayKlass::cast(k)->dimension() == 1, "expecting one-dimension primitive array klass");
-            assert(MetaspaceShared::is_shared_static((void*)k),
-              "one-dimension primitive array klass should be in static CDS archive");
-            if (ArrayKlass::cast(k)->higher_dimension() == nullptr) {
-              // Point _higher_dimension to the archived array.
-              ArrayKlass::cast(k)->set_higher_dimension(higher_dim);
-            }
-          }
-        }
-      } else {
-        assert(ak->dimension() == 1, "must be");
-        assert(ak->lower_dimension() == nullptr, "unexpected non-null lower_dimension klass");
-        assert(is_obj_array, "sanity");
+      assert(ak->dimension() >= 1, "sanity");
+      int target_dim = ak->dimension() - 1;
+      assert(target_dim >= 0, "sanity");
+      if (target_dim == 0) {
         // Point InstanceKlass::_array_klasses to the one-dimensional archived ObjArrayKlass
         InstanceKlass* ik = InstanceKlass::cast(bk);
         ik->release_set_array_klasses(ObjArrayKlass::cast(ak));
+      } else {
+        ArrayKlass* fixup_oak = ArrayKlass::cast(bk->array_klass_or_null(target_dim));
+        assert(fixup_oak != nullptr, "sanity");
+        assert(MetaspaceShared::is_shared_static((void*)fixup_oak),
+          "ObjArrayKlass to be fixed should be in static CDS archive");
+        fixup_oak->set_higher_dimension(ak);
       }
     }
     log_debug(cds)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
