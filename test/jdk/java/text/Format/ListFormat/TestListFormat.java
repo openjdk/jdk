@@ -31,7 +31,7 @@
 import java.text.DateFormat;
 import java.text.ListFormat;
 import java.text.ParseException;
-import java.text.ParsePosition;
+import java.util.List;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
@@ -45,10 +45,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestListFormat {
-    private static final String[] SAMPLE1 = {"foo"};
-    private static final String[] SAMPLE2 = {"foo", "bar"};
-    private static final String[] SAMPLE3 = {"foo", "bar", "baz"};
-    private static final String[] SAMPLE4 = {"foo", "bar", "baz", "qux"};
+    private static final List<String> SAMPLE1 = List.of("foo");
+    private static final List<String> SAMPLE2 = List.of("foo", "bar");
+    private static final List<String> SAMPLE3 = List.of("foo", "bar", "baz");
+    private static final List<String> SAMPLE4 = List.of("foo", "bar", "baz", "qux");
     private static final String[] CUSTOM_PATTERNS = {
             "sbef {0} sbet {1}",
             "{0} mid {1}",
@@ -120,7 +120,7 @@ public class TestListFormat {
 
     @ParameterizedTest
     @MethodSource
-    void getInstance_1Arg(String[] input, String expected) throws ParseException {
+    void getInstance_1Arg(List<String> input, String expected) throws ParseException {
         var f = ListFormat.getInstance(CUSTOM_PATTERNS);
         compareResult(f, input, expected, true);
     }
@@ -132,11 +132,11 @@ public class TestListFormat {
         compareResult(f, SAMPLE3, expected, roundTrip);
     }
 
-    private static void compareResult(ListFormat f, String[] input, String expected, boolean roundTrip) throws ParseException {
+    private static void compareResult(ListFormat f, List<String> input, String expected, boolean roundTrip) throws ParseException {
         var result = f.format(input);
         assertEquals(expected, result);
         if (roundTrip) {
-            assertArrayEquals(input, f.parse(result));
+            assertEquals(input, f.parse(result));
         }
     }
 }

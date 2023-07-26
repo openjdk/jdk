@@ -30,6 +30,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
@@ -46,12 +47,12 @@ import java.util.stream.IntStream;
  * Three types of concatenation are provided; {@link Type#STANDARD STANDARD},
  * {@link Type#OR OR}, and {@link Type#UNIT UNIT}, also three styles for each
  * type are provided; {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
- * {@link Style#NARROW NARROW}. For example, an array of Strings
+ * {@link Style#NARROW NARROW}. For example, a list of Strings
  * {@code ["Foo", "Bar", "Baz"]} may be formatted as follows in US English with
  * the following snippet ({@code STANDARD}, {@code FULL} are used for a typical case):
  * {@snippet lang=java :
  * ListFormat.getInstance(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL)
- *     .format(new String[] {"Foo", "Bar", "Baz"})
+ *     .format(new List.of("Foo", "Bar", "Baz"))
  * }
  * This will produce the concatenated list string as in the following table:
  * <table class="striped">
@@ -211,7 +212,7 @@ public class ListFormat extends Format {
      * two := (two_before){0}two_between{1}(two_after)
      * three := (three_before){0}three_between{1}three_between{2}(three_after)
      * </pre></blockquote>
-     * then, the {@code n} elements in the input string array substitute these
+     * then, the {@code n} elements in the input string list substitute these
      * placeholders:
      * <blockquote><pre>
      * (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
@@ -273,13 +274,13 @@ public class ListFormat extends Format {
     /**
      * {@return the string that consists of the input strings, concatenated with the
      * patterns specified, or derived from {@code Locale}, {@code Type}, and {@code Style}}
-     * @param input The array of input strings to format. There should at least
-     *              one String element in this array, otherwise an {@code IllegalArgumentException}
+     * @param input The list of input strings to format. There should at least
+     *              one String element in this list, otherwise an {@code IllegalArgumentException}
      *              is thrown.
      * @throws IllegalArgumentException if the length of {@code input} is zero.
-     * @throws NullPointerException if the input array is null.
+     * @throws NullPointerException if {@code input} is null.
      */
-    public String format(String[] input) {
+    public String format(List<String> input) {
         Objects.requireNonNull(input);
         return format(input, new StringBuffer(),
                 DontCareFieldPosition.INSTANCE).toString();
@@ -289,17 +290,18 @@ public class ListFormat extends Format {
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
         Objects.requireNonNull(toAppendTo);
         Objects.requireNonNull(pos);
-        if (obj instanceof Object[] objs) {
-            return generateMessageFormat(objs).format(objs, toAppendTo, pos);
+        if (obj instanceof List<?> objs) {
+            var a = objs.toArray(new Object[0]);
+            return generateMessageFormat(a).format(a, toAppendTo, pos);
         } else {
-            throw new IllegalArgumentException("The object to format should be an Object array");
+            throw new IllegalArgumentException("The object to format should be an Object list");
         }
     }
 
     /**
-     * {@return the parsed array of Strings from the {@code source} String}
+     * {@return the parsed list of Strings from the {@code source} String}
      *
-     * Note that {@link #format(String[])} format(String[])} and this method
+     * Note that {@link #format(List)} and this method
      * may not guarantee a round-trip, if the input strings contain ambiguous
      * delimiters. For example, a String array {@code ["a, b,", "c"]} will be
      * formatted as {@code "a, b, and c"}, but may be parsed as
@@ -309,17 +311,17 @@ public class ListFormat extends Format {
      * @throws ParseException if parse failed
      * @throws NullPointerException if source is null
      */
-    public String[] parse(String source) throws ParseException {
+    public List<String> parse(String source) throws ParseException {
         var pp = new ParsePosition(0);
-        if (parseObject(source, pp) instanceof Object[] orig) {
-            return Arrays.copyOf(orig, orig.length, String[].class);
+        if (parseObject(source, pp) instanceof List<?> orig) {
+            return orig.stream().map(Object::toString).toList();
         } else {
             throw new ParseException("Parse failed", pp.getErrorIndex());
         }
     }
 
     /**
-     * Parses text from a string to produce an array of {@code String}s.
+     * Parses text from a string to produce a list of {@code String}s.
      * <p>
      * The method attempts to parse text starting at the index given by
      * {@code pos}.
@@ -338,7 +340,7 @@ public class ListFormat extends Format {
      * @param source A {@code String}, part of which should be parsed.
      * @param parsePos A {@code ParsePosition} object with index and error
      *            index information as described above.
-     * @return An array of {@code String} parsed from the string. In case of
+     * @return A list of {@code String} parsed from the string. In case of
      *         error, returns null.
      * @throws NullPointerException if {@code source} or {@code parsePos} is null.
      */
@@ -347,7 +349,7 @@ public class ListFormat extends Format {
         Objects.requireNonNull(source);
         var sm = startPattern.matcher(source);
         var em = endPattern.matcher(source);
-        Object ret = null;
+        Object parsed = null;
         if (sm.find(parsePos.index) && em.find(parsePos.index)) {
             // get em to the last
             var c = em.start();
@@ -363,31 +365,35 @@ public class ListFormat extends Format {
                 var mid = source.substring(startEnd, endStart);
 //            System.out.println("middle found: " + mid);
                 var count = mid.split(middleBetween).length + 2;
-                ret = new MessageFormat(createMessageFormatString(count), locale).parseObject(source, parsePos);
+                parsed = new MessageFormat(createMessageFormatString(count), locale).parseObject(source, parsePos);
             }
         }
 
-        if (ret == null) {
+        if (parsed == null) {
             // now try exact number patterns
-            ret = new MessageFormat(patterns[TWO], locale).parseObject(source, parsePos);
-            if (ret == null && !patterns[THREE].isEmpty()) {
-                ret = new MessageFormat(patterns[THREE], locale).parseObject(source, parsePos);
+            parsed = new MessageFormat(patterns[TWO], locale).parseObject(source, parsePos);
+            if (parsed == null && !patterns[THREE].isEmpty()) {
+                parsed = new MessageFormat(patterns[THREE], locale).parseObject(source, parsePos);
             }
         }
 
         // return the entire source if still no match
-        if (ret == null) {
+        if (parsed == null) {
             parsePos.setIndex(source.length());
-            ret = new String[]{source};
+            parsed = new String[]{source};
         }
 
-        return ret;
+        if (parsed instanceof Object[] objs) {
+            return Arrays.asList(objs);
+        }
+        throw new InternalError("MessageFormat.parseObject() should return Object[]");
     }
 
     @Override
     public AttributedCharacterIterator formatToCharacterIterator(Object arguments) {
-        if (arguments instanceof Object[] objs) {
-            return generateMessageFormat(objs).formatToCharacterIterator(objs);
+        if (arguments instanceof List<?> objs) {
+            var a = objs.toArray(new Object[0]);
+            return generateMessageFormat(a).formatToCharacterIterator(a);
         } else {
             throw new IllegalArgumentException("The arguments should be an Object array");
         }
@@ -429,8 +435,8 @@ public class ListFormat extends Format {
             """.formatted(locale.getDisplayName(), patterns[START], patterns[MIDDLE], patterns[END], patterns[TWO], patterns[THREE]);
     }
 
-    private MessageFormat generateMessageFormat(Object[] objs) {
-        var len = objs.length;
+    private MessageFormat generateMessageFormat(Object[] input) {
+        var len = input.length;
         return switch (len) {
             case 0 -> throw new IllegalArgumentException("There should at least be one input string");
             case 1 -> new MessageFormat("{0}", locale);
