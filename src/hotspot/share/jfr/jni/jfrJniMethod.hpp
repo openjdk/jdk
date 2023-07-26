@@ -152,6 +152,8 @@ jboolean JNICALL jfr_set_handler(JNIEnv* env, jobject jvm, jobject clazz, jobjec
 
 jlong JNICALL jfr_get_type_id_from_string(JNIEnv* env, jobject jvm, jstring type);
 
+void JNICALL jfr_emit_data_loss(JNIEnv* env, jclass jvm, jlong bytes);
+
 #ifdef __cplusplus
 }
 #endif

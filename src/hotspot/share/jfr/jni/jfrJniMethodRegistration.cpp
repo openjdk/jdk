@@ -90,7 +90,8 @@ JfrJniMethodRegistration::JfrJniMethodRegistration(JNIEnv* env) {
       (char*)"getChunkStartNanos", (char*)"()J", (void*)jfr_chunk_start_nanos,
       (char*)"getHandler", (char*)"(Ljava/lang/Class;)Ljava/lang/Object;", (void*)jfr_get_handler,
       (char*)"setHandler", (char*)"(Ljava/lang/Class;Ljdk/jfr/internal/handlers/EventHandler;)Z", (void*)jfr_set_handler,
-      (char*)"getTypeId", (char*)"(Ljava/lang/String;)J", (void*)jfr_get_type_id_from_string
+      (char*)"getTypeId", (char*)"(Ljava/lang/String;)J", (void*)jfr_get_type_id_from_string,
+      (char*)"emitDataLoss", (char*)"(J)V", (void*)jfr_emit_data_loss
     };
 
     const size_t method_array_length = sizeof(method) / sizeof(JNINativeMethod);

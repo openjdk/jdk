@@ -33,7 +33,7 @@ import java.util.Set;
 import jdk.jfr.internal.SecuritySupport.SafePath;
 
 // This class keeps track of files that can't be deleted
-// so they can a later staged be removed.
+// so they can at a later staged be removed.
 final class FilePurger {
 
     private static final Set<SafePath> paths = new LinkedHashSet<>();
@@ -63,6 +63,13 @@ final class FilePurger {
     }
 
     private static boolean delete(SafePath p) {
+        try {
+            if (!SecuritySupport.exists(p)) {
+                return true;
+            }
+        } catch (IOException e) {
+            // ignore
+        }
         try {
             SecuritySupport.delete(p);
             return true;

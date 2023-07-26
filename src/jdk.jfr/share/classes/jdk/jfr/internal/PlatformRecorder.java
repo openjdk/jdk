@@ -25,6 +25,7 @@
 
 package jdk.jfr.internal;
 
+import static jdk.jfr.internal.LogLevel.ERROR;
 import static jdk.jfr.internal.LogLevel.INFO;
 import static jdk.jfr.internal.LogLevel.TRACE;
 import static jdk.jfr.internal.LogLevel.WARN;
@@ -451,10 +452,19 @@ public final class PlatformRecorder {
     }
 
     private void finishChunk(RepositoryChunk chunk, Instant time, PlatformRecording ignoreMe) {
-        chunk.finish(time);
-        for (PlatformRecording r : getRecordings()) {
-            if (r != ignoreMe && r.getState() == RecordingState.RUNNING) {
-                r.appendChunk(chunk);
+        if (chunk.finish(time)) {
+            for (PlatformRecording r : getRecordings()) {
+                if (r != ignoreMe && r.getState() == RecordingState.RUNNING) {
+                    r.appendChunk(chunk);
+                }
+            }
+        } else {
+            if (chunk.isMissingFile()) {
+                // With one chunkfile found missing, its likely more could've been removed too. Iterate through all recordings,
+                // and check for missing files. This will emit more error logs that can be seen in subsequent recordings.
+                for (PlatformRecording r : getRecordings()) {
+                    r.removeNonExistantPaths();
+                }
             }
         }
         FilePurger.purge();
@@ -495,17 +505,24 @@ public final class PlatformRecorder {
             return;
         }
         while (true) {
-            synchronized (this) {
-                if (jvm.shouldRotateDisk()) {
-                    rotateDisk();
+            long wait = Options.getWaitInterval();
+            try {
+                synchronized (this) {
+                    if (jvm.shouldRotateDisk()) {
+                        rotateDisk();
+                    }
+                    if (isToDisk()) {
+                        EventLog.update();
+                    }
                 }
-                if (isToDisk()) {
-                    EventLog.update();
-                }
+                long minDelta = RequestEngine.doPeriodic();
+                wait = Math.min(minDelta, Options.getWaitInterval());
+            } catch (Throwable t) {
+                // Catch everything and log, but don't allow it to end the periodic task
+                Logger.log(JFR_SYSTEM, ERROR, "Error in Periodic task: " + t.getClass().getName());
+            } finally {
+                takeNap(wait);
             }
-            long minDelta = RequestEngine.doPeriodic();
-            long wait = Math.min(minDelta, Options.getWaitInterval());
-            takeNap(wait);
         }
     }
 

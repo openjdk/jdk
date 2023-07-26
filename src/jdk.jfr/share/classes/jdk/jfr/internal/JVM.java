@@ -603,4 +603,11 @@ public final class JVM {
      * @return the id, or a negative value if it does not exists.
      */
     public native long getTypeId(String name);
+
+    /**
+     * Emit a jdk.DataLoss event for the specified amount of bytes.
+     *
+     * @param bytes number of bytes that were lost
+     */
+    public static native void emitDataLoss(long bytes);
 }
