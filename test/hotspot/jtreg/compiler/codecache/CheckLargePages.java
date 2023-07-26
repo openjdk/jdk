@@ -59,7 +59,7 @@ public class CheckLargePages {
                     "-Xlog:pagesize=info",
                     "-version");
             OutputAnalyzer out = new OutputAnalyzer(pb.start());
-            out.shouldContain("Failed to use large page memory for code cache");
+            out.shouldMatch("Code cache size too small for \\S* pages\\. Reverting to smaller page size \\((\\S*)\\)\\.");
             out.shouldHaveExitValue(0);
             // Parse page sizes to find next biggest page
             String sizes = out.firstMatch("Usable page sizes:(.*)", 1);
@@ -68,7 +68,7 @@ public class CheckLargePages {
             Asserts.assertGreaterThanOrEqual(smallerPageSizeIndex, 0);
             final long smallerPageSize = sizeList.get(smallerPageSizeIndex);
             // Retrieve reverted page size from code cache warning
-            String revertedSizeString = out.firstMatch("Failed to use large page memory for code cache \\((.*)\\)\\. Reverting to smaller page size \\((.*)\\)\\.", 2);
+            String revertedSizeString = out.firstMatch("Code cache size too small for (\\S*) pages. Reverting to smaller page size \\((\\S*)\\)\\.", 2);
             Asserts.assertEquals(parseMemoryString(revertedSizeString), smallerPageSize);
         } else {
             System.out.println("1GB large pages not supported: UseLargePages=" + largePages +
