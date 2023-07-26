@@ -117,13 +117,13 @@ int Symbol::index_of_at(int i, const char* substr, int substr_len) const {
   return -1;
 }
 
-bool Symbol::is_star_match(const char* pattern) const {
+bool Symbol::is_wildcard_match(const char* pattern) const {
   if (strchr(pattern, '*') == nullptr) {
     return equals(pattern);
   } else {
     ResourceMark rm;
     char* buf = as_C_string();
-    return StringUtils::is_star_match(pattern, buf);
+    return StringUtils::is_wildcard_match(pattern, buf);
   }
 }
 

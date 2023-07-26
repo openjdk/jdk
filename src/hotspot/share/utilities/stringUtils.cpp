@@ -70,55 +70,56 @@ double StringUtils::similarity(const char* str1, size_t len1, const char* str2, 
   return 2.0 * (double) hit / (double) total;
 }
 
-const char* StringUtils::strstr_nocase(const char* haystack, const char* needle) {
-  if (needle[0] == '\0') {
-    return haystack; // empty needle matches with anything
-  }
-  for (size_t i = 0; haystack[i] != '\0'; i++) {
-    bool matches = true;
-    for (size_t j = 0; needle[j] != '\0'; j++) {
-      if (haystack[i + j] == '\0') {
-        return nullptr; // hit end of haystack, abort
-      }
-      if (tolower(haystack[i + j]) != tolower(needle[j])) {
-        matches = false;
-        break; // abort, try next i
+template <bool CASE_SENSITIVE>
+inline static bool _is_wildcard_match(const char* pattern, const char* str) {
+  // Match leading stars
+  if (*pattern == '*') {
+    while (*pattern == '*') { // collapse consective stars
+      pattern++;
+    }
+    if (*pattern == '\0') {
+      return true;
+    }
+    while (*str != '\0') {
+      // If the star matches a prefix, does the rest of the pattern match the rest of the string?
+      if (_is_wildcard_match<CASE_SENSITIVE>(pattern, str)) {
+        return true;
+      } else {
+        str ++;
       }
     }
-    if (matches) {
-      return &haystack[i]; // all j were ok for this i
+    
+    return false;
+  }
+
+  while (*pattern != '\0' && *str != '\0') {
+    // Match regular characters until we see a star.
+    assert(*pattern != '*', "must be");
+    char p = *pattern;
+    char s = *str;
+    if (CASE_SENSITIVE) {
+      if (p != s) {
+        return false;
+      }
+    } else {
+      if (tolower(p) != tolower(s)) {
+        return false;
+      }
+    }
+    pattern ++;
+    str ++;
+    if (*pattern == '*') {
+      return _is_wildcard_match<CASE_SENSITIVE>(pattern, str);
     }
   }
-  return nullptr; // no i was a match
+
+  return *pattern == '\0' && *str == '\0';
 }
 
-bool StringUtils::is_star_match(const char* star_pattern, const char* str) {
-  const int N = 1000;
-  char pattern[N]; // copy pattern into this to ensure null termination
-  jio_snprintf(pattern, N, "%s", star_pattern);// ensures null termination
-  char buf[N]; // copy parts of pattern into this
-  const char* str_idx = str;
-  const char* pattern_idx = pattern;
-  while (strlen(pattern_idx) > 0) {
-    // find next section in pattern
-    const char* pattern_part_end = strstr(pattern_idx, "*");
-    const char* pattern_part = pattern_idx;
-    if (pattern_part_end != nullptr) { // copy part into buffer
-      size_t pattern_part_len = pattern_part_end-pattern_part;
-      strncpy(buf, pattern_part, pattern_part_len);
-      buf[pattern_part_len] = '\0'; // end of string
-      pattern_part = buf;
-    }
-    // find this section in s, case insensitive
-    const char* str_match = strstr_nocase(str_idx, pattern_part);
-    if (str_match == nullptr) {
-      return false; // r_part did not match - abort
-    }
-    size_t match_len = strlen(pattern_part);
-    // advance to match position plus part length
-    str_idx = str_match + match_len;
-    // advance by part length and "*"
-    pattern_idx += match_len + (pattern_part_end == nullptr ? 0 : 1);
-  }
-  return true; // all parts of pattern matched
+bool StringUtils::is_wildcard_match(const char* pattern, const char* str) {
+  return _is_wildcard_match</*case sensitive = */true>(pattern, str);
+}
+
+bool StringUtils::is_wildcard_match_nocase(const char* pattern, const char* str) {
+  return _is_wildcard_match</*case sensitive = */false>(pattern, str);
 }

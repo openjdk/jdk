@@ -1649,7 +1649,7 @@ void find_nodes_by_name(Node* start, const char* name) {
   ResourceMark rm;
   GrowableArray<const Node*> ns;
   auto callback = [&] (const Node* n) {
-    if (StringUtils::is_star_match(name, n->Name())) {
+    if (StringUtils::is_wildcard_match_nocase(name, n->Name())) {
       ns.push(n);
     }
   };
@@ -1666,7 +1666,7 @@ void find_nodes_by_dump(Node* start, const char* pattern) {
   auto callback = [&] (const Node* n) {
     stringStream stream;
     n->dump("", false, &stream);
-    if (StringUtils::is_star_match(pattern, stream.base())) {
+    if (StringUtils::is_wildcard_match_nocase(pattern, stream.base())) {
       ns.push(n);
     }
   };

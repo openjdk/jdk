@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2018, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,4 +71,69 @@ TEST_VM(StringUtils, replace_no_expand) {
 
   deleted = StringUtils::replace_no_expand(s2, "\n", "");
   ASSERT_EQ(deleted, 0);
+}
+
+static bool is_wildcard_match(const char* pattern, const char* string) {
+  return StringUtils::is_wildcard_match(pattern, string);
+}
+
+static bool is_wildcard_match_nocase(const char* pattern, const char* string) {
+  return StringUtils::is_wildcard_match_nocase(pattern, string);
+}
+
+TEST(StringUtils, is_wildcard_match) {
+  ASSERT_EQ(is_wildcard_match("abc", "abc"), true);
+  ASSERT_EQ(is_wildcard_match("ab*", "abc"), true);
+  ASSERT_EQ(is_wildcard_match("a*c", "abc"), true);
+  ASSERT_EQ(is_wildcard_match("a**", "abc"), true);
+  ASSERT_EQ(is_wildcard_match("*bc", "abc"), true);
+  ASSERT_EQ(is_wildcard_match("*b*", "abc"), true);
+  ASSERT_EQ(is_wildcard_match("**c", "abc"), true);
+  ASSERT_EQ(is_wildcard_match("***", "abc"), true);
+
+  ASSERT_EQ(is_wildcard_match("abc", "ABC"), false);
+
+  ASSERT_EQ(is_wildcard_match_nocase("abc", "ABC"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("ab*", "ABC"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("a*c", "ABC"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("a**", "ABC"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("*bc", "ABC"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("*b*", "ABC"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("**c", "ABC"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("***", "ABC"), true);
+
+  // Must match full string (no implicit leading/trailing stars)
+  ASSERT_EQ(is_wildcard_match("bc*",  "abcd"), false);
+  ASSERT_EQ(is_wildcard_match("*bc",  "abcd"), false);
+
+  // Multiple stars
+  ASSERT_EQ(is_wildcard_match("***bcd*", "abcd"), true);
+  ASSERT_EQ(is_wildcard_match("***bc****", "abcd"), true);
+  ASSERT_EQ(is_wildcard_match("***ccd", "abcd"), false);
+
+  // Some common cases
+  ASSERT_EQ(is_wildcard_match("java/*/Object",             "java/lang/Object"), true);
+  ASSERT_EQ(is_wildcard_match("java/*/Class*",             "java/lang/ClassLoader"), true);
+  ASSERT_EQ(is_wildcard_match("java/*/Class",              "java/lang/ClassLoader"), false);
+
+  ASSERT_EQ(is_wildcard_match_nocase("java/*/object",      "java/lang/Object"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("java/*/class*",      "java/lang/ClassLoader"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("java/*/class",       "java/lang/ClassLoader"), false);
+
+  // Special chars that are commonly used in Symbols - bracket, semi-colon, <> and ()
+  ASSERT_EQ(is_wildcard_match("[Ljava/*/Object;",          "[Ljava/lang/Object;"), true);
+  ASSERT_EQ(is_wildcard_match("[*Ljava/*/Object;",         "[[[[[Ljava/lang/Object;"), true);
+
+  ASSERT_EQ(is_wildcard_match_nocase("[LJava/*/object;",   "[Ljava/lang/Object;"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("[*LJava/*/object;",  "[[[[[Ljava/lang/Object;"), true);
+
+  ASSERT_EQ(is_wildcard_match_nocase("<*init>",            "<init>"), true);
+  ASSERT_EQ(is_wildcard_match_nocase("<*init>",            "<clinit>"), true);
+
+  ASSERT_EQ(is_wildcard_match_nocase("<*init>(L*ject;)L*", "<init>(Ljava/lang/String;III;Ljava/lang/Object;)V"), false);
+  ASSERT_EQ(is_wildcard_match_nocase("<*init>(L*ject;)L*", "<init>(Ljava/lang/String;III;Ljava/lang/Object;)Ljava/lang/String;"), true);
+
+  // Performance
+  // Oops - this is slow ... see https://www.codeproject.com/Articles/5163931/Fast-String-Matching-with-Wildcards-Globs-and-Giti
+  //ASSERT_EQ(is_wildcard_match("a*a*a*a*a*a*a*a*b", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"), true);
 }

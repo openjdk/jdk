@@ -77,7 +77,7 @@ public:
   }
 
   static bool match(const char* pattern, Symbol* sym) {
-    return (pattern == nullptr || sym->is_star_match(pattern));
+    return (pattern == nullptr || sym->is_wildcard_match(pattern));
   }
 
   void print_klass_name(InstanceKlass* ik) {
@@ -87,7 +87,7 @@ public:
   }
 
   void print_instance_klass(InstanceKlass* ik) {
-    if (ik->is_loaded() && ik->name()->is_star_match(_class_name_pattern)) {
+    if (ik->is_loaded() && ik->name()->is_wildcard_match(_class_name_pattern)) {
       ResourceMark rm;
       if (_has_printed_methods) {
         // We have printed some methods in the previous class.
