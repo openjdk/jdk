@@ -69,6 +69,7 @@
 #include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/align.hpp"
+#include "utilities/debug.hpp"
 #include "utilities/decoder.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/events.hpp"
@@ -4213,6 +4214,23 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
   }
 
   return nullptr;
+}
+
+char* os::get_lowest_attach_address() {
+  // This is determined by sysctl vm.mmap_min_addr. The usual value is 64*k. It prevents
+  // mappings below that point by mmap. Its main point is to cause Segfaults for accidental
+  // NULL pointer references.
+  // Typical default value for vm.mmap_min_addr is 64 * K. Here, we hardcode a slightly
+  // larger value, but the intent is the same.
+  return (char*)(16 * M);
+}
+
+char* os::get_highest_attach_address() {
+  // Depends on factors like size of address bits (eg. 48 vs 52 bits on ARM64) or,
+  // for 32-bit, whether we run on a 64-bit host with PAE enabled (3 vs 4 GB). But
+  // we limit the effort we undertake here.
+  return LP64_ONLY((char*)(128 * 1024 * G))
+         NOT_LP64((char*)(3 * G));
 }
 
 // Used to convert frequent JVM_Yield() to nops

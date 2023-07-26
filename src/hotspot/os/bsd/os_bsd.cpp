@@ -1816,10 +1816,26 @@ char* os::pd_attempt_reserve_memory_at(char* requested_addr, size_t bytes, bool 
 
   if (addr != nullptr) {
     // mmap() is successful but it fails to reserve at the requested address
+    log_trace(os, map)("requested " PTR_FORMAT " got " PTR_FORMAT, p2i(requested_addr), p2i(addr));
     anon_munmap(addr, bytes);
   }
 
   return nullptr;
+}
+
+char* os::get_lowest_attach_address() {
+#ifdef __APPLE__
+  // On MacOS, the lowest 4G are denied to the application (see "PAGEZERO" resp. -pagezero_size
+  // linker option).
+  return (char*)((size_t)4 * G);
+#else
+  return (char*)os::vm_allocation_granularity();
+#endif
+}
+
+char* os::get_highest_attach_address() {
+  // 128 TB
+  return (char*)(128 * 1024 * G);
 }
 
 // Used to convert frequent JVM_Yield() to nops

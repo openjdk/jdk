@@ -420,6 +420,10 @@ class os: AllStatic {
 
   static size_t vm_allocation_granularity() { return OSInfo::vm_allocation_granularity(); }
 
+  // Returns the minimal and maximal address one should use for reserving memory
+  static char* get_lowest_attach_address();
+  static char* get_highest_attach_address();
+
   inline static size_t cds_core_region_alignment();
 
   // Reserves virtual memory.
@@ -431,6 +435,10 @@ class os: AllStatic {
   // Attempts to reserve the virtual memory at [addr, addr + bytes).
   // Does not overwrite existing mappings.
   static char*  attempt_reserve_memory_at(char* addr, size_t bytes, bool executable = false);
+
+  // Given an address range [min, max), attempts to reserve memory at a possibly randomized location
+  // within this area and with a given alignment. Possibly uses help from the OS.
+  static char* attempt_reserve_memory_between(char* min, char* max, size_t bytes, size_t alignment, bool randomize);
 
   static bool   commit_memory(char* addr, size_t bytes, bool executable);
   static bool   commit_memory(char* addr, size_t size, size_t alignment_hint,

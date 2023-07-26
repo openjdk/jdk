@@ -1419,6 +1419,9 @@ const int ObjectAlignmentInBytes = 8;
           "Force the class space to be allocated at this address or "       \
           "fails VM initialization (requires -Xshare=off.")                 \
                                                                             \
+  develop(bool, RandomizeClassSpaceLocation, true,                          \
+          "Randomize location of class space.")                             \
+                                                                            \
   product(bool, PrintMetaspaceStatisticsAtExit, false, DIAGNOSTIC,          \
           "Print metaspace statistics upon VM exit.")                       \
                                                                             \
@@ -1992,6 +1995,11 @@ const int ObjectAlignmentInBytes = 8;
           "more eagerly at the cost of higher overhead. A value of 0 "      \
           "(default) disables native heap trimming.")                       \
           range(0, UINT_MAX)                                                \
+                                                                            \
+  develop(bool, LimitRandomness, false,                                     \
+          "If true, force internal randomizer to return either 0 or "       \
+          "always")                                                         \
+                                                                            \
 
 // end of RUNTIME_FLAGS
 
