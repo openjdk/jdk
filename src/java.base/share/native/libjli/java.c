@@ -460,8 +460,8 @@ JavaMain(void* _args)
      * -Xshare:dump does not have a main class so the VM can safely exit now
      */
     if (dumpSharedSpaces) {
-      CHECK_EXCEPTION_LEAVE(0);
-      LEAVE();
+        CHECK_EXCEPTION_LEAVE(1);
+        LEAVE();
     }
 
     /* If the user specified neither a class name nor a JAR file */
@@ -1446,7 +1446,7 @@ ParseArguments(int *pargc, char ***pargv,
         * Check for CDS option
         */
         if (JLI_StrCmp(arg, "-Xshare:dump") == 0) {
-          dumpSharedSpaces = JNI_TRUE;
+            dumpSharedSpaces = JNI_TRUE;
         }
     }
 

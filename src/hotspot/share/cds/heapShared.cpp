@@ -133,8 +133,8 @@ KlassSubGraphInfo* HeapShared::_default_subgraph_info;
 GrowableArrayCHeap<oop, mtClassShared>* HeapShared::_pending_roots = nullptr;
 OopHandle HeapShared::_roots;
 OopHandle HeapShared::_scratch_basic_type_mirrors[T_VOID+1];
-KlassToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
-HeapShared::ResolvedReferenceScratchTable* HeapShared::_scratch_references_table = nullptr;
+MetaspaceObjToOopHandleTable* HeapShared::_scratch_java_mirror_table = nullptr;
+MetaspaceObjToOopHandleTable* HeapShared::_scratch_references_table = nullptr;
 ClassLoaderData* HeapShared::_saved_java_platform_loader_data = nullptr;
 ClassLoaderData* HeapShared::_saved_java_system_loader_data = nullptr;
 
@@ -323,56 +323,42 @@ void HeapShared::restore_loader_data() {
   java_lang_ClassLoader::release_set_loader_data(SystemDictionary::java_system_loader(), _saved_java_system_loader_data);
 }
 
-class KlassToOopHandleTable: public ResourceHashtable<Klass*, OopHandle,
+class MetaspaceObjToOopHandleTable: public ResourceHashtable<MetaspaceObj*, OopHandle,
     36137, // prime number
     AnyObj::C_HEAP,
     mtClassShared> {
 public:
-  oop get_oop(Klass* k) {
+  oop get_oop(MetaspaceObj* obj) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-    OopHandle* handle = get(k);
+    OopHandle* handle = get(obj);
     if (handle != nullptr) {
       return handle->resolve();
     } else {
       return nullptr;
     }
   }
-  void set_oop(Klass* k, oop o) {
+  void set_oop(MetaspaceObj* obj, oop o) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
     OopHandle handle(Universe::vm_global(), o);
-    bool is_new = put(k, handle);
+    bool is_new = put(obj, handle);
     assert(is_new, "cannot set twice");
   }
-  void remove_oop(Klass* k) {
+  void remove_oop(MetaspaceObj* obj) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-    OopHandle* handle = get(k);
+    OopHandle* handle = get(obj);
     if (handle != nullptr) {
       handle->release(Universe::vm_global());
-      remove(k);
+      remove(obj);
     }
   }
 };
 
-void HeapShared::add_scratch_resolved_reference(ConstantPool* src, int index, oop new_result) {
-  MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-  OopHandle* scratch_handle = _scratch_references_table->get(src);
-  assert(scratch_handle != nullptr, "Must exist");
-  objArrayOop scratch = (objArrayOop)(scratch_handle->resolve());
-  scratch->obj_at_put(index, new_result);
+void HeapShared::add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) {
+  _scratch_references_table->set_oop(src, dest);
 }
 
-void HeapShared::add_scratch_resolved_references(ConstantPool* src, OopHandle dest) {
-  MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-  if (_scratch_references_table == nullptr) {
-    _scratch_references_table = new (mtClass)ResolvedReferenceScratchTable();
-  }
-  assert(_scratch_references_table != nullptr, "must be initialized");
-  _scratch_references_table->put(src, dest);
-}
-
-OopHandle HeapShared::scratch_resolved_references(ConstantPool* src) {
-  MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-  return *(_scratch_references_table->get(src));
+objArrayOop HeapShared::scratch_resolved_references(ConstantPool* src) {
+  return (objArrayOop)_scratch_references_table->get_oop(src);
 }
 
 void HeapShared::init_scratch_objects(TRAPS) {
@@ -383,7 +369,8 @@ void HeapShared::init_scratch_objects(TRAPS) {
       _scratch_basic_type_mirrors[i] = OopHandle(Universe::vm_global(), m);
     }
   }
-  _scratch_java_mirror_table = new (mtClass)KlassToOopHandleTable();
+  _scratch_java_mirror_table = new (mtClass)MetaspaceObjToOopHandleTable();
+  _scratch_references_table = new (mtClass)MetaspaceObjToOopHandleTable();
 }
 
 oop HeapShared::scratch_java_mirror(BasicType t) {
@@ -402,6 +389,9 @@ void HeapShared::set_scratch_java_mirror(Klass* k, oop mirror) {
 
 void HeapShared::remove_scratch_objects(Klass* k) {
   _scratch_java_mirror_table->remove_oop(k);
+  if (k->is_instance_klass()) {
+    _scratch_references_table->remove(InstanceKlass::cast(k)->constants());
+  }
 }
 
 void HeapShared::archive_java_mirrors() {

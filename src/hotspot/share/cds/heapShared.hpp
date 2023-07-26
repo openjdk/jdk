@@ -43,7 +43,7 @@
 class DumpedInternedStrings;
 class FileMapInfo;
 class KlassSubGraphInfo;
-class KlassToOopHandleTable;
+class MetaspaceObjToOopHandleTable;
 class ResourceBitMap;
 
 struct ArchivableStaticFieldInfo;
@@ -280,13 +280,8 @@ private:
   static GrowableArrayCHeap<oop, mtClassShared>* _pending_roots;
   static OopHandle _roots;
   static OopHandle _scratch_basic_type_mirrors[T_VOID+1];
-  static KlassToOopHandleTable* _scratch_java_mirror_table;
-
-  typedef ResourceHashtable<ConstantPool*, OopHandle,
-    36137, // prime number
-    AnyObj::C_HEAP,
-    mtClassShared> ResolvedReferenceScratchTable;
-  static ResolvedReferenceScratchTable* _scratch_references_table;
+  static MetaspaceObjToOopHandleTable* _scratch_java_mirror_table;
+  static MetaspaceObjToOopHandleTable* _scratch_references_table;
 
   static ClassLoaderData* _saved_java_platform_loader_data;
   static ClassLoaderData* _saved_java_system_loader_data;
@@ -403,9 +398,8 @@ private:
 #endif // INCLUDE_CDS_JAVA_HEAP
 
  public:
-  static OopHandle scratch_resolved_references(ConstantPool* src);
-  static void add_scratch_resolved_reference(ConstantPool* src, int index, oop new_result) NOT_CDS_JAVA_HEAP_RETURN;
-  static void add_scratch_resolved_references(ConstantPool* src, OopHandle dest) NOT_CDS_JAVA_HEAP_RETURN;
+  static objArrayOop scratch_resolved_references(ConstantPool* src);
+  static void add_scratch_resolved_references(ConstantPool* src, objArrayOop dest) NOT_CDS_JAVA_HEAP_RETURN;
   static void init_scratch_objects(TRAPS) NOT_CDS_JAVA_HEAP_RETURN;
   static void restore_loader_data() NOT_CDS_JAVA_HEAP_RETURN;
   static bool is_heap_region(int idx) {
