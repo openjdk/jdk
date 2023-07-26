@@ -4911,6 +4911,7 @@ void Compile::remove_speculative_types(PhaseIterGVN &igvn) {
           if (!in_hash) {
             tty->print_cr("current graph:");
             n->dump_bfs(MaxNodeLimit, nullptr, "S$");
+            tty->cr();
             tty->print_cr("erroneous node:");
             n->dump();
             assert(false, "node should be in igvn hash table");
