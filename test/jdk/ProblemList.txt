@@ -708,6 +708,7 @@ java/util/Locale/LocaleProvidersRun.java                        8268379 macosx-x
 sun/util/locale/provider/CalendarDataRegression.java            8268379 macosx-x64
 java/util/concurrent/forkjoin/AsyncShutdownNow.java             8286352 linux-all,windows-x64
 java/util/concurrent/ExecutorService/CloseTest.java             8288899 macosx-aarch64
+java/util/concurrent/SynchronousQueue/Fairness.java             8300663 generic-x64
 
 ############################################################################
 
