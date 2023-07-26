@@ -239,6 +239,18 @@ class Http2Connection  {
             shutdown(hte);
         }
 
+        /**
+         * Cancels this event. Should be called with stateLock held
+         */
+        void cancel() {
+            assert stateLock.isHeldByCurrentThread() : "Current thread doesn't hold " + stateLock;
+            // mark as cancelled to prevent potentially already triggered event from actually
+            // doing the shutdown
+            this.cancelled = true;
+            // cancel the timer to prevent the event from being triggered (if it hasn't already)
+            client().cancelTimer(this);
+        }
+
         @Override
         public String toString() {
             return "IdleConnectionTimeoutEvent, " + super.toString();
@@ -319,7 +331,7 @@ class Http2Connection  {
     // state when idle connection management initiates a shutdown of the connection, after
     // which the connection will go into SHUTDOWN_REQUESTED state
     private static final int IDLE_SHUTDOWN_INITIATED = 8;
-    private final Lock stateLock = new ReentrantLock();
+    private final ReentrantLock stateLock = new ReentrantLock();
     private volatile int closedState;
 
     //-------------------------------------
@@ -1019,10 +1031,7 @@ class Http2Connection  {
     }
 
     boolean isOpen() {
-        final int closedSt = closedState;
-        return !isMarked(closedSt, IDLE_SHUTDOWN_INITIATED)
-                && !isMarked(closedSt, SHUTDOWN_REQUESTED)
-                && connection.channel().isOpen();
+        return !isMarkedForShutdown() && connection.channel().isOpen();
     }
 
     void resetStream(int streamid, int code) {
@@ -1327,11 +1336,7 @@ class Http2Connection  {
             final IdleConnectionTimeoutEvent idleTimeoutEvent = this.idleConnectionTimeoutEvent;
             if (idleTimeoutEvent != null) {
                 this.idleConnectionTimeoutEvent = null;
-                // mark as cancelled to prevent potentially already triggered event from actually
-                // doing the shutdown
-                idleTimeoutEvent.cancelled = true;
-                // cancel the timer to prevent the event from being triggered (if it hasn't already)
-                client().cancelTimer(idleTimeoutEvent);
+                idleTimeoutEvent.cancel();
             }
             // consider the reservation successful only if the connection's state hasn't moved
             // to "being closed"
@@ -1347,7 +1352,7 @@ class Http2Connection  {
         // the stream is closed.
         stateLock.lock();
         try {
-            if (!isMarked(closedState, SHUTDOWN_REQUESTED)) {
+            if (!isMarkedForShutdown()) {
                 if (debug.on()) {
                     debug.log("Opened stream %d", streamid);
                 }
@@ -1356,8 +1361,8 @@ class Http2Connection  {
                 // idleConnectionTimerEvent is always accessed within a lock protected block
                 final IdleConnectionTimeoutEvent idleTimeoutEvent = this.idleConnectionTimeoutEvent;
                 if (idleTimeoutEvent != null) {
-                    client().cancelTimer(idleTimeoutEvent);
                     this.idleConnectionTimeoutEvent = null;
+                    idleTimeoutEvent.cancel();
                 }
                 return;
             }
@@ -1720,6 +1725,12 @@ class Http2Connection  {
 
     private boolean isMarked(int state, int mask) {
         return (state & mask) == mask;
+    }
+
+    private boolean isMarkedForShutdown() {
+        final int closedSt = closedState;
+        return isMarked(closedSt, IDLE_SHUTDOWN_INITIATED)
+                || isMarked(closedSt, SHUTDOWN_REQUESTED);
     }
 
     private boolean markShutdownRequested() {
