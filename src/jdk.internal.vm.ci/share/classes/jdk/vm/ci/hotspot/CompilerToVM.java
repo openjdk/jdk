@@ -387,18 +387,18 @@ final class CompilerToVM {
                     long callerMethodPointer);
 
     /**
-     * Converts the operand of an invokedynamic instruction in {@code operand}
+     * Converts the encoded indy index operand of an invokedynamic instruction
      * to an index directly into {@code constantPool}.
      *
-     * @param resolve if {@true}, then resolve the entry (which may call the bootstrap method)
-     * @throws IllegalArgumentException if {@code operand} is not a valid invokedynamic operand
+     * @param resolve if {@true}, then resolve the entry (which may call a bootstrap method)
+     * @throws IllegalArgumentException if {@code encoded_indy_index} is not an encoded indy index
      * @return {@code JVM_CONSTANT_InvokeDynamic} constant pool entry index for the invokedynamic
      */
-    int invokeDynamicOperandToCPIndex(HotSpotConstantPool constantPool, int operand, boolean resolve) {
-        return invokeDynamicOperandToCPIndex(constantPool, constantPool.getConstantPoolPointer(), operand, resolve);
+    int decodeIndyIndexToCPIndex(HotSpotConstantPool constantPool, int encoded_indy_index, boolean resolve) {
+        return decodeIndyIndexToCPIndex(constantPool, constantPool.getConstantPoolPointer(), encoded_indy_index, resolve);
     }
 
-    private native int invokeDynamicOperandToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int operand, boolean resolve);
+    private native int decodeIndyIndexToCPIndex(HotSpotConstantPool constantPool, long constantPoolPointer, int encoded_indy_index, boolean resolve);
 
     /**
      * Resolves the details for invoking the bootstrap method associated with the
@@ -441,7 +441,7 @@ final class CompilerToVM {
 
     /**
      * If {@code cpi} denotes an entry representing a resolved dynamic adapter (see
-     * {@link #invokeDynamicOperandToCPIndex} and {@link #resolveInvokeHandleInPool}), return the
+     * {@link #decodeIndyIndexToCPIndex} and {@link #resolveInvokeHandleInPool}), return the
      * opcode of the instruction for which the resolution was performed ({@code invokedynamic} or
      * {@code invokevirtual}), or {@code -1} otherwise.
      */

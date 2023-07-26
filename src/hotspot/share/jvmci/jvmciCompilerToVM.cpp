@@ -1587,16 +1587,16 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
   return nullptr;
 C2V_END
 
-C2V_VMENTRY_0(int, invokeDynamicOperandToCPIndex, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint operand, jboolean resolve))
-  if (!ConstantPool::is_invokedynamic_index(operand)) {
-    JVMCI_THROW_MSG_0(IllegalStateException, err_msg("not an invokedynamic index %d", operand));
+C2V_VMENTRY_0(int, decodeIndyIndexToCPIndex, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint encoded_indy_index, jboolean resolve))
+  if (!ConstantPool::is_invokedynamic_index(encoded_indy_index)) {
+    JVMCI_THROW_MSG_0(IllegalStateException, err_msg("not an encoded indy index %d", encoded_indy_index));
   }
 
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   CallInfo callInfo;
-  int indy_index = cp->decode_invokedynamic_index(operand);
+  int indy_index = cp->decode_invokedynamic_index(encoded_indy_index);
   if (resolve) {
-    LinkResolver::resolve_invoke(callInfo, Handle(), cp, operand, Bytecodes::_invokedynamic, CHECK_0);
+    LinkResolver::resolve_invoke(callInfo, Handle(), cp, encoded_indy_index, Bytecodes::_invokedynamic, CHECK_0);
     cp->cache()->set_dynamic_call(callInfo, indy_index);
   }
   return cp->resolved_indy_entry_at(indy_index)->constant_pool_index();
@@ -3125,7 +3125,7 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "getUncachedStringInPool",                      CC "(" HS_CONSTANT_POOL2 "I)" JAVACONSTANT,                                           FN_PTR(getUncachedStringInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL2 "I)" HS_KLASS,                                               FN_PTR(resolveTypeInPool)},
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL2 "I" HS_METHOD2 "B[I)" HS_KLASS,                              FN_PTR(resolveFieldInPool)},
-  {CC "invokeDynamicOperandToCPIndex",                CC "(" HS_CONSTANT_POOL2 "IZ)I",                                                      FN_PTR(invokeDynamicOperandToCPIndex)},
+  {CC "decodeIndyIndexToCPIndex",                     CC "(" HS_CONSTANT_POOL2 "IZ)I",                                                      FN_PTR(decodeIndyIndexToCPIndex)},
   {CC "resolveInvokeHandleInPool",                    CC "(" HS_CONSTANT_POOL2 "I)V",                                                       FN_PTR(resolveInvokeHandleInPool)},
   {CC "isResolvedInvokeHandleInPool",                 CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(isResolvedInvokeHandleInPool)},
   {CC "resolveMethod",                                CC "(" HS_KLASS2 HS_METHOD2 HS_KLASS2 ")" HS_METHOD,                                  FN_PTR(resolveMethod)},
