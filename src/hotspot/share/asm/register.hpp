@@ -63,7 +63,7 @@ enum { name##_##type##EnumValue = (value) }
 inline constexpr type as_ ## type(int encoding) {                       \
   return impl_type::first() + encoding;                                 \
 }                                                                       \
-extern impl_type all_ ## type ## s[reg_count + 1] INTERNAL_VISIBILITY;  \
+INTERNAL_VISIBILITY extern impl_type all_ ## type ## s[reg_count + 1];  \
 inline constexpr type impl_type::first() { return all_ ## type ## s + 1; }
 
 #define REGISTER_IMPL_DEFINITION(type, impl_type, reg_count)            \
@@ -82,7 +82,7 @@ const type name = ((type)value)
 // For definitions of RegisterImpl* instances. To be redefined in an
 // OS-specific way.
 #ifdef __GNUC__
-#define INTERNAL_VISIBILITY  __attribute__ ((visibility ("internal")))
+#define INTERNAL_VISIBILITY  [[gnu::visibility ("internal")]]
 #else
 #define INTERNAL_VISIBILITY
 #endif

@@ -35,6 +35,11 @@
 #include "opto/adlcVMDeps.hpp"
 #endif
 
+#ifdef _WIN32
+#undef INTERNAL_VISIBILITY
+#define INTERNAL_VISIBILITY
+#endif
+
 //------------------------------VMReg------------------------------------------
 // The VM uses 'unwarped' stack slots; the compiler uses 'warped' stack slots.
 // Register numbers below VMRegImpl::stack0 are the same for both.  Register
@@ -154,7 +159,7 @@ public:
 
 };
 
-extern VMRegImpl all_VMRegs[ConcreteRegisterImpl::number_of_registers + 1] INTERNAL_VISIBILITY;
+INTERNAL_VISIBILITY extern VMRegImpl all_VMRegs[ConcreteRegisterImpl::number_of_registers + 1];
 inline constexpr VMReg VMRegImpl::first() { return all_VMRegs + 1; }
 
 //---------------------------VMRegPair-------------------------------------------
