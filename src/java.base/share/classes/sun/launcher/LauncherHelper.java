@@ -58,11 +58,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Locale.Category;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.jar.Attributes;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
@@ -122,7 +124,7 @@ public final class LauncherHelper {
     private static PrintStream ostream;
     private static Class<?> appClass; // application class, for GUI/reporting purposes
 
-    enum Option { EMPTY, ALL, LOCALE, PROPERTIES, SECURITY,
+    enum Option { DEFAULT, ALL, LOCALE, PROPERTIES, SECURITY,
         SECURITY_ALL, SECURITY_PROPERTIES, SECURITY_PROVIDERS,
         SECURITY_TLS, SYSTEM, VM };
 
@@ -167,9 +169,9 @@ public final class LauncherHelper {
                  SECURITY_PROPERTIES,
                  SECURITY_PROVIDERS,
                  SECURITY_TLS -> SecuritySettings.printSecuritySettings(component, ostream, true);
-            case SYSTEM-> printSystemMetrics();
+            case SYSTEM -> printSystemMetrics();
             case VM -> printVmSettings(initialHeapSize, maxHeapSize, stackSize);
-            case EMPTY -> printAllSettings(initialHeapSize, maxHeapSize, stackSize, false);
+            case DEFAULT -> printAllSettings(initialHeapSize, maxHeapSize, stackSize, false);
         }
     }
 
@@ -180,32 +182,22 @@ public final class LauncherHelper {
      */
     private static Option validateOption(String optionFlag) {
         if (optionFlag.equals("-XshowSettings")) {
-            return Option.EMPTY;
+            return Option.DEFAULT;
         }
 
         if (optionFlag.equals("-XshowSetings:")) {
             abort(null, "java.launcher.bad.option", ":");
         }
 
-        // case-sensitive check of input flag
-        List<String> validOpts = Arrays.stream(Option.values())
-                .filter(o -> !o.equals(Option.EMPTY)) // non-valid option
-                .map(o -> o.name()
+        Map<String, Option> validOpts = Arrays.stream(Option.values())
+                .filter(o -> !o.equals(Option.DEFAULT)) // non-valid option
+                .collect(Collectors.toMap(o -> o.name()
                         .toLowerCase(Locale.ROOT)
-                        .replace("_", ":")).collect(Collectors.toList());
+                        .replace("_", ":"), Function.identity()));
 
         String optStr = optionFlag.substring("-XshowSettings:".length());
-        if (!validOpts.contains(optionFlag.substring("-XshowSettings:".length()))) {
-            abort(null, "java.launcher.bad.option", optStr);
-        }
-
-        Option component = null;
-        try {
-            component = Option.valueOf(optStr
-                    .toUpperCase(Locale.ROOT)
-                    .replace(":", "_")
-                    .trim());
-        } catch (IllegalArgumentException | NullPointerException e) {
+        Option component = validOpts.get(optStr);
+        if (component == null) {
             abort(null, "java.launcher.bad.option", optStr);
         }
         return component;
