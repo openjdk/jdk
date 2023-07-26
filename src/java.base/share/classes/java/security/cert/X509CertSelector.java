@@ -600,8 +600,7 @@ public class X509CertSelector implements CertSelector {
             this.keyPurposeSet = null;
             keyPurposeOIDSet = null;
         } else {
-            this.keyPurposeSet =
-                Collections.unmodifiableSet(keyPurposeSet);
+            this.keyPurposeSet = Set.copyOf(keyPurposeSet);
             keyPurposeOIDSet = new HashSet<>();
             for (String s : this.keyPurposeSet) {
                 keyPurposeOIDSet.add(ObjectIdentifier.of(s));
@@ -1045,7 +1044,7 @@ public class X509CertSelector implements CertSelector {
             policy = null;
         } else {
             // Snapshot set and parse it
-            Set<String> tempSet = Collections.unmodifiableSet(certPolicySet);
+            Set<String> tempSet = Set.copyOf(certPolicySet);
             /* Convert to Vector of ObjectIdentifiers */
             Iterator<String> i = tempSet.iterator();
             Vector<CertificatePolicyId> polIdVector = new Vector<>();

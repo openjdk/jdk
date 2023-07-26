@@ -566,7 +566,7 @@ public class KeyStore {
                 this.chain = clonedChain;
             }
 
-            this.attributes = Collections.unmodifiableSet(attributes);
+            this.attributes = Set.copyOf(attributes);
         }
 
         /**
@@ -684,7 +684,7 @@ public class KeyStore {
                 throw new NullPointerException("invalid null input");
             }
             this.sKey = secretKey;
-            this.attributes = Collections.unmodifiableSet(attributes);
+            this.attributes = Set.copyOf(attributes);
         }
 
         /**
@@ -766,7 +766,7 @@ public class KeyStore {
                 throw new NullPointerException("invalid null input");
             }
             this.cert = trustedCert;
-            this.attributes = Collections.unmodifiableSet(attributes);
+            this.attributes = Set.copyOf(attributes);
         }
 
         /**

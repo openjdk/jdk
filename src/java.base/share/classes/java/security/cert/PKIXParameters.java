@@ -206,7 +206,7 @@ public class PKIXParameters implements CertPathParameters {
                     + "of type java.security.cert.TrustAnchor");
             }
         }
-        this.unmodTrustAnchors = Collections.unmodifiableSet(trustAnchors);
+        this.unmodTrustAnchors = Set.copyOf(trustAnchors);
     }
 
     /**
@@ -253,8 +253,7 @@ public class PKIXParameters implements CertPathParameters {
                     throw new ClassCastException("all elements of set must be "
                         + "of type java.lang.String");
             }
-            this.unmodInitialPolicies =
-                Collections.unmodifiableSet(initialPolicies);
+            this.unmodInitialPolicies = Set.copyOf(initialPolicies);
         } else
             this.unmodInitialPolicies = Collections.<String>emptySet();
     }
@@ -313,7 +312,7 @@ public class PKIXParameters implements CertPathParameters {
      * @see #setCertStores
      */
     public List<CertStore> getCertStores() {
-        return Collections.unmodifiableList(this.certStores);
+        return List.copyOf(this.certStores);
     }
 
     /**

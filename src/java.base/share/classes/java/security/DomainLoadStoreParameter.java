@@ -134,7 +134,7 @@ public final class DomainLoadStoreParameter implements LoadStoreParameter {
             throw new NullPointerException("invalid null input");
         }
         this.configuration = configuration;
-        this.protectionParams = Collections.unmodifiableMap(protectionParams);
+        this.protectionParams = Map.copyOf(protectionParams);
     }
 
     /**
