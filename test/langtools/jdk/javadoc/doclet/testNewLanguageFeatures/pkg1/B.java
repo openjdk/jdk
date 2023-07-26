@@ -38,6 +38,6 @@ import pkg2.*;
    primitiveClassTest = boolean.class,
    arrayClassTest = String[][].class,
    arrayPrimitiveTest = boolean[].class,
-   classArrayTest = {TypeParameterSubClass[].class, String.class, long[][][].class})
+   classArrayTest = {TypeParameterSubClass[][].class, String.class, long[][][].class})
 public interface B {
 }

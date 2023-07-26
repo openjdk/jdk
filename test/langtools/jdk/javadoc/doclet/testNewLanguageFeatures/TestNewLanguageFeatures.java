@@ -702,8 +702,8 @@ public class TestNewLanguageFeatures extends JavadocTester {
                     <a href="A.html#arrayPrimitiveTest()">arrayPrimitiveTest</a>=boolean[].class,""",
                 """
                     <a href="A.html#classArrayTest()">classArrayTest</a>={<a href="../pkg/TypeParame\
-                    terSubClass.html" title="class in pkg">TypeParameterSubClass</a>[].class,java.la\
-                    ng.String.class,long[][][].class})""");
+                    terSubClass.html" title="class in pkg">TypeParameterSubClass</a>[][].class,java.\
+                    lang.String.class,long[][][].class})""");
 
         checkOutput("pkg1/B.html", true,
                 """
