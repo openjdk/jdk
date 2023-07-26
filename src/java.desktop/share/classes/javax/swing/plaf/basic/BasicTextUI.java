@@ -2610,6 +2610,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                     }
 
                     handleReaderImport(r, c, useRead);
+                    r.close();
 
                     if (isDrop) {
                         c.requestFocus();
