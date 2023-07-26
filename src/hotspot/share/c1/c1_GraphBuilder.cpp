@@ -1246,7 +1246,7 @@ void GraphBuilder::shift_op(ValueType* type, Bytecodes::Code code) {
             } else {
               // pattern: (a << s0c) >>> s0c => simplify to: a & m, with m constant
               assert(0 < s0c && s0c < BitsPerInt, "adjust code below to handle corner cases");
-              const int m = (1 << (BitsPerInt - s0c)) - 1;
+              const int m = checked_cast<int>(right_n_bits(BitsPerInt - s0c));
               Value s = append(new Constant(new IntConstant(m)));
               ipush(append(new LogicOp(Bytecodes::_iand, l->x(), s)));
             }
