@@ -64,11 +64,11 @@ public class Locks {
             return;
         }
         String name = t.getName();
-        // Carrier Thread can hold a lock on a VirtualThread, which we ignore.
         Optional<ThreadInfo> result = Arrays.stream(
                 TM.getThreadInfo(TM.getAllThreadIds(), true, true))
                                             .filter(Objects::nonNull)
                                             .filter(i -> name.equals(i.getLockOwnerName()))
+                                            /* Carrier Thread can hold a lock on a VirtualThread, which we ignore: */
                                             .filter(i -> !i.getLockName().contains("java.lang.VirtualThread"))
                                             .findAny();
         if (result.isPresent()) {
@@ -369,6 +369,7 @@ public class Locks {
 
                 assertThreadState(t2, Thread.State.BLOCKED);
                 if (!mainThread.isVirtual()) {
+                    // ThreadInfo not available for Virtual Threads.
                     checkBlockedObject(t2, OBJC, mainThread);
                 }
                 assertThreadState(t1, Thread.State.BLOCKED);
@@ -378,6 +379,7 @@ public class Locks {
                 expectedThreads[0] = t1.getId(); // blocked on lockB
                 expectedThreads[1] = t2.getId(); // owner of lockB blocking on lockC
                 if (!mainThread.isVirtual()) {
+                    // ThreadInfo not available for Virtual Threads.
                     expectedThreads[2] = mainThread.getId(); // owner of lockC
                 }
                 findThreadsBlockedOn(OBJB, expectedThreads);
@@ -410,7 +412,7 @@ public class Locks {
         ThreadInfo ownerInfo = null;
         for (ThreadInfo info : infos) {
             if (info == null) {
-                continue; // Missing thread, ignore
+                continue; // Missing thread, e.g. completed. Ignore.
             }
             String blockedLock = info.getLockName();
             if (lock.equals(blockedLock)) {
@@ -447,7 +449,7 @@ public class Locks {
         // Find the thread who is blocking on lock
         for (ThreadInfo info : infos) {
             if (info == null) {
-                continue; // Missing thread, ignore
+                continue; // Missing thread, e.g. completed. Ignore.
             }
             String blockedLock = info.getLockName();
             if (lock.equals(blockedLock)) {
