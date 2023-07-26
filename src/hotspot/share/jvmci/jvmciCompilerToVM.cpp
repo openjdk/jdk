@@ -697,24 +697,24 @@ C2V_VMENTRY_NULL(jobject, getUncachedStringInPool, (JNIEnv* env, jobject, ARGUME
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index, bool resolve))
+C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint cp_index, bool resolve))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   oop obj;
   if (!resolve) {
     bool found_it;
-    obj = cp->find_cached_constant_at(index, found_it, CHECK_NULL);
+    obj = cp->find_cached_constant_at(cp_index, found_it, CHECK_NULL);
     if (!found_it) {
       return nullptr;
     }
   } else {
-    obj = cp->resolve_possibly_cached_constant_at(index, CHECK_NULL);
+    obj = cp->resolve_possibly_cached_constant_at(cp_index, CHECK_NULL);
   }
-  constantTag tag = cp->tag_at(index);
+  constantTag tag = cp->tag_at(cp_index);
   if (tag.is_dynamic_constant()) {
     if (obj == nullptr) {
       return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
     }
-    BasicType bt = Signature::basic_type(cp->uncached_signature_ref_at(index));
+    BasicType bt = Signature::basic_type(cp->uncached_signature_ref_at(cp_index));
     if (!is_reference_type(bt)) {
       if (!is_java_primitive(bt)) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_ILLEGAL());
