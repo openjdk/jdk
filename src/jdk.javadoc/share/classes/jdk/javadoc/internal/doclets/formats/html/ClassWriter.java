@@ -331,13 +331,20 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     protected void buildSummaries(Content target) {
-        buildPropertiesSummary(target);
+        // compare with buildMemberDetails:
+        //      buildPropertyDetails(detailsList);
+        //      buildEnumConstantsDetails(detailsList);
+        //      buildFieldDetails(detailsList);
+        //      buildConstructorDetails(detailsList);
+        //      buildAnnotationTypeMemberDetails(detailsList);
+        //      buildMethodDetails(detailsList);
         buildNestedClassesSummary(target);
+        buildPropertiesSummary(target);
         buildEnumConstantsSummary(target);
-        buildAnnotationTypeRequiredMemberSummary(target);
-        buildAnnotationTypeOptionalMemberSummary(target);
         buildFieldsSummary(target);
         buildConstructorsSummary(target);
+        buildAnnotationTypeRequiredMemberSummary(target);
+        buildAnnotationTypeOptionalMemberSummary(target);
         buildMethodsSummary(target);
     }
 
@@ -562,8 +569,18 @@ public class ClassWriter extends SubWriterHolderWriter {
     protected void buildMemberDetails(Content classContent) throws DocletException {
         Content detailsList = getDetailsList();
 
-        buildEnumConstantsDetails(detailsList);
+        // compare with buildSummaries()
+        //      buildNestedClassesSummary(target);
+        //      buildPropertiesSummary(target);
+        //      buildEnumConstantsSummary(target);
+        //      buildFieldsSummary(target);
+        //      buildConstructorsSummary(target);
+        //      buildAnnotationTypeRequiredMemberSummary(target);
+        //      buildAnnotationTypeOptionalMemberSummary(target);
+        //      buildMethodsSummary(target);
+
         buildPropertyDetails(detailsList);
+        buildEnumConstantsDetails(detailsList);
         buildFieldDetails(detailsList);
         buildConstructorDetails(detailsList);
         buildAnnotationTypeMemberDetails(detailsList);
