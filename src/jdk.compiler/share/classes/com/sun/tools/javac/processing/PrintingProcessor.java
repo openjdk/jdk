@@ -183,6 +183,7 @@ public class PrintingProcessor extends AbstractProcessor {
             ElementKind kind = e.getKind();
             NestingKind nestingKind = e.getNestingKind();
 
+            // TODO: add code to handle anonymous classes for enum constant bodies
             if (NestingKind.ANONYMOUS == nestingKind) {
                 // Print out an anonymous class in the style of a
                 // class instance creation expression rather than a

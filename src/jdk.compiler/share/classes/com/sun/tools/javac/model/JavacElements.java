@@ -728,12 +728,27 @@ public class JavacElements implements Elements {
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeElement getEnumConstantBody(VariableElement enumConstant) {
         if (enumConstant.getKind() == ElementKind.ENUM_CONSTANT) {
-            return null;
+            JCTree enumBodyTree = getTreeAlt(enumConstant);
+            if (enumBodyTree instanceof JCVariableDecl decl
+                && decl.init instanceof JCNewClass nc
+                && nc.def != null) {
+                return nc.def.sym; // ClassSymbol for enum constant body
+            } else {
+                return null;
+            }
         } else {
             throw new IllegalArgumentException("Argument not an enum constant");
         }
     }
 
+    private JCTree getTreeAlt(Element e) {
+        Symbol sym = cast(Symbol.class, e);
+        Env<AttrContext> enterEnv = getEnterEnv(sym);
+        if (enterEnv == null)
+            return null;
+        JCTree tree = TreeInfo.declarationFor(sym, enterEnv.tree);
+        return tree;
+    }
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isCompactConstructor(ExecutableElement e) {
