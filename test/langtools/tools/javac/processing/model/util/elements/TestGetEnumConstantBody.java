@@ -36,6 +36,7 @@ import java.util.function.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
+import javax.lang.model.type.*;
 
 /**
  * Test basic workings of Elements.getEnumConstantBody
@@ -59,7 +60,7 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
                         System.out.println(field);
                         switch (field.getKind()) {
                         case FIELD         -> expectException(field);
-                        case ENUM_CONSTANT -> testEnumConstant(field, expectEnumConstantBody);
+                        case ENUM_CONSTANT -> testEnumConstant(field, typeElt, expectEnumConstantBody);
                         default            -> throw new RuntimeException("Unexpected field kind seen");
                         }
                     }
@@ -95,7 +96,9 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
         }
     }
 
-    private void testEnumConstant(VariableElement field, boolean expectEnumConstantBody) {
+    private void testEnumConstant(VariableElement field,
+                                  TypeElement enclosingClass,
+                                  boolean expectEnumConstantBody) {
         System.out.println("\tTesting enum constant " + field + " expected " + expectEnumConstantBody);
         if (vacuousElements.getEnumConstantBody(field) != null) {
             messager.printError("Unexpected vacuous body returned", field);
@@ -106,6 +109,11 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
         if (Objects.nonNull(enumConstantBody) != expectEnumConstantBody) {
             messager.printError("Unexpected body value", field);
         }
+
+        if (enumConstantBody != null) {
+            testEnumConstantBody(enumConstantBody, enclosingClass);
+        }
+
         System.out.println("\t constant body " + enumConstantBody);
     }
 
@@ -122,8 +130,23 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
      * only if they override accessible methods in the enclosing enum
      * class (8.4.8)."
      */
-    private void testEnumConstantBody(TypeElement enumConstBody) {
-        // TODO: implement checks described above
+    private void testEnumConstantBody(TypeElement enumConstBody, TypeElement enumClass) {
+        if (enumConstBody.getNestingKind() != NestingKind.ANONYMOUS) {
+            messager.printError("Class body not an anonymous class", enumConstBody);
+        }
+
+        // Get the TypeElement for the direct superclass.
+        TypeElement superClass =
+            (TypeElement)(((DeclaredType)enumConstBody.getSuperclass()).asElement());
+
+        if (superClass.equals(enumClass)) {
+            messager.printError("Class body is not a direct subclass of the enum", enumConstBody);
+        }
+
+        if (!enumConstBody.getModifiers().contains(Modifier.FINAL)) {
+            messager.printError("Modifier final missing on class body", enumConstBody);
+        }
+
         return;
     }
 
