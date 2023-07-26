@@ -112,7 +112,7 @@ public class TestParallelGCThreads {
         Asserts.assertEQ(count, i, "Specifying ParallelGCThreads=" + i + " for " + gc + "GC does not set the thread count properly!");
       }
     }
-    
+
     // Test the max value for ParallelGCThreads
     // So setting ParallelGCThreads=2147483647 should give back 2147483647
     long count = getParallelGCThreadCount(
