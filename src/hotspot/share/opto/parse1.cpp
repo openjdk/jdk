@@ -1893,30 +1893,7 @@ void Parse::merge_common(Parse::Block* target, int pnum) {
               // PEA MergeProcessor creates duplicated phi nodes.
               if (DoPartialEscapeAnalysis && phi != nullptr) {
                 PartialEscapeAnalysis* pea = PEA();
-                ObjID obj1 = pea->is_alias(m);
-                ObjID obj2 = pea->is_alias(n);
-
-                if (as.contains(obj1)) { // m points to an object that as is tracking.
-                  ObjectState* os1 = as.get_object_state(obj1);
-                  ObjectState* os2 = pred_as.contains(obj2) ? pred_as.get_object_state(obj2) : nullptr;
-
-                  // obj1 != obj2 if n points to something else. It could be the other object, null or a ConP.
-                  // we don't any here because PEA doesn't create phi in this case.
-                  if (obj1 == obj2 && os2 != nullptr) { // n points to the same object and pred_as is trakcing.
-                    if (!os1->is_virtual() || !os2->is_virtual()) {
-                      if (os2->is_virtual()) {
-                        os2 = pred_as.escape(obj2, n, false);
-                      }
-
-                      if (os1->is_virtual()) {
-                        bool materialized = static_cast<EscapedState*>(os2)->has_materialized();
-                        as.escape(obj1, phi, materialized);
-                      } else {
-                        static_cast<EscapedState*>(os1)->update(phi);
-                      }
-                    }
-                  }
-                }
+                as_merger.merge_at_phi_creation(pea, pred_as, phi, m, n);
               } // DoPartialEscapeAnalysis
             }
           }

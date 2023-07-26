@@ -651,6 +651,9 @@ void Parse::do_call() {
 
   PEAState* caller_state = nullptr;
   if (DoPartialEscapeAnalysis) {
+    // Besides outlined methods, we scan all intrinsics because C2 skips parsing bytecodes of them.
+    // Some intrinsics have side-effect of Java heap such as Unsafe.compareAndSetReference().
+    // We treat PredicatedIntrinsicGenerator as an ordinary intrinsic as well.
     if (!cg->is_inline() || cg->is_intrinsic()) {
       PEAState& state = jvms->alloc_state();
       // Materialize all inputs to non-inline and late inline calls.

@@ -276,6 +276,7 @@ class AllocationStateMerger {
   AllocationStateMerger(PEAState& target);
   ~AllocationStateMerger(); // purge all objects which are not in live.
   void merge(PEAState& newin, GraphKit* kit, RegionNode* region, int pnum);
+  void merge_at_phi_creation(const PartialEscapeAnalysis* pea, PEAState& newin, PhiNode* phi, Node* m, Node* n);
 };
 
 void printPeaStatistics();

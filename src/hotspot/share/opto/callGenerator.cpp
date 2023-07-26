@@ -946,6 +946,9 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   // branch.
   kit.map()->set_replaced_nodes(replaced_nodes);
 
+  PEAState& slow_as = slow_jvms->alloc_state();
+  PEAState& as = new_jvms->alloc_state();
+  AllocationStateMerger as_merger(as);
   // Finish the diamond.
   kit.C->set_has_split_ifs(true); // Has chance for split-if optimization
   RegionNode* region = new RegionNode(3);
@@ -979,7 +982,14 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
       Node* phi = PhiNode::make(region, m, t);
       phi->set_req(2, n);
       kit.map()->set_req(i, gvn.transform(phi));
+      if (DoPartialEscapeAnalysis) {
+        as_merger.merge_at_phi_creation(kit.PEA(), slow_as, phi->as_Phi(), m, n);
+      }
     }
+  }
+
+  if (DoPartialEscapeAnalysis) {
+    as_merger.merge(slow_as, &kit, region, 2);
   }
   return kit.transfer_exceptions_into_jvms();
 }

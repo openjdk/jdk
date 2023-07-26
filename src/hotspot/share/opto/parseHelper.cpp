@@ -959,6 +959,34 @@ void AllocationStateMerger::process_phi(PhiNode* phi, GraphKit* kit, RegionNode*
   }
 }
 
+void AllocationStateMerger::merge_at_phi_creation(const PartialEscapeAnalysis* pea, PEAState& newin, PhiNode* phi, Node* m, Node* n) {
+  ObjID obj1 = pea->is_alias(m);
+  ObjID obj2 = pea->is_alias(n);
+
+  if (_state.contains(obj1)) { // m points to an object that as is tracking.
+    ObjectState* os1 = _state.get_object_state(obj1);
+    ObjectState* os2 = newin.contains(obj2) ? newin.get_object_state(obj2) : nullptr;
+
+    // obj1 != obj2 if n points to something else. It could be the other object, null or a ConP.
+    // we don't any here because PEA doesn't create phi in this case.
+    if (obj1 == obj2 && os2 != nullptr) { // n points to the same object and pred_as is trakcing.
+      if (!os1->is_virtual() || !os2->is_virtual()) {
+        if (os2->is_virtual()) {
+          // passive materialize
+          os2 = newin.escape(obj2, n, false);
+        }
+
+        if (os1->is_virtual()) {
+          bool materialized = static_cast<EscapedState*>(os2)->has_materialized();
+          _state.escape(obj1, phi, materialized);
+        } else {
+          static_cast<EscapedState*>(os1)->update(phi);
+        }
+      }
+    }
+  }
+}
+
 AllocationStateMerger::~AllocationStateMerger() {
 }
 
