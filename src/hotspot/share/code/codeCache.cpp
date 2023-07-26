@@ -1384,10 +1384,19 @@ void CodeCache::recompile_marked_directives_matches() {
     methodHandle mh(thread, nm->method());
     if (mh->has_matching_directives()) {
       ResourceMark rm;
-      log_trace(codecache)("Recompile because of matching directives %s", mh->external_name());
+      int complevel = CompLevel::CompLevel_full_optimization;
+
       mh->clear_method_flags();
-      CompileBroker::compile_method(mh, InvocationEntryBci, CompLevel::CompLevel_full_optimization,
+      log_trace(codecache)("Recompile to level %d because of matching directives %s", complevel, mh->external_name());
+      nmethod * comp_nm = CompileBroker::compile_method(mh, InvocationEntryBci, complevel,
                                       methodHandle(), 0, CompileTask::Reason_DirectivesChanged, (JavaThread *)thread);
+      // For some reason the method cannot be compiled by C2, e.g. the new directives forbid it.
+      // Deoptimize the method and let the usual hotspot logic do the rest
+      if (comp_nm == nullptr) {
+        log_trace(codecache)("Recompilation to level %d failed, go deopt %s", complevel, mh->external_name());
+        nm->make_not_entrant();
+        nm->make_deoptimized();
+      }
       gc_on_allocation(); // Flush unused methods from CodeCache if required
     }
   }
