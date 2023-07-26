@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,12 @@
  * questions.
  */
 
-package pkg1;
+// key: compiler.err.selector.type.not.allowed
 
-import pkg.Coin;
-import pkg.*;
-import java.lang.annotation.*;
-
-@Documented public @interface A {
-    int i();
-    double d();
-    boolean b();
-    String s();
-    Class<?> c();
-    Class<? extends TypeParameterSuperClass> w();
-    Coin[] e();
-    AnnotationType a();
-    String[] sa();
-    Class<?> primitiveClassTest();
-    Class<?> arrayClassTest();
-    Class<?> arrayPrimitiveTest();
-    Class<?>[] classArrayTest();
+public class SelectorTypeNotAllowed {
+    private void noLong(long sel) {
+        switch (sel) {
+            default -> {}
+        }
+    }
 }
