@@ -1870,7 +1870,7 @@ public class HtmlDocletWriter {
         return new SimpleAnnotationValueVisitor9<Content, Void>() {
 
             @Override
-            public Content visitType(TypeMirror t, Void p) {
+            public Content visitType(TypeMirror type, Void p) {
                 return new SimpleTypeVisitor9<Content, Void>() {
                     @Override
                     public Content visitDeclared(DeclaredType t, Void p) {
@@ -1887,7 +1887,7 @@ public class HtmlDocletWriter {
                     protected Content defaultAction(TypeMirror t, Void p) {
                         return new TextBuilder(t.toString());
                     }
-                }.visit(t).add(".class");
+                }.visit(type).add(".class");
             }
 
             @Override
