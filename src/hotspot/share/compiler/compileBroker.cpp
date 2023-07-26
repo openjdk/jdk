@@ -2795,29 +2795,33 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
                                     !Compile_lock->owned_by_self();
   bool should_take_CodeCache_lock = !SafepointSynchronize::is_at_safepoint() &&
                                     !CodeCache_lock->owned_by_self();
-  Mutex*   global_lock_1   = allFun ? (should_take_Compile_lock   ? Compile_lock   : nullptr) : nullptr;
-  Monitor* global_lock_2   = allFun ? (should_take_CodeCache_lock ? CodeCache_lock : nullptr) : nullptr;
-  Mutex*   function_lock_1 = allFun ? nullptr : (should_take_Compile_lock   ? Compile_lock    : nullptr);
-  Monitor* function_lock_2 = allFun ? nullptr : (should_take_CodeCache_lock ? CodeCache_lock  : nullptr);
+  bool take_global_lock_1   =  allFun && should_take_Compile_lock;
+  bool take_global_lock_2   =  allFun && should_take_CodeCache_lock;
+  bool take_function_lock_1 = !allFun && should_take_Compile_lock;
+  bool take_function_lock_2 = !allFun && should_take_CodeCache_lock;
+  bool take_global_locks    = take_global_lock_1 || take_global_lock_2;
+  bool take_function_locks  = take_function_lock_1 || take_function_lock_2;
+
   ts_global.update(); // record starting point
-  MutexLocker mu1(global_lock_1, Mutex::_safepoint_check_flag);
-  MutexLocker mu2(global_lock_2, Mutex::_no_safepoint_check_flag);
-  if ((global_lock_1 != nullptr) || (global_lock_2 != nullptr)) {
+
+  ConditionalMutexLocker mu1(Compile_lock, take_global_lock_1, Mutex::_safepoint_check_flag);
+  ConditionalMutexLocker mu2(CodeCache_lock, take_global_lock_2, Mutex::_no_safepoint_check_flag);
+  if (take_global_locks) {
     out->print_cr("\n__ Compile & CodeCache (global) lock wait took %10.3f seconds _________\n", ts_global.seconds());
     ts_global.update(); // record starting point
   }
 
   if (aggregate) {
     ts.update(); // record starting point
-    MutexLocker mu11(function_lock_1, Mutex::_safepoint_check_flag);
-    MutexLocker mu22(function_lock_2, Mutex::_no_safepoint_check_flag);
-    if ((function_lock_1 != nullptr) || (function_lock_2 != nullptr)) {
+    ConditionalMutexLocker mu11(Compile_lock, take_function_lock_1,  Mutex::_safepoint_check_flag);
+    ConditionalMutexLocker mu22(CodeCache_lock, take_function_lock_2, Mutex::_no_safepoint_check_flag);
+    if (take_function_locks) {
       out->print_cr("\n__ Compile & CodeCache (function) lock wait took %10.3f seconds _________\n", ts.seconds());
     }
 
     ts.update(); // record starting point
     CodeCache::aggregate(out, granularity);
-    if ((function_lock_1 != nullptr) || (function_lock_2 != nullptr)) {
+    if (take_function_locks) {
       out->print_cr("\n__ Compile & CodeCache (function) lock hold took %10.3f seconds _________\n", ts.seconds());
     }
   }
@@ -2838,7 +2842,7 @@ void CompileBroker::print_heapinfo(outputStream* out, const char* function, size
   }
   if (discard) CodeCache::discard(out);
 
-  if ((global_lock_1 != nullptr) || (global_lock_2 != nullptr)) {
+  if (take_global_locks) {
     out->print_cr("\n__ Compile & CodeCache (global) lock hold took %10.3f seconds _________\n", ts_global.seconds());
   }
   out->print_cr("\n__ CodeHeapStateAnalytics total duration %10.3f seconds _________\n", ts_total.seconds());

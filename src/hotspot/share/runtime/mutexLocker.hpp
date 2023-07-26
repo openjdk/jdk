@@ -237,7 +237,7 @@ class MutexLocker: public MutexLockerImpl {
    MutexLocker(Thread* thread, Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
      MutexLockerImpl(thread, mutex, flag) {
      assert(mutex != nullptr, "null mutex is not allowed");
-   };
+   }
 };
 
 // Conditional locker: only lock when condition is true
