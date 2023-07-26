@@ -61,7 +61,7 @@ public class TestGetEnumConstantBody extends JavacTestingAbstractProcessor {
                         case FIELD         -> expectException(field);
                         case ENUM_CONSTANT -> testEnumConstant(field, expectEnumConstantBody);
                         default            -> throw new RuntimeException("Unexpected field kind seen");
-                        } 
+                        }
                     }
                 }
 
