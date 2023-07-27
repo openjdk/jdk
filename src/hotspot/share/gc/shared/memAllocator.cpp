@@ -56,11 +56,11 @@ class MemAllocator::Allocation: StackObj {
   bool check_out_of_memory();
   void verify_before();
   void verify_after();
-  void notify_allocation(JavaThread* thread);
+  void notify_allocation();
   void notify_allocation_jvmti_sampler();
   void notify_allocation_low_memory_detector();
   void notify_allocation_jfr_sampler();
-  void notify_allocation_dtrace_sampler(JavaThread* thread);
+  void notify_allocation_dtrace_sampler();
 #ifdef ASSERT
   void check_for_valid_allocation_state() const;
 #endif
@@ -70,19 +70,21 @@ class MemAllocator::Allocation: StackObj {
 public:
   Allocation(const MemAllocator& allocator, oop* obj_ptr)
     : _allocator(allocator),
-      _thread(JavaThread::current()),
       _obj_ptr(obj_ptr),
       _overhead_limit_exceeded(false),
       _allocated_outside_tlab(false),
       _allocated_tlab_size(0),
       _tlab_end_reset_for_sample(false)
   {
+    assert(Thread::current()->is_Java_thread(), "must be used by JavaThreads only");
+    assert(Thread::current() == allocator._thread, "do not pass MemAllocator across threads");
+    _thread = JavaThread::cast(allocator._thread);
     verify_before();
   }
 
   ~Allocation() {
     if (!check_out_of_memory()) {
-      notify_allocation(_thread);
+      notify_allocation();
     }
   }
 
@@ -95,7 +97,7 @@ class MemAllocator::Allocation::PreserveObj: StackObj {
   oop* const _obj_ptr;
 
 public:
-  PreserveObj(JavaThread* thread, oop* obj_ptr)
+  PreserveObj(Thread* thread, oop* obj_ptr)
     : _handle_mark(thread),
       _handle(thread, *obj_ptr),
       _obj_ptr(obj_ptr)
@@ -156,7 +158,7 @@ void MemAllocator::Allocation::check_for_valid_allocation_state() const {
   assert(!_thread->has_pending_exception(),
          "shouldn't be allocating with pending exception");
   // Allocation of an oop can always invoke a safepoint.
-  JavaThread::cast(_thread)->check_for_valid_safepoint_state();
+  _thread->check_for_valid_safepoint_state();
 }
 #endif
 
@@ -217,21 +219,21 @@ void MemAllocator::Allocation::notify_allocation_jfr_sampler() {
   }
 }
 
-void MemAllocator::Allocation::notify_allocation_dtrace_sampler(JavaThread* thread) {
+void MemAllocator::Allocation::notify_allocation_dtrace_sampler() {
   if (DTraceAllocProbes) {
     // support for Dtrace object alloc event (no-op most of the time)
     Klass* klass = obj()->klass();
     size_t word_size = _allocator._word_size;
     if (klass != nullptr && klass->name() != nullptr) {
-      SharedRuntime::dtrace_object_alloc(thread, obj(), word_size);
+      SharedRuntime::dtrace_object_alloc(_thread, obj(), word_size);
     }
   }
 }
 
-void MemAllocator::Allocation::notify_allocation(JavaThread* thread) {
+void MemAllocator::Allocation::notify_allocation() {
   notify_allocation_low_memory_detector();
   notify_allocation_jfr_sampler();
-  notify_allocation_dtrace_sampler(thread);
+  notify_allocation_dtrace_sampler();
   notify_allocation_jvmti_sampler();
 }
 
@@ -335,7 +337,7 @@ HeapWord* MemAllocator::mem_allocate_inside_tlab_slow(Allocation& allocation) co
 
 HeapWord* MemAllocator::mem_allocate_slow(Allocation& allocation) const {
   // Allocation of an oop can always invoke a safepoint.
-  debug_only(JavaThread::cast(_thread)->check_for_valid_safepoint_state());
+  debug_only(allocation._thread->check_for_valid_safepoint_state());
 
   if (UseTLAB) {
     // Try refilling the TLAB and allocating the object in it.
