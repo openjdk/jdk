@@ -131,7 +131,8 @@ class Http2Connection  {
 
     private static final int MAX_CLIENT_STREAM_ID = Integer.MAX_VALUE; // 2147483647
     private static final int MAX_SERVER_STREAM_ID = Integer.MAX_VALUE - 1; // 2147483646
-    private volatile IdleConnectionTimeoutEvent idleConnectionTimeoutEvent;  // may be null
+    // may be null; must be accessed/updated with the stateLock held
+    private IdleConnectionTimeoutEvent idleConnectionTimeoutEvent;
 
     /**
      * Flag set when no more streams to be opened on this connection.
@@ -197,7 +198,7 @@ class Http2Connection  {
     final class IdleConnectionTimeoutEvent extends TimeoutEvent {
 
         // expected to be accessed/updated with "stateLock" being held
-        private volatile boolean cancelled;
+        private boolean cancelled;
 
         IdleConnectionTimeoutEvent(Duration duration) {
             super(duration);
@@ -1128,14 +1129,13 @@ class Http2Connection  {
             // Start timer if property present and not already created
             stateLock.lock();
             try {
-                // idleConnectionTimerEvent is always accessed within a lock protected block
-                IdleConnectionTimeoutEvent idleTimeoutEvent = this.idleConnectionTimeoutEvent;
-                if (streams.isEmpty() && idleTimeoutEvent == null) {
-                    this.idleConnectionTimeoutEvent = idleTimeoutEvent =
-                            client().idleConnectionTimeout().map(IdleConnectionTimeoutEvent::new)
-                                    .orElse(null);
-                    if (idleTimeoutEvent != null) {
-                        client().registerTimer(idleTimeoutEvent);
+                // idleConnectionTimeoutEvent is always accessed within a lock protected block
+                if (streams.isEmpty() && idleConnectionTimeoutEvent == null) {
+                    idleConnectionTimeoutEvent = client().idleConnectionTimeout()
+                            .map(IdleConnectionTimeoutEvent::new)
+                            .orElse(null);
+                    if (idleConnectionTimeoutEvent != null) {
+                        client().registerTimer(idleConnectionTimeoutEvent);
                     }
                 }
             } finally {
@@ -1333,17 +1333,26 @@ class Http2Connection  {
         // must be done with "stateLock" held to co-ordinate idle connection management
         stateLock.lock();
         try {
-            final IdleConnectionTimeoutEvent idleTimeoutEvent = this.idleConnectionTimeoutEvent;
-            if (idleTimeoutEvent != null) {
-                this.idleConnectionTimeoutEvent = null;
-                idleTimeoutEvent.cancel();
-            }
+            cancelIdleShutdownEvent();
             // consider the reservation successful only if the connection's state hasn't moved
             // to "being closed"
             return isOpen();
         } finally {
             stateLock.unlock();
         }
+    }
+
+    /**
+     * Cancels any event that might have been scheduled to shutdown this connection. Must be called
+     * with the stateLock held.
+     */
+    private void cancelIdleShutdownEvent() {
+        assert stateLock.isHeldByCurrentThread() : "Current thread doesn't hold " + stateLock;
+        if (idleConnectionTimeoutEvent == null) {
+            return;
+        }
+        idleConnectionTimeoutEvent.cancel();
+        idleConnectionTimeoutEvent = null;
     }
 
     <T> void putStream(Stream<T> stream, int streamid) {
@@ -1358,12 +1367,7 @@ class Http2Connection  {
                 }
                 client().streamReference();
                 streams.put(streamid, stream);
-                // idleConnectionTimerEvent is always accessed within a lock protected block
-                final IdleConnectionTimeoutEvent idleTimeoutEvent = this.idleConnectionTimeoutEvent;
-                if (idleTimeoutEvent != null) {
-                    this.idleConnectionTimeoutEvent = null;
-                    idleTimeoutEvent.cancel();
-                }
+                cancelIdleShutdownEvent();
                 return;
             }
         } finally {
