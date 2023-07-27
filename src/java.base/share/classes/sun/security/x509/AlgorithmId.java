@@ -78,10 +78,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
      */
     protected transient byte[] encodedParams;
 
-    // this flag will override the oid-specific NULL handling
-    // when set to true, NULL params will be omitted from the encoding
-    private transient boolean omitNull = false;
-
     /**
      * Constructs an algorithm ID which will be initialized
      * separately, for example by deserialization.
@@ -97,19 +93,6 @@ public class AlgorithmId implements Serializable, DerEncoder {
      */
     public AlgorithmId(ObjectIdentifier oid) {
         algid = oid;
-    }
-
-    /**
-     * Constructs a parameterless algorithm ID with flag controlling
-     * whether NULL params is omitted.
-     *
-     * @param oid the identifier for the algorithm
-     * @param omitNull the flag controlling whether NULL is encoded for
-     *     NULL params
-     */
-    public AlgorithmId(ObjectIdentifier oid, boolean omitNull) {
-        algid = oid;
-        this.omitNull = omitNull;
     }
 
     /**
@@ -183,7 +166,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
             // if most RFCs suggested absent.
             // RSA key and signature algorithms requires the NULL parameters
             // to be present, see A.1 and A.2.4 of RFC 8017.
-            if (!omitNull && (algid.equals(RSAEncryption_oid)
+            if (algid.equals(RSAEncryption_oid)
                     || algid.equals(MD2_oid)
                     || algid.equals(MD5_oid)
                     || algid.equals(SHA_oid)
@@ -209,7 +192,7 @@ public class AlgorithmId implements Serializable, DerEncoder {
                     || algid.equals(SHA3_224withRSA_oid)
                     || algid.equals(SHA3_256withRSA_oid)
                     || algid.equals(SHA3_384withRSA_oid)
-                    || algid.equals(SHA3_512withRSA_oid))) {
+                    || algid.equals(SHA3_512withRSA_oid)) {
                 bytes.putNull();
             }
         } else {

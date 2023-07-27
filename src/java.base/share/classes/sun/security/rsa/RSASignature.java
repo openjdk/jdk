@@ -219,13 +219,7 @@ abstract class RSASignature extends SignatureSpi {
             byte[] digest = getDigestValue();
             byte[] encoded = RSAUtil.encodeSignature(digestOID, digest);
             byte[] padded = padding.pad(encoded);
-            if (!MessageDigest.isEqual(padded, decrypted)) {
-                byte[] encoded2 = RSAUtil.encodeSignatureOmitNull
-                        (digestOID, digest);
-                byte[] padded2 = padding.pad(encoded2);
-                return MessageDigest.isEqual(padded2, decrypted);
-            }
-            return true;
+            return MessageDigest.isEqual(padded, decrypted);
         } catch (javax.crypto.BadPaddingException e) {
             return false;
         } finally {
