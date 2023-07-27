@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,24 +23,25 @@
  * questions.
  */
 
-package pkg1;
+/**
+ * @test
+ * @summary Test to verify throwing an exception with extra long message does
+ *          not cause hang.
+ * @bug 8312401
+ * @run main/othervm LongExceptionMessageTest
+ */
 
-import pkg.Coin;
-import pkg.*;
-import java.lang.annotation.*;
-
-@Documented public @interface A {
-    int i();
-    double d();
-    boolean b();
-    String s();
-    Class<?> c();
-    Class<? extends TypeParameterSuperClass> w();
-    Coin[] e();
-    AnnotationType a();
-    String[] sa();
-    Class<?> primitiveClassTest();
-    Class<?> arrayClassTest();
-    Class<?> arrayPrimitiveTest();
-    Class<?>[] classArrayTest();
+class ClassWithLongExceptionMessage {
+  static {
+    if (true) throw new AssertionError("lorem ipsum ".repeat(16000));
+  }
 }
+
+public class LongExceptionMessageTest {
+  public static void main(String[] args) {
+    try {
+      new ClassWithLongExceptionMessage();
+    } catch(Throwable t) {}
+  }
+}
+

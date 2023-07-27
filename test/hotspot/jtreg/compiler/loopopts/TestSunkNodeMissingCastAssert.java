@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,37 @@
  * questions.
  */
 
-package pkg1;
+/*
+ * @test
+ * bug 8312440
+ * @summary assert(cast != nullptr) failed: must have added a cast to pin the node
+ * @run main/othervm -XX:-BackgroundCompilation TestSunkNodeMissingCastAssert
+ */
 
-import pkg.Coin;
-import pkg.*;
-import java.lang.annotation.*;
 
-@Documented public @interface A {
-    int i();
-    double d();
-    boolean b();
-    String s();
-    Class<?> c();
-    Class<? extends TypeParameterSuperClass> w();
-    Coin[] e();
-    AnnotationType a();
-    String[] sa();
-    Class<?> primitiveClassTest();
-    Class<?> arrayClassTest();
-    Class<?> arrayPrimitiveTest();
-    Class<?>[] classArrayTest();
+public class TestSunkNodeMissingCastAssert {
+  private static int N = 500;
+  private static int ia[] = new int[N];
+  private static volatile int ib[] = new int[N];
+
+  private static void test() {
+    for (int k = 1; k < 200; k++)
+      switch (k % 5) {
+      case 0:
+        ia[k - 1] -= 15;
+      case 2:
+        for (int m = 0; m < 1000; m++);
+      case 3:
+        ib[k - 1] <<= 5;
+      case 4:
+        ib[k + 1] <<= 3;
+      }
+  }
+
+  public static void main(String[] args) {
+    for (int i = 0; i < 20000; i++) {
+      test();
+    }
+  }
 }
+
