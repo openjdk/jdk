@@ -59,7 +59,6 @@ class ArrayKlass: public Klass {
 
   ObjArrayKlass* higher_dimension() const     { return _higher_dimension; }
   inline ObjArrayKlass* higher_dimension_acquire() const; // load with acquire semantics
-  void set_higher_dimension(ObjArrayKlass* k) { _higher_dimension = k; }
   inline void release_set_higher_dimension(ObjArrayKlass* k); // store with release semantics
 
   ArrayKlass* lower_dimension() const      { return _lower_dimension; }
