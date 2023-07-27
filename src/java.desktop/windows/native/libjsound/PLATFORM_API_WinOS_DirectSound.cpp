@@ -259,6 +259,7 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
         DS_unlockCache();
         return FALSE;
     }
+    ::CoInitialize(NULL);
     desc->maxSimulLines = 0;
     if (g_audioDeviceCache[desc->deviceID].isSource) {
         DirectSoundEnumerateW((LPDSENUMCALLBACKW) DS_GetDescEnum, desc);
@@ -267,7 +268,7 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
         DirectSoundCaptureEnumerateW((LPDSENUMCALLBACKW) DS_GetDescEnum, desc);
         strncpy(desc->description, "DirectSound Capture", DAUDIO_STRING_LENGTH);
     }
-
+    ::CoUninitialize();
     /*desc->vendor;
     desc->version;*/
 
