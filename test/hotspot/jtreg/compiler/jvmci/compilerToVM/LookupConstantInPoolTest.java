@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,7 @@
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions -XX:+EnableJVMCI
  *                   -XX:-UseJVMCICompiler
- *                   compiler.jvmci.compilerToVM.ResolvePossiblyCachedConstantInPoolTest
+ *                   compiler.jvmci.compilerToVM.LookupConstantInPoolTest
  */
 
 package compiler.jvmci.compilerToVM;
@@ -64,15 +64,15 @@ import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.CON
 import static compiler.jvmci.compilerToVM.ConstantPoolTestCase.ConstantTypes.CONSTANT_STRING;
 
 /**
- * Test for {@code jdk.vm.ci.hotspot.CompilerToVM.resolvePossiblyCachedConstantInPool} method
+ * Test for {@code jdk.vm.ci.hotspot.CompilerToVM.lookupConstantInPool} method
  */
-public class ResolvePossiblyCachedConstantInPoolTest {
+public class LookupConstantInPoolTest {
 
     public static void main(String[] args) throws Exception {
         Map<ConstantTypes, Validator> typeTests = new HashMap<>();
-        typeTests.put(CONSTANT_STRING, ResolvePossiblyCachedConstantInPoolTest::validateString);
-        typeTests.put(CONSTANT_METHODHANDLE, ResolvePossiblyCachedConstantInPoolTest::validateMethodHandle);
-        typeTests.put(CONSTANT_METHODTYPE, ResolvePossiblyCachedConstantInPoolTest::validateMethodType);
+        typeTests.put(CONSTANT_STRING, LookupConstantInPoolTest::validateString);
+        typeTests.put(CONSTANT_METHODHANDLE, LookupConstantInPoolTest::validateMethodHandle);
+        typeTests.put(CONSTANT_METHODTYPE, LookupConstantInPoolTest::validateMethodType);
         ConstantPoolTestCase testCase = new ConstantPoolTestCase(typeTests);
         testCase.test();
         // The next "Class.forName" and repeating "testCase.test()"
@@ -103,7 +103,7 @@ public class ResolvePossiblyCachedConstantInPoolTest {
             index = cpci;
             cached = "cached ";
         }
-        Object constantInPool = CompilerToVMHelper.resolvePossiblyCachedConstantInPool(constantPoolCTVM, index);
+        Object constantInPool = CompilerToVMHelper.lookupConstantInPool(constantPoolCTVM, index, true);
         String stringToVerify = (String) constantInPool;
         String stringToRefer = entry.name;
         if (stringToRefer.equals("") && cpci != ConstantPoolTestsHelper.NO_CP_CACHE_PRESENT) {
@@ -114,14 +114,14 @@ public class ResolvePossiblyCachedConstantInPoolTest {
     }
 
     private static final String NOT_NULL_MSG
-            = "Object returned by resolvePossiblyCachedConstantInPool method should not be null";
+            = "Object returned by lookupConstantInPool method should not be null";
 
 
     private static void validateMethodHandle(ConstantPool constantPoolCTVM,
                                              ConstantTypes cpType,
                                              DummyClasses dummyClass,
                                              int index) {
-        Object constantInPool = CompilerToVMHelper.resolvePossiblyCachedConstantInPool(constantPoolCTVM, index);
+        Object constantInPool = CompilerToVMHelper.lookupConstantInPool(constantPoolCTVM, index, true);
         String msg = String.format("%s for index %d", NOT_NULL_MSG, index);
         Asserts.assertNotNull(constantInPool, msg);
         if (!(constantInPool instanceof MethodHandle)) {
@@ -138,7 +138,7 @@ public class ResolvePossiblyCachedConstantInPoolTest {
                                            ConstantTypes cpType,
                                            DummyClasses dummyClass,
                                            int index) {
-        Object constantInPool = CompilerToVMHelper.resolvePossiblyCachedConstantInPool(constantPoolCTVM, index);
+        Object constantInPool = CompilerToVMHelper.lookupConstantInPool(constantPoolCTVM, index, true);
         String msg = String.format("%s for index %d", NOT_NULL_MSG, index);
         Asserts.assertNotNull(constantInPool, msg);
         Class mtToVerify = constantInPool.getClass();

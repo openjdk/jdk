@@ -281,6 +281,12 @@ ifneq ($(GENERATE_COMPILE_COMMANDS_ONLY), true)
         #
     UNDEF_PATTERN := ' U '
 
+    # 'nm' on AIX needs -X64 option
+
+    ifeq ($(call isTargetOs, aix), true)
+      NM := $(NM) -X64
+    endif
+
     define SetupOperatorNewDeleteCheck
         $1.op_check: $1
 	  $$(call ExecuteWithLog, $1.op_check, \
