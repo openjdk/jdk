@@ -256,6 +256,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
 
     // Process a stripe iff it contains any obj-start or large array chunk
     if (!start_array->object_starts_in_range(cur_stripe_addr, cur_stripe_end_addr)) {
+      // Scan middle and end of large arrays
       scavenge_large_array_stripe(start_array, pm, cur_stripe_addr, cur_stripe_end_addr, space_top);
       continue;
     }
@@ -264,6 +265,8 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     // 1. range of cards checked for being dirty or clean: [iter_limit_l, iter_limit_r)
     // 2. range of cards can be cleared: [clear_limit_l, clear_limit_r)
     // 3. range of objs (obj-start) can be scanned: [first_obj_addr, cur_stripe_end_addr)
+    // 4. range of large array elements to be scanned: [first_obj_addr, cur_stripe_end_addr)
+    //    limited to dirty regions
 
     CardValue* iter_limit_l;
     CardValue* iter_limit_r;
@@ -276,14 +279,6 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     if (first_obj_addr < cur_stripe_addr) {
       // this obj belongs to previous stripe; can't clear any cards it occupies
       first_obj_addr += cast_to_oop(first_obj_addr)->size();
-      if (first_obj_addr >= cur_stripe_end_addr) {
-        // No object starts in the stripe so continue.
-        // object_starts_in_range() above is imprecise. It can return true iff
-        // cur_stripe_end_addr equals space_top which is not aligned to _card_size and an
-        // object starts there.
-        assert(first_obj_addr == space_top, "assumption");
-        continue;
-      }
       clear_limit_l = byte_for(first_obj_addr - 1) + 1;
       iter_limit_l = byte_for(first_obj_addr);
     } else {
@@ -292,7 +287,7 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
     }
 
     assert(cur_stripe_addr <= first_obj_addr, "inside this stripe");
-    assert(first_obj_addr < cur_stripe_end_addr, "no objects start in stripe");
+    assert(first_obj_addr <= cur_stripe_end_addr, "can be empty");
 
     {
       // Identify right ends.
@@ -301,6 +296,17 @@ void PSCardTable::scavenge_contents_parallel(ObjectStartArray* start_array,
       HeapWord* obj_end_addr = obj_addr + obj_sz;
       // Scan the elements of a large array to the stripe end.
       if (obj_sz >= large_obj_arr_min_words() && cast_to_oop(obj_addr)->is_objArray()) {
+        if (first_obj_addr >= cur_stripe_end_addr) {
+          // Nothing to scan according to constraints given above.
+          // We reach here only for the last stripe below space_top where
+          // object_starts_in_range() returns true if space_top is not aligned to
+          // _card_size and an object starts there.
+          assert(first_obj_addr == space_top, "assumption");
+          assert(cur_stripe_end_addr == space_top, "assumption");
+          // This stripe accomodates the end of a large array. It is scanned by the
+          // thread owning the previous stripe.
+          continue;
+        }
         // Reaching here we know that the large array starts in this stripe.
         // If it starts here then its end has to be in a following stripe.
         assert(obj_addr >= cur_stripe_addr &&
