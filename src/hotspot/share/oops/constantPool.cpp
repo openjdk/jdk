@@ -220,9 +220,6 @@ void ConstantPool::initialize_resolved_references(ClassLoaderData* loader_data,
     // Create a "scratch" copy of the resolved references array to archive
     if (DumpSharedSpaces) {
       objArrayOop scratch_references = oopFactory::new_objArray(vmClasses::Object_klass(), map_length, CHECK);
-      // HandleMark hm(THREAD);
-      // Handle scratch_handle(THREAD, scratch_references);
-      //HeapShared::add_scratch_resolved_references(this, loader_data->add_handle(scratch_handle));
       HeapShared::add_scratch_resolved_references(this, scratch_references);
     }
   }

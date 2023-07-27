@@ -328,27 +328,27 @@ class MetaspaceObjToOopHandleTable: public ResourceHashtable<MetaspaceObj*, OopH
     AnyObj::C_HEAP,
     mtClassShared> {
 public:
-  oop get_oop(MetaspaceObj* obj) {
+  oop get_oop(MetaspaceObj* ptr) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-    OopHandle* handle = get(obj);
+    OopHandle* handle = get(ptr);
     if (handle != nullptr) {
       return handle->resolve();
     } else {
       return nullptr;
     }
   }
-  void set_oop(MetaspaceObj* obj, oop o) {
+  void set_oop(MetaspaceObj* ptr, oop o) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
     OopHandle handle(Universe::vm_global(), o);
-    bool is_new = put(obj, handle);
+    bool is_new = put(ptr, handle);
     assert(is_new, "cannot set twice");
   }
-  void remove_oop(MetaspaceObj* obj) {
+  void remove_oop(MetaspaceObj* ptr) {
     MutexLocker ml(ScratchObjects_lock, Mutex::_no_safepoint_check_flag);
-    OopHandle* handle = get(obj);
+    OopHandle* handle = get(ptr);
     if (handle != nullptr) {
       handle->release(Universe::vm_global());
-      remove(obj);
+      remove(ptr);
     }
   }
 };
