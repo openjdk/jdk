@@ -146,10 +146,18 @@ public sealed interface TypeAnnotation
             this.sizeIfFixed = sizeIfFixed;
         }
 
+        /**
+         *
+         * @return
+         */
         public int targetTypeValue() {
             return targetTypeValue;
         }
 
+        /**
+         *
+         * @return
+         */
         public int sizeIfFixed() {
             return sizeIfFixed;
         }
@@ -225,120 +233,279 @@ public sealed interface TypeAnnotation
      */
     sealed interface TargetInfo {
 
+        /**
+         *
+         * @return
+         */
         TargetType targetType();
 
+        /**
+         *
+         * @return
+         */
         default int size() {
             return targetType().sizeIfFixed;
         }
 
+        /**
+         *
+         * @param targetType
+         * @param typeParameterIndex
+         * @return
+         */
         static TypeParameterTarget ofTypeParameter(TargetType targetType, int typeParameterIndex) {
             return new TargetInfoImpl.TypeParameterTargetImpl(targetType, typeParameterIndex);
         }
 
+        /**
+         *
+         * @param typeParameterIndex
+         * @return
+         */
         static TypeParameterTarget ofClassTypeParameter(int typeParameterIndex) {
             return ofTypeParameter(TargetType.CLASS_TYPE_PARAMETER, typeParameterIndex);
         }
 
+        /**
+         *
+         * @param typeParameterIndex
+         * @return
+         */
         static TypeParameterTarget ofMethodTypeParameter(int typeParameterIndex) {
             return ofTypeParameter(TargetType.METHOD_TYPE_PARAMETER, typeParameterIndex);
         }
 
+        /**
+         *
+         * @param supertypeIndex
+         * @return
+         */
         static SupertypeTarget ofClassExtends(int supertypeIndex) {
             return new TargetInfoImpl.SupertypeTargetImpl(supertypeIndex);
         }
 
+        /**
+         *
+         * @param targetType
+         * @param typeParameterIndex
+         * @param boundIndex
+         * @return
+         */
         static TypeParameterBoundTarget ofTypeParameterBound(TargetType targetType, int typeParameterIndex, int boundIndex) {
             return new TargetInfoImpl.TypeParameterBoundTargetImpl(targetType, typeParameterIndex, boundIndex);
         }
 
+        /**
+         *
+         * @param typeParameterIndex
+         * @param boundIndex
+         * @return
+         */
         static TypeParameterBoundTarget ofClassTypeParameterBound(int typeParameterIndex, int boundIndex) {
             return ofTypeParameterBound(TargetType.CLASS_TYPE_PARAMETER_BOUND, typeParameterIndex, boundIndex);
         }
 
+        /**
+         *
+         * @param typeParameterIndex
+         * @param boundIndex
+         * @return
+         */
         static TypeParameterBoundTarget ofMethodTypeParameterBound(int typeParameterIndex, int boundIndex) {
             return ofTypeParameterBound(TargetType.METHOD_TYPE_PARAMETER_BOUND, typeParameterIndex, boundIndex);
         }
 
+        /**
+         *
+         * @param targetType
+         * @return
+         */
         static EmptyTarget of(TargetType targetType) {
             return new TargetInfoImpl.EmptyTargetImpl(targetType);
         }
 
+        /**
+         *
+         * @return
+         */
         static EmptyTarget ofField() {
             return of(TargetType.FIELD);
         }
 
+        /**
+         *
+         * @return
+         */
         static EmptyTarget ofMethodReturn() {
             return of(TargetType.METHOD_RETURN);
         }
 
+        /**
+         *
+         * @return
+         */
         static EmptyTarget ofMethodReceiver() {
             return of(TargetType.METHOD_RECEIVER);
         }
 
+        /**
+         *
+         * @param formalParameterIndex
+         * @return
+         */
         static FormalParameterTarget ofMethodFormalParameter(int formalParameterIndex) {
             return new TargetInfoImpl.FormalParameterTargetImpl(formalParameterIndex);
         }
 
+        /**
+         *
+         * @param throwsTargetIndex
+         * @return
+         */
         static ThrowsTarget ofThrows(int throwsTargetIndex) {
             return new TargetInfoImpl.ThrowsTargetImpl(throwsTargetIndex);
         }
 
+        /**
+         *
+         * @param targetType
+         * @param table
+         * @return
+         */
         static LocalVarTarget ofVariable(TargetType targetType, List<LocalVarTargetInfo> table) {
             return new TargetInfoImpl.LocalVarTargetImpl(targetType, table);
         }
 
+        /**
+         *
+         * @param table
+         * @return
+         */
         static LocalVarTarget ofLocalVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.LOCAL_VARIABLE, table);
         }
 
+        /**
+         *
+         * @param table
+         * @return
+         */
         static LocalVarTarget ofResourceVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.RESOURCE_VARIABLE, table);
         }
 
+        /**
+         *
+         * @param exceptionTableIndex
+         * @return
+         */
         static CatchTarget ofExceptionParameter(int exceptionTableIndex) {
             return new TargetInfoImpl.CatchTargetImpl(exceptionTableIndex);
         }
 
+        /**
+         *
+         * @param targetType
+         * @param target
+         * @return
+         */
         static OffsetTarget ofOffset(TargetType targetType, Label target) {
             return new TargetInfoImpl.OffsetTargetImpl(targetType, target);
         }
 
+        /**
+         *
+         * @param target
+         * @return
+         */
         static OffsetTarget ofInstanceofExpr(Label target) {
             return ofOffset(TargetType.INSTANCEOF, target);
         }
 
+        /**
+         *
+         * @param target
+         * @return
+         */
         static OffsetTarget ofNewExpr(Label target) {
             return ofOffset(TargetType.NEW, target);
         }
 
+        /**
+         *
+         * @param target
+         * @return
+         */
         static OffsetTarget ofConstructorReference(Label target) {
             return ofOffset(TargetType.CONSTRUCTOR_REFERENCE, target);
         }
 
+        /**
+         *
+         * @param target
+         * @return
+         */
         static OffsetTarget ofMethodReference(Label target) {
             return ofOffset(TargetType.METHOD_REFERENCE, target);
         }
 
+        /**
+         *
+         * @param targetType
+         * @param target
+         * @param typeArgumentIndex
+         * @return
+         */
         static TypeArgumentTarget ofTypeArgument(TargetType targetType, Label target, int typeArgumentIndex) {
             return new TargetInfoImpl.TypeArgumentTargetImpl(targetType, target, typeArgumentIndex);
         }
 
+        /**
+         *
+         * @param target
+         * @param typeArgumentIndex
+         * @return
+         */
         static TypeArgumentTarget ofCastExpr(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.CAST, target, typeArgumentIndex);
         }
 
+        /**
+         *
+         * @param target
+         * @param typeArgumentIndex
+         * @return
+         */
         static TypeArgumentTarget ofConstructorInvocationTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, target, typeArgumentIndex);
         }
 
+        /**
+         *
+         * @param target
+         * @param typeArgumentIndex
+         * @return
+         */
         static TypeArgumentTarget ofMethodInvocationTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.METHOD_INVOCATION_TYPE_ARGUMENT, target, typeArgumentIndex);
         }
 
+        /**
+         *
+         * @param target
+         * @param typeArgumentIndex
+         * @return
+         */
         static TypeArgumentTarget ofConstructorReferenceTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, target, typeArgumentIndex);
         }
 
+        /**
+         *
+         * @param target
+         * @param typeArgumentIndex
+         * @return
+         */
         static TypeArgumentTarget ofMethodReferenceTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.METHOD_REFERENCE_TYPE_ARGUMENT, target, typeArgumentIndex);
         }
@@ -493,6 +660,13 @@ public sealed interface TypeAnnotation
          */
         int index();
 
+        /**
+         *
+         * @param startLabel
+         * @param endLabel
+         * @param index
+         * @return
+         */
         static LocalVarTargetInfo of(Label startLabel, Label endLabel, int index) {
             return new TargetInfoImpl.LocalVarTargetInfoImpl(startLabel, endLabel, index);
         }
@@ -588,10 +762,29 @@ public sealed interface TypeAnnotation
     sealed interface TypePathComponent
             permits UnboundAttribute.TypePathComponentImpl {
 
+        /**
+         *
+         */
         public enum Kind {
+
+            /**
+             *
+             */
             ARRAY(0),
+
+            /**
+             *
+             */
             INNER_TYPE(1),
+
+            /**
+             *
+             */
             WILDCARD(2),
+
+            /**
+             *
+             */
             TYPE_ARGUMENT(3);
 
             private final int tag;
@@ -600,13 +793,28 @@ public sealed interface TypeAnnotation
                 this.tag = tag;
             }
 
+            /**
+             *
+             * @return
+             */
             public int tag() {
                 return tag;
             }
         }
 
+        /**
+         *
+         */
         TypePathComponent ARRAY = new UnboundAttribute.TypePathComponentImpl(Kind.ARRAY, 0);
+
+        /**
+         *
+         */
         TypePathComponent INNER_TYPE = new UnboundAttribute.TypePathComponentImpl(Kind.INNER_TYPE, 0);
+
+        /**
+         *
+         */
         TypePathComponent WILDCARD = new UnboundAttribute.TypePathComponentImpl(Kind.WILDCARD, 0);
 
 
@@ -629,6 +837,12 @@ public sealed interface TypeAnnotation
          */
         int typeArgumentIndex();
 
+        /**
+         *
+         * @param typePathKind
+         * @param typeArgumentIndex
+         * @return
+         */
         static TypePathComponent of(Kind typePathKind, int typeArgumentIndex) {
 
             return switch (typePathKind) {

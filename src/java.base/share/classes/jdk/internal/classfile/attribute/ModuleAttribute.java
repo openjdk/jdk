@@ -72,6 +72,11 @@ public sealed interface ModuleAttribute
         return AccessFlag.maskToAccessFlags(moduleFlagsMask(), AccessFlag.Location.MODULE);
     }
 
+    /**
+     * Tests presence of module flag
+     * @param flag module flag
+     * @return true if the flag is set
+     */
     default boolean has(AccessFlag flag) {
         return Util.has(AccessFlag.Location.MODULE, moduleFlagsMask(), flag);
     }
@@ -155,40 +160,156 @@ public sealed interface ModuleAttribute
         return  mb.build();
     }
 
+    /**
+     * A builder for module attributes.
+     */
     public sealed interface ModuleAttributeBuilder
             permits ModuleAttributeBuilderImpl {
 
+        /**
+         * Sets the module name
+         * @param moduleName module name
+         * @return this builder
+         */
         ModuleAttributeBuilder moduleName(ModuleDesc moduleName);
+
+        /**
+         * Sets the module flags
+         * @param flagsMask module flags
+         * @return this builder
+         */
         ModuleAttributeBuilder moduleFlags(int flagsMask);
+
+        /**
+         * Sets the module flags
+         * @param moduleFlags module flags
+         * @return this builder
+         */
         default ModuleAttributeBuilder moduleFlags(AccessFlag... moduleFlags) {
             return moduleFlags(Util.flagsToBits(AccessFlag.Location.MODULE, moduleFlags));
         }
+
+        /**
+         * Sets the module flags
+         * @param version module version
+         * @return this builder
+         */
         ModuleAttributeBuilder moduleVersion(String version);
 
+        /**
+         * Adds module requirement
+         * @param module required module
+         * @param requiresFlagsMask flags of the requirement
+         * @param version required module version
+         * @return this builder
+         */
         ModuleAttributeBuilder requires(ModuleDesc module, int requiresFlagsMask, String version);
+
+        /**
+         * Adds module requirement
+         * @param module required module
+         * @param requiresFlags flags of the requirement
+         * @param version required module version
+         * @return this builder
+         */
         default ModuleAttributeBuilder requires(ModuleDesc module, Collection<AccessFlag> requiresFlags, String version) {
             return requires(module, Util.flagsToBits(AccessFlag.Location.MODULE_REQUIRES, requiresFlags), version);
         }
+
+        /**
+         * Adds module requirement
+         * @param requires module require info
+         * @return this builder
+         */
         ModuleAttributeBuilder requires(ModuleRequireInfo requires);
 
+        /**
+         * Adds exported package
+         * @param pkge exported package
+         * @param exportsFlagsMask export flags
+         * @param exportsToModules specific modules to export to
+         * @return this builder
+         */
         ModuleAttributeBuilder exports(PackageDesc pkge, int exportsFlagsMask, ModuleDesc... exportsToModules);
+
+        /**
+         * Adds exported package
+         * @param pkge exported package
+         * @param exportsFlags export flags
+         * @param exportsToModules specific modules to export to
+         * @return this builder
+         */
         default ModuleAttributeBuilder exports(PackageDesc pkge, Collection<AccessFlag> exportsFlags, ModuleDesc... exportsToModules) {
             return exports(pkge, Util.flagsToBits(AccessFlag.Location.MODULE_EXPORTS, exportsFlags), exportsToModules);
         }
+
+        /**
+         * Adds exported package
+         * @param exports module export info
+         * @return this builder
+         */
         ModuleAttributeBuilder exports(ModuleExportInfo exports);
 
+        /**
+         *
+         * @param pkge Opens package
+         * @param opensFlagsMask open package flags
+         * @param opensToModules specific modules to open to
+         * @return this builder
+         */
         ModuleAttributeBuilder opens(PackageDesc pkge, int opensFlagsMask, ModuleDesc... opensToModules);
+
+        /**
+         *
+         * @param pkge Opens package
+         * @param opensFlags open package flags
+         * @param opensToModules specific modules to open to
+         * @return this builder
+         */
         default ModuleAttributeBuilder opens(PackageDesc pkge, Collection<AccessFlag> opensFlags, ModuleDesc... opensToModules) {
             return opens(pkge, Util.flagsToBits(AccessFlag.Location.MODULE_OPENS, opensFlags), opensToModules);
         }
+
+        /**
+         * Opens package
+         * @param opens module open info
+         * @return this builder
+         */
         ModuleAttributeBuilder opens(ModuleOpenInfo opens);
 
+        /**
+         * Declares use of a service
+         * @param service service class used
+         * @return this builder
+         */
         ModuleAttributeBuilder uses(ClassDesc service);
+
+        /**
+         * Declares use of a service
+         * @param uses service class used
+         * @return this builder
+         */
         ModuleAttributeBuilder uses(ClassEntry uses);
 
+        /**
+         * Declares provision of a service
+         * @param service service class provided
+         * @param implClasses specific implementation classes
+         * @return this builder
+         */
         ModuleAttributeBuilder provides(ClassDesc service, ClassDesc... implClasses);
+
+        /**
+         * Declares provision of a service
+         * @param provides module provides info
+         * @return this builder
+         */
         ModuleAttributeBuilder provides(ModuleProvideInfo provides);
 
+        /**
+         * Builds module attribute.
+         * @return module attribute
+         */
         ModuleAttribute build();
     }
 }
