@@ -98,8 +98,8 @@ public class TableHeaderBorderPositionTest {
             for (int x = verticalLineCol; x < verticalLineCol + 3; x++) {
                 if (expectedRGB != imgHeader.getRGB(x, y)) {
                     saveImage(imgHeader, "FailureImageHeader.png");
-                    throw new RuntimeException("Header Comparison Test Failed" +
-                            "(At Pos_x : " + x + ", Pos_y : " + y +")");
+                    throw new RuntimeException("Header Comparison Test " +
+                            "Failed at <" + x + ", " + y + ">");
                 }
             }
         }
@@ -110,8 +110,8 @@ public class TableHeaderBorderPositionTest {
             for (int x = verticalLineCol; x < verticalLineCol + 3; x++) {
                 if (expectedRGB != imgData.getRGB(x, y)) {
                     saveImage(imgData,"FailureImageData.png");
-                    throw new RuntimeException("TableData Comparison Test Failed" +
-                            "(At Pos_x : " + x + ", Pos_y : " + y +")");
+                    throw new RuntimeException("TableData Comparison Test " +
+                            "Failed at <" + x + ", " + y + ">");
                 }
             }
         }
