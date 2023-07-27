@@ -41,7 +41,8 @@ class TriBool{
  public:
   TriBool() : _value(0) {}
   TriBool(bool value) : _value(value) {
-    _value = _value | 2; // set to not-default
+    // set to not-default in separate step to avoid -Wconversion warnings
+    _value |= _value;
   }
   TriBool(const TriBool& o): _value(o._value) {}
 
