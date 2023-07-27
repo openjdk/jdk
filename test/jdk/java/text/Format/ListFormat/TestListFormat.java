@@ -41,7 +41,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 public class TestListFormat {
@@ -55,6 +55,30 @@ public class TestListFormat {
             "{0} ebet {1} eaft",
             "twobef {0} two {1} twoaft",
             "threebef {0} three {1} three {2} threeaft",
+    };
+    private static final String[] CUSTOM_PATTERNS_IAE_LENGTH = {
+            ""
+    };
+    private static final String[] CUSTOM_PATTERNS_IAE_START = {
+            "{0}",
+            "{0} mid {1}",
+            "{0} ebet {1} eaft",
+            "",
+            "",
+    };
+    private static final String[] CUSTOM_PATTERNS_IAE_MIDDLE = {
+            "{0} sbet {1}",
+            "{0} {1} {2}",
+            "{0} ebet {1} eaft",
+            "",
+            "",
+    };
+    private static final String[] CUSTOM_PATTERNS_IAE_END = {
+            "{0} sbet {1}",
+            "{0} mid {1}",
+            "error {0} ebet {1}",
+            "",
+            "",
     };
 
     @Test
@@ -73,6 +97,15 @@ public class TestListFormat {
                 arguments(SAMPLE2, "twobef foo two bar twoaft"),
                 arguments(SAMPLE3, "threebef foo three bar three baz threeaft"),
                 arguments(SAMPLE4, "sbef foo sbet bar mid baz ebet qux eaft"),
+        };
+    }
+
+    static Arguments[] getInstance_1Arg_IAE() {
+        return new Arguments[] {
+                arguments(CUSTOM_PATTERNS_IAE_LENGTH, "Pattern array length should be 5"),
+                arguments(CUSTOM_PATTERNS_IAE_START, "start pattern is incorrect"),
+                arguments(CUSTOM_PATTERNS_IAE_MIDDLE, "middle pattern is incorrect"),
+                arguments(CUSTOM_PATTERNS_IAE_END, "end pattern is incorrect"),
         };
     }
 
@@ -123,6 +156,14 @@ public class TestListFormat {
     void getInstance_1Arg(List<String> input, String expected) throws ParseException {
         var f = ListFormat.getInstance(CUSTOM_PATTERNS);
         compareResult(f, input, expected, true);
+    }
+
+    @ParameterizedTest
+    @MethodSource
+    void getInstance_1Arg_IAE(String[] invalidPatterns, String errorMsg) {
+        Exception e = assertThrows(IllegalArgumentException.class,
+                () -> ListFormat.getInstance(invalidPatterns));
+        assertEquals(errorMsg, e.getMessage());
     }
 
     @ParameterizedTest

@@ -136,22 +136,20 @@ public class ListFormat extends Format {
             startBefore = m.group("startBefore");
             startBetween = m.group("startBetween");
         } else {
-            startBefore = "";
-            startBetween = "";
+            throw new IllegalArgumentException("start pattern is incorrect");
         }
         m = Pattern.compile("\\{0}(?<middleBetween>.*?)\\{1}").matcher(patterns[MIDDLE]);
         if (m.matches()) {
             middleBetween = m.group("middleBetween");
         } else {
-            middleBetween = "";
+            throw new IllegalArgumentException("middle pattern is incorrect");
         }
         m = Pattern.compile("\\{0}(?<endBetween>.*?)\\{1}(?<endAfter>.*?)").matcher(patterns[END]);
         if (m.matches()) {
             endBetween = m.group("endBetween");
             endAfter = m.group("endAfter");
         } else {
-            endBetween = "";
-            endAfter = "";
+            throw new IllegalArgumentException("end pattern is incorrect");
         }
 
         startPattern = Pattern.compile(startBefore + "(.+?)" + startBetween);
@@ -263,7 +261,8 @@ public class ListFormat extends Format {
      * </table>
      *
      * @param patterns array of patterns, not null
-     * @throws IllegalArgumentException if the length {@code patterns} array is less than 5.
+     * @throws IllegalArgumentException if the length {@code patterns} array is less than 5, or
+     *          any of {@code start}, {@code middle}, {@code end} patterns cannot be parsed.
      * @throws NullPointerException if {@code patterns} is null.
      */
     public static ListFormat getInstance(String[] patterns) {
@@ -381,13 +380,10 @@ public class ListFormat extends Format {
                 c = em.start();
             }
             em.find(c);
-//            System.out.println("start found: " + sm.group(0));
-//            System.out.println("end found: " + em.group(0));
             var startEnd = sm.end();
             var endStart = em.start();
             if (startEnd <= endStart) {
                 var mid = source.substring(startEnd, endStart);
-//            System.out.println("middle found: " + mid);
                 var count = mid.split(middleBetween).length + 2;
                 parsed = new MessageFormat(createMessageFormatString(count), locale).parseObject(source, parsePos);
             }
