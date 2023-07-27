@@ -399,7 +399,7 @@ public class MethodWriter extends AbstractExecutableMemberWriter {
         var enclosing = (TypeElement) method.getEnclosingElement();
         VisibleMemberTable vmt = writer.configuration.getVisibleMemberTable(enclosing);
         SortedSet<ExecutableElement> implementedMethods =
-                new TreeSet<>(utils.comparators.makeOverrideUseComparator());
+                new TreeSet<>(utils.comparators.overrideUseComparator());
         implementedMethods.addAll(methods);
         for (ExecutableElement implementedMeth : implementedMethods) {
             TypeMirror intfac = vmt.getImplementedMethodHolder(method, implementedMeth);
