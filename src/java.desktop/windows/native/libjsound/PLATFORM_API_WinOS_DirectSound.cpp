@@ -183,7 +183,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
     if (!DS_lockCache()) {
         return 0;
     }
-
+    ::CoInitialize(NULL);
     if (g_lastCacheRefreshTime == 0
         || (UINT64) timeGetTime() > (UINT64) (g_lastCacheRefreshTime + WAIT_BETWEEN_CACHE_REFRESH_MILLIS)) {
         /* first, initialize any old cache items */
@@ -224,6 +224,7 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
 
         g_lastCacheRefreshTime = (UINT64) timeGetTime();
     }
+    ::CoUninitialize();
     DS_unlockCache();
     /*TRACE1("DirectSound: %d installed devices\n", g_mixerCount);*/
     return g_mixerCount;
@@ -479,7 +480,7 @@ DS_StartBufferHelper::Data::~Data() {
 
 DWORD WINAPI __stdcall DS_StartBufferHelper::ThreadProc(void *param)
 {
-    ::CoInitializeEx(NULL, COINIT_MULTITHREADED | COINIT_DISABLE_OLE1DDE);
+    ::CoInitialize(NULL);
     while (1) {
         // wait for something to do
         ::WaitForSingleObject(data.startEvent, INFINITE);
