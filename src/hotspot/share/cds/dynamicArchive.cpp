@@ -432,7 +432,7 @@ void DynamicArchive::setup_array_klasses() {
 
       if (elm->is_instance_klass()) {
         assert(InstanceKlass::cast(elm)->array_klasses() == nullptr, "must be");
-        InstanceKlass::cast(elm)->release_set_array_klasses(oak);
+        InstanceKlass::cast(elm)->set_array_klasses(oak);
       } else {
         assert(elm->is_array_klass(), "sanity");
         assert(ArrayKlass::cast(elm)->higher_dimension() == nullptr, "must be");
@@ -460,6 +460,7 @@ void DynamicArchive::make_array_klasses_shareable() {
 void DynamicArchive::post_dump() {
   if (_array_klasses != nullptr) {
     delete _array_klasses;
+    _array_klasses = nullptr;
   }
 }
 
