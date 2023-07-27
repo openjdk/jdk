@@ -802,6 +802,7 @@ define SetupRunJtregTestBody
   # symbol lookup in hserr files
   ifeq ($$(call isTargetOs, windows), true)
     $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
+    $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:+CreateCoredumpOnCrash
   else ifeq ($$(call isTargetOs, linux), true)
       $1_JTREG_BASIC_OPTIONS += -e:_JVM_DWARF_PATH=$$(SYMBOLS_IMAGE_DIR)
   endif
