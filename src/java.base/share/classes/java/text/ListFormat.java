@@ -39,22 +39,24 @@ import java.util.stream.IntStream;
 /**
  * {@code ListFormat} provides a means to produce a list of concatenated
  * strings in a language-sensitive way. Use this to construct a list
- * of strings displayed for end users. This class provides the functionality
- * defined in Unicode Consortium's LDML specification for
+ * of strings displayed for end users. For example, listing countries for US, UK,
+ * and Japan generates "United States, United Kingdom, and Japan". This class
+ * provides the functionality defined in Unicode Consortium's LDML specification for
  * <a href="https://www.unicode.org/reports/tr35/tr35-general.html#ListPatterns">
  * List Patterns</a>.
  * <p>
  * Three types of concatenation are provided; {@link Type#STANDARD STANDARD},
  * {@link Type#OR OR}, and {@link Type#UNIT UNIT}, also three styles for each
- * type are provided; {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
- * {@link Style#NARROW NARROW}. For example, a list of Strings
- * {@code ["Foo", "Bar", "Baz"]} may be formatted as follows in US English with
- * the following snippet ({@code STANDARD}, {@code FULL} are used for a typical case):
+ * type are provided: {@link Style#FULL FULL}, {@link Style#SHORT SHORT}, and
+ * {@link Style#NARROW NARROW}. The following snippet is an example of formatting
+ * the list of Strings {@code ["Foo", "Bar", "Baz"]} in US English with
+ * {@code STANDARD}, {@code FULL} (typical case):
  * {@snippet lang=java :
  * ListFormat.getInstance(Locale.US, ListFormat.Type.STANDARD, ListFormat.Style.FULL)
  *     .format(List.of("Foo", "Bar", "Baz"))
  * }
- * This will produce the concatenated list string as in the following table:
+ * This will produce the concatenated list string, "Foo, Bar, and Baz" as seen in
+ * the following table:
  * <table class="striped">
  * <caption style="display:none">Formatting examples</caption>
  * <thead>
@@ -85,12 +87,7 @@ import java.util.stream.IntStream;
  * the formatted string, as well as optional specialized patterns for two or three
  * elements. Refer to the method description for more detail.
  *
- * <h2><a id="synchronization">Synchronization</a></h2>
- * <p>
- * List formats are generally not synchronized.
- * It is recommended to create separate format instances for each thread.
- * If multiple threads access a format concurrently, it must be synchronized
- * externally.
+ * @implSpec This class is immutable and thread-safe
  *
  * @since 22
  */
@@ -162,7 +159,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the available locales for list formatting}
+     * {@return the available locales that support list formatting}
      */
     public static Locale[] getAvailableLocales() {
         // Same as a typical format class
@@ -183,6 +180,7 @@ public class ListFormat extends Format {
      * @param locale Locale to be used, not null
      * @param type type of the list format. One of STANDARD/OR/UNIT, not null
      * @param style style of the list format. One of FULL/SHORT/NARROW, not null
+     * @throws NullPointerException if any of the arguments is null
      */
     public static ListFormat getInstance(Locale locale, Type type, Style style) {
         Objects.requireNonNull(locale);
@@ -199,14 +197,14 @@ public class ListFormat extends Format {
      * This factory produces an instance based on the customized patterns array,
      * instead of letting the runtime provide appropriate patterns for the Locale/Type/Style.
      * <p>
-     * Patterns array should contain five Strings of patterns, each correspond to Unicode LDML's
+     * Patterns array should contain five Strings of patterns, each correspond to the Unicode LDML's
      * {@code listPatternPart}, i.e., "start", "middle", "end", "2", and "3" patterns
      * in this order. Each pattern contains "{0}" and "{1}" (and "{2}" for pattern "3")
      * placeholders that are substituted with the passed input strings on formatting.
      * If the length of the patterns array is less than 5, an {@code IllegalArgumentException}
      * is thrown.
      * <p>
-     * Each pattern string is first parsed as follows. Patterns in parens are optional:
+     * Each pattern string is first parsed as follows. Patterns in parentheses are optional:
      * <blockquote><pre>
      * start := (start_before){0}start_between{1}
      * middle := {0}middle_between{1}
@@ -221,8 +219,9 @@ public class ListFormat extends Format {
      * <blockquote><pre>
      * (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
      * </pre></blockquote>
-     * If {@code n} is either 2 or 3, and the pattern for those is not empty, the pattern
-     * is used as it is.
+     * If the number of elements in the input string list is either 2 or 3, and the
+     * pattern for those (either "two" or "three", respectively) is not empty, the
+     * pattern is used as it is.
      * Following table shows patterns array which is equivalent to
      * {@code STANDARD} type, {@code FULL} style in US English:
      * <table class="striped">
@@ -349,14 +348,14 @@ public class ListFormat extends Format {
      * Parses text from a string to produce a list of {@code String}s.
      * <p>
      * The method attempts to parse text starting at the index given by
-     * {@code pos}.
-     * If parsing succeeds, then the index of {@code pos} is updated
+     * {@code parsePos}.
+     * If parsing succeeds, then the index of {@code parsePos} is updated
      * to the index after the last character used (parsing does not necessarily
      * use all characters up to the end of the string), and the parsed
-     * object is returned. The updated {@code pos} can be used to
+     * object is returned. The updated {@code parsePos} can be used to
      * indicate the starting point for the next call to this method.
-     * If an error occurs, then the index of {@code pos} is not
-     * changed, the error index of {@code pos} is set to the index of
+     * If an error occurs, then the index of {@code parsePos} is not
+     * changed, the error index of {@code parsePos} is set to the index of
      * the character where the error occurred, and null is returned.
      *
      * See the {@link #parse(String)} method for more information
@@ -365,7 +364,7 @@ public class ListFormat extends Format {
      * @param source A {@code String}, part of which should be parsed.
      * @param parsePos A {@code ParsePosition} object with index and error
      *            index information as described above.
-     * @return A list of {@code String} parsed from the string. In case of
+     * @return A {@code List} of {@code String} parsed from the string. In case of
      *         error, returns null.
      * @throws NullPointerException if {@code source} or {@code parsePos} is null.
      */
@@ -492,7 +491,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * A list format type.
+     * A list format type - {@code standard}, {@code or}, and {@code unit}.
      * <p>
      * {@code Type} is an enum which represents the type for formatting
      * a list within a given {@code ListFormat} instance.
@@ -524,7 +523,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * A list format style.
+     * A list format style - {@code full}, {@code short}, and {@code narrow}.
      * <p>
      * {@code Style} is an enum which represents the style for formatting
      * a list within a given {@code ListFormat} instance.
