@@ -470,7 +470,6 @@ public:
     }
   }
 
-  virtual void iterate_primitive_array_klasses(MetaspaceClosure* it) { ShouldNotReachHere(); }
 };
 
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {

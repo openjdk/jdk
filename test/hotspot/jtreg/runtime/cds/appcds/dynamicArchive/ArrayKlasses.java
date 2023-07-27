@@ -54,7 +54,8 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
               "-Xlog:cds+dynamic=debug,cds+class=debug",
               "-cp", appJar, mainClass)
               .assertNormalExit(output -> {
-                     output//.shouldMatch("cds.class.*klasses.*array \\[LArrayKlassesApp;")
+                     output.shouldMatch("cds.class.*klasses.*array \\[LArrayKlassesApp;")
+                           .shouldMatch("cds.class.*klasses.*array \\[\\[LArrayKlassesApp;")
                            .shouldMatch("cds.class.*klasses.*array \\[\\[\\[LArrayKlassesApp;");
                  });
 
@@ -62,10 +63,12 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
         // At runtime , the ArrayKlasesApp and its array class should be loaded
         // from the dynamic archive.
         run2(null, topArchiveName,
-             "-Xlog:class+load,class+load+cds=debug,cds+dynamic=debug,cds=debug",
+             "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug",
              "-cp", appJar, mainClass)
              .assertNormalExit(output -> {
                      output.shouldContain("ArrayKlassesApp source: shared objects file (top)")
+                           .shouldContain("[LArrayKlassesApp; source: shared objects file (top)")
+                           .shouldContain("[[LArrayKlassesApp; source: shared objects file (top)")
                            .shouldContain("[[[LArrayKlassesApp; source: shared objects file (top)")
                            .shouldHaveExitValue(0);
                  });
@@ -88,10 +91,12 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
         // At runtime, the java/util/Date class should be loaded from the default
         // CDS archive; its array class should be loaded from the dynamic archive.
         run2(null, topArchiveName,
-             "-Xlog:class+load,class+load+cds=debug,cds+dynamic=debug,cds=debug",
+             "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug",
              "-cp", appJar, mainClass, "system")
              .assertNormalExit(output -> {
                      output.shouldContain("java.util.Date source: shared objects file")
+                           .shouldContain("[Ljava.util.Date; source: shared objects file (top)")
+                           .shouldContain("[[Ljava.util.Date; source: shared objects file (top)")
                            .shouldContain("[[[Ljava.util.Date; source: shared objects file (top)")
                            .shouldHaveExitValue(0);
                  });
@@ -112,10 +117,11 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
         // At runtime, the [J should be loaded from the default CDS archive;
         // the higher-dimension array should be loaded from the dynamic archive.
         run2(null, topArchiveName,
-             "-Xlog:class+load,class+load+cds=debug,cds+dynamic=debug,cds=debug",
+             "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug",
              "-cp", appJar, mainClass, "primitive")
              .assertNormalExit(output -> {
                      output.shouldContain("[J source: shared objects file")
+                           .shouldContain("[[J source: shared objects file (top)")
                            .shouldContain("[[[J source: shared objects file (top)")
                            .shouldHaveExitValue(0);
                  });
@@ -137,10 +143,12 @@ public class ArrayKlasses extends DynamicArchiveTestBase {
         // At runtime, the 4-dimension array of java/lang/Integer should be
         // loaded from the dynamic archive.
         run2(null, topArchiveName,
-             "-Xlog:class+load,class+load+cds=debug,cds+dynamic=debug,cds=debug",
+             "-Xlog:class+load,class+load+array=debug,cds+dynamic=debug,cds=debug",
              "-cp", appJar, mainClass, "integer-array")
              .assertNormalExit(output -> {
-                     output.shouldContain("[[[[Ljava.lang.Integer; source: shared objects file (top)")
+                     output.shouldContain("[[Ljava.lang.Integer; source: shared objects file (top)")
+                           .shouldContain("[[[Ljava.lang.Integer; source: shared objects file (top)")
+                           .shouldContain("[[[[Ljava.lang.Integer; source: shared objects file (top)")
                            .shouldHaveExitValue(0);
                  });
     }

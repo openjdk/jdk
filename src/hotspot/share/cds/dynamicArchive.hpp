@@ -61,8 +61,8 @@ public:
 
 class DynamicArchive : AllStatic {
 private:
-  static GrowableArray<ArrayKlass*>* _array_klasses;
-  static Array<ArrayKlass*>* _dynamic_archive_array_klasses;
+  static GrowableArray<ObjArrayKlass*>* _array_klasses;
+  static Array<ObjArrayKlass*>* _dynamic_archive_array_klasses;
 public:
   static void check_for_dynamic_dump();
   static void dump_for_jcmd(const char* archive_name, TRAPS);
@@ -71,12 +71,11 @@ public:
   static bool validate(FileMapInfo* dynamic_info);
   static void dump_array_klasses();
   static void setup_array_klasses();
-  static void append_array_klass(ArrayKlass* oak);
+  static void append_array_klass(ObjArrayKlass* oak);
   static void serialize_array_klasses(SerializeClosure* soc);
   static void make_array_klasses_shareable();
   static void post_dump();
   static int  num_array_klasses();
-  static void log_array_class_load(JavaThread* thread, Klass* k);
 };
 #endif // INCLUDE_CDS
 #endif // SHARE_CDS_DYNAMICARCHIVE_HPP

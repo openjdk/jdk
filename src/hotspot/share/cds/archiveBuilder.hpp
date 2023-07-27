@@ -256,7 +256,6 @@ private:
 
 protected:
   virtual void iterate_roots(MetaspaceClosure* it) = 0;
-  virtual void iterate_primitive_array_klasses(MetaspaceClosure* it) = 0;
 
   // Conservative estimate for number of bytes needed for:
   size_t _estimated_metaspaceobj_bytes;   // all archived MetaspaceObj's.
@@ -342,7 +341,6 @@ public:
   bool gather_klass_and_symbol(MetaspaceClosure::Ref* ref, bool read_only);
   bool gather_one_source_obj(MetaspaceClosure::Ref* ref, bool read_only);
   void remember_embedded_pointer_in_enclosing_obj(MetaspaceClosure::Ref* ref);
-  void gather_array_klasses();
   static void serialize_dynamic_archivable_items(SerializeClosure* soc);
 
   DumpRegion* rw_region() { return &_rw_region; }

@@ -122,6 +122,7 @@ class ArrayKlass: public Klass {
   void cds_print_value_on(outputStream* st) const;
 #endif
 
+  void log_array_class_load(Klass* k);
   // Printing
   void print_on(outputStream* st) const;
   void print_value_on(outputStream* st) const;

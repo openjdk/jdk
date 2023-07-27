@@ -88,6 +88,7 @@ public:
   void sort_methods(InstanceKlass* ik) const;
   void remark_pointers_for_instance_klass(InstanceKlass* k, bool should_mark) const;
   void write_archive(char* serialized_data);
+  void gather_array_klasses();
 
 public:
   DynamicArchiveBuilder() : ArchiveBuilder() { }
@@ -172,9 +173,10 @@ public:
   virtual void iterate_roots(MetaspaceClosure* it) {
     FileMapInfo::metaspace_pointers_do(it);
     SystemDictionaryShared::dumptime_classes_do(it);
+    iterate_primitive_array_klasses(it);
   }
 
-  virtual void iterate_primitive_array_klasses(MetaspaceClosure* it) {
+  void iterate_primitive_array_klasses(MetaspaceClosure* it) {
     for (int i = T_BOOLEAN; i <= T_LONG; i++) {
       assert(is_java_primitive((BasicType)i), "sanity");
       Klass* k = Universe::typeArrayKlassObj((BasicType)i);  // this give you "[I", etc
@@ -189,7 +191,8 @@ public:
           ak = nullptr;
         }
       }
-      if (ak != nullptr && (ak->dimension() > 1)) {
+      if (ak != nullptr) {
+        assert(ak->dimension() > 1, "sanity");
         // this is the lowest dimension that's not in the static archive
         it->push(&ak);
       }
@@ -352,6 +355,26 @@ void DynamicArchiveBuilder::write_archive(char* serialized_data) {
   log_info(cds, dynamic)("%d klasses; %d symbols", klasses()->length(), symbols()->length());
 }
 
+void DynamicArchiveBuilder::gather_array_klasses() {
+  for (int i = 0; i < klasses()->length(); i++) {
+    if (klasses()->at(i)->is_objArray_klass()) {
+      ObjArrayKlass* oak = ObjArrayKlass::cast(klasses()->at(i));
+      Klass* elem = oak->element_klass();
+      if (MetaspaceShared::is_shared_static(elem)) {
+        // Only capture the array klass whose element_klass is in the static archive.
+        // During run time, setup (see DynamicArchive::setup_array_klasses()) is needed
+        // so that the element_klass can find its array klasses from the dynamic archive.
+        DynamicArchive::append_array_klass(oak);
+      } else {
+        // The element_klass and its array klasses are in the same archive.
+        assert(!MetaspaceShared::is_shared_static(oak),
+          "we should not gather klasses that are already in the static archive");
+      }
+    }
+  }
+  log_debug(cds)("Total array klasses gathered for dynamic archive: %d", DynamicArchive::num_array_klasses());
+}
+
 class VM_PopulateDynamicDumpSharedSpace: public VM_GC_Sync_Operation {
   DynamicArchiveBuilder _builder;
 public:
@@ -373,12 +396,12 @@ public:
   }
 };
 
-GrowableArray<ArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
-Array<ArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
+GrowableArray<ObjArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
+Array<ObjArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
 
-void DynamicArchive::append_array_klass(ArrayKlass* ak) {
+void DynamicArchive::append_array_klass(ObjArrayKlass* ak) {
   if (_array_klasses == nullptr) {
-    _array_klasses = new (mtClassShared) GrowableArray<ArrayKlass*>(50, mtClassShared);
+    _array_klasses = new (mtClassShared) GrowableArray<ObjArrayKlass*>(50, mtClassShared);
   }
   _array_klasses->append(ak);
 }
@@ -389,11 +412,11 @@ void DynamicArchive::dump_array_klasses() {
     ArchiveBuilder* builder = ArchiveBuilder::current();
     int num_array_klasses = _array_klasses->length();
     _dynamic_archive_array_klasses =
-        ArchiveBuilder::new_ro_array<ArrayKlass*>(num_array_klasses);
+        ArchiveBuilder::new_ro_array<ObjArrayKlass*>(num_array_klasses);
     for (int i = 0; i < num_array_klasses; i++) {
-      ArrayKlass* ak = _array_klasses->at(i);
-      _dynamic_archive_array_klasses->at_put(i, ak);
-      builder->write_pointer_in_buffer(_dynamic_archive_array_klasses->adr_at(i), ak);
+      ObjArrayKlass* oak = _array_klasses->at(i);
+      _dynamic_archive_array_klasses->at_put(i, oak);
+      builder->write_pointer_in_buffer(_dynamic_archive_array_klasses->adr_at(i), oak);
     }
   }
 }
@@ -401,33 +424,19 @@ void DynamicArchive::dump_array_klasses() {
 void DynamicArchive::setup_array_klasses() {
   if (_dynamic_archive_array_klasses != nullptr) {
     for (int i = 0; i < _dynamic_archive_array_klasses->length(); i++) {
-      ArrayKlass* ak = _dynamic_archive_array_klasses->at(i);
-      Klass* bk = ObjArrayKlass::cast(ak)->bottom_klass();
-      assert(MetaspaceShared::is_shared_static((void*)bk), "bottom_klass should be in static archive");
-      while (ak->dimension() > 1) {
-        Klass* ld = ak->lower_dimension();
-        assert(ld != nullptr, "unexpected null lower_dimension klass");
-        assert(MetaspaceShared::is_in_shared_metaspace((void*)ld), "lower_dimension klass should be in CDS archive");
-        ld = ArrayKlass::cast(ld)->lower_dimension();
-        if (ld != nullptr) {
-          ak = ArrayKlass::cast(ld);
-        }  else {
-          break;
-        }
-      }
-      assert(ak->dimension() >= 1, "sanity");
-      int target_dim = ak->dimension() - 1;
-      assert(target_dim >= 0, "sanity");
-      if (target_dim == 0) {
-        // Point InstanceKlass::_array_klasses to the one-dimensional archived ObjArrayKlass
-        InstanceKlass* ik = InstanceKlass::cast(bk);
-        ik->release_set_array_klasses(ObjArrayKlass::cast(ak));
+      ObjArrayKlass* oak = _dynamic_archive_array_klasses->at(i);
+      assert(!oak->is_typeArray_klass(), "all type array classes must be in static archive");
+
+      Klass* elm = oak->element_klass();
+      assert(MetaspaceShared::is_shared_static((void*)elm), "must be");
+
+      if (elm->is_instance_klass()) {
+        assert(InstanceKlass::cast(elm)->array_klasses() == nullptr, "must be");
+        InstanceKlass::cast(elm)->release_set_array_klasses(oak);
       } else {
-        ArrayKlass* fixup_oak = ArrayKlass::cast(bk->array_klass_or_null(target_dim));
-        assert(fixup_oak != nullptr, "sanity");
-        assert(MetaspaceShared::is_shared_static((void*)fixup_oak),
-          "ObjArrayKlass to be fixed should be in static CDS archive");
-        fixup_oak->set_higher_dimension(ak);
+        assert(elm->is_array_klass(), "sanity");
+        assert(ArrayKlass::cast(elm)->higher_dimension() == nullptr, "must be");
+        ArrayKlass::cast(elm)->set_higher_dimension(oak);
       }
     }
     log_debug(cds)("Total array klasses read from dynamic archive: %d", _dynamic_archive_array_klasses->length());
@@ -442,7 +451,7 @@ void DynamicArchive::make_array_klasses_shareable() {
   if (_array_klasses != nullptr) {
     int num_array_klasses = _array_klasses->length();
     for (int i = 0; i < num_array_klasses; i++) {
-      ArrayKlass* k = ArchiveBuilder::current()->get_buffered_addr(_array_klasses->at(i));
+      ObjArrayKlass* k = ArchiveBuilder::current()->get_buffered_addr(_array_klasses->at(i));
       k->remove_unshareable_info();
     }
   }
@@ -456,21 +465,6 @@ void DynamicArchive::post_dump() {
 
 int DynamicArchive::num_array_klasses() {
   return _array_klasses != nullptr ? _array_klasses->length() : 0;
-}
-
-void DynamicArchive::log_array_class_load(JavaThread* thread, Klass* k) {
-  LogTarget(Debug, class, load, cds) lt;
-  if (lt.is_enabled() && MetaspaceShared::is_in_shared_metaspace((void*)k)) {
-    LogStream ls(lt);
-    ResourceMark rm(thread);
-    ls.print("%s", k->external_name());
-    if (MetaspaceShared::is_shared_dynamic((void*)k)) {
-      ls.print(" source: shared objects file (top)");
-    } else {
-      ls.print(" source: shared objects file");
-    }
-    ls.cr();
-  }
 }
 
 void DynamicArchive::check_for_dynamic_dump() {
