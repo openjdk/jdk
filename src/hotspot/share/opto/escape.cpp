@@ -48,7 +48,7 @@ ConnectionGraph::ConnectionGraph(Compile * C, PhaseIterGVN *igvn, int invocation
   // pushed to the ConnectionGraph. The code below bumps the initial capacity of
   // _nodes by 10% to account for these additional nodes. If capacity is exceeded
   // the array will be reallocated.
-  _nodes(C->comp_arena(), ReduceAllocationMerges ? C->unique()*1.10 : C->unique(), C->unique(), nullptr),
+  _nodes(C->comp_arena(), C->do_reduce_allocation_merges() ? C->unique()*1.10 : C->unique(), C->unique(), nullptr),
   _in_worklist(C->comp_arena()),
   _next_pidx(0),
   _collecting(true),
@@ -398,7 +398,7 @@ bool ConnectionGraph::compute_escape() {
   }
 
   // 6. Remove reducible allocation merges from ideal graph
-  if (ReduceAllocationMerges && reducible_merges.size() > 0) {
+  if (reducible_merges.size() > 0) {
     bool delay = _igvn->delay_transform();
     _igvn->set_delay_transform(true);
     for (uint i = 0; i < reducible_merges.size(); i++ ) {
@@ -505,7 +505,7 @@ bool ConnectionGraph::can_reduce_phi(PhiNode* ophi) const {
   // method we might have disabled the compilation and be retrying with RAM
   // disabled.
   // If EliminateAllocations is False, there is no point in reducing merges.
-  if (!ReduceAllocationMerges || !EliminateAllocations || !_compile->do_reduce_allocation_merges()) {
+  if (!_compile->do_reduce_allocation_merges()) {
     return false;
   }
 
@@ -736,11 +736,9 @@ void ConnectionGraph::reduce_phi(PhiNode* ophi) {
 }
 
 void ConnectionGraph::verify_ram_nodes(Compile* C, Node* root) {
+  if (!C->do_reduce_allocation_merges()) return;
+
   Unique_Node_List ideal_nodes;
-
-  // If already failing or RAM is disabled, just return.
-  if (C->failing() || !ReduceAllocationMerges) return;
-
   ideal_nodes.map(C->live_nodes(), nullptr);  // preallocate space
   ideal_nodes.push(root);
 
