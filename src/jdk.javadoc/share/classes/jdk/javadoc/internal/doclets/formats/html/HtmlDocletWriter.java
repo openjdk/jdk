@@ -52,6 +52,7 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.QualifiedNameable;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor9;
@@ -90,9 +91,9 @@ import jdk.javadoc.internal.doclets.formats.html.markup.RawHtml;
 import jdk.javadoc.internal.doclets.formats.html.markup.Script;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.formats.html.markup.TextBuilder;
 import jdk.javadoc.internal.doclets.formats.html.taglets.Taglet;
 import jdk.javadoc.internal.doclets.formats.html.taglets.TagletWriter;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.Messages;
 import jdk.javadoc.internal.doclets.toolkit.Resources;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
@@ -199,6 +200,16 @@ public class HtmlDocletWriter {
      * @param path the file to be generated.
      */
     public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path) {
+        this(configuration, path, true);
+    }
+    /**
+     * Creates an {@code HtmlDocletWriter}.
+     *
+     * @param configuration the configuration for this doclet
+     * @param path the file to be generated.
+     * @param generating whether to write a "Geneterating ..." message to the console
+     */
+    public HtmlDocletWriter(HtmlConfiguration configuration, DocPath path, boolean generating) {
         this.configuration = configuration;
         this.options = configuration.getOptions();
         this.contents = configuration.getContents();
@@ -214,8 +225,17 @@ public class HtmlDocletWriter {
         this.docPaths = configuration.docPaths;
         this.mainBodyScript = new Script();
 
+        if (generating) {
+            writeGenerating();
+        }
+    }
+
+    /**
+     * Writes a "Generating _file_" message to the console
+     */
+    protected final void writeGenerating() {
         messages.notice("doclet.Generating_0",
-            DocFile.createFileForOutput(configuration, path).getPath());
+                DocFile.createFileForOutput(configuration, path).getPath());
     }
 
     /**
@@ -300,10 +320,10 @@ public class HtmlDocletWriter {
             //   for these methods:
             //     * ForkJoinPool.execute(java.lang.Runnable)
             //  This is a long-standing bug, which must be fixed separately: JDK-8302316
-            MethodWriterImpl.addImplementsInfo(this, method, implementedMethods, dl);
+            MethodWriter.addImplementsInfo(this, method, implementedMethods, dl);
         }
         if (overrideInfo != null) {
-            MethodWriterImpl.addOverridden(this,
+            MethodWriter.addOverridden(this,
                     overrideInfo.overriddenMethodOwner(),
                     overrideInfo.overriddenMethod(),
                     dl);
@@ -1476,9 +1496,9 @@ public class HtmlDocletWriter {
         // in their respective writers, but other uses of the method are only interested in TypeElements.
         Element currentPageElement = getCurrentPageElement();
         if (currentPageElement == null) {
-            if (this instanceof PackageWriterImpl packageWriter) {
+            if (this instanceof PackageWriter packageWriter) {
                 currentPageElement = packageWriter.packageElement;
-            } else if (this instanceof ModuleWriterImpl moduleWriter) {
+            } else if (this instanceof ModuleWriter moduleWriter) {
                 currentPageElement = moduleWriter.mdle;
             }
         }
@@ -1511,7 +1531,7 @@ public class HtmlDocletWriter {
      * element of this writer.
      */
     private boolean inSamePackage(Element element) {
-        Element currentPageElement = (this instanceof PackageWriterImpl packageWriter)
+        Element currentPageElement = (this instanceof PackageWriter packageWriter)
                 ? packageWriter.packageElement : getCurrentPageElement();
         return currentPageElement != null && !utils.isModule(element)
                 && Objects.equals(utils.containingPackage(currentPageElement),
@@ -1850,23 +1870,24 @@ public class HtmlDocletWriter {
         return new SimpleAnnotationValueVisitor9<Content, Void>() {
 
             @Override
-            public Content visitType(TypeMirror t, Void p) {
+            public Content visitType(TypeMirror type, Void p) {
                 return new SimpleTypeVisitor9<Content, Void>() {
                     @Override
                     public Content visitDeclared(DeclaredType t, Void p) {
                         HtmlLinkInfo linkInfo = new HtmlLinkInfo(configuration,
                                 HtmlLinkInfo.Kind.PLAIN, t);
-                        String name = utils.isIncluded(t.asElement())
-                                ? t.asElement().getSimpleName().toString()
-                                : utils.getFullyQualifiedName(t.asElement());
-                        linkInfo.label(name + utils.getDimension(t) + ".class");
                         return getLink(linkInfo);
                     }
                     @Override
-                    protected Content defaultAction(TypeMirror e, Void p) {
-                        return Text.of(t + utils.getDimension(t) + ".class");
+                    public Content visitArray(ArrayType t, Void p) {
+                        // render declared base component type as link
+                        return visit(t.getComponentType()).add("[]");
                     }
-                }.visit(t);
+                    @Override
+                    protected Content defaultAction(TypeMirror t, Void p) {
+                        return new TextBuilder(t.toString());
+                    }
+                }.visit(type).add(".class");
             }
 
             @Override
@@ -2018,8 +2039,7 @@ public class HtmlDocletWriter {
     private List<DocPath> getStylesheets(Element element) throws DocFileIOException {
         List<DocPath> localStylesheets = configuration.localStylesheetMap.get(element);
         if (localStylesheets == null) {
-            DocFilesHandlerImpl docFilesHandler = (DocFilesHandlerImpl)configuration
-                    .getWriterFactory().getDocFilesHandler(element);
+            DocFilesHandler docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(element);
             localStylesheets = docFilesHandler.getStylesheets();
             configuration.localStylesheetMap.put(element, localStylesheets);
         }

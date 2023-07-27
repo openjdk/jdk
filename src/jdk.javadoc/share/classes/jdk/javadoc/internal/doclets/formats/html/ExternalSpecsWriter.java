@@ -53,7 +53,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.DocletElement;
 import jdk.javadoc.internal.doclets.toolkit.OverviewElement;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
@@ -247,34 +246,31 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
 
     Comparator<String> getTitleComparator() {
         Collator collator = Collator.getInstance();
-        return new Comparator<>() {
-            @Override
-            public int compare(String s1, String s2) {
-                int i1 = 0;
-                int i2 = 0;
-                while (i1 < s1.length() && i2 < s2.length()) {
-                    int j1 = find(s1, i1, Character::isDigit);
-                    int j2 = find(s2, i2, Character::isDigit);
-                    int cmp = collator.compare(s1.substring(i1, j1), s2.substring(i2, j2));
-                    if (cmp != 0) {
-                        return cmp;
-                    }
-                    if (j1 == s1.length() || j2 == s2.length()) {
-                        i1 = j1;
-                        i2 = j2;
-                        break;
-                    }
-                    int k1 = find(s1, j1, ch -> !Character.isDigit(ch));
-                    int k2 = find(s2, j2, ch -> !Character.isDigit(ch));
-                    cmp = Integer.compare(Integer.parseInt(s1.substring(j1, k1)), Integer.parseInt(s2.substring(j2, k2)));
-                    if (cmp != 0) {
-                        return cmp;
-                    }
-                    i1 = k1;
-                    i2 = k2;
+        return (s1, s2) -> {
+            int i1 = 0;
+            int i2 = 0;
+            while (i1 < s1.length() && i2 < s2.length()) {
+                int j1 = find(s1, i1, Character::isDigit);
+                int j2 = find(s2, i2, Character::isDigit);
+                int cmp = collator.compare(s1.substring(i1, j1), s2.substring(i2, j2));
+                if (cmp != 0) {
+                    return cmp;
                 }
-                return i1 < s1.length() ? 1 : i2 < s2.length() ? -1 : 0;
+                if (j1 == s1.length() || j2 == s2.length()) {
+                    i1 = j1;
+                    i2 = j2;
+                    break;
+                }
+                int k1 = find(s1, j1, ch -> !Character.isDigit(ch));
+                int k2 = find(s2, j2, ch -> !Character.isDigit(ch));
+                cmp = Integer.compare(Integer.parseInt(s1.substring(j1, k1)), Integer.parseInt(s2.substring(j2, k2)));
+                if (cmp != 0) {
+                    return cmp;
+                }
+                i1 = k1;
+                i2 = k2;
             }
+            return i1 < s1.length() ? 1 : i2 < s2.length() ? -1 : 0;
         };
     }
 
@@ -292,8 +288,7 @@ public class ExternalSpecsWriter extends HtmlDocletWriter {
         if (element instanceof OverviewElement) {
             return links.createLink(pathToRoot.resolve(i.getUrl()),
                     resources.getText("doclet.Overview"));
-        } else if (element instanceof DocletElement) {
-            DocletElement e = (DocletElement) element;
+        } else if (element instanceof DocletElement e) {
             // Implementations of DocletElement do not override equals and
             // hashCode; putting instances of DocletElement in a map is not
             // incorrect, but might well be inefficient
