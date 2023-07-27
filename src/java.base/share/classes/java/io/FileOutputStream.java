@@ -335,13 +335,16 @@ public class FileOutputStream extends OutputStream
     {
         Objects.checkFromIndexSize(off, len, b.length);
         boolean append = FD_ACCESS.getAppend(fd);
+        int pos = off;
+        int remaining = len;
         long comp = Blocker.begin();
         try {
-            while (len > 0) {
-                int n = writeBytes0(b, off, len, append);
-                off += n;
-                len -= n;
-            }
+            do {
+                int size = Math.min(remaining, 1572864);
+                int n = writeBytes0(b, pos, size, append);
+                pos += n;
+                remaining -= n;
+            } while (remaining > 0);
         } finally {
             Blocker.end(comp);
         }

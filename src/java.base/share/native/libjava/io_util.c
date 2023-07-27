@@ -57,10 +57,6 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
  */
 #define BUF_SIZE 8192
 
-/* The maximum size of a dynamically-allocated buffer.
- */
-#define MAX_MALLOC_SIZE 1572864
-
 /*
  * Returns true if the array slice defined by the given offset and length
  * is out of bounds.
@@ -80,7 +76,7 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 {
     jint nread;
     char stackBuf[BUF_SIZE];
-    char *buf = stackBuf;
+    char *buf = NULL;
     FD fd;
 
     if (IS_NULL(bytes)) {
@@ -96,13 +92,13 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
     if (len == 0) {
         return 0;
     } else if (len > BUF_SIZE) {
-        if (len > MAX_MALLOC_SIZE)
-            len = MAX_MALLOC_SIZE;
-        buf = (char*)malloc(len*sizeof(char));
+        buf = (char*)malloc(len * sizeof(char));
         if (buf == NULL) {
             JNU_ThrowOutOfMemoryError(env, NULL);
             return 0;
         }
+    } else {
+        buf = stackBuf;
     }
 
     fd = getFD(env, this, fid);
@@ -120,8 +116,9 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         }
     }
 
-    if (buf != stackBuf)
+    if (buf != stackBuf) {
         free(buf);
+    }
 
     return nread;
 }
@@ -152,7 +149,7 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
 {
     jint nwritten = -1;
     char stackBuf[BUF_SIZE];
-    char *buf = stackBuf;
+    char *buf = NULL;
     FD fd;
 
     if (IS_NULL(bytes)) {
@@ -168,13 +165,13 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
     if (len == 0) {
         return 0;
     } else if (len > BUF_SIZE) {
-        if (len > MAX_MALLOC_SIZE)
-            len = MAX_MALLOC_SIZE;
-        buf = (char*)malloc(len*sizeof(char));
+        buf = (char*)malloc(len * sizeof(char));
         if (buf == NULL) {
             JNU_ThrowOutOfMemoryError(env, NULL);
             return 0;
         }
+    } else {
+        buf = stackBuf;
     }
 
     (*env)->GetByteArrayRegion(env, bytes, off, len, (jbyte *)buf);
@@ -196,8 +193,9 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         }
     }
 
-    if (buf != stackBuf)
+    if (buf != stackBuf) {
         free(buf);
+    }
 
     return nwritten;
 }

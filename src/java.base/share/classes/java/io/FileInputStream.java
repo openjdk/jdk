@@ -248,27 +248,39 @@ public class FileInputStream extends InputStream
      */
     private int readBytes(byte[] b, int off, int len) throws IOException {
         Objects.checkFromIndexSize(off, len, b.length);
-        final int start = off;
+        int nread = 0;
+        int pos = off;
+        int remaining = len;
         long comp = Blocker.begin();
         try {
-            while (len > 0) {
-                int n = readBytes0(b, off, len);
-                if (n < 0) {
-                    if (off == start)
-                        return -1;
-                    break;
+            do {
+                int size = Math.min(remaining, 1572864);
+                try {
+                    int n = readBytes0(b, pos, size);
+                    if (n < 0) {
+                        // EOF
+                        if (nread == 0)
+                            nread = -1;
+                        break;
+                    }
+                    nread += n;
+                    if (n < size) {
+                        // buffer not filled
+                        break;
+                    }
+                    pos += n;
+                    remaining -= n;
+                } catch (IOException ioe) {
+                    if (nread > 0) {
+                        break;
+                    }
+                    throw ioe;
                 }
-                off += n;
-                len -= n;
-            }
-        } catch (IOException e) {
-            // Throw only if no bytes have been read
-            if (off == start)
-                throw e;
+            } while (remaining > 0);
         } finally {
             Blocker.end(comp);
         }
-        return off - start;
+        return nread;
     }
 
     /**
