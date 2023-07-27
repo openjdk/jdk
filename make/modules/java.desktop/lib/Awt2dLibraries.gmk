@@ -245,6 +245,8 @@ ifeq ($(call isTargetOs, windows macosx), false)
         DISABLED_WARNINGS_gcc_gtk3_interface.c := parentheses type-limits unused-function, \
         DISABLED_WARNINGS_gcc_OGLBufImgOps.c := format-nonliteral, \
         DISABLED_WARNINGS_gcc_OGLPaints.c := format-nonliteral, \
+        DISABLED_WARNINGS_gcc_screencast_pipewire.c := undef, \
+        DISABLED_WARNINGS_gcc_screencast_portal.c := undef, \
         DISABLED_WARNINGS_gcc_sun_awt_X11_GtkFileDialogPeer.c := parentheses, \
         DISABLED_WARNINGS_gcc_X11SurfaceData.c := implicit-fallthrough pointer-to-int-cast, \
         DISABLED_WARNINGS_gcc_XlibWrapper.c := type-limits pointer-to-int-cast, \
