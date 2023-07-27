@@ -596,7 +596,9 @@ class MacroAssembler: public Assembler {
   void NAME(Register Rs1, Register Rs2, const address dest) {                                            \
     assert_cond(dest != nullptr);                                                                        \
     int64_t offset = dest - pc();                                                                        \
-    guarantee(is_simm13(offset) && ((offset % 2) == 0), "offset is invalid.");                           \
+    guarantee(is_simm13(offset) && ((offset % 2) == 0),                                                  \
+              "offset is invalid: is_simm_13: %s offset: " INT64_FORMAT,                                 \
+              BOOL_TO_STR(is_simm13(offset)), offset);                                                   \
     Assembler::NAME(Rs1, Rs2, offset);                                                                   \
   }                                                                                                      \
   INSN_ENTRY_RELOC(void, NAME(Register Rs1, Register Rs2, address dest, relocInfo::relocType rtype))     \
