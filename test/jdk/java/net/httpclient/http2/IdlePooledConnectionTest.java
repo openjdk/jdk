@@ -111,6 +111,11 @@ public class IdlePooledConnectionTest {
     public void testPooledConnection() throws Exception {
         final Duration h2TimeoutDuration = getEffectiveH2IdleTimeoutDuration();
         assertNotNull(h2TimeoutDuration, "H2 idle connection timeout cannot be null");
+        // the wait time, which represents the time to wait before firing off additional requests,
+        // is intentionally a few milliseconds smaller than the h2 idle connection timeout,
+        // to allow for the requests to reach the place where connection checkout from the pool
+        // happens and thus allow the code to race with the idle connection timer task
+        // closing the connection.
         final long waitTimeMillis = TimeUnit.of(ChronoUnit.MILLIS).convert(h2TimeoutDuration) - 5;
         try (final HttpClient client = HttpClient.newBuilder().proxy(NO_PROXY).build()) {
             final HttpRequest request = HttpRequest.newBuilder(allOKUri)
