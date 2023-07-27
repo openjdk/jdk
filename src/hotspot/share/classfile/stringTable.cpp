@@ -121,7 +121,7 @@ volatile bool _alt_hash = false;
 static bool _rehashed = false;
 static uint64_t _alt_hash_seed = 0;
 
-uintx hash_string(const jchar* s, int len, bool useAlt) {
+unsigned int hash_string(const jchar* s, int len, bool useAlt) {
   return  useAlt ?
     AltHashing::halfsiphash_32(_alt_hash_seed, s, len) :
     java_lang_String::hash_code(s, len);
@@ -888,7 +888,7 @@ oop StringTable::init_shared_table(const DumpedInternedStrings* dumped_interned_
   verify_secondary_array_index_bits();
 
   _shared_table.reset();
-  CompactHashtableWriter writer(_items_count, ArchiveBuilder::string_stats());
+  CompactHashtableWriter writer((int)_items_count, ArchiveBuilder::string_stats());
 
   int index = 0;
   auto copy_into_array = [&] (oop string, bool value_ignored) {
