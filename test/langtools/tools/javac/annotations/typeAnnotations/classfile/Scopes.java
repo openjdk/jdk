@@ -25,14 +25,19 @@ import java.lang.annotation.*;
 import java.io.*;
 import java.net.URL;
 import java.util.List;
-
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
+import jdk.internal.classfile.attribute.*;
 
 /*
  * @test
  * @bug 6843077 8006775
  * @summary Qualified inner type annotation accessible to the class.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  */
 
 @Scopes.UniqueInner
@@ -45,8 +50,8 @@ public class Scopes<T extends @Scopes.UniqueInner Object> extends ClassfileTestH
         expected_tinvisibles = 1;
         expected_invisibles = 1;
 
-        ClassFile cf = getClassFile("Scopes.class");
-        test(cf);
+        ClassModel cm = getClassFile("Scopes.class");
+        test(cm);
 
         countAnnotations();
 

@@ -25,11 +25,16 @@
  * @test
  * @bug 8005085 8005681 8008769 8010015
  * @summary Check (repeating)type annotations on lambda usage.
- * @modules jdk.jdeps/com.sun.tools.classfile
+ * @modules java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @run main CombinationsTargetTest3
  */
 
-import com.sun.tools.classfile.*;
+import jdk.internal.classfile.*;
 import java.io.File;
 import java.util.Vector;
 
@@ -201,19 +206,19 @@ public class CombinationsTargetTest3 extends ClassfileTestHelper {
                 classFile=new File(classdir.concat(source.altClassName));
                 source.innerClassname=null;
             }
-            ClassFile cf = ClassFile.read(classFile);
+            ClassModel cf = Classfile.of().parse(classFile.toPath());
 
-            println("Testing classfile: " + cf.getName());
+            println("Testing classfile: " + cf.thisClass().name());
             //Test class,fields and method counts.
             test(cf);
 
-            for (Field f : cf.fields) {
-                test(cf, f);
-                test(cf, f, true);
+            for (FieldModel f : cf.fields()) {
+                test(f);
+                test(f, true);
             }
-            for (Method m: cf.methods) {
-                test(cf, m);
-                test(cf, m, true);
+            for (MethodModel m: cf.methods()) {
+                test(m);
+                test(m, true);
             }
 
             countAnnotations(); // sets errors=0 before counting.
