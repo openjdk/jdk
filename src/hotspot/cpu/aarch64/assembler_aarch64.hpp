@@ -35,7 +35,7 @@
 
 #ifdef __GNUC__
 
-// ISO C++ asm is always implicitly volatile
+// ISO C++ asm is always implicitly volatile (https://gcc.gnu.org/onlinedocs/gcc/Basic-Asm.html)
 #define NOP() asm ("nop");
 
 #elif defined(_MSC_VER)
