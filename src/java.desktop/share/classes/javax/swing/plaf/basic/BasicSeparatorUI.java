@@ -152,5 +152,13 @@ public class BasicSeparatorUI extends SeparatorUI
     }
 
     public Dimension getMinimumSize( JComponent c ) { return null; }
-    public Dimension getMaximumSize( JComponent c ) { return null; }
+    public Dimension getMaximumSize( JComponent c ) {
+        Dimension d = getPreferredSize(c);
+        if (((JSeparator)c).getOrientation() == JSeparator.VERTICAL) {
+            return new Dimension(d.width, Integer.MAX_VALUE);
+        }
+        else {
+            return new Dimension(Integer.MAX_VALUE, d.height);
+        }
+    }
 }
