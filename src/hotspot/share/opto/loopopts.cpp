@@ -1697,7 +1697,7 @@ void PhaseIdealLoop::try_sink_out_of_loop(Node* n) {
               }
               if (cast != nullptr) {
                 Node* prev = _igvn.hash_find_insert(cast);
-                if (prev != nullptr) {
+                if (prev != nullptr && get_ctrl(prev) == x_ctrl) {
                   cast->destruct(&_igvn);
                   cast = prev;
                 } else {
