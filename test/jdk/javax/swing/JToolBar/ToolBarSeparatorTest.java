@@ -95,7 +95,7 @@ public class ToolBarSeparatorTest {
 
             int y = img.getHeight() / 2;
             for (int x = 10; x < img.getWidth(); x += 10) {
-                System.out.println("x " + x + " y " + y + 
+                System.out.println("x " + x + " y " + y +
                                    " color: " + new Color(img.getRGB(x, y)));
                 Color c = new Color(img.getRGB(x, y));
                 if (c.equals(Color.RED)) {
