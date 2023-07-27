@@ -222,7 +222,7 @@ class same_frame : public stack_map_frame {
   static int frame_type_to_offset_delta(u1 frame_type) {
       return frame_type + 1; }
   static u1 offset_delta_to_frame_type(int offset_delta) {
-      return (u1)(offset_delta - 1); }
+      return checked_cast<u1>(offset_delta - 1); }
 
  public:
 
@@ -301,7 +301,7 @@ class same_frame_extended : public stack_map_frame {
   }
 
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), (u2)(offset_delta - 1));
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
 
   int number_of_types() const { return 0; }
@@ -437,7 +437,7 @@ class same_locals_1_stack_item_extended : public stack_map_frame {
   }
 
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), (u2)(offset_delta - 1));
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
 
   void set_type(verification_type_info* vti) {
@@ -507,7 +507,7 @@ class chop_frame : public stack_map_frame {
     return Bytes::get_Java_u2(offset_delta_addr()) + 1;
   }
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), (u2)(offset_delta - 1));
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
 
   int chops() const {
@@ -598,7 +598,7 @@ class append_frame : public stack_map_frame {
   }
 
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), (u2)(offset_delta - 1));
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
 
   void set_appends(int appends) {
@@ -748,7 +748,7 @@ class full_frame : public stack_map_frame {
   }
 
   void set_offset_delta(int offset_delta) {
-    Bytes::put_Java_u2(offset_delta_addr(), (u2)(offset_delta - 1));
+    Bytes::put_Java_u2(offset_delta_addr(), checked_cast<u2>(offset_delta - 1));
   }
   void set_num_locals(int num_locals) {
     Bytes::put_Java_u2(num_locals_addr(), checked_cast<u2>(num_locals));
