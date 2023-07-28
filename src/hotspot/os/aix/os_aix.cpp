@@ -1117,8 +1117,10 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     return nullptr;
   }
 
+#if INCLUDE_JFR
   EventNativeLibraryLoad event;
   event.set_name(filename);
+#endif
 
   // RTLD_LAZY is currently not implemented. The dl is loaded immediately with all its dependants.
   void * result= ::dlopen(filename, RTLD_LAZY);
@@ -1128,9 +1130,11 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     LoadedLibraries::reload();
     log_info(os)("shared library load of %s was successful", filename);
 
+#if INCLUDE_JFR
     event.set_success(true);
     event.set_errorDescription("");
     event.commit();
+#endif
 
     return result;
   } else {
@@ -1146,9 +1150,11 @@ void *os::dll_load(const char *filename, char *ebuf, int ebuflen) {
     Events::log_dll_message(nullptr, "Loading shared library %s failed, %s", filename, error_report);
     log_info(os)("shared library load of %s failed, %s", filename, error_report);
 
+#if INCLUDE_JFR
     event.set_success(false);
     event.set_errorDescription(error_report);
     event.commit();
+#endif
   }
   return nullptr;
 }

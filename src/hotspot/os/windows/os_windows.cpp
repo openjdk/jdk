@@ -1528,18 +1528,21 @@ static int _print_module(const char* fname, address base_address,
 // same architecture as Hotspot is running on
 void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   log_info(os)("attempting shared library load of %s", name);
+#if INCLUDE_JFR
   EventNativeLibraryLoad event;
   event.set_name(name);
-
+#endif
   void * result = LoadLibrary(name);
   if (result != nullptr) {
     Events::log_dll_message(nullptr, "Loaded shared library %s", name);
     // Recalculate pdb search path if a DLL was loaded successfully.
     SymbolEngine::recalc_search_path();
     log_info(os)("shared library load of %s was successful", name);
+#if INCLUDE_JFR
     event.set_success(true);
     event.set_errorDescription("");
     event.commit();
+#endif
     return result;
   }
   DWORD errcode = GetLastError();
@@ -1553,9 +1556,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   if (errcode == ERROR_MOD_NOT_FOUND) {
     strncpy(ebuf, "Can't find dependent libraries", ebuflen - 1);
     ebuf[ebuflen - 1] = '\0';
+#if INCLUDE_JFR
     event.set_success(false);
     event.set_errorDescription(ebuf);
     event.commit();
+#endif
     return nullptr;
   }
 
@@ -1566,9 +1571,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // else call os::lasterror to obtain system error message
   int fd = ::open(name, O_RDONLY | O_BINARY, 0);
   if (fd < 0) {
+#if INCLUDE_JFR
     event.set_success(false);
     event.set_errorDescription("open on dll file did not work");
     event.commit();
+#endif
     return nullptr;
   }
 
@@ -1595,9 +1602,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   ::close(fd);
   if (failed_to_get_lib_arch) {
     // file i/o error - report os::lasterror(...) msg
+#if INCLUDE_JFR
     event.set_success(false);
     event.set_errorDescription("failed to get lib architecture");
     event.commit();
+#endif
     return nullptr;
   }
 
@@ -1642,9 +1651,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
   // If the architecture is right
   // but some other error took place - report os::lasterror(...) msg
   if (lib_arch == running_arch) {
+#if INCLUDE_JFR
     event.set_success(false);
     event.set_errorDescription("lib architecture matches, but other error occured");
     event.commit();
+#endif
     return nullptr;
   }
 
@@ -1658,10 +1669,11 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen) {
                 "Can't load this .dll (machine code=0x%x) on a %s-bit platform",
                 lib_arch, running_arch_str);
   }
-
+#if INCLUDE_JFR
   event.set_success(false);
   event.set_errorDescription(ebuf);
   event.commit();
+#endif
 
   return nullptr;
 }
