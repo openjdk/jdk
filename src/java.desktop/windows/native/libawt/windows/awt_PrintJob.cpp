@@ -3930,7 +3930,7 @@ static void throwPrinterException(JNIEnv *env, DWORD err) {
     if (nb > 0) {
         JNU_ThrowByName(env, PRINTEREXCEPTION_STR, errStr);
     } else {
-        JNU_ThrowByName(env, PRINTEREXCEPTION_STR, "Secondary error while OS message extraction");
+        JNU_ThrowByName(env, PRINTEREXCEPTION_STR, "secondary error during OS message extraction");
     }
 }
 

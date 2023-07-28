@@ -40,9 +40,8 @@ LPSTR UnicodeToUTF8(const LPCWSTR lpUnicodeStr)
     int nb = WideCharToMultiByte(CP_UTF8, 0, lpUnicodeStr, -1, lpUTF8Str, dwUTF8Len, nullptr, nullptr);
     if (nb > 0) {
         return lpUTF8Str;
-    } else {
-        delete[] lpUTF8Str;
     }
+    delete[] lpUTF8Str;
     return NULL;
 }
 
