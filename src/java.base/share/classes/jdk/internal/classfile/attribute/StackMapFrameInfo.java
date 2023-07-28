@@ -89,39 +89,25 @@ public sealed interface StackMapFrameInfo
      */
     public enum SimpleVerificationTypeInfo implements VerificationTypeInfo {
 
-        /**
-         * verification type top
-         */
+        /** verification type top */
         ITEM_TOP(VT_TOP),
 
-        /**
-         * verification type int
-         */
+        /** verification type int */
         ITEM_INTEGER(VT_INTEGER),
 
-        /**
-         * verification type float
-         */
+        /** verification type float */
         ITEM_FLOAT(VT_FLOAT),
 
-        /**
-         * verification type double
-         */
+        /** verification type double */
         ITEM_DOUBLE(VT_DOUBLE),
 
-        /**
-         * verification type long
-         */
+        /** verification type long */
         ITEM_LONG(VT_LONG),
 
-        /**
-         * verification type null
-         */
+        /** verification type null */
         ITEM_NULL(VT_NULL),
 
-        /**
-         * verification type uninitializedThis
-         */
+        /** verification type uninitializedThis */
         ITEM_UNINITIALIZED_THIS(VT_UNINITIALIZED_THIS);
 
 

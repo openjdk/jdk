@@ -59,7 +59,7 @@ import static jdk.internal.classfile.Classfile.TAT_THROWS;
 import jdk.internal.classfile.impl.TemporaryConstantPool;
 
 /**
- * Models an annotation on a type use.
+ * Models an annotation on a type use, as defined in {@jvms 4.7.19} and {@jvms 4.7.20}.
  *
  * @see RuntimeVisibleTypeAnnotationsAttribute
  * @see RuntimeInvisibleTypeAnnotationsAttribute
@@ -69,7 +69,7 @@ public sealed interface TypeAnnotation
         permits UnboundAttribute.UnboundTypeAnnotation {
 
     /**
-     * The kind of target on which the annotation appears.
+     * The kind of target on which the annotation appears, as defined in {@jvms 4.7.20.1}.
      */
     public enum TargetType {
         /** For annotations on a class type parameter declaration. */
@@ -146,10 +146,16 @@ public sealed interface TypeAnnotation
             this.sizeIfFixed = sizeIfFixed;
         }
 
+        /**
+         * {@return target type value}
+         */
         public int targetTypeValue() {
             return targetTypeValue;
         }
 
+        /**
+         * {@return size of the target type if fixed or -1 if variable}
+         */
         public int sizeIfFixed() {
             return sizeIfFixed;
         }
@@ -225,120 +231,269 @@ public sealed interface TypeAnnotation
      */
     sealed interface TargetInfo {
 
+        /**
+         * {@return type of the target}
+         */
         TargetType targetType();
 
+        /**
+         * {@return size of the target info}
+         */
         default int size() {
             return targetType().sizeIfFixed;
         }
 
+        /**
+         * {@return target for annotations on a class or method type parameter declaration}
+         * @param targetType {@link TargetType.CLASS_TYPE_PARAMETER} or {@link TargetType.METHOD_TYPE_PARAMETER}
+         * @param typeParameterIndex specifies which type parameter declaration is annotated
+         */
         static TypeParameterTarget ofTypeParameter(TargetType targetType, int typeParameterIndex) {
             return new TargetInfoImpl.TypeParameterTargetImpl(targetType, typeParameterIndex);
         }
 
+        /**
+         * {@return target for annotations on a class type parameter declaration}
+         * @param typeParameterIndex specifies which type parameter declaration is annotated
+         */
         static TypeParameterTarget ofClassTypeParameter(int typeParameterIndex) {
             return ofTypeParameter(TargetType.CLASS_TYPE_PARAMETER, typeParameterIndex);
         }
 
+        /**
+         * {@return target for annotations on a method type parameter declaration}
+         * @param typeParameterIndex specifies which type parameter declaration is annotated
+         */
         static TypeParameterTarget ofMethodTypeParameter(int typeParameterIndex) {
             return ofTypeParameter(TargetType.METHOD_TYPE_PARAMETER, typeParameterIndex);
         }
 
+        /**
+         * {@return target for annotations on the type of an "extends" or "implements" clause}
+         * @param supertypeIndex the index into the interfaces array or 65535 to indicate it is the superclass
+         */
         static SupertypeTarget ofClassExtends(int supertypeIndex) {
             return new TargetInfoImpl.SupertypeTargetImpl(supertypeIndex);
         }
 
+        /**
+         * {@return target for annotations on the i'th bound of the j'th type parameter declaration of
+         * a generic class, interface, method, or constructor}
+         * @param targetType {@link TargetType.CLASS_TYPE_PARAMETER_BOUND} or {@link TargetType.METHOD_TYPE_PARAMETER_BOUND}
+         * @param typeParameterIndex specifies which type parameter declaration is annotated
+         * @param boundIndex specifies which bound of the type parameter declaration is annotated
+         */
         static TypeParameterBoundTarget ofTypeParameterBound(TargetType targetType, int typeParameterIndex, int boundIndex) {
             return new TargetInfoImpl.TypeParameterBoundTargetImpl(targetType, typeParameterIndex, boundIndex);
         }
 
+        /**
+         * {@return target for annotations on the i'th bound of the j'th type parameter declaration of
+         * a generic class, or interface}
+         * @param typeParameterIndex specifies which type parameter declaration is annotated
+         * @param boundIndex specifies which bound of the type parameter declaration is annotated
+         */
         static TypeParameterBoundTarget ofClassTypeParameterBound(int typeParameterIndex, int boundIndex) {
             return ofTypeParameterBound(TargetType.CLASS_TYPE_PARAMETER_BOUND, typeParameterIndex, boundIndex);
         }
 
+        /**
+         * {@return target for annotations on the i'th bound of the j'th type parameter declaration of
+         * a generic method, or constructor}
+         * @param typeParameterIndex specifies which type parameter declaration is annotated
+         * @param boundIndex specifies which bound of the type parameter declaration is annotated
+         */
         static TypeParameterBoundTarget ofMethodTypeParameterBound(int typeParameterIndex, int boundIndex) {
             return ofTypeParameterBound(TargetType.METHOD_TYPE_PARAMETER_BOUND, typeParameterIndex, boundIndex);
         }
 
+        /**
+         * {@return target for annotations on }
+         * @param targetType {@link TargetType.FIELD}, {@link TargetType.METHOD_RETURN} or {@link TargetType.METHOD_RECEIVER}
+         */
         static EmptyTarget of(TargetType targetType) {
             return new TargetInfoImpl.EmptyTargetImpl(targetType);
         }
 
+        /**
+         * {@return target for annotations on the type in a field or record declaration}
+         */
         static EmptyTarget ofField() {
             return of(TargetType.FIELD);
         }
 
+        /**
+         * {@return target for annotations on the return type of a method or a newly constructed object}
+         */
         static EmptyTarget ofMethodReturn() {
             return of(TargetType.METHOD_RETURN);
         }
 
+        /**
+         * {@return target for annotations on the receiver type of a method or constructor}
+         */
         static EmptyTarget ofMethodReceiver() {
             return of(TargetType.METHOD_RECEIVER);
         }
 
+        /**
+         * {@return target for annotations on the type in a formal parameter declaration of a method,
+         * constructor, or lambda expression}
+         * @param formalParameterIndex specifies which formal parameter declaration has an annotated type
+         */
         static FormalParameterTarget ofMethodFormalParameter(int formalParameterIndex) {
             return new TargetInfoImpl.FormalParameterTargetImpl(formalParameterIndex);
         }
 
+        /**
+         * {@return target for annotations on the i'th type in the throws clause of a method or
+         * constructor declaration}
+         * @param throwsTargetIndex an index into the exception table of the Exceptions attribute of the method
+         */
         static ThrowsTarget ofThrows(int throwsTargetIndex) {
             return new TargetInfoImpl.ThrowsTargetImpl(throwsTargetIndex);
         }
 
+        /**
+         * {@return target for annotations on the type in a local variable declaration,
+         * including a variable declared as a resource in a try-with-resources statement}
+         * @param targetType {@link TargetType.LOCAL_VARIABLE} or {@link TargetType.RESOURCE_VARIABLE}
+         * @param table list of local variable targets
+         */
         static LocalVarTarget ofVariable(TargetType targetType, List<LocalVarTargetInfo> table) {
             return new TargetInfoImpl.LocalVarTargetImpl(targetType, table);
         }
 
+        /**
+         * {@return target for annotations on the type in a local variable declaration}
+         * @param table list of local variable targets
+         */
         static LocalVarTarget ofLocalVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.LOCAL_VARIABLE, table);
         }
 
+        /**
+         * {@return target for annotations on the type in a local variable declared
+         * as a resource in a try-with-resources statement}
+         * @param table list of local variable targets
+         */
         static LocalVarTarget ofResourceVariable(List<LocalVarTargetInfo> table) {
             return ofVariable(TargetType.RESOURCE_VARIABLE, table);
         }
 
+        /**
+         * {@return target for annotations on the i'th type in an exception parameter declaration}
+         * @param exceptionTableIndex an index into the exception table of the Code attribute
+         */
         static CatchTarget ofExceptionParameter(int exceptionTableIndex) {
             return new TargetInfoImpl.CatchTargetImpl(exceptionTableIndex);
         }
 
+        /**
+         * {@return target for annotations on the type in an instanceof expression or a new expression,
+         * or the type before the :: in a method reference expression}
+         * {@param targetType {@link TargetType.INSTANCEOF}, {@link TargetType.NEW},
+         *                    {@link TargetType.CONSTRUCTOR_REFERENCE},
+         *                    or {@link TargetType.METHOD_REFERENCE}}
+         * @param target code label corresponding to the instruction
+         */
         static OffsetTarget ofOffset(TargetType targetType, Label target) {
             return new TargetInfoImpl.OffsetTargetImpl(targetType, target);
         }
 
+        /**
+         * {@return target for annotations on the type in an instanceof expression}
+         * @param target code label corresponding to the instruction
+         */
         static OffsetTarget ofInstanceofExpr(Label target) {
             return ofOffset(TargetType.INSTANCEOF, target);
         }
 
+        /**
+         * {@return target for annotations on the type in a new expression}
+         * @param target code label corresponding to the instruction
+         */
         static OffsetTarget ofNewExpr(Label target) {
             return ofOffset(TargetType.NEW, target);
         }
 
+        /**
+         * {@return target for annotations on the type before the :: in a constructor reference expression}
+         * @param target code label corresponding to the instruction
+         */
         static OffsetTarget ofConstructorReference(Label target) {
             return ofOffset(TargetType.CONSTRUCTOR_REFERENCE, target);
         }
 
+        /**
+         * {@return target for annotations on the type before the :: in a method reference expression}
+         * @param target code label corresponding to the instruction
+         */
         static OffsetTarget ofMethodReference(Label target) {
             return ofOffset(TargetType.METHOD_REFERENCE, target);
         }
 
+        /**
+         * {@return target for annotations on the i'th type in a cast expression,
+         * or on the i'th type argument in the explicit type argument list for any of the following:
+         * a new expression, an explicit constructor invocation statement, a method invocation expression,
+         * or a method reference expression}
+         * {@param targetType {@link TargetType.CAST}, {@link TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT},
+         *                    {@link TargetType.METHOD_INVOCATION_TYPE_ARGUMENT},
+         *                    {@link TargetType.CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT},
+         *                    or {@link TargetType.METHOD_REFERENCE_TYPE_ARGUMENT}}
+         * @param target code label corresponding to the instruction
+         * @param typeArgumentIndex specifies which type in the cast operator or argument is annotated
+         */
         static TypeArgumentTarget ofTypeArgument(TargetType targetType, Label target, int typeArgumentIndex) {
             return new TargetInfoImpl.TypeArgumentTargetImpl(targetType, target, typeArgumentIndex);
         }
 
+        /**
+         * {@return target for annotations on the i'th type in a cast expression}
+         * @param target code label corresponding to the instruction
+         * @param typeArgumentIndex specifies which type in the cast operator is annotated
+         */
         static TypeArgumentTarget ofCastExpr(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.CAST, target, typeArgumentIndex);
         }
 
+        /**
+         * {@return target for annotations on the i'th type argument in the explicit type argument list for
+         * an explicit constructor invocation statement}
+         * @param target code label corresponding to the instruction
+         * @param typeArgumentIndex specifies which type in the argument is annotated
+         */
         static TypeArgumentTarget ofConstructorInvocationTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT, target, typeArgumentIndex);
         }
 
+        /**
+         * {@return target for annotations on the i'th type argument in the explicit type argument list for
+         * a method invocation expression}
+         * @param target code label corresponding to the instruction
+         * @param typeArgumentIndex specifies which type in the argument is annotated
+         */
         static TypeArgumentTarget ofMethodInvocationTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.METHOD_INVOCATION_TYPE_ARGUMENT, target, typeArgumentIndex);
         }
 
+        /**
+         * {@return target for annotations on the i'th type argument in the explicit type argument list for
+         * a new expression}
+         * @param target code label corresponding to the instruction
+         * @param typeArgumentIndex specifies which type in the argument is annotated
+         */
         static TypeArgumentTarget ofConstructorReferenceTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT, target, typeArgumentIndex);
         }
 
+        /**
+         * {@return target for annotations on the i'th type argument in the explicit type argument list for
+         * a method reference expression}
+         * @param target code label corresponding to the instruction
+         * @param typeArgumentIndex specifies which type in the argument is annotated
+         */
         static TypeArgumentTarget ofMethodReferenceTypeArgument(Label target, int typeArgumentIndex) {
             return ofTypeArgument(TargetType.METHOD_REFERENCE_TYPE_ARGUMENT, target, typeArgumentIndex);
         }
@@ -493,6 +648,12 @@ public sealed interface TypeAnnotation
          */
         int index();
 
+        /**
+         * {@return local variable target info}
+         * @param startLabel code label indicating start of an interval where variable has value
+         * @param endLabel code label indicating start of an interval where variable has value
+         * @param index index into the local variables
+         */
         static LocalVarTargetInfo of(Label startLabel, Label endLabel, int index) {
             return new TargetInfoImpl.LocalVarTargetInfoImpl(startLabel, endLabel, index);
         }
@@ -567,31 +728,27 @@ public sealed interface TypeAnnotation
     }
 
     /**
-     * JVMS: Wherever a type is used in a declaration or expression, the type_path structure identifies which part of
-     * the type is annotated. An annotation may appear on the type itself, but if the type is a reference type, then
-     * there are additional locations where an annotation may appear:
-     *
-     * If an array type T[] is used in a declaration or expression, then an annotation may appear on any component type
-     * of the array type, including the element type.
-     *
-     * If a nested type T1.T2 is used in a declaration or expression, then an annotation may appear on the name of the
-     * innermost member type and any enclosing type for which a type annotation is admissible {@jls 9.7.4}.
-     *
-     * If a parameterized type {@literal T<A> or T<? extends A> or T<? super A>} is used in a declaration or expression, then an
-     * annotation may appear on any type argument or on the bound of any wildcard type argument.
-     *
-     * JVMS: ...  each entry in the path array represents an iterative, left-to-right step towards the precise location
-     * of the annotation in an array type, nested type, or parameterized type. (In an array type, the iteration visits
-     * the array type itself, then its component type, then the component type of that component type, and so on,
-     * until the element type is reached.)
+     * JVMS: Type_path structure identifies which part of the type is annotated,
+     * as defined in {@jvms 4.7.20.2}
      */
     sealed interface TypePathComponent
             permits UnboundAttribute.TypePathComponentImpl {
 
+        /**
+         * Type path kind, as defined in {@jvms 4.7.20.2}
+         */
         public enum Kind {
+
+            /** Annotation is deeper in an array type */
             ARRAY(0),
+
+            /** Annotation is deeper in a nested type */
             INNER_TYPE(1),
+
+            /** Annotation is on the bound of a wildcard type argument of a parameterized type */
             WILDCARD(2),
+
+            /** Annotation is on a type argument of a parameterized type */
             TYPE_ARGUMENT(3);
 
             private final int tag;
@@ -600,13 +757,21 @@ public sealed interface TypeAnnotation
                 this.tag = tag;
             }
 
+            /**
+             * {@return type path kind value}
+             */
             public int tag() {
                 return tag;
             }
         }
 
+        /** static instance for annotation is deeper in an array type */
         TypePathComponent ARRAY = new UnboundAttribute.TypePathComponentImpl(Kind.ARRAY, 0);
+
+        /** static instance for annotation is deeper in a nested type */
         TypePathComponent INNER_TYPE = new UnboundAttribute.TypePathComponentImpl(Kind.INNER_TYPE, 0);
+
+        /** static instance for annotation is on the bound of a wildcard type argument of a parameterized type */
         TypePathComponent WILDCARD = new UnboundAttribute.TypePathComponentImpl(Kind.WILDCARD, 0);
 
 
@@ -629,6 +794,11 @@ public sealed interface TypeAnnotation
          */
         int typeArgumentIndex();
 
+        /**
+         * {@return type path component of an annotation}
+         * @param typePathKind the kind of path element
+         * @param typeArgumentIndex type argument index
+         */
         static TypePathComponent of(Kind typePathKind, int typeArgumentIndex) {
 
             return switch (typePathKind) {
