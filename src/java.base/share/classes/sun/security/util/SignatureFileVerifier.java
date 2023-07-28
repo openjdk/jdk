@@ -851,9 +851,9 @@ public class SignatureFileVerifier {
                 "jdk.jar.maxSignatureFileSize", 16000000);
         if (tmp < 0 || tmp > MAX_ARRAY_SIZE) {
             if (debug != null) {
-                debug.println("Default signature file size 16000000 bytes " +
-                        "is used as the specified size for the " +
-                        "jdk.jar.maxSignatureFileSize system property " +
+                debug.println("The default signature file size of 16000000 bytes " +
+                        "will be used for the jdk.jar.maxSignatureFileSize " +
+                        "system property since the specified value " +
                         "is out of range: " + tmp);
             }
             tmp = 16000000;
