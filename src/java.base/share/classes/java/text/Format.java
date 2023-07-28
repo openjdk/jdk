@@ -61,7 +61,7 @@ import java.io.Serializable;
  * <h2>Subclassing</h2>
  *
  * <p>
- * The Java Platform provides four specialized subclasses of {@code Format}--
+ * The Java Platform provides specialized subclasses of {@code Format}--
  * {@code DateFormat}, {@code MessageFormat}, {@code NumberFormat}, and
  * {@code ListFormat}--for formatting dates, messages, numbers, and lists
  * respectively.

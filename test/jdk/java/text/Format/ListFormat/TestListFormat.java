@@ -114,9 +114,9 @@ public class TestListFormat {
     static Arguments[] getInstance_1Arg_IAE() {
         return new Arguments[] {
                 arguments(CUSTOM_PATTERNS_IAE_LENGTH, "Pattern array length should be 5"),
-                arguments(CUSTOM_PATTERNS_IAE_START, "start pattern is incorrect"),
-                arguments(CUSTOM_PATTERNS_IAE_MIDDLE, "middle pattern is incorrect"),
-                arguments(CUSTOM_PATTERNS_IAE_END, "end pattern is incorrect"),
+                arguments(CUSTOM_PATTERNS_IAE_START, "start pattern is incorrect: {0}"),
+                arguments(CUSTOM_PATTERNS_IAE_MIDDLE, "middle pattern is incorrect: {0} {1} {2}"),
+                arguments(CUSTOM_PATTERNS_IAE_END, "end pattern is incorrect: error {0} ebet {1}"),
         };
     }
 

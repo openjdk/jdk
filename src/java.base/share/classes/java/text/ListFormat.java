@@ -25,8 +25,6 @@
 
 package java.text;
 
-import sun.util.locale.provider.LocaleProviderAdapter;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serial;
@@ -36,6 +34,7 @@ import java.util.Locale;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.IntStream;
+import sun.util.locale.provider.LocaleProviderAdapter;
 
 /**
  * {@code ListFormat} produces or parses a list of concatenated
@@ -83,7 +82,7 @@ import java.util.stream.IntStream;
  * </table>
  * <p>
  * Alternatively, Locale, Type, and/or Style invariant patterns can be
- * specified with {@link #getInstance(String[])}. The String array to the
+ * created with {@link #getInstance(String[])}. The String array to the
  * method specifies the delimiting patterns for the start/middle/end portion of
  * the formatted string, as well as optional specialized patterns for two or three
  * elements. Refer to the method description for more detail.
@@ -117,6 +116,9 @@ public class ListFormat extends Format {
      */
     private final String[] patterns;
 
+    private static final Pattern PARSE_START = Pattern.compile("(?<startBefore>.*?)\\{0}(?<startBetween>.*?)\\{1}");
+    private static final Pattern PARSE_MIDDLE = Pattern.compile("\\{0}(?<middleBetween>.*?)\\{1}");
+    private static final Pattern PARSE_END = Pattern.compile("\\{0}(?<endBetween>.*?)\\{1}(?<endAfter>.*?)");
     private transient Pattern startPattern;
     private transient String middleBetween;
     private transient Pattern endPattern;
@@ -129,32 +131,32 @@ public class ListFormat extends Format {
 
     private void init() {
         // get pattern strings
-        var m = Pattern.compile("(?<startBefore>.*?)\\{0}(?<startBetween>.*?)\\{1}").matcher(patterns[START]);
+        var m = PARSE_START.matcher(patterns[START]);
         String startBefore;
         String startBetween;
         if (m.matches()) {
             startBefore = m.group("startBefore");
             startBetween = m.group("startBetween");
         } else {
-            throw new IllegalArgumentException("start pattern is incorrect");
+            throw new IllegalArgumentException("start pattern is incorrect: " + patterns[START]);
         }
-        m = Pattern.compile("\\{0}(?<middleBetween>.*?)\\{1}").matcher(patterns[MIDDLE]);
+        m = PARSE_MIDDLE.matcher(patterns[MIDDLE]);
         if (m.matches()) {
             middleBetween = m.group("middleBetween");
         } else {
-            throw new IllegalArgumentException("middle pattern is incorrect");
+            throw new IllegalArgumentException("middle pattern is incorrect: " + patterns[MIDDLE]);
         }
-        m = Pattern.compile("\\{0}(?<endBetween>.*?)\\{1}(?<endAfter>.*?)").matcher(patterns[END]);
+        m = PARSE_END.matcher(patterns[END]);
         String endBetween;
         String endAfter;
         if (m.matches()) {
             endBetween = m.group("endBetween");
             endAfter = m.group("endAfter");
         } else {
-            throw new IllegalArgumentException("end pattern is incorrect");
+            throw new IllegalArgumentException("end pattern is incorrect: " + patterns[END]);
         }
 
-        // two/three patterns, if empty
+        // generate two/three patterns, if empty
         if (patterns[TWO] == null || patterns[TWO].isEmpty()) {
             patterns[TWO] = startBefore + "{0}" + endBetween + "{1}" + endAfter;
         }
@@ -201,14 +203,14 @@ public class ListFormat extends Format {
     /**
      * {@return the list format for the specified patterns}
      * <p>
-     * This factory produces an instance based on the customized patterns array,
+     * This factory returns an instance based on the customized patterns array,
      * instead of letting the runtime provide appropriate patterns for the Locale/Type/Style.
      * <p>
      * The patterns array should contain five String patterns, each corresponding to the Unicode LDML's
      * {@code listPatternPart}, i.e., "start", "middle", "end", two element, and three element patterns
      * in this order. Each pattern contains "{0}" and "{1}" (and "{2}" for the three element pattern)
      * placeholders that are substituted with the passed input strings on formatting.
-     * If the length of the patterns array is less than 5, an {@code IllegalArgumentException}
+     * If the length of the patterns array is not 5, an {@code IllegalArgumentException}
      * is thrown.
      * <p>
      * Each pattern string is first parsed as follows. Patterns in parentheses are optional:
@@ -284,7 +286,7 @@ public class ListFormat extends Format {
 
     /**
      * {@return the string that consists of the input strings, concatenated with the
-     * patterns of this {@code ListFormat}
+     * patterns of this {@code ListFormat}}
      * @param input The list of input strings to format. There should at least
      *              one String element in this list, otherwise an {@code IllegalArgumentException}
      *              is thrown.
@@ -378,6 +380,7 @@ public class ListFormat extends Format {
     @Override
     public Object parseObject(String source, ParsePosition parsePos) {
         Objects.requireNonNull(source);
+        Objects.requireNonNull(parsePos);
         var sm = startPattern.matcher(source);
         var em = endPattern.matcher(source);
         Object parsed = null;
@@ -491,11 +494,15 @@ public class ListFormat extends Format {
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
         stream.defaultReadObject();
-        init();
+        try {
+            init();
+        } catch (IllegalArgumentException iae) {
+            throw new IOException("Deserialization failed.", iae);
+        }
     }
 
     /**
-     * A list format type - {@code standard}, {@code or}, and {@code unit}.
+     * A list format type - {@link #STANDARD}, {@link #OR}, and {@link #UNIT}.
      * <p>
      * {@code Type} is an enum which represents the type for formatting
      * a list within a given {@code ListFormat} instance.
@@ -519,15 +526,10 @@ public class ListFormat extends Format {
          * elements, useful for enumerating units.
          */
         UNIT;
-
-        @Override
-        public String toString() {
-            return name().toLowerCase(Locale.ROOT);
-        }
     }
 
     /**
-     * A list format style - {@code full}, {@code short}, and {@code narrow}.
+     * A list format style - {@link #FULL}, {@link #SHORT}, and {@link #NARROW}.
      * <p>
      * {@code Style} is an enum which represents the style for formatting
      * a list within a given {@code ListFormat} instance.
@@ -535,23 +537,21 @@ public class ListFormat extends Format {
     public enum Style {
 
         /**
-         * The {@code FULL} list format style.
+         * The {@code FULL} list format style. This is the default
+         * style, which typically is the full description of text.
          */
         FULL,
 
         /**
-         * The {@code SHORT} list format style.
+         * The {@code SHORT} list format style. This style
+         * typically is an abbreviation of text.
          */
         SHORT,
 
         /**
-         * The {@code NARROW} list format style.
+         * The {@code NARROW} list format style. This style
+         * typically is the shortest description of text.
          */
         NARROW;
-
-        @Override
-        public String toString() {
-            return name().toLowerCase(Locale.ROOT);
-        }
     }
 }

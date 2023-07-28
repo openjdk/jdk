@@ -840,8 +840,8 @@ public class LocaleResources {
      * @param style Style. one of {@link ListFormat.Style}
      */
     public String[] getListPatterns(ListFormat.Type type, ListFormat.Style style) {
-        String typeStr = type.toString();
-        String styleStr = style.toString();
+        String typeStr = type.toString().toLowerCase(Locale.ROOT);
+        String styleStr = style.toString().toLowerCase(Locale.ROOT);
         String[] lpArray;
         String cacheKey = LIST_PATTERN + typeStr;
 
