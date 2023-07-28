@@ -151,7 +151,7 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
     private void quux() {return ;}
 
     // Space after "**" is removed, but not trailing space later on the line
-    /** Totality 
+    /** Totality\u0020
      */
     @ExpectedComment("Totality \n")
     private void corge() {return ;}
@@ -162,7 +162,7 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
     private void grault() {return ;}
 
     // Trailing space characters on first line
-    /** \u0009 
+    /** \u0009\u0020
      * Totality
      */
     @ExpectedComment(" Totality\n") // No newline
@@ -183,4 +183,3 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
     @ExpectedComment("") // No newline
     private void tail2() {return ;}
 }
-                     
