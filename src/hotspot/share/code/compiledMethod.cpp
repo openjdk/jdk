@@ -116,7 +116,7 @@ const char* CompiledMethod::state() const {
 
 //-----------------------------------------------------------------------------
 void CompiledMethod::set_deoptimized_done() {
-  ReentrantMutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   if (_deoptimization_status != deoptimize_done) { // can't go backwards
     Atomic::store(&_deoptimization_status, deoptimize_done);
   }

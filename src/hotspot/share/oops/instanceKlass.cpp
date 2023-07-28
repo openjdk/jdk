@@ -3406,7 +3406,7 @@ void InstanceKlass::add_osr_nmethod(nmethod* n) {
 // Remove osr nmethod from the list. Return true if found and removed.
 bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
   // This is a short non-blocking critical region, so the no safepoint check is ok.
-  ReentrantMutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   assert(n->is_osr_method(), "wrong kind of nmethod");
   nmethod* last = nullptr;
   nmethod* cur  = osr_nmethods_head();
@@ -3447,7 +3447,7 @@ bool InstanceKlass::remove_osr_nmethod(nmethod* n) {
 }
 
 int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Method* m) {
-  ReentrantMutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   int found = 0;
   while (osr != nullptr) {
@@ -3462,7 +3462,7 @@ int InstanceKlass::mark_osr_nmethods(DeoptimizationScope* deopt_scope, const Met
 }
 
 nmethod* InstanceKlass::lookup_osr_nmethod(const Method* m, int bci, int comp_level, bool match_level) const {
-  ReentrantMutexLocker ml(CompiledMethod_lock, Mutex::_no_safepoint_check_flag);
+  ConditionalMutexLocker ml(CompiledMethod_lock, !CompiledMethod_lock->owned_by_self(), Mutex::_no_safepoint_check_flag);
   nmethod* osr = osr_nmethods_head();
   nmethod* best = nullptr;
   while (osr != nullptr) {

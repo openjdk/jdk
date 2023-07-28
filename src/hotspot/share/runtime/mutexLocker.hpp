@@ -187,6 +187,8 @@ void assert_lock_strong(const Mutex* lock);
 #define assert_lock_strong(lock)
 #endif
 
+// Internal implementation. Skips on null Mutex.
+// Subclasses enforce stronger invariants.
 class MutexLockerImpl: public StackObj {
  protected:
   Mutex* _mutex;
@@ -226,7 +228,8 @@ class MutexLockerImpl: public StackObj {
   static void post_initialize();
 };
 
-// Simplest locker, does not allow reentrancy
+// Simplest mutex locker.
+// Does not allow null mutexes.
 class MutexLocker: public MutexLockerImpl {
  public:
    MutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
@@ -240,7 +243,8 @@ class MutexLocker: public MutexLockerImpl {
    }
 };
 
-// Conditional locker: only lock when condition is true
+// Conditional mutex locker.
+// Like MutexLocker above, but only locks when condition is true.
 class ConditionalMutexLocker: public MutexLockerImpl {
  public:
    ConditionalMutexLocker(Mutex* mutex, bool condition, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
@@ -254,19 +258,9 @@ class ConditionalMutexLocker: public MutexLockerImpl {
    }
  };
 
-// Reentrant locker: only lock when mutex is not owned already
-class ReentrantMutexLocker: public ConditionalMutexLocker {
- public:
-   ReentrantMutexLocker(Mutex* mutex, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-     ConditionalMutexLocker(mutex, !mutex->owned_by_self(), flag) {}
-
-   ReentrantMutexLocker(Thread* thread, Mutex* mutex, bool condition, Mutex::SafepointCheckFlag flag = Mutex::_safepoint_check_flag) :
-     ConditionalMutexLocker(thread, mutex, !mutex->owned_by_self(), flag) {}
- };
-
 // A MonitorLocker is like a MutexLocker above, except it allows
 // wait/notify as well which are delegated to the underlying Monitor.
-
+// It also disallows null.
 class MonitorLocker: public MutexLocker {
   Mutex::SafepointCheckFlag _flag;
 
