@@ -470,6 +470,7 @@ public class Locks {
             ownerInfo = findOwnerInfo(infos, lock);
             log("ownerInfo = %s", ownerInfo);
             if (ownerInfo.getThreadName().contains("ForkJoinPool")) {
+                // Ignore e.g. "ForkJoinPool-1-worker-1" waiting on a VirtualThread 
                 log ("skipping %s", ownerInfo);
                 lock = ownerInfo.getLockName();
                 continue;
