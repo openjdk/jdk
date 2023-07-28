@@ -103,6 +103,7 @@ class outputStream;
   LOG_TAG(itables) \
   LOG_TAG(jfr) \
   LOG_TAG(jit) \
+  LOG_TAG(jmethod) \
   LOG_TAG(jni) \
   LOG_TAG(jvmci) \
   LOG_TAG(jvmti) \
