@@ -115,64 +115,64 @@ public enum Opcode {
     /** Load reference from local variable */
     ALOAD(Classfile.ALOAD, 2, Kind.LOAD, TypeKind.ReferenceType, -1),
 
-    /** Load int from local variable */
+    /** Load int from local variable 0 */
     ILOAD_0(Classfile.ILOAD_0, 1, Kind.LOAD, TypeKind.IntType, 0),
 
-    /** Load int from local variable */
+    /** Load int from local variable 1 */
     ILOAD_1(Classfile.ILOAD_1, 1, Kind.LOAD, TypeKind.IntType, 1),
 
-    /** Load int from local variable */
+    /** Load int from local variable 2 */
     ILOAD_2(Classfile.ILOAD_2, 1, Kind.LOAD, TypeKind.IntType, 2),
 
-    /** Load int from local variable */
+    /** Load int from local variable3  */
     ILOAD_3(Classfile.ILOAD_3, 1, Kind.LOAD, TypeKind.IntType, 3),
 
-    /** Load long from local variable */
+    /** Load long from local variable 0 */
     LLOAD_0(Classfile.LLOAD_0, 1, Kind.LOAD, TypeKind.LongType, 0),
 
-    /** Load long from local variable */
+    /** Load long from local variable 1 */
     LLOAD_1(Classfile.LLOAD_1, 1, Kind.LOAD, TypeKind.LongType, 1),
 
-    /** Load long from local variable */
+    /** Load long from local variable 2 */
     LLOAD_2(Classfile.LLOAD_2, 1, Kind.LOAD, TypeKind.LongType, 2),
 
-    /** Load long from local variable */
+    /** Load long from local variable 3 */
     LLOAD_3(Classfile.LLOAD_3, 1, Kind.LOAD, TypeKind.LongType, 3),
 
-    /** Load float from local variable */
+    /** Load float from local variable 0 */
     FLOAD_0(Classfile.FLOAD_0, 1, Kind.LOAD, TypeKind.FloatType, 0),
 
-    /** Load float from local variable */
+    /** Load float from local variable 1 */
     FLOAD_1(Classfile.FLOAD_1, 1, Kind.LOAD, TypeKind.FloatType, 1),
 
-    /** Load float from local variable */
+    /** Load float from local variable 2 */
     FLOAD_2(Classfile.FLOAD_2, 1, Kind.LOAD, TypeKind.FloatType, 2),
 
-    /** Load float from local variable */
+    /** Load float from local variable 3 */
     FLOAD_3(Classfile.FLOAD_3, 1, Kind.LOAD, TypeKind.FloatType, 3),
 
-    /** Load double from local variable */
+    /** Load double from local variable 0 */
     DLOAD_0(Classfile.DLOAD_0, 1, Kind.LOAD, TypeKind.DoubleType, 0),
 
-    /** Load double from local variable */
+    /** Load double from local variable 1 */
     DLOAD_1(Classfile.DLOAD_1, 1, Kind.LOAD, TypeKind.DoubleType, 1),
 
-    /** Load double from local variable */
+    /** Load double from local variable 2 */
     DLOAD_2(Classfile.DLOAD_2, 1, Kind.LOAD, TypeKind.DoubleType, 2),
 
-    /** Load double from local variable */
+    /** Load double from local variable 3 */
     DLOAD_3(Classfile.DLOAD_3, 1, Kind.LOAD, TypeKind.DoubleType, 3),
 
-    /**  */
+    /**  Load reference from local variable 0 */
     ALOAD_0(Classfile.ALOAD_0, 1, Kind.LOAD, TypeKind.ReferenceType, 0),
 
-    /** Load reference from local variable */
+    /** Load reference from local variable 1 */
     ALOAD_1(Classfile.ALOAD_1, 1, Kind.LOAD, TypeKind.ReferenceType, 1),
 
-    /** Load reference from local variable */
+    /** Load reference from local variable 2 */
     ALOAD_2(Classfile.ALOAD_2, 1, Kind.LOAD, TypeKind.ReferenceType, 2),
 
-    /** Load reference from local variable */
+    /** Load reference from local variable 3 */
     ALOAD_3(Classfile.ALOAD_3, 1, Kind.LOAD, TypeKind.ReferenceType, 3),
 
     /** Load int from array */
@@ -214,64 +214,64 @@ public enum Opcode {
     /** Store reference into local variable */
     ASTORE(Classfile.ASTORE, 2, Kind.STORE, TypeKind.ReferenceType, -1),
 
-    /** Store int into local variable */
+    /** Store int into local variable 0 */
     ISTORE_0(Classfile.ISTORE_0, 1, Kind.STORE, TypeKind.IntType, 0),
 
-    /** Store int into local variable */
+    /** Store int into local variable 1 */
     ISTORE_1(Classfile.ISTORE_1, 1, Kind.STORE, TypeKind.IntType, 1),
 
-    /** Store int into local variable */
+    /** Store int into local variable 2 */
     ISTORE_2(Classfile.ISTORE_2, 1, Kind.STORE, TypeKind.IntType, 2),
 
-    /** Store int into local variable */
+    /** Store int into local variable 3 */
     ISTORE_3(Classfile.ISTORE_3, 1, Kind.STORE, TypeKind.IntType, 3),
 
-    /** Store long into local variable */
+    /** Store long into local variable 0 */
     LSTORE_0(Classfile.LSTORE_0, 1, Kind.STORE, TypeKind.LongType, 0),
 
-    /** Store long into local variable */
+    /** Store long into local variable 1 */
     LSTORE_1(Classfile.LSTORE_1, 1, Kind.STORE, TypeKind.LongType, 1),
 
-    /** Store long into local variable */
+    /** Store long into local variable 2 */
     LSTORE_2(Classfile.LSTORE_2, 1, Kind.STORE, TypeKind.LongType, 2),
 
-    /** Store long into local variable */
+    /** Store long into local variable 3 */
     LSTORE_3(Classfile.LSTORE_3, 1, Kind.STORE, TypeKind.LongType, 3),
 
-    /** Store float into local variable */
+    /** Store float into local variable 0 */
     FSTORE_0(Classfile.FSTORE_0, 1, Kind.STORE, TypeKind.FloatType, 0),
 
-    /** Store float into local variable */
+    /** Store float into local variable 1 */
     FSTORE_1(Classfile.FSTORE_1, 1, Kind.STORE, TypeKind.FloatType, 1),
 
-    /** Store float into local variable */
+    /** Store float into local variable 2 */
     FSTORE_2(Classfile.FSTORE_2, 1, Kind.STORE, TypeKind.FloatType, 2),
 
-    /** Store float into local variable */
+    /** Store float into local variable 3 */
     FSTORE_3(Classfile.FSTORE_3, 1, Kind.STORE, TypeKind.FloatType, 3),
 
-    /** Store double into local variable */
+    /** Store double into local variable 0 */
     DSTORE_0(Classfile.DSTORE_0, 1, Kind.STORE, TypeKind.DoubleType, 0),
 
-    /** Store double into local variable */
+    /** Store double into local variable 1 */
     DSTORE_1(Classfile.DSTORE_1, 1, Kind.STORE, TypeKind.DoubleType, 1),
 
-    /** Store double into local variable */
+    /** Store double into local variable 2 */
     DSTORE_2(Classfile.DSTORE_2, 1, Kind.STORE, TypeKind.DoubleType, 2),
 
-    /** Store double into local variable */
+    /** Store double into local variable 3 */
     DSTORE_3(Classfile.DSTORE_3, 1, Kind.STORE, TypeKind.DoubleType, 3),
 
-    /** Store reference into local variable */
+    /** Store reference into local variable 0 */
     ASTORE_0(Classfile.ASTORE_0, 1, Kind.STORE, TypeKind.ReferenceType, 0),
 
-    /** Store reference into local variable */
+    /** Store reference into local variable 1 */
     ASTORE_1(Classfile.ASTORE_1, 1, Kind.STORE, TypeKind.ReferenceType, 1),
 
-    /** Store reference into local variable */
+    /** Store reference into local variable 2 */
     ASTORE_2(Classfile.ASTORE_2, 1, Kind.STORE, TypeKind.ReferenceType, 2),
 
-    /** Store reference into local variable */
+    /** Store reference into local variable 3 */
     ASTORE_3(Classfile.ASTORE_3, 1, Kind.STORE, TypeKind.ReferenceType, 3),
 
     /** Store into int array */
@@ -684,82 +684,373 @@ public enum Opcode {
      */
     public static enum Kind {
 
-        /** Load from local variable */
+        /**
+         * Load from local variable
+         *
+         * @see Opcode#ILOAD
+         * @see Opcode#LLOAD
+         * @see Opcode#FLOAD
+         * @see Opcode#DLOAD
+         * @see Opcode#ALOAD
+         * @see Opcode#ILOAD_0
+         * @see Opcode#ILOAD_1
+         * @see Opcode#ILOAD_2
+         * @see Opcode#ILOAD_3
+         * @see Opcode#LLOAD_0
+         * @see Opcode#LLOAD_1
+         * @see Opcode#LLOAD_2
+         * @see Opcode#LLOAD_3
+         * @see Opcode#FLOAD_0
+         * @see Opcode#FLOAD_1
+         * @see Opcode#FLOAD_2
+         * @see Opcode#FLOAD_3
+         * @see Opcode#DLOAD_0
+         * @see Opcode#DLOAD_1
+         * @see Opcode#DLOAD_2
+         * @see Opcode#DLOAD_3
+         * @see Opcode#ALOAD_0
+         * @see Opcode#ALOAD_1
+         * @see Opcode#ALOAD_2
+         * @see Opcode#ALOAD_3
+         * @see Opcode#ILOAD_W
+         * @see Opcode#LLOAD_W
+         * @see Opcode#FLOAD_W
+         * @see Opcode#DLOAD_W
+         * @see Opcode#ALOAD_W
+         */
         LOAD,
 
-        /** Store into local variable */
+        /**
+         * Store into local variable
+         *
+         * @see Opcode#ISTORE
+         * @see Opcode#LSTORE
+         * @see Opcode#FSTORE
+         * @see Opcode#DSTORE
+         * @see Opcode#ASTORE
+         * @see Opcode#ISTORE_0
+         * @see Opcode#ISTORE_1
+         * @see Opcode#ISTORE_2
+         * @see Opcode#ISTORE_3
+         * @see Opcode#LSTORE_0
+         * @see Opcode#LSTORE_1
+         * @see Opcode#LSTORE_2
+         * @see Opcode#LSTORE_3
+         * @see Opcode#FSTORE_0
+         * @see Opcode#FSTORE_1
+         * @see Opcode#FSTORE_2
+         * @see Opcode#FSTORE_3
+         * @see Opcode#DSTORE_0
+         * @see Opcode#DSTORE_1
+         * @see Opcode#DSTORE_2
+         * @see Opcode#DSTORE_3
+         * @see Opcode#ASTORE_0
+         * @see Opcode#ASTORE_1
+         * @see Opcode#ASTORE_2
+         * @see Opcode#ASTORE_3
+         * @see Opcode#ISTORE_W
+         * @see Opcode#LSTORE_W
+         * @see Opcode#FSTORE_W
+         * @see Opcode#DSTORE_W
+         * @see Opcode#ASTORE_W
+         */
         STORE,
 
-        /** Increment local variable */
+        /**
+         * Increment local variable
+         *
+         * @see Opcode#IINC
+         * @see Opcode#IINC_W
+         */
         INCREMENT,
 
-        /** Branch */
+        /**
+         * Branch
+         *
+         * @see Opcode#IFEQ
+         * @see Opcode#IFNE
+         * @see Opcode#IFLT
+         * @see Opcode#IFGE
+         * @see Opcode#IFGT
+         * @see Opcode#IFLE
+         * @see Opcode#IF_ICMPEQ
+         * @see Opcode#IF_ICMPNE
+         * @see Opcode#IF_ICMPLT
+         * @see Opcode#IF_ICMPGE
+         * @see Opcode#IF_ICMPGT
+         * @see Opcode#IF_ICMPLE
+         * @see Opcode#IF_ACMPEQ
+         * @see Opcode#IF_ACMPNE
+         * @see Opcode#GOTO
+         * @see Opcode#IFNULL
+         * @see Opcode#IFNONNULL
+         * @see Opcode#GOTO_W
+         */
         BRANCH,
 
-        /** Access jump table by key match and jump */
+        /**
+         * Access jump table by key match and jump
+         *
+         * @see Opcode#LOOKUPSWITCH
+         */
         LOOKUP_SWITCH,
 
-        /** Access jump table by index and jump */
+        /**
+         * Access jump table by index and jump
+         *
+         * @see Opcode#TABLESWITCH
+         */
         TABLE_SWITCH,
 
-        /** Return from method */
+        /**
+         * Return from method
+         *
+         * @see Opcode#IRETURN
+         * @see Opcode#LRETURN
+         * @see Opcode#FRETURN
+         * @see Opcode#DRETURN
+         * @see Opcode#ARETURN
+         * @see Opcode#RETURN
+         */
         RETURN,
 
-        /** Throw exception or error */
+        /**
+         * Throw exception or error
+         *
+         * @see Opcode#ATHROW
+         */
         THROW_EXCEPTION,
 
-        /** Access field */
+        /**
+         * Access field
+         *
+         * @see Opcode#GETSTATIC
+         * @see Opcode#PUTSTATIC
+         * @see Opcode#GETFIELD
+         * @see Opcode#PUTFIELD
+         */
         FIELD_ACCESS,
 
-        /** Invoke method or constructor */
+        /**
+         * Invoke method or constructor
+         *
+         * @see Opcode#INVOKEVIRTUAL
+         * @see Opcode#INVOKESPECIAL
+         * @see Opcode#INVOKESTATIC
+         * @see Opcode#INVOKEINTERFACE
+         */
         INVOKE,
 
-        /** Invoke a dynamically-computed call site */
+        /**
+         * Invoke a dynamically-computed call site
+         *
+         * @see Opcode#INVOKEDYNAMIC
+         */
         INVOKE_DYNAMIC,
 
-        /** Create new object */
+        /**
+         * Create new object
+         *
+         * @see Opcode#NEW
+         */
         NEW_OBJECT,
 
-        /** Create new array */
+        /**
+         * Create new array
+         *
+         * @see Opcode#NEWARRAY
+         */
         NEW_PRIMITIVE_ARRAY,
 
-        /** Create new reference array */
+        /**
+         * Create new reference array
+         *
+         * @see Opcode#ANEWARRAY
+         */
         NEW_REF_ARRAY,
 
-        /** Create new multidimensional array */
+        /**
+         * Create new multidimensional array
+         *
+         * @see Opcode#MULTIANEWARRAY
+         */
         NEW_MULTI_ARRAY,
 
-        /** Check whether object is of given type */
+        /**
+         * Check whether object is of given type
+         *
+         * @see Opcode#CHECKCAST
+         * @see Opcode#INSTANCEOF
+         */
         TYPE_CHECK,
 
-        /** Load from array */
+        /**
+         * Load from array
+         *
+         * @see Opcode#IALOAD
+         * @see Opcode#LALOAD
+         * @see Opcode#FALOAD
+         * @see Opcode#DALOAD
+         * @see Opcode#AALOAD
+         * @see Opcode#BALOAD
+         * @see Opcode#CALOAD
+         * @see Opcode#SALOAD
+         */
         ARRAY_LOAD,
 
-        /** Store into array */
+        /**
+         * Store into array
+         *
+         * @see Opcode#IASTORE
+         * @see Opcode#LASTORE
+         * @see Opcode#FASTORE
+         * @see Opcode#DASTORE
+         * @see Opcode#AASTORE
+         * @see Opcode#BASTORE
+         * @see Opcode#CASTORE
+         * @see Opcode#SASTORE
+         */
         ARRAY_STORE,
 
-        /** Stack operations */
+        /**
+         * Stack operations
+         *
+         * @see Opcode#POP
+         * @see Opcode#POP2
+         * @see Opcode#DUP
+         * @see Opcode#DUP_X1
+         * @see Opcode#DUP_X2
+         * @see Opcode#DUP2
+         * @see Opcode#DUP2_X1
+         * @see Opcode#DUP2_X2
+         * @see Opcode#SWAP
+         */
         STACK,
 
-        /** Type conversions */
+        /**
+         * Type conversions
+         *
+         * @see Opcode#I2L
+         * @see Opcode#I2F
+         * @see Opcode#I2D
+         * @see Opcode#L2I
+         * @see Opcode#L2F
+         * @see Opcode#L2D
+         * @see Opcode#F2I
+         * @see Opcode#F2L
+         * @see Opcode#F2D
+         * @see Opcode#D2I
+         * @see Opcode#D2L
+         * @see Opcode#D2F
+         * @see Opcode#I2B
+         * @see Opcode#I2C
+         * @see Opcode#I2S
+         */
         CONVERT,
 
-        /** Operators */
+        /**
+         * Operators
+         *
+         * @see Opcode#IADD
+         * @see Opcode#LADD
+         * @see Opcode#FADD
+         * @see Opcode#DADD
+         * @see Opcode#ISUB
+         * @see Opcode#LSUB
+         * @see Opcode#FSUB
+         * @see Opcode#DSUB
+         * @see Opcode#IMUL
+         * @see Opcode#LMUL
+         * @see Opcode#FMUL
+         * @see Opcode#DMUL
+         * @see Opcode#IDIV
+         * @see Opcode#LDIV
+         * @see Opcode#FDIV
+         * @see Opcode#DDIV
+         * @see Opcode#IREM
+         * @see Opcode#LREM
+         * @see Opcode#FREM
+         * @see Opcode#DREM
+         * @see Opcode#INEG
+         * @see Opcode#LNEG
+         * @see Opcode#FNEG
+         * @see Opcode#DNEG
+         * @see Opcode#ISHL
+         * @see Opcode#LSHL
+         * @see Opcode#ISHR
+         * @see Opcode#LSHR
+         * @see Opcode#IUSHR
+         * @see Opcode#LUSHR
+         * @see Opcode#IAND
+         * @see Opcode#LAND
+         * @see Opcode#IOR
+         * @see Opcode#LOR
+         * @see Opcode#IXOR
+         * @see Opcode#LXOR
+         * @see Opcode#LCMP
+         * @see Opcode#FCMPL
+         * @see Opcode#FCMPG
+         * @see Opcode#DCMPL
+         * @see Opcode#DCMPG
+         * @see Opcode#ARRAYLENGTH
+         */
         OPERATOR,
 
-        /** Constants */
+        /**
+         * Constants
+         *
+         * @see Opcode#ACONST_NULL
+         * @see Opcode#ICONST_M1
+         * @see Opcode#ICONST_0
+         * @see Opcode#ICONST_1
+         * @see Opcode#ICONST_2
+         * @see Opcode#ICONST_3
+         * @see Opcode#ICONST_4
+         * @see Opcode#ICONST_5
+         * @see Opcode#LCONST_0
+         * @see Opcode#LCONST_1
+         * @see Opcode#FCONST_0
+         * @see Opcode#FCONST_1
+         * @see Opcode#FCONST_2
+         * @see Opcode#DCONST_0
+         * @see Opcode#DCONST_1
+         * @see Opcode#BIPUSH
+         * @see Opcode#SIPUSH
+         * @see Opcode#LDC
+         * @see Opcode#LDC_W
+         * @see Opcode#LDC2_W
+         */
         CONSTANT,
 
-        /** Monitor */
+        /**
+         * Monitor
+         *
+         * @see Opcode#MONITORENTER
+         * @see Opcode#MONITOREXIT
+         */
         MONITOR,
 
-        /** Do nothing */
+        /**
+         * Do nothing
+         *
+         * @see Opcode#NOP
+         */
         NOP,
 
-        /** Discontinued jump subroutine */
+        /**
+         * Discontinued jump subroutine
+         *
+         * @see Opcode#JSR
+         * @see Opcode#JSR_W
+         */
         DISCONTINUED_JSR,
 
-        /** Discontinued return from subroutine */
+        /**
+         * Discontinued return from subroutine
+         *
+         * @see Opcode#RET
+         * @see Opcode#RET_W
+         */
         DISCONTINUED_RET;
     }
 
