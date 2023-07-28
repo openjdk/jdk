@@ -478,6 +478,8 @@ java/lang/invoke/LFCaching/LFMultiThreadCachingTest.java        8151492 generic-
 java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-all
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
+java/lang/invoke/MethodHandleProxies/BasicTest.java              8312482 linux-all
+java/lang/invoke/MethodHandleProxies/WrapperHiddenClassTest.java 8312482 linux-all
 
 ############################################################################
 
@@ -785,3 +787,8 @@ java/awt/event/MouseEvent/SpuriousExitEnter/SpuriousExitEnter.java 8254841 macos
 java/awt/Focus/AppletInitialFocusTest/AppletInitialFocusTest1.java 8256289 windows-x64
 java/awt/FullScreen/TranslucentWindow/TranslucentWindow.java 8258103 linux-all
 java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
+
+############################################################################
+# java/foreign
+
+java/foreign/TestByteBuffer.java 8309475 aix-ppc64
