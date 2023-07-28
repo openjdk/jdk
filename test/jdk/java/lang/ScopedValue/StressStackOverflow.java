@@ -28,25 +28,6 @@
  * @run main/othervm/timeout=300 StressStackOverflow
  */
 
-/*
- * @test id=no-TieredCompilation
- * @enablePreview
- * @run main/othervm/timeout=300 -XX:-TieredCompilation StressStackOverflow
- */
-
-/*
- * @test id=TieredStopAtLevel1
- * @enablePreview
- * @run main/othervm/timeout=300 -XX:TieredStopAtLevel=1 StressStackOverflow
- */
-
-/*
- * @test id=no-vmcontinuations
- * @requires vm.continuations
- * @enablePreview
- * @run main/othervm/timeout=300 -XX:+UnlockExperimentalVMOptions -XX:-VMContinuations StressStackOverflow
- */
-
 import java.time.Duration;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ThreadLocalRandom;
