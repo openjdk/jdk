@@ -3894,7 +3894,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
 
 #ifdef ASSERT
   // At this point reducible Phis shouldn't have AddP users anymore; only SafePoints.
-  for (uint i = 0; i < reducible_merges.size(); i++ ) {
+  for (uint i = 0; i < reducible_merges.size(); i++) {
     Node* phi = reducible_merges.at(i);
     for (DUIterator_Fast jmax, j = phi->fast_outs(jmax); j < jmax; j++) {
       Node *use = phi->fast_out(j);
