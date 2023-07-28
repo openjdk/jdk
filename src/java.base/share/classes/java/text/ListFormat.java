@@ -284,7 +284,7 @@ public class ListFormat extends Format {
 
     /**
      * {@return the string that consists of the input strings, concatenated with the
-     * patterns specified, or derived from {@code Locale}, {@code Type}, and {@code Style}}
+     * patterns of this {@code ListFormat}
      * @param input The list of input strings to format. There should at least
      *              one String element in this list, otherwise an {@code IllegalArgumentException}
      *              is thrown.
