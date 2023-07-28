@@ -3897,7 +3897,7 @@ void ConnectionGraph::split_unique_types(GrowableArray<Node *>  &alloc_worklist,
   for (uint i = 0; i < reducible_merges.size(); i++) {
     Node* phi = reducible_merges.at(i);
     for (DUIterator_Fast jmax, j = phi->fast_outs(jmax); j < jmax; j++) {
-      Node *use = phi->fast_out(j);
+      Node* use = phi->fast_out(j);
       if (!use->is_SafePoint()) {
         phi->dump(-3);
         assert(false, "Unexpected user of reducible Phi -> %s", use->Name());
