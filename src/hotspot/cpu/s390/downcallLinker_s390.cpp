@@ -159,14 +159,11 @@ void DowncallStubGenerator::generate() {
   allocated_frame_size += arg_shuffle.out_arg_bytes();
 
   assert(!_needs_return_buffer, "unexpected needs_return_buffer");
-  bool should_save_return_value = _needs_transition;;
   RegSpiller out_reg_spiller(_output_registers);
   int spill_offset = -1;
 
-  if (should_save_return_value) {
     spill_offset = allocated_frame_size;
     allocated_frame_size += BytesPerWord;
-  }
 
   StubLocations locs;
   locs.set(StubLocations::TARGET_ADDRESS, _abi._scratch2);
@@ -213,18 +210,14 @@ void DowncallStubGenerator::generate() {
   if (_captured_state_mask != 0) {
     __ block_comment("{ save thread local");
 
-    if (should_save_return_value) {
       out_reg_spiller.generate_spill(_masm, spill_offset);
-    }
 
     __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, DowncallLinker::capture_state));
     __ z_lg(Z_ARG1, Address(Z_SP, locs.data_offset(StubLocations::CAPTURED_STATE_BUFFER)));
     __ load_const_optimized(Z_ARG2, _captured_state_mask);
     __ call(call_target_address);
 
-    if (should_save_return_value) {
       out_reg_spiller.generate_fill(_masm, spill_offset);
-    }
 
     __ block_comment("} save thread local");
   }
@@ -274,18 +267,14 @@ void DowncallStubGenerator::generate() {
     __ block_comment("{ L_safepoint_poll_slow_path");
     __ bind(L_safepoint_poll_slow_path);
 
-    if (should_save_return_value) {
       // Need to save the native result registers around any runtime calls.
       out_reg_spiller.generate_spill(_masm, spill_offset);
-    }
 
     __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, JavaThread::check_special_condition_for_native_trans));
     __ z_lgr(Z_ARG1, Z_thread);
     __ call(call_target_address);
 
-    if (should_save_return_value) {
       out_reg_spiller.generate_fill(_masm, spill_offset);
-    }
 
     __ z_bru(L_after_safepoint_poll);
     __ block_comment("} L_safepoint_poll_slow_path");
@@ -294,17 +283,13 @@ void DowncallStubGenerator::generate() {
     __ block_comment("{ L_reguard");
     __ bind(L_reguard);
 
-    if (should_save_return_value) {
       // Need to save the native result registers around any runtime calls.
       out_reg_spiller.generate_spill(_masm, spill_offset);
-    }
 
     __ load_const_optimized(call_target_address, CAST_FROM_FN_PTR(uint64_t, SharedRuntime::reguard_yellow_pages));
     __ call(call_target_address);
 
-    if (should_save_return_value) {
       out_reg_spiller.generate_fill(_masm, spill_offset);
-    }
 
     __ z_bru(L_after_reguard);
 
