@@ -80,8 +80,10 @@ public class JTableHeaderLabelRightAlignTest {
             g2d.dispose();
         }
 
-        int x = (int)(table.getTableHeader().
-                getColumnModel().getColumn(0).getWidth() * SCALE);
+        int x = (int) (table.getTableHeader()
+                            .getColumnModel()
+                            .getColumn(0)
+                            .getWidth() * SCALE);
         int expectedRGB = imgHeader.getRGB(x, 1);
 
         for (int y = 1; y < (imgHeader.getHeight() - 3); y++) {
@@ -92,8 +94,7 @@ public class JTableHeaderLabelRightAlignTest {
                 } catch (IOException ioException) {
                     ioException.printStackTrace();
                 }
-                throw new RuntimeException("Test Failed at <" +
-                        x + ", " + y + ">");
+                throw new RuntimeException("Test Failed at <" + x + ", " + y + ">");
             }
         }
         System.out.println("Test Passed");
