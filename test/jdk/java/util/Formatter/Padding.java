@@ -309,7 +309,7 @@ public class Padding {
     @ParameterizedTest
     @MethodSource
     void padding(String expected, String format, Object value) {
-        assertEquals(expected, String.format(Locale.ROOT, format, value));
+        assertEquals(expected, String.format(Locale.US, format, value));
     }
 
 }
