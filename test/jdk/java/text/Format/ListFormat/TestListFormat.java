@@ -49,12 +49,19 @@ public class TestListFormat {
     private static final List<String> SAMPLE2 = List.of("foo", "bar");
     private static final List<String> SAMPLE3 = List.of("foo", "bar", "baz");
     private static final List<String> SAMPLE4 = List.of("foo", "bar", "baz", "qux");
-    private static final String[] CUSTOM_PATTERNS = {
+    private static final String[] CUSTOM_PATTERNS_FULL = {
             "sbef {0} sbet {1}",
             "{0} mid {1}",
             "{0} ebet {1} eaft",
             "twobef {0} two {1} twoaft",
             "threebef {0} three {1} three {2} threeaft",
+    };
+    private static final String[] CUSTOM_PATTERNS_MINIMAL = {
+            "sbef {0} sbet {1}",
+            "{0} mid {1}",
+            "{0} ebet {1} eaft",
+            "",
+            "",
     };
     private static final String[] CUSTOM_PATTERNS_IAE_LENGTH = {
             ""
@@ -93,10 +100,14 @@ public class TestListFormat {
 
     static Arguments[] getInstance_1Arg() {
         return new Arguments[] {
-                arguments(SAMPLE1, "foo"),
-                arguments(SAMPLE2, "twobef foo two bar twoaft"),
-                arguments(SAMPLE3, "threebef foo three bar three baz threeaft"),
-                arguments(SAMPLE4, "sbef foo sbet bar mid baz ebet qux eaft"),
+                arguments(CUSTOM_PATTERNS_FULL, SAMPLE1, "foo"),
+                arguments(CUSTOM_PATTERNS_FULL, SAMPLE2, "twobef foo two bar twoaft"),
+                arguments(CUSTOM_PATTERNS_FULL, SAMPLE3, "threebef foo three bar three baz threeaft"),
+                arguments(CUSTOM_PATTERNS_FULL, SAMPLE4, "sbef foo sbet bar mid baz ebet qux eaft"),
+                arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE1, "foo"),
+                arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE2, "sbef foo ebet bar eaft"),
+                arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE3, "sbef foo sbet bar ebet baz eaft"),
+                arguments(CUSTOM_PATTERNS_MINIMAL, SAMPLE4, "sbef foo sbet bar mid baz ebet qux eaft"),
         };
     }
 
@@ -153,8 +164,8 @@ public class TestListFormat {
 
     @ParameterizedTest
     @MethodSource
-    void getInstance_1Arg(List<String> input, String expected) throws ParseException {
-        var f = ListFormat.getInstance(CUSTOM_PATTERNS);
+    void getInstance_1Arg(String[] patterns, List<String> input, String expected) throws ParseException {
+        var f = ListFormat.getInstance(patterns);
         compareResult(f, input, expected, true);
     }
 

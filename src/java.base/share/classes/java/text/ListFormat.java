@@ -29,6 +29,7 @@ import sun.util.locale.provider.LocaleProviderAdapter;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.Serial;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
@@ -93,6 +94,7 @@ import java.util.stream.IntStream;
  */
 public class ListFormat extends Format {
 
+    @Serial
     private static final long serialVersionUID = 5272525550078071946L;
 
     private static final int START = 0;
@@ -115,12 +117,8 @@ public class ListFormat extends Format {
      */
     private final String[] patterns;
 
-    private transient String startBefore;
-    private transient String startBetween;
-    private transient String middleBetween;
-    private transient String endBetween;
-    private transient String endAfter;
     private transient Pattern startPattern;
+    private transient String middleBetween;
     private transient Pattern endPattern;
 
     private ListFormat(Locale l, String[] patterns) {
@@ -132,6 +130,8 @@ public class ListFormat extends Format {
     private void init() {
         // get pattern strings
         var m = Pattern.compile("(?<startBefore>.*?)\\{0}(?<startBetween>.*?)\\{1}").matcher(patterns[START]);
+        String startBefore;
+        String startBetween;
         if (m.matches()) {
             startBefore = m.group("startBefore");
             startBetween = m.group("startBetween");
@@ -145,6 +145,8 @@ public class ListFormat extends Format {
             throw new IllegalArgumentException("middle pattern is incorrect");
         }
         m = Pattern.compile("\\{0}(?<endBetween>.*?)\\{1}(?<endAfter>.*?)").matcher(patterns[END]);
+        String endBetween;
+        String endAfter;
         if (m.matches()) {
             endBetween = m.group("endBetween");
             endAfter = m.group("endAfter");
@@ -152,6 +154,13 @@ public class ListFormat extends Format {
             throw new IllegalArgumentException("end pattern is incorrect");
         }
 
+        // two/three patterns, if empty
+        if (patterns[TWO] == null || patterns[TWO].isEmpty()) {
+            patterns[TWO] = startBefore + "{0}" + endBetween + "{1}" + endAfter;
+        }
+        if (patterns[THREE] == null || patterns[THREE].isEmpty()) {
+            patterns[THREE] = startBefore + "{0}" + startBetween + "{1}" + endBetween + "{2}" + endAfter;
+        }
         startPattern = Pattern.compile(startBefore + "(.+?)" + startBetween);
         endPattern = Pattern.compile(endBetween + "(.+?)" + endAfter);
     }
@@ -270,7 +279,7 @@ public class ListFormat extends Format {
         if (patterns.length != PATTERN_ARRAY_LENGTH) {
             throw new IllegalArgumentException("Pattern array length should be " + PATTERN_ARRAY_LENGTH);
         }
-        return new ListFormat(Locale.ROOT, patterns);
+        return new ListFormat(Locale.ROOT, Arrays.copyOf(patterns, PATTERN_ARRAY_LENGTH));
     }
 
     /**
@@ -356,7 +365,6 @@ public class ListFormat extends Format {
      * If an error occurs, then the index of {@code parsePos} is not
      * changed, the error index of {@code parsePos} is set to the index of
      * the character where the error occurred, and null is returned.
-     *
      * See the {@link #parse(String)} method for more information
      * on list parsing.
      *
@@ -474,7 +482,7 @@ public class ListFormat extends Format {
 
     private String createMessageFormatString(int count) {
         var sb = new StringBuilder(patterns[START]);
-        IntStream.range(2, count - 1).forEach(i -> sb.append(middleBetween).append("{" + i + "}"));
+        IntStream.range(2, count - 1).forEach(i -> sb.append(middleBetween).append("{").append(i).append("}"));
         sb.append(patterns[END].replaceFirst("\\{0}", "").replaceFirst("\\{1}", "\\{" + (count - 1) + "\\}"));
         return sb.toString();
     }
