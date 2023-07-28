@@ -38,8 +38,8 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 /**
- * {@code ListFormat} provides a means to produce a list of concatenated
- * strings in a language-sensitive way. Use this to construct a list
+ * {@code ListFormat} produces or parses a list of concatenated
+ * strings in a locale-sensitive way. Use this to construct a list
  * of strings displayed for end users. For example, displaying 3 weekdays
  * as "Monday, Wednesday, and Friday". This class provides the functionality
  * defined in Unicode Consortium's LDML specification for
