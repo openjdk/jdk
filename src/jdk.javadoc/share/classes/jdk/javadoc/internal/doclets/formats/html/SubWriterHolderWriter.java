@@ -37,6 +37,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlId;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
+import jdk.javadoc.internal.doclets.toolkit.PropertyUtils;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 
 /**
@@ -63,6 +64,10 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
 
     public SubWriterHolderWriter(HtmlConfiguration configuration, DocPath filename, boolean generating) {
         super(configuration, filename, generating);
+    }
+
+    public PropertyUtils.PropertyHelper getPropertyHelper() {
+        throw new UnsupportedOperationException();
     }
 
     /**
@@ -292,15 +297,6 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
      */
     public Content getMemberSummary(Content memberContent) {
         return HtmlTree.SECTION(HtmlStyle.summary, memberContent);
-    }
-
-    /**
-     * {@return the member details}
-     *
-     * @param content the content used to generate the member details
-     */
-    public Content getMemberDetailsContent(Content content) {
-        return HtmlTree.SECTION(HtmlStyle.details, content);
     }
 
     /**

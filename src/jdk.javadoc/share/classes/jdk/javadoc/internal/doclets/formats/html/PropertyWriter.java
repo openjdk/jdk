@@ -56,10 +56,11 @@ public class PropertyWriter extends AbstractMemberWriter {
     private ExecutableElement currentProperty;
 
     public PropertyWriter(ClassWriter writer) {
-        super(writer, writer.typeElement);
+        super(writer, writer.typeElement, VisibleMemberTable.Kind.PROPERTIES);
     }
 
-    public void build(Content target) {
+    @Override
+    public void buildDetails(Content target) {
         buildPropertyDoc(target);
     }
 
@@ -165,7 +166,7 @@ public class PropertyWriter extends AbstractMemberWriter {
     }
 
     @Override
-    public void addSummary(Content summariesList, Content content) {
+    public void buildSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.propertySummary,
                 HtmlIds.PROPERTY_SUMMARY, summariesList, content);
     }

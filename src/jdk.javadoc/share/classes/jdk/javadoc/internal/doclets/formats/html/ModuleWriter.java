@@ -186,7 +186,7 @@ public class ModuleWriter extends HtmlDocletWriter {
 
         addModuleFooter();
         printDocument(content);
-        var docFilesHandler = configuration.getWriterFactory().getDocFilesHandler(mdle);
+        var docFilesHandler = configuration.getWriterFactory().newDocFilesHandler(mdle);
         docFilesHandler.copyDocFiles();
     }
 
@@ -609,7 +609,7 @@ public class ModuleWriter extends HtmlDocletWriter {
     /**
      * Add the package summary for the module.
      *
-     * @param li
+     * @param li the tree to which the summary will be added
      */
     public void addPackageSummary(HtmlTree li) {
         var table = new Table<PackageElement>(HtmlStyle.summaryTable)
