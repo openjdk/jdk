@@ -37,7 +37,6 @@ import static java.nio.file.StandardOpenOption.*;
 
 /*
  * @test
- * @enablePreview
  * @bug 8286637
  * @summary Ensure that memory mapping beyond 32-bit range does not cause an
  *          EXCEPTION_ACCESS_VIOLATION.

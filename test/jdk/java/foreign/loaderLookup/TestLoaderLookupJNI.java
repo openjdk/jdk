@@ -29,7 +29,6 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm TestLoaderLookupJNI
  */
 public class TestLoaderLookupJNI {

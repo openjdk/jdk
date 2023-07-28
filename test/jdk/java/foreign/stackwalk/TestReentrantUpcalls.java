@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @library /test/lib
  * @library ../
  * @build jdk.test.whitebox.WhiteBox

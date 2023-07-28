@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestNative
  */
 

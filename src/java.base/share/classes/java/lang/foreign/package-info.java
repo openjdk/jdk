@@ -148,9 +148,7 @@
  *
  * @spec jni/index.html Java Native Interface Specification
  *
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 package java.lang.foreign;
 
-import jdk.internal.javac.PreviewFeature;

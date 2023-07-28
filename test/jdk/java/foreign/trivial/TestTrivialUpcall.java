@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
  * @requires jdk.foreign.linker != "FALLBACK"
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestTrivialUpcall

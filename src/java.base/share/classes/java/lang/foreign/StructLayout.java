@@ -26,7 +26,6 @@
 package java.lang.foreign;
 
 import jdk.internal.foreign.layout.StructLayoutImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A group layout whose member layouts are laid out one after the other.
@@ -34,9 +33,8 @@ import jdk.internal.javac.PreviewFeature;
  * @implSpec
  * Implementing classes are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
- * @since 20
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface StructLayout extends GroupLayout permits StructLayoutImpl {
 
     /**

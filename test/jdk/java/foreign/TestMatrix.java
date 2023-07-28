@@ -32,7 +32,6 @@
  */
 
 /* @test id=UpcallHighArity-FF
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
@@ -44,7 +43,6 @@
  */
 
 /* @test id=UpcallHighArity-TF
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
@@ -56,7 +54,6 @@
  */
 
 /* @test id=UpcallHighArity-FT
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
@@ -68,7 +65,6 @@
  */
 
 /* @test id=UpcallHighArity-TT
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *
@@ -80,7 +76,6 @@
  */
 
 /* @test id=DowncallScope-F
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
@@ -91,7 +86,6 @@
  */
 
 /* @test id=DowncallScope-T
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
@@ -102,7 +96,6 @@
  */
 
 /* @test id=DowncallStack-F
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
@@ -113,7 +106,6 @@
  */
 
 /* @test id=DowncallStack-T
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestDowncallBase
  *
@@ -124,7 +116,6 @@
  */
 
 /* @test id=UpcallScope-FF
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -136,7 +127,6 @@
  */
 
 /* @test id=UpcallScope-TF
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -148,7 +138,6 @@
  */
 
 /* @test id=UpcallScope-FT
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -160,7 +149,6 @@
  */
 
 /* @test id=UpcallScope-TT
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -172,7 +160,6 @@
  */
 
 /* @test id=UpcallAsync-FF
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -184,7 +171,6 @@
  */
 
 /* @test id=UpcallAsync-TF
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -196,7 +182,6 @@
  */
 
 /* @test id=UpcallAsync-FT
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -208,7 +193,6 @@
  */
 
 /* @test id=UpcallAsync-TT
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -220,7 +204,6 @@
  */
 
 /* @test id=UpcallStack-FF
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -232,7 +215,6 @@
  */
 
 /* @test id=UpcallStack-TF
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -244,7 +226,6 @@
  */
 
 /* @test id=UpcallStack-FT
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -256,7 +237,6 @@
  */
 
 /* @test id=UpcallStack-TT
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase
  *
@@ -269,7 +249,6 @@
 
 /*
  * @test id=VarArgs
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper
  *

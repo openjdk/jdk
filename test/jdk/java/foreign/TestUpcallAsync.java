@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @requires !vm.musl
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallBase

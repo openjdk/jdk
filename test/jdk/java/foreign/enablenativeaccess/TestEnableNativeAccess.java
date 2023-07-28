@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @requires !vm.musl
  *
  * @library /test/lib
@@ -175,8 +174,8 @@ public class TestEnableNativeAccess {
         Stream<String> s1 = Stream.concat(
                 Stream.of(vmopts),
                 Stream.of("-Djava.library.path=" + System.getProperty("java.library.path")));
-        Stream<String> s2 = cls.equals(UNNAMED) ? Stream.of("--enable-preview", "-p", MODULE_PATH, cls, action)
-                : Stream.of("--enable-preview", "-p", MODULE_PATH, "-m", cls, action);
+        Stream<String> s2 = cls.equals(UNNAMED) ? Stream.of("-p", MODULE_PATH, cls, action)
+                : Stream.of("-p", MODULE_PATH, "-m", cls, action);
         String[] opts = Stream.concat(s1, s2).toArray(String[]::new);
         OutputAnalyzer outputAnalyzer = ProcessTools
                 .executeTestJava(opts)

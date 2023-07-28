@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.misc
  * @run testng TestValueLayouts
  */

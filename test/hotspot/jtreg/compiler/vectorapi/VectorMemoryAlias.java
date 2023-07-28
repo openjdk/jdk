@@ -26,7 +26,6 @@
 
 /*
  * @test
- * @enablePreview
  * @summary Test if memory ordering is preserved
  *
  * @run main/othervm -XX:-TieredCompilation -XX:+UnlockDiagnosticVMOptions -XX:+AbortVMOnCompilationFailure

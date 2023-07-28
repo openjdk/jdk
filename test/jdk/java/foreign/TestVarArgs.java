@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @run testng/othervm --enable-native-access=ALL-UNNAMED -Dgenerator.sample.factor=17 TestVarArgs
  */

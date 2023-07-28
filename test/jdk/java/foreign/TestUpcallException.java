@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @library /test/lib
  * @build TestUpcallException
  *

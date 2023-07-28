@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng TestVarHandleCombinators
  */
 

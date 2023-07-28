@@ -35,7 +35,6 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm --enable-native-access=ALL-UNNAMED LibraryLookupTest
  */
 public class LibraryLookupTest {

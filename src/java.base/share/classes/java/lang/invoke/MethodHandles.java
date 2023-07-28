@@ -7990,9 +7990,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * other than {@code (A... , S) -> T} and {@code (A... , T) -> S}, respectively, where {@code T} is the type of the target var handle,
      * or if it's determined that either {@code filterFromTarget} or {@code filterToTarget} throws any checked exceptions.
      * @throws NullPointerException if any of the arguments is {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle filterValue(VarHandle target, MethodHandle filterToTarget, MethodHandle filterFromTarget) {
         return VarHandles.filterValue(target, filterToTarget, filterFromTarget);
     }
@@ -8026,9 +8025,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * or if more filters are provided than the actual number of coordinate types available starting at {@code pos},
      * or if it's determined that any of the filters throws any checked exceptions.
      * @throws NullPointerException if any of the arguments is {@code null} or {@code filters} contains {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle filterCoordinates(VarHandle target, int pos, MethodHandle... filters) {
         return VarHandles.filterCoordinates(target, pos, filters);
     }
@@ -8058,9 +8056,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * other than {@code T1, T2 ... Tn }, where {@code T1, T2 ... Tn} are the coordinate types starting at position {@code pos}
      * of the target var handle.
      * @throws NullPointerException if any of the arguments is {@code null} or {@code values} contains {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle insertCoordinates(VarHandle target, int pos, Object... values) {
         return VarHandles.insertCoordinates(target, pos, values);
     }
@@ -8101,9 +8098,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * a coordinate of {@code newCoordinates}, or if two corresponding coordinate types in
      * the target var handle and in {@code newCoordinates} are not identical.
      * @throws NullPointerException if any of the arguments is {@code null} or {@code newCoordinates} contains {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle permuteCoordinates(VarHandle target, List<Class<?>> newCoordinates, int... reorder) {
         return VarHandles.permuteCoordinates(target, newCoordinates, reorder);
     }
@@ -8145,9 +8141,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      * if the resulting var handle's type would have <a href="MethodHandle.html#maxarity">too many coordinates</a>,
      * or if it's determined that {@code filter} throws any checked exceptions.
      * @throws NullPointerException if any of the arguments is {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle collectCoordinates(VarHandle target, int pos, MethodHandle filter) {
         return VarHandles.collectCoordinates(target, pos, filter);
     }
@@ -8171,9 +8166,8 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      *         before calling the target var handle
      * @throws IllegalArgumentException if {@code pos} is not between 0 and the target var handle coordinate arity, inclusive.
      * @throws NullPointerException if any of the arguments is {@code null} or {@code valueTypes} contains {@code null}.
-     * @since 19
+     * @since 22
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     public static VarHandle dropCoordinates(VarHandle target, int pos, Class<?>... valueTypes) {
         return VarHandles.dropCoordinates(target, pos, valueTypes);
     }

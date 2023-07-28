@@ -50,7 +50,6 @@ import org.openjdk.jmh.annotations.Warmup;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {
     "--add-modules=jdk.incubator.vector",
-    "--enable-preview",
     "--enable-native-access", "ALL-UNNAMED"})
 public class MemorySegmentVectorAccess {
   private static final VectorSpecies<Byte> SPECIES = VectorSpecies.ofLargestShape(byte.class);

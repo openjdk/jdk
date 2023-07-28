@@ -23,7 +23,6 @@
 
 /*
  * @test id=default_gc
- * @enablePreview
  * @bug 8277602
  * @library /test/lib
  * @library ../

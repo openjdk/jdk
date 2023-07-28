@@ -33,7 +33,6 @@ import static org.testng.Assert.*;
  * @test
  * @bug 8294621
  * @summary test that StringCharBuffer is not accepted by MemorySegment::ofBuffer
- * @enablePreview
  * @run testng TestOfBufferIssue
  */
 

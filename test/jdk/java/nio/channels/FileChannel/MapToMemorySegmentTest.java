@@ -22,7 +22,6 @@
  */
 
 /* @test
- * @enablePreview
  * @bug 8281412
  * @summary Test FileChannel::map to MemorySegment with custom file channel
  * @run testng/othervm MapToMemorySegmentTest

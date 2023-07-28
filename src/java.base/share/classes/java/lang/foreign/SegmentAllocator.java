@@ -34,7 +34,6 @@ import java.util.function.Function;
 import jdk.internal.foreign.AbstractMemorySegmentImpl;
 import jdk.internal.foreign.SlicingAllocator;
 import jdk.internal.foreign.StringSupport;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.vm.annotation.ForceInline;
 
 /**
@@ -71,10 +70,9 @@ import jdk.internal.vm.annotation.ForceInline;
  * Clients should consider using an {@linkplain Arena arena} instead, which, provides strong thread-safety,
  * lifetime and non-overlapping guarantees.
  *
- * @since 19
+ * @since 22
  */
 @FunctionalInterface
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public interface SegmentAllocator {
 
     /**

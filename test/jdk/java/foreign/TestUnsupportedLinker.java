@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  *
  * @run testng/othervm -Djdk.internal.foreign.CABI=UNSUPPORTED --enable-native-access=ALL-UNNAMED TestUnsupportedLinker
  */

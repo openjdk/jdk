@@ -26,7 +26,6 @@
 package java.lang.foreign;
 
 import jdk.internal.foreign.layout.PaddingLayoutImpl;
-import jdk.internal.javac.PreviewFeature;
 
 /**
  * A padding layout. A padding layout specifies the size of extra space which is typically not accessed by applications,
@@ -35,9 +34,8 @@ import jdk.internal.javac.PreviewFeature;
  * @implSpec
  * Implementing classes are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
- * @since 20
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface PaddingLayout extends MemoryLayout permits PaddingLayoutImpl {
 
     /**

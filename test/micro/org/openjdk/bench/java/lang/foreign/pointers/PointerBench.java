@@ -46,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 @Warmup(iterations = 3, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = "--enable-preview")
+@Fork(3)
 @State(Scope.Benchmark)
 public class PointerBench {
 

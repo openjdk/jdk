@@ -35,7 +35,6 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm -Xverify:all TestSlices
  */
 public class TestSlices {

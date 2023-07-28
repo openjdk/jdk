@@ -52,7 +52,7 @@ import java.util.function.ToIntFunction;
 @Measurement(iterations = 10, time = 500, timeUnit = TimeUnit.MILLISECONDS)
 @State(org.openjdk.jmh.annotations.Scope.Thread)
 @OutputTimeUnit(TimeUnit.MILLISECONDS)
-@Fork(value = 3, jvmArgsAppend = "--enable-preview")
+@Fork(3)
 public class ParallelSum extends JavaLayouts {
 
     final static int CARRIER_SIZE = 4;

@@ -23,7 +23,6 @@
 
 /*
  * @test id=specialized
- * @enablePreview
  * @library ../
  * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
  * @modules java.base/jdk.internal.foreign
@@ -36,7 +35,6 @@
 
 /*
  * @test id=interpreted
- * @enablePreview
  * @library ../
  * @requires (!(os.name == "Mac OS X" & os.arch == "aarch64") | jdk.foreign.linker != "FALLBACK")
  * @modules java.base/jdk.internal.foreign

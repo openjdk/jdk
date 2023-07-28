@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @compile lookup/Lookup.java
  * @compile invoker/Invoker.java
  * @run main/othervm --enable-native-access=ALL-UNNAMED TestLoaderLookup

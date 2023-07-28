@@ -37,7 +37,6 @@ import jdk.internal.vm.annotation.ForceInline;
 /*
  * @test id=ZSinglegen
  * @bug 8260473
- * @enablePreview
  * @requires vm.gc.ZSinglegen
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation
@@ -48,7 +47,6 @@ import jdk.internal.vm.annotation.ForceInline;
 /*
  * @test id=ZGenerational
  * @bug 8260473
- * @enablePreview
  * @requires vm.gc.ZGenerational
  * @modules jdk.incubator.vector
  * @modules java.base/jdk.internal.vm.annotation

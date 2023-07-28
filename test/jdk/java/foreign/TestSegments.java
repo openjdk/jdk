@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @requires vm.bits == 64
  * @run testng/othervm -Xmx4G -XX:MaxDirectMemorySize=1M --enable-native-access=ALL-UNNAMED TestSegments
  */

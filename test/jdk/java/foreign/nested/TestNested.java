@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
  * @requires jdk.foreign.linker != "FALLBACK"
  * @build NativeTestHelper

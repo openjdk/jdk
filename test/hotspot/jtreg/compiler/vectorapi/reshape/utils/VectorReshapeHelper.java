@@ -86,7 +86,7 @@ public class VectorReshapeHelper {
         var test = new TestFramework(testClass);
         test.setDefaultWarmup(1);
         test.addHelperClasses(VectorReshapeHelper.class);
-        test.addFlags("--add-modules=jdk.incubator.vector", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED", "--enable-preview");
+        test.addFlags("--add-modules=jdk.incubator.vector", "--add-exports=java.base/jdk.internal.misc=ALL-UNNAMED");
         test.addFlags(flags);
         String testMethodNames = testMethods
                 .filter(p -> p.isp().length() <= VectorSpecies.ofLargestShape(p.isp().elementType()).length())

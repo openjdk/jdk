@@ -272,9 +272,8 @@ public final class Module implements AnnotatedElement {
      * <a href="foreign/package-summary.html#restricted"><em>restricted</em></a> methods.
      *
      * @return {@code true} if this module can access <em>restricted</em> methods.
-     * @since 20
+     * @since 22
      */
-    @PreviewFeature(feature = PreviewFeature.Feature.FOREIGN)
     public boolean isNativeAccessEnabled() {
         Module target = moduleForNativeAccess();
         return EnableNativeAccess.isNativeAccessEnabled(target);

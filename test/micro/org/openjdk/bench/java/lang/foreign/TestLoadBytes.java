@@ -50,8 +50,7 @@ import static java.lang.foreign.ValueLayout.JAVA_BYTE;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {
         "-Dforeign.restricted=permit",
-        "--enable-native-access", "ALL-UNNAMED",
-        "--enable-preview"})
+        "--enable-native-access", "ALL-UNNAMED"})
 public class TestLoadBytes {
     @Param("1024")
     private int size;

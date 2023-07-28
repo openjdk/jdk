@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @requires !vm.musl
  *
  * @library /test/lib
@@ -154,7 +153,6 @@ public class TestEnableNativeAccessDynamic {
             Result expectedResult, boolean panamaModuleInBootLayer) throws Exception
     {
         List<String> list = new ArrayList<>();
-        list.add("--enable-preview");
         if (panamaModuleInBootLayer) {
             list.addAll(List.of("-p", MODULE_PATH));
             list.add("--add-modules=panama_module");

@@ -27,7 +27,6 @@
 /*
  * @test
  * @summary Test passing of Homogeneous Float Aggregates.
- * @enablePreview
  *
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestHFA
  */

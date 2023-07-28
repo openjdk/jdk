@@ -34,7 +34,6 @@ import static org.testng.Assert.*;
 
 /*
  * @test
- * @enablePreview
  * @run testng CompositeLookupTest
  */
 public class CompositeLookupTest {

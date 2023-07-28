@@ -62,7 +62,6 @@ public class UpcallTestHelper extends NativeTestHelper {
                     .resolve("java")
                     .toAbsolutePath()
                     .toString(),
-            "--enable-preview",
             "--enable-native-access=ALL-UNNAMED",
             "-Djava.library.path=" + System.getProperty("java.library.path"),
             "-Djdk.internal.foreign.UpcallLinker.USE_SPEC=" + useSpec,

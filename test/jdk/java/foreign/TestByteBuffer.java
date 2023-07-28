@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/sun.nio.ch java.base/jdk.internal.foreign
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestByteBuffer
  */

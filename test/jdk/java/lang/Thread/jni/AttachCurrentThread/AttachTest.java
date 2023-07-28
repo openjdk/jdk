@@ -38,10 +38,10 @@
  * @summary Test native threads attaching implicitly to the VM by means of an upcall
  * @requires (os.family == "linux" | os.family == "mac") & (sun.arch.data.model == "64")
  * @library /test/lib
- * @compile --enable-preview -source ${jdk.version} ImplicitAttach.java
- * @run main AttachTest --enable-preview --enable-native-access=ALL-UNNAMED ImplicitAttach 1
- * @run main AttachTest --enable-preview --enable-native-access=ALL-UNNAMED ImplicitAttach 2
- * @run main AttachTest --enable-preview --enable-native-access=ALL-UNNAMED ImplicitAttach 4
+ * @compile -source ${jdk.version} ImplicitAttach.java
+ * @run main AttachTest --enable-native-access=ALL-UNNAMED ImplicitAttach 1
+ * @run main AttachTest --enable-native-access=ALL-UNNAMED ImplicitAttach 2
+ * @run main AttachTest --enable-native-access=ALL-UNNAMED ImplicitAttach 4
  */
 
 import java.util.stream.Stream;

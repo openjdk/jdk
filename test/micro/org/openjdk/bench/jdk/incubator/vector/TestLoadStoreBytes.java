@@ -49,7 +49,6 @@ import org.openjdk.jmh.annotations.Warmup;
 @OutputTimeUnit(TimeUnit.NANOSECONDS)
 @Fork(value = 1, jvmArgsAppend = {
     "--add-modules=jdk.incubator.vector",
-    "--enable-preview",
     "--enable-native-access", "ALL-UNNAMED",
     "-Djdk.incubator.vector.VECTOR_ACCESS_OOB_CHECK=1"})
 public class TestLoadStoreBytes {

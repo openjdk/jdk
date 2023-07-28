@@ -24,7 +24,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.foreign
  * @build NativeTestHelper CallGeneratorHelper TestUpcallHighArity
  *

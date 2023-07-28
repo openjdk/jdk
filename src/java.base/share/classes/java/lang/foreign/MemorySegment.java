@@ -47,7 +47,6 @@ import jdk.internal.foreign.MemorySessionImpl;
 import jdk.internal.foreign.NativeMemorySegmentImpl;
 import jdk.internal.foreign.StringSupport;
 import jdk.internal.foreign.Utils;
-import jdk.internal.javac.PreviewFeature;
 import jdk.internal.reflect.CallerSensitive;
 import jdk.internal.vm.annotation.ForceInline;
 
@@ -446,9 +445,8 @@ import jdk.internal.vm.annotation.ForceInline;
  * @implSpec
  * Implementations of this interface are immutable, thread-safe and <a href="{@docRoot}/java.base/java/lang/doc-files/ValueBased.html">value-based</a>.
  *
- * @since 19
+ * @since 22
  */
-@PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
 public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
 
     /**
@@ -2368,7 +2366,6 @@ public sealed interface MemorySegment permits AbstractMemorySegmentImpl {
      * Scope instances can be compared for equality. That is, two scopes
      * are considered {@linkplain #equals(Object)} if they denote the same lifetime.
      */
-    @PreviewFeature(feature=PreviewFeature.Feature.FOREIGN)
     sealed interface Scope permits MemorySessionImpl {
         /**
          * {@return {@code true}, if the regions of memory backing the memory segments associated with this scope are

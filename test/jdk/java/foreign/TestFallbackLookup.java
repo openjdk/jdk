@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm -Dos.name=Windows --enable-native-access=ALL-UNNAMED TestFallbackLookup
  */
 

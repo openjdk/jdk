@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules jdk.incubator.vector java.base/jdk.internal.vm.annotation
  * @run testng/othervm -XX:-TieredCompilation Short128VectorLoadStoreTests
  *

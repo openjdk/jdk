@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @library ../ /test/lib
  * @run testng/othervm --enable-native-access=ALL-UNNAMED TestTrivial
  */

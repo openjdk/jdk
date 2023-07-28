@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @run testng/othervm
  *   -Djdk.internal.foreign.DowncallLinker.USE_SPEC=true
  *   --enable-native-access=ALL-UNNAMED

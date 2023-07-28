@@ -23,7 +23,6 @@
 
 /*
  * @test
- * @enablePreview
  * @modules java.base/jdk.internal.access.foreign
  * @modules java.base/jdk.internal.foreign.layout
  *
