@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016, 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Red Hat, Inc. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,22 +19,39 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_OOPS_ARRAYKLASS_INLINE_HPP
-#define SHARE_OOPS_ARRAYKLASS_INLINE_HPP
+/*
+ * @test
+ * bug 8312440
+ * @summary assert(cast != nullptr) failed: must have added a cast to pin the node
+ * @run main/othervm -XX:-BackgroundCompilation TestSunkNodeMissingCastAssert
+ */
 
-#include "oops/arrayKlass.hpp"
 
-#include "runtime/atomic.hpp"
+public class TestSunkNodeMissingCastAssert {
+  private static int N = 500;
+  private static int ia[] = new int[N];
+  private static volatile int ib[] = new int[N];
 
-inline ObjArrayKlass* ArrayKlass::higher_dimension_acquire() const {
-  return Atomic::load_acquire(&_higher_dimension);
+  private static void test() {
+    for (int k = 1; k < 200; k++)
+      switch (k % 5) {
+      case 0:
+        ia[k - 1] -= 15;
+      case 2:
+        for (int m = 0; m < 1000; m++);
+      case 3:
+        ib[k - 1] <<= 5;
+      case 4:
+        ib[k + 1] <<= 3;
+      }
+  }
+
+  public static void main(String[] args) {
+    for (int i = 0; i < 20000; i++) {
+      test();
+    }
+  }
 }
 
-inline void ArrayKlass::release_set_higher_dimension(ObjArrayKlass* k) {
-  Atomic::release_store(&_higher_dimension, k);
-}
-
-#endif // SHARE_OOPS_ARRAYKLASS_INLINE_HPP

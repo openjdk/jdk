@@ -148,7 +148,7 @@ public abstract class AbstractMemberWriter {
 
         visibleMemberTable = typeElement == null ? null : configuration.getVisibleMemberTable(typeElement);
 
-        summariesComparator = utils.comparators.makeIndexElementComparator();
+        summariesComparator = utils.comparators.indexElementComparator();
     }
 
     /**

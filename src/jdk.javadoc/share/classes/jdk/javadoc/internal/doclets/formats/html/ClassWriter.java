@@ -655,7 +655,7 @@ public class ClassWriter extends SubWriterHolderWriter {
     }
 
     protected void addImplementedInterfacesInfo(Content target) {
-        SortedSet<TypeMirror> interfaces = new TreeSet<>(comparators.makeTypeMirrorClassUseComparator());
+        SortedSet<TypeMirror> interfaces = new TreeSet<>(comparators.typeMirrorClassUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
         if (utils.isClass(typeElement) && !interfaces.isEmpty()) {
             var dl = HtmlTree.DL(HtmlStyle.notes);
@@ -667,7 +667,7 @@ public class ClassWriter extends SubWriterHolderWriter {
 
     protected void addSuperInterfacesInfo(Content target) {
         SortedSet<TypeMirror> interfaces =
-                new TreeSet<>(comparators.makeTypeMirrorIndexUseComparator());
+                new TreeSet<>(comparators.typeMirrorIndexUseComparator());
         interfaces.addAll(utils.getAllInterfaces(typeElement));
 
         if (utils.isPlainInterface(typeElement) && !interfaces.isEmpty()) {

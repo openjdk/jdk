@@ -309,7 +309,7 @@ public class ConstantsSummaryWriter extends HtmlDocletWriter {
             members.addAll(vmt.getVisibleMembers(VisibleMemberTable.Kind.FIELDS));
             members.addAll(vmt.getVisibleMembers(VisibleMemberTable.Kind.ENUM_CONSTANTS));
             SortedSet<VariableElement> includes =
-                    new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
+                    new TreeSet<>(utils.comparators.generalPurposeComparator());
             for (Element element : members) {
                 VariableElement member = (VariableElement)element;
                 if (member.getConstantValue() != null) {

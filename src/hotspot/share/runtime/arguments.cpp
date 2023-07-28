@@ -4041,7 +4041,7 @@ jint Arguments::apply_ergo() {
     JVMFlag::printSetFlags(tty);
   }
 
-#ifdef COMPILER2
+#if COMPILER2_OR_JVMCI
   if (!FLAG_IS_DEFAULT(EnableVectorSupport) && !EnableVectorSupport) {
     if (!FLAG_IS_DEFAULT(EnableVectorReboxing) && EnableVectorReboxing) {
       warning("Disabling EnableVectorReboxing since EnableVectorSupport is turned off.");
@@ -4062,7 +4062,7 @@ jint Arguments::apply_ergo() {
     }
     FLAG_SET_DEFAULT(UseVectorStubs, false);
   }
-#endif // COMPILER2
+#endif // COMPILER2_OR_JVMCI
 
   if (FLAG_IS_CMDLINE(DiagnoseSyncOnValueBasedClasses)) {
     if (DiagnoseSyncOnValueBasedClasses == ObjectSynchronizer::LOG_WARNING && !log_is_enabled(Info, valuebasedclasses)) {
