@@ -245,7 +245,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return target for annotations on a class or method type parameter declaration}
-         * @param targetType {@link TargetType.CLASS_TYPE_PARAMETER} or {@link TargetType.METHOD_TYPE_PARAMETER}
+         * @param targetType {@link TargetType#CLASS_TYPE_PARAMETER} or {@link TargetType#METHOD_TYPE_PARAMETER}
          * @param typeParameterIndex specifies which type parameter declaration is annotated
          */
         static TypeParameterTarget ofTypeParameter(TargetType targetType, int typeParameterIndex) {
@@ -279,7 +279,7 @@ public sealed interface TypeAnnotation
         /**
          * {@return target for annotations on the i'th bound of the j'th type parameter declaration of
          * a generic class, interface, method, or constructor}
-         * @param targetType {@link TargetType.CLASS_TYPE_PARAMETER_BOUND} or {@link TargetType.METHOD_TYPE_PARAMETER_BOUND}
+         * @param targetType {@link TargetType#CLASS_TYPE_PARAMETER_BOUND} or {@link TargetType#METHOD_TYPE_PARAMETER_BOUND}
          * @param typeParameterIndex specifies which type parameter declaration is annotated
          * @param boundIndex specifies which bound of the type parameter declaration is annotated
          */
@@ -309,7 +309,7 @@ public sealed interface TypeAnnotation
 
         /**
          * {@return target for annotations on }
-         * @param targetType {@link TargetType.FIELD}, {@link TargetType.METHOD_RETURN} or {@link TargetType.METHOD_RECEIVER}
+         * @param targetType {@link TargetType#FIELD}, {@link TargetType#METHOD_RETURN} or {@link TargetType#METHOD_RECEIVER}
          */
         static EmptyTarget of(TargetType targetType) {
             return new TargetInfoImpl.EmptyTargetImpl(targetType);
@@ -357,7 +357,7 @@ public sealed interface TypeAnnotation
         /**
          * {@return target for annotations on the type in a local variable declaration,
          * including a variable declared as a resource in a try-with-resources statement}
-         * @param targetType {@link TargetType.LOCAL_VARIABLE} or {@link TargetType.RESOURCE_VARIABLE}
+         * @param targetType {@link TargetType#LOCAL_VARIABLE} or {@link TargetType#RESOURCE_VARIABLE}
          * @param table list of local variable targets
          */
         static LocalVarTarget ofVariable(TargetType targetType, List<LocalVarTargetInfo> table) {
@@ -392,9 +392,9 @@ public sealed interface TypeAnnotation
         /**
          * {@return target for annotations on the type in an instanceof expression or a new expression,
          * or the type before the :: in a method reference expression}
-         * {@param targetType {@link TargetType.INSTANCEOF}, {@link TargetType.NEW},
-         *                    {@link TargetType.CONSTRUCTOR_REFERENCE},
-         *                    or {@link TargetType.METHOD_REFERENCE}}
+         * {@param targetType {@link TargetType#INSTANCEOF}, {@link TargetType#NEW},
+         *                    {@link TargetType#CONSTRUCTOR_REFERENCE},
+         *                    or {@link TargetType#METHOD_REFERENCE}}
          * @param target code label corresponding to the instruction
          */
         static OffsetTarget ofOffset(TargetType targetType, Label target) {
@@ -438,10 +438,10 @@ public sealed interface TypeAnnotation
          * or on the i'th type argument in the explicit type argument list for any of the following:
          * a new expression, an explicit constructor invocation statement, a method invocation expression,
          * or a method reference expression}
-         * {@param targetType {@link TargetType.CAST}, {@link TargetType.CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT},
-         *                    {@link TargetType.METHOD_INVOCATION_TYPE_ARGUMENT},
-         *                    {@link TargetType.CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT},
-         *                    or {@link TargetType.METHOD_REFERENCE_TYPE_ARGUMENT}}
+         * {@param targetType {@link TargetType#CAST}, {@link TargetType#CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT},
+         *                    {@link TargetType#METHOD_INVOCATION_TYPE_ARGUMENT},
+         *                    {@link TargetType#CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT},
+         *                    or {@link TargetType#METHOD_REFERENCE_TYPE_ARGUMENT}}
          * @param target code label corresponding to the instruction
          * @param typeArgumentIndex specifies which type in the cast operator or argument is annotated
          */
