@@ -189,6 +189,16 @@ void Parse::do_monitor_enter() {
   // the monitor object is not part of debug info expression stack
   pop();
 
+  if (DoPartialEscapeAnalysis) {
+    // TODO: PEA can support monitors
+    PartialEscapeAnalysis* pea = PEA();
+    PEAState& state = jvms()->alloc_state();
+
+    if (state.as_virtual(pea, obj) != nullptr) {
+      state.escape(pea->is_alias(obj), obj, false);
+    }
+  }
+
   // Insert a FastLockNode which takes as arguments the current thread pointer,
   // the obj pointer & the address of the stack slot pair used for the lock.
   shared_lock(obj);
