@@ -283,7 +283,8 @@ public interface Elements {
      * <p> A documentation comment of an element is a comment that
      * begins with "{@code /**}", ends with a separate
      * "<code>*&#47;</code>", and immediately precedes the element,
-     * ignoring white space.  Therefore, a documentation comment
+     * ignoring white space and annotations and end-of-line-comments ({@code "//"} comments).
+     * Therefore, a documentation comment
      * contains at least three "{@code *}" characters.  The text
      * returned for the documentation comment is a processed form of
      * the comment as it appears in source code:
