@@ -104,6 +104,8 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
      proident, sunt in culpa qui officia deserunt mollit anim id est
      laborum.
       """)
+    // End-of-line-style comment
+    @SuppressWarnings("") // A second preceding annotation
     private void foo() {return ;}
 
 
@@ -142,5 +144,43 @@ public class TestGetDocComments extends JavacTestingAbstractProcessor {
      " Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do\n" +
      " eiusmod tempor incididunt ut labore et dolore magna aliqua.\n")
     private void baz() {return ;}
+
+    // Space after ** is removed, but not space before "*/"
+    /**   Totality */
+    @ExpectedComment("Totality ") // No newline
+    private void quux() {return ;}
+
+    // Space after "**" is removed, but not trailing space later on the line
+    /** Totality 
+     */
+    @ExpectedComment("Totality \n")
+    private void corge() {return ;}
+
+    /**
+     * Totality */
+    @ExpectedComment(" Totality ") // No newline
+    private void grault() {return ;}
+
+    // Trailing space characters on first line
+    /** \u0009 
+     * Totality
+     */
+    @ExpectedComment(" Totality\n") // No newline
+    private void wombat() {return ;}
+
+    /**
+     */
+    @ExpectedComment("") // No newline
+    private void empty() {return ;}
+
+    /**
+     * tail */
+    @ExpectedComment(" tail ") // No newline
+    private void tail() {return ;}
+
+    /**
+   ****/
+    @ExpectedComment("") // No newline
+    private void tail2() {return ;}
 }
                      
