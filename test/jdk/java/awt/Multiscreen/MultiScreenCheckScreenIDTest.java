@@ -53,6 +53,8 @@ public class MultiScreenCheckScreenIDTest extends MouseAdapter {
     private static GraphicsDevice[] screens;
     static List<Window> windowList = new ArrayList<>();
     static Robot robot;
+    static JWindow window;
+
 
     public static void main(final String[] args) throws Exception {
         try {
@@ -89,7 +91,7 @@ public class MultiScreenCheckScreenIDTest extends MouseAdapter {
                 try {
                     SwingUtilities.invokeAndWait(() -> {
                         try {
-                            createWindow(r);
+                            window = createWindow(r);
                         } catch (Exception e) {
                             throw new RuntimeException(e);
                         }
@@ -99,35 +101,34 @@ public class MultiScreenCheckScreenIDTest extends MouseAdapter {
                 }
                 robot.delay(50);
                 robot.waitForIdle();
-                if (windowList.get(windowList.size() - 1).getBounds().intersects
-                        (screen.getDefaultConfiguration().getBounds())) {
-                    if (!(windowList.get(windowList.size() - 1).
-                            getGraphicsConfiguration().getBounds().
-                            intersects(screen.getDefaultConfiguration().
-                                    getBounds()))) {
+                if (window.getBounds().intersects(screenBounds)) {
+                    if (!(window.getGraphicsConfiguration().getBounds().
+                            intersects(screenBounds))) {
                         throw new RuntimeException("Graphics configuration " +
                                 "changed for screen :" + screenNumber);
                     }
                 }
+                windowList.add(window);
             }
             screenNumber++;
         }
     }
 
-    private void createWindow(Rectangle bounds) {
+    private JWindow createWindow(Rectangle bounds) {
         JWindow window = new JWindow();
         window.setBounds(bounds);
         window.setBackground(BACKGROUND);
         window.setAlwaysOnTop(true);
         window.addMouseListener(this);
         window.setVisible(true);
-        windowList.add(window);
+        return window;
     }
 
     @Override
     public void mouseClicked(MouseEvent e) {
         ((Window) e.getSource()).dispose();
     }
+
     private static List<Rectangle> gridOfRectangles(Rectangle r, int cols, int rows) {
         List<Rectangle> l = new ArrayList<>();
         for (int row = 0; row < rows; row++) {
