@@ -25,9 +25,9 @@
  * @test
  * @bug 8312596
  * @requires vm.debug == true & vm.compiler2.enabled
- * @summary Run with -Xcomp to test -XX:+TestPrintIdealNodeCount in debug builds.
+ * @summary Run with -Xcomp -XX:-TieredCompilation to force C2 compilations to test -XX:+PrintIdealNodeCount in debug builds.
  *
- * @run main/othervm -Xcomp -XX:+PrintIdealNodeCount compiler.c2.TestPrintIdealNodeCount
+ * @run main/othervm -Xcomp -XX:-TieredCompilation -XX:+PrintIdealNodeCount compiler.c2.TestPrintIdealNodeCount
  */
 package compiler.c2;
 
