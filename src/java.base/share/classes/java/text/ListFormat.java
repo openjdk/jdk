@@ -199,7 +199,7 @@ public class ListFormat extends Format {
     }
 
     /**
-     * {@return the list format object for the specified patterns array}
+     * {@return the list format for the specified patterns}
      * <p>
      * This factory produces an instance based on the customized patterns array,
      * instead of letting the runtime provide appropriate patterns for the Locale/Type/Style.
