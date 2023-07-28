@@ -286,12 +286,17 @@ public interface Elements {
      * ignoring white space.  Therefore, a documentation comment
      * contains at least three "{@code *}" characters.  The text
      * returned for the documentation comment is a processed form of
-     * the comment as it appears in source code.  The leading "{@code /**}"
-     * and trailing "<code>*&#47;</code>" are removed.  For lines
+     * the comment as it appears in source code:
+     * <ul>
+     * <li>The leading "{@code /**}"
+     * and trailing "<code>*&#47;</code>" are removed.
+     * <li>For lines
      * of the comment starting after the initial "{@code /**}",
      * leading white space characters are discarded as are any
      * consecutive "{@code *}" characters appearing after the white
-     * space or starting the line.  The processed lines are then
+     * space or starting the line.
+     * </ul>
+     * The processed lines are then
      * concatenated together (including line terminators) and
      * returned.
      *
