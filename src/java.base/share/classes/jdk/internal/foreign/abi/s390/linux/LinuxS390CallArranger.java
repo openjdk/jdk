@@ -70,7 +70,7 @@ public class LinuxS390CallArranger {
             new VMStorage[] { f0, f2, f4, f6 }, // FP intput
             new VMStorage[] { r2, }, // GP output
             new VMStorage[] { f0, }, // FP output
-            new VMStorage[] { r0, r1 }, // volatile GP (excluding argument registers)
+            new VMStorage[] { r0, r1, r14 }, // volatile GP (excluding argument registers)
             new VMStorage[] { f1, f3, f5, f7 }, // volatile FP (excluding argument registers)
             8, // Stack is always 8 byte aligned on S390
             160, // ABI header
