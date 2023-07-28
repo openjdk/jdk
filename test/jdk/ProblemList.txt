@@ -480,7 +480,7 @@ java/lang/invoke/LFCaching/LFGarbageCollectedTest.java          8078602 generic-
 java/lang/invoke/lambda/LambdaFileEncodingSerialization.java    8249079 linux-x64
 java/lang/invoke/RicochetTest.java                              8251969 generic-all
 
-java/lang/ScopedValue/StressStackOverflow.java                  8303498 linux-s390x
+java/lang/ScopedValue/StressStackOverflow.java                  8303498,8308609 linux-s390x,linux-i586
 
 ############################################################################
 
