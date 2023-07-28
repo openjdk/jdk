@@ -11,6 +11,7 @@ empty :=
 space := $(empty) $(empty)
 # CTWRunner accepts arguments with commas instead of spaces
 CTW_RUNNER_JAVA_OPTIONS := $(subst $(space),$(comma),$(CTW_JAVA_OPTIONS))
+JTREG_COMMON := CONF=linux-x86_64-server-fastdebug  JTREG="JAVA_OPTIONS=-XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis"
 
 set_jdk:
 	if [ -e ${JAVA_PATH} ]; then \
@@ -44,7 +45,10 @@ bootstrap-version: set_jdk
 	java -Xcomp -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -XX:-PrintCompilation -version
 
 hotspot-tier1:
-	cd ..; make test TEST="hotspot:tier1"  CONF=linux-x86_64-server-fastdebug  JTREG="JAVA_OPTIONS=-XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis"
+	cd ..; make test TEST="hotspot:tier1" ${JTREG_COMMON}
+
+hotspot-tier2:
+	cd ..; make test TEST="hotspot:tier2" ${JTREG_COMMON}
 
 all: smoketest bootstrap-version
 
