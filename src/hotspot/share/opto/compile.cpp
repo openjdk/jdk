@@ -2321,7 +2321,7 @@ void Compile::Optimize() {
         TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
         PhaseMacroExpand mexp(igvn);
         mexp.eliminate_macro_nodes();
-        if (failing())  return;
+        if (failing()) return;
 
         igvn.set_delay_transform(false);
         igvn.optimize();
