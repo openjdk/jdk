@@ -326,7 +326,7 @@ public class Group {
      */
     SortedSet<PackageElement> getPkgList(Map<String, SortedSet<PackageElement>> map,
             String groupname) {
-        return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.comparators.makePackageComparator()));
+        return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.comparators.packageComparator()));
     }
 
     /**
@@ -338,7 +338,7 @@ public class Group {
      */
     SortedSet<ModuleElement> getModuleList(Map<String, SortedSet<ModuleElement>> map,
             String groupname) {
-        return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.comparators.makeModuleComparator()));
+        return map.computeIfAbsent(groupname, g -> new TreeSet<>(configuration.utils.comparators.moduleComparator()));
     }
 
     /**

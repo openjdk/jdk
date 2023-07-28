@@ -26,7 +26,7 @@
  * @bug 8179071 8202537 8231273 8251317
  * @summary Test that language aliases of CLDR supplemental metadata are handled correctly.
  * @modules jdk.localedata
- * @run junit/othervm -Djava.locale.providers=CLDR Bug8179071
+ * @run junit/othervm -Djava.locale.providers=CLDR AliasesShouldBeRecognizedInCLDR
  */
 
 /*
@@ -49,7 +49,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class Bug8179071 {
+public class AliasesShouldBeRecognizedInCLDR {
 
     /*
      * Deprecated and Legacy tags.

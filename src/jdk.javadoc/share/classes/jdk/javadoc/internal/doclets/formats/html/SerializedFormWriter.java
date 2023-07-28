@@ -109,7 +109,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
      * @throws DocletException if there is a problem while building the documentation
      */
      void build() throws DocletException {
-        SortedSet<TypeElement> rootclasses = new TreeSet<>(utils.comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> rootclasses = new TreeSet<>(utils.comparators.generalPurposeComparator());
         rootclasses.addAll(configuration.getIncludedTypeElements());
         if (!serialClassFoundToDocument(rootclasses)) {
             //Nothing to document.
@@ -443,7 +443,7 @@ public class SerializedFormWriter extends SubWriterHolderWriter {
         // ObjectStreamFields. Print a member for each serialField tag.
         // (There should be one serialField tag per ObjectStreamField
         // element.)
-        SortedSet<SerialFieldTree> tags = new TreeSet<>(utils.comparators.makeSerialFieldTreeComparator());
+        SortedSet<SerialFieldTree> tags = new TreeSet<>(utils.comparators.serialFieldTreeComparator());
         // sort the elements
         tags.addAll(utils.getSerialFieldTrees(field));
 

@@ -27,8 +27,8 @@
  * @summary Verify ConcurrentModificationException is not thrown with multiple
  *     thread accesses.
  * @modules java.base/sun.util.locale.provider
- * @compile -XDignore.symbol.file=true Bug6989440.java
- * @run junit Bug6989440
+ * @compile -XDignore.symbol.file=true ProviderPoolMultiThreadAccess.java
+ * @run junit ProviderPoolMultiThreadAccess
  */
 import java.text.spi.DateFormatProvider;
 import java.util.spi.LocaleNameProvider;
@@ -39,7 +39,7 @@ import sun.util.locale.provider.LocaleServiceProviderPool;
 
 import org.junit.jupiter.api.Test;
 
-public class Bug6989440 {
+public class ProviderPoolMultiThreadAccess {
     static volatile boolean failed;  // false
     static final int THREADS = 50;
 
