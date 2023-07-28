@@ -502,7 +502,8 @@ public class ListFormat extends Format {
     }
 
     /**
-     * A list format type - {@link #STANDARD}, {@link #OR}, and {@link #UNIT}.
+     * A list format type - {@link #STANDARD STANDARD}, {@link #OR OR}, and
+     * {@link #UNIT UNIT}.
      * <p>
      * {@code Type} is an enum which represents the type for formatting
      * a list within a given {@code ListFormat} instance.
@@ -529,7 +530,8 @@ public class ListFormat extends Format {
     }
 
     /**
-     * A list format style - {@link #FULL}, {@link #SHORT}, and {@link #NARROW}.
+     * A list format style - {@link #FULL FULL}, {@link #SHORT SHORT},
+     * and {@link #NARROW NARROW}.
      * <p>
      * {@code Style} is an enum which represents the style for formatting
      * a list within a given {@code ListFormat} instance.
