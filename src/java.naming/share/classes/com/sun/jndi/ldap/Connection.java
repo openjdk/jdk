@@ -649,7 +649,19 @@ public final class Connection implements Runnable {
                         unpauseReader();
                     } catch (IOException ie) {
                         if (debug)
-                            System.err.println("Connection: problem closing socket: " + ie);
+                            System.err.println("Connection::cleanup - problem flushing stream: " + ie);
+                        //bug 35557158, socket not closed util GC running
+                        try {
+                            sock.close();
+                            unpauseReader();
+                            if (debug) {
+                                if(sock.isClosed())
+                                    System.err.println("Connection::cleanup - socket closed with no issue");
+                            }
+                        } catch (IOException ioe) {
+                            if (debug)
+                                System.err.println("Connection::cleanup problem: " + ioe);
+                        }
                     }
                     if (!notifyParent) {
                         LdapRequest ldr = pendingRequests;
