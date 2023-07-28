@@ -848,15 +848,15 @@ public class SignatureFileVerifier {
          * in a JAR file.
          */
         Integer tmp = GetIntegerAction.privilegedGetProperty(
-                "jdk.jar.maxSignatureFileSize", 8000000);
+                "jdk.jar.maxSignatureFileSize", 16000000);
         if (tmp < 0 || tmp > MAX_ARRAY_SIZE) {
             if (debug != null) {
-                debug.println("Default signature file size 8000000 bytes " +
+                debug.println("Default signature file size 16000000 bytes " +
                         "is used as the specified size for the " +
                         "jdk.jar.maxSignatureFileSize system property " +
                         "is out of range: " + tmp);
             }
-            tmp = 8000000;
+            tmp = 16000000;
         }
         return tmp;
     }
