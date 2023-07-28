@@ -73,7 +73,7 @@ class Bytecode: public StackObj {
   // Static functions for parsing bytecodes in place.
   u1 get_index_u1(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(1, bc);
-    return *(jubyte*)addr_at(1);
+    return *(u1*)addr_at(1);
   }
   u2 get_index_u2(Bytecodes::Code bc, bool is_wide = false) const {
     assert_same_format_as(bc, is_wide); assert_index_size(2, bc, is_wide);
@@ -86,7 +86,7 @@ class Bytecode: public StackObj {
   }
   int get_index_u1_cpcache(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(1, bc);
-    return *(jubyte*)addr_at(1) + ConstantPool::CPCACHE_INDEX_TAG;
+    return *(u1*)addr_at(1) + ConstantPool::CPCACHE_INDEX_TAG;
   }
   int get_index_u2_cpcache(Bytecodes::Code bc) const {
     assert_same_format_as(bc); assert_index_size(2, bc); assert_native_index(bc);
