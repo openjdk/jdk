@@ -660,7 +660,7 @@ public class Utils {
     }
 
     public SortedSet<TypeElement> getTypeElementsAsSortedSet(Iterable<TypeElement> typeElements) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         typeElements.forEach(set::add);
         return set;
     }
@@ -1317,7 +1317,7 @@ public class Utils {
     public SortedSet<TypeElement> filterOutPrivateClasses(Iterable<TypeElement> classlist,
             boolean javafx) {
         SortedSet<TypeElement> filteredOutClasses =
-                new TreeSet<>(comparators.makeGeneralPurposeComparator());
+                new TreeSet<>(comparators.generalPurposeComparator());
         if (!javafx) {
             for (TypeElement te : classlist) {
                 if (!hasHiddenTag(te)) {
@@ -1604,7 +1604,7 @@ public class Utils {
     }
 
     public Map<ModuleElement, String> getDependentModules(ModuleElement mdle) {
-        Map<ModuleElement, String> result = new TreeMap<>(comparators.makeModuleComparator());
+        Map<ModuleElement, String> result = new TreeMap<>(comparators.moduleComparator());
         Deque<ModuleElement> queue = new ArrayDeque<>();
         // get all the requires for the element in question
         for (RequiresDirective rd : ElementFilter.requiresIn(mdle.getDirectives())) {
@@ -1678,7 +1678,7 @@ public class Utils {
      * @return the interfaces
      */
     public SortedSet<TypeElement> getAllClassesUnfiltered(PackageElement pkg) {
-        SortedSet<TypeElement> set = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+        SortedSet<TypeElement> set = new TreeSet<>(comparators.generalPurposeComparator());
         set.addAll(getItems(pkg, true, this::isTypeElement, TypeElement.class));
         return set;
     }
@@ -1694,7 +1694,7 @@ public class Utils {
     public SortedSet<TypeElement> getAllClasses(PackageElement pkg) {
         return cachedClasses.computeIfAbsent(pkg, p_ -> {
             List<TypeElement> clist = getItems(pkg, false, this::isTypeElement, TypeElement.class);
-            SortedSet<TypeElement>oset = new TreeSet<>(comparators.makeGeneralPurposeComparator());
+            SortedSet<TypeElement>oset = new TreeSet<>(comparators.generalPurposeComparator());
             oset.addAll(clist);
             return oset;
         });
