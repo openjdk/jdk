@@ -303,6 +303,9 @@ public class WhiteBox {
   public native void NMTArenaMalloc(long arena, long size);
 
   // Compiler
+
+  // Determines if the libgraal shared library file is present.
+  public native boolean hasLibgraal();
   public native boolean isC2OrJVMCIIncluded();
   public native boolean isJVMCISupportedByGC();
 
@@ -764,4 +767,6 @@ public class WhiteBox {
   public native void unlockCritical();
 
   public native boolean setVirtualThreadsNotifyJvmtiMode(boolean enabled);
+
+  public native void preTouchMemory(long addr, long size);
 }

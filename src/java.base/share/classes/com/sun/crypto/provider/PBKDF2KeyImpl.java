@@ -26,6 +26,7 @@
 package com.sun.crypto.provider;
 
 import java.io.ObjectStreamException;
+import java.lang.ref.Reference;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
@@ -205,7 +206,12 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     }
 
     public byte[] getEncoded() {
-        return key.clone();
+        try {
+            return key.clone();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     public String getAlgorithm() {
@@ -221,7 +227,12 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
     }
 
     public char[] getPassword() {
-        return passwd.clone();
+        try {
+            return passwd.clone();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     public byte[] getSalt() {
@@ -238,26 +249,40 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
      */
     @Override
     public int hashCode() {
-        return Arrays.hashCode(this.key)
-                ^ getAlgorithm().toLowerCase(Locale.ENGLISH).hashCode();
+        try {
+            return Arrays.hashCode(this.key)
+                    ^ getAlgorithm().toLowerCase(Locale.ENGLISH).hashCode();
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     @Override
     public boolean equals(Object obj) {
-        if (obj == this)
-            return true;
+        try {
+            if (obj == this) {
+                return true;
+            }
 
-        if (!(obj instanceof SecretKey that))
-            return false;
+            if (!(obj instanceof SecretKey that)) {
+                return false;
+            }
 
-        if (!(that.getAlgorithm().equalsIgnoreCase(getAlgorithm())))
-            return false;
-        if (!(that.getFormat().equalsIgnoreCase("RAW")))
-            return false;
-        byte[] thatEncoded = that.getEncoded();
-        boolean ret = MessageDigest.isEqual(key, thatEncoded);
-        Arrays.fill(thatEncoded, (byte)0x00);
-        return ret;
+            if (!(that.getAlgorithm().equalsIgnoreCase(getAlgorithm()))){
+                return false;
+            }
+            if (!(that.getFormat().equalsIgnoreCase("RAW"))) {
+                return false;
+            }
+            byte[] thatEncoded = that.getEncoded();
+            boolean ret = MessageDigest.isEqual(key, thatEncoded);
+            Arrays.fill(thatEncoded, (byte)0x00);
+            return ret;
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 
     /**
@@ -270,7 +295,12 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
      */
     @java.io.Serial
     private Object writeReplace() throws ObjectStreamException {
-        return new KeyRep(KeyRep.Type.SECRET, getAlgorithm(),
-                getFormat(), key);
+        try {
+            return new KeyRep(KeyRep.Type.SECRET, getAlgorithm(),
+                    getFormat(), key);
+        } finally {
+            // prevent this from being cleaned for the above block
+            Reference.reachabilityFence(this);
+        }
     }
 }

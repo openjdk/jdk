@@ -24,6 +24,9 @@
 
 #include "precompiled.hpp"
 #include "classfile/javaClasses.inline.hpp"
+#include "classfile/symbolTable.hpp"
+#include "classfile/systemDictionary.hpp"
+#include "classfile/vmSymbols.hpp"
 #include "jfr/recorder/checkpoint/types/traceid/jfrTraceIdEpoch.hpp"
 #include "jfr/recorder/service/jfrOptionSet.hpp"
 #include "jfr/recorder/storage/jfrMemorySpace.inline.hpp"
@@ -38,6 +41,45 @@
 #include "runtime/atomic.hpp"
 #include "runtime/javaThread.hpp"
 #include "runtime/safepoint.hpp"
+
+static int generation_offset = invalid_offset;
+static jobject string_pool = nullptr;
+
+static unsigned short generation = 0;
+
+static bool setup_string_pool_offsets(TRAPS) {
+  const char class_name[] = "jdk/jfr/internal/StringPool";
+  Symbol* const k_sym = SymbolTable::new_symbol(class_name);
+  assert(k_sym != nullptr, "invariant");
+  Klass* klass = SystemDictionary::resolve_or_fail(k_sym, true, CHECK_false);
+  assert(klass != nullptr, "invariant");
+  klass->initialize(CHECK_false);
+  assert(!klass->should_be_initialized(), "invariant");
+  assert(string_pool == nullptr, "invariant");
+  jobject pool = JfrJavaSupport::global_jni_handle(klass->java_mirror(), THREAD);
+  if (pool == nullptr) {
+    return false;
+  }
+  const char generation_name[] = "generation";
+  Symbol* const generation_sym = SymbolTable::new_symbol(generation_name);
+  assert(generation_sym != nullptr, "invariant");
+  assert(invalid_offset == generation_offset, "invariant");
+  if (!JfrJavaSupport::compute_field_offset(generation_offset, klass, generation_sym, vmSymbols::short_signature(), true)) {
+    JfrJavaSupport::destroy_global_jni_handle(pool);
+    return false;
+  }
+  assert(generation_offset != invalid_offset, "invariant");
+  string_pool = pool;
+  return true;
+}
+
+static bool initialize_java_string_pool() {
+  static bool initialized = false;
+  if (!initialized) {
+    initialized = setup_string_pool_offsets(JavaThread::current());
+  }
+  return initialized;
+}
 
 typedef JfrStringPool::BufferPtr BufferPtr;
 
@@ -75,6 +117,10 @@ static const size_t string_pool_cache_count = 2;
 static const size_t string_pool_buffer_size = 512 * K;
 
 bool JfrStringPool::initialize() {
+  if (!initialize_java_string_pool()) {
+    return false;
+  }
+
   assert(_mspace == nullptr, "invariant");
   _mspace = create_mspace<JfrStringPoolMspace>(string_pool_buffer_size,
                                                0,
@@ -229,4 +275,13 @@ void JfrStringPool::register_full(BufferPtr buffer, Thread* thread) {
   assert(buffer != nullptr, "invariant");
   assert(buffer->acquired_by(thread), "invariant");
   assert(buffer->retired(), "invariant");
+}
+
+void JfrStringPool::on_epoch_shift() {
+  assert(SafepointSynchronize::is_at_safepoint(), "invariant");
+  assert(!JfrTraceIdEpoch::is_synchronizing(), "invariant");
+  assert(string_pool != nullptr, "invariant");
+  oop mirror = JfrJavaSupport::resolve_non_null(string_pool);
+  assert(mirror != nullptr, "invariant");
+  mirror->short_field_put(generation_offset, generation++);
 }

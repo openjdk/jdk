@@ -64,12 +64,19 @@ GrowableArrayCHeap<oop, mtClassShared>* ArchiveHeapWriter::_source_objs;
 ArchiveHeapWriter::BufferOffsetToSourceObjectTable*
   ArchiveHeapWriter::_buffer_offset_to_source_obj_table = nullptr;
 
+
+typedef ResourceHashtable<address, size_t,
+      127, // prime number
+      AnyObj::C_HEAP,
+      mtClassShared> FillersTable;
+static FillersTable* _fillers;
+
 void ArchiveHeapWriter::init() {
   if (HeapShared::can_write()) {
     Universe::heap()->collect(GCCause::_java_lang_system_gc);
 
     _buffer_offset_to_source_obj_table = new BufferOffsetToSourceObjectTable();
-
+    _fillers = new FillersTable();
     _requested_bottom = nullptr;
     _requested_top = nullptr;
 
@@ -255,7 +262,7 @@ int ArchiveHeapWriter::filler_array_length(size_t fill_bytes) {
   return -1;
 }
 
-void ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t fill_bytes) {
+HeapWord* ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t fill_bytes) {
   assert(UseCompressedClassPointers, "Archived heap only supported for compressed klasses");
   Klass* oak = Universe::objectArrayKlassObj(); // already relocated to point to archived klass
   HeapWord* mem = offset_to_buffered_address<HeapWord*>(_buffer_used);
@@ -264,6 +271,7 @@ void ArchiveHeapWriter::init_filler_array_at_buffer_top(int array_length, size_t
   narrowKlass nk = ArchiveBuilder::current()->get_requested_narrow_klass(oak);
   cast_to_oop(mem)->set_narrow_klass(nk);
   arrayOopDesc::set_length(mem, array_length);
+  return mem;
 }
 
 void ArchiveHeapWriter::maybe_fill_gc_region_gap(size_t required_byte_size) {
@@ -293,9 +301,19 @@ void ArchiveHeapWriter::maybe_fill_gc_region_gap(size_t required_byte_size) {
     int array_length = filler_array_length(fill_bytes);
     log_info(cds, heap)("Inserting filler obj array of %d elements (" SIZE_FORMAT " bytes total) @ buffer offset " SIZE_FORMAT,
                         array_length, fill_bytes, _buffer_used);
-    init_filler_array_at_buffer_top(array_length, fill_bytes);
-
+    HeapWord* filler = init_filler_array_at_buffer_top(array_length, fill_bytes);
     _buffer_used = filler_end;
+    _fillers->put((address)filler, fill_bytes);
+  }
+}
+
+size_t ArchiveHeapWriter::get_filler_size_at(address buffered_addr) {
+  size_t* p = _fillers->get(buffered_addr);
+  if (p != nullptr) {
+    assert(*p > 0, "filler must be larger than zero bytes");
+    return *p;
+  } else {
+    return 0; // buffered_addr is not a filler
   }
 }
 
@@ -512,6 +530,20 @@ void ArchiveHeapWriter::mark_native_pointer(oop src_obj, int field_offset) {
     info._field_offset = field_offset;
     _native_pointers->append(info);
   }
+}
+
+// Do we have a jlong/jint field that's actually a pointer to a MetaspaceObj?
+bool ArchiveHeapWriter::is_marked_as_native_pointer(ArchiveHeapInfo* heap_info, oop src_obj, int field_offset) {
+  HeapShared::CachedOopInfo* p = HeapShared::archived_object_cache()->get(src_obj);
+  assert(p != nullptr, "must be");
+
+  // requested_field_addr = the address of this field in the requested space
+  oop requested_obj = requested_obj_from_buffer_offset(p->buffer_offset());
+  Metadata** requested_field_addr = (Metadata**)(cast_from_oop<address>(requested_obj) + field_offset);
+  assert((Metadata**)_requested_bottom <= requested_field_addr && requested_field_addr < (Metadata**) _requested_top, "range check");
+
+  BitMap::idx_t idx = requested_field_addr - (Metadata**) _requested_bottom;
+  return (idx < heap_info->ptrmap()->size()) && (heap_info->ptrmap()->at(idx) == true);
 }
 
 void ArchiveHeapWriter::compute_ptrmap(ArchiveHeapInfo* heap_info) {
