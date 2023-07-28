@@ -1,7 +1,6 @@
 .DEFAULT_GOAL := all
 
-JAVA_PATH := $(abspath ../build/linux-x86_64-server-fastdebug/jdk)
-export JAVA_HOME := ${JAVA_PATH}
+JAVA_HOME ?= $(abspath ../build/linux-x86_64-server-fastdebug/jdk)
 export PATH := ${JAVA_HOME}/bin:$(PATH)
 
 CTW_DIR := $(abspath ../test/hotspot/jtreg/testlibrary/ctw)
@@ -22,10 +21,12 @@ set_jdk:
 		exit 1; \
 	fi
 
-all: set_jdk
-	javac --add-exports java.base/jdk.internal.misc=ALL-UNNAMED *.java
+classes := $(patsubst %.java, %.class, $(wildcard *.java))
 
-run: set_jdk
+%.class: %.java
+	javac --add-exports java.base/jdk.internal.misc=ALL-UNNAMED $<
+
+smoketest: set_jdk $(classes)
 	./auto.rb
 
 $(CTW_DIST):
@@ -40,7 +41,12 @@ run-ctw-no-inline: set_jdk ${CTW_DIST}
 	JAVA_OPTIONS="${CTW_JAVA_OPTIONS} -XX:-Inline" ./ctw.sh modules:java.base
 
 bootstrap-version: set_jdk
-	java -Xcomp -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -XX:+PrintCompilation -version
+	java -Xcomp -XX:-TieredCompilation -XX:CICompilerCount=1 -Xbatch -XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis -XX:-PrintCompilation -version
 
 hotspot-tier1:
 	cd ..; make test TEST="hotspot:tier1"  CONF=linux-x86_64-server-fastdebug  JTREG="JAVA_OPTIONS=-XX:+UnlockExperimentalVMOptions -XX:+DoPartialEscapeAnalysis"
+
+all: smoketest bootstrap-version
+
+clean:
+	rm *.class *.log
