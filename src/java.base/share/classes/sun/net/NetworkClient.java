@@ -151,6 +151,23 @@ public class NetworkClient {
      */
     protected Socket doConnect (String server, int port)
     throws IOException, UnknownHostException {
+        IOException exception = null;
+        for (InetAddress address : InetAddress.getAllByName(server)) {
+            try {
+                return doConnect(address, port);
+            } catch (IOException e) {
+                if (exception == null) {
+                    exception = e;
+                } else {
+                    exception.addSuppressed(e);
+                }
+            }
+        }
+        throw exception;
+    }
+
+    private Socket doConnect (InetAddress server, int port)
+    throws IOException, UnknownHostException {
         Socket s;
         if (proxy != null) {
             if (proxy.type() == Proxy.Type.SOCKS) {
