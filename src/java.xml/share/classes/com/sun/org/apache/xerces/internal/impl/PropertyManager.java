@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 package com.sun.org.apache.xerces.internal.impl;
 
-import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.xml.internal.stream.StaxEntityResolverWrapper;
 import java.util.HashMap;
@@ -36,6 +35,7 @@ import javax.xml.stream.XMLResolver;
 import jdk.xml.internal.JdkConstants;
 import jdk.xml.internal.JdkProperty;
 import jdk.xml.internal.JdkXmlUtils;
+import jdk.xml.internal.XMLSecurityManager;
 
 /**
  * This class manages the properties for the Stax specification and its
@@ -45,6 +45,8 @@ import jdk.xml.internal.JdkXmlUtils;
  * @author Neeraj Bajaj
  * @author K Venugopal
  * @author Sunitha Reddy
+ *
+ * @LastModified: July 2023
  */
 public class PropertyManager {
 
