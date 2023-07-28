@@ -204,9 +204,9 @@ public class ListFormat extends Format {
      * This factory produces an instance based on the customized patterns array,
      * instead of letting the runtime provide appropriate patterns for the Locale/Type/Style.
      * <p>
-     * Patterns array should contain five Strings of patterns, each correspond to the Unicode LDML's
-     * {@code listPatternPart}, i.e., "start", "middle", "end", "2", and "3" patterns
-     * in this order. Each pattern contains "{0}" and "{1}" (and "{2}" for pattern "3")
+     * The patterns array should contain five String patterns, each corresponding to the Unicode LDML's
+     * {@code listPatternPart}, i.e., "start", "middle", "end", two element, and three element patterns
+     * in this order. Each pattern contains "{0}" and "{1}" (and "{2}" for the three element pattern)
      * placeholders that are substituted with the passed input strings on formatting.
      * If the length of the patterns array is less than 5, an {@code IllegalArgumentException}
      * is thrown.
