@@ -215,6 +215,7 @@ public class URIName implements GeneralNameInterface {
      *
      * @return true iff the names are equivalent according to RFC 5280.
      */
+    @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
