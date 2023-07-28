@@ -63,8 +63,8 @@ public class TestBase {
     static final boolean DEBUG = true;
     public static final String ORACLE_JAXP_PROPERTY_PREFIX =
         "http://www.oracle.com/xml/jaxp/properties/";
-    public static final String JDK_ENTITY_COUNT_INFO = 
-            ORACLE_JAXP_PROPERTY_PREFIX + "getEntityCountInfo"; 
+    public static final String JDK_ENTITY_COUNT_INFO =
+            ORACLE_JAXP_PROPERTY_PREFIX + "getEntityCountInfo";
     public static final String CATALOG_FILE = CatalogFeatures.Feature.FILES.getPropertyName();
     public static final boolean IS_WINDOWS = System.getProperty("os.name").contains("Windows");
     public static String SRC_DIR = System.getProperty("test.src", ".");
@@ -77,11 +77,11 @@ public class TestBase {
     // Xerces Property
     public static final String DISALLOW_DTD = "http://apache.org/xml/features/disallow-doctype-decl";
     public static final String LOAD_EXTERNAL_DTD = "http://apache.org/xml/features/nonvalidating/load-external-dtd";
-    
+
     // Zephyr Properties
     public static final String ZEPHYR_PROPERTY_PREFIX = "http://java.sun.com/xml/stream/properties/" ;
     public static final String IGNORE_EXTERNAL_DTD = ZEPHYR_PROPERTY_PREFIX + "ignore-external-dtd";
-   
+
     // Impl Specific Properties
     public static final String SP_DTD = "jdk.xml.dtd.support";
     public static final String OVERRIDE_PARSER = "jdk.xml.overrideDefaultParser";
@@ -94,50 +94,50 @@ public class TestBase {
     public static final String DTD_ALLOW = "allow";
     public static final String DTD_IGNORE = "ignore";
     public static final String DTD_DENY = "deny";
-    
+
     // JAXP Configuration File(JCF) location
     // DTD = deny
     public static final String JCF_DTD2 = "../config/files/dtd2.properties";
-    
-    
+
+
     String xmlExternalEntity, xmlExternalEntityId;
     String xmlGE_Expansion, xmlGE_ExpansionId;
 
     public static enum Processor { DOM, SAX, STAX, VALIDATOR, TRANSFORMER };
     static enum SourceType { STREAM, SAX, STAX, DOM };
-    
+
     public static enum Properties {
-        CONFIG_FILE_DTD2(null, CONFIG_FILE, Type.FEATURE, getPath(JCF_DTD2)),      
+        CONFIG_FILE_DTD2(null, CONFIG_FILE, Type.FEATURE, getPath(JCF_DTD2)),
         FSP(XMLConstants.FEATURE_SECURE_PROCESSING, null, Type.FEATURE, "true"),
         FSP_FALSE(XMLConstants.FEATURE_SECURE_PROCESSING, null, Type.FEATURE, "false"),
-        
+
         // properties
         DTD0(SP_DTD, "ditto", Type.PROPERTY, DTD_ALLOW),
         DTD1(SP_DTD, "ditto", Type.PROPERTY, DTD_IGNORE),
         DTD2(SP_DTD, "ditto", Type.PROPERTY, DTD_DENY),
-        
+
         // StAX properties
         SUPPORT_DTD(XMLInputFactory.SUPPORT_DTD, null, Type.FEATURE, "true"),
         SUPPORT_DTD_FALSE(XMLInputFactory.SUPPORT_DTD, null, Type.FEATURE, "false"),
-        SUPPORT_EXTERNAL_ENTITIES(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, null, Type.FEATURE, "true"),   
-        SUPPORT_EXTERNAL_ENTITIES_FALSE(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, null, Type.FEATURE, "false"),   
-        REPLACE_ENTITY_REF(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, null, Type.FEATURE, "true"),   
-        REPLACE_ENTITY_REF_FALSE(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, null, Type.FEATURE, "false"),  
-        ZEPHY_IGNORE_EXTERNAL_DTD(IGNORE_EXTERNAL_DTD, null, Type.FEATURE, "true"), 
-        ZEPHY_IGNORE_EXTERNAL_DTD_FALSE(IGNORE_EXTERNAL_DTD, null, Type.FEATURE, "false"), 
-        
+        SUPPORT_EXTERNAL_ENTITIES(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, null, Type.FEATURE, "true"),
+        SUPPORT_EXTERNAL_ENTITIES_FALSE(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, null, Type.FEATURE, "false"),
+        REPLACE_ENTITY_REF(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, null, Type.FEATURE, "true"),
+        REPLACE_ENTITY_REF_FALSE(XMLInputFactory.IS_REPLACING_ENTITY_REFERENCES, null, Type.FEATURE, "false"),
+        ZEPHY_IGNORE_EXTERNAL_DTD(IGNORE_EXTERNAL_DTD, null, Type.FEATURE, "true"),
+        ZEPHY_IGNORE_EXTERNAL_DTD_FALSE(IGNORE_EXTERNAL_DTD, null, Type.FEATURE, "false"),
+
         // Xerces properties
         XERCES_DISALLOW_DTD(DISALLOW_DTD, null, Type.FEATURE, "true"),
         XERCES_ALLOW_DTD(DISALLOW_DTD, null, Type.FEATURE, "false"),
         XERCES_LOAD_EXTERNAL_DTD(LOAD_EXTERNAL_DTD, null, Type.FEATURE, "true"),
         XERCES_LOAD_EXTERNAL_DTD_FALSE(LOAD_EXTERNAL_DTD, null, Type.FEATURE, "false"),
-        
+
         ;
 
         final String apiName, spName;
         final Type type;
         final String value;
-        
+
         String file, resolve;
         Properties(String apiName, String spName, Type t, String value) {
             this.apiName = apiName;
@@ -150,11 +150,11 @@ public class TestBase {
             this.type = t;
             this.value = value;
         }
-        
+
         public Type type() {
             return type;
         }
-        
+
         public String value() {
             return value;
         }
@@ -162,15 +162,15 @@ public class TestBase {
 
     public static enum Type {
         CONFIGFILE,
-        FEATURE,  
+        FEATURE,
         PROPERTY,
         LIMIT,
     }
-    
+
     // the state of property setting
     public static enum PropertyState {
         // set through the factories
-        API,  
+        API,
         // set through the System Property
         SYSTEM,
         // set in the Config file
@@ -180,8 +180,8 @@ public class TestBase {
         // set: Config file, System Property and API, the later shall prevail
         CONFIG_FILE_SYSTEM_API,
     }
-    
-    protected void process(String filename, DocumentBuilderFactory dbf, boolean expectError, 
+
+    protected void process(String filename, DocumentBuilderFactory dbf, boolean expectError,
             String error) throws Exception {
         //dbf.setAttribute(CatalogFeatures.Feature.RESOLVE.getPropertyName(), "continue");
         DocumentBuilder builder = dbf.newDocumentBuilder();
@@ -194,8 +194,8 @@ public class TestBase {
             processError(expectError, error, e);
         }
     }
-    
-    protected void process(String filename, SAXParser parser, boolean expectError, 
+
+    protected void process(String filename, SAXParser parser, boolean expectError,
             String error) throws Exception {
 
         File file = new File(getPath(filename));
@@ -207,8 +207,8 @@ public class TestBase {
             processError(expectError, error, e);
         }
     }
-    
-    protected void process(String filename, XMLInputFactory xif, boolean expectError, 
+
+    protected void process(String filename, XMLInputFactory xif, boolean expectError,
             String expected) throws Exception {
 
         String xml = getPath(filename);
@@ -224,8 +224,8 @@ public class TestBase {
             processError(expectError, expected, e);
         }
     }
-    
-    protected void process(String filename, SchemaFactory sf, boolean expectError, 
+
+    protected void process(String filename, SchemaFactory sf, boolean expectError,
             String expected) throws Exception {
 
         String xsd = getPath(filename);
@@ -237,8 +237,8 @@ public class TestBase {
             processError(expectError, expected, e);
         }
     }
-    
-    protected void process(String filename, TransformerFactory tf, boolean expectError, 
+
+    protected void process(String filename, TransformerFactory tf, boolean expectError,
             String expected) throws Exception {
         String xsl = getPath(filename);
         try {
@@ -251,8 +251,8 @@ public class TestBase {
             processError(expectError, expected, e);
         }
     }
-    
-    protected void transform(String xmlFile, String xsl, TransformerFactory tf, 
+
+    protected void transform(String xmlFile, String xsl, TransformerFactory tf,
             boolean expectError, String expected) throws Exception {
         String xmlSysId = getPath(xmlFile);
         try {
@@ -268,8 +268,8 @@ public class TestBase {
             processError(expectError, expected, e);
         }
     }
-    
-    protected void validate(String filename, SchemaFactory sf, boolean expectError, 
+
+    protected void validate(String filename, SchemaFactory sf, boolean expectError,
             String expected) throws Exception {
         String xml = getPath(filename);
         try {
@@ -282,8 +282,8 @@ public class TestBase {
             processError(expectError, expected, e);
         }
     }
-    
-    protected void processError(boolean expectError, String error, Exception e) 
+
+    protected void processError(boolean expectError, String error, Exception e)
             throws Exception {
         //e.printStackTrace();
         String str = e.getMessage();
@@ -299,7 +299,7 @@ public class TestBase {
 
     /**
      * Returns a DocumentBuilderFactory with settings as specified.
-     * 
+     *
      * @param fsp FSP setting
      * @param state the setting method
      * @param config the configuration file setting
@@ -307,7 +307,7 @@ public class TestBase {
      * @param apiProp the properties to be set via the factory
      * @return a DocumentBuilderFactory
      */
-    protected DocumentBuilderFactory getDBF(Properties fsp, PropertyState state, 
+    protected DocumentBuilderFactory getDBF(Properties fsp, PropertyState state,
             Properties config, Properties[] sysProp, Properties[] apiProp) {
         setSystemProperty(config, state, sysProp);
 
@@ -337,10 +337,10 @@ public class TestBase {
         }
 
         clearSystemProperty(state, sysProp);
-        
+
         return dbf;
     }
-    
+
     /**
      * Returns an instance of SAXParser with a catalog if one is provided.
      *
@@ -353,10 +353,10 @@ public class TestBase {
      * @throws ParserConfigurationException
      * @throws Exception
      */
-    public SAXParser getSAXParser(Properties fsp, PropertyState state, Properties config, 
+    public SAXParser getSAXParser(Properties fsp, PropertyState state, Properties config,
             Properties[] sysProp, Properties[] apiProp) throws Exception {
         setSystemProperty(config, state, sysProp);
-        
+
         SAXParserFactory spf = SAXParserFactory.newDefaultNSInstance();
         spf.setXIncludeAware(true);
         if (fsp != null) {
@@ -390,8 +390,8 @@ public class TestBase {
         clearSystemProperty(state, sysProp);
         return parser;
     }
-    
-    protected XMLInputFactory getXMLInputFactory(PropertyState state, 
+
+    protected XMLInputFactory getXMLInputFactory(PropertyState state,
             Properties config, Properties[] sysProp, Properties[] apiProp) {
         setSystemProperty(config, state, sysProp);
         XMLInputFactory factory = XMLInputFactory.newInstance();
@@ -403,16 +403,16 @@ public class TestBase {
         }
 
         clearSystemProperty(state, sysProp);
-        
+
         return factory;
     }
-    
-    protected SchemaFactory getSchemaFactory(Properties fsp, PropertyState state, 
-            Properties config, Properties[] sysProp, Properties[] apiProp) 
+
+    protected SchemaFactory getSchemaFactory(Properties fsp, PropertyState state,
+            Properties config, Properties[] sysProp, Properties[] apiProp)
             throws Exception {
         setSystemProperty(config, state, sysProp);
         SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
-       
+
         if (fsp != null) {
             factory.setFeature(fsp.apiName, Boolean.parseBoolean(fsp.value));
         }
@@ -428,12 +428,12 @@ public class TestBase {
         }
 
         clearSystemProperty(state, sysProp);
-        
+
         return factory;
     }
 
-    protected TransformerFactory getTransformerFactory(Properties fsp, PropertyState state, 
-            Properties config, Properties[] sysProp, Properties[] apiProp) 
+    protected TransformerFactory getTransformerFactory(Properties fsp, PropertyState state,
+            Properties config, Properties[] sysProp, Properties[] apiProp)
             throws Exception {
         setSystemProperty(config, state, sysProp);
         TransformerFactory tf = TransformerFactory.newInstance();
@@ -452,10 +452,10 @@ public class TestBase {
         }
 
         clearSystemProperty(state, sysProp);
-        
+
         return tf;
     }
-    
+
     XMLStreamReader getStreamReader(boolean setUseCatalog, boolean useCatalog,
             String catalog, String xml, XMLResolver resolver)
             throws FileNotFoundException, XMLStreamException {
@@ -480,7 +480,7 @@ public class TestBase {
         return streamReader;
     }
 
-    
+
     /**
      * Returns the accumulated text of an event type.
      *
@@ -512,14 +512,14 @@ public class TestBase {
             return entityRef.toString();
         }
     }
-    
+
     /**
      * Build a Source for _xmlFile depending on the value of sourceType.
      * @return
      * @throws FileNotFoundException
      * @throws XMLStreamException
      */
-    private Source getSource(SourceType sourceType, String xmlFile) 
+    private Source getSource(SourceType sourceType, String xmlFile)
             throws FileNotFoundException, XMLStreamException {
         if (sourceType == null) {
             throw new Error("Test Bug: Please check that sourceType is set");
@@ -532,10 +532,10 @@ public class TestBase {
             default: return new StreamSource(xmlFile);
         }
     }
-    
+
     /**
      * Sets the System Property via the System Property API and/or the Config file.
-     * 
+     *
      * @param config the configuration file setting
      * @param state the setting method
      * @param sysProp properties to be set through the System Property API
@@ -551,7 +551,7 @@ public class TestBase {
             setSystemProperty1(config, state, null);
         }
     }
-    
+
     protected void setSystemProperty1(Properties config, PropertyState state, Properties property) {
         switch (state) {
             case SYSTEM:
@@ -569,10 +569,10 @@ public class TestBase {
                 break;
         }
     }
-    
+
     /**
      * Clears the System Properties.
-     * 
+     *
      * @param state the state of setting, refer to {@link PropertyState}.
      * @param sysProp the system properties
      */
@@ -612,12 +612,12 @@ public class TestBase {
         }
         return temp;
     }
- 
+
     static class Assert {
         public static void assertTrue(boolean condition) {
             assertTrue(condition, null);
         }
-        
+
         public static void assertTrue(boolean condition, String message) {
             if (!condition) {
                 if (message != null) {
@@ -627,7 +627,7 @@ public class TestBase {
                 }
             }
         }
-        
+
         public static void fail(String message) {
             throw new RuntimeException("Test failed. " + message);
         }
