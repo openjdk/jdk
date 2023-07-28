@@ -847,7 +847,7 @@ public class SignatureFileVerifier {
          * the maximum allowed number of bytes for the signature-related files
          * in a JAR file.
          */
-        Integer tmp = GetIntegerAction.privilegedGetProperty(
+        int tmp = GetIntegerAction.privilegedGetProperty(
                 "jdk.jar.maxSignatureFileSize", 16000000);
         if (tmp < 0 || tmp > MAX_ARRAY_SIZE) {
             if (debug != null) {
