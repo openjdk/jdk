@@ -63,6 +63,9 @@ public class MultiScreenCheckScreenIDTest extends MouseAdapter {
             for (Window win : windowList) {
                 win.dispose();
             }
+            if (window != null) {
+                window.dispose();
+            }
         }
         System.out.println("Test Pass");
     }
