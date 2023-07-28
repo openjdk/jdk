@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,14 +24,18 @@
  * @test
  * @bug 4518797
  * @summary Make sure that hashCode() and read/writeObject() are thread-safe.
- * @run main Bug4518797 10
+ * @run main HashCodeShouldBeThreadSafe 10
  */
 
-import java.util.*;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.util.Locale;
 
-// Usage: java Bug4518797 [duration]
-public class Bug4518797 {
+// Usage: java HashCodeShouldBeThreadSafe [duration]
+public class HashCodeShouldBeThreadSafe {
     static volatile boolean runrun = true;
     static volatile String message = null;
 

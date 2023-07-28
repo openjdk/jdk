@@ -26,7 +26,7 @@
  * @bug 8135061
  * @summary Checks that the Locale.lookup executes properly without throwing
  *          any exception for some specific language ranges
- * @run junit Bug8135061
+ * @run junit LookupOnValidRangeTest
  */
 
 import java.util.Collection;
@@ -40,7 +40,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
-public class Bug8135061 {
+public class LookupOnValidRangeTest {
 
     /**
      * Lookup should run without throwing any exception and return null as
