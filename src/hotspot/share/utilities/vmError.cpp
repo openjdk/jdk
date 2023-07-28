@@ -54,6 +54,7 @@
 #include "runtime/stackOverflow.hpp"
 #include "runtime/threads.hpp"
 #include "runtime/threadSMR.hpp"
+#include "runtime/trimNativeHeap.hpp"
 #include "runtime/vmThread.hpp"
 #include "runtime/vmOperations.hpp"
 #include "runtime/vm_version.hpp"
@@ -1289,9 +1290,13 @@ void VMError::report(outputStream* st, bool _verbose) {
 
   STEP_IF("Native Memory Tracking", _verbose)
     MemTracker::error_report(st);
+    st->cr();
+
+  STEP_IF("printing periodic trim state", _verbose)
+    NativeHeapTrimmer::print_state(st);
+    st->cr();
 
   STEP_IF("printing system", _verbose)
-    st->cr();
     st->print_cr("---------------  S Y S T E M  ---------------");
     st->cr();
 
@@ -1458,10 +1463,14 @@ void VMError::print_vm_info(outputStream* st) {
   // STEP("Native Memory Tracking")
 
   MemTracker::error_report(st);
+  st->cr();
+
+  // STEP("printing periodic trim state")
+  NativeHeapTrimmer::print_state(st);
+  st->cr();
+
 
   // STEP("printing system")
-
-  st->cr();
   st->print_cr("---------------  S Y S T E M  ---------------");
   st->cr();
 

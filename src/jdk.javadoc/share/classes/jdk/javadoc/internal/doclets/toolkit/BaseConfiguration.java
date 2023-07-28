@@ -60,7 +60,6 @@ import jdk.javadoc.doclet.DocletEnvironment;
 import jdk.javadoc.doclet.Reporter;
 import jdk.javadoc.doclet.StandardDoclet;
 import jdk.javadoc.doclet.Taglet;
-import jdk.javadoc.internal.doclets.toolkit.builders.BuilderFactory;
 import jdk.javadoc.internal.doclets.toolkit.util.Comparators;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFile;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileFactory;
@@ -86,11 +85,6 @@ public abstract class BaseConfiguration {
      * The doclet that created this configuration.
      */
     public final Doclet doclet;
-
-    /**
-     * The factory for builders.
-     */
-    protected BuilderFactory builderFactory;
 
     /**
      * The meta tag keywords instance.
@@ -249,18 +243,6 @@ public abstract class BaseConfiguration {
         includedTypeElements = Collections.unmodifiableSet(includedSplitter.tset);
     }
 
-    /**
-     * Return the builder factory for this doclet.
-     *
-     * @return the builder factory for this doclet.
-     */
-    public BuilderFactory getBuilderFactory() {
-        if (builderFactory == null) {
-            builderFactory = new BuilderFactory(this);
-        }
-        return builderFactory;
-    }
-
     public Reporter getReporter() {
         return this.reporter;
     }
@@ -304,15 +286,15 @@ public abstract class BaseConfiguration {
     private void initModules() {
         Comparators comparators = utils.comparators;
         // Build the modules structure used by the doclet
-        modules = new TreeSet<>(comparators.makeModuleComparator());
+        modules = new TreeSet<>(comparators.moduleComparator());
         modules.addAll(getSpecifiedModuleElements());
 
-        modulePackages = new TreeMap<>(comparators.makeModuleComparator());
+        modulePackages = new TreeMap<>(comparators.moduleComparator());
         for (PackageElement p : packages) {
             ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
                 Set<PackageElement> s = modulePackages
-                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.makePackageComparator()));
+                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.packageComparator()));
                 s.add(p);
             }
         }
@@ -321,7 +303,7 @@ public abstract class BaseConfiguration {
             ModuleElement mdle = docEnv.getElementUtils().getModuleOf(p);
             if (mdle != null && !mdle.isUnnamed()) {
                 Set<PackageElement> s = modulePackages
-                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.makePackageComparator()));
+                        .computeIfAbsent(mdle, m -> new TreeSet<>(comparators.packageComparator()));
                 s.add(p);
             }
         }
@@ -337,7 +319,7 @@ public abstract class BaseConfiguration {
     }
 
     private void initPackages() {
-        packages = new TreeSet<>(utils.comparators.makePackageComparator());
+        packages = new TreeSet<>(utils.comparators.packageComparator());
         // add all the included packages
         packages.addAll(includedPackageElements);
     }
@@ -481,13 +463,6 @@ public abstract class BaseConfiguration {
         }
         return !(utils.isDeprecated(te) || utils.isDeprecated(utils.containingPackage(te)));
     }
-
-    /**
-     * Return the doclet specific instance of a writer factory.
-     *
-     * @return the {@link WriterFactory} for the doclet.
-     */
-    public abstract WriterFactory getWriterFactory();
 
     /**
      * Return the Locale for this document.

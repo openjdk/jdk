@@ -697,15 +697,24 @@ C2V_VMENTRY_NULL(jobject, getUncachedStringInPool, (JNIEnv* env, jobject, ARGUME
   return JVMCIENV->get_jobject(JVMCIENV->get_object_constant(obj));
 C2V_END
 
-C2V_VMENTRY_NULL(jobject, resolvePossiblyCachedConstantInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
+C2V_VMENTRY_NULL(jobject, lookupConstantInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint cp_index, bool resolve))
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
-  oop obj = cp->resolve_possibly_cached_constant_at(index, CHECK_NULL);
-  constantTag tag = cp->tag_at(index);
+  oop obj;
+  if (!resolve) {
+    bool found_it;
+    obj = cp->find_cached_constant_at(cp_index, found_it, CHECK_NULL);
+    if (!found_it) {
+      return nullptr;
+    }
+  } else {
+    obj = cp->resolve_possibly_cached_constant_at(cp_index, CHECK_NULL);
+  }
+  constantTag tag = cp->tag_at(cp_index);
   if (tag.is_dynamic_constant()) {
     if (obj == nullptr) {
       return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_NULL_POINTER());
     }
-    BasicType bt = Signature::basic_type(cp->uncached_signature_ref_at(index));
+    BasicType bt = Signature::basic_type(cp->uncached_signature_ref_at(cp_index));
     if (!is_reference_type(bt)) {
       if (!is_java_primitive(bt)) {
         return JVMCIENV->get_jobject(JVMCIENV->get_JavaConstant_ILLEGAL());
@@ -1578,16 +1587,18 @@ C2V_VMENTRY_NULL(jobject, iterateFrames, (JNIEnv* env, jobject compilerToVM, job
   return nullptr;
 C2V_END
 
-C2V_VMENTRY_0(int, resolveInvokeDynamicInPool, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint index))
-  if (!ConstantPool::is_invokedynamic_index(index)) {
-    JVMCI_THROW_MSG_0(IllegalStateException, err_msg("not an invokedynamic index %d", index));
+C2V_VMENTRY_0(int, decodeIndyIndexToCPIndex, (JNIEnv* env, jobject, ARGUMENT_PAIR(cp), jint encoded_indy_index, jboolean resolve))
+  if (!ConstantPool::is_invokedynamic_index(encoded_indy_index)) {
+    JVMCI_THROW_MSG_0(IllegalStateException, err_msg("not an encoded indy index %d", encoded_indy_index));
   }
 
   constantPoolHandle cp(THREAD, UNPACK_PAIR(ConstantPool, cp));
   CallInfo callInfo;
-  LinkResolver::resolve_invoke(callInfo, Handle(), cp, index, Bytecodes::_invokedynamic, CHECK_0);
-  int indy_index = cp->decode_invokedynamic_index(index);
-  cp->cache()->set_dynamic_call(callInfo, indy_index);
+  int indy_index = cp->decode_invokedynamic_index(encoded_indy_index);
+  if (resolve) {
+    LinkResolver::resolve_invoke(callInfo, Handle(), cp, encoded_indy_index, Bytecodes::_invokedynamic, CHECK_0);
+    cp->cache()->set_dynamic_call(callInfo, indy_index);
+  }
   return cp->resolved_indy_entry_at(indy_index)->constant_pool_index();
 C2V_END
 
@@ -3108,13 +3119,13 @@ JNINativeMethod CompilerToVM::methods[] = {
   {CC "lookupKlassInPool",                            CC "(" HS_CONSTANT_POOL2 "I)Ljava/lang/Object;",                                      FN_PTR(lookupKlassInPool)},
   {CC "lookupAppendixInPool",                         CC "(" HS_CONSTANT_POOL2 "I)" OBJECTCONSTANT,                                         FN_PTR(lookupAppendixInPool)},
   {CC "lookupMethodInPool",                           CC "(" HS_CONSTANT_POOL2 "IB" HS_METHOD2 ")" HS_METHOD,                               FN_PTR(lookupMethodInPool)},
+  {CC "lookupConstantInPool",                         CC "(" HS_CONSTANT_POOL2 "IZ)" JAVACONSTANT,                                          FN_PTR(lookupConstantInPool)},
   {CC "constantPoolRemapInstructionOperandFromCache", CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(constantPoolRemapInstructionOperandFromCache)},
   {CC "resolveBootstrapMethod",                       CC "(" HS_CONSTANT_POOL2 "I)[" OBJECT,                                                FN_PTR(resolveBootstrapMethod)},
   {CC "getUncachedStringInPool",                      CC "(" HS_CONSTANT_POOL2 "I)" JAVACONSTANT,                                           FN_PTR(getUncachedStringInPool)},
-  {CC "resolvePossiblyCachedConstantInPool",          CC "(" HS_CONSTANT_POOL2 "I)" JAVACONSTANT,                                           FN_PTR(resolvePossiblyCachedConstantInPool)},
   {CC "resolveTypeInPool",                            CC "(" HS_CONSTANT_POOL2 "I)" HS_KLASS,                                               FN_PTR(resolveTypeInPool)},
   {CC "resolveFieldInPool",                           CC "(" HS_CONSTANT_POOL2 "I" HS_METHOD2 "B[I)" HS_KLASS,                              FN_PTR(resolveFieldInPool)},
-  {CC "resolveInvokeDynamicInPool",                   CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(resolveInvokeDynamicInPool)},
+  {CC "decodeIndyIndexToCPIndex",                     CC "(" HS_CONSTANT_POOL2 "IZ)I",                                                      FN_PTR(decodeIndyIndexToCPIndex)},
   {CC "resolveInvokeHandleInPool",                    CC "(" HS_CONSTANT_POOL2 "I)V",                                                       FN_PTR(resolveInvokeHandleInPool)},
   {CC "isResolvedInvokeHandleInPool",                 CC "(" HS_CONSTANT_POOL2 "I)I",                                                       FN_PTR(isResolvedInvokeHandleInPool)},
   {CC "resolveMethod",                                CC "(" HS_KLASS2 HS_METHOD2 HS_KLASS2 ")" HS_METHOD,                                  FN_PTR(resolveMethod)},
