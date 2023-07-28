@@ -43,6 +43,7 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.TagName;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
+import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS;
 import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.LINK_TYPE_PARAMS_AND_BOUNDS;
@@ -55,8 +56,9 @@ import static jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo.Kind.SHOW_T
  */
 public abstract class AbstractExecutableMemberWriter extends AbstractMemberWriter {
 
-    public AbstractExecutableMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+    public AbstractExecutableMemberWriter(SubWriterHolderWriter writer, TypeElement typeElement,
+                                          VisibleMemberTable.Kind kind) {
+        super(writer, typeElement, kind);
     }
 
     public AbstractExecutableMemberWriter(SubWriterHolderWriter writer) {
