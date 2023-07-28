@@ -576,8 +576,6 @@ public class StructuredTaskScope<T> implements AutoCloseable {
         }
 
         SubtaskImpl<U> subtask = new SubtaskImpl<>(this, task, round);
-        boolean started = false;
-
         if (s < SHUTDOWN) {
             // create thread to run task
             Thread thread = factory.newThread(subtask);
@@ -588,15 +586,14 @@ public class StructuredTaskScope<T> implements AutoCloseable {
             // attempt to start the thread
             try {
                 flock.start(thread);
-                started = true;
             } catch (IllegalStateException e) {
                 // shutdown by another thread, or underlying flock is shutdown due
                 // to unstructured use
             }
         }
 
-        // force owner to join if thread started
-        if (started && Thread.currentThread() == flock.owner() && round > forkRound) {
+        // force owner to join if this is the first fork in the round
+        if (Thread.currentThread() == flock.owner() && round > forkRound) {
             forkRound = round;
         }
 
