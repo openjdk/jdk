@@ -180,15 +180,25 @@ InstanceKlass* SystemDictionaryShared::acquire_class_for_current_thread(
 // k must not be a shared class.
 DumpTimeClassInfo* SystemDictionaryShared::get_info(InstanceKlass* k) {
   MutexLocker ml(DumpTimeTable_lock, Mutex::_no_safepoint_check_flag);
-  assert(!k->is_shared(), "sanity");
+  if (DumpSharedSpaces) {
+    assert(!k->is_shared(), "sanity");
+  } else {
+    assert(DynamicDumpSharedSpaces, "sanity");
+  }
   return get_info_locked(k);
 }
 
 DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
-  assert(!k->is_shared(), "sanity");
+  if (DumpSharedSpaces) {
+    assert(!k->is_shared(), "sanity");
+  } else {
+    assert(DynamicDumpSharedSpaces, "sanity");
+  }
   DumpTimeClassInfo* info = _dumptime_table->get_info(k);
-  assert(info != nullptr, "must be");
+  if (DumpSharedSpaces) {
+    assert(info != nullptr, "must be");
+  }
   return info;
 }
 
@@ -667,7 +677,11 @@ void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
 void SystemDictionaryShared::set_class_has_failed_verification(InstanceKlass* ik) {
   Arguments::assert_is_dumping_archive();
   DumpTimeClassInfo* p = get_info(ik);
-  p->set_failed_verification();
+  if (p != nullptr) {
+    p->set_failed_verification();
+  } else {
+    assert(DynamicDumpSharedSpaces, "sanity");
+  }
 }
 
 bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
@@ -699,8 +713,12 @@ bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   Arguments::assert_is_dumping_archive();
   DumpTimeClassInfo* info = get_info(k);
-  info->add_verification_constraint(k, name, from_name, from_field_is_protected,
-                                    from_is_array, from_is_object);
+  if (info != nullptr) {
+    info->add_verification_constraint(k, name, from_name, from_field_is_protected,
+                                      from_is_array, from_is_object);
+  } else {
+    assert(DynamicDumpSharedSpaces, "sanity");
+  }
 
   if (DynamicDumpSharedSpaces) {
     // For dynamic dumping, we can resolve all the constraint classes for all class loaders during
