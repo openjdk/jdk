@@ -40,9 +40,9 @@ import java.util.stream.IntStream;
 /**
  * {@code ListFormat} provides a means to produce a list of concatenated
  * strings in a language-sensitive way. Use this to construct a list
- * of strings displayed for end users. For example, listing countries for US, UK,
- * and Japan generates "United States, United Kingdom, and Japan". This class
- * provides the functionality defined in Unicode Consortium's LDML specification for
+ * of strings displayed for end users. For example, displaying 3 weekdays
+ * as "Monday, Wednesday, and Friday". This class provides the functionality
+ * defined in Unicode Consortium's LDML specification for
  * <a href="https://www.unicode.org/reports/tr35/tr35-general.html#ListPatterns">
  * List Patterns</a>.
  * <p>
