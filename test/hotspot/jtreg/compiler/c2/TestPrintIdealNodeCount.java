@@ -24,7 +24,7 @@
 /*
  * @test
  * @bug 8312596
- * @requires vm.debug == true & vm.flavor == "server"
+ * @requires vm.debug == true & vm.compiler2.enabled
  * @summary Run with -Xcomp to test -XX:+TestPrintIdealNodeCount in debug builds.
  *
  * @run main/othervm -Xcomp -XX:+PrintIdealNodeCount compiler.c2.TestPrintIdealNodeCount
