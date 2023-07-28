@@ -5187,7 +5187,6 @@ loop:   for(int x=0, offset=0; x<nCodePoints; x++, offset+=len) {
             groupIndex = groupCount + groupCount;
         }
         boolean match(Matcher matcher, int i, CharSequence seq) {
-
             // reference to not existing group must never match
             // group does not exist if matcher didn't allocate space for it
             if (groupIndex + 1 > matcher.groups.length) {
