@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,24 +26,24 @@
  * @summary Verify that the default locale can be specified from the
  * command line.
  * @run main/othervm -Duser.language=de -Duser.country=DE -Duser.variant=EURO
- *      Bug4152725 de_DE_EURO
+ *      LocaleShouldSetFromCLI de_DE_EURO
  * @run main/othervm -Duser.language=ja -Duser.country= -Duser.variant=
- *      Bug4152725 ja
+ *      LocaleShouldSetFromCLI ja
  * @run main/othervm -Duser.language=en -Duser.country=SG -Duser.variant=
- *      Bug4152725 en_SG
+ *      LocaleShouldSetFromCLI en_SG
  * @run main/othervm -Duser.language= -Duser.country=DE -Duser.variant=EURO
- *      Bug4152725 _DE_EURO
+ *      LocaleShouldSetFromCLI _DE_EURO
  * @run main/othervm -Duser.language=ja -Duser.country= -Duser.variant=YOMI
- *      Bug4152725 ja__YOMI
+ *      LocaleShouldSetFromCLI ja__YOMI
  * @run main/othervm -Duser.language= -Duser.country= -Duser.variant=EURO
- *      Bug4152725 __EURO
+ *      LocaleShouldSetFromCLI __EURO
  * @run main/othervm -Duser.language=de -Duser.region=DE_EURO
- *      Bug4152725 de_DE_EURO
+ *      LocaleShouldSetFromCLI de_DE_EURO
  */
 
 import java.util.Locale;
 
-public class Bug4152725 {
+public class LocaleShouldSetFromCLI {
 
     public static void main(String[] args) {
 
