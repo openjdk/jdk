@@ -541,18 +541,22 @@ public class ListFormat extends Format {
         /**
          * The {@code FULL} list format style. This is the default
          * style, which typically is the full description of text.
+         * Suitable for elements, such as, "Monday", "Tuesday",
+         * "Wednesday", etc.
          */
         FULL,
 
         /**
          * The {@code SHORT} list format style. This style
          * typically is an abbreviation of text.
+         * Suitable for elements, such as, "Mon", "Tue", "Wed", etc.
          */
         SHORT,
 
         /**
          * The {@code NARROW} list format style. This style
          * typically is the shortest description of text.
+         * Suitable for elements, such as, "M", "T", "W", etc.
          */
         NARROW;
     }
