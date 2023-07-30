@@ -797,13 +797,13 @@ public abstract class SwingWorker<T, V> implements RunnableFuture<T> {
             final ExecutorService es = executorService;
             appContext.addPropertyChangeListener(AppContext.DISPOSED_PROPERTY_NAME,
                 new PropertyChangeListener() {
+                    final WeakReference<ExecutorService> executorServiceRef =
+                        new WeakReference<ExecutorService>(es);
                     @SuppressWarnings("removal")
                     @Override
                     public void propertyChange(PropertyChangeEvent pce) {
                         boolean disposed = (Boolean)pce.getNewValue();
                         if (disposed) {
-                            final WeakReference<ExecutorService> executorServiceRef =
-                                new WeakReference<ExecutorService>(es);
                             final ExecutorService executorService =
                                 executorServiceRef.get();
                             if (executorService != null) {
