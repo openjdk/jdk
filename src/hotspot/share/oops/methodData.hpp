@@ -26,6 +26,7 @@
 #define SHARE_OOPS_METHODDATA_HPP
 
 #include "interpreter/bytecodes.hpp"
+#include "interpreter/invocationCounter.hpp"
 #include "oops/metadata.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.hpp"
