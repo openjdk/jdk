@@ -667,11 +667,7 @@ void SystemDictionaryShared::set_excluded(InstanceKlass* k) {
 void SystemDictionaryShared::set_class_has_failed_verification(InstanceKlass* ik) {
   Arguments::assert_is_dumping_archive();
   DumpTimeClassInfo* p = get_info(ik);
-  if (p != nullptr) {
-    p->set_failed_verification();
-  } else {
-    assert(DynamicDumpSharedSpaces, "sanity");
-  }
+  p->set_failed_verification();
 }
 
 bool SystemDictionaryShared::has_class_failed_verification(InstanceKlass* ik) {
@@ -703,12 +699,8 @@ bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
          Symbol* from_name, bool from_field_is_protected, bool from_is_array, bool from_is_object) {
   Arguments::assert_is_dumping_archive();
   DumpTimeClassInfo* info = get_info(k);
-  if (info != nullptr) {
-    info->add_verification_constraint(k, name, from_name, from_field_is_protected,
+  info->add_verification_constraint(k, name, from_name, from_field_is_protected,
                                       from_is_array, from_is_object);
-  } else {
-    assert(DynamicDumpSharedSpaces, "sanity");
-  }
 
   if (DynamicDumpSharedSpaces) {
     // For dynamic dumping, we can resolve all the constraint classes for all class loaders during
