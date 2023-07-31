@@ -243,10 +243,6 @@ AC_DEFUN([BPERF_SETUP_CCACHE_USAGE],
       fi
     fi
 
-    if test "x$ALLOW_ABSOLUTE_PATHS_IN_OUTPUT" = "xtrue"; then
-        AC_MSG_ERROR([--enable-ccache option CCACHE_BASEDIR requires --disable-absolute-paths-in-output])
-    fi
-
     CCACHE="CCACHE_COMPRESS=1 $SET_CCACHE_DIR \
         CCACHE_SLOPPINESS=$CCACHE_SLOPPINESS CCACHE_BASEDIR=$TOPDIR $CCACHE"
 
