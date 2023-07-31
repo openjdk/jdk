@@ -534,7 +534,7 @@ java/net/MulticastSocket/SetLoopbackMode.java                   7122846,8308807 
 
 java/net/MulticastSocket/Test.java                              7145658,8308807 macosx-all,aix-ppc64
 
-java/net/ServerSocket/AcceptInheritHandle.java                  8211854,8308807 aix-ppc64
+java/net/ServerSocket/AcceptInheritHandle.java                  8211854 aix-ppc64
 
 java/net/MulticastSocket/B6427403.java                          8308807 aix-ppc64
 java/net/MulticastSocket/SetOutgoingIf.java                     8308807 aix-ppc64
