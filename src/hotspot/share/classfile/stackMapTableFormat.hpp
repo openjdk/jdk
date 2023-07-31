@@ -478,8 +478,7 @@ class chop_frame : public stack_map_frame {
   }
 
   static u1 chops_to_frame_type(int chop) {
-    assert(chop >= 0 && chop <= 251, "chop value negative");
-    return checked_cast<u1>(251 - chop);
+    return static_cast<u1>(251 - chop);
   }
 
  public:
