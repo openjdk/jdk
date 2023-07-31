@@ -33,6 +33,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /*
@@ -215,6 +216,63 @@ public class ImmutableMatchResultTest {
         assertEquals(suffixStart, mr.start(2));
         assertEquals(suffixEnd, mr.end(2));
         assertEquals(suffixGroup, mr.group(2));
+    }
+
+    @Test
+    void testLookbehindLookaheadFail() {
+        char[] data = "-1234abcxyz5678-".toCharArray();
+        Matcher m = Pattern.compile("(?<=(\\d{5}))\\D*(?=(\\d{4}))")
+                .matcher(CharBuffer.wrap(data));
+
+        assertEquals(2, m.groupCount());
+        assertFalse(m.find());
+    }
+
+    @Test
+    void testLookbehindLookaheadWithBackref() {
+        char[] data = "-1234abcxyz2348-".toCharArray();
+        Matcher m = Pattern.compile("(?<=(\\d{3}))\\D*(?=(\\1))")
+                .matcher(CharBuffer.wrap(data));
+
+        assertEquals(2, m.groupCount());
+        assertTrue(m.find());
+
+        int start = m.start();
+        int end = m.end();
+        String group = m.group();
+
+        int prefixStart = m.start(1);
+        int prefixEnd = m.end(1);
+        String prefixGroup = m.group(1);
+
+        int suffixStart = m.start(2);
+        int suffixEnd = m.end(2);
+        String suffixGroup = m.group(2);
+
+        MatchResult mr = m.toMatchResult();
+        Arrays.fill(data, '*');  // spoil original input
+
+        assertEquals(start, mr.start());
+        assertEquals(end, mr.end());
+        assertEquals(group, mr.group());
+
+        assertEquals(prefixStart, mr.start(1));
+        assertEquals(prefixEnd, mr.end(1));
+        assertEquals(prefixGroup, mr.group(1));
+
+        assertEquals(suffixStart, mr.start(2));
+        assertEquals(suffixEnd, mr.end(2));
+        assertEquals(suffixGroup, mr.group(2));
+    }
+
+    @Test
+    void testLookbehindLookaheadWithBackrefFail() {
+        char[] data = "-1234abcxyz2358-".toCharArray();
+        Matcher m = Pattern.compile("(?<=(\\d{3}))\\D*(?=(\\1))")
+                .matcher(CharBuffer.wrap(data));
+
+        assertEquals(2, m.groupCount());
+        assertFalse(m.find());
     }
 
 }
