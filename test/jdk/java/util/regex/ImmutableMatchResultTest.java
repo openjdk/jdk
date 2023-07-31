@@ -194,7 +194,7 @@ public class ImmutableMatchResultTest {
 
     @ParameterizedTest
     @MethodSource
-    static void testGroupsOutsideMatch(String pattern, String text) {
+    void testGroupsOutsideMatch(String pattern, String text) {
         char[] data = text.toCharArray();
         Matcher m = Pattern.compile(pattern)
                 .matcher(CharBuffer.wrap(data));
