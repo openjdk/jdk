@@ -221,8 +221,10 @@ public class ListFormat extends Format {
      * two := (two_before){0}two_between{1}(two_after)
      * three := (three_before){0}three_between{1}three_between{2}(three_after)
      * </pre></blockquote>
-     * If parsing of the pattern string fails, start/middle/end fall back to "{0}{1}",
-     * and two/three fall back to empty strings.
+     * If parsing of the pattern string fails, start/middle/end throws an
+     * {@code IllegalArgumentException}, and two/three fall back to
+     * {@code "(start_before){0}end_between{1}(end_after)"},
+     * {@code "(start_before){0}start_between{1}end_between{2}(end_after)"} respectively.
      * Then the input string list with {@code n} elements substitutes these
      * placeholders:
      * <blockquote><pre>
@@ -302,31 +304,25 @@ public class ListFormat extends Format {
     /**
      * Formats an object and appends the resulting text to a given string
      * buffer. The object should either be a List or an array of Objects.
-     * If the {@code pos} argument identifies a field used by the format,
-     * then its indices are set to the beginning and end of the first such
-     * field encountered.
      *
      * @param obj    The object to format. Must be a List or an array
      *               of Object.
      * @param toAppendTo    where the text is to be appended
-     * @param pos    A {@code FieldPosition} identifying a field
-     *               in the formatted text
+     * @param pos    Ignored. Not used in ListFormat
      * @return       the string buffer passed in as {@code toAppendTo},
      *               with formatted text appended
-     * @throws    NullPointerException if {@code toAppendTo} or
-     *            {@code pos} is null
+     * @throws    NullPointerException if {@code toAppendTo} is null
      * @throws    IllegalArgumentException if it cannot format the given
      *            object
      */
     @Override
     public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
         Objects.requireNonNull(toAppendTo);
-        Objects.requireNonNull(pos);
         if (obj instanceof Object[] objs) {
-            return generateMessageFormat(objs).format(objs, toAppendTo, pos);
+            return generateMessageFormat(objs).format(objs, toAppendTo, DontCareFieldPosition.INSTANCE);
         } else if (obj instanceof List<?> objs) {
             var a = objs.toArray(new Object[0]);
-            return generateMessageFormat(a).format(a, toAppendTo, pos);
+            return generateMessageFormat(a).format(a, toAppendTo, DontCareFieldPosition.INSTANCE);
         } else {
             throw new IllegalArgumentException("The object to format should be an Object list");
         }
@@ -348,7 +344,8 @@ public class ListFormat extends Format {
     public List<String> parse(String source) throws ParseException {
         var pp = new ParsePosition(0);
         if (parseObject(source, pp) instanceof List<?> orig) {
-            return orig.stream().map(Object::toString).toList();
+            // parseObject() should've returned List<String>
+            return orig.stream().map(o -> (String)o).toList();
         } else {
             throw new ParseException("Parse failed", pp.getErrorIndex());
         }
@@ -414,10 +411,10 @@ public class ListFormat extends Format {
             parsed = new String[]{source};
         }
 
-        if (parsed instanceof Object[] objs) {
-            return Arrays.asList(objs);
+        if (parsed instanceof String[] strings) {
+            return Arrays.asList(strings);
         }
-        throw new InternalError("MessageFormat.parseObject() should return Object[]");
+        throw new InternalError("MessageFormat.parseObject() should return String[]");
     }
 
     @Override
