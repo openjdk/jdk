@@ -601,12 +601,12 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
         int remaining = len;
         long comp = Blocker.begin();
         try {
-            do {
+            while (remaining > 0) {
                 int size = Math.min(remaining, 1572864);
                 int n = writeBytes0(b, pos, size);
                 pos += n;
                 remaining -= n;
-            } while (remaining > 0);
+            }
         } finally {
             Blocker.end(comp);
         }

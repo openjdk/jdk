@@ -339,12 +339,12 @@ public class FileOutputStream extends OutputStream
         int remaining = len;
         long comp = Blocker.begin();
         try {
-            do {
+            while (remaining > 0) {
                 int size = Math.min(remaining, 1572864);
                 int n = writeBytes0(b, pos, size, append);
                 pos += n;
                 remaining -= n;
-            } while (remaining > 0);
+            }
         } finally {
             Blocker.end(comp);
         }

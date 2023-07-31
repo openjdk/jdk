@@ -57,19 +57,7 @@ readSingle(JNIEnv *env, jobject this, jfieldID fid) {
  */
 #define BUF_SIZE 8192
 
-/*
- * Returns true if the array slice defined by the given offset and length
- * is out of bounds.
- */
-static int
-outOfBounds(JNIEnv *env, jint off, jint len, jbyteArray array) {
-    return ((off < 0) ||
-            (len < 0) ||
-            // We are very careful to avoid signed integer overflow,
-            // the result of which is undefined in C.
-            ((*env)->GetArrayLength(env, array) - off < len));
-}
-
+// NULL and bounds checking should be performed by the caller.
 jint
 readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
           jint off, jint len, jfieldID fid)
@@ -78,16 +66,6 @@ readBytes(JNIEnv *env, jobject this, jbyteArray bytes,
     char stackBuf[BUF_SIZE];
     char *buf = NULL;
     FD fd;
-
-    if (IS_NULL(bytes)) {
-        JNU_ThrowNullPointerException(env, NULL);
-        return -1;
-    }
-
-    if (outOfBounds(env, off, len, bytes)) {
-        JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", NULL);
-        return -1;
-    }
 
     if (len == 0) {
         return 0;
@@ -143,6 +121,7 @@ writeSingle(JNIEnv *env, jobject this, jint byte, jboolean append, jfieldID fid)
     }
 }
 
+// NULL and bounds checking should be performed by the caller.
 int
 writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
            jint off, jint len, jboolean append, jfieldID fid)
@@ -151,16 +130,6 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
     char stackBuf[BUF_SIZE];
     char *buf = NULL;
     FD fd;
-
-    if (IS_NULL(bytes)) {
-        JNU_ThrowNullPointerException(env, NULL);
-        return -1;
-    }
-
-    if (outOfBounds(env, off, len, bytes)) {
-        JNU_ThrowByName(env, "java/lang/IndexOutOfBoundsException", NULL);
-        return -1;
-    }
 
     if (len == 0) {
         return 0;
@@ -180,7 +149,6 @@ writeBytes(JNIEnv *env, jobject this, jbyteArray bytes,
         fd = getFD(env, this, fid);
         if (fd == -1) {
             JNU_ThrowIOException(env, "Stream Closed");
-            nwritten = -1;
         } else {
              if (append == JNI_TRUE) {
                  nwritten = IO_Append(fd, buf, len);
