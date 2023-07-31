@@ -550,7 +550,7 @@ class append_frame : public stack_map_frame {
 
   static u1 appends_to_frame_type(int appends) {
     assert(appends > 0 && appends < 4, "Invalid append amount");
-    return (u1)(251 + appends);
+    return static_cast<u1>(251 + appends);
   }
 
  public:
