@@ -66,6 +66,7 @@ public class InstanceKlass extends Klass {
 
   private static synchronized void initialize(TypeDataBase db) throws WrongTypeException {
     Type type            = db.lookupType("InstanceKlass");
+    annotations          = type.getAddressField("_annotations");
     arrayKlasses         = new MetadataField(type.getAddressField("_array_klasses"), 0);
     methods              = type.getAddressField("_methods");
     defaultMethods       = type.getAddressField("_default_methods");
@@ -130,6 +131,7 @@ public class InstanceKlass extends Klass {
     }
   }
 
+  private static AddressField  annotations;
   private static MetadataField arrayKlasses;
   private static AddressField  methods;
   private static AddressField  defaultMethods;
@@ -375,7 +377,6 @@ public class InstanceKlass extends Klass {
   public long      majorVersion()           { return                getConstants().majorVersion(); }
   public long      minorVersion()           { return                getConstants().minorVersion(); }
   public Symbol    getGenericSignature()    { return                getConstants().getGenericSignature(); }
-
   // "size helper" == instance size in words
   public long getSizeHelper() {
     int lh = getLayoutHelper();
@@ -383,6 +384,10 @@ public class InstanceKlass extends Klass {
       Assert.that(lh > 0, "layout helper initialized for instance class");
     }
     return lh / VM.getVM().getAddressSize();
+  }
+  public Annotations  getAnnotations() {
+    Address addr = annotations.getValue(getAddress());
+    return VMObjectFactory.newObject(Annotations.class, addr);
   }
 
   // same as enum InnerClassAttributeOffset in VM code.
@@ -857,6 +862,42 @@ public class InstanceKlass extends Klass {
   public U2Array getInnerClasses() {
     Address addr = getAddress().getAddressAt(innerClasses.getOffset());
     return VMObjectFactory.newObject(U2Array.class, addr);
+  }
+
+  public U1Array getClassAnnotations() {
+    Annotations annotations = getAnnotations();
+    if (annotations != null) {
+      return annotations.getClassAnnotations();
+    } else {
+      return null;
+    }
+  }
+
+  public U1Array getClassTypeAnnotations() {
+    Annotations annotations = getAnnotations();
+    if (annotations != null) {
+      return annotations.getClassTypeAnnotations();
+    } else {
+      return null;
+    }
+  }
+
+  public U1Array getFieldAnnotations(int fieldIndex) {
+    Annotations annotations = getAnnotations();
+    if (annotations != null) {
+      return annotations.getFieldAnnotations(fieldIndex);
+    } else {
+      return null;
+    }
+  }
+
+  public U1Array getFieldTypeAnnotations(int fieldIndex) {
+    Annotations annotations = getAnnotations();
+    if (annotations != null) {
+      return annotations.getFieldTypeAnnotations(fieldIndex);
+    } else {
+      return null;
+    }
   }
 
   //----------------------------------------------------------------------

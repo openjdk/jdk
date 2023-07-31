@@ -205,8 +205,8 @@
   volatile_nonstatic_field(oopDesc,            _metadata._compressed_klass,                   narrowKlass)                           \
   static_field(BarrierSet,                     _barrier_set,                                  BarrierSet*)                           \
   nonstatic_field(ArrayKlass,                  _dimension,                                    int)                                   \
-  volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             Klass*)                                \
-  volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              Klass*)                                \
+  volatile_nonstatic_field(ArrayKlass,         _higher_dimension,                             ObjArrayKlass*)                        \
+  volatile_nonstatic_field(ArrayKlass,         _lower_dimension,                              ArrayKlass*)                           \
   nonstatic_field(CompiledICHolder,            _holder_metadata,                              Metadata*)                             \
   nonstatic_field(CompiledICHolder,            _holder_klass,                                 Klass*)                                \
   nonstatic_field(ConstantPool,                _tags,                                         Array<u1>*)                            \
@@ -325,6 +325,10 @@
   nonstatic_field(Symbol,                      _body[0],                                      u1)                                    \
   nonstatic_field(TypeArrayKlass,              _max_length,                                   jint)                                  \
   nonstatic_field(OopHandle,                   _obj,                                          oop*)                                  \
+  nonstatic_field(Annotations,                 _class_annotations,                            Array<u1>*)                            \
+  nonstatic_field(Annotations,                 _fields_annotations,                           Array<Array<u1>*>*)                    \
+  nonstatic_field(Annotations,                 _class_type_annotations,                       Array<u1>*)                            \
+  nonstatic_field(Annotations,                 _fields_type_annotations,                      Array<Array<u1>*>*)                    \
                                                                                                                                      \
   /***********************/                                                                                                          \
   /* Constant Pool Cache */                                                                                                          \
@@ -965,6 +969,7 @@
   unchecked_nonstatic_field(Array<Method*>,           _data,                                  sizeof(Method*))                       \
   unchecked_nonstatic_field(Array<Klass*>,            _data,                                  sizeof(Klass*))                        \
   unchecked_nonstatic_field(Array<ResolvedIndyEntry>, _data,                                  sizeof(ResolvedIndyEntry))             \
+  unchecked_nonstatic_field(Array<Array<u1>*>,        _data,                                  sizeof(Array<u1>*))                    \
                                                                                                                                      \
   /*********************************/                                                                                                \
   /* java_lang_Class fields        */                                                                                                \
@@ -1171,6 +1176,7 @@
     declare_type(Method, Metadata)                                        \
     declare_type(MethodCounters, MetaspaceObj)                            \
     declare_type(ConstMethod, MetaspaceObj)                               \
+    declare_type(Annotations, MetaspaceObj)                               \
                                                                           \
   declare_toplevel_type(MethodData::CompilerCounters)                     \
                                                                           \
@@ -1894,6 +1900,7 @@
             declare_type(Array<Klass*>, MetaspaceObj)                     \
             declare_type(Array<Method*>, MetaspaceObj)                    \
             declare_type(Array<ResolvedIndyEntry>, MetaspaceObj)          \
+            declare_type(Array<Array<u1>*>, MetaspaceObj)                 \
                                                                           \
    declare_toplevel_type(BitMap)                                          \
             declare_type(BitMapView, BitMap)                              \

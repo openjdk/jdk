@@ -288,9 +288,6 @@ void Rewriter::rewrite_invokedynamic(address bcp, int offset, bool reverse) {
     // Should do nothing since we are not patching this bytecode
     int cache_index = ConstantPool::decode_invokedynamic_index(
                         Bytes::get_native_u4(p));
-    // We will reverse the bytecode rewriting _after_ adjusting them.
-    // Adjust the cache index by offset to the invokedynamic entries in the
-    // cpCache plus the delta if the invokedynamic bytecodes were adjusted.
     int cp_index = _initialized_indy_entries.at(cache_index).constant_pool_index();
     assert(_pool->tag_at(cp_index).is_invoke_dynamic(), "wrong index");
     // zero out 4 bytes
