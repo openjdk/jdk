@@ -800,8 +800,10 @@ define SetupRunJtregTestBody
   $1_JTREG_BASIC_OPTIONS += -e:JIB_DATA_DIR
   # If running on Windows, propagate the _NT_SYMBOL_PATH to enable
   # symbol lookup in hserr files
+  # The minidumps are disabled by default on client Windows, so enable them
   ifeq ($$(call isTargetOs, windows), true)
     $1_JTREG_BASIC_OPTIONS += -e:_NT_SYMBOL_PATH
+    $1_JTREG_BASIC_OPTIONS += -vmoption:-XX:+CreateCoredumpOnCrash
   else ifeq ($$(call isTargetOs, linux), true)
       $1_JTREG_BASIC_OPTIONS += -e:_JVM_DWARF_PATH=$$(SYMBOLS_IMAGE_DIR)
   endif

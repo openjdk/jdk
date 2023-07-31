@@ -331,9 +331,9 @@ objArrayHandle LiveFrameStream::values_to_object_array(StackValueCollection* val
     int index = i;
 #ifdef _LP64
     if (type != T_OBJECT && type != T_CONFLICT) {
-        intptr_t ret = st->get_int(); // read full 64-bit slot
-        type = T_LONG;                // treat as long
-        index--;                      // undo +1 in StackValueCollection::long_at
+        intptr_t ret = st->get_intptr(); // read full 64-bit slot
+        type = T_LONG;                   // treat as long
+        index--;                         // undo +1 in StackValueCollection::long_at
     }
 #endif
     oop obj = create_primitive_slot_instance(values, index, type, CHECK_(empty));

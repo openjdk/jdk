@@ -221,6 +221,20 @@ public interface ConstantPool {
     Object lookupConstant(int cpi);
 
     /**
+     * Looks up a constant at the specified index.
+     *
+     * If {@code resolve == false} and the denoted constant is of type
+     * {@code JVM_CONSTANT_Dynamic}, {@code JVM_CONSTANT_MethodHandle} or
+     * {@code JVM_CONSTANT_MethodType} and it's not yet resolved then
+     * {@code null} is returned.
+     *
+     * @param cpi the constant pool index
+     * @return the {@code Constant} or {@code JavaType} instance representing the constant pool
+     *         entry
+     */
+    Object lookupConstant(int cpi, boolean resolve);
+
+    /**
      * Looks up the appendix at the specified index.
      *
      * @param cpi the constant pool index

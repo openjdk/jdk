@@ -36,7 +36,7 @@
 #include <dirent.h>
 
 StaticHugePageSupport::StaticHugePageSupport() :
-  _initialized(false), _pagesizes(), _default_hugepage_size(SIZE_MAX) {}
+  _initialized(false), _pagesizes(), _default_hugepage_size(SIZE_MAX), _inconsistent(false) {}
 
 os::PageSizes StaticHugePageSupport::pagesizes() const {
   assert(_initialized, "Not initialized");
@@ -111,20 +111,22 @@ static os::PageSizes scan_hugepages() {
 
   os::PageSizes pagesizes;
 
-  DIR *dir = opendir(sys_hugepages);
+  DIR* dir = opendir(sys_hugepages);
 
-  struct dirent *entry;
-  size_t pagesize;
-  while ((entry = readdir(dir)) != nullptr) {
-    if (entry->d_type == DT_DIR &&
-        sscanf(entry->d_name, "hugepages-%zukB", &pagesize) == 1) {
-      // The kernel is using kB, hotspot uses bytes
-      // Add each found Large Page Size to page_sizes
-      pagesize *= K;
-      pagesizes.add(pagesize);
+  if (dir != nullptr) {
+    struct dirent *entry;
+    size_t pagesize;
+    while ((entry = readdir(dir)) != nullptr) {
+      if (entry->d_type == DT_DIR &&
+          sscanf(entry->d_name, "hugepages-%zukB", &pagesize) == 1) {
+        // The kernel is using kB, hotspot uses bytes
+        // Add each found Large Page Size to page_sizes
+        pagesize *= K;
+        pagesizes.add(pagesize);
+      }
     }
+    closedir(dir);
   }
-  closedir(dir);
 
   return pagesizes;
 }
@@ -139,14 +141,25 @@ void StaticHugePageSupport::print_on(outputStream* os) {
   } else {
     os->print_cr("  unknown.");
   }
+  if (_inconsistent) {
+    os->print_cr("  Support inconsistent. JVM will not use static hugepages.");
+  }
 }
 
 void StaticHugePageSupport::scan_os() {
-  _pagesizes = scan_hugepages();
   _default_hugepage_size = scan_default_hugepagesize();
-  assert(_pagesizes.contains(_default_hugepage_size),
-         "Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
-         "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
+  if (_default_hugepage_size > 0) {
+    _pagesizes = scan_hugepages();
+    // See https://www.kernel.org/doc/Documentation/vm/hugetlbpage.txt: /proc/meminfo should match
+    // /sys/kernel/mm/hugepages/hugepages-xxxx. However, we may run on a broken kernel (e.g. on WSL)
+    // that only exposes /proc/meminfo but not /sys/kernel/mm/hugepages. In that case, we are not
+    // sure about the state of hugepage support by the kernel, so we won't use static hugepages.
+    if (!_pagesizes.contains(_default_hugepage_size)) {
+      log_info(pagesize)("Unexpected configuration: default pagesize (" SIZE_FORMAT ") "
+                         "has no associated directory in /sys/kernel/mm/hugepages..", _default_hugepage_size);
+      _inconsistent = true;
+    }
+  }
   _initialized = true;
   LogTarget(Info, pagesize) lt;
   if (lt.is_enabled()) {
