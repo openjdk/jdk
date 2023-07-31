@@ -1727,7 +1727,7 @@ void ClassVerifier::verify_method(const methodHandle& m, TRAPS) {
                 "Illegal new instruction");
             return;
           }
-          type = VerificationType::uninitialized_type(bci);
+          type = VerificationType::uninitialized_type(checked_cast<u2>(bci));
           current_frame.push_stack(type, CHECK_VERIFY(this));
           no_control_flow = false; break;
         }

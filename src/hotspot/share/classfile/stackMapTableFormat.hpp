@@ -478,7 +478,7 @@ class chop_frame : public stack_map_frame {
   }
 
   static u1 chops_to_frame_type(int chop) {
-    return static_cast<u1>(251 - chop);
+    return checked_cast<u1>(251 - chop);
   }
 
  public:
@@ -549,7 +549,7 @@ class append_frame : public stack_map_frame {
 
   static u1 appends_to_frame_type(int appends) {
     assert(appends > 0 && appends < 4, "Invalid append amount");
-    return static_cast<u1>(251 + appends);
+    return checked_cast<u1>(251 + appends);
   }
 
  public:

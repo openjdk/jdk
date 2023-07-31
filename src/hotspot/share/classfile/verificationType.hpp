@@ -162,7 +162,7 @@ class VerificationType {
       // to discriminate between oops and primitives.
       return VerificationType((uintptr_t)sh);
   }
-  static VerificationType uninitialized_type(int bci)
+  static VerificationType uninitialized_type(u2 bci)
     { return VerificationType(bci << 1 * BitsPerByte | Uninitialized); }
   static VerificationType uninitialized_this_type()
     { return uninitialized_type(BciForThis); }
