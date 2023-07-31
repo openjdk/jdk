@@ -152,17 +152,11 @@ DumpTimeClassInfo* DumpTimeSharedClassTable::allocate_info(InstanceKlass* k) {
 }
 
 DumpTimeClassInfo* DumpTimeSharedClassTable::get_info(InstanceKlass* k) {
-  if (DumpSharedSpaces) {
-    assert(!k->is_shared(), "Do not call with shared classes");
-  } else {
-    assert(DynamicDumpSharedSpaces, "sanity");
-  }
+  assert(!k->is_shared(), "Do not call with shared classes");
   DumpTimeClassInfo* p = get(k);
-  if (DumpSharedSpaces) {
-    assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
-           "not stored with SystemDictionaryShared::init_dumptime_info");
-    assert(p->_klass == k, "Sanity");
-  }
+  assert(p != nullptr, "we must not see any non-shared InstanceKlass* that's "
+         "not stored with SystemDictionaryShared::init_dumptime_info");
+  assert(p->_klass == k, "Sanity");
   return p;
 }
 

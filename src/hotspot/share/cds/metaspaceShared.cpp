@@ -794,9 +794,8 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
-  if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
-      !SystemDictionaryShared::has_class_failed_verification(ik) &&
-      !ik->shared_loading_failed()) {
+  if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
+      !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == nullptr) {
       // The verification decision is based on BytecodeVerificationRemote
@@ -816,12 +815,6 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
       CLEAR_PENDING_EXCEPTION;
       SystemDictionaryShared::set_class_has_failed_verification(ik);
       _has_error_classes = true;
-      if (DynamicDumpSharedSpaces && ik->is_shared()) {
-        // During dynamic CDS dump, a class loaded from the base archive could be in "unlinked"
-        // state. If linking of the class has failed, set the shared_loading_failed flag so that
-        // subsequent attempt on linking the class can be avoided.
-        ik->set_shared_loading_failed();
-      }
     }
     ik->compute_has_loops_flag_for_methods();
     BytecodeVerificationLocal = saved;
