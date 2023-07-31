@@ -1035,7 +1035,7 @@ public:
 
   // unconditional non-atomic increment
   void inc_counter(address counter_addr, Register tmpreg1, Register tmpreg2);
-  void inc_counter(int* counter_addr, Register tmpreg1, Register tmpreg2) {
+  void inc_counter(uint* counter_addr, Register tmpreg1, Register tmpreg2) {
     inc_counter((address) counter_addr, tmpreg1, tmpreg2);
   }
 

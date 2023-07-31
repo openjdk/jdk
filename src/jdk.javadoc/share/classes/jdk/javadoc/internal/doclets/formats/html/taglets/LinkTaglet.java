@@ -43,12 +43,12 @@ import com.sun.source.doctree.LinkTree;
 import com.sun.source.util.DocTreePath;
 
 import jdk.javadoc.doclet.Taglet;
-import jdk.javadoc.internal.doclets.formats.html.ClassWriterImpl;
+import jdk.javadoc.internal.doclets.formats.html.ClassWriter;
 import jdk.javadoc.internal.doclets.formats.html.HtmlConfiguration;
 import jdk.javadoc.internal.doclets.formats.html.HtmlLinkInfo;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
-import jdk.javadoc.internal.doclets.toolkit.Content;
+import jdk.javadoc.internal.doclets.formats.html.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.CommentHelper;
 import jdk.javadoc.internal.doclets.toolkit.util.DocLink;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
@@ -237,7 +237,7 @@ public class LinkTaglet extends BaseTaglet {
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
                 // inherits it automatically.
-                if (htmlWriter instanceof ClassWriterImpl cw) {
+                if (htmlWriter instanceof ClassWriter cw) {
                     containing = cw.getTypeElement();
                 } else if (!utils.isPublic(containing)) {
                     reportWarning.accept("doclet.link.see.reference_not_accessible",

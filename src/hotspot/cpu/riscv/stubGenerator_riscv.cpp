@@ -75,7 +75,7 @@ class StubGenerator: public StubCodeGenerator {
 #ifdef PRODUCT
 #define inc_counter_np(counter) ((void)0)
 #else
-  void inc_counter_np_(int& counter) {
+  void inc_counter_np_(uint& counter) {
     __ la(t1, ExternalAddress((address)&counter));
     __ lwu(t0, Address(t1, 0));
     __ addiw(t0, t0, 1);

@@ -39,8 +39,8 @@ class CompilerStatistics {
     friend class VMStructs;
   public:
     elapsedTimer _time;  // time spent compiling
-    int _bytes;          // number of bytecodes compiled, including inlined bytecodes
-    int _count;          // number of compilations
+    uint _bytes;         // number of bytecodes compiled, including inlined bytecodes
+    uint _count;         // number of compilations
     Data() : _bytes(0), _count(0) {}
     void update(elapsedTimer time, int bytes) {
       _time.add(time);
@@ -55,13 +55,13 @@ class CompilerStatistics {
  public:
   Data _standard;  // stats for non-OSR compilations
   Data _osr;       // stats for OSR compilations
-  int _nmethods_size; //
-  int _nmethods_code_size;
+  uint _nmethods_size; //
+  uint _nmethods_code_size;
 
   double total_time() { return _standard._time.seconds() + _osr._time.seconds(); }
 
   double bytes_per_second() {
-    int bytes = _standard._bytes + _osr._bytes;
+    uint bytes = _standard._bytes + _osr._bytes;
     if (bytes == 0) {
       return 0.0;
     }
