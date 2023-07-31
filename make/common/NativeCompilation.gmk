@@ -215,7 +215,7 @@ DEPENDENCY_TARGET_SED_PATTERN := \
 # The fix-deps-file macro is used to adjust the contents of the generated make
 # dependency files to contain paths compatible with make.
 #
-ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT)-$(FILE_MACRO_CFLAGS), false-)
+ifeq ($(ALLOW_ABSOLUTE_PATHS_IN_OUTPUT), false)
   # Need to handle -I flags as both '-Ifoo' and '-I foo'.
   MakeCommandRelative = \
       $(CD) $(WORKSPACE_ROOT) && \
