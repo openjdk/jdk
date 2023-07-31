@@ -60,7 +60,7 @@ static void print_satb_buffer(const char* name,
 }
 
 void SATBMarkQueue::print(const char* name) {
-  print_satb_buffer(name, _buf, index(), capacity());
+  print_satb_buffer(name, _buf, index(), current_capacity());
 }
 
 #endif // PRODUCT

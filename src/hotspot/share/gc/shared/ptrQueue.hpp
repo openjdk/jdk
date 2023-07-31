@@ -51,17 +51,7 @@ class PtrQueue {
   // Value is always pointer-size aligned.
   size_t _index;
 
-  // Size of the current buffer, in bytes.
-  // Value is always pointer-size aligned.
-  size_t _capacity_in_bytes;
-
   static const size_t _element_size = sizeof(void*);
-
-  // Get the capacity, in bytes.  The capacity must have been set.
-  size_t capacity_in_bytes() const {
-    assert(_capacity_in_bytes > 0, "capacity not set");
-    return _capacity_in_bytes;
-  }
 
   static size_t byte_index_to_index(size_t ind) {
     assert(is_aligned(ind, _element_size), "precondition");
@@ -93,13 +83,13 @@ public:
   }
 
   void set_index(size_t new_index) {
-    assert(new_index <= capacity(), "precondition");
+    assert(new_index <= current_capacity(), "precondition");
     _index = index_to_byte_index(new_index);
   }
 
-  size_t capacity() const {
-    return byte_index_to_index(capacity_in_bytes());
-  }
+  // Returns the capacity of the buffer, or 0 if the queue doesn't currently
+  // have a buffer.
+  size_t current_capacity() const;
 
   // To support compiler.
 
@@ -159,11 +149,15 @@ public:
 
   size_t capacity() const      { return _capacity; }
 
+  // Return the BufferNode containing the buffer, WITHOUT setting its index.
+  static BufferNode* make_node_from_buffer(void** buffer) {
+    char* base = reinterpret_cast<char*>(buffer) - buffer_offset();
+    return reinterpret_cast<BufferNode*>(base);
+  }
+
   // Return the BufferNode containing the buffer, after setting its index.
   static BufferNode* make_node_from_buffer(void** buffer, size_t index) {
-    BufferNode* node =
-      reinterpret_cast<BufferNode*>(
-        reinterpret_cast<char*>(buffer) - buffer_offset());
+    BufferNode* node = make_node_from_buffer(buffer);
     node->set_index(index);
     return node;
   }

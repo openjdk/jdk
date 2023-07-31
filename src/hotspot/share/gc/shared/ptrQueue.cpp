@@ -30,7 +30,6 @@
 
 PtrQueue::PtrQueue(PtrQueueSet* qset) :
   _index(0),
-  _capacity_in_bytes(index_to_byte_index(qset->buffer_capacity())),
   _buf(nullptr)
 {}
 
@@ -105,7 +104,7 @@ void PtrQueueSet::flush_queue(PtrQueue& queue) {
     queue.set_buffer(nullptr);
     queue.set_index(0);
     BufferNode* node = BufferNode::make_node_from_buffer(buffer, index);
-    if (index == buffer_capacity()) {
+    if (index == node->capacity()) {
       deallocate_buffer(node);
     } else {
       enqueue_completed_buffer(node);
@@ -142,8 +141,9 @@ BufferNode* PtrQueueSet::exchange_buffer_with_new(PtrQueue& queue) {
 }
 
 void PtrQueueSet::install_new_buffer(PtrQueue& queue) {
-  queue.set_buffer(allocate_buffer());
-  queue.set_index(buffer_capacity());
+  BufferNode* node = _allocator->allocate();
+  queue.set_buffer(BufferNode::make_buffer_from_node(node));
+  queue.set_index(node->capacity());
 }
 
 void** PtrQueueSet::allocate_buffer() {
