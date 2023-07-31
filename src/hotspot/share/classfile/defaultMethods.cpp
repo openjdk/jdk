@@ -865,23 +865,6 @@ void DefaultMethods::generate_default_methods(
   log_debug(defaultmethods)("Default method processing complete");
 }
 
-static int assemble_method_error(
-    BytecodeConstantPool* cp, BytecodeBuffer* buffer, Symbol* errorName, Symbol* message) {
-
-  Symbol* init = vmSymbols::object_initializer_name();
-  Symbol* sig = vmSymbols::string_void_signature();
-
-  BytecodeAssembler assem(buffer, cp);
-
-  assem._new(errorName);
-  assem.dup();
-  assem.load_string(message);
-  assem.invokespecial(errorName, init, sig);
-  assem.athrow();
-
-  return 3; // max stack size: [ exception, exception, string ]
-}
-
 static Method* new_method(
     BytecodeConstantPool* cp, BytecodeBuffer* bytecodes, Symbol* name,
     Symbol* sig, AccessFlags flags, int max_stack, int params,
@@ -989,7 +972,7 @@ static void create_defaults_and_exceptions(GrowableArray<EmptyVtableSlot*>* slot
         } else {
           buffer->clear();
         }
-        int max_stack = assemble_method_error(&bpool, buffer,
+        int max_stack = BytecodeAssembler::assemble_method_error(&bpool, buffer,
            method->get_exception_name(), method->get_exception_message());
         AccessFlags flags = accessFlags_from(
           JVM_ACC_PUBLIC | JVM_ACC_SYNTHETIC | JVM_ACC_BRIDGE);
@@ -1073,7 +1056,11 @@ static void merge_in_new_methods(InstanceKlass* klass,
   Array<int>* original_ordering = klass->method_ordering();
   Array<int>* merged_ordering = Universe::the_empty_int_array();
 
-  int new_size = klass->methods()->length() + new_methods->length();
+  int new_methods_length = klass->methods()->length() + new_methods->length();
+  if (new_methods_length > std::numeric_limits<u2>::max()) {
+    THROW_MSG(vmSymbols::java_lang_InternalError(), "default methods error methods overflow");
+  }
+  u2 new_size = static_cast<u2>(new_methods_length);
 
   Array<Method*>* merged_methods = MetadataFactory::new_array<Method*>(
       klass->class_loader_data(), new_size, nullptr, CHECK);
@@ -1091,7 +1078,7 @@ static void merge_in_new_methods(InstanceKlass* klass,
   int orig_idx = 0;
   int new_idx = 0;
 
-  for (int i = 0; i < new_size; ++i) {
+  for (u2 i = 0; i < new_size; ++i) {
     Method* orig_method = nullptr;
     Method* new_method = nullptr;
     if (orig_idx < original_methods->length()) {

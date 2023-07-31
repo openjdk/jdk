@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -179,37 +179,20 @@ class BytecodeAssembler : StackObj {
   void append(u2 imm_u2);
   void append(u4 imm_u4);
 
-  void xload(u4 index, u1 quick, u1 twobyte);
+  void athrow();
+  void dup();
+  void invokespecial(Symbol* cls, Symbol* name, Symbol* sig);
+  void ldc(u1 index);
+  void ldc_w(u2 index);
+  void _new(Symbol* sym);
+  void load_string(Symbol* sym);
 
  public:
   BytecodeAssembler(BytecodeBuffer* buffer, BytecodeConstantPool* cp)
     : _code(buffer), _cp(cp) {}
 
-  void aload(u4 index);
-  void areturn();
-  void athrow();
-  void checkcast(Symbol* sym);
-  void dload(u4 index);
-  void dreturn();
-  void dup();
-  void fload(u4 index);
-  void freturn();
-  void iload(u4 index);
-  void invokespecial(Method* method);
-  void invokespecial(Symbol* cls, Symbol* name, Symbol* sig);
-  void invokevirtual(Method* method);
-  void invokevirtual(Symbol* cls, Symbol* name, Symbol* sig);
-  void ireturn();
-  void ldc(u1 index);
-  void ldc_w(u2 index);
-  void lload(u4 index);
-  void lreturn();
-  void _new(Symbol* sym);
-  void _return();
-
-  void load_string(Symbol* sym);
-  void load(BasicType bt, u4 index);
-  void _return(BasicType bt);
+  static int assemble_method_error(
+    BytecodeConstantPool* cp, BytecodeBuffer* buffer, Symbol* errorName, Symbol* message);
 };
 
 #endif // SHARE_CLASSFILE_BYTECODEASSEMBLER_HPP
