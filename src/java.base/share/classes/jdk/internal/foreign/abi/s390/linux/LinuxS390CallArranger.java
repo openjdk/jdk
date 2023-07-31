@@ -67,7 +67,7 @@ public class LinuxS390CallArranger {
 
     private static final ABIDescriptor CLinux = abiFor(
             new VMStorage[] { r2, r3, r4, r5, r6, }, // GP input
-            new VMStorage[] { f0, f2, f4, f6 }, // FP intput
+            new VMStorage[] { f0, f2, f4, f6 }, // FP input
             new VMStorage[] { r2, }, // GP output
             new VMStorage[] { f0, }, // FP output
             new VMStorage[] { r0, r1, r2, r3, r4, r5, r14 }, // volatile GP
@@ -202,7 +202,7 @@ public class LinuxS390CallArranger {
         abstract List<Binding> getBindings(Class<?> carrier, MemoryLayout layout);
     }
 
-    // Compute recipe for transfering arguments / return values to C from Java.
+    // Compute recipe for transferring arguments / return values to C from Java.
     static class UnboxBindingCalculator extends BindingCalculator {
         UnboxBindingCalculator(boolean forArguments) {
             super(forArguments);
@@ -254,7 +254,7 @@ public class LinuxS390CallArranger {
         }
     }
 
-    // Compute recipe for transfering arguments / return values from C to Java.
+    // Compute recipe for transferring arguments / return values from C to Java.
     static class BoxBindingCalculator extends BindingCalculator {
         BoxBindingCalculator(boolean forArguments) {
             super(forArguments);
