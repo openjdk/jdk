@@ -37,97 +37,75 @@ import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 /**
  * The factory that returns HTML writers.
  */
-// TODO: be more consistent about using this factory
 public class WriterFactory {
 
     private final HtmlConfiguration configuration;
+
     public WriterFactory(HtmlConfiguration configuration) {
         this.configuration = configuration;
     }
 
-    public ConstantsSummaryWriter getConstantsSummaryWriter() {
+    /**
+     * {@return a new {@link ConstantsSummaryWriter}}
+     */
+    public ConstantsSummaryWriter newConstantsSummaryWriter() {
         return new ConstantsSummaryWriter(configuration);
     }
 
-    public PackageWriter getPackageSummaryWriter(PackageElement packageElement) {
+    /**
+     * {@return a new {@link PackageWriter}}
+     */
+    public PackageWriter newPackageWriter(PackageElement packageElement) {
         return new PackageWriter(configuration, packageElement);
     }
 
-    public ModuleWriter getModuleSummaryWriter(ModuleElement mdle) {
+    /**
+     * {@return a new {@link ModuleWriter}}
+     */
+    public ModuleWriter newModuleWriter(ModuleElement mdle) {
         return new ModuleWriter(configuration, mdle);
     }
 
-    public ClassWriter getClassWriter(TypeElement typeElement, ClassTree classTree) {
+    /**
+     * {@return a new {@link ClassWriter}}
+     */
+    public ClassWriter newClassWriter(TypeElement typeElement, ClassTree classTree) {
         return new ClassWriter(configuration, typeElement, classTree);
     }
-
-    public AnnotationTypeMemberWriter getAnnotationTypeMemberWriter(
-            ClassWriter classWriter) {
-        TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriter(classWriter, te, AnnotationTypeMemberWriter.Kind.ANY);
-    }
-
-    public AnnotationTypeMemberWriter getAnnotationTypeOptionalMemberWriter(
-            ClassWriter classWriter) {
-        TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriter(classWriter, te, AnnotationTypeMemberWriter.Kind.OPTIONAL);
-    }
-
-    public AnnotationTypeMemberWriter getAnnotationTypeRequiredMemberWriter(
-            ClassWriter classWriter) {
-        TypeElement te = classWriter.getTypeElement();
-        return new AnnotationTypeMemberWriter(classWriter, te, AnnotationTypeMemberWriter.Kind.REQUIRED);
-    }
-
-    public EnumConstantWriter getEnumConstantWriter(ClassWriter classWriter) {
-        return new EnumConstantWriter(classWriter);
-    }
-
-    public FieldWriter getFieldWriter(ClassWriter classWriter) {
-        return new FieldWriter(classWriter);
-    }
-
-    public PropertyWriter getPropertyWriter(ClassWriter classWriter) {
-        return new PropertyWriter(classWriter);
-    }
-
-    public MethodWriter getMethodWriter(ClassWriter classWriter) {
-        return new MethodWriter(classWriter);
-    }
-
-    public ConstructorWriter getConstructorWriter(ClassWriter classWriter) {
-        return new ConstructorWriter(classWriter);
-    }
-
-    public AbstractMemberWriter getMemberSummaryWriter(ClassWriter classWriter,
-                                                       VisibleMemberTable.Kind memberType) {
-        switch (memberType) {
-            case CONSTRUCTORS:
-                return getConstructorWriter(classWriter);
-            case ENUM_CONSTANTS:
-                return getEnumConstantWriter(classWriter);
-            case ANNOTATION_TYPE_MEMBER_OPTIONAL:
-                return getAnnotationTypeOptionalMemberWriter(classWriter);
-            case ANNOTATION_TYPE_MEMBER_REQUIRED:
-                return getAnnotationTypeRequiredMemberWriter(classWriter);
-            case FIELDS:
-                return getFieldWriter(classWriter);
-            case PROPERTIES:
-                return getPropertyWriter(classWriter);
-            case NESTED_CLASSES:
-                return new NestedClassWriter(classWriter, classWriter.getTypeElement());
-            case METHODS:
-                return getMethodWriter(classWriter);
-            default:
-                return null;
-        }
-    }
-
-    public SerializedFormWriter getSerializedFormWriter() {
+    /**
+     * {@return a new {@link SerializedFormWriter}}
+     */
+    public SerializedFormWriter newSerializedFormWriter() {
         return new SerializedFormWriter(configuration);
     }
 
-    public DocFilesHandler getDocFilesHandler(Element element) {
+    /**
+     * Returns a new member writer for the members of a given class and given kind.
+     *
+     * @param classWriter the writer for the enclosing class
+     * @param kind the kind
+     *
+     * @return the writer
+     */
+    public AbstractMemberWriter newMemberWriter(ClassWriter classWriter,
+                                                VisibleMemberTable.Kind kind) {
+        return switch (kind) {
+            case ANNOTATION_TYPE_MEMBER,
+                    ANNOTATION_TYPE_MEMBER_OPTIONAL,
+                    ANNOTATION_TYPE_MEMBER_REQUIRED -> new AnnotationTypeMemberWriter(classWriter, kind);
+            case CONSTRUCTORS -> new ConstructorWriter(classWriter);
+            case ENUM_CONSTANTS -> new EnumConstantWriter(classWriter);
+            case FIELDS -> new FieldWriter(classWriter);
+            case NESTED_CLASSES -> new NestedClassWriter(classWriter);
+            case METHODS -> new MethodWriter(classWriter);
+            case PROPERTIES -> new PropertyWriter(classWriter);
+        };
+    }
+
+    /**
+     * {@return a new {@link DocFilesHandler}}
+     */
+    public DocFilesHandler newDocFilesHandler(Element element) {
         return new DocFilesHandler(configuration, element);
     }
 }

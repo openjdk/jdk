@@ -2761,15 +2761,19 @@ Handle java_lang_Throwable::create_initialization_error(JavaThread* current, Han
   assert(throwable.not_null(), "shouldn't be");
 
   // Now create the message from the original exception and thread name.
-  Symbol* message = java_lang_Throwable::detail_message(throwable());
   ResourceMark rm(current);
+  const char *message = nullptr;
+  oop detailed_message = java_lang_Throwable::message(throwable());
+  if (detailed_message != nullptr) {
+    message = java_lang_String::as_utf8_string(detailed_message);
+  }
   stringStream st;
   st.print("Exception %s%s ", throwable()->klass()->name()->as_klass_external_name(),
              message == nullptr ? "" : ":");
   if (message == nullptr) {
     st.print("[in thread \"%s\"]", current->name());
   } else {
-    st.print("%s [in thread \"%s\"]", message->as_C_string(), current->name());
+    st.print("%s [in thread \"%s\"]", message, current->name());
   }
 
   Symbol* exception_name = vmSymbols::java_lang_ExceptionInInitializerError();

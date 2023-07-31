@@ -38,7 +38,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.markup.Text;
 import jdk.javadoc.internal.doclets.toolkit.BaseOptions;
-import jdk.javadoc.internal.doclets.toolkit.DocletException;
 import jdk.javadoc.internal.doclets.toolkit.util.VisibleMemberTable;
 
 /**
@@ -53,11 +52,11 @@ public class FieldWriter extends AbstractMemberWriter {
     private VariableElement currentElement;
 
     public FieldWriter(ClassWriter writer) {
-        super(writer, writer.typeElement);
+        super(writer, VisibleMemberTable.Kind.FIELDS);
     }
 
     public FieldWriter(SubWriterHolderWriter writer, TypeElement typeElement) {
-        super(writer, typeElement);
+        super(writer, typeElement, VisibleMemberTable.Kind.FIELDS);
     }
 
     // used in ClassUseWriter and SummaryUseWriter
@@ -65,7 +64,8 @@ public class FieldWriter extends AbstractMemberWriter {
         super(writer);
     }
 
-    public void build(Content target) throws DocletException {
+    @Override
+    public void buildDetails(Content target) {
         buildFieldDoc(target);
     }
 
@@ -156,7 +156,7 @@ public class FieldWriter extends AbstractMemberWriter {
     }
 
     @Override
-    public void addSummary(Content summariesList, Content content) {
+    public void buildSummary(Content summariesList, Content content) {
         writer.addSummary(HtmlStyle.fieldSummary,
                 HtmlIds.FIELD_SUMMARY, summariesList, content);
     }

@@ -127,8 +127,7 @@ GrowableArray<Klass*>* ArrayKlass::compute_secondary_supers(int num_extra_slots,
 objArrayOop ArrayKlass::allocate_arrayArray(int n, int length, TRAPS) {
   check_array_allocation_length(length, arrayOopDesc::max_array_length(T_ARRAY), CHECK_NULL);
   size_t size = objArrayOopDesc::object_size(length);
-  Klass* k = array_klass(n+dimension(), CHECK_NULL);
-  ArrayKlass* ak = ArrayKlass::cast(k);
+  ArrayKlass* ak = array_klass(n + dimension(), CHECK_NULL);
   objArrayOop o = (objArrayOop)Universe::heap()->array_allocate(ak, size, length,
                                                                 /* do_zero */ true, CHECK_NULL);
   // initialization to null not necessary, area already cleared
@@ -160,7 +159,7 @@ void ArrayKlass::metaspace_pointers_do(MetaspaceClosure* it) {
 void ArrayKlass::remove_unshareable_info() {
   Klass::remove_unshareable_info();
   if (_higher_dimension != nullptr) {
-    ArrayKlass *ak = ArrayKlass::cast(higher_dimension());
+    ArrayKlass *ak = higher_dimension();
     ak->remove_unshareable_info();
   }
 }
@@ -168,7 +167,7 @@ void ArrayKlass::remove_unshareable_info() {
 void ArrayKlass::remove_java_mirror() {
   Klass::remove_java_mirror();
   if (_higher_dimension != nullptr) {
-    ArrayKlass *ak = ArrayKlass::cast(higher_dimension());
+    ArrayKlass *ak = higher_dimension();
     ak->remove_java_mirror();
   }
 }
@@ -179,7 +178,7 @@ void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle p
   // Klass recreates the component mirror also
 
   if (_higher_dimension != nullptr) {
-    ArrayKlass *ak = ArrayKlass::cast(higher_dimension());
+    ArrayKlass *ak = higher_dimension();
     ak->restore_unshareable_info(loader_data, protection_domain, CHECK);
   }
 }
@@ -188,7 +187,7 @@ void ArrayKlass::cds_print_value_on(outputStream* st) const {
   assert(is_klass(), "must be klass");
   st->print("      - array: %s", internal_name());
   if (_higher_dimension != nullptr) {
-    ArrayKlass* ak = ArrayKlass::cast(higher_dimension());
+    ArrayKlass* ak = higher_dimension();
     st->cr();
     ak->cds_print_value_on(st);
   }
