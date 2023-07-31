@@ -57,7 +57,8 @@
 // such as _CRT_SECURE_NO_WARNINGS.  Annotating vetted uses allows those
 // warnings to catch unchecked uses.
 
-#define FORBID_C_FUNCTION(signature, alternative)
+#define FORBID_C_FUNCTION(signature, alternative) \
+  extern "C" [[deprecated]] signature;
 
 #define ALLOW_C_FUNCTION(name, ...)             \
   PRAGMA_DIAG_PUSH                              \
