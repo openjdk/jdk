@@ -102,7 +102,6 @@ public class StatusResponseManagerTests {
         rootOcsp.stop();
     }
 
-
     // Test a simple RFC 6066 server-side fetch
     public static final TestCase testOcspFetch = new TestCase() {
         @Override
