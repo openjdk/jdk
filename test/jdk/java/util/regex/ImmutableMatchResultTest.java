@@ -23,6 +23,9 @@
 
 import jdk.test.lib.RandomFactory;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 import java.nio.CharBuffer;
 import java.util.Arrays;
@@ -33,8 +36,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.params.provider.Arguments.arguments;
 
 /*
  * @test
@@ -181,84 +184,19 @@ public class ImmutableMatchResultTest {
         testResultsStream(CharBuffer.wrap(inResults));
     }
 
-    @Test
-    void testLookbehindLookahead() {
-        char[] data = "-1234abcxyz5678-".toCharArray();
-        Matcher m = Pattern.compile("(?<=(\\d{3}))\\D*(?=(\\d{4}))")
-                .matcher(CharBuffer.wrap(data));
-
-        assertEquals(2, m.groupCount());
-        assertTrue(m.find());
-
-        int start = m.start();
-        int end = m.end();
-        String group = m.group();
-
-        int prefixStart = m.start(1);
-        int prefixEnd = m.end(1);
-        String prefixGroup = m.group(1);
-
-        int suffixStart = m.start(2);
-        int suffixEnd = m.end(2);
-        String suffixGroup = m.group(2);
-
-        MatchResult mr = m.toMatchResult();
-        Arrays.fill(data, '*');  // spoil original input
-
-        assertEquals(start, mr.start());
-        assertEquals(end, mr.end());
-        assertEquals(group, mr.group());
-
-        assertEquals(prefixStart, mr.start(1));
-        assertEquals(prefixEnd, mr.end(1));
-        assertEquals(prefixGroup, mr.group(1));
-
-        assertEquals(suffixStart, mr.start(2));
-        assertEquals(suffixEnd, mr.end(2));
-        assertEquals(suffixGroup, mr.group(2));
+    static Arguments[] testGroupsOutsideMatch() {
+        return new Arguments[]{
+                arguments("(?<=(\\d{3}))\\D*(?=(\\d{4}))", "-1234abcxyz5678-"),
+                arguments("(?<=(\\d{3}))\\D*(?=(\\1))", "-1234abcxyz2348-"),
+                arguments("(?<!(\\d{4}))\\D+(?=(\\d{4}))", "123abcxyz5678-"),
+        };
     }
 
-    @Test
-    void testLookbehindLookaheadWithBackref() {
-        char[] data = "-1234abcxyz2348-".toCharArray();
-        Matcher m = Pattern.compile("(?<=(\\d{3}))\\D*(?=(\\1))")
-                .matcher(CharBuffer.wrap(data));
-
-        assertEquals(2, m.groupCount());
-        assertTrue(m.find());
-
-        int start = m.start();
-        int end = m.end();
-        String group = m.group();
-
-        int prefixStart = m.start(1);
-        int prefixEnd = m.end(1);
-        String prefixGroup = m.group(1);
-
-        int suffixStart = m.start(2);
-        int suffixEnd = m.end(2);
-        String suffixGroup = m.group(2);
-
-        MatchResult mr = m.toMatchResult();
-        Arrays.fill(data, '*');  // spoil original input
-
-        assertEquals(start, mr.start());
-        assertEquals(end, mr.end());
-        assertEquals(group, mr.group());
-
-        assertEquals(prefixStart, mr.start(1));
-        assertEquals(prefixEnd, mr.end(1));
-        assertEquals(prefixGroup, mr.group(1));
-
-        assertEquals(suffixStart, mr.start(2));
-        assertEquals(suffixEnd, mr.end(2));
-        assertEquals(suffixGroup, mr.group(2));
-    }
-
-    @Test
-    void testHegativeLookbehindLookahead() {
-        char[] data = "123abcxyz5678-".toCharArray();
-        Matcher m = Pattern.compile("(?<!(\\d{4}))\\D+(?=(\\d{4}))")
+    @ParameterizedTest
+    @MethodSource
+    static void testGroupsOutsideMatch(String pattern, String text) {
+        char[] data = text.toCharArray();
+        Matcher m = Pattern.compile(pattern)
                 .matcher(CharBuffer.wrap(data));
 
         assertEquals(2, m.groupCount());
