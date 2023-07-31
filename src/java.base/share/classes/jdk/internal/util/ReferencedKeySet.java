@@ -197,7 +197,7 @@ public final class ReferencedKeySet<T> extends AbstractSet<T> {
      * @return the old element if present, otherwise, the new element
      *
      * @implNote This version of intern should not be called during phase1
-     * due to bootstrapping of interner lambda.
+     * using a lambda. Use an UnaryOperator instance instead.
      */
     public T intern(T e, UnaryOperator<T> interner) {
         return ReferencedKeyMap.intern(map, e, interner);

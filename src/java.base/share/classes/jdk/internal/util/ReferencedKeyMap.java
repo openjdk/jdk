@@ -381,7 +381,7 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
      * @throws ClassCastException if {@code V} is not {@code EntryKey<T>}
      *
      * @implNote This version of intern should not be called during phase1
-     * due to bootstrapping of interner lambda.
+     * using a lambda. Use an UnaryOperator instance instead.
      */
     static <T> T intern(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key, UnaryOperator<T> interner) {
         T value = existingKey(setMap, key);
