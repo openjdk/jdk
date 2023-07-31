@@ -66,6 +66,15 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
       else
         AC_MSG_ERROR([Can't find 'cups/cups.h' under ${with_cups_include} given with the --with-cups-include option.])
       fi
+    else
+      # handle cups default location for AIX
+      if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+        if test -s "/opt/freeware/include/cups/cups.h"; then
+          CUPS_CFLAGS="-I/opt/freeware/include"
+          CUPS_FOUND=yes
+          AC_MSG_RESULT([$CUPS_FOUND])
+        fi
+      fi
     fi
     if test "x$CUPS_FOUND" = xno; then
       # Are the cups headers installed in the default /usr/include location?
