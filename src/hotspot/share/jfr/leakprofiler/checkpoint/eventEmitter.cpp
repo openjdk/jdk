@@ -112,7 +112,7 @@ static int array_size(const oop object) {
   if (object->is_array()) {
     return arrayOop(object)->length();
   }
-  return min_jint;
+  return -1;
 }
 
 void EventEmitter::link_sample_with_edge(const ObjectSample* sample, EdgeStore* edge_store) {
