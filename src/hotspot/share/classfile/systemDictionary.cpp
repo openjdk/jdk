@@ -1369,10 +1369,6 @@ void SystemDictionary::define_instance_class(InstanceKlass* k, Handle class_load
   ClassLoaderData* loader_data = k->class_loader_data();
   assert(loader_data->class_loader() == class_loader(), "they must be the same");
 
-  // Class loaders do not acquire a lock, they use placeholder token.
-  // If a class loader calls define_instance_class instead of
-  // find_or_define_instance_class to get here, we have a timing
-  // hole with systemDictionary updates and check_constraints
   assert(PlaceholderTable::is_definer(THREAD, k->name(), loader_data),
          "define called without a placeholder entry");
 

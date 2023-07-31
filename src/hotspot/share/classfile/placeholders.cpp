@@ -321,17 +321,17 @@ void PlaceholderKey::print_on(outputStream* st) const {
 }
 
 void PlaceholderEntry::print_on(outputStream* st) const {
-  if (supername() != nullptr) {
+  if (_supername != nullptr) {
     st->print(", supername ");
-    supername()->print_value_on(st);
+    _supername->print_value_on(st);
   }
-  if (definer_acquire() != nullptr) {
+  if (_definer != nullptr) {
     st->print(", definer ");
-    definer_acquire()->print_value_on(st);
+    _definer->print_value_on(st);
   }
-  if (instance_klass() != nullptr) {
+  if (_instanceKlass != nullptr) {
     st->print(", InstanceKlass ");
-    instance_klass()->print_value_on(st);
+    _instanceKlass->print_value_on(st);
   }
   st->cr();
   st->print("loadInstanceThreadQ threads:");
