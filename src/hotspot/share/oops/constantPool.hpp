@@ -706,9 +706,9 @@ class ConstantPool : public Metadata {
   BasicType basic_type_for_constant_at(int cp_index);
 
   // Resolve late bound constants.
-  oop resolve_constant_at(int index, TRAPS) {
+  oop resolve_constant_at(int cp_index, TRAPS) {
     constantPoolHandle h_this(THREAD, this);
-    return resolve_constant_at_impl(h_this, index, _no_index_sentinel, nullptr, THREAD);
+    return resolve_constant_at_impl(h_this, cp_index, _no_index_sentinel, nullptr, THREAD);
   }
 
   oop resolve_cached_constant_at(int cache_index, TRAPS) {
@@ -836,7 +836,7 @@ class ConstantPool : public Metadata {
   // Resolve string constants (to prevent allocation during compilation)
   static void resolve_string_constants_impl(const constantPoolHandle& this_cp, TRAPS);
 
-  static oop resolve_constant_at_impl(const constantPoolHandle& this_cp, int index, int cache_index,
+  static oop resolve_constant_at_impl(const constantPoolHandle& this_cp, int cp_index, int cache_index,
                                       bool* status_return, TRAPS);
   static void copy_bootstrap_arguments_at_impl(const constantPoolHandle& this_cp, int cp_index,
                                                int start_arg, int end_arg,
