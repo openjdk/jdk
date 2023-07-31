@@ -45,6 +45,11 @@
 #define fstatvfs64 fstatvfs
 #endif
 
+#if defined(__linux__)
+#include <linux/fs.h>
+#include <sys/ioctl.h>
+#endif
+
 #include "jni.h"
 #include "nio.h"
 #include "nio_util.h"
