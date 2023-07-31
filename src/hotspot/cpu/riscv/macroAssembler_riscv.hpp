@@ -774,6 +774,7 @@ public:
   void revb(Register Rd, Register Rs, Register tmp1 = t0, Register tmp2 = t1);          // reverse bytes in doubleword
 
   void ror_imm(Register dst, Register src, uint32_t shift, Register tmp = t0);
+  void rol32_imm(Register dst, Register src, uint32_t, Register tmp = t0);
   void andi(Register Rd, Register Rn, int64_t imm, Register tmp = t0);
   void orptr(Address adr, RegisterOrConstant src, Register tmp1 = t0, Register tmp2 = t1);
 

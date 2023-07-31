@@ -3914,7 +3914,7 @@ class StubGenerator: public StubCodeGenerator {
   }
 
   // Set of L registers that correspond to a contiguous memory area.
-  // Each 64-byte register typically corresponds to 2 32-byte integers.
+  // Each 64-bit register typically corresponds to 2 32-bit integers.
   template <uint L>
   class RegCache {
   private:
@@ -3937,7 +3937,7 @@ class StubGenerator: public StubCodeGenerator {
       }
     }
 
-    // Generate code extracting i-th unsigned word (4 bytes) from cached 64 bytes.
+    // Generate code extracting i-th unsigned word (4 bytes).
     void get_u32(Register dest, uint i, Register rmask32) {
       assert(i < 2 * L, "invalid i: %u", i);
 
@@ -3950,12 +3950,6 @@ class StubGenerator: public StubCodeGenerator {
   };
 
   typedef RegCache<8> BufRegCache;
-
-  void rotate_left_32(Register rd, Register rs, uint bits, Register rtmp1, Register rtmp2) {
-    __ srliw(rtmp1, rs, 32 - bits);
-    __ slliw(rtmp2, rs, bits);
-    __ orr(rd, rtmp1, rtmp2);
-  }
 
   // a += rtmp1 + x + ac;
   // a = Integer.rotateLeft(a, s) + b;
@@ -3973,7 +3967,7 @@ class StubGenerator: public StubCodeGenerator {
     __ addw(a, a, rtmp1);
 
     // a = Integer.rotateLeft(a, s) + b;
-    rotate_left_32(a, a, s, rtmp1, rtmp2);
+    __ rol32_imm(a, a, s, rtmp1);
     __ addw(a, a, b);
   }
 

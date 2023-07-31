@@ -1968,6 +1968,17 @@ void MacroAssembler::ror_imm(Register dst, Register src, uint32_t shift, Registe
   orr(dst, dst, tmp);
 }
 
+// rotate left with shift bits, 32-bit version
+void MacroAssembler::rol32_imm(Register dst, Register src, uint32_t shift, Register tmp) {
+  assert_different_registers(dst, tmp);
+  assert_different_registers(src, tmp);
+  assert(shift < 64, "shift amount must be < 64");
+
+  srliw(tmp, src, 32 - shift);
+  slliw(dst, src, shift);
+  orr(dst, dst, tmp);
+}
+
 void MacroAssembler::andi(Register Rd, Register Rn, int64_t imm, Register tmp) {
   if (is_simm12(imm)) {
     and_imm12(Rd, Rn, imm);
