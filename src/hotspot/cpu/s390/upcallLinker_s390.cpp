@@ -41,8 +41,7 @@ static int compute_reg_save_area_size(const ABIDescriptor& abi) {
     Register reg = as_Register(i);
     // Z_SP saved/restored by prologue/epilogue
     if (reg == Z_SP) continue;
-    // although Z_R6 is used for parameter passing, it must be saved and restored by a called function.
-    if (!abi.is_volatile_reg(reg) || reg == Z_R6) {
+    if (!abi.is_volatile_reg(reg)) {
       size += 8; // bytes
     }
   }
@@ -69,8 +68,7 @@ static void preserve_callee_saved_registers(MacroAssembler* _masm, const ABIDesc
     Register reg = as_Register(i);
     // Z_SP saved/restored by prologue/epilogue
     if (reg == Z_SP) continue;
-    // although Z_R6 is used for parameter passing, it must be saved and restored by a called function.
-    if (!abi.is_volatile_reg(reg) || reg == Z_R6) {
+    if (!abi.is_volatile_reg(reg)) {
       __ z_stg(reg, Address(Z_SP, offset));
       offset += 8;
     }
@@ -99,8 +97,7 @@ static void restore_callee_saved_registers(MacroAssembler* _masm, const ABIDescr
     Register reg = as_Register(i);
     // Z_SP saved/restored by prologue/epilogue
     if (reg == Z_SP) continue;
-    // although Z_R6 is used for parameter passing, it must be saved and restored by a called function.
-    if (!abi.is_volatile_reg(reg) || reg == Z_R6) {
+    if (!abi.is_volatile_reg(reg)) {
       __ z_lg(reg, Address(Z_SP, offset));
       offset += 8;
     }

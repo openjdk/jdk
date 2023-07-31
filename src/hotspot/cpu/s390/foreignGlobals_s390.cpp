@@ -37,8 +37,7 @@
 #define __ masm->
 
 bool ABIDescriptor::is_volatile_reg(Register reg) const {
-  return _integer_argument_registers.contains(reg)
-          || _integer_additional_volatile_registers.contains(reg);
+  return _integer_volatile_registers.contains(reg);
 }
 
 bool ABIDescriptor::is_volatile_reg(FloatRegister reg) const {
@@ -63,7 +62,7 @@ const ABIDescriptor ForeignGlobals::parse_abi_descriptor(jobject jabi) {
   parse_register_array(outputStorage, StorageType::FLOAT, abi._float_return_registers, as_FloatRegister);
 
   objArrayOop volatileStorage = jdk_internal_foreign_abi_ABIDescriptor::volatileStorage(abi_oop);
-  parse_register_array(volatileStorage, StorageType::INTEGER, abi._integer_additional_volatile_registers, as_Register);
+  parse_register_array(volatileStorage, StorageType::INTEGER, abi._integer_volatile_registers, as_Register);
   parse_register_array(volatileStorage, StorageType::FLOAT, abi._float_additional_volatile_registers, as_FloatRegister);
 
   abi._stack_alignment_bytes = jdk_internal_foreign_abi_ABIDescriptor::stackAlignment(abi_oop);

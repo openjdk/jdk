@@ -30,7 +30,7 @@ struct ABIDescriptor {
   GrowableArray<FloatRegister> _float_argument_registers;
   GrowableArray<FloatRegister> _float_return_registers;
 
-  GrowableArray<Register> _integer_additional_volatile_registers;
+  GrowableArray<Register> _integer_volatile_registers;
   GrowableArray<FloatRegister> _float_additional_volatile_registers;
 
   int32_t _stack_alignment_bytes;
