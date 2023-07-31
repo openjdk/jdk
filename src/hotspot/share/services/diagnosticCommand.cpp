@@ -889,7 +889,7 @@ CompilerDirectivesAddDCmd::CompilerDirectivesAddDCmd(outputStream* output, bool 
 }
 
 void CompilerDirectivesAddDCmd::execute(DCmdSource source, TRAPS) {
-  DirectivesParser::parse_from_file(_filename.value(), output());
+  DirectivesParser::parse_from_file(_filename.value(), output(), true);
 }
 
 void CompilerDirectivesRemoveDCmd::execute(DCmdSource source, TRAPS) {

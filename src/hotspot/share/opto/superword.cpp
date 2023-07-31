@@ -54,7 +54,6 @@ SuperWord::SuperWord(PhaseIdealLoop* phase) :
   _packset(arena(), 8,  0, nullptr),                        // packs for the current block
   _bb_idx(arena(), (int)(1.10 * phase->C->unique()), 0, 0), // node idx to index in bb
   _block(arena(), 8,  0, nullptr),                          // nodes in current block
-  _post_block(arena(), 8, 0, nullptr),                      // nodes common to current block which are marked as post loop vectorizable
   _data_entry(arena(), 8,  0, nullptr),                     // nodes with all inputs from outside
   _mem_slice_head(arena(), 8,  0, nullptr),                 // memory slice heads
   _mem_slice_tail(arena(), 8,  0, nullptr),                 // memory slice tails
@@ -116,11 +115,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
     mark_reductions();
   }
 
-  if (cl->is_rce_post_loop() && is_marked_reduction_loop()) {
-    // Post loop vectorization doesn't support reductions
-    return false;
-  }
-
   // skip any loop that has not been assigned max unroll by analysis
   if (do_optimization) {
     if (SuperWordLoopUnrollAnalysis && cl->slp_max_unroll() == 0) {
@@ -176,24 +170,6 @@ bool SuperWord::transform_loop(IdealLoopTree* lpt, bool do_optimization) {
   if (do_optimization) {
     assert(_packset.length() == 0, "packset must be empty");
     success = SLP_extract();
-    if (PostLoopMultiversioning) {
-      if (cl->is_vectorized_loop() && cl->is_main_loop() && !is_marked_reduction_loop()) {
-        IdealLoopTree *lpt_next = cl->is_strip_mined() ? lpt->_parent->_next : lpt->_next;
-        CountedLoopNode *cl_next = lpt_next->_head->as_CountedLoop();
-        // Main loop SLP works well for manually unrolled loops. But post loop
-        // vectorization doesn't work for these. To bail out the optimization
-        // earlier, we have range check and loop stride conditions below.
-        if (cl_next->is_post_loop() && !lpt_next->range_checks_present() &&
-            cl_next->stride_is_con() && abs(cl_next->stride_con()) == 1) {
-          if (!cl_next->is_vectorized_loop()) {
-            // Propagate some main loop attributes to its corresponding scalar
-            // rce'd post loop for vectorization with vector masks
-            cl_next->set_slp_max_unroll(cl->slp_max_unroll());
-            cl_next->set_slp_pack_count(cl->slp_pack_count());
-          }
-        }
-      }
-    }
   }
   return success;
 }
@@ -206,9 +182,6 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   Node_Stack nstack((int)ignored_size);
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   Node *cl_exit = cl->loopexit_or_null();
-  int rpo_idx = _post_block.length();
-
-  assert(rpo_idx == 0, "post loop block is empty");
 
   // First clear the entries
   for (uint i = 0; i < lpt()->_body.size(); i++) {
@@ -313,27 +286,6 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
   }
 
   if (is_slp) {
-    // In the main loop, SLP works well if parts of the operations in the loop body
-    // are not vectorizable and those non-vectorizable parts will be unrolled only.
-    // But in post loops with vector masks, we create singleton packs directly from
-    // scalars so all operations should be vectorized together. This compares the
-    // number of packs in the post loop with the main loop and bail out if the post
-    // loop potentially has more packs.
-    if (cl->is_rce_post_loop()) {
-      for (uint i = 0; i < lpt()->_body.size(); i++) {
-        if (ignored_loop_nodes[i] == -1) {
-          _post_block.at_put_grow(rpo_idx++, lpt()->_body.at(i));
-        }
-      }
-      if (_post_block.length() > cl->slp_pack_count()) {
-        // Clear local_loop_unroll_factor and bail out directly from here
-        local_loop_unroll_factor = 0;
-        cl->mark_was_slp();
-        cl->set_slp_max_unroll(0);
-        return;
-      }
-    }
-
     // Now we try to find the maximum supported consistent vector which the machine
     // description can use
     bool flag_small_bt = false;
@@ -404,7 +356,7 @@ void SuperWord::unrolling_analysis(int &local_loop_unroll_factor) {
       cl->mark_passed_slp();
     }
     cl->mark_was_slp();
-    if (cl->is_main_loop() || cl->is_rce_post_loop()) {
+    if (cl->is_main_loop()) {
       cl->set_slp_max_unroll(local_loop_unroll_factor);
     }
   }
@@ -590,79 +542,42 @@ bool SuperWord::SLP_extract() {
     }
   }
 #endif
+
+  CountedLoopNode* cl = lpt()->_head->as_CountedLoop();
+  assert(cl->is_main_loop(), "SLP should only work on main loops");
+
   // Ready the block
   if (!construct_bb()) {
     return false; // Exit if no interesting nodes or complex graph.
   }
 
-  // build    _dg, _disjoint_ptrs
+  // build _dg, _disjoint_ptrs
   dependence_graph();
 
   // compute function depth(Node*)
   compute_max_depth();
 
-  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  if (cl->is_main_loop()) {
-    compute_vector_element_type();
+  // Compute vector element types
+  compute_vector_element_type();
 
-    // Attempt vectorization
+  // Attempt vectorization
+  find_adjacent_refs();
 
-    find_adjacent_refs();
-
-    if (align_to_ref() == nullptr) {
-      return false; // Did not find memory reference to align vectors
-    }
-
-    extend_packlist();
-
-    combine_packs();
-
-    construct_my_pack_map();
-
-    filter_packs();
-
-    DEBUG_ONLY(verify_packs();)
-
-    schedule();
-
-    // Record eventual count of vector packs for checks in post loop vectorization
-    if (PostLoopMultiversioning) {
-      cl->set_slp_pack_count(_packset.length());
-    }
-  } else {
-    assert(cl->is_rce_post_loop(), "Must be an rce'd post loop");
-    int saved_mapped_unroll_factor = cl->slp_max_unroll();
-    if (saved_mapped_unroll_factor) {
-      int vector_mapped_unroll_factor = saved_mapped_unroll_factor;
-
-      // now reset the slp_unroll_factor so that we can check the analysis mapped
-      // what the vector loop was mapped to
-      cl->set_slp_max_unroll(0);
-
-      // do the analysis on the post loop
-      unrolling_analysis(vector_mapped_unroll_factor);
-
-      // if our analyzed loop is a canonical fit, start processing it
-      if (vector_mapped_unroll_factor == saved_mapped_unroll_factor) {
-        // now add the vector nodes to packsets
-        for (int i = 0; i < _post_block.length(); i++) {
-          Node* n = _post_block.at(i);
-          Node_List* singleton = new Node_List();
-          singleton->push(n);
-          _packset.append(singleton);
-          set_my_pack(n, singleton);
-        }
-
-        // map base types for vector usage
-        compute_vector_element_type();
-      } else {
-        return false;
-      }
-    } else {
-      // for some reason we could not map the slp analysis state of the vectorized loop
-      return false;
-    }
+  if (align_to_ref() == nullptr) {
+    return false; // Did not find memory reference to align vectors
   }
+
+  extend_packlist();
+
+  combine_packs();
+
+  construct_my_pack_map();
+
+  filter_packs();
+
+  DEBUG_ONLY(verify_packs();)
+
+  schedule();
 
   return output();
 }
@@ -724,9 +639,9 @@ void SuperWord::find_adjacent_refs() {
       }
     }
 
-    if (can_create_pairs(mem_ref, iv_adjustment, align_to_ref_p,
-                         best_align_to_mem_ref, best_iv_adjustment,
-                         align_to_refs)) {
+    if (mem_ref_has_no_alignment_violation(mem_ref, iv_adjustment, align_to_ref_p,
+                                           best_align_to_mem_ref, best_iv_adjustment,
+                                           align_to_refs)) {
       // Create initial pack pairs of memory operations for which alignment was set.
       for (uint i = 0; i < memops.size(); i++) {
         Node* s1 = memops.at(i);
@@ -836,93 +751,45 @@ void SuperWord::find_adjacent_refs_trace_1(Node* best_align_to_mem_ref, int best
 }
 #endif
 
-// Check if we can create the pack pairs for mem_ref:
-// If required, enforce strict alignment requirements of hardware.
-// Else, only enforce alignment within a memory slice, so that there cannot be any
-// memory-dependence between different vector "lanes".
-bool SuperWord::can_create_pairs(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
-                                 MemNode* best_align_to_mem_ref, int best_iv_adjustment,
-                                 Node_List &align_to_refs) {
-  bool is_aligned_with_best = memory_alignment(mem_ref, best_iv_adjustment) == 0;
-
-  if (vectors_should_be_aligned()) {
-    // All vectors need to be memory aligned, modulo their vector_width. This is more strict
-    // than the hardware probably requires. Most hardware at most requires 4-byte alignment.
-    //
-    // In the pre-loop, we align best_align_to_mem_ref to its vector_length. To ensure that
-    // all mem_ref's are memory aligned modulo their vector_width, we only need to check that
-    // they are all aligned to best_align_to_mem_ref, modulo their vector_width. For that,
-    // we check the following 3 conditions.
-
-    // (1) All packs are aligned with best_align_to_mem_ref.
-    if (!is_aligned_with_best) {
-      return false;
-    }
-    // (2) All other vectors have vector_size less or equal to that of best_align_to_mem_ref.
-    int vw = vector_width(mem_ref);
-    int vw_best = vector_width(best_align_to_mem_ref);
-    if (vw > vw_best) {
-      // We only align to vector_width of best_align_to_mem_ref during pre-loop.
-      // A mem_ref with a larger vector_width might thus not be vector_width aligned.
-      return false;
-    }
-    // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
-    //     address = base + k*iv + constant [+ invar]
-    //     memory_alignment ignores the invariant.
-    SWPointer p2(best_align_to_mem_ref, this, nullptr, false);
-    if (!align_to_ref_p.invar_equals(p2)) {
-      // Do not vectorize memory accesses with different invariants
-      // if unaligned memory accesses are not allowed.
-      return false;
-    }
+// If strict memory alignment is required (vectors_should_be_aligned), then check if
+// mem_ref is aligned with best_align_to_mem_ref.
+bool SuperWord::mem_ref_has_no_alignment_violation(MemNode* mem_ref, int iv_adjustment, SWPointer &align_to_ref_p,
+                                                   MemNode* best_align_to_mem_ref, int best_iv_adjustment,
+                                                   Node_List &align_to_refs) {
+  if (!vectors_should_be_aligned()) {
+    // Alignment is not required by the hardware. No violation possible.
     return true;
-  } else {
-    // Alignment is not required by the hardware.
-
-    // However, we need to ensure that the pack for mem_ref is independent, i.e. all members
-    // of the pack are mutually independent.
-
-    if (_do_vector_loop) {
-      // Wait until combine_packs to check independence of packs. For now we just know that
-      // the adjacent pairs are independent. This allows us to vectorize when we do not have
-      // alignment modulo vector_width. For example (forward read):
-      // for (int i ...) { v[i] = v[i + 1] + 5; }
-      // The following will be filtered out in combine_packs (forward write):
-      // for (int i ...) { v[i + 1] = v[i] + 5; }
-      return true;
-    }
-
-    // If all mem_ref's are modulo vector_width aligned with all other mem_ref's of their
-    // memory slice, then the VectorLoad / VectorStore regions are either exactly overlapping
-    // or completely non-overlapping. This ensures that there cannot be memory-dependencies
-    // between different vector "lanes".
-    // During SuperWord::filter_packs -> SuperWord::profitable -> SuperWord::is_vector_use,
-    // we check that all inputs are vectors that match on every element (with some reasonable
-    // exceptions). This ensures that every "lane" is isomorpic and independent to all other
-    // "lanes". This allows us to vectorize these cases:
-    // for (int i ...) { v[i] = v[i] + 5; }      // same alignment
-    // for (int i ...) { v[i] = v[i + 32] + 5; } // alignment modulo vector_width
-    if (same_memory_slice(mem_ref, best_align_to_mem_ref)) {
-      return is_aligned_with_best;
-    } else {
-      return is_mem_ref_aligned_with_same_memory_slice(mem_ref, iv_adjustment, align_to_refs);
-    }
   }
-}
 
-// Check if alignment of mem_ref is consistent with the other packs of the same memory slice
-bool SuperWord::is_mem_ref_aligned_with_same_memory_slice(MemNode* mem_ref, int iv_adjustment,
-                                                          Node_List &align_to_refs) {
-  for (uint i = 0; i < align_to_refs.size(); i++) {
-    MemNode* mr = align_to_refs.at(i)->as_Mem();
-    if (mr != mem_ref &&
-        same_memory_slice(mr, mem_ref) &&
-        memory_alignment(mr, iv_adjustment) != 0) {
-      // mem_ref is misaligned with mr, another ref of the same memory slice.
-      return false;
-    }
+  // All vectors need to be memory aligned, modulo their vector_width. This is more strict
+  // than the hardware probably requires. Most hardware at most requires 4-byte alignment.
+  //
+  // In the pre-loop, we align best_align_to_mem_ref to its vector_length. To ensure that
+  // all mem_ref's are memory aligned modulo their vector_width, we only need to check that
+  // they are all aligned to best_align_to_mem_ref, modulo their vector_width. For that,
+  // we check the following 3 conditions.
+
+  // (1) All packs are aligned with best_align_to_mem_ref.
+  if (memory_alignment(mem_ref, best_iv_adjustment) != 0) {
+    return false;
   }
-  // No misalignment found.
+  // (2) All other vectors have vector_size less or equal to that of best_align_to_mem_ref.
+  int vw = vector_width(mem_ref);
+  int vw_best = vector_width(best_align_to_mem_ref);
+  if (vw > vw_best) {
+    // We only align to vector_width of best_align_to_mem_ref during pre-loop.
+    // A mem_ref with a larger vector_width might thus not be vector_width aligned.
+    return false;
+  }
+  // (3) Ensure that all vectors have the same invariant. We model memory accesses like this
+  //     address = base + k*iv + constant [+ invar]
+  //     memory_alignment ignores the invariant.
+  SWPointer p2(best_align_to_mem_ref, this, nullptr, false);
+  if (!align_to_ref_p.invar_equals(p2)) {
+    // Do not vectorize memory accesses with different invariants
+    // if unaligned memory accesses are not allowed.
+    return false;
+  }
   return true;
 }
 
@@ -1191,6 +1058,8 @@ int SuperWord::get_iv_adjustment(MemNode* mem_ref) {
 //    A.out()->DependNode.in(1) and DependNode.out()->B.prec(x)
 void SuperWord::dependence_graph() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+  assert(cl->is_main_loop(), "SLP should only work on main loops");
+
   // First, assign a dependence node to each memory node
   for (int i = 0; i < _block.length(); i++ ) {
     Node *n = _block.at(i);
@@ -1205,9 +1074,7 @@ void SuperWord::dependence_graph() {
     Node* n_tail = _mem_slice_tail.at(i);
 
     // Get slice in predecessor order (last is first)
-    if (cl->is_main_loop()) {
-      mem_slice_preds(n_tail, n, _nlist);
-    }
+    mem_slice_preds(n_tail, n, _nlist);
 
 #ifndef PRODUCT
     if(TraceSuperWord && Verbose) {
@@ -1901,9 +1768,14 @@ void SuperWord::combine_packs() {
       assert(is_power_of_2(max_vlen), "sanity");
       uint psize = p1->size();
       if (!is_power_of_2(psize)) {
-        // Skip pack which can't be vector.
-        // case1: for(...) { a[i] = i; }    elements values are different (i+x)
-        // case2: for(...) { a[i] = b[i+1]; }  can't align both, load and store
+        // We currently only support power-of-2 sizes for vectors.
+#ifndef PRODUCT
+        if (TraceSuperWord) {
+          tty->cr();
+          tty->print_cr("WARNING: Removed pack[%d] with size that is not a power of 2:", i);
+          print_pack(p1);
+        }
+#endif
         _packset.at_put(i, nullptr);
         continue;
       }
@@ -1922,28 +1794,41 @@ void SuperWord::combine_packs() {
     }
   }
 
-  if (_do_vector_loop) {
-    // Since we did not enforce exact alignment of the packsets, we only know that there
-    // is no dependence with distance 1, because we have checked independent(s1, s2) for
-    // all adjacent memops. But there could be a dependence of a different distance.
-    // Hence: remove the pack if there is a dependence.
-    for (int i = 0; i < _packset.length(); i++) {
-      Node_List* p = _packset.at(i);
-      if (p != nullptr) {
-        Node* dependence = find_dependence(p);
-        if (dependence != nullptr) {
+  // We know that the nodes in a pair pack were independent - this gives us independence
+  // at distance 1. But now that we may have more than 2 nodes in a pack, we need to check
+  // if they are all mutually independent. If there is a dependence we remove the pack.
+  // This is better than giving up completely - we can have partial vectorization if some
+  // are rejected and others still accepted.
+  //
+  // Examples with dependence at distance 1 (pack pairs are not created):
+  // for (int i ...) { v[i + 1] = v[i] + 5; }
+  // for (int i ...) { v[i] = v[i - 1] + 5; }
+  //
+  // Example with independence at distance 1, but dependence at distance 2 (pack pairs are
+  // created and we need to filter them out now):
+  // for (int i ...) { v[i + 2] = v[i] + 5; }
+  // for (int i ...) { v[i] = v[i - 2] + 5; }
+  //
+  // Note: dependencies are created when a later load may reference the same memory location
+  // as an earlier store. This happens in "read backward" or "store forward" cases. On the
+  // other hand, "read forward" or "store backward" cases do not have such dependencies:
+  // for (int i ...) { v[i] = v[i + 1] + 5; }
+  // for (int i ...) { v[i - 1] = v[i] + 5; }
+  for (int i = 0; i < _packset.length(); i++) {
+    Node_List* p = _packset.at(i);
+    if (p != nullptr) {
+      Node* dependence = find_dependence(p);
+      if (dependence != nullptr) {
 #ifndef PRODUCT
-          if (TraceSuperWord) {
-            tty->cr();
-            tty->print_cr("WARNING: Found dependency.");
-            tty->print_cr("Cannot vectorize despite compile directive Vectorize.");
-            dependence->dump();
-            tty->print_cr("In pack[%d]", i);
-            print_pack(p);
-          }
-#endif
-          _packset.at_put(i, nullptr);
+        if (TraceSuperWord) {
+          tty->cr();
+          tty->print_cr("WARNING: Found dependency at distance greater than 1.");
+          dependence->dump();
+          tty->print_cr("In pack[%d]", i);
+          print_pack(p);
         }
+#endif
+        _packset.at_put(i, nullptr);
       }
     }
   }
@@ -2621,6 +2506,7 @@ void SuperWord::print_loop(bool whole) {
 // Convert packs into vector node operations
 bool SuperWord::output() {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
+  assert(cl->is_main_loop(), "SLP should only work on main loops");
   Compile* C = _phase->C;
   if (_packset.length() == 0) {
     return false;
@@ -2633,16 +2519,13 @@ bool SuperWord::output() {
   }
 #endif
 
-  if (cl->is_main_loop()) {
-    // MUST ENSURE main loop's initial value is properly aligned:
-    //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
+  // Ensure main loop's initial value is properly aligned
+  //  (iv_initial_value + min_iv_offset) % vector_width_in_bytes() == 0
+  align_initial_loop_index(align_to_ref());
 
-    align_initial_loop_index(align_to_ref());
-
-    // Insert extract (unpack) operations for scalar uses
-    for (int i = 0; i < _packset.length(); i++) {
-      insert_extracts(_packset.at(i));
-    }
+  // Insert extract (unpack) operations for scalar uses
+  for (int i = 0; i < _packset.length(); i++) {
+    insert_extracts(_packset.at(i));
   }
 
   uint max_vlen_in_bytes = 0;
@@ -2659,16 +2542,6 @@ bool SuperWord::output() {
     return false;
   }
 
-  Node* vmask = nullptr;
-  if (cl->is_rce_post_loop() && do_reserve_copy()) {
-    // Create a vector mask node for post loop, bail out if not created
-    vmask = create_post_loop_vmask();
-    if (vmask == nullptr) {
-      // create_post_loop_vmask checks many conditions, any of them could fail
-      return false; // and reverse to backup IG
-    }
-  }
-
   for (int i = 0; i < _block.length(); i++) {
     Node* n = _block.at(i);
     Node_List* p = my_pack(n);
@@ -2680,10 +2553,6 @@ bool SuperWord::output() {
       uint vlen = p->size();
       uint vlen_in_bytes = 0;
       Node* vn = nullptr;
-      if (cl->is_rce_post_loop()) {
-        // override vlen with the main loops vector length
-        vlen = cl->slp_max_unroll();
-      }
       NOT_PRODUCT(if(is_trace_cmov()) {tty->print_cr("SWPointer::output: %d executed first, %d executed last in pack", first->_idx, n->_idx); print_pack(p);})
       int   opc = n->Opcode();
       if (n->is_Load()) {
@@ -2705,13 +2574,7 @@ bool SuperWord::output() {
         }
         Node* adr = first->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        if (cl->is_rce_post_loop()) {
-          assert(vmask != nullptr, "vector mask should be generated");
-          const TypeVect* vt = TypeVect::make(velt_basic_type(n), vlen);
-          vn = new LoadVectorMaskedNode(ctl, mem, adr, atyp, vt, vmask);
-        } else {
-          vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
-        }
+        vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n), control_dependency(p));
         vlen_in_bytes = vn->as_LoadVector()->memory_size();
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
@@ -2729,13 +2592,7 @@ bool SuperWord::output() {
         Node* mem = first->in(MemNode::Memory);
         Node* adr = first->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        if (cl->is_rce_post_loop()) {
-          assert(vmask != nullptr, "vector mask should be generated");
-          const TypeVect* vt = TypeVect::make(velt_basic_type(n), vlen);
-          vn = new StoreVectorMaskedNode(ctl, mem, adr, val, atyp, vmask);
-        } else {
-          vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
-        }
+        vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
         vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (VectorNode::is_scalar_rotate(n)) {
         Node* in1 = first->in(1);
@@ -2991,20 +2848,12 @@ bool SuperWord::output() {
         if (TraceSuperWordLoopUnrollAnalysis) {
           tty->print_cr("vector loop(unroll=%d, len=%d)\n", max_vlen, max_vlen_in_bytes*BitsPerByte);
         }
-
         // For atomic unrolled loops which are vector mapped, instigate more unrolling
         cl->set_notpassed_slp();
-        if (cl->is_main_loop()) {
-          // if vector resources are limited, do not allow additional unrolling, also
-          // do not unroll more on pure vector loops which were not reduced so that we can
-          // program the post loop to single iteration execution.
-          if (Matcher::float_pressure_limit() > 8) {
-            C->set_major_progress();
-            cl->mark_do_unroll_only();
-          }
-        }
-        if (cl->is_rce_post_loop() && do_reserve_copy()) {
-          cl->mark_is_multiversioned();
+        // if vector resources are limited, do not allow additional unrolling
+        if (Matcher::float_pressure_limit() > 8) {
+          C->set_major_progress();
+          cl->mark_do_unroll_only();
         }
       }
     }
@@ -3018,107 +2867,6 @@ bool SuperWord::output() {
   return true;
 }
 
-//-------------------------create_post_loop_vmask-------------------------
-// Check the post loop vectorizability and create a vector mask if yes.
-// Return null to bail out if post loop is not vectorizable.
-Node* SuperWord::create_post_loop_vmask() {
-  CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
-  assert(cl->is_rce_post_loop(), "Must be an rce post loop");
-  assert(!is_marked_reduction_loop(), "no vector reduction in post loop");
-  assert(abs(cl->stride_con()) == 1, "post loop stride can only be +/-1");
-
-  // Collect vector element types of all post loop packs. Also collect
-  // superword pointers of each memory access operation if the address
-  // expression is supported. (Note that vectorizable post loop should
-  // only have positive scale in counting-up loop and negative scale in
-  // counting-down loop.) Collected SWPointer(s) are also used for data
-  // dependence check next.
-  VectorElementSizeStats stats(_arena);
-  GrowableArray<SWPointer*> swptrs(_arena, _packset.length(), 0, nullptr);
-  for (int i = 0; i < _packset.length(); i++) {
-    Node_List* p = _packset.at(i);
-    assert(p->size() == 1, "all post loop packs should be singleton");
-    Node* n = p->at(0);
-    BasicType bt = velt_basic_type(n);
-    if (!is_java_primitive(bt)) {
-      return nullptr;
-    }
-    if (n->is_Mem()) {
-      SWPointer* mem_p = new (_arena) SWPointer(n->as_Mem(), this, nullptr, false);
-      // For each memory access, we check if the scale (in bytes) in its
-      // address expression is equal to the data size times loop stride.
-      // With this, Only positive scales exist in counting-up loops and
-      // negative scales exist in counting-down loops.
-      if (mem_p->scale_in_bytes() != type2aelembytes(bt) * cl->stride_con()) {
-        return nullptr;
-      }
-      swptrs.append(mem_p);
-    }
-    stats.record_size(type2aelembytes(bt));
-  }
-
-  // Find the vector data type for generating vector masks. Currently we
-  // don't support post loops with mixed vector data sizes
-  int unique_size = stats.unique_size();
-  BasicType vmask_bt;
-  switch (unique_size) {
-    case 1:  vmask_bt = T_BYTE; break;
-    case 2:  vmask_bt = T_SHORT; break;
-    case 4:  vmask_bt = T_INT; break;
-    case 8:  vmask_bt = T_LONG; break;
-    default: return nullptr;
-  }
-
-  // Currently we can't remove this MaxVectorSize constraint. Without it,
-  // it's not guaranteed that the RCE'd post loop runs at most "vlen - 1"
-  // iterations, because the vector drain loop may not be cloned from the
-  // vectorized main loop. We should re-engineer PostLoopMultiversioning
-  // to fix this problem.
-  int vlen = cl->slp_max_unroll();
-  if (unique_size * vlen != MaxVectorSize) {
-    return nullptr;
-  }
-
-  // Bail out if target doesn't support mask generator or masked load/store
-  if (!Matcher::match_rule_supported_vector(Op_LoadVectorMasked, vlen, vmask_bt)  ||
-      !Matcher::match_rule_supported_vector(Op_StoreVectorMasked, vlen, vmask_bt) ||
-      !Matcher::match_rule_supported_vector(Op_VectorMaskGen, vlen, vmask_bt)) {
-    return nullptr;
-  }
-
-  // Bail out if potential data dependence exists between memory accesses
-  if (SWPointer::has_potential_dependence(swptrs)) {
-    return nullptr;
-  }
-
-  // Create vector mask with the post loop trip count. Note there's another
-  // vector drain loop which is cloned from main loop before super-unrolling
-  // so the scalar post loop runs at most vlen-1 trips. Hence, this version
-  // only runs at most 1 iteration after vector mask transformation.
-  Node* trip_cnt;
-  Node* new_incr;
-  if (cl->stride_con() > 0) {
-    trip_cnt = new SubINode(cl->limit(), cl->init_trip());
-    new_incr = new AddINode(cl->phi(), trip_cnt);
-  } else {
-    trip_cnt = new SubINode(cl->init_trip(), cl->limit());
-    new_incr = new SubINode(cl->phi(), trip_cnt);
-  }
-  _igvn.register_new_node_with_optimizer(trip_cnt);
-  _igvn.register_new_node_with_optimizer(new_incr);
-  _igvn.replace_node(cl->incr(), new_incr);
-  Node* length = new ConvI2LNode(trip_cnt);
-  _igvn.register_new_node_with_optimizer(length);
-  Node* vmask = VectorMaskGenNode::make(length, vmask_bt);
-  _igvn.register_new_node_with_optimizer(vmask);
-
-  // Remove exit test to transform 1-iteration loop to straight-line code.
-  // This results in redundant cmp+branch instructions been eliminated.
-  Node *cl_exit = cl->loopexit();
-  _igvn.replace_input_of(cl_exit, 1, _igvn.intcon(0));
-  return vmask;
-}
-
 //------------------------------vector_opd---------------------------
 // Create a vector operand for the nodes in pack p for operand: in(opd_idx)
 Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
@@ -3128,19 +2876,11 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
   CountedLoopNode *cl = lpt()->_head->as_CountedLoop();
   bool have_same_inputs = same_inputs(p, opd_idx);
 
-  if (cl->is_rce_post_loop()) {
-    // override vlen with the main loops vector length
-    assert(p->size() == 1, "Packs in post loop should have only one node");
-    vlen = cl->slp_max_unroll();
-  }
-
   // Insert index population operation to create a vector of increasing
   // indices starting from the iv value. In some special unrolled loops
   // (see JDK-8286125), we need scalar replications of the iv value if
-  // all inputs are the same iv, so we do a same inputs check here. But
-  // in post loops, "have_same_inputs" is always true because all packs
-  // are singleton. That's why a pack size check is also required.
-  if (opd == iv() && (!have_same_inputs || p->size() == 1)) {
+  // all inputs are the same iv, so we do a same inputs check here.
+  if (opd == iv() && !have_same_inputs) {
     BasicType p0_bt = velt_basic_type(p0);
     BasicType iv_bt = is_subword_type(p0_bt) ? p0_bt : T_INT;
     assert(VectorNode::is_populate_index_supported(iv_bt), "Should support");
@@ -3757,7 +3497,7 @@ int SuperWord::memory_alignment(MemNode* s, int iv_adjust) {
   int off_mod = off_rem >= 0 ? off_rem : off_rem + vw;
 #ifndef PRODUCT
   if ((TraceSuperWord && Verbose) || is_trace_alignment()) {
-    tty->print_cr("SWPointer::memory_alignment: off_rem = %d, off_mod = %d", off_rem, off_mod);
+    tty->print_cr("SWPointer::memory_alignment: off_rem = %d, off_mod = %d (offset = %d)", off_rem, off_mod, offset);
   }
 #endif
   return off_mod;
@@ -3965,7 +3705,10 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
       invar = new ConvL2INode(invar);
       _igvn.register_new_node_with_optimizer(invar);
     }
-    e = new URShiftINode(invar, log2_elt);
+    Node* aref = new URShiftINode(invar, log2_elt);
+    _igvn.register_new_node_with_optimizer(aref);
+    _phase->set_ctrl(aref, pre_ctrl);
+    e =  new AddINode(e, aref);
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
@@ -4053,7 +3796,6 @@ void SuperWord::init() {
   _packset.clear();
   _disjoint_ptrs.clear();
   _block.clear();
-  _post_block.clear();
   _data_entry.clear();
   _mem_slice_head.clear();
   _mem_slice_tail.clear();
@@ -4472,34 +4214,6 @@ void SWPointer::maybe_add_to_invar(Node* new_invar, bool negate) {
   }
   Node* add = AddNode::make(current_invar, new_invar, bt);
   _invar = register_if_new(add);
-}
-
-//-----------------has_potential_dependence-----------------
-// Check potential data dependence among all memory accesses.
-// We require every two accesses (with at least one store) of
-// the same element type has the same address expression.
-bool SWPointer::has_potential_dependence(GrowableArray<SWPointer*> swptrs) {
-  for (int i1 = 0; i1 < swptrs.length(); i1++) {
-    SWPointer* p1 = swptrs.at(i1);
-    MemNode* n1 = p1->mem();
-    BasicType bt1 = n1->memory_type();
-
-    // Iterate over remaining SWPointers
-    for (int i2 = i1 + 1; i2 < swptrs.length(); i2++) {
-      SWPointer* p2 = swptrs.at(i2);
-      MemNode* n2 = p2->mem();
-      BasicType bt2 = n2->memory_type();
-
-      // Data dependence exists between load-store, store-load
-      // or store-store with the same element type or subword
-      // size (subword load/store may have inaccurate type)
-      if ((n1->is_Store() || n2->is_Store()) &&
-          same_type_or_subword_size(bt1, bt2) && !p1->equal(*p2)) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 //----------------------------print------------------------

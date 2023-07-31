@@ -27,6 +27,7 @@
 #include "code/relocInfo.hpp"
 #include "memory/universe.hpp"
 #include "nativeInst_x86.hpp"
+#include "oops/compressedKlass.inline.hpp"
 #include "oops/compressedOops.inline.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/oop.inline.hpp"
@@ -73,7 +74,7 @@ void Relocation::pd_set_data_value(address x, intptr_t o, bool verify_only) {
     if (verify_only) {
       guarantee(*(int32_t*) disp == (x - next_ip), "instructions must match");
     } else {
-      *(int32_t*) disp = x - next_ip;
+      *(int32_t*) disp = checked_cast<int32_t>(x - next_ip);
     }
   }
 #else
@@ -130,7 +131,7 @@ void Relocation::pd_set_call_destination(address x) {
     // %%%% kludge this, for now, until we get a jump_destination method
     address old_dest = nativeGeneralJump_at(addr())->jump_destination();
     address disp = Assembler::locate_operand(addr(), Assembler::call32_operand);
-    *(jint*)disp += (x - old_dest);
+    *(jint*)disp += checked_cast<jint>(x - old_dest);
   } else if (ni->is_mov_literal64()) {
     ((NativeMovConstReg*)ni)->set_data((intptr_t)x);
   } else {

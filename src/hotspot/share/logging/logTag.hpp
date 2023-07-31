@@ -45,6 +45,7 @@ class outputStream;
   LOG_TAG(bot) \
   LOG_TAG(breakpoint) \
   LOG_TAG(bytecode) \
+  LOG_TAG(cause) \
   LOG_TAG(cds) \
   LOG_TAG(census) \
   LOG_TAG(class) \
@@ -124,6 +125,7 @@ class outputStream;
   LOG_TAG(module) \
   LOG_TAG(monitorinflation) \
   LOG_TAG(monitormismatch) \
+  LOG_TAG(native) \
   LOG_TAG(nestmates) \
   LOG_TAG(nmethod) \
   LOG_TAG(nmt) \
@@ -196,7 +198,9 @@ class outputStream;
   LOG_TAG(timer) \
   LOG_TAG(tlab) \
   LOG_TAG(tracking) \
+  LOG_TAG(trimnative) /* trim native heap */ \
   LOG_TAG(unload) /* Trace unloading of classes */ \
+  LOG_TAG(unmap) \
   LOG_TAG(unshareable) \
   NOT_PRODUCT(LOG_TAG(upcall)) \
   LOG_TAG(update) \

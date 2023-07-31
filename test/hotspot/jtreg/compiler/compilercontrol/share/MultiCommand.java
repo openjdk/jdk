@@ -56,6 +56,7 @@ public class MultiCommand extends AbstractTestBase {
         List<CompileCommand> testCases = new ArrayList<>();
 
         for (Command cmd : commands) {
+            boolean isValid = true;
             String argument = null;
 
             if (validOnly && cmd == Command.NONEXISTENT) {
@@ -67,6 +68,7 @@ public class MultiCommand extends AbstractTestBase {
                     argument = Utils.getRandomElement(VALID_INTRINSIC_SAMPLES);
                 } else {
                     argument = Utils.getRandomElement(INVALID_INTRINSIC_SAMPLES);
+                    isValid = false;
                 }
             }
 
@@ -78,12 +80,13 @@ public class MultiCommand extends AbstractTestBase {
                 md = AbstractTestBase.getValidMethodDescriptor(exec);
             } else {
                 md = AbstractTestBase.METHOD_GEN.generateRandomDescriptor(exec);
+                isValid &= md.isValid();
             }
             CompileCommand cc;
             if (cmd == Command.INTRINSIC) {
-                cc = cmdGen.generateCompileCommand(cmd, true, md, null, argument);
+                cc = cmdGen.generateCompileCommand(cmd, isValid, md, null, argument);
             } else {
-                cc = cmdGen.generateCompileCommand(cmd, true, md, null);
+                cc = cmdGen.generateCompileCommand(cmd, isValid, md, null);
             }
             testCases.add(cc);
         }
