@@ -217,8 +217,8 @@ int Bytecode_loadconstant::pool_index() const {
 }
 
 BasicType Bytecode_loadconstant::result_type() const {
-  int index = pool_index();
-  return _method->constants()->basic_type_for_constant_at(index);
+  int cp_index = pool_index();
+  return _method->constants()->basic_type_for_constant_at(cp_index);
 }
 
 oop Bytecode_loadconstant::resolve_constant(TRAPS) const {
