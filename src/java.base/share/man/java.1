@@ -36,7 +36,7 @@
 . ftr VB CB
 . ftr VBI CBI
 .\}
-.TH "JAVA" "1" "2023" "JDK 21-ea" "JDK Commands"
+.TH "JAVA" "1" "2023" "JDK 21" "JDK Commands"
 .hy
 .SH NAME
 .PP
@@ -530,26 +530,27 @@ The value \[dq]disabled\[dq] disables finalization, so that no
 finalizers are invoked.
 .TP
 \f[V]--module-path\f[R] \f[I]modulepath\f[R]... or \f[V]-p\f[R] \f[I]modulepath\f[R]
-Specifies where to find application modules with a list of path elements.
-The elements of a module path can be a file path to a module or a directory
-containing modules. Each module is either a modular JAR or an
-exploded-module directory.
+Specifies where to find application modules with a list of path
+elements.
+The elements of a module path can be a file path to a module or a
+directory containing modules.
+Each module is either a modular JAR or an exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
-on other platforms it is a colon (\f[V]:\f[R]).
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this
+list; on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP
 \f[V]--upgrade-module-path\f[R] \f[I]modulepath\f[R]...
-Specifies where to find module replacements of upgradeable modules in the
-runtime image with a list of path elements.
-The elements of a module path can be a file path to a module or a directory
-containing modules. Each module is either a modular JAR or an
-exploded-module directory.
+Specifies where to find module replacements of upgradeable modules in
+the runtime image with a list of path elements.
+The elements of a module path can be a file path to a module or a
+directory containing modules.
+Each module is either a modular JAR or an exploded-module directory.
 .RS
 .PP
-On Windows, semicolons (\f[V];\f[R]) separate path elements in this list;
-on other platforms it is a colon (\f[V]:\f[R]).
+On Windows, semicolons (\f[V];\f[R]) separate path elements in this
+list; on other platforms it is a colon (\f[V]:\f[R]).
 .RE
 .TP
 \f[V]--add-modules\f[R] \f[I]module\f[R][\f[V],\f[R]\f[I]module\f[R]...]
@@ -1305,6 +1306,7 @@ By default this option is disabled.
 .TP
 \f[V]-XX:FlightRecorderOptions=\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R] (or) \f[V]-XX:FlightRecorderOptions:\f[R]\f[I]parameter\f[R]\f[V]=\f[R]\f[I]value\f[R]
 Sets the parameters that control the behavior of JFR.
+Multiple parameters can be specified by separating them with a comma.
 .RS
 .PP
 The following list contains the available JFR
@@ -1370,9 +1372,6 @@ By default, the local buffer size is set to 8 kilobytes, with a minimum
 value of 4 kilobytes.
 Overriding this parameter could reduce performance and is not
 recommended.
-.PP
-You can specify values for multiple parameters by separating them with a
-comma.
 .RE
 .TP
 \f[V]-XX:LargePageSizeInBytes=\f[R]\f[I]size\f[R]
@@ -1659,6 +1658,9 @@ written when the recording is stopped, for example:
 \f[V]/home/user/recordings/recording.jfr\f[R]
 .IP \[bu] 2
 \f[V]c:\[rs]recordings\[rs]recording.jfr\f[R]
+.PP
+If %p and/or %t is specified in the filename, it expands to the
+JVM\[aq]s PID and the current timestamp, respectively.
 .RE
 .TP
 \f[V]name=\f[R]\f[I]identifier\f[R]
