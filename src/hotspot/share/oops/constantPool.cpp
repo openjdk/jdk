@@ -234,12 +234,12 @@ void ConstantPool::allocate_resolved_klasses(ClassLoaderData* loader_data, int n
 void ConstantPool::initialize_unresolved_klasses(ClassLoaderData* loader_data, TRAPS) {
   int len = length();
   int num_klasses = 0;
-  for (int cp_index = 1; cp_index <len; cp_index++) {
-    switch (tag_at(cp_index).value()) {
+  for (int i = 1; i <len; i++) {
+    switch (tag_at(i).value()) {
     case JVM_CONSTANT_ClassIndex:
       {
-        const int class_index = klass_index_at(cp_index);
-        unresolved_klass_at_put(cp_index, class_index, num_klasses++);
+        const int class_index = klass_index_at(i);
+        unresolved_klass_at_put(i, class_index, num_klasses++);
       }
       break;
 #ifndef PRODUCT
@@ -942,7 +942,7 @@ BasicType ConstantPool::basic_type_for_constant_at(int cp_index) {
 // Some constant pool entries cache their resolved oop. This is also
 // called to create oops from constants to use in arguments for invokedynamic
 oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
-                                           int cp_index, int cache_index,
+                                           int index, int cache_index,
                                            bool* status_return, TRAPS) {
   oop result_oop = nullptr;
 
@@ -951,17 +951,17 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
     // We'll do a linear search.  This should be OK because this usage is rare.
     // FIXME: If bootstrap specifiers stress this code, consider putting in
     // a reverse index.  Binary search over a short array should do it.
-    assert(cp_index > 0, "valid index");
-    cache_index = this_cp->cp_to_object_index(cp_index);
+    assert(index > 0, "valid index");
+    cache_index = this_cp->cp_to_object_index(index);
   }
   assert(cache_index == _no_index_sentinel || cache_index >= 0, "");
-  assert(cp_index == _no_index_sentinel || cp_index >= 0, "");
+  assert(index == _no_index_sentinel || index >= 0, "");
 
   if (cache_index >= 0) {
     result_oop = this_cp->resolved_reference_at(cache_index);
     if (result_oop != nullptr) {
       if (result_oop == Universe::the_null_sentinel()) {
-        DEBUG_ONLY(int temp_index = (cp_index >= 0 ? cp_index : this_cp->object_to_cp_index(cache_index)));
+        DEBUG_ONLY(int temp_index = (index >= 0 ? index : this_cp->object_to_cp_index(cache_index)));
         assert(this_cp->tag_at(temp_index).is_dynamic_constant(), "only condy uses the null sentinel");
         result_oop = nullptr;
       }
@@ -969,19 +969,19 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
       return result_oop;
       // That was easy...
     }
-    cp_index = this_cp->object_to_cp_index(cache_index);
+    index = this_cp->object_to_cp_index(cache_index);
   }
 
   jvalue prim_value;  // temp used only in a few cases below
 
-  constantTag tag = this_cp->tag_at(cp_index);
+  constantTag tag = this_cp->tag_at(index);
 
   if (status_return != nullptr) {
     // don't trigger resolution if the constant might need it
     switch (tag.value()) {
     case JVM_CONSTANT_Class:
     {
-      CPKlassSlot kslot = this_cp->klass_slot_at(cp_index);
+      CPKlassSlot kslot = this_cp->klass_slot_at(index);
       int resolved_klass_index = kslot.resolved_klass_index();
       if (this_cp->resolved_klasses()->at(resolved_klass_index) == nullptr) {
         (*status_return) = false;
@@ -1011,7 +1011,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
   case JVM_CONSTANT_Class:
     {
       assert(cache_index == _no_index_sentinel, "should not have been set");
-      Klass* resolved = klass_at_impl(this_cp, cp_index, CHECK_NULL);
+      Klass* resolved = klass_at_impl(this_cp, index, CHECK_NULL);
       // ldc wants the java mirror.
       result_oop = resolved->java_mirror();
       break;
@@ -1020,7 +1020,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
   case JVM_CONSTANT_Dynamic:
     {
       // Resolve the Dynamically-Computed constant to invoke the BSM in order to obtain the resulting oop.
-      BootstrapInfo bootstrap_specifier(this_cp, cp_index);
+      BootstrapInfo bootstrap_specifier(this_cp, index);
 
       // The initial step in resolving an unresolved symbolic reference to a
       // dynamically-computed constant is to resolve the symbolic reference to a
@@ -1038,7 +1038,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
       if (HAS_PENDING_EXCEPTION) {
         // Resolution failure of the dynamically-computed constant, save_and_throw_exception
         // will check for a LinkageError and store a DynamicConstantInError.
-        save_and_throw_exception(this_cp, cp_index, tag, CHECK_NULL);
+        save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
       result_oop = bootstrap_specifier.resolved_value()();
       BasicType type = Signature::basic_type(bootstrap_specifier.signature());
@@ -1072,25 +1072,25 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
 
   case JVM_CONSTANT_String:
     assert(cache_index != _no_index_sentinel, "should have been set");
-    result_oop = string_at_impl(this_cp, cp_index, cache_index, CHECK_NULL);
+    result_oop = string_at_impl(this_cp, index, cache_index, CHECK_NULL);
     break;
 
   case JVM_CONSTANT_MethodHandle:
     {
-      int ref_kind                 = this_cp->method_handle_ref_kind_at(cp_index);
-      int callee_index             = this_cp->method_handle_klass_index_at(cp_index);
-      Symbol*  name =      this_cp->method_handle_name_ref_at(cp_index);
-      Symbol*  signature = this_cp->method_handle_signature_ref_at(cp_index);
-      constantTag m_tag  = this_cp->tag_at(this_cp->method_handle_index_at(cp_index));
+      int ref_kind                 = this_cp->method_handle_ref_kind_at(index);
+      int callee_index             = this_cp->method_handle_klass_index_at(index);
+      Symbol*  name =      this_cp->method_handle_name_ref_at(index);
+      Symbol*  signature = this_cp->method_handle_signature_ref_at(index);
+      constantTag m_tag  = this_cp->tag_at(this_cp->method_handle_index_at(index));
       { ResourceMark rm(THREAD);
         log_debug(class, resolve)("resolve JVM_CONSTANT_MethodHandle:%d [%d/%d/%d] %s.%s",
-                              ref_kind, cp_index, this_cp->method_handle_index_at(cp_index),
+                              ref_kind, index, this_cp->method_handle_index_at(index),
                               callee_index, name->as_C_string(), signature->as_C_string());
       }
 
       Klass* callee = klass_at_impl(this_cp, callee_index, THREAD);
       if (HAS_PENDING_EXCEPTION) {
-        save_and_throw_exception(this_cp, cp_index, tag, CHECK_NULL);
+        save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
 
       // Check constant pool method consistency
@@ -1104,11 +1104,11 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
         ss.print(" %s(", name->as_C_string());
         signature->print_as_signature_external_parameters(&ss);
         ss.print(")' at index %d is %s and should be %s",
-                 cp_index,
+                 index,
                  callee->is_interface() ? "CONSTANT_MethodRef" : "CONSTANT_InterfaceMethodRef",
                  callee->is_interface() ? "CONSTANT_InterfaceMethodRef" : "CONSTANT_MethodRef");
         Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_IncompatibleClassChangeError(), "%s", ss.as_string());
-        save_and_throw_exception(this_cp, cp_index, tag, CHECK_NULL);
+        save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
 
       Klass* klass = this_cp->pool_holder();
@@ -1117,7 +1117,7 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
                                                                    callee, name, signature,
                                                                    THREAD);
       if (HAS_PENDING_EXCEPTION) {
-        save_and_throw_exception(this_cp, cp_index, tag, CHECK_NULL);
+        save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
       result_oop = value();
       break;
@@ -1125,10 +1125,10 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
 
   case JVM_CONSTANT_MethodType:
     {
-      Symbol*  signature = this_cp->method_type_signature_at(cp_index);
+      Symbol*  signature = this_cp->method_type_signature_at(index);
       { ResourceMark rm(THREAD);
         log_debug(class, resolve)("resolve JVM_CONSTANT_MethodType [%d/%d] %s",
-                              cp_index, this_cp->method_type_index_at(cp_index),
+                              index, this_cp->method_type_index_at(index),
                               signature->as_C_string());
       }
       Klass* klass = this_cp->pool_holder();
@@ -1136,32 +1136,32 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
       Handle value = SystemDictionary::find_method_handle_type(signature, klass, THREAD);
       result_oop = value();
       if (HAS_PENDING_EXCEPTION) {
-        save_and_throw_exception(this_cp, cp_index, tag, CHECK_NULL);
+        save_and_throw_exception(this_cp, index, tag, CHECK_NULL);
       }
       break;
     }
 
   case JVM_CONSTANT_Integer:
     assert(cache_index == _no_index_sentinel, "should not have been set");
-    prim_value.i = this_cp->int_at(cp_index);
+    prim_value.i = this_cp->int_at(index);
     result_oop = java_lang_boxing_object::create(T_INT, &prim_value, CHECK_NULL);
     break;
 
   case JVM_CONSTANT_Float:
     assert(cache_index == _no_index_sentinel, "should not have been set");
-    prim_value.f = this_cp->float_at(cp_index);
+    prim_value.f = this_cp->float_at(index);
     result_oop = java_lang_boxing_object::create(T_FLOAT, &prim_value, CHECK_NULL);
     break;
 
   case JVM_CONSTANT_Long:
     assert(cache_index == _no_index_sentinel, "should not have been set");
-    prim_value.j = this_cp->long_at(cp_index);
+    prim_value.j = this_cp->long_at(index);
     result_oop = java_lang_boxing_object::create(T_LONG, &prim_value, CHECK_NULL);
     break;
 
   case JVM_CONSTANT_Double:
     assert(cache_index == _no_index_sentinel, "should not have been set");
-    prim_value.d = this_cp->double_at(cp_index);
+    prim_value.d = this_cp->double_at(index);
     result_oop = java_lang_boxing_object::create(T_DOUBLE, &prim_value, CHECK_NULL);
     break;
 
@@ -1169,11 +1169,11 @@ oop ConstantPool::resolve_constant_at_impl(const constantPoolHandle& this_cp,
   case JVM_CONSTANT_DynamicInError:
   case JVM_CONSTANT_MethodHandleInError:
   case JVM_CONSTANT_MethodTypeInError:
-    throw_resolution_error(this_cp, cp_index, CHECK_NULL);
+    throw_resolution_error(this_cp, index, CHECK_NULL);
     break;
 
   default:
-    fatal("unexpected constant tag at CP %p[%d/%d] = %d", this_cp(), cp_index, cache_index, tag.value());
+    fatal("unexpected constant tag at CP %p[%d/%d] = %d", this_cp(), index, cache_index, tag.value());
     break;
   }
 
@@ -1612,13 +1612,13 @@ void ConstantPool::copy_operands(const constantPoolHandle& from_cp,
 // Copy this constant pool's entries at start_i to end_i (inclusive)
 // to the constant pool to_cp's entries starting at to_i. A total of
 // (end_i - start_i) + 1 entries are copied.
-void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_cpi, int end_cpi,
-       const constantPoolHandle& to_cp, int to_cpi, TRAPS) {
+void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_i, int end_i,
+       const constantPoolHandle& to_cp, int to_i, TRAPS) {
 
 
-  int dest_cpi = to_cpi;  // leave original alone for debug purposes
+  int dest_cpi = to_i;  // leave original alone for debug purposes
 
-  for (int src_cpi = start_cpi; src_cpi <= end_cpi; /* see loop bottom */ ) {
+  for (int src_cpi = start_i; src_cpi <= end_i; /* see loop bottom */ ) {
     copy_entry_to(from_cp, src_cpi, to_cp, dest_cpi);
 
     switch (from_cp->tag_at(src_cpi).value()) {
@@ -1643,77 +1643,77 @@ void ConstantPool::copy_cp_to_impl(const constantPoolHandle& from_cp, int start_
 
 // Copy this constant pool's entry at from_i to the constant pool
 // to_cp's entry at to_i.
-void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_cpi,
-                                        const constantPoolHandle& to_cp, int to_cpi) {
+void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_i,
+                                        const constantPoolHandle& to_cp, int to_i) {
 
-  int tag = from_cp->tag_at(from_cpi).value();
+  int tag = from_cp->tag_at(from_i).value();
   switch (tag) {
   case JVM_CONSTANT_ClassIndex:
   {
-    jint ki = from_cp->klass_index_at(from_cpi);
-    to_cp->klass_index_at_put(to_cpi, ki);
+    jint ki = from_cp->klass_index_at(from_i);
+    to_cp->klass_index_at_put(to_i, ki);
   } break;
 
   case JVM_CONSTANT_Double:
   {
-    jdouble d = from_cp->double_at(from_cpi);
-    to_cp->double_at_put(to_cpi, d);
+    jdouble d = from_cp->double_at(from_i);
+    to_cp->double_at_put(to_i, d);
     // double takes two constant pool entries so init second entry's tag
-    to_cp->tag_at_put(to_cpi + 1, JVM_CONSTANT_Invalid);
+    to_cp->tag_at_put(to_i + 1, JVM_CONSTANT_Invalid);
   } break;
 
   case JVM_CONSTANT_Fieldref:
   {
-    int class_index = from_cp->uncached_klass_ref_index_at(from_cpi);
-    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_cpi);
-    to_cp->field_at_put(to_cpi, class_index, name_and_type_index);
+    int class_index = from_cp->uncached_klass_ref_index_at(from_i);
+    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_i);
+    to_cp->field_at_put(to_i, class_index, name_and_type_index);
   } break;
 
   case JVM_CONSTANT_Float:
   {
-    jfloat f = from_cp->float_at(from_cpi);
-    to_cp->float_at_put(to_cpi, f);
+    jfloat f = from_cp->float_at(from_i);
+    to_cp->float_at_put(to_i, f);
   } break;
 
   case JVM_CONSTANT_Integer:
   {
-    jint i = from_cp->int_at(from_cpi);
-    to_cp->int_at_put(to_cpi, i);
+    jint i = from_cp->int_at(from_i);
+    to_cp->int_at_put(to_i, i);
   } break;
 
   case JVM_CONSTANT_InterfaceMethodref:
   {
-    int class_index = from_cp->uncached_klass_ref_index_at(from_cpi);
-    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_cpi);
-    to_cp->interface_method_at_put(to_cpi, class_index, name_and_type_index);
+    int class_index = from_cp->uncached_klass_ref_index_at(from_i);
+    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_i);
+    to_cp->interface_method_at_put(to_i, class_index, name_and_type_index);
   } break;
 
   case JVM_CONSTANT_Long:
   {
-    jlong l = from_cp->long_at(from_cpi);
-    to_cp->long_at_put(to_cpi, l);
+    jlong l = from_cp->long_at(from_i);
+    to_cp->long_at_put(to_i, l);
     // long takes two constant pool entries so init second entry's tag
-    to_cp->tag_at_put(to_cpi + 1, JVM_CONSTANT_Invalid);
+    to_cp->tag_at_put(to_i + 1, JVM_CONSTANT_Invalid);
   } break;
 
   case JVM_CONSTANT_Methodref:
   {
-    int class_index = from_cp->uncached_klass_ref_index_at(from_cpi);
-    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_cpi);
-    to_cp->method_at_put(to_cpi, class_index, name_and_type_index);
+    int class_index = from_cp->uncached_klass_ref_index_at(from_i);
+    int name_and_type_index = from_cp->uncached_name_and_type_ref_index_at(from_i);
+    to_cp->method_at_put(to_i, class_index, name_and_type_index);
   } break;
 
   case JVM_CONSTANT_NameAndType:
   {
-    int name_ref_index = from_cp->name_ref_index_at(from_cpi);
-    int signature_ref_index = from_cp->signature_ref_index_at(from_cpi);
-    to_cp->name_and_type_at_put(to_cpi, name_ref_index, signature_ref_index);
+    int name_ref_index = from_cp->name_ref_index_at(from_i);
+    int signature_ref_index = from_cp->signature_ref_index_at(from_i);
+    to_cp->name_and_type_at_put(to_i, name_ref_index, signature_ref_index);
   } break;
 
   case JVM_CONSTANT_StringIndex:
   {
-    jint si = from_cp->string_index_at(from_cpi);
-    to_cp->string_index_at_put(to_cpi, si);
+    jint si = from_cp->string_index_at(from_i);
+    to_cp->string_index_at_put(to_i, si);
   } break;
 
   case JVM_CONSTANT_Class:
@@ -1721,55 +1721,55 @@ void ConstantPool::copy_entry_to(const constantPoolHandle& from_cp, int from_cpi
   case JVM_CONSTANT_UnresolvedClassInError:
   {
     // Revert to JVM_CONSTANT_ClassIndex
-    int name_index = from_cp->klass_slot_at(from_cpi).name_index();
+    int name_index = from_cp->klass_slot_at(from_i).name_index();
     assert(from_cp->tag_at(name_index).is_symbol(), "sanity");
-    to_cp->klass_index_at_put(to_cpi, name_index);
+    to_cp->klass_index_at_put(to_i, name_index);
   } break;
 
   case JVM_CONSTANT_String:
   {
-    Symbol* s = from_cp->unresolved_string_at(from_cpi);
-    to_cp->unresolved_string_at_put(to_cpi, s);
+    Symbol* s = from_cp->unresolved_string_at(from_i);
+    to_cp->unresolved_string_at_put(to_i, s);
   } break;
 
   case JVM_CONSTANT_Utf8:
   {
-    Symbol* s = from_cp->symbol_at(from_cpi);
+    Symbol* s = from_cp->symbol_at(from_i);
     // Need to increase refcount, the old one will be thrown away and deferenced
     s->increment_refcount();
-    to_cp->symbol_at_put(to_cpi, s);
+    to_cp->symbol_at_put(to_i, s);
   } break;
 
   case JVM_CONSTANT_MethodType:
   case JVM_CONSTANT_MethodTypeInError:
   {
-    jint k = from_cp->method_type_index_at(from_cpi);
-    to_cp->method_type_index_at_put(to_cpi, k);
+    jint k = from_cp->method_type_index_at(from_i);
+    to_cp->method_type_index_at_put(to_i, k);
   } break;
 
   case JVM_CONSTANT_MethodHandle:
   case JVM_CONSTANT_MethodHandleInError:
   {
-    int k1 = from_cp->method_handle_ref_kind_at(from_cpi);
-    int k2 = from_cp->method_handle_index_at(from_cpi);
-    to_cp->method_handle_index_at_put(to_cpi, k1, k2);
+    int k1 = from_cp->method_handle_ref_kind_at(from_i);
+    int k2 = from_cp->method_handle_index_at(from_i);
+    to_cp->method_handle_index_at_put(to_i, k1, k2);
   } break;
 
   case JVM_CONSTANT_Dynamic:
   case JVM_CONSTANT_DynamicInError:
   {
-    int k1 = from_cp->bootstrap_methods_attribute_index(from_cpi);
-    int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_cpi);
+    int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
+    int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
     k1 += operand_array_length(to_cp->operands());  // to_cp might already have operands
-    to_cp->dynamic_constant_at_put(to_cpi, k1, k2);
+    to_cp->dynamic_constant_at_put(to_i, k1, k2);
   } break;
 
   case JVM_CONSTANT_InvokeDynamic:
   {
-    int k1 = from_cp->bootstrap_methods_attribute_index(from_cpi);
-    int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_cpi);
+    int k1 = from_cp->bootstrap_methods_attribute_index(from_i);
+    int k2 = from_cp->bootstrap_name_and_type_ref_index_at(from_i);
     k1 += operand_array_length(to_cp->operands());  // to_cp might already have operands
-    to_cp->invoke_dynamic_at_put(to_cpi, k1, k2);
+    to_cp->invoke_dynamic_at_put(to_i, k1, k2);
   } break;
 
   // Invalid is used as the tag for the second constant pool entry
