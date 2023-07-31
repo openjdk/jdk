@@ -37,6 +37,7 @@ public class UnnamedLocalVariableTable {
                 System.err.println("1");
             }
             I i = _ -> {};
+            java.util.List<String> _ = null;
         } catch (Exception _) {
             System.err.println("2");
         }
