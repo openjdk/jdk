@@ -29,6 +29,7 @@
 #include "gc/g1/g1ConcurrentRefineThreadsNeeded.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
+#include "runtime/perfData.hpp"
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/macros.hpp"
 
@@ -45,6 +46,9 @@ class G1ConcurrentRefineThreadControl {
   G1ConcurrentRefine* _cr;
   G1ConcurrentRefineThread** _threads;
   uint _max_num_threads;
+
+    // Perf data for CPU time consumed by concurrent refine threads.
+  PerfVariable* _g1_concurrent_refine_threads_cpu_time;
 
   // Create the refinement thread for the given worker id.
   // If initializing is true, ignore InjectGCWorkerCreationFailure.
@@ -71,6 +75,9 @@ public:
 
   void worker_threads_do(ThreadClosure* tc);
   void stop();
+
+  // Update the perf data counter _g1_concurrent_refine_threads_cpu_time.
+  void update_threads_cpu_time();
 };
 
 // Controls concurrent refinement.
@@ -218,6 +225,10 @@ public:
 
   // Maximum number of refinement threads.
   static uint max_num_threads();
+
+  // Update the perf data counter
+  // G1ConcurrentRefineThreadControl::_g1_concurrent_refine_threads_cpu_time
+  void update_concurrent_refine_threads_cpu_time();
 };
 
 #endif // SHARE_GC_G1_G1CONCURRENTREFINE_HPP

@@ -31,6 +31,7 @@
 #include "utilities/exceptions.hpp"
 
 StringDedupThread::StringDedupThread() : JavaThread(thread_entry) {}
+PerfVariable* StringDedupThread::_g1_concurrent_dedup_thread_cpu_time = NULL;
 
 void StringDedupThread::initialize() {
   EXCEPTION_MARK;

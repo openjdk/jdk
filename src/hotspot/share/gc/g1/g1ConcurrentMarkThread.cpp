@@ -134,6 +134,8 @@ void G1ConcurrentMarkThread::run_service() {
     concurrent_cycle_end(_state == FullMark && !_cm->has_aborted());
 
     _vtime_accum = (os::elapsedVTime() - _vtime_start);
+
+    cm()->update_concurrent_mark_threads_cpu_time();
   }
   _cm->root_regions()->cancel_scan();
 }
@@ -169,6 +171,7 @@ bool G1ConcurrentMarkThread::phase_clear_cld_claimed_marks() {
 bool G1ConcurrentMarkThread::phase_scan_root_regions() {
   G1ConcPhaseTimer p(_cm, "Concurrent Scan Root Regions");
   _cm->scan_root_regions();
+  cm()->update_concurrent_mark_threads_cpu_time();
   return _cm->has_aborted();
 }
 
@@ -228,6 +231,7 @@ bool G1ConcurrentMarkThread::subphase_delay_to_keep_mmu_before_remark() {
 
 bool G1ConcurrentMarkThread::subphase_remark() {
   ConcurrentGCBreakpoints::at("BEFORE MARKING COMPLETED");
+  cm()->update_concurrent_mark_threads_cpu_time();
   VM_G1PauseRemark op;
   VMThread::execute(&op);
   return _cm->has_aborted();
@@ -237,6 +241,7 @@ bool G1ConcurrentMarkThread::phase_rebuild_and_scrub() {
   ConcurrentGCBreakpoints::at("AFTER REBUILD STARTED");
   G1ConcPhaseTimer p(_cm, "Concurrent Rebuild Remembered Sets and Scrub Regions");
   _cm->rebuild_and_scrub();
+  cm()->update_concurrent_mark_threads_cpu_time();
   return _cm->has_aborted();
 }
 

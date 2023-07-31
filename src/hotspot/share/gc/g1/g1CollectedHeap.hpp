@@ -372,6 +372,8 @@ private:
 #define assert_used_and_recalculate_used_equal(g1h) do {} while(0)
 #endif
 
+ void update_parallel_gc_threads_cpu_time();
+
   // The young region list.
   G1EdenRegions _eden;
   G1SurvivorRegions _survivor;

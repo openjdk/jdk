@@ -80,6 +80,11 @@ protected:
   void report_active(const char* reason) const;
   void report_inactive(const char* reason, const G1ConcurrentRefineStats& stats) const;
 
+  // G1ConcurrentRefineThreadControl::update_threads_cpu_time() relies on the
+  // primary thread at G1ConcurrentRefineThreadControl::_threads[0], and
+  // _worker_id == 0.
+  bool is_primary() { return (_worker_id == 0); }
+
   G1ConcurrentRefine* cr() const { return _cr; }
 
   void run_service() override;

@@ -79,6 +79,10 @@ void G1ConcurrentRefineThread::run_service() {
     } else {
       _vtime_accum = 0.0;
     }
+
+    if (UsePerfData && os::is_thread_cpu_time_supported() && is_primary()) {
+      _cr->update_concurrent_refine_threads_cpu_time();
+    }
   }
 
   log_debug(gc, refine)("Stopping %d", _worker_id);

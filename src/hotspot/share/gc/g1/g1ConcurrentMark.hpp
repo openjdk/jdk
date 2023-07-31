@@ -360,6 +360,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   uint      _num_concurrent_workers; // The number of marking worker threads we're using
   uint      _max_concurrent_workers; // Maximum number of marking worker threads
 
+  // Perf data for CPU time consumed by concurrent mark threads.
+  PerfVariable* _g1_concurrent_mark_threads_cpu_time;
+
   enum class VerifyLocation {
     RemarkBefore,
     RemarkAfter,
@@ -370,6 +373,7 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   static const char* verify_location_string(VerifyLocation location);
   void verify_during_pause(G1HeapVerifier::G1VerifyType type,
                            VerifyLocation location);
+
 
   void finalize_marking();
 
@@ -444,6 +448,9 @@ class G1ConcurrentMark : public CHeapObj<mtGC> {
   // Methods to enter the two overflow sync barriers
   void enter_first_sync_barrier(uint worker_id);
   void enter_second_sync_barrier(uint worker_id);
+
+  // Update the perf data counter _g1_concurrent_mark_threads_cpu_time.
+  void update_concurrent_mark_threads_cpu_time();
 
   // Clear the next marking bitmap in parallel using the given WorkerThreads. If may_yield is
   // true, periodically insert checks to see if this method should exit prematurely.

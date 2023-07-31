@@ -192,6 +192,7 @@ void ParallelScavengeHeap::update_counters() {
   young_gen()->update_counters();
   old_gen()->update_counters();
   MetaspaceCounters::update_performance_counters();
+  update_parallel_gc_threads_cpu_time();
 }
 
 size_t ParallelScavengeHeap::capacity() const {
@@ -883,4 +884,17 @@ void ParallelScavengeHeap::pin_object(JavaThread* thread, oop obj) {
 
 void ParallelScavengeHeap::unpin_object(JavaThread* thread, oop obj) {
   GCLocker::unlock_critical(thread);
+}
+
+void ParallelScavengeHeap::update_parallel_gc_threads_cpu_time() {
+  assert(Thread::current()->is_VM_thread(),
+         "Must be called from VM thread to avoid races");
+  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+    return;
+  }
+  ThreadTotalCPUTimeClosure tttc(_perf_parallel_gc_threads_cpu_time);
+  // Currently parallel worker threads in GCTaskManager never terminate, so it
+  // is safe for VMThread to read their CPU times. If upstream changes this
+  // behavior, we should rethink if it is still safe.
+  gc_threads_do(&tttc);
 }

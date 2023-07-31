@@ -2330,6 +2330,8 @@ void G1CollectedHeap::gc_epilogue(bool full) {
 
   _free_arena_memory_task->notify_new_stats(&_young_gen_card_set_stats,
                                             &_collection_set_candidates_card_set_stats);
+
+  update_parallel_gc_threads_cpu_time();
 }
 
 uint G1CollectedHeap::uncommit_regions(uint region_limit) {
@@ -2413,6 +2415,22 @@ void G1CollectedHeap::verify_region_attr_remset_is_tracked() {
   heap_region_iterate(&cl);
 }
 #endif
+
+void G1CollectedHeap::update_parallel_gc_threads_cpu_time() {
+  assert(Thread::current()->is_VM_thread(),
+         "Must be called from VM thread to avoid races");
+  if (!UsePerfData || !os::is_thread_cpu_time_supported()) {
+    return;
+  }
+  WorkerThreads* worker_threads = workers();
+  if (worker_threads != NULL) {
+    ThreadTotalCPUTimeClosure tttc(_perf_parallel_gc_threads_cpu_time);
+    // Currently parallel worker threads never terminate (JDK-8081682), so it is
+    // safe for VMThread to read their CPU times. If upstream fixes JDK-8087340
+    // so they terminate, we should rethink if it is still safe.
+    worker_threads->threads_do(&tttc);
+  }
+}
 
 void G1CollectedHeap::start_new_collection_set() {
   collection_set()->start_incremental_building();

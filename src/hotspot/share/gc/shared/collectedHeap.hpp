@@ -33,6 +33,7 @@
 #include "memory/universe.hpp"
 #include "oops/stackChunkOop.hpp"
 #include "runtime/handles.hpp"
+#include "runtime/perfData.hpp"
 #include "runtime/perfDataTypes.hpp"
 #include "runtime/safepoint.hpp"
 #include "services/memoryUsage.hpp"
@@ -140,6 +141,10 @@ class CollectedHeap : public CHeapObj<mtGC> {
   GCCause::Cause _gc_lastcause;
   PerfStringVariable* _perf_gc_cause;
   PerfStringVariable* _perf_gc_lastcause;
+
+  // Perf counters for CPU time of parallel GC threads. Defined here in order to
+  // be reused for all collectors.
+  PerfVariable* _perf_parallel_gc_threads_cpu_time;
 
   // Constructor
   CollectedHeap();
@@ -548,6 +553,32 @@ class GCCauseSetter : StackObj {
 
   ~GCCauseSetter() {
     _heap->set_gc_cause(_previous_cause);
+  }
+};
+
+// Class to compute the total CPU time for a set of threads, then update an
+// hsperfdata counter.
+
+class ThreadTotalCPUTimeClosure: public ThreadClosure {
+ private:
+  jlong _total;
+  PerfVariable* _counter;
+
+ public:
+  ThreadTotalCPUTimeClosure(PerfVariable* counter) :
+      _total(0), _counter(counter) {}
+
+  ~ThreadTotalCPUTimeClosure() {
+    _counter->set_value(_total);
+  }
+
+  virtual void do_thread(Thread* thread) {
+    // The default code path (fast_thread_cpu_time()) asserts that
+    // pthread_getcpuclockid() and clock_gettime() must return 0. Thus caller
+    // must ensure the thread exists and has not terminated.
+    assert(os::is_thread_cpu_time_supported(), "os must support cpu time");
+    jlong cpu_time = os::thread_cpu_time(thread);
+    _total += cpu_time;
   }
 };
 
