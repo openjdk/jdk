@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Google and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,25 @@
  * questions.
  */
 
-package java.lang.runtime;
-
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
-import java.util.Objects;
-
 /**
- * View/wrapper of keys used by the backing {@link ReferencedKeyMap}.
- * There are two style of keys; one for entries in the backing map and
- * one for queries to the backing map. This second style avoids the
- * overhead of a {@link Reference} object.
- *
- * @param <T> key type
- *
- * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
+ * @test
+ * @summary Test to verify throwing an exception with extra long message does
+ *          not cause hang.
+ * @bug 8312401
+ * @run main/othervm LongExceptionMessageTest
  */
-sealed interface ReferenceKey<T> permits StrongReferenceKey, WeakReferenceKey, SoftReferenceKey {
-    /**
-     * {@return the value of the unwrapped key}
-     */
-    T get();
 
-    /**
-     * Cleanup unused key.
-     */
-    void unused();
-
+class ClassWithLongExceptionMessage {
+  static {
+    if (true) throw new AssertionError("lorem ipsum ".repeat(16000));
+  }
 }
+
+public class LongExceptionMessageTest {
+  public static void main(String[] args) {
+    try {
+      new ClassWithLongExceptionMessage();
+    } catch(Throwable t) {}
+  }
+}
+

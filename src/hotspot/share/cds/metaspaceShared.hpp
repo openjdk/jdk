@@ -47,7 +47,6 @@ enum MapArchiveResult {
 class MetaspaceShared : AllStatic {
   static ReservedSpace _symbol_rs;  // used only during -Xshare:dump
   static VirtualSpace _symbol_vs;   // used only during -Xshare:dump
-  static bool _has_error_classes;
   static bool _archive_loading_failed;
   static bool _remapped_readwrite;
   static void* _shared_metaspace_static_top;

@@ -637,6 +637,11 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
 
     @Override
     public Object lookupConstant(int cpi) {
+        return lookupConstant(cpi, true);
+    }
+
+    @Override
+    public Object lookupConstant(int cpi, boolean resolve) {
         final JvmConstant tag = getTagAt(cpi);
         switch (tag.name) {
             case "Integer":
@@ -658,17 +663,18 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                  * "pseudo strings" (arbitrary live objects) patched into a String entry. Such
                  * entries do not have a symbol in the constant pool slot.
                  */
-                return compilerToVM().resolvePossiblyCachedConstantInPool(this, cpi);
+                return compilerToVM().lookupConstantInPool(this, cpi, true);
             case "MethodHandle":
             case "MethodHandleInError":
             case "MethodType":
             case "MethodTypeInError":
             case "Dynamic":
             case "DynamicInError":
-                return compilerToVM().resolvePossiblyCachedConstantInPool(this, cpi);
+                return compilerToVM().lookupConstantInPool(this, cpi, resolve);
             default:
                 throw new JVMCIError("Unknown constant pool tag %s", tag);
         }
+
     }
 
     @Override
@@ -822,7 +828,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
             if (opcode != Bytecodes.INVOKEDYNAMIC) {
                 throw new IllegalArgumentException("expected INVOKEDYNAMIC at " + rawIndex + ", got " + opcode);
             }
-            return compilerToVM().resolveInvokeDynamicInPool(this, rawIndex);
+            return compilerToVM().decodeIndyIndexToCPIndex(this, rawIndex, false);
         }
         if (opcode == Bytecodes.INVOKEDYNAMIC) {
             throw new IllegalArgumentException("unexpected INVOKEDYNAMIC at " + rawIndex);
@@ -856,7 +862,7 @@ public final class HotSpotConstantPool implements ConstantPool, MetaspaceHandleO
                 if (!isInvokedynamicIndex(cpi)) {
                     throw new IllegalArgumentException("must use invokedynamic index but got " + cpi);
                 }
-                index = compilerToVM().resolveInvokeDynamicInPool(this, cpi);
+                index = compilerToVM().decodeIndyIndexToCPIndex(this, cpi, true);
                 break;
             }
             case Bytecodes.GETSTATIC:
