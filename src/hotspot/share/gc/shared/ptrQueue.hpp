@@ -91,9 +91,11 @@ public:
   // have a buffer.
   size_t current_capacity() const;
 
-  // To support compiler.
+  bool is_empty() const { return index() == current_capacity(); }
+  size_t size() const { return current_capacity() - index(); }
 
 protected:
+  // To support compiler.
   template<typename Derived>
   static ByteSize byte_offset_of_index() {
     return byte_offset_of(Derived, _index);
@@ -148,6 +150,9 @@ public:
   }
 
   size_t capacity() const      { return _capacity; }
+
+  bool is_empty() const { return index() == capacity(); }
+  size_t size() const { return capacity() - index(); }
 
   // Return the BufferNode containing the buffer, WITHOUT setting its index.
   static BufferNode* make_node_from_buffer(void** buffer) {
