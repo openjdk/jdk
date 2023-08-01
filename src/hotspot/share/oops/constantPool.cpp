@@ -305,7 +305,7 @@ objArrayOop ConstantPool::prepare_resolved_references_for_archiving() {
         if (tag_at(index).is_string()) {
           assert(java_lang_String::is_instance(obj), "must be");
           if (!ArchiveHeapWriter::is_string_too_large_to_archive(obj)) {
-            scratch_rr->obj_at_put(i, nullptr);
+            scratch_rr->obj_at_put(i, obj);
           }
         }
       }
