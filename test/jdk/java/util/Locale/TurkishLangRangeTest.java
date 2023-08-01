@@ -31,8 +31,8 @@
  *          e.g. "HI-Deva".toLowerCase() in the Turkish locale returns
  *          "hı-deva", where 'ı' is the LATIN SMALL LETTER DOTLESS I character
  *          which is not allowed in the language ranges/tags.
- * @compile -encoding utf-8 Bug8159420.java
- * @run junit/othervm -Duser.language=tr -Duser.country=TR Bug8159420
+ * @compile -encoding utf-8 TurkishLangRangeTest.java
+ * @run junit/othervm -Duser.language=tr -Duser.country=TR TurkishLangRangeTest
  */
 
 import java.util.ArrayList;
@@ -58,7 +58,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class Bug8159420 {
+public class TurkishLangRangeTest {
 
     /*
      * Ensure parse() does not throw IllegalArgumentException for the Turkish Locale

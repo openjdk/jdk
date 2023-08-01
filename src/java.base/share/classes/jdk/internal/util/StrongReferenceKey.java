@@ -23,55 +23,45 @@
  * questions.
  */
 
-package java.lang.runtime;
+package jdk.internal.util;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.util.Objects;
 
 /**
- * {@link SoftReference} wrapper key for entries in the backing map.
+ * Wrapper for querying the backing map. Avoids the overhead of an
+ * {@link java.lang.ref.Reference} object.
  *
  * @param <T> key type
  *
  * @since 21
- *
- * Warning: This class is part of PreviewFeature.Feature.STRING_TEMPLATES.
- *          Do not rely on its availability.
  */
-final class SoftReferenceKey<T> extends SoftReference<T> implements ReferenceKey<T> {
-    /**
-     * Saved hashcode of the key. Used when {@link SoftReference} is
-     * null.
-     */
-    private final int hashcode;
+final class StrongReferenceKey<T> implements ReferenceKey<T> {
+    T key;
 
     /**
      * Package-Protected constructor.
      *
-     * @param key   unwrapped key value
-     * @param queue reference queue
+     * @param key unwrapped key value
      */
-    SoftReferenceKey(T key, ReferenceQueue<T> queue) {
-        super(key, queue);
-        this.hashcode = Objects.hashCode(key);
+    StrongReferenceKey(T key) {
+        this.key = key;
     }
 
     /**
-     * Cleanup unused key. No need to enqueue since the key did not make it
-     * into the map.
+     * {@return the unwrapped key}
      */
     @Override
+    public T get() {
+        return key;
+    }
+
+    @Override
     public void unused() {
-        clear();
+        key = null;
     }
 
     @Override
     public boolean equals(Object obj) {
-        // Necessary when removing a null reference
-        if (obj == this) {
-            return true;
-        }
         // Necessary when comparing an unwrapped key
         if (obj instanceof ReferenceKey<?> key) {
             obj = key.get();
@@ -81,8 +71,8 @@ final class SoftReferenceKey<T> extends SoftReference<T> implements ReferenceKey
 
     @Override
     public int hashCode() {
-        // Use saved hashcode
-        return hashcode;
+        // Use unwrapped key hash code
+        return get().hashCode();
     }
 
     @Override
