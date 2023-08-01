@@ -299,35 +299,38 @@ public final class FallbackLinker extends AbstractLinker {
         return CANONICAL_LAYOUTS;
     }
 
-    static final Map<String, MemoryLayout> CANONICAL_LAYOUTS = new HashMap<>();
+    static final Map<String, MemoryLayout> CANONICAL_LAYOUTS;
 
     static {
-        CANONICAL_LAYOUTS.put("bool", JAVA_BOOLEAN);
-        CANONICAL_LAYOUTS.put("char", JAVA_BYTE);
-        CANONICAL_LAYOUTS.put("float", JAVA_FLOAT);
-        CANONICAL_LAYOUTS.put("double", JAVA_DOUBLE);
-        CANONICAL_LAYOUTS.put("long long", JAVA_LONG);
-        CANONICAL_LAYOUTS.put("void*", ADDRESS);
-        // platform-dependent sizes
-        CANONICAL_LAYOUTS.put("size_t", FFIType.SIZE_T);
-        CANONICAL_LAYOUTS.put("short", FFIType.layoutFor(LibFallback.shortSize()));
-        CANONICAL_LAYOUTS.put("int", FFIType.layoutFor(LibFallback.intSize()));
-        CANONICAL_LAYOUTS.put("long", FFIType.layoutFor(LibFallback.longSize()));
         int wchar_size = LibFallback.wcharSize();
-        if (wchar_size == 2) {
-            // prefer JAVA_CHAR
-            CANONICAL_LAYOUTS.put("wchar_t", JAVA_CHAR);
-        } else {
-            CANONICAL_LAYOUTS.put("wchar_t", FFIType.layoutFor(wchar_size));
-        }
-        // JNI types
-        CANONICAL_LAYOUTS.put("jboolean", JAVA_BOOLEAN);
-        CANONICAL_LAYOUTS.put("jchar", JAVA_CHAR);
-        CANONICAL_LAYOUTS.put("jbyte", JAVA_BYTE);
-        CANONICAL_LAYOUTS.put("jshort", JAVA_SHORT);
-        CANONICAL_LAYOUTS.put("jint", JAVA_INT);
-        CANONICAL_LAYOUTS.put("jlong", JAVA_LONG);
-        CANONICAL_LAYOUTS.put("jfloat", JAVA_FLOAT);
-        CANONICAL_LAYOUTS.put("jdouble", JAVA_DOUBLE);
+        MemoryLayout wchartLayout = switch(wchar_size) {
+            case 2 -> JAVA_CHAR; // prefer JAVA_CHAR
+            default -> FFIType.layoutFor(wchar_size);
+        };
+
+        CANONICAL_LAYOUTS = Map.ofEntries(
+                // specified canonical layouts
+                Map.entry("bool", JAVA_BOOLEAN),
+                Map.entry("char", JAVA_BYTE),
+                Map.entry("float", JAVA_FLOAT),
+                Map.entry("long long", JAVA_LONG),
+                Map.entry("double", JAVA_DOUBLE),
+                Map.entry("void*", ADDRESS),
+                // platform-dependent sizes
+                Map.entry("size_t", FFIType.SIZE_T),
+                Map.entry("short", FFIType.layoutFor(LibFallback.shortSize())),
+                Map.entry("int", FFIType.layoutFor(LibFallback.intSize())),
+                Map.entry("long", FFIType.layoutFor(LibFallback.longSize())),
+                Map.entry("wchar_t", wchartLayout),
+                // JNI types
+                Map.entry("jboolean", JAVA_BOOLEAN),
+                Map.entry("jchar", JAVA_CHAR),
+                Map.entry("jbyte", JAVA_BYTE),
+                Map.entry("jshort", JAVA_SHORT),
+                Map.entry("jint", JAVA_INT),
+                Map.entry("jlong", JAVA_LONG),
+                Map.entry("jfloat", JAVA_FLOAT),
+                Map.entry("jdouble", JAVA_DOUBLE)
+        );
     }
 }
