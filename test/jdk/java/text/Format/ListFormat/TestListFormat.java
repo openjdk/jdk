@@ -183,9 +183,17 @@ public class TestListFormat {
     }
 
     @Test
+    void format_3Arg() {
+        var f = ListFormat.getInstance();
+        // Ensures it accepts both List and []
+        assertEquals(f.format(SAMPLE4, new StringBuffer(), null).toString(),
+                f.format(SAMPLE4.toArray(), new StringBuffer(), null).toString());
+    }
+
+    @Test
     void format_emptyInput() {
         var ex = assertThrows(IllegalArgumentException.class,
-                    () -> ListFormat.getInstance().format(List.of()));
+                () -> ListFormat.getInstance().format(List.of()));
         assertEquals("There should at least be one input string", ex.getMessage());
     }
 
@@ -197,4 +205,3 @@ public class TestListFormat {
         }
     }
 }
-

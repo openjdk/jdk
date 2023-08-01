@@ -221,16 +221,17 @@ public class ListFormat extends Format {
      * two := (two_before){0}two_between{1}(two_after)
      * three := (three_before){0}three_between{1}three_between{2}(three_after)
      * </pre></blockquote>
-     * If parsing of the pattern string fails, start/middle/end throws an
-     * {@code IllegalArgumentException}, and two/three fall back to
+     * If parsing of the pattern string for start/middle/end fails, it throws an
+     * {@code IllegalArgumentException}. If two/three pattern string is empty, or
+     * fails on parsing, it falls back to
      * {@code "(start_before){0}end_between{1}(end_after)"},
      * {@code "(start_before){0}start_between{1}end_between{2}(end_after)"} respectively.
      * Then the input string list with {@code n} elements substitutes these
      * placeholders:
      * <blockquote><pre>
      * n = 1: {0}
-     * n = 2: pattern for "two"
-     * n = 3: pattern for "three"
+     * n = 2: parsed pattern for "two"
+     * n = 3: parsed pattern for "three"
      * n > 3: (start_before){0}start_between{1}middle_between{2} ... middle_between{m}end_between{n}(end_after)
      * </pre></blockquote>
      * As an example, the following table shows patterns array which is equivalent to
@@ -308,7 +309,7 @@ public class ListFormat extends Format {
      * @param obj    The object to format. Must be a List or an array
      *               of Object.
      * @param toAppendTo    where the text is to be appended
-     * @param pos    Ignored. Not used in ListFormat
+     * @param pos    Ignored. Not used in ListFormat. May be null
      * @return       the string buffer passed in as {@code toAppendTo},
      *               with formatted text appended
      * @throws    NullPointerException if {@code toAppendTo} is null
@@ -333,7 +334,7 @@ public class ListFormat extends Format {
      *
      * Note that {@link #format(List)} and this method
      * may not guarantee a round-trip, if the input strings contain ambiguous
-     * delimiters. For example, a String array {@code ["a, b,", "c"]} will be
+     * delimiters. For example, a String list {@code ["a, b,", "c"]} will be
      * formatted as {@code "a, b, and c"}, but may be parsed as
      * {@code ["a", "b", "c"]}.
      *
@@ -423,7 +424,7 @@ public class ListFormat extends Format {
             var a = objs.toArray(new Object[0]);
             return generateMessageFormat(a).formatToCharacterIterator(a);
         } else {
-            throw new IllegalArgumentException("The arguments should be an Object array");
+            throw new IllegalArgumentException("The arguments should be an Object list");
         }
     }
 
@@ -523,7 +524,7 @@ public class ListFormat extends Format {
          * The {@code UNIT} list format style. This style concatenates
          * elements, useful for enumerating units.
          */
-        UNIT;
+        UNIT
     }
 
     /**
@@ -555,6 +556,6 @@ public class ListFormat extends Format {
          * typically is the shortest description of text.
          * Suitable for elements, such as, "M", "T", "W", etc.
          */
-        NARROW;
+        NARROW
     }
 }
