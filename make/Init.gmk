@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2020, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2012, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,10 @@ ifeq ($(HAS_SPEC),)
     # The spec files depend on the autoconf source code. This check makes sure
     # the configuration is up to date after changes to configure.
     $(SPECS): $(wildcard $(topdir)/make/autoconf/*) \
-            $(if $(CUSTOM_CONFIG_DIR), $(wildcard $(CUSTOM_CONFIG_DIR)/*))
+            $(if $(CUSTOM_CONFIG_DIR), $(wildcard $(CUSTOM_CONFIG_DIR)/*)) \
+            $(addprefix $(topdir)/make/conf/, version-numbers.conf branding.conf) \
+            $(if $(CUSTOM_CONF_DIR), $(wildcard $(addprefix $(CUSTOM_CONF_DIR)/, \
+                version-numbers.conf branding.conf)))
         ifeq ($(CONF_CHECK), fail)
 	  @echo Error: The configuration is not up to date for \
 	      "'$(lastword $(subst /, , $(dir $@)))'."
