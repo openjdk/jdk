@@ -81,7 +81,7 @@ public class IntegrityHeapDumpTest {
                 .addToolArg("-parallel=" + Runtime.getRuntime().availableProcessors())
                 .addToolArg(heapDumpFile.getAbsolutePath());
 
-        ProcessBuilder processBuilder = SATestUtils.createProcessBuilder(launcher);
+        ProcessBuilder processBuilder = new ProcessBuilder(launcher.getCommand());
         processBuilder.redirectError(ProcessBuilder.Redirect.INHERIT);
         OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
         String stdoutStr = output.getStdout();
