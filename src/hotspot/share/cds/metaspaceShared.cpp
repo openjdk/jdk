@@ -792,7 +792,7 @@ bool MetaspaceShared::try_link_class(JavaThread* current, InstanceKlass* ik) {
   ExceptionMark em(current);
   JavaThread* THREAD = current; // For exception macros.
   Arguments::assert_is_dumping_archive();
-  if (ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
+  if (!ik->is_shared() && ik->is_loaded() && !ik->is_linked() && ik->can_be_verified_at_dumptime() &&
       !SystemDictionaryShared::has_class_failed_verification(ik)) {
     bool saved = BytecodeVerificationLocal;
     if (ik->is_shared_unregistered_class() && ik->class_loader() == nullptr) {
