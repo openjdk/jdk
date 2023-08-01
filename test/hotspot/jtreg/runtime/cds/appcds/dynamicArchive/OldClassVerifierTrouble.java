@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
 /*
  * @test
  * @bug 8312181
- * @summary Archive an old class, which fails verification and a supertype of another
+ * @summary Archive an old class, which fails verification and is a supertype of another
  *          class, in the base archive. Perform a dynamic dump with the base archive
  *          containing the old class and its subclass in "unlinked" state. VM should
  *          not crash in this scenario.
@@ -62,7 +62,7 @@ public class OldClassVerifierTrouble extends DynamicArchiveTestBase {
     private static void doTestCustomBase(String topArchiveName) throws Exception {
         String appJar = ClassFileInstaller.getJarPath("oldsuper-fail-verifier.jar");
 
-        // create a custom base archive containing and old class
+        // create a custom base archive containing an old class
         OutputAnalyzer output = TestCommon.dump(appJar,
             TestCommon.list("VerifierTroubleApp", "VerifierTroublev49", "ChildOldSuper"),
             "-Xlog:class+load,cds+class=debug");
