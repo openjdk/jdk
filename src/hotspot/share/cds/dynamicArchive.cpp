@@ -396,6 +396,8 @@ public:
   }
 };
 
+// _array_klasses and _dynamic_archive_array_klasses only hold the array klasses
+// which have element klass in the static archive.
 GrowableArray<ObjArrayKlass*>* DynamicArchive::_array_klasses = nullptr;
 Array<ObjArrayKlass*>* DynamicArchive::_dynamic_archive_array_klasses = nullptr;
 
