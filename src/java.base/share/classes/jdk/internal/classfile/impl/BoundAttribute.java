@@ -130,6 +130,7 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
         var filled = new Object[size];
         int p = pos + 2;
         int cfLen = reader.classfileLength();
+        var apo = ((ClassReaderImpl)reader).context().attributesProcessingOption();
         for (int i = 0; i < size; ++i) {
             Utf8Entry name = reader.readUtf8Entry(p);
             int len = reader.readInt(p + 2);
@@ -143,8 +144,10 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                 mapper = customAttributes.apply(name);
             }
             if (mapper != null) {
-                filled[i] = mapper.readAttribute(enclosing, reader, p);
-            } else if (((ClassReaderImpl)reader).context().unknownAttributesOption() == Classfile.UnknownAttributesOption.PASS_UNKNOWN_ATTRIBUTES) {
+                if (mapper.attributeStability() != AttributeMapper.AttributeStability.HAZMAT || apo != Classfile.AttributesProcessingOption.DROP_HAZMAT_ATRIBUTES) {
+                    filled[i] = mapper.readAttribute(enclosing, reader, p);
+                }
+            } else if (apo == Classfile.AttributesProcessingOption.PASS_ALL_ATTRIBUTES) {
                 AttributeMapper<UnknownAttribute> fakeMapper = new AttributeMapper<>() {
                     @Override
                     public String name() {
@@ -165,6 +168,11 @@ public abstract sealed class BoundAttribute<T extends Attribute<T>>
                     @Override
                     public boolean allowMultiple() {
                         return true;
+                    }
+
+                    @Override
+                    public AttributeMapper.AttributeStability attributeStability() {
+                        return AttributeStability.UNKNOWN;
                     }
                 };
                 filled[i] = new BoundUnknownAttribute(reader, fakeMapper, p);
