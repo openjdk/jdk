@@ -1970,10 +1970,15 @@ void MacroAssembler::ror_imm(Register dst, Register src, uint32_t shift, Registe
 
 // rotate left with shift bits, 32-bit version
 void MacroAssembler::rolw_imm(Register dst, Register src, uint32_t shift, Register tmp) {
+  if (UseZbb) {
+    // no roliw available
+    roriw(dst, src, 32 - shift);
+    return;
+  }
+
   assert_different_registers(dst, tmp);
   assert_different_registers(src, tmp);
   assert(shift < 32, "shift amount must be < 32");
-
   srliw(tmp, src, 32 - shift);
   slliw(dst, src, shift);
   orr(dst, dst, tmp);
