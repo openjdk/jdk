@@ -160,8 +160,10 @@ void BytecodeAssembler::invokespecial(Symbol* klss, Symbol* name, Symbol* sig) {
   append(methodref_index);
 }
 
-int BytecodeAssembler::assemble_method_error(
-    BytecodeConstantPool* cp, BytecodeBuffer* buffer, Symbol* errorName, Symbol* message) {
+int BytecodeAssembler::assemble_method_error(BytecodeConstantPool* cp,
+                                             BytecodeBuffer* buffer,
+                                             Symbol* errorName,
+                                             Symbol* message) {
 
   Symbol* init = vmSymbols::object_initializer_name();
   Symbol* sig = vmSymbols::string_void_signature();

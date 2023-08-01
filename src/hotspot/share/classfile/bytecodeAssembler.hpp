@@ -191,8 +191,10 @@ class BytecodeAssembler : StackObj {
   BytecodeAssembler(BytecodeBuffer* buffer, BytecodeConstantPool* cp)
     : _code(buffer), _cp(cp) {}
 
-  static int assemble_method_error(
-    BytecodeConstantPool* cp, BytecodeBuffer* buffer, Symbol* errorName, Symbol* message);
+  static int assemble_method_error(BytecodeConstantPool* cp,
+                                   BytecodeBuffer* buffer,
+                                   Symbol* errorName,
+                                   Symbol* message);
 };
 
 #endif // SHARE_CLASSFILE_BYTECODEASSEMBLER_HPP
