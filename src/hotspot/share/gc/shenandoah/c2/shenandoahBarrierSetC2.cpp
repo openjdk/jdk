@@ -251,8 +251,7 @@ void ShenandoahBarrierSetC2::satb_write_barrier_pre(GraphKit* kit,
 
     if (do_load) {
       // load original value
-      // alias_idx correct??
-      pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx);
+      pre_val = __ load(__ ctrl(), adr, val_type, bt, alias_idx, false, MemNode::unordered, LoadNode::Pinned);
     }
 
     // if (pre_val != nullptr)
@@ -891,7 +890,7 @@ void ShenandoahBarrierSetC2::unregister_potential_barrier_node(Node* node) const
 
 void ShenandoahBarrierSetC2::eliminate_gc_barrier(PhaseMacroExpand* macro, Node* n) const {
   if (is_shenandoah_wb_pre_call(n)) {
-//    shenandoah_eliminate_wb_pre(n, &macro->igvn());
+    shenandoah_eliminate_wb_pre(n, &macro->igvn());
   }
 }
 
