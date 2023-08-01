@@ -764,6 +764,7 @@ public final class AccessControlContext {
      * and has the same set of {@code ProtectionDomain} objects as this context,
      * {@code false} otherwise.
      */
+    @Override
     public boolean equals(Object obj) {
         if (obj == this)
             return true;
