@@ -3599,7 +3599,7 @@ Node* LibraryCallKit::scopedValueCache_helper() {
   // carrier thread's cache.
   // return _gvn.transform(LoadNode::make(_gvn, nullptr, immutable_memory(), p, p->bottom_type()->is_ptr(),
   //       TypeRawPtr::NOTNULL, T_ADDRESS, MemNode::unordered));
-  return make_load(nullptr, p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered);
+  return make_load(control(), p, p->bottom_type()->is_ptr(), T_ADDRESS, MemNode::unordered, LoadNode::Pinned);
 }
 
 //------------------------inline_native_scopedValueCache------------------
@@ -3624,7 +3624,7 @@ bool LibraryCallKit::inline_native_setScopedValueCache() {
   Node* cache_obj_handle = scopedValueCache_helper();
 
   const TypePtr *adr_type = _gvn.type(cache_obj_handle)->isa_ptr();
-  access_store_at(nullptr, cache_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
+  access_store_at(control(), cache_obj_handle, adr_type, arr, _gvn.type(arr), T_OBJECT, IN_NATIVE | MO_UNORDERED);
 
   return true;
 }
