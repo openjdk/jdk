@@ -140,7 +140,7 @@ char* os::iso8601_time(jlong milliseconds_since_19700101, char* buffer, size_t b
   const time_t seconds_since_19700101 =
     milliseconds_since_19700101 / milliseconds_per_microsecond;
   const int milliseconds_after_second =
-    milliseconds_since_19700101 % milliseconds_per_microsecond;
+    checked_cast<int>(milliseconds_since_19700101 % milliseconds_per_microsecond);
   // Convert the time value to a tm and timezone variable
   struct tm time_struct;
   if (utc) {
