@@ -390,11 +390,19 @@ public class MessageFormat extends Format {
      * Patterns and their interpretation are specified in the
      * <a href="#patterns">class description</a>.
      *
+     * @implSpec The default implementation throws a
+     * {@code NullPointerException} if {@code locale} is {@code null}
+     * either during the creation of the {@code MessageFormat} object or later
+     * when {@code format()} is called by a {@code MessageFormat}
+     * instance with a null locale and the implementation utilizes a
+     * locale-dependent subformat.
+     *
      * @param pattern the pattern for this message format
      * @param locale the locale for this message format
      * @throws    IllegalArgumentException if the pattern is invalid
      * @throws    NullPointerException if {@code pattern} is
-     *            {@code null}
+     *            {@code null} or {@code locale} is {@code null} and the
+     *            implementation uses a locale-dependent subformat.
      * @since 1.4
      */
     public MessageFormat(String pattern, Locale locale) {
@@ -843,7 +851,10 @@ public class MessageFormat extends Format {
      * @throws    IllegalArgumentException if an argument in the
      *            {@code arguments} array is not of the type
      *            expected by the format element(s) that use it.
-     * @throws    NullPointerException if {@code result} is {@code null}
+     * @throws    NullPointerException if {@code result} is {@code null} or
+     *            if the {@code MessageFormat} instance that calls this method
+     *            has locale set to null, and the implementation
+     *            uses a locale-dependent subformat.
      */
     public final StringBuffer format(Object[] arguments, StringBuffer result,
                                      FieldPosition pos)
@@ -889,7 +900,10 @@ public class MessageFormat extends Format {
      * @throws    IllegalArgumentException if an argument in the
      *            {@code arguments} array is not of the type
      *            expected by the format element(s) that use it.
-     * @throws    NullPointerException if {@code result} is {@code null}
+     * @throws    NullPointerException if {@code result} is {@code null} or
+     *            if the {@code MessageFormat} instance that calls this method
+     *            has locale set to null, and the implementation
+     *            uses a locale-dependent subformat.
      */
     public final StringBuffer format(Object arguments, StringBuffer result,
                                      FieldPosition pos)
