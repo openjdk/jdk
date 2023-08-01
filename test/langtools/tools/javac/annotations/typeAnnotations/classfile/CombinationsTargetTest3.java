@@ -26,6 +26,12 @@
  * @bug 8005085 8005681 8008769 8010015
  * @summary Check (repeating)type annotations on lambda usage.
  * @modules jdk.jdeps/com.sun.tools.classfile
+ *          java.base/jdk.internal.classfile
+ *          java.base/jdk.internal.classfile.attribute
+ *          java.base/jdk.internal.classfile.constantpool
+ *          java.base/jdk.internal.classfile.instruction
+ *          java.base/jdk.internal.classfile.components
+ *          java.base/jdk.internal.classfile.impl
  * @run main CombinationsTargetTest3
  */
 
@@ -35,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-public class CombinationsTargetTest3 {
+public class CombinationsTargetTest3 extends ClassfileTestHelper {
 
     // Helps identify test case in event of failure.
     int testcount = 0;
@@ -540,34 +546,6 @@ public class CombinationsTargetTest3 {
         return imports + source;
     }
 
-    /************ Migrated from original ClassfileTestHelper ******************/
-    int expected_tinvisibles = 0;
-    int expected_tvisibles = 0;
-    int expected_invisibles = 0;
-    int expected_visibles = 0;
-
-    //Makes debugging much easier. Set to 'false' for less output.
-    public Boolean verbose = true;
-    void println(String msg) { if (verbose) System.err.println(msg); }
-    void print(String msg) { if (verbose) System.err.print(msg); }
-
-    File writeTestFile(String fname, String source) throws IOException {
-      File f = new File(fname);
-        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f)));
-        out.println(source);
-        out.close();
-        return f;
-    }
-
-    File compile(File f) {
-        List<String> options = new ArrayList<>(List.of("-g", f.getPath()));
-        int rc = com.sun.tools.javac.Main.compile(options.toArray(new String[0]));
-        if (rc != 0)
-            throw new Error("compilation failed. rc=" + rc);
-        String path = f.getPath();
-        return new File(path.substring(0, path.length() - 5) + ".class");
-    }
-
     /************ Helper annotations counting methods ******************/
     void test(ClassFile cf) {
         test("CLASS",cf, null, null, Attribute.RuntimeVisibleTypeAnnotations, true);
@@ -702,43 +680,4 @@ public class CombinationsTargetTest3 {
             }
         }
     }
-
-    void countAnnotations() {
-        errors=0;
-        int expected_allt = expected_tvisibles + expected_tinvisibles;
-        int expected_all = expected_visibles + expected_invisibles;
-        if (expected_allt != allt) {
-            errors++;
-            System.err.println("Failure: expected " + expected_allt +
-                    " type annotations but found " + allt);
-        }
-        if (expected_all != all) {
-            errors++;
-            System.err.println("Failure: expected " + expected_all +
-                    " annotations but found " + all);
-        }
-        if (expected_tvisibles != tvisibles) {
-            errors++;
-            System.err.println("Failure: expected " + expected_tvisibles +
-                    " typevisible annotations but found " + tvisibles);
-        }
-        if (expected_tinvisibles != tinvisibles) {
-            errors++;
-            System.err.println("Failure: expected " + expected_tinvisibles +
-                    " typeinvisible annotations but found " + tinvisibles);
-        }
-        allt=0;
-        tvisibles=0;
-        tinvisibles=0;
-        all=0;
-        visibles=0;
-        invisibles=0;
-    }
-    int errors;
-    int allt;
-    int tvisibles;
-    int tinvisibles;
-    int all;
-    int visibles;
-    int invisibles;
 }
