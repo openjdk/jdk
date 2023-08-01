@@ -35,6 +35,7 @@
 #include "oops/arrayOop.hpp"
 #include "oops/markWord.hpp"
 #include "oops/methodData.hpp"
+#include "oops/resolvedIndyEntry.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
 #include "runtime/basicLock.hpp"
@@ -950,6 +951,11 @@ void InterpreterMacroAssembler::remove_activation(TosState state,
     BLOCK_COMMENT("reserved_stack_check:");
     // Test if reserved zone needs to be enabled.
     Label no_reserved_zone_enabling;
+
+    // check if already enabled - if so no re-enabling needed
+    assert(sizeof(StackOverflow::StackGuardState) == 4, "unexpected size");
+    z_ly(Z_R0, Address(Z_thread, JavaThread::stack_guard_state_offset()));
+    compare32_and_branch(Z_R0, StackOverflow::stack_guard_enabled, bcondEqual, no_reserved_zone_enabling);
 
     // Compare frame pointers. There is no good stack pointer, as with stack
     // frame compression we can get different SPs when we do calls. A subsequent

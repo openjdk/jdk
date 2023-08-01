@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2022, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2023, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -308,8 +308,6 @@ public class Enter extends JCTree.Visitor {
 
     @Override
     public void visitTopLevel(JCCompilationUnit tree) {
-//        Assert.checkNonNull(tree.modle, tree.sourcefile.toString());
-
         JavaFileObject prev = log.useSource(tree.sourcefile);
         boolean addEnv = false;
         boolean isPkgInfo = tree.sourcefile.isNameCompatible("package-info",
@@ -440,6 +438,9 @@ public class Enter extends JCTree.Visitor {
                 }
                 log.error(tree.pos(),
                           Errors.ClassPublicShouldBeInFile(topElement, tree.name));
+            }
+            if ((tree.mods.flags & UNNAMED_CLASS) != 0) {
+                syms.removeClass(env.toplevel.modle, tree.name);
             }
         } else {
             if (!tree.name.isEmpty() &&

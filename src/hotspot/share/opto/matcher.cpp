@@ -335,7 +335,7 @@ void Matcher::match( ) {
   Node* new_ideal_null = ConNode::make(TypePtr::NULL_PTR);
 
   // Swap out to old-space; emptying new-space
-  Arena *old = C->node_arena()->move_contents(C->old_arena());
+  Arena* old = C->swap_old_and_new();
 
   // Save debug and profile information for nodes in old space:
   _old_node_note_array = C->node_note_array();
@@ -447,7 +447,7 @@ static RegMask *init_input_masks( uint size, RegMask &ret_adr, RegMask &fp ) {
   return rms;
 }
 
-const int Matcher::scalable_predicate_reg_slots() {
+int Matcher::scalable_predicate_reg_slots() {
   assert(Matcher::has_predicated_vectors() && Matcher::supports_scalable_vector(),
         "scalable predicate vector should be supported");
   int vector_reg_bit_size = Matcher::scalable_vector_reg_size(T_BYTE) << LogBitsPerByte;
@@ -2540,7 +2540,7 @@ void Matcher::collect_null_checks( Node *proj, Node *orig_proj ) {
       bool push_it = false;
       if( proj->Opcode() == Op_IfTrue ) {
 #ifndef PRODUCT
-        extern int all_null_checks_found;
+        extern uint all_null_checks_found;
         all_null_checks_found++;
 #endif
         if( b->_test._test == BoolTest::ne ) {

@@ -1745,6 +1745,21 @@ bool PhaseIdealLoop::is_counted_loop(Node* x, IdealLoopTree*&loop, BasicType iv_
   // =================================================
   // ---- SUCCESS!   Found A Trip-Counted Loop!  -----
   //
+
+  if (x->Opcode() == Op_Region) {
+    // x has not yet been transformed to Loop or LongCountedLoop.
+    // This should only happen if we are inside an infinite loop.
+    // It happens like this:
+    //   build_loop_tree -> do not attach infinite loop and nested loops
+    //   beautify_loops  -> does not transform the infinite and nested loops to LoopNode, because not attached yet
+    //   build_loop_tree -> find and attach infinite and nested loops
+    //   counted_loop    -> nested Regions are not yet transformed to LoopNodes, we land here
+    assert(x->as_Region()->is_in_infinite_subgraph(),
+           "x can only be a Region and not Loop if inside infinite loop");
+    // Come back later when Region is transformed to LoopNode
+    return false;
+  }
+
   assert(x->Opcode() == Op_Loop || x->Opcode() == Op_LongCountedLoop, "regular loops only");
   C->print_method(PHASE_BEFORE_CLOOPS, 3);
 
@@ -2296,8 +2311,14 @@ const Type* LoopLimitNode::Value(PhaseGVN* phase) const {
     int final_int = (int)final_con;
     // The final value should be in integer range since the loop
     // is counted and the limit was checked for overflow.
-    assert(final_con == (jlong)final_int, "final value should be integer");
-    return TypeInt::make(final_int);
+    // Assert checks for overflow only if all input nodes are ConINodes, as during CCP
+    // there might be a temporary overflow from PhiNodes see JDK-8309266
+    assert((in(Init)->is_ConI() && in(Limit)->is_ConI() && in(Stride)->is_ConI()) ? final_con == (jlong)final_int : true, "final value should be integer");
+    if (final_con == (jlong)final_int) {
+      return TypeInt::make(final_int);
+    } else {
+      return bottom_type();
+    }
   }
 
   return bottom_type(); // TypeInt::INT
@@ -3510,13 +3531,13 @@ bool IdealLoopTree::beautify_loops( PhaseIdealLoop *phase ) {
 }
 
 //------------------------------allpaths_check_safepts----------------------------
-// Allpaths backwards scan from loop tail, terminating each path at first safepoint
-// encountered.  Helper for check_safepts.
+// Allpaths backwards scan. Starting at the head, traversing all backedges, and the body. Terminating each path at first
+// safepoint encountered.  Helper for check_safepts.
 void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack) {
   assert(stack.size() == 0, "empty stack");
-  stack.push(_tail);
+  stack.push(_head);
   visited.clear();
-  visited.set(_tail->_idx);
+  visited.set(_head->_idx);
   while (stack.size() > 0) {
     Node* n = stack.pop();
     if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
@@ -3524,12 +3545,13 @@ void IdealLoopTree::allpaths_check_safepts(VectorSet &visited, Node_List &stack)
     } else if (n->Opcode() == Op_SafePoint) {
       if (_phase->get_loop(n) != this) {
         if (_required_safept == nullptr) _required_safept = new Node_List();
-        _required_safept->push(n);  // save the one closest to the tail
+        // save the first we run into on that path: closest to the tail if the head has a single backedge
+        _required_safept->push(n);
       }
       // Terminate this path
     } else {
       uint start = n->is_Region() ? 1 : 0;
-      uint end   = n->is_Region() && !n->is_Loop() ? n->req() : start + 1;
+      uint end   = n->is_Region() && (!n->is_Loop() || n == _head) ? n->req() : start + 1;
       for (uint i = start; i < end; i++) {
         Node* in = n->in(i);
         assert(in->is_CFG(), "must be");
@@ -3601,53 +3623,55 @@ void IdealLoopTree::check_safepts(VectorSet &visited, Node_List &stack) {
   if (_child) _child->check_safepts(visited, stack);
   if (_next)  _next ->check_safepts(visited, stack);
 
-  if (!_head->is_CountedLoop() && !_has_sfpt && _parent != nullptr && !_irreducible) {
+  if (!_head->is_CountedLoop() && !_has_sfpt && _parent != nullptr) {
     bool  has_call         = false;    // call on dom-path
     bool  has_local_ncsfpt = false;    // ncsfpt on dom-path at this loop depth
     Node* nonlocal_ncsfpt  = nullptr;  // ncsfpt on dom-path at a deeper depth
-    // Scan the dom-path nodes from tail to head
-    for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
-      if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
-        has_call = true;
-        _has_sfpt = 1;          // Then no need for a safept!
-        break;
-      } else if (n->Opcode() == Op_SafePoint) {
-        if (_phase->get_loop(n) == this) {
-          has_local_ncsfpt = true;
+    if (!_irreducible) {
+      // Scan the dom-path nodes from tail to head
+      for (Node* n = tail(); n != _head; n = _phase->idom(n)) {
+        if (n->is_Call() && n->as_Call()->guaranteed_safepoint()) {
+          has_call = true;
+          _has_sfpt = 1;          // Then no need for a safept!
           break;
-        }
-        if (nonlocal_ncsfpt == nullptr) {
-          nonlocal_ncsfpt = n; // save the one closest to the tail
-        }
-      } else {
-        IdealLoopTree* nlpt = _phase->get_loop(n);
-        if (this != nlpt) {
-          // If at an inner loop tail, see if the inner loop has already
-          // recorded seeing a call on the dom-path (and stop.)  If not,
-          // jump to the head of the inner loop.
-          assert(is_member(nlpt), "nested loop");
-          Node* tail = nlpt->_tail;
-          if (tail->in(0)->is_If()) tail = tail->in(0);
-          if (n == tail) {
-            // If inner loop has call on dom-path, so does outer loop
-            if (nlpt->_has_sfpt) {
-              has_call = true;
-              _has_sfpt = 1;
-              break;
-            }
-            // Skip to head of inner loop
-            assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
-            n = nlpt->_head;
-            if (_head == n) {
-              // this and nlpt (inner loop) have the same loop head. This should not happen because
-              // during beautify_loops we call merge_many_backedges. However, infinite loops may not
-              // have been attached to the loop-tree during build_loop_tree before beautify_loops,
-              // but then attached in the build_loop_tree afterwards, and so still have unmerged
-              // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
-              // since we have reached the loop head of this.
-              assert(_head->as_Region()->is_in_infinite_subgraph(),
-                     "only expect unmerged backedges in infinite loops");
-              break;
+        } else if (n->Opcode() == Op_SafePoint) {
+          if (_phase->get_loop(n) == this) {
+            has_local_ncsfpt = true;
+            break;
+          }
+          if (nonlocal_ncsfpt == nullptr) {
+            nonlocal_ncsfpt = n; // save the one closest to the tail
+          }
+        } else {
+          IdealLoopTree* nlpt = _phase->get_loop(n);
+          if (this != nlpt) {
+            // If at an inner loop tail, see if the inner loop has already
+            // recorded seeing a call on the dom-path (and stop.)  If not,
+            // jump to the head of the inner loop.
+            assert(is_member(nlpt), "nested loop");
+            Node* tail = nlpt->_tail;
+            if (tail->in(0)->is_If()) tail = tail->in(0);
+            if (n == tail) {
+              // If inner loop has call on dom-path, so does outer loop
+              if (nlpt->_has_sfpt) {
+                has_call = true;
+                _has_sfpt = 1;
+                break;
+              }
+              // Skip to head of inner loop
+              assert(_phase->is_dominator(_head, nlpt->_head), "inner head dominated by outer head");
+              n = nlpt->_head;
+              if (_head == n) {
+                // this and nlpt (inner loop) have the same loop head. This should not happen because
+                // during beautify_loops we call merge_many_backedges. However, infinite loops may not
+                // have been attached to the loop-tree during build_loop_tree before beautify_loops,
+                // but then attached in the build_loop_tree afterwards, and so still have unmerged
+                // backedges. Check if we are indeed in an infinite subgraph, and terminate the scan,
+                // since we have reached the loop head of this.
+                assert(_head->as_Region()->is_in_infinite_subgraph(),
+                       "only expect unmerged backedges in infinite loops");
+                break;
+              }
             }
           }
         }
@@ -3989,7 +4013,6 @@ void IdealLoopTree::dump_head() {
     if (cl->is_post_loop()) tty->print(" post");
     if (cl->is_vectorized_loop()) tty->print(" vector");
     if (range_checks_present()) tty->print(" rc ");
-    if (cl->is_multiversioned()) tty->print(" multi ");
   }
   if (_has_call) tty->print(" has_call");
   if (_has_sfpt) tty->print(" has_sfpt");
@@ -4629,29 +4652,7 @@ void PhaseIdealLoop::build_and_optimize() {
       IdealLoopTree* lpt = iter.current();
       if (lpt->is_counted()) {
         CountedLoopNode *cl = lpt->_head->as_CountedLoop();
-
-        if (cl->is_rce_post_loop() && !cl->is_vectorized_loop()) {
-          assert(PostLoopMultiversioning, "multiversioning must be enabled");
-          // Check that the rce'd post loop is encountered first, multiversion after all
-          // major main loop optimization are concluded
-          if (!C->major_progress()) {
-            IdealLoopTree *lpt_next = lpt->_next;
-            if (lpt_next && lpt_next->is_counted()) {
-              CountedLoopNode *cl = lpt_next->_head->as_CountedLoop();
-              if (cl->is_post_loop() && lpt_next->range_checks_present()) {
-                if (!cl->is_multiversioned()) {
-                  if (multi_version_post_loops(lpt, lpt_next) == false) {
-                    // Cause the rce loop to be optimized away if we fail
-                    cl->mark_is_multiversioned();
-                    cl->set_slp_max_unroll(0);
-                    poison_rce_post_loop(lpt);
-                  }
-                }
-              }
-            }
-            sw.transform_loop(lpt, true);
-          }
-        } else if (cl->is_main_loop()) {
+        if (cl->is_main_loop()) {
           if (!sw.transform_loop(lpt, true)) {
             // Instigate more unrolling for optimization when vectorization fails.
             if (cl->has_passed_slp()) {

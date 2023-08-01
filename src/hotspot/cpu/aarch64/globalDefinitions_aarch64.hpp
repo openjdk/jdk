@@ -27,6 +27,7 @@
 #define CPU_AARCH64_GLOBALDEFINITIONS_AARCH64_HPP
 
 const int StackAlignmentInBytes  = 16;
+const size_t pd_segfault_address = 1024;
 
 // Indicates whether the C calling conventions require that
 // 32-bit integer argument values are extended to 64 bits.

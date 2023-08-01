@@ -1615,6 +1615,8 @@ public class JEditorPane extends JTextComponent {
      * it set the client {@link #putClientProperty property} with this name
      * to <code>Boolean.TRUE</code>.
      *
+     * @spec https://www.w3.org/TR/CSS22
+     *      Cascading Style Sheets Level 2 Revision 2 (CSS 2.2) Specification
      * @since 1.5
      */
     public static final String W3C_LENGTH_UNITS = "JEditorPane.w3cLengthUnits";

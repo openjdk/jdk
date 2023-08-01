@@ -57,8 +57,8 @@ void DirectivesParser::clean_tmp() {
   assert(_tmp_depth == 0, "Consistency");
 }
 
-int DirectivesParser::parse_string(const char* text, outputStream* st) {
-  DirectivesParser cd(text, st, false);
+int DirectivesParser::parse_string(const char* text, outputStream* st, bool silent) {
+  DirectivesParser cd(text, st, silent);
   if (cd.valid()) {
     return cd.install_directives();
   } else {
@@ -77,16 +77,16 @@ bool DirectivesParser::parse_from_flag() {
   return parse_from_file(CompilerDirectivesFile, tty);
 }
 
-bool DirectivesParser::parse_from_file(const char* filename, outputStream* st) {
+bool DirectivesParser::parse_from_file(const char* filename, outputStream* st, bool silent) {
   assert(filename != nullptr, "Test before calling this");
-  if (!parse_from_file_inner(filename, st)) {
+  if (!parse_from_file_inner(filename, st, silent)) {
     st->print_cr("Could not load file: %s", filename);
     return false;
   }
   return true;
 }
 
-bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream* stream) {
+bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream* stream, bool silent) {
   struct stat st;
   ResourceMark rm;
   if (os::stat(filename, &st) == 0) {
@@ -99,7 +99,7 @@ bool DirectivesParser::parse_from_file_inner(const char* filename, outputStream*
       ::close(file_handle);
       if (num_read >= 0) {
         buffer[num_read] = '\0';
-        return parse_string(buffer, stream) > 0;
+        return parse_string(buffer, stream, silent) > 0;
       }
     }
   }
