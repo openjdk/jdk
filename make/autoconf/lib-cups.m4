@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2016, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2023, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,7 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
       fi
     else
       # handle cups default location for AIX
-      if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      if test "x$OPENJDK_TARGET_OS" = "xaix" && test "x${with_cups}" = x; then
         if test -s "/opt/freeware/include/cups/cups.h"; then
           CUPS_CFLAGS="-I/opt/freeware/include"
           CUPS_FOUND=yes
