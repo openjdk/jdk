@@ -186,19 +186,9 @@ DumpTimeClassInfo* SystemDictionaryShared::get_info(InstanceKlass* k) {
 
 DumpTimeClassInfo* SystemDictionaryShared::get_info_locked(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
-#ifdef ASSERT
-  if (DumpSharedSpaces) {
-    assert(!k->is_shared(), "sanity");
-  } else {
-    assert(DynamicDumpSharedSpaces, "sanity");
-  }
-#endif
+  assert(!k->is_shared(), "sanity");
   DumpTimeClassInfo* info = _dumptime_table->get_info(k);
-#ifdef ASSERT
-  if (!k->is_shared()) {
-    assert(info != nullptr, "must be");
-  }
-#endif
+  assert(info != nullptr, "must be");
   return info;
 }
 
@@ -658,11 +648,7 @@ bool SystemDictionaryShared::is_excluded_class(InstanceKlass* k) {
   assert_lock_strong(DumpTimeTable_lock);
   Arguments::assert_is_dumping_archive();
   DumpTimeClassInfo* p = get_info_locked(k);
-  if (p != nullptr) {
-    return p->is_excluded();
-  } else {
-    return false;
-  }
+  return p->is_excluded();
 }
 
 void SystemDictionaryShared::set_excluded_locked(InstanceKlass* k) {

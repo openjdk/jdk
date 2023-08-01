@@ -468,7 +468,6 @@ public:
       }
     }
   }
-
 };
 
 char* VM_PopulateDumpSharedSpace::dump_read_only_tables() {
