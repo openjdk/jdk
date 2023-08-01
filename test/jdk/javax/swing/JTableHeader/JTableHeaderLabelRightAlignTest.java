@@ -88,15 +88,18 @@ public class JTableHeaderLabelRightAlignTest {
 
         for (int y = 1; y < (imgHeader.getHeight() - 3); y++) {
             if (expectedRGB != imgHeader.getRGB(x, y)) {
-                try {
-                    ImageIO.write(imgHeader, "png",
-                            new File("FailureImage.png"));
-                } catch (IOException ioException) {
-                    ioException.printStackTrace();
-                }
+                saveBufferedImage(imgHeader, "failureImage.png");
                 throw new RuntimeException("Test Failed at <" + x + ", " + y + ">");
             }
         }
         System.out.println("Test Passed");
+    }
+
+    private static void saveBufferedImage(BufferedImage image, String fileName) {
+        try {
+            ImageIO.write(image, "png", new File(fileName));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
