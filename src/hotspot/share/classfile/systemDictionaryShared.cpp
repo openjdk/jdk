@@ -700,7 +700,7 @@ bool SystemDictionaryShared::add_verification_constraint(InstanceKlass* k, Symbo
   Arguments::assert_is_dumping_archive();
   DumpTimeClassInfo* info = get_info(k);
   info->add_verification_constraint(k, name, from_name, from_field_is_protected,
-                                      from_is_array, from_is_object);
+                                    from_is_array, from_is_object);
 
   if (DynamicDumpSharedSpaces) {
     // For dynamic dumping, we can resolve all the constraint classes for all class loaders during
