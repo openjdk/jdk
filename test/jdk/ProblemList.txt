@@ -796,6 +796,6 @@ java/awt/Focus/FrameMinimizeTest/FrameMinimizeTest.java 8016266 linux-x64
 
 ############################################################################
 
-# jdk_foreign
+# java/foreign
 
 java/foreign/TestByteBuffer.java 8309475 aix-ppc64
