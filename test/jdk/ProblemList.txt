@@ -551,6 +551,8 @@ java/nio/channels/DatagramChannel/Unref.java                    8233437 generic-
 
 jdk/nio/zipfs/TestLocOffsetFromZip64EF.java                     8301183 linux-all
 
+java/nio/channels/DatagramChannel/AfterDisconnect.java          8308807 aix-ppc64
+
 ############################################################################
 
 # jdk_rmi
