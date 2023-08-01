@@ -180,10 +180,9 @@ INT32 DAUDIO_GetDirectAudioDeviceCount() {
     INT32 oldCount;
     INT32 cacheIndex;
 
-    if (!DS_lockCache()) {
+    if (!DS_lockCache() || FAILED(::CoInitialize(NULL))) {
         return 0;
     }
-    ::CoInitialize(NULL);
     if (g_lastCacheRefreshTime == 0
         || (UINT64) timeGetTime() > (UINT64) (g_lastCacheRefreshTime + WAIT_BETWEEN_CACHE_REFRESH_MILLIS)) {
         /* first, initialize any old cache items */
@@ -259,7 +258,8 @@ INT32 DAUDIO_GetDirectAudioDeviceDescription(INT32 mixerIndex, DirectAudioDevice
         DS_unlockCache();
         return FALSE;
     }
-    ::CoInitialize(NULL);
+    if(FAILED(::CoInitialize(NULL)))
+        return false;
     desc->maxSimulLines = 0;
     if (g_audioDeviceCache[desc->deviceID].isSource) {
         DirectSoundEnumerateW((LPDSENUMCALLBACKW) DS_GetDescEnum, desc);
