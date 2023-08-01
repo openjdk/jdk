@@ -37,6 +37,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -338,34 +339,91 @@ public final class ReferencedKeyMap<K, V> implements Map<K, V> {
 
     /**
      * Puts an entry where the key and the value are the same. Used for
-     * interning values.
+     * interning values in a set.
      *
      * @implNote Requires a {@link ReferencedKeyMap} whose {@code V} type
-     * is {@code ReferenceKey<K>}. Otherwise, a {@link ClassCastException} will
+     * is a {@code ReferenceKey<K>}. Otherwise, a {@link ClassCastException} will
      * be thrown.
      *
-     * @param key  key to add
+     * @param setMap    {@link ReferencedKeyMap} where interning takes place
+     * @param key       key to add
      *
-     * @return the old key instance unless null then the new key instance
+     * @param <T> type of key
      *
-     * @throws ClassCastException if {@code V} is not {@code EntryKey<K>}
+     * @return the old key instance if found otherwise the new key instance
+     *
+     * @throws ClassCastException if {@code V} is not {@code EntryKey<T>}
      */
-    @SuppressWarnings("unchecked")
-    K intern(K key) {
-        removeStaleReferences();
-        ReferenceKey<K> entryKey = (ReferenceKey<K>)get(lookupKey(key));
-        if (entryKey != null) {
-            K value = entryKey.get();
-            if (value != null) {
-                return value;
-            }
+    static <T> T intern(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key) {
+        T value = existingKey(setMap, key);
+        if (value != null) {
+            return value;
         }
-        entryKey = entryKey(key);
-        K interned;
+        return internKey(setMap, key);
+    }
+
+    /**
+     * Puts an entry where the key and the value are the same. Used for
+     * interning values in a set.
+     *
+     * @implNote Requires a {@link ReferencedKeyMap} whose {@code V} type
+     * is a {@code ReferenceKey<K>}. Otherwise, a {@link ClassCastException} will
+     * be thrown.
+     *
+     * @param setMap    {@link ReferencedKeyMap} where interning takes place
+     * @param key       key to add
+     * @param interner  operation to apply to key before adding to map
+     *
+     * @param <T> type of key
+     *
+     * @return the old key instance if found otherwise the new key instance
+     *
+     * @throws ClassCastException if {@code V} is not {@code EntryKey<T>}
+     *
+     * @implNote This version of intern should not be called during phase1
+     * using a lambda. Use an UnaryOperator instance instead.
+     */
+    static <T> T intern(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key, UnaryOperator<T> interner) {
+        T value = existingKey(setMap, key);
+        if (value != null) {
+            return value;
+        }
+        key = interner.apply(key);
+        return internKey(setMap, key);
+    }
+
+    /**
+     * Check if the key already exists in the map.
+     *
+     * @param setMap    {@link ReferencedKeyMap} where interning takes place
+     * @param key       key to test
+     *
+     * @param <T> type of key
+     *
+     * @return key if found otherwise null
+     */
+    private static <T> T existingKey(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key) {
+        setMap.removeStaleReferences();
+        ReferenceKey<T> entryKey = setMap.get(setMap.lookupKey(key));
+        return entryKey != null ? entryKey.get() : null;
+    }
+
+    /**
+     * Attempt to add key to map.
+     *
+     * @param setMap    {@link ReferencedKeyMap} where interning takes place
+     * @param key       key to add
+     *
+     * @param <T> type of key
+     *
+     * @return the old key instance if found otherwise the new key instance
+     */
+    private static <T> T internKey(ReferencedKeyMap<T, ReferenceKey<T>> setMap, T key) {
+        ReferenceKey<T> entryKey = setMap.entryKey(key);
+        T interned;
         do {
-            removeStaleReferences();
-            ReferenceKey<K> existing =
-                    (ReferenceKey<K>)map.putIfAbsent(entryKey, (V)entryKey);
+            setMap.removeStaleReferences();
+            ReferenceKey<T> existing = setMap.map.putIfAbsent(entryKey, entryKey);
             if (existing == null) {
                 return key;
             } else {

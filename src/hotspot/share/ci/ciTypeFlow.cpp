@@ -727,8 +727,8 @@ void ciTypeFlow::StateVector::do_ldc(ciBytecodeStream* str) {
   }
   ciConstant con = str->get_constant();
   if (con.is_valid()) {
-    int index = str->get_constant_pool_index();
-    BasicType basic_type = str->get_basic_type_for_constant_at(index);
+    int cp_index = str->get_constant_pool_index();
+    BasicType basic_type = str->get_basic_type_for_constant_at(cp_index);
     if (is_reference_type(basic_type)) {
       ciObject* obj = con.as_object();
       if (obj->is_null_object()) {

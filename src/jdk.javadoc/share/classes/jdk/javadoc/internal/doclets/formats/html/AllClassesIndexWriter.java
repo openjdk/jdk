@@ -37,7 +37,6 @@ import jdk.javadoc.internal.doclets.formats.html.markup.ContentBuilder;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlStyle;
 import jdk.javadoc.internal.doclets.formats.html.markup.HtmlTree;
 import jdk.javadoc.internal.doclets.formats.html.Navigation.PageMode;
-import jdk.javadoc.internal.doclets.toolkit.Content;
 import jdk.javadoc.internal.doclets.toolkit.util.DocFileIOException;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPath;
 import jdk.javadoc.internal.doclets.toolkit.util.DocPaths;
@@ -117,10 +116,10 @@ public class AllClassesIndexWriter extends HtmlDocletWriter {
                 .setId(HtmlIds.ALL_CLASSES_TABLE)
                 .setDefaultTab(contents.allClassesAndInterfacesLabel)
                 .addTab(contents.interfaces, utils::isPlainInterface)
-                .addTab(contents.classes, e -> utils.isNonThrowableClass(e))
+                .addTab(contents.classes, utils::isNonThrowableClass)
                 .addTab(contents.enums, utils::isEnum)
-                .addTab(contents.records, e -> utils.isRecord(e))
-                .addTab(contents.exceptionClasses, e -> utils.isThrowable(e))
+                .addTab(contents.records, utils::isRecord)
+                .addTab(contents.exceptionClasses, utils::isThrowable)
                 .addTab(contents.annotationTypes, utils::isAnnotationInterface);
         for (Character unicode : indexBuilder.getFirstCharacters()) {
             for (IndexItem indexItem : indexBuilder.getItems(unicode)) {

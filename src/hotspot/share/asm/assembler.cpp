@@ -33,7 +33,6 @@
 #include "runtime/javaThread.hpp"
 #include "runtime/os.hpp"
 
-
 // Implementation of AbstractAssembler
 //
 // The AbstractAssembler is generating code into a CodeBuffer. To make code generation faster,

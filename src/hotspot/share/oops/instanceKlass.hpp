@@ -1075,12 +1075,12 @@ public:
   // Lock during initialization
 public:
   // Returns the array class for the n'th dimension
-  virtual Klass* array_klass(int n, TRAPS);
-  virtual Klass* array_klass_or_null(int n);
+  virtual ArrayKlass* array_klass(int n, TRAPS);
+  virtual ArrayKlass* array_klass_or_null(int n);
 
   // Returns the array class with this class as element type
-  virtual Klass* array_klass(TRAPS);
-  virtual Klass* array_klass_or_null();
+  virtual ArrayKlass* array_klass(TRAPS);
+  virtual ArrayKlass* array_klass_or_null();
 
   static void clean_initialization_error_table();
 
@@ -1164,6 +1164,11 @@ public:
   void print_class_load_logging(ClassLoaderData* loader_data,
                                 const ModuleEntry* module_entry,
                                 const ClassFileStream* cfs) const;
+ private:
+  void print_class_load_cause_logging() const;
+  void print_class_load_helper(ClassLoaderData* loader_data,
+                               const ModuleEntry* module_entry,
+                               const ClassFileStream* cfs) const;
 };
 
 // for adding methods
