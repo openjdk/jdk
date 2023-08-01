@@ -225,7 +225,7 @@ UpcallStub::FrameData* UpcallStub::frame_data_for_frame(const frame& frame) cons
 }
 
 bool frame::upcall_stub_frame_is_first() const {
-  assert(is_upcall_stub_frame(), "must be optimzed entry frame");
+  assert(is_upcall_stub_frame(), "must be optimized entry frame");
   UpcallStub* blob = _cb->as_upcall_stub();
   JavaFrameAnchor* jfa = blob->jfa_for_frame(*this);
   return jfa->last_Java_sp() == nullptr;
