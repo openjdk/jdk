@@ -718,7 +718,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type,
     case os::gc_thread:
     case os::asynclog_thread:
     case os::watcher_thread:
-    default:
+    default:  // follow Unix and presume the unknown thread type is an internal VM one
       if (VMThreadStackSize > 0) stack_size = (size_t)(VMThreadStackSize * K);
       break;
     }
