@@ -70,15 +70,14 @@ class MemAllocator::Allocation: StackObj {
 public:
   Allocation(const MemAllocator& allocator, oop* obj_ptr)
     : _allocator(allocator),
+      _thread(JavaThread::cast(allocator._thread)), // Do not use Allocation in non-JavaThreads.
       _obj_ptr(obj_ptr),
       _overhead_limit_exceeded(false),
       _allocated_outside_tlab(false),
       _allocated_tlab_size(0),
       _tlab_end_reset_for_sample(false)
   {
-    assert(Thread::current()->is_Java_thread(), "must be used by JavaThreads only");
     assert(Thread::current() == allocator._thread, "do not pass MemAllocator across threads");
-    _thread = JavaThread::cast(allocator._thread);
     verify_before();
   }
 
